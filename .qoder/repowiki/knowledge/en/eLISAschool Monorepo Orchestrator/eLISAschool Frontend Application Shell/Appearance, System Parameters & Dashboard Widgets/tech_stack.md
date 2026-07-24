@@ -1,0 +1,1 @@
+React + TypeScript with `@tanstack/react-query` for server state, `sonner` for toast notifications, `lucide-react` icons, and Tailwind CSS using design tokens from CSS custom properties (`--color-bordure`, `--space-lg`, etc.).

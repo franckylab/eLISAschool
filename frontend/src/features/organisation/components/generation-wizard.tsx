@@ -35,6 +35,7 @@ interface ApercuNode {
 }
 
 function StructureApercu({ noeud, depth = 0 }: { noeud: ApercuNode; depth?: number }) {
+    const { t } = useTranslation('organisation');
     if (!noeud) return null;
     return (
         <div className="text-xs" style={{ paddingLeft: depth ? '0.75rem' : 0 }}>
@@ -42,7 +43,7 @@ function StructureApercu({ noeud, depth = 0 }: { noeud: ApercuNode; depth?: numb
                 <ChevronRightIcon className="h-3 w-3" />
                 <span className="font-medium text-foreground">{noeud.nom || '—'}</span>
                 {(noeud.count ?? 0) > 1 && <span>×{noeud.count}</span>}
-                {(noeud.postes?.length ?? 0) > 0 && <span className="text-[var(--color-dominant-600)]">· {noeud.postes!.length} poste(s)</span>}
+                {(noeud.postes?.length ?? 0) > 0 && <span className="text-[var(--color-dominant-600)]">· {noeud.postes!.length} {t('postes')}</span>}
             </div>
             {(noeud.enfants || []).slice(0, 5).map((e: ApercuNode, i: number) => <StructureApercu key={i} noeud={e} depth={depth + 1} />)}
         </div>
@@ -154,7 +155,7 @@ export function GenerationWizard({ open, onOpenChange, templates, presetTemplate
                             </div>
                             <div>
                                 <label className="block text-sm font-medium mb-1 text-foreground">{t('modeConflit')}</label>
-                                <select value={modeConflit} onChange={(e) => setModeConflit(e.target.value as any)}
+                                <select value={modeConflit} onChange={(e) => setModeConflit(e.target.value as 'ERROR' | 'SKIP' | 'OVERWRITE')}
                                     className="w-full px-3 py-2 border border-border rounded bg-background text-foreground">
                                     <option value="ERROR">{t('modeConflitError')}</option>
                                     <option value="SKIP">{t('modeConflitSkip')}</option>

@@ -1,0 +1,1 @@
+Frontend features for payroll (bulletins, cotisations, primes, retenues), leave management (conges), and daily time tracking (pointages), each exposing a React page component plus TanStack Query hooks typed against dedicated DTOs.

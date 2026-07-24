@@ -72,6 +72,37 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 ### Blocked
 — (none)
 
+## Travail effectué — Session 2026-07-24 (fix FK crash seeds + serveur)
+### Problème critique
+- **Crash serveur** : `ALTER TABLE heures_cours ADD CONSTRAINT FK_4694216da... REFERENCES classes_annees` échouait car `classeAnneeId` contenait des UUID orphelins (71 lignes avec ancien `classeId`).
+- **DTO obsolète** : `createHeureCoursSchema` utilisait `classeId` au lieu de `classeAnneeId` (refactoring v4.0 incomplet).
+- **Service obsolète** : référençait `EmploiDuTemps` (supprimé) au lieu de `CreneauHoraire` ; requêtait `slot.classeAnneeId` directement au lieu de `slot.affectationMatiere?.classeAnneeId`.
+- **Seed runners** : 3 scripts (`run-seeds.ts`, `run-demo-seeds.ts`, `run-rbac-seed.ts`) créent leur propre `DataSource` et contournent `initializeDatabase()`.
+
+### Correctifs appliqués
+1. **`pre-sync-cleanup.ts`** (nouveau module partagé) : nettoie les orphelins AVANT synchronize.
+   - Détecte `classeId` (old) vs `classeAnneeId` (new) → DROP TABLE `heures_cours` CASCADE si schéma obsolète
+   - Supprime les lignes avec `classeAnneeId`/`salleId` orphelins si le schéma est déjà v4.0
+   - Supprime les FK obsolètes sur `creneauId` si la table cible manque
+   - Fonctionne avec connexion pg brute, utilisable avant toute `initialize()`
+2. **`pre-sync-cleanup.ts` — `envDbConfig()`** : lit la config depuis les vars d'env (DRY)
+3. **`data-source.ts`** : `initializeDatabase()` appelle `cleanOrphanHeuresCours()` avant `AppDataSource.initialize()`
+4. **`run-seeds.ts`** : importe et appelle `cleanOrphanHeuresCours(envDbConfig())` avant `SeedDataSource.initialize()`
+5. **`run-rbac-seed.ts`** : idem
+6. **`run-demo-seeds.ts`** : `synchronize: false` (pas de risque FK, pas de modif nécessaire)
+7. **`@types/pg`** : installé pour la déclaration TS du module `pg`
+8. **DTO `heure-cours.dto.ts`** : `classeId`→`classeAnneeId`, ajout `salleId`/`commentaire`/`affectationMatiereId`
+9. **Service `heure-cours.service.ts`** : `EmploiDuTemps`→`CreneauHoraire`, jointure via `affectationMatiere`
+10. **`seed-nomenclatures.ts`** v4.0 : 10 échelons avec couleurs, update des existants
+11. **`seed-templates.ts`** : 5 codes invalides corrigés (`CENSORAT`→`DIRECTION`, etc.)
+12. **`seed-heures-cours-edt.ts`** : constructeur au lieu de `repo.create()`
+
+### Résultat
+- `npm run seed` → ✅ (synchronize + seeds système OK)
+- `npm run seed:demo` → ✅ (8 créneaux, 5 heures cours, 12 bulletins)
+- `npm run start:ts` → ✅ (serveur démarre, health endpoint 200)
+- Schéma `heures_cours` : `classeAnneeId uuid NOT NULL` avec FK→`classes_annees`. Table `creneaux_horaires` créée. Ancienne `emploi_du_temps` intacte (données inertes).
+
 ## Next Move
 Implémenter la refonte v4.0 du modèle organisation (grill-me consolidé) :
 1. **Backend — Migration SQL** : rename niveaux_organisation → echelons_structurels (+ code, couleur), drop usages_unite/categories_poste/types_relation_hierarchique, add FK modeRemunerationId sur contrats/types_contrat, drop modeRemunerationDefaut sur types_personnel, drop categoriePosteId sur postes, HierarchiePersonnel.typeRelationId → typeRelation varchar
@@ -88,13 +119,13 @@ Implémenter la refonte v4.0 du modèle organisation (grill-me consolidé) :
 ### Backend — Bugs critiques corrigés
 - **`organisation.service.ts`** : Bug 1 — `creerUniteAvecPostes` supprimé `estSuppleant` et `etablissementId` (champs inexistants sur Poste). Bug 2 — `getImpactUnite` utilisait `uniteOrganisationnelleId` sur HierarchiePersonnel (inexistant) → corrigé pour `posteId: In(postes.map(p => p.id))`.
 - **`mode-remuneration.entity.ts` + `niveau-responsabilite.entity.ts`** : Contraintes `unique: true` sur `code` supprimées → index composites partiels multi-tenant `['code', 'etablissementId'] WHERE "etablissementId" IS NOT NULL`.
-- **Migration 113** : Drop contraintes unique globales + recréation index composites partiels.
 
 ### Backend — Normalisation échelons structurels
 - **13 → 10 échelons** : suppression redondances (DIRECTION_GENERAL, DEPARTEMENT, SOUS_SERVICE), rename BIBLIOTHEQUE → CDI.
 - **Couleurs ajoutées** : chaque échelon a une couleur distinctive (#2563eb, #7c3aed, #059669, etc.).
 - **Config registry** : `typesUnitesActifs` aligné avec 10 codes normalisés.
-- **Migration 114** : SQL idempotent (rename, delete, update couleurs).
+- **Migration 113** : Drop contraintes unique globales + recréation index composites partiels.
+- **Migration 119** (renommée depuis 114) : SQL idempotent (rename BIBLIOTHEQUE→CDI, delete redondants, update couleurs).
 
 ### Backend — Organigramme enrichi
 - **`buildArborescence`** : ajout `relations: ['echelonStructurel']` + `echelonStructurelLabel` et `echelonCouleur` dans les noeuds.
@@ -111,6 +142,52 @@ Implémenter la refonte v4.0 du modèle organisation (grill-me consolidé) :
 
 ### Frontend — Sidebar
 - **Lien Organigramme** : `/organisation/organigramme` → `/organisation` (route index).
+
+### Sécurité multi-tenant (P0 — failles CRITICAL corrigées)
+- **`unites.controller.ts`** : `etablissementId` forcé depuis le token sur POST create, POST avec-postes, PATCH update, DELETE, reordonner, chemin hiérarchique.
+- **`organisation.service.ts`** : `updateUnite`, `deleteUnite`, `reordonnerUnite`, `getCheminHierarchique`, `updateHierarchie`, `deleteHierarchie` filtrent désormais par `etablissementId`.
+- **`organigramme.controller.ts`** : `requirePermission('organisation:organigramme:read')` ajouté sur les 4 routes.
+- **`nomenclature.controller.ts`** : `etablissementId` passé à `findById`, `update`, `delete` pour les 4 nomenclatures (échelons, niveaux, templates, modes).
+- **4 services nomenclature** : `findById/update/delete` acceptent `etablissementId` et filtrent les requêtes.
+- **`postes.controller.ts`** : `etablissementId` passé à `create`, `update`, `delete`.
+- **`postes.service.ts`** : `create` vérifie que l'unité cible appartient à l'établissement. `update/delete` filtrent via `findById(id, etablissementId)`.
+
+### Entités — Contraintes multi-tenant corrigées
+- **`niveau-responsabilite.entity.ts`** : `unique: true` retiré de `@Column` sur `code`. Index composé avec `where: '"etablissementId" IS NOT NULL'`.
+- **`mode-remuneration.entity.ts`** : idem.
+
+### Frontend — Qualité code (suite)
+- **`OrganigrammePage.tsx`** : gestion erreur avec bouton Réessayer. `OrganigrammeFlowView` rendu conditionnel (lazy). `handleConfirmMove` avec `toast.error`.
+- **`nomenclature-crud-page.tsx`** : suppression wrappée dans try/catch (dialog ne se ferme que si succès).
+- **`use-unites.ts`** : `staleTime: 30_000` sur useUnites et useArborescence. `useCreerUniteAvecPostes` invalide aussi l'organigramme.
+- **`UniteNode.tsx`** : `aria-expanded`, `aria-haspopup="menu"` sur boutons menu et collapse. Dernières chaînes FR hardcodées → `t()`.
+
+### Frontend — i18n et types (session 2026-07-24 suite)
+- **`UniteNode.tsx`** : 5 chaînes FR hardcodées → `t()` (`autres`, `aucunPosteCourt`, `vacants_count`, `deplier`, `replier`).
+- **Locales FR/EN** : 6 clés ajoutées à la racine (`ajouterEnfant`, `autres`, `aucunPosteCourt`, `vacants_count`, `deplier`, `replier`).
+- **`generation-wizard.tsx`** : `as any` → `as 'ERROR' | 'SKIP' | 'OVERWRITE'` (type littéral).
+- **`use-types-personnel.ts`** : 7 `any` → typage propre avec `TypePersonnel`, `ApiResponse<T>`, `Omit<>`, `Partial<>`.
+- **Module organisation** : 0 `any` restants (vérifié par grep).
+
+### Frontend — UX et qualité (session 2026-07-24 — suite 2)
+- **`use-fonctions.ts`** : 10 `any` supprimés, typage propre avec `Fonction`, `PaginatedResult`, `ApiResponse<T>`. Toasts succès/erreur ajoutés via `useHandleError`.
+- **`use-postes.ts`** : 8 `any` supprimés, typage propre avec `Poste`, `AffectationPoste`. Migration vers `useHandleError`. Invalidations organigramme ajoutées dans les mutations.
+- **`fonctions-page.tsx`** : Skeleton loading (`PageSkeleton`), état erreur avec bouton Réessayer, 10 chaînes FR hardcodées → `t()`, type `handleSave` propre.
+- **`unites-page.tsx`** : État erreur avec bouton Réessayer ajouté.
+- **Locales FR/EN** : 5 clés ajoutées (`voirDetails`, `rechercherNomCode`, `aucuneFonctionTrouvee`, `supprimerFonction`, `confirmerSuppressionFonction`).
+
+### Backend — Bugs organisation.service.ts (corrigés session 2026-07-24 tour 4)
+- **`creerUniteAvecPostes`** : `estSuppleant` supprimé (champ inexistant sur `Poste`). `etablissementId` supprimé (inexistant sur `Poste`).
+- **`getImpactUnite`** : `uniteOrganisationnelleId: In(familleIds)` → `posteId: In(postes.map(p => p.id))` (HierarchiePersonnel n'a plus de `uniteOrganisationnelleId`).
+- **Migration 119** : commentaire en-tête corrigé (114 → 119).
+
+### Frontend — Composants fonctions/postes (any résorbés)
+- **`fonction-form-modal.tsx`** : `onSave: (data: any)` → `(data: CreerFonctionDto | ModifierFonctionDto)`.
+- **`fonction-detail-page.tsx`** : `handleSave`, `membresList.map` typés.
+- **`poste-form-modal.tsx`** : 10 `any` → types propres (`Fonction`, `UniteOrganisationnelle`, `NiveauResponsabilite`, `React.ChangeEvent`, etc.).
+- **`poste-detail-page.tsx`** : `(a: any)` → `(a: AffectationPoste)`.
+- **`postes-page.tsx`** : `filtres as any` → `filtres as PosteFiltres`.
+- **Modules fonctions + postes** : 0 `any` restants.
 
 ## Travail effectué — Session 2026-07-23
 ### Frontend — Nettoyage `any` types
@@ -197,3 +274,104 @@ Implémenter la refonte v4.0 du modèle organisation (grill-me consolidé) :
 
 ### Frontend — base-form-modal colorMap
 - **`base-form-modal.tsx`** : couleurs indigo/purple/green/orange/amber remplacées par CSS vars (`var(--color-info)`, `accent`, `var(--color-success)`, `var(--color-warning)`). Plus de classes hardcodées dark/light.
+
+## Refonte Emploi du Temps — Session 2026-07-24 (grill-me 10 décisions)
+### Décisions validées (D1–D9)
+| # | Décision | Impact |
+|---|----------|--------|
+| D1 | `MatiereNiveau.volumeHoraire` = source unique et absolue | Supprimé `volumeHoraire` de ProgrammeMatiere, ConfigurationMatiereClasse |
+| D2 | Fusion `EmploiDuTemps` + `RepartitionHoraire` → `CreneauHoraire` | Nouvelle entité, référencée par `affectationMatiereId` |
+| D3 | `HeureCours` ancré sur `classeAnneeId` (pas `classeId`) | Migration FK, remplacement classeId → classeAnneeId |
+| D4 | `ProgrammePedagogique` = curriculum intemporel + historisation | Supprimé periodeId, dateDebut/Fin, anneeScolaireId, nbHeuresHebdo. Table `programmes_versions` |
+| D5 | Supprimer `ConfigurationMatiereClasse` | `obligatoire` et `statutValidation` absorbés par AffectationMatiere |
+| D6 | Édition manuelle complète : modal + drag & drop + resize | Nouveau frontend |
+| D7 | `PreferenceEmploiDuTemps` enrichi : pauses + `creneauxImposables` JSONB | Migration + nouveaux champs |
+| D8 | Frontend 5 onglets : Calendrier, Liste, Synthèse, Préférences, Templates | Refonte page |
+| D9 | `ConflitDetectionService` : 5 types (3 bloquants, 2 avertissements) | Nouveau service backend |
+
+### Entités supprimées (3)
+- `ConfigurationMatiereClasse` → champs absorbés par AffectationMatiere
+- `RepartitionHoraire` → fusionnée dans CreneauHoraire
+- `EmploiDuTemps` → fusionnée dans CreneauHoraire
+
+### Entités créées (2)
+- `CreneauHoraire` (table `creneaux_horaires`)
+- `ProgrammeVersion` (table `programmes_versions` — historisation)
+
+### Modèle cible
+```
+MatiereNiveau (source vérité volume horaire)
+    ├── ProgrammePedagogique (curriculum intemporel)
+    │       └── ProgrammeMatiere (bridge, SANS volumeHoraire)
+    ├── ClasseAnnee.programmeId → ProgrammePedagogique
+    └── AffectationMatiere (pivot contextuel: +obligatoire, +statutValidation, -configurationId)
+            └── CreneauHoraire (fusion EDT+Repartition)
+                    └── HeureCours (matérialisation datée: +classeAnneeId, +creneauId)
+```
+
+### Permissions RBAC ajoutées
+- `emploi-du-temps:verifier-conflits` (lecture)
+- `programmes:historiser` (écriture)
+
+### Fichiers backend modifiés
+- Entités : creneau-horaire.entity.ts, programme-version.entity.ts, affectation-matiere.entity.ts, heure-cours.entity.ts, programme-pedagogique.entity.ts, programme-matiere.entity.ts, preference-emploi-du-temps.entity.ts
+- Services : emploi-du-temps.service.ts (réécrit), conflit-detection.service.ts (nouveau), programme-pedagogique.service.ts (historisation), matieres.service.ts (nettoyé), notes.service.ts, programme-matiere.service.ts
+- Controllers : emploi-du-temps.controller.ts, matieres.controller.ts
+- DTOs : emploi-du-temps.dto.ts, matieres.dto.ts, programme-pedagogique.dto.ts, programme-matiere.dto.ts
+
+### Fichiers frontend modifiés
+- Types : use-emploi-du-temps.ts (CreneauHoraire, Conflit, types), matiere.types.ts, programme.types.ts
+- Hooks : use-emploi-du-temps.ts (useVerifierConflits), use-matieres.ts (nettoyé)
+- Composants : edt-calendar.tsx, matiere-detail-page.tsx
+- i18n : emplois.json (FR+EN: conflitDetection, synthese)
+
+## Travail effectué — Session 2026-07-24 (grill-me suite)
+### Frontend — Couleurs hardcodées → CSS vars (5 fichiers)
+- **`PosteCapaciteIndicator.tsx`** : `bg-red-500/amber-500/green-500` → `bg-destructive/warning/success`, `bg-gray-200 dark:bg-gray-700` → `bg-muted`
+- **`fonction-form-modal.tsx`** : `text-red-500` (required markers) → `text-destructive`
+- **`fonction-arbre.tsx`** : `bg-blue-100` → `bg-primary/10`, `bg-green/red` → `bg-success/destructive`, `hover:bg-red` → `hover:bg-destructive/10`
+- **`fonctions-page.tsx`** : status badges `bg-green/red` → `bg-success/destructive`
+- **`postes-page.tsx`** : `text-gray-*` → `text-foreground/secondary/muted-foreground`
+- **`poste-form-modal.tsx`** : `text-gray-700` → `text-foreground`, `bg-gray-100` → `bg-muted`, `hover:bg-red` → `hover:bg-destructive/10`
+
+### Frontend — i18n : 22 chaînes FR hardcodées → t()
+- **`fonction-arbre.tsx`** : `useTranslation` ajouté, 5 chaînes traduites (Actif/Inactif, Modifier, Supprimer, aucuneFonctionIndication)
+- **`hierarchie-form-modal.tsx`** : `TYPES_RELATION_OPTIONS` déplacé dans le composant, labels → `t('typeRelation_DIRECT/FONCTIONNEL')`
+- **`nomenclature-form-modal.tsx`** : fallback `'Erreur'` → `t('erreurGenerique')`
+- **`generation-wizard.tsx`** : `StructureApercu` avec `useTranslation`, `'poste(s)'` → `t('postes')`
+- **`modeles-page.tsx`** : `StructurePreview` avec `useTranslation`, `'poste(s)'` → `t('postes')`
+- **`unites-page.tsx`** : `header: 'Actions'` → `t('colActions')`
+- **`postes-page.tsx`** : `header: 'Actions'` → `t('colActions')`
+- **`fonctions-page.tsx`** : `'— Racine —'` → `t('racine')`
+- **`poste-form-modal.tsx`** : `'Une erreur est survenue'` → `t('erreurGenerique')`, placeholders missions/compétences → `t()`
+- **`poste.zod.ts`** : `STATUT_POSTE_OPTIONS` converti `label` → `labelKey` (i18n keys), consommateurs mis à jour
+- **3 clés i18n ajoutées** FR+EN : `ajouterMission`, `ajouterCompetence`, `aucuneFonctionIndication`
+
+### Backend — 21 types `any` éliminés dans `organisation.service.ts`
+- **Interfaces ajoutées** : `ArborescenceNode` (extends `Partial<UniteOrganisationnelle>` avec enfants récursif) + `PosteOrganigramme` (extends `Partial<Poste>` avec labels enrichis)
+- **`FindOptionsWhere<T>`** : 7 `const where: any` → `FindOptionsWhere<UniteOrganisationnelle>` ou `FindOptionsWhere<HierarchiePersonnel>`
+- **Résultats SQL bruts** : `(r: any) => r.id` → `(r: { id: string }) => r.id`
+- **Arborescence/Organigramme** : `Promise<any[]>` → `Promise<ArborescenceNode[]>`, `Map<string, any>` → `Map<string, ArborescenceNode>`, callbacks reduce/filtre typés
+- **Statistiques** : `statistiques: any` → `Record<string, unknown>`
+
+### Bilan qualité — Module Organisation
+- **`any` frontend** : 0 dans organisation/, fonctions/, postes/
+- **`any` backend** : 0 dans TOUT le module organisation (services + entities)
+- **Couleurs hardcodées** : 0 dans les 3 modules
+- **Chaînes FR hardcodées** : 0 dans les 3 modules
+- **Cohérence backend** : aucune référence aux entités supprimées (UsageUnite, CategoriePoste, NiveauOrganisation, TypeRelationHierarchique)
+
+## Travail effectué — Session 2026-07-24 (grill-me tour final)
+### Backend — Élimination `any` dans 4 services secondaires
+- **`postes-vacants.service.ts`** : Interfaces `PosteVacantInfo` et `StatistiquesVacance` ajoutées. 4 `any` → 0 (`critiques: any[]`, `avertissements: any[]`, `Promise<any>`)
+- **`statistiques-optimisees.service.ts`** : `params: any[]` → `(string | number)[]`, `(row: any)` → `Record<string, string | number | null>`, `(u: any)` → `{ id: string }`
+- **`organigramme.pdf.service.ts`** : Interfaces `NoeudOrganigramme` et `PosteOrganigrammePDF` ajoutées. 13 `any` → 0 (paramètres méthodes + callbacks)
+- **`generation.service.ts`** : `templatePoste as any` supprimé. Interface `TemplatePoste` étendue avec `intitulé?` et `niveauResponsabilite?` (champs optionnels utilisés par les templates JSON)
+- **4 services nomenclature** (déjà fait tour précédent) : `FindOptionsWhere<T>` dans mode-remuneration, niveau-responsabilite, echelon-structurel, template-organisation
+
+### Bilan final — Zéro `any` module Organisation
+- **Backend services** : 0 `any` dans les 8 fichiers de service
+- **Backend entities** : 0 `any` dans les interfaces template
+- **Frontend** : 0 `any` dans les hooks, composants, types, pages
+- **Routes** : 60/60 protégées par `authMiddleware` + `requirePermission`
+- **UX** : Toutes les pages ont des états loading/error avec retry

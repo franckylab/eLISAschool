@@ -28,16 +28,16 @@ interface Props {
     hierarchie?: HierarchiePersonnel | null;
 }
 
-const TYPES_RELATION_OPTIONS = [
-    { value: 'DIRECT', label: 'Directe' },
-    { value: 'FONCTIONNEL', label: 'Fonctionnelle' },
-];
-
 export function HierarchieFormModal({ open, onOpenChange, postes, hierarchie }: Props) {
     const { t } = useTranslation('organisation');
     const isEdit = !!hierarchie;
     const creer = useCreerHierarchie();
     const modifier = useModifierHierarchie();
+
+    const TYPES_RELATION_OPTIONS = [
+        { value: 'DIRECT', label: t('typeRelation_DIRECT') },
+        { value: 'FONCTIONNEL', label: t('typeRelation_FONCTIONNEL') },
+    ];
     const etablissementId = useAuthStore((s) => s.etablissementId);
     const [apiError, setApiError] = useState<string | null>(null);
 

@@ -1,0 +1,1 @@
+Express modules implementing the APC (Approche Par Compétences) competence model with multi-tenant isolation and national exam/certification administration for Cameroonian education.

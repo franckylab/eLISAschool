@@ -1,0 +1,5 @@
+- Each feature lives in `src/modules/<slug>/` with a uniform `controllers/`, `dto/`, `entities/`, `services/` subfolder plus an `index.ts` barrel.
+- Every authenticated API route is mounted as `authMiddleware → requireModuleActive('<slug>') → filterByEtablissement() → controller` so modules can be toggled per-establishment without code changes.
+- Cross-cutting concerns (logging, error formatting, pagination, DTO validation, crypto, QR codes) are imported from `@common/*` rather than duplicated inside modules.
+- All modules share a single `AppDataSource` from `@database/data-source`; no module creates its own connection.
+- Cron-capable modules expose an `init*CronJobs()` function imported once from `src/index.ts` instead of self-registering.

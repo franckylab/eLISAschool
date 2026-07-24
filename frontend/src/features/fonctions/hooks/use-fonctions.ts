@@ -1,11 +1,22 @@
+/**
+ * ==================================
+ * eLISAschool - Hooks Fonctions
+ * ==================================
+ * Hooks TanStack Query pour la gestion des fonctions organisationnelles.
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
+import { toast } from 'sonner';
+import { useAuthStore } from '@/stores/auth.store';
+import { useHandleError } from '@/features/organisation/hooks/use-handle-error';
 import type { PaginatedResult } from '@shared/types/api.types';
 import type { Fonction, CreerFonctionDto, ModifierFonctionDto, FonctionFiltres } from '../types/fonction.types';
 
 // ---- Queries ----
 
 export function useFonctions(filtres?: FonctionFiltres) {
+    const { isAuthenticated } = useAuthStore();
     const params = new URLSearchParams();
     if (filtres?.recherche) params.set('search', filtres.recherche);
     if (filtres?.parentId !== undefined) {
@@ -19,51 +30,58 @@ export function useFonctions(filtres?: FonctionFiltres) {
     return useQuery({
         queryKey: ['fonctions', 'list', filtres],
         queryFn: async () => {
-            const res = await apiClient.get(`/api/organisation/fonctions?${params}`);
-            return (res as any).data as PaginatedResult<Fonction>;
+            const res = await apiClient.get<PaginatedResult<Fonction>>(`/api/organisation/fonctions?${params}`);
+            return res.data;
         },
+        enabled: isAuthenticated,
     });
 }
 
 export function useFonctionMembres(id: string) {
+    const { isAuthenticated } = useAuthStore();
     return useQuery({
         queryKey: ['fonctions', 'membres', id],
         queryFn: async () => {
-            const res = await apiClient.get(`/api/organisation/fonctions/${id}/membres`);
-            return (res as any).data as any[];
+            const res = await apiClient.get<Fonction[]>(`/api/organisation/fonctions/${id}/membres`);
+            return res.data ?? [];
         },
-        enabled: !!id,
+        enabled: !!id && isAuthenticated,
     });
 }
 
 export function useArbreFonctions() {
+    const { isAuthenticated } = useAuthStore();
     return useQuery({
         queryKey: ['fonctions', 'arbre'],
         queryFn: async () => {
-            const res = await apiClient.get('/api/organisation/fonctions/arbre');
-            return (res as any).data as Fonction[];
+            const res = await apiClient.get<Fonction[]>('/api/organisation/fonctions/arbre');
+            return res.data ?? [];
         },
+        enabled: isAuthenticated,
     });
 }
 
 export function useToutesFonctions() {
+    const { isAuthenticated } = useAuthStore();
     return useQuery({
         queryKey: ['fonctions', 'toutes'],
         queryFn: async () => {
-            const res = await apiClient.get('/api/organisation/fonctions/all');
-            return (res as any).data as Fonction[];
+            const res = await apiClient.get<Fonction[]>('/api/organisation/fonctions/all');
+            return res.data ?? [];
         },
+        enabled: isAuthenticated,
     });
 }
 
 export function useFonction(id: string) {
+    const { isAuthenticated } = useAuthStore();
     return useQuery({
         queryKey: ['fonctions', 'detail', id],
         queryFn: async () => {
-            const res = await apiClient.get(`/api/organisation/fonctions/${id}`);
-            return (res as any).data as Fonction;
+            const res = await apiClient.get<Fonction>(`/api/organisation/fonctions/${id}`);
+            return res.data;
         },
-        enabled: !!id,
+        enabled: !!id && isAuthenticated,
         placeholderData: (previousData) => previousData,
     });
 }
@@ -72,37 +90,44 @@ export function useFonction(id: string) {
 
 export function useCreerFonction() {
     const queryClient = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: CreerFonctionDto) => {
-            const res = await apiClient.post('/api/organisation/fonctions', dto);
-            return (res as any).data as Fonction;
+            const res = await apiClient.post<Fonction>('/api/organisation/fonctions', dto);
+            return res.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['fonctions', 'list'] });
             queryClient.invalidateQueries({ queryKey: ['fonctions', 'arbre'] });
             queryClient.invalidateQueries({ queryKey: ['fonctions', 'toutes'] });
+            toast.success('Fonction créée avec succès');
         },
+        onError: (e) => handleError(e, 'Erreur lors de la création de la fonction'),
     });
 }
 
 export function useModifierFonction() {
     const queryClient = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async ({ id, dto }: { id: string; dto: ModifierFonctionDto }) => {
-            const res = await apiClient.patch(`/api/organisation/fonctions/${id}`, dto);
-            return (res as any).data as Fonction;
+            const res = await apiClient.patch<Fonction>(`/api/organisation/fonctions/${id}`, dto);
+            return res.data;
         },
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['fonctions', 'list'] });
             queryClient.invalidateQueries({ queryKey: ['fonctions', 'arbre'] });
             queryClient.invalidateQueries({ queryKey: ['fonctions', 'toutes'] });
             queryClient.invalidateQueries({ queryKey: ['fonctions', 'detail', data.id] });
+            toast.success('Fonction modifiée avec succès');
         },
+        onError: (e) => handleError(e, 'Erreur lors de la modification de la fonction'),
     });
 }
 
 export function useSupprimerFonction() {
     const queryClient = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (id: string) => {
             await apiClient.delete(`/api/organisation/fonctions/${id}`);
@@ -111,6 +136,8 @@ export function useSupprimerFonction() {
             queryClient.invalidateQueries({ queryKey: ['fonctions', 'list'] });
             queryClient.invalidateQueries({ queryKey: ['fonctions', 'arbre'] });
             queryClient.invalidateQueries({ queryKey: ['fonctions', 'toutes'] });
+            toast.success('Fonction supprimée');
         },
+        onError: (e) => handleError(e, 'Erreur lors de la suppression de la fonction'),
     });
 }

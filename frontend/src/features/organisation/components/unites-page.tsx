@@ -12,7 +12,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, Building2, FolderTree, MapPin, User } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Building2, FolderTree, MapPin, User, AlertCircle } from 'lucide-react';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { TreeView, type TreeNode } from '@/components/ui/TreeView';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -54,7 +54,7 @@ export function UnitesPage() {
     const canWrite = hasPermission('organisation:unites:write');
     const canDelete = hasPermission('organisation:unites:delete');
 
-    const { data: arborescence, isLoading } = useArborescence();
+    const { data: arborescence, isLoading, isError, refetch } = useArborescence();
     const { data: unites } = useUnites();
     const modifier = useModifierUnite();
     const supprimer = useSupprimerUnite();
@@ -113,7 +113,7 @@ export function UnitesPage() {
             render: (u) => <Badge variant={u.actif !== false ? 'success' : 'secondary'} size="sm">{u.actif !== false ? t('actif') : t('inactif')}</Badge>,
         },
         {
-            key: 'actions', header: 'Actions', className: 'text-right',
+            key: 'actions', header: t('colActions'), className: 'text-right',
             renderActions: (u) => [
                 { key: 'voir', icon: Eye, label: t('voir'), onClick: () => navigate({ to: '/organisation/unites/$id', params: { id: u.id } }), permission: 'organisation:unites:read', variant: 'info' as const },
                 { key: 'ajouter', icon: Plus, label: t('ajouterSousUnite'), onClick: () => handleCreateChild(u.id), permission: 'organisation:unites:write', variant: 'info' as const },
@@ -124,6 +124,18 @@ export function UnitesPage() {
     ], [t]);
 
     if (isLoading && !unites) return <PageSkeleton showTable />;
+
+    if (isError) {
+        return (
+            <div className="flex flex-col items-center justify-center gap-4 p-12">
+                <AlertCircle className="h-12 w-12 text-destructive" />
+                <p className="text-lg font-medium text-foreground">{t('erreurChargement')}</p>
+                <ElisaButton variant="outline" onClick={() => refetch()}>
+                    {t('reessayer')}
+                </ElisaButton>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-6 p-6">

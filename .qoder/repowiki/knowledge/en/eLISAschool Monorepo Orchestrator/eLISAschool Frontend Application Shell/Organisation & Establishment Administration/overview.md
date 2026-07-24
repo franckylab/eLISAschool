@@ -1,0 +1,1 @@
+Frontend feature modules for managing the school organisation (units, positions, hierarchies, organigramme flow) and establishment CRUD, exposing typed hooks and pages to the rest of the app.

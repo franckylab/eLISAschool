@@ -8,7 +8,7 @@
  * Service de gestion des échelons structurels (fusion NiveauOrganisation + UsageUnite).
  */
 
-import { Repository } from 'typeorm';
+import { Repository, FindOptionsWhere } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { EchelonStructurel } from '../entities';
 import {
@@ -58,20 +58,22 @@ class EchelonStructurelService {
         return { data, total };
     }
 
-    async findById(id: string): Promise<EchelonStructurel> {
-        const entity = await this.repo.findOne({ where: { id } });
+    async findById(id: string, etablissementId?: string): Promise<EchelonStructurel> {
+        const where: FindOptionsWhere<EchelonStructurel> = { id };
+        if (etablissementId) where.etablissementId = etablissementId;
+        const entity = await this.repo.findOne({ where });
         if (!entity) throw new AppError('Échelon structurel non trouvé', 404, 'ECHELON_STRUCTUREL_NOT_FOUND');
         return entity;
     }
 
-    async update(id: string, dto: UpdateEchelonStructurelDto): Promise<EchelonStructurel> {
-        const entity = await this.findById(id);
+    async update(id: string, dto: UpdateEchelonStructurelDto, etablissementId?: string): Promise<EchelonStructurel> {
+        const entity = await this.findById(id, etablissementId);
         Object.assign(entity, dto);
         return this.repo.save(entity);
     }
 
-    async delete(id: string): Promise<void> {
-        const entity = await this.findById(id);
+    async delete(id: string, etablissementId?: string): Promise<void> {
+        const entity = await this.findById(id, etablissementId);
         assertNotSystem(entity, 'supprimer');
         await this.repo.remove(entity);
     }

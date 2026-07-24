@@ -12,7 +12,8 @@ import { useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Edit, Briefcase, CheckCircle, XCircle, Info, Workflow, Users, UserRound } from 'lucide-react';
-import { useFonction, useModifierFonction, useFonctionMembres } from '../hooks/use-fonctions';
+import { useFonction, useModifierFonction, useFonctionMembres, useSupprimerFonction } from '../hooks/use-fonctions';
+import type { Fonction as FonctionType, ModifierFonctionDto } from '../types/fonction.types';
 import { FonctionFormModal } from './fonction-form-modal';
 import { FonctionArbre } from './fonction-arbre';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -21,7 +22,21 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { TabsBar, TabsContent, type Tab } from '@/components/ui';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePermissions } from '@/hooks';
+
+/** Shape des membres retournés par l'API /fonctions/:id/membres */
+interface FonctionMembre {
+    id: string;
+    membrePersonnelId: string;
+    estPrincipale?: boolean;
+    membrePersonnel?: {
+        id: string;
+        matricule: string;
+        nom?: string;
+        prenom?: string;
+    } | null;
+}
 
 export function FonctionDetailPage() {
     const { t } = useTranslation('organisation');
@@ -32,11 +47,21 @@ export function FonctionDetailPage() {
     const { data: membres } = useFonctionMembres(id);
     const [formOpen, setFormOpen] = useState(false);
     const [tab, setTab] = useState('infos');
+    const [fonctionToDelete, setFonctionToDelete] = useState<FonctionType | null>(null);
     const modifier = useModifierFonction();
+    const supprimer = useSupprimerFonction();
 
-    const handleSave = async (data: any) => {
+    const handleSave = async (data: ModifierFonctionDto) => {
         await modifier.mutateAsync({ id: fonction!.id, dto: data });
         setFormOpen(false);
+    };
+
+    const handleDeleteSousFonction = async () => {
+        if (fonctionToDelete) {
+            await supprimer.mutateAsync(fonctionToDelete.id);
+            setFonctionToDelete(null);
+            refetch();
+        }
     };
 
     if (isLoading) return <PageSkeleton showHeader />;
@@ -119,8 +144,8 @@ export function FonctionDetailPage() {
                         ) : (
                             <FonctionArbre
                                 fonctions={enfants.map((e) => ({ ...e, enfants: [] }))}
-                                onEdit={() => {}}
-                                onDelete={() => {}}
+                                onEdit={(f) => navigate({ to: '/organisation/fonctions/$id', params: { id: f.id } })}
+                                onDelete={(f) => setFonctionToDelete(f)}
                                 onView={(f) => navigate({ to: '/organisation/fonctions/$id', params: { id: f.id } })}
                                 compact
                             />
@@ -134,7 +159,7 @@ export function FonctionDetailPage() {
                             <p className="text-sm text-muted-foreground text-center py-8">{t('aucunMembre')}</p>
                         ) : (
                             <ul className="divide-y divide-border">
-                                {membresList.map((m: any) => (
+                                {(membresList as unknown as FonctionMembre[]).map((m) => (
                                     <li key={m.id} className="flex items-center gap-3 py-2.5">
                                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-dominant-100)]"><UserRound className="h-4 w-4 text-[var(--color-dominant-600)]" /></div>
                                         <div className="min-w-0 flex-1">
@@ -158,6 +183,17 @@ export function FonctionDetailPage() {
                     onSave={handleSave}
                 />
             )}
+
+            <ConfirmDialog
+                open={!!fonctionToDelete}
+                onOpenChange={(open) => { if (!open) setFonctionToDelete(null); }}
+                title={t('supprimerFonction')}
+                description={t('confirmerSuppressionFonction', { nom: fonctionToDelete?.nom })}
+                confirmText={t('supprimer')}
+                variant="danger"
+                onConfirm={handleDeleteSousFonction}
+                isLoading={supprimer.isPending}
+            />
         </div>
     );
 }

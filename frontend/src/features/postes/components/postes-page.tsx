@@ -25,7 +25,7 @@ import { usePostes, useSupprimerPoste } from '../hooks/use-postes';
 import { PosteFormModal } from './poste-form-modal';
 import { PosteCapaciteIndicator } from './PosteCapaciteIndicator';
 import { STATUT_POSTE_OPTIONS } from '../types/poste.zod';
-import type { Poste } from '../types/poste.types';
+import type { Poste, PosteFiltres, StatutPoste } from '../types/poste.types';
 
 const statutColors: Record<string, 'success' | 'warning' | 'danger' | 'default'> = {
     ACTIF: 'success',
@@ -38,7 +38,7 @@ interface PostesFiltres {
     page: number;
     limit: number;
     search?: string;
-    statut?: string;
+    statut?: StatutPoste;
 }
 
 export function PostesPage() {
@@ -48,7 +48,7 @@ export function PostesPage() {
     useDocumentTitle('eLISAschool | Postes');
 
     const [filtres, setFiltres] = useState<PostesFiltres>({ page: 1, limit: 20 });
-    const { data, isLoading, isFetching, isError, refetch } = usePostes(filtres as any);
+    const { data, isLoading, isFetching, isError, refetch } = usePostes(filtres as PosteFiltres);
     const supprimer = useSupprimerPoste();
 
     const postes = data?.items || [];
@@ -69,8 +69,8 @@ export function PostesPage() {
                         <Briefcase className="h-5 w-5 text-[var(--color-dominant-600)]" />
                     </div>
                     <div className="min-w-0">
-                        <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{p.intitule}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 font-mono truncate">{p.code}</p>
+                        <p className="font-medium text-foreground truncate">{p.intitule}</p>
+                        <p className="text-xs text-muted-foreground font-mono truncate">{p.code}</p>
                     </div>
                 </div>
             ),
@@ -78,17 +78,17 @@ export function PostesPage() {
         {
             key: 'fonction',
             header: t('fonction'),
-            render: (p) => <span className="text-sm text-gray-600 dark:text-gray-400">{p.fonction?.nom || '—'}</span>,
+            render: (p) => <span className="text-sm text-secondary">{p.fonction?.nom || '—'}</span>,
         },
         {
             key: 'unite',
             header: t('unites'),
-            render: (p) => <span className="text-sm text-gray-600 dark:text-gray-400">{p.uniteOrganisationnelle?.nom || '—'}</span>,
+            render: (p) => <span className="text-sm text-secondary">{p.uniteOrganisationnelle?.nom || '—'}</span>,
         },
         {
             key: 'typePersonnel',
             header: t('type'),
-            render: (p) => <span className="text-sm text-gray-600 dark:text-gray-400">{p.fonction?.typePersonnel?.nom || '—'}</span>,
+            render: (p) => <span className="text-sm text-secondary">{p.fonction?.typePersonnel?.nom || '—'}</span>,
         },
         {
             key: 'statut',
@@ -110,7 +110,7 @@ export function PostesPage() {
         },
         {
             key: 'actions',
-            header: 'Actions',
+            header: t('colActions'),
             className: 'text-right',
             renderActions: (p) => [
                 {
@@ -182,7 +182,7 @@ export function PostesPage() {
                     filtres={[
                         {
                             key: 'statut', label: t('statut'),
-                            options: STATUT_POSTE_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+                            options: STATUT_POSTE_OPTIONS.map((o) => ({ value: o.value, label: t(o.labelKey) })),
                             allOptionLabel: t('tousLesStatuts'),
                         },
                     ]}

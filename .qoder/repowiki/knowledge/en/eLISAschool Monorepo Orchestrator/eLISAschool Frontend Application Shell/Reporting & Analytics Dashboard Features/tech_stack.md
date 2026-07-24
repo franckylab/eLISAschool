@@ -1,0 +1,1 @@
+React + TypeScript with `@tanstack/react-query` for server state, `framer-motion` for page transitions, `lucide-react` icons, `sonner` for toast notifications, and a shared `apiClient` wrapper over axios; pages render Tailwind classes directly rather than using a charting library.

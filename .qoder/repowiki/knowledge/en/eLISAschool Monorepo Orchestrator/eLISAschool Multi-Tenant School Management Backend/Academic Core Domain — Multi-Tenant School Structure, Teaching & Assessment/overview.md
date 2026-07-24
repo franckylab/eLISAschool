@@ -1,0 +1,1 @@
+Aggregates the multi-tenant academic backbone (school structure, subjects/programmes/periods, competence-based assessment and national exams) behind a uniform NestJS module layout consumed by higher-level modules.

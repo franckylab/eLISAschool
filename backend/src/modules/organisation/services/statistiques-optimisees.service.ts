@@ -14,6 +14,7 @@ import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { logger } from '@common/utils/logger.util';
 import { AppError } from '@common/filters/error.filter';
+import { Poste, StatutPoste } from '../entities';
 
 export interface StatsOrganisationRapides {
     etablissementId: string;
@@ -107,7 +108,7 @@ export class StatistiquesOrganisationOptimiseesService {
                 SELECT * FROM mv_postes_vacants_critiques 
                 WHERE etablissement_id = $1
             `;
-            const params: any[] = [etablissementId];
+            const params: (string | number)[] = [etablissementId];
 
             if (niveauAlerte) {
                 query += ` AND niveau_alerte = $2`;
@@ -125,7 +126,7 @@ export class StatistiquesOrganisationOptimiseesService {
                 temps: '~10ms',
             });
 
-            return (result || []).map((row: any) => ({
+            return (result || []).map((row: Record<string, string | number | null>) => ({
                 posteId: row.poste_id,
                 intitule: row.intitule,
                 code: row.code,
@@ -178,17 +179,17 @@ export class StatistiquesOrganisationOptimiseesService {
         const uniteIds = (await uniteRepo.find({
             where: { etablissementId },
             select: ['id'],
-        })).map((u: any) => u.id);
+        })).map((u: { id: string }) => u.id);
 
         const [totalPostes, postesOccupes, postesVacants] = await Promise.all([
             uniteIds.length > 0
                 ? posteRepo.count({ where: { uniteOrganisationnelleId: uniteIds } })
                 : 0,
             uniteIds.length > 0
-                ? posteRepo.count({ where: { uniteOrganisationnelleId: uniteIds, statut: 'actif' } })
+                ? posteRepo.count({ where: { uniteOrganisationnelleId: uniteIds, statut: StatutPoste.ACTIF } })
                 : 0,
             uniteIds.length > 0
-                ? posteRepo.count({ where: { uniteOrganisationnelleId: uniteIds, statut: 'vacant' } })
+                ? posteRepo.count({ where: { uniteOrganisationnelleId: uniteIds, statut: StatutPoste.VACANT } })
                 : 0,
         ]);
 

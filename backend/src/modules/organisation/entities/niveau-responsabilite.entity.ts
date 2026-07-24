@@ -11,7 +11,7 @@ import {
 import { Etablissement } from '@modules/etablissement/entities';
 
 @Entity('niveaux_responsabilite')
-@Index(['code', 'etablissementId'], { unique: true })
+@Index(['code', 'etablissementId'], { unique: true, where: '"etablissementId" IS NOT NULL' })
 @Index(['etablissementId'])
 export class NiveauResponsabilite {
     @PrimaryGeneratedColumn('uuid')
@@ -20,7 +20,7 @@ export class NiveauResponsabilite {
     @Column({ type: 'int' })
     niveau!: number;
 
-    @Column({ type: 'varchar', length: 50, unique: true })
+    @Column({ type: 'varchar', length: 50 })
     code!: string;
 
     @Column({ type: 'varchar', length: 100 })

@@ -10,6 +10,7 @@ import path from 'path';
 import { DataSource } from 'typeorm';
 import { runSystemSeeds } from './initial.seed';
 import { logger } from '@common/utils/logger.util';
+import { cleanOrphanHeuresCours, envDbConfig } from '../pre-sync-cleanup';
 
 const envPath = path.resolve(__dirname, '../../../../.env');
 dotenv.config({ path: envPath });
@@ -29,6 +30,10 @@ async function main(): Promise<void> {
             logging: false,
             entities: [__dirname + '/../../modules/**/entities/*.entity.{js,ts}'],
         });
+
+        // Nettoyer les orphelins avant synchronize (évite erreur FK)
+        logger.info('🧹 Pré-nettoyage avant synchronize...');
+        await cleanOrphanHeuresCours(envDbConfig());
 
         await SeedDataSource.initialize();
         logger.info('✅ Connexion établie');

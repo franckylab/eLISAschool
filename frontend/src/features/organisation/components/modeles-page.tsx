@@ -12,7 +12,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { FileText, Plus, Play, Trash2, Edit, Sparkles, Building2, Briefcase, ChevronRight, X, Copy } from 'lucide-react';
+import { FileText, Plus, Play, Trash2, Edit, Sparkles, Building2, Briefcase, ChevronRight, X, Copy, AlertCircle } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Card } from '@/components/ui/Card';
@@ -105,6 +105,7 @@ function NodeEditor({ noeud, onChange, onRemove, depth = 0 }: {
 }
 
 function StructurePreview({ noeud, depth = 0 }: { noeud: NoeudTemplate; depth?: number }) {
+    const { t } = useTranslation('organisation');
     if (!noeud) return null;
     return (
         <div className="text-xs" style={{ paddingLeft: depth ? '0.75rem' : 0 }}>
@@ -112,7 +113,7 @@ function StructurePreview({ noeud, depth = 0 }: { noeud: NoeudTemplate; depth?: 
                 <ChevronRight className="h-3 w-3" />
                 <span className="font-medium text-foreground">{noeud.nom || '—'}</span>
                 {noeud.count > 1 && <span>×{noeud.count}</span>}
-                {noeud.postes && noeud.postes.length > 0 && <span className="text-[var(--color-dominant-600)]">· {noeud.postes.length} poste(s)</span>}
+                {noeud.postes && noeud.postes.length > 0 && <span className="text-[var(--color-dominant-600)]">· {noeud.postes.length} {t('postes')}</span>}
             </div>
             {(noeud.enfants || []).slice(0, 4).map((e, i) => <StructurePreview key={i} noeud={e} depth={depth + 1} />)}
         </div>
@@ -124,7 +125,7 @@ export function ModelesPage() {
     const { hasPermission } = usePermissions();
     useDocumentTitle(`eLISAschool | ${t('modeles')}`);
 
-    const { data: templates, isLoading } = useTemplatesOrganisation();
+    const { data: templates, isLoading, isError, refetch } = useTemplatesOrganisation();
     const creer = useCreerTemplateOrganisation();
     const modifier = useModifierTemplateOrganisation();
     const supprimer = useSupprimerTemplateOrganisation();
@@ -164,6 +165,18 @@ export function ModelesPage() {
     };
 
     if (isLoading && !templates) return <PageSkeleton showTable />;
+
+    if (isError) {
+        return (
+            <div className="flex flex-col items-center justify-center gap-4 p-12">
+                <AlertCircle className="h-12 w-12 text-destructive" />
+                <p className="text-lg font-medium text-foreground">{t('erreurChargement')}</p>
+                <ElisaButton variant="outline" onClick={() => refetch()}>
+                    {t('reessayer')}
+                </ElisaButton>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-6 p-6">

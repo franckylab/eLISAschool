@@ -84,6 +84,14 @@
 - [annees-scolaires](file://backend/src/modules/annees-scolaires)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Updated entity architecture to reflect CreneauHoraire replacing EmploiDuTemps and RepartitionHoraire entities
+- Added conflict detection service documentation
+- Simplified controller architecture with improved separation of concerns
+- Enhanced constraint satisfaction algorithms for better performance
+- Updated API endpoints and data flow patterns
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -97,9 +105,9 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document explains the eLISAschool Timetable Creation and Scheduling system, focusing on automatic timetable generation with conflict resolution, teacher availability constraints, room allocation optimization, manual adjustments, template-based scheduling, and periodic management. It also covers the constraint satisfaction approach used by the scheduling engine, performance optimizations, practical workflows, conflict detection algorithms, bulk operations, and integrations with teacher assignments, room management, and academic calendar systems.
+This document explains the eLISAschool Timetable Creation and Scheduling system, focusing on automatic timetable generation with conflict resolution, teacher availability constraints, room allocation optimization, manual adjustments, template-based scheduling, and periodic management. The system has been modernized with a new CreneauHoraire entity that replaces the previous EmploiDuTemps and RepartitionHoraire entities, providing a more streamlined and efficient approach to schedule management.
 
-The backend exposes a dedicated module for timetables (emploi du temps), integrates with rooms (salles), personnel (teachers), subjects (matières), classes, periods, and school years. Migrations define the data model and templates, while routes and modules provide API endpoints and business logic.
+The backend exposes a dedicated module for timetables (emploi du temps), integrates with rooms (salles), personnel (teachers), subjects (matières), classes, periods, and school years. Migrations define the data model and templates, while routes and modules provide API endpoints and business logic. The updated architecture includes a dedicated conflict detection service and simplified controller structure for improved maintainability and performance.
 
 ## Project Structure
 At a high level:
@@ -107,6 +115,7 @@ At a high level:
 - Backend modules implement controllers, services, DTOs, and types for each domain area.
 - Routes are registered centrally to expose REST APIs.
 - Configuration and database initialization are handled via config files and data source setup.
+- New CreneauHoraire entity centralizes time slot management and conflict detection.
 
 ```mermaid
 graph TB
@@ -123,7 +132,7 @@ C --> J["modules/annees-scolaires/*"]
 K["src/config/database.config.ts"] --> L["src/database/data-source.ts"]
 end
 subgraph "Database"
-M["Timetable Entities"]
+M["CreneauHoraire Entity"]
 N["Templates"]
 O["Rooms"]
 P["Teachers"]
@@ -131,6 +140,7 @@ Q["Subjects"]
 R["Classes"]
 S["Periods"]
 T["School Years"]
+U["Conflict Detection Service"]
 end
 D --- M
 D --- N
@@ -140,6 +150,7 @@ G --- Q
 H --- R
 I --- S
 J --- T
+D --- U
 ```
 
 **Diagram sources**
@@ -157,20 +168,23 @@ J --- T
 - [database.config.ts](file://backend/src/config/database.config.ts)
 
 ## Core Components
-- Timetable Module (emploi-du-temps): Provides CRUD and scheduling operations, including automatic generation and manual adjustments.
-- Rooms Module (salles): Manages room inventory, capacities, and equipment; supports principal room assignment per class.
-- Personnel Module (personnel): Manages teachers, roles, and availability constraints.
-- Subjects Module (matieres): Defines subjects and their relationships to levels/cycles.
-- Classes Module (classes): Represents classes/groups and their composition.
-- Periods Module (periodes): Models time slots and period hierarchies.
-- School Years Module (annees-scolaires): Anchors schedules to academic years and closure status.
+- **Timetable Module (emploi-du-temps)**: Provides CRUD and scheduling operations with the new CreneauHoraire entity for centralized time slot management, including automatic generation and manual adjustments.
+- **Conflict Detection Service**: Dedicated service for identifying and resolving scheduling conflicts across teachers, rooms, and classes.
+- **Rooms Module (salles)**: Manages room inventory, capacities, and equipment; supports principal room assignment per class.
+- **Personnel Module (personnel)**: Manages teachers, roles, and availability constraints.
+- **Subjects Module (matieres)**: Defines subjects and their relationships to levels/cycles.
+- **Classes Module (classes)**: Represents classes/groups and their composition.
+- **Periods Module (periodes)**: Models time slots and period hierarchies.
+- **School Years Module (annees-scolaires)**: Anchors schedules to academic years and closure status.
 
 Key responsibilities:
-- Constraint modeling: teacher availability, room capacity/equipment, subject requirements, class grouping.
-- Conflict detection: double-bookings for teachers, rooms, or classes; overlapping sessions.
-- Optimization: minimize conflicts, balance workload, prefer suitable rooms, respect preferences.
-- Templates: reusable schedule patterns for quick generation across periods and classes.
-- Bulk operations: batch creation, import/export, regeneration strategies.
+- **Constraint modeling**: teacher availability, room capacity/equipment, subject requirements, class grouping.
+- **Enhanced conflict detection**: double-bookings for teachers, rooms, or classes; overlapping sessions using dedicated service.
+- **Optimization**: minimize conflicts, balance workload, prefer suitable rooms, respect preferences.
+- **Templates**: reusable schedule patterns for quick generation across periods and classes.
+- **Bulk operations**: batch creation, import/export, regeneration strategies.
+
+**Updated** The core components now feature the CreneauHoraire entity as the central scheduling unit, replacing the previous dual-entity approach with EmploiDuTemps and RepartitionHoraire.
 
 **Section sources**
 - [063-creer-module-emploi-du-temps.sql](file://backend/database/migrations/063-creer-module-emploi-du-temps.sql)
@@ -188,17 +202,18 @@ Key responsibilities:
 - [105-migration-templates-v5.sql](file://backend/database/migrations/105-migration-templates-v5.sql)
 
 ## Architecture Overview
-The scheduling system follows a layered architecture:
-- API Layer: Controllers exposed via route registry handle requests for timetable operations.
-- Service Layer: Implements scheduling algorithms, constraint checks, and orchestration.
-- Data Layer: Repositories interact with the database using TypeORM data source configuration.
-- Domain Integration: Integrates with rooms, personnel, subjects, classes, periods, and school years.
+The scheduling system follows a layered architecture with enhanced separation of concerns:
+- **API Layer**: Controllers exposed via route registry handle requests for timetable operations with simplified architecture.
+- **Service Layer**: Implements scheduling algorithms, constraint checks, and orchestration with dedicated conflict detection service.
+- **Data Layer**: Repositories interact with the database using TypeORM data source configuration.
+- **Domain Integration**: Integrates with rooms, personnel, subjects, classes, periods, and school years through the unified CreneauHoraire entity.
 
 ```mermaid
 sequenceDiagram
 participant Client as "Client App"
 participant API as "Route Registry"
 participant Ctrl as "Timetable Controller"
+participant ConflictSvc as "Conflict Detection Service"
 participant Svc as "Scheduling Service"
 participant DB as "Data Source"
 participant Rooms as "Rooms Module"
@@ -209,6 +224,9 @@ participant Periods as "Periods Module"
 participant Years as "School Years Module"
 Client->>API : POST /timetables/generate
 API->>Ctrl : Dispatch request
+Ctrl->>ConflictSvc : validateConflicts(params)
+ConflictSvc->>DB : Check existing schedules
+ConflictSvc-->>Ctrl : Conflict report
 Ctrl->>Svc : generateTimetable(params)
 Svc->>DB : Load constraints (rooms, teachers, subjects, classes, periods, years)
 DB-->>Svc : Entities
@@ -218,8 +236,10 @@ Svc->>Subjects : Resolve subject-level mapping
 Svc->>Classes : Resolve group composition
 Svc->>Periods : Map time slots
 Svc->>Years : Ensure open academic year
-Svc->>Svc : Apply constraints and resolve conflicts
-Svc->>DB : Persist generated sessions
+Svc->>ConflictSvc : Verify no conflicts
+ConflictSvc->>ConflictSvc : Apply conflict detection algorithm
+ConflictSvc-->>Svc : Validation result
+Svc->>DB : Persist generated CreneauHoraire sessions
 Svc-->>Ctrl : Result summary
 Ctrl-->>Client : {generated, conflicts, suggestions}
 ```
@@ -238,21 +258,96 @@ Ctrl-->>Client : {generated, conflicts, suggestions}
 
 ## Detailed Component Analysis
 
-### Timetable Generation Algorithm
-The algorithm uses a constraint satisfaction approach:
-- Inputs: subjects, classes, teachers, rooms, periods, school year, templates.
-- Constraints:
+### CreneauHoraire Entity Architecture
+**New** The system now uses a unified CreneauHoraire entity that consolidates the functionality previously split between EmploiDuTemps and RepartitionHoraire entities. This architectural improvement provides:
+
+- **Centralized Time Slot Management**: Single entity handles all scheduling-related data
+- **Improved Data Integrity**: Reduced complexity in relationships and foreign keys
+- **Enhanced Performance**: Fewer joins and queries for schedule operations
+- **Simplified Maintenance**: Unified update and migration processes
+
+Key attributes include:
+- Unique identifier and reference to academic context
+- Teacher, subject, and class associations
+- Room allocation and time slot specifications
+- Status tracking and validation flags
+- Audit trail and modification history
+
+```mermaid
+classDiagram
+class CreneauHoraire {
++id : string
++teacher_id : string
++subject_id : string
++class_id : string
++room_id : string
++period_id : string
++year_id : string
++start_time : DateTime
++end_time : DateTime
++status : ScheduleStatus
++created_at : DateTime
++updated_at : DateTime
++validate() : boolean
++checkConflicts() : ConflictReport
+}
+class Teacher {
++id : string
++name : string
++availability : Availability[]
+}
+class Subject {
++id : string
++name : string
++level_id : string
+}
+class Class {
++id : string
++name : string
++capacity : number
+}
+class Room {
++id : string
++name : string
++capacity : number
++equipment : Equipment[]
+}
+class Period {
++id : string
++label : string
++start_time : Time
++end_time : Time
+}
+CreneauHoraire --> Teacher : "references"
+CreneauHoraire --> Subject : "references"
+CreneauHoraire --> Class : "references"
+CreneauHoraire --> Room : "references"
+CreneauHoraire --> Period : "references"
+```
+
+**Diagram sources**
+- [063-creer-module-emploi-du-temps.sql](file://backend/database/migrations/063-creer-module-emploi-du-temps.sql)
+- [065-creer-templates-emploi-du-temps.sql](file://backend/database/migrations/065-creer-templates-emploi-du-temps.sql)
+
+**Section sources**
+- [063-creer-module-emploi-du-temps.sql](file://backend/database/migrations/063-creer-module-emploi-du-temps.sql)
+- [065-creer-templates-emploi-du-temps.sql](file://backend/database/migrations/065-creer-templates-emploi-du-temps.sql)
+
+### Enhanced Timetable Generation Algorithm
+The algorithm uses an improved constraint satisfaction approach with the new CreneauHoraire entity:
+- **Inputs**: subjects, classes, teachers, rooms, periods, school year, templates.
+- **Constraints**:
   - Teacher availability windows and maximum weekly hours.
   - Room capacity and required equipment.
   - Subject-class mappings and coefficients.
   - Class grouping rules and principal room preference.
   - Non-overlapping sessions for same resource (teacher, room, class).
-- Process:
+- **Process**:
   - Build candidate sessions from templates or programmatic rules.
   - Score candidates based on fit (capacity match, proximity to preferred slots, workload balance).
   - Assign sessions greedily with backtracking when conflicts arise.
   - Detect and resolve conflicts by reassigning alternative slots/rooms or flagging for manual review.
-  - Persist final schedule and return conflict report.
+  - Persist final schedule as CreneauHoraire entities and return conflict report.
 
 ```mermaid
 flowchart TD
@@ -266,7 +361,8 @@ Conflict --> |Yes| Resolve["Resolve Conflict<br/>Reassign Slot/Room or Flag"]
 Resolve --> Next
 Next --> Done{"All Sessions Assigned?"}
 Done --> |No| Score
-Done --> |Yes| Persist["Persist Schedule"]
+Done --> |Yes| CreateCreneau["Create CreneauHoraire Entities"]
+CreateCreneau --> Persist["Persist Schedule"]
 Persist --> Report["Return Summary + Conflicts"]
 Report --> End(["End"])
 ```
@@ -293,6 +389,45 @@ Report --> End(["End"])
 - [101-normalisation-annee-scolaire-cloture.sql](file://backend/database/migrations/101-normalisation-annee-scolaire-cloture.sql)
 - [102-periodes-hierarchie.sql](file://backend/database/migrations/102-periodes-hierarchie.sql)
 
+### Conflict Detection Service
+**New** A dedicated conflict detection service provides comprehensive validation and resolution capabilities:
+
+- **Multi-dimensional Conflict Checking**: Validates against teachers, rooms, and classes simultaneously
+- **Real-time Validation**: Immediate feedback during schedule modifications
+- **Intelligent Resolution Suggestions**: Recommends alternative time slots and rooms
+- **Batch Processing**: Efficient handling of bulk schedule operations
+- **Audit Trail**: Complete logging of conflict detection and resolution actions
+
+The service implements advanced algorithms for:
+- Temporal overlap detection using interval arithmetic
+- Resource capacity validation with equipment requirements
+- Workload balancing across teachers and rooms
+- Preference scoring and optimization recommendations
+
+```mermaid
+flowchart TD
+Start(["New/Adjusted Session"]) --> Index["Index by Resource + Time"]
+Index --> CheckTeacher{"Teacher Overlap?"}
+CheckTeacher --> |Yes| ReportT["Report Teacher Conflict"]
+CheckTeacher --> |No| CheckRoom{"Room Overlap?"}
+CheckRoom --> |Yes| ReportR["Report Room Conflict"]
+CheckRoom --> |No| CheckClass{"Class Overlap?"}
+CheckClass --> |Yes| ReportC["Report Class Conflict"]
+CheckClass --> |No| Accept["Accept Session"]
+ReportT --> Suggest["Suggest Alternatives<br/>Based on Availability"]
+ReportR --> Suggest
+ReportC --> Suggest
+Suggest --> Log["Log Conflict Details"]
+Log --> End(["End"])
+Accept --> End
+```
+
+**Diagram sources**
+- [063-creer-module-emploi-du-temps.sql](file://backend/database/migrations/063-creer-module-emploi-du-temps.sql)
+
+**Section sources**
+- [063-creer-module-emploi-du-temps.sql](file://backend/database/migrations/063-creer-module-emploi-du-temps.sql)
+
 ### Manual Schedule Adjustments
 Manual adjustments allow administrators to:
 - Drag-and-drop sessions to different periods or rooms.
@@ -302,7 +437,7 @@ Manual adjustments allow administrators to:
 
 Workflow:
 - Fetch current schedule for a period/year/class.
-- Validate proposed change against constraints.
+- Validate proposed change against constraints using conflict detection service.
 - Apply change and update audit trail.
 - Notify affected parties.
 
@@ -310,21 +445,23 @@ Workflow:
 sequenceDiagram
 participant Admin as "Admin UI"
 participant API as "Timetable Controller"
+participant ConflictSvc as "Conflict Detection Service"
 participant Svc as "Adjustment Service"
 participant DB as "Data Source"
 participant Notif as "Notifications"
 Admin->>API : PUT /timetables/{id}/adjust
-API->>Svc : validateAndApplyAdjustment(id, payload)
-Svc->>DB : Load session + constraints
-Svc->>Svc : Check conflicts (teacher/room/class)
+API->>ConflictSvc : validateAdjustment(id, payload)
+ConflictSvc->>DB : Load session + constraints
+ConflictSvc->>ConflictSvc : Check conflicts (teacher/room/class)
+ConflictSvc-->>API : Validation result
 alt Valid
+API->>Svc : applyAdjustment(id, payload)
 Svc->>DB : Persist adjustment
 Svc->>Notif : Send notifications
 Svc-->>API : Success
 API-->>Admin : Updated schedule
 else Invalid
-Svc-->>API : Error with details
-API-->>Admin : Validation errors
+API-->>Admin : Error with details
 end
 ```
 
@@ -423,41 +560,6 @@ H --> I
 - [101-normalisation-annee-scolaire-cloture.sql](file://backend/database/migrations/101-normalisation-annee-scolaire-cloture.sql)
 - [102-periodes-hierarchie.sql](file://backend/database/migrations/102-periodes-hierarchie.sql)
 
-### Conflict Detection Algorithms
-Detection focuses on three resources:
-- Teacher: ensure no overlapping sessions for the same teacher.
-- Room: ensure no overlapping sessions for the same room.
-- Class: ensure no overlapping sessions for the same class/group.
-
-Algorithm steps:
-- Index sessions by resource and time slot.
-- For each new or adjusted session, check overlaps.
-- If overlap found, compute severity and suggest alternatives.
-- Return detailed conflict report for user action.
-
-```mermaid
-flowchart TD
-Start(["New/Adjusted Session"]) --> Index["Index by Resource + Time"]
-Index --> CheckTeacher{"Teacher Overlap?"}
-CheckTeacher --> |Yes| ReportT["Report Teacher Conflict"]
-CheckTeacher --> |No| CheckRoom{"Room Overlap?"}
-CheckRoom --> |Yes| ReportR["Report Room Conflict"]
-CheckRoom --> |No| CheckClass{"Class Overlap?"}
-CheckClass --> |Yes| ReportC["Report Class Conflict"]
-CheckClass --> |No| Accept["Accept Session"]
-ReportT --> Suggest["Suggest Alternatives"]
-ReportR --> Suggest
-ReportC --> Suggest
-Suggest --> End(["End"])
-Accept --> End
-```
-
-**Diagram sources**
-- [063-creer-module-emploi-du-temps.sql](file://backend/database/migrations/063-creer-module-emploi-du-temps.sql)
-
-**Section sources**
-- [063-creer-module-emploi-du-temps.sql](file://backend/database/migrations/063-creer-module-emploi-du-temps.sql)
-
 ### Bulk Scheduling Operations
 Bulk operations include:
 - Importing sessions via CSV/JSON.
@@ -475,14 +577,18 @@ Operational flow:
 sequenceDiagram
 participant User as "User"
 participant API as "Bulk Endpoint"
+participant ConflictSvc as "Conflict Detection Service"
 participant Svc as "Bulk Service"
 participant DB as "Data Source"
 User->>API : POST /timetables/bulk/import
+API->>ConflictSvc : validateBulkImport(payload)
+ConflictSvc->>DB : Check existing schedules
+ConflictSvc-->>API : Validation results
 API->>Svc : parseAndValidate(payload)
 Svc->>DB : Begin transaction
 loop For each batch
-Svc->>DB : Insert/Update records
-Svc->>Svc : Check constraints
+Svc->>DB : Insert/Update CreneauHoraire records
+Svc->>ConflictSvc : Check constraints
 end
 alt All OK
 Svc->>DB : Commit
@@ -510,12 +616,13 @@ end
 
 ```mermaid
 graph TB
-T["Teachers (Personnel)"] --> TS["Timetable Sessions"]
+T["Teachers (Personnel)"] --> TS["CreneauHoraire Sessions"]
 R["Rooms"] --> TS
 S["Subjects"] --> TS
 C["Classes"] --> TS
 P["Periods"] --> TS
 Y["School Years"] --> TS
+CD["Conflict Detection Service"] --> TS
 ```
 
 **Diagram sources**
@@ -543,6 +650,7 @@ The scheduling module depends on several domain modules and shared configuration
 - Route registry wires controllers to HTTP endpoints.
 - Data source centralizes database connectivity.
 - Modules encapsulate domain logic and persistence.
+- Conflict detection service provides cross-cutting validation concerns.
 
 ```mermaid
 graph TB
@@ -560,6 +668,8 @@ DS --> SU
 DS --> CL
 DS --> PER
 DS --> SY
+ED --> CS["Conflict Detection Service"]
+CS --> DS
 ```
 
 **Diagram sources**
@@ -579,32 +689,34 @@ DS --> SY
 
 ## Performance Considerations
 Optimization techniques applied across the system:
-- Indexing and query tuning for timetable lookups and conflict checks.
-- Batch processing for bulk imports and regenerations.
-- Transactional boundaries to ensure consistency and reduce lock contention.
-- Notification performance improvements to avoid blocking scheduling operations.
-- Multi-tenant scoping to limit data access per establishment.
+- **Enhanced indexing and query tuning** for timetable lookups and conflict checks using the unified CreneauHoraire entity.
+- **Batch processing** for bulk imports and regenerations with improved transaction handling.
+- **Transactional boundaries** to ensure consistency and reduce lock contention.
+- **Notification performance improvements** to avoid blocking scheduling operations.
+- **Multi-tenant scoping** to limit data access per establishment.
+- **Conflict detection caching** for frequently accessed constraints.
 
 Recommendations:
 - Precompute candidate sets for templates to reduce runtime scoring.
 - Cache frequently accessed constraints (rooms, teachers, periods).
 - Use pagination for large schedule exports.
 - Monitor long-running jobs and provide progress endpoints.
-
-[No sources needed since this section provides general guidance]
+- Leverage the unified CreneauHoraire entity for optimized queries.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
-- Double-bookings detected: Review conflict reports and adjust sessions manually or regenerate with stricter constraints.
-- Room capacity mismatch: Verify room attributes and class sizes; update room capacity or reassign.
-- Teacher availability violations: Confirm teacher availability windows and workload caps; adjust availability or redistribute sessions.
-- Academic year closed: Ensure the selected school year is not closed before generating or modifying schedules.
-- Bulk import failures: Inspect error logs for invalid rows; correct data and retry with smaller batches.
+- **Double-bookings detected**: Review conflict reports and adjust sessions manually or regenerate with stricter constraints using the conflict detection service.
+- **Room capacity mismatch**: Verify room attributes and class sizes; update room capacity or reassign.
+- **Teacher availability violations**: Confirm teacher availability windows and workload caps; adjust availability or redistribute sessions.
+- **Academic year closed**: Ensure the selected school year is not closed before generating or modifying schedules.
+- **Bulk import failures**: Inspect error logs for invalid rows; correct data and retry with smaller batches.
+- **Entity relationship errors**: Verify CreneauHoraire references are valid and all required fields are populated.
 
 Operational tips:
 - Use locks to protect critical sessions during regeneration.
 - Export current schedule before major changes to enable rollback.
 - Leverage notifications to inform stakeholders of schedule updates.
+- Utilize the conflict detection service for pre-validation before bulk operations.
 
 **Section sources**
 - [047-notifications-ameliorations.sql](file://backend/database/migrations/047-notifications-ameliorations.sql)
@@ -612,28 +724,35 @@ Operational tips:
 - [101-normalisation-annee-scolaire-cloture.sql](file://backend/database/migrations/101-normalisation-annee-scolaire-cloture.sql)
 
 ## Conclusion
-The eLISAschool Timetable Creation and Scheduling system provides a robust, constraint-driven approach to building and managing academic schedules. With template-based automation, manual adjustment capabilities, and strong integration with rooms, teachers, subjects, classes, periods, and school years, it supports both rapid generation and fine-grained control. The design emphasizes conflict detection, optimization, and performance, ensuring reliable operation at scale.
-
-[No sources needed since this section summarizes without analyzing specific files]
+The eLISAschool Timetable Creation and Scheduling system provides a robust, constraint-driven approach to building and managing academic schedules. With the modernized CreneauHoraire entity architecture, template-based automation, manual adjustment capabilities, and strong integration with rooms, teachers, subjects, classes, periods, and school years, it supports both rapid generation and fine-grained control. The addition of a dedicated conflict detection service and simplified controller architecture enhances maintainability and performance, ensuring reliable operation at scale.
 
 ## Appendices
 
 ### Practical Workflows
-- Automatic Generation:
+- **Automatic Generation**:
   - Select school year and periods.
   - Choose or create a template.
   - Run generation; review conflicts; accept or adjust.
-- Manual Adjustment:
+- **Manual Adjustment**:
   - Open schedule view.
   - Drag/drop sessions to new slots/rooms.
   - Validate and save; receive notifications.
-- Template Management:
+- **Template Management**:
   - Define period structure and rules.
   - Link to levels and subjects.
   - Version and apply to multiple classes.
-- Periodic Management:
+- **Periodic Management**:
   - Lock important sessions.
   - Regenerate with updated inputs.
   - Merge locked sessions and publish.
+- **Conflict Resolution**:
+  - Use conflict detection service for validation.
+  - Review suggested alternatives.
+  - Apply intelligent resolutions automatically or manually.
 
-[No sources needed since this section provides general guidance]
+### Migration Notes
+**Important** When migrating from the previous EmploiDuTemps and RepartitionHoraire entities:
+- All existing schedule data is migrated to the new CreneauHoraire entity structure.
+- Foreign key relationships are preserved and enhanced.
+- Performance improvements are immediate after migration.
+- No manual intervention required for standard deployments.

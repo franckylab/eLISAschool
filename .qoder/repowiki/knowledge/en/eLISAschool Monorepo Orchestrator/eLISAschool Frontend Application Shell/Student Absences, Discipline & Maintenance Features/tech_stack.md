@@ -1,0 +1,1 @@
+React + TypeScript with `@tanstack/react-query` for server-state caching and invalidation, `sonner` for toast notifications, and a shared `apiClient` wrapper over HTTP calls.

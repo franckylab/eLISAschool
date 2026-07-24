@@ -5,7 +5,7 @@ import { apiClient } from '@/lib/api-client';
 import { useHandleError } from './use-handle-error';
 import type {
     HierarchiePersonnel, CreerHierarchieDto, ModifierHierarchieDto,
-    OrganigrammeNode, StatistiquesOrganisation,
+    OrganigrammeNode, StatistiquesOrganisation, ValidationArborescence,
 } from '../types/organisation.types';
 
 const ORGA_KEYS = {
@@ -76,6 +76,8 @@ export function useCreerHierarchie() {
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.hierarchie.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
             toast.success('Relation hiérarchique créée');
         },
         onError: (e: unknown) => handleError(e, 'Erreur création hiérarchie'),
@@ -92,6 +94,8 @@ export function useModifierHierarchie() {
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.hierarchie.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
             toast.success('Relation hiérarchique modifiée');
         },
         onError: (e: unknown) => handleError(e, 'Erreur modification hiérarchie'),
@@ -108,6 +112,8 @@ export function useSupprimerHierarchie() {
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.hierarchie.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
             toast.success('Relation hiérarchique supprimée');
         },
         onError: (e: unknown) => handleError(e, 'Erreur suppression hiérarchie'),
@@ -149,7 +155,7 @@ export function useValiderArborescence() {
     return useQuery({
         queryKey: ORGA_KEYS.validation.all,
         queryFn: async () => {
-            const response = await apiClient.get<{ valide: boolean; erreurs?: string[] }>('/api/organisation/valider-arborescence');
+            const response = await apiClient.get<ValidationArborescence>('/api/organisation/valider-arborescence');
             return response.data;
         },
         enabled: !!etablissementId && isAuthenticated,

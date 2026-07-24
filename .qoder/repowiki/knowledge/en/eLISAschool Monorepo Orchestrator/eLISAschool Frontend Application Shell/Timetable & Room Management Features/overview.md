@@ -1,0 +1,1 @@
+Frontend features for managing school timetables (créneaux, preferences, templates) and room administration with statistics and class assignment.

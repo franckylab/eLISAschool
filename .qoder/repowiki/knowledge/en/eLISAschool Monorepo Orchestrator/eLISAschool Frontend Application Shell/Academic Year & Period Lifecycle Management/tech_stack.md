@@ -1,0 +1,1 @@
+React + TypeScript with TanStack Query (`useQuery`/`useMutation`) for server state, `sonner` for toasts, and a shared `apiClient` HTTP wrapper. Backend API paths follow REST conventions under `/api/annees-scolaires`, `/api/periodes`, `/api/periodes-templates`, `/api/niveaux-periode`, `/api/usages-niveau`.

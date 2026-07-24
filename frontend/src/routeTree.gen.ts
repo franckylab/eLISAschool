@@ -35,7 +35,6 @@ import { Route as AuthModulesReportingRouteImport } from './routes/_auth.modules
 import { Route as AuthModulesPedagogiquesRouteImport } from './routes/_auth.modules-pedagogiques'
 import { Route as AuthModulesPedagogiqueAvanceRouteImport } from './routes/_auth.modules-pedagogique-avance'
 import { Route as AuthModulesOrganisationnelsRouteImport } from './routes/_auth.modules-organisationnels'
-import { Route as AuthModulesCritiquesRouteImport } from './routes/_auth.modules-critiques'
 import { Route as AuthModulesComplementairesRouteImport } from './routes/_auth.modules-complementaires'
 import { Route as AuthModulesAdministratifsRouteImport } from './routes/_auth.modules-administratifs'
 import { Route as AuthMatieresRouteImport } from './routes/_auth.matieres'
@@ -79,6 +78,7 @@ import { Route as AuthDiplomesElevesIndexRouteImport } from './routes/_auth.dipl
 import { Route as AuthCyclesIndexRouteImport } from './routes/_auth.cycles.index'
 import { Route as AuthCompetencesIndexRouteImport } from './routes/_auth.competences.index'
 import { Route as AuthClassesIndexRouteImport } from './routes/_auth.classes.index'
+import { Route as AuthBulletinsIndexRouteImport } from './routes/_auth.bulletins.index'
 import { Route as AuthAnneesScolairesIndexRouteImport } from './routes/_auth.annees-scolaires.index'
 import { Route as AuthUtilisateursIdRouteImport } from './routes/_auth.utilisateurs.$id'
 import { Route as AuthSpecialitesIdRouteImport } from './routes/_auth.specialites.$id'
@@ -109,6 +109,7 @@ import { Route as AuthCyclesIdRouteImport } from './routes/_auth.cycles.$id'
 import { Route as AuthContratsIdRouteImport } from './routes/_auth.contrats.$id'
 import { Route as AuthCompetencesIdRouteImport } from './routes/_auth.competences.$id'
 import { Route as AuthClassesIdRouteImport } from './routes/_auth.classes.$id'
+import { Route as AuthBulletinsIdRouteImport } from './routes/_auth.bulletins.$id'
 import { Route as AuthAnneesScolairesIdRouteImport } from './routes/_auth.annees-scolaires.$id'
 import { Route as AuthAdminRolesRouteImport } from './routes/_auth.admin.roles'
 import { Route as AuthAdminPermissionsRouteImport } from './routes/_auth.admin.permissions'
@@ -261,11 +262,6 @@ const AuthModulesOrganisationnelsRoute =
     path: '/modules-organisationnels',
     getParentRoute: () => AuthRoute,
   } as any)
-const AuthModulesCritiquesRoute = AuthModulesCritiquesRouteImport.update({
-  id: '/modules-critiques',
-  path: '/modules-critiques',
-  getParentRoute: () => AuthRoute,
-} as any)
 const AuthModulesComplementairesRoute =
   AuthModulesComplementairesRouteImport.update({
     id: '/modules-complementaires',
@@ -485,6 +481,11 @@ const AuthClassesIndexRoute = AuthClassesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthClassesRoute,
 } as any)
+const AuthBulletinsIndexRoute = AuthBulletinsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthBulletinsRoute,
+} as any)
 const AuthAnneesScolairesIndexRoute =
   AuthAnneesScolairesIndexRouteImport.update({
     id: '/',
@@ -640,6 +641,11 @@ const AuthClassesIdRoute = AuthClassesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthClassesRoute,
 } as any)
+const AuthBulletinsIdRoute = AuthBulletinsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthBulletinsRoute,
+} as any)
 const AuthAnneesScolairesIdRoute = AuthAnneesScolairesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -764,7 +770,7 @@ export interface FileRoutesByFullPath {
   '/annees-scolaires': typeof AuthAnneesScolairesRouteWithChildren
   '/apparence': typeof AuthApparenceRoute
   '/bibliotheque': typeof AuthBibliothequeRoute
-  '/bulletins': typeof AuthBulletinsRoute
+  '/bulletins': typeof AuthBulletinsRouteWithChildren
   '/change-password': typeof AuthChangePasswordRoute
   '/classes': typeof AuthClassesRouteWithChildren
   '/competences': typeof AuthCompetencesRouteWithChildren
@@ -785,7 +791,6 @@ export interface FileRoutesByFullPath {
   '/matieres': typeof AuthMatieresRouteWithChildren
   '/modules-administratifs': typeof AuthModulesAdministratifsRoute
   '/modules-complementaires': typeof AuthModulesComplementairesRoute
-  '/modules-critiques': typeof AuthModulesCritiquesRoute
   '/modules-organisationnels': typeof AuthModulesOrganisationnelsRoute
   '/modules-pedagogique-avance': typeof AuthModulesPedagogiqueAvanceRoute
   '/modules-pedagogiques': typeof AuthModulesPedagogiquesRoute
@@ -810,6 +815,7 @@ export interface FileRoutesByFullPath {
   '/admin/permissions': typeof AuthAdminPermissionsRoute
   '/admin/roles': typeof AuthAdminRolesRouteWithChildren
   '/annees-scolaires/$id': typeof AuthAnneesScolairesIdRoute
+  '/bulletins/$id': typeof AuthBulletinsIdRoute
   '/classes/$id': typeof AuthClassesIdRoute
   '/competences/$id': typeof AuthCompetencesIdRoute
   '/contrats/$id': typeof AuthContratsIdRoute
@@ -840,6 +846,7 @@ export interface FileRoutesByFullPath {
   '/specialites/$id': typeof AuthSpecialitesIdRoute
   '/utilisateurs/$id': typeof AuthUtilisateursIdRoute
   '/annees-scolaires/': typeof AuthAnneesScolairesIndexRoute
+  '/bulletins/': typeof AuthBulletinsIndexRoute
   '/classes/': typeof AuthClassesIndexRoute
   '/competences/': typeof AuthCompetencesIndexRoute
   '/cycles/': typeof AuthCyclesIndexRoute
@@ -884,7 +891,6 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/apparence': typeof AuthApparenceRoute
   '/bibliotheque': typeof AuthBibliothequeRoute
-  '/bulletins': typeof AuthBulletinsRoute
   '/change-password': typeof AuthChangePasswordRoute
   '/configuration': typeof AuthConfigurationRoute
   '/contrats': typeof AuthContratsRouteWithChildren
@@ -895,7 +901,6 @@ export interface FileRoutesByTo {
   '/infrastructure': typeof AuthInfrastructureRoute
   '/modules-administratifs': typeof AuthModulesAdministratifsRoute
   '/modules-complementaires': typeof AuthModulesComplementairesRoute
-  '/modules-critiques': typeof AuthModulesCritiquesRoute
   '/modules-organisationnels': typeof AuthModulesOrganisationnelsRoute
   '/modules-pedagogique-avance': typeof AuthModulesPedagogiqueAvanceRoute
   '/modules-pedagogiques': typeof AuthModulesPedagogiquesRoute
@@ -910,6 +915,7 @@ export interface FileRoutesByTo {
   '/parametres/structure-academique': typeof authenticatedParametresStructureAcademiqueRouteRouteWithChildren
   '/admin/permissions': typeof AuthAdminPermissionsRoute
   '/annees-scolaires/$id': typeof AuthAnneesScolairesIdRoute
+  '/bulletins/$id': typeof AuthBulletinsIdRoute
   '/classes/$id': typeof AuthClassesIdRoute
   '/competences/$id': typeof AuthCompetencesIdRoute
   '/contrats/$id': typeof AuthContratsIdRoute
@@ -935,6 +941,7 @@ export interface FileRoutesByTo {
   '/specialites/$id': typeof AuthSpecialitesIdRoute
   '/utilisateurs/$id': typeof AuthUtilisateursIdRoute
   '/annees-scolaires': typeof AuthAnneesScolairesIndexRoute
+  '/bulletins': typeof AuthBulletinsIndexRoute
   '/classes': typeof AuthClassesIndexRoute
   '/competences': typeof AuthCompetencesIndexRoute
   '/cycles': typeof AuthCyclesIndexRoute
@@ -982,7 +989,7 @@ export interface FileRoutesById {
   '/_auth/annees-scolaires': typeof AuthAnneesScolairesRouteWithChildren
   '/_auth/apparence': typeof AuthApparenceRoute
   '/_auth/bibliotheque': typeof AuthBibliothequeRoute
-  '/_auth/bulletins': typeof AuthBulletinsRoute
+  '/_auth/bulletins': typeof AuthBulletinsRouteWithChildren
   '/_auth/change-password': typeof AuthChangePasswordRoute
   '/_auth/classes': typeof AuthClassesRouteWithChildren
   '/_auth/competences': typeof AuthCompetencesRouteWithChildren
@@ -1003,7 +1010,6 @@ export interface FileRoutesById {
   '/_auth/matieres': typeof AuthMatieresRouteWithChildren
   '/_auth/modules-administratifs': typeof AuthModulesAdministratifsRoute
   '/_auth/modules-complementaires': typeof AuthModulesComplementairesRoute
-  '/_auth/modules-critiques': typeof AuthModulesCritiquesRoute
   '/_auth/modules-organisationnels': typeof AuthModulesOrganisationnelsRoute
   '/_auth/modules-pedagogique-avance': typeof AuthModulesPedagogiqueAvanceRoute
   '/_auth/modules-pedagogiques': typeof AuthModulesPedagogiquesRoute
@@ -1028,6 +1034,7 @@ export interface FileRoutesById {
   '/_auth/admin/permissions': typeof AuthAdminPermissionsRoute
   '/_auth/admin/roles': typeof AuthAdminRolesRouteWithChildren
   '/_auth/annees-scolaires/$id': typeof AuthAnneesScolairesIdRoute
+  '/_auth/bulletins/$id': typeof AuthBulletinsIdRoute
   '/_auth/classes/$id': typeof AuthClassesIdRoute
   '/_auth/competences/$id': typeof AuthCompetencesIdRoute
   '/_auth/contrats/$id': typeof AuthContratsIdRoute
@@ -1058,6 +1065,7 @@ export interface FileRoutesById {
   '/_auth/specialites/$id': typeof AuthSpecialitesIdRoute
   '/_auth/utilisateurs/$id': typeof AuthUtilisateursIdRoute
   '/_auth/annees-scolaires/': typeof AuthAnneesScolairesIndexRoute
+  '/_auth/bulletins/': typeof AuthBulletinsIndexRoute
   '/_auth/classes/': typeof AuthClassesIndexRoute
   '/_auth/competences/': typeof AuthCompetencesIndexRoute
   '/_auth/cycles/': typeof AuthCyclesIndexRoute
@@ -1126,7 +1134,6 @@ export interface FileRouteTypes {
     | '/matieres'
     | '/modules-administratifs'
     | '/modules-complementaires'
-    | '/modules-critiques'
     | '/modules-organisationnels'
     | '/modules-pedagogique-avance'
     | '/modules-pedagogiques'
@@ -1151,6 +1158,7 @@ export interface FileRouteTypes {
     | '/admin/permissions'
     | '/admin/roles'
     | '/annees-scolaires/$id'
+    | '/bulletins/$id'
     | '/classes/$id'
     | '/competences/$id'
     | '/contrats/$id'
@@ -1181,6 +1189,7 @@ export interface FileRouteTypes {
     | '/specialites/$id'
     | '/utilisateurs/$id'
     | '/annees-scolaires/'
+    | '/bulletins/'
     | '/classes/'
     | '/competences/'
     | '/cycles/'
@@ -1225,7 +1234,6 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/apparence'
     | '/bibliotheque'
-    | '/bulletins'
     | '/change-password'
     | '/configuration'
     | '/contrats'
@@ -1236,7 +1244,6 @@ export interface FileRouteTypes {
     | '/infrastructure'
     | '/modules-administratifs'
     | '/modules-complementaires'
-    | '/modules-critiques'
     | '/modules-organisationnels'
     | '/modules-pedagogique-avance'
     | '/modules-pedagogiques'
@@ -1251,6 +1258,7 @@ export interface FileRouteTypes {
     | '/parametres/structure-academique'
     | '/admin/permissions'
     | '/annees-scolaires/$id'
+    | '/bulletins/$id'
     | '/classes/$id'
     | '/competences/$id'
     | '/contrats/$id'
@@ -1276,6 +1284,7 @@ export interface FileRouteTypes {
     | '/specialites/$id'
     | '/utilisateurs/$id'
     | '/annees-scolaires'
+    | '/bulletins'
     | '/classes'
     | '/competences'
     | '/cycles'
@@ -1343,7 +1352,6 @@ export interface FileRouteTypes {
     | '/_auth/matieres'
     | '/_auth/modules-administratifs'
     | '/_auth/modules-complementaires'
-    | '/_auth/modules-critiques'
     | '/_auth/modules-organisationnels'
     | '/_auth/modules-pedagogique-avance'
     | '/_auth/modules-pedagogiques'
@@ -1368,6 +1376,7 @@ export interface FileRouteTypes {
     | '/_auth/admin/permissions'
     | '/_auth/admin/roles'
     | '/_auth/annees-scolaires/$id'
+    | '/_auth/bulletins/$id'
     | '/_auth/classes/$id'
     | '/_auth/competences/$id'
     | '/_auth/contrats/$id'
@@ -1398,6 +1407,7 @@ export interface FileRouteTypes {
     | '/_auth/specialites/$id'
     | '/_auth/utilisateurs/$id'
     | '/_auth/annees-scolaires/'
+    | '/_auth/bulletins/'
     | '/_auth/classes/'
     | '/_auth/competences/'
     | '/_auth/cycles/'
@@ -1627,13 +1637,6 @@ declare module '@tanstack/react-router' {
       path: '/modules-organisationnels'
       fullPath: '/modules-organisationnels'
       preLoaderRoute: typeof AuthModulesOrganisationnelsRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/modules-critiques': {
-      id: '/_auth/modules-critiques'
-      path: '/modules-critiques'
-      fullPath: '/modules-critiques'
-      preLoaderRoute: typeof AuthModulesCritiquesRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/modules-complementaires': {
@@ -1937,6 +1940,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthClassesIndexRouteImport
       parentRoute: typeof AuthClassesRoute
     }
+    '/_auth/bulletins/': {
+      id: '/_auth/bulletins/'
+      path: '/'
+      fullPath: '/bulletins/'
+      preLoaderRoute: typeof AuthBulletinsIndexRouteImport
+      parentRoute: typeof AuthBulletinsRoute
+    }
     '/_auth/annees-scolaires/': {
       id: '/_auth/annees-scolaires/'
       path: '/'
@@ -2147,6 +2157,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthClassesIdRouteImport
       parentRoute: typeof AuthClassesRoute
     }
+    '/_auth/bulletins/$id': {
+      id: '/_auth/bulletins/$id'
+      path: '/$id'
+      fullPath: '/bulletins/$id'
+      preLoaderRoute: typeof AuthBulletinsIdRouteImport
+      parentRoute: typeof AuthBulletinsRoute
+    }
     '/_auth/annees-scolaires/$id': {
       id: '/_auth/annees-scolaires/$id'
       path: '/$id'
@@ -2302,6 +2319,20 @@ const AuthAnneesScolairesRouteChildren: AuthAnneesScolairesRouteChildren = {
 
 const AuthAnneesScolairesRouteWithChildren =
   AuthAnneesScolairesRoute._addFileChildren(AuthAnneesScolairesRouteChildren)
+
+interface AuthBulletinsRouteChildren {
+  AuthBulletinsIdRoute: typeof AuthBulletinsIdRoute
+  AuthBulletinsIndexRoute: typeof AuthBulletinsIndexRoute
+}
+
+const AuthBulletinsRouteChildren: AuthBulletinsRouteChildren = {
+  AuthBulletinsIdRoute: AuthBulletinsIdRoute,
+  AuthBulletinsIndexRoute: AuthBulletinsIndexRoute,
+}
+
+const AuthBulletinsRouteWithChildren = AuthBulletinsRoute._addFileChildren(
+  AuthBulletinsRouteChildren,
+)
 
 interface AuthClassesRouteChildren {
   AuthClassesIdRoute: typeof AuthClassesIdRoute
@@ -2714,7 +2745,7 @@ interface AuthRouteChildren {
   AuthAnneesScolairesRoute: typeof AuthAnneesScolairesRouteWithChildren
   AuthApparenceRoute: typeof AuthApparenceRoute
   AuthBibliothequeRoute: typeof AuthBibliothequeRoute
-  AuthBulletinsRoute: typeof AuthBulletinsRoute
+  AuthBulletinsRoute: typeof AuthBulletinsRouteWithChildren
   AuthChangePasswordRoute: typeof AuthChangePasswordRoute
   AuthClassesRoute: typeof AuthClassesRouteWithChildren
   AuthCompetencesRoute: typeof AuthCompetencesRouteWithChildren
@@ -2735,7 +2766,6 @@ interface AuthRouteChildren {
   AuthMatieresRoute: typeof AuthMatieresRouteWithChildren
   AuthModulesAdministratifsRoute: typeof AuthModulesAdministratifsRoute
   AuthModulesComplementairesRoute: typeof AuthModulesComplementairesRoute
-  AuthModulesCritiquesRoute: typeof AuthModulesCritiquesRoute
   AuthModulesOrganisationnelsRoute: typeof AuthModulesOrganisationnelsRoute
   AuthModulesPedagogiqueAvanceRoute: typeof AuthModulesPedagogiqueAvanceRoute
   AuthModulesPedagogiquesRoute: typeof AuthModulesPedagogiquesRoute
@@ -2764,7 +2794,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthAnneesScolairesRoute: AuthAnneesScolairesRouteWithChildren,
   AuthApparenceRoute: AuthApparenceRoute,
   AuthBibliothequeRoute: AuthBibliothequeRoute,
-  AuthBulletinsRoute: AuthBulletinsRoute,
+  AuthBulletinsRoute: AuthBulletinsRouteWithChildren,
   AuthChangePasswordRoute: AuthChangePasswordRoute,
   AuthClassesRoute: AuthClassesRouteWithChildren,
   AuthCompetencesRoute: AuthCompetencesRouteWithChildren,
@@ -2785,7 +2815,6 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthMatieresRoute: AuthMatieresRouteWithChildren,
   AuthModulesAdministratifsRoute: AuthModulesAdministratifsRoute,
   AuthModulesComplementairesRoute: AuthModulesComplementairesRoute,
-  AuthModulesCritiquesRoute: AuthModulesCritiquesRoute,
   AuthModulesOrganisationnelsRoute: AuthModulesOrganisationnelsRoute,
   AuthModulesPedagogiqueAvanceRoute: AuthModulesPedagogiqueAvanceRoute,
   AuthModulesPedagogiquesRoute: AuthModulesPedagogiquesRoute,

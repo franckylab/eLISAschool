@@ -29,7 +29,7 @@ if (envFile) {
     dotenv.config();  // Fallback
 }
 
-import { AppDataSource } from '@database/data-source';
+import { AppDataSource, initializeDatabase } from '@database/data-source';
 import { createApp } from './app';
 import { logger } from '@common/utils/logger.util';
 import { envConfig } from '@config/env.config';
@@ -55,7 +55,7 @@ async function bootstrap(): Promise<void> {
     try {
         // Initialisation de la connexion à la base de données
         logger.info('🔌 Connexion à la base de données PostgreSQL...');
-        await AppDataSource.initialize();
+        await initializeDatabase();
         logger.info('✅ Connexion à la base de données établie avec succès');
 
         // Backfill sécurisé des postes sans fonctionId (migration différée)

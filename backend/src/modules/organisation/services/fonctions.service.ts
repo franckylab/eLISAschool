@@ -38,11 +38,12 @@ export class FonctionsService {
         }
 
         let niveau = 0;
-        let chemin = '';
+        let parentChemin = '';
 
         if (dto.parentId) {
             const parent = await this.findOne(dto.parentId, etablissementId);
             niveau = parent.niveau + 1;
+            parentChemin = parent.chemin || parent.id;
         }
 
         const fonction = this.repo.create({
@@ -60,7 +61,7 @@ export class FonctionsService {
         });
         await this.repo.save(fonction);
 
-        fonction.chemin = dto.parentId ? `${chemin}${fonction.id}` : fonction.id;
+        fonction.chemin = dto.parentId ? `${parentChemin}.${fonction.id}` : fonction.id;
         await this.repo.save(fonction);
 
         logger.info(`Fonction créée: ${dto.nom} (${dto.code}) pour établissement ${etablissementId}`);
@@ -169,6 +170,7 @@ export class FonctionsService {
                     throw new AppError('Opération invalide : le parent choisi est un descendant de cette fonction', 400, 'CYCLE_DETECTED');
                 }
                 fonction.niveau = parent.niveau + 1;
+                fonction.chemin = `${parent.chemin || parent.id}.${fonction.id}`;
             }
         }
 

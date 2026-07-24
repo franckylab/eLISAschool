@@ -1,0 +1,1 @@
+React 19 + Vite 6, TanStack Router (file-based codegen), TanStack React Query + Table, Radix UI primitives, Tailwind CSS v4 with class-variance-authority, Zustand for global state, react-hook-form + zod validation, i18next with per-feature locale JSON files, Framer Motion + Lucide icons.

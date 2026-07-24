@@ -1,0 +1,1 @@
+`npm install` then `npm run dev` boots both backend and frontend concurrently; `npm run docker:dev[:build|:logs|:down]` manages the Compose environment; `npm run db:migrate` and `npm run db:seed` delegate to the backend workspace.

@@ -1,3 +1,17 @@
+/**
+ * ==================================
+ * eLISAschool - DTOs Nomenclatures Organisation
+ * ==================================
+ * Version: 4.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Schémas de validation Zod pour les 4 nomenclatures :
+ * - Échelons structurels (fusion NiveauOrganisation + UsageUnite)
+ * - Niveaux de responsabilité
+ * - Modes de rémunération
+ * - Templates d'organisation
+ */
+
 import { z } from 'zod';
 
 // ==================== Echelon Structurel ====================

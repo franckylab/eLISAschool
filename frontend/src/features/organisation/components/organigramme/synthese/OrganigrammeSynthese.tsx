@@ -40,22 +40,41 @@ interface OrganigrammeSyntheseProps {
 interface StatsCalculees {
     totalMembres: number;
     profondeurMax: number;
+    parEchelon: Array<{ label: string; couleur?: string; count: number }>;
 }
 
 function calculerStats(arbre: OrganigrammeNode[]): StatsCalculees {
     let totalMembres = 0;
     let profondeurMax = 0;
+    const echelonMap = new Map<string, { label: string; couleur?: string; count: number }>();
+
+    // totalMembres est déjà agrégé (descendants inclus) sur chaque noeud.
+    // Sommer sur TOUS les noeuds → double-comptage. On prend donc la somme des racines.
+    for (const racine of arbre) {
+        totalMembres += racine.totalMembres || 0;
+    }
 
     const parcourir = (noeuds: OrganigrammeNode[]) => {
         for (const noeud of noeuds) {
-            totalMembres += noeud.totalMembres || 0;
             if (noeud.depth > profondeurMax) profondeurMax = noeud.depth;
+            // Distribution par échelon
+            const key = noeud.echelonStructurelLabel || 'Sans échelon';
+            const existing = echelonMap.get(key);
+            if (existing) {
+                existing.count++;
+            } else {
+                echelonMap.set(key, { label: key, couleur: noeud.echelonStructurelCouleur, count: 1 });
+            }
             if (noeud.enfants?.length) parcourir(noeud.enfants);
         }
     };
 
     parcourir(arbre);
-    return { totalMembres, profondeurMax };
+    return {
+        totalMembres,
+        profondeurMax,
+        parEchelon: Array.from(echelonMap.values()).sort((a, b) => b.count - a.count),
+    };
 }
 
 /** Détermine le tone conditionnel pour le taux d'occupation */
@@ -83,7 +102,17 @@ export function OrganigrammeSynthese({ data, statsApi }: OrganigrammeSynthesePro
     const totalMembres = statsCalc.totalMembres;
     const profondeurMax = statsApi?.profondeurMax ?? statsCalc.profondeurMax;
 
+    // Distribution par échelon : préférer les données API (avec labels/couleurs) ou fallback calcul local
+    const parEchelon = statsApi?.parEchelonDetails?.length
+        ? statsApi.parEchelonDetails.map(e => ({
+            label: e.label,
+            couleur: e.couleur,
+            count: e.count,
+        }))
+        : statsCalc.parEchelon;
+
     return (
+        <>
         <CardGrid
             columns={{ default: 1, xs: 2, lg: 3, '2xl': 5 }}
             loading={!statsApi && data.length === 0}
@@ -175,5 +204,54 @@ export function OrganigrammeSynthese({ data, statsApi }: OrganigrammeSynthesePro
                 tone="muted"
             />
         </CardGrid>
+
+        {/* Distribution par échelon */}
+        {parEchelon.length > 0 && (
+            <div className="mt-6">
+                <h3
+                    className="font-medium mb-3"
+                    style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)', color: 'var(--color-text)' }}
+                >
+                    {t('organigramme.stats.repartitionEchelon', 'Répartition par échelon')}
+                </h3>
+                <div className="flex flex-col gap-2">
+                    {parEchelon.map((echelon) => {
+                        const total = parEchelon.reduce((s, e) => s + e.count, 0);
+                        const pct = total > 0 ? Math.round((echelon.count / total) * 100) : 0;
+                        return (
+                            <div key={echelon.label} className="flex items-center gap-3">
+                                <span
+                                    className="w-24 sm:w-32 text-xs truncate flex-shrink-0"
+                                    style={{ color: 'var(--color-text-secondary)' }}
+                                    title={echelon.label}
+                                >
+                                    {echelon.label}
+                                </span>
+                                <div className="flex-1 h-5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--color-dominant-50)' }}>
+                                    <div
+                                        className="h-full rounded-full transition-all duration-500 flex items-center justify-end pr-1"
+                                        style={{
+                                            width: `${Math.max(pct, 4)}%`,
+                                            backgroundColor: echelon.couleur || 'var(--color-dominant-400)',
+                                        }}
+                                    >
+                                        {pct >= 15 && (
+                                            <span className="text-[9px] font-medium text-white/90">{pct}%</span>
+                                        )}
+                                    </div>
+                                </div>
+                                <span
+                                    className="text-xs font-medium w-8 text-right flex-shrink-0"
+                                    style={{ color: 'var(--color-text-muted)' }}
+                                >
+                                    {echelon.count}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        )}
+    </>
     );
 }

@@ -15,6 +15,12 @@ const ORGA_KEYS = {
         arborescence: ['organisation', 'unites', 'arborescence'] as const,
         chemin: (uniteId: string) => [...ORGA_KEYS.unites.all, 'chemin', uniteId] as const,
     },
+    organigramme: {
+        all: ['organisation', 'organigramme'] as const,
+    },
+    stats: {
+        all: ['organisation', 'statistiques'] as const,
+    },
 };
 
 // ─── UNITÉS ORGANISATIONNELLES ───
@@ -28,6 +34,7 @@ export function useUnites(filtres: UniteFiltres = {}) {
             return response.data || [];
         },
         enabled: isAuthenticated,
+        staleTime: 30_000,
     });
 }
 
@@ -53,6 +60,8 @@ export function useCreerUnite() {
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
             toast.success('Unité créée');
         },
         onError: (e: unknown) => handleError(e, 'Erreur création unité'),
@@ -70,6 +79,8 @@ export function useModifierUnite() {
         onSuccess: (_, vars) => {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.detail(vars.id) });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
             toast.success('Unité modifiée');
         },
         onError: (e: unknown) => handleError(e, 'Erreur modification unité'),
@@ -86,6 +97,8 @@ export function useSupprimerUnite() {
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
             toast.success('Unité supprimée');
         },
         onError: (e: unknown) => handleError(e, 'Erreur suppression unité'),
@@ -101,6 +114,7 @@ export function useArborescence() {
             return response.data || [];
         },
         enabled: !!etablissementId && isAuthenticated,
+        staleTime: 30_000,
     });
 }
 
@@ -133,6 +147,8 @@ export function useCreerUniteAvecPostes() {
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
             toast.success('Unité créée avec ses postes');
         },
         onError: (e: unknown) => handleError(e, 'Erreur création unité'),
@@ -148,8 +164,9 @@ export function useReordonnerUnite() {
             await apiClient.patch(`/api/organisation/unites/${uniteId}/reordonner`, { apresId });
         },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
             toast.success('Ordre mis à jour');
         },
         onError: (e: unknown) => handleError(e, 'Erreur réordonnancement'),

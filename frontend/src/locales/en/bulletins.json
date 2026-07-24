@@ -5,8 +5,18 @@
     "classe": "Class",
     "periode": "Period",
     "moyenne": "Average",
-    "rang": "Rank",
-    "effectif": "Total students",
-    "appreciation": "Comments",
-    "exporter": "Export PDF"
+    "rang": "Rank {{rang}}",
+    "effectif": "Class size",
+    "appreciation": "Comment",
+    "exporterPdf": "Export PDF",
+    "rechercher": "Search student...",
+    "actions": "Actions",
+    "supprimer": "Delete",
+    "confirmerSupprimerTitre": "Delete report card",
+    "confirmerSupprimerMessage": "This action cannot be undone. Are you sure you want to delete this report card?",
+    "chargement": "Error loading report cards",
+    "bulletinCount": "{{count}} report card(s)",
+    "matieres": "Subjects",
+    "dateGeneration": "Generation date",
+    "detail": "Details"
 }

@@ -1,0 +1,1 @@
+TypeScript + Express routers, TypeORM for persistence, Zod schemas for request validation, UUID primary keys, JSON-based system parameters stored via `ParametreSysteme` entity, file uploads handled as base64-encoded SVG written to `uploads/fonds/`.

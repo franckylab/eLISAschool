@@ -20,6 +20,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useModifierUnite } from '../../../hooks/use-unites';
 import type { OrganigrammeNode } from '../../../types/organisation.types';
 import type { Node, Connection } from 'reactflow';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 interface UseDndOrganigrammeProps {
@@ -100,6 +101,7 @@ function trouverParent(arbre: OrganigrammeNode[], uniteId: string): string | nul
 }
 
 export function useDndOrganigramme({ arbre, isEditMode = false }: UseDndOrganigrammeProps) {
+    const { t } = useTranslation('organisation');
     const qc = useQueryClient();
     const { mutateAsync: modifierUnite } = useModifierUnite();
     const [dndState, setDndState] = useState<DndState>({
@@ -122,9 +124,9 @@ export function useDndOrganigramme({ arbre, isEditMode = false }: UseDndOrganigr
             });
             qc.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
             if (newParentId === null) {
-                toast.success('Unité détachée (racine)');
+                toast.success(t('organigramme.dnd.uniteDetachee', 'Unité détachée (racine)'));
             } else {
-                toast.success('Unité déplacée');
+                toast.success(t('organigramme.dnd.uniteDeplacee', 'Unité déplacée'));
             }
         } catch (error: unknown) {
             console.error('Erreur déplacement:', error);
@@ -154,7 +156,7 @@ export function useDndOrganigramme({ arbre, isEditMode = false }: UseDndOrganigr
         if (targetId && targetId !== draggedId) {
             // Anti-cycle frontend
             if (estDescendant(arbre, targetId, draggedId)) {
-                toast.error('Déplacement impossible : cycle détecté');
+                toast.error(t('organigramme.dnd.cycleDetecte', 'Déplacement impossible : cycle détecté'));
                 return;
             }
 
@@ -235,7 +237,7 @@ export function useDndOrganigramme({ arbre, isEditMode = false }: UseDndOrganigr
 
         // Anti-cycle : vérifier que source n'est pas déjà descendant de target
         if (estDescendant(arbre, sourceId, targetId)) {
-            toast.error('Connexion impossible : cycle détecté');
+            toast.error(t('organigramme.dnd.connexionImpossible', 'Connexion impossible : cycle détecté'));
             return;
         }
 

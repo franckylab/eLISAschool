@@ -1,0 +1,1 @@
+TypeScript + Express routers (no Nest controllers); TypeORM entities with `uuid` primary keys and `simple-json` columns for flexible arrays/records; DTOs validated via a shared `validateDto` utility against schemas defined in the same module's `dto/` folder.

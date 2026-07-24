@@ -1,0 +1,1 @@
+Provides student gamification (badges, points, leaderboards) and configurable academic scoring (grades, rankings, mentions) as two complementary modules sharing a configuration-driven architecture.

@@ -1,0 +1,1 @@
+React + TypeScript with @tanstack/react-query for server state, lucide-react icons, sonner for toast notifications, react-i18next for internationalization, and Tailwind utility classes for styling; HTTP calls go through a centralized `apiClient` from `@/lib/api` (or `@/lib/api-client` in sante).

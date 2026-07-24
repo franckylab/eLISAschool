@@ -4,9 +4,9 @@ import { apiClient } from '@/lib/api-client';
 export interface HeureCours {
     id: string;
     enseignantId: string;
-    classeId: string;
+    classeAnneeId: string;
     matiereId: string;
-    periodeId: string;
+    periodeId?: string;
     salleId?: string;
     date: string;
     heureDebut: string;
@@ -14,7 +14,7 @@ export interface HeureCours {
     statutEffectue: 'PLANIFIE' | 'EFFECTUE' | 'ANNULE' | 'REMPLACE';
     commentaire?: string;
     remplacantId?: string;
-    classe?: { id: string; nom: string };
+    classeAnnee?: { id: string; classe?: { id: string; nom: string }; anneeScolaire?: { id: string; nom: string } };
     matiere?: { id: string; nom: string };
     periode?: { id: string; nom: string };
     salle?: { id: string; nom: string };

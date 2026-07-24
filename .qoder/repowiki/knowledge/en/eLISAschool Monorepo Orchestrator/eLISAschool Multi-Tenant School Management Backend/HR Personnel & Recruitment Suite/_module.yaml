@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/hr_recruitment
+title: HR Personnel & Recruitment Suite
+scope:
+    - backend/src/modules/personnel/
+    - backend/src/modules/recrutement/
+    - backend/src/modules/suivi-personnel/
+source_files: []
+depends_on: []
+related_to: []

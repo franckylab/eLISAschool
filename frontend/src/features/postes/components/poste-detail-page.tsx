@@ -22,6 +22,7 @@ import { TabsBar, TabsContent, type Tab } from '@/components/ui';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePermissions } from '@/hooks';
 import { usePoste, usePosteOccupants, useSupprimerPoste } from '../hooks/use-postes';
+import type { AffectationPoste } from '@/features/personnel/types/affectation.types';
 import { PosteFormModal } from './poste-form-modal';
 import { PosteCapaciteIndicator } from './PosteCapaciteIndicator';
 import { STATUT_POSTE_OPTIONS } from '../types/poste.zod';
@@ -48,7 +49,8 @@ export function PosteDetailPage() {
         );
     }
 
-    const statutLabel = STATUT_POSTE_OPTIONS.find((o) => o.value === poste.statut)?.label || poste.statut;
+    const statutOption = STATUT_POSTE_OPTIONS.find((o) => o.value === poste.statut);
+    const statutLabel = statutOption ? t(statutOption.labelKey) : poste.statut;
     const typeNom = poste.fonction?.typePersonnel?.nom || '—';
     const niveauLabel = poste.niveauResponsabilite?.label || '—';
     const occupantsList = occupants || [];
@@ -155,11 +157,11 @@ export function PosteDetailPage() {
                             <p className="text-sm text-muted-foreground text-center py-8">{t('aucunOccupant')}</p>
                         ) : (
                             <ul className="divide-y divide-border">
-                                {occupantsList.map((a: any) => (
+                                {occupantsList.map((a: AffectationPoste) => (
                                     <li key={a.id} className="flex items-center gap-3 py-2.5">
                                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-dominant-100)]"><UserRound className="h-4 w-4 text-[var(--color-dominant-600)]" /></div>
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-medium text-foreground truncate">{a.membrePersonnel ? `${a.membrePersonnel.prenom ?? ''} ${a.membrePersonnel.nom ?? ''}`.trim() : (a.membrePersonnelId || '—')}</p>
+                                            <p className="text-sm font-medium text-foreground truncate">{a.membrePersonnel ? `${a.membrePersonnel.utilisateur?.profil?.prenom ?? ''} ${a.membrePersonnel.utilisateur?.profil?.nom ?? ''}`.trim() : (a.membrePersonnelId || '—')}</p>
                                             {a.membrePersonnel?.matricule && <p className="text-xs text-muted-foreground font-mono">{a.membrePersonnel.matricule}</p>}
                                         </div>
                                         {a.statut && <Badge variant="default" size="sm">{a.statut}</Badge>}

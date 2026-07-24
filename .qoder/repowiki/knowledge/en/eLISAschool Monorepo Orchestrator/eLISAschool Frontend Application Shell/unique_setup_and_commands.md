@@ -1,0 +1,1 @@
+`npm run dev` starts Vite on port 7001 with host 0.0.0.0; `npm run build` runs `tsc -b` then `vite build`; route tree is regenerated automatically by `@tanstack/router-plugin` when files under `src/routes/` change.

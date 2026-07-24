@@ -60,7 +60,7 @@ export function NomenclatureFormModal({
             await onSave(clean);
             onOpenChange(false);
         } catch (e: unknown) {
-            setError(e instanceof Error ? e.message : 'Erreur');
+            setError(e instanceof Error ? e.message : t('erreurGenerique'));
         }
     };
 

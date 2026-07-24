@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: frontend/bulletins_reports
+title: School Bulletins, Contracts & Finance Feature Modules
+scope:
+    - frontend/src/features/bulletins/
+    - frontend/src/features/contrats/
+    - frontend/src/features/finances/
+source_files: []
+depends_on: []
+related_to: []

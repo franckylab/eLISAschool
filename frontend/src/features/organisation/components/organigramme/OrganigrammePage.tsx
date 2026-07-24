@@ -10,8 +10,9 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Network, ArrowDown, ArrowRight, List, BarChart3 } from 'lucide-react';
+import { Network, ArrowDown, ArrowRight, List, BarChart3, Building2, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useOrganigramme, useModifierUnite, useStatistiquesOrganisation } from '../../hooks/use-organisation';
 import { useReordonnerUnite } from '../../hooks/use-unites';
@@ -19,6 +20,7 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { usePermissions, useDocumentTitle } from '@/hooks';
 import { useAuthStore } from '@/stores/auth.store';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { OrganigrammeFlowView } from './OrganigrammeFlowView';
 import { OrganigrammeListe } from './OrganigrammeListe';
@@ -42,7 +44,7 @@ export function OrganigrammePage() {
     useDocumentTitle(t('organigramme.titre', 'Organigramme'));
 
     const isMobile = useMediaQuery('(max-width: 479px)');
-    const { data: organigramme, isLoading } = useOrganigramme();
+    const { data: organigramme, isLoading, isError, refetch: refetchOrganigramme } = useOrganigramme();
     const { data: statsApi } = useStatistiquesOrganisation();
     const etablissements = useAuthStore(s => s.etablissementsDisponibles);
     const etablissementId = useAuthStore(s => s.etablissementId);
@@ -112,6 +114,7 @@ export function OrganigrammePage() {
             await modifierUnite({ id: confirmMove.nodeId, parentId });
         } catch (err) {
             console.error('Erreur déplacement:', err);
+            toast.error(err instanceof Error ? err.message : t('organigramme.dnd.erreurDeplacement', 'Erreur lors du déplacement'));
         }
         setConfirmMove(null);
     }, [confirmMove, modifierUnite]);
@@ -168,6 +171,17 @@ export function OrganigrammePage() {
         { id: 'liste' as const, label: t('organigramme.liste', 'Liste'), icon: List },
     ];
 
+    if (isError) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12">
+                <p className="text-destructive mb-4">{t('erreurChargement', 'Erreur lors du chargement de l\'organigramme')}</p>
+                <ElisaButton variant="outline" onClick={() => refetchOrganigramme()}>
+                    {t('reessayer', 'Réessayer')}
+                </ElisaButton>
+            </div>
+        );
+    }
+
     if (isLoading) {
         return (
             <div className="flex flex-col" style={{ gap: 'var(--gap-md)', padding: 'var(--space-lg)' }}>
@@ -196,6 +210,104 @@ export function OrganigrammePage() {
     }
 
     const data = organigramme || [];
+
+    // ─── État vide : aucune unité ───
+    if (data.length === 0) {
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                className="flex flex-col h-full"
+                style={{ gap: 'var(--gap-md)', padding: 'var(--space-lg)' }}
+            >
+                <PageHeader
+                    title={nomEtablissement || t('organigramme.titre', 'Organigramme')}
+                    subtitle={t('organigramme.subtitle', 'Vue interactive de la structure organisationnelle')}
+                    icon={Network}
+                    variant="gradient"
+                />
+
+                <div className="flex-1 flex items-center justify-center">
+                    <div
+                        className="flex flex-col items-center text-center max-w-md"
+                        style={{ gap: 'var(--gap-lg)' }}
+                    >
+                        <div
+                            className="rounded-2xl flex items-center justify-center"
+                            style={{
+                                width: 'clamp(64px, 15vw, 96px)',
+                                height: 'clamp(64px, 15vw, 96px)',
+                                backgroundColor: 'var(--color-dominant-50)',
+                            }}
+                        >
+                            <Building2
+                                className="text-[var(--color-dominant-400)]"
+                                style={{ width: 'clamp(32px, 8vw, 48px)', height: 'clamp(32px, 8vw, 48px)' }}
+                            />
+                        </div>
+
+                        <div>
+                            <h2
+                                className="font-semibold text-[var(--color-text)]"
+                                style={{ fontSize: 'clamp(1.125rem, 1rem + 0.5vw, 1.375rem)' }}
+                            >
+                                {t('organigramme.empty.titre', 'Aucune unité organisationnelle')}
+                            </h2>
+                            <p
+                                className="mt-2 text-[var(--color-text-secondary)]"
+                                style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.25vw, 0.9375rem)' }}
+                            >
+                                {t('organigramme.empty.description', 'Commencez par créer votre première unité ou générez une organisation complète depuis un modèle.')}
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-center" style={{ gap: 'var(--gap-md)' }}>
+                            {canEdit && (
+                                <ElisaButton
+                                    variant="primary"
+                                    icon={<Building2 className="h-4 w-4" />}
+                                    onClick={() => setUniteFormModal({ open: true, mode: 'create', unite: null, parentUnite: null })}
+                                >
+                                    {t('organigramme.empty.creerUnite', 'Créer une unité')}
+                                </ElisaButton>
+                            )}
+                            <ElisaButton
+                                variant="outline"
+                                icon={<Sparkles className="h-4 w-4" />}
+                                onClick={() => {
+                                    // Naviguer vers la page modèles
+                                    window.location.hash = '#/organisation/modeles';
+                                }}
+                            >
+                                {t('organigramme.empty.genererDepuisModele', 'Générer depuis un modèle')}
+                            </ElisaButton>
+                        </div>
+
+                        <p
+                            className="text-[var(--color-text-muted)] italic"
+                            style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)' }}
+                        >
+                            {t('organigramme.empty.astuce', 'Vous pouvez aussi utiliser un modèle prédéfini pour générer automatiquement toute la structure.')}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Modal formulaire unité (nécessaire même en état vide) */}
+                <UniteFormModal
+                    open={uniteFormModal.open}
+                    onOpenChange={(v) => setUniteFormModal(prev => ({ ...prev, open: v }))}
+                    mode={uniteFormModal.mode}
+                    unite={uniteFormModal.unite}
+                    parentUnite={uniteFormModal.parentUnite}
+                    onSuccess={() => {
+                        setUniteFormModal({ open: false, mode: 'create', unite: null, parentUnite: null });
+                        refetchOrganigramme();
+                    }}
+                />
+            </motion.div>
+        );
+    }
 
     return (
         <motion.div
@@ -270,15 +382,18 @@ export function OrganigrammePage() {
                         className="w-full h-full"
                     >
                         {vueActive === 'synthese' && <OrganigrammeSynthese data={data} statsApi={statsApi} />}
-                        <OrganigrammeFlowView
-                            data={data}
-                            direction={vueActive === 'horizontal' ? 'LR' : 'TB'}
-                            onNodeSelect={handleNodeSelect}
-                            isEditMode={isEditMode}
-                            onEditUnite={canEdit ? handleEditUnite : undefined}
-                            onAddChildUnite={canEdit ? handleAddChildUnite : undefined}
-                            onDeleteUnite={canDelete ? handleDeleteUnite : undefined}
-                        />
+                        {(vueActive === 'vertical' || vueActive === 'horizontal') && (
+                            <OrganigrammeFlowView
+                                data={data}
+                                direction={vueActive === 'horizontal' ? 'LR' : 'TB'}
+                                containerId={containerId}
+                                onNodeSelect={handleNodeSelect}
+                                isEditMode={isEditMode}
+                                onEditUnite={canEdit ? handleEditUnite : undefined}
+                                onAddChildUnite={canEdit ? handleAddChildUnite : undefined}
+                                onDeleteUnite={canDelete ? handleDeleteUnite : undefined}
+                            />
+                        )}
                         {vueActive === 'liste' && <OrganigrammeListe data={data} onNodeSelect={handleNodeSelect} />}
                     </motion.div>
                 </AnimatePresence>
@@ -289,9 +404,9 @@ export function OrganigrammePage() {
                 unite={selectedUnite}
                 open={drawerOpen}
                 onClose={handleCloseDrawer}
-                onEdit={isEditMode && canEdit ? handleEditUnite : undefined}
-                onAddChild={isEditMode && canEdit ? handleAddChildUnite : undefined}
-                onDelete={isEditMode && canDelete ? handleDeleteUnite : undefined}
+                onEdit={canEdit ? handleEditUnite : undefined}
+                onAddChild={canEdit ? handleAddChildUnite : undefined}
+                onDelete={canDelete ? handleDeleteUnite : undefined}
             />
 
             {/* Modal formulaire unité */}

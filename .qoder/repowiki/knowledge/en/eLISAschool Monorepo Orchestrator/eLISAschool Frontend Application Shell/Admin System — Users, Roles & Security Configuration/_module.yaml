@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: frontend/admin_system
+title: Admin System — Users, Roles & Security Configuration
+scope:
+    - frontend/src/features/utilisateurs/
+    - frontend/src/features/securite/
+    - frontend/src/features/configuration/
+source_files: []
+depends_on: []
+related_to: []

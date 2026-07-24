@@ -5,13 +5,13 @@ import { Briefcase } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useToutesFonctions } from '../hooks/use-fonctions';
 import { useTypePersonnelOptions } from '@/features/personnel/hooks/use-types-personnel';
-import type { Fonction } from '../types/fonction.types';
+import type { Fonction, CreerFonctionDto, ModifierFonctionDto } from '../types/fonction.types';
 
 interface FonctionFormModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     fonction?: Fonction | null;
-    onSave: (data: any) => void;
+    onSave: (data: CreerFonctionDto | ModifierFonctionDto) => void;
     isLoading?: boolean;
 }
 
@@ -109,7 +109,7 @@ export function FonctionFormModal({ open, onOpenChange, fonction, onSave, isLoad
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="text-sm font-medium text-foreground mb-2 block">
-                            {t('code')} <span className="text-red-500">*</span>
+                            {t('code')} <span className="text-destructive">*</span>
                         </label>
                         <input
                             type="text"
@@ -138,7 +138,7 @@ export function FonctionFormModal({ open, onOpenChange, fonction, onSave, isLoad
 
                 <div>
                     <label className="text-sm font-medium text-foreground mb-2 block">
-                        {t('nom')} <span className="text-red-500">*</span>
+                        {t('nom')} <span className="text-destructive">*</span>
                     </label>
                     <input
                         type="text"

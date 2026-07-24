@@ -24,9 +24,22 @@
     "onglets": {
         "calendrier": "Calendar",
         "liste": "List",
+        "synthese": "Summary",
         "preferences": "Preferences",
         "templates": "Templates"
     },
+    "contexte": {
+        "classe": "Class",
+        "enseignant": "Teacher",
+        "salle": "Room"
+    },
+    "selectionnerFiltre": "Select a filter",
+    "precedent": "Previous",
+    "suivant": "Next",
+    "modifier": "Edit",
+    "creer": "Create",
+    "annuler": "Cancel",
+    "enregistrer": "Save",
     "liste": {
         "titre": "Timetable",
         "actualiser": "Refresh",
@@ -110,5 +123,82 @@
         "samedi": "Saturday"
     },
     "salle": "Room",
-    "matiereDefaut": "Subject"
+    "matiereDefaut": "Subject",
+    "conflitDetection": {
+        "titre": "Conflict detection",
+        "bloquant": "Blocking",
+        "avertissement": "Warning",
+        "conflitClasse": "Class conflict",
+        "conflitEnseignant": "Teacher conflict",
+        "conflitSalle": "Room conflict",
+        "depassementVolume": "Volume overflow",
+        "creneauImposable": "Imposable slot",
+        "aucunConflit": "No conflict detected",
+        "conflitsDetectes": "{{count}} conflict(s) detected"
+    },
+    "synthese": {
+        "titre": "Summary",
+        "volumeHoraire": "Hourly volume",
+        "heuresPlanifiees": "Planned hours",
+        "volumeRequis": "Required volume",
+        "respectVolume": "Volume compliance",
+        "totalHeures": "Total hours",
+        "totalCreneaux": "Total slots",
+        "matieres": "Subjects",
+        "matiere": "Subject",
+        "enseignant": "Teacher",
+        "creneaux": "Slots",
+        "respect": "Compliance",
+        "aucuneDonnee": "No data",
+        "genererPourVoirSynthese": "Generate the timetable to view hourly volume summary."
+    },
+    "creneau": {
+        "ajouter": "Add a slot",
+        "types": {
+            "cours": "Class",
+            "td": "Tutorial",
+            "tp": "Lab",
+            "recreation": "Break",
+            "pause": "Break",
+            "permanence": "Study hall",
+            "etude": "Study",
+            "autre": "Other"
+        },
+        "modal": {
+            "titreCreer": "New slot",
+            "titreModifier": "Edit slot",
+            "description": "Step {{step}} of 3",
+            "etape1": "Identification",
+            "etape2": "Planning",
+            "etape3": "Summary",
+            "identification": "Identification",
+            "planification": "Planning",
+            "resume": "Summary and validation",
+            "affectation": "Subject assignment",
+            "typeCreneau": "Slot type",
+            "couleur": "Color",
+            "jour": "Day",
+            "salle": "Room",
+            "heureDebut": "Start time",
+            "heureFin": "End time",
+            "horaire": "Schedule",
+            "notes": "Notes",
+            "notesPlaceholder": "Optional notes…",
+            "conflitsDetectes": "{{count}} conflict(s) detected",
+            "conflitsBloquants": "Blocking conflicts — cannot validate",
+            "avertissements": "{{count}} warning(s)"
+        }
+    },
+    "heureCours": {
+        "modal": {
+            "titre": "Edit class hour",
+            "statut": "Status",
+            "remplacant": "Substitute",
+            "salleOverride": "Room (one-time override)",
+            "sallePlaceholder": "Leave empty to keep the usual room",
+            "salleAide": "If empty, the usual slot's room is kept.",
+            "commentaire": "Comment",
+            "commentairePlaceholder": "Optional comment…"
+        }
+    }
 }

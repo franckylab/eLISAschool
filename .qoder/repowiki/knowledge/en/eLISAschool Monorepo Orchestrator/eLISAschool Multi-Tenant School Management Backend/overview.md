@@ -1,0 +1,1 @@
+Express-based backend that wires ~40 Nest-style feature modules behind a single app, enforcing multi-tenant isolation and module activation through shared middleware and a central route registry.

@@ -12,7 +12,7 @@
 import { Repository, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { HeureCours, IndisponibiliteEnseignant } from '@modules/personnel/entities';
-import { RepartitionHoraire } from '../entities';
+import { CreneauHoraire } from '../entities';
 import { salleAvailabilityService } from '@modules/salles/services/salle-availability.service';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -28,12 +28,12 @@ export interface ConflitDetection {
 export class EmploiDuTempsValidatorService {
     private heureCoursRepo: Repository<HeureCours>;
     private indisponibiliteRepo: Repository<IndisponibiliteEnseignant>;
-    private repartitionRepo: Repository<RepartitionHoraire>;
+    private creneauRepo: Repository<CreneauHoraire>;
 
     constructor() {
         this.heureCoursRepo = AppDataSource.getRepository(HeureCours);
         this.indisponibiliteRepo = AppDataSource.getRepository(IndisponibiliteEnseignant);
-        this.repartitionRepo = AppDataSource.getRepository(RepartitionHoraire);
+        this.creneauRepo = AppDataSource.getRepository(CreneauHoraire);
     }
 
     /**
@@ -123,7 +123,7 @@ export class EmploiDuTempsValidatorService {
                 conflictingIds: [conflit.id],
                 details: {
                     matiere: conflit.matiereId,
-                    classe: conflit.classeId,
+                    classe: conflit.classeAnneeId,
                 },
             };
         }
@@ -177,7 +177,7 @@ export class EmploiDuTempsValidatorService {
     ): Promise<ConflitDetection | null> {
         const conflit = await this.heureCoursRepo.findOne({
             where: {
-                classeId,
+                classeAnneeId: classeId,
                 date,
                 etablissementId,
                 heureDebut: this.lessThan(heureFin),

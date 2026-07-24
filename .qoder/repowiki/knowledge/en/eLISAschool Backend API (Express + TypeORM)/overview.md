@@ -1,1 +1,0 @@
-Multi-tenant school management REST API built on Express.js, TypeScript, and TypeORM with PostgreSQL, exposing domain modules for academics, HR, finance, messaging and more.

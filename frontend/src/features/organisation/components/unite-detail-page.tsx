@@ -170,7 +170,7 @@ export function UniteDetailPage() {
             <ConfirmationModal
                 isOpen={deleteConfirmOpen}
                 title={t('confirmerSuppression')}
-                message={`${t('supprimerUniteConfirmation')} "${unite.nom}" ?`}
+                message={`${t('confirmerSuppressionUnite')}`}
                 onConfirm={handleDelete}
                 onCancel={() => setDeleteConfirmOpen(false)}
                 confirmLabel={t('supprimer')}

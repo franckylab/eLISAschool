@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: backend/hr_recruitment/suivi_personnel
-title: suivi_personnel
-scope:
-    - backend/src/modules/suivi-personnel/
-source_files: []
-depends_on: []
-related_to: []

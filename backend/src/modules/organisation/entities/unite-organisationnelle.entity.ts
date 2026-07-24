@@ -94,7 +94,7 @@ export class UniteOrganisationnelle {
 
     @ManyToOne('MembrePersonnel', { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'responsableId' })
-    responsable?: any;
+    responsable?: MembrePersonnel;
 
     @Column({ type: 'varchar', length: 100, nullable: true })
     localisation?: string;

@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/system_services/impressions_salles_cartes
+title: Impressions, Salles & Cartes Modules
+scope:
+    - backend/src/modules/impressions/
+    - backend/src/modules/salles/
+    - backend/src/modules/cartes/
+source_files: []
+depends_on: []
+related_to: []

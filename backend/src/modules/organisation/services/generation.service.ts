@@ -262,12 +262,18 @@ export class GenerationService {
             }
         }
 
+        // Résoudre l'échelon structurel (echelonCode du template → UUID)
+        const echelonStructurelId = noeud.echelonCode
+            ? ctx.echelonMap.get(noeud.echelonCode.toLowerCase())
+            : undefined;
+
         const unite = ctx.queryRunner.manager.create(UniteOrganisationnelle, {
             nom,
             code,
             ordre: index,
             etablissementId: ctx.etablissementId,
             parentId: parentId ?? undefined,
+            echelonStructurelId,
             statut: StatutUnite.ACTIF,
             actif: true,
         });
@@ -304,7 +310,7 @@ export class GenerationService {
         noeud: NoeudTemplateOrganisation,
     ): Promise<string | null> {
         const count = templatePoste.nombrePostes || 1;
-        const tp = templatePoste as any;
+        const tp = templatePoste;
 
         // Résoudre le niveau de responsabilité (code → UUID)
         const niveauRespCode = tp.niveauResponsabilite;
@@ -372,11 +378,17 @@ export class GenerationService {
             });
 
             if (superieurPoste && subordonnePoste) {
+                // superieurId est une référence sémantique vers MembrePersonnel (pas de FK).
+                // À la génération, aucun personnel n'est encore affecté : on laisse null.
+                // Le poste supérieur est référencé via des moyens externes (affectations futures).
                 const hierarchie = ctx.queryRunner.manager.create(HierarchiePersonnel, {
-                    superieurId: superieurPoste.id,
+                    personnelId: undefined, // sera renseigné lors de l'affectation du subordonné
+                    superieurId: undefined, // sera renseigné lorsque le supérieur aura un occupant
                     posteId: subordonnePoste.id,
+                    typeRelation: (lien.typeRelation as 'DIRECT' | 'FONCTIONNEL') || 'DIRECT',
                     statut: StatutRelation.ACTIVE,
                     actif: true,
+                    etablissementId: ctx.etablissementId,
                 });
                 const saved = await ctx.queryRunner.manager.save(hierarchie);
                 ctx.result.hierarchiesCrees++;

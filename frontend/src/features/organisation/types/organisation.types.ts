@@ -98,12 +98,13 @@ export interface OrganigrammeNode {
     id: string;
     nom: string;
     code: string;
-    type: string;
     statut: string;
     description?: string;
     responsableNom?: string;
     localisation?: string;
+    echelonStructurelId?: string;
     echelonStructurelLabel?: string;
+    echelonStructurelCouleur?: string;
     ordre: number;
     depth: number;
     totalMembres: number;
@@ -150,6 +151,19 @@ export interface ModeRemuneration {
     updatedAt: string;
 }
 
+// ==================== TYPE PERSONNEL ====================
+
+export interface TypePersonnel {
+    id: string;
+    code: string;
+    nom: string;
+    description?: string;
+    actif: boolean;
+    estSysteme: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
 // ==================== STATISTIQUES ====================
 
 export interface StatistiquesOrganisation {
@@ -168,8 +182,15 @@ export interface StatistiquesOrganisation {
     hierarchiesActives: number;
     // Arborescence
     profondeurMax: number;
-    // Répartition
-    parUsage: Record<string, number>;
+    // Répartition par échelon structurel
+    parEchelon: Record<string, number>;
+    parEchelonDetails: Array<{
+        echelonId: string;
+        label: string;
+        code: string;
+        couleur?: string;
+        count: number;
+    }>;
 }
 
 // ==================== NOMENCLATURES ====================
@@ -192,9 +213,7 @@ export interface TemplateStructure {
         ref: string;
         nom: string;
         code: string;
-        typeCode?: string;
-        usageCode?: string;
-        niveauOrg?: number;
+        echelonCode?: string;
         parentRef?: string;
         ordre?: number;
         postes?: Array<{
@@ -202,7 +221,7 @@ export interface TemplateStructure {
             intitule: string;
             code: string;
             nombrePostes?: number;
-            categorieCode?: string;
+            fonctionCode?: string;
             niveauRespCode?: string;
             missions?: string[];
             competences?: string[];
@@ -245,4 +264,18 @@ export interface ResultatGeneration {
     postes: Array<{ ref: string; id: string; intitule: string; code: string }>;
     hierarchies: Array<{ superieurRef: string; subordonneRef: string; id: string }>;
     arborescence: Record<string, unknown>;
+}
+
+// ==================== VALIDATION ARBORESCENCE ====================
+
+export interface ValidationArborescence {
+    valide: boolean;
+    erreurs: string[];
+    avertissements: string[];
+    statistiques: {
+        totalUnites: number;
+        totalPostes: number;
+        unitesSansPoste: number;
+        profondeurMax: number;
+    };
 }

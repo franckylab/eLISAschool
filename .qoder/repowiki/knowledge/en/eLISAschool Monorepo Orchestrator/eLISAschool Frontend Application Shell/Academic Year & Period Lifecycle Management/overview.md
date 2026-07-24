@@ -1,0 +1,1 @@
+Frontend feature modules managing academic years, configurable period hierarchies (v5.0), and academic structure utilities for the school calendar domain.

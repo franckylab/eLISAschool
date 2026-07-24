@@ -12,7 +12,10 @@ import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useCreerPoste, useModifierPoste } from '../hooks/use-postes';
 import { useToutesFonctions } from '@/features/fonctions/hooks/use-fonctions';
 import { createPosteSchema, updatePosteSchema } from '../types/poste.zod';
+import type { CreatePosteFormData, UpdatePosteFormData } from '../types/poste.zod';
 import type { Poste } from '../types/poste.types';
+import type { Fonction } from '@/features/fonctions/types/fonction.types';
+import type { UniteOrganisationnelle, NiveauResponsabilite } from '@/features/organisation/types/organisation.types';
 
 interface Props {
     open: boolean;
@@ -30,15 +33,15 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
     const { data: unites } = useQuery({
         queryKey: ['unites', 'all'],
         queryFn: async () => {
-            const res = await apiClient.get('/api/organisation/unites');
-            return (res as any).data || [];
+            const res = await apiClient.get<UniteOrganisationnelle[]>('/api/organisation/unites');
+            return res.data || [];
         },
     });
     const { data: niveauxResponsabilite } = useQuery({
         queryKey: ['niveaux-responsabilite'],
         queryFn: async () => {
-            const res = await apiClient.get('/api/organisation/niveaux-responsabilite');
-            return (res as any).data || [];
+            const res = await apiClient.get<NiveauResponsabilite[]>('/api/organisation/niveaux-responsabilite');
+            return res.data || [];
         },
     });
 
@@ -67,15 +70,15 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
     const competences = watch('competencesRequises') || [];
 
     const fonctionOptions = (fonctions || [])
-        .filter((f: any) => f.actif !== false)
-        .map((f: any) => ({ value: f.id, label: `${f.nom} (${f.code})` }));
+        .filter((f: Fonction) => f.actif !== false)
+        .map((f: Fonction) => ({ value: f.id, label: `${f.nom} (${f.code})` }));
 
-    const uniteOptions = (unites || []).map((u: any) => ({
+    const uniteOptions = (unites || []).map((u: UniteOrganisationnelle) => ({
         value: u.id,
         label: `${u.nom} (${u.code})`,
     }));
 
-    const niveauOptions = (niveauxResponsabilite || []).map((n: any) => ({
+    const niveauOptions = (niveauxResponsabilite || []).map((n: NiveauResponsabilite) => ({
         value: n.id,
         label: `${n.label} (Niveau ${n.niveau})`,
     }));
@@ -102,7 +105,7 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
         setValue('competencesRequises', competences.filter((_, i) => i !== index), { shouldValidate: true });
     };
 
-    const onFormSubmit = async (data: any) => {
+    const onFormSubmit = async (data: CreatePosteFormData | UpdatePosteFormData) => {
         setApiError(null);
         try {
             const payload = {
@@ -118,8 +121,11 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
             }
             onSuccess?.();
             onOpenChange(false);
-        } catch (err: any) {
-            setApiError(err?.response?.data?.message || err?.message || 'Une erreur est survenue');
+        } catch (err: unknown) {
+            const message = err instanceof Error && 'response' in err
+                ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+                : err instanceof Error ? err.message : t('erreurGenerique');
+            setApiError(message || t('erreurGenerique'));
         }
     };
 
@@ -211,18 +217,18 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
             />
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('missions')}</label>
+                <label className="block text-sm font-medium text-foreground mb-1">{t('missions')}</label>
                 <div className="flex gap-2 mb-2">
                     <ElisaInput value={missionText}
-                        onChange={(e: any) => setMissionText(e.target.value ?? e)}
-                        placeholder="Ajouter une mission"
-                        onKeyDown={(e: any) => e.key === 'Enter' && addMission()}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMissionText(e.target.value ?? '')}
+                        placeholder={t('ajouterMission')}
+                        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && addMission()}
                     />
                     <ElisaButton variant="outline" size="sm" onClick={addMission}><Plus className="h-4 w-4" /></ElisaButton>
                 </div>
                 <div className="flex flex-wrap gap-1">
                     {missions.map((m: string, i: number) => (
-                        <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30"
+                        <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs cursor-pointer hover:bg-destructive/10"
                             onClick={() => removeMission(i)}>
                             {m} <X className="h-3 w-3" />
                         </span>
@@ -231,18 +237,18 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('competencesRequises')}</label>
+                <label className="block text-sm font-medium text-foreground mb-1">{t('competencesRequises')}</label>
                 <div className="flex gap-2 mb-2">
                     <ElisaInput value={competenceText}
-                        onChange={(e: any) => setCompetenceText(e.target.value ?? e)}
-                        placeholder="Ajouter une compétence"
-                        onKeyDown={(e: any) => e.key === 'Enter' && addCompetence()}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCompetenceText(e.target.value ?? '')}
+                        placeholder={t('ajouterCompetence')}
+                        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && addCompetence()}
                     />
                     <ElisaButton variant="outline" size="sm" onClick={addCompetence}><Plus className="h-4 w-4" /></ElisaButton>
                 </div>
                 <div className="flex flex-wrap gap-1">
                     {competences.map((c: string, i: number) => (
-                        <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30"
+                        <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-muted rounded text-xs cursor-pointer hover:bg-destructive/10"
                             onClick={() => removeCompetence(i)}>
                             {c} <X className="h-3 w-3" />
                         </span>

@@ -6,6 +6,7 @@ import { User, MapPin } from 'lucide-react';
 
 interface EDTCalendarProps {
     creneaux: CreneauHoraire[];
+    onCreneauClick?: (creneau: CreneauHoraire) => void;
 }
 
 const COULEURS_MATIERES: Record<string, string> = {
@@ -23,7 +24,7 @@ const COULEURS_MATIERES: Record<string, string> = {
     'default': 'bg-[var(--color-surface-alt)] border-[var(--color-bordure)] text-[var(--color-text-primary)]',
 };
 
-export function EDTCalendar({ creneaux }: EDTCalendarProps) {
+export function EDTCalendar({ creneaux, onCreneauClick }: EDTCalendarProps) {
     const { t } = useTranslation('emplois');
 
     const JOURS = useMemo(() => [
@@ -123,9 +124,10 @@ export function EDTCalendar({ creneaux }: EDTCalendarProps) {
                                 return (
                                     <td key={jour} className="px-2 py-2 border-r border-[var(--color-bordure)] last:border-r-0">
                                         <motion.div
-                                            className={`p-3 rounded-lg border-l-4 ${couleurClass} shadow-sm`}
+                                            className={`relative p-3 rounded-lg border-l-4 ${couleurClass} shadow-sm ${onCreneauClick ? 'cursor-pointer' : ''}`}
                                             whileHover={{ scale: 1.02 }}
                                             transition={{ type: 'spring', stiffness: 300 }}
+                                            onClick={() => onCreneauClick?.(creneau)}
                                         >
                                             <div className="font-semibold text-sm mb-1">
                                                 {creneau.affectationMatiere?.matiere?.nom || t('matiereDefaut')}
@@ -150,6 +152,11 @@ export function EDTCalendar({ creneaux }: EDTCalendarProps) {
                                             <div className="text-xs opacity-60 mt-1">
                                                 {creneau.heureDebut} - {creneau.heureFin}
                                             </div>
+
+                                            {/* Indicateur statut */}
+                                            {creneau.statut === 'VALIDE' && (
+                                                <div className="absolute top-1 right-1 h-2 w-2 rounded-full bg-success" />
+                                            )}
                                         </motion.div>
                                     </td>
                                 );

@@ -1,0 +1,5 @@
+- Each feature exposes exactly one public entry point via `index.ts` that re-exports only its page component, keeping the feature tree flat for route registration.
+- Server state is encapsulated in per-feature hook files where query keys are grouped in a module-level constant object (e.g. `ANALYTICS_KEYS.dashboard(filtres)`) and every read-only hook is guarded by `enabled: isAuthenticated`.
+- Mutations follow a uniform shape: `mutationFn` calls `apiClient.<method>(...)`, `onSuccess` invalidates the affected query key(s) via `queryClient.invalidateQueries({ queryKey: ... })` and shows a French `toast.success(...)` message.
+- Type definitions live in a co-located `<feature>.types.ts` file and are imported into hooks via `import type { ... }`, so runtime code never imports types at runtime.
+- Download/export actions create a Blob URL, append an `<a>` element to `document.body`, trigger `.click()`, then remove it — reused verbatim in both `useExporterStatistiques` and `useTelechargerRapport`.

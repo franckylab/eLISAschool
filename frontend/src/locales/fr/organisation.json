@@ -43,6 +43,12 @@
     "modifierUnite": "Modifier l'unité",
     "sousUnite": "Sous-unité",
     "ajouterSousUnite": "Ajouter une sous-unité",
+    "ajouterEnfant": "Ajouter enfant",
+    "autres": "{{count}} autre(s)",
+    "aucunPosteCourt": "Aucun poste",
+    "vacants_count": "{{count}} vacant(s)",
+    "deplier": "Déplier",
+    "replier": "Replier",
     "intitule": "Intitulé",
     "sigle": "Sigle",
     "direction": "Direction",
@@ -64,7 +70,7 @@
     "nouveauPoste": "Nouveau poste",
     "modifierPoste": "Modifier le poste",
     "intitulePoste": "Intitulé du poste",
-    "categoriePoste": "Catégorie de poste",
+    "categoriePoste": "Catégorie (dérivée via fonction)",
     "missions": "Missions",
     "competences": "Compétences",
     "competencesRequises": "Compétences requises",
@@ -111,12 +117,8 @@
     "niveauxResponsabilite_SUPERVISEUR": "Superviseur",
     "niveauxResponsabilite_EXECUTANT": "Exécutant",
     "niveauxResponsabilite_STAGIAIRE": "Stagiaire",
-    "typeRelation_SUPERVISE_DIRECT": "Supervision directe",
-    "typeRelation_SUPERVISE_INDIRECT": "Supervision indirecte",
-    "typeRelation_RATTACHEMENT_FONCTIONNEL": "Rattachement fonctionnel",
-    "typeRelation_COLLABORATION": "Collaboration",
-    "typeRelation_REMPLACEMENT": "Remplacement",
-    "typeRelation_INTERIM": "Intérim",
+    "typeRelation_DIRECT": "Hiérarchie directe",
+    "typeRelation_FONCTIONNEL": "Rattachement fonctionnel",
     "descriptionSection": "Description",
     "aucuneDescription": "Aucune description fournie.",
     "statutSection": "Statut",
@@ -151,6 +153,11 @@
     "fonctionCreerDescription": "Ajoutez une nouvelle fonction",
     "fonctionModifierDescription": "Modifiez les informations de la fonction",
     "fonctionParente": "Fonction parente",
+    "voirDetails": "Voir détails",
+    "rechercherNomCode": "Nom, code...",
+    "aucuneFonctionTrouvee": "Aucune fonction trouvée",
+    "supprimerFonction": "Supprimer la fonction",
+    "confirmerSuppressionFonction": "Êtes-vous sûr de vouloir supprimer la fonction « {{nom}} » ?",
     "aucuneRacine": "Aucune (racine)",
     "typePersonnelStatut": "Type de personnel (statut)",
     "typePersonnelStatutAide": "Détermine le type attendu des postes liés à cette fonction (ex. Professeur ⟹ Enseignant).",
@@ -159,7 +166,7 @@
     "descriptionFonctionPlaceholder": "Description de la fonction...",
     "exMajoration": "Ex : 15",
     "majorationPct": "Majoration %",
-    "modeRemunerationDefaut": "Mode de rémunération par défaut",
+    "modeRemuneration": "Mode de rémunération",
     "assigner": "Assigner",
     "liberer": "Libérer",
     "supprimerPoste": "Supprimer le poste",
@@ -217,7 +224,6 @@
     "nouveauTypePersonnel": "Nouveau type de personnel",
     "modifierTypePersonnel": "Modifier le type",
     "supprimerTypePersonnel": "Supprimer ce type ?",
-    "modeRemuneration": "Mode de rémunération",
     "estSysteme": "Type système",
     "typePersonnelCode": "Code",
     "typePersonnelNom": "Nom",
@@ -312,6 +318,9 @@
     "aucunMembre": "Aucun membre",
     "aucuneSousFonction": "Aucune sous-fonction",
     "racine": "Racine",
+    "ajouterMission": "Ajouter une mission",
+    "ajouterCompetence": "Ajouter une compétence",
+    "aucuneFonctionIndication": "Aucune fonction. Créez votre première fonction.",
     "majorationDefaut": "Majoration par défaut",
     "principale": "Principale",
     "generationPersonnalisee": "Génération personnalisée",
@@ -350,7 +359,8 @@
             "hierarchiesActives": "Hiérarchies actives",
             "totalMembres": "Membres (total)",
             "unitesSansPostes": "Unités sans postes",
-            "profondeurMax": "Profondeur max"
+            "profondeurMax": "Profondeur max",
+            "repartitionEchelon": "Répartition par échelon"
         },
         "drawer": {
             "profondeur": "Profondeur",
@@ -376,10 +386,18 @@
             "confirmer": "Déplacer",
             "annuler": "Annuler",
             "connexionImpossible": "Connexion impossible : cycle détecté",
+            "cycleDetecte": "Déplacement impossible : cycle détecté",
             "uniteDeplacee": "Unité déplacée",
             "uniteDetachee": "Unité détachée (racine)",
             "ordreMisAJour": "Ordre mis à jour",
-            "dropSurCanvas": "Déposez ici pour détacher (faire racine)"
+            "dropSurCanvas": "Déposez ici pour détacher (faire racine)",
+            "erreurDeplacement": "Erreur lors du déplacement"
+        },
+        "flow": {
+            "posteDeplace": "Poste déplacé",
+            "erreurDeplacementPoste": "Erreur déplacement poste",
+            "quitterPleinEcran": "Quitter le plein écran (Échap)",
+            "quitter": "Quitter"
         },
         "modeModification": "Mode édition",
         "quitterModification": "Quitter le mode édition",
@@ -430,6 +448,18 @@
             "membres": "Membres",
             "membresDirect": "{{count}} directs",
             "hierarchies": "Hiérarchies"
+        },
+        "liste": {
+            "postes": "Postes",
+            "membres": "Membres",
+            "postesVacants": "Postes vacants"
+        },
+        "empty": {
+            "titre": "Aucune unité organisationnelle",
+            "description": "Commencez par créer votre première unité ou générez une organisation complète depuis un modèle.",
+            "creerUnite": "Créer une unité",
+            "genererDepuisModele": "Générer depuis un modèle",
+            "astuce": "Vous pouvez aussi utiliser un modèle prédéfini pour générer automatiquement toute la structure."
         }
     }
 }

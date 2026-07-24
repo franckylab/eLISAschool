@@ -1,0 +1,5 @@
+- Every entity carries an `etablissementId` UUID column plus a `ManyToOne` relation to `Etablissement` for multi-tenancy, and service methods accept `etablissementId` as a parameter to scope all queries.
+- Controllers follow a uniform shape: create a local `Router`, instantiate the corresponding service once, wrap each route in `try/catch` delegating to `next(error)`, read `etablissementId` from `req.utilisateur!`, validate bodies with `validateDto(schema, req.body)`, and return `{ success, data }` JSON.
+- Services are plain classes instantiated directly (`new XxxService()`) and expose static singleton instances re-exported from their `index.ts` alongside the class, allowing both `import { ServiceClass }` and `import { serviceInstance }`.
+- Cross-module collaborators are imported lazily inside method bodies via `await import('@modules/...')` instead of top-level imports, preventing circular dependency bootstraps between peer modules.
+- Entity files carry a versioned header comment block documenting the current schema version and a bullet list of breaking changes (e.g. v2.0 multi-tenant, v5.0 configurable period levels).

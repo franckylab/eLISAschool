@@ -1,8 +1,17 @@
+/**
+ * ==================================
+ * eLISAschool - Hooks Postes
+ * ==================================
+ * Hooks TanStack Query pour la gestion des postes organisationnels.
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
-import { toast } from 'sonner';
+import { useHandleError } from '@/features/organisation/hooks/use-handle-error';
 import type { Poste, CreatePosteDto, UpdatePosteDto, PosteFiltres } from '../types/poste.types';
+import type { AffectationPoste } from '@/features/personnel/types/affectation.types';
 
 const POSTES_KEYS = {
     all: ['postes'] as const,
@@ -28,8 +37,8 @@ export function usePostes(filtres?: PosteFiltres) {
             if (filtres?.vacant !== undefined) params.set('vacant', String(filtres.vacant));
             if (filtres?.sortBy) params.set('sortBy', filtres.sortBy);
             if (filtres?.sortOrder) params.set('sortOrder', filtres.sortOrder);
-            const res = await apiClient.get(`/api/organisation/postes?${params}`);
-            const payload = (res as any).data;
+            const res = await apiClient.get<{ items: Poste[]; meta: Record<string, number> }>(`/api/organisation/postes?${params}`);
+            const payload = res.data;
             return {
                 items: (payload?.items ?? []) as Poste[],
                 meta: payload?.meta ?? { currentPage: 1, itemsPerPage: filtres?.limit ?? 20, totalItems: 0, totalPages: 1 },
@@ -45,8 +54,8 @@ export function useTousPostes() {
     return useQuery({
         queryKey: [...POSTES_KEYS.all, 'all'],
         queryFn: async () => {
-            const res = await apiClient.get('/api/organisation/postes/all');
-            return (res as any).data as Poste[];
+            const res = await apiClient.get<Poste[]>('/api/organisation/postes/all');
+            return res.data ?? [];
         },
         staleTime: 5 * 60 * 1000,
         placeholderData: (previousData) => previousData,
@@ -59,8 +68,8 @@ export function usePostesVacants() {
     return useQuery({
         queryKey: POSTES_KEYS.vacants(),
         queryFn: async () => {
-            const res = await apiClient.get('/api/organisation/postes/vacants');
-            return (res as any).data as Poste[];
+            const res = await apiClient.get<Poste[]>('/api/organisation/postes/vacants');
+            return res.data ?? [];
         },
         staleTime: 2 * 60 * 1000,
         placeholderData: (previousData) => previousData,
@@ -73,8 +82,8 @@ export function usePostesParFonction(fonctionId: string) {
     return useQuery({
         queryKey: POSTES_KEYS.parFonction(fonctionId),
         queryFn: async () => {
-            const res = await apiClient.get(`/api/organisation/postes/fonction/${fonctionId}`);
-            return (res as any).data as Poste[];
+            const res = await apiClient.get<Poste[]>(`/api/organisation/postes/fonction/${fonctionId}`);
+            return res.data ?? [];
         },
         enabled: !!fonctionId && isAuthenticated,
         placeholderData: (previousData) => previousData,
@@ -86,8 +95,8 @@ export function usePoste(id: string) {
     return useQuery({
         queryKey: POSTES_KEYS.detail(id),
         queryFn: async () => {
-            const res = await apiClient.get(`/api/organisation/postes/${id}`);
-            return (res as any).data as Poste;
+            const res = await apiClient.get<Poste>(`/api/organisation/postes/${id}`);
+            return res.data;
         },
         enabled: !!id && isAuthenticated,
         placeholderData: (previousData) => previousData,
@@ -99,8 +108,8 @@ export function usePosteOccupants(id: string) {
     return useQuery({
         queryKey: [...POSTES_KEYS.detail(id), 'occupants'],
         queryFn: async () => {
-            const res = await apiClient.get(`/api/organisation/postes/${id}/occupants`);
-            return (res as any).data as any[];
+            const res = await apiClient.get<AffectationPoste[]>(`/api/organisation/postes/${id}/occupants`);
+            return res.data ?? [];
         },
         enabled: !!id && isAuthenticated,
     });
@@ -108,53 +117,54 @@ export function usePosteOccupants(id: string) {
 
 export function useCreerPoste() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: CreatePosteDto) => {
-            const res = await apiClient.post('/api/organisation/postes', dto);
-            return (res as any).data as Poste;
+            const res = await apiClient.post<Poste>('/api/organisation/postes', dto);
+            return res.data;
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: POSTES_KEYS.all });
+            qc.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
+            qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
             toast.success('Poste créé avec succès');
         },
-        onError: (e: any) => {
-            toast.error(e?.response?.data?.message || e?.message || 'Erreur lors de la création');
-        },
+        onError: (e) => handleError(e, 'Erreur lors de la création du poste'),
     });
 }
 
 export function useModifierPoste() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async ({ id, dto }: { id: string; dto: UpdatePosteDto }) => {
-            const res = await apiClient.patch(`/api/organisation/postes/${id}`, dto);
-            return (res as any).data as Poste;
+            const res = await apiClient.patch<Poste>(`/api/organisation/postes/${id}`, dto);
+            return res.data;
         },
         onSuccess: (data) => {
             qc.invalidateQueries({ queryKey: POSTES_KEYS.all });
             qc.invalidateQueries({ queryKey: POSTES_KEYS.detail(data.id) });
+            qc.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
+            qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
             toast.success('Poste modifié avec succès');
         },
-        onError: (e: any) => {
-            toast.error(e?.response?.data?.message || e?.message || 'Erreur lors de la modification');
-        },
+        onError: (e) => handleError(e, 'Erreur lors de la modification du poste'),
     });
 }
 
 export function useSupprimerPoste() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (id: string) => {
             await apiClient.delete(`/api/organisation/postes/${id}`);
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: POSTES_KEYS.all });
+            qc.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
+            qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
             toast.success('Poste supprimé');
         },
-        onError: (e: any) => {
-            toast.error(e?.response?.data?.message || e?.message || 'Erreur lors de la suppression');
-        },
+        onError: (e) => handleError(e, 'Erreur lors de la suppression du poste'),
     });
 }
-
-

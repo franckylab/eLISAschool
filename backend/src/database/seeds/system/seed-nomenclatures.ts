@@ -15,6 +15,8 @@ async function upsertAll<T extends { id: string }>(
         if ((row as any).etablissementId) where.etablissementId = (row as any).etablissementId;
         const existing = await repo.findOne({ where } as any);
         if (existing) {
+            // Mise à jour des champs (couleur, label) même si déjà existant
+            await repo.update(existing.id, row as any);
             map.set(String(row[matchKey]), existing.id);
             continue;
         }
@@ -29,26 +31,21 @@ export async function seedNomenclatures(): Promise<{
     niveauxResponsabilite: Map<string, string>;
     modesRemuneration: Map<string, string>;
 }> {
-    logger.info('📋 Seed des nomenclatures organisation (globales)...');
+    logger.info('📋 Seed des nomenclatures organisation (globales) — v4.0...');
 
-    // 1. Échelons structurels (fusion niveaux organisation + usages unité)
+    // 1. Échelons structurels — 10 codes v4.0 (fusion NiveauOrganisation + UsageUnite)
     const echRepo = AppDataSource.getRepository(EchelonStructurel);
     const echelonsStructurels = await upsertAll(echRepo, [
-        // Anciens niveaux d'organisation
-        { code: 'ETABLISSEMENT', niveau: 0, label: 'Établissement', description: 'Niveau établissement (racine)', estSysteme: true },
-        { code: 'DIRECTION', niveau: 1, label: 'Direction', description: 'Direction et services rattachés', estSysteme: true },
-        { code: 'DEPARTEMENT', niveau: 2, label: 'Département / Service', description: 'Départements pédagogiques et services administratifs', estSysteme: true },
-        { code: 'SOUS_SERVICE', niveau: 3, label: 'Sous-service / Équipe', description: 'Sous-services, équipes et cellules', estSysteme: true },
-        // Anciens usages d'unité
-        { code: 'DIRECTION_GENERAL', niveau: 1, label: 'Direction générale', description: 'Unité de direction générale', estSysteme: true },
-        { code: 'DEPARTEMENT_PEDA', niveau: 2, label: 'Département pédagogique', description: 'Département pédagogique', estSysteme: true },
-        { code: 'SERVICE', niveau: 2, label: 'Service', description: 'Service spécialisé', estSysteme: true },
-        { code: 'COMMISSION', niveau: 3, label: 'Commission', description: 'Commission ou comité', estSysteme: true },
-        { code: 'EQUIPE', niveau: 3, label: 'Équipe', description: 'Équipe ou cellule de travail', estSysteme: true },
-        { code: 'ATELIER', niveau: 3, label: 'Atelier', description: 'Atelier technique ou artistique', estSysteme: true },
-        { code: 'BUREAU', niveau: 3, label: 'Bureau', description: 'Bureau ou unité administrative', estSysteme: true },
-        { code: 'LABORATOIRE', niveau: 3, label: 'Laboratoire', description: 'Laboratoire scientifique', estSysteme: true },
-        { code: 'BIBLIOTHEQUE', niveau: 3, label: 'Bibliothèque', description: 'Bibliothèque ou centre de documentation', estSysteme: true },
+        { code: 'ETABLISSEMENT', niveau: 0, label: 'Établissement', description: 'Niveau établissement (racine)', couleur: '#2563eb', estSysteme: true },
+        { code: 'DIRECTION', niveau: 1, label: 'Direction', description: 'Direction et services rattachés', couleur: '#7c3aed', estSysteme: true },
+        { code: 'DEPARTEMENT_PEDA', niveau: 2, label: 'Département pédagogique', description: 'Département pédagogique', couleur: '#059669', estSysteme: true },
+        { code: 'SERVICE', niveau: 2, label: 'Service', description: 'Service spécialisé', couleur: '#0284c7', estSysteme: true },
+        { code: 'COMMISSION', niveau: 3, label: 'Commission', description: 'Commission ou comité', couleur: '#d97706', estSysteme: true },
+        { code: 'EQUIPE', niveau: 3, label: 'Équipe', description: 'Équipe ou cellule de travail', couleur: '#dc2626', estSysteme: true },
+        { code: 'BUREAU', niveau: 3, label: 'Bureau', description: 'Bureau ou unité administrative', couleur: '#9333ea', estSysteme: true },
+        { code: 'ATELIER', niveau: 3, label: 'Atelier', description: 'Atelier technique ou artistique', couleur: '#0891b2', estSysteme: true },
+        { code: 'LABORATOIRE', niveau: 3, label: 'Laboratoire', description: 'Laboratoire scientifique', couleur: '#65a30d', estSysteme: true },
+        { code: 'CDI', niveau: 3, label: 'CDI', description: 'Centre de documentation et d\'information', couleur: '#e11d48', estSysteme: true },
     ], 'code');
     logger.info(`   Échelons structurels: ${echelonsStructurels.size}`);
 

@@ -14,7 +14,7 @@
  * Les unités sont rattachées directement à l'établissement.
  */
 
-import { Repository, In, Like } from 'typeorm';
+import { Repository, In, Like, FindOptionsWhere, IsNull } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import {
     UniteOrganisationnelle,
@@ -38,27 +38,106 @@ import { logger } from '@common/utils/logger.util';
 import { redisService } from '@common/services/redis.service';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 
+/**
+ * Noeud d'arborescence organisationnelle (type récursif)
+ */
+interface ArborescenceNode extends Partial<UniteOrganisationnelle> {
+    id: string;
+    enfants: ArborescenceNode[];
+    depth?: number;
+    echelonStructurelLabel?: string;
+    echelonStructurelCouleur?: string;
+    postes?: PosteOrganigramme[];
+    totalMembres?: number;
+    postesVacants?: number;
+}
+
+/**
+ * Poste enrichi pour l'organigramme
+ */
+interface PosteOrganigramme extends Partial<Poste> {
+    id: string;
+    fonctionLabel?: string;
+    niveauResponsabiliteLabel?: string;
+    typePersonnelLabel?: string;
+    occupantsCount?: number;
+    statut?: StatutPoste;
+}
+
+/**
+ * Résultat de la validation d'arborescence
+ */
+export interface ValidationArborescenceResult {
+    valide: boolean;
+    erreurs: string[];
+    avertissements: string[];
+    statistiques: {
+        totalUnites: number;
+        totalPostes: number;
+        unitesSansPoste: number;
+        profondeurMax: number;
+    };
+}
+
+/**
+ * Interface pour les statistiques organisationnelles
+ */
+export interface StatistiquesOrganisationResult {
+    totalUnites: number;
+    unitesActives: number;
+    unitesSansPostes: number;
+    totalPostes: number;
+    postesActifs: number;
+    postesOccupes: number;
+    postesVacants: number;
+    tauxOccupation: number;
+    totalHierarchies: number;
+    hierarchiesActives: number;
+    profondeurMax: number;
+    parEchelon: Record<string, number>;
+    parEchelonDetails: Array<{
+        echelonId: string;
+        label: string;
+        code: string;
+        couleur?: string;
+        count: number;
+    }>;
+}
+
 export class OrganisationService {
     private uniteRepo: Repository<UniteOrganisationnelle>;
     private posteRepo: Repository<Poste>;
     private hierarchieRepo: Repository<HierarchiePersonnel>;
+    private echelonRepo: Repository<EchelonStructurel>;
 
     // Configuration du cache
     private readonly CACHE_PREFIX = 'organisation:';
     private CACHE_ARBRESCENCE_TTL = 5 * 60; // 5 minutes (configurable)
     private CACHE_ORGANIGRAMME_TTL = 5 * 60; // 5 minutes (configurable)
     private useRedis = false;
+    private redisCheckIntervalId: ReturnType<typeof setInterval> | null = null;
 
     constructor() {
         this.uniteRepo = AppDataSource.getRepository(UniteOrganisationnelle);
         this.posteRepo = AppDataSource.getRepository(Poste);
         this.hierarchieRepo = AppDataSource.getRepository(HierarchiePersonnel);
+        this.echelonRepo = AppDataSource.getRepository(EchelonStructurel);
 
         // Vérifier si Redis est disponible (avec retry)
         this.checkRedisAvailability();
         
         // Re-vérifier toutes les 30 secondes
-        setInterval(() => this.checkRedisAvailability(), 30000);
+        this.redisCheckIntervalId = setInterval(() => this.checkRedisAvailability(), 30000);
+    }
+
+    /**
+     * Nettoyer les ressources (appeler lors de l'arrêt du service)
+     */
+    destroy(): void {
+        if (this.redisCheckIntervalId) {
+            clearInterval(this.redisCheckIntervalId);
+            this.redisCheckIntervalId = null;
+        }
     }
 
     /**
@@ -127,7 +206,7 @@ export class OrganisationService {
     }
 
     async findUnites(filtres: FiltreUnitesDto, etablissementId?: string): Promise<UniteOrganisationnelle[]> {
-        const where: any = {};
+        const where: FindOptionsWhere<UniteOrganisationnelle> = {};
 
         if (filtres.etablissementId) {
             where.etablissementId = filtres.etablissementId;
@@ -194,7 +273,7 @@ export class OrganisationService {
     }
 
     async findUniteById(id: string, etablissementId?: string): Promise<UniteOrganisationnelle> {
-        const where: any = { id };
+        const where: FindOptionsWhere<UniteOrganisationnelle> = { id };
         
         if (etablissementId) {
             where.etablissementId = etablissementId;
@@ -212,8 +291,8 @@ export class OrganisationService {
         return unite;
     }
 
-    async updateUnite(id: string, dto: UpdateUniteOrganisationnelleDto): Promise<UniteOrganisationnelle> {
-        const unite = await this.findUniteById(id);
+    async updateUnite(id: string, dto: UpdateUniteOrganisationnelleDto, etablissementId?: string): Promise<UniteOrganisationnelle> {
+        const unite = await this.findUniteById(id, etablissementId);
         const ancienEtablissementId = unite.etablissementId;
 
         // Vérifier parentId (changement ou nouveau)
@@ -304,9 +383,9 @@ export class OrganisationService {
      * - unites_organisationnelles.parentId → ON DELETE SET NULL : les enfants ne sont PAS
      *   supprimés en cascade DB, d'où la suppression explicite de toute la descendance.
      */
-    async deleteUnite(id: string): Promise<void> {
-        const unite = await this.findUniteById(id);
-        const etablissementId = unite.etablissementId;
+    async deleteUnite(id: string, etablissementId?: string): Promise<void> {
+        const unite = await this.findUniteById(id, etablissementId);
+        const uniteEtablissementId = unite.etablissementId;
 
         const queryRunner = AppDataSource.createQueryRunner();
         await queryRunner.connect();
@@ -324,7 +403,7 @@ export class OrganisationService {
                 )
                 SELECT id FROM desc_tree
             `, [id]);
-            const familleIds: string[] = familleRows.map((r: any) => r.id);
+            const familleIds: string[] = familleRows.map((r: { id: string }) => r.id);
 
             // 2. Supprimer toute la famille d'unités.
             //    Les postes sont supprimés en cascade (FK ON DELETE CASCADE) et
@@ -347,7 +426,7 @@ export class OrganisationService {
         }
 
         // Invalider le cache
-        await this.invalidateArborescenceCache(etablissementId);
+        await this.invalidateArborescenceCache(uniteEtablissementId);
     }
 
     async countUnitesActives(etablissementId: string): Promise<number> {
@@ -360,8 +439,10 @@ export class OrganisationService {
      * Réordonne une unité après une autre dans la liste des siblings.
      * Met à jour les champs `ordre` de tous les siblings.
      */
-    async reordonnerUnite(uniteId: string, apresId: string | null): Promise<void> {
-        const unite = await this.uniteRepo.findOne({ where: { id: uniteId } });
+    async reordonnerUnite(uniteId: string, apresId: string | null, etablissementId?: string): Promise<void> {
+        const where: FindOptionsWhere<UniteOrganisationnelle> = { id: uniteId };
+        if (etablissementId) where.etablissementId = etablissementId;
+        const unite = await this.uniteRepo.findOne({ where });
         if (!unite) {
             throw new AppError('Unité non trouvée', 404, 'UNITE_NOT_FOUND');
         }
@@ -404,14 +485,14 @@ export class OrganisationService {
 
     // ==================== ARBORESCENCE HIÉRARCHIQUE ====================
 
-    async buildArborescence(etablissementId: string): Promise<any[]> {
+    async buildArborescence(etablissementId: string): Promise<ArborescenceNode[]> {
         // Clé de cache
         const cacheKey = `${this.CACHE_PREFIX}arborescence:${etablissementId}`;
 
         // Essayer de récupérer depuis le cache Redis
         if (this.useRedis) {
             try {
-                const cached = await redisService.getJSON<any[]>(cacheKey);
+                const cached = await redisService.getJSON<ArborescenceNode[]>(cacheKey);
                 if (cached) {
                     logger.debug(`[Organisation] Cache hit: arborescence ${etablissementId}`);
                     return cached;
@@ -428,8 +509,8 @@ export class OrganisationService {
         });
 
         // Construire l'arbre
-        const unitesMap = new Map<string, any>();
-        const racines: any[] = [];
+        const unitesMap = new Map<string, ArborescenceNode>();
+        const racines: ArborescenceNode[] = [];
 
         // Créer un map de toutes les unités
         unites.forEach((unite) => {
@@ -483,8 +564,10 @@ export class OrganisationService {
         }
     }
 
-    async getCheminHierarchique(uniteId: string): Promise<UniteOrganisationnelle[]> {
-        const unite = await this.uniteRepo.findOne({ where: { id: uniteId } });
+    async getCheminHierarchique(uniteId: string, etablissementId?: string): Promise<UniteOrganisationnelle[]> {
+        const where: FindOptionsWhere<UniteOrganisationnelle> = { id: uniteId };
+        if (etablissementId) where.etablissementId = etablissementId;
+        const unite = await this.uniteRepo.findOne({ where });
         if (!unite) return [];
 
         // Charger toutes les unités de l'établissement en une seule requête
@@ -599,7 +682,7 @@ export class OrganisationService {
     }
 
     async findHierarchies(etablissementId: string, personnelId?: string): Promise<HierarchiePersonnel[]> {
-        const where: any = { etablissementId, actif: true };
+        const where: FindOptionsWhere<HierarchiePersonnel> = { etablissementId, actif: true };
 
         if (personnelId) {
             where.personnelId = personnelId;
@@ -633,8 +716,10 @@ export class OrganisationService {
         });
     }
 
-    async updateHierarchie(id: string, dto: UpdateHierarchiePersonnelDto): Promise<HierarchiePersonnel> {
-        const hierarchie = await this.hierarchieRepo.findOne({ where: { id } });
+    async updateHierarchie(id: string, dto: UpdateHierarchiePersonnelDto, etablissementId?: string): Promise<HierarchiePersonnel> {
+        const where: FindOptionsWhere<HierarchiePersonnel> = { id };
+        if (etablissementId) where.etablissementId = etablissementId;
+        const hierarchie = await this.hierarchieRepo.findOne({ where });
         if (!hierarchie) {
             throw new AppError('Relation hiérarchique non trouvée', 404, 'NOT_FOUND');
         }
@@ -649,8 +734,10 @@ export class OrganisationService {
         return updated;
     }
 
-    async deleteHierarchie(id: string): Promise<void> {
-        const hierarchie = await this.hierarchieRepo.findOne({ where: { id } });
+    async deleteHierarchie(id: string, etablissementId?: string): Promise<void> {
+        const where: FindOptionsWhere<HierarchiePersonnel> = { id };
+        if (etablissementId) where.etablissementId = etablissementId;
+        const hierarchie = await this.hierarchieRepo.findOne({ where });
         if (!hierarchie) {
             throw new AppError('Relation hiérarchique non trouvée', 404, 'NOT_FOUND');
         }
@@ -662,7 +749,7 @@ export class OrganisationService {
 
     // ==================== STATISTIQUES ET ANALYSES ====================
 
-    async getStatistiquesOrganisation(etablissementId: string): Promise<any> {
+    async getStatistiquesOrganisation(etablissementId: string): Promise<StatistiquesOrganisationResult> {
         const unites = await this.uniteRepo.find({ where: { etablissementId } });
         const uniteIds = unites.map((u) => u.id);
         const postes = uniteIds.length > 0
@@ -696,11 +783,32 @@ export class OrganisationService {
         const profondeurMax = this.calculerProfondeurMax(unites);
 
         // Répartition par échelon structurel
-        const parUsage = unites.reduce((acc, unite) => {
+        const parEchelon = unites.reduce((acc, unite) => {
             const key = unite.echelonStructurelId || 'SANS_ECHELON';
             acc[key] = (acc[key] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
+
+        // Détails par échelon avec labels et couleurs
+        // Inclure les échelons globaux (etablissementId NULL) ET locaux
+        const echelons = await this.echelonRepo.find({
+            where: [
+                { etablissementId },
+                { etablissementId: IsNull() },
+            ],
+            select: ['id', 'label', 'code', 'couleur'],
+        });
+        const echelonMap = new Map(echelons.map(e => [e.id, e]));
+        const parEchelonDetails = Object.entries(parEchelon).map(([echelonId, count]) => {
+            const echelon = echelonId === 'SANS_ECHELON' ? null : echelonMap.get(echelonId);
+            return {
+                echelonId,
+                label: echelon?.label || 'Sans échelon',
+                code: echelon?.code || 'N/A',
+                couleur: echelon?.couleur,
+                count,
+            };
+        }).sort((a, b) => b.count - a.count);
 
         return {
             // Unités
@@ -718,8 +826,9 @@ export class OrganisationService {
             hierarchiesActives,
             // Arborescence
             profondeurMax,
-            // Répartition par usage
-            parUsage,
+            // Répartition par échelon structurel
+            parEchelon,
+            parEchelonDetails,
         };
     }
 
@@ -727,12 +836,7 @@ export class OrganisationService {
      * Validation complète de la cohérence de l'arborescence
      * Détecte les cycles, orphelins et incohérences
      */
-    async validerArborescence(etablissementId: string): Promise<{
-        valide: boolean;
-        erreurs: string[];
-        avertissements: string[];
-        statistiques: any;
-    }> {
+    async validerArborescence(etablissementId: string): Promise<ValidationArborescenceResult> {
         const erreurs: string[] = [];
         const avertissements: string[] = [];
 
@@ -746,7 +850,12 @@ export class OrganisationService {
                 valide: true,
                 erreurs: [],
                 avertissements: ['Aucune unité dans cet établissement'],
-                statistiques: { totalUnites: 0 },
+                statistiques: {
+                    totalUnites: 0,
+                    totalPostes: 0,
+                    unitesSansPoste: 0,
+                    profondeurMax: 0,
+                },
             };
         }
 
@@ -947,7 +1056,7 @@ export class OrganisationService {
                 )
                 SELECT id FROM desc_tree
             `, [id, unite.etablissementId]);
-            familleIds.push(...descRows.map((r: any) => r.id));
+            familleIds.push(...descRows.map((r: { id: string }) => r.id));
         }
 
         // Compter les postes dans toute la famille
@@ -961,10 +1070,10 @@ export class OrganisationService {
             .reduce((sum, p) => sum + (p.occupantsCount || 0), 0);
         const membresTotal = postes.reduce((sum, p) => sum + (p.occupantsCount || 0), 0);
 
-        // Compter les hiérarchies liées
+        // Compter les hiérarchies liées (via posteId sur les postes de la famille)
         const hierarchieRepo = AppDataSource.getRepository('HierarchiePersonnel');
         const hierarchies = await hierarchieRepo.count({
-            where: { uniteOrganisationnelleId: In(familleIds), etablissementId: unite.etablissementId },
+            where: { posteId: In(postes.map(p => p.id)), etablissementId: unite.etablissementId },
         });
 
         return { enfants, descendants, postes: postes.length, postesOccupes, membresDirect, membresTotal, hierarchies };
@@ -1015,9 +1124,7 @@ export class OrganisationService {
                         code: posteDto.code || posteDto.intitule.substring(0, 4).toUpperCase(),
                         fonctionId: posteDto.fonctionId!,
                         description: posteDto.description,
-                        estSuppleant: posteDto.estSuppleant || false,
                         uniteOrganisationnelleId: savedUnite.id,
-                        etablissementId: dto.etablissementId,
                         statut: StatutPoste.VACANT,
                         actif: true,
                         nombrePostes: 1,
@@ -1042,12 +1149,12 @@ export class OrganisationService {
         }
     }
 
-    async getOrganigramme(etablissementId: string): Promise<any> {
+    async getOrganigramme(etablissementId: string): Promise<ArborescenceNode[]> {
         const arborescence = await this.buildArborescence(etablissementId);
 
-        // OPTIMISATION: Charger tous les postes en UNE SEULE requête
+        // OPTIMISATION: Charger tous les postes + échelons en UNE SEULE requête chacun
         const uniteIds = new Set<string>();
-        const collecterIds = (unites: any[]): void => {
+        const collecterIds = (unites: ArborescenceNode[]): void => {
             unites.forEach((u) => {
                 uniteIds.add(u.id);
                 if (u.enfants && u.enfants.length > 0) {
@@ -1057,12 +1164,23 @@ export class OrganisationService {
         };
         collecterIds(arborescence);
 
+        // Charger échelons pour résoudre le label (evite N+1 sur chaque noeud)
+        // Charger échelons globaux (système) ET locaux pour résoudre les labels
+        const tousEchelons = await this.echelonRepo.find({
+            where: [
+                { etablissementId },
+                { etablissementId: IsNull() },
+            ],
+            select: ['id', 'label', 'code', 'couleur'],
+        }) || [];
+        const echelonMap = new Map<string, { label: string; code: string; couleur?: string }>();
+        tousEchelons.forEach((e) => echelonMap.set(e.id, { label: e.label, code: e.code, couleur: e.couleur }));
         const tousPostes = await this.posteRepo.find({
             where: { uniteOrganisationnelleId: In(Array.from(uniteIds)) },
             relations: ['fonction', 'fonction.typePersonnel', 'niveauResponsabilite'],
         });
 
-        const postesParUnite = new Map<string, any[]>();
+        const postesParUnite = new Map<string, PosteOrganigramme[]>();
         tousPostes.forEach((p) => {
             if (!postesParUnite.has(p.uniteOrganisationnelleId)) {
                 postesParUnite.set(p.uniteOrganisationnelleId, []);
@@ -1077,22 +1195,26 @@ export class OrganisationService {
         });
 
         // Enrichir chaque noeud avec depth, totalMembres, postesVacants
-        const injecterPostes = (unites: any[], depth: number = 0): any[] => {
+        const injecterPostes = (unites: ArborescenceNode[], depth: number = 0): ArborescenceNode[] => {
             return unites.map((unite) => {
                 const postesUnite = postesParUnite.get(unite.id) || [];
                 const enfantsEnrichis = unite.enfants ? injecterPostes(unite.enfants, depth + 1) : [];
 
                 // Calcul totalMembres (cette unité + descendants)
-                const membresDirect = postesUnite.reduce((sum: number, p: any) => sum + (p.occupantsCount || 0), 0);
-                const membresDescendants = enfantsEnrichis.reduce((sum: number, e: any) => sum + (e.totalMembres || 0), 0);
+                const membresDirect = postesUnite.reduce((sum: number, p: PosteOrganigramme) => sum + (p.occupantsCount || 0), 0);
+                const membresDescendants = enfantsEnrichis.reduce((sum: number, e: ArborescenceNode) => sum + (e.totalMembres || 0), 0);
 
                 // Calcul postesVacants (cette unité + descendants)
-                const postesVacantsDirect = postesUnite.filter((p: any) => p.statut === StatutPoste.VACANT).length;
-                const postesVacantsDescendants = enfantsEnrichis.reduce((sum: number, e: any) => sum + (e.postesVacants || 0), 0);
+                const postesVacantsDirect = postesUnite.filter((p: PosteOrganigramme) => p.statut === StatutPoste.VACANT).length;
+                const postesVacantsDescendants = enfantsEnrichis.reduce((sum: number, e: ArborescenceNode) => sum + (e.postesVacants || 0), 0);
+
+                const echelon = unite.echelonStructurelId ? echelonMap.get(unite.echelonStructurelId) : undefined;
 
                 return {
                     ...unite,
                     depth,
+                    echelonStructurelLabel: echelon?.label || echelon?.code,
+                    echelonStructurelCouleur: echelon?.couleur,
                     postes: postesUnite,
                     totalMembres: membresDirect + membresDescendants,
                     postesVacants: postesVacantsDirect + postesVacantsDescendants,

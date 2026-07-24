@@ -1,0 +1,1 @@
+Three independent feature modules providing the laboratory reservation dashboard, school inventory management, and infirmary visit tracking pages with their data hooks and types.

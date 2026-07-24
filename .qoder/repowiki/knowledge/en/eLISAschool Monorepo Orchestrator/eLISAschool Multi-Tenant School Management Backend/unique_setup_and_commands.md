@@ -1,0 +1,1 @@
+`npm start` / `npm run dev` (via `nodemon.json`) boots the process; database changes are applied through `scripts/run-migration.ts` (schema) and `scripts/run-pending-migrations.ts` (data), while `deploy-all-migrations.sh` and `deploy-v31-complete.sh` orchestrate full deployments.

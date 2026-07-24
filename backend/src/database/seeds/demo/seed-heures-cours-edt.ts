@@ -137,16 +137,17 @@ export async function seedHeuresCoursEtEdt(etablissementId: string): Promise<voi
             },
         });
         if (!affectation) {
-            affectation = affectationRepo.create({
-                matiereId: matiere.id,
-                classeAnneeId: classeAnnee.id,
-                enseignantId: enseignant.id,
-                etablissementId,
-                obligatoire: true,
-                statutValidation: 'VALIDE',
-                statut: 'ACTIVE',
-            });
-            await affectationRepo.save(affectation);
+            const a = new AffectationMatiere();
+            a.matiereId = matiere.id;
+            a.classeAnneeId = classeAnnee.id;
+            a.enseignantId = enseignant.id;
+            a.etablissementId = etablissementId;
+            a.obligatoire = true;
+            a.statutValidation = 'VALIDE' as any;
+            a.statut = 'ACTIVE' as any;
+            a.dateDebut = new Date();
+            await affectationRepo.save(a);
+            affectation = a;
         }
 
         const existant = await edtRepo.findOne({

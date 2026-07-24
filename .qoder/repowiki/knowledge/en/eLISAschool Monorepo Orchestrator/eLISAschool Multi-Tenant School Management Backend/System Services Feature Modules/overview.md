@@ -1,0 +1,1 @@
+Aggregates a set of independent NestJS feature modules (configuration, dashboard, audit, scoring, gamification, etc.) that provide cross-cutting application capabilities without shared business logic between them.

@@ -1,0 +1,1 @@
+React + TypeScript with `@tanstack/react-query` for server-state caching, `sonner` for toast notifications, and a shared `apiClient` wrapper that supports both JSON responses and blob downloads (PDF receipts/relevés).

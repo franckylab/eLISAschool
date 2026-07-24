@@ -1,40 +1,45 @@
-/**
- * ==================================
- * eLISAschool - Page Bulletins
- * ==================================
- */
-
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { FileText, Download, Award, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@tanstack/react-router';
+import { FileText, Download, Award, Trash2, Plus } from 'lucide-react';
 import { useBulletins, useSupprimerBulletin, useExporterBulletin } from '../hooks/use-bulletins';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { LoadingState, ErrorState } from '@/components/feedback';
+import { PageSkeleton } from '@/components/ui/Skeleton';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import type { Bulletin, BulletinFiltres } from '../types/bulletin.types';
 import type { Column } from '@/components/ui/DataTable';
 
 export function BulletinsPage() {
+    const { t } = useTranslation('bulletins');
+    const navigate = useNavigate();
     const [filtres, setFiltres] = useState<BulletinFiltres>({ page: 1, limit: 20 });
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [bulletinToDelete, setBulletinToDelete] = useState<Bulletin | null>(null);
 
-    const { data, isLoading, isFetching, error } = useBulletins(filtres);
+    const { data, isLoading, isFetching, error, refetch } = useBulletins(filtres);
     const supprimer = useSupprimerBulletin();
     const exporter = useExporterBulletin();
 
+    const handleDelete = async () => {
+        if (!bulletinToDelete) return;
+        await supprimer.mutateAsync(bulletinToDelete.id);
+        setDeleteConfirmOpen(false);
+        setBulletinToDelete(null);
+    };
+
     if (isLoading && !data) {
-        return (
-            <div className="p-6">
-                <LoadingState message="Chargement des bulletins..." />
-            </div>
-        );
+        return <div className="p-6"><PageSkeleton showHeader showTable /></div>;
     }
 
     if (error) {
         return (
             <div className="p-6">
-                <ErrorState
-                    message={error.message || "Impossible de charger les bulletins"}
-                    onRetry={() => window.location.reload()}
+                <ErrorMessage
+                    message={t('chargement')}
+                    onRetry={() => refetch()}
                 />
             </div>
         );
@@ -44,36 +49,38 @@ export function BulletinsPage() {
         {
             key: 'eleve',
             pinned: 'left' as const,
-            header: 'Élève',
+            header: t('eleve'),
             sortable: true,
             render: (b) => (
                 <div>
-                    <p className="font-medium">{b.eleve?.prenom} {b.eleve?.nom}</p>
+                    <button className="font-medium text-left hover:text-primary transition-colors" onClick={() => navigate({ to: '/bulletins/$id', params: { id: b.id } })}>
+                        {b.eleve?.prenom} {b.eleve?.nom}
+                    </button>
                     <p className="text-xs font-mono text-[var(--color-text-muted)]">{b.eleve?.matricule}</p>
                 </div>
             ),
         },
         {
             key: 'classe',
-            header: 'Classe',
+            header: t('classe'),
             sortable: true,
             render: (b) => (
                 <div>
-                    <p className="font-medium">{b.classe?.nom}</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">{b.classe?.code}</p>
+                    <p className="font-medium">{b.classeAnnee?.classe?.nom}</p>
+                    <p className="text-xs text-[var(--color-text-muted)]">{b.classeAnnee?.classe?.code}</p>
                 </div>
             ),
         },
         {
             key: 'periode',
-            header: 'Période',
+            header: t('periode'),
             render: (b) => (
                 <span className="text-sm font-medium">{b.periode?.nom}</span>
             ),
         },
         {
             key: 'moyenne',
-            header: 'Moyenne',
+            header: t('moyenne'),
             sortable: true,
             className: 'text-center',
             render: (b) => (
@@ -89,30 +96,29 @@ export function BulletinsPage() {
                     </span>
                     <div className="flex items-center gap-1">
                         <Award className="h-3 w-3 text-[var(--color-text-muted)]" />
-                        <span className="text-xs font-medium">Rang {b.rang}/{b.effectifClasse}</span>
+                        <span className="text-xs font-medium">{t('rang', { rang: b.rang })}</span>
                     </div>
                 </div>
             ),
         },
         {
             key: 'actions',
-            header: 'Actions',
+            header: t('actions'),
             className: 'text-right',
             renderActions: (b) => [
                 {
                     key: 'exporter',
                     icon: Download,
-                    label: 'Exporter PDF',
+                    label: t('exporterPdf'),
                     onClick: () => exporter.mutateAsync(b.id),
                 },
                 {
                     key: 'supprimer',
                     icon: Trash2,
-                    label: 'Supprimer',
+                    label: t('supprimer'),
                     onClick: () => {
-                        if (confirm('Supprimer ce bulletin ?')) {
-                            supprimer.mutateAsync(b.id);
-                        }
+                        setBulletinToDelete(b);
+                        setDeleteConfirmOpen(true);
                     },
                     permission: 'bulletins:delete',
                     variant: 'danger' as const,
@@ -123,24 +129,26 @@ export function BulletinsPage() {
 
     return (
         <div className="flex flex-col gap-6 p-6">
-            <motion.div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-                <div>
-                    <h1 className="text-3xl font-bold">Bulletins</h1>
-                    <p className="text-sm text-[var(--color-text-secondary)]">{data?.meta?.totalItems || 0} bulletin(s)</p>
-                </div>
-                <div className="flex gap-2">
-                    <ElisaButton variant="outline" size="sm" icon={<FileText className="h-4 w-4" />}>
-                        Générer bulletins
-                    </ElisaButton>
-                </div>
-            </motion.div>
+            <PageHeader
+                variant="gradient"
+                icon={FileText}
+                title={t('titre')}
+                subtitle={t('bulletinCount', { count: data?.meta?.totalItems || 0 })}
+                actions={
+                    <div className="flex gap-2">
+                        <ElisaButton variant="outline" size="sm" icon={<Plus className="h-4 w-4" />}>
+                            {t('generer')}
+                        </ElisaButton>
+                    </div>
+                }
+            />
 
             <DataTable
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}
                 isFetching={isFetching}
-                searchPlaceholder="Rechercher..."
+                searchPlaceholder={t('rechercher')}
                 enableReordering
                 enablePinning
                 onSearchChange={(recherche) =>
@@ -157,6 +165,17 @@ export function BulletinsPage() {
                 } : undefined}
                 onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
                 onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
+                tableId="bulletins"
+            />
+
+            <ConfirmDialog
+                open={deleteConfirmOpen}
+                onOpenChange={setDeleteConfirmOpen}
+                onConfirm={handleDelete}
+                title={t('confirmerSupprimerTitre')}
+                description={t('confirmerSupprimerMessage')}
+                variant="danger"
+                isLoading={supprimer.isPending}
             />
         </div>
     );

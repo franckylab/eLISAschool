@@ -1,0 +1,5 @@
+- Each feature package mirrors the same folder shape (`types/`, `hooks/`, `components/`, `index.ts`) and exports a single-page entry point plus a detail page and a form modal from its barrel.
+- Server state is modeled as a top-level `*_KEYS` object of nested factory functions returning const-typed arrays, used consistently as `queryKey` values across queries and mutations.
+- Mutations invalidate related query keys (list, detail, stats) and surface user feedback via `toast.success` / `toast.error` rather than throwing or relying on component-side error handling.
+- Backend-facing DTOs are split into separate `Creer*Dto` / `Modifier*Dto` interfaces distinct from the read-only entity type, with `Modifier*Dto` extending `Partial<Creer*Dto>`.
+- Form validation uses per-step Zod schemas exported by name (`etape1IdentiteSchema`, `etape2CoordonneesSchema`, …) and composed via `.merge()` into a full schema whose inferred types drive the form state.

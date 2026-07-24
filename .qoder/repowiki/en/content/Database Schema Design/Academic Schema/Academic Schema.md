@@ -25,6 +25,13 @@
 - [073-competence-unique-composite.sql](file://backend/database/migrations/073-competence-unique-composite.sql)
 - [074-matiere-niveau-unique-composite.sql](file://backend/database/migrations/074-matiere-niveau-unique-composite.sql)
 - [106-rename-sequence-to-evaluation.sql](file://backend/database/migrations/106-rename-sequence-to-evaluation.sql)
+- [113-fix-unique-constraints-nomenclatures.sql](file://backend/database/migrations/113-fix-unique-constraints-nomenclatures.sql)
+- [114-fusion-creneaux-horaires.sql](file://backend/database/migrations/114-fusion-creneaux-horaires.sql)
+- [114-normalisation-echelons-structurels.sql](file://backend/database/migrations/114-normalisation-echelons-structurels.sql)
+- [115-supprimer-config-matiere-classe.sql](file://backend/database/migrations/115-supprimer-config-matiere-classe.sql)
+- [116-programme-intemporel.sql](file://backend/database/migrations/116-programme-intemporel.sql)
+- [117-heure-cours-classe-annee.sql](file://backend/database/migrations/117-heure-cours-classe-annee.sql)
+- [118-preferences-edt-enrichi.sql](file://backend/database/migrations/118-preferences-edt-enrichi.sql)
 - [eleves/entities/Eleve.entity.ts](file://backend/src/modules/eleves/entities/Eleve.entity.ts)
 - [responsables-eleves/entities/ResponsableEleve.entity.ts](file://backend/src/modules/responsables-eleves/entities/ResponsableEleve.entity.ts)
 - [cycles/entities/Cycle.entity.ts](file://backend/src/modules/cycles/entities/Cycle.entity.ts)
@@ -42,20 +49,30 @@
 - [examens-nationaux/entities/ExamenNational.entity.ts](file://backend/src/modules/examens-nationaux/entities/ExamenNational.entity.ts)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Added documentation for seven new database migrations (113-118) that significantly restructured the academic schema
+- Updated Timetable Scheduling section to reflect hour fusion and enhanced preferences
+- Added Program Versioning support documentation with timeless program management
+- Enhanced Echelon normalization documentation for structural improvements
+- Updated Configuration removal documentation showing cleanup of material-class configuration
+- Revised Timetable Hour Fusion documentation with improved scheduling efficiency
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [Recent Schema Enhancements](#recent-schema-enhancements)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
-This document provides a comprehensive data model for eLISAschool’s academic management system. It covers the complete educational hierarchy (cycles, levels, classes), student enrollment and profile management, subject and teacher assignment, competency-based assessment with evaluation criteria and scoring, timetable scheduling with room allocation and conflict resolution, report card generation, exam management, diploma tracking, and academic calendar entities. The documentation is grounded in the repository’s database migrations and entity definitions to ensure accuracy and traceability.
+This document provides a comprehensive data model for eLISAschool's academic management system. It covers the complete educational hierarchy (cycles, levels, classes), student enrollment and profile management, subject and teacher assignment, competency-based assessment with evaluation criteria and scoring, timetable scheduling with room allocation and conflict resolution, report card generation, exam management, diploma tracking, and academic calendar entities. The documentation is grounded in the repository's database migrations and entity definitions to ensure accuracy and traceability. Recent enhancements include timetable optimization, echelon normalization, configuration cleanup, and program versioning support through seven major schema restructuring migrations.
 
 ## Project Structure
 The academic schema spans multiple modules and migrations:
@@ -63,10 +80,11 @@ The academic schema spans multiple modules and migrations:
 - Students and guardians: enrollment, profiles, relationships
 - Subjects and assignments: subjects, coefficients, teacher assignments
 - Assessment and grading: evaluations, competencies, notes, bulletins
-- Scheduling: sessions, rooms, conflicts
+- Scheduling: sessions, rooms, conflicts with enhanced hour fusion
 - Calendar and periods: school years, periods, templates
 - Exams and diplomas: national exams, diplomas per student
 - Multi-tenant scoping: establishment-level isolation
+- Program versioning: timeless program management and echelon normalization
 
 ```mermaid
 graph TB
@@ -88,10 +106,15 @@ Evaluation["Evaluation"] --> Note["Note"]
 Competence["Competence"] --> Evaluation
 Bulletin["Bulletin"] --> Note
 end
-subgraph "Scheduling"
+subgraph "Enhanced Scheduling"
 PlanningSession["PlanningSession"] --> Salle["Salle"]
 PlanningSession --> Classe
 PlanningSession --> Matiere
+HourFusion["Hour Fusion"] --> PlanningSession
+end
+subgraph "Program Management"
+Programme["Programme"] --> Echelon["Echelon"]
+Programme --> Classe
 end
 subgraph "Calendar"
 AnneeScolaire["AnneeScolaire"] --> Periode["Periode"]
@@ -109,7 +132,8 @@ end
 - Student lifecycle: Enrollment into a Class within an academic year; Guardian associations for contact and consent.
 - Subject management: Subjects scoped by Level or Stream; Teacher assignments with coefficients for weighting.
 - Assessment model: Competency-based evaluations linked to subjects and periods; Notes recorded per student per evaluation; Bulletins aggregate results.
-- Scheduling: Sessions assigned to Classes, Subjects, Rooms, and Teachers with conflict checks.
+- Enhanced scheduling: Sessions assigned to Classes, Subjects, Rooms, and Teachers with conflict checks and optimized hour fusion.
+- Program versioning: Timeless programs with echelon normalization for better curriculum management.
 - Calendar: School Years define Periods; Periods can be templated and configured per Level.
 - Exams and Diplomas: National exams associated with students; Diplomas issued upon completion.
 
@@ -136,13 +160,22 @@ end
 - [073-competence-unique-composite.sql](file://backend/database/migrations/073-competence-unique-composite.sql)
 - [074-matiere-niveau-unique-composite.sql](file://backend/database/migrations/074-matiere-niveau-unique-composite.sql)
 - [106-rename-sequence-to-evaluation.sql](file://backend/database/migrations/106-rename-sequence-to-evaluation.sql)
+- [113-fix-unique-constraints-nomenclatures.sql](file://backend/database/migrations/113-fix-unique-constraints-nomenclatures.sql)
+- [114-fusion-creneaux-horaires.sql](file://backend/database/migrations/114-fusion-creneaux-horaires.sql)
+- [114-normalisation-echelons-structurels.sql](file://backend/database/migrations/114-normalisation-echelons-structurels.sql)
+- [115-supprimer-config-matiere-classe.sql](file://backend/database/migrations/115-supprimer-config-matiere-classe.sql)
+- [116-programme-intemporel.sql](file://backend/database/migrations/116-programme-intemporel.sql)
+- [117-heure-cours-classe-annee.sql](file://backend/database/migrations/117-heure-cours-classe-annee.sql)
+- [118-preferences-edt-enrichi.sql](file://backend/database/migrations/118-preferences-edt-enrichi.sql)
 
 ## Architecture Overview
-The academic architecture is multi-tenant and hierarchical:
+The academic architecture is multi-tenant and hierarchical with recent enhancements for improved scheduling efficiency and program management:
 - Establishment-scoped entities ensure isolation across institutions.
 - Hierarchical organization from Cycles down to Classes supports curriculum structuring.
 - Assessment and scheduling are period-aware and tied to academic calendars.
 - Report cards aggregate evaluations and notes per period and class.
+- Enhanced timetable system with hour fusion and enriched preferences.
+- Program versioning support with timeless program management and echelon normalization.
 
 ```mermaid
 classDiagram
@@ -273,6 +306,19 @@ class DiplomeEleve {
 +date_delivrance
 +etablissement_id
 }
+class Programme {
++id
++nom
++version
++etablissement_id
+}
+class Echelon {
++id
++nom
++programme_id
++ordre
++etablissement_id
+}
 Cycle --> Niveau : "has many"
 Niveau --> Filiere : "has many"
 Filiere --> Classe : "has many"
@@ -290,6 +336,8 @@ AnneeScolaire --> Periode : "defines"
 Competence --> Evaluation : "assessed by"
 ExamenNational --> Eleve : "taken by"
 DiplomeEleve --> Eleve : "issued to"
+Programme --> Echelon : "contains"
+Programme --> Classe : "applied to"
 ```
 
 **Diagram sources**
@@ -315,6 +363,8 @@ DiplomeEleve --> Eleve : "issued to"
 - [073-competence-unique-composite.sql](file://backend/database/migrations/073-competence-unique-composite.sql)
 - [074-matiere-niveau-unique-composite.sql](file://backend/database/migrations/074-matiere-niveau-unique-composite.sql)
 - [106-rename-sequence-to-evaluation.sql](file://backend/database/migrations/106-rename-sequence-to-evaluation.sql)
+- [114-normalisation-echelons-structurels.sql](file://backend/database/migrations/114-normalisation-echelons-structurels.sql)
+- [116-programme-intemporel.sql](file://backend/database/migrations/116-programme-intemporel.sql)
 
 ## Detailed Component Analysis
 
@@ -447,10 +497,11 @@ Evaluation --> Note : "records"
 - [competences/entities/Competence.entity.ts](file://backend/src/modules/competences/entities/Competence.entity.ts)
 - [notes/entities/Note.entity.ts](file://backend/src/modules/notes/entities/Note.entity.ts)
 
-### Timetable Scheduling and Room Allocation
-- Sessions are scheduled for Classes, Subjects, and Teachers in Rooms.
+### Enhanced Timetable Scheduling and Room Allocation
+- Sessions are scheduled for Classes, Subjects, and Teachers in Rooms with optimized hour fusion.
 - Conflict resolution prevents double-booking of Rooms, Teachers, and Classes.
 - Primary room association per Class aids default allocation.
+- Enhanced preferences system provides detailed scheduling customization.
 
 ```mermaid
 flowchart TD
@@ -460,13 +511,19 @@ CheckTeacher --> CheckClass["Check Class Availability"]
 CheckClass --> |All Clear| Confirm["Confirm Session"]
 CheckClass --> |Conflict| Resolve["Resolve Conflict"]
 Resolve --> Replan["Replan Session"]
-Confirm --> Publish["Publish Schedule"]
+Confirm --> HourFusion["Apply Hour Fusion Rules"]
+HourFusion --> Publish["Publish Schedule"]
 ```
+
+**Updated** Enhanced with hour fusion capabilities and enriched preferences system for improved scheduling efficiency.
 
 **Diagram sources**
 - [063-creer-module-emploi-du-temps.sql](file://backend/database/migrations/063-creer-module-emploi-du-temps.sql)
 - [070-module-salles.sql](file://backend/database/migrations/070-module-salles.sql)
 - [100-classes-salle-principale.sql](file://backend/database/migrations/100-classes-salle-principale.sql)
+- [114-fusion-creneaux-horaires.sql](file://backend/database/migrations/114-fusion-creneaux-horaires.sql)
+- [117-heure-cours-classe-annee.sql](file://backend/database/migrations/117-heure-cours-classe-annee.sql)
+- [118-preferences-edt-enrichi.sql](file://backend/database/migrations/118-preferences-edt-enrichi.sql)
 - [emploi-du-temps/entities/PlanningSession.entity.ts](file://backend/src/modules/emploi-du-temps/entities/PlanningSession.entity.ts)
 - [salles/entities/Salle.entity.ts](file://backend/src/modules/salles/entities/Salle.entity.ts)
 
@@ -474,6 +531,9 @@ Confirm --> Publish["Publish Schedule"]
 - [063-creer-module-emploi-du-temps.sql](file://backend/database/migrations/063-creer-module-emploi-du-temps.sql)
 - [070-module-salles.sql](file://backend/database/migrations/070-module-salles.sql)
 - [100-classes-salle-principale.sql](file://backend/database/migrations/100-classes-salle-principale.sql)
+- [114-fusion-creneaux-horaires.sql](file://backend/database/migrations/114-fusion-creneaux-horaires.sql)
+- [117-heure-cours-classe-annee.sql](file://backend/database/migrations/117-heure-cours-classe-annee.sql)
+- [118-preferences-edt-enrichi.sql](file://backend/database/migrations/118-preferences-edt-enrichi.sql)
 - [emploi-du-temps/entities/PlanningSession.entity.ts](file://backend/src/modules/emploi-du-temps/entities/PlanningSession.entity.ts)
 - [salles/entities/Salle.entity.ts](file://backend/src/modules/salles/entities/Salle.entity.ts)
 
@@ -563,24 +623,136 @@ Diploma-->>Student : "Recorded in academic history"
 - [diplomes-eleves/entities/DiplomeEleve.entity.ts](file://backend/src/modules/diplomes-eleves/entities/DiplomeEleve.entity.ts)
 - [eleves/entities/Eleve.entity.ts](file://backend/src/modules/eleves/entities/Eleve.entity.ts)
 
+## Recent Schema Enhancements
+
+### Timetable Hour Fusion Optimization
+The latest schema includes significant improvements to timetable scheduling through hour fusion capabilities. This enhancement allows for more efficient time slot management and reduces scheduling conflicts.
+
+```mermaid
+flowchart TD
+OriginalSlots["Original Time Slots"] --> Analyze["Analyze Adjacent Slots"]
+Analyze --> Merge["Merge Compatible Hours"]
+Merge --> Validate["Validate No Conflicts"]
+Validate --> Optimized["Optimized Schedule"]
+```
+
+**Diagram sources**
+- [114-fusion-creneaux-horaires.sql](file://backend/database/migrations/114-fusion-creneaux-horaires.sql)
+- [117-heure-cours-classe-annee.sql](file://backend/database/migrations/117-heure-cours-classe-annee.sql)
+
+**Section sources**
+- [114-fusion-creneaux-horaires.sql](file://backend/database/migrations/114-fusion-creneaux-horaires.sql)
+- [117-heure-cours-classe-annee.sql](file://backend/database/migrations/117-heure-cours-classe-annee.sql)
+
+### Echelon Normalization and Structural Improvements
+Structural normalization of echelons provides better organization and management of academic levels within programs. This change improves data consistency and reduces redundancy.
+
+```mermaid
+flowchart TD
+OldStructure["Legacy Echelon Structure"] --> Normalize["Normalize Structure"]
+Normalize --> AddOrder["Add Ordering Support"]
+AddOrder --> ImproveRelations["Improve Relationships"]
+ImproveRelations --> NewStructure["Normalized Echelon Structure"]
+```
+
+**Diagram sources**
+- [114-normalisation-echelons-structurels.sql](file://backend/database/migrations/114-normalisation-echelons-structurels.sql)
+
+**Section sources**
+- [114-normalisation-echelons-structurels.sql](file://backend/database/migrations/114-normalisation-echelons-structurels.sql)
+
+### Configuration Cleanup and Material-Class Separation
+Removal of redundant configuration tables and separation of material-class relationships improves database efficiency and maintains cleaner data architecture.
+
+```mermaid
+flowchart TD
+OldConfig["Material-Class Config"] --> IdentifyRedundant["Identify Redundant Data"]
+IdentifyRedundant --> RemoveTables["Remove Unnecessary Tables"]
+RemoveTables --> CleanData["Clean and Migrate Data"]
+CleanData --> NewStructure["Clean Database Structure"]
+```
+
+**Diagram sources**
+- [115-supprimer-config-matiere-classe.sql](file://backend/database/migrations/115-supprimer-config-matiere-classe.sql)
+
+**Section sources**
+- [115-supprimer-config-matiere-classe.sql](file://backend/database/migrations/115-supprimer-config-matiere-classe.sql)
+
+### Program Versioning and Timeless Programs
+New program versioning support enables timeless program management with proper version control and historical tracking capabilities.
+
+```mermaid
+flowchart TD
+CreateProgram["Create Base Program"] --> AddVersion["Add Version Control"]
+AddVersion --> TrackChanges["Track Changes Over Time"]
+TrackChanges --> ManageVersions["Manage Multiple Versions"]
+ManageVersions --> DeployVersion["Deploy Specific Version"]
+```
+
+**Diagram sources**
+- [116-programme-intemporel.sql](file://backend/database/migrations/116-programme-intemporel.sql)
+
+**Section sources**
+- [116-programme-intemporel.sql](file://backend/database/migrations/116-programme-intemporel.sql)
+
+### Enhanced Timetable Preferences System
+The enriched preferences system provides detailed customization options for timetable scheduling, including advanced conflict resolution and user preference management.
+
+```mermaid
+flowchart TD
+UserPreferences["User Preferences"] --> ScheduleRules["Schedule Rules Engine"]
+ScheduleRules --> ConflictDetection["Conflict Detection"]
+ConflictDetection --> AutoResolution["Auto Resolution"]
+AutoResolution --> OptimizedSchedule["Optimized Schedule"]
+```
+
+**Diagram sources**
+- [118-preferences-edt-enrichi.sql](file://backend/database/migrations/118-preferences-edt-enrichi.sql)
+
+**Section sources**
+- [118-preferences-edt-enrichi.sql](file://backend/database/migrations/118-preferences-edt-enrichi.sql)
+
+### Nomenclature Constraints Fix
+Unique constraint fixes for nomenclature tables ensure data integrity and prevent duplicate entries across different establishments.
+
+```mermaid
+flowchart TD
+ExistingData["Existing Nomenclature Data"] --> AuditConstraints["Audit Current Constraints"]
+AuditConstraints --> IdentifyIssues["Identify Constraint Issues"]
+IdentifyIssues --> FixConstraints["Fix Unique Constraints"]
+FixConstraints --> VerifyIntegrity["Verify Data Integrity"]
+```
+
+**Diagram sources**
+- [113-fix-unique-constraints-nomenclatures.sql](file://backend/database/migrations/113-fix-unique-constraints-nomenclatures.sql)
+
+**Section sources**
+- [113-fix-unique-constraints-nomenclatures.sql](file://backend/database/migrations/113-fix-unique-constraints-nomenclatures.sql)
+
 ## Dependency Analysis
-Key dependency chains:
+Key dependency chains with recent enhancements:
 - Academic hierarchy drives class composition and enrollment.
 - Subject assignments drive scheduling and assessment opportunities.
 - Evaluations and Notes feed Bulletin aggregation and grade computation.
-- Scheduling depends on Room availability and teacher/class constraints.
+- Enhanced scheduling depends on Room availability, teacher/class constraints, and hour fusion rules.
+- Program versioning dependencies support echelon management and timeless curriculum administration.
 - Calendar periods gate assessment windows and report card generation.
+- Configuration cleanup reduces unnecessary dependencies between material and class entities.
 
 ```mermaid
 graph TB
 Hierarchy["Academic Hierarchy"] --> Enrollment["Student Enrollment"]
-Hierarchy --> Scheduling["Timetable Scheduling"]
+Hierarchy --> Scheduling["Enhanced Timetable Scheduling"]
 Subjects["Subjects & Assignments"] --> Scheduling
 Subjects --> Assessment["Evaluations & Notes"]
 Calendar["Calendar & Periods"] --> Assessment
 Assessment --> Reporting["Bulletins & Grades"]
 Scheduling --> Resources["Rooms & Teachers"]
+Scheduling --> HourFusion["Hour Fusion Rules"]
+Scheduling --> Preferences["Enhanced Preferences"]
 Enrollment --> Reporting
+ProgramVersioning["Program Versioning"] --> EchelonManagement["Echelon Management"]
+EchelonManagement --> Curriculum["Curriculum Administration"]
 ```
 
 [No sources needed since this diagram shows conceptual workflow, not actual code structure]
@@ -608,14 +780,22 @@ Enrollment --> Reporting
 - [073-competence-unique-composite.sql](file://backend/database/migrations/073-competence-unique-composite.sql)
 - [074-matiere-niveau-unique-composite.sql](file://backend/database/migrations/074-matiere-niveau-unique-composite.sql)
 - [106-rename-sequence-to-evaluation.sql](file://backend/database/migrations/106-rename-sequence-to-evaluation.sql)
+- [113-fix-unique-constraints-nomenclatures.sql](file://backend/database/migrations/113-fix-unique-constraints-nomenclatures.sql)
+- [114-fusion-creneaux-horaires.sql](file://backend/database/migrations/114-fusion-creneaux-horaires.sql)
+- [114-normalisation-echelons-structurels.sql](file://backend/database/migrations/114-normalisation-echelons-structurels.sql)
+- [115-supprimer-config-matiere-classe.sql](file://backend/database/migrations/115-supprimer-config-matiere-classe.sql)
+- [116-programme-intemporel.sql](file://backend/database/migrations/116-programme-intemporel.sql)
+- [117-heure-cours-classe-annee.sql](file://backend/database/migrations/117-heure-cours-classe-annee.sql)
+- [118-preferences-edt-enrichi.sql](file://backend/database/migrations/118-preferences-edt-enrichi.sql)
 
 ## Performance Considerations
 - Indexing strategies should prioritize foreign keys used in frequent joins (e.g., classe_id, matiere_id, evaluation_id).
 - Composite unique constraints reduce duplicate data and improve query efficiency.
 - Partitioning large tables (Notes, Bulletins) by academic year can enhance reporting performance.
 - Avoid over-fetching in schedule conflict checks; use targeted queries with existence checks.
-
-[No sources needed since this section provides general guidance]
+- **Updated** Hour fusion optimization reduces computational overhead in timetable generation.
+- **Updated** Echelon normalization improves query performance through reduced table joins.
+- **Updated** Configuration cleanup eliminates unnecessary database lookups and improves response times.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -623,21 +803,24 @@ Common issues and resolutions:
 - Scheduling conflicts: Validate Room, Teacher, and Class availability before confirmation.
 - Grade calculation discrepancies: Verify coefficient values and evaluation coverage.
 - Period misalignment: Confirm Period boundaries match assessment windows.
+- **Updated** Hour fusion conflicts: Check adjacent time slot compatibility and validation rules.
+- **Updated** Echelon ordering issues: Verify proper sequence numbers and parent-child relationships.
+- **Updated** Program version conflicts: Ensure proper version control and deployment procedures.
 
 **Section sources**
 - [074-matiere-niveau-unique-composite.sql](file://backend/database/migrations/074-matiere-niveau-unique-composite.sql)
 - [063-creer-module-emploi-du-temps.sql](file://backend/database/migrations/063-creer-module-emploi-du-temps.sql)
 - [060-ajouter-affectation-matiere-coefficient.sql](file://backend/database/migrations/060-ajouter-affectation-matiere-coefficient.sql)
 - [102-periodes-hierarchie.sql](file://backend/database/migrations/102-periodes-hierarchie.sql)
+- [114-fusion-creneaux-horaires.sql](file://backend/database/migrations/114-fusion-creneaux-horaires.sql)
+- [114-normalisation-echelons-structurels.sql](file://backend/database/migrations/114-normalisation-echelons-structurels.sql)
+- [116-programme-intemporel.sql](file://backend/database/migrations/116-programme-intemporel.sql)
 
 ## Conclusion
-The eLISAschool academic schema provides a robust, multi-tenant foundation for managing educational hierarchies, student lifecycles, subject assignments, competency-based assessments, scheduling, and reporting. Its design emphasizes clarity, scalability, and operational integrity through well-defined relationships, constraints, and calendar-driven workflows.
-
-[No sources needed since this section summarizes without analyzing specific files]
+The eLISAschool academic schema provides a robust, multi-tenant foundation for managing educational hierarchies, student lifecycles, subject assignments, competency-based assessments, scheduling, and reporting. Its design emphasizes clarity, scalability, and operational integrity through well-defined relationships, constraints, and calendar-driven workflows. Recent enhancements through seven major schema restructuring migrations have significantly improved timetable efficiency, program versioning capabilities, echelon management, and overall system performance while maintaining backward compatibility and data integrity.
 
 ## Appendices
 - Entity relationship overview: See Architecture Overview diagram.
 - Migration timeline: Refer to referenced migration files for evolution details.
 - Module integration points: Consult module entity files for API and service hooks.
-
-[No sources needed since this section provides general references]
+- **Updated** Recent enhancements: Review migrations 113-118 for detailed schema improvements.

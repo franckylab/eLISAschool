@@ -1,0 +1,1 @@
+TypeORM with PostgreSQL enums (`TypeNotification`, `StatutNotification`, `PrioriteNotification`), Express Router + zod schema validation, node-cron for scheduling, Nodemailer for email delivery; runtime toggles come from the shared configuration module rather than env-only.

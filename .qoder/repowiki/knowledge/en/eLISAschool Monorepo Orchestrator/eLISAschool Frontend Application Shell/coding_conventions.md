@@ -1,0 +1,5 @@
+- Each feature module follows the `<feature>/components/<page>.tsx + <feature>/hooks/use-<feature>.ts + <feature>/types/*.ts + index.ts barrel` layout, exposing only the page and hooks to consumers.
+- Data access is exclusively through React Query hooks in `features/*/hooks/`, never direct fetch calls inside components.
+- UI building blocks live in `components/ui/` and are composed via `cn()` / `cva` variants; features should not duplicate primitive buttons, inputs or tables.
+- Route guards and permission checks are applied at the route level using `_auth.*` nested layouts and `RequirePermission` / `PermissionGate` wrappers rather than inside pages.
+- Internationalized strings are split one JSON file per feature under `locales/{fr,en}/<feature>.json` and consumed via `useTranslation`.

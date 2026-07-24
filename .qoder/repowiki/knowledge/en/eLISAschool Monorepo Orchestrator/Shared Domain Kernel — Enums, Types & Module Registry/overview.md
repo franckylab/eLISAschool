@@ -1,0 +1,1 @@
+TypeScript shared package providing the application's single source of truth for roles, permissions, module metadata, API types, Zod validators and system guards consumed by both backend and frontend.

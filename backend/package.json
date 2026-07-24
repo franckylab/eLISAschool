@@ -66,6 +66,7 @@
         "@types/multer": "^2.2.0",
         "@types/node": "^22.10.2",
         "@types/nodemailer": "^8.0.0",
+        "@types/pg": "^8.20.0",
         "@types/qrcode": "^1.5.5",
         "@types/swagger-ui-express": "^4.1.8",
         "@types/uuid": "^10.0.0",

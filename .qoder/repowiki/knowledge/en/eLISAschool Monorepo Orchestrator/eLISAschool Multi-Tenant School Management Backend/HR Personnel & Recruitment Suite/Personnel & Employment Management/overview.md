@@ -1,0 +1,1 @@
+HR module managing staff members, employment contracts, job assignments (fonctions), teaching hours, absences, evaluations and personnel dashboards.

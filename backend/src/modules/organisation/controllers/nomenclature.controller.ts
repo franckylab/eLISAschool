@@ -68,7 +68,7 @@ router.post('/echelons-structurels', authMiddleware, requirePermission('organisa
 
 router.get('/echelons-structurels/:id', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const data = await echelonStructurelService.findById(req.params.id);
+        const data = await echelonStructurelService.findById(req.params.id, req.utilisateur?.etablissementId);
         res.json({ success: true, data });
     } catch (error) { next(error); }
 });
@@ -77,14 +77,14 @@ router.patch('/echelons-structurels/:id', authMiddleware, requirePermission('org
     try {
         const dto = validate(updateEchelonStructurelSchema, req.body);
         delete dto.etablissementId;
-        const updated = await echelonStructurelService.update(req.params.id, dto);
+        const updated = await echelonStructurelService.update(req.params.id, dto, req.utilisateur?.etablissementId);
         res.json({ success: true, data: updated });
     } catch (error) { next(error); }
 });
 
 router.delete('/echelons-structurels/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await echelonStructurelService.delete(req.params.id);
+        await echelonStructurelService.delete(req.params.id, req.utilisateur?.etablissementId);
         res.json({ success: true, message: 'Échelon structurel supprimé' });
     } catch (error) { next(error); }
 });
@@ -123,7 +123,7 @@ router.post('/niveaux-responsabilite', authMiddleware, requirePermission('organi
 
 router.get('/niveaux-responsabilite/:id', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const data = await niveauResponsabiliteService.findById(req.params.id);
+        const data = await niveauResponsabiliteService.findById(req.params.id, req.utilisateur?.etablissementId);
         res.json({ success: true, data });
     } catch (error) { next(error); }
 });
@@ -132,14 +132,14 @@ router.patch('/niveaux-responsabilite/:id', authMiddleware, requirePermission('o
     try {
         const dto = validate(updateNiveauResponsabiliteSchema, req.body);
         delete dto.etablissementId;
-        const updated = await niveauResponsabiliteService.update(req.params.id, dto);
+        const updated = await niveauResponsabiliteService.update(req.params.id, dto, req.utilisateur?.etablissementId);
         res.json({ success: true, data: updated });
     } catch (error) { next(error); }
 });
 
 router.delete('/niveaux-responsabilite/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await niveauResponsabiliteService.delete(req.params.id);
+        await niveauResponsabiliteService.delete(req.params.id, req.utilisateur?.etablissementId);
         res.json({ success: true, message: 'Niveau de responsabilité supprimé' });
     } catch (error) { next(error); }
 });
@@ -178,7 +178,7 @@ router.post('/templates', authMiddleware, requirePermission('organisation:templa
 
 router.get('/templates/:id', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const data = await templateOrganisationService.findById(req.params.id);
+        const data = await templateOrganisationService.findById(req.params.id, req.utilisateur?.etablissementId);
         res.json({ success: true, data });
     } catch (error) { next(error); }
 });
@@ -187,14 +187,14 @@ router.patch('/templates/:id', authMiddleware, requirePermission('organisation:t
     try {
         const dto = validate(updateTemplateOrganisationSchema, req.body);
         delete dto.etablissementId;
-        const updated = await templateOrganisationService.update(req.params.id, dto);
+        const updated = await templateOrganisationService.update(req.params.id, dto, req.utilisateur?.etablissementId);
         res.json({ success: true, data: updated });
     } catch (error) { next(error); }
 });
 
 router.delete('/templates/:id', authMiddleware, requirePermission('organisation:templates:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await templateOrganisationService.delete(req.params.id);
+        await templateOrganisationService.delete(req.params.id, req.utilisateur?.etablissementId);
         res.json({ success: true, message: 'Template d\'organisation supprimé' });
     } catch (error) { next(error); }
 });
@@ -232,7 +232,7 @@ router.post('/modes-remuneration', authMiddleware, requirePermission('organisati
 
 router.get('/modes-remuneration/:id', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const data = await modeRemunerationService.findById(req.params.id);
+        const data = await modeRemunerationService.findById(req.params.id, req.utilisateur?.etablissementId);
         res.json({ success: true, data });
     } catch (error) { next(error); }
 });
@@ -241,14 +241,14 @@ router.patch('/modes-remuneration/:id', authMiddleware, requirePermission('organ
     try {
         const dto = validate(updateModeRemunerationSchema, req.body);
         delete dto.etablissementId;
-        const updated = await modeRemunerationService.update(req.params.id, dto);
+        const updated = await modeRemunerationService.update(req.params.id, dto, req.utilisateur?.etablissementId);
         res.json({ success: true, data: updated });
     } catch (error) { next(error); }
 });
 
 router.delete('/modes-remuneration/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await modeRemunerationService.delete(req.params.id);
+        await modeRemunerationService.delete(req.params.id, req.utilisateur?.etablissementId);
         res.json({ success: true, message: 'Mode de rémunération supprimé' });
     } catch (error) { next(error); }
 });

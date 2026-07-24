@@ -1,0 +1,1 @@
+TypeORM entities with `uuid` primary keys, PostgreSQL-specific columns (`timestamp with time zone`, `time`, `decimal(precision,scale)`), and raw SQL fallback in `createOnboarding` (`membre_personnel WHERE id = $1 AND etablissementId = $2`).

@@ -15,6 +15,19 @@ import {
 import type { ModifierPosteDto } from '../types/organisation.types';
 import type { CreatePosteDto } from '@/features/postes/types/poste.types';
 
+/** Clés de cache partagées pour l'invalidation */
+const ORGA_KEYS = {
+    organigramme: { all: ['organisation', 'organigramme'] as const },
+    unites: { all: ['organisation', 'unites'] as const },
+    stats: { all: ['organisation', 'statistiques'] as const },
+};
+
+function invaliderCacheOrg(qc: ReturnType<typeof useQueryClient>) {
+    qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
+    qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
+    qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
+}
+
 export function useCreerPoste() {
     const qc = useQueryClient();
     const { mutateAsync, ...rest } = useCreerPosteCentral();
@@ -23,8 +36,7 @@ export function useCreerPoste() {
         ...rest,
         mutateAsync: async (dto: CreatePosteDto) => {
             const result = await mutateAsync(dto);
-            qc.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
-            qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
+            invaliderCacheOrg(qc);
             return result;
         },
     };
@@ -38,8 +50,7 @@ export function useModifierPoste() {
         ...rest,
         mutateAsync: async ({ id, ...dto }: { id: string } & ModifierPosteDto) => {
             const result = await mutateAsync({ id, dto });
-            qc.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
-            qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
+            invaliderCacheOrg(qc);
             return result;
         },
     };
@@ -53,8 +64,7 @@ export function useSupprimerPoste() {
         ...rest,
         mutateAsync: async (id: string) => {
             const result = await mutateAsync(id);
-            qc.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
-            qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
+            invaliderCacheOrg(qc);
             return result;
         },
     };

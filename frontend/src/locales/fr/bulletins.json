@@ -5,8 +5,18 @@
     "classe": "Classe",
     "periode": "Période",
     "moyenne": "Moyenne",
-    "rang": "Rang",
+    "rang": "Rang {{rang}}",
     "effectif": "Effectif",
     "appreciation": "Appréciation",
-    "exporter": "Exporter PDF"
+    "exporterPdf": "Exporter PDF",
+    "rechercher": "Rechercher un élève...",
+    "actions": "Actions",
+    "supprimer": "Supprimer",
+    "confirmerSupprimerTitre": "Supprimer le bulletin",
+    "confirmerSupprimerMessage": "Cette action est irréversible. Voulez-vous vraiment supprimer ce bulletin ?",
+    "chargement": "Erreur lors du chargement des bulletins",
+    "bulletinCount": "{{count}} bulletin(s)",
+    "matieres": "Matières",
+    "dateGeneration": "Date de génération",
+    "detail": "Détail"
 }

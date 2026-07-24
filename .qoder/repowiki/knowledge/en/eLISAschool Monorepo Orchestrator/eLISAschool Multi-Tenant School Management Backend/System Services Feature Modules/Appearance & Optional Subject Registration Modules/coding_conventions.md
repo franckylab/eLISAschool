@@ -1,0 +1,7 @@
+- Each module exposes a singleton service instance (`apparenceService`, `inscriptionOptionService`) created at export time rather than using dependency injection containers.
+- Request validation is performed inside each controller with a local `validate(schema, data)` helper that calls `schema.safeParse()` and throws `AppError` with code `VALIDATION_ERROR` on failure.
+- All database access goes through TypeORM repositories obtained via `AppDataSource.getRepository(Entity)` in the service constructor, never via direct imports of query builders except in specialized queries like statistics.
+- Multi-tenancy is enforced by always filtering queries on `etablissementId`, which is injected from `req.utilisateur.etablissementId` in controllers.
+- Entities use UUID primary keys, `@Index` decorators on frequently queried columns, and `@CreateDateColumn`/`@UpdateDateColumn` for audit timestamps.
+- Business errors are thrown as `AppError` instances with a human message, HTTP status code, and machine-readable error code string (e.g., `FOND_DEJA_SELECTIONNE`, `OPTION_ALREADY_ACTIVE`).
+- Soft deletes are modeled by updating a `statut` enum field (ACTIVE/ABANDONNEE/EN_ATTENTE) and setting a `dateAbandon` timestamp instead of physically removing rows.

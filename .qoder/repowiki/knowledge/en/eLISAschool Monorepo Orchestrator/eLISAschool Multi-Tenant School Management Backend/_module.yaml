@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend
+title: eLISAschool Multi-Tenant School Management Backend
+scope:
+    - backend/
+source_files: []
+depends_on: []
+related_to: []

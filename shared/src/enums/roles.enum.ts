@@ -326,6 +326,7 @@ export enum Permission {
     EMPLOI_DU_TEMPS_REALISATION_VALIDATE = 'emploi-du-temps:realisation:validate',
     EMPLOI_DU_TEMPS_PREFERENCES_MANAGE = 'emploi-du-temps:preferences:manage',
     EMPLOI_DU_TEMPS_TEMPLATES_MANAGE = 'emploi-du-temps:templates:manage',
+    EMPLOI_DU_TEMPS_VERIFIER_CONFLITS = 'emploi-du-temps:verifier-conflits',
     EMPLOI_DU_TEMPS_ALL_VIEW = 'emploi-du-temps:all:view',
 
     // ==================================
@@ -573,6 +574,7 @@ export enum Permission {
     PROGRAMMES_CORRELATION_READ = 'programmes:correlation:read',
     PROGRAMMES_CORRELATION_EVALUATE = 'programmes:correlation:evaluate',
     PROGRAMMES_DASHBOARD_READ = 'programmes:dashboard:read',
+    PROGRAMMES_HISTORISER = 'programmes:historiser',
 
     // ==================================
     // ORIENTATION & SCORING
@@ -1013,6 +1015,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.EMPLOI_DU_TEMPS_REALISATION_VALIDATE,
         Permission.EMPLOI_DU_TEMPS_PREFERENCES_MANAGE,
         Permission.EMPLOI_DU_TEMPS_TEMPLATES_MANAGE,
+        Permission.EMPLOI_DU_TEMPS_VERIFIER_CONFLITS,
         Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
         // Organisation
         Permission.ORGANISATION_VIEW,

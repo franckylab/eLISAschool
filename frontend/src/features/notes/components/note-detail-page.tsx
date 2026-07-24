@@ -18,6 +18,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { NoteFormModal } from './note-form-modal';
 
 type OngletActif = 'informations' | 'statistiques';
 
@@ -36,6 +37,7 @@ export function NoteDetailPage() {
     const statsQuery = useStatistiquesNotes(note?.periodeId ?? '');
     const [ongletActif, setOngletActif] = useTabState<OngletActif>('informations');
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [formOpen, setFormOpen] = useState(false);
     const supprimer = useSupprimerNote();
 
     const handleDelete = async () => {
@@ -78,7 +80,7 @@ export function NoteDetailPage() {
                 onBack={() => navigate({ to: '/notes' })}
                 actions={
                     <div className="flex gap-2">
-                        <ElisaButton variant="outline" size="sm" icon={<Edit className="h-4 w-4" />}>
+                        <ElisaButton variant="outline" size="sm" icon={<Edit className="h-4 w-4" />} onClick={() => setFormOpen(true)}>
                             {t('modifier')}
                         </ElisaButton>
                         <ElisaButton variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => setDeleteConfirmOpen(true)}>
@@ -105,7 +107,7 @@ export function NoteDetailPage() {
                                     <InfoField label={t('matiere')} value={matiereLabel} icon={<BookOpen className="h-3.5 w-3.5" />} />
                                     <InfoField label={t('valeur')} value={`${note.valeur}/20`} icon={<Award className="h-3.5 w-3.5" />} />
                                     <InfoField label={t('coefficient')} value={note.coefficient || 1} icon={<Percent className="h-3.5 w-3.5" />} />
-                                    <InfoField label={t('type')} value={t(note.type)} icon={<Hash className="h-3.5 w-3.5" />} />
+                                    <InfoField label={t('type')} value={t(note.typeEvaluation?.toLowerCase() || '')} icon={<Hash className="h-3.5 w-3.5" />} />
                                     <InfoField label={t('enseignant')} value={enseignantLabel} icon={<User className="h-3.5 w-3.5" />} />
                                 </div>
                             </div>
@@ -119,8 +121,8 @@ export function NoteDetailPage() {
                                 </h3>
                                 <div className="border-b border-border mb-4" />
                                 <div className="space-y-3">
-                                    {note.remarque && (
-                                        <InfoField label={t('remarque')} value={note.remarque} />
+                                    {note.commentaire && (
+                                        <InfoField label={t('remarque')} value={note.commentaire} />
                                     )}
                                     {note.dateEvaluation && (
                                         <InfoField label={t('dateEvaluation')} value={formatDate(note.dateEvaluation)} />
@@ -173,6 +175,12 @@ export function NoteDetailPage() {
                     </div>
                 )}
             </TabsContent>
+
+            <NoteFormModal
+                open={formOpen}
+                onOpenChange={setFormOpen}
+                note={note}
+            />
 
             <ConfirmDialog
                 open={deleteConfirmOpen}

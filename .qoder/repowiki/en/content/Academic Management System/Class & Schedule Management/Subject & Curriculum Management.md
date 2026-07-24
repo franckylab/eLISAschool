@@ -11,6 +11,7 @@
 - [089-finalisation-architecture-academique-v2.sql](file://backend/database/migrations/089-finalisation-architecture-academique-v2.sql)
 - [090-correction-migration-088-camelcase.sql](file://backend/database/migrations/090-correction-migration-088-camelcase.sql)
 - [091-peuplement-architecture-academique.sql](file://backend/database/migrations/091-peuplement-architecture-academique.sql)
+- [115-supprimer-config-matiere-classe.sql](file://backend/database/migrations/115-supprimer-config-matiere-classe.sql)
 - [matiere.controller.ts](file://backend/src/modules/matieres/controllers/matiere.controller.ts)
 - [matiere.service.ts](file://backend/src/modules/matieres/services/matiere.service.ts)
 - [matiere.entity.ts](file://backend/src/modules/matieres/entities/matiere.entity.ts)
@@ -26,6 +27,13 @@
 - [notes.service.ts](file://backend/src/modules/notes/services/notes.service.ts)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Updated subject management consolidation by removing ConfigurationMatiereClasse entity
+- Enhanced AffectationMatiere for coefficient/bareme assignments
+- Simplified matieres.controller.ts and matieres.service.ts architecture
+- Added documentation for the new simplified subject assignment workflow
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -39,19 +47,20 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document explains eLISAschool’s Subject and Curriculum Management system, focusing on:
+This document explains eLISAschool's Subject and Curriculum Management system, focusing on:
 - Subject creation, categorization, and assignment to academic levels and cycles
+- **Updated**: Simplified subject management with consolidated entity structure
 - Curriculum alignment with competency frameworks
 - Coefficient-based grade weighting and report card integration
 - Program structure including chapters, learning objectives, and assessment criteria
 - Practical examples for subject lifecycle management, curriculum versioning, and cross-referencing subjects and competencies
 - Integration points with timetable generation and grade calculation systems
 
-The content is grounded in the repository’s database migrations and module implementations for subjects (matières), programs (curriculum), competencies, timetables, and grading.
+The content is grounded in the repository's database migrations and module implementations for subjects (matières), programs (curriculum), competencies, timetables, and grading, reflecting the recent consolidation of subject management entities.
 
 ## Project Structure
 The Subject and Curriculum Management spans several modules and their corresponding database migrations:
-- Subjects (matières): entities, services, controllers
+- Subjects (matières): entities, services, controllers - **Updated**: Simplified architecture after ConfigurationMatiereClasse removal
 - Programs (curriculum): entities, services, controllers
 - Competencies: entities, services, controllers
 - Timetable (emploi du temps): service/controller
@@ -90,6 +99,7 @@ C --> DB
 - Subject (Matière)
   - Represents a teachable subject within an establishment
   - Supports categorization and association to academic levels and cycles
+  - **Updated**: Now uses simplified AffectationMatiere for coefficient/bareme assignments instead of separate ConfigurationMatiereClasse entity
   - Used by timetable scheduling and grading workflows
 - Program (Curriculum)
   - Defines structured curriculum content per subject
@@ -128,7 +138,7 @@ Key implementation references:
 - [notes.controller.ts](file://backend/src/modules/notes/controllers/notes.controller.ts)
 
 ## Architecture Overview
-The system models subjects as first-class entities linked to academic levels and cycles, while programs define curriculum structure and align with competencies. Timetable and grading subsystems consume these definitions to schedule instruction and compute weighted results.
+The system models subjects as first-class entities linked to academic levels and cycles, while programs define curriculum structure and align with competencies. **Updated**: The recent consolidation removed the ConfigurationMatiereClasse entity, simplifying the architecture by moving coefficient and bareme assignments directly to AffectationMatiere. Timetable and grading subsystems consume these definitions to schedule instruction and compute weighted results.
 
 ```mermaid
 classDiagram
@@ -139,6 +149,14 @@ class Matiere {
 +categorie
 +niveauId
 +cycleId
++etablissementId
+}
+class AffectationMatiere {
++id
++matiereId
++niveauId
++coefficient
++bareme
 +etablissementId
 }
 class Programme {
@@ -171,8 +189,10 @@ class Note {
 +coefficient
 +note
 }
+Matiere "1" --> "many" AffectationMatiere : "has assignments"
 Matiere "1" --> "many" Programme : "has"
 Programme "many" --> "many" Competence : "aligns"
+AffectationMatiere --> Matiere : "references"
 Matiere "1" --> "many" EmploiDuTemps : "scheduled"
 Matiere "1" --> "many" Note : "graded"
 ```
@@ -189,7 +209,7 @@ Matiere "1" --> "many" Note : "graded"
 ### Subject Lifecycle Management
 End-to-end flow for creating, assigning, and retiring a subject:
 - Create subject with category and academic associations
-- Assign to levels/cycles for visibility and filtering
+- **Updated**: Assign coefficients and bareme through simplified AffectationMatiere instead of separate configuration entity
 - Schedule via timetable
 - Record assessments and compute weighted grades
 - Archive or deactivate when no longer used
@@ -208,9 +228,9 @@ MatSvc->>DB : insert matiere
 DB-->>MatSvc : subjectId
 MatSvc-->>MatCtrl : subject
 MatCtrl-->>Admin : 201 Created
-Admin->>MatCtrl : PUT /subjects/ : id/assign-level-cycle
-MatCtrl->>MatSvc : assignToLevelCycle(subjectId, levelId, cycleId)
-MatSvc->>DB : update matiere
+Admin->>MatCtrl : PUT /subjects/ : id/affectation
+MatCtrl->>MatSvc : assignCoefficientBareme(subjectId, data)
+MatSvc->>DB : insert/update affectation_matiere
 DB-->>MatSvc : ok
 MatSvc-->>MatCtrl : updated subject
 MatCtrl-->>Admin : 200 OK
@@ -269,7 +289,7 @@ Iterate --> DefineChapters
 
 ### Coefficient Calculations for Grade Weighting
 Grade weighting uses coefficients associated with assessments and subjects:
-- Coefficients can be defined at subject assignment or evaluation level
+- **Updated**: Coefficients are now managed through AffectationMatiere entity, consolidating subject-level weight assignments
 - Weighted averages are computed by summing (note × coefficient) divided by total coefficient
 - Bulletin tables aggregate final results per subject and period
 
@@ -330,7 +350,7 @@ TimetableCtrl-->>Scheduler : 201 Created
 
 #### Example: Subject Creation and Assignment
 - Create a new subject with category and code
-- Assign to a specific academic level and cycle
+- **Updated**: Assign coefficients and bareme through simplified AffectationMatiere endpoint
 - Verify availability for timetable scheduling
 
 References:
@@ -425,6 +445,7 @@ MatiereEntity --- NotesSvc
 
 ## Performance Considerations
 - Indexing: Ensure indexes on foreign keys linking subjects to levels/cycles and programmes to subjects improve query performance for scheduling and reporting.
+- **Updated**: Simplified entity structure reduces database joins and improves query performance for subject assignments.
 - Batch operations: When generating timetables or computing grades, prefer batch inserts and updates to reduce transaction overhead.
 - Pagination: For large lists of subjects or programmes, implement pagination to avoid heavy payloads.
 - Caching: Cache frequently accessed subject catalogs and competency lists where appropriate.
@@ -435,6 +456,7 @@ MatiereEntity --- NotesSvc
 Common issues and resolutions:
 - Missing subject assignments to levels/cycles prevent timetable generation; verify subject metadata before scheduling.
 - Invalid coefficients (zero or negative) cause grade computation errors; validate inputs before persisting assessments.
+- **Updated**: After ConfigurationMatiereClasse removal, ensure all subject assignments use the new AffectationMatiere structure.
 - Programme version conflicts: ensure unique version identifiers per subject and maintain backward compatibility when publishing updates.
 - Timetable conflicts: check for overlapping slots and resource constraints; resolve by adjusting periods or rooms.
 
@@ -451,7 +473,7 @@ Operational references:
 - [notes.controller.ts](file://backend/src/modules/notes/controllers/notes.controller.ts)
 
 ## Conclusion
-eLISAschool’s Subject and Curriculum Management system provides a robust foundation for organizing academic content, aligning it with competency frameworks, and integrating with scheduling and grading workflows. The design emphasizes clear versioning, cross-referencing, and coefficient-based weighting to support accurate reporting and effective instructional planning.
+eLISAschool's Subject and Curriculum Management system provides a robust foundation for organizing academic content, aligning it with competency frameworks, and integrating with scheduling and grading workflows. **Updated**: The recent consolidation of subject management entities has simplified the architecture by removing ConfigurationMatiereClasse and enhancing AffectationMatiere for coefficient/bareme assignments, resulting in improved performance and maintainability. The design emphasizes clear versioning, cross-referencing, and coefficient-based weighting to support accurate reporting and effective instructional planning.
 
 [No sources needed since this section summarizes without analyzing specific files]
 
@@ -465,6 +487,7 @@ eLISAschool’s Subject and Curriculum Management system provides a robust found
 - Timetable module creation: [063-creer-module-emploi-du-temps.sql](file://backend/database/migrations/063-creer-module-emploi-du-temps.sql)
 - Academic architecture refactoring and finalization: [088-refactorisation-architecture-academique.sql](file://backend/database/migrations/088-refactorisation-architecture-academique.sql), [089-finalisation-architecture-academique-v2.sql](file://backend/database/migrations/089-finalisation-architecture-academique-v2.sql)
 - CamelCase corrections and population scripts: [090-correction-migration-088-camelcase.sql](file://backend/database/migrations/090-correction-migration-088-camelcase.sql), [091-peuplement-architecture-academique.sql](file://backend/database/migrations/091-peuplement-architecture-academique.sql)
+- **Updated**: ConfigurationMatiereClasse entity removal: [115-supprimer-config-matiere-classe.sql](file://backend/database/migrations/115-supprimer-config-matiere-classe.sql)
 
 **Section sources**
 - [059-ajouter-matiere-sous-systeme.sql](file://backend/database/migrations/059-ajouter-matiere-sous-systeme.sql)
@@ -476,3 +499,4 @@ eLISAschool’s Subject and Curriculum Management system provides a robust found
 - [089-finalisation-architecture-academique-v2.sql](file://backend/database/migrations/089-finalisation-architecture-academique-v2.sql)
 - [090-correction-migration-088-camelcase.sql](file://backend/database/migrations/090-correction-migration-088-camelcase.sql)
 - [091-peuplement-architecture-academique.sql](file://backend/database/migrations/091-peuplement-architecture-academique.sql)
+- [115-supprimer-config-matiere-classe.sql](file://backend/database/migrations/115-supprimer-config-matiere-classe.sql)

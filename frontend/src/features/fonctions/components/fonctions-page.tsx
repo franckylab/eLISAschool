@@ -2,15 +2,16 @@ import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Eye, Edit, Trash2, Briefcase, Workflow } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Briefcase, Workflow, AlertCircle } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { PageSkeleton } from '@/components/ui/Skeleton';
 import { OrgViewToggle, type OrgView } from '@/features/organisation/components/org-view-toggle';
 import { usePermissions, useDocumentTitle } from '@/hooks';
 import type { Column } from '@/components/ui/DataTable';
-import type { Fonction } from '../types/fonction.types';
+import type { Fonction, CreerFonctionDto, ModifierFonctionDto } from '../types/fonction.types';
 import {
     useFonctions,
     useCreerFonction,
@@ -35,7 +36,7 @@ export function FonctionsPage() {
     const [fonctionToDelete, setFonctionToDelete] = useState<Fonction | null>(null);
 
     const { hasPermission } = usePermissions();
-    const { data, isLoading } = useFonctions({ recherche: search || undefined, page, limit });
+    const { data, isLoading, isError, refetch } = useFonctions({ recherche: search || undefined, page, limit });
     const { data: arbre, isLoading: arbreLoading } = useArbreFonctions();
     const { data: allFonctions } = useToutesFonctions();
 
@@ -55,7 +56,7 @@ export function FonctionsPage() {
     const colonnes: Column<Fonction>[] = [
         {
             key: 'code',
-            header: 'Code',
+            header: t('code'),
             render: (f) => (
                 <div className="flex items-center gap-2">
                     <Briefcase className="h-4 w-4 text-primary" />
@@ -65,64 +66,64 @@ export function FonctionsPage() {
         },
         {
             key: 'nom',
-            header: 'Nom',
+            header: t('nom'),
             render: (f) => <span className="text-sm font-medium">{f.nom}</span>,
         },
         {
             key: 'parent',
-            header: 'Fonction parente',
+            header: t('fonctionParente'),
             render: (f) => {
                 const parent = f.parent || getFonctionParent(f.parentId);
                 return (
                     <span className="text-sm text-muted-foreground">
-                        {parent ? parent.nom : <span className="italic">— Racine —</span>}
+                        {parent ? parent.nom : <span className="italic">{t('racine')}</span>}
                     </span>
                 );
             },
         },
         {
             key: 'niveau',
-            header: 'Niveau',
+            header: t('niveau'),
             render: (f) => (
                 <span className="text-sm text-muted-foreground">{f.niveau}</span>
             ),
         },
         {
             key: 'actif',
-            header: 'Statut',
+            header: t('statut'),
             render: (f) => (
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     f.actif
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                        ? 'bg-success/10 text-success'
+                        : 'bg-destructive/10 text-destructive'
                 }`}>
-                    {f.actif ? 'Actif' : 'Inactif'}
+                    {f.actif ? t('actif') : t('inactif')}
                 </span>
             ),
         },
         {
             key: 'actions',
-            header: 'Actions',
+            header: t('colActions'),
             className: 'text-right',
             renderActions: (f) => [
                 {
                     key: 'voir',
                     icon: Eye,
-                    label: 'Voir détails',
+                    label: t('voirDetails'),
                     onClick: () => navigate({ to: '/organisation/fonctions/$id', params: { id: f.id } }),
                     variant: 'info' as const,
                 },
                 {
                     key: 'modifier',
                     icon: Edit,
-                    label: 'Modifier',
+                    label: t('modifier'),
                     onClick: () => { setFonctionToEdit(f); setShowFormModal(true); },
                     permission: 'organisation:fonctions:write',
                 },
                 {
                     key: 'supprimer',
                     icon: Trash2,
-                    label: 'Supprimer',
+                    label: t('supprimer'),
                     onClick: () => setFonctionToDelete(f),
                     permission: 'organisation:fonctions:delete',
                     variant: 'danger' as const,
@@ -136,7 +137,7 @@ export function FonctionsPage() {
         setShowFormModal(true);
     };
 
-    const handleSave = async (data: any) => {
+    const handleSave = async (data: CreerFonctionDto | ModifierFonctionDto) => {
         if (fonctionToEdit) {
             await modifier.mutateAsync({ id: fonctionToEdit.id, dto: data });
         } else {
@@ -152,6 +153,20 @@ export function FonctionsPage() {
             setFonctionToDelete(null);
         }
     };
+
+    if (isLoading) return <PageSkeleton showTable />;
+
+    if (isError) {
+        return (
+            <div className="flex flex-col items-center justify-center gap-4 p-12">
+                <AlertCircle className="h-12 w-12 text-destructive" />
+                <p className="text-lg font-medium text-foreground">{t('erreurChargement')}</p>
+                <ElisaButton variant="outline" onClick={() => refetch()}>
+                    {t('reessayer')}
+                </ElisaButton>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-6 p-6">
@@ -193,11 +208,11 @@ export function FonctionsPage() {
                     >
                         <div className="max-w-sm">
                             <label className="text-sm font-medium text-foreground mb-2 block">
-                                Rechercher
+                                {t('rechercher')}
                             </label>
                             <input
                                 type="text"
-                                placeholder="Nom, code..."
+                                placeholder={t('rechercherNomCode')}
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
@@ -224,7 +239,7 @@ export function FonctionsPage() {
                                 hasPrev: currentPage > 1,
                                 onPageChange: setPage,
                             } : undefined}
-                            emptyMessage="Aucune fonction trouvée"
+                            emptyMessage={t('aucuneFonctionTrouvee')}
                         />
                     </motion.div>
                 </>
@@ -243,9 +258,9 @@ export function FonctionsPage() {
             <ConfirmDialog
                 open={!!fonctionToDelete}
                 onOpenChange={(open) => { if (!open) setFonctionToDelete(null); }}
-                title="Supprimer la fonction"
-                description={`Êtes-vous sûr de vouloir supprimer la fonction "${fonctionToDelete?.nom}" ?`}
-                confirmText="Supprimer"
+                title={t('supprimerFonction')}
+                description={t('confirmerSuppressionFonction', { nom: fonctionToDelete?.nom })}
+                confirmText={t('supprimer')}
                 variant="danger"
                 onConfirm={handleDelete}
                 isLoading={supprimer.isPending}

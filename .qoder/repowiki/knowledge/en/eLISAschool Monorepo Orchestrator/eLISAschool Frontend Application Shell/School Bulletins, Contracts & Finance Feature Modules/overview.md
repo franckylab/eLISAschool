@@ -1,0 +1,1 @@
+Frontend feature modules for student report cards (bulletins), personnel contracts, and school fee/payment management, each exposing a page component plus React Query hooks.

@@ -1,0 +1,1 @@
+Three sibling modules exposing REST APIs for dynamic role-based dashboards, system health/metrics, and immutable audit-log querying with CSV/JSON export.

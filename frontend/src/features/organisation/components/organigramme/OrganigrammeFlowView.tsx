@@ -17,12 +17,13 @@ import { useDndOrganigramme } from './hooks/use-dnd-organigramme';
 import { useModifierPoste } from '../../hooks/use-postes';
 import type { OrganigrammeNode } from '../../types/organisation.types';
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { Minimize2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 interface OrganigrammeFlowViewProps {
     data: OrganigrammeNode[];
     direction?: 'TB' | 'LR';
+    containerId?: string;
     onNodeSelect?: (unite: OrganigrammeNode) => void;
     isEditMode?: boolean;
     onEditUnite?: (unite: OrganigrammeNode) => void;
@@ -36,12 +37,14 @@ const edgeTypes: EdgeTypes = { hierarchieEdge: HierarchieEdge };
 function FlowViewInner({
     data,
     direction = 'TB',
+    containerId = 'organigramme-flow-container',
     onNodeSelect,
     isEditMode,
     onEditUnite,
     onAddChildUnite,
     onDeleteUnite,
 }: OrganigrammeFlowViewProps) {
+    const { t } = useTranslation('organisation');
     const isDesktop = useMediaQuery('(min-width: 1280px)');
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
     const { fitView, zoomIn, zoomOut } = useReactFlow();
@@ -58,13 +61,6 @@ function FlowViewInner({
 
     const { mutateAsync: modifierPoste } = useModifierPoste();
     const [posteDropTarget, setPosteDropTarget] = useState<string | null>(null);
-    const [isFullscreen, setIsFullscreen] = useState(false);
-
-    useEffect(() => {
-        const handler = () => setIsFullscreen(!!document.fullscreenElement);
-        document.addEventListener('fullscreenchange', handler);
-        return () => document.removeEventListener('fullscreenchange', handler);
-    }, []);
 
     const handleNodeSelect = useCallback((unite: OrganigrammeNode) => {
         selectNode(unite);
@@ -129,15 +125,16 @@ function FlowViewInner({
         if (!posteId || !posteDropTarget) return;
         try {
             await modifierPoste({ id: posteId, uniteOrganisationnelleId: posteDropTarget });
-            toast.success('Poste déplacé');
+            toast.success(t('organigramme.flow.posteDeplace', 'Poste déplacé'));
         } catch {
-            toast.error('Erreur déplacement poste');
+            toast.error(t('organigramme.flow.erreurDeplacementPoste', 'Erreur déplacement poste'));
         }
         setPosteDropTarget(null);
-    }, [modifierPoste, posteDropTarget]);
+    }, [modifierPoste, posteDropTarget, t]);
 
     return (
         <div
+            id={containerId}
             ref={reactFlowWrapper}
             className="w-full"
             style={{ height: 'clamp(300px, calc(100vh - 320px), 800px)' }}
@@ -170,7 +167,7 @@ function FlowViewInner({
                 defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
                 nodesDraggable={isEditMode}
                 nodesConnectable={isEditMode}
-                elementsSelectable={isEditMode}
+                elementsSelectable
                 panOnDrag
                 panOnScroll={false}
                 zoomOnScroll
@@ -193,21 +190,6 @@ function FlowViewInner({
                     showInteractive={false}
                     className="!bg-[var(--color-surface)] !border !border-[var(--color-bordure)] !rounded-lg !shadow-sm"
                 />
-                {isFullscreen && (
-                    <button
-                        onClick={() => document.exitFullscreen().catch(() => {})}
-                        className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-                        style={{
-                            backgroundColor: 'var(--color-surface)',
-                            border: '1px solid var(--color-bordure)',
-                            color: 'var(--color-text-secondary)',
-                        }}
-                        title="Quitter le plein écran (Échap)"
-                    >
-                        <Minimize2 className="w-3.5 h-3.5" />
-                        Quitter
-                    </button>
-                )}
             </ReactFlow>
         </div>
     );

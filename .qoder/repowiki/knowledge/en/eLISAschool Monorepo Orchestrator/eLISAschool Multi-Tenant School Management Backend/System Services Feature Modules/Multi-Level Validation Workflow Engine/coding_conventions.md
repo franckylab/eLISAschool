@@ -1,0 +1,6 @@
+- All public routes are wrapped with `authMiddleware` and guarded by `requirePermission('config:edit')` or `requireValidationLevel(module, niveau)`, never trusting caller input directly.
+- Incoming requests are validated through `validateDto(zodSchema, req.body|req.query)` before reaching the service layer, and errors are thrown as `AppError` with a machine-readable code.
+- Role resolution uses a permission-first strategy: build `validation:{module}:level{n}` and check `permissionResolverService.resolvePermissions`, falling back to the configured role only when no explicit permission exists.
+- Default role maps for known modules (notes, bulletins, cantine, transport, personnel, …) are kept as a plain `Record<string, Record<string, string>>` literal and reused identically in both the service and the middleware.
+- Cross-module references are stored as opaque strings (`module`, `entiteId`, `entiteType`) rather than foreign keys, keeping the workflow entity decoupled from every business domain.
+- Each service file exports both a class constructor and a singleton instance (`new XxxService()`) plus a default export, allowing DI-style injection or direct import.

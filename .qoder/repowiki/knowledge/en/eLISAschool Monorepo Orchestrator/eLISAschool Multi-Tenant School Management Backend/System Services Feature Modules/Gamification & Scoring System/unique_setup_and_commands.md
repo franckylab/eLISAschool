@@ -1,0 +1,1 @@
+Cron jobs are initialized via `initGamificationCronJobs()` and stopped via `stopGamificationCronJobs()` in `cron-jobs.ts`; they run on the `Africa/Douala` timezone and require the application's database to be available at startup. The scoring configuration must be created per establishment (optionally scoped to an `anneeScolaireId`) before any scoring operations succeed.

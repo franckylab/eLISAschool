@@ -211,7 +211,7 @@ const NAV_SECTIONS: NavSection[] = [
                     { label: 'Unités', path: '/organisation/unites', icon: GitBranch, module: 'organisation' },
                     { label: 'Postes', path: '/organisation/postes', icon: Briefcase, module: 'organisation' },
                     { label: 'Fonctions', path: '/organisation/fonctions', icon: Workflow, module: 'organisation' },
-                    { label: 'Organigramme', path: '/organisation/organigramme', icon: Network, module: 'organisation' },
+                    { label: 'Organigramme', path: '/organisation', icon: Network, module: 'organisation' },
                     { label: 'Nomenclatures', path: '/organisation/nomenclatures', icon: LayoutGrid, module: 'organisation' },
                     { label: 'Modèles', path: '/organisation/modeles', icon: FileText, module: 'organisation' },
                 ]

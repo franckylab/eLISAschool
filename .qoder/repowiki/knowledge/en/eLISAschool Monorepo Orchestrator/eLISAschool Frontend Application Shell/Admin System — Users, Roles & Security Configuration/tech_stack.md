@@ -1,0 +1,1 @@
+React + TypeScript with TanStack Query (`@tanstack/react-query`) for server state, `sonner` for toasts, and a shared `apiClient` wrapper over fetch/Axios. The configuration security tab uses a custom key-mapping layer (`PARAM_MAPPING`/`REVERSE_MAPPING`) to bridge flat key-value config rows to a strongly-typed form model.

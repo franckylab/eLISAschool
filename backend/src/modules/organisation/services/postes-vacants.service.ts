@@ -13,6 +13,24 @@ import { AppDataSource } from '@database/data-source';
 import { Poste, StatutPoste } from '../entities';
 import { logger } from '@common/utils/logger.util';
 
+/** Information sur un poste vacant */
+export interface PosteVacantInfo {
+    posteId: string;
+    intitule: string;
+    code: string;
+    unite: string | undefined;
+    joursVacance: number;
+    dernierMAJ: Date;
+}
+
+/** Statistiques de vacance des postes */
+export interface StatistiquesVacance {
+    totalPostesVacants: number;
+    moyenneJoursVacance: number;
+    maxJoursVacance: number;
+    critiques: number;
+}
+
 // Seuils par défaut (configurables via ParametreSysteme si besoin)
 const SEUIL_VACANCE_CRITIQUE = 30;
 const SEUIL_VACANCE_AVERTISSEMENT = 15;
@@ -43,8 +61,8 @@ export class PostesVacantsService {
      */
     async verifierPostesVacants(etablissementId?: string): Promise<{
         total: number;
-        critiques: any[];
-        avertissements: any[];
+        critiques: PosteVacantInfo[];
+        avertissements: PosteVacantInfo[];
     }> {
         const maintenant = new Date();
         const seuilCritique = this.getSeuilCritique();
@@ -64,8 +82,8 @@ export class PostesVacantsService {
 
         const postesVacants = await qb.getMany();
 
-        const critiques: any[] = [];
-        const avertissements: any[] = [];
+        const critiques: PosteVacantInfo[] = [];
+        const avertissements: PosteVacantInfo[] = [];
 
         postesVacants.forEach((poste) => {
             const joursVacance = Math.floor(
@@ -98,7 +116,7 @@ export class PostesVacantsService {
     /**
      * Obtenir les statistiques de vacance
      */
-    async getStatistiquesVacance(etablissementId?: string): Promise<any> {
+    async getStatistiquesVacance(etablissementId?: string): Promise<StatistiquesVacance> {
         const maintenant = new Date();
         const seuilCritique = this.getSeuilCritique();
 

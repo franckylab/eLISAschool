@@ -37,14 +37,14 @@ router.post('/hierarchie', authMiddleware, requirePermission('organisation:hiera
 router.patch('/hierarchie/:id', authMiddleware, requirePermission('organisation:hierarchie:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updateHierarchiePersonnelSchema, req.body);
-        const updated = await organisationService.updateHierarchie(req.params.id, dto);
+        const updated = await organisationService.updateHierarchie(req.params.id, dto, req.utilisateur?.etablissementId);
         res.json({ success: true, data: updated });
     } catch (error) { next(error); }
 });
 
 router.delete('/hierarchie/:id', authMiddleware, requirePermission('organisation:hierarchie:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await organisationService.deleteHierarchie(req.params.id);
+        await organisationService.deleteHierarchie(req.params.id, req.utilisateur?.etablissementId);
         res.json({ success: true, message: 'Relation hiérarchique supprimée' });
     } catch (error) { next(error); }
 });

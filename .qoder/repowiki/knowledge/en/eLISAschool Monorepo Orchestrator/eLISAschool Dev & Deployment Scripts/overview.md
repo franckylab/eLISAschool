@@ -1,0 +1,1 @@
+Shell/JS/TS utility scripts that bootstrap, deploy, migrate, seed, test, and verify the eLISAschool monorepo across Docker, PostgreSQL, Redis, frontend and backend.

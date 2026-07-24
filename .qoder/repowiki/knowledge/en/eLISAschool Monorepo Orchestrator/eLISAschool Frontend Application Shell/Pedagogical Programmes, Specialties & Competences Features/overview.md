@@ -1,0 +1,1 @@
+Frontend feature modules for managing pedagogical programmes (with chapters and subjects), specialties, and competences — each providing React Query hooks, typed DTOs/interfaces, and page/modal components exposed through barrel index files.

@@ -1,0 +1,1 @@
+Tracks personnel incidents, evaluations and computes multi-dimensional performance scores with configurable rules, rankings and automated cron recalculations.

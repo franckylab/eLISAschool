@@ -43,6 +43,12 @@
     "modifierUnite": "Edit unit",
     "sousUnite": "Sub-unit",
     "ajouterSousUnite": "Add sub-unit",
+    "ajouterEnfant": "Add child",
+    "autres": "{{count}} other(s)",
+    "aucunPosteCourt": "No position",
+    "vacants_count": "{{count}} vacant(s)",
+    "deplier": "Expand",
+    "replier": "Collapse",
     "intitule": "Title",
     "sigle": "Acronym",
     "direction": "Directorate",
@@ -111,12 +117,8 @@
     "niveauxResponsabilite_SUPERVISEUR": "Supervisor",
     "niveauxResponsabilite_EXECUTANT": "Executive",
     "niveauxResponsabilite_STAGIAIRE": "Intern",
-    "typeRelation_SUPERVISE_DIRECT": "Direct supervision",
-    "typeRelation_SUPERVISE_INDIRECT": "Indirect supervision",
-    "typeRelation_RATTACHEMENT_FONCTIONNEL": "Functional attachment",
-    "typeRelation_COLLABORATION": "Collaboration",
-    "typeRelation_REMPLACEMENT": "Replacement",
-    "typeRelation_INTERIM": "Interim",
+    "typeRelation_DIRECT": "Direct hierarchy",
+    "typeRelation_FONCTIONNEL": "Functional attachment",
     "descriptionSection": "Description",
     "aucuneDescription": "No description provided.",
     "statutSection": "Status",
@@ -151,6 +153,11 @@
     "fonctionCreerDescription": "Add a new function",
     "fonctionModifierDescription": "Edit the function details",
     "fonctionParente": "Parent function",
+    "voirDetails": "View details",
+    "rechercherNomCode": "Name, code...",
+    "aucuneFonctionTrouvee": "No function found",
+    "supprimerFonction": "Delete function",
+    "confirmerSuppressionFonction": "Are you sure you want to delete the function \"{{nom}}\"?",
     "aucuneRacine": "None (root)",
     "typePersonnelStatut": "Personnel type (status)",
     "typePersonnelStatutAide": "Determines the expected type of positions linked to this function (e.g. Teacher ⟹ Teaching staff).",
@@ -159,7 +166,7 @@
     "descriptionFonctionPlaceholder": "Function description...",
     "exMajoration": "e.g. 15",
     "majorationPct": "Markup %",
-    "modeRemunerationDefaut": "Default pay mode",
+    "modeRemuneration": "Pay mode",
     "assigner": "Assign",
     "liberer": "Release",
     "supprimerPoste": "Delete position",
@@ -217,7 +224,6 @@
     "nouveauTypePersonnel": "New staff type",
     "modifierTypePersonnel": "Edit type",
     "supprimerTypePersonnel": "Delete this type?",
-    "modeRemuneration": "Pay mode",
     "estSysteme": "System type",
     "typePersonnelCode": "Code",
     "typePersonnelNom": "Name",
@@ -312,6 +318,9 @@
     "aucunMembre": "No member",
     "aucuneSousFonction": "No sub-function",
     "racine": "Root",
+        "ajouterMission": "Add a mission",
+        "ajouterCompetence": "Add a competency",
+        "aucuneFonctionIndication": "No functions. Create your first function.",
     "majorationDefaut": "Default increase",
     "principale": "Primary",
     "generationPersonnalisee": "Custom generation",
@@ -350,7 +359,8 @@
             "hierarchiesActives": "Active hierarchies",
             "totalMembres": "Members (total)",
             "unitesSansPostes": "Units without positions",
-            "profondeurMax": "Max depth"
+            "profondeurMax": "Max depth",
+            "repartitionEchelon": "Echelon distribution"
         },
         "drawer": {
             "profondeur": "Depth",
@@ -376,10 +386,18 @@
             "confirmer": "Move",
             "annuler": "Cancel",
             "connexionImpossible": "Connection impossible: cycle detected",
+            "cycleDetecte": "Move impossible: cycle detected",
             "uniteDeplacee": "Unit moved",
             "uniteDetachee": "Unit detached (root)",
             "ordreMisAJour": "Order updated",
-            "dropSurCanvas": "Drop here to detach (make root)"
+            "dropSurCanvas": "Drop here to detach (make root)",
+            "erreurDeplacement": "Error while moving"
+        },
+        "flow": {
+            "posteDeplace": "Position moved",
+            "erreurDeplacementPoste": "Error moving position",
+            "quitterPleinEcran": "Exit fullscreen (Esc)",
+            "quitter": "Exit"
         },
         "modeModification": "Edit mode",
         "quitterModification": "Exit edit mode",
@@ -430,6 +448,18 @@
             "membres": "Members",
             "membresDirect": "{{count}} direct",
             "hierarchies": "Hierarchies"
+        },
+        "liste": {
+            "postes": "Positions",
+            "membres": "Members",
+            "postesVacants": "Vacant positions"
+        },
+        "empty": {
+            "titre": "No organisational unit",
+            "description": "Start by creating your first unit or generate a complete organisation from a template.",
+            "creerUnite": "Create a unit",
+            "genererDepuisModele": "Generate from template",
+            "astuce": "You can also use a predefined template to automatically generate the entire structure."
         }
     }
 }

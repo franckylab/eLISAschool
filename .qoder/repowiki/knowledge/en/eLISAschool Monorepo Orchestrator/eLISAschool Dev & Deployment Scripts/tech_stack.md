@@ -1,0 +1,1 @@
+Bash 4+ with ANSI color prompts; PostgreSQL client (`psql`, `pg_dump`, `createdb`) against a Docker container named `elisaschool_db` (host `127.0.0.1:7002`, user `elisaschool_user`); `ts-node` + `tsconfig-paths/register` to execute TS seeds; `docker compose up -d postgres redis` for infra; Node.js helpers for AST-like permission/hook mutations.

@@ -1,0 +1,5 @@
+- Each feature exposes a single barrel `index.ts` that re-exports pages, components, hooks, and types as named exports consumed by the router.
+- Server state is encapsulated in `useXxx` hooks built on `@tanstack/react-query`; read hooks return `useQuery` objects, write hooks return `useMutation` objects that call `queryClient.invalidateQueries` with a locally defined key prefix (`EDT_KEYS.*`, `SALLES_KEYS.*`) after success.
+- Error handling follows a uniform pattern: `onError` callbacks read `err.response?.data?.error?.message` (or fallback string) and surface it via `toast.error(...)`, while loading/error states are rendered with shared `PageSkeleton` and `ErrorMessage` components.
+- Feature-scoped TypeScript interfaces and enums live next to their usage (e.g. `types/salle.types.ts` for salles; `Creneau`, `PreferenceEDT`, `TemplateEDT` inline in the emploi-du-temps hook file) and are re-exported through the feature barrel.
+- All user-facing strings go through `useTranslation('emplois')` / `useTranslation('salles')` with namespace-specific keys; enum values are mapped to i18n labels via `t(value.toLowerCase())`.

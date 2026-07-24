@@ -1,0 +1,2 @@
+- Cross-package contracts live exclusively in the `shared_package` workspace and are imported by both backend and frontend rather than duplicated.
+- Workspace entry points are invoked uniformly via `npm run <script> --workspace=<pkg>` or the root aliases defined in the top-level `package.json`.

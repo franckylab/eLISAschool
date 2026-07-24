@@ -1,9 +1,3 @@
-/**
- * ==================================
- * eLISAschool - Types Note
- * ==================================
- */
-
 export interface Note {
     id: string;
     eleveId: string;
@@ -12,10 +6,13 @@ export interface Note {
     periodeId: string;
     enseignantId: string;
     valeur: number;
+    bareme?: number;
     coefficient?: number;
-    type: 'composition' | 'interrogation' | 'exercice' | 'projet' | 'autre';
-    remarque?: string;
+    typeEvaluation: 'DEVOIR' | 'INTERROGATION' | 'EXAMEN' | 'PROJET' | 'PARTICIPATION' | 'AUTRE';
+    commentaire?: string;
+    description?: string;
     dateEvaluation?: string;
+    statut?: 'BROUILLON' | 'VALIDEE' | 'PUBLIEE';
     etablissementId: string;
     createdAt: string;
     updatedAt: string;
@@ -47,36 +44,43 @@ export interface CreerNoteDto {
     eleveId: string;
     matiereId: string;
     periodeId: string;
+    classeAnneeId: string;
+    typeEvaluation: 'DEVOIR' | 'INTERROGATION' | 'EXAMEN' | 'PROJET' | 'PARTICIPATION' | 'AUTRE';
     valeur: number;
+    bareme?: number;
     coefficient?: number;
-    type: 'composition' | 'interrogation' | 'exercice' | 'projet' | 'autre';
-    remarque?: string;
+    commentaire?: string;
+    description?: string;
     dateEvaluation?: string;
 }
 
 export interface CreerNoteEnMasseDto {
-    eleveIds: string[];
     matiereId: string;
+    classeAnneeId: string;
     periodeId: string;
+    typeEvaluation?: string;
+    bareme?: number;
+    coefficient?: number;
     notes: {
         eleveId: string;
         valeur: number;
-        coefficient?: number;
-        type?: string;
-        remarque?: string;
+        commentaire?: string;
     }[];
 }
 
 export interface ModifierNoteDto extends Partial<CreerNoteDto> {
     id: string;
+    statut?: string;
 }
 
 export interface NoteFiltres {
     eleveId?: string;
     matiereId?: string;
+    classeAnneeId?: string;
     periodeId?: string;
     enseignantId?: string;
-    type?: string;
+    typeEvaluation?: string;
+    statut?: string;
     page?: number;
     limit?: number;
     sortBy?: string;

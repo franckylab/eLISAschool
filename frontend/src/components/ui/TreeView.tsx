@@ -16,6 +16,7 @@ export interface TreeNode<T = any> {
     data: T;
     children?: TreeNode<T>[];
     icon?: ReactNode;
+    badge?: ReactNode;
     depth?: number;
 }
 
@@ -86,8 +87,8 @@ function TreeItem<T>({
             <div
                 className={cn(
                     'flex items-center gap-1.5 py-1.5 px-2 rounded-md cursor-pointer transition-colors group',
-                    'hover:bg-gray-100 dark:hover:bg-gray-800',
-                    isSelected && 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800',
+                    'hover:bg-[var(--color-dominant-50)]',
+                    isSelected && 'bg-[var(--color-dominant-50)] border border-[var(--color-dominant-200)]',
                     !isSelected && 'border border-transparent',
                 )}
                 onClick={handleSelect}
@@ -95,7 +96,7 @@ function TreeItem<T>({
             >
                 {enableDrag && (
                     <button
-                        className="cursor-grab active:cursor-grabbing text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
+                        className="cursor-grab active:cursor-grabbing text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] shrink-0"
                         {...attributes}
                         {...listeners}
                     >
@@ -106,7 +107,7 @@ function TreeItem<T>({
                 {hasChildren ? (
                     <button
                         onClick={handleToggle}
-                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
+                        className="text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] shrink-0"
                     >
                         <motion.div
                             animate={{ rotate: isExpanded ? 90 : 0 }}
@@ -119,15 +120,17 @@ function TreeItem<T>({
                     <span className="w-4 shrink-0" />
                 )}
 
-                {node.icon && <span className="shrink-0 text-gray-500 dark:text-gray-400">{node.icon}</span>}
+                {node.icon && <span className="shrink-0 text-[var(--color-text-muted)]">{node.icon}</span>}
 
                 <span className={cn(
                     'text-sm truncate flex-1',
-                    isSelected && 'font-medium text-blue-700 dark:text-blue-300',
-                    !isSelected && 'text-gray-700 dark:text-gray-300',
+                    isSelected && 'font-medium text-[var(--color-dominant-600)]',
+                    !isSelected && 'text-[var(--color-text-primary)]',
                 )}>
                     {node.label}
                 </span>
+
+                {node.badge && <span className="shrink-0">{node.badge}</span>}
 
                 {renderActions && (
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0" onClick={(e) => e.stopPropagation()}>

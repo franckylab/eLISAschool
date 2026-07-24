@@ -17,6 +17,7 @@ import path from 'path';
 import { DataSource } from 'typeorm';
 import { RBACSeedService } from './system/rbac.seed';
 import { logger } from '@common/utils/logger.util';
+import { cleanOrphanHeuresCours, envDbConfig } from '../pre-sync-cleanup';
 
 // Charger le fichier .env depuis la racine du projet
 const envPath = path.resolve(__dirname, '../../../../.env');
@@ -40,6 +41,10 @@ async function main(): Promise<void> {
             entities: [__dirname + '/../../modules/**/entities/*.entity.{js,ts}'],
         });
         
+        // Nettoyer les orphelins avant synchronize (évite erreur FK)
+        logger.info('🧹 Pré-nettoyage avant synchronize...');
+        await cleanOrphanHeuresCours(envDbConfig());
+
         await SeedDataSource.initialize();
         logger.info('✅ Connexion établie');
 

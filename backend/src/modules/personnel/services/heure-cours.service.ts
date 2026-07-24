@@ -2,8 +2,8 @@
  * ==================================
  * eLISAschool - Service Heure de Cours
  * ==================================
- * Version: 1.0.0
- * Auteur: franck arlos chendjou
+ * Version: 1.1.0
+ * Migration complète classeId → classeAnneeId (v4.0)
  */
 
 import { Repository, Between, In } from 'typeorm';
@@ -15,7 +15,7 @@ import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
-import { EmploiDuTemps, JourSemaine } from '@modules/emploi-du-temps/entities';
+import { CreneauHoraire, JourSemaine } from '@modules/emploi-du-temps/entities';
 import { ClasseAnnee } from '@modules/classes/entities';
 
 export class HeureCoursService {
@@ -25,16 +25,12 @@ export class HeureCoursService {
         this.repo = AppDataSource.getRepository(HeureCours);
     }
 
-    /**
-     * Créer un nouveau créneau de cours avec vérification de conflits
-     */
     async create(
         dto: CreateHeureCoursDto,
         etablissementId: string,
         createurId?: string,
         req?: any
     ): Promise<HeureCours> {
-        // Vérifier les conflits de créneaux pour l'enseignant
         await this.verifierConflitCreneau(dto);
 
         const heureCours = new HeureCours();
@@ -46,7 +42,6 @@ export class HeureCoursService {
 
         await this.repo.save(heureCours);
 
-        // Audit
         if (createurId) {
             await auditService.log({
                 utilisateurId: createurId,
@@ -63,9 +58,6 @@ export class HeureCoursService {
         return heureCours;
     }
 
-    /**
-     * Vérifier qu'il n'y a pas de conflit de créneaux pour un enseignant
-     */
     private async verifierConflitCreneau(dto: CreateHeureCoursDto): Promise<void> {
         const conflit = await this.repo.findOne({
             where: {
@@ -76,7 +68,6 @@ export class HeureCoursService {
         });
 
         if (conflit) {
-            // Vérifier overlap horaire
             const overlap = this.verifierOverlapHoraire(
                 conflit.heureDebut,
                 conflit.heureFin,
@@ -94,57 +85,36 @@ export class HeureCoursService {
         }
     }
 
-    /**
-     * Vérifier si deux créneaux horaires se superposent
-     */
-    private verifierOverlapHoraire(
-        debut1: string,
-        fin1: string,
-        debut2: string,
-        fin2: string
-    ): boolean {
+    private verifierOverlapHoraire(debut1: string, fin1: string, debut2: string, fin2: string): boolean {
         const toMinutes = (time: string): number => {
             const [h, m] = time.split(':').map(Number);
             return h * 60 + m;
         };
-
-        const d1 = toMinutes(debut1);
-        const f1 = toMinutes(fin1);
-        const d2 = toMinutes(debut2);
-        const f2 = toMinutes(fin2);
-
-        return d1 < f2 && d2 < f1;
+        return toMinutes(debut1) < toMinutes(fin2) && toMinutes(debut2) < toMinutes(fin1);
     }
 
-    /**
-     * Rechercher tous les créneaux avec pagination et filtres
-     */
-    async findAll(
-        query: QueryHeureCoursDto,
-        etablissementId?: string
-    ): Promise<PaginatedResult<HeureCours>> {
-        const { page, limit, search, enseignantId, classeId, matiereId, dateDebut, dateFin, statutEffectue } = query;
+    async findAll(query: QueryHeureCoursDto, etablissementId?: string): Promise<PaginatedResult<HeureCours>> {
+        const { page, limit, search, enseignantId, classeAnneeId, matiereId, dateDebut, dateFin, statutEffectue } = query;
 
         const qb = this.repo
             .createQueryBuilder('h')
             .leftJoinAndSelect('h.enseignant', 'ens')
-            .leftJoinAndSelect('h.classe', 'c')
+            .leftJoinAndSelect('h.classeAnnee', 'ca')
+            .leftJoinAndSelect('ca.classe', 'c')
             .leftJoinAndSelect('h.matiere', 'm')
             .leftJoinAndSelect('h.creneau', 'creneau')
             .where('1=1');
 
-        // Filtre par établissement (multi-tenancy)
         if (etablissementId) {
             qb.andWhere('h.etablissementId = :etablissementId', { etablissementId });
         }
 
-        // Filtres optionnels
         if (enseignantId) {
             qb.andWhere('h.enseignantId = :enseignantId', { enseignantId });
         }
 
-        if (classeId) {
-            qb.andWhere('h.classeId = :classeId', { classeId });
+        if (classeAnneeId) {
+            qb.andWhere('h.classeAnneeId = :classeAnneeId', { classeAnneeId });
         }
 
         if (matiereId) {
@@ -163,22 +133,17 @@ export class HeureCoursService {
             qb.andWhere('h.statutEffectue = :statutEffectue', { statutEffectue });
         }
 
-        // Tri avec validation
         const allowedFields = ['createdAt', 'date', 'heureDebut', 'statutEffectue'];
         const orderField = allowedFields.includes(query.sortBy) ? query.sortBy : 'date';
         qb.orderBy(`h.${orderField}`, query.sortOrder);
 
-        // Pagination optimisée
         return paginateWithQueryBuilder(qb, page, limit, false);
     }
 
-    /**
-     * Récupérer un créneau par son ID
-     */
     async findOne(id: string, etablissementId?: string): Promise<HeureCours> {
         const heureCours = await this.repo.findOne({
             where: { id, ...(etablissementId ? { etablissementId } : {}) },
-            relations: ['enseignant', 'classe', 'matiere', 'periode', 'remplacant', 'creneau'],
+            relations: ['enseignant', 'classeAnnee', 'classeAnnee.classe', 'matiere', 'periode', 'remplacant', 'creneau'],
         });
 
         if (!heureCours) {
@@ -188,20 +153,79 @@ export class HeureCoursService {
         return heureCours;
     }
 
-    /**
-     * Calculer le volume horaire hebdomadaire d'un enseignant
-     */
+    async update(
+        id: string,
+        dto: UpdateHeureCoursDto,
+        userId: string,
+        etablissementId: string,
+        req?: any
+    ): Promise<HeureCours> {
+        const heureCours = await this.findOne(id, etablissementId);
+
+        const anciennesValeurs = {
+            date: heureCours.date,
+            heureDebut: heureCours.heureDebut,
+            heureFin: heureCours.heureFin,
+            statutEffectue: heureCours.statutEffectue,
+        };
+
+        if (dto.date) dto.date = new Date(dto.date) as any;
+
+        Object.assign(heureCours, dto);
+
+        if (dto.heureDebut || dto.heureFin || dto.date) {
+            const conflitDto: CreateHeureCoursDto = {
+                enseignantId: heureCours.enseignantId,
+                classeAnneeId: heureCours.classeAnneeId,
+                matiereId: heureCours.matiereId,
+                date: (dto.date ? (dto.date as any as Date) : heureCours.date as Date).toISOString().split('T')[0],
+                heureDebut: dto.heureDebut || heureCours.heureDebut,
+                heureFin: dto.heureFin || heureCours.heureFin,
+                statutEffectue: (dto.statutEffectue as any) || heureCours.statutEffectue || 'PLANIFIE',
+            };
+            await this.verifierConflitCreneau(conflitDto as CreateHeureCoursDto);
+        }
+
+        await this.repo.save(heureCours);
+
+        await auditService.log({
+            utilisateurId: userId,
+            action: AuditAction.HEURE_COURS_UPDATE,
+            cible: 'HeureCours',
+            cibleId: id,
+            description: `Modification créneau cours ${id}`,
+            anciennesValeurs,
+            nouvellesValeurs: dto,
+            module: 'personnel',
+        }, req);
+
+        logger.info(`Créneau cours modifié: ${id}`);
+        return heureCours;
+    }
+
+    async delete(id: string, userId: string, etablissementId: string, req?: any): Promise<void> {
+        const heureCours = await this.findOne(id, etablissementId);
+        await this.repo.remove(heureCours);
+
+        await auditService.log({
+            utilisateurId: userId,
+            action: AuditAction.HEURE_COURS_DELETE,
+            cible: 'HeureCours',
+            cibleId: id,
+            description: `Suppression créneau cours ${id}`,
+            module: 'personnel',
+        }, req);
+
+        logger.info(`Créneau cours supprimé: ${id}`);
+    }
+
     async calculerVolumeHoraireHebdomadaire(
         enseignantId: string,
         dateDebut: Date,
         dateFin: Date,
         etablissementId: string,
         periodeId?: string
-    ): Promise<{
-        totalHeures: number;
-        heuresParSemaine: number;
-        nbSemaines: number;
-    }> {
+    ): Promise<{ totalHeures: number; heuresParSemaine: number; nbSemaines: number }> {
         const heures = await this.repo.find({
             where: {
                 enseignantId,
@@ -211,7 +235,6 @@ export class HeureCoursService {
             },
         });
 
-        // Calculer la durée totale en heures
         let totalMinutes = 0;
         for (const h of heures) {
             const toMinutes = (time: string): number => {
@@ -232,9 +255,6 @@ export class HeureCoursService {
         };
     }
 
-    /**
-     * Obtenir le résumé des heures d'un enseignant pour un mois donné
-     */
     async getResumeMensuel(
         enseignantId: string,
         mois: number,
@@ -261,7 +281,6 @@ export class HeureCoursService {
             relations: ['matiere'],
         });
 
-        // Récupérer le tarif horaire depuis le contrat actif de l'enseignant
         const contratRepo = AppDataSource.getRepository(ContratPersonnel);
         const contratActif = await contratRepo.findOne({
             where: { membrePersonnelId: enseignantId, etablissementId, statut: StatutContrat.ACTIF },
@@ -283,15 +302,9 @@ export class HeureCoursService {
             const matiereNom = h.matiere?.nom || '—';
 
             switch (h.statutEffectue) {
-                case StatutEffectue.EFFECTUE:
-                    heuresEffectuees += duree;
-                    break;
-                case StatutEffectue.PLANIFIE:
-                    heuresPlanifiees += duree;
-                    break;
-                case StatutEffectue.ANNULE:
-                    heuresAnnulees += duree;
-                    break;
+                case StatutEffectue.EFFECTUE: heuresEffectuees += duree; break;
+                case StatutEffectue.PLANIFIE: heuresPlanifiees += duree; break;
+                case StatutEffectue.ANNULE: heuresAnnulees += duree; break;
             }
 
             if (h.statutEffectue === StatutEffectue.EFFECTUE) {
@@ -309,89 +322,20 @@ export class HeureCoursService {
             montant: +(d.heures * d.tarifHoraire).toFixed(2),
         }));
 
-        return {
-            mois,
-            annee,
-            heuresEffectuees,
-            heuresPlanifiees,
-            heuresAnnulees,
-            nombreCours: heures.length,
-            detailParMatiere,
-        };
+        return { mois, annee, heuresEffectuees, heuresPlanifiees, heuresAnnulees, nombreCours: heures.length, detailParMatiere };
     }
 
-    /**
-     * Mettre à jour un créneau
-     */
-    async update(
-        id: string,
-        dto: UpdateHeureCoursDto,
-        userId: string,
-        etablissementId: string,
-        req?: any
-    ): Promise<HeureCours> {
-        const heureCours = await this.findOne(id, etablissementId);
-
-        const anciennesValeurs = {
-            date: heureCours.date,
-            heureDebut: heureCours.heureDebut,
-            heureFin: heureCours.heureFin,
-            statutEffectue: heureCours.statutEffectue,
-        };
-
-        if (dto.date) dto.date = new Date(dto.date) as any;
-
-        Object.assign(heureCours, dto);
-
-        // Si on modifie l'horaire, vérifier les conflits
-        if (dto.heureDebut || dto.heureFin || dto.date) {
-            await this.verifierConflitCreneau({
-                enseignantId: heureCours.enseignantId,
-                classeId: heureCours.classeId,
-                matiereId: heureCours.matiereId,
-                date: dto.date ? (dto.date as any as Date).toISOString().split('T')[0] : (heureCours.date as Date).toISOString().split('T')[0],
-                heureDebut: dto.heureDebut || heureCours.heureDebut,
-                heureFin: dto.heureFin || heureCours.heureFin,
-            } as CreateHeureCoursDto);
-        }
-
-        await this.repo.save(heureCours);
-
-        // Audit
-        await auditService.log({
-            utilisateurId: userId,
-            action: AuditAction.HEURE_COURS_UPDATE,
-            cible: 'HeureCours',
-            cibleId: id,
-            description: `Modification créneau cours ${id}`,
-            anciennesValeurs,
-            nouvellesValeurs: dto,
-            module: 'personnel',
-        }, req);
-
-        logger.info(`Créneau cours modifié: ${id}`);
-        return heureCours;
-    }
-
-    /**
-     * Obtenir l'emploi du temps hebdomadaire d'un enseignant
-     * Groupé par jour de la semaine (LUN → VEN)
-     */
     async getEdtEnseignant(
         enseignantId: string,
         semaine: string,
         etablissementId: string,
         periodeId?: string
-    ): Promise<{
-        semaine: string;
-        jours: Record<string, HeureCours[]>;
-    }> {
+    ): Promise<{ semaine: string; jours: Record<string, HeureCours[]> }> {
         const dateRef = new Date(semaine);
         if (isNaN(dateRef.getTime())) {
             throw new AppError('Date de semaine invalide (format YYYY-MM-DD attendu)', 400, 'INVALID_DATE');
         }
 
-        // Calculer lundi et samedi de la semaine
         const dayOfWeek = dateRef.getDay();
         const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
         const lundi = new Date(dateRef);
@@ -407,18 +351,12 @@ export class HeureCoursService {
                 etablissementId,
                 date: Between(lundi, samedi) as any,
             },
-            relations: ['matiere', 'classe', 'salle', 'remplacant', 'creneau'],
+            relations: ['matiere', 'classeAnnee', 'classeAnnee.classe', 'salle', 'remplacant', 'creneau'],
             order: { date: 'ASC', heureDebut: 'ASC' },
         });
 
-        // Grouper par jour
         const jours: Record<string, HeureCours[]> = {
-            LUNDI: [],
-            MARDI: [],
-            MERCREDI: [],
-            JEUDI: [],
-            VENDREDI: [],
-            SAMEDI: [],
+            LUNDI: [], MARDI: [], MERCREDI: [], JEUDI: [], VENDREDI: [], SAMEDI: [],
         };
 
         const dayNames = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
@@ -430,36 +368,9 @@ export class HeureCoursService {
             }
         }
 
-        return {
-            semaine: lundi.toISOString().split('T')[0],
-            jours,
-        };
+        return { semaine: lundi.toISOString().split('T')[0], jours };
     }
 
-    /**
-     * Supprimer un créneau
-     */
-    async delete(id: string, userId: string, etablissementId: string, req?: any): Promise<void> {
-        const heureCours = await this.findOne(id, etablissementId);
-        await this.repo.remove(heureCours);
-
-        // Audit
-        await auditService.log({
-            utilisateurId: userId,
-            action: AuditAction.HEURE_COURS_DELETE,
-            cible: 'HeureCours',
-            cibleId: id,
-            description: `Suppression créneau cours ${id}`,
-            module: 'personnel',
-        }, req);
-
-        logger.info(`Créneau cours supprimé: ${id}`);
-    }
-
-    /**
-     * Générer des HeureCours depuis les créneaux EDT d'un enseignant
-     * Crée un HeureCours par semaine pour chaque créneau EDT dans la période
-     */
     async genererHeuresCoursFromEdt(
         dto: GenererHeuresCoursFromEdtDto,
         etablissementId: string,
@@ -470,21 +381,17 @@ export class HeureCoursService {
         const dateD = new Date(dateDebut);
         const dateF = new Date(dateFin);
 
-        // Résoudre classeAnneeId → classeId si fourni
-        let filtreClasseAnnee: string | undefined = classeAnneeId;
-
-        // Chercher les EDT slots
-        const edtRepo = AppDataSource.getRepository(EmploiDuTemps);
+        const edtRepo = AppDataSource.getRepository(CreneauHoraire);
         const edtQuery = edtRepo
             .createQueryBuilder('e')
-            .leftJoinAndSelect('e.classeAnnee', 'ca')
-            .leftJoinAndSelect('e.matiere', 'm')
-            .where('e.enseignantId = :enseignantId', { enseignantId })
+            .leftJoinAndSelect('e.affectationMatiere', 'am')
+            .leftJoinAndSelect('am.matiere', 'm')
+            .where('am.enseignantId = :enseignantId', { enseignantId })
             .andWhere('e.etablissementId = :etablissementId', { etablissementId })
-            .andWhere('e.actif = true');
+            .andWhere('e.statut = :statut', { statut: 'VALIDE' });
 
-        if (filtreClasseAnnee) {
-            edtQuery.andWhere('e.classeAnneeId = :classeAnneeId', { classeAnneeId: filtreClasseAnnee });
+        if (classeAnneeId) {
+            edtQuery.andWhere('am.classeAnneeId = :classeAnneeId', { classeAnneeId });
         }
 
         const edtSlots = await edtQuery.getMany();
@@ -494,16 +401,6 @@ export class HeureCoursService {
             return { created: 0, skipped: 0 };
         }
 
-        // Résoudre les ClasseAnnee → classeId mapping
-        const classeAnneeIds = [...new Set(edtSlots.map(s => s.classeAnneeId))];
-        const caRepo = AppDataSource.getRepository(ClasseAnnee);
-        const classeAnnees = await caRepo.find({
-            where: { id: In(classeAnneeIds) },
-            select: ['id', 'classeId'],
-        });
-        const classeAnneeToClasseId = new Map(classeAnnees.map(ca => [ca.id, ca.classeId]));
-
-        // Map jour string → getDay()
         const jourSemaineIndex: Record<string, number> = {
             [JourSemaine.LUNDI]: 1,
             [JourSemaine.MARDI]: 2,
@@ -516,9 +413,7 @@ export class HeureCoursService {
         let created = 0;
         let skipped = 0;
 
-        // Pour chaque semaine dans la période
         const current = new Date(dateD);
-        // Avancer au lundi de la première semaine
         const dayOfWeek = current.getDay();
         const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
         current.setDate(current.getDate() + diffToMonday);
@@ -527,22 +422,15 @@ export class HeureCoursService {
         while (current <= dateF) {
             const semaineStart = new Date(current);
 
-            // Pour chaque EDT slot
             for (const slot of edtSlots) {
                 const targetDayIndex = jourSemaineIndex[slot.jour];
                 if (targetDayIndex === undefined) continue;
 
-                // Calculer la date exacte pour ce jour de la semaine
                 const courseDate = new Date(semaineStart);
                 courseDate.setDate(semaineStart.getDate() + (targetDayIndex - 1));
 
-                // Skip si hors période
                 if (courseDate < dateD || courseDate > dateF) continue;
 
-                const classeId = classeAnneeToClasseId.get(slot.classeAnneeId);
-                if (!classeId) continue;
-
-                // Vérifier si un HeureCours existe déjà pour ce créneau à cette date
                 const existing = await this.repo.findOne({
                     where: {
                         enseignantId,
@@ -557,11 +445,10 @@ export class HeureCoursService {
                     continue;
                 }
 
-                // Créer le HeureCours
                 const hc = this.repo.create({
                     enseignantId,
-                    classeId,
-                    matiereId: slot.matiereId,
+                    classeAnneeId: slot.affectationMatiere?.classeAnneeId || '',
+                    matiereId: slot.affectationMatiere?.matiereId || slot.matiereId || '',
                     periodeId: periodeId || slot.periodeId,
                     creneauId: slot.id,
                     salleId: slot.salleId,
@@ -576,7 +463,6 @@ export class HeureCoursService {
                 created++;
             }
 
-            // Passer à la semaine suivante
             current.setDate(current.getDate() + 7);
         }
 

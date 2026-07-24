@@ -1,0 +1,1 @@
+Frontend feature modules for managing student absences and sanctions, plus school equipment maintenance interventions, each exposing a React page component, typed hooks, and shared types.

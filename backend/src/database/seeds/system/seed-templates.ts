@@ -71,8 +71,7 @@ const P = {
     ANIM: { ref: 'ANIM', intitulé: 'Animateur Pédagogique', niveauResponsabilite: 'EXECUTANT', fonctionRef: 'ANIMATEUR', nombrePostes: 1 },
 };
 
-const H_DIR_CENSEUR = [{ superieurRef: 'DIRECTION', subordonneRef: 'CENSORAT', typeRelation: 'SUPERVISE_DIRECT' }];
-const H_DIR_SURV = [{ superieurRef: 'DIRECTION', subordonneRef: 'SURVEILLANCE', typeRelation: 'SUPERVISE_DIRECT' }];
+
 
 const TEMPLATES: TemplateDef[] = [
 
@@ -86,12 +85,12 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 4, echelonCode: 'CENSORAT', nom: 'Censorat', count: 1,
+                    niveau: 4, echelonCode: 'DIRECTION', nom: 'Censorat', count: 1,
                     postes: [P.CENSEUR, { ...P.PROF, intitulé: 'Censeur Adjoint', ref: 'CENSEUR_ADJ', nombrePostes: 1 }],
                     hierarchie: [],
                     enfants: [
                         {
-                            niveau: 3, echelonCode: 'DEPARTEMENT', nom: 'Département', count: 6,
+                            niveau: 3, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Département', count: 6,
                             postes: [P.CHEF_DEPT, { ...P.PROF, nombrePostes: 8 }],
                             hierarchie: [],
                             enfants: [],
@@ -99,13 +98,13 @@ const TEMPLATES: TemplateDef[] = [
                     ],
                 },
                 {
-                    niveau: 4, echelonCode: 'SURVEILLANCE', nom: 'Surveillance Générale', count: 1,
+                    niveau: 4, echelonCode: 'SERVICE', nom: 'Surveillance Générale', count: 1,
                     postes: [P.SURV, { ...P.SURV, intitulé: 'Surveillant', ref: 'SURV_ADJ', nombrePostes: 4 }],
                     hierarchie: [],
                     enfants: [],
                 },
                 {
-                    niveau: 3, echelonCode: 'INTENDANCE', nom: 'Intendance', count: 1,
+                    niveau: 3, echelonCode: 'SERVICE', nom: 'Intendance', count: 1,
                     postes: [P.INTEND, P.COMPTA, { ...P.ADMIN, intitulé: 'Agent de gestion', ref: 'AGENT_GEST', nombrePostes: 2 }],
                     hierarchie: [],
                     enfants: [],
@@ -124,12 +123,12 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 4, echelonCode: 'CENSORAT', nom: 'Censorat', count: 1,
+                    niveau: 4, echelonCode: 'DIRECTION', nom: 'Censorat', count: 1,
                     postes: [P.CENSEUR, P.SURV, { ...P.SURV, intitulé: 'Chef des Travaux', ref: 'CHEF_TRAV', niveauResponsabilite: 'DIRECTION_ADJOINTE', nombrePostes: 1 }],
                     hierarchie: [],
                     enfants: [
                         {
-                            niveau: 3, echelonCode: 'DEPARTEMENT', nom: 'Département Technique', count: 4,
+                            niveau: 3, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Département Technique', count: 4,
                             postes: [P.CHEF_DEPT, { ...P.FORMATEUR, nombrePostes: 6 }],
                             hierarchie: [],
                             enfants: [
@@ -163,12 +162,12 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 4, echelonCode: 'CENSORAT', nom: 'Censorat', count: 1,
+                    niveau: 4, echelonCode: 'DIRECTION', nom: 'Censorat', count: 1,
                     postes: [P.CENSEUR, { ...P.SURV, nombrePostes: 2 }],
                     hierarchie: [],
                     enfants: [
                         {
-                            niveau: 3, echelonCode: 'DEPARTEMENT', nom: 'Département', count: 5,
+                            niveau: 3, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Département', count: 5,
                             postes: [P.CHEF_DEPT, { ...P.PROF, nombrePostes: 6 }],
                             hierarchie: [],
                             enfants: [],
@@ -195,12 +194,12 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 4, echelonCode: 'CENSORAT', nom: 'Chef des Travaux', count: 1,
+                    niveau: 4, echelonCode: 'DIRECTION', nom: 'Chef des Travaux', count: 1,
                     postes: [{ ...P.CENSEUR, intitulé: 'Chef des Travaux', ref: 'CHEF_TRAV', niveauResponsabilite: 'DIRECTION_ADJOINTE', nombrePostes: 1 }],
                     hierarchie: [],
                     enfants: [
                         {
-                            niveau: 3, echelonCode: 'DEPARTEMENT', nom: 'Section Technique', count: 3,
+                            niveau: 3, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Section Technique', count: 3,
                             postes: [{ ...P.CHEF_DEPT, intitulé: 'Chef de Section', ref: 'CHEF_SECTION' }, { ...P.FORMATEUR, nombrePostes: 4 }],
                             hierarchie: [],
                             enfants: [],
@@ -227,7 +226,7 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 3, echelonCode: 'POLE_PEDAGOGIQUE', nom: 'Cycle', count: 3,
+                    niveau: 3, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Cycle', count: 3,
                     postes: [{ ...P.CHEF_DEPT, intitulé: 'Coordinateur de Cycle', ref: 'COORD_CYCLE', niveauResponsabilite: 'COORDINATEUR' },
                              { ...P.PROF, intitulé: 'Instituteur', ref: 'INSTIT', niveauResponsabilite: 'EXECUTANT', nombrePostes: 6 }],
                     hierarchie: [],
@@ -247,7 +246,7 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 3, echelonCode: 'DEPARTEMENT', nom: 'Section', count: 2,
+                    niveau: 3, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Section', count: 2,
                     postes: [{ ...P.PROF, intitulé: 'Instituteur(-trice) Maternelle', ref: 'INSTIT_MAT', niveauResponsabilite: 'EXECUTANT', nombrePostes: 4 },
                              { ...P.ANIM, intitulé: 'Aide-Maternelle', ref: 'AIDE_MAT', nombrePostes: 2 }],
                     hierarchie: [],
@@ -269,10 +268,10 @@ const TEMPLATES: TemplateDef[] = [
                 {
                     niveau: 4, echelonCode: 'DIRECTION', nom: 'Direction du Secondaire', count: 1,
                     postes: [{ ...P.DIR, intitulé: 'Directeur du Secondaire', ref: 'DIR_SECONDAIRE' }, P.CENSEUR, P.SURV],
-                    hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'DIR_SECONDAIRE', typeRelation: 'SUPERVISE_DIRECT' }],
+                    hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'DIR_SECONDAIRE', typeRelation: 'DIRECT' }],
                     enfants: [
                         {
-                            niveau: 3, echelonCode: 'DEPARTEMENT', nom: 'Département', count: 4,
+                            niveau: 3, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Département', count: 4,
                             postes: [P.CHEF_DEPT, { ...P.PROF, nombrePostes: 6 }],
                             hierarchie: [], enfants: [],
                         },
@@ -281,10 +280,10 @@ const TEMPLATES: TemplateDef[] = [
                 {
                     niveau: 4, echelonCode: 'DIRECTION', nom: 'Direction du Primaire', count: 1,
                     postes: [{ ...P.DIR, intitulé: 'Directeur du Primaire', ref: 'DIR_PRIMAIRE' }],
-                    hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'DIR_PRIMAIRE', typeRelation: 'SUPERVISE_DIRECT' }],
+                    hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'DIR_PRIMAIRE', typeRelation: 'DIRECT' }],
                     enfants: [
                         {
-                            niveau: 3, echelonCode: 'POLE_PEDAGOGIQUE', nom: 'Cycle Primaire', count: 3,
+                            niveau: 3, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Cycle Primaire', count: 3,
                             postes: [{ ...P.PROF, intitulé: 'Instituteur', ref: 'INSTIT_PRIM', nombrePostes: 4 }],
                             hierarchie: [], enfants: [],
                         },
@@ -293,10 +292,10 @@ const TEMPLATES: TemplateDef[] = [
                 {
                     niveau: 4, echelonCode: 'DIRECTION', nom: 'Direction de la Maternelle', count: 1,
                     postes: [{ ...P.DIR, intitulé: 'Directrice de la Maternelle', ref: 'DIR_MAT_COMP' }],
-                    hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'DIR_MAT_COMP', typeRelation: 'SUPERVISE_DIRECT' }],
+                    hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'DIR_MAT_COMP', typeRelation: 'DIRECT' }],
                     enfants: [
                         {
-                            niveau: 3, echelonCode: 'DEPARTEMENT', nom: 'Section Maternelle', count: 2,
+                            niveau: 3, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Section Maternelle', count: 2,
                             postes: [{ ...P.PROF, intitulé: 'Institutrice Maternelle', ref: 'INSTIT_MAT_COMP', nombrePostes: 3 }],
                             hierarchie: [], enfants: [],
                         },
@@ -318,7 +317,7 @@ const TEMPLATES: TemplateDef[] = [
                 {
                     niveau: 4, echelonCode: 'DIRECTION', nom: 'Direction d\'Établissement', count: 3,
                     postes: [{ ...P.DIR, intitulé: 'Directeur d\'Établissement', ref: 'DIR_ETAB' }, P.RESP_ADMIN],
-                    hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'DIR_ETAB', typeRelation: 'SUPERVISE_DIRECT' }],
+                    hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'DIR_ETAB', typeRelation: 'DIRECT' }],
                     enfants: [
                         {
                             niveau: 3, echelonCode: 'SERVICE', nom: 'Service Pédagogique', count: 1,
@@ -341,19 +340,19 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 4, echelonCode: 'CENSORAT', nom: 'Scolarité', count: 1,
+                    niveau: 4, echelonCode: 'DIRECTION', nom: 'Scolarité', count: 1,
                     postes: [{ ...P.CENSEUR, intitulé: 'Chef de Scolarité', ref: 'CHEF_SCOL' }],
                     hierarchie: [],
                     enfants: [
                         {
-                            niveau: 3, echelonCode: 'DEPARTEMENT', nom: 'Département de Formation', count: 3,
+                            niveau: 3, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Département de Formation', count: 3,
                             postes: [P.CHEF_DEPT, { ...P.PROF, intitulé: 'Formateur', ref: 'FORMATEUR_ENIEG', nombrePostes: 5 }],
                             hierarchie: [], enfants: [],
                         },
                     ],
                 },
                 {
-                    niveau: 3, echelonCode: 'SURVEILLANCE', nom: 'Surveillance', count: 1,
+                    niveau: 3, echelonCode: 'SERVICE', nom: 'Surveillance', count: 1,
                     postes: [P.SURV],
                     hierarchie: [],
                     enfants: [],
@@ -377,7 +376,7 @@ const TEMPLATES: TemplateDef[] = [
                     hierarchie: [],
                     enfants: [
                         {
-                            niveau: 3, echelonCode: 'DEPARTEMENT', nom: 'Département', count: 5,
+                            niveau: 3, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Département', count: 5,
                             postes: [P.CHEF_DEPT, { ...P.PROF, intitulé: 'Maître de Conférences', ref: 'MC', nombrePostes: 8 },
                                      { ...P.PROF, intitulé: 'Assistant', ref: 'ASSISTANT', nombrePostes: 4 }],
                             hierarchie: [], enfants: [],
@@ -404,7 +403,7 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 4, echelonCode: 'CENSORAT', nom: 'Chef des Travaux', count: 1,
+                    niveau: 4, echelonCode: 'DIRECTION', nom: 'Chef des Travaux', count: 1,
                     postes: [{ ...P.CENSEUR, intitulé: 'Chef des Travaux', ref: 'CHEF_TRAV_CETFP', niveauResponsabilite: 'DIRECTION_ADJOINTE' }],
                     hierarchie: [],
                     enfants: [
@@ -435,10 +434,10 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 4, echelonCode: 'DEPARTEMENT', nom: 'Pôle de Formation', count: 3,
+                    niveau: 4, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Pôle de Formation', count: 3,
                     postes: [{ ...P.CHEF_DEPT, intitulé: 'Coordinateur de Pôle', ref: 'COORD_POLE' },
                              { ...P.FORMATEUR, nombrePostes: 4 }],
-                    hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'COORD_POLE', typeRelation: 'SUPERVISE_DIRECT' }],
+                    hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'COORD_POLE', typeRelation: 'DIRECT' }],
                     enfants: [],
                 },
                 {
@@ -463,7 +462,7 @@ const TEMPLATES: TemplateDef[] = [
                 {
                     niveau: 4, echelonCode: 'DIRECTION', nom: 'Vice-Doyenat', count: 3,
                     postes: [{ ...P.CENSEUR, intitulé: 'Vice-Doyen', ref: 'VICE_DOYEN' }],
-                    hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'VICE_DOYEN', typeRelation: 'SUPERVISE_DIRECT' }],
+                    hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'VICE_DOYEN', typeRelation: 'DIRECT' }],
                     enfants: [],
                 },
                 {
@@ -473,7 +472,7 @@ const TEMPLATES: TemplateDef[] = [
                     enfants: [],
                 },
                 {
-                    niveau: 3, echelonCode: 'DEPARTEMENT', nom: 'Département', count: 6,
+                    niveau: 3, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Département', count: 6,
                     postes: [P.CHEF_DEPT, { ...P.PROF, intitulé: 'Professeur des Universités', ref: 'PU', nombrePostes: 10 },
                              { ...P.PROF, intitulé: 'Maître de Conférences', ref: 'MC_UNIV', nombrePostes: 8 },
                              { ...P.PROF, intitulé: 'Assistant', ref: 'ASSIST_UNIV', nombrePostes: 6 }],
@@ -498,7 +497,7 @@ const TEMPLATES: TemplateDef[] = [
                     hierarchie: [],
                     enfants: [
                         {
-                            niveau: 3, echelonCode: 'DEPARTEMENT', nom: 'Département', count: 4,
+                            niveau: 3, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Département', count: 4,
                             postes: [P.CHEF_DEPT, { ...P.PROF, nombrePostes: 6 }],
                             hierarchie: [], enfants: [],
                         },
@@ -524,12 +523,12 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 4, echelonCode: 'DEPARTEMENT', nom: 'Pôle Pédagogique', count: 1,
+                    niveau: 4, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Pôle Pédagogique', count: 1,
                     postes: [{ ...P.CHEF_DEPT, intitulé: 'Chef de la Pédagogie', ref: 'CHEF_PED' }],
                     hierarchie: [],
                     enfants: [
                         {
-                            niveau: 3, echelonCode: 'DEPARTEMENT', nom: 'Section de Formation', count: 3,
+                            niveau: 3, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Section de Formation', count: 3,
                             postes: [{ ...P.FORMATEUR, intitulé: 'Moniteur Maritime', ref: 'MONITEUR', nombrePostes: 4 }],
                             hierarchie: [], enfants: [],
                         },
@@ -555,7 +554,7 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 4, echelonCode: 'DEPARTEMENT', nom: 'Chef de Section', count: 1,
+                    niveau: 4, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Chef de Section', count: 1,
                     postes: [{ ...P.CHEF_DEPT, intitulé: 'Chef de Section', ref: 'CHEF_SECTION_SAR' }],
                     hierarchie: [],
                     enfants: [
@@ -580,7 +579,7 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 4, echelonCode: 'DEPARTEMENT', nom: 'Pôle Pédagogique', count: 1,
+                    niveau: 4, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Pôle Pédagogique', count: 1,
                     postes: [{ ...P.CHEF_DEPT, intitulé: 'Conseiller Pédagogique Principal', ref: 'CP_PRINCIPAL' },
                              { ...P.PROF, intitulé: 'Conseiller Pédagogique', ref: 'CP', niveauResponsabilite: 'COORDINATEUR', nombrePostes: 5 }],
                     hierarchie: [],
@@ -606,7 +605,7 @@ const TEMPLATES: TemplateDef[] = [
             hierarchie: [],
             enfants: [
                 {
-                    niveau: 4, echelonCode: 'DEPARTEMENT', nom: 'Pôle d\'Orientation', count: 2,
+                    niveau: 4, echelonCode: 'DEPARTEMENT_PEDA', nom: 'Pôle d\'Orientation', count: 2,
                     postes: [{ ...P.ORIENT, nombrePostes: 3 }],
                     hierarchie: [],
                     enfants: [],
@@ -731,7 +730,7 @@ const TEMPLATES: TemplateDef[] = [
                     niveau: 4, echelonCode: 'SERVICE', nom: 'Service', count: 4,
                     postes: [{ ...P.RESP_ADMIN, intitulé: 'Chef de Service', ref: 'CHEF_SERV' },
                              { ...P.ADMIN, intitulé: 'Agent', ref: 'AGENT', nombrePostes: 3 }],
-                    hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'CHEF_SERV', typeRelation: 'SUPERVISE_DIRECT' }],
+                    hierarchie: [{ superieurRef: 'DIRECTION', subordonneRef: 'CHEF_SERV', typeRelation: 'DIRECT' }],
                     enfants: [
                         {
                             niveau: 2, echelonCode: 'BUREAU', nom: 'Bureau', count: 2,

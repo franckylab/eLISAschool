@@ -96,9 +96,9 @@ export function ImpactSuppressionDialog({ open, onOpenChange, unite, onDeleted }
         >
             <div className="space-y-4">
                 {/* Alerte */}
-                <div className="flex items-start gap-3 p-3 rounded-lg" style={{ backgroundColor: 'var(--color-error, #ef4444)' + '10' }}>
-                    <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-error, #ef4444)' }} />
-                    <p className="text-sm" style={{ color: 'var(--color-text-secondary, #64748b)' }}>
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10">
+                    <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-destructive" />
+                    <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                         {t('organigramme.impact.warning', 'Cette action est irréversible. Les unités enfants et les données associées seront également supprimées.')}
                     </p>
                 </div>

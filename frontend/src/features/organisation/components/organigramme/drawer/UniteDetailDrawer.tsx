@@ -12,6 +12,7 @@
 import { useEffect, useCallback } from 'react';
 import { X, Building2, Briefcase, GitBranch, Edit, Trash2, Plus, GripVertical, MapPin, Layers } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { OrganigrammeNode } from '../../../types/organisation.types';
 
 interface UniteDetailDrawerProps {
@@ -45,19 +46,29 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
     const labelClass = "text-xs font-medium uppercase tracking-wide mb-2";
 
     return (
-        <>
+        <AnimatePresence>
             {/* Overlay */}
-            <div
-                className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] transition-opacity"
+            <motion.div
+                key="overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px]"
                 onClick={onClose}
             />
 
             {/* Drawer */}
-            <div
+            <motion.div
+                key="drawer"
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 role="dialog"
                 aria-modal="true"
                 aria-label={unite ? `Détails — ${unite.nom}` : 'Détails unité'}
-                className="fixed top-0 right-0 z-50 h-full w-[380px] max-w-[90vw] overflow-y-auto shadow-xl transition-transform"
+                className="fixed top-0 right-0 z-50 h-full w-[380px] max-w-[90vw] overflow-y-auto shadow-xl"
                 style={{
                     backgroundColor: 'var(--color-surface)',
                     borderLeft: '1px solid var(--color-bordure)',
@@ -107,7 +118,7 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                         <div className="flex items-center gap-2 text-sm">
                             <Layers className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
                             <span style={{ color: 'var(--color-text-muted)' }}>{t('organigramme.drawer.echelon', 'Échelon')} :</span>
-                            <span style={{ color: 'var(--color-text)' }}>{unite.echelonStructurelLabel || unite.type || '—'}</span>
+                            <span style={{ color: 'var(--color-text)' }}>{unite.echelonStructurelLabel || '—'}</span>
                         </div>
                         {unite.localisation && (
                             <div className="flex items-center gap-2 text-sm">
@@ -242,7 +253,7 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                         </div>
                     </div>
                 </div>
-            </div>
-        </>
+            </motion.div>
+        </AnimatePresence>
     );
 }

@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { Repository, FindOptionsWhere } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { ModeRemunerationEntity } from '../entities';
 import { CreateModeRemunerationDto, UpdateModeRemunerationDto } from '../dto';
@@ -44,20 +44,22 @@ class ModeRemunerationService {
         return { data, total };
     }
 
-    async findById(id: string): Promise<ModeRemunerationEntity> {
-        const entity = await this.repo.findOne({ where: { id } });
+    async findById(id: string, etablissementId?: string): Promise<ModeRemunerationEntity> {
+        const where: FindOptionsWhere<ModeRemunerationEntity> = { id };
+        if (etablissementId) where.etablissementId = etablissementId;
+        const entity = await this.repo.findOne({ where });
         if (!entity) throw new AppError('Mode de rémunération non trouvé', 404, 'MODE_REMUNERATION_NOT_FOUND');
         return entity;
     }
 
-    async update(id: string, dto: UpdateModeRemunerationDto): Promise<ModeRemunerationEntity> {
-        const entity = await this.findById(id);
+    async update(id: string, dto: UpdateModeRemunerationDto, etablissementId?: string): Promise<ModeRemunerationEntity> {
+        const entity = await this.findById(id, etablissementId);
         Object.assign(entity, dto);
         return this.repo.save(entity);
     }
 
-    async delete(id: string): Promise<void> {
-        const entity = await this.findById(id);
+    async delete(id: string, etablissementId?: string): Promise<void> {
+        const entity = await this.findById(id, etablissementId);
         assertNotSystem(entity, 'supprimer');
         await this.repo.remove(entity);
     }

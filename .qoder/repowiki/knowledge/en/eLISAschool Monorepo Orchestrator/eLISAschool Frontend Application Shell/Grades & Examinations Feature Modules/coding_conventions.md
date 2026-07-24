@@ -1,0 +1,6 @@
+- Every feature exports a single barrel `index.ts` that re-exports all types, hooks, and page components so consumers import exclusively from the feature root path.
+- Server state is encapsulated in a per-feature hook file where a module-scoped `*_KEYS` object defines typed query/mutation key factories used consistently by every `useQuery` / `useMutation` call.
+- List hooks accept a typed filters object (e.g. `NoteFiltres`, `ExamenFiltres`, `ExamenNationalFiltres`) with optional pagination fields (`page`, `limit`) and forward them as query params to a paginated GET endpoint.
+- Mutations follow a uniform shape: `mutationFn` calls `apiClient.post|patch|delete`, then `onSuccess` invalidates the relevant list/detail keys via `queryClient.invalidateQueries` and surfaces a French `toast.success` message; `onError` reads `error.response?.data?.error?.message` for the user-facing error.
+- Read queries guard execution with `enabled: isAuthenticated` (and `!!id` for detail hooks), and many use `placeholderData: (previousData) => previousData` to keep optimistic UI during refetches.
+- Domain models expose both a core entity interface and a pair of `Creer*Dto` / `Modifier*Dto` interfaces plus a `*Filtres` interface, keeping request payloads distinct from response entities.

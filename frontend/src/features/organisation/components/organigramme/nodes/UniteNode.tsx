@@ -11,6 +11,7 @@
  */
 
 import { memo, useCallback, useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Handle, Position, type NodeProps } from 'reactflow';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronRight, Users, Briefcase, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -40,6 +41,7 @@ export interface UniteNodeData {
 }
 
 function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
+    const { t } = useTranslation('organisation');
     const {
         unite, isCollapsed, onToggleCollapse, onSelect, isSelected, isSearchMatch, direction,
         isEditMode, onEdit, onAddChild, onDelete,
@@ -185,7 +187,7 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                             ? 'border-[var(--color-bordure)] hover:border-[var(--color-dominant-400)] hover:shadow-md hover:scale-[1.02]'
                             : ''
                 }
-                ${isEditMode && !isDragged && !isDropTarget ? 'ring-2 ring-dashed ring-[var(--color-dominant-300)]/50' : ''}
+                ${isEditMode && !isDragged && !isDropTarget ? 'border-dashed border-[var(--color-dominant-300)]/50' : ''}
                 bg-[var(--color-surface)]
             `}
             style={{ width: 220 }}
@@ -213,7 +215,7 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
             {/* Header */}
             <div
                 className="px-3 py-2 flex items-center gap-1"
-                style={{ backgroundColor: 'var(--color-dominant-600)' }}
+                style={{ backgroundColor: unite.echelonStructurelCouleur || 'var(--color-dominant-600)' }}
             >
                 <span
                     className="text-white font-medium truncate text-xs flex-1 min-w-0"
@@ -222,6 +224,15 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                 >
                     {unite.nom}
                 </span>
+                {/* Badge échelon */}
+                {unite.echelonStructurelLabel && (
+                    <span
+                        className="text-[9px] px-1 py-0.5 rounded-full font-medium text-white/90 bg-white/15 flex-shrink-0"
+                        title={unite.echelonStructurelLabel}
+                    >
+                        {unite.echelonStructurelLabel}
+                    </span>
+                )}
                 <div className="flex items-center gap-0.5 flex-shrink-0">
                     {/* Menu ⋮ — visible uniquement en mode édition */}
                     {isEditMode && (
@@ -230,6 +241,8 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                                 onClick={(e) => { e.stopPropagation(); setMenuOpen(prev => !prev); }}
                                 className="text-white/70 hover:text-white transition-colors p-0.5 rounded hover:bg-white/10"
                                 aria-label="Actions"
+                                aria-expanded={menuOpen}
+                                aria-haspopup="menu"
                             >
                                 <MoreVertical className="h-3.5 w-3.5" />
                             </button>
@@ -250,7 +263,7 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                                                 className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-dominant-50)] transition-colors"
                                             >
                                                 <Pencil className="w-3 h-3" />
-                                                Modifier
+                                                {t('modifier', 'Modifier')}
                                             </button>
                                         )}
                                         {onAddChild && (
@@ -259,7 +272,7 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                                                 className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-dominant-50)] transition-colors"
                                             >
                                                 <Plus className="w-3 h-3 text-[var(--color-dominant-600)]" />
-                                                Ajouter enfant
+                                                {t('ajouterEnfant', 'Ajouter enfant')}
                                             </button>
                                         )}
                                         {onDelete && (
@@ -268,7 +281,7 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                                                 className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--color-danger)] hover:bg-danger/10 transition-colors"
                                             >
                                                 <Trash2 className="w-3 h-3" />
-                                                Supprimer
+                                                {t('supprimer', 'Supprimer')}
                                             </button>
                                         )}
                                     </motion.div>
@@ -281,7 +294,8 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                         <button
                             onClick={handleToggle}
                             className="text-white/80 hover:text-white transition-colors p-0.5"
-                            aria-label={isCollapsed ? 'Déplier' : 'Replier'}
+                            aria-label={isCollapsed ? t('deplier') : t('replier')}
+                            aria-expanded={!isCollapsed}
                         >
                             {isCollapsed ? (
                                 <ChevronRight className="h-3.5 w-3.5" />
@@ -310,7 +324,7 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                         className="text-[var(--color-text-muted)] italic"
                         style={{ fontSize: 'clamp(0.5625rem, 0.55rem + 0.08vw, 0.625rem)' }}
                     >
-                        +{postesRestants} autre{postesRestants > 1 ? 's' : ''}
+                        +{t('autres', { count: postesRestants })}
                     </div>
                 )}
                 {postes.length === 0 && (
@@ -318,7 +332,7 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                         className="text-[var(--color-text-muted)] italic"
                         style={{ fontSize: 'clamp(0.5625rem, 0.55rem + 0.08vw, 0.625rem)' }}
                     >
-                        Aucun poste
+                        {t('aucunPosteCourt')}
                     </div>
                 )}
             </div>
@@ -338,7 +352,7 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                 </span>
                 {unite.postesVacants > 0 && (
                     <span className="text-[var(--color-warning)] font-medium">
-                        {unite.postesVacants} vacant{unite.postesVacants > 1 ? 's' : ''}
+                        {t('vacants_count', { count: unite.postesVacants })}
                     </span>
                 )}
             </div>

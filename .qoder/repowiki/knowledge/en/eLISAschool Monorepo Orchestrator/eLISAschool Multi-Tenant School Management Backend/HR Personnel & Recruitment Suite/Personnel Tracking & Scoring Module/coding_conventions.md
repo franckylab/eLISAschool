@@ -1,0 +1,6 @@
+- Every entity is annotated with `@Entity('snake_case_table')` plus targeted `@Index` decorators on foreign keys and frequently filtered columns (e.g. `anneeScolaireId`, `membrePersonnelId`, `periodeId`).
+- Cross-cutting concerns (logging, errors, config flags) are accessed through shared packages (`@common/utils/logger.util`, `@common/filters/error.filter`, `@modules/configuration/utils/config.helper`) rather than local helpers.
+- Feature toggles for background work are read at runtime via `getParamBoolean('scoring-personnel.<feature>', { defaultValue })` so cron jobs can be disabled without redeploy.
+- Controllers validate incoming requests with a local `validate(schema, data)` helper that throws `AppError` on failure, then delegate to a singleton service instance (`const service = scoringPersonnelService`).
+- All persistent entities carry `etablissementId` as a hard FK to enforce multi-tenant isolation at the query layer.
+- Services are exported as singletons (`export const <name> = new <Class>()`) instead of being constructed per-request.

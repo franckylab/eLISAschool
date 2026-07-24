@@ -8,6 +8,7 @@ import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { NoteFormModal } from './note-form-modal';
 import { usePermissions } from '@/hooks';
 import type { Note, NoteFiltres } from '../types/note.types';
 import type { Column } from '@/components/ui/DataTable';
@@ -18,6 +19,8 @@ export function NotesPage() {
     const [filtres, setFiltres] = useState<NoteFiltres>({ page: 1, limit: 20 });
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+    const [formOpen, setFormOpen] = useState(false);
+    const [editNote, setEditNote] = useState<Note | null>(null);
 
     const { data, isLoading, isFetching, error, refetch } = useNotes(filtres);
     const supprimer = useSupprimerNote();
@@ -45,11 +48,12 @@ export function NotesPage() {
     }
 
     const typesNote: Record<string, { label: string; color: string }> = {
-        composition: { label: t('composition'), color: 'red' },
-        interrogation: { label: t('interrogation'), color: 'blue' },
-        exercice: { label: t('exercice'), color: 'green' },
-        projet: { label: t('projet'), color: 'purple' },
-        autre: { label: t('autre'), color: 'gray' },
+        DEVOIR: { label: t('composition'), color: 'red' },
+        INTERROGATION: { label: t('interrogation'), color: 'blue' },
+        EXAMEN: { label: t('examen'), color: 'orange' },
+        PROJET: { label: t('projet'), color: 'purple' },
+        PARTICIPATION: { label: t('participation'), color: 'green' },
+        AUTRE: { label: t('autre'), color: 'gray' },
     };
 
     const colonnes: Column<Note>[] = [
@@ -92,8 +96,8 @@ export function NotesPage() {
                     }`}>
                         {n.valeur}/20
                     </span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium bg-${typesNote[n.type]?.color}-100 text-${typesNote[n.type]?.color}-800`}>
-                        {typesNote[n.type]?.label}
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium bg-${typesNote[n.typeEvaluation]?.color}-100 text-${typesNote[n.typeEvaluation]?.color}-800`}>
+                        {typesNote[n.typeEvaluation]?.label}
                     </span>
                 </div>
             ),
@@ -120,7 +124,7 @@ export function NotesPage() {
                     key: 'modifier',
                     icon: Edit,
                     label: t('modifier'),
-                    onClick: () => {},
+                    onClick: () => { setEditNote(n); setFormOpen(true); },
                     permission: 'notes:edit',
                 },
                 {
@@ -148,7 +152,7 @@ export function NotesPage() {
                 actions={
                     <div className="flex gap-2">
                         {hasPermission('notes:create') && (
-                            <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />}>
+                            <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => { setEditNote(null); setFormOpen(true); }}>
                                 {t('nouvelleNote')}
                             </ElisaButton>
                         )}
@@ -184,6 +188,12 @@ export function NotesPage() {
                 onPageChange={(page) => setFiltres((prev) => ({ ...prev, page }))}
                 onLimitChange={(limit) => setFiltres((prev) => ({ ...prev, limit, page: 1 }))}
                 tableId="notes"
+            />
+
+            <NoteFormModal
+                open={formOpen}
+                onOpenChange={setFormOpen}
+                note={editNote}
             />
 
             <ConfirmDialog

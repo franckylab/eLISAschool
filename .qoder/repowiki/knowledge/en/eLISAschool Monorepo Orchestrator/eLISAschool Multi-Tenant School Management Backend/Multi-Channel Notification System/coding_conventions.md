@@ -1,0 +1,5 @@
+- Each provider implements the shared `INotificationProvider` interface and exposes a singleton instance plus default export so it can be registered globally without DI.
+- Controller handlers wrap body/query in `validateDto(schema, ...)` and pass `req.utilisateur!.id` as the actor, keeping auth/permission checks (`authMiddleware`, `requirePermission`) at the route level.
+- Every service method that mutates state calls `auditService.log({ module: 'notifications', action: AuditAction.*, ... })` inside a try/catch so audit failures never break the primary flow.
+- Feature switches are read via `getParamBoolean('notifications.enable_*')` with a local TTL cache (`paramsCache`, 5 min) instead of direct env reads, and callers throw `AppError` with typed codes when a channel is disabled.
+- Bulk operations batch-insert via `repository.insert([...])` and then process deliveries asynchronously in fixed-size batches (`MAX_BATCH_SIZE = 50`) with small delays between batches.

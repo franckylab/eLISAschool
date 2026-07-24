@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Copy, Shield, type LucideIcon } from 'lucide-react';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -183,9 +184,15 @@ export function NomenclatureCrudPage<T extends EntityWithId>({
                 open={!!deleteId}
                 onOpenChange={(open) => { if (!open) setDeleteId(null); }}
                 onConfirm={async () => {
-                    if (deleteId) await del.mutateAsync(deleteId);
-                    setDeleteId(null);
-                    refetch();
+                    if (!deleteId) return;
+                    try {
+                        await del.mutateAsync(deleteId);
+                        toast.success(t('suppressionSucces', 'Supprimé avec succès'));
+                        setDeleteId(null);
+                        refetch();
+                    } catch {
+                        // handleError already shows toast, just don't close the dialog
+                    }
                 }}
                 title={t('supprimer')}
                 description={t('confirmerSuppression')}

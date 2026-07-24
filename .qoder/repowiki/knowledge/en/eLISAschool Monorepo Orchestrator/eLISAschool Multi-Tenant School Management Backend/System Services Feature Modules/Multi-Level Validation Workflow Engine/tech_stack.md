@@ -1,0 +1,1 @@
+TypeScript + Express; TypeORM entities with `simple-json` columns for `configRoles` and `historique`; Zod schemas for request validation; permissions delegated to `@modules/auth/services/permission-resolver.service`.

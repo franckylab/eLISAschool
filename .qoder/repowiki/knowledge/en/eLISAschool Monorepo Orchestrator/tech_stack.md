@@ -1,0 +1,1 @@
+Node.js ≥20 / npm workspaces as the monorepo glue; Docker Compose for the full stack (PostgreSQL, Redis, pgAdmin); TypeScript shared package consumed by both backend and frontend.

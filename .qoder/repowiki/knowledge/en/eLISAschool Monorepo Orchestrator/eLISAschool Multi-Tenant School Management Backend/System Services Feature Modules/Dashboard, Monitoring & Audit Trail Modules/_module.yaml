@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/system_services/dashboard_monitoring_audit
+title: Dashboard, Monitoring & Audit Trail Modules
+scope:
+    - backend/src/modules/dashboard/
+    - backend/src/modules/monitoring/
+    - backend/src/modules/audit/
+source_files: []
+depends_on: []
+related_to: []

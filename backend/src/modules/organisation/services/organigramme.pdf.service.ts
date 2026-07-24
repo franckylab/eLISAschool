@@ -13,6 +13,27 @@ import { OrganisationService } from './organisation.service';
 import { logger } from '@common/utils/logger.util';
 import { AppError } from '@common/filters/error.filter';
 
+/** Noeud de l'organigramme pour le rendu HTML/PDF */
+interface NoeudOrganigramme {
+    id: string;
+    nom: string;
+    code?: string;
+    type?: string;
+    description?: string;
+    responsableId?: string;
+    enfants?: NoeudOrganigramme[];
+    postes?: PosteOrganigrammePDF[];
+}
+
+/** Poste dans l'organigramme pour le rendu PDF */
+interface PosteOrganigrammePDF {
+    id: string;
+    intitule: string;
+    statut?: string;
+    occupantsCount?: number;
+    nombrePostes?: number;
+}
+
 export class OrganigrammePdfService {
     private organisationService: OrganisationService;
 
@@ -37,7 +58,7 @@ export class OrganigrammePdfService {
     /**
      * Construire le HTML de l'organigramme
      */
-    private construireHTML(organigramme: any): string {
+    private construireHTML(organigramme: NoeudOrganigramme): string {
         return `
 <!DOCTYPE html>
 <html lang="fr">
@@ -292,7 +313,7 @@ export class OrganigrammePdfService {
     /**
      * Rendre récursivement les unités
      */
-    private renderUnites(unites: any[]): string {
+    private renderUnites(unites: NoeudOrganigramme[]): string {
         if (!unites || unites.length === 0) return '';
 
         return unites.map(unite => `
@@ -310,7 +331,7 @@ export class OrganigrammePdfService {
                 ${unite.postes && unite.postes.length > 0 ? `
                     <div class="postes">
                         <h4>📋 Postes (${unite.postes.length})</h4>
-                        ${unite.postes.map((poste: any) => `
+                        ${unite.postes.map((poste: PosteOrganigrammePDF) => `
                             <div class="poste ${poste.statut === 'vacant' ? 'vacant' : ''}">
                                 <div class="intitule">${poste.intitule}</div>
                                 ${poste.occupantsCount > 0
@@ -334,10 +355,10 @@ export class OrganigrammePdfService {
     /**
      * Compter les unités récursivement
      */
-    private compterUnites(organigramme: any): number {
+    private compterUnites(organigramme: NoeudOrganigramme): number {
         let count = 1;
         if (organigramme.enfants) {
-            organigramme.enfants.forEach((enfant: any) => {
+            organigramme.enfants.forEach((enfant: NoeudOrganigramme) => {
                 count += this.compterUnites(enfant);
             });
         }
@@ -347,10 +368,10 @@ export class OrganigrammePdfService {
     /**
      * Compter les postes récursivement
      */
-    private compterPostes(organigramme: any): number {
+    private compterPostes(organigramme: NoeudOrganigramme): number {
         let count = (organigramme.postes || []).length;
         if (organigramme.enfants) {
-            organigramme.enfants.forEach((enfant: any) => {
+            organigramme.enfants.forEach((enfant: NoeudOrganigramme) => {
                 count += this.compterPostes(enfant);
             });
         }
@@ -360,10 +381,10 @@ export class OrganigrammePdfService {
     /**
      * Compter les postes occupés
      */
-    private compterPostesOccupes(organigramme: any): number {
-        let count = (organigramme.postes || []).filter((p: any) => (p.occupantsCount || 0) > 0).length;
+    private compterPostesOccupes(organigramme: NoeudOrganigramme): number {
+        let count = (organigramme.postes || []).filter((p: PosteOrganigrammePDF) => (p.occupantsCount || 0) > 0).length;
         if (organigramme.enfants) {
-            organigramme.enfants.forEach((enfant: any) => {
+            organigramme.enfants.forEach((enfant: NoeudOrganigramme) => {
                 count += this.compterPostesOccupes(enfant);
             });
         }
@@ -373,10 +394,10 @@ export class OrganigrammePdfService {
     /**
      * Compter les postes vacants
      */
-    private compterPostesVacants(organigramme: any): number {
-        let count = (organigramme.postes || []).filter((p: any) => (p.occupantsCount || 0) < (p.nombrePostes || 1)).length;
+    private compterPostesVacants(organigramme: NoeudOrganigramme): number {
+        let count = (organigramme.postes || []).filter((p: PosteOrganigrammePDF) => (p.occupantsCount || 0) < (p.nombrePostes || 1)).length;
         if (organigramme.enfants) {
-            organigramme.enfants.forEach((enfant: any) => {
+            organigramme.enfants.forEach((enfant: NoeudOrganigramme) => {
                 count += this.compterPostesVacants(enfant);
             });
         }

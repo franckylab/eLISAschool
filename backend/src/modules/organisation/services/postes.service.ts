@@ -16,7 +16,17 @@ export class PostesService {
         this.affectationRepo = AppDataSource.getRepository(AffectationPoste);
     }
 
-    async create(dto: CreatePosteDto): Promise<Poste> {
+    async create(dto: CreatePosteDto, etablissementId?: string): Promise<Poste> {
+        // Vérifier que l'unité cible appartient à l'établissement
+        if (etablissementId) {
+            const unite = await AppDataSource.getRepository('UniteOrganisationnelle').findOne({
+                where: { id: dto.uniteOrganisationnelleId, etablissementId },
+            });
+            if (!unite) {
+                throw new AppError('Unité organisationnelle non trouvée dans votre établissement', 404, 'UNITE_NOT_FOUND');
+            }
+        }
+
         const existing = await this.posteRepo.findOne({
             where: { code: dto.code, uniteOrganisationnelleId: dto.uniteOrganisationnelleId },
         });
@@ -121,8 +131,8 @@ export class PostesService {
         return poste;
     }
 
-    async update(id: string, dto: UpdatePosteDto): Promise<Poste> {
-        const poste = await this.findById(id);
+    async update(id: string, dto: UpdatePosteDto, etablissementId?: string): Promise<Poste> {
+        const poste = await this.findById(id, etablissementId);
         Object.assign(poste, dto);
 
         const updated = await this.posteRepo.save(poste);
@@ -130,8 +140,8 @@ export class PostesService {
         return updated;
     }
 
-    async delete(id: string): Promise<void> {
-        const poste = await this.findById(id);
+    async delete(id: string, etablissementId?: string): Promise<void> {
+        const poste = await this.findById(id, etablissementId);
         await this.posteRepo.remove(poste);
         logger.info(`Poste supprimé: ${poste.intitule}`, { posteId: id });
     }

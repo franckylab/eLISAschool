@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ChevronRight, ChevronDown, Edit, Trash2, Briefcase, Loader2 } from 'lucide-react';
 import type { Fonction } from '../types/fonction.types';
@@ -26,6 +27,7 @@ function FonctionTreeNode({
     depth: number;
     compact?: boolean;
 }) {
+    const { t } = useTranslation('organisation');
     const [expanded, setExpanded] = useState(true);
     const hasChildren = fonction.enfants && fonction.enfants.length > 0;
 
@@ -64,17 +66,17 @@ function FonctionTreeNode({
                 </button>
 
                 {fonction.majorationDefaut != null && !compact && (
-                    <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                         +{fonction.majorationDefaut}%
                     </span>
                 )}
 
                 <span className={`text-xs px-2 py-0.5 rounded-full ${
                     fonction.actif
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                        : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                        ? 'bg-success/10 text-success'
+                        : 'bg-destructive/10 text-destructive'
                 }`}>
-                    {fonction.actif ? 'Actif' : 'Inactif'}
+                    {fonction.actif ? t('actif') : t('inactif')}
                 </span>
 
                 {!compact && (
@@ -82,14 +84,14 @@ function FonctionTreeNode({
                         <button
                             onClick={() => onEdit(fonction)}
                             className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                            title="Modifier"
+                            title={t('modifier')}
                         >
                             <Edit className="h-3.5 w-3.5" />
                         </button>
                         <button
                             onClick={() => onDelete(fonction)}
-                            className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground hover:text-red-600 transition-colors"
-                            title="Supprimer"
+                            className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                            title={t('supprimer')}
                         >
                             <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -129,7 +131,7 @@ export function FonctionArbre({ fonctions, isLoading, onEdit, onDelete, onView, 
         return (
             <div className="text-center py-12 text-muted-foreground">
                 <Briefcase className="h-12 w-12 mx-auto mb-3 opacity-40" />
-                <p>Aucune fonction. Créez votre première fonction.</p>
+                <p>{t('aucuneFonctionIndication')}</p>
             </div>
         );
     }

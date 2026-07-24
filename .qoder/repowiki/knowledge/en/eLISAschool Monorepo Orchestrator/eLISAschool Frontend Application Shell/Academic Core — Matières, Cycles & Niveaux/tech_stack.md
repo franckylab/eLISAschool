@@ -1,0 +1,1 @@
+React Query (`@tanstack/react-query`) for server state, `sonner` for toast notifications, `framer-motion` for page transitions, `lucide-react` icons, and a shared `apiClient` wrapper over HTTP calls returning paginated results typed via `PaginatedResult<T>` from `@shared/types/api.types`.

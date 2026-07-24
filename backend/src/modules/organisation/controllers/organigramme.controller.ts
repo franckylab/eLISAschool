@@ -1,12 +1,12 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { organisationService } from '../services';
 import { organigrammePdfService } from '../services/organigramme.pdf.service';
-import { authMiddleware } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { AppError } from '@common/filters/error.filter';
 
 const router = Router();
 
-router.get('/statistiques', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/statistiques', authMiddleware, requirePermission('organisation:organigramme:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur?.etablissementId;
         if (!etablissementId) throw new AppError('Établissement requis', 400, 'ETABLISSEMENT_REQUIRED');
@@ -15,7 +15,7 @@ router.get('/statistiques', authMiddleware, async (req: Request, res: Response, 
     } catch (error) { next(error); }
 });
 
-router.get('/organigramme', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/organigramme', authMiddleware, requirePermission('organisation:organigramme:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur?.etablissementId;
         if (!etablissementId) throw new AppError('Établissement requis', 400, 'ETABLISSEMENT_REQUIRED');
@@ -24,7 +24,7 @@ router.get('/organigramme', authMiddleware, async (req: Request, res: Response, 
     } catch (error) { next(error); }
 });
 
-router.get('/valider-arborescence', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/valider-arborescence', authMiddleware, requirePermission('organisation:organigramme:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur?.etablissementId;
         if (!etablissementId) throw new AppError('Établissement requis', 400, 'ETABLISSEMENT_REQUIRED');
@@ -33,7 +33,7 @@ router.get('/valider-arborescence', authMiddleware, async (req: Request, res: Re
     } catch (error) { next(error); }
 });
 
-router.get('/export-pdf', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/export-pdf', authMiddleware, requirePermission('organisation:organigramme:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur?.etablissementId;
         if (!etablissementId) throw new AppError('Établissement requis', 400, 'ETABLISSEMENT_REQUIRED');

@@ -17,6 +17,10 @@ import { Etablissement } from '@modules/etablissement/entities';
 export interface TemplatePoste {
     ref: string;
     intitule: string;
+    /** Variante accentuée possible dans certains templates */
+    intitulé?: string;
+    /** Code du niveau de responsabilité (résolu en UUID par le service) */
+    niveauResponsabilite?: string;
     niveauResponsabiliteId?: string;
     fonctionRef?: string;
     fonctionId?: string;

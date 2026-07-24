@@ -1,6 +1,0 @@
-- Each feature module under `src/modules/<name>/` exposes a barrel `index.ts` re-exporting controllers/services/entities, keeping cross-module imports uniform.
-- Route registration follows a fixed guard chain: `authMiddleware` → `filterByEtablissement()` → optional `requireModuleActive('<key>')` before mounting the module's router under `/api/<domain>`.
-- Environment variables are declared once in `src/config/env.config.ts` using a Zod schema with defaults, then consumed through the typed `envConfig` object rather than `process.env` directly.
-- Database access goes through the singleton `AppDataSource` exported from `src/database/data-source.ts`; modules never create their own DataSource instances.
-- All HTTP responses follow a `{ success, data?, message? }` envelope returned from controllers, with errors funneled through the global `errorHandler` filter.
-- Cron job initialization is isolated per module in a `cron-jobs.ts` (or `services/cron-jobs.ts`) file and registered centrally from `src/index.ts` behind an `ENABLE_CRON_JOBS` flag.

@@ -18,8 +18,8 @@ export type CreatePosteFormData = z.infer<typeof createPosteSchema>;
 export type UpdatePosteFormData = z.infer<typeof updatePosteSchema>;
 
 export const STATUT_POSTE_OPTIONS = [
-    { value: 'ACTIF', label: 'Actif' },
-    { value: 'VACANT', label: 'Vacant' },
-    { value: 'EN_ATTENTE', label: 'En attente' },
-    { value: 'SUPPRIME', label: 'Supprimé' },
+    { value: 'ACTIF', labelKey: 'statutPoste_ACTIF' },
+    { value: 'VACANT', labelKey: 'statutPoste_VACANT' },
+    { value: 'EN_ATTENTE', labelKey: 'statutPoste_EN_ATTENTE' },
+    { value: 'SUPPRIME', labelKey: 'statutPoste_SUPPRIME' },
 ];

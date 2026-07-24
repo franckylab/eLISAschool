@@ -1,0 +1,6 @@
+- Each module exposes a single exported service instance (`gamificationService`, `scoringService`, `configurationScoringService`) created with `new ServiceClass()` at the bottom of the service file for singleton-like reuse.
+- Services obtain TypeORM repositories through `AppDataSource.getRepository(Entity)` in the constructor rather than dependency injection, keeping modules self-contained.
+- All business logic reads tunable parameters through `getParamNumber` / `getParamBoolean` from `@modules/configuration/utils/config.helper` instead of hardcoding thresholds or weights.
+- Controllers wrap route handlers in try/catch blocks that forward errors to a global error handler via `next(error)`, and return a uniform `{ success, data, timestamp }` JSON shape.
+- DTOs are validated at the controller boundary using either `validateDto(schema, body)` or a local `schema.safeParse(data)` helper that throws `AppError` on failure.
+- Entities use UUID primary keys (`PrimaryGeneratedColumn('uuid')`), `CreateDateColumn`/`UpdateDateColumn` timestamps, and explicit `@JoinColumn` names matching snake_case column conventions.

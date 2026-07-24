@@ -37,7 +37,19 @@ router.get('/unites', authMiddleware, requirePermission('organisation:unites:rea
 router.post('/unites', authMiddleware, requirePermission('organisation:unites:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createUniteOrganisationnelleSchema, req.body);
+        dto.etablissementId = req.utilisateur?.etablissementId;
         const created = await organisationService.createUnite(dto);
+        res.status(201).json({ success: true, data: created });
+    } catch (error) { next(error); }
+});
+
+// Route statique AVANT les routes dynamiques /:id
+router.post('/unites/avec-postes', authMiddleware, requirePermission('organisation:unites:write'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { postes, ...uniteDto } = req.body;
+        const dto = validate(createUniteOrganisationnelleSchema, uniteDto);
+        dto.etablissementId = req.utilisateur?.etablissementId;
+        const created = await organisationService.creerUniteAvecPostes(dto, postes || []);
         res.status(201).json({ success: true, data: created });
     } catch (error) { next(error); }
 });
@@ -56,15 +68,6 @@ router.get('/unites/:id/impact', authMiddleware, requirePermission('organisation
     } catch (error) { next(error); }
 });
 
-router.post('/unites/avec-postes', authMiddleware, requirePermission('organisation:unites:write'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { postes, ...uniteDto } = req.body;
-        const dto = validate(createUniteOrganisationnelleSchema, uniteDto);
-        const created = await organisationService.creerUniteAvecPostes(dto, postes || []);
-        res.status(201).json({ success: true, data: created });
-    } catch (error) { next(error); }
-});
-
 router.get('/unites/:id/sous-unites', authMiddleware, requirePermission('organisation:unites:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const sousUnites = await organisationService.findSousUnites(req.params.id, req.utilisateur?.etablissementId);
@@ -75,7 +78,7 @@ router.get('/unites/:id/sous-unites', authMiddleware, requirePermission('organis
 router.patch('/unites/:id', authMiddleware, requirePermission('organisation:unites:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updateUniteOrganisationnelleSchema, req.body);
-        const updated = await organisationService.updateUnite(req.params.id, dto);
+        const updated = await organisationService.updateUnite(req.params.id, dto, req.utilisateur?.etablissementId);
         res.json({ success: true, data: updated });
     } catch (error) { next(error); }
 });
@@ -86,14 +89,14 @@ router.patch('/unites/:id/reordonner', authMiddleware, requirePermission('organi
         if (apresId !== null && typeof apresId !== 'string') {
             throw new AppError('apresId doit être un string ou null', 400, 'VALIDATION_ERROR');
         }
-        await organisationService.reordonnerUnite(req.params.id, apresId ?? null);
+        await organisationService.reordonnerUnite(req.params.id, apresId ?? null, req.utilisateur?.etablissementId);
         res.json({ success: true, message: 'Unité réordonnée' });
     } catch (error) { next(error); }
 });
 
 router.delete('/unites/:id', authMiddleware, requirePermission('organisation:unites:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await organisationService.deleteUnite(req.params.id);
+        await organisationService.deleteUnite(req.params.id, req.utilisateur?.etablissementId);
         res.json({ success: true, message: 'Unité supprimée' });
     } catch (error) { next(error); }
 });
@@ -109,7 +112,7 @@ router.get('/arborescence', authMiddleware, requirePermission('organisation:unit
 
 router.get('/chemin/:uniteId', authMiddleware, requirePermission('organisation:unites:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const chemin = await organisationService.getCheminHierarchique(req.params.uniteId);
+        const chemin = await organisationService.getCheminHierarchique(req.params.uniteId, req.utilisateur?.etablissementId);
         res.json({ success: true, data: chemin });
     } catch (error) { next(error); }
 });

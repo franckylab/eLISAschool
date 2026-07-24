@@ -27,7 +27,7 @@ interface FormData {
     date: string;
     heureDebut: string;
     heureFin: string;
-    classeId: string;
+    classeAnneeId: string;
     matiereId: string;
     statutEffectue: string;
     salle: string;
@@ -39,7 +39,7 @@ const emptyForm: FormData = {
     date: '',
     heureDebut: '',
     heureFin: '',
-    classeId: '',
+    classeAnneeId: '',
     matiereId: '',
     statutEffectue: 'PLANIFIE',
     salle: '',
@@ -62,7 +62,7 @@ export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCa
                 date: cours.date?.split('T')[0] || '',
                 heureDebut: cours.heureDebut || '',
                 heureFin: cours.heureFin || '',
-                classeId: cours.classeId || '',
+                classeAnneeId: cours.classeAnneeId || '',
                 matiereId: cours.matiereId || '',
                 statutEffectue: cours.statutEffectue || 'PLANIFIE',
                 salle: cours.salleId || '',
@@ -83,7 +83,7 @@ export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCa
             date: form.date,
             heureDebut: form.heureDebut,
             heureFin: form.heureFin,
-            classeId: form.classeId,
+            classeAnneeId: form.classeAnneeId,
             matiereId: form.matiereId,
             statutEffectue: form.statutEffectue,
             salle: form.salle || undefined,
@@ -144,7 +144,7 @@ export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCa
                     <ElisaSelect label="Statut" value={form.statutEffectue} onValueChange={(v: string) => setForm(prev => ({ ...prev, statutEffectue: v }))} options={STATUTS} />
                     <ElisaInput label="Début (HH:MM)" placeholder="08:00" value={form.heureDebut} onChange={set('heureDebut')} required />
                     <ElisaInput label="Fin (HH:MM)" placeholder="09:00" value={form.heureFin} onChange={set('heureFin')} required />
-                    <ElisaInput label="Classe (UUID)" placeholder="ID de la classe" value={form.classeId} onChange={set('classeId')} required />
+                    <ElisaInput label="Classe (UUID)" placeholder="ID de la classe-année" value={form.classeAnneeId} onChange={set('classeAnneeId')} required />
                     <ElisaInput label="Matière (UUID)" placeholder="ID de la matière" value={form.matiereId} onChange={set('matiereId')} required />
                     <ElisaInput label="Salle" placeholder="Nom ou ID de la salle" value={form.salle} onChange={set('salle')} />
                     <ElisaInput label="Remplaçant (UUID)" placeholder="ID du remplaçant" value={form.remplacantId} onChange={set('remplacantId')} />

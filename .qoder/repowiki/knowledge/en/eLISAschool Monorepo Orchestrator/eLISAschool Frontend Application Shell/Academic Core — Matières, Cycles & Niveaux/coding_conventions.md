@@ -1,0 +1,5 @@
+- Each feature exposes a `CreerXxxDto` / `ModifierXxxDto extends Partial<CreerXxxDto>` pair plus an `XxxFiltres` interface describing list query parameters, keeping request shapes explicit and type-safe.
+- Hooks define a local `*_KEYS` object with nested factories (`all`, `listes`, `liste(filtres)`, `details`, `detail(id)`) used as React Query keys, enabling precise cache invalidation on mutations.
+- Every mutation wraps `queryClient.invalidateQueries({ queryKey: *_KEYS.listes() })` and surfaces user feedback through `toast.success` / `toast.error`, centralizing side-effect handling at the data layer rather than in components.
+- List hooks accept a filters object with default values (`page: 1`, `limit: 20|50`, `sortBy: 'ordre'`, `sortOrder: 'ASC'`) and build params by spreading only non-empty fields, so optional filters never pollute the URL.
+- Detail hooks guard with `enabled: isAuthenticated && !!id` and provide `placeholderData: (previousData) => previousData` so navigation between list and detail keeps UI responsive.

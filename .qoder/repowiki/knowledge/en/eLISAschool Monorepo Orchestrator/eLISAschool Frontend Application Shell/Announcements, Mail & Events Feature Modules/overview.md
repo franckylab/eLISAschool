@@ -1,0 +1,1 @@
+Three parallel feature modules (annonces, courriers, evenements) providing paginated list pages with server-side search/filter and CRUD operations over their respective REST endpoints.

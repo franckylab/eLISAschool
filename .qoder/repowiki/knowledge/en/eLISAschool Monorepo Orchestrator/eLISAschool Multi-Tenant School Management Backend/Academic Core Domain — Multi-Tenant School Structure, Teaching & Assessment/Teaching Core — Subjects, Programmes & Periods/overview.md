@@ -1,0 +1,1 @@
+Core teaching domain providing school subjects (matières), pedagogical programmes with chapters and subject mappings, and configurable multi-level academic periods.

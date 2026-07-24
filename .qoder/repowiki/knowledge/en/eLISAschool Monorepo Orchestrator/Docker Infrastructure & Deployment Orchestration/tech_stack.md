@@ -1,0 +1,1 @@
+Docker Compose v2 with `postgres:16-alpine`, `redis:7-alpine` (AOF + allkeys-lru), `dpage/pgadmin4`, `node:20-alpine` for both backend build and frontend dev, and `nginx:alpine` for static asset serving; npm workspaces (`package.json` at repo root) drive the multi-stage backend build.

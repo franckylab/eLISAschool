@@ -24,9 +24,22 @@
     "onglets": {
         "calendrier": "Calendrier",
         "liste": "Liste",
+        "synthese": "Synthèse",
         "preferences": "Préférences",
         "templates": "Templates"
     },
+    "contexte": {
+        "classe": "Classe",
+        "enseignant": "Enseignant",
+        "salle": "Salle"
+    },
+    "selectionnerFiltre": "Sélectionner un filtre",
+    "precedent": "Précédent",
+    "suivant": "Suivant",
+    "modifier": "Modifier",
+    "creer": "Créer",
+    "annuler": "Annuler",
+    "enregistrer": "Enregistrer",
     "liste": {
         "titre": "Emploi du Temps",
         "actualiser": "Actualiser",
@@ -110,5 +123,82 @@
         "samedi": "Samedi"
     },
     "salle": "Salle",
-    "matiereDefaut": "Matière"
+    "matiereDefaut": "Matière",
+    "conflitDetection": {
+        "titre": "Détection de conflits",
+        "bloquant": "Bloquant",
+        "avertissement": "Avertissement",
+        "conflitClasse": "Conflit de classe",
+        "conflitEnseignant": "Conflit enseignant",
+        "conflitSalle": "Conflit de salle",
+        "depassementVolume": "Dépassement volume horaire",
+        "creneauImposable": "Créneau imposable",
+        "aucunConflit": "Aucun conflit détecté",
+        "conflitsDetectes": "{{count}} conflit(s) détecté(s)"
+    },
+    "synthese": {
+        "titre": "Synthèse",
+        "volumeHoraire": "Volume horaire",
+        "heuresPlanifiees": "Heures planifiées",
+        "volumeRequis": "Volume requis",
+        "respectVolume": "Respect du volume horaire",
+        "totalHeures": "Total heures",
+        "totalCreneaux": "Total créneaux",
+        "matieres": "Matières",
+        "matiere": "Matière",
+        "enseignant": "Enseignant",
+        "creneaux": "Créneaux",
+        "respect": "Respect",
+        "aucuneDonnee": "Aucune donnée",
+        "genererPourVoirSynthese": "Générez l'emploi du temps pour voir la synthèse des volumes horaires."
+    },
+    "creneau": {
+        "ajouter": "Ajouter un créneau",
+        "types": {
+            "cours": "Cours",
+            "td": "TD",
+            "tp": "TP",
+            "recreation": "Récréation",
+            "pause": "Pause",
+            "permanence": "Permanence",
+            "etude": "Étude",
+            "autre": "Autre"
+        },
+        "modal": {
+            "titreCreer": "Nouveau créneau",
+            "titreModifier": "Modifier le créneau",
+            "description": "Étape {{step}} sur 3",
+            "etape1": "Identification",
+            "etape2": "Planification",
+            "etape3": "Résumé",
+            "identification": "Identification",
+            "planification": "Planification",
+            "resume": "Résumé et validation",
+            "affectation": "Affectation matière",
+            "typeCreneau": "Type de créneau",
+            "couleur": "Couleur",
+            "jour": "Jour",
+            "salle": "Salle",
+            "heureDebut": "Heure de début",
+            "heureFin": "Heure de fin",
+            "horaire": "Horaire",
+            "notes": "Notes",
+            "notesPlaceholder": "Notes optionnelles…",
+            "conflitsDetectes": "{{count}} conflit(s) détecté(s)",
+            "conflitsBloquants": "Conflits bloquants — impossible de valider",
+            "avertissements": "{{count}} avertissement(s)"
+        }
+    },
+    "heureCours": {
+        "modal": {
+            "titre": "Édition de l'heure de cours",
+            "statut": "Statut",
+            "remplacant": "Remplaçant",
+            "salleOverride": "Salle (override ponctuel)",
+            "sallePlaceholder": "Laisser vide pour conserver la salle habituelle",
+            "salleAide": "Si vide, la salle du créneau habituel est conservée.",
+            "commentaire": "Commentaire",
+            "commentairePlaceholder": "Commentaire optionnel…"
+        }
+    }
 }

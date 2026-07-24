@@ -1,0 +1,1 @@
+Frontend feature modules for managing academic entities: subjects (matières) with their programme and teacher assignments, school cycles, and levels within those cycles.

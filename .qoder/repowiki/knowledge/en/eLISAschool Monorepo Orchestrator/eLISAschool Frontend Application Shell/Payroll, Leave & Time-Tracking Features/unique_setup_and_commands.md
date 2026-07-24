@@ -1,0 +1,1 @@
+No build or setup scripts are specific to these features; they are consumed as part of the frontend application's standard React/Vite build pipeline. Feature entry points are registered elsewhere in the app router via the barrel exports in each `index.ts`.

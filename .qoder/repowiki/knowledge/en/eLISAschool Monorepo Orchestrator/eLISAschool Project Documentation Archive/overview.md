@@ -1,0 +1,1 @@
+Curated archive of French-language technical, functional and session documentation for the eLISAschool school management platform, organized by lifecycle phase.

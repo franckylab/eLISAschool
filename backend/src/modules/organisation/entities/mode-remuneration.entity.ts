@@ -11,13 +11,13 @@ import {
 import { Etablissement } from '@modules/etablissement/entities';
 
 @Entity('modes_remuneration')
-@Index(['code', 'etablissementId'], { unique: true })
+@Index(['code', 'etablissementId'], { unique: true, where: '"etablissementId" IS NOT NULL' })
 @Index(['etablissementId'])
 export class ModeRemunerationEntity {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'varchar', length: 50, unique: true })
+    @Column({ type: 'varchar', length: 50 })
     code!: string;
 
     @Column({ type: 'varchar', length: 100 })

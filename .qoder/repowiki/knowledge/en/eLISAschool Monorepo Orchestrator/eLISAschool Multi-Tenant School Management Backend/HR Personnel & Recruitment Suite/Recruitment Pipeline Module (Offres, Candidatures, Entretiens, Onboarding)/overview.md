@@ -1,0 +1,1 @@
+End-to-end recruitment module implementing job-offer publishing, candidate application pipeline, interview scheduling/evaluation, and post-hire onboarding checklist.

@@ -5,7 +5,7 @@
  * Éclaté depuis nomenclature.service.ts
  */
 
-import { Repository } from 'typeorm';
+import { Repository, FindOptionsWhere } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { TemplateOrganisation } from '../entities';
 import { CreateTemplateOrganisationDto, UpdateTemplateOrganisationDto } from '../dto';
@@ -53,20 +53,22 @@ class TemplateOrganisationService {
         return { data, total };
     }
 
-    async findById(id: string): Promise<TemplateOrganisation> {
-        const entity = await this.repo.findOne({ where: { id } });
+    async findById(id: string, etablissementId?: string): Promise<TemplateOrganisation> {
+        const where: FindOptionsWhere<TemplateOrganisation> = { id };
+        if (etablissementId) where.etablissementId = etablissementId;
+        const entity = await this.repo.findOne({ where });
         if (!entity) throw new AppError('Template d\'organisation non trouvé', 404, 'TEMPLATE_NOT_FOUND');
         return entity;
     }
 
-    async update(id: string, dto: UpdateTemplateOrganisationDto): Promise<TemplateOrganisation> {
-        const entity = await this.findById(id);
+    async update(id: string, dto: UpdateTemplateOrganisationDto, etablissementId?: string): Promise<TemplateOrganisation> {
+        const entity = await this.findById(id, etablissementId);
         Object.assign(entity, dto);
         return this.repo.save(entity);
     }
 
-    async delete(id: string): Promise<void> {
-        const entity = await this.findById(id);
+    async delete(id: string, etablissementId?: string): Promise<void> {
+        const entity = await this.findById(id, etablissementId);
         assertNotSystem(entity, 'supprimer');
         await this.repo.remove(entity);
     }
