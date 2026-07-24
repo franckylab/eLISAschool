@@ -1,6 +1,6 @@
 /**
  * ==================================
- * eLISAschool - Service Bulletins
+ * eLISAschool - Service Bulletins v2.0
  * ==================================
  */
 
@@ -19,6 +19,8 @@ import { AffectationMatiere, StatutAffectationMatiere } from '@modules/matieres/
 import { Eleve } from '@modules/eleves/entities';
 import { getParamBoolean, getParamNumber, getParam } from '@modules/configuration/utils/config.helper';
 import { notificationTemplates } from '@modules/notifications/services';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { auditService, AuditAction } from '@modules/auth';
 
 export class BulletinsService {
     private repo: Repository<Bulletin>;
@@ -31,9 +33,6 @@ export class BulletinsService {
         this.workflowRepo = AppDataSource.getRepository(BulletinWorkflow);
     }
 
-    /**
-     * Récupère les paramètres bulletins depuis la configuration
-     */
     private async getBulletinsParams() {
         return {
             includeRanking: await getParamBoolean('bulletins.include_ranking', { defaultValue: true }),
@@ -42,6 +41,7 @@ export class BulletinsService {
             calculationMethod: await getParam<string>('bulletins.calculation_method', { defaultValue: 'ponderee' }),
             displayCoefficients: await getParamBoolean('bulletins.display_coefficients', { defaultValue: true }),
             templateId: await getParam<string>('bulletins.template_id', { defaultValue: 'default' }),
+            requireValidation: await getParamBoolean('bulletins.require_validation', { defaultValue: false }),
         };
     }
 
@@ -52,7 +52,6 @@ export class BulletinsService {
         await queryRunner.startTransaction();
 
         try {
-            // Récupérer la classe/année et vérifier la cohérence
             const classeAnneeRepo = AppDataSource.getRepository('ClasseAnnee');
             const classeAnnee = await classeAnneeRepo.findOne({
                 where: { id: dto.classeAnneeId },
@@ -65,7 +64,6 @@ export class BulletinsService {
 
             const periode = await periodesService.findOne(dto.periodeId);
 
-            // Vérifier le verrouillage de la période
             if (periode.statut === StatutPeriode.CLOTUREE) {
                 const lockOnCloture = await getParamBoolean('periodes.lock_on_cloture', { defaultValue: true });
                 if (lockOnCloture) {
@@ -77,19 +75,16 @@ export class BulletinsService {
                 }
             }
 
-            // Vérifier que la période appartient à la même année scolaire
             if (periode.anneeScolaireId !== classeAnnee.anneeScolaireId) {
                 throw new AppError('La période ne correspond pas à l\'année scolaire de la classe', 400, 'PERIODE_MISMATCH');
             }
 
-            // Récupérer les élèves (tous ou un seul)
             const eleveRepo = AppDataSource.getRepository(Eleve);
             let eleves: Eleve[] = [];
             if (dto.eleveId) {
                 const eleve = await eleveRepo.findOne({ where: { id: dto.eleveId } });
                 if (eleve) eleves.push(eleve);
             } else {
-                // Find eleves in class via affectations
                 const affectationRepo = AppDataSource.getRepository('AffectationEleve');
                 const affectations = await affectationRepo.find({
                     where: { classeAnneeId: dto.classeAnneeId, actif: true },
@@ -107,29 +102,23 @@ export class BulletinsService {
 
             const bulletins: Bulletin[] = [];
 
-            // OPTIMISATION : Charger toutes les moyennes en UNE requête batch
             const programme = await matieresService.getMatieresParNiveau(classeAnnee.classe.niveauId);
-            
-            // CHARGEMENT des affectations matières de la classe pour les coefficients spécifiques
+
             const affectationRepo = AppDataSource.getRepository(AffectationMatiere);
             const affectationsClasse = await affectationRepo.find({
-                where: { 
+                where: {
                     classeAnneeId: dto.classeAnneeId,
                     statut: StatutAffectationMatiere.ACTIVE
                 }
             });
-            
-            // Créer un map matièreId -> coefficient de l'affectation
+
             const coeffAffectationMap = new Map<string, number>();
             for (const aff of affectationsClasse) {
                 if (aff.coefficient !== null && aff.coefficient !== undefined) {
                     coeffAffectationMap.set(aff.matiereId, aff.coefficient);
                 }
             }
-            
-            logger.info(`[Bulletins] ${affectationsClasse.length} affectations chargées, ${coeffAffectationMap.size} avec coefficients spécifiques`);
-            
-            // Préparer les clés de batch pour tous les élèves et matières
+
             const batchKeys = [];
             for (const eleve of eleves) {
                 for (const matiereNiveau of programme) {
@@ -141,20 +130,23 @@ export class BulletinsService {
                 }
             }
 
-            // Exécuter le batch loading (1 requête au lieu de N×M)
             const moyennesMap = await notesBatchLoaderService.batchLoadMoyennes(batchKeys);
             logger.info(`[Bulletins] Batch loading: ${batchKeys.length} combinaisons en 1 requête`);
 
-            // Traiter chaque élève avec les données déjà chargées
-            const requireValidation = await getParamBoolean('bulletins.require_validation', { defaultValue: false });
+            // Calculer les stats par matière pour la classe (moyenne/min/max classe)
+            const matiereStatsMap = await this.calculerStatsMatieres(
+                dto.classeAnneeId,
+                periode.id,
+                programme.map(p => p.matiereId),
+                coeffAffectationMap,
+                params.calculationMethod === 'ponderee'
+            );
 
             for (const eleve of eleves) {
-                // Vérifier que l'élève appartient au même établissement
                 if (etablissementId && eleve.etablissementId !== etablissementId) {
                     throw new AppError(`L'élève ${eleve.id} n'appartient pas à cet établissement`, 403, 'WRONG_ETABLISSEMENT');
                 }
 
-                // Calculer Moyenne Générale avec les données batchées
                 let totalPoints = 0;
                 let totalCoeffs = 0;
 
@@ -169,15 +161,14 @@ export class BulletinsService {
 
                 for (const matiereNiveau of programme) {
                     const moyenneMatiere = eleveMoyennes.get(matiereNiveau.matiereId) || 0;
-                    
+
                     let coefficient = 1;
-                    
                     if (params.calculationMethod === 'ponderee') {
-                        coefficient = coeffAffectationMap.get(matiereNiveau.matiereId) 
-                            ?? matiereNiveau.coefficient 
+                        coefficient = coeffAffectationMap.get(matiereNiveau.matiereId)
+                            ?? matiereNiveau.coefficient
                             ?? 1;
                     }
-                    
+
                     totalPoints += moyenneMatiere * coefficient;
                     totalCoeffs += coefficient;
 
@@ -190,11 +181,11 @@ export class BulletinsService {
 
                 const moyenneGenerale = totalCoeffs > 0 ? totalPoints / totalCoeffs : 0;
 
-                // Créer ou MAJ Bulletin
                 let bulletin = await this.repo.findOne({
                     where: { eleveId: eleve.id, classeAnneeId: dto.classeAnneeId, periodeId: periode.id }
                 });
 
+                const isNew = !bulletin;
                 if (!bulletin) {
                     bulletin = new Bulletin();
                     Object.assign(bulletin, {
@@ -209,59 +200,75 @@ export class BulletinsService {
 
                 await queryRunner.manager.save(bulletin);
 
-                // Sauvegarder les BulletinMatiere (upsert par bulletin+matière)
-                for (const bmData of bulletinMatieresData) {
-                    let bm = await this.bulletinMatiereRepo.findOne({
-                        where: { bulletinId: bulletin.id, matiereId: bmData.matiereId },
-                    });
+                // Supprimer les anciennes BulletinMatiere et recréer
+                await queryRunner.manager
+                    .createQueryBuilder()
+                    .delete()
+                    .from(BulletinMatiere)
+                    .where('bulletinId = :bulletinId', { bulletinId: bulletin.id })
+                    .execute();
 
-                    if (!bm) {
-                        bm = new BulletinMatiere();
-                        bm.bulletinId = bulletin.id;
-                        bm.matiereId = bmData.matiereId;
+                // Créer les BulletinMatiere pour chaque matière du programme
+                for (const matiereNiveau of programme) {
+                    const moyenneMatiere = eleveMoyennes.get(matiereNiveau.matiereId) || 0;
+                    let coefficient = 1;
+                    if (params.calculationMethod === 'ponderee') {
+                        coefficient = coeffAffectationMap.get(matiereNiveau.matiereId)
+                            ?? matiereNiveau.coefficient
+                            ?? 1;
                     }
 
-                    bm.moyenne = bmData.moyenne;
-                    bm.coefficient = bmData.coefficient;
+                    const stats = matiereStatsMap.get(matiereNiveau.matiereId);
+
+                    const bm = this.bulletinMatiereRepo.create({
+                        bulletinId: bulletin.id,
+                        matiereId: matiereNiveau.matiereId,
+                        moyenne: parseFloat(moyenneMatiere.toFixed(2)),
+                        coefficient,
+                        moyenneClasse: stats?.moyenne,
+                        moyenneMinClasse: stats?.min,
+                        moyenneMaxClasse: stats?.max,
+                        nombreNotes: stats?.nbNotes ?? 0,
+                    });
 
                     await queryRunner.manager.save(bm);
                 }
 
                 // Créer le workflow de validation si requis
-                if (requireValidation) {
-                    const existingWorkflow = await this.workflowRepo.findOne({
-                        where: { bulletinId: bulletin.id },
-                    });
-
-                    if (!existingWorkflow) {
-                        const workflow = this.workflowRepo.create({
-                            bulletinId: bulletin.id,
-                            statutValidation: StatutValidationBulletin.BROUILLON,
-                            niveauValidationActuel: 0,
+                if (params.requireValidation && isNew) {
+                    try {
+                        await validationWorkflowService.createWorkflow({
+                            module: 'bulletins',
+                            entiteId: bulletin.id,
+                            entiteType: 'Bulletin',
                             niveauxRequis: 2,
-                        });
-                        await queryRunner.manager.save(workflow);
+                            etablissementId,
+                        }, 'system');
+                    } catch (error) {
+                        logger.warn(`[Bulletins] Échec création workflow pour bulletin ${bulletin.id} (non bloquant)`, error);
                     }
                 }
 
                 bulletins.push(bulletin);
             }
 
-            // Calcul des rangs pour tous les bulletins de la classe/période (si activé)
             if (params.includeRanking) {
                 await this.calculerRangs(dto.classeAnneeId, periode.id, etablissementId, queryRunner);
+                await this.calculerRangsMatieres(dto.classeAnneeId, periode.id, queryRunner);
             }
 
             await queryRunner.commitTransaction();
             logger.info(`[${etablissementId}] ${bulletins.length} bulletins générés pour la classe ${classeAnnee.classe?.nom || dto.classeAnneeId}`);
-            
-            // NOTIFICATION : Envoyer les notifications aux parents (après commit)
+
+            // Invalider le cache batch loader après génération
+            notesBatchLoaderService.clearCache();
+
             try {
                 await this.envoyerNotificationsBulletins(bulletins, classeAnnee.classe, periode, etablissementId);
             } catch (error) {
                 logger.warn('[Bulletins] Échec envoi notifications (non bloquant)', error);
             }
-            
+
             return bulletins;
         } catch (error: any) {
             await queryRunner.rollbackTransaction();
@@ -273,13 +280,113 @@ export class BulletinsService {
     }
 
     /**
-     * Calcule les rangs de tous les élèves d'une classe pour une période donnée
+     * Calcule les statistiques par matière pour l'ensemble de la classe
      */
+    private async calculerStatsMatieres(
+        classeAnneeId: string,
+        periodeId: string,
+        matiereIds: string[],
+        coeffMap: Map<string, number>,
+        ponderer: boolean
+    ): Promise<Map<string, { moyenne: number; min: number; max: number; nbNotes: number }>> {
+        const result = new Map<string, { moyenne: number; min: number; max: number; nbNotes: number }>();
+
+        if (matiereIds.length === 0) return result;
+
+        try {
+            const query = `
+                SELECT
+                    n.matiere_id,
+                    AVG(n.valeur / n.bareme * 20 * n.coefficient) / AVG(n.coefficient) as moyenne,
+                    MIN(n.valeur / n.bareme * 20) as min_note,
+                    MAX(n.valeur / n.bareme * 20) as max_note,
+                    COUNT(*) as nb_notes
+                FROM notes n
+                INNER JOIN affectations_eleves ae ON ae.eleve_id = n.eleve_id
+                WHERE ae.classe_annee_id = $1
+                AND n.periode_id = $2
+                AND n.matiere_id = ANY($3)
+                AND n.statut = 'PUBLIEE'
+                AND ae.actif = true
+                GROUP BY n.matiere_id
+            `;
+
+            const rows = await this.repo.query(query, [classeAnneeId, periodeId, matiereIds]);
+
+            for (const row of rows) {
+                result.set(row.matiere_id, {
+                    moyenne: parseFloat(parseFloat(row.moyenne).toFixed(2)),
+                    min: parseFloat(parseFloat(row.min_note).toFixed(2)),
+                    max: parseFloat(parseFloat(row.max_note).toFixed(2)),
+                    nbNotes: parseInt(row.nb_notes, 10),
+                });
+            }
+        } catch (error) {
+            logger.warn('[Bulletins] Erreur calcul stats matières (non bloquant)', error);
+        }
+
+        return result;
+    }
+
+    /**
+     * Calcule les rangs par matière pour tous les bulletins d'une classe
+     */
+    private async calculerRangsMatieres(classeAnneeId: string, periodeId: string, queryRunner?: any): Promise<void> {
+        const manager = queryRunner?.manager || AppDataSource;
+
+        const bulletins = await (queryRunner?.manager || this.repo).find(Bulletin, {
+            where: { classeAnneeId, periodeId },
+        });
+
+        if (bulletins.length === 0) return;
+
+        const bulletinIds = bulletins.map((b: Bulletin) => b.id);
+
+        const matieres = await manager.createQueryBuilder()
+            .select('bm.matiereId', 'matiereId')
+            .addSelect('bm.bulletinId', 'bulletinId')
+            .addSelect('bm.moyenne', 'moyenne')
+            .from(BulletinMatiere, 'bm')
+            .where('bm.bulletinId IN (:...ids)', { ids: bulletinIds })
+            .orderBy('bm.moyenne', 'DESC')
+            .getRawMany();
+
+        // Grouper par matière
+        const parMatiere = new Map<string, { bulletinId: string; moyenne: number }[]>();
+        for (const row of matieres) {
+            if (!parMatiere.has(row.matiereId)) {
+                parMatiere.set(row.matiereId, []);
+            }
+            parMatiere.get(row.matiereId)!.push({ bulletinId: row.bulletinId, moyenne: row.moyenne });
+        }
+
+        // Calculer les rangs par matière
+        for (const [matiereId, entries] of parMatiere) {
+            entries.sort((a, b) => b.moyenne - a.moyenne);
+            let rang = 1;
+            for (let i = 0; i < entries.length; i++) {
+                if (i > 0 && entries[i].moyenne === entries[i - 1].moyenne) {
+                    rang = rang;
+                } else {
+                    rang = i + 1;
+                }
+
+                await manager.createQueryBuilder()
+                    .update(BulletinMatiere)
+                    .set({ rangMatiere: rang })
+                    .where('bulletinId = :bulletinId AND matiereId = :matiereId', {
+                        bulletinId: entries[i].bulletinId,
+                        matiereId,
+                    })
+                    .execute();
+            }
+        }
+    }
+
     private async calculerRangs(classeAnneeId: string, periodeId: string, etablissementId?: string, queryRunner?: any): Promise<void> {
-        // Récupérer tous les bulletins de la classe pour cette période
         const where: any = { classeAnneeId, periodeId };
         if (etablissementId) where.etablissementId = etablissementId;
-        
+
         const bulletins = await (queryRunner?.manager || this.repo).find(Bulletin, {
             where,
             order: { moyenneGenerale: 'DESC' }
@@ -287,28 +394,23 @@ export class BulletinsService {
 
         if (bulletins.length === 0) return;
 
-        // Trier par moyenne décroissante et assigner les rangs
         bulletins.sort((a: Bulletin, b: Bulletin) => (b.moyenneGenerale || 0) - (a.moyenneGenerale || 0));
 
         let rang = 1;
         for (let i = 0; i < bulletins.length; i++) {
-            // Si même moyenne que le précédent, même rang
             if (i > 0 && bulletins[i].moyenneGenerale === bulletins[i - 1].moyenneGenerale) {
                 bulletins[i].rang = bulletins[i - 1].rang;
             } else {
                 bulletins[i].rang = rang;
             }
             rang++;
-            
+
             await (queryRunner?.manager || this.repo).save(bulletins[i]);
         }
 
         logger.info(`[${etablissementId}] Rangs calculés pour ${bulletins.length} bulletins`);
     }
 
-    /**
-     * Statut de génération des bulletins pour le dashboard
-     */
     async getGenerationStatus(context: { etablissementId?: string; periodeId?: string }): Promise<{
         total: number;
         generes: number;
@@ -327,15 +429,7 @@ export class BulletinsService {
         return { total, generes, enCours, progression };
     }
 
-    async findByEleve(eleveId: string): Promise<Bulletin[]> {
-        return this.repo.find({
-            where: { eleveId },
-            relations: ['periode', 'classeAnnee', 'classeAnnee.classe', 'bulletinMatieres', 'bulletinMatieres.matiere'],
-            order: { periode: { dateDebut: 'ASC' } }
-        });
-    }
-
-    async findAll(query: QueryBulletinsDto, etablissementId?: string): Promise<{ items: Bulletin[]; total: number }> {
+    async findAllPaginated(query: QueryBulletinsDto, etablissementId?: string): Promise<{ items: Bulletin[]; total: number }> {
         const { page, limit, eleveId, classeAnneeId, periodeId, publie } = query;
 
         const where: FindOptionsWhere<Bulletin> = {};
@@ -347,7 +441,7 @@ export class BulletinsService {
 
         const [items, total] = await this.repo.findAndCount({
             where,
-            relations: ['eleve', 'periode', 'classeAnnee', 'classeAnnee.classe'],
+            relations: ['eleve', 'classeAnnee', 'classeAnnee.classe', 'periode', 'bulletinMatieres', 'bulletinMatieres.matiere'],
             order: { createdAt: 'DESC' },
             skip: (page - 1) * limit,
             take: limit,
@@ -356,17 +450,39 @@ export class BulletinsService {
         return { items, total };
     }
 
+    async findOne(id: string, etablissementId?: string): Promise<Bulletin> {
+        const where: FindOptionsWhere<Bulletin> = { id } as any;
+        if (etablissementId) where.etablissementId = etablissementId;
+
+        const bulletin = await this.repo.findOne({
+            where,
+            relations: ['eleve', 'classeAnnee', 'classeAnnee.classe', 'periode', 'bulletinMatieres', 'bulletinMatieres.matiere'],
+        });
+
+        if (!bulletin) throw new AppError('Bulletin non trouvé', 404, 'BULLETIN_NOT_FOUND');
+        return bulletin;
+    }
+
+    async findByEleve(eleveId: string, etablissementId?: string): Promise<Bulletin[]> {
+        const where: FindOptionsWhere<Bulletin> = { eleveId } as any;
+        if (etablissementId) where.etablissementId = etablissementId;
+
+        return this.repo.find({
+            where,
+            relations: ['periode', 'classeAnnee', 'classeAnnee.classe', 'bulletinMatieres', 'bulletinMatieres.matiere'],
+            order: { periode: { dateDebut: 'ASC' } }
+        });
+    }
+
     async update(id: string, dto: UpdateBulletinDto): Promise<Bulletin> {
         const bulletin = await this.repo.findOne({ where: { id } });
         if (!bulletin) throw new AppError('Bulletin non trouvé', 404, 'NOT_FOUND');
+
         Object.assign(bulletin, dto);
         await this.repo.save(bulletin);
         return bulletin;
     }
 
-    /**
-     * Envoyer les notifications de bulletin disponible aux parents
-     */
     private async envoyerNotificationsBulletins(
         bulletins: Bulletin[],
         classe: any,
@@ -374,30 +490,20 @@ export class BulletinsService {
         etablissementId?: string
     ): Promise<void> {
         const eleveRepo = AppDataSource.getRepository(Eleve);
-        
-        // Compter le total d'élèves pour le rang
         const totalEleves = bulletins.length;
-        
+
         for (const bulletin of bulletins) {
             try {
-                // Récupérer l'élève avec son utilisateur
                 const eleve = await eleveRepo.findOne({
                     where: { id: bulletin.eleveId },
                     relations: ['utilisateur'],
                 });
 
-                if (!eleve?.utilisateurId) {
-                    continue;
-                }
+                if (!eleve?.utilisateurId) continue;
 
-                // Trouver les responsables
                 const responsables = await parentsService.getResponsablesForNotification(eleve.utilisateurId);
+                if (!responsables || responsables.length === 0) continue;
 
-                if (!responsables || responsables.length === 0) {
-                    continue;
-                }
-
-                // Notifier chaque responsable
                 for (const resp of responsables) {
                     await notificationTemplates.bulletinDisponible({
                         destinataireId: resp.utilisateurId,
@@ -405,7 +511,7 @@ export class BulletinsService {
                         metadata: {
                             bulletinId: bulletin.id,
                             eleveId: eleve.id,
-                            email: resp.email, // Pour envoi email
+                            email: resp.email,
                         },
                     }, {
                         eleveNom: `Élève ${eleve.id.substring(0, 8)}`,

@@ -44,6 +44,9 @@ export class Bulletin {
     @JoinColumn({ name: 'classeAnneeId' })
     classeAnnee!: ClasseAnnee;
 
+    @Column({ type: 'uuid', nullable: true })
+    anneeScolaireId?: string;
+
     @Column({ type: 'uuid' })
     periodeId!: string;
 

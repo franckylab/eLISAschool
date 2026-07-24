@@ -24,6 +24,7 @@ import { validationWorkflowService } from '@modules/validation-workflow/services
 import { StatutWorkflow, DecisionValidation } from '@modules/validation-workflow/entities';
 import { gamificationService } from '@modules/gamification/services';
 
+
 export class NotesService {
     private noteRepository: Repository<Note>;
 
@@ -214,7 +215,7 @@ export class NotesService {
                             note: createDto.valeur,
                             bareme: createDto.bareme || 20,
                             periode: periode?.nom || 'Période',
-                            enseignant: enseignant?.utilisateur 
+                            enseignant: enseignant?.utilisateur
                                 ? `${enseignant.utilisateur.pseudonyme || enseignant.utilisateur.email?.split('@')[0] || 'Enseignant'}`
                                 : 'Enseignant',
                         });
@@ -462,7 +463,7 @@ export class NotesService {
     async remove(id: string, utilisateurId: string): Promise<void> {
         const note = await this.findOne(id);
 
-        // Guard de clôture — cohérent avec update()
+// Guard de clôture — cohérent avec update()
         if (note.periodeId) {
             const periode = await periodesService.findOne(note.periodeId);
             if (periode.statut === StatutPeriode.CLOTUREE) {
@@ -477,17 +478,26 @@ export class NotesService {
             }
         }
 
-        // Nettoyer le workflow de validation orphan
+// Nettoyer le workflow de validation associé
         try {
             const workflow = await validationWorkflowService.findByModuleAndEntite('notes', id);
             if (workflow) {
                 await validationWorkflowService.remove(workflow.id);
             }
-        } catch (e) {
+} catch (e) {
             logger.warn('[Notes] Impossible de nettoyer le workflow de validation (non bloquant)', e);
         }
 
         await this.noteRepository.remove(note);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.NOTE_DELETE,
+            cible: 'Note',
+            cibleId: id,
+            description: `Note supprimée (élève: ${note.eleveId}, matière: ${note.matiereId})`,
+            module: 'notes',
+        });
 
         logger.info(`[Notes] Note ${id} supprimée par ${utilisateurId}`);
     }

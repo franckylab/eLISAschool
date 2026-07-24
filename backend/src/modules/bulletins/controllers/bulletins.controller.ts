@@ -1,6 +1,6 @@
 /**
  * ==================================
- * eLISAschool - Controller Bulletins
+ * eLISAschool - Controller Bulletins v2.0
  * ==================================
  */
 
@@ -16,7 +16,7 @@ const service = new BulletinsService();
 router.get('/', authMiddleware, requirePermission('bulletins:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = validateDto(queryBulletinsSchema, req.query);
-        const result = await service.findAll(query, req.etablissementId);
+        const result = await service.findAllPaginated(query, req.etablissementId);
         res.json({
             success: true,
             data: result.items,
@@ -50,8 +50,15 @@ router.post('/generate', authMiddleware, requirePermission('bulletins:generate')
 
 router.get('/eleve/:eleveId', authMiddleware, requirePermission('bulletins:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const bulletins = await service.findByEleve(req.params.eleveId);
+        const bulletins = await service.findByEleve(req.params.eleveId, req.etablissementId);
         res.json({ success: true, data: bulletins });
+    } catch (error) { next(error); }
+});
+
+router.get('/:id', authMiddleware, requirePermission('bulletins:read'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const bulletin = await service.findOne(req.params.id, req.etablissementId);
+        res.json({ success: true, data: bulletin });
     } catch (error) { next(error); }
 });
 
