@@ -25,9 +25,9 @@ function convertirEnTreeNode(nodes: OrganigrammeNode[], t: (key: string, fallbac
         id: n.id,
         label: `${n.nom}${n.code ? ` (${n.code})` : ''}`,
         data: n,
-        icon: <Building2 className="h-4 w-4 text-[var(--color-dominant-600)]" />,
+        icon: <Building2 className="text-[var(--color-dominant-600)]" style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />,
         badge: (
-            <div className="flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
+            <div className="flex items-center text-[var(--color-text-muted)]" style={{ gap: 'var(--gap-xs)', fontSize: 'clamp(0.625rem, 0.6rem + 0.1vw, 0.6875rem)' }}>
                 {n.echelonStructurelLabel && (
                     <span
                         className="px-1 py-0.5 rounded-full text-[9px] font-medium text-white/90"
