@@ -7,14 +7,13 @@ import {
     Layers, CheckCircle, XCircle,
     Globe, UserCheck, UserPlus, Plus,
 } from 'lucide-react';
-import { useMatiere, useSupprimerMatiere, useModifierMatiere, useMatiereProgramme, useMatiereProgrammesPedagogiques, useMatiereAffectations, useMatiereConfigurations, useCreerAffectation, useModifierAffectation, useSupprimerAffectation, useCreerConfigurationMatiereClasse, useModifierConfigurationMatiereClasse, useSupprimerConfigurationMatiereClasse } from '../hooks/use-matieres';
+import { useMatiere, useSupprimerMatiere, useModifierMatiere, useMatiereProgramme, useMatiereProgrammesPedagogiques, useMatiereAffectations, useCreerAffectation, useModifierAffectation, useSupprimerAffectation } from '../hooks/use-matieres';
 import { MatiereFormModal } from './matiere-form-modal';
 import { TabProgramme } from './tab-programme';
 import { TabNiveaux } from './tab-niveaux';
 import { useCreneaux } from '@/features/emploi-du-temps';
 import { EDTCalendar } from '@/features/emploi-du-temps';
 import { AffectationFormModal } from './affectation-form-modal';
-import { ConfigurationFormModal } from './configuration-form-modal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage, LoadingState } from '@/components/ui/ErrorMessage';
@@ -26,10 +25,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { InfoField } from '@/components/ui/InfoField';
 import { StatCard } from '@/components/ui/StatCard';
 import { useConfirmation } from '@/components/ui/ConfirmationModal';
-import type { AffectationMatiere, ConfigurationMatiereClasse } from '../types/matiere.types';
+import type { AffectationMatiere } from '../types/matiere.types';
 import type { AffectationPayload } from '../hooks/use-matieres';
 
-type OngletActif = 'informations' | 'niveaux' | 'programme' | 'affectations' | 'configurations' | 'emploi-du-temps';
+type OngletActif = 'informations' | 'niveaux' | 'programme' | 'affectations' | 'emploi-du-temps';
 
 function StatutBadge({ actif }: { actif: boolean }) {
     return (
@@ -74,7 +73,6 @@ export function MatiereDetailPage() {
     const supprimer = useSupprimerMatiere();
     const { ask: askDelete, ConfirmationModal: DeleteConfirmModal } = useConfirmation();
     const { ask: askDeleteAffectation, ConfirmationModal: DeleteAffectationConfirmModal } = useConfirmation();
-    const { ask: askDeleteConfig, ConfirmationModal: DeleteConfigConfirmModal } = useConfirmation();
 
     const [affectationModalOpen, setAffectationModalOpen] = useState(false);
     const [affectationToEdit, setAffectationToEdit] = useState<AffectationMatiere | null>(null);
@@ -83,20 +81,12 @@ export function MatiereDetailPage() {
     const modifierAffectation = useModifierAffectation();
     const supprimerAffectation = useSupprimerAffectation();
 
-    const [configModalOpen, setConfigModalOpen] = useState(false);
-    const [configToEdit, setConfigToEdit] = useState<ConfigurationMatiereClasse | null>(null);
-    const [deleteConfigId, setDeleteConfigId] = useState<string | null>(null);
-    const creerConfig = useCreerConfigurationMatiereClasse();
-    const modifierConfig = useModifierConfigurationMatiereClasse();
-    const supprimerConfig = useSupprimerConfigurationMatiereClasse();
-
     const [ongletActif, setOngletActif] = useTabState<OngletActif>('informations');
 
     const programmeQuery = useMatiereProgramme(id);
     const programmesPedagogiquesQuery = useMatiereProgrammesPedagogiques(id);
     const affectationsQuery = useMatiereAffectations(id);
-    const configurationsQuery = useMatiereConfigurations(id);
-    const edtQuery = useCreneaux({ matiereId: id, limit: 100 });
+    const edtQuery = useCreneaux({ affectationMatiereId: id, limit: 100 });
 
     const { niveauxSansAffectation, affectationsInactives } = useMemo(() => {
         const programme = programmeQuery.data ?? [];
@@ -130,22 +120,6 @@ export function MatiereDetailPage() {
         setAffectationToEdit(null);
     };
 
-    const handleConfigSave = async (data: any) => {
-        if (configToEdit) {
-            await modifierConfig.mutateAsync({ configId: configToEdit.id, matiereId: id, ...data });
-        } else {
-            await creerConfig.mutateAsync({ matiereId: id, ...data });
-        }
-        setConfigModalOpen(false);
-        setConfigToEdit(null);
-    };
-
-    const handleDeleteConfig = async () => {
-        if (!deleteConfigId) return;
-        await supprimerConfig.mutateAsync({ configId: deleteConfigId, matiereId: id });
-        setDeleteConfigId(null);
-    };
-
     const handleDeleteAffectation = async () => {
         if (!deleteAffectationId) return;
         await supprimerAffectation.mutateAsync({ id: deleteAffectationId, matiereId: id });
@@ -176,7 +150,6 @@ export function MatiereDetailPage() {
         { id: 'niveaux', label: 'Niveaux', icon: Layers, count: programmeQuery.data?.length },
         { id: 'programme', label: 'Programmes', icon: BookOpen, count: programmesPedagogiquesQuery.data?.length },
         { id: 'affectations', label: 'Enseignants', icon: Users, count: affectationsQuery.data?.length },
-        { id: 'configurations', label: 'Configurations', icon: FileText, count: configurationsQuery.data?.length },
         { id: 'emploi-du-temps', label: 'Emploi du temps', icon: Clock, count: edtQuery.data?.data?.items?.length },
     ];
 
@@ -281,24 +254,6 @@ export function MatiereDetailPage() {
                         hasPermission={hasPermission('config:edit')}
                     />
                 )}
-                {ongletActif === 'configurations' && (
-                    <ConfigurationsTab
-                        data={configurationsQuery.data}
-                        isLoading={configurationsQuery.isLoading}
-                        onEdit={(c) => { setConfigToEdit(c); setConfigModalOpen(true); }}
-                        onDelete={(id) => {
-                            setDeleteConfigId(id);
-                            askDeleteConfig({
-                                title: 'Supprimer cette configuration',
-                                message: 'Êtes-vous sûr de vouloir supprimer cette configuration matière-classe ?',
-                                details: 'Cette action est irréversible.',
-                                onConfirm: handleDeleteConfig,
-                            });
-                        }}
-                        onCreate={() => { setConfigToEdit(null); setConfigModalOpen(true); }}
-                        hasPermission={hasPermission('config:edit')}
-                    />
-                )}
                 {ongletActif === 'emploi-du-temps' && (
                     <div className="space-y-4">
                         {edtQuery.isLoading ? (
@@ -337,19 +292,8 @@ export function MatiereDetailPage() {
                 />
             )}
 
-            <ConfigurationFormModal
-                open={configModalOpen}
-                onOpenChange={(v) => { if (!v) { setConfigModalOpen(false); setConfigToEdit(null); } }}
-                matiereId={id}
-                matiereNom={matiere.nom}
-                config={configToEdit}
-                onSave={handleConfigSave}
-                isLoading={creerConfig.isPending || modifierConfig.isPending}
-            />
-
             {DeleteConfirmModal}
             {DeleteAffectationConfirmModal}
-            {DeleteConfigConfirmModal}
         </div>
     );
 }
@@ -490,112 +434,6 @@ function AffectationsTab({ data, isLoading, onEdit, onDelete, onCreate, hasPermi
                                                     <ElisaButton variant="ghost" size="sm" onClick={() => onDelete(a.id)}>
                                                         <Trash2 className="h-3.5 w-3.5 text-red-500" />
                                                     </ElisaButton>
-                                                </div>
-                                            </td>
-                                        )}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
-
-function ConfigurationsTab({ data, isLoading, onEdit, onDelete, onCreate, hasPermission }: {
-    data: ConfigurationMatiereClasse[] | undefined;
-    isLoading: boolean;
-    onEdit: (c: ConfigurationMatiereClasse) => void;
-    onDelete: (id: string) => void;
-    onCreate: () => void;
-    hasPermission: boolean;
-}) {
-    if (isLoading) return <div className="py-12 text-center text-gray-500 dark:text-gray-200"><LoadingState message="Chargement des configurations..." /></div>;
-
-    const maxVolume = data && data.length > 0 ? Math.max(...data.map((c) => c.volumeHoraireHebdo || 0)) : 0;
-
-    return (
-        <div className="space-y-4">
-            {hasPermission && (
-                <div className="flex justify-end">
-                    <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={onCreate}>
-                        Ajouter une configuration
-                    </ElisaButton>
-                </div>
-            )}
-
-            {!data || data.length === 0 ? (
-                <EmptyState icon={FileText} message="Aucune configuration spécifique" sub="Les configurations par classe héritent des valeurs du programme par défaut. Utilisez le bouton ci-dessus pour surcharger une classe." />
-            ) : (
-                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="bg-gray-50 dark:bg-gray-800/50">
-                                <tr>
-                                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Classe</th>
-                                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Année scolaire</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Coeff.</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Barème</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Vol. horaire</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Oblig.</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Statut</th>
-                                    {hasPermission && <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Actions</th>}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {data.map((c) => (
-                                    <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800/50 transition-colors">
-                                        <td className="px-4 py-3 font-medium">{c.classeAnnee?.classe?.nom || '-'}</td>
-                                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{c.classeAnnee?.anneeScolaire?.libelle || '-'}</td>
-                                        <td className="px-4 py-3 text-center">
-                                            <InheritedValue value={c.coefficient} unit="" />
-                                        </td>
-                                        <td className="px-4 py-3 text-center">
-                                            <InheritedValue value={c.bareme} unit="" prefix="/ " />
-                                        </td>
-                                        <td className="px-4 py-3 text-center">
-                                            {c.volumeHoraireHebdo
-                                                ? <VolumeBar value={c.volumeHoraireHebdo} max={maxVolume} />
-                                                : <span className="text-xs text-gray-400 dark:text-gray-100 italic">Hérité</span>
-                                            }
-                                        </td>
-                                        <td className="px-4 py-3 text-center">
-                                            {c.obligatoire ? (
-                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
-                                                    <CheckCircle className="h-3 w-3" /> Oblig.
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700">
-                                                    <XCircle className="h-3 w-3" /> Optionnel
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-3 text-center">
-                                            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                                                c.statut === 'ACTIVE' ? 'bg-green-100 text-green-700' :
-                                                c.statut === 'EN_ATTENTE_VALIDATION' ? 'bg-yellow-100 text-yellow-700' :
-                                                'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400'
-                                            }`}>
-                                                {c.statut === 'ACTIVE' ? 'Active' : c.statut === 'EN_ATTENTE_VALIDATION' ? 'En attente' : 'Inactive'}
-                                            </span>
-                                        </td>
-                                        {hasPermission && (
-                                            <td className="px-4 py-3 text-center">
-                                                <div className="flex items-center justify-center gap-1">
-                                                    <button onClick={() => onEdit(c)}
-                                                        className="rounded-lg p-1.5 text-gray-400 dark:text-gray-100 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                                                        title="Modifier"
-                                                    >
-                                                        <Edit className="h-4 w-4" />
-                                                    </button>
-                                                    <button onClick={() => onDelete(c.id)}
-                                                        className="rounded-lg p-1.5 text-gray-400 dark:text-gray-100 hover:bg-red-50 hover:text-red-600 transition-colors"
-                                                        title="Supprimer"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </button>
                                                 </div>
                                             </td>
                                         )}

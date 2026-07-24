@@ -172,9 +172,9 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                         : ''
                 }
                 ${isDropTarget && isDropValid
-                    ? 'ring-4 ring-green-500/60 shadow-[0_0_20px_rgba(34,197,94,0.3)] scale-[1.03] border-green-500'
+                    ? 'ring-4 ring-success/60 shadow-[0_0_20px_rgba(var(--color-success),0.3)] scale-[1.03] border-[var(--color-success)]'
                     : isDropTarget && !isDropValid
-                        ? 'ring-4 ring-red-500/60 shadow-[0_0_20px_rgba(239,68,68,0.3)] border-red-500'
+                        ? 'ring-4 ring-danger/60 shadow-[0_0_20px_rgba(var(--color-danger),0.3)] border-[var(--color-danger)]'
                         : ''
                 }
                 ${isSearchMatch && !isDragged
@@ -201,7 +201,7 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                         : '!w-2 !h-2 !bg-[var(--color-text-muted)] !opacity-30'
                     }
                     ${isConnecting && isEditMode
-                        ? '!bg-green-500 !w-4 !h-4 !shadow-[0_0_8px_rgba(34,197,94,0.6)]'
+                        ? '!bg-[var(--color-success)] !w-4 !h-4 !shadow-[0_0_8px_rgba(var(--color-success),0.6)]'
                         : ''
                     }
                 `}
@@ -265,7 +265,7 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                                         {onDelete && (
                                             <button
                                                 onClick={handleDelete}
-                                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--color-danger)] hover:bg-danger/10 transition-colors"
                                             >
                                                 <Trash2 className="w-3 h-3" />
                                                 Supprimer
@@ -337,7 +337,7 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                     {unite.totalMembres || 0}
                 </span>
                 {unite.postesVacants > 0 && (
-                    <span className="text-amber-500 font-medium">
+                    <span className="text-[var(--color-warning)] font-medium">
                         {unite.postesVacants} vacant{unite.postesVacants > 1 ? 's' : ''}
                     </span>
                 )}
@@ -354,7 +354,7 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                         : '!w-2 !h-2 !bg-[var(--color-dominant-600)] !opacity-30'
                     }
                     ${isConnecting && isEditMode
-                        ? '!bg-green-500 !w-4 !h-4 !shadow-[0_0_8px_rgba(34,197,94,0.6)]'
+                        ? '!bg-[var(--color-success)] !w-4 !h-4 !shadow-[0_0_8px_rgba(var(--color-success),0.6)]'
                         : ''
                     }
                 `}

@@ -140,7 +140,7 @@ function FlowViewInner({
         <div
             ref={reactFlowWrapper}
             className="w-full"
-            style={{ height: 'calc(100vh - 320px)', minHeight: '400px' }}
+            style={{ height: 'clamp(300px, calc(100vh - 320px), 800px)' }}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
         >
@@ -182,7 +182,7 @@ function FlowViewInner({
                 {isDesktop && (
                     <MiniMap
                         nodeColor={() => 'var(--color-dominant-400)'}
-                        maskColor="rgba(0,0,0,0.1)"
+                        maskColor="rgba(0,0,0,0.08)"
                         className="!bg-[var(--color-surface)] !border !border-[var(--color-bordure)] !rounded-lg"
                         position="bottom-right"
                         pannable

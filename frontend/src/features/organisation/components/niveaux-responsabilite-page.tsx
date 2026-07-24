@@ -9,6 +9,34 @@ import type { NiveauResponsabilite } from '../types/organisation.types';
 import type { Column } from '@/components/ui/DataTable';
 import { useTranslation } from 'react-i18next';
 
+function NiveauFormWrapper({ initialData, onSuccess, onCancel }: { initialData?: NiveauResponsabilite | null; onSuccess: () => void; onCancel: () => void }) {
+    const { mutateAsync: modifier } = useModifierNiveauResponsabilite();
+    const { mutateAsync: creer } = useCreerNiveauResponsabilite();
+    return (
+        <NomenclatureFormModal
+            open
+            onOpenChange={(v: boolean) => { if (!v) onCancel(); }}
+            initialData={initialData}
+            titleKey={initialData ? 'modifierNiveauResp' : 'nouveauNiveauResp'}
+            icon={ArrowUpDown}
+            fields={[
+                { key: 'code', labelKey: 'code', required: true, span: 'col-span-1' },
+                { key: 'label', labelKey: 'label', required: true, span: 'col-span-1' },
+                { key: 'niveau', labelKey: 'niveau', type: 'number', span: 'col-span-1' },
+                { key: 'description', labelKey: 'description', required: false },
+            ]}
+            onSave={async (values: Record<string, unknown>) => {
+                if (initialData) {
+                    await modifier({ id: initialData.id, ...values });
+                } else {
+                    await creer(values);
+                }
+                onSuccess();
+            }}
+        />
+    );
+}
+
 export function NiveauxResponsabilitePage({ embedded }: { embedded?: boolean } = {}) {
     const { t } = useTranslation('organisation');
 
@@ -31,29 +59,7 @@ export function NiveauxResponsabilitePage({ embedded }: { embedded?: boolean } =
             useCreate={useCreerNiveauResponsabilite}
             useUpdate={useModifierNiveauResponsabilite}
             useDelete={useSupprimerNiveauResponsabilite}
-            formComponent={({ initialData, onSuccess, onCancel }) => (
-                <NomenclatureFormModal
-                    open
-                    onOpenChange={(v: boolean) => { if (!v) onCancel(); }}
-                    initialData={initialData}
-                    titleKey={initialData ? 'modifierNiveauResp' : 'nouveauNiveauResp'}
-                    icon={ArrowUpDown}
-                    fields={[
-                        { key: 'code', labelKey: 'code', required: true, span: 'col-span-1' },
-                        { key: 'label', labelKey: 'label', required: true, span: 'col-span-1' },
-                        { key: 'niveau', labelKey: 'niveau', type: 'number', span: 'col-span-1' },
-                        { key: 'description', labelKey: 'description', required: false },
-                    ]}
-                    onSave={async (values: Record<string, unknown>) => {
-                        if (initialData) {
-                            await useModifierNiveauResponsabilite().mutateAsync({ id: initialData.id, ...values });
-                        } else {
-                            await useCreerNiveauResponsabilite().mutateAsync(values);
-                        }
-                        onSuccess();
-                    }}
-                />
-            )}
+            formComponent={NiveauFormWrapper}
         />
     );
 }

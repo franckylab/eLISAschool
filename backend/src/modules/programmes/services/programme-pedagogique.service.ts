@@ -3,6 +3,7 @@ import { AppDataSource } from '@database/data-source';
 import { ProgrammePedagogique } from '../entities/programme-pedagogique.entity';
 import { ProgrammeMatiere } from '../entities/programme-matiere.entity';
 import { ProgrammeChapitre } from '../entities/programme-chapitre.entity';
+import { ProgrammeVersion } from '../entities/programme-version.entity';
 import { CreateProgrammeDto, UpdateProgrammeDto, QueryProgrammesDto, AddMatiereProgrammeDto, UpdateMatiereProgrammeDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -13,11 +14,13 @@ export class ProgrammePedagogiqueService {
     private repo: Repository<ProgrammePedagogique>;
     private matiereRepo: Repository<ProgrammeMatiere>;
     private chapitreRepo: Repository<ProgrammeChapitre>;
+    private versionRepo: Repository<ProgrammeVersion>;
 
     constructor() {
         this.repo = AppDataSource.getRepository(ProgrammePedagogique);
         this.matiereRepo = AppDataSource.getRepository(ProgrammeMatiere);
         this.chapitreRepo = AppDataSource.getRepository(ProgrammeChapitre);
+        this.versionRepo = AppDataSource.getRepository(ProgrammeVersion);
     }
 
     async create(dto: CreateProgrammeDto, etablissementId: string): Promise<ProgrammePedagogique> {
@@ -69,7 +72,7 @@ export class ProgrammePedagogiqueService {
             qb.andWhere('p.actif = :actif', { actif });
         }
 
-        const allowedSort = ['nom', 'code', 'createdAt', 'nbHeuresHebdo', 'actif', 'type'];
+        const allowedSort = ['nom', 'code', 'createdAt', 'actif', 'type'];
         const orderField = allowedSort.includes(sortBy) ? sortBy : 'nom';
         qb.orderBy(`p.${orderField}`, sortOrder === 'DESC' ? 'DESC' : 'ASC');
 
@@ -99,15 +102,25 @@ export class ProgrammePedagogiqueService {
         });
         if (!programme) throw new AppError('Programme non trouvé', 404, 'NOT_FOUND');
 
-        const nbHeures = programme.matieres?.reduce((sum, m) => sum + (m.volumeHoraire || 0), 0) || 0;
+        // Calcul du volume horaire total depuis MatiereNiveau (source unique)
+        let nbHeures = 0;
+        for (const m of programme.matieres ?? []) {
+            const matiereNiveau = m.matiereNiveau;
+            if (matiereNiveau?.volumeHoraire) {
+                nbHeures += matiereNiveau.volumeHoraire;
+            }
+        }
         (programme as any).nbHeuresCalculees = nbHeures;
 
         return programme;
     }
 
-    async update(id: string, dto: UpdateProgrammeDto, etablissementId: string): Promise<ProgrammePedagogique> {
+    async update(id: string, dto: UpdateProgrammeDto, etablissementId: string, modifiePar?: string): Promise<ProgrammePedagogique> {
         const programme = await this.repo.findOne({ where: { id, etablissementId } });
         if (!programme) throw new AppError('Programme non trouvé', 404, 'NOT_FOUND');
+
+        // Créer un snapshot avant modification (historisation)
+        await this.creerVersion(id, modifiePar, 'Modification du programme');
 
         Object.assign(programme, dto);
         await this.repo.save(programme);
@@ -150,6 +163,61 @@ export class ProgrammePedagogiqueService {
             where: { programmeMatiereId: In(programmeMatiereIds), etablissementId },
             relations: ['programmeMatiere', 'programmeMatiere.matiereNiveau', 'programmeMatiere.matiereNiveau.matiere', 'programmeMatiere.matiereNiveau.niveau'],
             order: { programmeMatiereId: 'ASC', ordre: 'ASC' },
+        });
+    }
+
+    // ─── Historisation ────────────────────────────────────────
+
+    /**
+     * Crée un snapshot du programme actuel dans programmes_versions
+     */
+    async creerVersion(programmeId: string, modifiePar?: string, commentaire?: string): Promise<ProgrammeVersion> {
+        const programme = await this.repo.findOne({
+            where: { id: programmeId },
+            relations: ['matieres', 'matieres.matiereNiveau', 'matieres.matiereNiveau.matiere'],
+        });
+        if (!programme) throw new AppError('Programme non trouvé', 404, 'NOT_FOUND');
+
+        const snapshot = {
+            nom: programme.nom,
+            code: programme.code,
+            description: programme.description,
+            type: programme.type,
+            cycleId: programme.cycleId,
+            niveauId: programme.niveauId,
+            actif: programme.actif,
+            matieres: programme.matieres?.map(m => ({
+                matiereNiveauId: m.matiereNiveauId,
+                coefficient: m.coefficient,
+                obligatoire: m.obligatoire,
+                ordre: m.ordre,
+                matiere: m.matiereNiveau?.matiere ? {
+                    id: m.matiereNiveau.matiere.id,
+                    nom: m.matiereNiveau.matiere.nom,
+                    volumeHoraire: m.matiereNiveau.volumeHoraire,
+                } : null,
+            })),
+        };
+
+        const version = this.versionRepo.create({
+            programmeId,
+            snapshot,
+            modifiePar: modifiePar || 'system',
+            commentaire: commentaire || null,
+        });
+        await this.versionRepo.save(version);
+        logger.info(`[Programme] Version créée pour programme ${programmeId}: ${commentaire || 'snapshot'}`);
+        return version;
+    }
+
+    /**
+     * Récupère l'historique des versions d'un programme
+     */
+    async getVersions(programmeId: string, etablissementId: string): Promise<ProgrammeVersion[]> {
+        return this.versionRepo.find({
+            where: { programmeId },
+            order: { modifieAt: 'DESC' },
+            take: 50,
         });
     }
 }

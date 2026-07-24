@@ -9,6 +9,33 @@ import type { Column } from '@/components/ui/DataTable';
 import type { TypePersonnel } from '@/features/personnel/types/personnel.types';
 import { useTranslation } from 'react-i18next';
 
+function TypeFormWrapper({ initialData, onSuccess, onCancel }: { initialData?: TypePersonnel | null; onSuccess: () => void; onCancel: () => void }) {
+    const { mutateAsync: modifier } = useModifierTypePersonnel();
+    const { mutateAsync: creer } = useCreerTypePersonnel();
+    return (
+        <NomenclatureFormModal
+            open
+            onOpenChange={(v: boolean) => { if (!v) onCancel(); }}
+            initialData={initialData}
+            titleKey={initialData ? 'modifierTypePersonnel' : 'nouveauTypePersonnel'}
+            icon={UserCheck}
+            fields={[
+                { key: 'code', labelKey: 'code', required: true, span: 'col-span-1' },
+                { key: 'nom', labelKey: 'nom', required: true, span: 'col-span-1' },
+                { key: 'description', labelKey: 'description', required: false },
+            ]}
+            onSave={async (values: Record<string, unknown>) => {
+                if (initialData) {
+                    await modifier({ id: initialData.id, ...values });
+                } else {
+                    await creer(values);
+                }
+                onSuccess();
+            }}
+        />
+    );
+}
+
 export function TypesPersonnelPage({ embedded }: { embedded?: boolean } = {}) {
     const { t } = useTranslation('organisation');
 
@@ -30,28 +57,7 @@ export function TypesPersonnelPage({ embedded }: { embedded?: boolean } = {}) {
             useCreate={useCreerTypePersonnel}
             useUpdate={useModifierTypePersonnel}
             useDelete={useSupprimerTypePersonnel}
-            formComponent={({ initialData, onSuccess, onCancel }) => (
-                <NomenclatureFormModal
-                    open
-                    onOpenChange={(v: boolean) => { if (!v) onCancel(); }}
-                    initialData={initialData}
-                    titleKey={initialData ? 'modifierTypePersonnel' : 'nouveauTypePersonnel'}
-                    icon={UserCheck}
-                    fields={[
-                        { key: 'code', labelKey: 'code', required: true, span: 'col-span-1' },
-                        { key: 'nom', labelKey: 'nom', required: true, span: 'col-span-1' },
-                        { key: 'description', labelKey: 'description', required: false },
-                    ]}
-                    onSave={async (values: Record<string, unknown>) => {
-                        if (initialData) {
-                            await useModifierTypePersonnel().mutateAsync({ id: initialData.id, ...values });
-                        } else {
-                            await useCreerTypePersonnel().mutateAsync(values);
-                        }
-                        onSuccess();
-                    }}
-                />
-            )}
+            formComponent={TypeFormWrapper}
         />
     );
 }

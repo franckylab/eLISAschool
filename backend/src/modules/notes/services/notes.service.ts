@@ -82,7 +82,7 @@ export class NotesService {
         if (coefficient === undefined || bareme === undefined) {
             try {
                 const matiereNiveauRepo = AppDataSource.getRepository('MatiereNiveau') as any;
-                const configRepo = AppDataSource.getRepository('ConfigurationMatiereClasse') as any;
+                const affectationRepo = AppDataSource.getRepository('AffectationMatiere') as any;
                 const classeAnneeRepo = AppDataSource.getRepository('AffectationEleve') as any;
 
                 // Trouver le niveau de la classe et le programme associé
@@ -94,16 +94,16 @@ export class NotesService {
                 if (affectation?.classe?.niveauId) {
                     const niveauId = affectation.classe.niveauId;
 
-                    // Chercher la configuration par classe (override prioritaire)
-                    const config = await configRepo.findOne({
+                    // Chercher l'affectation matière (source prioritaire)
+                    const affectMatiere = await affectationRepo.findOne({
                         where: { matiereId: createDto.matiereId, classeAnneeId: createDto.classeAnneeId },
                     });
 
                     if (coefficient === undefined) {
-                        coefficient = config?.coefficient;
+                        coefficient = affectMatiere?.coefficient;
                     }
                     if (bareme === undefined) {
-                        bareme = config?.bareme;
+                        bareme = affectMatiere?.bareme;
                     }
 
                     // ProgrammeMatiere override (via programme de la ClasseAnnee)
@@ -268,17 +268,17 @@ export class NotesService {
         if (coefficient === undefined || bareme === undefined) {
             try {
                 const matiereNiveauRepo = AppDataSource.getRepository('MatiereNiveau') as any;
-                const configRepo = AppDataSource.getRepository('ConfigurationMatiereClasse') as any;
+                const affectationRepo = AppDataSource.getRepository('AffectationMatiere') as any;
 
-                const config = await configRepo.findOne({
+                const affectMatiere = await affectationRepo.findOne({
                     where: { matiereId: createDto.matiereId, classeAnneeId: createDto.classeAnneeId },
                 });
 
                 if (coefficient === undefined) {
-                    coefficient = config?.coefficient;
+                    coefficient = affectMatiere?.coefficient;
                 }
                 if (bareme === undefined) {
-                    bareme = config?.bareme;
+                    bareme = affectMatiere?.bareme;
                 }
 
                 // ProgrammeMatiere override (via programme de la ClasseAnnee)

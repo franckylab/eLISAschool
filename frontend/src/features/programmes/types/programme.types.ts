@@ -8,12 +8,8 @@ export interface ProgrammePedagogique {
     type: ProgrammeType;
     cycleId: string | null;
     niveauId: string | null;
-    nbHeuresHebdo: number;
     objectifsGeneraux: string | null;
     competencesVisees: string[] | null;
-    periodeId: string | null;
-    dateDebut: string | null;
-    dateFin: string | null;
     actif: boolean;
     etablissementId: string;
     createdAt: string;
@@ -29,7 +25,6 @@ export interface ProgrammeMatiere {
     programmeId: string;
     matiereNiveauId: string;
     coefficient: number | null;
-    volumeHoraire: number | null;
     obligatoire: boolean;
     ordre: number;
     etablissementId: string;
@@ -90,12 +85,8 @@ export interface CreerProgrammeDto {
     type?: ProgrammeType;
     cycleId?: string;
     niveauId?: string;
-    nbHeuresHebdo?: number;
     objectifsGeneraux?: string;
     competencesVisees?: string[];
-    periodeId?: string;
-    dateDebut?: string;
-    dateFin?: string;
     actif?: boolean;
 }
 
@@ -118,14 +109,12 @@ export interface QueryProgrammesDto {
 export interface AddMatiereProgrammeDto {
     matiereNiveauId: string;
     coefficient?: number;
-    volumeHoraire?: number;
     obligatoire?: boolean;
     ordre?: number;
 }
 
 export interface UpdateMatiereProgrammeDto {
     coefficient?: number;
-    volumeHoraire?: number;
     obligatoire?: boolean;
     ordre?: number;
 }

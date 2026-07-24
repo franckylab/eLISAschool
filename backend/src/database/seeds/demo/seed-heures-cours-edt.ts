@@ -11,7 +11,8 @@
 import { AppDataSource } from '@database/data-source';
 import { MembrePersonnel, StatutPersonnel, TypePersonnel, ContratPersonnel, StatutContrat, HeureCours, StatutEffectue } from '@modules/personnel/entities';
 import { ModeRemunerationEntity } from '@modules/organisation/entities';
-import { EmploiDuTemps, JourSemaine, TypeCreneau } from '@modules/emploi-du-temps/entities';
+import { CreneauHoraire, JourSemaine, TypeCreneau, StatutCreneau } from '@modules/emploi-du-temps/entities';
+import { AffectationMatiere } from '@modules/matieres/entities';
 import { Classe, ClasseAnnee } from '@modules/classes/entities';
 import { Matiere } from '@modules/matieres/entities';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
@@ -41,7 +42,8 @@ export async function seedHeuresCoursEtEdt(etablissementId: string): Promise<voi
     const matiereRepo = AppDataSource.getRepository(Matiere);
     const anneeRepo = AppDataSource.getRepository(AnneeScolaire);
     const typePersonnelRepo = AppDataSource.getRepository(TypePersonnel);
-    const edtRepo = AppDataSource.getRepository(EmploiDuTemps);
+    const edtRepo = AppDataSource.getRepository(CreneauHoraire);
+    const affectationRepo = AppDataSource.getRepository(AffectationMatiere);
     const hcRepo = AppDataSource.getRepository(HeureCours);
 
     // 1. Trouver ou créer l'enseignant
@@ -117,7 +119,7 @@ export async function seedHeuresCoursEtEdt(etablissementId: string): Promise<voi
         return;
     }
 
-    // 4. Créer les EDT slots
+    // 4. Créer les affectations + créneaux
     let edtCount = 0;
     const semaine = getLundi(new Date());
     for (let i = 0; i < SLOTS_DEF.length; i++) {
@@ -125,10 +127,31 @@ export async function seedHeuresCoursEtEdt(etablissementId: string): Promise<voi
         const classeAnnee = classesAnnee[i % classesAnnee.length];
         const matiere = matieres[i % matieres.length];
 
+        // Créer ou trouver l'affectation
+        let affectation = await affectationRepo.findOne({
+            where: {
+                matiereId: matiere.id,
+                classeAnneeId: classeAnnee.id,
+                enseignantId: enseignant.id,
+                etablissementId,
+            },
+        });
+        if (!affectation) {
+            affectation = affectationRepo.create({
+                matiereId: matiere.id,
+                classeAnneeId: classeAnnee.id,
+                enseignantId: enseignant.id,
+                etablissementId,
+                obligatoire: true,
+                statutValidation: 'VALIDE',
+                statut: 'ACTIVE',
+            });
+            await affectationRepo.save(affectation);
+        }
+
         const existant = await edtRepo.findOne({
             where: {
-                enseignantId: enseignant.id,
-                classeAnneeId: classeAnnee.id,
+                affectationMatiereId: affectation.id,
                 jour: slot.jour,
                 heureDebut: slot.heureDebut,
                 etablissementId,
@@ -137,16 +160,16 @@ export async function seedHeuresCoursEtEdt(etablissementId: string): Promise<voi
         if (existant) continue;
 
         const edt = edtRepo.create({
-            classeAnneeId: classeAnnee.id,
-            matiereId: matiere.id,
-            enseignantId: enseignant.id,
+            affectationMatiereId: affectation.id,
             jour: slot.jour,
             heureDebut: slot.heureDebut,
             heureFin: slot.heureFin,
             typeCreneau: TypeCreneau.COURS,
+            statut: StatutCreneau.PLANIFIE,
             anneeScolaireId: anneeActive.id,
+            periodeId: anneeActive.id,
             etablissementId,
-            actif: true,
+            genereAutomatiquement: true,
         });
         await edtRepo.save(edt);
         edtCount++;
@@ -177,7 +200,7 @@ export async function seedHeuresCoursEtEdt(etablissementId: string): Promise<voi
 
         const hc = hcRepo.create({
             enseignantId: enseignant.id,
-            classeId: classeAnnee.classeId,
+            classeAnneeId: classeAnnee.id,
             matiereId: matiere.id,
             date,
             heureDebut: slot.heureDebut,

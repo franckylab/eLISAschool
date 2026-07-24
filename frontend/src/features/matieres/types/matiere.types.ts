@@ -62,8 +62,9 @@ export interface AffectationMatiere {
     classeAnneeId: string;
     enseignantId: string;
     etablissementId: string;
-    configurationId: string | null;
     coefficient: number | null;
+    obligatoire: boolean;
+    statutValidation: 'VALIDE' | 'EN_ATTENTE_VALIDATION' | 'REJETE';
     statut: string;
     dateDebut: string;
     dateFin: string | null;
@@ -71,27 +72,6 @@ export interface AffectationMatiere {
     createdAt: string;
     updatedAt: string;
     enseignant?: { id: string; nom: string; prenom: string };
-    classeAnnee?: {
-        id: string;
-        classe: { id: string; nom: string };
-        anneeScolaire: { id: string; libelle: string };
-    };
-}
-
-export interface ConfigurationMatiereClasse {
-    id: string;
-    matiereId: string;
-    classeAnneeId: string;
-    etablissementId: string;
-    coefficient: number | null;
-    bareme: number | null;
-    volumeHoraireHebdo: number | null;
-    credits: number | null;
-    obligatoire: boolean;
-    statut: string;
-    notes: string | null;
-    createdAt: string;
-    updatedAt: string;
     classeAnnee?: {
         id: string;
         classe: { id: string; nom: string };

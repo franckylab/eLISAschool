@@ -81,8 +81,8 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                             <div className="flex items-center gap-2">
                                 <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{unite.code}</span>
                                 <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{
-                                    backgroundColor: unite.statut === 'ACTIF' ? 'var(--color-success-50, #f0fdf4)' : unite.statut === 'ARCHIVE' ? 'var(--color-attention-50, #fffbeb)' : 'var(--color-dominant-50)',
-                                    color: unite.statut === 'ACTIF' ? 'var(--color-success-600, #16a34a)' : unite.statut === 'ARCHIVE' ? 'var(--color-attention-600, #d97706)' : 'var(--color-dominant-600)',
+                                    backgroundColor: unite.statut === 'ACTIF' ? 'var(--color-dominant-50)' : unite.statut === 'ARCHIVE' ? 'var(--color-secondary-50)' : 'var(--color-dominant-50)',
+                                    color: unite.statut === 'ACTIF' ? 'var(--color-dominant-600)' : unite.statut === 'ARCHIVE' ? 'var(--color-secondary-600)' : 'var(--color-dominant-600)',
                                 }}>
                                     {unite.statut}
                                 </span>
@@ -173,8 +173,8 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                                             </div>
                                         </div>
                                         <span className="text-xs px-1.5 py-0.5 rounded" style={{
-                                            backgroundColor: p.statut === 'VACANT' ? 'var(--color-attention-50, #fffbeb)' : 'var(--color-success-50, #f0fdf4)',
-                                            color: p.statut === 'VACANT' ? 'var(--color-attention-600, #d97706)' : 'var(--color-success-600, #16a34a)',
+                                            backgroundColor: p.statut === 'VACANT' ? 'var(--color-secondary-50)' : 'var(--color-dominant-50)',
+                                            color: p.statut === 'VACANT' ? 'var(--color-secondary-600)' : 'var(--color-dominant-600)',
                                         }}>
                                             {p.statut === 'VACANT' ? t('organigramme.drawer.vacant', 'Vacant') : t('organigramme.drawer.occupe', 'Occupé')}
                                         </span>
@@ -234,7 +234,7 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                                 <button
                                     onClick={() => onDelete(unite)}
                                     className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border transition-colors hover:bg-destructive/10"
-                                    style={{ borderColor: 'var(--color-bordure)', color: 'var(--color-attention-600, #d97706)' }}
+                                    style={{ borderColor: 'var(--color-bordure)', color: 'var(--color-warning)' }}
                                 >
                                     <Trash2 className="w-3.5 h-3.5" />
                                 </button>

@@ -62,7 +62,6 @@ export class ProgrammeMatiereService {
             programmeId,
             matiereNiveauId: dto.matiereNiveauId,
             coefficient: dto.coefficient,
-            volumeHoraire: dto.volumeHoraire,
             obligatoire: dto.obligatoire,
             ordre: dto.ordre ?? (await this.repo.count({ where: { programmeId } })),
             etablissementId,

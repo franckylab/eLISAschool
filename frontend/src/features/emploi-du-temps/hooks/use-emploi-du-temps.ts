@@ -2,33 +2,59 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
 
-export interface Creneau {
+// ─── Enums ────────────────────────────────────────────
+
+export type JourSemaine = 'LUNDI' | 'MARDI' | 'MERCREDI' | 'JEUDI' | 'VENDREDI' | 'SAMEDI' | 'DIMANCHE';
+export type TypeCreneau = 'COURS' | 'TD' | 'TP' | 'RECREATION' | 'PAUSE' | 'PERMANENCE' | 'AUTRE';
+export type StatutCreneau = 'PLANIFIE' | 'VALIDE';
+
+// ─── Interfaces ───────────────────────────────────────
+
+export interface CreneauHoraire {
     id: string;
-    classeAnneeId: string;
-    matiereId: string;
-    enseignantId: string;
-    salleId?: string;
-    jour: string;
+    affectationMatiereId: string;
+    jour: JourSemaine;
     heureDebut: string;
     heureFin: string;
-    typeCreneau: string;
+    typeCreneau: TypeCreneau;
+    statut: StatutCreneau;
+    salleId?: string;
+    periodeId: string;
     anneeScolaireId: string;
     etablissementId: string;
     couleur?: string;
     notes?: string;
-    actif: boolean;
     genereAutomatiquement: boolean;
     createdAt: string;
     updatedAt: string;
-    classeAnnee?: {
+    // Getters dérivés (retournés par le backend)
+    dureeMinutes?: number;
+    dureeHeures?: number;
+    plageHoraire?: string;
+    classeAnneeId?: string;
+    matiereId?: string;
+    enseignantId?: string;
+    affectationMatiere?: {
         id: string;
-        classe: { id: string; nom: string; niveau?: string };
-        anneeScolaire: { id: string; nom?: string; anneeDebut?: number };
+        matiereId: string;
+        classeAnneeId: string;
+        enseignantId: string;
+        coefficient: number | null;
+        obligatoire: boolean;
+        statutValidation: string;
+        matiere?: { id: string; nom: string; code?: string; couleur?: string };
+        enseignant?: { id: string; nom: string; prenom: string };
+        classeAnnee?: {
+            id: string;
+            classe: { id: string; nom: string; niveau?: string };
+            anneeScolaire: { id: string; nom?: string; anneeDebut?: number };
+        };
     };
-    matiere?: { id: string; nom: string; code?: string; couleur?: string };
-    enseignant?: { id: string; nom: string; prenom: string };
     salle?: { id: string; nom: string; code?: string };
 }
+
+/** @deprecated Utiliser CreneauHoraire */
+export type Creneau = CreneauHoraire;
 
 export interface PaginatedResponse<T> {
     items: T[];
@@ -47,14 +73,15 @@ export interface CreneauFilters {
     classeAnneeId?: string;
     enseignantId?: string;
     salleId?: string;
-    matiereId?: string;
-    jour?: string;
-    typeCreneau?: string;
+    affectationMatiereId?: string;
+    jour?: JourSemaine;
+    typeCreneau?: TypeCreneau;
+    statut?: StatutCreneau;
     anneeScolaireId?: string;
-    actif?: boolean;
+    periodeId?: string;
     genereAutomatiquement?: boolean;
     inclureHeuresCours?: boolean;
-    typeSource?: 'edt' | 'heure_cours';
+    typeSource?: 'creneau' | 'heure_cours';
     page?: number;
     limit?: number;
     orderBy?: string;
@@ -74,9 +101,42 @@ export interface PreferenceEDT {
     maxCreneauxConsecutifs: number;
     pauseDebut?: string | null;
     pauseFin?: string | null;
+    pauseMatineeDebut?: string | null;
+    pauseMatineeFin?: string | null;
+    pauseApresMidiDebut?: string | null;
+    pauseApresMidiFin?: string | null;
+    creneauxImposables?: CreneauImposable[];
     repartitionEquilibree: boolean;
     createdAt?: string;
     updatedAt?: string;
+}
+
+export interface CreneauImposable {
+    jour: JourSemaine;
+    heureDebut: string;
+    heureFin: string;
+    motif?: string;
+}
+
+// ─── Conflits ───────────────────────────────────────
+
+export type TypeConflit = 'CONFLIT_CLASSE' | 'CONFLIT_ENSEIGNANT' | 'CONFLIT_SALLE' | 'DEPASSEMENT_VOLUME_HORAIRE' | 'CRENEAU_IMPOSABLE';
+export type SeveriteConflit = 'BLOQUANT' | 'AVERTISSEMENT';
+
+export interface Conflit {
+    type: TypeConflit;
+    severite: SeveriteConflit;
+    message: string;
+    details: Record<string, unknown>;
+}
+
+export interface DonneesVerification {
+    affectationMatiereId?: string;
+    jour: JourSemaine;
+    heureDebut: string;
+    heureFin: string;
+    salleId?: string;
+    excludeCreneauId?: string;
 }
 
 export interface TemplateEDT {
@@ -108,7 +168,7 @@ export function useCreneaux(filters: CreneauFilters = {}) {
         queryFn: async () => {
             const params: Record<string, any> = {};
             Object.entries(filters).forEach(([k, v]) => { if (v !== undefined && v !== '') params[k] = v; });
-            const response = await apiClient.get<{ data: PaginatedResponse<Creneau> }>('/api/emploi-du-temps', params);
+            const response = await apiClient.get<{ data: PaginatedResponse<CreneauHoraire> }>('/api/emploi-du-temps', params);
             return response.data;
         },
         staleTime: 2 * 60 * 1000,
@@ -119,7 +179,7 @@ export function useCreneau(id: string) {
     return useQuery({
         queryKey: EDT_KEYS.detail(id),
         queryFn: async () => {
-            const response = await apiClient.get<{ data: Creneau }>(`/api/emploi-du-temps/${id}`);
+            const response = await apiClient.get<{ data: CreneauHoraire }>(`/api/emploi-du-temps/${id}`);
             return response.data;
         },
         enabled: !!id,
@@ -130,8 +190,8 @@ export function useCreneau(id: string) {
 export function useCreerCreneau() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async (dto: any) => {
-            const res = await apiClient.post<{ data: Creneau }>('/api/emploi-du-temps', dto);
+        mutationFn: async (dto: Partial<CreneauHoraire>) => {
+            const res = await apiClient.post<{ data: CreneauHoraire }>('/api/emploi-du-temps', dto);
             return res.data;
         },
         onSuccess: () => {
@@ -147,8 +207,8 @@ export function useCreerCreneau() {
 export function useUpdateCreneau() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async ({ id, ...dto }: any) => {
-            const res = await apiClient.patch<{ data: Creneau }>(`/api/emploi-du-temps/${id}`, dto);
+        mutationFn: async ({ id, ...dto }: Partial<CreneauHoraire> & { id: string }) => {
+            const res = await apiClient.patch<{ data: CreneauHoraire }>(`/api/emploi-du-temps/${id}`, dto);
             return res.data;
         },
         onSuccess: () => {
@@ -287,6 +347,17 @@ export function useDupliquerTemplateEDT() {
         },
         onError: (err: any) => {
             toast.error(err?.response?.data?.error?.message || 'Erreur');
+        },
+    });
+}
+
+// ─── Vérification conflits ─────────────────────────
+
+export function useVerifierConflits() {
+    return useMutation({
+        mutationFn: async (donnees: DonneesVerification) => {
+            const res = await apiClient.post<{ data: Conflit[] }>('/api/emploi-du-temps/verifier-conflits', donnees);
+            return res.data;
         },
     });
 }

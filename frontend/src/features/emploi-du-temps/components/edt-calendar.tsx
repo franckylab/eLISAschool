@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import type { Creneau } from '../hooks/use-emploi-du-temps';
+import type { CreneauHoraire } from '../hooks/use-emploi-du-temps';
 import { User, MapPin } from 'lucide-react';
 
 interface EDTCalendarProps {
-    creneaux: Creneau[];
+    creneaux: CreneauHoraire[];
 }
 
 const COULEURS_MATIERES: Record<string, string> = {
@@ -36,7 +36,7 @@ export function EDTCalendar({ creneaux }: EDTCalendarProps) {
     ], [t]);
 
     const plan = useMemo(() => {
-        const planByDay: Record<string, Creneau[]> = {};
+        const planByDay: Record<string, CreneauHoraire[]> = {};
 
         for (const creneau of creneaux) {
             if (!planByDay[creneau.jour]) {
@@ -60,7 +60,7 @@ export function EDTCalendar({ creneaux }: EDTCalendarProps) {
         return Array.from(heureSet).sort();
     }, [creneaux]);
 
-    const trouverCreneau = (jour: string, heure: string): Creneau | null => {
+    const trouverCreneau = (jour: string, heure: string): CreneauHoraire | null => {
         const creneauxJour = plan[jour] || [];
         return creneauxJour.find(c => c.heureDebut === heure) || null;
     };
@@ -118,7 +118,7 @@ export function EDTCalendar({ creneaux }: EDTCalendarProps) {
                                     );
                                 }
 
-                                const couleurClass = obtenirCouleur(creneau.matiere?.nom);
+                                const couleurClass = obtenirCouleur(creneau.affectationMatiere?.matiere?.nom);
 
                                 return (
                                     <td key={jour} className="px-2 py-2 border-r border-[var(--color-bordure)] last:border-r-0">
@@ -128,14 +128,14 @@ export function EDTCalendar({ creneaux }: EDTCalendarProps) {
                                             transition={{ type: 'spring', stiffness: 300 }}
                                         >
                                             <div className="font-semibold text-sm mb-1">
-                                                {creneau.matiere?.nom || t('matiereDefaut')}
+                                                {creneau.affectationMatiere?.matiere?.nom || t('matiereDefaut')}
                                             </div>
 
-                                            {creneau.enseignant && (
+                                            {creneau.affectationMatiere?.enseignant && (
                                                 <div className="flex items-center gap-1 text-xs opacity-80 mb-1">
                                                     <User className="h-3 w-3 shrink-0" />
                                                     <span className="truncate">
-                                                        {creneau.enseignant.prenom} {creneau.enseignant.nom}
+                                                        {creneau.affectationMatiere.enseignant.prenom} {creneau.affectationMatiere.enseignant.nom}
                                                     </span>
                                                 </div>
                                             )}

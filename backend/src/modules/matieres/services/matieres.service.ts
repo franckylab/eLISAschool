@@ -335,258 +335,6 @@ export class MatieresService {
         return affectation;
     }
 
-    // ==== CONFIGURATION MATIERE CLASSE ====
-
-    async createConfigurationMatiereClasse(
-        dto: CreateConfigurationMatiereClasseDto,
-        createurId?: string,
-        etablissementId?: string
-    ): Promise<ConfigurationMatiereClasse> {
-        const classeAnneeRepo = AppDataSource.getRepository('ClasseAnnee');
-        const classeAnnee = await classeAnneeRepo.findOne({
-            where: { id: dto.classeAnneeId },
-            relations: ['classe']
-        }) as any;
-
-        if (!classeAnnee) {
-            throw new AppError('Classe/Année non trouvée', 404, 'CLASSE_ANNEE_NOT_FOUND');
-        }
-
-        const existing = await this.configurationMatiereClasseRepo.findOne({
-            where: {
-                matiereId: dto.matiereId,
-                classeAnneeId: dto.classeAnneeId,
-                etablissementId: dto.etablissementId,
-            }
-        });
-
-        if (existing) {
-            throw new AppError(
-                'Cette matière est déjà configurée pour cette classe et cette année scolaire',
-                409,
-                'CONFIGURATION_MATIERE_CLASSE_EXISTS'
-            );
-        }
-
-        const matiereNiveau = await this.niveauRepo.findOne({
-            where: {
-                matiereId: dto.matiereId,
-                niveauId: classeAnnee.classe.niveauId,
-            }
-        });
-
-        if (!matiereNiveau) {
-            throw new AppError(
-                'Programme matière-niveau non trouvé. Configurez d\'abord le MatiereNiveau.',
-                400,
-                'MATIERE_NIVEAU_NOT_FOUND'
-            );
-        }
-
-        const config = this.configurationMatiereClasseRepo.create({
-            matiereId: dto.matiereId,
-            classeAnneeId: dto.classeAnneeId,
-            etablissementId: dto.etablissementId,
-            coefficient: dto.coefficient,
-            bareme: dto.bareme,
-            volumeHoraireHebdo: dto.volumeHoraireHebdo,
-            credits: dto.credits,
-            obligatoire: dto.obligatoire,
-            notes: dto.notes,
-            statut: StatutConfigurationMatiereClasse.ACTIVE,
-        });
-
-        await this.configurationMatiereClasseRepo.save(config);
-
-        if (createurId && etablissementId) {
-            const requireValidation = await getParamBoolean('matieres.require_validation', { defaultValue: false, etablissementId });
-
-            if (requireValidation) {
-                await validationWorkflowService.createWorkflow({
-                    module: 'matieres',
-                    entiteId: config.id,
-                    entiteType: 'ConfigurationMatiereClasse',
-                    niveauxRequis: 2,
-                    etablissementId,
-                }, createurId);
-
-                logger.info(`[${etablissementId}] Configuration matière-classe créée en attente de validation: ${config.matiereId} → ${config.classeAnneeId}`);
-            } else {
-                logger.info(`Configuration matière-classe créée: ${config.matiereId} → ${config.classeAnneeId}`);
-            }
-        }
-
-        return config;
-    }
-
-    async findAllConfigurationsMatiereClasse(
-        etablissementId: string,
-        classeAnneeId?: string
-    ): Promise<ConfigurationMatiereClasse[]> {
-        const where: any = { etablissementId };
-
-        if (classeAnneeId) {
-            where.classeAnneeId = classeAnneeId;
-        }
-
-        return this.configurationMatiereClasseRepo.find({
-            where,
-            relations: ['matiere', 'classeAnnee', 'classeAnnee.classe', 'classeAnnee.anneeScolaire'],
-            order: {
-                'classeAnnee': { createdAt: 'DESC' },
-                'matiere': { nom: 'ASC' },
-            },
-        });
-    }
-
-    async findOneConfigurationMatiereClasse(id: string): Promise<ConfigurationMatiereClasse> {
-        const config = await this.configurationMatiereClasseRepo.findOne({
-            where: { id },
-            relations: ['matiere', 'classeAnnee', 'classeAnnee.classe', 'classeAnnee.anneeScolaire', 'etablissement'],
-        });
-
-        if (!config) {
-            throw new AppError('Configuration matière-classe non trouvée', 404, 'NOT_FOUND');
-        }
-
-        return config;
-    }
-
-    async updateConfigurationMatiereClasse(
-        id: string,
-        dto: UpdateConfigurationMatiereClasseDto
-    ): Promise<ConfigurationMatiereClasse> {
-        const config = await this.findOneConfigurationMatiereClasse(id);
-
-        Object.assign(config, dto);
-        await this.configurationMatiereClasseRepo.save(config);
-
-        logger.info(`Configuration matière-classe mise à jour: ${config.matiereId} → ${config.classeAnneeId}`);
-        return config;
-    }
-
-    async deleteConfigurationMatiereClasse(id: string): Promise<void> {
-        const config = await this.findOneConfigurationMatiereClasse(id);
-
-        const affectations = await this.affectationRepo.find({
-            where: { configurationId: id },
-        });
-
-        if (affectations.length > 0) {
-            throw new AppError(
-                'Impossible de supprimer : cette configuration est utilisée par des affectations enseignants',
-                400,
-                'CONFIGURATION_MATIERE_CLASSE_IN_USE'
-            );
-        }
-
-        await this.configurationMatiereClasseRepo.remove(config);
-        logger.info(`Configuration matière-classe supprimée: ${config.matiereId} → ${config.classeAnneeId}`);
-    }
-
-    async getConfigurationEffective(
-        matiereId: string,
-        classeAnneeId: string,
-        etablissementId: string
-    ): Promise<{
-        config: ConfigurationMatiereClasse | null;
-        programme: { coefficient?: number | null; volumeHoraire?: number | null; obligatoire?: boolean | null; nom?: string | null } | null;
-        defaults: { coefficient: number; bareme: number; volumeHoraire: number | null; credits: number | null; obligatoire: boolean; source: string };
-        effective: { coefficient: number; bareme: number; volumeHoraireHebdo: number | null; credits: number | null; obligatoire: boolean };
-    }> {
-        const classeAnneeRepo = AppDataSource.getRepository('ClasseAnnee');
-        const classeAnnee = await classeAnneeRepo.findOne({
-            where: { id: classeAnneeId },
-            relations: ['classe'],
-        }) as any;
-
-        if (!classeAnnee) {
-            throw new AppError('Classe/Année non trouvée', 404, 'CLASSE_ANNEE_NOT_FOUND');
-        }
-
-        const config = await this.configurationMatiereClasseRepo.findOne({
-            where: {
-                matiereId,
-                classeAnneeId,
-                etablissementId,
-            },
-        });
-
-        // Résolution ProgrammeMatiere : si la classe a un programme, cherche
-        // le ProgrammeMatiere dont matiereNiveau.matiereId + niveauId correspondent.
-        let programmeSource: { coefficient?: number | null; volumeHoraire?: number | null; obligatoire?: boolean | null; nom?: string | null } | null = null;
-
-        if (classeAnnee.programmeId) {
-            const pm = await this.programmeMatiereRepo.findOne({
-                where: {
-                    programmeId: classeAnnee.programmeId,
-                    matiereNiveau: {
-                        matiereId,
-                        niveauId: classeAnnee.classe.niveauId,
-                    },
-                },
-                relations: ['matiereNiveau', 'programme'],
-            });
-
-            if (pm) {
-                programmeSource = {
-                    coefficient: pm.coefficient ?? null,
-                    volumeHoraire: pm.volumeHoraire ?? null,
-                    obligatoire: pm.obligatoire,
-                    nom: (pm.programme as any)?.nom ?? null,
-                };
-            }
-        }
-
-        const matiereNiveau = await this.niveauRepo.findOne({
-            where: {
-                matiereId,
-                niveauId: classeAnnee.classe.niveauId,
-            },
-        }) as any;
-
-        // Fallback : MatiereNiveau → si ProgrammeMatiere définit une valeur, l'utiliser
-        const defaultsMatiereNiveau = matiereNiveau
-            ? {
-                coefficient: matiereNiveau.coefficient,
-                bareme: matiereNiveau.bareme,
-                volumeHoraire: matiereNiveau.volumeHoraire ?? null,
-                credits: matiereNiveau.credits ?? null,
-                obligatoire: matiereNiveau.obligatoire,
-            }
-            : {
-                coefficient: 1,
-                bareme: 20,
-                volumeHoraire: null,
-                credits: null,
-                obligatoire: true,
-            };
-
-        // Chaîne : ProgrammeMatiere (primaire) → MatiereNiveau (fallback)
-        const coefficient = programmeSource?.coefficient ?? defaultsMatiereNiveau.coefficient;
-        const volumeHoraire = programmeSource?.volumeHoraire ?? defaultsMatiereNiveau.volumeHoraire;
-        const obligatoire = programmeSource?.obligatoire ?? defaultsMatiereNiveau.obligatoire;
-
-        const defaults = {
-            coefficient,
-            bareme: defaultsMatiereNiveau.bareme,
-            volumeHoraire,
-            credits: defaultsMatiereNiveau.credits,
-            obligatoire,
-            source: programmeSource ? 'ProgrammeMatiere' as const : 'MatiereNiveau' as const,
-        };
-
-        const effective = {
-            coefficient: config?.coefficient ?? defaults.coefficient,
-            bareme: config?.bareme ?? defaults.bareme,
-            volumeHoraireHebdo: config?.volumeHoraireHebdo ?? defaults.volumeHoraire,
-            credits: config?.credits ?? defaults.credits,
-            obligatoire: config?.obligatoire ?? defaults.obligatoire,
-        };
-
-        return { config: config || null, programme: programmeSource, defaults, effective };
-    }
-
     // ==== GRILLE PAR MATIÈRE (MatiereNiveau filtré par matière) ====
 
     async findProgrammeByMatiere(matiereId: string): Promise<MatiereNiveau[]> {
@@ -614,7 +362,6 @@ export class MatieresService {
                 'classeAnnee',
                 'classeAnnee.classe',
                 'classeAnnee.anneeScolaire',
-                'configuration',
             ],
             order: { createdAt: 'DESC' },
         });
@@ -663,16 +410,15 @@ export class MatieresService {
             const niveauId = aff.classeAnnee?.classe?.niveauId;
             const key = niveauId ? `${aff.matiereId}::${niveauId}` : '';
             const matiereNiveau = key ? matiereNiveaux.get(key) : null;
-            const config = aff.configuration;
 
             // Résolution ProgrammeMatiere
             const programmeId = (aff.classeAnnee as any)?.programmeId;
             const pmKey = programmeId && niveauId ? `${aff.matiereId}::${niveauId}::${programmeId}` : '';
             const pm = pmKey ? programmeMatieres.get(pmKey) : null;
 
-            // Chaîne : Config → ProgrammeMatiere → MatiereNiveau → Affectation (deprecated)
-            const coefficient = config?.coefficient ?? pm?.coefficient ?? matiereNiveau?.coefficient ?? aff.coefficient ?? 1;
-            const volumeHoraireHebdo = config?.volumeHoraireHebdo ?? pm?.volumeHoraire ?? matiereNiveau?.volumeHoraire ?? null;
+            // Chaîne : ProgrammeMatiere → MatiereNiveau → Affectation
+            const coefficient = pm?.coefficient ?? matiereNiveau?.coefficient ?? aff.coefficient ?? 1;
+            const volumeHoraireHebdo = matiereNiveau?.volumeHoraire ?? null;
 
             return {
                 ...aff,
@@ -693,15 +439,6 @@ export class MatieresService {
         });
     }
 
-    // ==== CONFIGURATIONS PAR MATIERE ====
-
-    async findConfigurationsByMatiere(matiereId: string, etablissementId: string): Promise<ConfigurationMatiereClasse[]> {
-        return this.configurationMatiereClasseRepo.find({
-            where: { matiereId, etablissementId },
-            relations: ['classeAnnee', 'classeAnnee.classe', 'classeAnnee.anneeScolaire'],
-            order: { createdAt: 'DESC' },
-        });
-    }
 }
 
 export const matieresService = new MatieresService();

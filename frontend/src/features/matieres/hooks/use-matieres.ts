@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
 import type {
     Matiere, CreerMatiereDto, ModifierMatiereDto, MatiereFiltres,
-    MatiereNiveau, AffectationMatiere, ConfigurationMatiereClasse,
+    MatiereNiveau, AffectationMatiere,
 } from '../types/matiere.types';
 import type { ProgrammeMatiere } from '@/features/programmes/types/programme.types';
 import { toast } from 'sonner';
@@ -17,8 +17,6 @@ const MATIERES_KEYS = {
     programme: (id: string) => [...MATIERES_KEYS.all, 'programme', id] as const,
     programmesPedagogiques: (id: string) => [...MATIERES_KEYS.all, 'programmes-pedagogiques', id] as const,
     affectations: (id: string) => [...MATIERES_KEYS.all, 'affectations', id] as const,
-    configurations: (id: string) => [...MATIERES_KEYS.all, 'configurations', id] as const,
-    configurationEffective: (matiereId: string, classeAnneeId: string) => [...MATIERES_KEYS.all, 'configurations', matiereId, 'effective', classeAnneeId] as const,
     tousNiveaux: () => [...MATIERES_KEYS.all, 'tous-niveaux'] as const,
 };
 
@@ -127,94 +125,6 @@ export function useMatiereAffectations(matiereId: string) {
         },
         enabled: isAuthenticated && !!matiereId,
         placeholderData: (previousData) => previousData,
-    });
-}
-
-export function useMatiereConfigurations(matiereId: string) {
-    const { isAuthenticated } = useAuthStore();
-    return useQuery({
-        queryKey: MATIERES_KEYS.configurations(matiereId),
-        queryFn: async () => {
-            try {
-                const response = await apiClient.get<ConfigurationMatiereClasse[]>(`/api/matieres/${matiereId}/configurations`);
-                return response.data;
-            } catch {
-                return [];
-            }
-        },
-        enabled: isAuthenticated && !!matiereId,
-        placeholderData: (previousData) => previousData,
-    });
-}
-
-export interface ConfigurationEffective {
-    config: ConfigurationMatiereClasse | null;
-    defaults: { coefficient: number; bareme: number; volumeHoraire: number | null; credits: number | null; obligatoire: boolean; source: string };
-    effective: { coefficient: number; bareme: number; volumeHoraireHebdo: number | null; credits: number | null; obligatoire: boolean };
-}
-
-export function useConfigurationEffective(matiereId: string, classeAnneeId: string | null) {
-    const { isAuthenticated } = useAuthStore();
-    return useQuery({
-        queryKey: MATIERES_KEYS.configurationEffective(matiereId, classeAnneeId ?? ''),
-        queryFn: async () => {
-            const response = await apiClient.get<ConfigurationEffective>(
-                `/api/matieres/${matiereId}/configurations/effective?classeAnneeId=${classeAnneeId}`
-            );
-            return response.data;
-        },
-        enabled: isAuthenticated && !!matiereId && !!classeAnneeId,
-        staleTime: 5 * 60 * 1000,
-        placeholderData: (previousData) => previousData,
-    });
-}
-
-export function useCreerConfigurationMatiereClasse() {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async (dto: { matiereId: string; classeAnneeId: string; coefficient?: number; bareme?: number; volumeHoraireHebdo?: number; credits?: number; obligatoire?: boolean; notes?: string }) => {
-            const response = await apiClient.post<ConfigurationMatiereClasse>(
-                `/api/matieres/${dto.matiereId}/configurations`, dto
-            );
-            return response.data;
-        },
-        onSuccess: (_data, variables) => {
-            queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.configurations(variables.matiereId) });
-            toast.success('Configuration créée avec succès');
-        },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la création'),
-    });
-}
-
-export function useModifierConfigurationMatiereClasse() {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async ({ configId, matiereId, ...dto }: { configId: string; matiereId: string; coefficient?: number; bareme?: number; volumeHoraireHebdo?: number; credits?: number; obligatoire?: boolean; notes?: string }) => {
-            const response = await apiClient.patch<ConfigurationMatiereClasse>(
-                `/api/matieres/${matiereId}/configurations/${configId}`, dto
-            );
-            return response.data;
-        },
-        onSuccess: (_data, variables) => {
-            queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.configurations(variables.matiereId) });
-            toast.success('Configuration modifiée');
-        },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la modification'),
-    });
-}
-
-export function useSupprimerConfigurationMatiereClasse() {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async ({ configId, matiereId }: { configId: string; matiereId: string }) => {
-            await apiClient.delete(`/api/matieres/${matiereId}/configurations/${configId}`);
-            return matiereId;
-        },
-        onSuccess: (matiereId) => {
-            queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.configurations(matiereId) });
-            toast.success('Configuration supprimée');
-        },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la suppression'),
     });
 }
 
@@ -375,7 +285,7 @@ export function useSupprimerAffectation() {
 export function useAjouterMatiereProgramme() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (dto: { programmeId: string; matiereNiveauId: string; coefficient?: number; volumeHoraire?: number; obligatoire?: boolean; ordre?: number }) => {
+        mutationFn: async (dto: { programmeId: string; matiereNiveauId: string; coefficient?: number; obligatoire?: boolean; ordre?: number }) => {
             const response = await apiClient.post<any>('/api/programmes/matieres', dto);
             return response.data;
         },
@@ -405,7 +315,7 @@ export function useRetirerMatiereProgramme() {
 export function useModifierMatiereProgramme() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ id, ...dto }: { id: string; coefficient?: number; volumeHoraire?: number; obligatoire?: boolean; ordre?: number }) => {
+        mutationFn: async ({ id, ...dto }: { id: string; coefficient?: number; obligatoire?: boolean; ordre?: number }) => {
             const response = await apiClient.patch<any>(`/api/programmes/matieres/${id}`, dto);
             return response.data;
         },

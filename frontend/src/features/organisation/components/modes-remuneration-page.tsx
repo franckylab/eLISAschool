@@ -9,6 +9,33 @@ import type { ModeRemuneration } from '../types/organisation.types';
 import type { Column } from '@/components/ui/DataTable';
 import { useTranslation } from 'react-i18next';
 
+function ModeFormWrapper({ initialData, onSuccess, onCancel }: { initialData?: ModeRemuneration | null; onSuccess: () => void; onCancel: () => void }) {
+    const { mutateAsync: modifier } = useModifierModeRemuneration();
+    const { mutateAsync: creer } = useCreerModeRemuneration();
+    return (
+        <NomenclatureFormModal
+            open
+            onOpenChange={(v: boolean) => { if (!v) onCancel(); }}
+            initialData={initialData}
+            titleKey={initialData ? 'modifierModeRemuneration' : 'nouveauModeRemuneration'}
+            icon={DollarSign}
+            fields={[
+                { key: 'code', labelKey: 'code', required: true, span: 'col-span-1' },
+                { key: 'label', labelKey: 'label', required: true, span: 'col-span-1' },
+                { key: 'description', labelKey: 'description', required: false },
+            ]}
+            onSave={async (values: Record<string, unknown>) => {
+                if (initialData) {
+                    await modifier({ id: initialData.id, ...values });
+                } else {
+                    await creer(values);
+                }
+                onSuccess();
+            }}
+        />
+    );
+}
+
 export function ModesRemunerationPage({ embedded }: { embedded?: boolean } = {}) {
     const { t } = useTranslation('organisation');
 
@@ -30,28 +57,7 @@ export function ModesRemunerationPage({ embedded }: { embedded?: boolean } = {})
             useCreate={useCreerModeRemuneration}
             useUpdate={useModifierModeRemuneration}
             useDelete={useSupprimerModeRemuneration}
-            formComponent={({ initialData, onSuccess, onCancel }) => (
-                <NomenclatureFormModal
-                    open
-                    onOpenChange={(v: boolean) => { if (!v) onCancel(); }}
-                    initialData={initialData}
-                    titleKey={initialData ? 'modifierModeRemuneration' : 'nouveauModeRemuneration'}
-                    icon={DollarSign}
-                    fields={[
-                        { key: 'code', labelKey: 'code', required: true, span: 'col-span-1' },
-                        { key: 'label', labelKey: 'label', required: true, span: 'col-span-1' },
-                        { key: 'description', labelKey: 'description', required: false },
-                    ]}
-                    onSave={async (values: Record<string, unknown>) => {
-                        if (initialData) {
-                            await useModifierModeRemuneration().mutateAsync({ id: initialData.id, ...values });
-                        } else {
-                            await useCreerModeRemuneration().mutateAsync(values);
-                        }
-                        onSuccess();
-                    }}
-                />
-            )}
+            formComponent={ModeFormWrapper}
         />
     );
 }

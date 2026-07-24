@@ -9,6 +9,34 @@ import type { EchelonStructurel } from '../types/organisation.types';
 import type { Column } from '@/components/ui/DataTable';
 import { useTranslation } from 'react-i18next';
 
+function EchelonFormWrapper({ initialData, onSuccess, onCancel }: { initialData?: EchelonStructurel | null; onSuccess: () => void; onCancel: () => void }) {
+    const { mutateAsync: modifier } = useModifierEchelonStructurel();
+    const { mutateAsync: creer } = useCreerEchelonStructurel();
+    return (
+        <NomenclatureFormModal
+            open
+            onOpenChange={(v: boolean) => { if (!v) onCancel(); }}
+            initialData={initialData}
+            titleKey={initialData ? 'modifierEchelon' : 'nouvelEchelon'}
+            icon={Layers}
+            fields={[
+                { key: 'label', labelKey: 'label', required: true },
+                { key: 'code', labelKey: 'code', required: true },
+                { key: 'niveau', labelKey: 'niveau', type: 'number', span: 'col-span-1' },
+                { key: 'description', labelKey: 'description', required: false },
+            ]}
+            onSave={async (values: Record<string, unknown>) => {
+                if (initialData) {
+                    await modifier({ id: initialData.id, ...values });
+                } else {
+                    await creer(values);
+                }
+                onSuccess();
+            }}
+        />
+    );
+}
+
 export function EchelonsStructurelsPage({ embedded }: { embedded?: boolean } = {}) {
     const { t } = useTranslation('organisation');
 
@@ -31,29 +59,7 @@ export function EchelonsStructurelsPage({ embedded }: { embedded?: boolean } = {
             useCreate={useCreerEchelonStructurel}
             useUpdate={useModifierEchelonStructurel}
             useDelete={useSupprimerEchelonStructurel}
-            formComponent={({ initialData, onSuccess, onCancel }) => (
-                <NomenclatureFormModal
-                    open
-                    onOpenChange={(v: boolean) => { if (!v) onCancel(); }}
-                    initialData={initialData}
-                    titleKey={initialData ? 'modifierEchelon' : 'nouvelEchelon'}
-                    icon={Layers}
-                    fields={[
-                        { key: 'label', labelKey: 'label', required: true },
-                        { key: 'code', labelKey: 'code', required: true },
-                        { key: 'niveau', labelKey: 'niveau', type: 'number', span: 'col-span-1' },
-                        { key: 'description', labelKey: 'description', required: false },
-                    ]}
-                    onSave={async (values: Record<string, unknown>) => {
-                        if (initialData) {
-                            await useModifierEchelonStructurel().mutateAsync({ id: initialData.id, ...values });
-                        } else {
-                            await useCreerEchelonStructurel().mutateAsync(values);
-                        }
-                        onSuccess();
-                    }}
-                />
-            )}
+            formComponent={EchelonFormWrapper}
         />
     );
 }
