@@ -2,14 +2,10 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
+import { useHandleError } from './use-handle-error';
 import type { ModeRemuneration } from '../types/organisation.types';
 
 const KEYS = { all: ['organisation', 'modes-remuneration'] as const };
-
-function handleError(e: unknown, msg: string) {
-    const err = e as { response?: { data?: { error?: { message?: string } } } };
-    toast.error(err?.response?.data?.error?.message || msg);
-}
 
 export function useModesRemuneration() {
     const { isAuthenticated } = useAuthStore();
@@ -22,6 +18,7 @@ export function useModesRemuneration() {
 
 export function useCreerModeRemuneration() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: Partial<ModeRemuneration>) => { const res = await apiClient.post<ModeRemuneration>('/api/organisation/modes-remuneration', dto); return res.data!; },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Mode de rémunération créé'); },
@@ -31,6 +28,7 @@ export function useCreerModeRemuneration() {
 
 export function useModifierModeRemuneration() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async ({ id, ...data }: { id: string } & Partial<ModeRemuneration>) => { const res = await apiClient.patch<ModeRemuneration>(`/api/organisation/modes-remuneration/${id}`, data); return res.data!; },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Mode de rémunération modifié'); },
@@ -40,6 +38,7 @@ export function useModifierModeRemuneration() {
 
 export function useSupprimerModeRemuneration() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/organisation/modes-remuneration/${id}`); },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Mode de rémunération supprimé'); },

@@ -2,16 +2,12 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
+import { useHandleError } from './use-handle-error';
 import type { EchelonStructurel } from '../types/organisation.types';
 
 const KEYS = {
     all: ['organisation', 'echelons-structurels'] as const,
 };
-
-function handleError(e: unknown, msg: string) {
-    const err = e as { response?: { data?: { error?: { message?: string } } } };
-    toast.error(err?.response?.data?.error?.message || msg);
-}
 
 export function useEchelonsStructurels() {
     const { isAuthenticated } = useAuthStore();
@@ -27,6 +23,7 @@ export function useEchelonsStructurels() {
 
 export function useCreerEchelonStructurel() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: Partial<EchelonStructurel>) => {
             const res = await apiClient.post<EchelonStructurel>('/api/organisation/echelons-structurels', dto);
@@ -39,6 +36,7 @@ export function useCreerEchelonStructurel() {
 
 export function useModifierEchelonStructurel() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async ({ id, ...data }: { id: string } & Partial<EchelonStructurel>) => {
             const res = await apiClient.patch<EchelonStructurel>(`/api/organisation/echelons-structurels/${id}`, data);
@@ -51,6 +49,7 @@ export function useModifierEchelonStructurel() {
 
 export function useSupprimerEchelonStructurel() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/organisation/echelons-structurels/${id}`); },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Échelon supprimé'); },

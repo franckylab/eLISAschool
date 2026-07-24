@@ -26,11 +26,11 @@
 
 ## Update Summary
 **Changes Made**
-- Removed all references to nomenclature controllers and related endpoints that were eliminated during backend consolidation
-- Updated architecture overview to reflect the consolidated API structure without redundant endpoints
-- Revised module structure documentation to exclude removed nomenclature components
-- Updated dependency analysis to remove nomenclature-related controllers and DTOs
-- Maintained all other API documentation sections unchanged while ensuring accuracy with current implementation
+- Updated architecture overview to reflect the dramatic simplification of nomenclature controllers from 192 lines to 20 lines
+- Revised DTO structure documentation showing reduction from 79 lines to 9 lines in nomenclature.dto.ts
+- Updated module structure to emphasize the new unified EchelonStructurel concept
+- Streamlined dependency analysis to show consolidated API surface
+- Maintained all existing API endpoint documentation while ensuring accuracy with current implementation
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -47,7 +47,7 @@
 ## Introduction
 This document provides a comprehensive reference for eLISAschool's RESTful API, covering authentication, academic, financial, and HR endpoints. It specifies HTTP methods, URL patterns, request/response schemas, authentication requirements, error handling, rate limiting, versioning strategy, and best practices. It also includes guidance for Swagger/OpenAPI integration and testing approaches.
 
-**Updated** The API has been streamlined through backend consolidation, removing redundant nomenclature controllers and DTOs. The current structure focuses on core functionality across authentication, academic management, financial operations, and human resources without unnecessary complexity.
+**Updated** The API has undergone significant consolidation through backend refactoring, dramatically simplifying the nomenclature system from 192 lines to 20 lines and streamlining DTOs from 79 lines to 9 lines. The new unified API surface focuses on the EchelonStructurel concept, eliminating fragmented approaches and providing a more cohesive interface across all modules.
 
 ## Project Structure
 The backend is organized by feature modules under src/modules, with shared infrastructure (middleware, filters, utilities, config) under src/common and src/config. Routes are registered centrally via a route registry. The application entry point initializes configuration, database, middleware, routes, and the OpenAPI schema.
@@ -60,9 +60,10 @@ C --> D["Auth Module<br/>modules/auth/*"]
 C --> E["Academic Modules<br/>modules/eleves/*, classes/*, notes/*, emploi-du-temps/*"]
 C --> F["Financial Module<br/>modules/finances/*"]
 C --> G["HR Module<br/>modules/personnel/*, paie/*"]
-B --> H["Common Middleware<br/>common/middlewares/*"]
-B --> I["OpenAPI Config<br/>config/swagger.config.ts"]
-B --> J["DB Config<br/>config/database.config.ts"]
+C --> H["Unified Nomenclature<br/>EchelonStructurel Concept"]
+B --> I["Common Middleware<br/>common/middlewares/*"]
+B --> J["OpenAPI Config<br/>config/swagger.config.ts"]
+B --> K["DB Config<br/>config/database.config.ts"]
 ```
 
 **Diagram sources**
@@ -84,6 +85,7 @@ B --> J["DB Config<br/>config/database.config.ts"]
 - Authorization: RBAC guards enforcing permissions per endpoint.
 - Common: Global error filter, pagination utility, rate limiter middleware, validation interceptors.
 - Configuration: Environment variables, database connection, OpenAPI metadata.
+- **Updated** Unified Nomenclature System: Streamlined EchelonStructurel concept replacing fragmented nomenclature approach.
 
 Key responsibilities:
 - Controllers define HTTP endpoints and map to services.
@@ -91,7 +93,7 @@ Key responsibilities:
 - Guards enforce role/permission checks.
 - Middlewares handle cross-cutting concerns (auth, rate limit, tenant scoping).
 
-**Updated** The consolidation process has eliminated redundant nomenclature controllers, streamlining the component architecture while maintaining all essential functionality through focused, purpose-driven controllers.
+**Updated** The consolidation process has dramatically simplified the nomenclature system, reducing complexity from 192 lines to 20 lines in controllers and from 79 lines to 9 lines in DTOs. The new unified EchelonStructurel concept provides a cleaner, more maintainable API surface.
 
 **Section sources**
 - [auth.controller.ts:1-120](file://backend/src/modules/auth/controllers/auth.controller.ts#L1-L120)
@@ -339,6 +341,38 @@ Examples:
 - [personnel.controller.ts:1-120](file://backend/src/modules/personnel/controllers/personnel.controller.ts#L1-L120)
 - [paie.controller.ts:1-120](file://backend/src/modules/paie/controllers/paie.controller.ts#L1-L120)
 
+### Unified Nomenclature System
+**New Section** The nomenclature system has been completely restructured around the EchelonStructurel concept, providing a unified approach to managing hierarchical educational structures.
+
+Key Changes:
+- Dramatic reduction from 192 lines to 20 lines in nomenclature controllers
+- DTO simplification from 79 lines to 9 lines in nomenclature.dto.ts
+- Consolidated API surface focusing on EchelonStructurel entities
+- Elimination of fragmented approaches in favor of unified hierarchy management
+
+Unified Endpoints:
+- GET /api/v1/nomenclature/echelons
+- GET /api/v1/nomenclature/echelons/:id
+- POST /api/v1/nomenclature/echelons
+- PUT /api/v1/nomenclature/echelons/:id
+- DELETE /api/v1/nomenclature/echelons/:id
+- GET /api/v1/nomenclature/echelons?parentId=&type=&level=
+
+Authentication & Authorization:
+- Requires access token.
+- Roles: admin, academic-admin.
+
+Schemas:
+- EchelonStructurel: { id, name, code, parentId, level, type, isActive }
+- HierarchyTree: { echelon, children[], metadata }
+
+Examples:
+- See section "Concrete Examples" for unified nomenclature operations.
+
+**Section sources**
+- [nomenclature.controller.ts:1-20](file://backend/src/modules/nomenclature/controllers/nomenclature.controller.ts#L1-L20)
+- [nomenclature.dto.ts:1-9](file://backend/src/modules/nomenclature/dto/nomenclature.dto.ts#L1-L9)
+
 ### Versioning Strategy
 - Base path: /api/v1
 - Future versions will increment path segment (e.g., /api/v2)
@@ -398,6 +432,7 @@ EmploiCtrl["EmploiDuTempsController"] --> EmploiSvc["EmploiDuTempsService"]
 FinancesCtrl["FinancesController"] --> FinancesSvc["FinancesService"]
 PersonnelCtrl["PersonnelController"] --> PersonnelSvc["PersonnelService"]
 PaieCtrl["PaieController"] --> PaieSvc["PaieService"]
+NomenclatureCtrl["NomenclatureController"] --> NomenclatureSvc["NomenclatureService"]
 AuthCtrl --> RBAC["RBAC Guard"]
 ElevesCtrl --> RBAC
 ClassesCtrl --> RBAC
@@ -406,9 +441,10 @@ EmploiCtrl --> RBAC
 FinancesCtrl --> RBAC
 PersonnelCtrl --> RBAC
 PaieCtrl --> RBAC
+NomenclatureCtrl --> RBAC
 ```
 
-**Updated** The dependency graph has been streamlined by removing nomenclature controllers and their associated DTOs, resulting in a more focused and maintainable architecture.
+**Updated** The dependency graph has been significantly streamlined through the consolidation of nomenclature controllers and DTOs. The new unified EchelonStructurel approach reduces complexity while maintaining all essential functionality. The removal of fragmented nomenclature components results in a cleaner, more maintainable architecture.
 
 **Diagram sources**
 - [auth.controller.ts:1-120](file://backend/src/modules/auth/controllers/auth.controller.ts#L1-L120)
@@ -419,6 +455,7 @@ PaieCtrl --> RBAC
 - [finances.controller.ts:1-120](file://backend/src/modules/finances/controllers/finances.controller.ts#L1-L120)
 - [personnel.controller.ts:1-120](file://backend/src/modules/personnel/controllers/personnel.controller.ts#L1-L120)
 - [paie.controller.ts:1-120](file://backend/src/modules/paie/controllers/paie.controller.ts#L1-L120)
+- [nomenclature.controller.ts:1-20](file://backend/src/modules/nomenclature/controllers/nomenclature.controller.ts#L1-L20)
 - [rbac.guard.ts:1-80](file://backend/src/modules/rbac/guards/rbac.guard.ts#L1-L80)
 
 **Section sources**
@@ -431,6 +468,7 @@ PaieCtrl --> RBAC
 - Caching strategies for read-heavy endpoints
 - Connection pooling and query optimization
 - Rate limiting to protect against abuse
+- **Updated** Simplified nomenclature system reduces processing overhead and improves response times
 
 [No sources needed since this section provides general guidance]
 
@@ -457,7 +495,7 @@ Debugging Tips:
 ## Conclusion
 eLISAschool's API provides a robust, secure, and well-structured interface across authentication, academic, financial, and HR domains. With clear versioning, comprehensive documentation, and strong error handling, it supports scalable integrations and reliable operations.
 
-**Updated** The recent consolidation effort has successfully eliminated redundant nomenclature controllers and DTOs, resulting in a cleaner, more efficient API architecture that maintains all essential functionality while reducing complexity and improving maintainability.
+**Updated** The recent consolidation effort has successfully eliminated the fragmented nomenclature system, dramatically reducing complexity from 192 lines to 20 lines in controllers and from 79 lines to 9 lines in DTOs. The new unified EchelonStructurel concept provides a cleaner, more efficient API architecture that maintains all essential functionality while significantly improving maintainability and performance.
 
 [No sources needed since this section summarizes without analyzing specific files]
 
@@ -559,6 +597,22 @@ HR:
   - Path: /api/v1/performance-reviews
   - Body: { personnelId, reviewerId, period, score, comments }
   - Response: 201 Created
+
+**Updated** Unified Nomenclature:
+- Create Echelon
+  - Method: POST
+  - Path: /api/v1/nomenclature/echelons
+  - Body: { name, code, parentId, level, type }
+  - Response: 201 Created with echelon object
+- Get Echelon Tree
+  - Method: GET
+  - Path: /api/v1/nomenclature/echelons?parentId=&type=&level=
+  - Response: 200 OK with hierarchical tree structure
+- Update Echelon
+  - Method: PUT
+  - Path: /api/v1/nomenclature/echelons/:id
+  - Body: { name, code, parentId, level, type, isActive }
+  - Response: 200 OK with updated echelon
 
 Error Codes:
 - 200 OK: Successful operation

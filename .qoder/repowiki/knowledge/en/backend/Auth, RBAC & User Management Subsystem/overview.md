@@ -1,0 +1,1 @@
+Orchestrates authentication, RBAC role/permission management, and user administration as three sibling modules sharing TypeORM entities and a common Express middleware/guard stack.

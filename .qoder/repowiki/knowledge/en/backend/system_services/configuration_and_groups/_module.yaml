@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/system_services/configuration_and_groups
+title: configuration_and_groups
+scope:
+    - backend/src/modules/configuration/
+    - backend/src/modules/groupes-etablissements/
+    - backend/src/modules/types-enum/
+source_files: []
+depends_on: []
+related_to: []

@@ -1,0 +1,5 @@
+Three sibling modules form the identity layer of the backend:
+- `auth` owns the runtime identity: login/register, JWT refresh tokens, account lockout, multi-tenant establishment selection, user preferences, audit logging, and the shared TypeORM entities (`Utilisateur`, `Role`, `Permission`, `ProfilUtilisateur`, etc.).
+- `rbac_permissions` exposes CRUD APIs over those same entities (roles, permissions, user-role assignments) without duplicating persistence logic.
+- `utilisateurs` provides administrative endpoints for user/profile lifecycle and photo uploads, also reading from the auth entities.
+Cross-module wiring is done through shared TypeORM entity imports rather than service calls — `rbac` and `utilisateurs` import entities directly from `auth/entities`. Runtime authorization is enforced by guards/middlewares in `auth/guards` and `auth/middlewares` (`CheckPermissionGuard`, `EtablissementMiddleware`, `PermissionMiddleware`) that are mounted on routes across all three modules. The `auth` module's `index.ts` re-exports controllers/services/guards so other modules can consume them via barrel imports.

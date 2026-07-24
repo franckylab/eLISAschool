@@ -1,0 +1,6 @@
+- Every entity is multi-tenant-scoped: each table carries an `etablissementId` column with a `ManyToOne(Etablissement)` relation and indexes on it.
+- Controllers are plain Express `Router()` instances mounted as named exports (`bulletinPaieController`, `calculPaieController`, …) rather than class-based controllers.
+- Each route follows the same pipeline: `authMiddleware` → optional `requirePermission('paie:*')` → `validateDto(schema, req.body|query)` → service call → `{ success: true, data }` response, with errors forwarded via `next(error)`.
+- Services expose a singleton instance at the bottom of the file (`export const calculPaieService = new CalculPaieService()`) instead of using dependency injection containers.
+- Domain configuration is read at runtime through `getParamBoolean('personnel.paie.require_validation', { defaultValue: true })` rather than hard-coded booleans.
+- Cross-module side effects (workflow creation, audit logging) are invoked conditionally based on the presence of `options.userId` / `options.req`, keeping the core calculation deterministic.

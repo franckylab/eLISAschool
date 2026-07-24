@@ -2,14 +2,10 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
+import { useHandleError } from './use-handle-error';
 import type { TemplateOrganisation, GenererOrganisationDto, ResultatGeneration } from '../types/organisation.types';
 
 const KEYS = { all: ['organisation', 'templates'] as const };
-
-function handleError(e: unknown, msg: string) {
-    const err = e as { response?: { data?: { error?: { message?: string } } } };
-    toast.error(err?.response?.data?.error?.message || msg);
-}
 
 export function useTemplatesOrganisation() {
     const { isAuthenticated } = useAuthStore();
@@ -22,6 +18,7 @@ export function useTemplatesOrganisation() {
 
 export function useCreerTemplateOrganisation() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: Partial<TemplateOrganisation>) => { const res = await apiClient.post<TemplateOrganisation>('/api/organisation/templates', dto); return res.data!; },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Template créé'); },
@@ -31,6 +28,7 @@ export function useCreerTemplateOrganisation() {
 
 export function useModifierTemplateOrganisation() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async ({ id, ...data }: { id: string } & Partial<TemplateOrganisation>) => { const res = await apiClient.patch<TemplateOrganisation>(`/api/organisation/templates/${id}`, data); return res.data!; },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Template modifié'); },
@@ -40,6 +38,7 @@ export function useModifierTemplateOrganisation() {
 
 export function useSupprimerTemplateOrganisation() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/organisation/templates/${id}`); },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Template supprimé'); },
@@ -49,6 +48,7 @@ export function useSupprimerTemplateOrganisation() {
 
 export function useGenererOrganisation() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: GenererOrganisationDto) => { const res = await apiClient.post<ResultatGeneration>('/api/organisation/generer', dto); return res.data!; },
         onSuccess: () => {

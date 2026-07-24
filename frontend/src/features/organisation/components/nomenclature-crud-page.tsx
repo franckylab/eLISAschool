@@ -15,7 +15,7 @@ import type { ActionConfig } from '@/components/ui/RowActions';
 interface EntityWithId {
     id: string;
     estSysteme?: boolean;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 interface NomenclatureCrudConfig<T extends EntityWithId> {

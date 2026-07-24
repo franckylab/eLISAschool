@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: frontend/school_lifecycle
+title: school_lifecycle
+scope:
+    - frontend/src/features/annees-scolaires/
+    - frontend/src/features/periodes/
+    - frontend/src/features/structure-academique/
+source_files: []
+depends_on: []
+related_to: []

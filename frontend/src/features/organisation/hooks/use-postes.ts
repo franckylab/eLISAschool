@@ -13,6 +13,7 @@ import {
     useSupprimerPoste as useSupprimerPosteCentral,
 } from '@/features/postes/hooks/use-postes';
 import type { ModifierPosteDto } from '../types/organisation.types';
+import type { CreatePosteDto } from '@/features/postes/types/poste.types';
 
 export function useCreerPoste() {
     const qc = useQueryClient();
@@ -20,7 +21,7 @@ export function useCreerPoste() {
 
     return {
         ...rest,
-        mutateAsync: async (dto: any) => {
+        mutateAsync: async (dto: CreatePosteDto) => {
             const result = await mutateAsync(dto);
             qc.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
             qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });

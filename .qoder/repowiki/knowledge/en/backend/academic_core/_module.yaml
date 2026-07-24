@@ -1,0 +1,18 @@
+schema_version: 1
+module_path: backend/academic_core
+title: academic_core
+scope:
+    - backend/src/modules/etablissement/
+    - backend/src/modules/annees-scolaires/
+    - backend/src/modules/matieres/
+    - backend/src/modules/periodes/
+    - backend/src/modules/programmes/
+    - backend/src/modules/cycles/
+    - backend/src/modules/niveaux/
+    - backend/src/modules/filieres/
+    - backend/src/modules/specialites/
+    - backend/src/modules/competences/
+    - backend/src/modules/examens-nationaux/
+source_files: []
+depends_on: []
+related_to: []

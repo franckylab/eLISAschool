@@ -6,12 +6,13 @@ import {
     useModifierTypePersonnel, useSupprimerTypePersonnel,
 } from '@/features/personnel/hooks/use-types-personnel';
 import type { Column } from '@/components/ui/DataTable';
+import type { TypePersonnel } from '@/features/personnel/types/personnel.types';
 import { useTranslation } from 'react-i18next';
 
 export function TypesPersonnelPage({ embedded }: { embedded?: boolean } = {}) {
     const { t } = useTranslation('organisation');
 
-    const columns: Column<any>[] = [
+    const columns: Column<TypePersonnel>[] = [
         { key: 'code', header: t('code'), render: (tp) => <span className="font-mono text-xs bg-surface-alt border border-border px-2 py-0.5 rounded">{tp.code}</span> },
         { key: 'nom', header: t('nom') },
         { key: 'description', header: t('description'), render: (tp) => tp.description || '-' },

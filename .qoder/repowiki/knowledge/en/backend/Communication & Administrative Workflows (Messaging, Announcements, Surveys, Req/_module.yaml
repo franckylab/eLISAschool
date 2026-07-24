@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: backend/communication
+title: Communication & Administrative Workflows (Messaging, Announcements, Surveys, Requests)
+scope:
+    - backend/src/modules/messagerie/
+    - backend/src/modules/annonces/
+    - backend/src/modules/sondages/
+    - backend/src/modules/requetes/
+source_files: []
+depends_on: []
+related_to: []

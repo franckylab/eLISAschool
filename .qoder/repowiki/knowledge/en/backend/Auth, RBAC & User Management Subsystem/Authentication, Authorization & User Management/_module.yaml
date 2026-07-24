@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend/auth_and_users/authentication
+title: Authentication, Authorization & User Management
+scope:
+    - backend/src/modules/auth/
+source_files: []
+depends_on: []
+related_to: []

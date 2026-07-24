@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: frontend/scheduling_timetable
+title: scheduling_timetable
+scope:
+    - frontend/src/features/emploi-du-temps/
+    - frontend/src/features/salles/
+source_files: []
+depends_on: []
+related_to: []

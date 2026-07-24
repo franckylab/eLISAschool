@@ -1,0 +1,6 @@
+- Every route handler is wrapped in try/catch and forwarded to the global error pipeline via `next(error)` instead of handling errors inline.
+- Controller endpoints are guarded with `router.use(authMiddleware)` followed by per-route `requirePermission('roles:manage')` middleware before the async handler.
+- Request bodies are validated through `validateDto(zodSchema, req.body)` inside the controller; services receive already-typed DTOs and never re-validate.
+- Services construct repository instances lazily in the constructor via `AppDataSource.getRepository(Entity)` and expose plain methods returning entities or typed arrays.
+- Business-rule violations are raised as `new AppError(message, statusCode, CODE)` with stable uppercase codes (e.g. `ROLE_NOT_FOUND`, `PERMISSION_CODE_EXISTS`) rather than throwing generic errors.
+- Responses are always returned through `successResponse(res, data, message, status?)` so clients get a uniform envelope instead of raw objects.

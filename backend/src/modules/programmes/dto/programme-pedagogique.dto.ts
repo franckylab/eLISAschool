@@ -8,13 +8,8 @@ export const createProgrammeSchema = z.object({
     type: z.nativeEnum(ProgrammeType).default(ProgrammeType.NIVEAU),
     cycleId: z.string().uuid('Cycle invalide').optional().nullable(),
     niveauId: z.string().uuid('Niveau invalide').optional().nullable(),
-    nbHeuresHebdo: z.coerce.number().int().min(0).default(0),
     objectifsGeneraux: z.string().max(10000).optional(),
     competencesVisees: z.array(z.string()).optional(),
-    periodeId: z.string().uuid('Période invalide').optional().nullable(),
-    dateDebut: z.string().optional(),
-    dateFin: z.string().optional(),
-    anneeScolaireId: z.string().uuid('Année scolaire invalide').optional().nullable(),
     actif: z.boolean().default(true),
 });
 

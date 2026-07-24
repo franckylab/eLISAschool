@@ -19,6 +19,16 @@ import {
     Index,
 } from 'typeorm';
 
+/**
+ * Interface d'un créneau imposable (exclusion fine de plage horaire)
+ */
+export interface CreneauImposable {
+    jour: string;
+    heureDebut: string;
+    heureFin: string;
+    motif?: string;
+}
+
 @Entity('preferences_emploi_du_temps')
 @Index(['etablissementId'])
 export class PreferenceEmploiDuTemps {
@@ -99,6 +109,36 @@ export class PreferenceEmploiDuTemps {
      */
     @Column({ type: 'time', nullable: true })
     pauseFin?: string;
+
+    /**
+     * Pause matinée / récréation (heure début)
+     */
+    @Column({ type: 'time', nullable: true })
+    pauseMatineeDebut?: string;
+
+    /**
+     * Pause matinée / récréation (heure fin)
+     */
+    @Column({ type: 'time', nullable: true })
+    pauseMatineeFin?: string;
+
+    /**
+     * Pause après-midi (heure début)
+     */
+    @Column({ type: 'time', nullable: true })
+    pauseApresMidiDebut?: string;
+
+    /**
+     * Pause après-midi (heure fin)
+     */
+    @Column({ type: 'time', nullable: true })
+    pauseApresMidiFin?: string;
+
+    /**
+     * Créneaux imposables (exclusions fines de plages horaires)
+     */
+    @Column({ type: 'jsonb', nullable: true })
+    creneauxImposables?: CreneauImposable[];
 
     /**
      * Indique si on veut répartir uniformément les matières dans la semaine

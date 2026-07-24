@@ -1,0 +1,1 @@
+TypeScript + Express controllers, TypeORM entities, and service-layer separation across all six sub-modules; finances adds OHADA-compliant accounting rules and a financial dashboard service.

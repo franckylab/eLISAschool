@@ -7,6 +7,7 @@ import ReactFlow, {
     useReactFlow,
     type NodeTypes,
     type EdgeTypes,
+    type Node,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { UniteNode } from './nodes/UniteNode';
@@ -151,12 +152,12 @@ function FlowViewInner({
                 onInit={onInit}
                 onNodeDrag={onNodeDrag}
                 onNodeDragStop={onNodeDragStop}
-                onNodeMouseEnter={(_event: unknown, node: Record<string, unknown>) => {
-                    onNodeMouseEnter(_event as React.MouseEvent, node as never);
+                onNodeMouseEnter={(_event: React.MouseEvent, node: Node) => {
+                    onNodeMouseEnter(_event, node);
                     setPosteDropTarget((node.id as string) ?? null);
                 }}
-                onNodeMouseLeave={(_event: unknown, node: Record<string, unknown>) => {
-                    onNodeMouseLeave(_event as React.MouseEvent, node as never);
+                onNodeMouseLeave={(_event: React.MouseEvent, node: Node) => {
+                    onNodeMouseLeave(_event, node);
                     setPosteDropTarget(null);
                 }}
                 onConnect={onConnect}

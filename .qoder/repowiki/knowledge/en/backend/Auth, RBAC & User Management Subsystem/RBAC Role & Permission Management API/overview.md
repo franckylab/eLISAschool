@@ -1,0 +1,1 @@
+Express-based RBAC module exposing CRUD APIs for roles, permissions, and user-role assignments backed by TypeORM entities from the auth module.

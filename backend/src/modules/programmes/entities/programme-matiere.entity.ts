@@ -6,11 +6,13 @@
  * RÔLE : Associe une MatiereNiveau (grille matière par niveau) à un
  * ProgrammePedagogique (programme pédagogique nommé).
  *
- * Les champs coefficient/volumeHoraire/obligatoire sont les VALEURS
+ * Les champs coefficient/obligatoire sont les VALEURS
  * PRIMAIRES utilisées dans la chaîne de résolution :
  *   ProgrammeMatiere (primaire)
  *       → MatiereNiveau (fallback)
- *           → ConfigurationMatiereClasse (override par classe)
+ *
+ * Le volume horaire est résolu UNIQUEMENT depuis MatiereNiveau.volumeHoraire
+ * (source unique de vérité, pas d'override).
  *
  * IMPORTANT : Chaque matiereNiveauId ne peut appartenir qu'à UN SEUL
  * programme (contrainte d'unicité globale sur matiereNiveauId).
@@ -58,10 +60,6 @@ export class ProgrammeMatiere {
     /** PRIMAIRE (résolu dans la chaîne) : coefficient de la matière dans ce programme. Fallback: MatiereNiveau.coefficient */
     @Column({ type: 'float', nullable: true })
     coefficient?: number;
-
-    /** PRIMAIRE (résolu dans la chaîne) : volume horaire de la matière dans ce programme. Fallback: MatiereNiveau.volumeHoraire */
-    @Column({ type: 'int', nullable: true })
-    volumeHoraire?: number;
 
     /** PRIMAIRE (résolu dans la chaîne) : la matière est-elle obligatoire ? Fallback: MatiereNiveau.obligatoire */
     @Column({ type: 'boolean', default: true })

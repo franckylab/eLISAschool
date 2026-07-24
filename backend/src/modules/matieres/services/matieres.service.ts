@@ -9,9 +9,9 @@
 
 import { Repository, ILike } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Matiere, GroupeMatiere, MatiereNiveau, AffectationMatiere, ConfigurationMatiereClasse, StatutAffectationMatiere, StatutMatiereNiveau, StatutConfigurationMatiereClasse } from '../entities';
+import { Matiere, GroupeMatiere, MatiereNiveau, AffectationMatiere, StatutAffectationMatiere, StatutMatiereNiveau } from '../entities';
 import { ProgrammeMatiere } from '@modules/programmes/entities';
-import { CreateMatiereDto, UpdateMatiereDto, CreateGroupeMatiereDto, CreateMatiereNiveauDto, UpdateMatiereNiveauDto, AffecterEnseignantDto, QueryMatieresDto, CreateConfigurationMatiereClasseDto, UpdateConfigurationMatiereClasseDto, MoveAffectationDto } from '../dto';
+import { CreateMatiereDto, UpdateMatiereDto, CreateGroupeMatiereDto, CreateMatiereNiveauDto, UpdateMatiereNiveauDto, AffecterEnseignantDto, QueryMatieresDto, MoveAffectationDto } from '../dto';
 import { anneesScolairesService } from '@modules/annees-scolaires/services';
 import { classesService } from '@modules/classes/services';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
@@ -25,7 +25,6 @@ export class MatieresService {
     private groupeRepo: Repository<GroupeMatiere>;
     private niveauRepo: Repository<MatiereNiveau>;
     private affectationRepo: Repository<AffectationMatiere>;
-    private configurationMatiereClasseRepo: Repository<ConfigurationMatiereClasse>;
     private programmeMatiereRepo: Repository<ProgrammeMatiere>;
 
     constructor() {
@@ -33,7 +32,6 @@ export class MatieresService {
         this.groupeRepo = AppDataSource.getRepository(GroupeMatiere);
         this.niveauRepo = AppDataSource.getRepository(MatiereNiveau);
         this.affectationRepo = AppDataSource.getRepository(AffectationMatiere);
-        this.configurationMatiereClasseRepo = AppDataSource.getRepository(ConfigurationMatiereClasse);
         this.programmeMatiereRepo = AppDataSource.getRepository(ProgrammeMatiere);
     }
 
@@ -129,7 +127,6 @@ export class MatieresService {
 
     // ==== GRILLE MATIÈRE PAR NIVEAU (MatiereNiveau) ====
     // Source de vérité pour coefficient, barème, volumeHoraire, credits, obligatoire
-    // ConfigurationMatiereClasse peut surcharger ces valeurs par classe.
 
     async addMatiereToNiveau(dto: CreateMatiereNiveauDto, createurId: string, etablissementId?: string): Promise<MatiereNiveau> {
         // La contrainte d'unicité (matiereId, niveauId) est levée pour permettre

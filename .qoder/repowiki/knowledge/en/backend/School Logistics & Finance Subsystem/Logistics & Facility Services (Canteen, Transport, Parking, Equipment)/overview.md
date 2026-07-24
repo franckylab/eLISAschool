@@ -1,0 +1,1 @@
+Express-based CRUD modules for school logistics: canteen menus/inscriptions/consumptions, transport lines/presences, parking spots/vehicles/subscriptions, and equipment inventory with loan tracking.

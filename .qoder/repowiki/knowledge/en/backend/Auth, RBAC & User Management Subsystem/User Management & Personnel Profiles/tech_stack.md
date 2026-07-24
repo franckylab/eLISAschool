@@ -1,0 +1,1 @@
+TypeScript + Express + TypeORM; request validation via Zod (`zod`); image processing through `@common/utils/image-processor.util` (multer buffer → resized thumbnail + ID document variants); QR code rendering via the `qrcode` npm package.

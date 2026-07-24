@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, User, Loader2 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
+import type { MembrePersonnel } from '@/features/personnel/types/personnel.types';
 
 export interface PersonnelSearchResult {
     id: string;
@@ -46,10 +47,10 @@ export function PersonnelSearchField({
             try {
                 const params: Record<string, string | number> = { search: query.trim(), limit: 10 };
                 if (typeCode) params.typeCode = typeCode;
-                const raw = await apiClient.get('/api/personnel', params) as any;
+                const raw = await apiClient.get<{ items: MembrePersonnel[] }>('/api/personnel', params);
                 // La réponse est paginée : { success, data: { items: MembrePersonnel[], meta } }
                 const membres = raw?.data?.items ?? raw?.data ?? [];
-                const mapped: PersonnelSearchResult[] = membres.map((m: any) => ({
+                const mapped: PersonnelSearchResult[] = membres.map((m) => ({
                     id: m.id,
                     nom: m.utilisateur?.profil?.nom ?? '',
                     prenom: m.utilisateur?.profil?.prenom ?? '',

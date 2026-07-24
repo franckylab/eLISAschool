@@ -1,0 +1,1 @@
+Express-based finance module providing school fee scheduling & payments, expense lifecycle with multi-level approval, OHADA-compliant accounting entries, cash/bank accounts, budgeting and a financial dashboard.

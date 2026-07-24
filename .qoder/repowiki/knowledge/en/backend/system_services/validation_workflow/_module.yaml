@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend/system_services/validation_workflow
+title: validation_workflow
+scope:
+    - backend/src/modules/validation-workflow/
+source_files: []
+depends_on: []
+related_to: []

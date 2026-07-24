@@ -7,7 +7,9 @@ import {
     queryCreneauxSchema,
     genererEmploiDuTempsSchema,
     preferenceEmploiDuTempsSchema,
+    verifierConflitsSchema,
 } from '../dto';
+import { conflitDetectionService } from '../services/conflit-detection.service';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { AppError } from '@common/filters/error.filter';
 import { validateDto, validateQuery } from '@common/utils';
@@ -26,9 +28,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFu
 router.post('/', authMiddleware, requirePermission('emploi-du-temps:create'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(creerCreneauSchema, req.body);
-        const anneeScolaireId = req.body.anneeScolaireId;
-        if (!anneeScolaireId) throw new AppError('anneeScolaireId requis', 400, 'MISSING_PARAM');
-        const creneau = await emploiDuTempsService.creerCreneau(dto, req.etablissementId!, anneeScolaireId);
+        const creneau = await emploiDuTempsService.creerCreneau(dto, req.etablissementId!);
         return res.status(201).json({ success: true, data: creneau });
     } catch (error) { next(error); }
 });
@@ -96,6 +96,14 @@ router.post('/templates/:id/dupliquer', authMiddleware, requirePermission('emplo
     try {
         const template = await templateService.dupliquer(req.params.id, req.etablissementId!, req.body.nom);
         return res.status(201).json({ success: true, data: template });
+    } catch (error) { next(error); }
+});
+
+router.post('/verifier-conflits', authMiddleware, requirePermission('emploi-du-temps:view'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validateDto(verifierConflitsSchema, req.body);
+        const conflits = await conflitDetectionService.detecterConflits(dto, req.etablissementId!);
+        return res.json({ success: true, data: conflits });
     } catch (error) { next(error); }
 });
 

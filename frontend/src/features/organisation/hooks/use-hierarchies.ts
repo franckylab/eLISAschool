@@ -2,6 +2,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
+import { useHandleError } from './use-handle-error';
 import type {
     HierarchiePersonnel, CreerHierarchieDto, ModifierHierarchieDto,
     OrganigrammeNode, StatistiquesOrganisation,
@@ -24,11 +25,6 @@ const ORGA_KEYS = {
         all: ['organisation', 'validation'] as const,
     },
 };
-
-function handleError(error: unknown, message: string) {
-    const err = error as { response?: { data?: { error?: { message?: string } } } };
-    toast.error(err?.response?.data?.error?.message || message);
-}
 
 // ─── HIÉRARCHIE ───
 
@@ -72,6 +68,7 @@ export function useSubordonnes(superieurId: string) {
 
 export function useCreerHierarchie() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: CreerHierarchieDto) => {
             const response = await apiClient.post<HierarchiePersonnel>('/api/organisation/hierarchie', dto);
@@ -87,6 +84,7 @@ export function useCreerHierarchie() {
 
 export function useModifierHierarchie() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async ({ id, ...dto }: { id: string } & ModifierHierarchieDto) => {
             const response = await apiClient.patch<HierarchiePersonnel>(`/api/organisation/hierarchie/${id}`, dto);
@@ -102,6 +100,7 @@ export function useModifierHierarchie() {
 
 export function useSupprimerHierarchie() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (id: string) => {
             await apiClient.delete(`/api/organisation/hierarchie/${id}`);
@@ -150,7 +149,7 @@ export function useValiderArborescence() {
     return useQuery({
         queryKey: ORGA_KEYS.validation.all,
         queryFn: async () => {
-            const response = await apiClient.get<any>('/api/organisation/valider-arborescence');
+            const response = await apiClient.get<{ valide: boolean; erreurs?: string[] }>('/api/organisation/valider-arborescence');
             return response.data;
         },
         enabled: !!etablissementId && isAuthenticated,

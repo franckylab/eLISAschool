@@ -3,7 +3,6 @@ import { z } from 'zod';
 export const addMatiereProgrammeSchema = z.object({
     matiereNiveauId: z.string().uuid('ID matière-niveau invalide'),
     coefficient: z.number().positive().optional(),
-    volumeHoraire: z.number().int().positive().optional(),
     obligatoire: z.boolean().default(true),
     ordre: z.number().int().min(0).default(0),
 });

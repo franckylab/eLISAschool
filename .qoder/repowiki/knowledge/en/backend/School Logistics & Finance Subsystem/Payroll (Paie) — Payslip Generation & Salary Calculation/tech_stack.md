@@ -1,0 +1,1 @@
+TypeScript + Express Router (no Nest decorators); persistence via TypeORM repositories obtained from `AppDataSource`; request validation via Joi schemas wrapped in `@common/utils.validateDto`; error propagation through `@common/filters/error.filter.AppError`.

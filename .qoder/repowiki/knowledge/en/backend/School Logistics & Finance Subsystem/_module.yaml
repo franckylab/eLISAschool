@@ -1,0 +1,13 @@
+schema_version: 1
+module_path: backend/logistics
+title: School Logistics & Finance Subsystem
+scope:
+    - backend/src/modules/finances/
+    - backend/src/modules/paie/
+    - backend/src/modules/cantine/
+    - backend/src/modules/transport/
+    - backend/src/modules/parking/
+    - backend/src/modules/materiel/
+source_files: []
+depends_on: []
+related_to: []

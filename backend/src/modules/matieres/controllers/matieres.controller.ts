@@ -16,8 +16,6 @@ import {
     affecterEnseignantSchema,
     moveAffectationSchema,
     queryMatieresSchema,
-    createConfigurationMatiereClasseSchema,
-    updateConfigurationMatiereClasseSchema,
 } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
@@ -202,50 +200,6 @@ router.delete('/affectations/:id', authMiddleware, requirePermission('config:edi
         const etablissementId = req.utilisateur!.etablissementId!;
         await service.deleteAffectation(req.params.id, etablissementId);
         res.json({ success: true, message: 'Affectation supprimée' });
-    } catch (error) { next(error); }
-});
-
-// ==== CONFIGURATIONS MATIERE CLASSE ====
-
-router.get('/:matiereId/configurations/effective', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const etablissementId = req.utilisateur!.etablissementId!;
-        const { classeAnneeId } = req.query as any;
-        if (!classeAnneeId) {
-            throw new AppError('classeAnneeId requis', 400, 'VALIDATION_ERROR');
-        }
-
-        const result = await service.getConfigurationEffective(req.params.matiereId, classeAnneeId, etablissementId);
-        res.json({ success: true, data: result });
-    } catch (error) { next(error); }
-});
-
-router.post('/:matiereId/configurations', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const scopedSchema = createConfigurationMatiereClasseSchema.omit({ matiereId: true, etablissementId: true });
-        const body = validateDto(scopedSchema, req.body);
-        const dto = { ...body, matiereId: req.params.matiereId, etablissementId: req.etablissementId! };
-        const config = await service.createConfigurationMatiereClasse(
-            dto,
-            req.utilisateur?.id,
-            req.etablissementId
-        );
-        res.status(201).json({ success: true, data: config });
-    } catch (error) { next(error); }
-});
-
-router.patch('/:matiereId/configurations/:configId', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const dto = validateDto(updateConfigurationMatiereClasseSchema, req.body);
-        const config = await service.updateConfigurationMatiereClasse(req.params.configId, dto);
-        res.json({ success: true, data: config });
-    } catch (error) { next(error); }
-});
-
-router.delete('/:matiereId/configurations/:configId', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        await service.deleteConfigurationMatiereClasse(req.params.configId);
-        res.json({ success: true, message: 'Configuration supprimée' });
     } catch (error) { next(error); }
 });
 

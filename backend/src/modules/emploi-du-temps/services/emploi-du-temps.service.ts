@@ -1,4 +1,17 @@
-import { Repository, FindOptionsWhere } from 'typeorm';
+/**
+ * ==================================
+ * eLISAschool - Service CreneauHoraire (ex-EmploiDuTempsService)
+ * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ * Date: 2026-07-24
+ *
+ * Refonte : fusion EmploiDuTemps + RepartitionHoraire → CreneauHoraire.
+ * Le créneau référence affectationMatiereId comme source unique.
+ * ==================================
+ */
+
+import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { HeureCours } from '@modules/personnel/entities';
 import {
@@ -7,201 +20,223 @@ import {
     QueryCreneauxDto,
     GenererEmploiDuTempsDto,
     PreferenceEmploiDuTempsDto,
-    CreateRepartitionHoraireDto,
-    UpdateRepartitionHoraireDto,
 } from '../dto';
 import { ClasseAnnee } from '@modules/classes/entities';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, calculatePaginationMeta } from '@common/utils/pagination.util';
 import { AffectationMatiere, StatutAffectationMatiere } from '@modules/matieres/entities';
+import { MatiereNiveau } from '@modules/matieres/entities';
 import { salleAvailabilityService } from '@modules/salles/services/salle-availability.service';
-import { EmploiDuTemps, PreferenceEmploiDuTemps, RepartitionHoraire, JourSemaine, TypeCreneau } from '../entities';
+import { CreneauHoraire, PreferenceEmploiDuTemps, JourSemaine, TypeCreneau, StatutCreneau } from '../entities';
+import { conflitDetectionService } from './conflit-detection.service';
 
 export class EmploiDuTempsService {
-    private repo: Repository<EmploiDuTemps>;
+    private creneauRepo: Repository<CreneauHoraire>;
     private preferenceRepo: Repository<PreferenceEmploiDuTemps>;
-    private repartitionRepo: Repository<RepartitionHoraire>;
 
     constructor() {
-        this.repo = AppDataSource.getRepository(EmploiDuTemps);
+        this.creneauRepo = AppDataSource.getRepository(CreneauHoraire);
         this.preferenceRepo = AppDataSource.getRepository(PreferenceEmploiDuTemps);
-        this.repartitionRepo = AppDataSource.getRepository(RepartitionHoraire);
     }
 
+    // ─── CRUD CreneauHoraire ───────────────────────────────────
+
     async findAll(query: QueryCreneauxDto, etablissementId: string) {
-        // Filtrer les EDT creneaux
-        const edtQb = this.repo.createQueryBuilder('edt')
-            .leftJoinAndSelect('edt.classeAnnee', 'classeAnnee')
+        const qb = this.creneauRepo.createQueryBuilder('ch')
+            .leftJoinAndSelect('ch.affectationMatiere', 'am')
+            .leftJoinAndSelect('am.matiere', 'matiere')
+            .leftJoinAndSelect('am.enseignant', 'enseignant')
+            .leftJoinAndSelect('am.classeAnnee', 'classeAnnee')
             .leftJoinAndSelect('classeAnnee.classe', 'classe')
             .leftJoinAndSelect('classeAnnee.anneeScolaire', 'anneeScolaire')
-            .leftJoinAndSelect('edt.matiere', 'matiere')
-            .leftJoinAndSelect('edt.enseignant', 'enseignant')
-            .leftJoinAndSelect('edt.salle', 'salle')
-            .where('edt.etablissementId = :etablissementId', { etablissementId });
+            .leftJoinAndSelect('ch.salle', 'salle')
+            .where('ch.etablissementId = :etablissementId', { etablissementId });
 
-        if (query.classeAnneeId) edtQb.andWhere('edt.classeAnneeId = :classeAnneeId', { classeAnneeId: query.classeAnneeId });
-        if (query.enseignantId) edtQb.andWhere('edt.enseignantId = :enseignantId', { enseignantId: query.enseignantId });
-        if (query.salleId) edtQb.andWhere('edt.salleId = :salleId', { salleId: query.salleId });
-        if (query.matiereId) edtQb.andWhere('edt.matiereId = :matiereId', { matiereId: query.matiereId });
-        if (query.jour) edtQb.andWhere('edt.jour = :jour', { jour: query.jour });
-        if (query.typeCreneau) edtQb.andWhere('edt.typeCreneau = :typeCreneau', { typeCreneau: query.typeCreneau });
-        if (query.anneeScolaireId) edtQb.andWhere('edt.anneeScolaireId = :anneeScolaireId', { anneeScolaireId: query.anneeScolaireId });
-        if (query.actif !== undefined) edtQb.andWhere('edt.actif = :actif', { actif: query.actif });
-        if (query.genereAutomatiquement !== undefined) edtQb.andWhere('edt.genereAutomatiquement = :genereAutomatiquement', { genereAutomatiquement: query.genereAutomatiquement });
-        if (query.dateDebut) edtQb.andWhere('edt.createdAt >= :dateDebut', { dateDebut: new Date(query.dateDebut) });
-        if (query.dateFin) edtQb.andWhere('edt.createdAt <= :dateFin', { dateFin: new Date(query.dateFin) });
+        // Filtres directs
+        if (query.affectationMatiereId) qb.andWhere('ch.affectationMatiereId = :affectationMatiereId', { affectationMatiereId: query.affectationMatiereId });
+        if (query.salleId) qb.andWhere('ch.salleId = :salleId', { salleId: query.salleId });
+        if (query.jour) qb.andWhere('ch.jour = :jour', { jour: query.jour });
+        if (query.typeCreneau) qb.andWhere('ch.typeCreneau = :typeCreneau', { typeCreneau: query.typeCreneau });
+        if (query.statut) qb.andWhere('ch.statut = :statut', { statut: query.statut });
+        if (query.anneeScolaireId) qb.andWhere('ch.anneeScolaireId = :anneeScolaireId', { anneeScolaireId: query.anneeScolaireId });
+        if (query.periodeId) qb.andWhere('ch.periodeId = :periodeId', { periodeId: query.periodeId });
+        if (query.genereAutomatiquement !== undefined) qb.andWhere('ch.genereAutomatiquement = :genereAutomatiquement', { genereAutomatiquement: query.genereAutomatiquement });
 
-        const JOUR_ORDER = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
+        // Filtres dérivés via affectation
+        if (query.classeAnneeId) qb.andWhere('am.classeAnneeId = :classeAnneeId', { classeAnneeId: query.classeAnneeId });
+        if (query.enseignantId) qb.andWhere('am.enseignantId = :enseignantId', { enseignantId: query.enseignantId });
+        if (query.matiereId) qb.andWhere('am.matiereId = :matiereId', { matiereId: query.matiereId });
 
-        if (query.inclureHeuresCours) {
-            // Pas de pagination DB — on fusionne en mémoire
-            edtQb.orderBy('edt.jour', 'ASC').addOrderBy('edt.heureDebut', 'ASC');
-            const edtItems = (await edtQb.getMany()).map((item: any) => ({ ...item, typeSource: 'edt' }));
-
-            const heuresRepo = AppDataSource.getRepository(HeureCours);
-            const hcQb = heuresRepo.createQueryBuilder('hc')
-                .leftJoinAndSelect('hc.enseignant', 'enseignant')
-                .leftJoinAndSelect('hc.classe', 'classe')
-                .leftJoinAndSelect('hc.matiere', 'matiere')
-                .leftJoinAndSelect('hc.salle', 'salle')
-                .leftJoinAndSelect('hc.creneau', 'creneau')
-                .where('hc.etablissementId = :etablissementId', { etablissementId });
-
-            if (query.enseignantId) hcQb.andWhere('hc.enseignantId = :enseignantId', { enseignantId: query.enseignantId });
-            if (query.salleId) hcQb.andWhere('hc.salleId = :salleId', { salleId: query.salleId });
-            if (query.matiereId) hcQb.andWhere('hc.matiereId = :matiereId', { matiereId: query.matiereId });
-            if (query.dateDebut) hcQb.andWhere('hc.date >= :dateDebut', { dateDebut: new Date(query.dateDebut) });
-            if (query.dateFin) hcQb.andWhere('hc.date <= :dateFin', { dateFin: new Date(query.dateFin) });
-
-            hcQb.orderBy('hc.date', 'ASC').addOrderBy('hc.heureDebut', 'ASC');
-            const hcItems = (await hcQb.getMany()).map((hc: any) => {
-                const dayNames = ['DIMANCHE', 'LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
-                return {
-                    ...hc,
-                    jour: dayNames[new Date(hc.date).getDay()],
-                    classeAnnee: null,
-                    typeSource: 'heure_cours',
-                };
-            });
-
-            let merged = [...edtItems, ...hcItems];
-            if (query.typeSource) {
-                merged = merged.filter(item => item.typeSource === query.typeSource);
-            }
-            merged.sort((a, b) => {
-                const aIdx = JOUR_ORDER.indexOf(a.jour);
-                const bIdx = JOUR_ORDER.indexOf(b.jour);
-                if (aIdx !== bIdx) return aIdx - bIdx;
-                return (a.heureDebut || '').localeCompare(b.heureDebut || '');
-            });
-
-            const total = merged.length;
-            const page = query.page || 1;
-            const limit = query.limit || 50;
-            const start = (page - 1) * limit;
-            const items = merged.slice(start, start + limit);
-
-            return { items, meta: calculatePaginationMeta(total, page, limit, items.length) };
-        }
-
-        if (query.typeSource === 'heure_cours') {
-            return { items: [], meta: calculatePaginationMeta(0, query.page, query.limit, 0) };
-        }
-
-        edtQb.orderBy(`edt.${query.orderBy}`, query.orderDir);
-        const result = await paginateWithQueryBuilder(edtQb, query.page, query.limit);
-
-        result.items = result.items.map((item: any) => ({
-            ...item,
-            typeSource: 'edt',
-        }));
+        qb.orderBy(`ch.${query.orderBy}`, query.orderDir);
+        const result = await paginateWithQueryBuilder(qb, query.page, query.limit);
 
         return result;
     }
 
-    async findOne(id: string, etablissementId: string): Promise<EmploiDuTemps> {
-        const creneau = await this.repo.findOne({
+    async findOne(id: string, etablissementId: string): Promise<CreneauHoraire> {
+        const creneau = await this.creneauRepo.findOne({
             where: { id, etablissementId },
-            relations: ['classeAnnee', 'classeAnnee.classe', 'classeAnnee.anneeScolaire', 'matiere', 'enseignant', 'salle'],
+            relations: [
+                'affectationMatiere',
+                'affectationMatiere.matiere',
+                'affectationMatiere.enseignant',
+                'affectationMatiere.classeAnnee',
+                'affectationMatiere.classeAnnee.classe',
+                'affectationMatiere.classeAnnee.anneeScolaire',
+                'salle',
+            ],
         });
         if (!creneau) throw new AppError('Créneau non trouvé', 404, 'NOT_FOUND');
         return creneau;
     }
 
-    async creerCreneau(dto: CreerCreneauDto, etablissementId: string, anneeScolaireId: string): Promise<EmploiDuTemps> {
-        const creneau = this.repo.create({
-            classeAnneeId: dto.classeAnneeId,
-            matiereId: dto.matiereId,
-            enseignantId: dto.enseignantId,
+    async creerCreneau(dto: CreerCreneauDto, etablissementId: string): Promise<CreneauHoraire> {
+        // Vérifier les conflits bloquants
+        const conflits = await conflitDetectionService.detecterConflits(
+            {
+                affectationMatiereId: dto.affectationMatiereId,
+                jour: dto.jour as JourSemaine,
+                heureDebut: dto.heureDebut,
+                heureFin: dto.heureFin,
+                salleId: dto.salleId,
+            },
+            etablissementId,
+        );
+
+        const conflitsBloquants = conflits.filter(c => c.severite === 'BLOQUANT');
+        if (conflitsBloquants.length > 0) {
+            throw new AppError(
+                conflitsBloquants.map(c => c.message).join('; '),
+                409,
+                'CONFLITS_CRENEAU',
+            );
+        }
+
+        const creneau = this.creneauRepo.create({
+            affectationMatiereId: dto.affectationMatiereId,
             salleId: dto.salleId || undefined,
             jour: dto.jour as JourSemaine,
             heureDebut: dto.heureDebut,
             heureFin: dto.heureFin,
-            typeCreneau: (dto.typeCreneau || 'COURS') as TypeCreneau,
+            typeCreneau: (dto.typeCreneau || TypeCreneau.COURS) as TypeCreneau,
+            statut: (dto.statut || StatutCreneau.PLANIFIE) as StatutCreneau,
             couleur: dto.couleur || undefined,
             notes: dto.notes,
-            anneeScolaireId,
+            periodeId: dto.periodeId,
+            anneeScolaireId: dto.anneeScolaireId,
             etablissementId,
             genereAutomatiquement: false,
-            actif: true,
         });
 
-        await this.repo.save(creneau);
-        logger.info(`[EmploiDuTemps] Créneau créé: ${dto.jour} ${dto.heureDebut}-${dto.heureFin}`);
+        await this.creneauRepo.save(creneau);
+        logger.info(`[CreneauHoraire] Créneau créé: ${dto.jour} ${dto.heureDebut}-${dto.heureFin}`);
         return this.findOne(creneau.id, etablissementId);
     }
 
-    async updateCreneau(id: string, dto: ModifierCreneauDto, etablissementId: string): Promise<EmploiDuTemps> {
+    async updateCreneau(id: string, dto: ModifierCreneauDto, etablissementId: string): Promise<CreneauHoraire> {
         const creneau = await this.findOne(id, etablissementId);
+
+        // Vérifier les conflits si les champs critiques changent
+        const nouveauJour = (dto.jour || creneau.jour) as JourSemaine;
+        const nouveauDebut = dto.heureDebut || creneau.heureDebut;
+        const nouveauFin = dto.heureFin || creneau.heureFin;
+        const nouvelleSalle = dto.salleId !== undefined ? dto.salleId : creneau.salleId;
+        const nouvelleAffectation = dto.affectationMatiereId || creneau.affectationMatiereId;
+
+        const conflits = await conflitDetectionService.detecterConflits(
+            {
+                affectationMatiereId: nouvelleAffectation,
+                jour: nouveauJour,
+                heureDebut: nouveauDebut,
+                heureFin: nouveauFin,
+                salleId: nouvelleSalle || undefined,
+                excludeCreneauId: id,
+            },
+            etablissementId,
+        );
+
+        const conflitsBloquants = conflits.filter(c => c.severite === 'BLOQUANT');
+        if (conflitsBloquants.length > 0) {
+            throw new AppError(
+                conflitsBloquants.map(c => c.message).join('; '),
+                409,
+                'CONFLITS_CRENEAU',
+            );
+        }
+
         Object.assign(creneau, dto);
-        await this.repo.save(creneau);
-        logger.info(`[EmploiDuTemps] Créneau modifié: ${id}`);
+        await this.creneauRepo.save(creneau);
+        logger.info(`[CreneauHoraire] Créneau modifié: ${id}`);
         return this.findOne(id, etablissementId);
     }
 
     async supprimerCreneau(id: string, etablissementId: string): Promise<void> {
         const creneau = await this.findOne(id, etablissementId);
-        await this.repo.remove(creneau);
-        logger.info(`[EmploiDuTemps] Créneau supprimé: ${id}`);
+        await this.creneauRepo.remove(creneau);
+        logger.info(`[CreneauHoraire] Créneau supprimé: ${id}`);
     }
 
-    async findByClasseAnnee(classeAnneeId: string, etablissementId: string): Promise<EmploiDuTemps[]> {
-        return this.repo.find({
-            where: { classeAnneeId, etablissementId, actif: true },
-            relations: ['matiere', 'enseignant', 'classeAnnee', 'classeAnnee.classe', 'classeAnnee.anneeScolaire', 'salle'],
+    // ─── Requêtes par contexte ─────────────────────────────────
+
+    async findByClasseAnnee(classeAnneeId: string, etablissementId: string): Promise<CreneauHoraire[]> {
+        return this.creneauRepo.find({
+            where: { etablissementId },
+            relations: [
+                'affectationMatiere', 'affectationMatiere.matiere',
+                'affectationMatiere.enseignant', 'affectationMatiere.classeAnnee',
+                'salle',
+            ],
+            order: { jour: 'ASC', heureDebut: 'ASC' },
+        }).then(creneaux =>
+            creneaux.filter(c => c.affectationMatiere?.classeAnneeId === classeAnneeId)
+        );
+    }
+
+    async findByEnseignant(enseignantId: string, etablissementId: string): Promise<CreneauHoraire[]> {
+        return this.creneauRepo.find({
+            where: { etablissementId },
+            relations: [
+                'affectationMatiere', 'affectationMatiere.matiere',
+                'affectationMatiere.classeAnnee', 'salle',
+            ],
+            order: { jour: 'ASC', heureDebut: 'ASC' },
+        }).then(creneaux =>
+            creneaux.filter(c => c.affectationMatiere?.enseignantId === enseignantId)
+        );
+    }
+
+    async findBySalle(salleId: string, etablissementId: string): Promise<CreneauHoraire[]> {
+        return this.creneauRepo.find({
+            where: { salleId, etablissementId },
+            relations: [
+                'affectationMatiere', 'affectationMatiere.matiere',
+                'affectationMatiere.enseignant', 'affectationMatiere.classeAnnee',
+            ],
             order: { jour: 'ASC', heureDebut: 'ASC' },
         });
     }
 
-    async findByEnseignant(enseignantId: string, anneeScolaireId: string, etablissementId: string): Promise<EmploiDuTemps[]> {
-        return this.repo.find({
-            where: { enseignantId, anneeScolaireId, etablissementId, actif: true },
-            relations: ['classeAnnee', 'classeAnnee.classe', 'classeAnnee.anneeScolaire', 'matiere', 'salle'],
-            order: { jour: 'ASC', heureDebut: 'ASC' },
-        });
-    }
-
-    async findBySalle(salleId: string, anneeScolaireId: string, etablissementId: string): Promise<EmploiDuTemps[]> {
-        return this.repo.find({
-            where: { salleId, anneeScolaireId, etablissementId, actif: true },
-            relations: ['matiere', 'enseignant', 'classeAnnee', 'classeAnnee.classe'],
-            order: { jour: 'ASC', heureDebut: 'ASC' },
-        });
-    }
+    // ─── Génération automatique ────────────────────────────────
 
     async genererEmploiDuTemps(dto: GenererEmploiDuTempsDto, etablissementId: string): Promise<{
         success: boolean;
         message: string;
         nombreCreneaux: number;
         conflits: string[];
+        avertissements: string[];
     }> {
         const { classeAnneeId, options } = dto;
 
         const preferences = await this.getPreferences(etablissementId);
 
         if (options?.regenerer) {
-            await this.repo.delete({ classeAnneeId, etablissementId });
+            await this.creneauRepo
+                .createQueryBuilder()
+                .delete()
+                .where('affectationMatiereId IN (SELECT id FROM affectations_matieres WHERE "classeAnneeId" = :classeAnneeId)', { classeAnneeId })
+                .andWhere('etablissementId = :etablissementId', { etablissementId })
+                .execute();
         }
 
         const classeAnneeRepo = AppDataSource.getRepository(ClasseAnnee);
@@ -211,7 +246,6 @@ export class EmploiDuTempsService {
         if (!classeAnnee) {
             throw new AppError('Classe/Année non trouvée', 404, 'CLASSE_ANNEE_NOT_FOUND');
         }
-        const anneeScolaireId = classeAnnee.anneeScolaireId;
 
         const affectationsRepo = AppDataSource.getRepository(AffectationMatiere);
         const affectations = await affectationsRepo.find({
@@ -224,43 +258,41 @@ export class EmploiDuTempsService {
         });
 
         if (affectations.length === 0) {
-            return { success: true, message: 'Aucune affectation trouvée pour cette classe. Emploi du temps vide généré.', nombreCreneaux: 0, conflits: [] };
+            return { success: true, message: 'Aucune affectation trouvée. EDT vide.', nombreCreneaux: 0, conflits: [], avertissements: [] };
         }
 
-        const plan = this.creerPlanVide(preferences);
-        const creneauxGenerees: EmploiDuTemps[] = [];
+        // Résoudre les volumes horaires depuis MatiereNiveau (source unique)
+        const matiereNiveauRepo = AppDataSource.getRepository(MatiereNiveau);
+        const creneauxGenerees: CreneauHoraire[] = [];
         const conflits: string[] = [];
+        const avertissements: string[] = [];
 
         for (const affectation of affectations) {
-            const volumeHebdo = affectation.configuration?.volumeHoraireHebdo || 2;
-            const dureeCreneau = preferences.dureeCreneauDefaut || 60;
+            const matiereNiveau = await matiereNiveauRepo.findOne({
+                where: { matiereId: affectation.matiereId, niveauId: classeAnnee.niveauId ?? '' },
+            });
+            const volumeHebdo = matiereNiveau?.volumeHoraire || 2;
 
             for (let i = 0; i < volumeHebdo; i++) {
                 const placement = await this.trouverCreneauDisponible(
-                    plan,
-                    preferences,
-                    affectation,
-                    creneauxGenerees,
-                    options?.respecterContraintes ?? true
+                    preferences, affectation, creneauxGenerees,
+                    options?.respecterContraintes ?? true,
                 );
 
                 if (placement) {
-                    const creneau = this.repo.create({
-                        classeAnneeId,
-                        matiereId: affectation.matiereId,
-                        enseignantId: affectation.enseignantId,
+                    const creneau = this.creneauRepo.create({
+                        affectationMatiereId: affectation.id,
                         salleId: placement.salleId,
                         jour: placement.jour as JourSemaine,
                         heureDebut: placement.heureDebut,
                         heureFin: placement.heureFin,
                         typeCreneau: TypeCreneau.COURS,
-                        anneeScolaireId,
+                        statut: StatutCreneau.PLANIFIE,
+                        anneeScolaireId: classeAnnee.anneeScolaireId,
                         etablissementId,
                         genereAutomatiquement: true,
-                        actif: true,
                     });
                     creneauxGenerees.push(creneau);
-                    this.marquerCreneauOccupe(plan, placement, affectation);
                 } else {
                     conflits.push(
                         `Impossible de placer ${affectation.matiere?.nom || 'Matière'} (séance ${i + 1}/${volumeHebdo})`
@@ -270,19 +302,22 @@ export class EmploiDuTempsService {
         }
 
         if (creneauxGenerees.length > 0) {
-            await this.repo.save(creneauxGenerees);
+            await this.creneauRepo.save(creneauxGenerees);
         }
 
         const success = conflits.length === 0;
         return {
             success,
             message: success
-                ? `Emploi du temps généré avec succès : ${creneauxGenerees.length} créneaux`
-                : `Génération partielle : ${creneauxGenerees.length} créneaux placés, ${conflits.length} conflits`,
+                ? `Emploi du temps généré : ${creneauxGenerees.length} créneaux`
+                : `Génération partielle : ${creneauxGenerees.length} créneaux, ${conflits.length} conflits`,
             nombreCreneaux: creneauxGenerees.length,
             conflits,
+            avertissements,
         };
     }
+
+    // ─── Préférences ───────────────────────────────────────────
 
     async getPreferences(etablissementId: string): Promise<PreferenceEmploiDuTemps> {
         let preferences = await this.preferenceRepo.findOne({ where: { etablissementId } });
@@ -301,149 +336,64 @@ export class EmploiDuTempsService {
         return preferences;
     }
 
-    async findRepartitions(filters: { etablissementId?: string; affectationId?: string; jourSemaine?: string }) {
-        const where: FindOptionsWhere<RepartitionHoraire> = {};
-        if (filters.etablissementId) where.etablissementId = filters.etablissementId;
-        if (filters.affectationId) where.affectationId = filters.affectationId;
-        if (filters.jourSemaine) where.jourSemaine = filters.jourSemaine as any;
-        return this.repartitionRepo.find({
-            where,
-            relations: ['affectation', 'affectation.matiere', 'affectation.enseignant', 'affectation.classe'],
-            order: { jourSemaine: 'ASC', heureDebut: 'ASC' },
-        });
-    }
-
-    async createRepartition(dto: CreateRepartitionHoraireDto, etablissementId?: string): Promise<RepartitionHoraire> {
-        const repartition = this.repartitionRepo.create({ ...dto, etablissementId, jourSemaine: dto.jourSemaine as any });
-        await this.repartitionRepo.save(repartition);
-        return repartition;
-    }
-
-    async createRepartitionsBatch(dtos: CreateRepartitionHoraireDto[], etablissementId?: string): Promise<RepartitionHoraire[]> {
-        const repartitions = dtos.map(dto =>
-            this.repartitionRepo.create({ ...dto, etablissementId, jourSemaine: dto.jourSemaine as any })
-        );
-        await this.repartitionRepo.save(repartitions);
-        return repartitions;
-    }
-
-    async getRepartition(id: string): Promise<RepartitionHoraire> {
-        const repartition = await this.repartitionRepo.findOne({
-            where: { id },
-            relations: ['affectation', 'affectation.matiere', 'affectation.enseignant', 'affectation.classe'],
-        });
-        if (!repartition) throw new AppError('Répartition horaire non trouvée', 404, 'NOT_FOUND');
-        return repartition;
-    }
-
-    async updateRepartition(id: string, dto: UpdateRepartitionHoraireDto): Promise<RepartitionHoraire> {
-        const repartition = await this.getRepartition(id);
-        Object.assign(repartition, dto);
-        await this.repartitionRepo.save(repartition);
-        return repartition;
-    }
-
-    async deleteRepartition(id: string): Promise<void> {
-        const repartition = await this.getRepartition(id);
-        await this.repartitionRepo.remove(repartition);
-    }
-
-    private creerPlanVide(preferences: PreferenceEmploiDuTemps): any {
-        const plan: any = {};
-        const jours = preferences.joursTravailles || ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI'];
-        const heureDebut = preferences.heureDebutCours || '07:00';
-        const heureFin = preferences.heureFinCours || '17:00';
-
-        for (const jour of jours) {
-            plan[jour] = {};
-            let heure = heureDebut;
-            while (heure < heureFin) {
-                plan[jour][heure] = { occupe: false, enseignantId: null, matiereId: null };
-                const [h, m] = heure.split(':').map(Number);
-                const nouvelleHeure = new Date();
-                nouvelleHeure.setHours(h, m + (preferences.dureeCreneauDefaut || 60), 0, 0);
-                heure = `${String(nouvelleHeure.getHours()).padStart(2, '0')}:${String(nouvelleHeure.getMinutes()).padStart(2, '0')}`;
-            }
-        }
-        return plan;
-    }
+    // ─── Méthodes privées ──────────────────────────────────────
 
     private async trouverCreneauDisponible(
-        plan: any, preferences: PreferenceEmploiDuTemps, affectation: any,
-        creneauxExistants: EmploiDuTemps[], respecterContraintes: boolean
+        preferences: PreferenceEmploiDuTemps,
+        affectation: AffectationMatiere,
+        creneauxExistants: CreneauHoraire[],
+        respecterContraintes: boolean,
     ): Promise<{ jour: string; heureDebut: string; heureFin: string; salleId?: string } | null> {
-        const jours = preferences.joursTravailles || ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI'];
-        const dureeCreneau = preferences.dureeCreneauDefaut || 60;
-        const enseignantId = affectation.enseignantId;
+        const jours = preferences.joursOuvrables || ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI'];
+        const dureeCreneau = preferences.dureeCreneauStandard || 55;
+        const heureDebutCours = preferences.heureDebutCours || '07:00';
+        const heureFinCours = preferences.heureFinCours || '17:00';
 
         for (const jour of jours) {
-            if (!plan[jour]) continue;
-            const creneaux = Object.keys(plan[jour]).sort();
+            let heure = heureDebutCours;
+            while (heure < heureFinCours) {
+                const [h, m] = heure.split(':').map(Number);
+                const finDate = new Date();
+                finDate.setHours(h, m + dureeCreneau, 0, 0);
+                const heureFin = `${String(finDate.getHours()).padStart(2, '0')}:${String(finDate.getMinutes()).padStart(2, '0')}`;
 
-            for (let i = 0; i < creneaux.length; i++) {
-                const heureDebut = creneaux[i];
-                if (plan[jour][heureDebut].occupe) continue;
-                if (respecterContraintes && !this.enseignantDisponible(enseignantId, jour, heureDebut, creneauxExistants)) continue;
+                if (heureFin > heureFinCours) break;
 
-                const [h, m] = heureDebut.split(':').map(Number);
-                const heureFinDate = new Date();
-                heureFinDate.setHours(h, m + dureeCreneau, 0, 0);
-                const heureFin = `${String(heureFinDate.getHours()).padStart(2, '0')}:${String(heureFinDate.getMinutes()).padStart(2, '0')}`;
-
-                let tousLibres = true;
-                for (let j = i; j < creneaux.length && creneaux[j] < heureFin; j++) {
-                    if (plan[jour][creneaux[j]].occupe) { tousLibres = false; break; }
+                if (respecterContraintes) {
+                    const enseignantOccupe = creneauxExistants.some(c => {
+                        const ensId = c.affectationMatiere?.enseignantId;
+                        return ensId === affectation.enseignantId
+                            && c.jour === jour
+                            && c.heureDebut < heureFin
+                            && c.heureFin > heure;
+                    });
+                    if (enseignantOccupe) {
+                        heure = heureFin;
+                        continue;
+                    }
                 }
 
-                if (tousLibres) {
-                    const salleId = await this.trouverSalleDisponible(
-                        affectation.etablissementId, jour, heureDebut, heureFin
+                const estImposable = (preferences.creneauxImposables || []).some(ci =>
+                    ci.jour === jour && ci.heureDebut < heureFin && ci.heureFin > heure
+                );
+                if (estImposable) {
+                    heure = heureFin;
+                    continue;
+                }
+
+                let salleId: string | undefined;
+                try {
+                    const salles = await salleAvailabilityService.trouverSallesDisponibles(
+                        affectation.etablissementId,
+                        { jour, heureDebut: heure, heureFin },
                     );
-                    return { jour, heureDebut, heureFin, salleId };
-                }
+                    salleId = salles[0]?.id;
+                } catch { /* pas de salle disponible */ }
+
+                return { jour, heureDebut: heure, heureFin, salleId };
             }
         }
         return null;
-    }
-
-    private async trouverSalleDisponible(etablissementId: string, jour: string, heureDebut: string, heureFin: string): Promise<string | undefined> {
-        try {
-            const salles = await salleAvailabilityService.trouverSallesDisponibles(etablissementId, { jour, heureDebut, heureFin });
-            return salles[0]?.id;
-        } catch { return undefined; }
-    }
-
-    private enseignantDisponible(enseignantId: string, jour: string, heureDebut: string, creneauxExistants: EmploiDuTemps[]): boolean {
-        for (const creneau of creneauxExistants) {
-            if (creneau.enseignantId === enseignantId && creneau.jour === jour) {
-                if (this.yaOverlap(heureDebut, this.calculerHeureFin(heureDebut, 60), creneau.heureDebut, creneau.heureFin)) return false;
-            }
-        }
-        return true;
-    }
-
-    private yaOverlap(debut1: string, fin1: string, debut2: string, fin2: string): boolean {
-        return debut1 < fin2 && debut2 < fin1;
-    }
-
-    private calculerHeureFin(heureDebut: string, dureeMinutes: number): string {
-        const [h, m] = heureDebut.split(':').map(Number);
-        const finDate = new Date();
-        finDate.setHours(h, m + dureeMinutes, 0, 0);
-        return `${String(finDate.getHours()).padStart(2, '0')}:${String(finDate.getMinutes()).padStart(2, '0')}`;
-    }
-
-    private marquerCreneauOccupe(plan: any, placement: any, affectation: any): void {
-        let heure = placement.heureDebut;
-        while (heure < placement.heureFin) {
-            if (plan[placement.jour]?.[heure]) {
-                plan[placement.jour][heure] = { occupe: true, enseignantId: affectation.enseignantId, matiereId: affectation.matiereId };
-            }
-            const [h, m] = heure.split(':').map(Number);
-            const nouvelleHeure = new Date();
-            nouvelleHeure.setHours(h, m + 60, 0, 0);
-            heure = `${String(nouvelleHeure.getHours()).padStart(2, '0')}:${String(nouvelleHeure.getMinutes()).padStart(2, '0')}`;
-        }
     }
 }
 

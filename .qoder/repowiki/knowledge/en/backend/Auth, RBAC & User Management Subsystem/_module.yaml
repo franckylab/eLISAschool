@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: backend/auth_and_users
+title: Auth, RBAC & User Management Subsystem
+scope:
+    - backend/src/modules/auth/
+    - backend/src/modules/utilisateurs/
+    - backend/src/modules/rbac/
+source_files: []
+depends_on: []
+related_to: []

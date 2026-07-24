@@ -2,6 +2,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
+import { useHandleError } from './use-handle-error';
 import type {
     UniteOrganisationnelle, CreerUniteDto, ModifierUniteDto, UniteFiltres,
 } from '../types/organisation.types';
@@ -16,11 +17,6 @@ const ORGA_KEYS = {
     },
 };
 
-function handleError(error: unknown, message: string) {
-    const err = error as { response?: { data?: { error?: { message?: string } } } };
-    toast.error(err?.response?.data?.error?.message || message);
-}
-
 // ─── UNITÉS ORGANISATIONNELLES ───
 
 export function useUnites(filtres: UniteFiltres = {}) {
@@ -28,7 +24,7 @@ export function useUnites(filtres: UniteFiltres = {}) {
     return useQuery({
         queryKey: ORGA_KEYS.unites.liste(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<UniteOrganisationnelle[]>('/api/organisation/unites', filtres as any);
+            const response = await apiClient.get<UniteOrganisationnelle[]>('/api/organisation/unites', filtres as unknown as Record<string, string | number | boolean | undefined>);
             return response.data || [];
         },
         enabled: isAuthenticated,
@@ -49,6 +45,7 @@ export function useUnite(id: string) {
 
 export function useCreerUnite() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: CreerUniteDto) => {
             const response = await apiClient.post<UniteOrganisationnelle>('/api/organisation/unites', dto);
@@ -64,6 +61,7 @@ export function useCreerUnite() {
 
 export function useModifierUnite() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async ({ id, ...dto }: { id: string } & ModifierUniteDto) => {
             const response = await apiClient.patch<UniteOrganisationnelle>(`/api/organisation/unites/${id}`, dto);
@@ -80,6 +78,7 @@ export function useModifierUnite() {
 
 export function useSupprimerUnite() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (id: string) => {
             await apiClient.delete(`/api/organisation/unites/${id}`);
@@ -98,7 +97,7 @@ export function useArborescence() {
     return useQuery({
         queryKey: ORGA_KEYS.unites.arborescence,
         queryFn: async () => {
-            const response = await apiClient.get<any[]>('/api/organisation/arborescence');
+            const response = await apiClient.get<UniteOrganisationnelle[]>('/api/organisation/arborescence');
             return response.data || [];
         },
         enabled: !!etablissementId && isAuthenticated,
@@ -126,6 +125,7 @@ export function useGetImpactUnite() {
 /** Créer une unité avec ses postes en une seule transaction */
 export function useCreerUniteAvecPostes() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (data: CreerUniteDto & { postes?: Array<{ intitule: string; code?: string; description?: string; estSuppleant?: boolean }> }) => {
             const response = await apiClient.post<UniteOrganisationnelle>('/api/organisation/unites/avec-postes', data);
@@ -142,6 +142,7 @@ export function useCreerUniteAvecPostes() {
 /** Réordonner une unité après une autre (même parent) */
 export function useReordonnerUnite() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async ({ uniteId, apresId }: { uniteId: string; apresId: string | null }) => {
             await apiClient.patch(`/api/organisation/unites/${uniteId}/reordonner`, { apresId });

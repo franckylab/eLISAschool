@@ -1,0 +1,1 @@
+Four business modules providing real-time messaging with conversations and reactions, targeted announcements with validation workflow, configurable surveys with voting and scheduling, and multi-level approval requests.

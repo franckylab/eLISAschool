@@ -1,0 +1,6 @@
+- Every entity exposes a UUID primary key via `@PrimaryGeneratedColumn('uuid')` and carries an `etablissementId` column plus a `@ManyToOne(() => Etablissement)` relation for multi-tenancy scoping.
+- Each module groups its exports behind a single barrel `index.ts` that re-exports `entities`, `dto`, `services`, and `controllers` as flat namespaces.
+- Controllers instantiate their service once at module scope (`const xxxService = new XxxService()`) and route handlers wrap body/query parsing in `validateDto(schema, ...)` before delegating.
+- All public routes pass through `authMiddleware` and use `requirePermission('<resource>:<action>')` for authorization instead of ad-hoc role checks.
+- Services fetch runtime flags through `getParamBoolean` / `getParamNumber` from `@modules/configuration/utils/config.helper` rather than hard-coded constants.
+- Write paths invoke `auditService.log({module:'<feature>', action: AuditAction.XXX, cible, cibleId, description})` wrapped in try/catch so audit failures do not abort the business transaction.

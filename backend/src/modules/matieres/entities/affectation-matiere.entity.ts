@@ -18,7 +18,6 @@ import { Matiere } from './matiere.entity';
 import { ClasseAnnee } from '@modules/classes/entities';
 import { MembrePersonnel } from '@modules/personnel/entities';
 import { Etablissement } from '@modules/etablissement/entities';
-import { ConfigurationMatiereClasse } from './configuration-matiere-classe.entity';
 
 /**
  * Statut de l'affectation matière (support workflow de validation)
@@ -29,11 +28,19 @@ export enum StatutAffectationMatiere {
     INACTIVE = 'INACTIVE',
 }
 
+/**
+ * Statut de validation de l'affectation (absorbé depuis ConfigurationMatiereClasse)
+ */
+export enum StatutValidationAffectation {
+    VALIDE = 'VALIDE',
+    EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
+    REJETE = 'REJETE',
+}
+
 @Entity('affectations_matieres')
 @Index(['classeAnneeId'])
 @Index(['enseignantId'])
 @Index(['etablissementId'])
-@Index(['configurationId'])
 @Index(['classeAnneeId', 'etablissementId'])  // Index composite pour requêtes multi-tenant
 @Index(['enseignantId', 'etablissementId'])  // Index composite pour enseignants par établissement
 @Index(['enseignantId', 'matiereId', 'classeAnneeId', 'actif'], {
@@ -76,22 +83,20 @@ export class AffectationMatiere {
     etablissement?: Etablissement;
 
     /**
-     * Configuration matière-classe liée (contient coefficient, barème, volume horaire)
-     * Permet de partager la même configuration entre plusieurs enseignants
+     * La matière est-elle obligatoire pour cette classe (absorbé depuis ConfigurationMatiereClasse)
      */
-    @Column({ type: 'uuid', nullable: true })
-    configurationId?: string;
-
-    @ManyToOne(() => ConfigurationMatiereClasse, { nullable: true })
-    @JoinColumn({ name: 'configurationId' })
-    configuration?: ConfigurationMatiereClasse;
+    @Column({ type: 'boolean', default: true })
+    obligatoire!: boolean;
 
     /**
-     * Coefficient spécifique à cette affectation (override du coefficient ConfigurationMatiereClasse).
-     * Permet d'ajuster les coefficients par enseignant si nécessaire.
-     * Si NULL, utilise le coefficient de ConfigurationMatiereClasse.
-     * 
-     * @deprecated Préférer l'utilisation de configurationId pour la cohérence
+     * Statut de validation de l'affectation (absorbé depuis ConfigurationMatiereClasse)
+     */
+    @Column({ type: 'varchar', length: 30, default: StatutValidationAffectation.VALIDE })
+    statutValidation!: StatutValidationAffectation;
+
+    /**
+     * Coefficient spécifique à cette affectation.
+     * Si NULL, utilise le coefficient de MatiereNiveau.
      */
     @Column({ type: 'float', nullable: true })
     coefficient?: number;

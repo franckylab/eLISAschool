@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: backend/hr_recruitment/personnel_master
+title: personnel_master
+scope:
+    - backend/src/modules/personnel/
+source_files: []
+depends_on: []
+related_to: []

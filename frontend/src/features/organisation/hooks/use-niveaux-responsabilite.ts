@@ -2,14 +2,10 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
+import { useHandleError } from './use-handle-error';
 import type { NiveauResponsabilite } from '../types/organisation.types';
 
 const KEYS = { all: ['organisation', 'niveaux-responsabilite'] as const };
-
-function handleError(e: unknown, msg: string) {
-    const err = e as { response?: { data?: { error?: { message?: string } } } };
-    toast.error(err?.response?.data?.error?.message || msg);
-}
 
 export function useNiveauxResponsabilite() {
     const { isAuthenticated } = useAuthStore();
@@ -22,6 +18,7 @@ export function useNiveauxResponsabilite() {
 
 export function useCreerNiveauResponsabilite() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: Partial<NiveauResponsabilite>) => { const res = await apiClient.post<NiveauResponsabilite>('/api/organisation/niveaux-responsabilite', dto); return res.data!; },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Niveau créé'); },
@@ -31,6 +28,7 @@ export function useCreerNiveauResponsabilite() {
 
 export function useModifierNiveauResponsabilite() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async ({ id, ...data }: { id: string } & Partial<NiveauResponsabilite>) => { const res = await apiClient.patch<NiveauResponsabilite>(`/api/organisation/niveaux-responsabilite/${id}`, data); return res.data!; },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Niveau modifié'); },
@@ -40,6 +38,7 @@ export function useModifierNiveauResponsabilite() {
 
 export function useSupprimerNiveauResponsabilite() {
     const qc = useQueryClient();
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/organisation/niveaux-responsabilite/${id}`); },
         onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Niveau supprimé'); },

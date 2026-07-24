@@ -16,13 +16,13 @@ import {
     Index,
 } from 'typeorm';
 import { MembrePersonnel } from './personnel.entity';
-import { Classe } from '@modules/classes/entities';
+import { Classe, ClasseAnnee } from '@modules/classes/entities';
 import { Matiere } from '@modules/matieres/entities';
 import { Periode } from '@modules/periodes/entities';
 import { Salle } from '@modules/salles/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 import { AffectationMatiere } from '@modules/matieres/entities';
-import { EmploiDuTemps } from '@modules/emploi-du-temps/entities';
+import { CreneauHoraire } from '@modules/emploi-du-temps/entities';
 
 /**
  * Statut d'exécution du cours
@@ -36,13 +36,13 @@ export enum StatutEffectue {
 
 @Entity('heures_cours')
 @Index(['enseignantId'])
-@Index(['classeId'])
+@Index(['classeAnneeId'])
 @Index(['date'])
 @Index(['periodeId'])
 @Index(['salleId'])
 @Index(['etablissementId'])
 @Index(['enseignantId', 'date', 'heureDebut']) // Index composite pour détection conflits
-@Index(['classeId', 'date', 'heureDebut']) // Conflits de classe
+@Index(['classeAnneeId', 'date', 'heureDebut']) // Conflits de classe
 @Index(['salleId', 'date', 'heureDebut']) // Conflits de salle
 export class HeureCours {
     @PrimaryGeneratedColumn('uuid')
@@ -56,11 +56,11 @@ export class HeureCours {
     enseignant?: MembrePersonnel;
 
     @Column({ type: 'uuid' })
-    classeId!: string;
+    classeAnneeId!: string;
 
-    @ManyToOne(() => Classe)
-    @JoinColumn({ name: 'classeId' })
-    classe?: Classe;
+    @ManyToOne(() => ClasseAnnee)
+    @JoinColumn({ name: 'classeAnneeId' })
+    classeAnnee?: ClasseAnnee;
 
     @Column({ type: 'uuid' })
     matiereId!: string;
@@ -125,9 +125,9 @@ export class HeureCours {
     @Column({ type: 'uuid', nullable: true })
     creneauId?: string;
 
-    @ManyToOne(() => EmploiDuTemps, { nullable: true, onDelete: 'SET NULL' })
+    @ManyToOne(() => CreneauHoraire, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'creneauId' })
-    creneau?: EmploiDuTemps;
+    creneau?: CreneauHoraire;
 
     @CreateDateColumn()
     createdAt!: Date;

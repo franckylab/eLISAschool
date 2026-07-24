@@ -65,7 +65,7 @@ export function UnitesPage() {
     const [deleteUniteId, setDeleteUniteId] = useState<string | null>(null);
     const [parentId, setParentId] = useState<string | undefined>(undefined);
 
-    const flattenTree = (nodes: UniteOrganisationnelle[]): UniteOrganisationnelle[] => nodes.flatMap((n) => [n, ...flattenTree((n as any).enfants || [])]);
+    const flattenTree = (nodes: UniteOrganisationnelle[]): UniteOrganisationnelle[] => nodes.flatMap((n) => [n, ...flattenTree(n.enfants || [])]);
     const treeNodes = useMemo(
         () => (arborescence && Array.isArray(arborescence) ? buildTreeNodes(flattenTree(arborescence)) : buildTreeNodes(unites || [])),
         [arborescence, unites],

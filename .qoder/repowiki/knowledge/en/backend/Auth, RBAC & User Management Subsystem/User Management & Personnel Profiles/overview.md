@@ -1,0 +1,1 @@
+Express module exposing REST endpoints and services for creating, querying, updating, and deleting users, their profiles, role/permission resolution, and profile photo uploads.

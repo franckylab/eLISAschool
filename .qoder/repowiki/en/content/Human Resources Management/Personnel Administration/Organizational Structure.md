@@ -2,13 +2,12 @@
 
 <cite>
 **Referenced Files in This Document**
-- [044-module-organisation.sql](file://backend/database/migrations/044-module-organisation.sql)
-- [045-organisation-optimisations.sql](file://backend/database/migrations/045-organisation-optimisations.sql)
-- [046-organisation-performance-avancee.sql](file://backend/database/migrations/046-organisation-performance-avancee.sql)
 - [109-refonte-organisation.sql](file://backend/database/migrations/109-refonte-organisation.sql)
 - [110-consolidation-organisation.sql](file://backend/database/migrations/110-consolidation-organisation.sql)
+- [114-normalisation-echelons-structurels.sql](file://backend/database/migrations/114-normalisation-echelons-structurels.sql)
 - [organisation.controller.ts](file://backend/src/modules/organisation/controllers/organisation.controller.ts)
 - [organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
+- [echelon-structurel.service.ts](file://backend/src/modules/organisation/services/echelon-structurel.service.ts)
 - [nomenclature.service.ts](file://backend/src/modules/organisation/services/nomenclature.service.ts)
 - [rbac.guard.ts](file://backend/src/modules/rbac/guards/rbac.guard.ts)
 - [rbac.service.ts](file://backend/src/modules/rbac/services/rbac.service.ts)
@@ -17,12 +16,11 @@
 
 ## Update Summary
 **Changes Made**
-- Updated frontend interface enhancements section to reflect streamlined UniteDetailDrawer component with improved user experience
-- Added documentation for updated PosteFormModal integration with new validation systems and enhanced error handling
-- Documented significantly refactored UniteFormModal (reduced from 67 to 33 lines) with simplified logic and better maintainability
-- Enhanced personnel search field capabilities with improved filtering, sorting, and real-time search functionality
-- Completely rewritten use-postes hook with sophisticated filtering and sorting algorithms for better performance
-- Updated frontend architectural diagrams to reflect the new unified flow-based approach for organizational charts
+- Updated architectural overview to reflect major consolidation from multiple entities (NiveauOrganisation, UsageUnite, CategoriePoste, TypeRelationHierarchique) into unified EchelonStructurel model
+- Revised backend service architecture documentation showing consolidation from 4 specialized services to single EchelonStructurelService
+- Updated frontend interface documentation to reflect consolidation from separate management interfaces to unified echelons structurels interface
+- Enhanced database schema documentation with new EchelonStructurel entity and migration details
+- Updated component relationships and data flow diagrams to show simplified architecture
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -38,13 +36,13 @@
 11. [Appendices](#appendices)
 
 ## Introduction
-This document explains the organizational structure sub-feature for an educational institution following major architectural refactoring and frontend interface enhancements. The system has undergone significant backend restructuring with enhanced services, improved nomenclature management replacing database enums with dedicated tables, and better error handling. The frontend has been substantially improved with streamlined components, enhanced validation systems, and sophisticated data filtering capabilities. It covers how to define organizational units, establish reporting relationships, manage position hierarchies, and link these structures to access control permissions through optimized APIs and enhanced user interfaces with improved performance and usability.
+This document explains the organizational structure sub-feature for an educational institution following major architectural consolidation. The system has undergone significant restructuring with the consolidation of multiple entities (NiveauOrganisation, UsageUnite, CategoriePoste, TypeRelationHierarchique) into a unified EchelonStructurel model, simplifying backend services from 4 specialized services to a single EchelonStructurelService, and consolidating frontend pages from separate management interfaces to a unified echelons structurels interface. It covers how to define organizational units, establish reporting relationships, manage position hierarchies, and link these structures to access control permissions through optimized APIs and enhanced user interfaces with improved performance and usability.
 
 ## Project Structure
-The organizational structure is now implemented as a unified backend module with consolidated functionality and enhanced service architecture, complemented by significantly improved frontend components:
-- Database schema and indexes are defined in migration files under the database/migrations directory, including the latest consolidation migrations.
-- Business logic and API endpoints are organized within the unified organisation module with specialized services.
-- Frontend components have been streamlined with reduced complexity and enhanced user experience through modern React patterns.
+The organizational structure is now implemented as a consolidated backend module with unified EchelonStructurel functionality and streamlined service architecture, complemented by unified frontend components:
+- Database schema and indexes are defined in migration files under the database/migrations directory, including the latest consolidation migrations that created the EchelonStructurel model.
+- Business logic and API endpoints are organized within the unified organisation module with simplified service architecture centered around EchelonStructurelService.
+- Frontend components have been consolidated into unified interfaces for managing echelons structurels with improved user experience.
 - Access control integrates with the RBAC module to enforce permissions based on roles and permissions.
 - Enhanced nomenclature management provides standardized terminology across the organization with dedicated table support.
 
@@ -52,146 +50,141 @@ The organizational structure is now implemented as a unified backend module with
 graph TB
 subgraph "Database"
 DB["PostgreSQL"]
+EchelonStruct["EchelonStructurel Model"]
 end
 subgraph "Unified Organisation Module"
 OrgCtrl["Organisation Controller"]
-OrgSvc["Organisation Service"]
+EchelonSvc["EchelonStructurel Service"]
 NomenclatureSvc["Nomenclature Service"]
 RbacGuard["RBAC Guard"]
 RbacSvc["RBAC Service"]
 end
-subgraph "Enhanced Frontend Components"
-UniteDetailDrawer["Streamlined UniteDetailDrawer"]
-PosteFormModal["Updated PosteFormModal"]
-UniteFormModal["Refactored UniteFormModal"]
-PersonnelSearch["Enhanced Personnel Search"]
-UsePostesHook["Rewritten use-postes Hook"]
+subgraph "Consolidated Frontend Interfaces"
+UnifiedInterface["Unified Echelons Structurels Interface"]
+EnhancedSearch["Enhanced Personnel Search"]
+StreamlinedComponents["Streamlined Components"]
 end
 subgraph "Routing"
 Router["Route Registry"]
 end
 Router --> OrgCtrl
-OrgCtrl --> OrgSvc
+OrgCtrl --> EchelonSvc
 OrgCtrl --> NomenclatureSvc
-OrgSvc --> DB
+EchelonSvc --> DB
 NomenclatureSvc --> DB
 OrgCtrl --> RbacGuard
 RbacGuard --> RbacSvc
-UsePostesHook --> OrgCtrl
-PersonnelSearch --> UsePostesHook
+UnifiedInterface --> OrgCtrl
+EnhancedSearch --> UnifiedInterface
+StreamlinedComponents --> UnifiedInterface
 ```
 
 **Diagram sources**
 - [organisation.controller.ts](file://backend/src/modules/organisation/controllers/organisation.controller.ts)
-- [organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
+- [echelon-structurel.service.ts](file://backend/src/modules/organisation/services/echelon-structurel.service.ts)
 - [nomenclature.service.ts](file://backend/src/modules/organisation/services/nomenclature.service.ts)
 - [rbac.guard.ts](file://backend/src/modules/rbac/guards/rbac.guard.ts)
 - [rbac.service.ts](file://backend/src/modules/rbac/services/rbac.service.ts)
 
 **Section sources**
-- [044-module-organisation.sql](file://backend/database/migrations/044-module-organisation.sql)
-- [045-organisation-optimisations.sql](file://backend/database/migrations/045-organisation-optimisations.sql)
-- [046-organisation-performance-avancee.sql](file://backend/database/migrations/046-organisation-performance-avancee.sql)
 - [109-refonte-organisation.sql](file://backend/database/migrations/109-refonte-organisation.sql)
 - [110-consolidation-organisation.sql](file://backend/database/migrations/110-consolidation-organisation.sql)
+- [114-normalisation-echelons-structurels.sql](file://backend/database/migrations/114-normalisation-echelons-structurels.sql)
 
 ## Core Components
-- Unified function and position management: Consolidated job functions and positions within the organisation module through streamlined controllers and services with enhanced validation.
+- Unified EchelonStructurel management: Consolidated former NiveauOrganisation, UsageUnite, CategoriePoste, and TypeRelationHierarchique functionality into a single cohesive model through streamlined controllers and services with enhanced validation.
+- Simplified service architecture: Reduced from 4 specialized services to single EchelonStructurelService with consolidated business logic and improved maintainability.
 - Enhanced nomenclature management: Standardized terminology and definitions across organizational units with centralized management using dedicated tables instead of database enums.
-- Streamlined frontend components: Significantly reduced component complexity with improved maintainability and user experience through modern React patterns.
+- Consolidated frontend interfaces: Unified management interfaces for echelons structurels with streamlined user experience and reduced complexity.
 - Advanced personnel search: Enhanced search capabilities with sophisticated filtering, sorting, and real-time search functionality for better user productivity.
-- Interactive organizational charts: Build department trees and position hierarchies with real-time visualization capabilities using unified flow-based approach.
+- Interactive organizational charts: Build department trees and position hierarchies with real-time visualization capabilities using unified approach.
 - Advanced reporting and analytics: Generate comprehensive organizational reports with performance optimizations and improved error handling.
 - Access control integration: Restrict operations based on RBAC roles and permissions with enhanced guard mechanisms and better scoping.
 
 Key implementation references:
-- Unified organisation management: [organisation.controller.ts](file://backend/src/modules/organisation/controllers/organisation.controller.ts), [organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
+- Unified EchelonStructurel management: [organisation.controller.ts](file://backend/src/modules/organisation/controllers/organisation.controller.ts), [echelon-structurel.service.ts](file://backend/src/modules/organisation/services/echelon-structurel.service.ts)
 - Nomenclature management: [nomenclature.service.ts](file://backend/src/modules/organisation/services/nomenclature.service.ts)
 - RBAC enforcement: [rbac.guard.ts](file://backend/src/modules/rbac/guards/rbac.guard.ts), [rbac.service.ts](file://backend/src/modules/rbac/services/rbac.service.ts)
 - Shared constants for personnel-related enums: [personnel.constants.ts](file://backend/src/shared/constants/personnel.constants.ts)
 
 **Section sources**
 - [organisation.controller.ts](file://backend/src/modules/organisation/controllers/organisation.controller.ts)
-- [organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
+- [echelon-structurel.service.ts](file://backend/src/modules/organisation/services/echelon-structurel.service.ts)
 - [nomenclature.service.ts](file://backend/src/modules/organisation/services/nomenclature.service.ts)
 - [rbac.guard.ts](file://backend/src/modules/rbac/guards/rbac.guard.ts)
 - [rbac.service.ts](file://backend/src/modules/rbac/services/rbac.service.ts)
 - [personnel.constants.ts](file://backend/src/shared/constants/personnel.constants.ts)
 
 ## Architecture Overview
-The system follows a streamlined unified architecture after major refactoring with consolidated modules, enhanced service layer, and significantly improved frontend components:
+The system follows a streamlined consolidated architecture after major refactoring with unified EchelonStructurel model, simplified service layer, and consolidated frontend interfaces:
 - Controllers handle HTTP requests with consolidated functionality and simplified routing patterns with improved error handling.
-- Services encapsulate business logic with optimized data access patterns and enhanced nomenclature support using dedicated tables.
-- Frontend components have been streamlined with reduced complexity, better state management, and enhanced user interactions.
-- Database migrations define entities and relationships with enhanced performance and data integrity through consolidation migrations.
+- Single EchelonStructurelService encapsulates all business logic replacing previous 4 specialized services with optimized data access patterns and enhanced nomenclature support using dedicated tables.
+- Frontend interfaces have been consolidated into unified echelons structurels management with reduced complexity, better state management, and enhanced user interactions.
+- Database migrations define unified EchelonStructurel entity and relationships with enhanced performance and data integrity through consolidation migrations.
 - RBAC guard intercepts requests to enforce permissions with improved efficiency and scoping capabilities.
 
 ```mermaid
 sequenceDiagram
 participant Client as "Client"
-param Hook as "use-postes Hook"
+param UnifiedInterface as "Unified Echelons Interface"
 param Search as "Personnel Search"
-param Drawer as "UniteDetailDrawer"
-param Modal as "PosteFormModal"
-participant Router as "Route Registry"
+param Router as "Route Registry"
 participant Ctrl as "Organisation Controller"
-participant Guard as "RBAC Guard"
-participant Svc as "Organisation Service"
-param Svc as "Nomenclature Service"
+param Guard as "RBAC Guard"
+param Svc as "EchelonStructurel Service"
+param NomenclatureSvc as "Nomenclature Service"
 participant DB as "Database"
-Client->>Hook : "Request organizational data"
-Hook->>Search : "Apply filters & sorting"
+Client->>UnifiedInterface : "Request organizational data"
+UnifiedInterface->>Search : "Apply filters & sorting"
 Search->>Ctrl : "Optimized API call"
-Client->>Drawer : "View unit details"
-Client->>Modal : "Edit position/form"
 Router->>Ctrl : "Dispatch endpoint"
 Ctrl->>Guard : "Check permission"
 Guard-->>Ctrl : "Allow/Deny"
-Ctrl->>Svc : "Invoke business logic"
-Ctrl->>param Svc : "Access nomenclature"
-Svc->>DB : "Query/Update"
-param Svc->>DB : "Manage terminology"
+Ctrl->>Svc : "Invoke unified business logic"
+Ctrl->>NomenclatureSvc : "Access nomenclature"
+Svc->>DB : "Query/Update EchelonStructurel"
+NomenclatureSvc->>DB : "Manage terminology"
 DB-->>Svc : "Data"
-DB-->>param Svc : "Terminology"
+DB-->>NomenclatureSvc : "Terminology"
 Svc-->>Ctrl : "Result"
-param Svc-->>Ctrl : "Nomenclature data"
-Ctrl-->>Hook : "Filtered & sorted data"
-Ctrl-->>Drawer : "Unit details"
-Ctrl-->>Modal : "Form data"
-Hook-->>Client : "Enhanced UI response"
-Drawer-->>Client : "Streamlined view"
-Modal-->>Client : "Improved form experience"
+NomenclatureSvc-->>Ctrl : "Nomenclature data"
+Ctrl-->>UnifiedInterface : "Consolidated response"
+UnifiedInterface-->>Client : "Enhanced UI response"
 ```
 
 **Diagram sources**
 - [rbac.guard.ts](file://backend/src/modules/rbac/guards/rbac.guard.ts)
 - [rbac.service.ts](file://backend/src/modules/rbac/services/rbac.service.ts)
 - [organisation.controller.ts](file://backend/src/modules/organisation/controllers/organisation.controller.ts)
-- [organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
+- [echelon-structurel.service.ts](file://backend/src/modules/organisation/services/echelon-structurel.service.ts)
 - [nomenclature.service.ts](file://backend/src/modules/organisation/services/nomenclature.service.ts)
 
 ## Detailed Component Analysis
 
-### Unified Organisation Management
-- Purpose: Consolidates former 'postes' and 'fonctions' functionality into a single cohesive module through streamlined controllers and services with enhanced validation and error handling.
+### Unified EchelonStructurel Management
+**Updated** Major architectural consolidation from multiple entities to single EchelonStructurel model
+
+- Purpose: Consolidates former NiveauOrganisation, UsageUnite, CategoriePoste, and TypeRelationHierarchique functionality into a single cohesive EchelonStructurel model through streamlined controllers and services with enhanced validation and error handling.
 - Key operations:
-  - Create/update/delete organizational units via optimized endpoints with improved data validation.
-  - Manage position hierarchies and reporting relationships through consolidated services with cycle detection.
+  - Create/update/delete organizational echelons via optimized endpoints with improved data validation.
+  - Manage hierarchical relationships and reporting structures through unified services with cycle detection.
   - Handle function-to-position associations with enhanced validation and referential integrity checks.
   - Query organizational structures with improved performance and pagination support.
 - Example workflows:
-  - Creating a complete organizational unit with associated positions and functions through streamlined APIs.
+  - Creating complete organizational hierarchies with associated positions and functions through streamlined APIs.
   - Managing complex reporting chains with automatic cycle prevention and validation.
   - Reassigning staff across departments efficiently with proper audit trails.
 
 ```mermaid
 classDiagram
-class OrganisationUnit {
+class EchelonStructurel {
 +id
 +code
 +label
 +description
 +parentId
++level
++type
 +isActive
 }
 class Position {
@@ -209,17 +202,52 @@ class Function {
 +description
 +isActive
 }
-OrganisationUnit <|--o Position : "contains"
+EchelonStructurel <|--o Position : "contains"
 Function <|--o{ Position : "assigned via functionId"
 ```
 
 **Diagram sources**
 - [organisation.controller.ts](file://backend/src/modules/organisation/controllers/organisation.controller.ts)
-- [organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
+- [echelon-structurel.service.ts](file://backend/src/modules/organisation/services/echelon-structurel.service.ts)
 
 **Section sources**
 - [organisation.controller.ts](file://backend/src/modules/organisation/controllers/organisation.controller.ts)
-- [organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
+- [echelon-structurel.service.ts](file://backend/src/modules/organisation/services/echelon-structurel.service.ts)
+
+### Simplified Service Architecture
+**Updated** Consolidation from 4 specialized services to single EchelonStructurelService
+
+- Purpose: Provides unified business logic through single EchelonStructurelService replacing previous specialized services for NiveauOrganisation, UsageUnite, CategoriePoste, and TypeRelationHierarchique.
+- Key operations:
+  - Centralized CRUD operations for EchelonStructurel entities with enhanced validation.
+  - Unified relationship management between organizational units, positions, and functions.
+  - Consolidated query methods with improved performance and caching strategies.
+  - Streamlined transaction management for complex organizational modifications.
+- Benefits:
+  - Reduced code duplication and maintenance overhead.
+  - Improved consistency across organizational operations.
+  - Enhanced performance through optimized data access patterns.
+  - Better error handling and logging throughout the service layer.
+
+```mermaid
+flowchart TD
+A["Previous 4 Services"] --> B["NiveauOrganisation Service"]
+A --> C["UsageUnite Service"]
+A --> D["CategoriePoste Service"]
+A --> E["TypeRelationHierarchique Service"]
+B --> F["Single EchelonStructurel Service"]
+C --> F
+D --> F
+E --> F
+F --> G["Unified Business Logic"]
+G --> H["Simplified Maintenance"]
+G --> I["Improved Performance"]
+```
+
+[No sources needed since this diagram shows conceptual workflow, not actual code structure]
+
+**Section sources**
+- [echelon-structurel.service.ts](file://backend/src/modules/organisation/services/echelon-structurel.service.ts)
 
 ### Enhanced Nomenclature Management
 - Purpose: Provides centralized management of organizational terminology and standardized definitions across all modules using dedicated tables instead of database enums.
@@ -248,28 +276,30 @@ F --> C
 **Section sources**
 - [nomenclature.service.ts](file://backend/src/modules/organisation/services/nomenclature.service.ts)
 
-### Interactive Organizational Charts
+### Consolidated Frontend Interfaces
+**Updated** From separate management interfaces to unified echelons structurels interface
+
 - Capabilities:
-  - Build dynamic department trees using parent-child relationships through optimized services with unified flow-based approach.
-  - Create position hierarchies with real-time reporting line updates and improved performance.
-  - Generate interactive visualizations with drag-and-drop reorganization using simplified component architecture.
-  - Export organizational structures in multiple formats (PDF, PNG, SVG) with enhanced rendering options.
+  - Unified management interface for all echelon structurel types through single consolidated view.
+  - Streamlined navigation between different echelon types with improved user experience.
+  - Integrated form handling for creating and editing various echelon types with shared validation.
+  - Enhanced search and filtering across all echelon types with unified query interface.
 - Typical outputs:
-  - Real-time hierarchical views with expandable nodes and improved responsiveness.
-  - Annotated charts showing staff assignments and vacancies with better visualization.
-  - Comparative views for organizational restructuring planning with side-by-side comparison.
+  - Single dashboard view for managing all organizational echelons with tabbed interface.
+  - Consolidated reporting views showing relationships between different echelon types.
+  - Unified export functionality for all echelon data with consistent formatting.
 
 ```mermaid
 flowchart TD
-A["Load Organization Data"] --> B["Build Department Tree"]
-C["Load Position Hierarchy"] --> D["Create Reporting Chains"]
-E["Fetch Staff Assignments"] --> F["Generate Visual Elements"]
-B --> G["Render Interactive Chart"]
+A["Load Echelon Data"] --> B["Unified Interface Rendering"]
+C["User Selection"] --> D["Context-Aware Forms"]
+E["Search Queries"] --> F["Consolidated Filtering"]
+B --> G["Interactive Visualization"]
 D --> G
 F --> G
-G --> H["Support Drag & Drop"]
-G --> I["Enable Zoom & Pan"]
-G --> J["Export Multiple Formats"]
+G --> H["Unified Operations"]
+G --> I["Consolidated Reporting"]
+G --> J["Integrated Export"]
 ```
 
 [No sources needed since this diagram shows conceptual workflow, not actual code structure]
@@ -280,28 +310,28 @@ G --> J["Export Multiple Formats"]
   - Permissions may be scoped by establishment context and organizational unit with enhanced filtering.
   - Role-based visibility affects which organizational structures are accessible with granular control.
 - Practical implications:
-  - Only authorized users can create/edit organizational units and positions with proper validation.
+  - Only authorized users can create/edit organizational echelons and positions with proper validation.
   - Hierarchical permissions allow managers to access subordinate units with inheritance rules.
   - Audit trails track all organizational changes with user attribution and detailed context.
 
 ```mermaid
 sequenceDiagram
 participant User as "User"
-param Hook as "use-postes Hook"
+param UnifiedInterface as "Unified Interface"
 param Search as "Personnel Search"
 participant Guard as "RBAC Guard"
-param Svc as "Nomenclature Service"
-participant Svc as "Organisation Service"
-User->>Hook : "Request with token"
-Hook->>Search : "Filter & sort data"
+param Svc as "EchelonStructurel Service"
+param NomenclatureSvc as "Nomenclature Service"
+User->>UnifiedInterface : "Request with token"
+UnifiedInterface->>Search : "Filter & sort data"
 Search->>Guard : "Validate permissions"
 Guard->>Guard : "Resolve role/permissions"
 alt Allowed
-Guard->>Svc : "Call organisation method"
-Guard->>param Svc : "Access nomenclature"
-Svc-->>Hook : "Authorized response"
-param Svc-->>Hook : "Terminology data"
-Hook-->>User : "Enhanced UI data"
+Guard->>Svc : "Call unified method"
+Guard->>NomenclatureSvc : "Access nomenclature"
+Svc-->>UnifiedInterface : "Authorized response"
+NomenclatureSvc-->>UnifiedInterface : "Terminology data"
+UnifiedInterface-->>User : "Enhanced UI data"
 else Denied
 Guard-->>User : "403 Forbidden"
 end
@@ -310,40 +340,25 @@ end
 **Diagram sources**
 - [rbac.guard.ts](file://backend/src/modules/rbac/guards/rbac.guard.ts)
 - [rbac.service.ts](file://backend/src/modules/rbac/services/rbac.service.ts)
-- [organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
+- [echelon-structurel.service.ts](file://backend/src/modules/organisation/services/echelon-structurel.service.ts)
 - [nomenclature.service.ts](file://backend/src/modules/organisation/services/nomenclature.service.ts)
 
 **Section sources**
 - [rbac.guard.ts](file://backend/src/modules/rbac/guards/rbac.guard.ts)
 - [rbac.service.ts](file://backend/src/modules/rbac/services/rbac.service.ts)
-- [organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
+- [echelon-structurel.service.ts](file://backend/src/modules/organisation/services/echelon-structurel.service.ts)
 - [nomenclature.service.ts](file://backend/src/modules/organisation/services/nomenclature.service.ts)
 
 ## Frontend Interface Enhancements
 
-### Streamlined UniteDetailDrawer Component
-The UniteDetailDrawer component has been significantly streamlined to provide a more focused and efficient user experience for viewing organizational unit details. The component now features:
-- Simplified layout with essential information prominently displayed
-- Improved navigation between related organizational elements
-- Better responsive design for various screen sizes
-- Enhanced loading states and error handling
-- Reduced bundle size through code optimization
-
-### Updated PosteFormModal with New Validation Systems
-The PosteFormModal has been updated to integrate with the new validation systems, providing:
-- Real-time form validation with immediate feedback
-- Enhanced error messaging with specific guidance for corrections
-- Improved accessibility with proper ARIA labels and keyboard navigation
-- Better integration with the nomenclature system for standardized terminology
-- Optimized submission handling with improved error recovery
-
-### Refactored UniteFormModal (Reduced from 67 to 33 Lines)
-The UniteFormModal has undergone significant refactoring, reducing its complexity from 67 to 33 lines while maintaining full functionality:
-- Eliminated redundant validation logic through shared utilities
-- Simplified state management with improved React hooks usage
-- Removed duplicate code blocks through better abstraction
-- Enhanced maintainability with clearer component structure
-- Improved testability with cleaner separation of concerns
+### Unified Echelons Structurels Interface
+The unified echelons structurels interface has replaced separate management interfaces to provide:
+- Single consolidated view for managing all echelon types with tabbed navigation
+- Streamlined form handling with shared validation logic across different echelon types
+- Enhanced search capabilities with unified filtering across all echelon categories
+- Improved responsive design for various screen sizes and devices
+- Better loading states and error handling with unified error management
+- Reduced bundle size through code optimization and shared components
 
 ### Enhanced Personnel Search Field
 The personnel search field has been significantly enhanced with improved capabilities:
@@ -354,21 +369,20 @@ The personnel search field has been significantly enhanced with improved capabil
 - Better pagination handling for large result sets
 - Enhanced accessibility with keyboard navigation and screen reader support
 
-### Completely Rewritten use-postes Hook
-The use-postes hook has been completely rewritten with sophisticated filtering and sorting capabilities:
-- Advanced query parameter handling for complex search scenarios
-- Optimized data fetching with caching strategies to reduce API calls
-- Comprehensive error handling with fallback mechanisms
-- Better TypeScript integration with improved type safety
-- Enhanced performance through memoization and selective updates
-- Improved testing utilities with mock data support
+### Streamlined Components
+Frontend components have been streamlined with reduced complexity and improved maintainability:
+- Eliminated redundant validation logic through shared utilities
+- Simplified state management with improved React hooks usage
+- Removed duplicate code blocks through better abstraction
+- Enhanced maintainability with clearer component structure
+- Improved testability with cleaner separation of concerns
 
 ```mermaid
 flowchart TD
 A["User Input"] --> B["Enhanced Personnel Search"]
 B --> C["Real-time Filtering"]
 C --> D["Advanced Sorting"]
-D --> E["use-postes Hook Processing"]
+D --> E["Unified Interface Processing"]
 E --> F["Optimized API Calls"]
 F --> G["Cached Results"]
 G --> H["Streamlined UI Updates"]
@@ -379,52 +393,49 @@ H --> I["Improved User Experience"]
 
 **Section sources**
 - [organisation.controller.ts](file://backend/src/modules/organisation/controllers/organisation.controller.ts)
-- [organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
+- [echelon-structurel.service.ts](file://backend/src/modules/organisation/services/echelon-structurel.service.ts)
 
 ## Dependency Analysis
 - Module coupling:
-  - Unified controller depends on specialized services for business logic with simplified dependencies and better error handling.
-  - Services depend on database entities and indexes with optimized queries and enhanced validation.
+  - Unified controller depends on single EchelonStructurelService for business logic with simplified dependencies and better error handling.
+  - Service depends on database entities and indexes with optimized queries and enhanced validation.
   - RBAC guard depends on RBAC service for permission checks with enhanced performance and caching.
   - Nomenclature service provides shared terminology across organisational components with dedicated table support.
   - Frontend components have reduced dependencies through streamlined architecture and improved code organization.
 - External dependencies:
   - PostgreSQL for persistence with enhanced indexing strategies and improved query performance.
   - Central route registry for endpoint registration with simplified routing patterns.
-  - Frontend charting libraries for interactive visualizations with unified flow-based approach.
   - Modern React ecosystem with improved hooks and state management patterns.
 
 ```mermaid
 graph LR
 Route["Route Registry"] --> OrgCtrl["Organisation Controller"]
-OrgCtrl --> OrgSvc["Organisation Service"]
+OrgCtrl --> EchelonSvc["EchelonStructurel Service"]
 OrgCtrl --> NomenclatureSvc["Nomenclature Service"]
-OrgSvc --> DB["PostgreSQL"]
+EchelonSvc --> DB["PostgreSQL"]
 NomenclatureSvc --> DB
 OrgCtrl --> RbacGuard["RBAC Guard"]
 RbacGuard --> RbacSvc["RBAC Service"]
-Frontend["Enhanced Frontend Components"] --> UsePostesHook["use-postes Hook"]
-UsePostesHook --> OrgCtrl
-PersonnelSearch["Personnel Search"] --> UsePostesHook
+Frontend["Consolidated Frontend Interfaces"] --> UnifiedInterface["Unified Echelons Interface"]
+UnifiedInterface --> OrgCtrl
+PersonnelSearch["Personnel Search"] --> UnifiedInterface
 ```
 
 **Diagram sources**
 - [organisation.controller.ts](file://backend/src/modules/organisation/controllers/organisation.controller.ts)
-- [organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
+- [echelon-structurel.service.ts](file://backend/src/modules/organisation/services/echelon-structurel.service.ts)
 - [nomenclature.service.ts](file://backend/src/modules/organisation/services/nomenclature.service.ts)
 - [rbac.guard.ts](file://backend/src/modules/rbac/guards/rbac.guard.ts)
 - [rbac.service.ts](file://backend/src/modules/rbac/services/rbac.service.ts)
 
 **Section sources**
-- [044-module-organisation.sql](file://backend/database/migrations/044-module-organisation.sql)
-- [045-organisation-optimisations.sql](file://backend/database/migrations/045-organisation-optimisations.sql)
-- [046-organisation-performance-avancee.sql](file://backend/database/migrations/046-organisation-performance-avancee.sql)
 - [109-refonte-organisation.sql](file://backend/database/migrations/109-refonte-organisation.sql)
 - [110-consolidation-organisation.sql](file://backend/database/migrations/110-consolidation-organisation.sql)
+- [114-normalisation-echelons-structurels.sql](file://backend/database/migrations/114-normalisation-echelons-structurels.sql)
 
 ## Performance Considerations
 - Index usage:
-  - Ensure indexes exist on foreign keys and frequently queried columns (e.g., parent_id, function_id, report_to_position_id) with optimized query patterns.
+  - Ensure indexes exist on foreign keys and frequently queried columns (e.g., parent_id, level, type) with optimized query patterns.
   - Leverage composite indexes for common filter combinations and nomenclature lookups with enhanced performance.
   - Utilize full-text search indexes for nomenclature lookups and improve search capabilities.
 - Query patterns:
@@ -439,7 +450,7 @@ PersonnelSearch["Personnel Search"] --> UsePostesHook
   - Apply optimistic concurrency controls for critical updates (e.g., reassignments, structural changes) with enhanced validation and error handling.
   - Use database transactions for complex multi-step organizational modifications with improved rollback capabilities.
 - Frontend performance:
-  - Streamlined components reduce bundle size and improve initial load times.
+  - Consolidated interfaces reduce bundle size and improve initial load times.
   - Enhanced search with debouncing prevents excessive API calls during rapid user input.
   - Optimized hooks with memoization prevent unnecessary re-renders and improve overall application responsiveness.
 
@@ -462,40 +473,39 @@ Common issues and resolutions:
   - Validate referential integrity when deleting organizational units or positions with children with enhanced cascade handling.
   - Ensure nomenclature consistency across all organizational references with automated validation.
 - Migration issues:
-  - Verify successful execution of consolidation migrations (109-refonte-organisation.sql, 110-consolidation-organisation.sql) with better rollback support.
+  - Verify successful execution of consolidation migrations (109-refonte-organisation.sql, 110-consolidation-organisation.sql, 114-normalisation-echelons-structurels.sql) with better rollback support.
   - Check data integrity after module consolidation and resolve any orphaned records with automated cleanup tools.
+  - Validate EchelonStructurel model creation and data migration from previous entities.
 - Nomenclature system issues:
   - Verify dedicated tables are properly created and populated instead of enum values with migration verification.
   - Check nomenclature service connectivity and database connections with improved error reporting.
 - Frontend component issues:
-  - Verify streamlined components maintain expected functionality after refactoring.
+  - Verify consolidated interfaces maintain expected functionality after architectural changes.
   - Check enhanced search functionality with proper debouncing and filtering logic.
-  - Validate use-postes hook performance with large datasets and complex filtering scenarios.
-  - Test form validation systems in PosteFormModal and UniteFormModal for proper error handling.
+  - Test unified interface performance with large datasets and complex filtering scenarios.
+  - Validate form validation systems for proper error handling across all echelon types.
 
 **Section sources**
 - [rbac.guard.ts](file://backend/src/modules/rbac/guards/rbac.guard.ts)
 - [rbac.service.ts](file://backend/src/modules/rbac/services/rbac.service.ts)
-- [organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
+- [echelon-structurel.service.ts](file://backend/src/modules/organisation/services/echelon-structurel.service.ts)
 - [nomenclature.service.ts](file://backend/src/modules/organisation/services/nomenclature.service.ts)
-- [044-module-organisation.sql](file://backend/database/migrations/044-module-organisation.sql)
-- [045-organisation-optimisations.sql](file://backend/database/migrations/045-organisation-optimisations.sql)
-- [046-organisation-performance-avancee.sql](file://backend/database/migrations/046-organisation-performance-avancee.sql)
 - [109-refonte-organisation.sql](file://backend/database/migrations/109-refonte-organisation.sql)
 - [110-consolidation-organisation.sql](file://backend/database/migrations/110-consolidation-organisation.sql)
+- [114-normalisation-echelons-structurels.sql](file://backend/database/migrations/114-normalisation-echelons-structurels.sql)
 
 ## Conclusion
-The organizational structure sub-feature provides a robust foundation for modeling functions and positions with clear reporting lines and strong access control. Following the major architectural refactoring that consolidated separate modules into a unified organisation module with enhanced service architecture, improved nomenclature system replacing database enums with dedicated tables, and better error handling, institutions can maintain accurate organizational charts, manage changes efficiently, and ensure secure, role-based access to sensitive HR data through streamlined interfaces with unified flow-based visualization capabilities and enhanced performance. The recent frontend enhancements, including streamlined components, improved validation systems, and sophisticated data filtering, further enhance the user experience and operational efficiency for managing complex organizational structures.
+The organizational structure sub-feature provides a robust foundation for modeling functions and positions with clear reporting lines and strong access control. Following the major architectural consolidation that merged multiple entities (NiveauOrganisation, UsageUnite, CategoriePoste, TypeRelationHierarchique) into unified EchelonStructurel model, simplified backend services from 4 specialized services to single EchelonStructurelService, and consolidated frontend pages from separate management interfaces to unified echelons structurels interface, institutions can maintain accurate organizational charts, manage changes efficiently, and ensure secure, role-based access to sensitive HR data through streamlined interfaces with enhanced performance. The recent consolidation improvements further enhance the user experience and operational efficiency for managing complex organizational structures through simplified architecture and unified interfaces.
 
 ## Appendices
 
 ### Practical Examples
 
 - Creating an organizational chart:
-  - Define top-level departments using the unified organisation module with enhanced validation.
-  - Add sub-departments by setting parent relationships through consolidated controllers with improved error handling.
+  - Define top-level echelons using the unified EchelonStructurel model with enhanced validation.
+  - Add sub-echelons by setting parent relationships through consolidated controllers with improved error handling.
   - Build position hierarchies by assigning reporting managers with enhanced validation and cycle detection.
-  - Combine both views to produce comprehensive org charts via optimized endpoints with unified flow-based approach.
+  - Combine both views to produce comprehensive org charts via optimized endpoints with unified approach.
 
 - Assigning staff to positions:
   - Select a valid position linked to a standardized function through nomenclature management.
@@ -509,7 +519,7 @@ The organizational structure sub-feature provides a robust foundation for modeli
   - Periodically review and update functions to reflect evolving roles while maintaining consistency with centralized management.
 
 - Managing departmental structures:
-  - Re-parent departments to reflect restructuring with proper validation and impact assessment.
+  - Re-parent echelons to reflect restructuring with proper validation and impact assessment.
   - Archive inactive units rather than deleting to preserve historical data with soft delete support.
   - Use aggregated reports to monitor staffing ratios and coverage across the organization with enhanced analytics.
 
@@ -517,7 +527,7 @@ The organizational structure sub-feature provides a robust foundation for modeli
   - Plan reassignments with change windows and proper notification systems with improved communication tools.
   - Audit trails should capture who made changes and when with detailed context and enhanced logging.
   - Communicate updates through notifications or dashboards with impact assessments and better visualization.
-  - Leverage interactive charts to visualize proposed changes before implementation with unified flow-based approach.
+  - Leverage unified interfaces to visualize proposed changes before implementation with consolidated views.
 
 - Managing organizational terminology:
   - Establish standardized position titles and department names through nomenclature management with dedicated table support.
@@ -525,9 +535,8 @@ The organizational structure sub-feature provides a robust foundation for modeli
   - Enforce consistency across all organizational documents and communications with automated validation.
   - Track terminology usage and identify outdated or conflicting terms with improved monitoring and reporting.
 
-- Using enhanced frontend interfaces:
-  - Utilize the streamlined UniteDetailDrawer for quick access to organizational unit information with improved navigation.
-  - Employ the updated PosteFormModal with new validation systems for efficient position management and error correction.
-  - Take advantage of the refactored UniteFormModal's simplified interface for faster organizational unit creation and editing.
-  - Leverage the enhanced personnel search field with advanced filtering and sorting for efficient staff management.
-  - Benefit from the rewritten use-postes hook's sophisticated filtering and sorting capabilities for better data management.
+- Using consolidated frontend interfaces:
+  - Utilize the unified echelons structurels interface for comprehensive organizational management with streamlined navigation.
+  - Employ enhanced search capabilities with advanced filtering and sorting for efficient staff management.
+  - Take advantage of consolidated forms for faster echelon creation and editing with shared validation.
+  - Benefit from unified reporting views for better organizational analysis and decision making.

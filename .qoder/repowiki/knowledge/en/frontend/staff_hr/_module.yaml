@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: frontend/staff_hr
+title: staff_hr
+scope:
+    - frontend/src/features/personnel/
+    - frontend/src/features/postes/
+    - frontend/src/features/fonctions/
+source_files: []
+depends_on: []
+related_to: []

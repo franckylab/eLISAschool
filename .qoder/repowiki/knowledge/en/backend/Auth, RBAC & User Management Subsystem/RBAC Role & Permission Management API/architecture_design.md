@@ -1,0 +1,7 @@
+Three-layer Express module mounted under `/api/rbac` via `index.ts`, which wires three controllers (`roles`, `permissions`, `user-roles`) onto a single Router.
+
+- Controllers (`controllers/*.controller.ts`) are thin: they apply `authMiddleware` + `requirePermission('roles:manage')` guards, validate bodies with Zod schemas from `dto/create-role.dto.ts`, delegate to services, and wrap results in `successResponse`.
+- Services (`services/*.service.ts`) own all business logic and data access through TypeORM repositories obtained from `AppDataSource`. They throw `AppError` with typed codes (e.g. `ROLE_CODE_EXISTS`, `SYSTEM_ROLE_IMMUTABLE`).
+- DTOs live in `dto/create-role.dto.ts` as exported Zod schemas plus `z.infer` types consumed by both controllers and services.
+- Cross-cutting dependency direction is one-way: controller → service → `@modules/auth/entities` (Role, Permission, UtilisateurEtablissement) and `@modules/auth/services/permission-resolver.service` for cache invalidation; the reverse never imports rbac.
+- Multi-tenant scoping is enforced at the service layer by filtering on `etablissementId` and counting users through `utilisateur_etablissements` rather than the Role entity itself.

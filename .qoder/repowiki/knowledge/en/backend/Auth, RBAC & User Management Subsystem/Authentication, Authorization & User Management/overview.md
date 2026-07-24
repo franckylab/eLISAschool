@@ -1,0 +1,1 @@
+Express-based authentication module providing login/register/password management, JWT token handling, RBAC permissions, multi-tenant establishment selection, user preferences, and audit logging with a two-level account lockout system.

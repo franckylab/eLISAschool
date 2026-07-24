@@ -1,0 +1,1 @@
+TypeScript + Express (plain `express.Router` controllers), TypeORM with `@Entity`/`@Column`/`@ManyToOne` decorators, Zod for request validation, and a custom in-process `Map`-based cache with TTL for configuration parameters.

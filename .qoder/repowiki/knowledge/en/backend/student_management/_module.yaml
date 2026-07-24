@@ -1,0 +1,15 @@
+schema_version: 1
+module_path: backend/student_management
+title: student_management
+scope:
+    - backend/src/modules/eleves/
+    - backend/src/modules/responsables-eleves/
+    - backend/src/modules/diplomes-eleves/
+    - backend/src/modules/suivi-eleves/
+    - backend/src/modules/sante/
+    - backend/src/modules/orientation/
+    - backend/src/modules/bulletins/
+    - backend/src/modules/notes/
+source_files: []
+depends_on: []
+related_to: []

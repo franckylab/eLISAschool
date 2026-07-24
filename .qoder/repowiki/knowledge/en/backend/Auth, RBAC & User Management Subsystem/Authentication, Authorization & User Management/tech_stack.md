@@ -1,0 +1,1 @@
+TypeScript/Express with TypeORM entities, JSON Web Tokens via `jsonwebtoken` (configured through `@config/env.config`), bcryptjs for password hashing, node-cron for scheduled tasks, and Zod-like schemas via `../dto/*` validated through `@common/utils.validateDto`. Uses `@shared/enums/roles.enum` and `@shared/enums/statuts.enum` for shared enums.

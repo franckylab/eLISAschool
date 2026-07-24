@@ -147,12 +147,12 @@ export function ModelesPage() {
     const openCreate = () => { setEditing(null); setNom(''); setDescription(''); setStructure(noeudVide()); setBuilderOpen(true); };
     const openEdit = (tpl: TemplateOrganisation) => {
         setEditing(tpl); setNom(tpl.nom); setDescription(tpl.description || '');
-        setStructure((tpl.structure as any) || noeudVide()); setBuilderOpen(true);
+        setStructure((tpl.structure as unknown as NoeudTemplate) || noeudVide()); setBuilderOpen(true);
     };
     const openWizard = (templateId?: string) => { setWizardTemplateId(templateId); setWizardOpen(true); };
     const handleSave = async () => {
         if (nom.trim().length < 2) return;
-        const payload = { nom: nom.trim(), description: description || undefined, structure: structure as any };
+        const payload = { nom: nom.trim(), description: description || undefined, structure: structure as unknown as TemplateStructure };
         try {
             // editing.id vide = duplication d'un modèle système → création (POST), pas PATCH
             if (editing && editing.id) await modifier.mutateAsync({ id: editing.id, ...payload });
@@ -206,7 +206,7 @@ export function ModelesPage() {
                             {tpl.estSysteme && <Badge variant="secondary" size="sm">⚙ {t('systeme')}</Badge>}
                         </div>
                         <div className="rounded-md border border-border bg-surface-alt/40 p-2 max-h-28 overflow-auto">
-                            <StructurePreview noeud={tpl.structure as any} />
+                            <StructurePreview noeud={tpl.structure as unknown as NoeudTemplate} />
                         </div>
                         <div className="flex items-center justify-end gap-1 pt-1 border-t border-border">
                             {canGenerate && (

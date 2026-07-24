@@ -3,3 +3,4 @@ export { useHierarchies, useSuperieurs, useSubordonnes, useCreerHierarchie, useM
 export { useEchelonsStructurels, useCreerEchelonStructurel, useModifierEchelonStructurel, useSupprimerEchelonStructurel } from './use-echelons-structurels';
 export { useNiveauxResponsabilite, useCreerNiveauResponsabilite, useModifierNiveauResponsabilite, useSupprimerNiveauResponsabilite } from './use-niveaux-responsabilite';
 export { useTemplatesOrganisation, useCreerTemplateOrganisation, useModifierTemplateOrganisation, useSupprimerTemplateOrganisation, useGenererOrganisation } from './use-templates';
+export * from './use-handle-error';
