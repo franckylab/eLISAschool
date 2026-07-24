@@ -1,1 +1,0 @@
-Docker Compose v2 (`docker compose`) orchestrating postgres:16-alpine, redis:7-alpine, dpage/pgadmin4:latest, node:20-alpine; Nginx as reverse proxy in cloud-prod; Let's Encrypt SSL via the cloud-prod compose overlay; OpenSSL used at runtime to generate secrets.

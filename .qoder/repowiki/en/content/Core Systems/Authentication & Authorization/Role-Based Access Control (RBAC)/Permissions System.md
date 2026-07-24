@@ -30,6 +30,13 @@
 - [GUIDE-API-UTILISATEURS-ETABLISSEMENTS.md](file://docs/GUIDE-API-UTILISATEURS-ETABLISSEMENTS.md)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Updated middleware implementation section to reflect requirePermission middleware instead of role-based approach
+- Enhanced permission evaluation logic documentation with current implementation details
+- Updated sidebar filtering and access control examples to use requirePermission middleware
+- Revised practical examples to demonstrate modern permission checking patterns
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -43,7 +50,7 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document explains eLISAschool’s permission system architecture with a focus on the Permission entity model, resource-action based permission types, and evaluation logic. It details how permissions are assigned via user-permission relationships and role-permission inheritance, including group-based scoping for multi-tenant environments. It also covers practical guidance for defining new permissions, implementing guards in controllers, checking permissions in services, and rendering UI conditionally. Finally, it addresses validation rules, conflict resolution, auditing capabilities, and best practices for granular access control.
+This document explains eLISAschool's permission system architecture with a focus on the Permission entity model, resource-action based permission types, and evaluation logic. It details how permissions are assigned via user-permission relationships and role-permission inheritance, including group-based scoping for multi-tenant environments. The system now uses requirePermission middleware for enhanced permission-based access controls and sidebar filtering, replacing the previous role-based approach. It also covers practical guidance for defining new permissions, implementing guards in controllers, checking permissions in services, and rendering UI conditionally. Finally, it addresses validation rules, conflict resolution, auditing capabilities, and best practices for granular access control.
 
 ## Project Structure
 The permission system spans documentation, database migrations, scripts, and shared examples:
@@ -176,12 +183,14 @@ S2 --> D2
 - Role-permission inheritance: Roles aggregate permissions; users inherit permissions from their assigned roles. Group membership further scopes permissions to specific establishments or contexts.
 - User-permission assignment: Direct user-to-permission links can override or extend inherited permissions, enabling precise exceptions.
 - Evaluation logic: A resolver aggregates permissions by combining direct assignments, role inheritance, and group scoping, then evaluates whether a given resource-action is allowed under the current context (including tenant isolation).
+- **Updated**: Enhanced middleware implementation using requirePermission for improved access control and sidebar filtering.
 
 Key responsibilities:
 - Define canonical permission identifiers and conventions
 - Persist roles, permissions, and assignments
 - Resolve effective permissions per user and context
 - Provide APIs and hooks for real-time checks and UI gating
+- **Updated**: Implement requirePermission middleware for consistent authorization enforcement
 
 **Section sources**
 - [rbac-system.md](file://docs/rbac-system.md)
@@ -193,13 +202,13 @@ Key responsibilities:
 The permission system integrates across data, services, and presentation layers:
 - Data layer: Tables for permissions, roles, user-role mappings, and group-scoped assignments
 - Service layer: PermissionResolver computes effective permissions using caching and context-aware queries
-- API layer: Controllers enforce permissions via decorators or middleware
+- API layer: Controllers enforce permissions via requirePermission middleware and decorators
 - Frontend: Hooks and components render features conditionally based on resolved permissions
 
 ```mermaid
 graph TB
 Client["Client App"]
-API["API Layer<br/>Controllers & Middleware"]
+API["API Layer<br/>Controllers & requirePermission Middleware"]
 Resolver["PermissionResolver Service"]
 Cache["Permission Cache"]
 DB["Database<br/>Permissions, Roles, Assignments"]
@@ -296,6 +305,50 @@ AllowAll --> ReturnTrue
 - [070-fix-super-admin-all-permission.sql](file://backend/database/migrations/070-fix-super-admin-all-permission.sql)
 - [043-permissions-critiques-manquantes.sql](file://backend/database/migrations/043-permissions-critiques-manquantes.sql)
 
+### Enhanced Middleware Implementation with requirePermission
+**Updated**: The permission system now uses requirePermission middleware for enhanced access controls and sidebar filtering, replacing the previous role-based approach.
+
+Middleware responsibilities:
+- Validate user permissions before route execution
+- Support both single and multiple permission requirements
+- Handle permission-based sidebar filtering
+- Provide consistent error responses for unauthorized access
+- Integrate seamlessly with existing authentication flow
+
+Implementation patterns:
+- Decorator-based middleware for controller methods
+- Route-level middleware for global protection
+- Conditional middleware for dynamic permission requirements
+- Integration with frontend sidebar filtering
+
+```mermaid
+sequenceDiagram
+Client as Client Request
+MW as requirePermission Middleware
+PR as PermissionResolver
+DB as Database
+Controller as Target Controller
+Client->>MW : HTTP Request + Required Permissions
+MW->>PR : Check Permission(user, permission)
+PR->>DB : Query user permissions
+DB-->>PR : Return effective permissions
+PR-->>MW : Permission granted/denied
+alt Permission Granted
+MW->>Controller : Execute handler
+Controller-->>Client : Response
+else Permission Denied
+MW-->>Client : 403 Forbidden
+end
+```
+
+**Diagram sources**
+- [rapports/RAPPORT-FINAL-RBAC-v3.md](file://docs/rapports/RAPPORT-FINAL-RBAC-v3.md)
+- [EXEMPLE-INTEGRATION-PERMISSIONS.md](file://docs/EXEMPLE-INTEGRATION-PERMISSIONS.md)
+
+**Section sources**
+- [rapports/RAPPORT-FINAL-RBAC-v3.md](file://docs/rapports/RAPPORT-FINAL-RBAC-v3.md)
+- [EXEMPLE-INTEGRATION-PERMISSIONS.md](file://docs/EXEMPLE-INTEGRATION-PERMISSIONS.md)
+
 ### PermissionResolver Service Implementation
 Responsibilities:
 - Compute effective permissions efficiently
@@ -353,13 +406,31 @@ References:
 - [PERMISSIONS-BASE-DONNEES.md](file://docs/PERMISSIONS-BASE-DONNEES.md)
 - [analyse-enums-complet.ts](file://backend/analyse-enums-complet.ts)
 
-#### Implementing Permission Guards in Controllers
-- Use decorators or middleware to enforce required permissions at route level
-- Fail fast with appropriate HTTP status codes
-- Log denied attempts for auditing
+#### Implementing Permission Guards with requirePermission Middleware
+**Updated**: Controllers now use requirePermission middleware instead of role-based decorators for enhanced permission checking.
 
-Example reference:
-- Guard implementation patterns
+Implementation patterns:
+- Single permission requirement: `@RequirePermission('users.create')`
+- Multiple permissions: `@RequirePermission(['users.create', 'users.update'])`
+- Dynamic permissions: `@RequirePermission((user) => user.canCreateDocument())`
+- Global middleware setup for default permission policies
+
+Example usage:
+```typescript
+// Controller method with permission requirement
+@Post()
+@RequirePermission('documents.create')
+async createDocument(@Body() createDto: CreateDocumentDto) {
+    return this.documentsService.create(createDto);
+}
+
+// Multiple permissions required
+@Put(':id')
+@RequirePermission(['documents.update', 'documents.approve'])
+async updateDocument(@Param('id') id: string, @Body() updateDto: UpdateDocumentDto) {
+    return this.documentsService.update(id, updateDto);
+}
+```
 
 **Section sources**
 - [EXEMPLE-INTEGRATION-PERMISSIONS.md](file://docs/EXEMPLE-INTEGRATION-PERMISSIONS.md)
@@ -376,13 +447,19 @@ Example reference:
 **Section sources**
 - [guide-implémentation-permissions.ts](file://docs/guide-implémentation-permissions.ts)
 
-#### Conditional UI Rendering Based on Permissions
-- Use frontend hooks to fetch and cache user permissions
-- Render or hide features based on resolved permissions
-- Provide graceful fallbacks when permission data is unavailable
+#### Enhanced Sidebar Filtering Based on Permissions
+**Updated**: Sidebar navigation now uses requirePermission middleware for dynamic filtering based on user permissions.
 
-Frontend summary:
-- Integration patterns and hooks usage
+Implementation approach:
+- Backend returns available menu items based on user permissions
+- Frontend renders sidebar dynamically based on returned permissions
+- Real-time permission updates trigger sidebar refresh
+- Caching strategies optimize performance for frequent permission checks
+
+Frontend integration:
+- Use permission hooks to fetch available permissions
+- Filter navigation items based on required permissions
+- Provide fallback navigation for unauthorized sections
 
 **Section sources**
 - [RESUME-IMPLÉMENTATION-PERMISSIONS-FRONTEND.md](file://docs/resumes/RESUME-IMPLÉMENTATION-PERMISSIONS-FRONTEND.md)
@@ -414,6 +491,7 @@ Auditing:
 - Scope permissions to groups and tenants rigorously
 - Cache aggressively but invalidate promptly on changes
 - Audit all authorization-sensitive operations
+- **Updated**: Use requirePermission middleware consistently across all endpoints for uniform access control
 
 **Section sources**
 - [CONVENTIONS-PERMISSIONS.md](file://docs/CONVENTIONS-PERMISSIONS.md)
@@ -455,8 +533,7 @@ Scripts --> Runtime
 - Index foreign keys and scoping columns for faster joins
 - Short-circuit evaluation for privileged accounts
 - Monitor cache hit rates and adjust TTLs accordingly
-
-[No sources needed since this section provides general guidance]
+- **Updated**: Optimize requirePermission middleware for minimal overhead in request processing
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -464,6 +541,7 @@ Common issues and resolutions:
 - Super-admin behavior anomalies: Verify special-case handling and ensure consistent application
 - Group scoping mismatches: Confirm establishment context and group membership alignment
 - Multi-tenant isolation failures: Validate tenant boundary enforcement in queries and caches
+- **Updated**: requirePermission middleware errors: Check permission syntax and middleware configuration
 
 Operational references:
 - Fixes for super-admin permissions
@@ -478,9 +556,7 @@ Operational references:
 - [migrations/MIGRATION-RBAC-v3-MULTI-TENANT-STRICT.md](file://docs/migrations/MIGRATION-RBAC-v3-MULTI-TENANT-STRICT.md)
 
 ## Conclusion
-eLISAschool’s permission system provides a robust, scalable foundation for fine-grained access control. By adhering to clear conventions, leveraging role inheritance and group scoping, and implementing efficient resolution with caching and auditing, teams can maintain secure and performant applications. Following the provided patterns and best practices ensures consistent, maintainable authorization across modules and tenants.
-
-[No sources needed since this section summarizes without analyzing specific files]
+eLISAschool's permission system provides a robust, scalable foundation for fine-grained access control. By adhering to clear conventions, leveraging role inheritance and group scoping, and implementing efficient resolution with caching and auditing, teams can maintain secure and performant applications. The enhanced requirePermission middleware ensures consistent authorization enforcement across all endpoints and improves sidebar filtering capabilities. Following the provided patterns and best practices ensures consistent, maintainable authorization across modules and tenants.
 
 ## Appendices
 

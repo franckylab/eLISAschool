@@ -2,7 +2,7 @@
  * ==================================
  * eLISAschool - Entité Unité Organisationnelle
  * ==================================
- * Version: 3.0.0
+ * Version: 4.0.0
  * Auteur: franck arlos chendjou
  *
  * Représente une unité structurelle au sein d'un établissement :
@@ -10,10 +10,9 @@
  * Supporte une hiérarchie en arbre (parent/enfant).
  * Rattachée directement à l'établissement (après fusion Organisation → Etablissement).
  *
- * Refonte v3.0 :
- * - usageUniteId : FK vers UsageUnite (remplace usageUniteCode)
- * - metadata supprimé
- * - typeUniteId supprimé (redondant avec UsageUnite)
+ * Refonte v4.0 :
+ * - usageUniteId supprimé (fusionné dans EchelonStructurel)
+ * - niveauOrganisationId → echelonStructurelId
  */
 
 import {
@@ -29,8 +28,7 @@ import {
 } from 'typeorm';
 import { Etablissement } from '@modules/etablissement/entities';
 import { Poste } from './poste.entity';
-import { NiveauOrganisation } from './niveau-organisation.entity';
-import { UsageUnite } from './usage-unite.entity';
+import { EchelonStructurel } from './echelon-structurel.entity';
 
 /**
  * Statut d'une unité organisationnelle (enum fermé — non modifiable)
@@ -60,21 +58,13 @@ export class UniteOrganisationnelle {
     @Column({ type: 'text', nullable: true })
     description?: string;
 
-    // FK vers UsageUnite (remplace l'ancien usageUniteCode)
+    // FK vers EchelonStructurel (fusion de NiveauOrganisation + UsageUnite)
     @Column({ type: 'uuid', nullable: true })
-    usageUniteId?: string;
+    echelonStructurelId?: string;
 
-    @ManyToOne(() => UsageUnite, { nullable: true, onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'usageUniteId' })
-    usageUnite?: UsageUnite;
-
-    // FK vers NiveauOrganisation
-    @Column({ type: 'uuid', nullable: true })
-    niveauOrganisationId?: string;
-
-    @ManyToOne(() => NiveauOrganisation, { nullable: true, onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'niveauOrganisationId' })
-    niveauOrganisation?: NiveauOrganisation;
+    @ManyToOne(() => EchelonStructurel, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'echelonStructurelId' })
+    echelonStructurel?: EchelonStructurel;
 
     @Column({ type: 'varchar', length: 50 })
     code!: string;

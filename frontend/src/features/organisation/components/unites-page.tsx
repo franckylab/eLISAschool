@@ -94,7 +94,7 @@ export function UnitesPage() {
                 </div>
             ),
         },
-        { key: 'type', header: t('type'), render: (u) => <span className="text-sm text-secondary">{u.usageUnite?.label || '—'}</span> },
+        { key: 'type', header: t('type'), render: (u) => <span className="text-sm text-secondary">{u.echelonStructurel?.label || '—'}</span> },
         { key: 'parent', header: t('parent'), render: (u) => <span className="text-sm text-secondary">{u.parent?.nom || '—'}</span> },
         {
             key: 'responsable', header: t('responsable'),

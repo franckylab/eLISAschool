@@ -1,1 +1,0 @@
-TypeScript package exposing shared enums, constants, Zod validators, API/user types, and a centralized module registry consumed by both the eLISAschool backend and frontend.

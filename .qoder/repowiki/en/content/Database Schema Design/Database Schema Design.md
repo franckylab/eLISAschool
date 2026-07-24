@@ -27,6 +27,8 @@
 - [108-refactor-salle-principale.sql](file://backend/database/migrations/108-refactor-salle-principale.sql)
 - [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
 - [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
+- [114-drop-categorie-personnel.sql](file://backend/database/migrations/114-drop-categorie-personnel.sql)
+- [115-poste-fonction-id-not-null.sql](file://backend/database/migrations/115-poste-fonction-id-not-null.sql)
 - [run-migration.ts](file://backend/scripts/run-migration.ts)
 - [run-pending-migrations.ts](file://backend/scripts/run-pending-migrations.ts)
 - [migrate-rbac-v3.sql](file://backend/database/migrations/migrate-rbac-v3.sql)
@@ -42,11 +44,11 @@
 
 ## Update Summary
 **Changes Made**
-- Updated to reflect database schema improvements through migrations 111 and 112 focusing on nomenclature refactoring and type/function refactoring
-- Enhanced data integrity and relationships with more normalized database design patterns
-- Added entity simplifications in the organisation module for improved maintainability
-- Updated architectural diagrams to reflect the latest normalization improvements
-- Revised validation approaches to support enhanced referential integrity constraints
+- Updated to reflect latest database schema improvements through migrations 114 and 115 focusing on personnel category cleanup and poste fonction constraint enforcement
+- Enhanced TemplatePoste entity with optional fonctionId field for improved flexibility in position management
+- Updated seeding system with TYPE_ prefixed codes for better clarity and consistency across all reference data
+- Strengthened referential integrity constraints in personnel management module
+- Improved data validation patterns through enhanced constraint definitions
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -65,7 +67,7 @@ This document provides comprehensive data model documentation for eLISAschool's 
 
 The goal is to make the schema accessible to both technical and non-technical readers while providing precise references to source files and migrations.
 
-**Updated** The schema has evolved significantly with recent migrations introducing enhanced normalization patterns, improved nomenclature consistency, and simplified organizational entities. The latest improvements focus on data integrity, relationship optimization, and maintainable database design patterns.
+**Updated** The schema has evolved significantly with recent migrations introducing enhanced normalization patterns, improved nomenclature consistency, simplified organizational entities, and strengthened personnel management constraints. The latest improvements focus on data integrity, relationship optimization, maintainable database design patterns, and enhanced reference data management with TYPE_ prefixed coding standards.
 
 ## Project Structure
 The database schema is defined primarily through SQL migrations under backend/database/migrations and managed via TypeORM configuration and scripts. The application uses a single PostgreSQL instance with multi-tenant scoping enforced at the application layer and reinforced by schema design (e.g., etablisement_id columns). Migrations are executed using Node.js scripts that integrate with TypeORM.
@@ -79,11 +81,13 @@ C["DB Index<br/>database/index.ts"]
 D["Migration Runner<br/>scripts/run-migration.ts"]
 E["Pending Migrations<br/>scripts/run-pending-migrations.ts"]
 end
-subgraph "Recent Schema Improvements"
-R1["Nomenclature Refactoring<br/>111-refactoring-nomenclatures.sql"]
-R2["Type & Function Refactoring<br/>112-refactoring-type-fonction.sql"]
-R3["Enhanced Normalization<br/>Improved Data Integrity"]
-R4["Organisation Module Simplification<br/>Entity Streamlining"]
+subgraph "Latest Schema Improvements"
+R1["Personnel Category Cleanup<br/>114-drop-categorie-personnel.sql"]
+R2["Poste Fonction Constraint<br/>115-poste-fonction-id-not-null.sql"]
+R3["TemplatePoste Enhancement<br/>Optional fonctionId Field"]
+R4["TYPE_ Prefixed Codes<br/>Enhanced Reference Data"]
+R5["Nomenclature Refactoring<br/>111-refactoring-nomenclatures.sql"]
+R6["Type & Function Refactoring<br/>112-refactoring-type-fonction.sql"]
 end
 subgraph "Core Migrations"
 M1["Multi-Tenant v3<br/>050-multi-tenant-v3-max-etablissements.sql"]
@@ -125,6 +129,8 @@ D --> R1
 D --> R2
 D --> R3
 D --> R4
+D --> R5
+D --> R6
 ```
 
 **Diagram sources**
@@ -133,6 +139,8 @@ D --> R4
 - [index.ts](file://backend/src/database/index.ts)
 - [run-migration.ts](file://backend/scripts/run-migration.ts)
 - [run-pending-migrations.ts](file://backend/scripts/run-pending-migrations.ts)
+- [114-drop-categorie-personnel.sql](file://backend/database/migrations/114-drop-categorie-personnel.sql)
+- [115-poste-fonction-id-not-null.sql](file://backend/database/migrations/115-poste-fonction-id-not-null.sql)
 - [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
 - [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
 - [050-multi-tenant-v3-max-etablissements.sql](file://backend/database/migrations/050-multi-tenant-v3-max-etablissements.sql)
@@ -163,18 +171,20 @@ D --> R4
 - Academic architecture: Major refactors define cycles, levels, classes, subjects, evaluations, schedules, and related structures with strict referential integrity.
 - Periods and school years: Hierarchical periods, customizable templates, and closure normalization ensure consistent academic calendars.
 - Monitoring and configuration: Additional monitoring parameters and cleanup of module activation flags improve operational visibility and consistency.
-- **Enhanced Personnel Management**: New personnel types and hierarchical relationships provide flexible organizational structures.
+- **Enhanced Personnel Management**: New personnel types and hierarchical relationships provide flexible organizational structures with strengthened constraints.
 - **Database-Driven Validation**: Replaced enum-based validation with truth tables for better maintainability and extensibility.
-- **Latest Schema Improvements**: Recent migrations have introduced enhanced normalization patterns, improved nomenclature consistency, and simplified organisational entities for better data integrity and maintainability.
+- **Latest Schema Improvements**: Recent migrations have introduced enhanced normalization patterns, improved nomenclature consistency, simplified organisational entities, and strengthened personnel management constraints for better data integrity and maintainability.
+- **Reference Data Standardization**: TYPE_ prefixed codes provide clear categorization and improved consistency across all reference data systems.
 
 Key responsibilities:
 - Enforce tenant boundaries across modules (finance, personnel, academic, scheduling).
 - Maintain referential integrity between academic entities (cycles, levels, classes, subjects, evaluations).
 - Provide flexible period templates and hierarchical period structures.
 - Support main room assignment per class and refactor associated fields.
-- **Manage complex personnel hierarchies and organizational units**.
+- **Manage complex personnel hierarchies and organizational units with enhanced constraints**.
 - **Enable dynamic validation through database-driven truth tables**.
 - **Implement enhanced normalization patterns for improved data integrity**.
+- **Standardize reference data with TYPE_ prefixed coding conventions**.
 
 **Section sources**
 - [050-multi-tenant-v3-max-etablissements.sql](file://backend/database/migrations/050-multi-tenant-v3-max-etablissements.sql)
@@ -193,11 +203,13 @@ Key responsibilities:
 - [107-cleanup-configuration-modules-actif.sql](file://backend/database/migrations/107-cleanup-configuration-modules-actif.sql)
 - [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
 - [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
+- [114-drop-categorie-personnel.sql](file://backend/database/migrations/114-drop-categorie-personnel.sql)
+- [115-poste-fonction-id-not-null.sql](file://backend/database/migrations/115-poste-fonction-id-not-null.sql)
 
 ## Architecture Overview
 The database architecture centers around a single PostgreSQL instance with multi-tenant scoping. Each tenant corresponds to an establishment (etablissement), and most domain tables include etablisement_id to enforce data isolation. Academic entities are organized hierarchically (cycles → levels → classes), with subjects and evaluations linked to these structures. Periods define academic timeframes and can be templated and configured per level. Scheduling includes rooms and main room assignments per class.
 
-**Updated** The architecture now includes enhanced personnel management with hierarchical relationships and organizational unit classifications, supported by database-driven validation tables. Recent improvements have further strengthened data integrity through enhanced normalization patterns and simplified organisational entities.
+**Updated** The architecture now includes enhanced personnel management with hierarchical relationships, organizational unit classifications, and strengthened constraints. Recent improvements have further strengthened data integrity through enhanced normalization patterns, simplified organisational entities, and standardized reference data with TYPE_ prefixed codes.
 
 ```mermaid
 erDiagram
@@ -305,6 +317,14 @@ string label
 string type
 boolean active
 }
+TEMPLATE_POSTE {
+uuid id PK
+uuid etablisement_id FK
+uuid fonction_id FK
+string code
+string label
+boolean active
+}
 TRUTH_TABLE {
 uuid id PK
 uuid etablisement_id FK
@@ -314,10 +334,10 @@ string value
 string description
 boolean active
 }
-ENHANCED_ENTITY {
+REFERENCE_DATA {
 uuid id PK
 uuid etablisement_id FK
-string reference_code
+string type_code
 string display_name
 boolean active
 timestamp created_at
@@ -335,8 +355,9 @@ ETABLISSEMENT ||--o{ ANNEE_SCOLAIRE : "owns"
 ETABLISSEMENT ||--o{ SALLE : "owns"
 ETABLISSEMENT ||--o{ PERSONNEL_TYPE : "defines"
 ETABLISSEMENT ||--o{ ORGANIZATIONAL_UNIT : "contains"
+ETABLISSEMENT ||--o{ TEMPLATE_POSTE : "manages"
 ETABLISSEMENT ||--o{ TRUTH_TABLE : "validates"
-ETABLISSEMENT ||--o{ ENHANCED_ENTITY : "manages"
+ETABLISSEMENT ||--o{ REFERENCE_DATA : "standardizes"
 CYCLE ||--o{ NIVEAU : "contains"
 NIVEAU ||--o{ CLASSE : "has"
 CLASSE ||--o{ EVALUATION : "hosts"
@@ -344,6 +365,7 @@ MATIERE ||--o{ EVALUATION : "subject of"
 PERIODE ||--o{ PERIODE : "parent-child"
 CLASSE ||--|| SALLE : "main room"
 ORGANIZATIONAL_UNIT ||--o{ ORGANIZATIONAL_UNIT : "hierarchical"
+TEMPLATE_POSTE ||--o| TEMPLATE_POSTE : "optional fonction link"
 ```
 
 **Diagram sources**
@@ -361,6 +383,8 @@ ORGANIZATIONAL_UNIT ||--o{ ORGANIZATIONAL_UNIT : "hierarchical"
 - [106-rename-sequence-to-evaluation.sql](file://backend/database/migrations/106-rename-sequence-to-evaluation.sql)
 - [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
 - [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
+- [114-drop-categorie-personnel.sql](file://backend/database/migrations/114-drop-categorie-personnel.sql)
+- [115-poste-fonction-id-not-null.sql](file://backend/database/migrations/115-poste-fonction-id-not-null.sql)
 
 ## Detailed Component Analysis
 
@@ -428,31 +452,40 @@ Integrity:
 - [108-refactor-salle-principale.sql](file://backend/database/migrations/108-refactor-salle-principale.sql)
 
 ### Enhanced Personnel Management and Organizational Structure
-**New** The schema now includes comprehensive personnel management capabilities with hierarchical relationships and organizational unit classifications.
+**Updated** The schema now includes comprehensive personnel management capabilities with hierarchical relationships, organizational unit classifications, and strengthened constraints for improved data integrity.
 
 - **Personnel Types**: Centralized definition of different personnel categories (teachers, administrators, support staff) with descriptive metadata and activity controls.
 - **Hierarchical Relationships**: Support for complex reporting structures and organizational charts through parent-child relationships.
 - **Organizational Units**: Flexible departmental and team structures with hierarchical nesting capabilities.
 - **Database-Driven Truth Tables**: Replaced static enum validations with dynamic truth tables for better maintainability and extensibility.
+- **Strengthened Constraints**: Recent migrations have removed deprecated personnel categories and enforced NOT NULL constraints on critical fields like poste.fonction_id.
+- **TemplatePoste Enhancement**: Optional fonctionId field provides flexibility in position management while maintaining referential integrity.
 
 Key benefits:
 - Dynamic validation rules without code changes
 - Flexible organizational structures that adapt to institutional needs
 - Improved auditability and traceability of personnel assignments
 - Enhanced scalability for growing institutions
+- **Stronger data integrity through enforced constraints**
+- **Improved flexibility with optional functional relationships**
 
 **Section sources**
 - [050-multi-tenant-v3-max-etablissements.sql](file://backend/database/migrations/050-multi-tenant-v3-max-etablissements.sql)
 - [088-refactorisation-architecture-academique.sql](file://backend/database/migrations/088-refactorisation-architecture-academique.sql)
 - [089-finalisation-architecture-academique-v2.sql](file://backend/database/migrations/089-finalisation-architecture-academique-v2.sql)
+- [114-drop-categorie-personnel.sql](file://backend/database/migrations/114-drop-categorie-personnel.sql)
+- [115-poste-fonction-id-not-null.sql](file://backend/database/migrations/115-poste-fonction-id-not-null.sql)
 
 ### Latest Schema Improvements and Normalization Enhancements
-**New** Recent migrations have introduced significant improvements to data integrity, normalization patterns, and entity simplification.
+**Updated** Recent migrations have introduced significant improvements to data integrity, normalization patterns, entity simplification, and reference data standardization.
 
 - **Nomenclature Refactoring**: Standardized naming conventions across the database schema for improved consistency and maintainability.
 - **Type and Function Refactoring**: Enhanced data types and improved function implementations for better performance and reliability.
 - **Enhanced Normalization Patterns**: Applied advanced normalization techniques to reduce data redundancy and improve data integrity.
 - **Organisation Module Simplification**: Streamlined organisational entities to reduce complexity while maintaining functionality.
+- **Personnel Category Cleanup**: Removed deprecated personnel categories to simplify the schema and improve data consistency.
+- **Constraint Enforcement**: Strengthened referential integrity through NOT NULL constraints on critical personnel fields.
+- **Reference Data Standardization**: Implemented TYPE_ prefixed codes for better clarity and consistency across all reference data systems.
 
 Key improvements:
 - Consistent naming conventions across all database objects
@@ -460,6 +493,31 @@ Key improvements:
 - Enhanced referential integrity through stricter foreign key relationships
 - Simplified entity structures that are easier to maintain and extend
 - Better performance through optimized query patterns and reduced joins
+- **Cleaner personnel schema with removed deprecated categories**
+- **Stronger data validation through enforced constraints**
+- **Improved reference data management with TYPE_ prefixed coding**
+
+**Section sources**
+- [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
+- [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
+- [114-drop-categorie-personnel.sql](file://backend/database/migrations/114-drop-categorie-personnel.sql)
+- [115-poste-fonction-id-not-null.sql](file://backend/database/migrations/115-poste-fonction-id-not-null.sql)
+
+### Reference Data Management with TYPE_ Prefixed Codes
+**New** The seeding system has been enhanced with TYPE_ prefixed codes to provide better clarity and consistency across all reference data management.
+
+- **Standardized Coding Convention**: All reference data types now use TYPE_ prefix (e.g., TYPE_TEACHER, TYPE_ADMINISTRATOR, TYPE_SUPPORT_STAFF)
+- **Improved Readability**: Clear distinction between different types of reference data
+- **Better Organization**: Easier identification and management of reference data categories
+- **Enhanced Maintainability**: Consistent naming patterns reduce confusion and errors
+- **Scalable Architecture**: Easy addition of new reference data types following established patterns
+
+Benefits:
+- Clear visual distinction between different data categories
+- Reduced risk of naming conflicts
+- Improved code readability and maintainability
+- Better integration with frontend display logic
+- Enhanced search and filtering capabilities
 
 **Section sources**
 - [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
@@ -494,9 +552,11 @@ The database schema dependencies follow a clear hierarchy:
 - Evaluations depend on classes and subjects.
 - Periods form a tree structure with parent-child links.
 - Rooms are referenced by classes for main room assignment.
-- **Personnel types and organizational units provide foundational reference data for HR operations**.
+- **Personnel types and organizational units provide foundational reference data for HR operations with strengthened constraints**.
 - **Truth tables serve as validation foundations for multiple domains**.
 - **Enhanced entities benefit from improved normalization patterns and simplified relationships**.
+- **TemplatePoste entities have optional functional relationships for flexible position management**.
+- **Reference data follows TYPE_ prefixed coding standards for consistency**.
 
 ```mermaid
 graph TB
@@ -510,8 +570,9 @@ ETAB --> ANN["ANNEE_SCOLAIRE"]
 ETAB --> SAL["SALLE"]
 ETAB --> PTYPE["PERSONNEL_TYPE"]
 ETAB --> OUNIT["ORGANIZATIONAL_UNIT"]
+ETAB --> TPOSTE["TEMPLATE_POSTE"]
 ETAB --> TRUTH["TRUTH_TABLE"]
-ETAB --> ENH["ENHANCED_ENTITY"]
+ETAB --> REFDATA["REFERENCE_DATA"]
 CYC --> NIV
 NIV --> CLA
 CLA --> EVA
@@ -520,8 +581,8 @@ PER --> PER
 CLA --> SAL
 OUNIT --> OUNIT
 PTYPE --> PTYPE
-TRUTH --> TRUTH
-ENH --> ETAB
+TPOSTE --> TPOSTE
+REFDATA --> REFDATA
 ```
 
 **Diagram sources**
@@ -531,6 +592,8 @@ ENH --> ETAB
 - [102-periodes-hierarchie.sql](file://backend/database/migrations/102-periodes-hierarchie.sql)
 - [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
 - [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
+- [114-drop-categorie-personnel.sql](file://backend/database/migrations/114-drop-categorie-personnel.sql)
+- [115-poste-fonction-id-not-null.sql](file://backend/database/migrations/115-poste-fonction-id-not-null.sql)
 
 **Section sources**
 - [088-refactorisation-architecture-academique.sql](file://backend/database/migrations/088-refactorisation-architecture-academique.sql)
@@ -539,6 +602,8 @@ ENH --> ETAB
 - [102-periodes-hierarchie.sql](file://backend/database/migrations/102-periodes-hierarchie.sql)
 - [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
 - [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
+- [114-drop-categorie-personnel.sql](file://backend/database/migrations/114-drop-categorie-personnel.sql)
+- [115-poste-fonction-id-not-null.sql](file://backend/database/migrations/115-poste-fonction-id-not-null.sql)
 
 ## Performance Considerations
 - Indexes: Ensure foreign keys and frequently filtered columns (e.g., etablisement_id, codes, dates) are indexed. Review migration scripts for index creation and consider composite indexes for common query patterns.
@@ -547,6 +612,8 @@ ENH --> ETAB
 - **Truth table optimization**: Implement appropriate indexing on truth tables to support efficient validation queries.
 - **Hierarchical queries**: Use recursive CTEs for deep organizational hierarchy traversals and consider materialized views for frequently accessed hierarchy snapshots.
 - **Enhanced performance patterns**: Recent normalization improvements have reduced join complexity and improved query performance through better data organization.
+- **Reference data optimization**: TYPE_ prefixed codes enable more efficient filtering and grouping operations on reference data.
+- **Personnel constraint optimization**: NOT NULL constraints on critical fields reduce query complexity and improve performance.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -557,6 +624,8 @@ Common issues and resolutions:
 - **Hierarchical relationship issues**: Verify parent-child relationships don't create circular dependencies when modifying organizational structures.
 - **Nomenclature conflicts**: Check for naming convention violations after applying nomenclature refactoring migrations.
 - **Type compatibility issues**: Verify data type compatibility when upgrading to newer schema versions.
+- **Personnel constraint violations**: Ensure poste.fonction_id values are properly set before applying NOT NULL constraints.
+- **Reference data inconsistencies**: Verify TYPE_ prefixed codes are consistently applied across all reference data entries.
 
 Operational steps:
 - Inspect migration logs and verify dependency order.
@@ -564,6 +633,8 @@ Operational steps:
 - Use backups before major migrations.
 - **Test truth table configurations in development before production deployment**.
 - **Verify naming conventions after applying nomenclature refactoring**.
+- **Validate personnel data integrity before applying constraint migrations**.
+- **Audit reference data for TYPE_ prefixed code consistency**.
 
 **Section sources**
 - [084-cleanup-classe-id-notes.sql](file://backend/database/migrations/084-cleanup-classe-id-notes.sql)
@@ -572,11 +643,13 @@ Operational steps:
 - [run-pending-migrations.ts](file://backend/scripts/run-pending-migrations.ts)
 - [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
 - [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
+- [114-drop-categorie-personnel.sql](file://backend/database/migrations/114-drop-categorie-personnel.sql)
+- [115-poste-fonction-id-not-null.sql](file://backend/database/migrations/115-poste-fonction-id-not-null.sql)
 
 ## Conclusion
 The eLISAschool database schema emphasizes multi-tenant isolation, robust academic architecture, and flexible period management. Strong referential integrity and careful migration practices ensure data consistency and scalability. Monitoring and configuration cleanup further enhance operational reliability.
 
-**Updated** The recent evolution introduces enhanced personnel management capabilities, hierarchical organizational structures, and database-driven validation systems that replace static enum-based approaches. The latest improvements through migrations 111 and 112 have significantly enhanced data integrity, normalization patterns, and entity simplification, providing greater flexibility, maintainability, and scalability for complex institutional requirements.
+**Updated** The recent evolution introduces enhanced personnel management capabilities, hierarchical organizational structures, database-driven validation systems, and strengthened constraints that replace static enum-based approaches. The latest improvements through migrations 114 and 115 have significantly enhanced data integrity by removing deprecated personnel categories and enforcing critical constraints. The TYPE_ prefixed coding standard for reference data provides better clarity and consistency. Combined with the previous improvements through migrations 111 and 112, these changes provide greater flexibility, maintainability, and scalability for complex institutional requirements while ensuring stronger data integrity and cleaner schema design.
 
 ## Appendices
 
@@ -587,6 +660,8 @@ The eLISAschool database schema emphasizes multi-tenant isolation, robust academ
 - **Personnel history**: Maintain historical records of personnel assignments and organizational changes for audit purposes.
 - **Truth table versions**: Version truth table configurations to track validation rule changes over time.
 - **Enhanced entity lifecycle**: Apply consistent lifecycle management to newly simplified organisational entities.
+- **Reference data lifecycle**: Manage TYPE_ prefixed reference data with proper archiving and deprecation policies.
+- **Personnel category cleanup**: Regularly audit and clean up unused personnel categories to maintain schema efficiency.
 
 ### Backup Procedures
 Automated and manual backup processes are provided via Docker scripts. Cron jobs can schedule regular backups. Restore procedures are available for disaster recovery.
@@ -621,7 +696,8 @@ VerifyBackup --> End(["Backup Complete"])
 - Seed data updates ensure baseline configurations and permissions.
 - **Database-driven validation migrations**: Include truth table population and validation rule setup in migration sequences.
 - **Hierarchical data migrations**: Handle organizational structure initialization and relationship establishment carefully.
-- **Enhanced migration patterns**: Recent migrations demonstrate improved patterns for nomenclature standardization and type/function refactoring.
+- **Enhanced migration patterns**: Recent migrations demonstrate improved patterns for nomenclature standardization, type/function refactoring, personnel category cleanup, and constraint enforcement.
+- **Reference data migrations**: Apply TYPE_ prefixed code standardization systematically across all reference data entities.
 
 **Section sources**
 - [run-migration.ts](file://backend/scripts/run-migration.ts)
@@ -631,6 +707,8 @@ VerifyBackup --> End(["Backup Complete"])
 - [MIGRATION-076-SUCCESS.md](file://backend/database/migrations/MIGRATION-076-SUCCESS.md)
 - [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
 - [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
+- [114-drop-categorie-personnel.sql](file://backend/database/migrations/114-drop-categorie-personnel.sql)
+- [115-poste-fonction-id-not-null.sql](file://backend/database/migrations/115-poste-fonction-id-not-null.sql)
 
 ### Seed Data Management and Demo Data Generation
 - Seed updates provide baseline permissions and groups.
@@ -639,9 +717,13 @@ VerifyBackup --> End(["Backup Complete"])
 - **Personnel type seeds**: Initialize common personnel categories and organizational unit templates.
 - **Truth table seeds**: Populate essential validation rules and reference data for system functionality.
 - **Enhanced entity seeds**: Generate sample data for newly simplified organisational entities following improved naming conventions.
+- **Reference data seeds**: Create TYPE_ prefixed reference data entries following the new coding standard.
+- **Personnel constraint seeds**: Ensure all personnel data meets NOT NULL constraints for critical fields like fonction_id.
 
 **Section sources**
 - [PERMISSIONS-GROUPES-SEED-UPDATE.md](file://backend/database/migrations/PERMISSIONS-GROUPES-SEED-UPDATE.md)
 - [README-075-GROUPES.md](file://backend/database/migrations/README-075-GROUPES.md)
 - [111-refactoring-nomenclatures.sql](file://backend/database/migrations/111-refactoring-nomenclatures.sql)
 - [112-refactoring-type-fonction.sql](file://backend/database/migrations/112-refactoring-type-fonction.sql)
+- [114-drop-categorie-personnel.sql](file://backend/database/migrations/114-drop-categorie-personnel.sql)
+- [115-poste-fonction-id-not-null.sql](file://backend/database/migrations/115-poste-fonction-id-not-null.sql)

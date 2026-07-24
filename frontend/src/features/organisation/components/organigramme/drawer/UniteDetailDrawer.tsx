@@ -72,9 +72,9 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                         <div>
                             <div className="flex items-center gap-2">
                                 <h2 className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>{unite.nom}</h2>
-                                {unite.usageUniteLabel && (
+                                {unite.echelonStructurelLabel && (
                                     <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'var(--color-dominant-50)', color: 'var(--color-dominant-600)' }}>
-                                        {unite.usageUniteLabel}
+                                        {unite.echelonStructurelLabel}
                                     </span>
                                 )}
                             </div>
@@ -106,16 +106,9 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                     <div className="py-4 space-y-2">
                         <div className="flex items-center gap-2 text-sm">
                             <Layers className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
-                            <span style={{ color: 'var(--color-text-muted)' }}>{t('organigramme.drawer.usage', 'Usage')} :</span>
-                            <span style={{ color: 'var(--color-text)' }}>{unite.usageUniteLabel || unite.type || '—'}</span>
+                            <span style={{ color: 'var(--color-text-muted)' }}>{t('organigramme.drawer.echelon', 'Échelon')} :</span>
+                            <span style={{ color: 'var(--color-text)' }}>{unite.echelonStructurelLabel || unite.type || '—'}</span>
                         </div>
-                        {unite.niveauOrganisationLabel && (
-                            <div className="flex items-center gap-2 text-sm">
-                                <GitBranch className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
-                                <span style={{ color: 'var(--color-text-muted)' }}>{t('organigramme.drawer.niveau', 'Niveau')} :</span>
-                                <span style={{ color: 'var(--color-text)' }}>{unite.niveauOrganisationLabel}</span>
-                            </div>
-                        )}
                         {unite.localisation && (
                             <div className="flex items-center gap-2 text-sm">
                                 <MapPin className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />

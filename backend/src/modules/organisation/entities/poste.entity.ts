@@ -2,12 +2,15 @@
  * ==================================
  * eLISAschool - Entité Poste
  * ==================================
- * Version: 2.0.0
+ * Version: 4.0.0
  * Auteur: franck arlos chendjou
  *
  * Représente un poste au sein d'une unité organisationnelle.
  * La relation avec le personnel se fait via AffectationPoste (module personnel).
- * Les jointures vers nomenclatures utilisent des FK UUID directes.
+ * La catégorie du poste est dérivée via poste.fonction.typePersonnel.
+ *
+ * Refonte v4.0 :
+ * - categoriePosteId supprimé (dérivé via fonction.typePersonnel)
  */
 
 import {
@@ -24,7 +27,6 @@ import {
 import { UniteOrganisationnelle } from './unite-organisationnelle.entity';
 import { Fonction } from './fonction.entity';
 import { NiveauResponsabilite } from './niveau-responsabilite.entity';
-import { CategoriePoste } from './categorie-poste.entity';
 
 export enum StatutPoste {
     ACTIF = 'ACTIF',
@@ -36,7 +38,6 @@ export enum StatutPoste {
 @Entity('postes')
 @Index(['uniteOrganisationnelleId'])
 @Index(['code'])
-@Index(['categoriePosteId'])
 @Index(['statut'])
 @Index(['fonctionId'])
 @Index(['occupantsCount'])
@@ -53,16 +54,7 @@ export class Poste {
     @Column({ type: 'varchar', length: 50 })
     code!: string;
 
-    // FK directe vers CategoriePoste (remplace l'ancien categoriePosteCode)
-    @Column({ type: 'uuid', nullable: true })
-    categoriePosteId?: string;
-
-    @ManyToOne(() => CategoriePoste, { nullable: true, onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'categoriePosteId' })
-    categoriePoste?: CategoriePoste;
-
-    // FK directe vers Fonction (requis côté applicatif via DTO — le type attendu du poste est dérivé via fonction.typePersonnel)
-    // nullable en base temporairement (synchronize dev) le temps que les NULL existants soient backfillés
+    // FK vers Fonction — le type attendu du poste est dérivé via fonction.typePersonnel
     @Column({ type: 'uuid', nullable: true })
     fonctionId?: string;
 
@@ -70,7 +62,7 @@ export class Poste {
     @JoinColumn({ name: 'fonctionId' })
     fonction?: Fonction;
 
-    // FK directe vers NiveauResponsabilite (remplace l'ancien niveauResponsabiliteCode)
+    // FK directe vers NiveauResponsabilite (axe orthogonal : poids hiérarchique)
     @Column({ type: 'uuid', nullable: true })
     niveauResponsabiliteId?: string;
 

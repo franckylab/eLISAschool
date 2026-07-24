@@ -14,14 +14,14 @@ const OLD_TO_NEW_CODE: Record<string, string> = {
 };
 
 const TYPES_PAR_DEFAUT: Array<Partial<TypePersonnel>> = [
-    { code: 'TYPE_ENSEIGNANT', nom: 'Enseignant', modeRemunerationDefaut: 'MIXTE', actif: true, estSysteme: true },
-    { code: 'TYPE_DIRECTION', nom: 'Direction', modeRemunerationDefaut: 'MENSUEL', actif: true, estSysteme: true },
-    { code: 'TYPE_ADMINISTRATIF', nom: 'Administratif', modeRemunerationDefaut: 'MENSUEL', actif: true, estSysteme: true },
-    { code: 'TYPE_TECHNIQUE', nom: 'Technique', modeRemunerationDefaut: 'HORAIRE', actif: true, estSysteme: true },
-    { code: 'TYPE_SERVICE', nom: 'Service', modeRemunerationDefaut: 'HORAIRE', actif: true, estSysteme: true },
-    { code: 'TYPE_SANTE', nom: 'Santé', modeRemunerationDefaut: 'MENSUEL', actif: true, estSysteme: true },
-    { code: 'TYPE_SOCIAL', nom: 'Social', modeRemunerationDefaut: 'MENSUEL', actif: true, estSysteme: true },
-    { code: 'TYPE_AUTRE', nom: 'Autre', modeRemunerationDefaut: 'MENSUEL', actif: true, estSysteme: false },
+    { code: 'TYPE_ENSEIGNANT', nom: 'Enseignant', actif: true, estSysteme: true },
+    { code: 'TYPE_DIRECTION', nom: 'Direction', actif: true, estSysteme: true },
+    { code: 'TYPE_ADMINISTRATIF', nom: 'Administratif', actif: true, estSysteme: true },
+    { code: 'TYPE_TECHNIQUE', nom: 'Technique', actif: true, estSysteme: true },
+    { code: 'TYPE_SERVICE', nom: 'Service', actif: true, estSysteme: true },
+    { code: 'TYPE_SANTE', nom: 'Santé', actif: true, estSysteme: true },
+    { code: 'TYPE_SOCIAL', nom: 'Social', actif: true, estSysteme: true },
+    { code: 'TYPE_AUTRE', nom: 'Autre', actif: true, estSysteme: false },
 ];
 
 export async function seedTypePersonnel(): Promise<Map<string, string>> {
@@ -52,7 +52,6 @@ export async function seedTypePersonnel(): Promise<Map<string, string>> {
         if (codesExistants.has(tp.code!)) {
             await repo.update({ code: tp.code! }, {
                 nom: tp.nom,
-                modeRemunerationDefaut: tp.modeRemunerationDefaut,
                 actif: tp.actif,
                 estSysteme: tp.estSysteme,
             });

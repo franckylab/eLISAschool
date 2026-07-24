@@ -83,7 +83,7 @@ export function TabHierarchie() {
             header: t('colTypeRelation'),
             render: (h) => (
                 <Badge variant="default" size="sm">
-                    {h.typeRelation?.label || h.typeRelationId || '-'}
+                    {h.typeRelation || '-'}
                 </Badge>
             ),
         },

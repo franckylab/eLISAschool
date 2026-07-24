@@ -1,76 +1,32 @@
 import { z } from 'zod';
 
-// ==================== Niveau Organisation ====================
+// ==================== Echelon Structurel ====================
+// (fusion de NiveauOrganisation + UsageUnite — refonte v4.0)
 
-export const createNiveauOrganisationSchema = z.object({
+export const createEchelonStructurelSchema = z.object({
     niveau: z.number().int().min(0).max(10),
-    label: z.string().min(2).max(50),
+    code: z.string().min(2).max(50),
+    label: z.string().min(2).max(100),
+    couleur: z.string().max(20).optional(),
     description: z.string().optional(),
     etablissementId: z.string().uuid().optional(),
     estSysteme: z.boolean().default(false),
 });
 
-export const updateNiveauOrganisationSchema = createNiveauOrganisationSchema.partial().omit({
+export const updateEchelonStructurelSchema = createEchelonStructurelSchema.partial().omit({
+    code: true,
     estSysteme: true,
 });
 
-export const queryNiveauxOrganisationSchema = z.object({
+export const queryEchelonsStructurelsSchema = z.object({
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().max(100).optional(),
     search: z.string().optional(),
     niveau: z.coerce.number().int().optional(),
 });
 
-export type CreateNiveauOrganisationDto = z.infer<typeof createNiveauOrganisationSchema>;
-export type UpdateNiveauOrganisationDto = z.infer<typeof updateNiveauOrganisationSchema>;
-
-// ==================== Usage Unité ====================
-
-export const createUsageUniteSchema = z.object({
-    code: z.string().min(2).max(50),
-    label: z.string().min(2).max(100),
-    description: z.string().optional(),
-    etablissementId: z.string().uuid().optional(),
-    estSysteme: z.boolean().default(false),
-});
-
-export const updateUsageUniteSchema = createUsageUniteSchema.partial().omit({
-    code: true,
-    estSysteme: true,
-});
-
-export const queryUsagesUniteSchema = z.object({
-    page: z.coerce.number().int().positive().optional(),
-    limit: z.coerce.number().int().positive().max(100).optional(),
-    search: z.string().optional(),
-});
-
-export type CreateUsageUniteDto = z.infer<typeof createUsageUniteSchema>;
-export type UpdateUsageUniteDto = z.infer<typeof updateUsageUniteSchema>;
-
-// ==================== Catégorie Poste ====================
-
-export const createCategoriePosteSchema = z.object({
-    code: z.string().min(2).max(50),
-    label: z.string().min(2).max(100),
-    description: z.string().optional(),
-    etablissementId: z.string().uuid().optional(),
-    estSysteme: z.boolean().default(false),
-});
-
-export const updateCategoriePosteSchema = createCategoriePosteSchema.partial().omit({
-    code: true,
-    estSysteme: true,
-});
-
-export const queryCategoriesPosteSchema = z.object({
-    page: z.coerce.number().int().positive().optional(),
-    limit: z.coerce.number().int().positive().max(100).optional(),
-    search: z.string().optional(),
-});
-
-export type CreateCategoriePosteDto = z.infer<typeof createCategoriePosteSchema>;
-export type UpdateCategoriePosteDto = z.infer<typeof updateCategoriePosteSchema>;
+export type CreateEchelonStructurelDto = z.infer<typeof createEchelonStructurelSchema>;
+export type UpdateEchelonStructurelDto = z.infer<typeof updateEchelonStructurelSchema>;
 
 // ==================== Niveau Responsabilité ====================
 
@@ -123,30 +79,6 @@ export const queryTemplatesOrganisationSchema = z.object({
 export type CreateTemplateOrganisationDto = z.infer<typeof createTemplateOrganisationSchema>;
 export type UpdateTemplateOrganisationDto = z.infer<typeof updateTemplateOrganisationSchema>;
 
-// ==================== Type Relation Hiérarchique ====================
-
-export const createTypeRelationHierarchiqueSchema = z.object({
-    code: z.string().min(2).max(50),
-    label: z.string().min(2).max(100),
-    description: z.string().optional(),
-    etablissementId: z.string().uuid().optional(),
-    estSysteme: z.boolean().default(false),
-});
-
-export const updateTypeRelationHierarchiqueSchema = createTypeRelationHierarchiqueSchema.partial().omit({
-    code: true,
-    estSysteme: true,
-});
-
-export const queryTypesRelationHierarchiqueSchema = z.object({
-    page: z.coerce.number().int().positive().optional(),
-    limit: z.coerce.number().int().positive().max(100).optional(),
-    search: z.string().optional(),
-});
-
-export type CreateTypeRelationHierarchiqueDto = z.infer<typeof createTypeRelationHierarchiqueSchema>;
-export type UpdateTypeRelationHierarchiqueDto = z.infer<typeof updateTypeRelationHierarchiqueSchema>;
-
 // ==================== Mode Rémunération ====================
 
 export const createModeRemunerationSchema = z.object({
@@ -170,5 +102,3 @@ export const queryModesRemunerationSchema = z.object({
 
 export type CreateModeRemunerationDto = z.infer<typeof createModeRemunerationSchema>;
 export type UpdateModeRemunerationDto = z.infer<typeof updateModeRemunerationSchema>;
-
-

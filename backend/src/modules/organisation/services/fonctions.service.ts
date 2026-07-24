@@ -46,7 +46,15 @@ export class FonctionsService {
         }
 
         const fonction = this.repo.create({
-            ...dto,
+            nom: dto.nom,
+            code: dto.code,
+            description: dto.description,
+            parentId: dto.parentId ?? undefined,
+            ordre: dto.ordre,
+            typePersonnelId: dto.typePersonnelId ?? undefined,
+            primesDefaut: dto.primesDefaut ?? undefined,
+            majorationDefaut: dto.majorationDefaut ?? undefined,
+            actif: dto.actif,
             niveau,
             etablissementId,
         });

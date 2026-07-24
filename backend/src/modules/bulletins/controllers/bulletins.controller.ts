@@ -6,15 +6,41 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { BulletinsService } from '../services';
-import { generateBulletinSchema, updateBulletinSchema } from '../dto';
+import { generateBulletinSchema, updateBulletinSchema, queryBulletinsSchema } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
-import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 
 const router = Router();
 const service = new BulletinsService();
 
-router.post('/generate', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', authMiddleware, requirePermission('bulletins:read'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const query = validateDto(queryBulletinsSchema, req.query);
+        const result = await service.findAll(query, req.etablissementId);
+        res.json({
+            success: true,
+            data: result.items,
+            pagination: {
+                page: query.page,
+                limit: query.limit,
+                total: result.total,
+                totalPages: Math.ceil(result.total / query.limit),
+            },
+        });
+    } catch (error) { next(error); }
+});
+
+router.get('/status', authMiddleware, requirePermission('bulletins:read'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const status = await service.getGenerationStatus({
+            etablissementId: req.etablissementId,
+            periodeId: req.query.periodeId as string | undefined,
+        });
+        res.json({ success: true, data: status });
+    } catch (error) { next(error); }
+});
+
+router.post('/generate', authMiddleware, requirePermission('bulletins:generate'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(generateBulletinSchema, req.body);
         const bulletins = await service.generate(dto, req.etablissementId);
@@ -22,14 +48,14 @@ router.post('/generate', authMiddleware, requirePermission('config:edit'), async
     } catch (error) { next(error); }
 });
 
-router.get('/eleve/:eleveId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/eleve/:eleveId', authMiddleware, requirePermission('bulletins:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const bulletins = await service.findByEleve(req.params.eleveId);
         res.json({ success: true, data: bulletins });
     } catch (error) { next(error); }
 });
 
-router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', authMiddleware, requirePermission('bulletins:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateBulletinSchema, req.body);
         const bulletin = await service.update(req.params.id, dto);

@@ -1,9 +1,6 @@
 import { AppDataSource } from '@database/data-source';
-import { CategoriePoste } from '@modules/organisation/entities/categorie-poste.entity';
-import { NiveauOrganisation } from '@modules/organisation/entities/niveau-organisation.entity';
+import { EchelonStructurel } from '@modules/organisation/entities/echelon-structurel.entity';
 import { NiveauResponsabilite } from '@modules/organisation/entities/niveau-responsabilite.entity';
-import { UsageUnite } from '@modules/organisation/entities/usage-unite.entity';
-import { TypeRelationHierarchique } from '@modules/organisation/entities/type-relation-hierarchique.entity';
 import { ModeRemunerationEntity } from '@modules/organisation/entities/mode-remuneration.entity';
 import { logger } from '@common/utils/logger.util';
 
@@ -28,43 +25,34 @@ async function upsertAll<T extends { id: string }>(
 }
 
 export async function seedNomenclatures(): Promise<{
-    categoriesPoste: Map<string, string>;
-    niveauxOrganisation: Map<string, string>;
+    echelonsStructurels: Map<string, string>;
     niveauxResponsabilite: Map<string, string>;
-    usagesUnite: Map<string, string>;
-    typesRelation: Map<string, string>;
     modesRemuneration: Map<string, string>;
 }> {
     logger.info('📋 Seed des nomenclatures organisation (globales)...');
 
-    // 1. Catégories de poste
-    // Note: les codes sont distincts de TypePersonnel pour éviter la confusion sémantique.
-    // Seul DIRECTION est intentionnellement partagé (un directeur occupant un poste de direction).
-    const catRepo = AppDataSource.getRepository(CategoriePoste);
-    const categoriesPoste = await upsertAll(catRepo, [
-        { code: 'DIRECTION', label: 'Direction', description: 'Postes de direction et d\'encadrement supérieur', estSysteme: true },
-        { code: 'ENSEIGNEMENT', label: 'Enseignement', description: 'Postes d\'enseignement et de formation', estSysteme: true },
-        { code: 'ENCADREMENT', label: 'Encadrement éducatif', description: 'Postes de surveillance, animation et éducation', estSysteme: true },
-        { code: 'ADMINISTRATIF', label: 'Administratif', description: 'Postes administratifs et de gestion', estSysteme: true },
-        { code: 'TECHNIQUE', label: 'Technique', description: 'Postes techniques et maintenance', estSysteme: true },
-        { code: 'DOCUMENTATION', label: 'Documentation', description: 'Postes de documentation et bibliothèque', estSysteme: true },
-        { code: 'ORIENTATION', label: 'Orientation', description: 'Postes d\'orientation et conseil', estSysteme: true },
-        { code: 'SANTE', label: 'Santé', description: 'Postes médicaux et paramédicaux', estSysteme: true },
-        { code: 'SOCIAL', label: 'Social', description: 'Postes d\'assistance sociale et d\'accompagnement', estSysteme: true },
+    // 1. Échelons structurels (fusion niveaux organisation + usages unité)
+    const echRepo = AppDataSource.getRepository(EchelonStructurel);
+    const echelonsStructurels = await upsertAll(echRepo, [
+        // Anciens niveaux d'organisation
+        { code: 'ETABLISSEMENT', niveau: 0, label: 'Établissement', description: 'Niveau établissement (racine)', estSysteme: true },
+        { code: 'DIRECTION', niveau: 1, label: 'Direction', description: 'Direction et services rattachés', estSysteme: true },
+        { code: 'DEPARTEMENT', niveau: 2, label: 'Département / Service', description: 'Départements pédagogiques et services administratifs', estSysteme: true },
+        { code: 'SOUS_SERVICE', niveau: 3, label: 'Sous-service / Équipe', description: 'Sous-services, équipes et cellules', estSysteme: true },
+        // Anciens usages d'unité
+        { code: 'DIRECTION_GENERAL', niveau: 1, label: 'Direction générale', description: 'Unité de direction générale', estSysteme: true },
+        { code: 'DEPARTEMENT_PEDA', niveau: 2, label: 'Département pédagogique', description: 'Département pédagogique', estSysteme: true },
+        { code: 'SERVICE', niveau: 2, label: 'Service', description: 'Service spécialisé', estSysteme: true },
+        { code: 'COMMISSION', niveau: 3, label: 'Commission', description: 'Commission ou comité', estSysteme: true },
+        { code: 'EQUIPE', niveau: 3, label: 'Équipe', description: 'Équipe ou cellule de travail', estSysteme: true },
+        { code: 'ATELIER', niveau: 3, label: 'Atelier', description: 'Atelier technique ou artistique', estSysteme: true },
+        { code: 'BUREAU', niveau: 3, label: 'Bureau', description: 'Bureau ou unité administrative', estSysteme: true },
+        { code: 'LABORATOIRE', niveau: 3, label: 'Laboratoire', description: 'Laboratoire scientifique', estSysteme: true },
+        { code: 'BIBLIOTHEQUE', niveau: 3, label: 'Bibliothèque', description: 'Bibliothèque ou centre de documentation', estSysteme: true },
     ], 'code');
-    logger.info(`   Catégories poste: ${categoriesPoste.size}`);
+    logger.info(`   Échelons structurels: ${echelonsStructurels.size}`);
 
-    // 2. Niveaux d'organisation
-    const nivRepo = AppDataSource.getRepository(NiveauOrganisation);
-    const niveauxOrganisation = await upsertAll(nivRepo, [
-        { niveau: 0, label: 'Établissement', description: 'Niveau établissement (racine)', estSysteme: true },
-        { niveau: 1, label: 'Direction', description: 'Direction et services rattachés', estSysteme: true },
-        { niveau: 2, label: 'Département / Service', description: 'Départements pédagogiques et services administratifs', estSysteme: true },
-        { niveau: 3, label: 'Sous-service / Équipe', description: 'Sous-services, équipes et cellules', estSysteme: true },
-    ], 'niveau');
-    logger.info(`   Niveaux organisation: ${niveauxOrganisation.size}`);
-
-    // 3. Niveaux de responsabilité
+    // 2. Niveaux de responsabilité
     const respRepo = AppDataSource.getRepository(NiveauResponsabilite);
     const niveauxResponsabilite = await upsertAll(respRepo, [
         { code: 'DIRECTION_GENERALE', niveau: 0, label: 'Direction Générale', description: 'Responsable principal de l\'établissement', estSysteme: true },
@@ -77,31 +65,7 @@ export async function seedNomenclatures(): Promise<{
     ], 'code');
     logger.info(`   Niveaux responsabilité: ${niveauxResponsabilite.size}`);
 
-    // 4. Usages d'unité
-    const usageRepo = AppDataSource.getRepository(UsageUnite);
-    const usagesUnite = await upsertAll(usageRepo, [
-        { code: 'DIRECTION', label: 'Direction', description: 'Unité de direction générale', estSysteme: true },
-        { code: 'DEPARTEMENT', label: 'Département', description: 'Département pédagogique ou administratif', estSysteme: true },
-        { code: 'SERVICE', label: 'Service', description: 'Service spécialisé', estSysteme: true },
-        { code: 'COMMISSION', label: 'Commission', description: 'Commission ou comité', estSysteme: true },
-        { code: 'EQUIPE', label: 'Équipe', description: 'Équipe ou cellule de travail', estSysteme: true },
-        { code: 'ATELIER', label: 'Atelier', description: 'Atelier technique ou artistique', estSysteme: true },
-        { code: 'BUREAU', label: 'Bureau', description: 'Bureau ou unité administrative', estSysteme: true },
-        { code: 'LABORATOIRE', label: 'Laboratoire', description: 'Laboratoire scientifique', estSysteme: true },
-        { code: 'BIBLIOTHEQUE', label: 'Bibliothèque', description: 'Bibliothèque ou centre de documentation', estSysteme: true },
-    ], 'code');
-    logger.info(`   Usages unité: ${usagesUnite.size}`);
-
-    // 5. Types de relation hiérarchique
-    const typeRelRepo = AppDataSource.getRepository(TypeRelationHierarchique);
-    const typesRelation = await upsertAll(typeRelRepo, [
-        { code: 'SUPERVISE_DIRECT', label: 'Supervise directement', description: 'Relation de supervision directe (N+1)', estSysteme: true },
-        { code: 'SUPERVISE_INDIRECT', label: 'Supervise indirectement', description: 'Relation de supervision indirecte (N+2+)', estSysteme: true },
-        { code: 'RAPPORTE_A', label: 'Rapporte à', description: 'Relation fonctionnelle (reporting)', estSysteme: true },
-    ], 'code');
-    logger.info(`   Types relation: ${typesRelation.size}`);
-
-    // 6. Modes de rémunération
+    // 3. Modes de rémunération
     const modeRemRepo = AppDataSource.getRepository(ModeRemunerationEntity);
     const modesRemuneration = await upsertAll(modeRemRepo, [
         { code: 'MENSUEL', label: 'Mensuel', description: 'Salaire fixe mensuel', estSysteme: true },
@@ -112,5 +76,5 @@ export async function seedNomenclatures(): Promise<{
     logger.info(`   Modes rémunération: ${modesRemuneration.size}`);
 
     logger.info('✅ Nomenclatures globales seedées');
-    return { categoriesPoste, niveauxOrganisation, niveauxResponsabilite, usagesUnite, typesRelation, modesRemuneration };
+    return { echelonsStructurels, niveauxResponsabilite, modesRemuneration };
 }

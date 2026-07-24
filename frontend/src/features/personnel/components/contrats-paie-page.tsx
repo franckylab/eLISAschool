@@ -16,6 +16,7 @@ import type { Tab } from '@/components/ui/Tabs';
 import { ContratWizardModal } from './contrat-wizard-modal';
 import { useContrats, useSupprimerContrat, useBulletins, useCreerBulletin, useGenererBulletin, useModifierBulletin, useSupprimerBulletin, useElementsBulletin, useCotisations, useCreerCotisation, useModifierCotisation, useSupprimerCotisation, useTypesPrimes, useCreerTypePrime, useModifierTypePrime, useSupprimerTypePrime, useTypesRetenues, useCreerTypeRetenue, useModifierTypeRetenue, useSupprimerTypeRetenue, useTypesContrat, useCreerTypeContrat, useModifierTypeContrat, useSupprimerTypeContrat, useToggleTypeContrat, useSimulerPaie, useRegenererBulletin, useGenererBulletinsMasse, useRapportPaie } from '../hooks/use-paie';
 import { usePersonnel } from '../hooks/use-personnel';
+import { useModesRemuneration } from '@/features/organisation/hooks/use-modes-remuneration';
 import type { ContratPersonnel, BulletinPaie, Cotisation, TypePrime, TypeRetenue, TypeContratPersonnalise, MembrePersonnel, ElementSalaire, SimulationResult } from '../types/personnel.types';
 
 type OngletId = 'contrats' | 'bulletins' | 'cotisations' | 'primes' | 'retenues' | 'types-contrat';
@@ -117,7 +118,7 @@ function ContratsTab() {
                                         )}
                                     </td>
                                     <td className="py-3 px-4">
-                                        <Badge variant="default">{modeDisplay[c.modeRemuneration as string] || c.modeRemuneration || '—'}</Badge>
+                                        <Badge variant="default">{modeDisplay[c.modeRemuneration?.code || ''] || c.modeRemuneration?.code || '—'}</Badge>
                                     </td>
                                     <td className="py-3 px-4 text-gray-600 dark:text-gray-300">
                                         <div className="flex items-center gap-1">
@@ -132,16 +133,16 @@ function ContratsTab() {
                                     </td>
                                     <td className="py-3 px-4">
                                         <div className="text-right font-medium">{c.salaireBase?.toLocaleString('fr-FR')} F</div>
-                                        {c.modeRemuneration === 'HORAIRE' && c.tarifHoraire && (
+                                        {c.modeRemuneration?.code === 'HORAIRE' && c.tarifHoraire && (
                                             <div className="text-right text-xs text-gray-400 dark:text-gray-500">{c.tarifHoraire?.toLocaleString('fr-FR')} F/h</div>
                                         )}
-                                        {c.modeRemuneration === 'MIXTE' && (
+                                        {c.modeRemuneration?.code === 'MIXTE' && (
                                             <div className="text-right text-xs text-gray-400 dark:text-gray-500">
                                                 Base {c.salaireBase?.toLocaleString('fr-FR')} F
                                                 {c.tarifHoraire ? ` + ${c.tarifHoraire.toLocaleString('fr-FR')} F/h` : ''}
                                             </div>
                                         )}
-                                        {c.modeRemuneration === 'HEBDOMADAIRE' && c.tarifHebdomadaire && (
+                                        {c.modeRemuneration?.code === 'HEBDOMADAIRE' && c.tarifHebdomadaire && (
                                             <div className="text-right text-xs text-gray-400 dark:text-gray-500">{c.tarifHebdomadaire.toLocaleString('fr-FR')} F/sem</div>
                                         )}
                                     </td>
@@ -183,17 +184,18 @@ function TypesContratTab() {
     const modifier = useModifierTypeContrat();
     const supprimer = useSupprimerTypeContrat();
     const toggle = useToggleTypeContrat();
+    const { data: modesRemuneration } = useModesRemuneration();
     const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState<TypeContratPersonnalise | null>(null);
     const [form, setForm] = useState({
         code: '', nom: '', description: '', categorie: 'EMPLOI_PERMANENT',
-        modeRemuneration: 'MENSUEL', ordre: 0, renouvellementAutoDefaut: false,
+        modeRemunerationId: '', ordre: 0, renouvellementAutoDefaut: false,
         dureeMaxMois: 0,
     });
 
     const openCreate = () => {
         setEditing(null);
-        setForm({ code: '', nom: '', description: '', categorie: 'EMPLOI_PERMANENT', modeRemuneration: 'MENSUEL', ordre: 0, renouvellementAutoDefaut: false, dureeMaxMois: 0 });
+        setForm({ code: '', nom: '', description: '', categorie: 'EMPLOI_PERMANENT', modeRemunerationId: '', ordre: 0, renouvellementAutoDefaut: false, dureeMaxMois: 0 });
         setShowModal(true);
     };
 
@@ -201,7 +203,7 @@ function TypesContratTab() {
         setEditing(tc);
         setForm({
             code: tc.code, nom: tc.nom, description: tc.description || '',
-            categorie: tc.categorie, modeRemuneration: tc.modeRemuneration,
+            categorie: tc.categorie, modeRemunerationId: tc.modeRemunerationId || '',
             ordre: tc.ordre, renouvellementAutoDefaut: tc.renouvellementAutoDefaut,
             dureeMaxMois: tc.dureeMaxMois || 0,
         });
@@ -258,7 +260,7 @@ function TypesContratTab() {
                                     <td className="py-3 px-4 font-mono font-medium">{tc.code}</td>
                                     <td className="py-3 px-4">{tc.nom}</td>
                                     <td className="py-3 px-4 text-gray-600 dark:text-gray-300">{tc.categorie}</td>
-                                    <td className="py-3 px-4 text-center"><Badge variant="default">{modeLabel[tc.modeRemuneration] || tc.modeRemuneration}</Badge></td>
+                                    <td className="py-3 px-4 text-center"><Badge variant="default">{modeLabel[tc.modeRemuneration?.code || ''] || tc.modeRemuneration?.code || '—'}</Badge></td>
                                     <td className="py-3 px-4 text-center">{tc.actif ? <Badge variant="success">{t('contrat.typesContrat.oui')}</Badge> : <Badge variant="secondary">{t('contrat.typesContrat.non')}</Badge>}</td>
                                     <td className="py-3 px-4 text-center">{tc.estSysteme ? <Badge variant="warning">{t('contrat.typesContrat.systeme')}</Badge> : '—'}</td>
                                     <td className="py-3 px-4 text-right text-gray-600 dark:text-gray-300">{tc.ordre}</td>
@@ -317,11 +319,9 @@ function TypesContratTab() {
                             { value: 'AUTRE', label: t('contrat.typesContrat.catAutre') },
                         ]} value={form.categorie} onValueChange={(v) => setForm({ ...form, categorie: v })} />
                         <ElisaSelect label={t('contrat.typesContrat.modeRemunerationDefaut')} options={[
-                            { value: 'MENSUEL', label: t('contrat.modeMensuel') },
-                            { value: 'HORAIRE', label: t('contrat.modeHoraire') },
-                            { value: 'MIXTE', label: t('contrat.modeMixte') },
-                            { value: 'HEBDOMADAIRE', label: t('contrat.modeHebdomadaire') },
-                        ]} value={form.modeRemuneration} onValueChange={(v) => setForm({ ...form, modeRemuneration: v })} />
+                            { value: '', label: '—' },
+                            ...(modesRemuneration || []).map((m: any) => ({ value: m.id, label: m.label })),
+                        ]} value={form.modeRemunerationId} onValueChange={(v) => setForm({ ...form, modeRemunerationId: v })} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <ElisaInput label={t('contrat.typesContrat.ordreAffichage')} type="number" value={String(form.ordre)} onChange={(e) => setForm({ ...form, ordre: Number(e.target.value) })} />

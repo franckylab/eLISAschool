@@ -652,7 +652,7 @@ export function PersonnelDetailPage() {
                                                             <span className="text-gray-400 dark:text-gray-500 italic">—</span>
                                                         )}
                                                     </td>
-                                                    <td className="py-3 px-4"><Badge variant={c.statut === 'ACTIF' ? 'success' : 'default'}>{MODE_LABEL[c.modeRemuneration as string] || c.modeRemuneration || '—'}</Badge></td>
+                                                    <td className="py-3 px-4"><Badge variant={c.statut === 'ACTIF' ? 'success' : 'default'}>{MODE_LABEL[c.modeRemuneration?.code || ''] || c.modeRemuneration?.code || '—'}</Badge></td>
                                                     <td className="py-3 px-4 text-gray-600 dark:text-gray-300">
                                                         <span className="text-xs">{new Date(c.dateDebut).toLocaleDateString('fr-FR')}</span>
                                                         {c.dateFin && <><span className="text-gray-300 mx-1">→</span><span className="text-xs">{new Date(c.dateFin).toLocaleDateString('fr-FR')}</span></>}

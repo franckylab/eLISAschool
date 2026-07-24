@@ -1,32 +1,21 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import {
-    niveauOrganisationService,
-    usageUniteService,
-    categoriePosteService,
+    echelonStructurelService,
     niveauResponsabiliteService,
     templateOrganisationService,
-    typeRelationHierarchiqueService,
     modeRemunerationService,
     generationService,
 } from '../services';
 import {
-    createNiveauOrganisationSchema,
-    updateNiveauOrganisationSchema,
-    queryNiveauxOrganisationSchema,
-    createUsageUniteSchema,
-    updateUsageUniteSchema,
-    queryUsagesUniteSchema,
-    createCategoriePosteSchema,
-    updateCategoriePosteSchema,
-    queryCategoriesPosteSchema,
+    createEchelonStructurelSchema,
+    updateEchelonStructurelSchema,
+    queryEchelonsStructurelsSchema,
     createNiveauResponsabiliteSchema,
     updateNiveauResponsabiliteSchema,
     queryNiveauxResponsabiliteSchema,
     createTemplateOrganisationSchema,
     updateTemplateOrganisationSchema,
     queryTemplatesOrganisationSchema,
-    createTypeRelationHierarchiqueSchema,
-    updateTypeRelationHierarchiqueSchema,
     createModeRemunerationSchema,
     updateModeRemunerationSchema,
     genererOrganisationSchema,
@@ -45,10 +34,11 @@ function validate(schema: any, data: unknown): any {
 }
 
 // ==================================
-// NIVEAUX D'ORGANISATION
+// ÉCHELONS STRUCTURELS
+// (fusion de Niveaux d'Organisation + Usages d'Unité — refonte v4.0)
 // ==================================
 
-router.get('/niveaux-organisation', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/echelons-structurels', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
@@ -56,154 +46,46 @@ router.get('/niveaux-organisation', authMiddleware, requirePermission('organisat
         const niveau = req.query.niveau ? parseInt(req.query.niveau as string) : undefined;
 
         if (req.query.page || req.query.limit) {
-            const { data, total } = await niveauOrganisationService.findAllPaginated(
+            const { data, total } = await echelonStructurelService.findAllPaginated(
                 page, limit, req.utilisateur?.etablissementId, search, niveau
             );
             res.json({ success: true, data, pagination: { page, limit, total, totalPages: Math.ceil(total / limit), hasNext: page * limit < total, hasPrev: page > 1 } });
         } else {
-            const data = await niveauOrganisationService.findAll(req.utilisateur?.etablissementId);
+            const data = await echelonStructurelService.findAll(req.utilisateur?.etablissementId);
             res.json({ success: true, data });
         }
     } catch (error) { next(error); }
 });
 
-router.post('/niveaux-organisation', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/echelons-structurels', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createNiveauOrganisationSchema, req.body);
+        const dto = validate(createEchelonStructurelSchema, req.body);
         dto.etablissementId = req.utilisateur?.etablissementId;
-        const created = await niveauOrganisationService.create(dto);
+        const created = await echelonStructurelService.create(dto);
         res.status(201).json({ success: true, data: created });
     } catch (error) { next(error); }
 });
 
-router.get('/niveaux-organisation/:id', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/echelons-structurels/:id', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const data = await niveauOrganisationService.findById(req.params.id);
+        const data = await echelonStructurelService.findById(req.params.id);
         res.json({ success: true, data });
     } catch (error) { next(error); }
 });
 
-router.patch('/niveaux-organisation/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/echelons-structurels/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(updateNiveauOrganisationSchema, req.body);
+        const dto = validate(updateEchelonStructurelSchema, req.body);
         delete dto.etablissementId;
-        const updated = await niveauOrganisationService.update(req.params.id, dto);
+        const updated = await echelonStructurelService.update(req.params.id, dto);
         res.json({ success: true, data: updated });
     } catch (error) { next(error); }
 });
 
-router.delete('/niveaux-organisation/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/echelons-structurels/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await niveauOrganisationService.delete(req.params.id);
-        res.json({ success: true, message: 'Niveau d\'organisation supprimé' });
-    } catch (error) { next(error); }
-});
-
-// ==================================
-// USAGES D'UNITÉ
-// ==================================
-
-router.get('/usages-unite', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-        const search = req.query.search as string | undefined;
-
-        if (req.query.page || req.query.limit) {
-            const { data, total } = await usageUniteService.findAllPaginated(
-                page, limit, req.utilisateur?.etablissementId, search
-            );
-            res.json({ success: true, data, pagination: { page, limit, total, totalPages: Math.ceil(total / limit), hasNext: page * limit < total, hasPrev: page > 1 } });
-        } else {
-            const data = await usageUniteService.findAll(req.utilisateur?.etablissementId);
-            res.json({ success: true, data });
-        }
-    } catch (error) { next(error); }
-});
-
-router.post('/usages-unite', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const dto = validate(createUsageUniteSchema, req.body);
-        dto.etablissementId = req.utilisateur?.etablissementId;
-        const created = await usageUniteService.create(dto);
-        res.status(201).json({ success: true, data: created });
-    } catch (error) { next(error); }
-});
-
-router.get('/usages-unite/:id', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const data = await usageUniteService.findById(req.params.id);
-        res.json({ success: true, data });
-    } catch (error) { next(error); }
-});
-
-router.patch('/usages-unite/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const dto = validate(updateUsageUniteSchema, req.body);
-        delete dto.etablissementId;
-        const updated = await usageUniteService.update(req.params.id, dto);
-        res.json({ success: true, data: updated });
-    } catch (error) { next(error); }
-});
-
-router.delete('/usages-unite/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        await usageUniteService.delete(req.params.id);
-        res.json({ success: true, message: 'Usage d\'unité supprimé' });
-    } catch (error) { next(error); }
-});
-
-// ==================================
-// CATÉGORIES DE POSTE
-// ==================================
-
-router.get('/categories-poste', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-        const search = req.query.search as string | undefined;
-
-        if (req.query.page || req.query.limit) {
-            const { data, total } = await categoriePosteService.findAllPaginated(
-                page, limit, req.utilisateur?.etablissementId, search
-            );
-            res.json({ success: true, data, pagination: { page, limit, total, totalPages: Math.ceil(total / limit), hasNext: page * limit < total, hasPrev: page > 1 } });
-        } else {
-            const data = await categoriePosteService.findAll(req.utilisateur?.etablissementId);
-            res.json({ success: true, data });
-        }
-    } catch (error) { next(error); }
-});
-
-router.post('/categories-poste', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const dto = validate(createCategoriePosteSchema, req.body);
-        dto.etablissementId = req.utilisateur?.etablissementId;
-        const created = await categoriePosteService.create(dto);
-        res.status(201).json({ success: true, data: created });
-    } catch (error) { next(error); }
-});
-
-router.get('/categories-poste/:id', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const data = await categoriePosteService.findById(req.params.id);
-        res.json({ success: true, data });
-    } catch (error) { next(error); }
-});
-
-router.patch('/categories-poste/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const dto = validate(updateCategoriePosteSchema, req.body);
-        delete dto.etablissementId;
-        const updated = await categoriePosteService.update(req.params.id, dto);
-        res.json({ success: true, data: updated });
-    } catch (error) { next(error); }
-});
-
-router.delete('/categories-poste/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        await categoriePosteService.delete(req.params.id);
-        res.json({ success: true, message: 'Catégorie de poste supprimée' });
+        await echelonStructurelService.delete(req.params.id);
+        res.json({ success: true, message: 'Échelon structurel supprimé' });
     } catch (error) { next(error); }
 });
 
@@ -314,60 +196,6 @@ router.delete('/templates/:id', authMiddleware, requirePermission('organisation:
     try {
         await templateOrganisationService.delete(req.params.id);
         res.json({ success: true, message: 'Template d\'organisation supprimé' });
-    } catch (error) { next(error); }
-});
-
-// ==================================
-// TYPES DE RELATION HIÉRARCHIQUE
-// ==================================
-
-router.get('/types-relation', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-        const search = req.query.search as string | undefined;
-
-        if (req.query.page || req.query.limit) {
-            const { data, total } = await typeRelationHierarchiqueService.findAllPaginated(
-                page, limit, req.utilisateur?.etablissementId, search
-            );
-            res.json({ success: true, data, pagination: { page, limit, total, totalPages: Math.ceil(total / limit), hasNext: page * limit < total, hasPrev: page > 1 } });
-        } else {
-            const data = await typeRelationHierarchiqueService.findAll(req.utilisateur?.etablissementId);
-            res.json({ success: true, data });
-        }
-    } catch (error) { next(error); }
-});
-
-router.post('/types-relation', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const dto = validate(createTypeRelationHierarchiqueSchema, req.body);
-        dto.etablissementId = req.utilisateur?.etablissementId;
-        const created = await typeRelationHierarchiqueService.create(dto);
-        res.status(201).json({ success: true, data: created });
-    } catch (error) { next(error); }
-});
-
-router.get('/types-relation/:id', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const data = await typeRelationHierarchiqueService.findById(req.params.id);
-        res.json({ success: true, data });
-    } catch (error) { next(error); }
-});
-
-router.patch('/types-relation/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const dto = validate(updateTypeRelationHierarchiqueSchema, req.body);
-        delete dto.etablissementId;
-        const updated = await typeRelationHierarchiqueService.update(req.params.id, dto);
-        res.json({ success: true, data: updated });
-    } catch (error) { next(error); }
-});
-
-router.delete('/types-relation/:id', authMiddleware, requirePermission('organisation:nomenclatures:write'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        await typeRelationHierarchiqueService.delete(req.params.id);
-        res.json({ success: true, message: 'Type de relation supprimé' });
     } catch (error) { next(error); }
 });
 

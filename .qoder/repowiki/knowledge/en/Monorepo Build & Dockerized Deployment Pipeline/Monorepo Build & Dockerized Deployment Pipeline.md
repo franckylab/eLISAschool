@@ -7,94 +7,68 @@ scope:
 source_files:
     - package.json
     - backend/package.json
-    - frontend/package.json
-    - shared/package.json
     - backend/tsconfig.json
-    - frontend/vite.config.ts
     - docker/Dockerfile.backend
-    - docker/Dockerfile.frontend
+    - docker/Dockerfile.backend.dev
     - docker/docker-compose.yml
-    - docker/deploy.sh
+    - backend/jest.config.ts
+    - backend/nodemon.json
+    - scripts/README.md
 ---
 
-## System Overview
+## Build System Overview
 
-eLISAschool uses a **npm workspaces monorepo** with three packages (`backend`, `frontend`, `shared`) orchestrated through npm scripts, TypeScript compilation, and Docker Compose for local development and multi-stage Dockerfiles for production builds. There is no Makefile or CI pipeline in this branch — the build system is entirely npm/Docker-driven.
+eLISAschool uses a npm workspaces monorepo with three packages (backend, frontend, shared) orchestrated through Docker Compose for development and production deployments. The build system is centered around TypeScript compilation, TypeORM migrations, and containerized service orchestration.
 
-## Core Architecture
+### Core Build Architecture
 
-### Monorepo Structure (npm workspaces)
-- Root `package.json` declares workspaces: `backend`, `frontend`, `shared`
-- Shared package (`@elisaschool/shared`) exports types, enums, validators consumed by both frontend and backend via path aliases
-- Each workspace has its own `package.json`, `tsconfig.json`, and build scripts
-- Root-level scripts delegate to workspaces using `--workspace=` flags
+Monorepo Structure: Root package.json defines workspaces for backend (Express + TypeORM), frontend (React + Vite), and shared types/constants. All npm scripts are proxied through the root workspace commands like npm run build --workspaces.
 
-### Backend Build Chain
-- **Compiler**: TypeScript 5.7 → CommonJS output in `backend/dist/`
-- **Runtime**: Node.js 20 (Alpine), Express server
-- **Development**: `nodemon` + `ts-node --transpile-only` with hot reload
-- **Database migrations**: TypeORM CLI (`typeorm migration:run`, `migration:generate`, `migration:revert`) configured against `src/database/data-source.ts`
-- **Seeding**: Custom `ts-node` scripts under `src/database/seeds/` and `scripts/`
-- **Linting**: ESLint 9 with TypeScript parser
-- **Testing**: Jest 29 with ts-jest
+TypeScript Compilation: Backend compiles to CommonJS ES2022 output in backend/dist/ using strict mode with decorators enabled for TypeORM entities. Path aliases map @modules/*, @common/*, @config/*, @database/*, and @shared/* to their respective directories.
 
-### Frontend Build Chain
-- **Bundler**: Vite 6 with React plugin, Tailwind CSS v4, TanStack Router codegen
-- **PWA**: `vite-plugin-pwa` with Workbox caching strategies (NetworkFirst for API, CacheFirst for images)
-- **Output**: Static assets served by Nginx in production
-- **Development**: Vite dev server on port 7001 with HMR polling enabled for Docker volume mounts
-- **Build**: `tsc -b && vite build` — type-check then bundle
+Development Workflow: Hot-reload via nodemon watches both src/ and ../shared/src/ for changes, running TypeScript directly through ts-node during development. Production builds use separate Docker images that compile TypeScript once and run compiled JavaScript.
 
-### Docker Strategy
-Two distinct Dockerfile approaches:
+### Containerization Strategy
 
-**Production** (`docker/Dockerfile.backend`, `docker/Dockerfile.frontend`):
-- Multi-stage builds: `deps` → `builder` → `production`/`runner`
-- Backend: Alpine node:20, non-root user `expressjs`, only prod dependencies via `npm ci --omit=dev`
-- Frontend: Built with Node, served by `nginx:alpine` from `/usr/share/nginx/html`
-- Separate compose files per environment: `docker-compose.local.dev.yml`, `docker-compose.local.prod.yml`, `docker-compose.cloud.dev.yml`, `docker-compose.cloud.prod.yml`
+Multi-stage Docker Builds: Production images use a 4-stage pipeline: base image -> dependency installation -> TypeScript compilation -> minimal runtime image. Development images mount source code volumes for live reloading while keeping node_modules cached.
 
-**Development** (`docker/docker-compose.yml`):
-- Services: PostgreSQL 16 (port 7002), Redis 7 (port 7003), Backend (port 7000), Frontend (port 7001), pgAdmin (port 7004)
-- Volume mounts for live code sync (`../backend:/app/backend`, `../frontend:/app`)
-- Health checks on postgres and redis before starting dependent services
-- Environment variables sourced from `.env` files in `docker/` directory
+Service Orchestration: Docker Compose manages PostgreSQL (port 7002), Redis (port 7003), backend API (port 7000), frontend dev server (port 7001), and pgAdmin (port 7004) as interconnected services with health checks and persistent volumes.
 
 ### Database Migration System
-- SQL migrations in `backend/database/migrations/` (numbered 001–111+)
-- TypeORM-managed with `data-source.ts` configuration
-- Helper scripts in `backend/scripts/` for running migrations, seeds, and index fixes
-- Shell wrappers in root `scripts/` for common deployment tasks (`deploy-migration-*.sh`, `run-seeds.sh`, etc.)
 
-## Key Files
+TypeORM Migrations: Database schema evolution uses numbered SQL migration files in backend/database/migrations/ (currently at 110+). Commands include migration:generate, migration:run, and migration:revert through TypeORM CLI. Custom shell scripts handle batch operations like deploy-all-migrations.sh and run-migration-*.sh for specific feature deployments.
 
-- `package.json` — Workspace orchestration, root scripts, engine constraints (Node ≥20, npm ≥10)
-- `backend/package.json` — Backend build/test/lint/migrate/seed scripts
-- `frontend/package.json` — Vite dev/build scripts
-- `shared/package.json` — Shared package build entrypoint
-- `backend/tsconfig.json` — Path aliases (`@modules/*`, `@common/*`, `@shared/*`), decorator support
-- `frontend/vite.config.ts` — PWA config, route generation, chunk splitting, proxy disabled (uses `VITE_API_URL`)
-- `docker/Dockerfile.backend` — Production backend image (multi-stage)
-- `docker/Dockerfile.frontend` — Frontend build + Nginx serving
-- `docker/docker-compose.yml` — Local dev stack with all services
-- `docker/deploy.sh` — Deployment automation script
-- `scripts/` — 80+ shell/JS utilities for migrations, deployments, testing, verification
+Seed Data: Separate seed scripts populate initial data including RBAC roles, demo users, and module configurations through dedicated ts-node commands.
 
-## Developer Conventions
+### Testing Infrastructure
 
-1. **Workspace commands**: Use root `npm run dev`, `npm run build`, `npm run test` instead of calling workspace scripts directly
-2. **Environment variables**: All runtime config via `.env` files; never hardcode secrets
-3. **Migrations**: Create new numbered SQL files in `backend/database/migrations/`; use `npm run db:migrate` to apply
-4. **Docker dev**: Prefer `docker compose up -d` over direct `npm run dev` when needing full stack (DB, Redis, pgAdmin)
-5. **Frontend API calls**: Use `VITE_API_URL` env var; do not configure Vite proxy (explicitly disabled due to Docker bug)
-6. **Shared types**: Import from `@shared/*` alias rather than duplicating types between frontend/backend
-7. **Port conventions**: Backend 7000, Frontend 7001, Postgres 7002, Redis 7003, pgAdmin 7004 — override via env vars
-8. **No CI pipeline**: This branch contains no GitHub Actions/GitLab CI — deployment is manual via `docker/deploy.sh` and scripts
+Jest Configuration: Unit and integration tests use ts-jest preset with path alias mapping matching the main application. Test files follow test/**/*.spec.ts or tests/**/*.test.ts patterns with Node.js environment.
 
-## Gaps & Observations
+### Deployment Scripts
 
-- No Makefile despite heavy shell scripting — could benefit from centralized build targets
-- No CI/CD pipeline defined in this branch (no `.github/workflows/`, no `.gitlab-ci.yml`)
-- Versioning is flat (`1.0.0` everywhere) — no semantic versioning automation
-- Frontend build disables sourcemaps in production but backend enables them — inconsistent strategy
-- `postinstall` hook removes conflicting `@types/express` versions — workaround for dependency conflict
+Feature-based Deployments: Extensive collection of shell scripts in scripts/ directory handle module-specific deployments (deploy-*.sh), database migrations, testing, and infrastructure validation. Each major feature has its own deployment script for isolated releases.
+
+Environment Management: Multiple .env files support different environments (docker/.env.local, docker/.env.cloud, root .env). Docker Compose variants provide local development and cloud production configurations.
+
+## Key Files and Packages
+
+- package.json - Monorepo workspace configuration and root scripts
+- backend/package.json - Backend dependencies and build/test scripts
+- backend/tsconfig.json - TypeScript compilation settings with path aliases
+- docker/Dockerfile.backend - Multi-stage production Docker image
+- docker/Dockerfile.backend.dev - Development image with hot-reload
+- docker/docker-compose.yml - Service orchestration for all components
+- backend/jest.config.ts - Test runner configuration
+- backend/nodemon.json - Development file watching rules
+- scripts/README.md - Comprehensive script documentation
+
+## Rules Developers Should Follow
+
+1. Workspace Commands: Always use root-level npm run commands rather than navigating to individual packages
+2. Migration Naming: New database changes require TypeORM migration generation following the existing numbering convention
+3. Docker Development: Use provided compose files for consistent development environments across team members
+4. Path Aliases: Import shared modules using @shared/* aliases rather than relative paths
+5. Environment Variables: Configure services through .env files and Docker Compose environment variables, never hardcode secrets
+6. Testing: Place test files in test/ or tests/ directories following the established naming patterns
+7. Build Artifacts: Never commit dist/ directories; they should be generated during build/deployment
+8. Module Isolation: Keep new features within their own module directories under backend/src/modules/

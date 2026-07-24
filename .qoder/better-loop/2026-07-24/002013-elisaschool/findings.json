@@ -1,0 +1,246 @@
+{
+  "summary": {
+    "projectName": "eLISAschool",
+    "locale": "en",
+    "modelId": "agent-work-loop-v4",
+    "reportContractVersion": 24,
+    "overview": "The project has rich agent guidance (rules, skills, 858 memories) and a clear modular architecture, but change validation relies on only 10 test files for 1548 source files, the build command silences TypeScript errors, and no CI/CD pipeline supports delivery. Long sessions (up to 11h) and 182 failed events signal high operational cost without outcome review.",
+    "aiAgentPractice": {
+      "inspectedSurfaces": [
+        "Rules",
+        "Skills",
+        "Plugins",
+        "Memories"
+      ],
+      "coverageRows": [
+        {
+          "surface": "Rules",
+          "scopes": [
+            "Project"
+          ],
+          "count": 4,
+          "paths": [
+            ".qoder/rules/elisaschool-conventions.md",
+            ".qoder/rules/elisaschool-docs-management.md",
+            ".qoder/rules/elisaschool-frontend.md",
+            "AGENTS.md"
+          ]
+        },
+        {
+          "surface": "Skills",
+          "scopes": [
+            "Project"
+          ],
+          "count": 4,
+          "paths": [
+            ".qoder/skills/elisaschool-business-logic/SKILL.md",
+            ".qoder/skills/elisaschool-dev/SKILL.md",
+            ".qoder/skills/elisaschool-frontend-dev/SKILL.md",
+            ".qoder/skills/elisaschool-frontend-refactor/SKILL.md"
+          ]
+        },
+        {
+          "surface": "Plugins",
+          "scopes": [
+            "Plugin"
+          ],
+          "count": 3,
+          "paths": [
+            "better-loop",
+            "qoder-create-plugin",
+            "security-scan"
+          ]
+        },
+        {
+          "surface": "Memories",
+          "scopes": [
+            "Project"
+          ],
+          "count": 858,
+          "paths": [
+            "~/.qoder/memories/019c5fe1/projects/mnt-DONNEES-projets-eLISAschool/history_task_reference_files/Fichiers_centraux_de_la_refonte_RBAC.md",
+            "~/.qoder/memories/019c5fe1/projects/mnt-DONNEES-projets-eLISAschool/project_introduction/Architecture_de_filtrage_des_utilisateurs_par_établissement.md",
+            "~/.qoder/memories/019c5fe1/projects/mnt-DONNEES-projets-eLISAschool/common_pitfalls_experience/Absence_de_colonne_updated_at_dans_parametres_systeme.md"
+          ]
+        }
+      ]
+    },
+    "suggestions": [
+      {
+        "id": "fix-build-silences-errors",
+        "kind": "try-existing",
+        "title": "Remove `|| true` from the TypeScript build command",
+        "reason": "The `tsc || true` build silences all compilation errors, making type validation inoperative. This is the most direct barrier to change reliability.",
+        "confidence": "High",
+        "owner": "Backend developers",
+        "nextStep": "Replace `\"build\": \"tsc || true\"` with `\"build\": \"tsc\"` in backend/package.json, then fix revealed compilation errors.",
+        "validation": "Run `npm run build` and verify it fails with a non-zero exit code on TypeScript errors."
+      },
+      {
+        "id": "add-module-level-agents-md",
+        "kind": "try-existing",
+        "title": "Add nested AGENTS.md for backend/ and frontend/",
+        "reason": "With 1548 source files and a single root AGENTS.md, the ratio is 1 instruction per 1548 files. Skills and rules are global but lack per-module context to guide the agent on each source root's specifics.",
+        "confidence": "Medium",
+        "owner": "Project maintainers",
+        "nextStep": "Create backend/AGENTS.md and frontend/AGENTS.md with module-specific conventions (test patterns, imports, validation).",
+        "validation": "Verify the source-files-per-instruction ratio drops below 200 per root."
+      },
+      {
+        "id": "exercise-skills-more",
+        "kind": "try-existing",
+        "title": "Systematically invoke existing skills as declared in rules",
+        "reason": "The 4 project skills (dev, business-logic, frontend-dev, frontend-refactor) are invoked only once each across 288 sessions despite mandatory invocation in rules. This indicates a gap between declared rule and observed practice.",
+        "confidence": "Medium",
+        "owner": "User / Agent",
+        "nextStep": "Ensure automatic skill invocation is effective before each development task, as specified in rules.",
+        "validation": "Verify in future sessions that skills are invoked before code modifications."
+      }
+    ],
+    "assignmentSummaries": [],
+    "dimensions": [
+      {
+        "id": "task-understanding",
+        "label": "Task Understanding",
+        "score": 72,
+        "summary": "AGENTS.md and project rules provide detailed decisional guidance (conventions, architecture, patterns). 858 memories capture context. However, the absence of nested AGENTS.md for the 4 source roots (backend, frontend, shared, scripts) and a 1:1548 instruction-to-source ratio limit per-module context precision.",
+        "findingRefs": [
+          "no-nested-agents-md-for-source-roots"
+        ]
+      },
+      {
+        "id": "controlled-execution",
+        "label": "Controlled Execution",
+        "score": 58,
+        "summary": "Startup scripts and Docker are present, but `npm run build` uses `tsc || true` which silences compilation errors. No CI/CD workflow is configured. PreToolUse hooks are active (288 sessions) but underlying scripts are not always verified. The operating mode relies on manual shell scripts without execution guardrails.",
+        "findingRefs": [
+          "build-silences-typescript-errors",
+          "skills-configured-but-not-exercised"
+        ]
+      },
+      {
+        "id": "change-validation",
+        "label": "Change Validation",
+        "score": 42,
+        "summary": "Jest is configured but only 10 test files exist for the backend (out of 848 source files) and zero for the frontend (670 files). User-mentioned validation has no matching observed command execution. The TypeScript build is intentionally silenced (`|| true`). No type check, lint, or test is systematically run after modification.",
+        "findingRefs": [
+          "build-silences-typescript-errors",
+          "test-coverage-critical-gap"
+        ]
+      },
+      {
+        "id": "reliable-delivery",
+        "label": "Reliable Delivery",
+        "score": 35,
+        "summary": "No CI/CD pipeline, no GitHub Actions workflow, no branch protection inspected. Deployments rely entirely on manual shell scripts. Docker-compose files exist but without post-deployment automated validation. No evidence of delivery review, high-risk approval, or structured rollback.",
+        "findingRefs": [
+          "no-ci-cd-pipeline"
+        ]
+      },
+      {
+        "id": "learning-capture",
+        "label": "Learning Capture",
+        "score": 45,
+        "summary": "858 memories and 4 configured skills show capitalization effort. However, skills are invoked only once each across 288 sessions. 182 failed events produced no observed reusable learning. No recurrence detection or longitudinal validation is visible. Memories are numerous but their freshness and coherence are not inspected.",
+        "findingRefs": [
+          "long-sessions-without-outcome-review",
+          "skills-configured-but-not-exercised"
+        ]
+      }
+    ]
+  },
+  "findings": [
+    {
+      "id": "build-silences-typescript-errors",
+      "title": "Build command silences all TypeScript errors",
+      "severity": "High",
+      "reason": "`npm run build` executes `tsc || true`, which always returns exit code 0 even with compilation errors. This makes type validation completely inoperative and allows invalid code to reach production undetected.",
+      "expectedOutput": [
+        "Build command returns non-zero exit code on TypeScript errors",
+        "Compilation errors are visible and blocking"
+      ],
+      "expectedArtifact": "backend/package.json",
+      "aiFixPrompt": "/better-loop fix this issue\n\nRemove `|| true` from the build command in backend/package.json and fix revealed TypeScript errors.\n\n## Validation\n\n- `npm run build` must fail with non-zero exit code on errors\n- `npx tsc --noEmit` must produce no errors on corrected code",
+      "dimensionRefs": [
+        "controlled-execution",
+        "change-validation"
+      ]
+    },
+    {
+      "id": "test-coverage-critical-gap",
+      "title": "Critical test coverage gap: 10 files for 1548 sources",
+      "severity": "High",
+      "reason": "The backend has only 10 test files for 848 source files (1.2%), and the frontend has zero tests for 670 files. Jest is configured but barely used. No automated validation covers business changes, calculation rules, or multi-tenant flows.",
+      "expectedOutput": [
+        "Unit tests for high-logic services",
+        "Integration tests for critical multi-tenant flows"
+      ],
+      "expectedArtifact": "backend/test/ test files",
+      "aiFixPrompt": "/better-loop fix this issue\n\nAdd targeted tests for critical services (calculations, multi-tenant validation, workflows) prioritizing high-logic modules.\n\n## Validation\n\n- New tests pass with `npm test`\n- Critical modules (configuration, organisation, notes, bulletins) have at least one integration test",
+      "dimensionRefs": [
+        "change-validation"
+      ]
+    },
+    {
+      "id": "no-ci-cd-pipeline",
+      "title": "No CI/CD pipeline for delivery",
+      "severity": "High",
+      "reason": "No GitHub Actions or CI/CD workflow is configured. Deployments rely entirely on manual shell scripts. No automated post-commit verification, no branch protection, no deployment validation. The 86 changed files in the current diff have no automated gate.",
+      "expectedOutput": [
+        "CI workflow running build + lint + test",
+        "Branch protection configured to require CI pass"
+      ],
+      "expectedArtifact": ".github/workflows/ci.yml",
+      "aiFixPrompt": "/better-loop fix this issue\n\nCreate a minimal CI workflow that runs TypeScript build, lint, and tests on every push/PR.\n\n## Validation\n\n- Workflow runs automatically on push\n- Build, lint, or test failure blocks the pipeline",
+      "dimensionRefs": [
+        "reliable-delivery"
+      ]
+    },
+    {
+      "id": "long-sessions-without-outcome-review",
+      "title": "3 long sessions (up to 11h) without outcome review",
+      "severity": "Medium",
+      "reason": "3 child-agent sessions lasted between 4h and 11h (total ~23h combined) for organization system inspection/analysis. No outcome review was performed. 182 failed events observed without reusable learning produced. Operational cost is high without efficiency validation.",
+      "expectedOutput": [
+        "Each long session classified by task family, outcome, and friction",
+        "Documented decision: decomposition, tool change, or normal confirmation"
+      ],
+      "expectedArtifact": "Session review",
+      "aiFixPrompt": "/better-loop review these sessions\n\n3 long-session candidates need outcome review\n\n## Evidence to inspect\n\n- S1: ~663 min, organization system and nomenclatures inspection\n- S2: ~494 min, organization system and nomenclatures inspection\n- S3: ~237 min, in-depth organization system inspection\n\n## First step\n\nClassify each by task family, outcome, and friction before deciding if decomposition or tool changes are needed.",
+      "dimensionRefs": [
+        "learning-capture"
+      ]
+    },
+    {
+      "id": "skills-configured-but-not-exercised",
+      "title": "Project skills configured but barely invoked",
+      "severity": "Medium",
+      "reason": "Rules declare mandatory invocation of 4 skills (elisaschool-dev, business-logic, frontend-dev, frontend-refactor) before any modification. Yet each skill was invoked only once across 288 sessions. The gap between declared rule and observed practice indicates either a failure of automatic application or an overly broad rule that is not followed.",
+      "expectedOutput": [
+        "Alignment between invocation rule and observed practice",
+        "Effective application mechanism (hook, reminder, or adjusted rule)"
+      ],
+      "expectedArtifact": "Rules or hooks",
+      "aiFixPrompt": "/better-loop fix this issue\n\nAlign skill invocation with declared rules, either by making automatic invocation effective or by adjusting the rule to reflect actual practice.\n\n## Validation\n\n- Skills are invoked before code modifications as specified in rules\n- Or rules are adjusted to reflect actual usage",
+      "dimensionRefs": [
+        "learning-capture",
+        "controlled-execution"
+      ]
+    },
+    {
+      "id": "no-nested-agents-md-for-source-roots",
+      "title": "No nested AGENTS.md for source roots",
+      "severity": "Low",
+      "reason": "With 1548 source files across 4 roots (backend: 848, frontend: 675, shared: 14, scripts: 11) and a single root AGENTS.md, the ratio is 1 instruction per 1548 files. The suggested minimum is 7 instruction files. Global conventions do not capture per-module specifics (backend test patterns, frontend components, shared configuration).",
+      "expectedOutput": [
+        "Nested AGENTS.md with module-specific context",
+        "Improved instruction-to-source ratio per root"
+      ],
+      "expectedArtifact": "backend/AGENTS.md, frontend/AGENTS.md",
+      "aiFixPrompt": "/better-loop fix this issue\n\nAdd nested AGENTS.md for backend/ and frontend/ with module-specific conventions.\n\n## Validation\n\n- Each module AGENTS.md contains module-specific patterns, imports, and validations\n- Source-files-per-instruction ratio drops below 200 per root",
+      "dimensionRefs": [
+        "task-understanding"
+      ]
+    }
+  ]
+}

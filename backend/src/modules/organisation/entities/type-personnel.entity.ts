@@ -2,12 +2,15 @@
  * ==================================
  * eLISAschool - Entité TypePersonnel
  * ==================================
- * Version: 2.0.0
+ * Version: 4.0.0
  * Auteur: franck arlos chendjou
  *
- * Type de personnel (ENSEIGNANT, DIRECTEUR, SURVEILLANT, etc.)
+ * Type de personnel (TYPE_ENSEIGNANT, TYPE_DIRECTION, etc.)
  * Source de vérité unique dans le module organisation.
  * Les seeds système sont protégés (estSysteme = true, non supprimables).
+ *
+ * Refonte v4.0 :
+ * - modeRemunerationDefaut supprimé (anomalie global→multi-tenant, déjà porté par TypeContratPersonnalise)
  */
 
 import {
@@ -33,9 +36,6 @@ export class TypePersonnel {
 
     @Column({ type: 'varchar', length: 200, nullable: true })
     description?: string;
-
-    @Column({ type: 'varchar', length: 30, nullable: true })
-    modeRemunerationDefaut?: string;
 
     @Column({ type: 'boolean', default: true })
     actif!: boolean;

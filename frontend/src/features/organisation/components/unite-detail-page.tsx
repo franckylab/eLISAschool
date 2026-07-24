@@ -81,8 +81,8 @@ export function UniteDetailPage() {
                                 <h1 className="text-2xl font-bold text-white leading-tight">{unite.nom}</h1>
                                 <div className="flex flex-wrap items-center gap-2">
                                     <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90 font-mono">{unite.code}</span>
-                                    {unite.usageUnite?.label && (
-                                        <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90">{unite.usageUnite.label}</span>
+                                    {unite.echelonStructurel?.label && (
+                                        <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90">{unite.echelonStructurel.label}</span>
                                     )}
                                     <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90">
                                         {unite.actif !== false ? t('actif') : t('inactif')}
@@ -113,7 +113,7 @@ export function UniteDetailPage() {
                     <Card className="p-6">
                         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div><dt className="text-sm text-muted-foreground">{t('code')}</dt><dd className="font-mono font-medium text-foreground">{unite.code}</dd></div>
-                            <div><dt className="text-sm text-muted-foreground">{t('type')}</dt><dd className="text-foreground">{unite.usageUnite?.label || '—'}</dd></div>
+                            <div><dt className="text-sm text-muted-foreground">{t('type')}</dt><dd className="text-foreground">{unite.echelonStructurel?.label || '—'}</dd></div>
                             <div><dt className="text-sm text-muted-foreground">{t('parent')}</dt><dd className="text-foreground">{unite.parent?.nom || '—'}</dd></div>
                             <div><dt className="text-sm text-muted-foreground">{t('responsable')}</dt><dd className="text-foreground inline-flex items-center gap-1">{unite.responsableNom ? <><User className="h-4 w-4" />{unite.responsableNom}</> : '—'}</dd></div>
                             <div><dt className="text-sm text-muted-foreground">{t('localisation')}</dt><dd className="text-foreground inline-flex items-center gap-1">{unite.localisation ? <><MapPin className="h-4 w-4" />{unite.localisation}</> : '—'}</dd></div>

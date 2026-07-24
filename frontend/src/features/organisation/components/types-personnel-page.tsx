@@ -15,12 +15,6 @@ export function TypesPersonnelPage({ embedded }: { embedded?: boolean } = {}) {
         { key: 'code', header: t('code'), render: (tp) => <span className="font-mono text-xs bg-surface-alt border border-border px-2 py-0.5 rounded">{tp.code}</span> },
         { key: 'nom', header: t('nom') },
         { key: 'description', header: t('description'), render: (tp) => tp.description || '-' },
-        {
-            key: 'modeRemunerationDefaut', header: t('modeRemuneration'),
-            render: (tp) => tp.modeRemunerationDefaut
-                ? <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tp.modeRemunerationDefaut}</span>
-                : '-',
-        },
     ];
 
     return (
@@ -46,7 +40,6 @@ export function TypesPersonnelPage({ embedded }: { embedded?: boolean } = {}) {
                         { key: 'code', labelKey: 'code', required: true, span: 'col-span-1' },
                         { key: 'nom', labelKey: 'nom', required: true, span: 'col-span-1' },
                         { key: 'description', labelKey: 'description', required: false },
-                        { key: 'modeRemunerationDefaut', labelKey: 'modeRemuneration', required: false },
                     ]}
                     onSave={async (values: Record<string, unknown>) => {
                         if (initialData) {

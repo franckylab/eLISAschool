@@ -8,7 +8,6 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { NotesService } from '../services/notes.service';
 import { createNoteSchema, updateNoteSchema, createBulkNotesSchema, queryNotesSchema } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
-import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 
 const router = Router();
@@ -16,7 +15,7 @@ const notesService = new NotesService();
 
 router.use(authMiddleware);
 
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', requirePermission('notes:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = validateDto(queryNotesSchema, req.query);
         const result = await notesService.findAll(query, req.etablissementId);
@@ -24,7 +23,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     } catch (error) { next(error); }
 });
 
-router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id', requirePermission('notes:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const note = await notesService.findOne(req.params.id);
         res.json({ success: true, data: note });

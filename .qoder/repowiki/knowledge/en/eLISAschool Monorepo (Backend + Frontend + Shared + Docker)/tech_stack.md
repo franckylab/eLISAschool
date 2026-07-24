@@ -1,1 +1,0 @@
-Node.js ≥20 / npm ≥10 workspaces as the monorepo runtime; Docker Compose for provisioning PostgreSQL, Redis, and pgAdmin across four environment profiles.

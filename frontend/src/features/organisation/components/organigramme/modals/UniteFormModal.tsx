@@ -5,8 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { useCreerUnite, useModifierUnite } from '../../../hooks/use-unites';
-import { useUsagesUnite } from '../../../hooks/use-usages-unite';
-import { useNiveauxOrganisation } from '../../../hooks/use-niveaux-organisation';
+import { useEchelonsStructurels } from '../../../hooks/use-echelons-structurels';
 import { useAuthStore } from '@/stores/auth.store';
 import { PersonnelSearchField } from '../../personnel-search-field';
 import type { PersonnelSearchResult } from '../../personnel-search-field';
@@ -16,8 +15,7 @@ interface UniteFormTarget {
     nom: string;
     code?: string;
     description?: string;
-    usageUniteId?: string;
-    niveauOrganisationId?: string;
+    echelonStructurelId?: string;
     parentId?: string;
     responsableNom?: string;
     responsableId?: string;
@@ -28,8 +26,7 @@ type UniteFormData = {
     nom: string;
     code: string;
     description: string;
-    usageUniteId: string;
-    niveauOrganisationId: string;
+    echelonStructurelId: string;
     parentId: string;
     responsableNom: string;
     localisation: string;
@@ -51,8 +48,7 @@ const FORM_INIT: UniteFormData = {
     nom: '',
     code: '',
     description: '',
-    usageUniteId: '',
-    niveauOrganisationId: '',
+    echelonStructurelId: '',
     parentId: '',
     responsableNom: '',
     localisation: '',
@@ -67,14 +63,12 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
         nom: z.string().min(2, t('organigramme.form.validationMin2')).max(150),
         code: z.string().min(1, t('organigramme.form.validationRequis')).max(20),
         description: z.string().max(500).optional().or(z.literal('')),
-        usageUniteId: z.string().uuid().optional().or(z.literal('')),
-        niveauOrganisationId: z.string().uuid().optional().or(z.literal('')),
+        echelonStructurelId: z.string().uuid().optional().or(z.literal('')),
         parentId: z.string().uuid().optional().or(z.literal('')),
         responsableNom: z.string().max(100).optional().or(z.literal('')),
         localisation: z.string().max(200).optional().or(z.literal('')),
     }), [t]);
-    const { data: usages } = useUsagesUnite();
-    const { data: niveaux } = useNiveauxOrganisation();
+    const { data: echelons } = useEchelonsStructurels();
     const { mutateAsync: creerUnite, isPending: isCreating } = useCreerUnite();
     const { mutateAsync: modifierUnite, isPending: isUpdating } = useModifierUnite();
 
@@ -99,8 +93,7 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                 nom: unite.nom || '',
                 code: unite.code || '',
                 description: unite.description || '',
-                usageUniteId: unite.usageUniteId || '',
-                niveauOrganisationId: unite.niveauOrganisationId || '',
+                echelonStructurelId: unite.echelonStructurelId || '',
                 parentId: unite.parentId || '',
                 responsableNom: unite.responsableNom || '',
                 localisation: unite.localisation || '',
@@ -132,8 +125,7 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
         const dto = {
             ...data,
             etablissementId,
-            usageUniteId: data.usageUniteId || undefined,
-            niveauOrganisationId: data.niveauOrganisationId || undefined,
+            echelonStructurelId: data.echelonStructurelId || undefined,
             parentId: data.parentId || undefined,
             description: data.description || undefined,
             responsableNom: data.responsableNom || undefined,
@@ -234,38 +226,21 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                     />
                 </div>
 
-                {/* Usage + Niveau */}
-                <div className="grid grid-cols-2 gap-3">
-                    <div>
-                        <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                            {t('organigramme.form.usage', 'Usage')}
-                        </label>
-                        <select
-                            {...register('usageUniteId')}
-                            className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
-                            style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
-                        >
-                            <option value="">{t('organigramme.form.selectionner', 'Sélectionner...')}</option>
-                            {usages?.map(u => (
-                                <option key={u.id} value={u.id}>{u.label}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                            {t('organigramme.form.niveau', 'Niveau')}
-                        </label>
-                        <select
-                            {...register('niveauOrganisationId')}
-                            className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
-                            style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
-                        >
-                            <option value="">{t('organigramme.form.selectionner', 'Sélectionner...')}</option>
-                            {niveaux?.map(n => (
-                                <option key={n.id} value={n.id}>{n.label} (N{n.niveau})</option>
-                            ))}
-                        </select>
-                    </div>
+                {/* Échelon structurel */}
+                <div>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                        {t('organigramme.form.echelon', 'Échelon structurel')}
+                    </label>
+                    <select
+                        {...register('echelonStructurelId')}
+                        className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
+                        style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
+                    >
+                        <option value="">{t('organigramme.form.selectionner', 'Sélectionner...')}</option>
+                        {echelons?.map(e => (
+                            <option key={e.id} value={e.id}>{e.label} ({e.code})</option>
+                        ))}
+                    </select>
                 </div>
 
                 {/* Responsable + Localisation */}

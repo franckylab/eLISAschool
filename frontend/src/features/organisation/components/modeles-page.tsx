@@ -30,15 +30,15 @@ import type { TemplateOrganisation } from '../types/organisation.types';
 
 interface NoeudTemplate {
     niveau: number;
-    usageUnite: string;
+    echelonCode: string;
     nom: string;
     count: number;
-    postes?: { ref: string; intitule: string; categoriePosteId?: string; niveauResponsabiliteId?: string; nombrePostes: number }[];
+    postes?: { ref: string; intitule: string; niveauResponsabiliteId?: string; nombrePostes: number }[];
     enfants?: NoeudTemplate[];
 }
 
 function noeudVide(niveau = 0): NoeudTemplate {
-    return { niveau, usageUnite: 'SERVICE', nom: '', count: 1, postes: [], enfants: [] };
+    return { niveau, echelonCode: 'SERVICE', nom: '', count: 1, postes: [], enfants: [] };
 }
 
 // ─── Éditeur récursif de nœud (builder visuel) ───
@@ -57,7 +57,7 @@ function NodeEditor({ noeud, onChange, onRemove, depth = 0 }: {
                 <Building2 className="h-4 w-4 text-[var(--color-dominant-600)] shrink-0" />
                 <input value={noeud.nom} onChange={(e) => set({ nom: e.target.value })} placeholder={t('nomUnite')}
                     className="flex-1 min-w-[8rem] px-2 py-1 text-sm border border-border rounded bg-background text-foreground" />
-                <input value={noeud.usageUnite} onChange={(e) => set({ usageUnite: e.target.value })} placeholder={t('usageUnite')}
+                <input value={noeud.echelonCode} onChange={(e) => set({ echelonCode: e.target.value })} placeholder={t('echelonCode', 'Code échelon')}
                     className="w-28 px-2 py-1 text-xs border border-border rounded bg-background text-foreground" />
                 <label className="flex items-center gap-1 text-xs text-muted-foreground">×
                     <input type="number" min={1} value={noeud.count} onChange={(e) => set({ count: parseInt(e.target.value) || 1 })}

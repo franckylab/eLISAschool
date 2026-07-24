@@ -34,13 +34,6 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
             return (res as any).data || [];
         },
     });
-    const { data: categoriesPoste } = useQuery({
-        queryKey: ['categories-poste'],
-        queryFn: async () => {
-            const res = await apiClient.get('/api/organisation/categories-poste');
-            return (res as any).data || [];
-        },
-    });
     const { data: niveauxResponsabilite } = useQuery({
         queryKey: ['niveaux-responsabilite'],
         queryFn: async () => {
@@ -61,7 +54,6 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
             intitule: poste?.intitule || '',
             description: poste?.description || '',
             code: poste?.code || '',
-            categoriePosteId: poste?.categoriePosteId || '',
             niveauResponsabiliteId: poste?.niveauResponsabiliteId || '',
             fonctionId: poste?.fonctionId || '',
             uniteOrganisationnelleId: poste?.uniteOrganisationnelleId || '',
@@ -81,11 +73,6 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
     const uniteOptions = (unites || []).map((u: any) => ({
         value: u.id,
         label: `${u.nom} (${u.code})`,
-    }));
-
-    const categorieOptions = (categoriesPoste || []).map((c: any) => ({
-        value: c.id,
-        label: `${c.label} (${c.code})`,
     }));
 
     const niveauOptions = (niveauxResponsabilite || []).map((n: any) => ({
@@ -120,7 +107,6 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
         try {
             const payload = {
                 ...data,
-                categoriePosteId: data.categoriePosteId || undefined,
                 niveauResponsabiliteId: data.niveauResponsabiliteId || undefined,
                 fonctionId: data.fonctionId,
             };
@@ -198,18 +184,6 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-                <Controller
-                    name="categoriePosteId"
-                    control={control}
-                    render={({ field }) => (
-                        <ElisaSelect label={t('categoriePoste')}
-                            value={field.value || ''}
-                            onValueChange={field.onChange}
-                            options={categorieOptions}
-                            placeholder={t('selectionner')}
-                        />
-                    )}
-                />
                 <Controller
                     name="uniteOrganisationnelleId"
                     control={control}

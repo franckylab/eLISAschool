@@ -19,6 +19,7 @@ import { Eleve } from '@modules/eleves/entities';
 import { ClasseAnnee } from '@modules/classes/entities';
 import { Periode } from '@modules/periodes/entities';
 import { Etablissement } from '@modules/etablissement/entities';
+import { BulletinMatiere } from './bulletin-matiere.entity';
 
 @Entity('bulletins')
 @Index(['eleveId'])
@@ -77,6 +78,9 @@ export class Bulletin {
 
     @Column({ type: 'boolean', default: false })
     publie!: boolean;
+
+    @OneToMany(() => BulletinMatiere, (bm) => bm.bulletin, { cascade: true })
+    bulletinMatieres!: BulletinMatiere[];
 
     /**
      * Établissement du bulletin (multi-tenancy)

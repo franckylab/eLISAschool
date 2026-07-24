@@ -1,7 +1,7 @@
 import { AppDataSource } from '../../data-source';
 import { UniteOrganisationnelle, StatutUnite } from '@modules/organisation/entities/unite-organisationnelle.entity';
 import { Poste, StatutPoste } from '@modules/organisation/entities/poste.entity';
-import { HierarchiePersonnel, StatutRelation } from '@modules/organisation/entities/hierarchie-personnel.entity';
+import { HierarchiePersonnel, StatutRelation, TypeRelationHierarchique } from '@modules/organisation/entities/hierarchie-personnel.entity';
 import { Fonction } from '@modules/organisation/entities/fonction.entity';
 import { TypePersonnel } from '@modules/organisation/entities/type-personnel.entity';
 import { logger } from '@common/utils/logger.util';
@@ -9,8 +9,7 @@ import { logger } from '@common/utils/logger.util';
 interface UniteSeed {
     code: string;
     nom: string;
-    usageCode: string;
-    niveauOrg: number;
+    echelonCode: string;
     ordre: number;
     parentCode?: string;
     responsableNom?: string;
@@ -20,7 +19,6 @@ interface UniteSeed {
 interface PosteSeed {
     code: string;
     intitule: string;
-    categorieCode: string;
     niveauRespCode: string;
     fonctionCode?: string;
     uniteCode: string;
@@ -68,11 +66,9 @@ export async function seedOrganisation(
     etablissementId: string,
     nomEtablissement: string,
     nomenclatures: {
-        categoriesPoste: Map<string, string>;
-        niveauxOrganisation: Map<string, string>;
+        echelonsStructurels: Map<string, string>;
         niveauxResponsabilite: Map<string, string>;
-        usagesUnite: Map<string, string>;
-        typesRelation: Map<string, string>;
+        modesRemuneration: Map<string, string>;
     },
 ): Promise<void> {
     const uniteRepo = AppDataSource.getRepository(UniteOrganisationnelle);
@@ -116,26 +112,26 @@ export async function seedOrganisation(
 
     // --- UNITÉS ---
     const unitesData: UniteSeed[] = [
-        { code: 'DIR', nom: 'Direction', usageCode: 'DIRECTION', niveauOrg: 1, ordre: 1, responsableNom: 'Dr. Jean Dupont', localisation: 'Bureau 101' },
-        { code: 'SE-DIR', nom: 'Secrétariat de Direction', usageCode: 'SERVICE', niveauOrg: 2, ordre: 2, parentCode: 'DIR', localisation: 'Bureau 102' },
-        { code: 'CONSEIL', nom: 'Conseil d\'Établissement', usageCode: 'COMMISSION', niveauOrg: 2, ordre: 3, parentCode: 'DIR' },
-        { code: 'ENS', nom: 'Enseignement', usageCode: 'DEPARTEMENT', niveauOrg: 1, ordre: 10, responsableNom: 'M. Pierre Mbarga', localisation: 'Bâtiment A' },
-        { code: 'CENS', nom: 'Censeur', usageCode: 'SERVICE', niveauOrg: 2, ordre: 11, parentCode: 'ENS', responsableNom: 'M. Pierre Mbarga', localisation: 'Bureau 201' },
-        { code: 'DEP-FR', nom: 'Département Français', usageCode: 'DEPARTEMENT', niveauOrg: 2, ordre: 12, parentCode: 'ENS', localisation: 'Salle 103' },
-        { code: 'DEP-MATH', nom: 'Département Mathématiques', usageCode: 'DEPARTEMENT', niveauOrg: 2, ordre: 13, parentCode: 'ENS', localisation: 'Salle 104' },
-        { code: 'DEP-ANG', nom: 'Département Anglais', usageCode: 'DEPARTEMENT', niveauOrg: 2, ordre: 14, parentCode: 'ENS', localisation: 'Salle 105' },
-        { code: 'DEP-SCI', nom: 'Département Sciences', usageCode: 'DEPARTEMENT', niveauOrg: 2, ordre: 15, parentCode: 'ENS', localisation: 'Salle 106' },
-        { code: 'DEP-HG', nom: 'Département Histoire-Géo', usageCode: 'DEPARTEMENT', niveauOrg: 2, ordre: 16, parentCode: 'ENS', localisation: 'Salle 107' },
-        { code: 'VS', nom: 'Vie Scolaire', usageCode: 'SERVICE', niveauOrg: 1, ordre: 20, responsableNom: 'Mme. Aïcha Mahamat', localisation: 'Bâtiment B' },
-        { code: 'SURV', nom: 'Surveillance', usageCode: 'SERVICE', niveauOrg: 2, ordre: 21, parentCode: 'VS', localisation: 'Bureau 301' },
-        { code: 'ANIM', nom: 'Animation et Clubs', usageCode: 'EQUIPE', niveauOrg: 2, ordre: 22, parentCode: 'VS', localisation: 'Salle polyvalente' },
-        { code: 'SPORT', nom: 'Section Sportive', usageCode: 'SERVICE', niveauOrg: 2, ordre: 23, parentCode: 'VS', localisation: 'Terrain A' },
-        { code: 'ADM', nom: 'Administration', usageCode: 'DEPARTEMENT', niveauOrg: 1, ordre: 30, responsableNom: 'Mme. Marie Ngo Mback', localisation: 'Bâtiment C' },
-        { code: 'COMPTA', nom: 'Comptabilité', usageCode: 'SERVICE', niveauOrg: 2, ordre: 31, parentCode: 'ADM', localisation: 'Bureau 401' },
-        { code: 'SCOLARITE', nom: 'Scolarité', usageCode: 'SERVICE', niveauOrg: 2, ordre: 32, parentCode: 'ADM', localisation: 'Bureau 402' },
-        { code: 'INTENDANCE', nom: 'Intendance', usageCode: 'SERVICE', niveauOrg: 2, ordre: 33, parentCode: 'ADM', localisation: 'Bureau 403' },
-        { code: 'RH', nom: 'Ressources Humaines', usageCode: 'SERVICE', niveauOrg: 2, ordre: 34, parentCode: 'ADM', localisation: 'Bureau 404' },
-        { code: 'INFO', nom: 'Informatique', usageCode: 'SERVICE', niveauOrg: 2, ordre: 35, parentCode: 'ADM', localisation: 'Bureau 405' },
+        { code: 'DIR', nom: 'Direction', echelonCode: 'DIRECTION', ordre: 1, responsableNom: 'Dr. Jean Dupont', localisation: 'Bureau 101' },
+        { code: 'SE-DIR', nom: 'Secrétariat de Direction', echelonCode: 'SERVICE', ordre: 2, parentCode: 'DIR', localisation: 'Bureau 102' },
+        { code: 'CONSEIL', nom: 'Conseil d\'Établissement', echelonCode: 'COMMISSION', ordre: 3, parentCode: 'DIR' },
+        { code: 'ENS', nom: 'Enseignement', echelonCode: 'DEPARTEMENT_PEDA', ordre: 10, responsableNom: 'M. Pierre Mbarga', localisation: 'Bâtiment A' },
+        { code: 'CENS', nom: 'Censeur', echelonCode: 'SERVICE', ordre: 11, parentCode: 'ENS', responsableNom: 'M. Pierre Mbarga', localisation: 'Bureau 201' },
+        { code: 'DEP-FR', nom: 'Département Français', echelonCode: 'DEPARTEMENT_PEDA', ordre: 12, parentCode: 'ENS', localisation: 'Salle 103' },
+        { code: 'DEP-MATH', nom: 'Département Mathématiques', echelonCode: 'DEPARTEMENT_PEDA', ordre: 13, parentCode: 'ENS', localisation: 'Salle 104' },
+        { code: 'DEP-ANG', nom: 'Département Anglais', echelonCode: 'DEPARTEMENT_PEDA', ordre: 14, parentCode: 'ENS', localisation: 'Salle 105' },
+        { code: 'DEP-SCI', nom: 'Département Sciences', echelonCode: 'DEPARTEMENT_PEDA', ordre: 15, parentCode: 'ENS', localisation: 'Salle 106' },
+        { code: 'DEP-HG', nom: 'Département Histoire-Géo', echelonCode: 'DEPARTEMENT_PEDA', ordre: 16, parentCode: 'ENS', localisation: 'Salle 107' },
+        { code: 'VS', nom: 'Vie Scolaire', echelonCode: 'SERVICE', ordre: 20, responsableNom: 'Mme. Aïcha Mahamat', localisation: 'Bâtiment B' },
+        { code: 'SURV', nom: 'Surveillance', echelonCode: 'SERVICE', ordre: 21, parentCode: 'VS', localisation: 'Bureau 301' },
+        { code: 'ANIM', nom: 'Animation et Clubs', echelonCode: 'EQUIPE', ordre: 22, parentCode: 'VS', localisation: 'Salle polyvalente' },
+        { code: 'SPORT', nom: 'Section Sportive', echelonCode: 'SERVICE', ordre: 23, parentCode: 'VS', localisation: 'Terrain A' },
+        { code: 'ADM', nom: 'Administration', echelonCode: 'DEPARTEMENT_PEDA', ordre: 30, responsableNom: 'Mme. Marie Ngo Mback', localisation: 'Bâtiment C' },
+        { code: 'COMPTA', nom: 'Comptabilité', echelonCode: 'SERVICE', ordre: 31, parentCode: 'ADM', localisation: 'Bureau 401' },
+        { code: 'SCOLARITE', nom: 'Scolarité', echelonCode: 'SERVICE', ordre: 32, parentCode: 'ADM', localisation: 'Bureau 402' },
+        { code: 'INTENDANCE', nom: 'Intendance', echelonCode: 'SERVICE', ordre: 33, parentCode: 'ADM', localisation: 'Bureau 403' },
+        { code: 'RH', nom: 'Ressources Humaines', echelonCode: 'SERVICE', ordre: 34, parentCode: 'ADM', localisation: 'Bureau 404' },
+        { code: 'INFO', nom: 'Informatique', echelonCode: 'SERVICE', ordre: 35, parentCode: 'ADM', localisation: 'Bureau 405' },
     ];
 
     const unitesMap = new Map<string, UniteOrganisationnelle>();
@@ -152,8 +148,7 @@ export async function seedOrganisation(
             ordre: u.ordre,
             etablissementId,
             parentId: parent?.id,
-            usageUniteId: nomenclatures.usagesUnite.get(u.usageCode),
-            niveauOrganisationId: nomenclatures.niveauxOrganisation.get(String(u.niveauOrg)),
+            echelonStructurelId: nomenclatures.echelonsStructurels.get(u.echelonCode),
             responsableNom: u.responsableNom,
             localisation: u.localisation,
             statut: StatutUnite.ACTIF,
@@ -166,28 +161,28 @@ export async function seedOrganisation(
 
     // --- POSTES ---
     const postesData: PosteSeed[] = [
-        { code: 'PROVISEUR', intitule: 'Proviseur', categorieCode: 'DIRECTION', niveauRespCode: 'DIRECTION_GENERALE', fonctionCode: 'PROVISEUR', uniteCode: 'DIR', nombrePostes: 1, missions: ['Diriger l\'établissement', 'Superviser l\'équipe pédagogique', 'Représenter l\'établissement'], competences: ['Management', 'Pédagogie', 'Gestion'] },
-        { code: 'PROVISEUR-ADJ', intitule: 'Proviseur Adjoint', categorieCode: 'DIRECTION', niveauRespCode: 'DIRECTION_ADJOINTE', fonctionCode: 'PROVISEUR-ADJ', uniteCode: 'DIR', nombrePostes: 1, missions: ['Assister le proviseur', 'Coordonner les départements'] },
-        { code: 'SECRETAIRE-DIR', intitule: 'Secrétaire de Direction', categorieCode: 'ADMINISTRATIF', niveauRespCode: 'EXECUTANT', fonctionCode: 'AGENT-COMPTA', uniteCode: 'SE-DIR', nombrePostes: 1 },
-        { code: 'CENSEUR-PRINCIPAL', intitule: 'Censeur', categorieCode: 'DIRECTION', niveauRespCode: 'RESPONSABLE', fonctionCode: 'CENSEUR', uniteCode: 'CENS', nombrePostes: 1, missions: ['Organiser les emplois du temps', 'Suivre la discipline', 'Coordonner les conseils de classe'] },
-        { code: 'CD-FRANCAIS', intitule: 'Chef Département Français', categorieCode: 'ENSEIGNANT', niveauRespCode: 'COORDINATEUR', fonctionCode: 'CDEPT', uniteCode: 'DEP-FR', nombrePostes: 1, missions: ['Coordonner l\'équipe de français', 'Organiser les évaluations'] },
-        { code: 'CD-MATHS', intitule: 'Chef Département Mathématiques', categorieCode: 'ENSEIGNANT', niveauRespCode: 'COORDINATEUR', fonctionCode: 'CDEPT', uniteCode: 'DEP-MATH', nombrePostes: 1 },
-        { code: 'CD-ANGLAIS', intitule: 'Chef Département Anglais', categorieCode: 'ENSEIGNANT', niveauRespCode: 'COORDINATEUR', fonctionCode: 'CDEPT', uniteCode: 'DEP-ANG', nombrePostes: 1 },
-        { code: 'CD-SCIENCES', intitule: 'Chef Département Sciences', categorieCode: 'ENSEIGNANT', niveauRespCode: 'COORDINATEUR', fonctionCode: 'CDEPT', uniteCode: 'DEP-SCI', nombrePostes: 1 },
-        { code: 'CD-HG', intitule: 'Chef Département Histoire-Géo', categorieCode: 'ENSEIGNANT', niveauRespCode: 'COORDINATEUR', fonctionCode: 'CDEPT', uniteCode: 'DEP-HG', nombrePostes: 1 },
-        { code: 'PROF-FR1', intitule: 'Professeur de Français', categorieCode: 'ENSEIGNANT', niveauRespCode: 'EXECUTANT', fonctionCode: 'PROF-TIT', uniteCode: 'DEP-FR', nombrePostes: 5 },
-        { code: 'PROF-MATH1', intitule: 'Professeur de Mathématiques', categorieCode: 'ENSEIGNANT', niveauRespCode: 'EXECUTANT', fonctionCode: 'PROF-TIT', uniteCode: 'DEP-MATH', nombrePostes: 4 },
-        { code: 'SURV-GEN', intitule: 'Surveillant Général', categorieCode: 'SERVICE', niveauRespCode: 'RESPONSABLE', fonctionCode: 'SURV-GEN', uniteCode: 'SURV', nombrePostes: 1 },
-        { code: 'SURV1', intitule: 'Surveillant', categorieCode: 'SERVICE', niveauRespCode: 'EXECUTANT', fonctionCode: 'SURV', uniteCode: 'SURV', nombrePostes: 6 },
-        { code: 'COMPTABLE', intitule: 'Comptable', categorieCode: 'ADMINISTRATIF', niveauRespCode: 'EXECUTANT', fonctionCode: 'COMPTABLE', uniteCode: 'COMPTA', nombrePostes: 1 },
-        { code: 'AGENT-COMPTA', intitule: 'Agent Comptable', categorieCode: 'ADMINISTRATIF', niveauRespCode: 'EXECUTANT', fonctionCode: 'AGENT-COMPTA', uniteCode: 'COMPTA', nombrePostes: 2 },
-        { code: 'CHEF-SCOLARITE', intitule: 'Chef Scolarité', categorieCode: 'ADMINISTRATIF', niveauRespCode: 'RESPONSABLE', fonctionCode: 'CHEF-SCOL', uniteCode: 'SCOLARITE', nombrePostes: 1 },
-        { code: 'AGENT-SCOLARITE', intitule: 'Agent Scolarité', categorieCode: 'ADMINISTRATIF', niveauRespCode: 'EXECUTANT', fonctionCode: 'AGENT-SCOL', uniteCode: 'SCOLARITE', nombrePostes: 3 },
-        { code: 'INTENDANT', intitule: 'Intendant', categorieCode: 'ADMINISTRATIF', niveauRespCode: 'RESPONSABLE', fonctionCode: 'INTENDANT', uniteCode: 'INTENDANCE', nombrePostes: 1 },
-        { code: 'RESP-RH', intitule: 'Responsable RH', categorieCode: 'ADMINISTRATIF', niveauRespCode: 'RESPONSABLE', fonctionCode: 'RESP-RH', uniteCode: 'RH', nombrePostes: 1 },
-        { code: 'TECH-INFO', intitule: 'Technicien Informatique', categorieCode: 'TECHNIQUE', niveauRespCode: 'EXECUTANT', fonctionCode: 'TECH-INFO', uniteCode: 'INFO', nombrePostes: 2 },
-        { code: 'ANIMATEUR', intitule: 'Animateur Culturel', categorieCode: 'SERVICE', niveauRespCode: 'EXECUTANT', fonctionCode: 'ANIMATEUR', uniteCode: 'ANIM', nombrePostes: 2 },
-        { code: 'COACH-SPORT', intitule: 'Coach Sportif', categorieCode: 'SERVICE', niveauRespCode: 'EXECUTANT', fonctionCode: 'COACH-SPORT', uniteCode: 'SPORT', nombrePostes: 3 },
+        { code: 'PROVISEUR', intitule: 'Proviseur', niveauRespCode: 'DIRECTION_GENERALE', fonctionCode: 'PROVISEUR', uniteCode: 'DIR', nombrePostes: 1, missions: ['Diriger l\'établissement', 'Superviser l\'équipe pédagogique', 'Représenter l\'établissement'], competences: ['Management', 'Pédagogie', 'Gestion'] },
+        { code: 'PROVISEUR-ADJ', intitule: 'Proviseur Adjoint', niveauRespCode: 'DIRECTION_ADJOINTE', fonctionCode: 'PROVISEUR-ADJ', uniteCode: 'DIR', nombrePostes: 1, missions: ['Assister le proviseur', 'Coordonner les départements'] },
+        { code: 'SECRETAIRE-DIR', intitule: 'Secrétaire de Direction', niveauRespCode: 'EXECUTANT', fonctionCode: 'AGENT-COMPTA', uniteCode: 'SE-DIR', nombrePostes: 1 },
+        { code: 'CENSEUR-PRINCIPAL', intitule: 'Censeur', niveauRespCode: 'RESPONSABLE', fonctionCode: 'CENSEUR', uniteCode: 'CENS', nombrePostes: 1, missions: ['Organiser les emplois du temps', 'Suivre la discipline', 'Coordonner les conseils de classe'] },
+        { code: 'CD-FRANCAIS', intitule: 'Chef Département Français', niveauRespCode: 'COORDINATEUR', fonctionCode: 'CDEPT', uniteCode: 'DEP-FR', nombrePostes: 1, missions: ['Coordonner l\'équipe de français', 'Organiser les évaluations'] },
+        { code: 'CD-MATHS', intitule: 'Chef Département Mathématiques', niveauRespCode: 'COORDINATEUR', fonctionCode: 'CDEPT', uniteCode: 'DEP-MATH', nombrePostes: 1 },
+        { code: 'CD-ANGLAIS', intitule: 'Chef Département Anglais', niveauRespCode: 'COORDINATEUR', fonctionCode: 'CDEPT', uniteCode: 'DEP-ANG', nombrePostes: 1 },
+        { code: 'CD-SCIENCES', intitule: 'Chef Département Sciences', niveauRespCode: 'COORDINATEUR', fonctionCode: 'CDEPT', uniteCode: 'DEP-SCI', nombrePostes: 1 },
+        { code: 'CD-HG', intitule: 'Chef Département Histoire-Géo', niveauRespCode: 'COORDINATEUR', fonctionCode: 'CDEPT', uniteCode: 'DEP-HG', nombrePostes: 1 },
+        { code: 'PROF-FR1', intitule: 'Professeur de Français', niveauRespCode: 'EXECUTANT', fonctionCode: 'PROF-TIT', uniteCode: 'DEP-FR', nombrePostes: 5 },
+        { code: 'PROF-MATH1', intitule: 'Professeur de Mathématiques', niveauRespCode: 'EXECUTANT', fonctionCode: 'PROF-TIT', uniteCode: 'DEP-MATH', nombrePostes: 4 },
+        { code: 'SURV-GEN', intitule: 'Surveillant Général', niveauRespCode: 'RESPONSABLE', fonctionCode: 'SURV-GEN', uniteCode: 'SURV', nombrePostes: 1 },
+        { code: 'SURV1', intitule: 'Surveillant', niveauRespCode: 'EXECUTANT', fonctionCode: 'SURV', uniteCode: 'SURV', nombrePostes: 6 },
+        { code: 'COMPTABLE', intitule: 'Comptable', niveauRespCode: 'EXECUTANT', fonctionCode: 'COMPTABLE', uniteCode: 'COMPTA', nombrePostes: 1 },
+        { code: 'AGENT-COMPTA', intitule: 'Agent Comptable', niveauRespCode: 'EXECUTANT', fonctionCode: 'AGENT-COMPTA', uniteCode: 'COMPTA', nombrePostes: 2 },
+        { code: 'CHEF-SCOLARITE', intitule: 'Chef Scolarité', niveauRespCode: 'RESPONSABLE', fonctionCode: 'CHEF-SCOL', uniteCode: 'SCOLARITE', nombrePostes: 1 },
+        { code: 'AGENT-SCOLARITE', intitule: 'Agent Scolarité', niveauRespCode: 'EXECUTANT', fonctionCode: 'AGENT-SCOL', uniteCode: 'SCOLARITE', nombrePostes: 3 },
+        { code: 'INTENDANT', intitule: 'Intendant', niveauRespCode: 'RESPONSABLE', fonctionCode: 'INTENDANT', uniteCode: 'INTENDANCE', nombrePostes: 1 },
+        { code: 'RESP-RH', intitule: 'Responsable RH', niveauRespCode: 'RESPONSABLE', fonctionCode: 'RESP-RH', uniteCode: 'RH', nombrePostes: 1 },
+        { code: 'TECH-INFO', intitule: 'Technicien Informatique', niveauRespCode: 'EXECUTANT', fonctionCode: 'TECH-INFO', uniteCode: 'INFO', nombrePostes: 2 },
+        { code: 'ANIMATEUR', intitule: 'Animateur Culturel', niveauRespCode: 'EXECUTANT', fonctionCode: 'ANIMATEUR', uniteCode: 'ANIM', nombrePostes: 2 },
+        { code: 'COACH-SPORT', intitule: 'Coach Sportif', niveauRespCode: 'EXECUTANT', fonctionCode: 'COACH-SPORT', uniteCode: 'SPORT', nombrePostes: 3 },
     ];
 
     const postesMap = new Map<string, Poste>();
@@ -206,7 +201,6 @@ export async function seedOrganisation(
             intitule: p.intitule,
             code: p.code,
             uniteOrganisationnelleId: unite.id,
-            categoriePosteId: nomenclatures.categoriesPoste.get(p.categorieCode),
             niveauResponsabiliteId: nomenclatures.niveauxResponsabilite.get(p.niveauRespCode),
             fonctionId: p.fonctionCode ? fonctionsMap.get(p.fonctionCode) : undefined,
             nombrePostes: p.nombrePostes,
@@ -236,7 +230,6 @@ export async function seedOrganisation(
         { subCode: 'RESP-RH', supCode: 'PROVISEUR-ADJ' },
         { subCode: 'PROVISEUR-ADJ', supCode: 'PROVISEUR' },
     ];
-    const typeRelationSuperviseDirect = nomenclatures.typesRelation.get('SUPERVISE_DIRECT');
 
     for (const h of hierarchies) {
         const sub = postesMap.get(h.subCode);
@@ -249,8 +242,7 @@ export async function seedOrganisation(
         const hier = hierRepo.create({
             posteId: sub.id,
             superieurId: sup.id,
-            typeRelationId: typeRelationSuperviseDirect,
-            uniteOrganisationnelleId: sub.uniteOrganisationnelleId,
+            typeRelation: TypeRelationHierarchique.DIRECT,
             statut: StatutRelation.ACTIVE,
             actif: true,
             dateDebut: new Date(),

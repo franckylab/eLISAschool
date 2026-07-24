@@ -1,0 +1,456 @@
+{
+  "schemaVersion": 1,
+  "summary": {
+    "evidenceMode": "session-limited",
+    "evidenceBoundary": {
+      "manifest": {
+        "schemaVersion": 2,
+        "sourceFingerprint": "08a388f032f4fa7b",
+        "adapterVersion": "qoder-task-loop-source-v2",
+        "platform": "qoder",
+        "selection": {
+          "strategy": "stratified",
+          "eligibleCount": 288,
+          "analyzedCount": 40,
+          "confidence": "Medium"
+        }
+      },
+      "deliveryEvidenceLevels": [],
+      "sourceGaps": []
+    },
+    "semanticFacets": {
+      "schemaVersion": 1,
+      "status": "supplementary",
+      "entries": [
+        {
+          "id": "session-insight:source-coverage",
+          "kind": "redacted-summary",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "source-coverage",
+            "Medium"
+          ],
+          "summary": "Analyzed 40 of 288 sessions; 3/5 enabled source roots exist. Treat conclusions as sampled and increase the limit or time scope before making broad claims.",
+          "evidenceRefs": [],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:validation-behavior",
+          "kind": "redacted-summary",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "validation-behavior",
+            "Low"
+          ],
+          "summary": "Validation was mentioned by the user, but no matching command execution was observed: cargo test (3). Treat this as a validation execution gap until a matching tool command is found in bounded evidence.",
+          "evidenceRefs": [
+            {
+              "kind": "project-jsonl",
+              "id": "session-insight-2-1",
+              "type": "user",
+              "line": 3
+            },
+            {
+              "kind": "project-jsonl",
+              "id": "session-insight-2-2",
+              "type": "user",
+              "line": 9
+            },
+            {
+              "kind": "project-jsonl",
+              "id": "session-insight-2-3",
+              "type": "user",
+              "line": 3
+            }
+          ],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:post-edit-validation",
+          "kind": "rework-correction",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "post-edit-validation",
+            "Low"
+          ],
+          "summary": "No edit event was observed in the analyzed sample. Inspect more sessions before making claims about edit or validation habits.",
+          "evidenceRefs": [],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:execution-friction",
+          "kind": "friction-taxonomy",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "execution-friction",
+            "Medium"
+          ],
+          "summary": "Observed friction category: failed-event (182). Open bounded sessions behind this category before turning it into a user-facing recommendation.",
+          "evidenceRefs": [
+            {
+              "kind": "logs-session",
+              "id": "session-insight-4-1",
+              "type": "hook.finished",
+              "line": 66
+            },
+            {
+              "kind": "logs-session",
+              "id": "session-insight-4-2",
+              "type": "hook.finished",
+              "line": 177
+            },
+            {
+              "kind": "logs-session",
+              "id": "session-insight-4-3",
+              "type": "hook.finished",
+              "line": 178
+            }
+          ],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:tool-mix",
+          "kind": "redacted-summary",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "tool-mix",
+            "Medium"
+          ],
+          "summary": "Most observed tool: Read (280). Use this as workflow evidence, then inspect bounded sessions before claiming user intent.",
+          "evidenceRefs": [
+            {
+              "kind": "logs-session",
+              "id": "session-insight-5-1",
+              "type": "tool.requested",
+              "line": 73
+            }
+          ],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:observed-hooks",
+          "kind": "redacted-summary",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "observed-hooks",
+            "Medium"
+          ],
+          "summary": "Most observed hook: PreToolUse (288). Separate configured hooks from observed hook enforcement, and state when the script target is unavailable.",
+          "evidenceRefs": [
+            {
+              "kind": "logs-session",
+              "id": "session-insight-6-1",
+              "type": "hook.finished",
+              "line": 75
+            }
+          ],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:session-complexity",
+          "kind": "redacted-summary",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "session-complexity",
+            "Medium"
+          ],
+          "summary": "Observed 1 active long session(s); longest active estimate: 3h 57m. Review task family, outcome, and friction before deciding whether this duration reflects a problem or any decomposition, tool, delegation, or model change is needed.",
+          "evidenceRefs": [
+            {
+              "kind": "execution-transcript",
+              "id": "session-insight-7-1",
+              "type": "session_meta",
+              "line": 1
+            }
+          ],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:session-usage-efficiency",
+          "kind": "redacted-summary",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "session-usage-efficiency",
+            "Medium"
+          ],
+          "summary": "The analysis covered 288 sessions: 3 met the active-long threshold, with the longest estimated at 663 minutes. This activity describes effort only; token or credit evidence is incomplete and does not establish model preference, quality, or savings.",
+          "evidenceRefs": [
+            {
+              "kind": "execution-transcript",
+              "id": "session-insight-8-1",
+              "type": "session_meta",
+              "line": 1
+            }
+          ],
+          "modelVersion": "session-insights-v1"
+        }
+      ]
+    },
+    "usageActivity": {
+      "schemaVersion": 2,
+      "dateBasis": "UTC",
+      "measurementBasis": "session-starts-active-estimate-model-active-session-days-skill-invocations-and-loads",
+      "truncated": false,
+      "dates": [
+        "2026-07-20",
+        "2026-07-21",
+        "2026-07-22",
+        "2026-07-23"
+      ],
+      "sessions": {
+        "total": 288,
+        "starts": [
+          8,
+          11,
+          4,
+          265
+        ],
+        "activeMinutes": [
+          255.6,
+          690.8,
+          501.4,
+          170.9
+        ]
+      },
+      "models": [
+        {
+          "name": "lite",
+          "total": 21,
+          "daily": [
+            2,
+            0,
+            0,
+            19
+          ]
+        },
+        {
+          "name": "efficient",
+          "total": 9,
+          "daily": [
+            1,
+            0,
+            0,
+            8
+          ]
+        },
+        {
+          "name": "Unknown model",
+          "total": 5,
+          "daily": [
+            0,
+            0,
+            0,
+            5
+          ]
+        }
+      ],
+      "skills": [
+        {
+          "name": "canvas",
+          "total": 10,
+          "daily": [
+            0,
+            3,
+            5,
+            2
+          ]
+        },
+        {
+          "name": "elisaschool-business-logic",
+          "total": 1,
+          "daily": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "name": "elisaschool-dev",
+          "total": 1,
+          "daily": [
+            0,
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "name": "elisaschool-frontend-dev",
+          "total": 1,
+          "daily": [
+            0,
+            1,
+            0,
+            0
+          ]
+        },
+        {
+          "name": "elisaschool-frontend-refactor",
+          "total": 1,
+          "daily": [
+            0,
+            0,
+            1,
+            0
+          ]
+        },
+        {
+          "name": "grill-me",
+          "total": 1,
+          "daily": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    "usageEfficiency": {
+      "schemaVersion": 2,
+      "selection": {
+        "strategy": "all-eligible",
+        "eligibleSessionCount": 288,
+        "analyzedSessionCount": 288,
+        "complete": true
+      },
+      "roles": {
+        "userThreadCandidateCount": 271,
+        "childAgentCandidateCount": 17
+      },
+      "longSessions": {
+        "activeCount": 3,
+        "wallOnlyCount": 0,
+        "longestActiveMinutes": 662.9,
+        "activeRatio": 0.0104,
+        "estimate": {
+          "method": "capped-event-gap",
+          "activeThresholdMinutes": 45,
+          "gapCapMinutes": 5,
+          "idleGapMinutes": 30
+        },
+        "samples": [
+          {
+            "alias": "S1",
+            "sessionRef": "qsr1-27e705c97cfab6c415e27815",
+            "role": "child-agent-candidate",
+            "activeMinutes": 662.9,
+            "failureCount": 0,
+            "userInputSummary": "inspecte et analyse le système d'organisation et nomenclatures organisations, et toutes les notions et les modules liés commposte, fonction, unités, hiérachie, …"
+          },
+          {
+            "alias": "S2",
+            "sessionRef": "qsr1-b28087596e2af91f207c64b2",
+            "role": "child-agent-candidate",
+            "activeMinutes": 494.1,
+            "failureCount": 0,
+            "userInputSummary": "inspecte et analyse le sytème d'organisation et nomenclature. quels sont l'utilité, les fonctiones et importance de tous les éléments de nomenclaure dans le sys…"
+          },
+          {
+            "alias": "S3",
+            "sessionRef": "qsr1-b8b299cdcc3cfbfb011594fe",
+            "role": "child-agent-candidate",
+            "activeMinutes": 236.7,
+            "failureCount": 0,
+            "userInputSummary": "inspecte et analyse en profondeur elisaschool, le système d'organisation et le type d'organisation. fait des recherches sur le système académique et scolaire en…"
+          }
+        ]
+      },
+      "accounting": {
+        "mode": "effort-proxy",
+        "responseCount": 424,
+        "modelAttributedResponseCount": 419,
+        "unattributedResponseCount": 5,
+        "usageFieldObservedCount": 422,
+        "nonZeroUsageCount": 0,
+        "exactCreditsAvailable": false,
+        "pricingVersion": null
+      },
+      "modelUsage": [
+        {
+          "model": "lite",
+          "responseCount": 214,
+          "usageFieldObservedCount": 212,
+          "nonZeroUsageCount": 0
+        },
+        {
+          "model": "efficient",
+          "responseCount": 205,
+          "usageFieldObservedCount": 205,
+          "nonZeroUsageCount": 0
+        }
+      ],
+      "outcomeReview": {
+        "status": "required",
+        "reviewedCandidateCount": 0,
+        "reviewedActiveLongCount": 0,
+        "comparableModelOutcomeEvidence": false,
+        "recommendation": "controlled-a-b-required"
+      },
+      "reviewLead": {
+        "id": "session-usage-outcome-review-gap",
+        "title": "3 long-session candidates still need outcome review",
+        "reason": "3 of 288 analyzed sessions (1.0%) crossed the estimated active-time threshold; the longest estimate was 662.9 minutes and 0 have reviewed outcomes. 0 additional long spans may be idle or resumed work. This is an investigation lead, not a confirmed efficiency, decomposition, tool, or model problem.",
+        "expectedOutcome": "Each displayed candidate is classified by task family, outcome, and friction so the report can decide whether any real improvement is needed.",
+        "aiFixPrompt": "/better-loop review these sessions\n\n3 long-session candidates still need outcome review\n\n## Evidence to inspect\n\n- S1: session id `task-f32ae97759f2415c8835.session.execution`, analysis ref `qsr1-27e705c97cfab6c415e27815`; child-agent candidate, about 662.9 estimated active minutes, 0 failure event(s); user input: “inspecte et analyse le système d'organisation et nomenclatures organisations, et toutes les notions et les modules liés commposte, fonction, unités, hiérachie, …”\n- S2: session id `task-21f5bca8b8a14af0969e.session.execution`, analysis ref `qsr1-b28087596e2af91f207c64b2`; child-agent candidate, about 494.1 estimated active minutes, 0 failure event(s); user input: “inspecte et analyse le sytème d'organisation et nomenclature. quels sont l'utilité, les fonctiones et importance de tous les éléments de nomenclaure dans le sys…”\n- S3: session id `task-5b85e08f7a0547909498.session.execution`, analysis ref `qsr1-b8b299cdcc3cfbfb011594fe`; child-agent candidate, about 236.7 estimated active minutes, 0 failure event(s); user input: “inspecte et analyse en profondeur elisaschool, le système d'organisation et le type d'organisation. fait des recherches sur le système académique et scolaire en…”\n\n## First step\n\nCreate <run> in the OS temporary directory, then run from the project root:\n\n```bash\nnode scripts/session-analysis.mjs insights --platform qoder --workspace . --selection all-eligible --limit 1000 --format json --output <run>/insights.json\nnode scripts/session-analysis/usage-review-packet.mjs --source <run>/insights.json --workspace . --limit 8 --session-ref qsr1-27e705c97cfab6c415e27815 --session-ref qsr1-b28087596e2af91f207c64b2 --session-ref qsr1-b8b299cdcc3cfbfb011594fe --output <run>/.review-packet.json\n```\n\nWrite taskFamily, outcome, friction, confidence, and evidenceReason only for S1, S2, S3. Finish diagnosis before editing product code or creating a Memory, Skill, or Hook.\n\n## What we saw\n\n3 of 288 analyzed sessions (1.0%) crossed the estimated active-time threshold; the longest estimate was 662.9 minutes and 0 have reviewed outcomes. 0 additional long spans may be idle or resumed work. This is an investigation lead, not a confirmed efficiency, decomposition, tool, or model problem.\n\n## Why review it\n\nWithout outcome review, complex work, tool friction, idle/resume noise, and a normal long task remain indistinguishable.\n\n## Expected result\n\nEach displayed candidate is classified by task family, outcome, and friction so the report can decide whether any real improvement is needed.\n\n## Scope\n\nCreate only a privacy-safe session-efficiency review and reader report. Do not edit product code or treat wall span as active cost. Raw session ids are only for locating the sessions inside this prompt; do not copy them into the final report, review JSON, or other reader-visible fields. This is the complete 3/3 candidate view; conclusions still require semantic review.\n\n## Done when\n\n<run>/.review.json has one valid row for each of S1, S2, S3; semantic review writes <run>/insights.reviewed.json; and <run>/report.md validates against the reviewed source. If review confirms no problem, do not create an improvement.\n\n## Validation\n\n- Run `node scripts/session-analysis/usage-semantic-review.mjs --source <run>/insights.json --packet <run>/.review-packet.json --review <run>/.review.json --output <run>/insights.reviewed.json`\n- Run `node scripts/session-analysis/validate-usage-report.mjs --source <run>/insights.reviewed.json --report <run>/report.md`; it must return `ok: true`\n- Confirm `outcomeReview.reviewedActiveLongCount` in the reviewed source equals the number of reviewed displayed aliases; delete the two private review files after validation",
+        "sampleCoverage": {
+          "shown": 3,
+          "total": 3,
+          "complete": true
+        }
+      }
+    },
+    "learningCapture": {
+      "schemaVersion": 1,
+      "state": "N/A",
+      "summary": "N/A — requires two comparable observation windows and an intervention comparison.",
+      "interventions": []
+    }
+  },
+  "dimensions": [
+    {
+      "id": "task-understanding"
+    },
+    {
+      "id": "controlled-execution"
+    },
+    {
+      "id": "change-validation"
+    },
+    {
+      "id": "reliable-delivery"
+    },
+    {
+      "id": "learning-capture"
+    }
+  ],
+  "findings": [
+    {
+      "id": "build-silences-typescript-errors"
+    },
+    {
+      "id": "test-coverage-critical-gap"
+    },
+    {
+      "id": "no-ci-cd-pipeline"
+    },
+    {
+      "id": "long-sessions-without-outcome-review"
+    },
+    {
+      "id": "skills-configured-but-not-exercised"
+    },
+    {
+      "id": "no-nested-agents-md-for-source-roots"
+    }
+  ]
+}

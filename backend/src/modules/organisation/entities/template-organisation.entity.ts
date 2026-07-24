@@ -10,10 +10,13 @@ import {
 } from 'typeorm';
 import { Etablissement } from '@modules/etablissement/entities';
 
+/**
+ * Template de poste (refonte v4.0)
+ * categoriePosteId supprimé — dérivé via fonction.typePersonnel
+ */
 export interface TemplatePoste {
     ref: string;
     intitule: string;
-    categoriePosteId?: string;
     niveauResponsabiliteId?: string;
     fonctionRef?: string;
     fonctionId?: string;
@@ -27,9 +30,12 @@ export interface TemplateLienHierarchique {
     typeRelation: string;
 }
 
+/**
+ * Noeud de template d'organisation (refonte v4.0)
+ * usageUnite + niveau → echelonCode (fusion dans EchelonStructurel)
+ */
 export interface NoeudTemplateOrganisation {
-    niveau: number;
-    usageUnite: string;
+    echelonCode: string;
     nom: string;
     count: number;
     postes?: TemplatePoste[];

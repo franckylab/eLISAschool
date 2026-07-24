@@ -16,8 +16,7 @@ import { z } from 'zod';
 export const createUniteOrganisationnelleSchema = z.object({
     nom: z.string().min(2).max(100),
     description: z.string().optional(),
-    usageUniteId: z.string().uuid().optional(), // FK vers UsageUnite
-    niveauOrganisationId: z.string().uuid().optional(), // FK vers NiveauOrganisation
+    echelonStructurelId: z.string().uuid().nullable().optional(), // FK vers EchelonStructurel
     code: z.string().min(2).max(50),
     statut: z.enum(['ACTIF', 'EN_CREATION', 'EN_RESTRUCTURATION', 'ARCHIVE']).default('ACTIF'),
     etablissementId: z.string().uuid(),
@@ -40,10 +39,9 @@ export type UpdateUniteOrganisationnelleDto = z.infer<typeof updateUniteOrganisa
 export const createHierarchiePersonnelSchema = z.object({
     personnelId: z.string().uuid().optional(),
     superieurId: z.string().uuid().optional(),
-    typeRelationId: z.string().uuid().optional(), // FK vers TypeRelationHierarchique
+    typeRelation: z.enum(['DIRECT', 'FONCTIONNEL']).default('DIRECT'), // enum varchar (remplace FK TypeRelationHierarchique)
     statut: z.enum(['ACTIVE', 'HISTORIQUE', 'PLANIFIEE']).default('ACTIVE'),
     posteId: z.string().uuid().optional(),
-    uniteOrganisationnelleId: z.string().uuid().optional(),
     etablissementId: z.string().uuid().optional(),
     dateDebut: z.string().datetime().optional(),
     dateFin: z.string().datetime().optional(),

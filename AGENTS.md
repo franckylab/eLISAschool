@@ -3,49 +3,53 @@
 ## Objective
 Refactorer le module organisation et ses nomenclatures en une source de vérité unique, avec routes dédiées, composants génériques, i18n 100% flat, et permissions granulaires.
 
-## Décisions Architecturales (grill-me session)
-### Modèle de données
-- **NiveauResponsabilite** : table unique `niveaux_responsabilite` (enum supprimé). Poste.niveauResponsabilite calculé via relation.
-- **CategoriePoste** : table unique `categories_poste` (remplace l'enum `TypePoste`). 9 seeds protégés (DIRECTION, ENSEIGNEMENT, ENCADREMENT, ADMINISTRATIF, TECHNIQUE, DOCUMENTATION, ORIENTATION, SANTE, SOCIAL). Codes distincts de TypePersonnel pour éviter la confusion sémantique (sauf DIRECTION intentionnellement partagé). Poste.type calculé via `categoriePosteId` FK.
-- **TypePersonnel** : entité dans `organisation/entities`, **globale** (pas d'`etablissementId`), `estSysteme` + 8 seeds protégés (TYPE_ENSEIGNANT, TYPE_DIRECTION, TYPE_ADMINISTRATIF, TYPE_TECHNIQUE, TYPE_SERVICE, TYPE_SANTE, TYPE_SOCIAL, TYPE_AUTRE). Codes préfixés `TYPE_` pour les disambiguer de `CategoriePoste`. STAGE et TEMPORAIRE retirés (redondants). Route API UNIQUE : `/api/personnel/types`. Pas de doublon dans `/api/organisation/types-personnel`. Migration seed incluse : renommage auto des anciens codes.
-- **Fonction** : nomenclature **multi-tenant** hiérarchique (`etablissementId` requis). Porte le type statutaire via `Fonction.typePersonnelId` (FK optionnelle → type global). Seedée par établissement dans `seed-organisation.ts`.
-- **Type attendu d'un Poste** : **dérivé** via `poste.fonction.typePersonnel` — jamais stocké sur `Poste` ni sur `HierarchiePersonnel`.
-- **NiveauOrganisation** : table `niveaux_organisation` (niveau 0-3). Lié via `UniteOrganisationnelle.niveauOrganisationId`.
-- **UsageUnite** : table `usages_unite`. Lié via `UniteOrganisationnelle.usageUniteId`.
-- **TypeRelationHierarchique** : table `types_relation_hierarchique`. Lié via `HierarchiePersonnel.typeRelationId`.
-- **JSONB** : `missions`, `competencesRequises` conservés sur Poste (pas de tables séparées).
-- **TemplateOrganisation** : JSONB conservé (lecture seule, 22 templates seedés). TemplatePoste supporte `fonctionId` (optionnel) avec fallback `fonctionRef`. Validation croisée seed-templates : vérifie que chaque `fonctionRef` existe dans au moins un établissement.
-- **Validation** : anti-cycle arborescence via CTE récursif PostgreSQL sur UniteOrganisationnelle (Fonction) et HierarchiePersonnel (CTE WITH RECURSIVE).
+## Décisions Architecturales (grill-me session — consolidé v4.0)
+### Modèle de données — 8 entités + 1 template (réduction 33% depuis 12)
+- **Poste** : pivot central unifiant les 3 axes (où=unite, quoi=fonction, qui=occupant). `categoriePosteId` supprimé — catégorie dérivée via `poste.fonction.typePersonnel`.
+- **EchelonStructurel** (ex-NiveauOrganisation + UsageUnite) : fusion des deux concepts. Champs : `niveau` (int), `code` (string, ex: 'DIRECTION'), `label`, `description`, `couleur`, `estSysteme`, `etablissementId`. `UniteOrganisationnelle` référence uniquement `echelonStructurelId`.
+- **NiveauResponsabilite** : table `niveaux_responsabilite`. Axe orthogonal à EchelonStructurel (poids hiérarchique vs profondeur structurelle).
+- **TypePersonnel** : entité **globale** (pas d'`etablissementId`), 8 seeds protégés (TYPE_ENSEIGNANT, etc.). `modeRemunerationDefaut` supprimé (anomalie global→multi-tenant, déjà porté par TypeContratPersonnalise).
+- **ModeRemunerationEntity** : source unique de vérité pour les modes de rémunération. L'enum `ModeRemuneration` du module paie est **supprimée**. FK uuid dans ContratPersonnel et TypeContratPersonnalise.
+- **HierarchiePersonnel** : `typeRelationId` (FK) remplacé par `typeRelation` (varchar enum : DIRECT, FONCTIONNEL). `uniteOrganisationnelleId` supprimé (redondant avec Poste).
+- **Fonction** : nomenclature multi-tenant hiérarchique. Porte `typePersonnelId` (FK → type global).
+- **JSONB** : `missions`, `competencesRequises` conservés sur Poste.
+- **TemplateOrganisation** : JSONB (lecture seule, 22 templates). Interfaces adaptées : `TemplatePoste.categoriePosteId` supprimé, `NoeudTemplateOrganisation.usageUnite` → `echelonCode`, `niveau` supprimé.
+- **Validation** : anti-cycle arborescence via CTE récursif PostgreSQL.
 - **Protection seeds** : `assertNotSystem()` guard backend, UI bouton Supprimer caché + Dupliquer.
 
+### Entités supprimées (4)
+- ❌ `UsageUnite` → fusionné dans EchelonStructurel
+- ❌ `CategoriePoste` → dérivé via Fonction.typePersonnel
+- ❌ `TypeRelationHierarchique` → enum varchar sur HierarchiePersonnel
+- ❌ `NiveauOrganisation` → renommé EchelonStructurel
+
 ### Modules backend
-- **Postes** : fusionné dans `organisation/`. Route `/api/organisation/postes`.
+- **Postes** : dans `organisation/`. Route `/api/organisation/postes`.
 - **Fonctions** : entité dans `organisation/entities/`, service/contrôleur propres.
-- **TypePersonnel** : entité dans `organisation/entities/`, accessible depuis `personnel/` via barrel. Routes dans `personnel/controllers/` uniquement.
-- **Nomenclatures** : 6 CRUD dans `nomenclature.controller.ts` : niveaux-organisation, usages-unite, categories-poste, niveaux-responsabilite, types-unite, types-relation. Pas de types-personnel ici.
-- **Seeds** : `seed-nomenclatures.ts` (global, 5 tables), `seed-organisation.ts` (par établissement : fonctions + unités + postes + hiérarchies avec résolution FK complète).
+- **TypePersonnel** : entité dans `organisation/entities/`, accessible depuis `personnel/` via barrel. Routes dans `personnel/controllers/`.
+- **Nomenclatures** : 4 CRUD dans `nomenclature.controller.ts` : echelons-structurels, niveaux-responsabilite, modes-remuneration. Types-personnel dans personnel.
+- **Seeds** : `seed-nomenclatures.ts` (global : echelons_structurels, niveaux_responsabilite, modes_remuneration), `seed-type-personnel.ts` (global, 8 types), `seed-organisation.ts` (par établissement : fonctions + unités + postes + hiérarchies).
 - **Routes API REST** : pur pluriel. Actions via query params ou sous-ressources.
-- **Fonction.etablissementId** requis (NOT NULL). Les fonctions système sont seedées par établissement.
 
 ### Frontend
-- **Navigation** : routes dédiées pour chaque entité. Sidebar « Organisation » : Vue d'ensemble, Unités, Postes, Fonctions, Hiérarchie, Nomenclatures (6 tabs), Modèles.
+- **Navigation** : Sidebar « Organisation » : Vue d'ensemble, Unités, Postes, Fonctions, Organigramme (vue unifiée), Nomenclatures (4 onglets : Échelons, Responsabilités, Types personnel, Modes rémun.), Modèles.
 - **Layout** : `_auth.organisation.tsx` → Breadcrumbs + motion + ErrorBoundary + `<Outlet/>`.
-- **Composants** : `NomenclatureCrudPage<T>` générique (6 nomenclatures). Plus de `TemplatesPage` (supprimé, remplacé par `ModelesPage`).
-- **Hooks** : unitaires, tous exportés depuis le barrel `features/organisation/index.ts` (use-postes, use-hierarchies, etc.).
-- **i18n** : 100% flat. `NomenclatureCrudPage` utilise `t('colActions')` (pas `t('actions')`).
-- **Permissions** : sous-permissions CRUD + section (6 niveaux : unites, postes, fonctions, hierarchie, nomenclatures, templates). `organisation:unites:read`, `organisation:postes:write`, etc. Toutes les routes GET protégées par `requirePermission`. Sidebar filtrée par `useModulePermissions('organisation')`. Enum complet dans `shared/src/enums/roles.enum.ts`.
-- **Icônes** : Building2(module), LayoutDashboard(dashboard), GitBranch(unités), Briefcase(postes), Workflow(fonctions), Network(hiérarchie), Layers(niveaux-org), Tags(usages), FolderTree(catégories), ArrowUpDown(niveaux-resp), FileText(modèles), UserCheck(types-personnel), Sparkles(génération).
+- **Composants** : `NomenclatureCrudPage<T>` générique (4 nomenclatures). Pages supprimées : `categories-poste-page`, `usages-unite-page`, `niveaux-organisation-page`, `types-relation-page`.
+- **Hooks** : unitaires, barrel `features/organisation/index.ts`.
+- **i18n** : 100% flat. Clés obsolètes nettoyées (categoriePoste, usageUnite, niveauOrganisation, typeRelation seeds).
+- **Permissions** : sous-permissions CRUD + section. `organisation:unites:read`, `organisation:postes:write`, etc.
+- **Icônes** : Building2(module), GitBranch(unités), Briefcase(postes), Workflow(fonctions), Network(organigramme), Layers(échelons), ArrowUpDown(responsabilités), UserCheck(types-personnel), Wallet(modes-rémun.), FileText(modèles), Sparkles(génération).
 
 ### Sidebar
-- "Organisation" expandable sous "Organisation Académique" : Vue d'ensemble, Unités, Postes, Fonctions, Hiérarchie, Nomenclatures.
+- "Organisation" expandable : Vue d'ensemble, Unités, Postes, Fonctions, Organigramme, Nomenclatures, Modèles.
 - Icône mère : Building2.
 
 ### Seeds ordre (initial.seed.ts)
-10. seedTypePersonnel() — global, 8 types (TYPE_ENSEIGNANT, TYPE_DIRECTION, TYPE_ADMINISTRATIF, TYPE_TECHNIQUE, TYPE_SERVICE, TYPE_SANTE, TYPE_SOCIAL, TYPE_AUTRE). Renomme auto les anciens codes (sans préfixe).
+10. seedTypePersonnel() — global, 8 types (TYPE_ENSEIGNANT, etc.). `modeRemunerationDefaut` supprimé des seeds.
 10b. seedTypesContrat() — global
-10c. seedNomenclatures() — global : categories_poste (9), niveaux_organisation, niveaux_responsabilite, usages_unite, types_relation_hierarchique
-11. seedOrganisation(etablissementId) — par établissement : 22 fonctions arborescentes + 20 unités + 22 postes + 13 hiérarchies (FK résolues)
-12. seedTemplatesOrganisation() — global, 22 templates
+10c. seedNomenclatures() — global : echelons_structurels (fusion niveaux_organisation + usages_unite), niveaux_responsabilite, modes_remuneration
+11. seedOrganisation(etablissementId) — par établissement : fonctions + unités + postes + hiérarchies (FK résolues)
+12. seedTemplatesOrganisation() — global, 22 templates (interfaces adaptées : echelonCode, sans categoriePosteId)
 
 ### Seeds demo ordre (run-demo-seeds.ts)
 4. seedPersonnelDemo() — 10 membres + contrats
@@ -69,7 +73,16 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 — (none)
 
 ## Next Move
-- Tests unitaires dédiés (phase séparée)
+Implémenter la refonte v4.0 du modèle organisation (grill-me consolidé) :
+1. **Backend — Migration SQL** : rename niveaux_organisation → echelons_structurels (+ code, couleur), drop usages_unite/categories_poste/types_relation_hierarchique, add FK modeRemunerationId sur contrats/types_contrat, drop modeRemunerationDefaut sur types_personnel, drop categoriePosteId sur postes, HierarchiePersonnel.typeRelationId → typeRelation varchar
+2. **Backend — Entités/Services/DTOs** : renommer/créer/supprimer les fichiers correspondants
+3. **Backend — Seeds** : adapter seed-nomenclatures, seed-type-personnel, seed-templates
+4. **Backend — Enum paie** : supprimer `paie/entities/mode-remuneration.enum.ts`, remplacer par constantes TS
+5. **Frontend — Pages** : supprimer 4 pages nomenclature, créer page onglets 4 tabs
+6. **Frontend — Composants** : mettre à jour unite-detail, poste-form, types, organigramme
+7. **Frontend — i18n** : nettoyer clés obsolètes, ajouter echelonStructurel
+8. **Frontend — Sidebar** : retirer "Hiérarchie", ajouter "Organigramme"
+9. **Tests** : phase dédiée après stabilisation
 
 ## Travail effectué — Session 2026-07-23
 ### Frontend — Nettoyage `any` types
@@ -106,9 +119,9 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 - Pas de glass container system-wide — uniquement dans les actions du PageHeader.
 - `TextLabel` (composant réutilisable `components/ui/TextLabel.tsx`) pour les labels importants : utilise `--color-text-strong` (contrat plus élevé), `font-weight: 600`, tooltip natif `title` lors du troncage.
 - Hierarchie de contraste : `--color-text-strong` > `--color-text-primary` > `--color-text-secondary` > `--color-text-muted`.
-- **Sources de vérité** : NiveauResponsabilite (table), CategoriePoste (table), TypePersonnel (table + estSysteme). Enums TypePoste, NiveauResponsabiliteEnum supprimés.
+- **Sources de vérité** : EchelonStructurel (table, fusion NiveauOrg+UsageUnite), NiveauResponsabilite (table), TypePersonnel (table globale), ModeRemunerationEntity (table, remplace enum paie). CategoriePoste, TypeRelationHierarchique supprimés.
 - **Protection seeds** : `assertNotSystem()` dans shared/helpers. UI : Supprimer caché si estSysteme, Dupliquer ajouté.
-- **Composants génériques** : `NomenclatureCrudPage<T>` (7 nomenclatures), `TreeView<T>` (unités, fonctions, organigramme).
+- **Composants génériques** : `NomenclatureCrudPage<T>` (4 nomenclatures), `TreeView<T>` (unités, fonctions, organigramme).
 - **i18n** : 100% flat. Helper `useEnumOptions(ns, enumValues, prefix)` pour listes déroulantes.
 - **Routes API** : pur pluriel REST. `/api/organisation/*`. Actions via sous-ressources ou query params.
 
@@ -124,8 +137,18 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 - **ApparencePage** : preview `<img>` avec `filter: var(--fond-filter)`. Grille catalogue miniatures SVG via `FondImage`.
 
 
-## Travail effectué — Session 2026-07-23 (grill-me organisation)
-### Architecture & Modèle
+## Travail effectué — Session 2026-07-23 (grill-me organisation v4.0)
+### Consolidation du modèle (8 décisions validées)
+1. **ModeRemunerationEntity** = source unique, enum `ModeRemuneration` (paie) supprimée
+2. **NiveauOrganisation** → renommé `EchelonStructurel`
+3. **UsageUnite** → fusionné dans `EchelonStructurel` (ajout champ `code`)
+4. **TypeRelationHierarchique** (table) → enum varchar `DIRECT/FONCTIONNEL` sur HierarchiePersonnel
+5. **CategoriePoste** → supprimé, dérivé via `Fonction.typePersonnel`
+6. **TypePersonnel.modeRemunerationDefaut** → supprimé
+7. **TemplateOrganisation** → interfaces adaptées (echelonCode, sans categoriePosteId)
+8. **Frontend** → sidebar simplifiée, Nomenclatures 4 onglets, Organigramme unifié
+
+### Architecture & Modèle (session précédente)
 - **TypePersonnel codes** : préfixe `TYPE_` pour disambiguer de CategoriePoste. `personnel.constants.ts`, `seed-type-personnel.ts`, `seed-organisation.ts` mis à jour. Migration seed auto : renommage des anciens codes (ex. `ENSEIGNANT` → `TYPE_ENSEIGNANT`).
 - **TemplatePoste.fonctionId** : champ optionnel ajouté à l'interface. `generation.service.ts` priorise `fonctionId` sur `fonctionRef`. Validation croisée seed-templates : vérifie que chaque `fonctionRef` existe dans la base.
 - **CTE anti-cycle HierarchiePersonnel** : remplacement du DFS applicatif par une `WITH RECURSIVE` PostgreSQL dans `organisation.service.ts`.

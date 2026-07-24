@@ -2,7 +2,7 @@
  * ==================================
  * eLISAschool - Export des services Organisation
  * ==================================
- * Version: 2.0.0 — post-refonte
+ * Version: 4.0.0 — post-refonte v4.0
  */
 
 // Services principaux
@@ -10,13 +10,10 @@ export * from './organisation.service';
 export * from './postes.service';
 export * from './fonctions.service';
 
-// Services nomenclature (éclatés)
-export * from './niveau-organisation.service';
-export * from './usage-unite.service';
-export * from './categorie-poste.service';
+// Services nomenclature (éclatés — 4 nomenclatures)
+export * from './echelon-structurel.service';
 export * from './niveau-responsabilite.service';
 export * from './template-organisation.service';
-export * from './type-relation.service';
 export * from './mode-remuneration.service';
 
 // Services spécialisés

@@ -139,8 +139,6 @@ export class ContratService {
                 superieurId: aff.membrePersonnelId,
                 statut: StatutRelation.ACTIVE,
                 posteId: poste.id,
-                posteIntitule: poste.intitule,
-                uniteOrganisationnelleId: poste.uniteOrganisationnelleId,
                 etablissementId,
                 dateDebut,
             });
@@ -214,10 +212,12 @@ export class ContratService {
         await this.syncTypeContrat(dto);
 
         // Validation conditionnelle selon le mode de rémunération
-        if (dto.modeRemuneration === 'MENSUEL' || dto.modeRemuneration === 'MIXTE') {
+        // Le mode étant maintenant une FK, on vérifie via le modeRemunerationId
+        // que le salaire de base est fourni si un mode est spécifié
+        if (dto.modeRemunerationId) {
             if (!dto.salaireBase || dto.salaireBase <= 0) {
                 throw new AppError(
-                    'Le salaire de base est requis pour le mode ' + dto.modeRemuneration,
+                    'Le salaire de base est requis quand un mode de rémunération est spécifié',
                     400, 'SALAIRE_BASE_REQUIS',
                 );
             }
@@ -269,7 +269,7 @@ export class ContratService {
             dateFin: dto.dateFin ? new Date(dto.dateFin) : null,
             salaireBase: dto.salaireBase || 0,
             tarifHoraire: dto.tarifHoraire,
-            modeRemuneration: dto.modeRemuneration as any,
+            modeRemunerationId: dto.modeRemunerationId,
             heuresContractuellesMois: dto.heuresContractuellesMois,
             tarifHebdomadaire: dto.tarifHebdomadaire,
             statut: dto.statut as any,

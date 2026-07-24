@@ -1,6 +1,0 @@
-- Feature modules under `src/features/<domain>/` follow a fixed sub-folder layout of `components/`, `hooks/`, `types/`, and a barrel `index.ts` re-exporting the public surface.
-- State lives in Zustand stores under `src/stores/` and is accessed exclusively through typed selector functions (e.g. `useAuthStore((state) => state.isAuthenticated)`), never by reading raw store fields.
-- All HTTP calls go through the singleton `apiClient` in `src/lib/api-client.ts`; direct `fetch` calls are reserved only for the internal refresh loop and upload helper.
-- Authentication and authorization are enforced centrally via route-level guards (`src/app/route-guards.ts`, `permission-guards.ts`) and the `RequirePermission` / `PermissionGate` components rather than ad-hoc checks inside pages.
-- Internationalization keys are grouped per feature namespace (one `*.json` file per domain under `locales/fr` and `locales/en`) and registered as static imports in `src/lib/i18n.ts` instead of being loaded on demand.
-- UI components in `src/components/ui/` are thin presentational wrappers styled with Tailwind utility classes and exported through a per-directory `index.ts` barrel.

@@ -18,9 +18,7 @@ import {
     GenererOrganisationDto,
     ResultatGeneration,
 } from '../dto';
-import { niveauOrganisationService } from './niveau-organisation.service';
-import { usageUniteService } from './usage-unite.service';
-import { categoriePosteService } from './categorie-poste.service';
+import { echelonStructurelService } from './echelon-structurel.service';
 import { niveauResponsabiliteService } from './niveau-responsabilite.service';
 import { organisationService } from './organisation.service';
 
@@ -33,8 +31,7 @@ interface GenerationContext {
     result: ResultatGeneration;
     uniteRefMap: Map<string, string>;
     posteRefMap: Map<string, string>;
-    niveauOrgMap: Map<string, string>;
-    categorieMap: Map<string, string>;
+    echelonMap: Map<string, string>;
     niveauRespMap: Map<string, string>;
     fonctionMap: Map<string, string>;
 }
@@ -134,20 +131,14 @@ export class GenerationService {
             },
             uniteRefMap: new Map(),
             posteRefMap: new Map(),
-            niveauOrgMap: new Map(),
-            categorieMap: new Map(),
+            echelonMap: new Map(),
             niveauRespMap: new Map(),
             fonctionMap: new Map(),
         };
 
-        const niveaux = await niveauOrganisationService.findAll(etablissementId);
-        for (const n of niveaux) {
-            context.niveauOrgMap.set(n.label.toLowerCase(), n.id);
-        }
-
-        const categories = await categoriePosteService.findAll(etablissementId);
-        for (const c of categories) {
-            context.categorieMap.set(c.code, c.id);
+        const echelons = await echelonStructurelService.findAll(etablissementId);
+        for (const e of echelons) {
+            context.echelonMap.set(e.code.toLowerCase(), e.id);
         }
 
         const niveauxResp = await niveauResponsabiliteService.findAll(etablissementId);
@@ -258,7 +249,7 @@ export class GenerationService {
                     );
                 }
                 ctx.uniteRefMap.set(nomNet, existing.id);
-                ctx.uniteRefMap.set(noeud.usageUnite, existing.id);
+                ctx.uniteRefMap.set(noeud.echelonCode, existing.id);
                 return existing.id;
             }
         } else {
@@ -284,7 +275,7 @@ export class GenerationService {
         ctx.result.unitesCrees++;
         ctx.result.unites.push({ ref: nomNet, id: savedUnite.id, nom, code });
         ctx.uniteRefMap.set(nomNet, savedUnite.id);
-        ctx.uniteRefMap.set(noeud.usageUnite, savedUnite.id);
+        ctx.uniteRefMap.set(noeud.echelonCode, savedUnite.id);
 
         // Créer les postes
         if (noeud.postes) {
@@ -315,10 +306,6 @@ export class GenerationService {
         const count = templatePoste.nombrePostes || 1;
         const tp = templatePoste as any;
 
-        // Résoudre la catégorie de poste (code → UUID)
-        const categorieCode = tp.categoriePoste;
-        const categoriePosteId = tp.categoriePosteId ?? (categorieCode ? ctx.categorieMap.get(categorieCode) : undefined);
-
         // Résoudre le niveau de responsabilité (code → UUID)
         const niveauRespCode = tp.niveauResponsabilite;
         const niveauResponsabiliteId = tp.niveauResponsabiliteId ?? (niveauRespCode ? ctx.niveauRespMap.get(niveauRespCode) : undefined);
@@ -337,7 +324,6 @@ export class GenerationService {
                 intitule,
                 code: posteCode,
                 uniteOrganisationnelleId: uniteId,
-                categoriePosteId,
                 niveauResponsabiliteId,
                 fonctionId,
                 nombrePostes: 1,

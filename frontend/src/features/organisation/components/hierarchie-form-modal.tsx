@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { GitBranch } from 'lucide-react';
-import { apiClient } from '@/lib/api-client';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { useAuthStore } from '@/stores/auth.store';
 import { useCreerHierarchie, useModifierHierarchie } from '../hooks/use-organisation';
@@ -30,6 +28,11 @@ interface Props {
     hierarchie?: HierarchiePersonnel | null;
 }
 
+const TYPES_RELATION_OPTIONS = [
+    { value: 'DIRECT', label: 'Directe' },
+    { value: 'FONCTIONNEL', label: 'Fonctionnelle' },
+];
+
 export function HierarchieFormModal({ open, onOpenChange, postes, hierarchie }: Props) {
     const { t } = useTranslation('organisation');
     const isEdit = !!hierarchie;
@@ -37,14 +40,6 @@ export function HierarchieFormModal({ open, onOpenChange, postes, hierarchie }: 
     const modifier = useModifierHierarchie();
     const etablissementId = useAuthStore((s) => s.etablissementId);
     const [apiError, setApiError] = useState<string | null>(null);
-
-    const { data: typesRelationData } = useQuery({
-        queryKey: ['types-relation'],
-        queryFn: async () => {
-            const res = await apiClient.get('/api/organisation/types-relation');
-            return (res as any).data || [];
-        },
-    });
 
     const initSubordonne: PersonnelSearchResult | null = hierarchie
         ? { id: hierarchie.personnelId || '', nom: '', prenom: '' }
@@ -60,7 +55,7 @@ export function HierarchieFormModal({ open, onOpenChange, postes, hierarchie }: 
     const { handleSubmit, control, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(schema),
         defaultValues: {
-            typeRelationId: hierarchie?.typeRelationId || '',
+            typeRelation: hierarchie?.typeRelation || 'DIRECT',
             posteId: hierarchie?.posteId || '',
             commentaire: hierarchie?.commentaire || '',
         },
@@ -87,11 +82,6 @@ export function HierarchieFormModal({ open, onOpenChange, postes, hierarchie }: 
             setApiError(e?.response?.data?.message || e?.message || t('erreurGenerique'));
         }
     };
-
-    const typesRelation = (typesRelationData || []).map((tr: { id: string; label: string }) => ({
-        value: tr.id,
-        label: tr.label,
-    }));
 
     const valide = subordonne && superieur;
 
@@ -122,14 +112,14 @@ export function HierarchieFormModal({ open, onOpenChange, postes, hierarchie }: 
             />
 
             <Controller
-                name="typeRelationId"
+                name="typeRelation"
                 control={control}
                 render={({ field }) => (
                     <ElisaSelect label={t('typeRelation')}
                         value={field.value}
                         onValueChange={field.onChange}
-                        options={typesRelation}
-                        error={errors.typeRelationId?.message as string}
+                        options={TYPES_RELATION_OPTIONS}
+                        error={errors.typeRelation?.message as string}
                     />
                 )}
             />

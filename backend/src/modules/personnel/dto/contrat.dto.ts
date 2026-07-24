@@ -21,7 +21,7 @@ export const createContratSchema = z.object({
     dateFin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
     salaireBase: z.coerce.number().min(0).default(0),
     tarifHoraire: z.coerce.number().positive().optional(),
-    modeRemuneration: modeRemunerationSchema.optional(),
+    modeRemunerationId: z.string().uuid().optional(),
     heuresContractuellesMois: z.coerce.number().positive().optional(),
     tarifHebdomadaire: z.coerce.number().positive().optional(),
     statut: z.enum(['ACTIF', 'EXPIRE', 'RENEGOCIE', 'ROMPU']).default('ACTIF'),

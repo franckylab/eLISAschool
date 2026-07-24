@@ -20,6 +20,14 @@
 - [IMPROVEMENTS-RH-PARCOURS-PROFESSIONNEL.md](file://docs/_improvements/IMPROVEMENTS-RH-PARCOURS-PROFESSIONNEL.md)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Updated personnel administration models to use TypePersonnel code prefixing (TYPE_ prefix) for improved consistency
+- Removed deprecated categorie_personnel table references throughout the documentation
+- Enhanced position template functionality with function relationships for better organizational structure
+- Updated database schema diagrams to reflect the new TypePersonnel naming convention
+- Revised entity relationship models to show improved position-template-function relationships
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -35,9 +43,11 @@
 ## Introduction
 This document describes the human resources management system within eLISAschool, covering personnel administration, payroll processing, recruitment workflow, and performance evaluation. It explains the complete staff lifecycle from recruitment through retirement, including contract management and document handling. It also details attendance and leave management, time tracking, absence monitoring, performance evaluation workflows, career progression tracking, training management, practical examples, reporting capabilities, compliance requirements, data privacy, and integration with external payroll systems.
 
+**Updated** The system now uses standardized TypePersonnel code prefixing for improved consistency and maintainability across all personnel-related entities.
+
 ## Project Structure
 The HR domain is implemented as a set of backend modules and database migrations:
-- Personnel module (multi-phase migrations) for core employee records, roles, contracts, and related entities
+- Personnel module (multi-phase migrations) for core employee records, roles, contracts, and related entities with enhanced TypePersonnel code prefixing
 - Payroll extension migration for salary structures, allowances/deductions, tax components, and payment runs
 - Recruitment module for candidate pipeline and hiring stages
 - Performance tracking and follow-up via dedicated migrations and constants
@@ -125,18 +135,20 @@ PC --> P
 - [046-types-contrat-personnalises.sql](file://backend/database/migrations/046-types-contrat-personnalises.sql)
 
 ## Core Components
-- Personnel Administration: Employee master data, job positions, contracts, documents, and role-based access control for HR operations.
+- Personnel Administration: Employee master data, job positions, contracts, documents, and role-based access control for HR operations with standardized TypePersonnel code prefixing.
 - Payroll Processing: Salary structures, allowances/deductions, tax components, pay periods, and payment runs.
 - Recruitment Workflow: Candidate profiles, application stages, interviews, offers, and onboarding handoff.
 - Attendance and Leave Management: Time tracking, attendance logs, leave requests, approvals, and absence monitoring.
 - Performance Evaluation and Career Progression: Evaluations, competencies, career moves, and training records.
 
 Key implementation anchors:
-- Multi-phase personnel schema and permissions
+- Multi-phase personnel schema and permissions with TypePersonnel code standardization
 - Payroll extension for extended salary components and payments
 - Recruitment module schema
 - Performance follow-up schema
 - Shared HR constants for enums and defaults
+
+**Updated** All personnel-related entities now use consistent TYPE_ prefix coding for better maintainability and clarity.
 
 **Section sources**
 - [016-module-personnel-rh-phase1.sql](file://backend/database/migrations/016-module-personnel-rh-phase1.sql)
@@ -153,7 +165,7 @@ Key implementation anchors:
 
 ## Architecture Overview
 The HR system follows a modular architecture:
-- Database layer: Phase-by-phase migrations define entities and relationships for personnel, payroll, recruitment, and performance.
+- Database layer: Phase-by-phase migrations define entities and relationships for personnel, payroll, recruitment, and performance with standardized TypePersonnel code prefixing.
 - Application layer: Modules are registered and routes exposed via central registries.
 - Shared layer: Constants provide common enums and defaults used across modules.
 
@@ -183,7 +195,7 @@ Note over Admin,DB : "Similar flows apply to payroll runs,<br/>recruitment stage
 ## Detailed Component Analysis
 
 ### Personnel Administration
-Covers employee master data, job positions, contracts, and document handling. The multi-phase migrations establish foundational tables, constraints, and indexes, while permissions are attributed to support RBAC for HR tasks.
+Covers employee master data, job positions, contracts, and document handling. The multi-phase migrations establish foundational tables, constraints, and indexes, while permissions are attributed to support RBAC for HR tasks. **Updated** All personnel-related codes now use the TYPE_ prefix for consistency.
 
 ```mermaid
 erDiagram
@@ -205,6 +217,13 @@ uuid id PK
 string title
 text description
 enum status
+uuid function_id FK
+}
+FUNCTION {
+uuid id PK
+string code
+string name
+text description
 }
 CONTRACT {
 uuid id PK
@@ -226,8 +245,11 @@ timestamp uploaded_at
 }
 EMPLOYEE ||--o{ CONTRACT : "has many"
 POSITION ||--o{ EMPLOYEE : "assigned to"
+POSITION }o--|| FUNCTION : "belongs to"
 EMPLOYEE ||--o{ DOCUMENT : "owns"
 ```
+
+**Updated** Enhanced position template functionality with function relationships for better organizational structure and improved code standardization using TYPE_ prefix.
 
 **Diagram sources**
 - [016-module-personnel-rh-phase1.sql](file://backend/database/migrations/016-module-personnel-rh-phase1.sql)
@@ -464,6 +486,7 @@ CONST --> PERF
 - Batch operations for payroll and attendance aggregation should be scheduled during off-peak hours.
 - Pagination and filtering at the API layer reduce payload sizes for dashboards and reports.
 - Caching frequently accessed reference data (positions, contract types, currencies) can reduce database load.
+- **Updated** Standardized TypePersonnel code prefixing improves query optimization and indexing efficiency.
 
 [No sources needed since this section provides general guidance]
 
@@ -473,6 +496,8 @@ Common issues and resolutions:
 - Payroll discrepancies: Validate allowance/deduction rules and tax component configurations; ensure pay period alignment.
 - Recruitment stage stuck: Check state transitions and approval workflows; confirm manager assignments.
 - Attendance gaps: Confirm clock-in/out logs and timezone settings; reconcile with leave approvals.
+- **Updated** TypePersonnel code inconsistencies: Ensure all personnel-related codes use the standardized TYPE_ prefix format.
+- **Updated** Position-template relationships: Verify function relationships are properly configured for position templates.
 
 Operational references:
 - HR phases documentation for end-to-end workflows
@@ -487,7 +512,9 @@ Operational references:
 - [IMPROVEMENTS-RH-PARCOURS-PROFESSIONNEL.md](file://docs/_improvements/IMPROVEMENTS-RH-PARCOURS-PROFESSIONNEL.md)
 
 ## Conclusion
-eLISAschool’s HR system provides a comprehensive foundation for managing the full staff lifecycle. The phased migrations ensure robust data models for personnel, payroll, recruitment, and performance. With clear workflows, extensible contract types, and integrated reporting, institutions can maintain compliance, streamline operations, and support career development.
+eLISAschool's HR system provides a comprehensive foundation for managing the full staff lifecycle. The phased migrations ensure robust data models for personnel, payroll, recruitment, and performance. With clear workflows, extensible contract types, and integrated reporting, institutions can maintain compliance, streamline operations, and support career development.
+
+**Updated** The recent refactoring with TypePersonnel code prefixing, removal of deprecated tables, and enhanced position-template relationships significantly improves system maintainability and scalability.
 
 [No sources needed since this section summarizes without analyzing specific files]
 
@@ -520,3 +547,17 @@ eLISAschool’s HR system provides a comprehensive foundation for managing the f
 
 **Section sources**
 - [029-paie-etendue.sql](file://backend/database/migrations/029-paie-etendue.sql)
+
+### Migration Notes
+**Updated** Key migration changes:
+- Refactored all personnel administration models to use TypePersonnel code prefixing (TYPE_ prefix)
+- Removed deprecated categorie_personnel table and all its references
+- Enhanced position template functionality with new function relationships
+- Improved database schema consistency and maintainability
+
+**Section sources**
+- [016-module-personnel-rh-phase1.sql](file://backend/database/migrations/016-module-personnel-rh-phase1.sql)
+- [017-module-personnel-rh-phase2.sql](file://backend/database/migrations/017-module-personnel-rh-phase2.sql)
+- [018-module-personnel-rh-phase3.sql](file://backend/database/migrations/018-module-personnel-rh-phase3.sql)
+- [019-module-personnel-rh-phase4.sql](file://backend/database/migrations/019-module-personnel-rh-phase4.sql)
+- [020-module-personnel-rh-phase5.sql](file://backend/database/migrations/020-module-personnel-rh-phase5.sql)

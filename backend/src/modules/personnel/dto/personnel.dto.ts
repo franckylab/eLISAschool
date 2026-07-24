@@ -12,7 +12,6 @@ export const createTypePersonnelSchema = z.object({
     code: z.string().min(2).max(50),
     nom: z.string().min(2).max(100),
     description: z.string().max(200).optional(),
-    modeRemunerationDefaut: z.string().max(30).optional(),
 });
 
 export const createPersonnelSchema = z.object({

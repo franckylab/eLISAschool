@@ -9,4 +9,3 @@ export * from './evaluation-enseignant.entity';
 export * from './progression-programme.entity';
 export * from './membre-fonction.entity';
 export { TypePersonnel } from '@modules/organisation/entities/type-personnel.entity';
-export { ModeRemuneration } from '@modules/paie/entities/mode-remuneration.enum';

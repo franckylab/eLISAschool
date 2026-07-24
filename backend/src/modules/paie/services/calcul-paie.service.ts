@@ -19,7 +19,6 @@ import { ElementSalaire, TypeElementSalaire, CategorieElementSalaire } from '../
 import { Cotisation } from '../entities/cotisation.entity';
 import { TypePrime } from '../entities/type-prime.entity';
 import { MembrePersonnel, ContratPersonnel } from '@modules/personnel/entities';
-import { ModeRemuneration } from '../entities/mode-remuneration.enum';
 import { heureCoursService } from '@modules/personnel/services';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -195,10 +194,9 @@ export class CalculPaieService {
             relations: ['typePersonnel'],
         });
 
-        const mode = contrat.modeRemuneration
-            || contrat.typeContratEntity?.modeRemuneration
-            || membre?.typePersonnel?.modeRemunerationDefaut as ModeRemuneration | undefined
-            || ModeRemuneration.MENSUEL;
+        const mode = contrat.modeRemuneration?.code
+            || contrat.typeContratEntity?.modeRemuneration?.code
+            || 'MENSUEL';
 
         let salaireBase = 0;
         let heuresEffectuees = 0;
@@ -207,7 +205,7 @@ export class CalculPaieService {
         let detailParMatiere: DetailMatiereSimulation[] = [];
 
         switch (mode) {
-            case ModeRemuneration.MENSUEL:
+            case 'MENSUEL':
                 salaireBase = contrat.salaireBase || 0;
                 elements.push(this.creerElement(
                     TypeElementSalaire.GAIN, CategorieElementSalaire.SALAIRE_BASE,
@@ -216,7 +214,7 @@ export class CalculPaieService {
                 ));
                 break;
 
-            case ModeRemuneration.HORAIRE: {
+            case 'HORAIRE': {
                 const tarifHoraire = contrat.tarifHoraire || 0;
                 const resume = mois && annee
                     ? await heureCoursService.getResumeMensuel(membrePersonnelId, mois, annee, etablissementId)
@@ -238,7 +236,7 @@ export class CalculPaieService {
                 break;
             }
 
-            case ModeRemuneration.MIXTE: {
+            case 'MIXTE': {
                 const fixe = contrat.salaireBase || 0;
                 const tarifHoraire = contrat.tarifHoraire || 0;
                 const seuil = contrat.heuresContractuellesMois || 0;
@@ -272,7 +270,7 @@ export class CalculPaieService {
                 break;
             }
 
-            case ModeRemuneration.HEBDOMADAIRE: {
+            case 'HEBDOMADAIRE': {
                 const tarifHebdo = contrat.tarifHebdomadaire || contrat.salaireBase || 0;
                 salaireBase = +(tarifHebdo * 52 / 12).toFixed(2);
                 elements.push(this.creerElement(

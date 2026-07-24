@@ -20,9 +20,11 @@ import {
     UniteOrganisationnelle,
     Poste,
     HierarchiePersonnel,
-    NiveauOrganisation,
+    EchelonStructurel,
     StatutUnite,
     StatutPoste,
+    TypeRelationHierarchique,
+    StatutRelation,
 } from '../entities';
 import {
     CreateUniteOrganisationnelleDto,
@@ -96,19 +98,18 @@ export class OrganisationService {
         if (dto.parentId) {
             const parent = await this.uniteRepo.findOne({
                 where: { id: dto.parentId, etablissementId: dto.etablissementId },
-                relations: ['niveauOrganisation'],
+                relations: ['echelonStructurel'],
             });
             if (!parent) {
                 throw new AppError('Unité parente non trouvée', 404, 'PARENT_UNITE_NOT_FOUND');
             }
-            await this.verifierProgressionNiveau(parent, dto.niveauOrganisationId);
+            await this.verifierProgressionNiveau(parent, dto.echelonStructurelId);
         }
 
         const unite = this.uniteRepo.create({
             nom: dto.nom,
             description: dto.description,
-            usageUniteId: dto.usageUniteId,
-            niveauOrganisationId: dto.niveauOrganisationId,
+            echelonStructurelId: dto.echelonStructurelId,
             code: dto.code,
             etablissementId: dto.etablissementId,
             parentId: dto.parentId,
@@ -116,8 +117,6 @@ export class OrganisationService {
             responsableNom: dto.responsableNom,
             responsableId: dto.responsableId,
             localisation: dto.localisation,
-            telephone: dto.telephone,
-            email: dto.email,
             statut: StatutUnite.ACTIF,
             actif: true,
         });
@@ -189,7 +188,7 @@ export class OrganisationService {
         await this.findUniteById(id, etablissementId);
         return this.uniteRepo.find({
             where: { parentId: id },
-            relations: ['usageUnite'],
+            relations: ['echelonStructurel'],
             order: { ordre: 'ASC' },
         });
     }
@@ -225,7 +224,7 @@ export class OrganisationService {
             if (dto.parentId) {
                 const parent = await this.uniteRepo.findOne({
                     where: { id: dto.parentId, etablissementId: unite.etablissementId },
-                    relations: ['niveauOrganisation'],
+                    relations: ['echelonStructurel'],
                 });
                 if (!parent) {
                     throw new AppError('Unité parente non trouvée', 404, 'PARENT_UNITE_NOT_FOUND');
@@ -269,18 +268,18 @@ export class OrganisationService {
                 if (profondeurActuelle > 5) {
                     throw new AppError('Profondeur maximale atteinte (6 niveaux). Impossible de déplacer cette unité à cet endroit.', 400, 'MAX_DEPTH_EXCEEDED');
                 }
-                await this.verifierProgressionNiveau(parent, dto.niveauOrganisationId ?? unite.niveauOrganisationId);
+                await this.verifierProgressionNiveau(parent, dto.echelonStructurelId ?? unite.echelonStructurelId);
             }
-        } else if (dto.niveauOrganisationId !== undefined && dto.niveauOrganisationId !== unite.niveauOrganisationId) {
+        } else if (dto.echelonStructurelId !== undefined && dto.echelonStructurelId !== unite.echelonStructurelId) {
             // Changement de niveau sans changement de parent
             const parent = unite.parentId
                 ? await this.uniteRepo.findOne({
                     where: { id: unite.parentId },
-                    relations: ['niveauOrganisation'],
+                    relations: ['echelonStructurel'],
                 })
                 : null;
             if (parent) {
-                await this.verifierProgressionNiveau(parent, dto.niveauOrganisationId);
+                await this.verifierProgressionNiveau(parent, dto.echelonStructurelId);
             }
         }
         
@@ -302,7 +301,6 @@ export class OrganisationService {
      * Mécanique FK :
      * - postes (poste.uniteOrganisationnelleId) → ON DELETE CASCADE : supprimés automatiquement
      * - hierarchie_personnel.posteId → ON DELETE SET NULL : détaché automatiquement
-     * - hierarchie_personnel.uniteOrganisationnelleId : colonne sans FK → détachée explicitement
      * - unites_organisationnelles.parentId → ON DELETE SET NULL : les enfants ne sont PAS
      *   supprimés en cascade DB, d'où la suppression explicite de toute la descendance.
      */
@@ -328,13 +326,7 @@ export class OrganisationService {
             `, [id]);
             const familleIds: string[] = familleRows.map((r: any) => r.id);
 
-            // 2. Détacher les liens hiérarchiques (colonne sans contrainte FK → nettoyage explicite)
-            await queryRunner.query(
-                `UPDATE hierarchie_personnel SET "uniteOrganisationnelleId" = NULL WHERE "uniteOrganisationnelleId" = ANY($1::uuid[])`,
-                [familleIds],
-            );
-
-            // 3. Supprimer toute la famille d'unités.
+            // 2. Supprimer toute la famille d'unités.
             //    Les postes sont supprimés en cascade (FK ON DELETE CASCADE) et
             //    hierarchie.posteId est mis à NULL (FK ON DELETE SET NULL).
             await queryRunner.query(
@@ -521,19 +513,20 @@ export class OrganisationService {
 
     async createHierarchie(dto: CreateHierarchiePersonnelDto): Promise<HierarchiePersonnel> {
         // Vérifier qu'il n'y a pas de cycle hiérarchique
-        await this.verifierPasDeCycle(dto.personnelId, dto.superieurId, dto.etablissementId);
+        if (dto.personnelId && dto.superieurId) {
+            await this.verifierPasDeCycle(dto.personnelId, dto.superieurId, dto.etablissementId || '');
+        }
 
         const hierarchie = this.hierarchieRepo.create({
             personnelId: dto.personnelId,
             superieurId: dto.superieurId,
-            typeRelationId: dto.typeRelationId,
+            typeRelation: dto.typeRelation as TypeRelationHierarchique,
             posteId: dto.posteId,
-            uniteOrganisationnelleId: dto.uniteOrganisationnelleId,
             etablissementId: dto.etablissementId,
             dateDebut: dto.dateDebut ? new Date(dto.dateDebut) : undefined,
             dateFin: dto.dateFin ? new Date(dto.dateFin) : undefined,
             commentaire: dto.commentaire,
-            statut: 'ACTIVE' as any,
+            statut: StatutRelation.ACTIVE,
             actif: true,
         });
 
@@ -583,22 +576,22 @@ export class OrganisationService {
         }
     }
 
-    private async verifierProgressionNiveau(parent: UniteOrganisationnelle, enfantNiveauOrganisationId?: string | null): Promise<void> {
-        if (!enfantNiveauOrganisationId) return;
+    private async verifierProgressionNiveau(parent: UniteOrganisationnelle, enfantEchelonStructurelId?: string | null): Promise<void> {
+        if (!enfantEchelonStructurelId) return;
 
-        const parentNiveauId = parent.niveauOrganisationId;
-        if (!parentNiveauId) return;
+        const parentEchelonId = parent.echelonStructurelId;
+        if (!parentEchelonId) return;
 
-        const [parentNiveau, enfantNiveau] = await Promise.all([
-            AppDataSource.getRepository(NiveauOrganisation).findOne({ where: { id: parentNiveauId } }),
-            AppDataSource.getRepository(NiveauOrganisation).findOne({ where: { id: enfantNiveauOrganisationId } }),
+        const [parentEchelon, enfantEchelon] = await Promise.all([
+            AppDataSource.getRepository(EchelonStructurel).findOne({ where: { id: parentEchelonId } }),
+            AppDataSource.getRepository(EchelonStructurel).findOne({ where: { id: enfantEchelonStructurelId } }),
         ]);
 
-        if (!parentNiveau || !enfantNiveau) return;
+        if (!parentEchelon || !enfantEchelon) return;
 
-        if (enfantNiveau.niveau !== parentNiveau.niveau + 1) {
+        if (enfantEchelon.niveau !== parentEchelon.niveau + 1) {
             throw new AppError(
-                `Progression de niveau invalide : le parent est au niveau ${parentNiveau.niveau}, l'enfant doit être au niveau ${parentNiveau.niveau + 1} (reçu: ${enfantNiveau.niveau})`,
+                `Progression de niveau invalide : le parent est au niveau ${parentEchelon.niveau}, l'enfant doit être au niveau ${parentEchelon.niveau + 1} (reçu: ${enfantEchelon.niveau})`,
                 400,
                 'NIVEAU_PROGRESSION_INVALIDE',
             );
@@ -702,9 +695,9 @@ export class OrganisationService {
         // Profondeur max
         const profondeurMax = this.calculerProfondeurMax(unites);
 
-        // Répartition par usage
+        // Répartition par échelon structurel
         const parUsage = unites.reduce((acc, unite) => {
-            const key = unite.usageUniteId || 'SANS_USAGE';
+            const key = unite.echelonStructurelId || 'SANS_ECHELON';
             acc[key] = (acc[key] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
@@ -982,7 +975,7 @@ export class OrganisationService {
      */
     async creerUniteAvecPostes(
         dto: CreateUniteOrganisationnelleDto,
-        postes: Array<{ intitule: string; code?: string; categoriePosteId?: string; fonctionId?: string; description?: string; estSuppleant?: boolean }>
+        postes: Array<{ intitule: string; code?: string; fonctionId?: string; description?: string; estSuppleant?: boolean }>
     ): Promise<UniteOrganisationnelle> {
         const queryRunner = AppDataSource.createQueryRunner();
         await queryRunner.connect();
@@ -1001,8 +994,7 @@ export class OrganisationService {
             const unite = queryRunner.manager.create(UniteOrganisationnelle, {
                 nom: dto.nom,
                 description: dto.description,
-                usageUniteId: dto.usageUniteId,
-                niveauOrganisationId: dto.niveauOrganisationId,
+                echelonStructurelId: dto.echelonStructurelId,
                 code: dto.code,
                 etablissementId: dto.etablissementId,
                 parentId: dto.parentId,
@@ -1021,7 +1013,6 @@ export class OrganisationService {
                     const poste = queryRunner.manager.create(Poste, {
                         intitule: posteDto.intitule,
                         code: posteDto.code || posteDto.intitule.substring(0, 4).toUpperCase(),
-                        categoriePosteId: posteDto.categoriePosteId,
                         fonctionId: posteDto.fonctionId!,
                         description: posteDto.description,
                         estSuppleant: posteDto.estSuppleant || false,

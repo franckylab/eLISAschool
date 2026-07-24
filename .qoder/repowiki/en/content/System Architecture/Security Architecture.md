@@ -27,17 +27,27 @@
 - [GUIDE-TEST-SECURITE.md](file://docs/guides/GUIDE-TEST-SECURITE.md)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Enhanced GET route protection using requirePermission middleware for improved authorization enforcement
+- Implemented permission-based sidebar filtering in frontend for better access control visibility
+- Strengthened security controls for organizational unit management with enhanced guards and modals
+- Updated RBAC guard implementation to support more granular permission checks
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [Enhanced Route Protection](#enhanced-route-protection)
+7. [Frontend Permission Controls](#frontend-permission-controls)
+8. [Organizational Unit Security](#organizational-unit-security)
+9. [Dependency Analysis](#dependency-analysis)
+10. [Performance Considerations](#performance-considerations)
+11. [Troubleshooting Guide](#troubleshooting-guide)
+12. [Conclusion](#conclusion)
+13. [Appendices](#appendices)
 
 ## Introduction
 This document describes the security architecture of the application with a focus on authentication, authorization, and data protection. It explains the JWT-based authentication system, role-based access control (RBAC), multi-tenant isolation, password hashing, session management, input validation, audit logging, security headers, CORS configuration, secure API communication, file upload security, vulnerability mitigation, compliance considerations, and best practices. The goal is to provide both high-level understanding and code-level traceability for developers and operators.
@@ -142,7 +152,7 @@ D --> T
 
 Key responsibilities:
 - Enforce least privilege via RBAC.
-- Isolate tenants by etablishment context.
+- Isolate tenants by establishment context.
 - Validate all inputs and sanitize uploads.
 - Log security-relevant events.
 - Configure strict HTTP security headers and CORS.
@@ -375,8 +385,6 @@ Valid --> |Yes| Next["Pass to next middleware/controller"]
 - Strict transport security and certificate pinning guidance provided in deployment docs.
 - Token transmission restricted to secure channels.
 
-[No sources needed since this section provides general guidance]
-
 ### File Upload Security
 - File upload middleware enforces size limits, MIME type checks, and extension whitelisting.
 - Stored files are isolated per tenant and served via controlled endpoints.
@@ -406,7 +414,114 @@ Valid --> |Yes| Next["Pass to next middleware/controller"]
 - Periodic review of RBAC policies and tenant boundaries.
 - Adherence to OWASP Top 10 and GDPR principles.
 
-[No sources needed since this section provides general guidance]
+## Enhanced Route Protection
+
+**Updated** Enhanced GET route protection using requirePermission middleware for comprehensive authorization enforcement across all HTTP methods.
+
+The requirePermission middleware has been strengthened to provide consistent authorization checks for GET routes, ensuring that read operations are properly secured alongside write operations. This enhancement addresses potential security gaps where GET endpoints might have been less strictly protected than mutation endpoints.
+
+Key improvements include:
+- Consistent permission checking across all HTTP methods (GET, POST, PUT, DELETE)
+- Enhanced middleware chain integration for better performance
+- Improved error handling for unauthorized access attempts
+- Better audit logging for permission denial events
+
+```mermaid
+sequenceDiagram
+participant Client as "Client"
+participant Guard as "RequirePermission Guard"
+participant RBAC as "RBAC Service"
+participant Controller as "Controller"
+Client->>Guard : "GET /api/resource"
+Guard->>RBAC : "Check permission"
+RBAC->>RBAC : "Evaluate user roles"
+RBAC-->>Guard : "Permission result"
+alt "Permission granted"
+Guard->>Controller : "Execute handler"
+Controller-->>Client : "Response"
+else "Permission denied"
+Guard-->>Client : "403 Forbidden"
+end
+```
+
+**Diagram sources**
+- [require-permission.guard.ts](file://backend/src/modules/rbac/guards/require-permission.guard.ts)
+- [rbac.service.ts](file://backend/src/modules/rbac/services/rbac.service.ts)
+
+**Section sources**
+- [require-permission.guard.ts](file://backend/src/modules/rbac/guards/require-permission.guard.ts)
+- [rbac.service.ts](file://backend/src/modules/rbac/services/rbac.service.ts)
+
+## Frontend Permission Controls
+
+**New** Permission-based sidebar filtering in frontend for improved access control visibility and user experience.
+
+The frontend now implements dynamic sidebar filtering based on user permissions, providing a more intuitive interface that only displays accessible features. This enhancement improves both security and usability by preventing users from even seeing options they cannot access.
+
+Features include:
+- Dynamic menu rendering based on current user permissions
+- Real-time permission evaluation for navigation items
+- Graceful fallback for missing permissions
+- Integration with existing RBAC system
+
+```mermaid
+flowchart TD
+UserLogin["User Login"] --> FetchPermissions["Fetch User Permissions"]
+FetchPermissions --> FilterSidebar["Filter Sidebar Items"]
+FilterSidebar --> RenderMenu["Render Accessible Menu"]
+RenderMenu --> UserNavigation["User Navigation"]
+UserNavigation --> CheckRoute["Check Route Permission"]
+CheckRoute --> |Allowed| ShowContent["Show Content"]
+CheckRoute --> |Denied| Redirect["Redirect to Home"]
+```
+
+**Diagram sources**
+- [require-permission.guard.ts](file://backend/src/modules/rbac/guards/require-permission.guard.ts)
+- [rbac.service.ts](file://backend/src/modules/rbac/services/rbac.service.ts)
+
+**Section sources**
+- [require-permission.guard.ts](file://backend/src/modules/rbac/guards/require-permission.guard.ts)
+- [rbac.service.ts](file://backend/src/modules/rbac/services/rbac.service.ts)
+
+## Organizational Unit Security
+
+**New** Strengthened security controls for organizational unit management with enhanced guards and modals.
+
+Organizational unit management now includes comprehensive security measures including enhanced guards for CRUD operations and secure modal dialogs for sensitive operations like deletion and modification. These controls ensure that only authorized personnel can manage organizational structures.
+
+Security enhancements include:
+- Enhanced guards for all organizational unit operations
+- Secure confirmation modals for destructive actions
+- Permission-based UI element visibility
+- Audit logging for all organizational changes
+- Multi-tenant isolation for organizational data
+
+```mermaid
+sequenceDiagram
+participant User as "Authorized User"
+participant Modal as "Security Modal"
+participant Guard as "Operation Guard"
+participant Service as "Org Service"
+User->>Modal : "Initiate Delete Operation"
+Modal->>User : "Confirm Action"
+User->>Modal : "Confirm Deletion"
+Modal->>Guard : "Check Permissions"
+Guard->>Guard : "Validate User Rights"
+alt "Authorized"
+Guard->>Service : "Execute Delete"
+Service-->>User : "Success Response"
+else "Unauthorized"
+Guard-->>User : "Access Denied"
+end
+```
+
+**Diagram sources**
+- [require-permission.guard.ts](file://backend/src/modules/rbac/guards/require-permission.guard.ts)
+- [rbac.service.ts](file://backend/src/modules/rbac/services/rbac.service.ts)
+
+**Section sources**
+- [require-permission.guard.ts](file://backend/src/modules/rbac/guards/require-permission.guard.ts)
+- [rbac.service.ts](file://backend/src/modules/rbac/services/rbac.service.ts)
 
 ## Dependency Analysis
 Security components depend on configuration and database layers, while middlewares orchestrate request processing. RBAC depends on tenant context and user roles.
@@ -470,8 +585,7 @@ DBMig3["050-multi-tenant-v3-max-etablissements.sql"] --> DBConf
 - Use efficient indexes for tenant-scoped queries.
 - Avoid heavy operations in global middlewares; offload to background jobs where possible.
 - Tune JWT payload size to reduce overhead.
-
-[No sources needed since this section provides general guidance]
+- Optimize frontend permission checks for better user experience.
 
 ## Troubleshooting Guide
 - Authentication failures: Review two-level blocking configuration and audit logs for repeated attempts.
@@ -479,6 +593,9 @@ DBMig3["050-multi-tenant-v3-max-etablissements.sql"] --> DBConf
 - CORS errors: Confirm allowed origins and credentials settings match frontend domain.
 - Multi-tenant leaks: Run isolation tests and inspect tenant middleware resolution.
 - Input validation errors: Inspect validation schemas and adjust client payloads accordingly.
+- Enhanced route protection issues: Check requirePermission middleware configuration and permission definitions.
+- Frontend permission display problems: Verify permission synchronization between backend and frontend.
+- Organizational unit access issues: Review enhanced guards and modal security configurations.
 
 **Section sources**
 - [SYSTEME-BLOCAGE-AUTH-DEUX-NIVEAUX.md](file://docs/SYSTEME-BLOCAGE-AUTH-DEUX-NIVEAUX.md)
@@ -486,9 +603,10 @@ DBMig3["050-multi-tenant-v3-max-etablissements.sql"] --> DBConf
 - [cors.config.ts](file://backend/src/config/cors.config.ts)
 - [test-multi-tenant-isolation.test.ts](file://backend/test/multi-tenant-isolation.test.ts)
 - [input.validation.pipe.ts](file://backend/src/common/pipes/input.validation.pipe.ts)
+- [require-permission.guard.ts](file://backend/src/modules/rbac/guards/require-permission.guard.ts)
 
 ## Conclusion
-The security architecture combines layered defenses: robust authentication with JWT, granular RBAC enforcement, strict multi-tenant isolation, comprehensive input validation, audit logging, and hardened HTTP configuration. Together, these mechanisms protect sensitive data, limit attack surfaces, and support compliance objectives. Continuous monitoring, periodic reviews, and adherence to best practices will sustain a strong security posture.
+The security architecture combines layered defenses: robust authentication with JWT, granular RBAC enforcement, strict multi-tenant isolation, comprehensive input validation, audit logging, and hardened HTTP configuration. Recent enhancements include strengthened GET route protection, permission-based frontend filtering, and improved organizational unit security controls. Together, these mechanisms protect sensitive data, limit attack surfaces, and support compliance objectives. Continuous monitoring, periodic reviews, and adherence to best practices will sustain a strong security posture.
 
 ## Appendices
 - Testing guidance for security scenarios and penetration testing recommendations.

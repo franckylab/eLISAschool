@@ -1,1 +1,0 @@
-Build with `npm run build` (runs `tsc`); lint with `npm run lint` / `npm run lint:fix`. The package is marked `private: true` and intended to be referenced via workspace protocol by sibling packages rather than published.

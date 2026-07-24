@@ -4,7 +4,7 @@
  * ==================================
  */
 
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { MembrePersonnel, TypePersonnel, StatutPersonnel } from '../entities';
 import { Fonction } from '@modules/organisation/entities';
@@ -237,7 +237,7 @@ export class PersonnelService {
 
     async getPersonnelSansCompte(etablissementId: string): Promise<{ count: number; total: number; pourcentage: number }> {
         const total = await this.personnelRepo.count({ where: { etablissementId } });
-        const sansCompte = await this.personnelRepo.count({ where: { etablissementId, utilisateurId: null } });
+        const sansCompte = await this.personnelRepo.count({ where: { etablissementId, utilisateurId: IsNull() } });
         return {
             total,
             count: sansCompte,

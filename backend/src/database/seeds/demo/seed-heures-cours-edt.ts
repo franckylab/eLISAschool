@@ -9,7 +9,8 @@
  */
 
 import { AppDataSource } from '@database/data-source';
-import { MembrePersonnel, StatutPersonnel, TypePersonnel, ContratPersonnel, StatutContrat, ModeRemuneration, HeureCours, StatutEffectue } from '@modules/personnel/entities';
+import { MembrePersonnel, StatutPersonnel, TypePersonnel, ContratPersonnel, StatutContrat, HeureCours, StatutEffectue } from '@modules/personnel/entities';
+import { ModeRemunerationEntity } from '@modules/organisation/entities';
 import { EmploiDuTemps, JourSemaine, TypeCreneau } from '@modules/emploi-du-temps/entities';
 import { Classe, ClasseAnnee } from '@modules/classes/entities';
 import { Matiere } from '@modules/matieres/entities';
@@ -73,13 +74,16 @@ export async function seedHeuresCoursEtEdt(etablissementId: string): Promise<voi
         where: { membrePersonnelId: enseignant.id, statut: StatutContrat.ACTIF },
     });
     if (!contrat) {
+        // Résoudre le mode de rémunération HORAIRE
+        const modeRemunRepo = AppDataSource.getRepository(ModeRemunerationEntity);
+        const modeHoraire = await modeRemunRepo.findOne({ where: { code: 'HORAIRE' } });
         contrat = contratRepo.create({
             membrePersonnelId: enseignant.id,
             typeContrat: 'CDI',
             dateDebut: new Date('2023-09-01'),
             salaireBase: 250000,
             tarifHoraire: 5000,
-            modeRemuneration: ModeRemuneration.HORAIRE,
+            modeRemunerationId: modeHoraire?.id || null,
             statut: StatutContrat.ACTIF,
             etablissementId,
         });

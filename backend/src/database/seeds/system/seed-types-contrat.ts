@@ -13,7 +13,7 @@
 import { AppDataSource } from '@database/data-source';
 import { IsNull } from 'typeorm';
 import { TypeContratPersonnalise, CategorieContrat } from '@modules/personnel/entities/type-contrat.entity';
-import { ModeRemuneration } from '@modules/paie/entities/mode-remuneration.enum';
+import { ModeRemunerationEntity } from '@modules/organisation/entities';
 import { logger } from '@common/utils/logger.util';
 
 interface TypeContratSeed {
@@ -21,7 +21,7 @@ interface TypeContratSeed {
     nom: string;
     description: string;
     categorie: CategorieContrat;
-    modeRemuneration: ModeRemuneration;
+    modeRemunerationCode: string;
     estSysteme: true;
     actif: true;
     ordre: number;
@@ -35,7 +35,7 @@ const TYPES_CONTRAT_SYSTEME: TypeContratSeed[] = [
         nom: 'Contrat à Durée Indéterminée',
         description: 'Contrat sans limite de durée, garantissant une stabilité professionnelle',
         categorie: CategorieContrat.EMPLOI_PERMANENT,
-        modeRemuneration: ModeRemuneration.MENSUEL,
+        modeRemunerationCode: 'MENSUEL',
         estSysteme: true,
         actif: true,
         ordre: 1,
@@ -46,7 +46,7 @@ const TYPES_CONTRAT_SYSTEME: TypeContratSeed[] = [
         nom: 'Contrat à Durée Déterminée',
         description: 'Contrat avec une durée limitée, généralement pour un remplacement ou surcroit d\'activité',
         categorie: CategorieContrat.EMPLOI_TEMPORAIRE,
-        modeRemuneration: ModeRemuneration.MENSUEL,
+        modeRemunerationCode: 'MENSUEL',
         estSysteme: true,
         actif: true,
         ordre: 2,
@@ -58,7 +58,7 @@ const TYPES_CONTRAT_SYSTEME: TypeContratSeed[] = [
         nom: 'Vacataire',
         description: 'Intervention ponctuelle rémunérée à l\'heure ou à la vacation',
         categorie: CategorieContrat.EMPLOI_TEMPORAIRE,
-        modeRemuneration: ModeRemuneration.HORAIRE,
+        modeRemunerationCode: 'HORAIRE',
         estSysteme: true,
         actif: true,
         ordre: 3,
@@ -70,7 +70,7 @@ const TYPES_CONTRAT_SYSTEME: TypeContratSeed[] = [
         nom: 'Stagiaire',
         description: 'Convention de stage académique ou professionnel',
         categorie: CategorieContrat.STAGE_FORMATION,
-        modeRemuneration: ModeRemuneration.MENSUEL,
+        modeRemunerationCode: 'MENSUEL',
         estSysteme: true,
         actif: true,
         ordre: 4,
@@ -82,7 +82,7 @@ const TYPES_CONTRAT_SYSTEME: TypeContratSeed[] = [
         nom: 'Prestataire / Freelance',
         description: 'Prestation de service indépendante, facturée à la mission ou à l\'heure',
         categorie: CategorieContrat.FREELANCE,
-        modeRemuneration: ModeRemuneration.HORAIRE,
+        modeRemunerationCode: 'HORAIRE',
         estSysteme: true,
         actif: true,
         ordre: 5,
@@ -93,7 +93,7 @@ const TYPES_CONTRAT_SYSTEME: TypeContratSeed[] = [
         nom: 'Temps Partiel',
         description: 'Contrat à temps partiel avec répartition horaire spécifique',
         categorie: CategorieContrat.TEMPS_PARTIEL,
-        modeRemuneration: ModeRemuneration.MIXTE,
+        modeRemunerationCode: 'MIXTE',
         estSysteme: true,
         actif: true,
         ordre: 6,
@@ -104,7 +104,7 @@ const TYPES_CONTRAT_SYSTEME: TypeContratSeed[] = [
         nom: 'Contrat d\'Apprentissage',
         description: 'Formation en alternance alliant théorie et pratique en entreprise',
         categorie: CategorieContrat.APPRENTISSAGE,
-        modeRemuneration: ModeRemuneration.MIXTE,
+        modeRemunerationCode: 'MIXTE',
         estSysteme: true,
         actif: true,
         ordre: 7,
@@ -116,7 +116,7 @@ const TYPES_CONTRAT_SYSTEME: TypeContratSeed[] = [
         nom: 'Autre',
         description: 'Type de contrat non classé dans les catégories précédentes',
         categorie: CategorieContrat.AUTRE,
-        modeRemuneration: ModeRemuneration.MENSUEL,
+        modeRemunerationCode: 'MENSUEL',
         estSysteme: true,
         actif: true,
         ordre: 8,
@@ -126,7 +126,15 @@ const TYPES_CONTRAT_SYSTEME: TypeContratSeed[] = [
 
 export async function seedTypesContrat(): Promise<Map<string, string>> {
     const repo = AppDataSource.getRepository(TypeContratPersonnalise);
+    const modeRemunRepo = AppDataSource.getRepository(ModeRemunerationEntity);
     const typeContratMap = new Map<string, string>();
+
+    // Charger les modes de rémunération pour résoudre les FK
+    const modesRemun = await modeRemunRepo.find();
+    const modeRemunMap = new Map<string, string>();
+    for (const m of modesRemun) {
+        modeRemunMap.set(m.code, m.id);
+    }
 
     const existants = await repo.find({
         where: { estSysteme: true, etablissementId: IsNull() },
@@ -139,6 +147,7 @@ export async function seedTypesContrat(): Promise<Map<string, string>> {
 
     let crees = 0;
     for (const tc of TYPES_CONTRAT_SYSTEME) {
+        const modeRemunerationId = modeRemunMap.get(tc.modeRemunerationCode) || null;
         if (codesExistants.has(tc.code)) {
             await repo.update(
                 { code: tc.code, etablissementId: IsNull() },
@@ -146,7 +155,7 @@ export async function seedTypesContrat(): Promise<Map<string, string>> {
                     nom: tc.nom,
                     description: tc.description,
                     categorie: tc.categorie,
-                    modeRemuneration: tc.modeRemuneration,
+                    modeRemunerationId,
                     actif: tc.actif,
                     ordre: tc.ordre,
                     renouvellementAutoDefaut: tc.renouvellementAutoDefaut,
@@ -154,7 +163,18 @@ export async function seedTypesContrat(): Promise<Map<string, string>> {
                 },
             );
         } else {
-            const nouveau = repo.create(tc as TypeContratPersonnalise);
+            const nouveau = repo.create({
+                code: tc.code,
+                nom: tc.nom,
+                description: tc.description,
+                categorie: tc.categorie,
+                modeRemunerationId,
+                estSysteme: tc.estSysteme,
+                actif: tc.actif,
+                ordre: tc.ordre,
+                renouvellementAutoDefaut: tc.renouvellementAutoDefaut,
+                dureeMaxMois: tc.dureeMaxMois,
+            } as TypeContratPersonnalise);
             const saved = await repo.save(nouveau);
             typeContratMap.set(saved.code, saved.id);
             codesExistants.add(saved.code);

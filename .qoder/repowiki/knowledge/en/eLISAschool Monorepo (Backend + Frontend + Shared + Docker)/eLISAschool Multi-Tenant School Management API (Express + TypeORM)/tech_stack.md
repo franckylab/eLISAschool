@@ -1,1 +1,0 @@
-Express + TypeScript, TypeORM with PostgreSQL (pg driver), bcryptjs for password hashing, helmet/CORS/rate-limit/compression for HTTP hardening, swagger-ui-express for OpenAPI docs, redis service with in-memory fallback, dotenv for configuration, reflect-metadata decorators for DI/entity mapping.

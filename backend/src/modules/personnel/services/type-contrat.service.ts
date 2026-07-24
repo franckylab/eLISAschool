@@ -178,7 +178,7 @@ export class TypeContratService {
         if (typeContrat.estSysteme) {
             // Seuls certains champs sont autorisés pour les types système
             const allowedFields: (keyof UpdateTypeContratDto)[] = [
-                'nom', 'description', 'categorie', 'modeRemuneration', 'ordre',
+                'nom', 'description', 'categorie', 'modeRemunerationId', 'ordre',
                 'renouvellementAutoDefaut', 'dureeMaxMois', 'clausesDefaut', 'avantagesDefaut',
             ];
             for (const key of Object.keys(dto)) {

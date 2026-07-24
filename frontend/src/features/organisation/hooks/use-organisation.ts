@@ -4,9 +4,7 @@
  * Les hooks ont été éclatés en fichiers unitaires :
  * - use-unites.ts      → Unités organisationnelles
  * - use-hierarchies.ts  → Hiérarchie, organigramme, statistiques, validation
- * - use-niveaux-organisation.ts
- * - use-usages-unite.ts
- * - use-categories-poste.ts
+ * - use-echelons-structurels.ts
  * - use-niveaux-responsabilite.ts
  * - use-templates.ts
  * - use-postes.ts

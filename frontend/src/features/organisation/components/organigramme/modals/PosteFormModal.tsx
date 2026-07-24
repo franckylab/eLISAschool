@@ -15,7 +15,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { useCreerPoste, useModifierPoste } from '../../../hooks/use-postes';
-import { useCategoriesPoste } from '../../../hooks/use-categories-poste';
 import { useNiveauxResponsabilite } from '../../../hooks/use-niveaux-responsabilite';
 import { useAuthStore } from '@/stores/auth.store';
 import type { OrganigrammeNode, OrganigrammePoste } from '../../../types/organisation.types';
@@ -23,7 +22,6 @@ import type { OrganigrammeNode, OrganigrammePoste } from '../../../types/organis
 type PosteFormData = {
     intitule: string;
     code: string;
-    categoriePosteId: string;
     niveauResponsabiliteId: string;
     description: string;
     estSuppleant: boolean;
@@ -43,7 +41,6 @@ interface PosteFormModalProps {
 const FORM_INIT: PosteFormData = {
     intitule: '',
     code: '',
-    categoriePosteId: '',
     niveauResponsabiliteId: '',
     description: '',
     estSuppleant: false,
@@ -56,12 +53,10 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
     const posteFormSchema = useMemo(() => z.object({
         intitule: z.string().min(2, t('organigramme.form.validationMin2')).max(150),
         code: z.string().max(20).optional().or(z.literal('')),
-        categoriePosteId: z.string().optional().or(z.literal('')),
         niveauResponsabiliteId: z.string().optional().or(z.literal('')),
         description: z.string().max(500).optional().or(z.literal('')),
         estSuppleant: z.boolean().default(false),
     }), [t]);
-    const { data: categories } = useCategoriesPoste();
     const { data: niveaux } = useNiveauxResponsabilite();
     const { mutateAsync: creerPoste, isPending: isCreating } = useCreerPoste();
     const { mutateAsync: modifierPoste, isPending: isUpdating } = useModifierPoste();
@@ -82,7 +77,6 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
             reset({
                 intitule: poste.intitule || '',
                 code: poste.code || '',
-                categoriePosteId: '',
                 niveauResponsabiliteId: '',
                 description: '',
                 estSuppleant: false,
@@ -100,7 +94,6 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
                 id: poste.id,
                 intitule: data.intitule,
                 code: data.code || undefined,
-                categoriePosteId: data.categoriePosteId || undefined,
                 niveauResponsabiliteId: data.niveauResponsabiliteId || undefined,
                 description: data.description || undefined,
                 estSuppleant: data.estSuppleant,
@@ -109,7 +102,6 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
             await creerPoste({
                 ...data,
                 code: data.code || undefined,
-                categoriePosteId: data.categoriePosteId || undefined,
                 niveauResponsabiliteId: data.niveauResponsabiliteId || undefined,
                 description: data.description || undefined,
                 uniteOrganisationnelleId: unite.id,
@@ -176,34 +168,17 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
                     {errors.intitule && <p className="text-xs mt-1 text-destructive">{errors.intitule.message}</p>}
                 </div>
 
-                {/* Code + Catégorie */}
-                <div className="grid grid-cols-2 gap-3">
-                    <div>
-                        <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                            {t('organigramme.form.codePoste', 'Code')}
-                        </label>
-                        <input
-                            {...register('code')}
-                            className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
-                            style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
-                            placeholder={t('organigramme.form.phCode')}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
-                            {t('organigramme.form.categorie', 'Catégorie')}
-                        </label>
-                        <select
-                            {...register('categoriePosteId')}
-                            className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
-                            style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
-                        >
-                            <option value="">{t('organigramme.form.selectionner', 'Sélectionner...')}</option>
-                            {categories?.map(c => (
-                                <option key={c.id} value={c.code}>{c.label}</option>
-                            ))}
-                        </select>
-                    </div>
+                {/* Code */}
+                <div>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                        {t('organigramme.form.codePoste', 'Code')}
+                    </label>
+                    <input
+                        {...register('code')}
+                        className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
+                        style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
+                        placeholder={t('organigramme.form.phCode')}
+                    />
                 </div>
 
                 {/* Niveau de responsabilité */}

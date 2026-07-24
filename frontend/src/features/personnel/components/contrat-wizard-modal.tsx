@@ -11,8 +11,9 @@ import { useTypesContrat, useCreerContrat, useModifierContrat } from '../hooks/u
 import { useAffectationActiveMembre } from '../hooks/use-affectations';
 import { usePostesVacants, useTousPostes } from '@/features/postes/hooks/use-postes';
 import { useToutesFonctions } from '@/features/fonctions/hooks/use-fonctions';
+import { useModesRemuneration } from '@/features/organisation/hooks/use-modes-remuneration';
 import { PosteCapaciteIndicator } from '@/features/postes/components/PosteCapaciteIndicator';
-import type { ContratPersonnel, MembrePersonnel, ModeRemuneration } from '../types/personnel.types';
+import type { ContratPersonnel, MembrePersonnel } from '../types/personnel.types';
 import type { Poste } from '@/features/postes/types/poste.types';
 
 const STEPS = ['stepMembre', 'stepPoste', 'stepFonctions', 'stepRemuneration', 'stepRecap'] as const;
@@ -30,6 +31,7 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
     const { data: postesVacants } = usePostesVacants();
     const { data: tousPostes } = useTousPostes();
     const { data: fonctions } = useToutesFonctions();
+    const { data: modesRemuneration } = useModesRemuneration();
     const creer = useCreerContrat();
     const modifier = useModifierContrat();
 
@@ -42,7 +44,7 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
         fonctionsSecondairesIds: [] as string[],
         dateDebut: new Date().toISOString().split('T')[0],
         dateFin: '',
-        modeRemuneration: '' as ModeRemuneration | '',
+        modeRemunerationId: '',
         salaireBase: 0,
         tarifHoraire: 0,
         heuresContractuellesMois: 0,
@@ -71,13 +73,11 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
 
     const modeOptions = [
         { value: '', label: t('modeHerite') },
-        { value: 'MENSUEL', label: t('modeMensuel') },
-        { value: 'HORAIRE', label: t('modeHoraire') },
-        { value: 'MIXTE', label: t('modeMixte') },
-        { value: 'HEBDOMADAIRE', label: t('modeHebdomadaire') },
+        ...(modesRemuneration || []).map((m: any) => ({ value: m.id, label: m.label })),
     ];
 
-    const mode = form.modeRemuneration as string;
+    const mode = (modesRemuneration || []).find((m: any) => m.id === form.modeRemunerationId);
+    const modeCode = mode?.code || '';
 
     const fonctionOptions = (fonctions || [])
         .filter((f: any) => f.actif !== false)
@@ -112,11 +112,11 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
             case 0: return !!form.membrePersonnelId && !!form.typeContrat && !!form.dateDebut;
             case 1: return true; // poste optionnel
             case 2: return true; // fonctions optionnelles
-            case 3: return !!form.modeRemuneration && (
-                mode === 'MENSUEL' ? form.salaireBase > 0 :
-                mode === 'HORAIRE' ? form.tarifHoraire > 0 :
-                mode === 'MIXTE' ? form.salaireBase > 0 && form.tarifHoraire > 0 :
-                mode === 'HEBDOMADAIRE' ? form.tarifHebdomadaire > 0 : true
+            case 3: return !!form.modeRemunerationId && (
+                modeCode === 'MENSUEL' ? form.salaireBase > 0 :
+                modeCode === 'HORAIRE' ? form.tarifHoraire > 0 :
+                modeCode === 'MIXTE' ? form.salaireBase > 0 && form.tarifHoraire > 0 :
+                modeCode === 'HEBDOMADAIRE' ? form.tarifHebdomadaire > 0 : true
             );
             case 4: return true;
             default: return false;
@@ -137,13 +137,13 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
             fonctionsSecondairesIds: form.fonctionsSecondairesIds.length > 0 ? form.fonctionsSecondairesIds : undefined,
             dateDebut: form.dateDebut,
             dateFin: form.dateFin || undefined,
-            modeRemuneration: form.modeRemuneration || undefined,
+            modeRemunerationId: form.modeRemunerationId || undefined,
             renouvellementAuto: form.renouvellementAuto || undefined,
             clauses: form.clauses || undefined,
             salaireBase: Number(form.salaireBase),
-            tarifHoraire: mode === 'HORAIRE' || mode === 'MIXTE' ? Number(form.tarifHoraire) : undefined,
-            heuresContractuellesMois: mode === 'MIXTE' ? Number(form.heuresContractuellesMois) : undefined,
-            tarifHebdomadaire: mode === 'HEBDOMADAIRE' ? Number(form.tarifHebdomadaire) : undefined,
+            tarifHoraire: modeCode === 'HORAIRE' || modeCode === 'MIXTE' ? Number(form.tarifHoraire) : undefined,
+            heuresContractuellesMois: modeCode === 'MIXTE' ? Number(form.heuresContractuellesMois) : undefined,
+            tarifHebdomadaire: modeCode === 'HEBDOMADAIRE' ? Number(form.tarifHebdomadaire) : undefined,
         };
         Object.keys(payload).forEach((k) => { if (payload[k] === undefined) delete payload[k]; });
 
@@ -167,7 +167,7 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
             fonctionsSecondairesIds: [],
             dateDebut: editing?.dateDebut?.split('T')[0] || new Date().toISOString().split('T')[0],
             dateFin: editing?.dateFin?.split('T')[0] || '',
-            modeRemuneration: (editing?.modeRemuneration as ModeRemuneration) || '',
+            modeRemunerationId: editing?.modeRemunerationId || '',
             salaireBase: editing?.salaireBase || 0,
             tarifHoraire: editing?.tarifHoraire || 0,
             heuresContractuellesMois: editing?.heuresContractuellesMois || 0,
@@ -277,21 +277,21 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
             case 3:
                 return (
                     <div className="space-y-4">
-                        <ElisaSelect label={t('modeRemuneration')} options={modeOptions} value={mode}
-                            onValueChange={(v) => setForm({ ...form, modeRemuneration: v as ModeRemuneration | '' })} required />
-                        {(!mode || mode === 'MENSUEL' || mode === 'MIXTE') && (
+                        <ElisaSelect label={t('modeRemuneration')} options={modeOptions} value={form.modeRemunerationId}
+                            onValueChange={(v) => setForm({ ...form, modeRemunerationId: v })} required />
+                        {(!modeCode || modeCode === 'MENSUEL' || modeCode === 'MIXTE') && (
                             <ElisaInput label={t('salaireBase')} type="number" value={String(form.salaireBase)}
                                 onChange={(e) => setForm({ ...form, salaireBase: Number(e.target.value) })} required />
                         )}
-                        {(mode === 'HORAIRE' || mode === 'MIXTE') && (
+                        {(modeCode === 'HORAIRE' || modeCode === 'MIXTE') && (
                             <ElisaInput label={t('tarifHoraire')} type="number" value={String(form.tarifHoraire)}
                                 onChange={(e) => setForm({ ...form, tarifHoraire: Number(e.target.value) })} />
                         )}
-                        {mode === 'MIXTE' && (
+                        {modeCode === 'MIXTE' && (
                             <ElisaInput label={t('heuresContractuelles')} type="number" value={String(form.heuresContractuellesMois)}
                                 onChange={(e) => setForm({ ...form, heuresContractuellesMois: Number(e.target.value) })} />
                         )}
-                        {mode === 'HEBDOMADAIRE' && (
+                        {modeCode === 'HEBDOMADAIRE' && (
                             <ElisaInput label={t('tarifHebdomadaire')} type="number" value={String(form.tarifHebdomadaire)}
                                 onChange={(e) => setForm({ ...form, tarifHebdomadaire: Number(e.target.value) })} />
                         )}
@@ -311,7 +311,6 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
                     </div>
                 );
             case 4:
-                const modeLabel: Record<string, string> = { MENSUEL: t('recapModeMensuel'), HORAIRE: t('recapModeHoraire'), MIXTE: t('recapModeMixte'), HEBDOMADAIRE: t('recapModeHebdomadaire') };
                 return (
                     <div className="space-y-4">
                         <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg p-4 text-center">
@@ -324,7 +323,7 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
                             <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapPoste')}</span><span className="font-medium">{form.posteId ? (tousPostes?.find((p: Poste) => p.id === form.posteId)?.intitule || form.posteId) : t('recapAucun')}</span></div>
                             <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapFonctionPrincipale')}</span><span className="font-medium">{form.fonctionId ? getFonctionName(form.fonctionId) : t('recapAucune')}</span></div>
                             <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapFonctionsSecondaires')}</span><span className="font-medium">{form.fonctionsSecondairesIds.length > 0 ? form.fonctionsSecondairesIds.map(getFonctionName).join(', ') : t('recapAucune')}</span></div>
-                            <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapModeRemuneration')}</span><span className="font-medium">{modeLabel[form.modeRemuneration as string] || form.modeRemuneration}</span></div>
+                            <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapModeRemuneration')}</span><span className="font-medium">{mode?.label || form.modeRemunerationId}</span></div>
                             {form.salaireBase > 0 && <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapSalaireBase')}</span><span className="font-medium">{form.salaireBase.toLocaleString('fr-FR')} F</span></div>}
                             {form.tarifHoraire > 0 && <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapTarifHoraire')}</span><span className="font-medium">{form.tarifHoraire.toLocaleString('fr-FR')} F/h</span></div>}
                             {form.heuresContractuellesMois > 0 && <div className="flex justify-between py-2"><span className="text-gray-500 dark:text-gray-400">{t('recapHeuresContractuelles')}</span><span className="font-medium">{form.heuresContractuellesMois}h/mois</span></div>}

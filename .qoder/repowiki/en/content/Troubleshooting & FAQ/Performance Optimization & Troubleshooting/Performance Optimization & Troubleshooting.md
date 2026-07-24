@@ -24,6 +24,13 @@
 - [frontend/package.json](file://frontend/package.json)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Updated Database Query Optimization section to reflect PostgreSQL recursive CTE implementation for hierarchical organization operations
+- Added new section on Hierarchical Data Processing Optimization covering the DFS to recursive CTE migration
+- Enhanced Slow Query Analysis with specific guidance for hierarchical query patterns
+- Updated Architecture Overview to include hierarchical data processing improvements
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -54,6 +61,7 @@ DBM["Database Migrations<br/>Indexes & Optimizations"]
 MON["Monitoring Module<br/>Metrics Endpoints"]
 PAG["Pagination Utilities"]
 IDX["Index Scripts<br/>Analyze & Run"]
+HIER["Hierarchical Processing<br/>Recursive CTE Optimizations"]
 end
 subgraph "Frontend"
 VITE["Vite Config<br/>Bundling & Optimization"]
@@ -65,6 +73,7 @@ end
 DBM --> MON
 PAG --> MON
 IDX --> DBM
+HIER --> DBM
 VITE --> PKGFE
 PKGBE --> MON
 ```
@@ -73,6 +82,7 @@ PKGBE --> MON
 
 ## Core Components
 - Database Indexing and Query Optimization: A series of migrations introduce targeted indexes and schema improvements to accelerate common queries across modules such as announcements, organization, notifications, and general performance tuning.
+- **Enhanced Hierarchical Data Processing**: PostgreSQL recursive CTE implementation replaces application-level DFS algorithms for anti-cycle detection in personnel hierarchies, significantly improving query performance.
 - Monitoring and Metrics: The monitoring module exposes endpoints to collect and report system health and performance metrics.
 - Pagination Utilities: Shared pagination helpers standardize cursor/skip-limit patterns and reduce payload sizes.
 - Load Testing and Verification: Scripts provide load tests for pagination and verification routines for pagination correctness.
@@ -94,7 +104,7 @@ PKGBE --> MON
 - [backend/package.json](file://backend/package.json)
 
 ## Architecture Overview
-The performance architecture integrates database-level optimizations, application-level caching and pagination, and monitoring endpoints that expose runtime metrics. Frontend optimizations reduce bundle size and improve rendering throughput.
+The performance architecture integrates database-level optimizations, application-level caching and pagination, and monitoring endpoints that expose runtime metrics. Frontend optimizations reduce bundle size and improve rendering throughput. **Updated** to include hierarchical data processing optimizations using PostgreSQL recursive CTEs.
 
 ```mermaid
 graph TB
@@ -105,6 +115,8 @@ API --> MonCtrl["Monitoring Controller"]
 MonCtrl --> MonSvc["Monitoring Service"]
 MonSvc --> DB
 MonSvc --> Cache
+DB --> Hierarchy["Hierarchical Queries<br/>Recursive CTE"]
+Hierarchy --> AntiCycle["Anti-Cycle Detection<br/>Personnel Hierarchy"]
 ```
 
 **Diagram sources**
@@ -117,10 +129,12 @@ MonSvc --> Cache
 ### Database Query Optimization and Index Management
 - Purpose: Accelerate frequent read/write paths by adding appropriate indexes and refining schemas.
 - Key areas: Announcements, organization, notifications, and general performance enhancements.
+- **Enhanced**: Hierarchical organization operations now leverage PostgreSQL recursive CTEs for improved performance.
 - Operational steps:
   - Review and apply performance-focused migrations.
   - Use index analysis scripts to validate effectiveness and detect redundancy.
   - Schedule periodic index maintenance and reindexing when necessary.
+  - Monitor recursive CTE performance for complex hierarchical queries.
 
 ```mermaid
 flowchart TD
@@ -153,14 +167,47 @@ Monitor --> End(["End"])
 - [backend/scripts/analyze-indexes.ts](file://backend/scripts/analyze-indexes.ts)
 - [backend/scripts/run-indexes.sh](file://backend/scripts/run-indexes.sh)
 
+### Hierarchical Data Processing Optimization
+- **New**: PostgreSQL recursive CTE implementation for personnel hierarchy anti-cycle detection.
+- **Migration Impact**: Replaced application-level Depth-First Search (DFS) algorithm with native PostgreSQL recursive CTE queries.
+- **Performance Benefits**: 
+  - Reduced application memory usage by moving computation to database layer
+  - Improved query execution time for hierarchical organization operations
+  - Better scalability for large organizational structures
+  - Eliminated potential stack overflow issues with deep hierarchies
+- **Implementation Strategy**:
+  - Utilize `WITH RECURSIVE` clauses for cycle detection
+  - Leverage PostgreSQL's optimized recursive query engine
+  - Maintain referential integrity at database level
+  - Optimize recursive CTE parameters for performance
+
+```mermaid
+sequenceDiagram
+participant App as "Application Layer"
+participant DB as "PostgreSQL Engine"
+participant Hierarchy as "Personnel Hierarchy"
+App->>DB : "Recursive CTE Query"
+DB->>Hierarchy : "Process with WITH RECURSIVE"
+DB-->>App : "Anti-cycle validated results"
+Note over DB,Hierarchy : "Optimized recursive processing<br/>in database engine"
+```
+
+**Diagram sources**
+- [backend/database/migrations/046-organisation-performance-avancee.sql](file://backend/database/migrations/046-organisation-performance-avancee.sql)
+
+**Section sources**
+- [backend/database/migrations/046-organisation-performance-avancee.sql](file://backend/database/migrations/046-organisation-performance-avancee.sql)
+
 ### Slow Query Analysis
 - Strategy:
   - Enable database-level logging for slow queries.
   - Periodically analyze query plans using explain plans and index coverage reports.
   - Correlate slow queries with business hotspots and adjust indexes or rewrite queries.
+  - **Enhanced**: Monitor recursive CTE performance for hierarchical queries.
 - Tools:
   - Index analysis script to identify missing or redundant indexes.
   - Migration files that add targeted indexes for known hot paths.
+  - **New**: Recursive query performance monitoring for hierarchical operations.
 
 ```mermaid
 sequenceDiagram
@@ -172,6 +219,7 @@ Script->>DB : "Collect stats and query plans"
 DB-->>Script : "Stats and plans"
 Script-->>Admin : "Report : missing/redundant indexes"
 Admin->>DB : "Apply targeted migrations"
+DB->>DB : "Monitor recursive CTE performance"
 ```
 
 **Diagram sources**
@@ -298,6 +346,7 @@ Assets --> Prod["Production Bundle"]
   - Use provided load test scripts to simulate realistic traffic patterns.
   - Focus on paginated endpoints and high-read scenarios.
   - Measure response times, error rates, and resource utilization.
+  - **Enhanced**: Include hierarchical query performance testing.
 - Methodology:
   - Gradually increase concurrency to find breaking points.
   - Record baseline metrics and compare after optimizations.
@@ -312,7 +361,7 @@ participant DB as "PostgreSQL"
 Tester->>API : "Concurrent requests"
 API->>Cache : "Read-through"
 API->>DB : "Fallback reads"
-Note over API,DB : "Monitor latency and errors"
+Note over API,DB : "Monitor latency and errors<br/>including recursive CTE performance"
 Tester-->>Tester : "Aggregate results"
 ```
 
@@ -327,10 +376,12 @@ Tester-->>Tester : "Aggregate results"
   - Establish SLOs for latency, throughput, and error rates.
   - Model expected growth in users, tenants, and data volume.
   - Size CPU, memory, storage, and network based on benchmarks.
+  - **Enhanced**: Account for increased database workload from recursive CTE operations.
 - Practices:
   - Horizontal scaling for stateless API nodes.
   - Vertical scaling for database with tuned connection pools.
   - Cache layer scaling and sharding if needed.
+  - **New**: Monitor PostgreSQL recursive query performance and optimize accordingly.
 
 [No sources needed since this section provides general guidance]
 
@@ -338,12 +389,14 @@ Tester-->>Tester : "Aggregate results"
 - Dashboards:
   - Expose metrics endpoints from the monitoring module.
   - Aggregate metrics in a time-series database and visualize trends.
+  - **Enhanced**: Include recursive CTE performance metrics.
 - KPIs:
   - P95/P99 latency per endpoint.
   - Throughput (requests/sec).
   - Error rate and saturation metrics.
   - Cache hit ratio and memory usage.
   - Database query duration distribution and index usage.
+  - **New**: Recursive query execution time and complexity metrics.
 
 ```mermaid
 sequenceDiagram
@@ -375,6 +428,7 @@ MonCtrl-->>App : "Metrics response"
   - Use HTTP load generators (e.g., k6, wrk) for API stress tests.
   - Employ database profiling tools to capture slow queries and plan analyses.
   - Integrate benchmarking into CI to catch regressions early.
+  - **Enhanced**: Include recursive CTE performance benchmarking for hierarchical operations.
 
 [No sources needed since this section provides general guidance]
 
@@ -383,9 +437,11 @@ MonCtrl-->>App : "Metrics response"
   - Profile heap snapshots to detect leaks.
   - Adjust GC flags based on workload characteristics.
   - Monitor RSS and heap usage trends.
+  - **Enhanced**: Monitor memory reduction from recursive CTE migration.
 - PostgreSQL:
   - Tune autovacuum and work_mem settings.
   - Monitor bloat and reclaim space periodically.
+  - **New**: Optimize recursive query memory allocation.
 
 [No sources needed since this section provides general guidance]
 
@@ -395,6 +451,7 @@ MonCtrl-->>App : "Metrics response"
   - Use connection pooling for database and cache clients.
   - Batch background jobs and throttle I/O-bound tasks.
   - Enable compression for API responses where appropriate.
+  - **Enhanced**: Leverage database-side processing for complex hierarchical operations.
 
 [No sources needed since this section provides general guidance]
 
@@ -407,6 +464,7 @@ BEPkg["Backend Package"] --> DBConf["Database Config"]
 BEPkg --> MonCtrl["Monitoring Controller"]
 MonCtrl --> MonSvc["Monitoring Service"]
 FEConf["Frontend Vite Config"] --> FEPkg["Frontend Package"]
+DBConf --> RecCTE["Recursive CTE Support"]
 ```
 
 **Diagram sources**
@@ -429,8 +487,10 @@ FEConf["Frontend Vite Config"] --> FEPkg["Frontend Package"]
 - Prioritize index-driven query optimization for hot paths.
 - Standardize pagination across APIs to control payload sizes.
 - Implement caching with clear invalidation policies and TTLs.
+- **Enhanced**: Leverage PostgreSQL recursive CTEs for complex hierarchical operations instead of application-level algorithms.
 - Continuously monitor metrics and alert on SLO breaches.
 - Conduct regular load tests and capacity reviews.
+- **New**: Monitor recursive query performance and optimize database parameters accordingly.
 
 [No sources needed since this section provides general guidance]
 
@@ -447,6 +507,11 @@ FEConf["Frontend Vite Config"] --> FEPkg["Frontend Package"]
   - Capture heap snapshots and analyze retained objects.
   - Validate cache eviction policies and TTLs.
   - Check for unbounded collections or event listeners.
+- **New**: Symptom: Poor hierarchical query performance
+  - Verify recursive CTE query plans and execution times.
+  - Check PostgreSQL recursive query settings and memory allocation.
+  - Monitor anti-cycle detection performance in personnel hierarchies.
+  - Consider optimizing recursive CTE parameters and database configuration.
 
 **Section sources**
 - [backend/src/common/utils/pagination.util.ts](file://backend/src/common/utils/pagination.util.ts)
@@ -454,7 +519,7 @@ FEConf["Frontend Vite Config"] --> FEPkg["Frontend Package"]
 - [backend/test/unit/redis.service.spec.ts](file://backend/test/unit/redis.service.spec.ts)
 
 ## Conclusion
-By combining database indexing, caching, pagination, monitoring, and frontend optimizations, eLISAschool can achieve robust performance at scale. Continuous measurement, load testing, and proactive capacity planning ensure sustained reliability and responsiveness.
+By combining database indexing, caching, pagination, monitoring, and frontend optimizations, eLISAschool can achieve robust performance at scale. **Enhanced** with PostgreSQL recursive CTE implementations for hierarchical operations, the system now leverages database-native processing for complex organizational queries. Continuous measurement, load testing, and proactive capacity planning ensure sustained reliability and responsiveness.
 
 [No sources needed since this section summarizes without analyzing specific files]
 

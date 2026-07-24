@@ -28,7 +28,6 @@ export class PostesService {
             intitule: dto.intitule,
             description: dto.description,
             code: dto.code,
-            categoriePosteId: dto.categoriePosteId,
             niveauResponsabiliteId: dto.niveauResponsabiliteId,
             fonctionId: dto.fonctionId,
             uniteOrganisationnelleId: dto.uniteOrganisationnelleId,
@@ -49,7 +48,6 @@ export class PostesService {
             .leftJoinAndSelect('p.uniteOrganisationnelle', 'uo')
             .leftJoinAndSelect('p.fonction', 'f')
             .leftJoinAndSelect('f.typePersonnel', 'ftp')
-            .leftJoinAndSelect('p.categoriePoste', 'cp')
             .leftJoinAndSelect('p.niveauResponsabilite', 'nr');
 
         if (etablissementId) {
@@ -57,9 +55,6 @@ export class PostesService {
         }
         if (query.search) {
             qb.andWhere('(p.intitule ILIKE :search OR p.code ILIKE :search)', { search: `%${query.search}%` });
-        }
-        if (query.categoriePosteId) {
-            qb.andWhere('p.categoriePosteId = :categoriePosteId', { categoriePosteId: query.categoriePosteId });
         }
         if (query.statut) {
             qb.andWhere('p.statut = :statut', { statut: query.statut });
@@ -85,7 +80,7 @@ export class PostesService {
     async findAllSimple(etablissementId?: string): Promise<Poste[]> {
         return this.posteRepo.find({
             where: { actif: true, uniteOrganisationnelle: { etablissementId } },
-            relations: ['uniteOrganisationnelle', 'fonction', 'fonction.typePersonnel', 'categoriePoste', 'niveauResponsabilite'],
+            relations: ['uniteOrganisationnelle', 'fonction', 'fonction.typePersonnel', 'niveauResponsabilite'],
             order: { intitule: 'ASC' },
         });
     }
@@ -104,7 +99,7 @@ export class PostesService {
     async findByFonction(fonctionId: string, etablissementId?: string): Promise<Poste[]> {
         return this.posteRepo.find({
             where: { fonctionId, uniteOrganisationnelle: { etablissementId } },
-            relations: ['uniteOrganisationnelle', 'fonction', 'fonction.typePersonnel', 'categoriePoste', 'niveauResponsabilite'],
+            relations: ['uniteOrganisationnelle', 'fonction', 'fonction.typePersonnel', 'niveauResponsabilite'],
             order: { intitule: 'ASC' },
         });
     }
@@ -114,7 +109,6 @@ export class PostesService {
             .leftJoinAndSelect('p.uniteOrganisationnelle', 'uo')
             .leftJoinAndSelect('p.fonction', 'f')
             .leftJoinAndSelect('f.typePersonnel', 'ftp')
-            .leftJoinAndSelect('p.categoriePoste', 'cp')
             .leftJoinAndSelect('p.niveauResponsabilite', 'nr')
             .where('p.id = :id', { id });
         if (etablissementId) {

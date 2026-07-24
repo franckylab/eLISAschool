@@ -1,1 +1,0 @@
-`npm install` installs all three workspaces plus runs the postinstall type-pinning override; `npm run dev` boots backend + frontend in parallel; `npm run docker:dev[:build|logs|down]` drives `docker-compose.dev.yml`; `npm run db:migrate` / `db:seed` forward to the backend's TypeORM migration/seed scripts.

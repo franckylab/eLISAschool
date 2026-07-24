@@ -3,95 +3,13 @@ schema_version: 1
 locale: en-US
 branch: MAJ_pages
 nodes_managed: true
-exported_at: "2026-07-23T14:00:17Z"
+exported_at: "2026-07-23T21:40:19Z"
 modules:
     "":
-        dir_name: eLISAschool Monorepo (Backend + Frontend + Shared + Docker)
-        title: eLISAschool Monorepo (Backend + Frontend + Shared + Docker)
-        scope:
-            - README.md
-            - QUICKSTART.md
-            - INDEX.md
-            - AGENTS.md
-            - CHEATSHEET.md
-            - package.json
-            - package-lock.json
-        source_files: []
-        children:
-            - backend
-            - docker_infra
-            - docs
-            - frontend
-            - scripts
-            - shared_package
-        depends_on: []
-        related_to: []
-    backend:
-        dir_name: eLISAschool Multi-Tenant School Management API (Express + TypeORM)
-        title: eLISAschool Multi-Tenant School Management API (Express + TypeORM)
-        scope:
-            - backend/src/
-            - backend/database/migrations/
-            - backend/scripts/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: docker_infra
-            - path: frontend
-            - path: shared_package
-    docker_infra:
-        dir_name: Docker Infrastructure & Deployment Orchestration
-        title: Docker Infrastructure & Deployment Orchestration
-        scope:
-            - docker/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend
-            - path: frontend
-    docs:
-        dir_name: docs
-        title: docs
-        scope:
-            - docs/
+        dir_name: eLISAschool Backend API (Express + TypeORM)
+        title: eLISAschool Backend API (Express + TypeORM)
+        scope: []
         source_files: []
         children: []
         depends_on: []
         related_to: []
-    frontend:
-        dir_name: eLISAschool Frontend Application Shell
-        title: eLISAschool Frontend Application Shell
-        scope:
-            - frontend/src/
-            - frontend/public/
-            - frontend/scripts/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend
-            - path: docker_infra
-            - path: shared_package
-    scripts:
-        dir_name: scripts
-        title: scripts
-        scope:
-            - scripts/
-        source_files: []
-        children: []
-        depends_on: []
-        related_to: []
-    shared_package:
-        dir_name: Shared Domain Primitives & Module Registry
-        title: Shared Domain Primitives & Module Registry
-        scope:
-            - shared/src/
-            - shared/package.json
-        source_files: []
-        children: []
-        depends_on: []
-        related_to:
-            - path: backend
-            - path: frontend

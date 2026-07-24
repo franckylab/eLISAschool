@@ -2,16 +2,16 @@
  * ==================================
  * eLISAschool - Entité HierarchiePersonnel
  * ==================================
- * Version: 2.0.0
+ * Version: 4.0.0
  * Auteur: franck arlos chendjou
  *
  * Trace les liens hiérarchiques entre membres du personnel.
  * Permet de construire l'organigramme dynamique et de gérer les relations
  * de subordination/supervision.
  *
- * Refonte v2.0 :
- * - typeRelation : FK vers TypeRelationHierarchique (remplace l'enum PostgreSQL)
- * - FK ajoutées vers membres_personnel et unites_organisationnelles
+ * Refonte v4.0 :
+ * - typeRelationId (FK) → typeRelation (varchar enum : DIRECT, FONCTIONNEL)
+ * - uniteOrganisationnelleId supprimé (redondant avec Poste)
  */
 
 import {
@@ -27,7 +27,6 @@ import {
 import { Etablissement } from '@modules/etablissement/entities';
 import { MembrePersonnel } from '@modules/personnel/entities';
 import { Poste } from './poste.entity';
-import { TypeRelationHierarchique } from './type-relation-hierarchique.entity';
 
 /**
  * Statut de la relation hiérarchique (enum fermé — non modifiable)
@@ -39,13 +38,21 @@ export enum StatutRelation {
 }
 
 /**
+ * Type de relation hiérarchique (enum varchar — remplace la table TypeRelationHierarchique)
+ */
+export enum TypeRelationHierarchique {
+    DIRECT = 'DIRECT',
+    FONCTIONNEL = 'FONCTIONNEL',
+}
+
+/**
  * Entité HierarchiePersonnel
  * Modélise les relations de subordination dans l'organisation
  */
 @Entity('hierarchie_personnel')
 @Index(['personnelId'])
 @Index(['superieurId'])
-@Index(['typeRelationId'])
+@Index(['typeRelation'])
 @Index(['posteId'])
 @Index(['etablissementId'])
 export class HierarchiePersonnel {
@@ -64,13 +71,9 @@ export class HierarchiePersonnel {
     @Column({ type: 'uuid', nullable: true })
     superieurId?: string;
 
-    // FK vers TypeRelationHierarchique (remplace l'enum PostgreSQL)
-    @Column({ type: 'uuid', nullable: true })
-    typeRelationId?: string;
-
-    @ManyToOne(() => TypeRelationHierarchique, { nullable: true, onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'typeRelationId' })
-    typeRelation?: TypeRelationHierarchique;
+    // Type de relation (enum varchar — remplace la FK TypeRelationHierarchique)
+    @Column({ type: 'varchar', length: 30, default: TypeRelationHierarchique.DIRECT })
+    typeRelation!: TypeRelationHierarchique;
 
     @Column({ type: 'enum', enum: StatutRelation, default: StatutRelation.ACTIVE })
     statut!: StatutRelation;
@@ -88,9 +91,6 @@ export class HierarchiePersonnel {
 
     @Column({ type: 'uuid', nullable: true })
     posteId?: string;
-
-    @Column({ type: 'uuid', nullable: true })
-    uniteOrganisationnelleId?: string;
 
     // Référence au poste (FK — permet de lier sans personnel assigné)
     @ManyToOne(() => Poste, { nullable: true, onDelete: 'SET NULL' })

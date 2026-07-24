@@ -22,7 +22,7 @@ import {
 } from 'typeorm';
 import { Etablissement } from '@modules/etablissement/entities';
 import { ContratPersonnel } from './contrat-personnel.entity';
-import { ModeRemuneration } from '@modules/paie/entities/mode-remuneration.enum';
+import { ModeRemunerationEntity } from '@modules/organisation/entities';
 
 /**
  * Catégorie de contrat (pour organisation et filtrage)
@@ -68,8 +68,12 @@ export class TypeContratPersonnalise {
     ordre!: number; // Pour l'affichage trié
 
     // Configuration par défaut pour ce type de contrat
-    @Column({ type: 'varchar', length: 30, default: ModeRemuneration.MENSUEL })
-    modeRemuneration!: ModeRemuneration;
+    @Column({ type: 'uuid', nullable: true })
+    modeRemunerationId?: string | null;
+
+    @ManyToOne(() => ModeRemunerationEntity, { onDelete: 'SET NULL', nullable: true })
+    @JoinColumn({ name: 'modeRemunerationId' })
+    modeRemuneration?: ModeRemunerationEntity | null;
 
     @Column({ type: 'boolean', default: false })
     renouvellementAutoDefaut!: boolean;

@@ -19,8 +19,7 @@ import {
 import { MembrePersonnel } from './personnel.entity';
 import { Etablissement } from '@modules/etablissement/entities';
 import { TypeContratPersonnalise } from './type-contrat.entity';
-import { UniteOrganisationnelle, Poste, Fonction } from '@modules/organisation/entities';
-import { ModeRemuneration } from '@modules/paie/entities/mode-remuneration.enum';
+import { UniteOrganisationnelle, Poste, Fonction, ModeRemunerationEntity } from '@modules/organisation/entities';
 
 /**
  * Statut du contrat
@@ -91,8 +90,12 @@ export class ContratPersonnel {
     @Column({ type: 'decimal', precision: 10, scale: 0, nullable: true })
     tarifHoraire?: number | null;
 
-    @Column({ type: 'varchar', length: 30, nullable: true })
-    modeRemuneration?: ModeRemuneration | null;
+    @Column({ type: 'uuid', nullable: true })
+    modeRemunerationId?: string | null;
+
+    @ManyToOne(() => ModeRemunerationEntity, { onDelete: 'SET NULL', nullable: true })
+    @JoinColumn({ name: 'modeRemunerationId' })
+    modeRemuneration?: ModeRemunerationEntity | null;
 
     @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
     heuresContractuellesMois?: number | null;

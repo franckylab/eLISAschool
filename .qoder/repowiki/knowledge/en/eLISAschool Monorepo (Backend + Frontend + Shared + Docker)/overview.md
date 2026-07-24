@@ -1,1 +1,0 @@
-Top-level npm workspaces monorepo wiring the Express backend, React frontend, and shared domain package together with unified dev/build/test scripts and Docker Compose orchestration.

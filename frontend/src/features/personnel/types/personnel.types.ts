@@ -19,7 +19,6 @@ export interface TypePersonnel {
     code: string;
     nom: string;
     description?: string;
-    modeRemunerationDefaut?: string;
     actif: boolean;
     estSysteme: boolean;
     createdAt: string;
@@ -90,7 +89,11 @@ export interface ModifierPersonnelDto extends Partial<CreerPersonnelDto> {
     id: string;
 }
 
-export type ModeRemuneration = 'MENSUEL' | 'HORAIRE' | 'MIXTE' | 'HEBDOMADAIRE';
+export interface ModeRemunerationInfo {
+    id: string;
+    code: string;
+    label: string;
+}
 
 export interface ContratPersonnel {
     id: string;
@@ -105,7 +108,8 @@ export interface ContratPersonnel {
     dateFin?: string | null;
     salaireBase: number;
     tarifHoraire?: number | null;
-    modeRemuneration?: ModeRemuneration | null;
+    modeRemunerationId?: string | null;
+    modeRemuneration?: ModeRemunerationInfo | null;
     heuresContractuellesMois?: number | null;
     tarifHebdomadaire?: number | null;
     statut: string;
@@ -210,7 +214,8 @@ export interface TypeContratPersonnalise {
     nom: string;
     description?: string;
     categorie: string;
-    modeRemuneration: ModeRemuneration;
+    modeRemunerationId?: string | null;
+    modeRemuneration?: ModeRemunerationInfo | null;
     actif: boolean;
     estSysteme: boolean;
     ordre: number;

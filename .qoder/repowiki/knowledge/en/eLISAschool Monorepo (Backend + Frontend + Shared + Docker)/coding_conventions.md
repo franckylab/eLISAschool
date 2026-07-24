@@ -1,2 +1,0 @@
-- All workspace scripts are invoked through the root `npm run <script>` surface (`dev`, `build`, `test`, `lint`, `db:*`, `docker:*`) rather than calling child directories directly.
-- Cross-package contracts live exclusively in the `shared` workspace; backend and frontend consume it as a typed dependency instead of duplicating enums, Zod schemas, or API shapes.

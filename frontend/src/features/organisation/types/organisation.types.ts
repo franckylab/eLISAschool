@@ -1,5 +1,21 @@
 export type StatutUnite = 'ACTIF' | 'EN_CREATION' | 'EN_RESTRUCTURATION' | 'ARCHIVE';
 export type StatutRelation = 'ACTIVE' | 'HISTORIQUE' | 'PLANIFIEE';
+export type TypeRelationHierarchique = 'DIRECT' | 'FONCTIONNEL';
+
+// ==================== ÉCHELON STRUCTUREL ====================
+
+export interface EchelonStructurel {
+    id: string;
+    niveau: number;
+    code: string;
+    label: string;
+    couleur?: string;
+    description?: string;
+    estSysteme: boolean;
+    etablissementId?: string;
+    createdAt: string;
+    updatedAt: string;
+}
 
 // ==================== UNITÉ ORGANISATIONNELLE ====================
 
@@ -7,10 +23,8 @@ export interface UniteOrganisationnelle {
     id: string;
     nom: string;
     description?: string;
-    usageUniteId?: string;
-    usageUnite?: { id: string; code: string; label: string };
-    niveauOrganisationId?: string;
-    niveauOrganisation?: { id: string; niveau: number; label: string };
+    echelonStructurelId?: string;
+    echelonStructurel?: EchelonStructurel;
     code: string;
     statut: StatutUnite;
     actif: boolean;
@@ -29,8 +43,7 @@ export interface UniteOrganisationnelle {
 export interface CreerUniteDto {
     nom: string;
     description?: string;
-    usageUniteId?: string;
-    niveauOrganisationId?: string;
+    echelonStructurelId?: string;
     code: string;
     etablissementId: string;
     parentId?: string | null; // null = détacher (racine)
@@ -54,12 +67,10 @@ export interface HierarchiePersonnel {
     id: string;
     personnelId?: string;
     superieurId?: string;
-    typeRelationId?: string;
-    typeRelation?: { id: string; code: string; label: string };
+    typeRelation: TypeRelationHierarchique;
     statut: StatutRelation;
     actif: boolean;
     posteId?: string;
-    uniteOrganisationnelleId?: string;
     etablissementId?: string;
     dateDebut?: string;
     dateFin?: string;
@@ -71,9 +82,8 @@ export interface HierarchiePersonnel {
 export interface CreerHierarchieDto {
     personnelId?: string;
     superieurId?: string;
-    typeRelationId?: string;
+    typeRelation?: TypeRelationHierarchique;
     posteId?: string;
-    uniteOrganisationnelleId?: string;
     etablissementId?: string | null;
     dateDebut?: string;
     dateFin?: string;
@@ -93,8 +103,7 @@ export interface OrganigrammeNode {
     description?: string;
     responsableNom?: string;
     localisation?: string;
-    usageUniteLabel?: string;
-    niveauOrganisationLabel?: string;
+    echelonStructurelLabel?: string;
     ordre: number;
     depth: number;
     totalMembres: number;
@@ -124,7 +133,6 @@ export interface ModifierPosteDto {
     nombrePostes?: number;
     statut?: string;
     fonctionId?: string;
-    categoriePosteId?: string;
     niveauResponsabiliteId?: string;
     missions?: string[];
     competencesRequises?: string[];
@@ -165,39 +173,6 @@ export interface StatistiquesOrganisation {
 }
 
 // ==================== NOMENCLATURES ====================
-
-export interface NiveauOrganisation {
-    id: string;
-    niveau: number;
-    label: string;
-    description?: string;
-    etablissementId?: string | null;
-    estSysteme: boolean;
-    createdAt: string;
-    updatedAt: string;
-}
-
-export interface UsageUnite {
-    id: string;
-    code: string;
-    label: string;
-    description?: string;
-    etablissementId?: string | null;
-    estSysteme: boolean;
-    createdAt: string;
-    updatedAt: string;
-}
-
-export interface CategoriePoste {
-    id: string;
-    code: string;
-    label: string;
-    description?: string;
-    etablissementId?: string | null;
-    estSysteme: boolean;
-    createdAt: string;
-    updatedAt: string;
-}
 
 export interface NiveauResponsabilite {
     id: string;
