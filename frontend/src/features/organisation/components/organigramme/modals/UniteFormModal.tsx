@@ -1,9 +1,21 @@
+/**
+ * ==================================
+ * eLISAschool - Modal formulaire unité organisationnelle
+ * ==================================
+ * Version: 1.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Formulaire création/édition d'unité : nom, code, échelon, responsable, localisation.
+ * Basé sur CustomModal + react-hook-form + zod.
+ */
+
 import { useEffect, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { CustomModal } from '@/components/modals/CustomModal';
+import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useCreerUnite, useModifierUnite } from '../../../hooks/use-unites';
 import { useEchelonsStructurels } from '../../../hooks/use-echelons-structurels';
 import { useAuthStore } from '@/stores/auth.store';
@@ -159,20 +171,15 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
             description={subtitle}
             size="lg"
             footer={<>
-                <button
-                    type="button"
-                    onClick={() => onOpenChange(false)}
-                    className="px-4 py-2 rounded-lg text-sm font-medium border transition-colors"
-                    style={{ borderColor: 'var(--color-bordure)', color: 'var(--color-text-secondary)' }}
-                >
+                <ElisaButton variant="outline" onClick={() => onOpenChange(false)}>
                     {t('common:boutons.annuler', 'Annuler')}
-                </button>
-                <button
+                </ElisaButton>
+                <ElisaButton
+                    variant="primary"
                     type="submit"
                     form="unite-form"
                     disabled={isPending}
-                    className="px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50"
-                    style={{ backgroundColor: 'var(--color-dominant-600)' }}
+                    chargement={isPending}
                 >
                     {isPending
                         ? t('common:boutons.enregistrement', 'Enregistrement...')
@@ -180,7 +187,7 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                             ? t('common:boutons.enregistrer', 'Enregistrer')
                             : t('common:boutons.creer', 'Créer')
                     }
-                </button>
+                </ElisaButton>
             </>}
         >
             <form id="unite-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">

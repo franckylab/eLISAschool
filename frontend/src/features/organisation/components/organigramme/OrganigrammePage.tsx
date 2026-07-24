@@ -173,8 +173,8 @@ export function OrganigrammePage() {
 
     if (isError) {
         return (
-            <div className="flex flex-col items-center justify-center py-12">
-                <p className="text-destructive mb-4">{t('erreurChargement', 'Erreur lors du chargement de l\'organigramme')}</p>
+            <div className="flex flex-col items-center justify-center py-12" style={{ padding: 'var(--space-xl)' }}>
+                <p className="text-destructive mb-4" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}>{t('erreurChargement', 'Erreur lors du chargement de l\'organigramme')}</p>
                 <ElisaButton variant="outline" onClick={() => refetchOrganigramme()}>
                     {t('reessayer', 'Réessayer')}
                 </ElisaButton>

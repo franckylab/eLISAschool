@@ -375,3 +375,47 @@ MatiereNiveau (source vérité volume horaire)
 - **Frontend** : 0 `any` dans les hooks, composants, types, pages
 - **Routes** : 60/60 protégées par `authMiddleware` + `requirePermission`
 - **UX** : Toutes les pages ont des états loading/error avec retry
+
+## Travail effectué — Session 2026-07-24 (audit final + corrections)
+### Backend — Bugs corrigés
+- **`unites.controller.ts`** : Route `POST /unites/avec-postes` déplacée avant `GET /unites/:id` (sinon le `:id` matchait "avec-postes")
+- **`statistiques-optimisees.service.ts`** : Strings `'actif'`/`'vacant'` → `StatutPoste.ACTIF`/`StatutPoste.VACANT` (enum)
+- **`fonctions.service.ts`** : Chemin matérialisé corrigé (`parent.chemin + '.' + id`) + mise à jour dans `update()`
+- **`organisation.service.ts`** : Ajout `destroy()` pour cleanup du `setInterval` Redis
+- **`generation.service.ts`** : `superieurId` corrigé (ne reçoit plus un UUID de Poste)
+
+### Frontend — Hooks, pages, types
+- **`use-fonctions.ts`** : Ajout `enabled: isAuthenticated` sur tous les hooks (évite requêtes quand non connecté)
+- **`fonction-detail-page.tsx`** : Handlers `onEdit`/`onDelete` fonctionnels + `ConfirmDialog` pour suppression sous-fonctions
+- **`unite-detail-page.tsx`** : Clé i18n `supprimerUniteConfirmation` → `confirmerSuppressionUnite`
+- **`fonctions-page.tsx`** : Clé i18n `actions` → `colActions`
+- **`organisation.types.ts`** : Types `Fonction`/`CreerFonctionDto`/`ModifierFonctionDto` dupliqués supprimés
+
+### i18n — Clés dupliquées nettoyées
+- **`fr/organisation.json`** : Clé `organigramme` (string) renommée `vueOrganigramme` (conflit avec l'objet imbriqué). Doublon `ajouterSousUnite` supprimé.
+- **`en/organisation.json`** : Idem. Clé renommée + doublon supprimé.
+- **`tab-hierarchie.tsx`** : `t('organigramme')` → `t('vueOrganigramme')`
+
+### Bilan qualité final
+- **0 `any`** dans tout le module (backend + frontend)
+- **0 clé i18n dupliquée** dans les JSON
+- **0 route sans guard**
+- **157 clés i18n** vérifiées dans les 24 fichiers composants
+- **Cohérence backend** : entités, services, controllers alignés
+
+## Travail effectué — Session 2026-07-24 (migration 120 — vues matérialisées)
+### Migration 120 — Correction vues matérialisées organisation
+- **`120-correction-vues-materialisees-organisation.sql`** : Migration corrective pour les vues matérialisées cassées depuis la refonte v4.
+- **`mv_stats_organisation`** : DROP + RECREATE. Ne référence plus la table inexistante `organisations`. Agrège par `etablissementId` directement depuis `unites_organisationnelles`. Colonnes aliasées en snake_case pour cohérence avec le service (`etablissement_id`, `total_unites`, etc.)
+- **`mv_postes_vacants_critiques`** : DROP + RECREATE. `p.intitulé` → `p.intitule`, suppression de `organisations o` / `u.organisationId` / `organisation_nom`. Ajout filtre `p.actif = true`.
+- **`refresh_mv_organisation()`** : Fonction simplifiée (suppression INSERT dans logs_systeme obsolète).
+- **Index ajoutés** : `idx_templates_org_actif`, `idx_templates_org_etablissement` sur `templates_organisation`.
+- **Index obsolètes supprimés** : `idx_postes_couvrant_stats` (référençait `occupantId` supprimé), `idx_mv_stats_organisation_id` (référençait `organisation_id` supprimé).
+
+### Service backend — Cohérence vues
+- **`statistiques-optimisees.service.ts`** : `organisationNom` supprimé de l'interface `PosteVacantCritique` et du mapping (la table `organisations` n'existe plus).
+
+### Bilan migrations
+- **12 migrations** pour le module organisation (044, 045, 046, 109, 110, 112, 120 + anciennes)
+- **Migration 120** : corrige les vues matérialisées cassées par les refontes 109-112
+- **Cohérence vérifiée** : entités ↔ migrations ↔ service ↔ vues matérialisées

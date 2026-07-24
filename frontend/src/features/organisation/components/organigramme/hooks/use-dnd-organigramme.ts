@@ -16,7 +16,6 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useModifierUnite } from '../../../hooks/use-unites';
 import type { OrganigrammeNode } from '../../../types/organisation.types';
 import type { Node, Connection } from 'reactflow';
@@ -102,7 +101,6 @@ function trouverParent(arbre: OrganigrammeNode[], uniteId: string): string | nul
 
 export function useDndOrganigramme({ arbre, isEditMode = false }: UseDndOrganigrammeProps) {
     const { t } = useTranslation('organisation');
-    const qc = useQueryClient();
     const { mutateAsync: modifierUnite } = useModifierUnite();
     const [dndState, setDndState] = useState<DndState>({
         draggedNodeId: null,
@@ -122,7 +120,7 @@ export function useDndOrganigramme({ arbre, isEditMode = false }: UseDndOrganigr
                 id: nodeId,
                 parentId: newParentId ?? null,
             });
-            qc.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
+            // Invalidation cache déjà gérée par useModifierUnite (unites + organigramme + stats)
             if (newParentId === null) {
                 toast.success(t('organigramme.dnd.uniteDetachee', 'Unité détachée (racine)'));
             } else {
@@ -131,7 +129,7 @@ export function useDndOrganigramme({ arbre, isEditMode = false }: UseDndOrganigr
         } catch (error: unknown) {
             console.error('Erreur déplacement:', error);
         }
-    }, [modifierUnite, qc]);
+    }, [modifierUnite, t]);
 
     // ─── DRAG EVENTS ───
 

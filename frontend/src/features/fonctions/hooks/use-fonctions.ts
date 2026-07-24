@@ -97,9 +97,9 @@ export function useCreerFonction() {
             return res.data;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['fonctions', 'list'] });
-            queryClient.invalidateQueries({ queryKey: ['fonctions', 'arbre'] });
-            queryClient.invalidateQueries({ queryKey: ['fonctions', 'toutes'] });
+            queryClient.invalidateQueries({ queryKey: ['fonctions'] });
+            queryClient.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
+            queryClient.invalidateQueries({ queryKey: ['organisation', 'statistiques'] });
             toast.success('Fonction créée avec succès');
         },
         onError: (e) => handleError(e, 'Erreur lors de la création de la fonction'),
@@ -115,10 +115,9 @@ export function useModifierFonction() {
             return res.data;
         },
         onSuccess: (data) => {
-            queryClient.invalidateQueries({ queryKey: ['fonctions', 'list'] });
-            queryClient.invalidateQueries({ queryKey: ['fonctions', 'arbre'] });
-            queryClient.invalidateQueries({ queryKey: ['fonctions', 'toutes'] });
-            queryClient.invalidateQueries({ queryKey: ['fonctions', 'detail', data.id] });
+            queryClient.invalidateQueries({ queryKey: ['fonctions'] });
+            queryClient.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
+            queryClient.invalidateQueries({ queryKey: ['organisation', 'statistiques'] });
             toast.success('Fonction modifiée avec succès');
         },
         onError: (e) => handleError(e, 'Erreur lors de la modification de la fonction'),
@@ -133,9 +132,9 @@ export function useSupprimerFonction() {
             await apiClient.delete(`/api/organisation/fonctions/${id}`);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['fonctions', 'list'] });
-            queryClient.invalidateQueries({ queryKey: ['fonctions', 'arbre'] });
-            queryClient.invalidateQueries({ queryKey: ['fonctions', 'toutes'] });
+            queryClient.invalidateQueries({ queryKey: ['fonctions'] });
+            queryClient.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
+            queryClient.invalidateQueries({ queryKey: ['organisation', 'statistiques'] });
             toast.success('Fonction supprimée');
         },
         onError: (e) => handleError(e, 'Erreur lors de la suppression de la fonction'),

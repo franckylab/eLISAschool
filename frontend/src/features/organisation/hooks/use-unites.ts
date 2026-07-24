@@ -1,3 +1,14 @@
+/**
+ * ==================================
+ * eLISAschool - Hooks Unités Organisationnelles
+ * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Hooks TanStack Query pour les unités : CRUD, arborescence, impact, réordonnancement.
+ * Invalidation cache croisée : unites, organigramme, stats.
+ */
+
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';

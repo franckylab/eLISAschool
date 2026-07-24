@@ -1,0 +1,1 @@
+Full-stack PWA school management system for multi-establishment environments, covering academics, HR/payroll, finances, scheduling and student tracking.

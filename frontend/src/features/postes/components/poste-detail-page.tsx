@@ -43,7 +43,7 @@ export function PosteDetailPage() {
     if (isLoading) return <PageSkeleton showHeader />;
     if (error || !poste) {
         return (
-            <div className="p-6">
+            <div className="flex flex-col items-center justify-center" style={{ gap: 'var(--gap-md)', padding: 'var(--space-xl)' }}>
                 <ErrorMessage title={t('erreurChargement')} message={t('erreurChargement')} onRetry={() => refetch()} retryLabel={t('reessayer')} />
             </div>
         );
@@ -62,7 +62,7 @@ export function PosteDetailPage() {
     ];
 
     return (
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col" style={{ gap: 'var(--gap-lg)', padding: 'var(--space-lg)' }}>
             <PageHeader
                 variant="gradient"
                 showBreadcrumbs

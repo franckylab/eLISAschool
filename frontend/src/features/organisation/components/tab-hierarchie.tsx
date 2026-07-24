@@ -125,7 +125,7 @@ export function TabHierarchie() {
     ];
 
     return (
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col" style={{ gap: 'var(--gap-lg)', padding: 'var(--space-lg)' }}>
             <PageHeader
                 title={t('hierarchie')}
                 subtitle={t('relationsHierarchiques')}
@@ -136,7 +136,7 @@ export function TabHierarchie() {
                 <div className="bg-card rounded-lg border border-border p-6">
                     <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                         <Users className="h-5 w-5 text-primary" />
-                        {t('organigramme')}
+                        {t('vueOrganigramme')}
                     </h3>
                     <TreeView
                         nodes={buildOrganigramTree(organigrammeNodes)}

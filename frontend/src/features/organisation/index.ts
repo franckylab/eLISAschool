@@ -1,11 +1,17 @@
+/**
+ * ==================================
+ * eLISAschool - Module Organisation — Barrel
+ * ==================================
+ * Point d'entrée unique : types, hooks, composants.
+ */
+
+// Types
 export * from './types/organisation.types';
-export * from './hooks/use-organisation';
-export * from './hooks/use-unites';
-export * from './hooks/use-hierarchies';
-export * from './hooks/use-echelons-structurels';
-export * from './hooks/use-niveaux-responsabilite';
-export * from './hooks/use-templates';
-export * from './hooks/use-modes-remuneration';
+
+// Hooks (via barrel unitaire)
+export * from './hooks';
+
+// Composants
 export { UnitesPage } from './components/unites-page';
 export { UniteDetailPage } from './components/unite-detail-page';
 export { ModelesPage } from './components/modeles-page';
@@ -17,5 +23,3 @@ export { EchelonsStructurelsPage } from './components/echelons-structurels-page'
 export { NiveauxResponsabilitePage } from './components/niveaux-responsabilite-page';
 export { TypesPersonnelPage } from './components/types-personnel-page';
 export { ModesRemunerationPage } from './components/modes-remuneration-page';
-export { useCreerPoste, useModifierPoste, useSupprimerPoste } from './hooks/use-postes';
-export { useGetImpactUnite, useCreerUniteAvecPostes, useReordonnerUnite } from './hooks/use-unites';

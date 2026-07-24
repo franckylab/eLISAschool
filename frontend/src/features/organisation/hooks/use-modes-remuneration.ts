@@ -1,3 +1,11 @@
+/**
+ * ==================================
+ * eLISAschool - Hooks Modes de Rémunération
+ * ==================================
+ * Version: 1.0.0
+ * Auteur: franck arlos chendjou
+ */
+
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';

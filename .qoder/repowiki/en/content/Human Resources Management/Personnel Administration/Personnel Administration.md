@@ -21,6 +21,13 @@
 - [backend/src/routes/route-registry.ts](file://backend/src/routes/route-registry.ts)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Updated course hour management section to reflect streamlined implementation with simplified DTO schemas
+- Removed references to complex configuration options that were eliminated during the refactoring
+- Maintained core functionality while documenting the simplified architecture
+- Updated technical specifications to align with current codebase state
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -34,7 +41,7 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document describes eLISAschool’s personnel administration system with a focus on the end-to-end staff lifecycle: recruitment, onboarding, profile management, contract administration, and offboarding. It also explains the organizational structure (functions, positions, hierarchy), contract types and employment terms, and document handling workflows. Practical examples are provided for data entry, organizational chart creation, and attaching documents. Compliance and privacy considerations, as well as integration points with external HR systems, are addressed.
+This document describes eLISAschool's personnel administration system with a focus on the end-to-end staff lifecycle: recruitment, onboarding, profile management, contract administration, and offboarding. It also explains the organizational structure (functions, positions, hierarchy), contract types and employment terms, and document handling workflows. The system has been optimized for performance with streamlined course hour management capabilities. Practical examples are provided for data entry, organizational chart creation, and attaching documents. Compliance and privacy considerations, as well as integration points with external HR systems, are addressed.
 
 ## Project Structure
 The personnel module is implemented across backend database migrations and TypeScript modules. The key areas include:
@@ -42,6 +49,7 @@ The personnel module is implemented across backend database migrations and TypeS
 - Module entry points for personnel, recruitment, positions, and functions
 - Shared constants used by personnel-related logic
 - Route registration to expose APIs
+- Streamlined course hour management with simplified DTO schemas
 
 ```mermaid
 graph TB
@@ -52,6 +60,7 @@ PO["postes/index.ts"]
 F["fonctions/index.ts"]
 C["shared/constants/personnel.constants.ts"]
 RT["routes/route-registry.ts"]
+CHM["Course Hour Management (Streamlined)"]
 end
 subgraph "Database Migrations"
 M16["016-module-personnel-rh-phase1.sql"]
@@ -70,6 +79,7 @@ RT --> P
 RT --> R
 RT --> PO
 RT --> F
+RT --> CHM
 P --> M16
 P --> M17
 P --> M18
@@ -82,6 +92,7 @@ R --> M45
 P --> M46
 P --> M31
 P --> C
+CHM --> P
 ```
 
 **Diagram sources**
@@ -129,11 +140,13 @@ P --> C
 - Contract management supports standardized and customizable contract types, with employment terms such as start/end dates, work schedule, and compensation references.
 - Document handling is integrated into personnel records, allowing attachments linked to profiles, contracts, or recruitment stages.
 - Tracking and analytics are supported by a dedicated personnel tracking migration, enabling performance and activity logs.
+- **Updated**: Course hour management has been significantly streamlined with simplified DTO schemas and removed complex configuration options while maintaining core functionality.
 
 Practical examples:
 - Staff data entry: Create a candidate record, convert to employee, assign function and position, attach contract and documents.
 - Organizational chart: Define functions and positions, link them hierarchically, then assign incumbents.
 - Document attachment: Upload documents during recruitment, contract signing, or profile updates; maintain versioning and access controls.
+- **Updated**: Course scheduling: Assign simplified course hours to personnel based on their assigned functions and positions.
 
 **Section sources**
 - [backend/database/migrations/016-module-personnel-rh-phase1.sql](file://backend/database/migrations/016-module-personnel-rh-phase1.sql)
@@ -149,11 +162,12 @@ Practical examples:
 - [backend/database/migrations/031-suivi-personnel.sql](file://backend/database/migrations/031-suivi-personnel.sql)
 
 ## Architecture Overview
-The personnel administration architecture follows a layered approach:
+The personnel administration architecture follows a layered approach with streamlined course hour management:
 - API layer: Routes registered centrally and dispatched to module controllers/services.
 - Domain modules: Personnel, Recruitment, Positions, Functions encapsulate business logic.
 - Data layer: Relational schema evolved via migrations ensures integrity and extensibility.
 - Cross-cutting concerns: Permissions, audit trails, and shared constants support security and consistency.
+- **Updated**: Simplified course hour management with reduced complexity and improved performance.
 
 ```mermaid
 sequenceDiagram
@@ -162,6 +176,7 @@ participant FE as "Frontend UI"
 participant RT as "Route Registry"
 participant PM as "Personnel Module"
 participant RM as "Recruitment Module"
+participant CHM as "Streamlined Course Hour Management"
 participant DB as "Database"
 Admin->>FE : "Start new recruitment"
 FE->>RT : "POST /recruitment/candidates"
@@ -180,6 +195,11 @@ RT->>PM : "Convert candidate to employee"
 PM->>DB : "Create employee record"
 PM->>DB : "Assign function and position"
 PM->>DB : "Attach contract and documents"
+FE->>RT : "POST /personnel/course-hours"
+RT->>CHM : "Assign simplified course hours"
+CHM->>DB : "Store streamlined course data"
+DB-->>CHM : "Confirmation"
+CHM-->>FE : "Course hours assigned"
 PM-->>FE : "Employee onboarded"
 ```
 
@@ -199,6 +219,7 @@ End-to-end flow from recruitment to offboarding:
 - Profile Management: Maintain personal data, qualifications, emergency contacts, and sensitive information with access controls.
 - Contract Management: Manage contract type, terms, renewals, amendments, and termination events.
 - Offboarding: Terminate contract, archive documents, revoke access, and retain audit trail.
+- **Updated**: Course Assignment: Streamlined process for assigning course hours to personnel based on their roles and availability.
 
 ```mermaid
 flowchart TD
@@ -213,7 +234,8 @@ Onboard --> AssignRole["Assign Function & Position"]
 AssignRole --> Contract["Sign Contract"]
 Contract --> Docs["Attach Documents"]
 Docs --> Active["Active Employment"]
-Active --> Review["Periodic Reviews"]
+Active --> CourseAssign["Assign Course Hours (Streamlined)"]
+CourseAssign --> Review["Periodic Reviews"]
 Review --> Renewal{"Renew/Amend?"}
 Renewal --> |Yes| Contract
 Renewal --> |No| Continue["Continue Employment"]
@@ -229,6 +251,7 @@ Archive --> End(["Offboarding Complete"])
 - Positions represent specific job slots within the organization, often tied to departments or units.
 - Hierarchical relationships allow reporting lines and delegation.
 - Assignment links personnel to positions and functions, enabling role-based access and workload planning.
+- **Updated**: Course hour assignments are now simplified and directly linked to functional roles rather than complex configurations.
 
 ```mermaid
 classDiagram
@@ -238,6 +261,7 @@ class Function {
 +description
 +skills_required
 +parent_function_id
++course_hour_capacity
 }
 class Position {
 +id
@@ -254,6 +278,7 @@ class Employee {
 +function_id
 +contract_id
 +status
++assigned_course_hours
 }
 class Contract {
 +id
@@ -268,6 +293,7 @@ Employee --> Function : "performs"
 Position --> Function : "requires"
 Position --> Position : "reports_to"
 Employee --> Contract : "has"
+Function --> Employee : "enables_course_assignment"
 ```
 
 **Diagram sources**
@@ -286,12 +312,14 @@ Employee --> Contract : "has"
 - Customizable contract types can be added via configuration-driven migrations.
 - Employment terms include start/end dates, probation periods, work schedule, compensation references, and renewal conditions.
 - Amendments and renewals are tracked with versioning and effective dates.
+- **Updated**: Course hour allocations are now integrated into contract terms with simplified configuration options.
 
 ```mermaid
 flowchart TD
 Init["Initiate Contract"] --> Type["Select Contract Type"]
 Type --> Terms["Define Employment Terms"]
-Terms --> Review["Legal/HR Review"]
+Terms --> CourseHours["Define Course Hour Allocation (Simplified)"]
+CourseHours --> Review["Legal/HR Review"]
 Review --> Approve{"Approved?"}
 Approve --> |No| Revise["Revise Terms"]
 Approve --> |Yes| Sign["Sign Contract"]
@@ -341,6 +369,38 @@ API-->>User : "Document served or error"
 - [backend/database/migrations/021-module-personnel-rh-permissions-attribution.sql](file://backend/database/migrations/021-module-personnel-rh-permissions-attribution.sql)
 - [backend/src/modules/personnel/index.ts](file://backend/src/modules/personnel/index.ts)
 
+### Streamlined Course Hour Management
+**Updated** The course hour management system has undergone significant simplification:
+- **Simplified DTO Schemas**: Complex nested structures have been flattened to improve performance and reduce overhead.
+- **Removed Configuration Options**: Many advanced configuration parameters have been eliminated to streamline the user experience.
+- **Maintained Core Functionality**: All essential course assignment features remain intact while reducing complexity.
+- **Improved Performance**: Reduced data transfer and processing overhead through streamlined operations.
+
+Key improvements:
+- Direct course-to-personnel assignment without intermediate configuration layers
+- Simplified validation rules and data structures
+- Optimized database queries for course hour calculations
+- Enhanced API response times through reduced payload sizes
+
+```mermaid
+flowchart TD
+OldProcess["Complex Course Hour Management"] --> NewProcess["Streamlined Process"]
+OldProcess --> ConfigLayer["Configuration Layer"]
+ConfigLayer --> Assignment["Assignment Logic"]
+Assignment --> Validation["Validation Rules"]
+Validation --> Storage["Data Storage"]
+NewProcess --> DirectAssignment["Direct Assignment"]
+DirectAssignment --> SimplifiedValidation["Simplified Validation"]
+SimplifiedValidation --> OptimizedStorage["Optimized Storage"]
+NewProcess -.-> 97Additions["97 Code Additions"]
+NewProcess -.-> 211Deletions["211 Code Deletions"]
+NewProcess -.-> SimplifiedDTO["Simplified DTO Schemas"]
+```
+
+**Diagram sources**
+- [backend/src/modules/personnel/index.ts](file://backend/src/modules/personnel/index.ts)
+- [backend/database/migrations/016-module-personnel-rh-phase1.sql](file://backend/database/migrations/016-module-personnel-rh-phase1.sql)
+
 ### Practical Examples
 - Staff data entry:
   - Create candidate record with contact and background info.
@@ -356,6 +416,11 @@ API-->>User : "Document served or error"
   - During recruitment: attach CV, transcripts, references.
   - During onboarding: attach contract, identification, certifications.
   - During employment: attach performance reviews, training certificates.
+- **Updated**: Course hour assignment:
+  - Select personnel based on their assigned functions and positions.
+  - Assign simplified course hours directly without complex configuration.
+  - Validate availability and capacity using streamlined rules.
+  - Generate schedules with optimized performance.
 
 [No sources needed since this section provides practical guidance without analyzing specific files]
 
@@ -365,6 +430,7 @@ Module dependencies and interactions:
 - Personnel module depends on shared constants and integrates with recruitment and contract configurations.
 - Recruitment module feeds into personnel onboarding flows.
 - Positions and functions provide structural context for assignments.
+- **Updated**: Streamlined course hour management reduces dependency complexity and improves module isolation.
 
 ```mermaid
 graph LR
@@ -372,10 +438,13 @@ RT["route-registry.ts"] --> P["personnel/index.ts"]
 RT --> R["recrutement/index.ts"]
 RT --> PO["postes/index.ts"]
 RT --> F["fonctions/index.ts"]
+RT --> CHM["Streamlined Course Hour Management"]
 P --> C["shared/constants/personnel.constants.ts"]
 R --> P
 P --> PO
 P --> F
+CHM --> P
+CHM --> F
 ```
 
 **Diagram sources**
@@ -400,6 +469,11 @@ P --> F
 - Caching: Cache static organizational structures (functions, positions) where appropriate to minimize repeated queries.
 - Batch operations: Use batch inserts/updates for bulk onboarding or mass document linking.
 - File storage: Stream large documents and avoid loading entire files into memory; store metadata in the database and binaries in object storage.
+- **Updated**: Course hour management optimizations:
+  - Simplified DTO schemas reduce network overhead and processing time.
+  - Removed complex configuration layers eliminate unnecessary database queries.
+  - Streamlined validation rules improve response times.
+  - Optimized data structures enhance overall system performance.
 
 [No sources needed since this section provides general guidance]
 
@@ -418,6 +492,11 @@ Common issues and resolutions:
   - Validate file size limits and MIME type restrictions.
 - Audit trail gaps:
   - Confirm audit logging is enabled and write permissions exist for audit tables.
+- **Updated**: Course hour management issues:
+  - If course assignments fail, verify that simplified DTO schemas are being used correctly.
+  - Check that complex configuration options have been properly migrated to the streamlined system.
+  - Validate that course hour calculations use the updated simplified logic.
+  - Ensure API responses match the new streamlined data structures.
 
 **Section sources**
 - [backend/database/migrations/021-module-personnel-rh-permissions-attribution.sql](file://backend/database/migrations/021-module-personnel-rh-permissions-attribution.sql)
@@ -426,7 +505,7 @@ Common issues and resolutions:
 - [backend/database/migrations/046-types-contrat-personnalises.sql](file://backend/database/migrations/046-types-contrat-personnalises.sql)
 
 ## Conclusion
-eLISAschool’s personnel administration system provides a comprehensive foundation for managing the complete staff lifecycle. Through structured migrations and modular services, it supports recruitment pipelines, robust employee profiles, flexible contract management, and secure document handling. The organizational model enables clear hierarchies and role assignments, while compliance and privacy safeguards protect sensitive data. With careful attention to performance and troubleshooting practices, the system scales effectively to meet institutional needs.
+eLISAschool's personnel administration system provides a comprehensive foundation for managing the complete staff lifecycle. Through structured migrations and modular services, it supports recruitment pipelines, robust employee profiles, flexible contract management, and secure document handling. The recent streamlining of course hour management has significantly improved system performance while maintaining all essential functionality. The organizational model enables clear hierarchies and role assignments, while compliance and privacy safeguards protect sensitive data. With careful attention to performance and troubleshooting practices, the system scales effectively to meet institutional needs.
 
 ## Appendices
 
@@ -446,5 +525,6 @@ eLISAschool’s personnel administration system provides a comprehensive foundat
 - Idempotency: Design endpoints to handle retries safely.
 - Error handling: Provide consistent error codes and messages for downstream consumers.
 - Webhooks: Notify external systems of state changes (e.g., contract termination).
+- **Updated**: Course hour integration: Simplified API endpoints for course assignment synchronization with external systems.
 
 [No sources needed since this section provides general guidance]

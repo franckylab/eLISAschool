@@ -32,7 +32,7 @@ export function NomenclaturesPage() {
     ];
 
     return (
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col" style={{ gap: 'var(--gap-lg)', padding: 'var(--space-lg)' }}>
             <PageHeader
                 title={t('nomenclaturesTitre')}
                 subtitle={t('nomenclaturesSubtitle')}

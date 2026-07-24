@@ -23,7 +23,7 @@ export interface ResultatGeneration {
     unites: Array<{ ref: string; id: string; nom: string; code: string }>;
     postes: Array<{ ref: string; id: string; intitule: string; code: string }>;
     hierarchies: Array<{ superieurRef: string; subordonneRef: string; id: string }>;
-    arborescence: any;
+    arborescence: unknown[];
 }
 
 export const optionsGenerationSchema = z.object({

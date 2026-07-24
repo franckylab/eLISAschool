@@ -1,3 +1,11 @@
+/**
+ * ==================================
+ * eLISAschool - Schémas Zod Organisation (validation frontend)
+ * ==================================
+ * Version: 1.0.0
+ * Auteur: franck arlos chendjou
+ */
+
 import { z } from 'zod';
 
 export const createUniteSchema = z.object({

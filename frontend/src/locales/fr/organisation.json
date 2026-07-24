@@ -93,7 +93,7 @@
     "infos": "Infos",
     "vueEnsemble": "Vue d'ensemble",
     "arborescence": "Arborescence",
-    "organigramme": "Organigramme",
+    "vueOrganigramme": "Organigramme",
     "selectionner": "Sélectionner",
     "changer": "Changer",
     "aucunResultat": "Aucun résultat trouvé",
@@ -177,7 +177,6 @@
     "confirmerSuppressionRelation": "Êtes-vous sûr de vouloir supprimer cette relation hiérarchique ?",
     "arborescenceUnites": "Arborescence des unités",
     "nouvelleUniteBtn": "Nouvelle unité",
-    "ajouterSousUnite": "Ajouter une sous-unité",
     "selectionnerUnite": "Sélectionnez une unité dans l'arborescence pour voir ses détails",
     "aucuneUniteMsg": "Aucune unité. Créez votre première unité organisationnelle.",
     "relationsHierarchiques": "Relations hiérarchiques",
@@ -376,7 +375,8 @@
             "ajouterEnfant": "Enfant",
             "fermer": "Fermer",
             "echelon": "Échelon",
-            "localisation": "Localisation"
+            "localisation": "Localisation",
+            "responsable": "Responsable"
         },
         "dnd": {
             "confirmTitle": "Déplacer l'unité ?",

@@ -29,6 +29,7 @@ import {
 import { Etablissement } from '@modules/etablissement/entities';
 import { Poste } from './poste.entity';
 import { EchelonStructurel } from './echelon-structurel.entity';
+import type { MembrePersonnel } from '@modules/personnel/entities';
 
 /**
  * Statut d'une unité organisationnelle (enum fermé — non modifiable)

@@ -45,9 +45,20 @@
 - [103-templates-periode-personnalisables.sql](file://backend/database/migrations/103-templates-periode-personnalisables.sql)
 - [104-refonte-periodes-niveaux-configurables.sql](file://backend/database/migrations/104-refonte-periodes-niveaux-configurables.sql)
 - [105-migration-templates-v5.sql](file://backend/database/migrations/105-migration-templates-v5.sql)
+- [cleanup-orphans-heures-cours.sql](file://backend/database/migrations/cleanup-orphans-heures-cours.sql)
+- [pre-sync-cleanup.ts](file://backend/src/database/pre-sync-cleanup.ts)
 - [IMPLEMENTATION-EMPLOI-DU-TEMPS-COMPLETE.md](file://docs/implementations/IMPLEMENTATION-EMPLOI-DU-TEMPS-COMPLETE.md)
 - [IMPLEMENTATION-MODULE-SALLES.md](file://docs/implementations/IMPLEMENTATION-MODULE-SALLES.md)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive data model documentation for the class and scheduling system
+- Updated architecture diagrams to reflect current database schema
+- Enhanced conflict resolution logic documentation
+- Added resource optimization algorithms section
+- Included template-based schedule generation details
+- Documented complex scheduling scenarios and troubleshooting procedures
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -57,12 +68,13 @@
 5. [Detailed Component Analysis](#detailed-component-analysis)
 6. [Dependency Analysis](#dependency-analysis)
 7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+8. [Data Integrity and Cleanup Procedures](#data-integrity-and-cleanup-procedures)
+9. [Troubleshooting Guide](#troubleshooting-guide)
+10. [Conclusion](#conclusion)
+11. [Appendices](#appendices)
 
 ## Introduction
-This document provides comprehensive data model documentation for eLISAschool’s class and scheduling system. It focuses on the entities that define academic structure (classes, levels, cycles, academic years), subjects (matiere with coefficients and curriculum alignment), timetabling (emploi du temps with time slots, rooms, and teachers), and classroom management (salles). It also explains scheduling conflict resolution logic, resource optimization strategies, template-based schedule generation, periodic adjustments, and complex scenarios such as multi-room coordination and teacher availability constraints.
+This document provides comprehensive data model documentation for eLISAschool's class and scheduling system. It focuses on the entities that define academic structure (classes, levels, cycles, academic years), subjects (matiere with coefficients and curriculum alignment), timetabling (emploi du temps with time slots, rooms, and teachers), and classroom management (salles). It also explains scheduling conflict resolution logic, resource optimization strategies, template-based schedule generation, periodic adjustments, and complex scenarios such as multi-room coordination and teacher availability constraints. The system includes robust data integrity measures with automated cleanup procedures for orphaned records and pre-synchronization validation.
 
 ## Project Structure
 The class and scheduling system is implemented across multiple database migrations and implementation documents:
@@ -70,6 +82,7 @@ The class and scheduling system is implemented across multiple database migratio
 - The timetable module introduces EmploiDuTemps entities, templates, and related configuration.
 - The room module defines Salle entities with capacity and equipment attributes.
 - Subject definitions and coefficients are established via dedicated migrations.
+- Data integrity is maintained through cleanup procedures and pre-synchronization validation systems.
 
 ```mermaid
 graph TB
@@ -98,6 +111,12 @@ end
 D --- H
 E --- H
 P --- H
+subgraph "Data Integrity"
+Q["cleanup_procedures"] --> R["orphaned_records"]
+S["pre_sync_validation"] --> T["foreign_key_integrity"]
+end
+R -.-> H
+T -.-> G
 ```
 
 **Diagram sources**
@@ -112,6 +131,8 @@ P --- H
 - [065-creer-templates-emploi-du-temps.sql](file://backend/database/migrations/065-creer-templates-emploi-du-temps.sql)
 - [070-module-salles.sql](file://backend/database/migrations/070-module-salles.sql)
 - [100-classes-salle-principale.sql](file://backend/database/migrations/100-classes-salle-principale.sql)
+- [cleanup-orphans-heures-cours.sql](file://backend/database/migrations/cleanup-orphans-heures-cours.sql)
+- [pre-sync-cleanup.ts](file://backend/src/database/pre-sync-cleanup.ts)
 
 **Section sources**
 - [088-refactorisation-architecture-academique.sql](file://backend/database/migrations/088-refactorisation-architecture-academique.sql)
@@ -125,6 +146,8 @@ P --- H
 - [065-creer-templates-emploi-du-temps.sql](file://backend/database/migrations/065-creer-templates-emploi-du-temps.sql)
 - [070-module-salles.sql](file://backend/database/migrations/070-module-salles.sql)
 - [100-classes-salle-principale.sql](file://backend/database/migrations/100-classes-salle-principale.sql)
+- [cleanup-orphans-heures-cours.sql](file://backend/database/migrations/cleanup-orphans-heures-cours.sql)
+- [pre-sync-cleanup.ts](file://backend/src/database/pre-sync-cleanup.ts)
 
 ## Core Components
 This section outlines the primary entities and their relationships:
@@ -146,6 +169,7 @@ Key relationship highlights:
 - EmploiDuTemps organizes Seances across Periode and SemaineType using PlageHoraire.
 - Seance references Salle, Personnel (teacher), Classe, and Matiere.
 - Salle has capacity and equipment attributes.
+- Data integrity is enforced through cleanup procedures and pre-synchronization validation.
 
 **Section sources**
 - [088-refactorisation-architecture-academique.sql](file://backend/database/migrations/088-refactorisation-architecture-academique.sql)
@@ -159,9 +183,11 @@ Key relationship highlights:
 - [065-creer-templates-emploi-du-temps.sql](file://backend/database/migrations/065-creer-templates-emploi-du-temps.sql)
 - [070-module-salles.sql](file://backend/database/migrations/070-module-salles.sql)
 - [100-classes-salle-principale.sql](file://backend/database/migrations/100-classes-salle-principale.sql)
+- [cleanup-orphans-heures-cours.sql](file://backend/database/migrations/cleanup-orphans-heures-cours.sql)
+- [pre-sync-cleanup.ts](file://backend/src/database/pre-sync-cleanup.ts)
 
 ## Architecture Overview
-The system separates concerns into academic structure, subjects, timetabling, and rooms. Timetable generation uses templates and period configurations to produce weekly schedules while enforcing constraints like teacher availability, room capacity, and subject requirements.
+The system separates concerns into academic structure, subjects, timetabling, and rooms. Timetable generation uses templates and period configurations to produce weekly schedules while enforcing constraints like teacher availability, room capacity, and subject requirements. The architecture includes robust data integrity mechanisms with automated cleanup procedures and pre-synchronization validation to maintain foreign key consistency.
 
 ```mermaid
 classDiagram
@@ -253,6 +279,16 @@ class PlageHoraire {
 +heure_fin
 +etablissement_id
 }
+class CleanupProcedures {
++remove_orphaned_heures_cours()
++validate_foreign_keys()
++maintain_data_integrity()
+}
+class PreSyncValidation {
++check_reference_integrity()
++validate_timetable_consistency()
++prepare_database_for_sync()
+}
 AnneeScolaire --> Cycle : "contains"
 Cycle --> Niveau : "contains"
 Niveau --> Classe : "produces"
@@ -269,6 +305,8 @@ Seance --> Personnel : "teacher"
 Seance --> Salle : "room"
 Seance --> PlageHoraire : "time slot"
 Salle --> EmploiDuTemps : "resource"
+CleanupProcedures --> Seance : "maintains"
+PreSyncValidation --> EmploiDuTemps : "validates"
 ```
 
 **Diagram sources**
@@ -283,6 +321,8 @@ Salle --> EmploiDuTemps : "resource"
 - [065-creer-templates-emploi-du-temps.sql](file://backend/database/migrations/065-creer-templates-emploi-du-temps.sql)
 - [070-module-salles.sql](file://backend/database/migrations/070-module-salles.sql)
 - [100-classes-salle-principale.sql](file://backend/database/migrations/100-classes-salle-principale.sql)
+- [cleanup-orphans-heures-cours.sql](file://backend/database/migrations/cleanup-orphans-heures-cours.sql)
+- [pre-sync-cleanup.ts](file://backend/src/database/pre-sync-cleanup.ts)
 
 ## Detailed Component Analysis
 
@@ -302,7 +342,7 @@ Implementation highlights:
 - [089-finalisation-architecture-academique-v2.sql](file://backend/database/migrations/089-finalisation-architecture-academique-v2.sql)
 - [090-correction-migration-088-camelcase.sql](file://backend/database/migrations/090-correction-migration-088-camelcase.sql)
 - [091-peuplement-architecture-academique.sql](file://backend/database/migrations/091-peuplement-architecture-academique.sql)
-- [092-refactorisation-classeAnneeId.sql](file://backend/database/migrations/092-refactorisation-classeAnneeId.sql)
+- [092-refactorisation-classeAnneeId.sql](file://backend/database/migrations/092/refactorisation-classeAnneeId.sql)
 - [058-multi-tenant-structure-academique.sql](file://backend/database/migrations/058-multi-tenant-structure-academique.sql)
 - [072-scoping-cycles-niveaux.sql](file://backend/database/migrations/072-scoping-cycles-niveaux.sql)
 - [100-classes-salle-principale.sql](file://backend/database/migrations/100-classes-salle-principale.sql)
@@ -349,6 +389,46 @@ Implementation highlights:
 - [070-module-salles.sql](file://backend/database/migrations/070-module-salles.sql)
 - [045-organisation-optimisations.sql](file://backend/database/migrations/045-organisation-optimisations.sql)
 - [046-organisation-performance-avancee.sql](file://backend/database/migrations/046-organisation-performance-avancee.sql)
+
+### Data Integrity and Cleanup Procedures
+**Updated** New section documenting the enhanced data integrity system for the timetable architecture.
+
+The system now includes comprehensive data integrity measures to maintain foreign key consistency and prevent orphaned records:
+
+#### Orphaned Record Cleanup
+- Automated cleanup procedures remove orphaned records from heures_cours table
+- Foreign key integrity validation ensures referential consistency
+- Scheduled maintenance tasks prevent accumulation of invalid references
+
+#### Pre-Synchronization Validation
+- Pre-synchronization cleanup system validates database state before major operations
+- Reference integrity checks prevent cascading failures during synchronization
+- Database preparation routines ensure clean state for timetable operations
+
+#### Implementation Details
+- Cleanup procedures target orphaned heures_cours records that reference non-existent entities
+- Pre-sync validation runs before critical database operations to ensure consistency
+- Automated monitoring detects and reports integrity violations
+
+```mermaid
+flowchart TD
+Start(["Database Operation"]) --> PreSync["Run Pre-Sync Validation"]
+PreSync --> CheckIntegrity["Check Foreign Key Integrity"]
+CheckIntegrity --> IntegritOK{"Integrity Valid?"}
+IntegritOK --> |No| CleanupOrphans["Clean Up Orphaned Records"]
+CleanupOrphans --> Revalidate["Re-validate Integrity"]
+Revalidate --> IntegritOK
+IntegritOK --> |Yes| Proceed["Proceed with Operation"]
+Proceed --> End(["Operation Complete"])
+```
+
+**Diagram sources**
+- [cleanup-orphans-heures-cours.sql](file://backend/database/migrations/cleanup-orphans-heures-cours.sql)
+- [pre-sync-cleanup.ts](file://backend/src/database/pre-sync-cleanup.ts)
+
+**Section sources**
+- [cleanup-orphans-heures-cours.sql](file://backend/database/migrations/cleanup-orphans-heures-cours.sql)
+- [pre-sync-cleanup.ts](file://backend/src/database/pre-sync-cleanup.ts)
 
 ### Scheduling Conflict Resolution Logic
 Conflict detection and resolution involve:
@@ -429,7 +509,7 @@ Examples:
 [No sources needed since this section provides general guidance]
 
 ## Dependency Analysis
-The scheduling system depends on academic structure, subject assignments, and resource definitions. Dependencies are enforced via foreign keys and composite constraints.
+The scheduling system depends on academic structure, subject assignments, and resource definitions. Dependencies are enforced via foreign keys and composite constraints. The system includes additional dependency validation through cleanup procedures and pre-synchronization checks.
 
 ```mermaid
 graph TB
@@ -447,6 +527,8 @@ SE --> MT
 SE --> PE["personnel"]
 SE --> SA["salle"]
 SE --> PH["plage_horaire"]
+CI["cleanup_integrity"] --> SE
+PS["pre_sync_validation"] --> EDT
 ```
 
 **Diagram sources**
@@ -454,12 +536,14 @@ SE --> PH["plage_horaire"]
 - [089-finalisation-architecture-academique-v2.sql](file://backend/database/migrations/089-finalisation-architecture-academique-v2.sql)
 - [090-correction-migration-088-camelcase.sql](file://backend/database/migrations/090-correction-migration-088-camelcase.sql)
 - [091-peuplement-architecture-academique.sql](file://backend/database/migrations/091-peuplement-architecture-academique.sql)
-- [092-refactorisation-classeAnneeId.sql](file://backend/database/migrations/092-refactorisation-classeAnneeId.sql)
+- [092-refactorisation-classeAnneeId.sql](file://backend/database/migrations/092/refactorisation-classeAnneeId.sql)
 - [059-ajouter-affectation-matiere-coefficient.sql](file://backend/database/migrations/059-ajouter-affectation-matiere-coefficient.sql)
 - [060-ajouter-affectation-matiere-coefficient.sql](file://backend/database/migrations/060-ajouter-affectation-matiere-coefficient.sql)
 - [063-creer-module-emploi-du-temps.sql](file://backend/database/migrations/063-creer-module-emploi-du-temps.sql)
 - [065-creer-templates-emploi-du-temps.sql](file://backend/database/migrations/065-creer-templates-emploi-du-temps.sql)
 - [070-module-salles.sql](file://backend/database/migrations/070-module-salles.sql)
+- [cleanup-orphans-heures-cours.sql](file://backend/database/migrations/cleanup-orphans-heures-cours.sql)
+- [pre-sync-cleanup.ts](file://backend/src/database/pre-sync-cleanup.ts)
 
 **Section sources**
 - [088-refactorisation-architecture-academique.sql](file://backend/database/migrations/088-refactorisation-architecture-academique.sql)
@@ -472,21 +556,26 @@ SE --> PH["plage_horaire"]
 - [063-creer-module-emploi-du-temps.sql](file://backend/database/migrations/063-creer-module-emploi-du-temps.sql)
 - [065-creer-templates-emploi-du-temps.sql](file://backend/database/migrations/065-creer-templates-emploi-du-temps.sql)
 - [070-module-salles.sql](file://backend/database/migrations/070-module-salles.sql)
+- [cleanup-orphans-heures-cours.sql](file://backend/database/migrations/cleanup-orphans-heures-cours.sql)
+- [pre-sync-cleanup.ts](file://backend/src/database/pre-sync-cleanup.ts)
 
 ## Performance Considerations
 - Indexes on frequently queried columns (e.g., emploi_du_temps_id, salle_id, personnel_id, plage_horaire_id) improve conflict checks and lookups.
 - Composite constraints on unique assignments reduce redundant checks.
 - Organization performance migrations optimize queries for large datasets.
+- Cleanup procedures run efficiently to minimize impact on production operations.
 
 Recommendations:
 - Maintain up-to-date indexes for salle, personnel, and plage_horaire.
 - Use batch operations for template expansion to avoid long-running transactions.
 - Partition large tables by annee_scolaire if necessary.
+- Schedule cleanup procedures during low-traffic periods.
 
 **Section sources**
 - [045-organisation-optimisations.sql](file://backend/database/migrations/045-organisation-optimisations.sql)
 - [046-organisation-performance-avancee.sql](file://backend/database/migrations/046-organisation-performance-avancee.sql)
 - [074-matiere-niveau-unique-composite.sql](file://backend/database/migrations/074-matiere-niveau-unique-composite.sql)
+- [cleanup-orphans-heures-cours.sql](file://backend/database/migrations/cleanup-orphans-heures-cours.sql)
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -494,19 +583,25 @@ Common issues and resolutions:
 - Teacher double-booking: Identify overlapping seances and reschedule one.
 - Room capacity mismatch: Update salle capacity or assign a suitable room.
 - Invalid subject for niveau: Verify affectation_matiere_niveau exists and matches the target niveau.
+- Orphaned records detected: Run cleanup procedures to remove invalid references.
+- Pre-sync validation failures: Investigate foreign key violations and repair data integrity.
 
 Validation steps:
 - Run constraint checks on affected tables.
 - Inspect emploi_du_temps status and period boundaries.
 - Review template expansions for unexpected overlaps.
+- Execute cleanup procedures to resolve orphaned record issues.
+- Perform pre-sync validation to ensure database consistency.
 
 **Section sources**
 - [074-matiere-niveau-unique-composite.sql](file://backend/database/migrations/074-matiere-niveau-unique-composite.sql)
 - [063-creer-module-emploi-du-temps.sql](file://backend/database/migrations/063-creer-module-emploi-du-temps.sql)
 - [065-creer-templates-emploi-du-temps.sql](file://backend/database/migrations/065-creer-templates-emploi-du-temps.sql)
+- [cleanup-orphans-heures-cours.sql](file://backend/database/migrations/cleanup-orphans-heures-cours.sql)
+- [pre-sync-cleanup.ts](file://backend/src/database/pre-sync-cleanup.ts)
 
 ## Conclusion
-The eLISAschool class and scheduling system integrates academic structure, subject alignment, timetabling, and room management into a cohesive data model. Through robust constraints, template-driven generation, and optimization heuristics, it supports complex scheduling scenarios while maintaining consistency and performance.
+The eLISAschool class and scheduling system integrates academic structure, subject alignment, timetabling, and room management into a cohesive data model. Through robust constraints, template-driven generation, and optimization heuristics, it supports complex scheduling scenarios while maintaining consistency and performance. The enhanced data integrity system with automated cleanup procedures and pre-synchronization validation ensures long-term reliability and prevents data corruption in the timetable architecture.
 
 ## Appendices
 
@@ -518,6 +613,7 @@ participant API as "Scheduling API"
 participant DB as "Database"
 participant Validator as "Constraint Validator"
 participant Optimizer as "Resource Optimizer"
+participant Cleaner as "Data Integrity Cleaner"
 Admin->>API : "Create EmploiDuTemps"
 API->>DB : "Insert emploi_du_temps record"
 DB-->>API : "Success"
@@ -526,6 +622,8 @@ API->>Validator : "Validate teacher, room, class availability"
 Validator-->>API : "Constraints OK"
 API->>Optimizer : "Optimize room and time assignments"
 Optimizer-->>API : "Adjusted placements"
+API->>Cleaner : "Run cleanup procedures"
+Cleaner-->>API : "Orphaned records removed"
 API->>DB : "Insert seances"
 DB-->>API : "Success"
 API-->>Admin : "Schedule generated"
@@ -624,6 +722,13 @@ time heure_debut
 time heure_fin
 uuid etablissement_id FK
 }
+HEURES_COURS {
+uuid id PK
+uuid seance_id FK
+uuid cours_id FK
+datetime date_cours
+enum statut
+}
 ANNEE_SCOLAIRE ||--o{ CYCLE : "contains"
 CYCLE ||--o{ NIVEAU : "contains"
 NIVEAU ||--o{ CLASSE : "produces"
@@ -639,6 +744,7 @@ MATIERE ||--o{ SEANCE : "taught"
 PERSONNEL ||--o{ SEANCE : "teaches"
 SALLE ||--o{ SEANCE : "hosts"
 PLAGE_HORAIRE ||--o{ SEANCE : "scheduled"
+SEANCE ||--o{ HEURES_COURS : "generates"
 ```
 
 **Diagram sources**
@@ -653,3 +759,5 @@ PLAGE_HORAIRE ||--o{ SEANCE : "scheduled"
 - [065-creer-templates-emploi-du-temps.sql](file://backend/database/migrations/065-creer-templates-emploi-du-temps.sql)
 - [070-module-salles.sql](file://backend/database/migrations/070-module-salles.sql)
 - [100-classes-salle-principale.sql](file://backend/database/migrations/100-classes-salle-principale.sql)
+- [cleanup-orphans-heures-cours.sql](file://backend/database/migrations/cleanup-orphans-heures-cours.sql)
+- [pre-sync-cleanup.ts](file://backend/src/database/pre-sync-cleanup.ts)

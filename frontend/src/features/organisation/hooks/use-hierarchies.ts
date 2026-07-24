@@ -1,3 +1,14 @@
+/**
+ * ==================================
+ * eLISAschool - Hooks Hiérarchie, Organigramme, Statistiques, Validation
+ * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Hooks TanStack Query pour hiérarchies CRUD, organigramme, statistiques et validation.
+ * Invalidation cache croisée : hierarchie, organigramme, stats.
+ */
+
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';

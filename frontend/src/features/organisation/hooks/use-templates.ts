@@ -1,3 +1,11 @@
+/**
+ * ==================================
+ * eLISAschool - Hooks Templates Organisation
+ * ==================================
+ * Version: 1.0.0
+ * Auteur: franck arlos chendjou
+ */
+
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
@@ -6,6 +14,13 @@ import { useHandleError } from './use-handle-error';
 import type { TemplateOrganisation, GenererOrganisationDto, ResultatGeneration } from '../types/organisation.types';
 
 const KEYS = { all: ['organisation', 'templates'] as const };
+
+/** Clés de cache pour invalidation croisée après génération */
+const ORGA_KEYS = {
+    unites: { all: ['organisation', 'unites'] as const },
+    organigramme: { all: ['organisation', 'organigramme'] as const },
+    stats: { all: ['organisation', 'statistiques'] as const },
+};
 
 export function useTemplatesOrganisation() {
     const { isAuthenticated } = useAuthStore();
@@ -52,8 +67,9 @@ export function useGenererOrganisation() {
     return useMutation({
         mutationFn: async (dto: GenererOrganisationDto) => { const res = await apiClient.post<ResultatGeneration>('/api/organisation/generer', dto); return res.data!; },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
-            qc.invalidateQueries({ queryKey: ['organisation', 'hierarchie'] });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
             toast.success('Organisation générée avec succès');
         },
         onError: (e: unknown) => handleError(e, 'Erreur génération organisation'),

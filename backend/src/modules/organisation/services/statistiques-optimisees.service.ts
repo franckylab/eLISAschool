@@ -33,7 +33,6 @@ export interface PosteVacantCritique {
     code: string;
     uniteNom: string;
     uniteCode: string;
-    organisationNom: string;
     joursVacance: number;
     niveauAlerte: 'critique' | 'avertissement' | 'normal';
 }
@@ -132,7 +131,6 @@ export class StatistiquesOrganisationOptimiseesService {
                 code: row.code,
                 uniteNom: row.unite_nom,
                 uniteCode: row.unite_code,
-                organisationNom: row.organisation_nom,
                 joursVacance: parseInt(row.jours_vacance) || 0,
                 niveauAlerte: row.niveau_alerte,
             }));

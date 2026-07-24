@@ -1,3 +1,11 @@
+/**
+ * ==================================
+ * eLISAschool - Hooks Échelons Structurels
+ * ==================================
+ * Version: 1.0.0
+ * Auteur: franck arlos chendjou
+ */
+
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
@@ -7,6 +15,12 @@ import type { EchelonStructurel } from '../types/organisation.types';
 
 const KEYS = {
     all: ['organisation', 'echelons-structurels'] as const,
+};
+
+/** Invalidation croisée : l'organigramme affiche la couleur/label des échelons */
+const ORGA_KEYS = {
+    organigramme: { all: ['organisation', 'organigramme'] as const },
+    stats: { all: ['organisation', 'statistiques'] as const },
 };
 
 export function useEchelonsStructurels() {
@@ -29,7 +43,7 @@ export function useCreerEchelonStructurel() {
             const res = await apiClient.post<EchelonStructurel>('/api/organisation/echelons-structurels', dto);
             return res.data!;
         },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Échelon créé'); },
+        onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all }); qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all }); toast.success('Échelon créé'); },
         onError: (e: unknown) => handleError(e, 'Erreur création échelon'),
     });
 }
@@ -42,7 +56,7 @@ export function useModifierEchelonStructurel() {
             const res = await apiClient.patch<EchelonStructurel>(`/api/organisation/echelons-structurels/${id}`, data);
             return res.data!;
         },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Échelon modifié'); },
+        onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all }); qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all }); toast.success('Échelon modifié'); },
         onError: (e: unknown) => handleError(e, 'Erreur modification échelon'),
     });
 }
@@ -52,7 +66,7 @@ export function useSupprimerEchelonStructurel() {
     const handleError = useHandleError();
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/organisation/echelons-structurels/${id}`); },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Échelon supprimé'); },
+        onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all }); qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all }); toast.success('Échelon supprimé'); },
         onError: (e: unknown) => handleError(e, 'Erreur suppression échelon'),
     });
 }

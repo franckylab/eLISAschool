@@ -1,0 +1,5 @@
+- Each backend module follows a fixed sub-package layout of `controllers/`, `dto/`, `entities/`, `services/` (plus optional `guards/`, `middlewares/`, `cron-jobs.ts`) and re-exports its controller(s) from a barrel `index.ts` mounted under `/api/<module>`.
+- Route registration chains `authMiddleware → requireModuleActive('<slug>') → filterByEtablissement()` in that order, so authorization, module gating and tenant scoping are applied uniformly across all endpoints.
+- Database changes are versioned as numbered SQL/TS files under `backend/database/migrations/` and `backend/src/database/migrations/`, executed through TypeORM CLI targets rather than ad-hoc scripts.
+- Cross-cutting concerns (error filters, request logger interceptor, tenant middleware, Redis service, logger utility) live in `backend/src/common/` and are imported via `@common/...` path aliases instead of relative imports.
+- Frontend features are organized as `frontend/src/features/<feature>/` paired with route files `frontend/src/routes/<feature>.tsx`, while global UI primitives live under `frontend/src/components/` and shared state in `frontend/src/stores/`.

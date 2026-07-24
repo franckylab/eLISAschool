@@ -1,3 +1,15 @@
+/**
+ * ==================================
+ * eLISAschool - Page CRUD générique pour nomenclatures
+ * ==================================
+ * Version: 1.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Composant générique réutilisable pour les 4 nomenclatures :
+ * échelons structurels, niveaux responsabilité, modes rémunération, templates.
+ * Supporte mode embedded (onglets) et standalone (PageHeader).
+ */
+
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -136,7 +148,7 @@ export function NomenclatureCrudPage<T extends EntityWithId>({
     ) : null;
 
     return (
-        <div className={embedded ? 'flex flex-col gap-4' : 'flex flex-col gap-6 p-6'}>
+        <div className={embedded ? 'flex flex-col gap-4' : 'flex flex-col'} style={embedded ? undefined : { gap: 'var(--gap-lg)', padding: 'var(--space-lg)' }}>
             {embedded ? (
                 addButton && <div className="flex justify-end">{addButton}</div>
             ) : (

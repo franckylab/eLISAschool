@@ -1,3 +1,14 @@
+/**
+ * ==================================
+ * eLISAschool - Vue Organigramme React Flow
+ * ==================================
+ * Version: 1.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Composant React Flow principal : rendu interactif avec DnD, connect,
+ * recherche, zoom, toolbar via événements custom, drop postes.
+ */
+
 import { useCallback, useRef, useMemo, useState, useEffect } from 'react';
 import ReactFlow, {
     ReactFlowProvider,

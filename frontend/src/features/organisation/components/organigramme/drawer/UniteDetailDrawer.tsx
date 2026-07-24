@@ -10,9 +10,10 @@
  */
 
 import { useEffect, useCallback } from 'react';
-import { X, Building2, Briefcase, GitBranch, Edit, Trash2, Plus, GripVertical, MapPin, Layers } from 'lucide-react';
+import { X, Building2, Briefcase, GitBranch, Edit, Trash2, Plus, MapPin, Layers, User, GripVertical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ElisaButton } from '@/components/ui/ElisaButton';
 import type { OrganigrammeNode } from '../../../types/organisation.types';
 
 interface UniteDetailDrawerProps {
@@ -41,8 +42,8 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
 
     if (!open || !unite) return null;
 
-    const sectionClass = "border-t py-4" ;
-    const sectionStyle = { borderColor: 'var(--color-bordure)' };
+    const sectionClass = "border-t";
+    const sectionStyle = { borderColor: 'var(--color-bordure)', padding: 'var(--space-md) 0' };
     const labelClass = "text-xs font-medium uppercase tracking-wide mb-2";
 
     return (
@@ -75,7 +76,7 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                 }}
             >
                 {/* Header */}
-                <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-bordure)' }}>
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-bordure)', padding: 'var(--space-md) var(--space-lg)' }}>
                     <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--color-dominant-50)' }}>
                             <Building2 className="w-5 h-5" style={{ color: 'var(--color-dominant-600)' }} />
@@ -105,7 +106,7 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                     </button>
                 </div>
 
-                <div className="px-5 pb-6">
+                <div style={{ padding: '0 var(--space-lg) var(--space-lg)' }}>
                     {/* Description */}
                     {unite.description && (
                         <div className="py-4">
@@ -114,46 +115,52 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                     )}
 
                     {/* Informations */}
-                    <div className="py-4 space-y-2">
+                    <div className="py-4 flex flex-col" style={{ gap: 'var(--gap-sm)' }}>
                         <div className="flex items-center gap-2 text-sm">
-                            <Layers className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
+                            <Layers className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} />
                             <span style={{ color: 'var(--color-text-muted)' }}>{t('organigramme.drawer.echelon', 'Échelon')} :</span>
                             <span style={{ color: 'var(--color-text)' }}>{unite.echelonStructurelLabel || '—'}</span>
                         </div>
+                        {unite.responsableNom && (
+                            <div className="flex items-center gap-2 text-sm">
+                                <User className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} />
+                                <span style={{ color: 'var(--color-text-muted)' }}>{t('organigramme.drawer.responsable', 'Responsable')} :</span>
+                                <span style={{ color: 'var(--color-text)' }}>{unite.responsableNom}</span>
+                            </div>
+                        )}
                         {unite.localisation && (
                             <div className="flex items-center gap-2 text-sm">
-                                <MapPin className="w-3.5 h-3.5" style={{ color: 'var(--color-text-muted)' }} />
+                                <MapPin className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} />
                                 <span style={{ color: 'var(--color-text-muted)' }}>{t('organigramme.drawer.localisation', 'Localisation')} :</span>
                                 <span style={{ color: 'var(--color-text)' }}>{unite.localisation}</span>
                             </div>
                         )}
-
                     </div>
 
                     {/* Stats rapides */}
-                    <div className="grid grid-cols-3 gap-3 py-4">
+                    <div className="grid grid-cols-3" style={{ gap: 'var(--gap-sm)', padding: 'var(--space-md) 0' }}>
                         {[
                             { label: t('organigramme.drawer.profondeur', 'Profondeur'), value: unite.depth },
                             { label: t('organigramme.drawer.membres', 'Membres'), value: unite.totalMembres },
                             { label: t('organigramme.drawer.vacants', 'Vacants'), value: unite.postesVacants },
                         ].map(s => (
-                            <div key={s.label} className="text-center p-2 rounded-lg" style={{ backgroundColor: 'var(--color-dominant-50)' }}>
-                                <div className="text-lg font-bold" style={{ color: 'var(--color-dominant-600)' }}>{s.value}</div>
-                                <div className="text-[10px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>{s.label}</div>
+                            <div key={s.label} className="text-center rounded-lg" style={{ backgroundColor: 'var(--color-dominant-50)', padding: 'var(--space-sm)' }}>
+                                <div className="font-bold" style={{ color: 'var(--color-dominant-600)', fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.25rem)' }}>{s.value}</div>
+                                <div className="uppercase tracking-wide" style={{ color: 'var(--color-text-muted)', fontSize: 'clamp(0.625rem, 0.6rem + 0.1vw, 0.6875rem)' }}>{s.label}</div>
                             </div>
                         ))}
                     </div>
 
                     {/* Postes */}
                     <div className={sectionClass} style={sectionStyle}>
-                        <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center gap-2 mb-2">
                             <Briefcase className="w-4 h-4" style={{ color: 'var(--color-dominant-600)' }} />
                             <span className={labelClass} style={{ color: 'var(--color-text)' }}>
                                 {t('organigramme.drawer.postes', 'Postes')} ({unite.postes?.length || 0})
                             </span>
                         </div>
                         {unite.postes?.length ? (
-                            <ul className="space-y-1.5">
+                            <ul className="flex flex-col" style={{ gap: 'var(--gap-xs)' }}>
                                 {unite.postes.map(p => (
                                     <li
                                         key={p.id}
@@ -199,14 +206,14 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
 
                     {/* Enfants */}
                     <div className={sectionClass} style={sectionStyle}>
-                        <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center gap-2 mb-2">
                             <GitBranch className="w-4 h-4" style={{ color: 'var(--color-dominant-600)' }} />
                             <span className={labelClass} style={{ color: 'var(--color-text)' }}>
                                 {t('organigramme.drawer.enfants', 'Unités enfants')} ({unite.enfants?.length || 0})
                             </span>
                         </div>
                         {unite.enfants?.length ? (
-                            <ul className="space-y-1">
+                            <ul className="flex flex-col" style={{ gap: 'var(--gap-xs)' }}>
                                 {unite.enfants.map(e => (
                                     <li key={e.id} className="text-sm px-2 py-1.5 rounded-lg hover:bg-[var(--color-dominant-50)]" style={{ color: 'var(--color-text)' }}>
                                         {e.nom} <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>({e.code})</span>
@@ -220,35 +227,19 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
 
                     {/* Actions */}
                     <div className={sectionClass} style={sectionStyle}>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                             {onEdit && (
-                                <button
-                                    onClick={() => onEdit(unite)}
-                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                                    style={{ backgroundColor: 'var(--color-dominant-600)', color: '#fff' }}
-                                >
-                                    <Edit className="w-3.5 h-3.5" />
+                                <ElisaButton variant="primary" size="sm" icon={<Edit className="w-3.5 h-3.5" />} onClick={() => onEdit(unite)} className="flex-1">
                                     {t('organigramme.drawer.modifier', 'Modifier')}
-                                </button>
+                                </ElisaButton>
                             )}
                             {onAddChild && (
-                                <button
-                                    onClick={() => onAddChild(unite)}
-                                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border transition-colors hover:bg-[var(--color-dominant-50)]"
-                                    style={{ borderColor: 'var(--color-bordure)', color: 'var(--color-text)' }}
-                                >
-                                    <Plus className="w-3.5 h-3.5" />
+                                <ElisaButton variant="outline" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => onAddChild(unite)}>
                                     {t('organigramme.drawer.ajouterEnfant', 'Enfant')}
-                                </button>
+                                </ElisaButton>
                             )}
                             {onDelete && (
-                                <button
-                                    onClick={() => onDelete(unite)}
-                                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border transition-colors hover:bg-destructive/10"
-                                    style={{ borderColor: 'var(--color-bordure)', color: 'var(--color-warning)' }}
-                                >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                </button>
+                                <ElisaButton variant="danger" size="sm" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={() => onDelete(unite)} />
                             )}
                         </div>
                     </div>
