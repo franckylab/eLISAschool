@@ -68,7 +68,7 @@ export function OrganigrammeListe({ data, onNodeSelect }: OrganigrammeListeProps
     }, [onNodeSelect]);
 
     return (
-        <div className="w-full h-full overflow-auto p-4">
+        <div className="w-full h-full overflow-auto" style={{ padding: 'var(--space-md)' }}>
             <TreeView
                 nodes={treeNodes}
                 onSelect={handleSelect}

@@ -186,18 +186,18 @@ export function OrganigrammePage() {
         return (
             <div className="flex flex-col" style={{ gap: 'var(--gap-md)', padding: 'var(--space-lg)' }}>
                 {/* Skeleton header */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center" style={{ gap: 'var(--gap-md)' }}>
                     <div className="w-10 h-10 rounded-xl bg-[var(--color-dominant-50)] animate-pulse" />
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 flex flex-col" style={{ gap: 'var(--gap-xs)' }}>
                         <div className="h-5 w-48 rounded bg-[var(--color-bordure)] animate-pulse" />
                         <div className="h-3 w-32 rounded bg-[var(--color-bordure)] animate-pulse" />
                     </div>
                 </div>
                 {/* Skeleton cartes */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4" style={{ gap: 'var(--gap-md)' }}>
                     {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="rounded-xl border p-4 space-y-3" style={{ borderColor: 'var(--color-bordure)' }}>
-                            <div className="flex items-center gap-3">
+                        <div key={i} className="rounded-xl border space-y-3" style={{ borderColor: 'var(--color-bordure)', padding: 'var(--space-md)' }}>
+                            <div className="flex items-center" style={{ gap: 'var(--gap-sm)' }}>
                                 <div className="w-10 h-10 rounded-lg bg-[var(--color-bordure)] animate-pulse" />
                                 <div className="h-3 w-24 rounded bg-[var(--color-bordure)] animate-pulse" />
                             </div>
@@ -318,7 +318,7 @@ export function OrganigrammePage() {
             style={{ gap: 'var(--gap-md)', padding: 'var(--space-lg)' }}
         >
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between" style={{ gap: 'var(--gap-sm)' }}>
                 <PageHeader
                     title={nomEtablissement || t('organigramme.titre', 'Organigramme')}
                     subtitle={t('organigramme.subtitle', 'Vue interactive de la structure organisationnelle')}

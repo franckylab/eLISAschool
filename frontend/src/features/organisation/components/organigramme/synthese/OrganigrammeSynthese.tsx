@@ -207,14 +207,14 @@ export function OrganigrammeSynthese({ data, statsApi }: OrganigrammeSynthesePro
 
         {/* Distribution par échelon */}
         {parEchelon.length > 0 && (
-            <div className="mt-6">
+            <div style={{ marginTop: 'var(--space-lg)' }}>
                 <h3
-                    className="font-medium mb-3"
-                    style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)', color: 'var(--color-text)' }}
+                    className="font-medium"
+                    style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)', color: 'var(--color-text)', marginBottom: 'var(--gap-sm)' }}
                 >
                     {t('organigramme.stats.repartitionEchelon', 'Répartition par échelon')}
                 </h3>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col" style={{ gap: 'var(--gap-xs)' }}>
                     {parEchelon.map((echelon) => {
                         const total = parEchelon.reduce((s, e) => s + e.count, 0);
                         const pct = total > 0 ? Math.round((echelon.count / total) * 100) : 0;
