@@ -1,6 +1,0 @@
-- Every file opens with a uniform JSDoc banner containing project name, version, and author, followed by a descriptive comment block before each exported symbol.
-- Domain keys are modeled as string-backed TypeScript `enum`s (`ModuleName`, `Role`, `Permission`, `Statut*`, `Type*`) and kept as the single source of truth; registries like `MODULE_REGISTRY` index into them via computed keys `[ModuleName.X]`.
-- Public configuration objects are declared with `as const` (`APP_INFO`, `LIMITS`, `CURRENCIES`, `LANGUAGES`) so consumers get literal-typed values instead of widened primitives.
-- Each sub-package exposes an `index.ts` barrel that re-exports its contents, and the root `src/index.ts` re-exports those barrels — callers import exclusively from `@elisaschool/shared` rather than deep paths.
-- Zod schemas pair each `export const XxxSchema = z.object({...})` with a corresponding `export type XxxInput = z.infer<typeof XxxSchema>` so request/response contracts stay in sync.
-- Guard helpers (`assertNotSystem`, `assertNotImmutable`) attach `statusCode` and `code` properties onto the thrown `Error` instance via `(error as any)` casts, producing a consistent error shape across services.

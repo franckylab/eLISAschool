@@ -1,1 +1,0 @@
-React + TypeScript with `@tanstack/react-query` for server state, `sonner` for toast notifications, `react-i18next` for translations, `lucide-react` icons, and `framer-motion` for page transitions; HTTP client is `@/lib/api-client` (emploi-du-temps) and `@/lib/api` (salles).

@@ -1,6 +1,0 @@
-- Every shell script starts with `#!/bin/bash`, `set -e`, a banner header comment block (version/author/description), and ANSI color variables (`GREEN`/`RED`/`YELLOW`/`BLUE`/`NC`) used consistently for status output.
-- Long-running processes are launched as background jobs (`&`) and their PID is persisted to `/tmp/elisaschool-{backend|frontend}.pid` so `stop-dev.sh` can send SIGTERM/SIGKILL later.
-- Each `deploy-*.sh` is designed to be re-runnable: it guards each step with existence checks (DB exists? table exists? row exists?) and reports per-step success/failure counts instead of failing fast.
-- Database access uses `PGPASSWORD=... psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME` with credentials hard-coded at the top of each script, avoiding `.env` parsing inside the script body.
-- Test and verification scripts follow a uniform pattern: define `check()` / `check_warning()` helpers that `eval` a command, print a colored emoji prefix, and increment `SUCCESS`/`WARNINGS`/`ERRORS` counters before printing a final summary box.
-- Per-feature migrations are split into tiny `run-migration-NNN.sh` / `deploy-migration-NNN.sh` files (one per database change) rather than monolithic upgrade scripts, making rollbacks and selective re-runs possible.

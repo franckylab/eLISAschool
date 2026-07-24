@@ -1,5 +1,0 @@
-- Feature data access is encapsulated in dedicated `useXxx` hooks exported from a `hooks.ts` file, each wrapping a `useQuery` or `useMutation` call against `apiClient`.
-- Cache keys are grouped under a module-level constant object (e.g. `PARAMETRES_KEYS`) whose factory functions return typed tuple keys for precise invalidation.
-- Mutations invalidate related query keys in their `onSuccess` handler rather than relying on automatic refetch, ensuring consistent cache coherence across lists and details.
-- UI text is internationalized through `react-i18next`'s `useTranslation` hook with feature-scoped namespaces (e.g. `'dashboard'`), never hard-coded strings.
-- Authentication gating is applied at the hook level via `enabled: isAuthenticated` read from `useAuthStore`, so unauthenticated users never trigger network requests.

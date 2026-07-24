@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: backend/logistics/paie
-title: Payroll (Paie) — Payslip Generation & Salary Calculation
-scope:
-    - backend/src/modules/paie/
-source_files: []
-depends_on: []
-related_to: []

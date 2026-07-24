@@ -1,6 +1,0 @@
-- Each feature exposes a single `index.ts` barrel that re-exports all public types, hooks, and components, keeping consumers importing from the feature root rather than internal subpaths.
-- Server state is encapsulated in `use*` hooks built on TanStack Query; mutations call `queryClient.invalidateQueries({ queryKey: PERIODES_KEYS.all, exact: false })` after success to keep lists fresh.
-- Query keys are centralized in a module-scoped object (`ANNEES_KEYS`, `PERIODES_KEYS`) with nested factory functions returning typed const arrays, ensuring cache key consistency across queries and invalidations.
-- Backend/frontend type mismatches are bridged by a local `*Backend` interface plus a dedicated mapper function (e.g. `mapperAnneeScolaire`) inside the hook file, never by mutating the shared domain type.
-- Mutations surface user feedback uniformly via `toast.success(...)` / `toast.error(...)` with French messages, and error branches fall back to `error.response?.data?.error?.message || 'Erreur ...'`.
-- Domain DTOs are split per operation (`CreerXxxDto`, `ModifierXxxDto`, `ReorderXxxDto`, `ConfigInitialeXxxDto`) rather than using a single mutable shape, and helpers like `getLabelNiveau`/`niveauPeutAvoirEnfants` live next to their types.

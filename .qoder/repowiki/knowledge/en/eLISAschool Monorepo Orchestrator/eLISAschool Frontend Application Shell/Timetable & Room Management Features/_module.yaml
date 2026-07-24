@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: frontend/scheduling_timetable
-title: Timetable & Room Management Features
-scope:
-    - frontend/src/features/emploi-du-temps/
-    - frontend/src/features/salles/
-source_files: []
-depends_on: []
-related_to: []

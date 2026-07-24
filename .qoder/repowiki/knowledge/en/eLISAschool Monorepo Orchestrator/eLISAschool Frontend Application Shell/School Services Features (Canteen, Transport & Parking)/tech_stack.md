@@ -1,1 +1,0 @@
-React + TypeScript with `@tanstack/react-query` for data fetching/caching, `sonner` for toast notifications, `lucide-react` icons, and `react-i18next` keyed per feature namespace (`cantine`, `transport`).

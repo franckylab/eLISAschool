@@ -219,7 +219,7 @@ export function OrganigrammeSynthese({ data, statsApi }: OrganigrammeSynthesePro
                         const total = parEchelon.reduce((s, e) => s + e.count, 0);
                         const pct = total > 0 ? Math.round((echelon.count / total) * 100) : 0;
                         return (
-                            <div key={echelon.label} className="flex items-center gap-3">
+                            <div key={echelon.label} className="flex items-center" style={{ gap: 'var(--gap-sm)' }}>
                                 <span
                                     className="w-24 sm:w-32 text-xs truncate flex-shrink-0"
                                     style={{ color: 'var(--color-text-secondary)' }}

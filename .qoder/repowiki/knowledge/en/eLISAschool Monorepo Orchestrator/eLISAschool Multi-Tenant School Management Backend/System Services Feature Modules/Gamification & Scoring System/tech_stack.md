@@ -1,1 +1,0 @@
-TypeORM entities with decorators (`@Entity`, `@Column`, `@ManyToOne`, `@Index`), Express routers for HTTP, `node-cron` for scheduled tasks, Zod-style validation via `validateDto`/`safeParse`, and a centralized configuration helper (`getParamNumber`, `getParamBoolean`) from `@modules/configuration/utils/config.helper`.

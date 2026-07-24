@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: backend/auth_and_users/user_management
-title: User Management & Personnel Profiles
-scope:
-    - backend/src/modules/utilisateurs/
-source_files: []
-depends_on: []
-related_to: []

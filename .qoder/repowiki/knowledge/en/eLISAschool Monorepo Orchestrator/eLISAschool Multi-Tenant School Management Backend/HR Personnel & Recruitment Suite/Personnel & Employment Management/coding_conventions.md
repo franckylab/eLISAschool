@@ -1,6 +1,0 @@
-- Each business concept has a one-to-one set of files across `entities/`, `dto/`, `services/`, `controllers/` sharing the same kebab-case filename, re-exported through a per-folder `index.ts` barrel.
-- Controllers are thin Express `Router`s created at import time, wrapping each route in `try/catch` that forwards errors to `next(error)` so a global handler can format responses.
-- Services are stateful classes instantiated once (singleton pattern via `export const xxxService = new XxxService()`) and acquire repositories lazily through `AppDataSource.getRepository(...)` in the constructor.
-- Multi-tenancy is enforced by always passing `etablissementId` from `req.utilisateur.etablissementId` down to service/repository queries, and every entity carries an `etablissementId` FK with `onDelete: 'CASCADE'`.
-- Domain errors are raised as `AppError` with a human message, HTTP status code and machine-readable code (e.g. `'TYPE_EXISTS'`, `'MATRICULE_EXISTS'`, `'NOT_FOUND'`) instead of throwing generic exceptions.
-- Audit logging uses `auditService.log({ utilisateurId, action, cible, cibleId, description, anciennesValeurs?, nouvellesValeurs?, module })` around any mutation that changes persisted state.

@@ -1,1 +1,0 @@
-TypeORM entities with `uuid` primary keys, Express `Router` controllers, class-validator-based DTOs validated via a shared `validateDto` utility, and `AppDataSource.getRepository()` for data access — no ORM DI container inside these modules.

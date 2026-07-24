@@ -1,1 +1,0 @@
-React + Vite SPA that wires ~30 domain feature modules behind a TanStack Router tree, shared UI kit, React Query client and Zustand stores.

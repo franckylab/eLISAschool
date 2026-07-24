@@ -1,6 +1,0 @@
-- Each feature exposes a `*_KEYS` constant object that constructs nested React Query query key arrays (all → listes → liste(filtres) → details → detail(id)) used consistently across queries and mutations for cache invalidation.
-- Every data hook checks `useAuthStore().isAuthenticated` in the `enabled` option before making API calls, ensuring unauthenticated users cannot trigger requests.
-- Mutations follow a uniform pattern: define a `mutationFn` calling `apiClient.post/patch/delete`, then invalidate relevant query keys in `onSuccess` and show user feedback via `toast.success` / `toast.error`.
-- DTOs are split into `Creer*Dto` and `Modifier*Dto` interfaces where the modifier extends partial creation fields plus an `id` field, keeping create/update contracts explicit.
-- Feature modules use barrel `index.ts` files to re-export only the public surface (types, hooks, components), hiding internal implementation files from consumers.
-- API responses are cast to `PaginatedResult<T>` or `as any` when the response shape differs from the generic type, indicating a gap between the shared `PaginatedResult` contract and actual backend payloads.

@@ -1,1 +1,0 @@
-Three sibling React feature modules exposing paginated CRUD + statistics for school documents, library books/loans, and archived media via TanStack Query hooks.

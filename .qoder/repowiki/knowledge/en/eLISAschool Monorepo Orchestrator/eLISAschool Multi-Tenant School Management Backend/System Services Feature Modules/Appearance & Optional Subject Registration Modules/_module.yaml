@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: backend/system_services/apparence_options
-title: Appearance & Optional Subject Registration Modules
-scope:
-    - backend/src/modules/apparence/
-    - backend/src/modules/options/
-source_files: []
-depends_on: []
-related_to: []

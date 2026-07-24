@@ -1,6 +1,0 @@
-- Every entity declares a UUID primary key, `createdAt`/`updatedAt` timestamps, an `actif` boolean flag, and an `etablissementId` foreign key for multi-tenancy.
-- Composite unique indexes are declared with `@Index([...], { unique: true })` on the combination of a business code field plus `etablissementId` instead of relying on global uniqueness.
-- Services are stateless classes instantiated once per file (`export const cyclesService = new CyclesService()`) and accept `etablissementId` as an explicit method parameter rather than reading it from the request.
-- Controllers are plain Express routers created with `const router = Router()`, use `authMiddleware` + `requirePermission(...)` decorators, and wrap all responses in `{ success, data }` JSON envelopes.
-- Each module exposes a barrel `index.ts` that re-exports `entities`, `dto`, `services`, and `controllers` so consumers import from `@modules/<name>` without knowing the internal layout.
-- DTOs follow a create/update/query triad pattern (`CreateXxxDto`, `UpdateXxxDto`, `QueryXxxDto`) with separate validation schemas exported alongside the entity.

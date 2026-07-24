@@ -1,6 +1,0 @@
-- Each module exposes a single barrel `index.ts` that re-exports `entities`, `dto`, `services`, and `controllers` so consumers import only from the module root.
-- Services are instantiated as class instances holding a private `Repository<T>` obtained through `AppDataSource.getRepository(Entity)` in the constructor, then exported as a singleton instance (`competencesService`, `examensNationauxService`).
-- Controller routes wrap every handler in `try/catch` delegating to `next(error)` and always return `{ success: true, data }` JSON envelopes; mutating endpoints require `authMiddleware` followed by `requirePermission('config:edit')`.
-- All read queries accept a typed query DTO validated with `validateDto(schema, req.query)` before being passed to the service layer.
-- Multi-tenant scoping is enforced by passing `etablissementId` extracted from `req.utilisateur!.etablissementId!` into every service method, never relying on DB-level row security alone.
-- Entity classes carry a header comment block declaring version, author, and a changelog section describing major structural changes.

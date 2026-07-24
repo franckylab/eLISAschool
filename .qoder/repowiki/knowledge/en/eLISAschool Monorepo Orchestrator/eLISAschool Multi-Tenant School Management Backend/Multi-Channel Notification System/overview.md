@@ -1,1 +1,0 @@
-Express-based notification module that persists notifications and dispatches them through pluggable providers (email, SMS, push, in-app) with scheduled delivery and admin configuration.

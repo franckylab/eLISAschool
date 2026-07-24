@@ -190,29 +190,29 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                 </ElisaButton>
             </>}
         >
-            <form id="unite-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form id="unite-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col" style={{ gap: 'var(--space-md)' }}>
                 {/* Nom + Code */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 'var(--gap-sm)' }}>
                     <div>
-                        <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                        <label className="block font-medium" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-xxs)' }}>
                             {t('organigramme.form.nom', 'Nom')} *
                         </label>
                         <input
                             {...register('nom')}
-                            className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
-                            style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
+                            className="w-full rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
+                            style={{ padding: 'clamp(0.375rem, 0.3rem + 0.2vw, 0.5rem) clamp(0.625rem, 0.5rem + 0.3vw, 0.75rem)', borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
                             placeholder={t('organigramme.form.phNomUnite')}
                         />
                         {errors.nom && <p className="text-xs mt-1 text-destructive">{errors.nom.message}</p>}
                     </div>
                     <div>
-                        <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                        <label className="block font-medium" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-xxs)' }}>
                             {t('organigramme.form.code', 'Code')} *
                         </label>
                         <input
                             {...register('code')}
-                            className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
-                            style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
+                            className="w-full rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
+                            style={{ padding: 'clamp(0.375rem, 0.3rem + 0.2vw, 0.5rem) clamp(0.625rem, 0.5rem + 0.3vw, 0.75rem)', borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
                             placeholder={t('organigramme.form.phCode')}
                         />
                         {errors.code && <p className="text-xs mt-1 text-destructive">{errors.code.message}</p>}
@@ -221,27 +221,27 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
 
                 {/* Description */}
                 <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    <label className="block font-medium" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-xxs)' }}>
                         {t('organigramme.form.description', 'Description')}
                     </label>
                     <textarea
                         {...register('description')}
                         rows={2}
-                        className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)] resize-none"
-                        style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
+                        className="w-full rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)] resize-none"
+                        style={{ padding: 'clamp(0.375rem, 0.3rem + 0.2vw, 0.5rem) clamp(0.625rem, 0.5rem + 0.3vw, 0.75rem)', borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
                         placeholder={t('organigramme.form.phDescriptionUnite')}
                     />
                 </div>
 
                 {/* Échelon structurel */}
                 <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    <label className="block font-medium" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-xxs)' }}>
                         {t('organigramme.form.echelon', 'Échelon structurel')}
                     </label>
                     <select
                         {...register('echelonStructurelId')}
-                        className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
-                        style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
+                        className="w-full rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
+                        style={{ padding: 'clamp(0.375rem, 0.3rem + 0.2vw, 0.5rem) clamp(0.625rem, 0.5rem + 0.3vw, 0.75rem)', borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
                     >
                         <option value="">{t('organigramme.form.selectionner', 'Sélectionner...')}</option>
                         {echelons?.map(e => (
@@ -251,9 +251,9 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                 </div>
 
                 {/* Responsable + Localisation */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 'var(--gap-sm)' }}>
                     <div>
-                        <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                        <label className="block font-medium" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-xxs)' }}>
                             {t('organigramme.form.responsable', 'Responsable')}
                         </label>
                         <PersonnelSearchField
@@ -263,13 +263,13 @@ export function UniteFormModal({ open, onOpenChange, mode, unite, parentUnite, p
                         />
                     </div>
                     <div>
-                        <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                        <label className="block font-medium" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-xxs)' }}>
                             {t('organigramme.form.localisation', 'Localisation')}
                         </label>
                         <input
                             {...register('localisation')}
-                            className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
-                            style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
+                            className="w-full rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
+                            style={{ padding: 'clamp(0.375rem, 0.3rem + 0.2vw, 0.5rem) clamp(0.625rem, 0.5rem + 0.3vw, 0.75rem)', borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
                             placeholder={t('organigramme.form.phLocalisation')}
                         />
                     </div>

@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: backend/system_services/gamification_scoring
-title: Gamification & Scoring System
-scope:
-    - backend/src/modules/gamification/
-    - backend/src/modules/scoring/
-source_files: []
-depends_on: []
-related_to: []

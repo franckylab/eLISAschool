@@ -1,1 +1,0 @@
-TypeScript + Express Router for HTTP, TypeORM `@Entity`/`@Column` decorators for persistence, Zod schemas for input validation, `node-cron` for scheduled tasks, and `@common/filters/error.filter.AppError` as the module-wide error type.

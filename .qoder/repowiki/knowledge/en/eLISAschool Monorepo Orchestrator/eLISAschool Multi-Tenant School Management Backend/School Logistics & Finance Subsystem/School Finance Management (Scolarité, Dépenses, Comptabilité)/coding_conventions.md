@@ -1,6 +1,0 @@
-- Every controller route wraps its handler in try/catch and forwards errors to Express `next(error)` instead of returning responses inside catch blocks.
-- Request bodies are validated through a local `validate(schema, data)` helper that calls `schema.safeParse` and throws `new AppError('Erreur de validation', 400, 'VALIDATION_ERROR', ...)` on failure.
-- Multi-tenant isolation is enforced by reading `etablissementId` from `(req as any).utilisateur.etablissementId` and passing it as the last argument to every service method.
-- All monetary amounts use `decimal`/`numeric` columns with `precision: 12, scale: 2` (or `15,2` for ledger totals) and never `float`/`real`.
-- Domain state is modelled with string enums (`StatutDepense`, `StatutDemande`, `TypeEcriture`, etc.) stored as `enum` columns rather than boolean flags or magic strings.
-- Each entity exposes both a `uuid` primary key column and a matching `etablissementId` FK with `onDelete: 'CASCADE'`, and adds `@Index` annotations on frequently filtered columns.

@@ -1,1 +1,0 @@
-TypeORM entities with PostgreSQL-specific features (`ANY($1)` array parameters, `simple-json` columns), NestJS controller/service/dto layering, and raw SQL via `Repository.query()` for batched aggregate computations.

@@ -1,5 +1,0 @@
-- Every module exposes a barrel `index.ts` that re-exports `entities`, `dto`, `services`, and `controllers` so consumers import from `@modules/<name>` rather than sub-paths.
-- Entities use UUID primary keys, explicit `@Index` decorators on frequently filtered columns (matricule, utilisateurId, etablissementId), and `simple-json` columns for variable-length arrays or document lists instead of child tables.
-- Cross-resource authorization is implemented as reusable Express middleware factories (e.g. `requireParentAccess(paramName)`) that read the target ID from `req.params`/`req.query`, call a service method, and attach verification flags to `req` before calling `next()`.
-- Domain enums are declared alongside their owning entity (e.g. `StatutEleve`, `StatutNote`, `StatutValidationBulletin`) and used directly as `enum` column types with sensible defaults.
-- Performance-sensitive aggregation paths (grades averages, general means) go through a dedicated batch loader service that groups requests by period and executes one SQL query per group, caching results in an in-process Map with a scheduled TTL cleanup.

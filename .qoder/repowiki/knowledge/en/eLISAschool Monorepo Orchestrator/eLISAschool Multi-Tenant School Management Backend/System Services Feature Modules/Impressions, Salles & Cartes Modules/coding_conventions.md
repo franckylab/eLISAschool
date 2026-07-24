@@ -1,5 +1,0 @@
-- Each module exposes a flat barrel `index.ts` that re-exports `entities`, `dto`, `services`, and `controllers` as named groups for upstream consumers.
-- Entities use UUID primary keys, `@CreateDateColumn`/`@UpdateDateColumn` audit timestamps, and an `etablissementId` column plus `ManyToOne(Etablissement)` relation for multi-tenancy scoping.
-- Cross-module dependencies are loaded lazily via `await import('@modules/<mod>/entities')` inside service methods instead of top-level imports, avoiding circular module graphs.
-- Services expose a singleton instance alongside the class (e.g. `salleAvailabilityService`, `generationBatchService`) created with `new ServiceClass()` at module bottom for direct consumption without DI.
-- DTOs pair a Zod schema with a `z.infer<...>` TypeScript type alias exported together, and reuse base schemas via `.partial()` for update variants.

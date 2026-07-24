@@ -86,12 +86,12 @@
 
 ## Update Summary
 **Changes Made**
-- Complete timetable system redesign with unified CreneauHoraire entity replacing separate EmploiDuTemps and RepartitionHoraire entities
-- Added dedicated conflict detection service for comprehensive validation and resolution capabilities
-- Enhanced user experience with improved modal dialogs and synthesis view components
+- Complete timetable system refactoring with unified CreneauHoraire entity replacing dual-entity approach (EmploiDuTemps and RepartitionHoraire)
+- Enhanced conflict detection service for comprehensive validation and resolution capabilities
+- Improved user experience with enhanced modal dialogs and synthesis view components
 - Simplified controller architecture with better separation of concerns
-- Improved constraint satisfaction algorithms for better performance and accuracy
-- Updated API endpoints and data flow patterns for streamlined operations
+- Optimized performance through reduced database joins and streamlined data model
+- Updated API endpoints and data flows to reflect new unified architecture
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -106,7 +106,7 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document explains the eLISAschool Timetable Creation and Scheduling system, focusing on automatic timetable generation with conflict resolution, teacher availability constraints, room allocation optimization, manual adjustments, template-based scheduling, and periodic management. The system has undergone a complete architectural redesign with the introduction of the unified CreneauHoraire entity that consolidates the previous dual-entity approach (EmploiDuTemps and RepartitionHoraire), providing a more streamlined and efficient approach to schedule management.
+This document explains the eLISAschool Timetable Creation and Scheduling system, focusing on automatic timetable generation with conflict resolution, teacher availability constraints, room allocation optimization, manual adjustments, template-based scheduling, and periodic management. The system has undergone a major architectural refactoring with the introduction of the unified CreneauHoraire entity that consolidates the previous dual-entity approach (EmploiDuTemps and RepartitionHoraire), providing a more streamlined and efficient approach to schedule management.
 
 The backend exposes a dedicated module for timetables (emploi du temps), integrates with rooms (salles), personnel (teachers), subjects (matières), classes, periods, and school years. Migrations define the data model and templates, while routes and modules provide API endpoints and business logic. The redesigned architecture includes a dedicated conflict detection service, simplified controller structure, and enhanced user experience components for improved maintainability and performance.
 
@@ -116,7 +116,7 @@ At a high level:
 - Backend modules implement controllers, services, DTOs, and types for each domain area.
 - Routes are registered centrally to expose REST APIs.
 - Configuration and database initialization are handled via config files and data source setup.
-- **New** Unified CreneauHoraire entity centralizes time slot management and conflict detection.
+- **Updated** Unified CreneauHoraire entity centralizes time slot management and conflict detection.
 
 ```mermaid
 graph TB

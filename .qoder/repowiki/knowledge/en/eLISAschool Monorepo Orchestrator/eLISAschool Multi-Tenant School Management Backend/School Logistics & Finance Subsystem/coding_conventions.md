@@ -1,4 +1,0 @@
-- Every module follows the same folder layout: `controllers/`, `dto/`, `entities/`, `services/`, plus an `index.ts` barrel that re-exports all four layers.
-- Domain configuration is kept in a `config/<module>.config.ts` file when needed (finances, cantine, transport).
-- Controllers are thin HTTP handlers delegating all business logic to corresponding `*.service.ts` classes.
-- Entities are defined as TypeORM classes with explicit column definitions and exported through an `index.ts` barrel.

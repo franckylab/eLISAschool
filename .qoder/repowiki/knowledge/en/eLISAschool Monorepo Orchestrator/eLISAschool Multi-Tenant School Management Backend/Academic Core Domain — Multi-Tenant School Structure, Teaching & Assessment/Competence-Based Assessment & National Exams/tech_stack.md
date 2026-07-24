@@ -1,1 +1,0 @@
-TypeScript + Express Router (not Nest controllers), TypeORM entities with `uuid` primary keys, Zod-like schema validation via `validateDto`, and shared pagination via `paginateWithQueryBuilder` returning a `PaginatedResult<T>` envelope.

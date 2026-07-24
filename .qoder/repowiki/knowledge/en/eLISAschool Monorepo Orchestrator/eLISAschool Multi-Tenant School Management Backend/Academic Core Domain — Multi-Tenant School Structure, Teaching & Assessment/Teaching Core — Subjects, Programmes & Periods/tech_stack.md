@@ -1,1 +1,0 @@
-TypeScript + Express routers (not Nest controllers) with TypeORM entities; DTO validation via Zod schemas re-exported from each module's `dto/index.ts`; pagination via shared `@common/utils/pagination.util.paginateWithQueryBuilder`.

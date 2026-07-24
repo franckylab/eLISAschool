@@ -1,1 +1,0 @@
-Node.js + Express (not NestJS despite Nest-style folder layout), TypeORM with PostgreSQL, Redis (optional, falls back to in-memory cache), Swagger/OpenAPI for docs, Jest for tests.

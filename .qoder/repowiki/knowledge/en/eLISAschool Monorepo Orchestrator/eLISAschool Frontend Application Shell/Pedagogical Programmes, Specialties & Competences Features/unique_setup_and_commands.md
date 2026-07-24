@@ -1,1 +1,0 @@
-No build or test scripts are specific to this module; it is consumed as part of the frontend application. Each feature's `index.ts` acts as the single import surface for consumers, so adding new components/hooks requires updating the barrel export.

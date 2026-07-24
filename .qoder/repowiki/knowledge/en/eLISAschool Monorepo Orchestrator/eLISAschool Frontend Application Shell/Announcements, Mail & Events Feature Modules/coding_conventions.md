@@ -1,6 +1,0 @@
-- Each feature ships a `*_KEYS` object of nested factory functions producing const-typed query keys (e.g. `['annonces', 'liste', filtres]`) used by every hook to enable precise cache invalidation.
-- Hooks guard network calls behind `enabled: isAuthenticated` from `useAuthStore()` so unauthenticated renders never fire requests.
-- Mutations follow a uniform shape: `mutationFn` calls `apiClient.<method>`, `onSuccess` invalidates the affected key families plus stats, and `onError` surfaces `error.response?.data?.error?.message` via `toast.error`.
-- List pages declare columns as a `Column<Entity>[]` array passed to the shared `DataTable`, using inline `render`/`renderActions` closures rather than separate cell components.
-- Enum-like display maps (`types`, `statuts`, `priorites`) are local objects mapping backend string values to `{ label, color }` pairs consumed by badge-style renderers.
-- Feature entry points use a single `index.ts` barrel that re-exports `./types/*`, `./hooks/*`, and the named page component, keeping imports at the feature boundary.

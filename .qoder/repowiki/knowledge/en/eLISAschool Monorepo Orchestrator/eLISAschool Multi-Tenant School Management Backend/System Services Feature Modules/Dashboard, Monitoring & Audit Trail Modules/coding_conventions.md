@@ -1,5 +1,0 @@
-- Controllers are thin Express routers that validate input with `validateDto(schema, req.body|req.query)` and delegate all logic to a dedicated service class, forwarding errors to `next(error)`.
-- Route-level authorization uses the shared `authMiddleware` plus `requirePermission('<perm>')` or explicit role checks against `req.utilisateur.role` before invoking service methods.
-- Services are instantiated as singletons (e.g. `new MonitoringService()`, exported `auditArchivageService`) and obtain TypeORM repositories via `AppDataSource.getRepository(Entity)` rather than constructor injection.
-- Public-facing responses follow a uniform `{ success: boolean, data?: any, message?: string }` envelope, with admin-only endpoints guarded by role/permission middleware.
-- Module entry points re-export everything via barrel files (`index.ts` exporting `* from './services'`, `'./controllers'`, etc.) so consumers import from the module root.

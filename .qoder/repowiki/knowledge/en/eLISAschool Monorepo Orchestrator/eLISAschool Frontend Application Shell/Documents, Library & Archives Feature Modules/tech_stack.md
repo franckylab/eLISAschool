@@ -1,1 +1,0 @@
-React + TypeScript with `@tanstack/react-query` for server state, `sonner` for toast notifications, and a custom `apiClient` wrapper around fetch/Axios that normalises `{ success, data }` JSON envelopes.

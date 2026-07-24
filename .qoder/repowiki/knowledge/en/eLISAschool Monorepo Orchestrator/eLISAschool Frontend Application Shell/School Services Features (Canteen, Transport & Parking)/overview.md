@@ -1,1 +1,0 @@
-Frontend feature modules for school canteen subscriptions and menus, bus transport lines and student enrollments, and parking place/vehicle/subscription management.

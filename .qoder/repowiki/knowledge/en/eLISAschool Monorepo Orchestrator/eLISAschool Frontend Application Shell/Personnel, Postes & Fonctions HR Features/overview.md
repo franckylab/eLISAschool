@@ -1,1 +1,0 @@
-Frontend features for managing staff members (MembrePersonnel), organizational positions (Poste) and job functions (Fonction) with payroll contracts and a hierarchical function tree.

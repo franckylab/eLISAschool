@@ -44,7 +44,8 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
 
     const sectionClass = "border-t";
     const sectionStyle = { borderColor: 'var(--color-bordure)', padding: 'var(--space-md) 0' };
-    const labelClass = "text-xs font-medium uppercase tracking-wide mb-2";
+    const labelClass = "text-xs font-medium uppercase tracking-wide";
+    const labelStyle = { color: 'var(--color-text)', marginBottom: 'var(--space-xxs)' };
 
     return (
         <AnimatePresence>
@@ -77,12 +78,12 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
             >
                 {/* Header */}
                 <div className="sticky top-0 z-10 flex items-center justify-between border-b" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-bordure)', padding: 'var(--space-md) var(--space-lg)' }}>
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--color-dominant-50)' }}>
-                            <Building2 className="w-5 h-5" style={{ color: 'var(--color-dominant-600)' }} />
+                    <div className="flex items-center" style={{ gap: 'var(--gap-sm)' }}>
+                        <div className="rounded-lg flex items-center justify-center" style={{ width: 'var(--icon-lg)', height: 'var(--icon-lg)', backgroundColor: 'var(--color-dominant-50)' }}>
+                            <Building2 style={{ width: 'var(--icon-md)', height: 'var(--icon-md)', color: 'var(--color-dominant-600)' }} />
                         </div>
                         <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center" style={{ gap: 'var(--gap-xs)' }}>
                                 <h2 className="font-semibold text-sm" style={{ color: 'var(--color-text)' }}>{unite.nom}</h2>
                                 {unite.echelonStructurelLabel && (
                                     <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'var(--color-dominant-50)', color: 'var(--color-dominant-600)' }}>
@@ -90,7 +91,7 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                                     </span>
                                 )}
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center" style={{ gap: 'var(--gap-xs)' }}>
                                 <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{unite.code}</span>
                                 <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{
                                     backgroundColor: unite.statut === 'ACTIF' ? 'var(--color-dominant-50)' : unite.statut === 'ARCHIVE' ? 'var(--color-secondary-50)' : 'var(--color-dominant-50)',
@@ -101,36 +102,36 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                             </div>
                         </div>
                     </div>
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--color-dominant-50)] transition-colors" aria-label={t('organigramme.drawer.fermer', 'Fermer')}>
-                        <X className="w-4 h-4" style={{ color: 'var(--color-text-muted)' }} />
+                    <button onClick={onClose} className="flex items-center justify-center rounded-lg hover:bg-[var(--color-dominant-50)] transition-colors" style={{ width: 'var(--icon-xl)', height: 'var(--icon-xl)' }} aria-label={t('organigramme.drawer.fermer', 'Fermer')}>
+                        <X style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)', color: 'var(--color-text-muted)' }} />
                     </button>
                 </div>
 
                 <div style={{ padding: '0 var(--space-lg) var(--space-lg)' }}>
                     {/* Description */}
                     {unite.description && (
-                        <div className="py-4">
+                        <div style={{ padding: 'var(--space-md) 0' }}>
                             <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{unite.description}</p>
                         </div>
                     )}
 
                     {/* Informations */}
-                    <div className="py-4 flex flex-col" style={{ gap: 'var(--gap-sm)' }}>
-                        <div className="flex items-center gap-2 text-sm">
-                            <Layers className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} />
+                    <div className="flex flex-col" style={{ gap: 'var(--gap-sm)', padding: 'var(--space-md) 0' }}>
+                        <div className="flex items-center text-sm" style={{ gap: 'var(--gap-xs)' }}>
+                            <Layers className="flex-shrink-0" style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)', color: 'var(--color-text-muted)' }} />
                             <span style={{ color: 'var(--color-text-muted)' }}>{t('organigramme.drawer.echelon', 'Échelon')} :</span>
                             <span style={{ color: 'var(--color-text)' }}>{unite.echelonStructurelLabel || '—'}</span>
                         </div>
                         {unite.responsableNom && (
-                            <div className="flex items-center gap-2 text-sm">
-                                <User className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} />
+                            <div className="flex items-center text-sm" style={{ gap: 'var(--gap-xs)' }}>
+                                <User className="flex-shrink-0" style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)', color: 'var(--color-text-muted)' }} />
                                 <span style={{ color: 'var(--color-text-muted)' }}>{t('organigramme.drawer.responsable', 'Responsable')} :</span>
                                 <span style={{ color: 'var(--color-text)' }}>{unite.responsableNom}</span>
                             </div>
                         )}
                         {unite.localisation && (
-                            <div className="flex items-center gap-2 text-sm">
-                                <MapPin className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} />
+                            <div className="flex items-center text-sm" style={{ gap: 'var(--gap-xs)' }}>
+                                <MapPin className="flex-shrink-0" style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)', color: 'var(--color-text-muted)' }} />
                                 <span style={{ color: 'var(--color-text-muted)' }}>{t('organigramme.drawer.localisation', 'Localisation')} :</span>
                                 <span style={{ color: 'var(--color-text)' }}>{unite.localisation}</span>
                             </div>
@@ -153,9 +154,9 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
 
                     {/* Postes */}
                     <div className={sectionClass} style={sectionStyle}>
-                        <div className="flex items-center gap-2 mb-2">
-                            <Briefcase className="w-4 h-4" style={{ color: 'var(--color-dominant-600)' }} />
-                            <span className={labelClass} style={{ color: 'var(--color-text)' }}>
+                        <div className="flex items-center" style={{ gap: 'var(--gap-xs)', marginBottom: 'var(--space-xxs)' }}>
+                            <Briefcase style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)', color: 'var(--color-dominant-600)' }} />
+                            <span className={labelClass} style={labelStyle}>
                                 {t('organigramme.drawer.postes', 'Postes')} ({unite.postes?.length || 0})
                             </span>
                         </div>

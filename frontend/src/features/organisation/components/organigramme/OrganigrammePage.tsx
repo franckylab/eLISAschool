@@ -196,7 +196,7 @@ export function OrganigrammePage() {
                 {/* Skeleton cartes */}
                 <div className="grid grid-cols-2 lg:grid-cols-4" style={{ gap: 'var(--gap-md)' }}>
                     {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="rounded-xl border space-y-3" style={{ borderColor: 'var(--color-bordure)', padding: 'var(--space-md)' }}>
+                        <div key={i} className="rounded-xl border flex flex-col" style={{ borderColor: 'var(--color-bordure)', padding: 'var(--space-md)', gap: 'var(--gap-sm)' }}>
                             <div className="flex items-center" style={{ gap: 'var(--gap-sm)' }}>
                                 <div className="w-10 h-10 rounded-lg bg-[var(--color-bordure)] animate-pulse" />
                                 <div className="h-3 w-24 rounded bg-[var(--color-bordure)] animate-pulse" />
@@ -255,8 +255,8 @@ export function OrganigrammePage() {
                                 {t('organigramme.empty.titre', 'Aucune unité organisationnelle')}
                             </h2>
                             <p
-                                className="mt-2 text-[var(--color-text-secondary)]"
-                                style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.25vw, 0.9375rem)' }}
+                                className="text-[var(--color-text-secondary)]"
+                                style={{ marginTop: 'var(--space-xs)', fontSize: 'clamp(0.8125rem, 0.75rem + 0.25vw, 0.9375rem)' }}
                             >
                                 {t('organigramme.empty.description', 'Commencez par créer votre première unité ou générez une organisation complète depuis un modèle.')}
                             </p>
@@ -343,8 +343,10 @@ export function OrganigrammePage() {
                                     role="tab"
                                     aria-selected={isActive}
                                     onClick={() => changerVue(v.id)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                                    className="flex items-center rounded-lg text-xs font-medium transition-all"
                                     style={{
+                                        gap: 'var(--gap-xxs, 0.25rem)',
+                                        padding: 'clamp(0.25rem, 0.2rem + 0.15vw, 0.375rem) clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem)',
                                         backgroundColor: isActive ? 'var(--color-dominant-600)' : 'transparent',
                                         color: isActive ? '#fff' : 'var(--color-text-muted)',
                                     }}

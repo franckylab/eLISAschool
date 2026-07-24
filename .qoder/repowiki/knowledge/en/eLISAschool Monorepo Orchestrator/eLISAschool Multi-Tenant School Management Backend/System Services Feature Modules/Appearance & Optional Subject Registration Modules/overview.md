@@ -1,1 +1,0 @@
-Two independent Nest-style modules: apparence manages SVG wallpaper catalogs and per-establishment rotation configuration, while options handles student enrollment in optional subjects with approval workflow.

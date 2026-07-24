@@ -1,8 +1,0 @@
-Three sibling feature packages under `src/features/`, each following an identical internal layout: `index.ts` barrel re-exports types + hooks + page/modal components; `types/*.ts` define DTOs and domain interfaces; `hooks/use-*.ts` wrap REST calls via `@tanstack/react-query` (`useQuery`/`useMutation`) through `apiClient`; `components/` hold pages (`*-page.tsx`), detail views, form modals (`*-form-modal.tsx`) and shared sub-components.
-
-Cross-feature relationships are modelled as references rather than imports:
-- `Fonction.typePersonnelId → TypePersonnel` (the refactoring goal keeps both concepts orthogonal but links Fonction back to its personnel type).
-- `Poste.fonctionId → Fonction` and `ContratPersonnel.posteId → Poste`, so a MembrePersonnel is linked to a Poste only indirectly through ContratPersonnel.
-- Personnel data lives in `/api/personnel*`, while Poste/Fonction live under `/api/organisation/*`, keeping the two domains separate at the API boundary.
-
-Payroll-related types (`ContratPersonnel`, `BulletinPaie`, `ElementSalaire`, `Cotisation`, `TypePrime`, `TypeRetenue`, `ModeRemunerationInfo`, `SimulationResult`) coexist in `personnel/types/personnel.types.ts` because they are tightly coupled to a member's employment contract, even though the actual payroll UI is elsewhere. The `postes/types/poste.zod.ts` file provides runtime validation for POST/PUT payloads alongside the TS interfaces.

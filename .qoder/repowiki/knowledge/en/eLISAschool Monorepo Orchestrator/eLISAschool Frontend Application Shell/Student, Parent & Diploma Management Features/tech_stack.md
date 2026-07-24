@@ -1,1 +1,0 @@
-React + TypeScript with TanStack Query for server state, Zod for multi-step form validation, Sonner for toast notifications, Framer Motion for transitions, and Lucide icons — all consumed through shared `@/lib/api-client` REST wrappers.

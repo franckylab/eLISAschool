@@ -1,5 +1,0 @@
-- Each feature ships an `index.ts` barrel that re-exports only public symbols (types, hooks, page components) so consumers import from the feature root rather than sub-paths.
-- Hooks define a module-level `*_KEYS` constant with nested `all`/`liste`/`detail` factories returning typed query-key tuples, used consistently across every `useQuery` and `invalidateQueries` call.
-- List hooks accept a filter object typed as `*Filtres` and forward `page`/`limit`/`sortBy`/`sortOrder` through `apiClient.getPaginated`, while detail hooks guard execution with `enabled: isAuthenticated && !!id`.
-- Mutations follow a uniform shape: `mutationFn` calls `apiClient.post|patch|delete`, `onSuccess` invalidates the relevant `*_KEYS.all` list(s) and emits a `toast.success`, and `onError` reads `error.response?.data?.message || error.message` for user feedback.
-- Entity interfaces model the server payload directly, while mutation inputs use separate `Creer*Dto` / `Generer*Dto` interfaces, keeping write contracts decoupled from read models.

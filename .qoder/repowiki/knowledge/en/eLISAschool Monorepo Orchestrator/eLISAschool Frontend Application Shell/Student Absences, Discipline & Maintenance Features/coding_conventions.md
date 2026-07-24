@@ -1,6 +1,0 @@
-- Each feature exposes a single barrel `index.ts` that re-exports the page component, all hooks, and all types so consumers import from the feature root rather than subpaths.
-- Server state is modelled as a module-level `*_KEYS` object with nested factory functions (`all`, `listes`, `liste(filtres)`, `details`, `detail(id)`, `stats`) used consistently as `queryKey` values across queries and mutations.
-- Every hook reads `isAuthenticated` from `useAuthStore` and wires it into the `enabled` option so unauthenticated users never fire requests.
-- Mutations follow a uniform shape: `mutationFn` calls `apiClient.post|patch|delete`, then `onSuccess` invalidates the affected list/detail/stats keys via `queryClient.invalidateQueries` and shows a French `toast.success` message.
-- Domain DTOs are split per operation (`CreerXxxDto`, `ModifierXxxDto`, `XxxFiltres`) while the resource interface carries both scalar fields and optional eager-loaded relations like `eleve?` / `technicien?`.
-- List endpoints return a paginated shape (`page`/`limit`/`data`/`meta`) consumed by `apiClient.getPaginated<T>()`, while detail/statistics endpoints return `{ success: boolean; data: T }` unwrapped via `response.data?.data`.

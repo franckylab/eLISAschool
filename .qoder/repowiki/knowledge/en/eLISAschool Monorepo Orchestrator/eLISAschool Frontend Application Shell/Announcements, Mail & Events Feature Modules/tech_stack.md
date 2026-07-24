@@ -1,1 +1,0 @@
-React + TypeScript with TanStack Query for data fetching, Sonner for toast notifications, Framer Motion for page transitions, Lucide icons, and Tailwind utility classes for styling.

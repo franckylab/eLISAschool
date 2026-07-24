@@ -1,4 +1,0 @@
-- Every child module exposes a single barrel `index.ts` that re-exports `entities`, `dto`, `services`, and `controllers` in that order.
-- Entities implement a common `EtabBaseEntity` / `EtabBaseDto` mixin carrying `id`, `createdAt`, `updatedAt`, and `etablissementId` for multi-tenant isolation.
-- Controllers are thin REST endpoints delegating all logic to a sibling `*.service.ts`; DTOs mirror entities one-to-one with class-validator decorators.
-- Cross-entity relations use TypeORM `@ManyToOne`/`@OneToMany` foreign-key columns (`etablissementId`, `niveauId`, `matiereId`, etc.) instead of service-layer lookups.

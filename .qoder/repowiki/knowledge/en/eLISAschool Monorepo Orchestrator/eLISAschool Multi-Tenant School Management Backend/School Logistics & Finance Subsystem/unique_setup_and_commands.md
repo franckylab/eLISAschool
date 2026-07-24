@@ -1,1 +1,0 @@
-No unified command exists at this level; each module is registered with the parent Express app through its barrel `index.ts` re-exports.

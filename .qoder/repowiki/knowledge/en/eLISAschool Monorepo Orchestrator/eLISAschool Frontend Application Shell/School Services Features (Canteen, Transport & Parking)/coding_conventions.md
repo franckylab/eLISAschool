@@ -1,6 +1,0 @@
-- Each feature ships a flat `types/`, `hooks/`, `components/` trio plus a barrel `index.ts` that re-exports them as a single public surface.
-- Server-facing shapes are split into a read-only entity interface (e.g. `InscriptionCantine`) plus a separate `Creer*Dto` input type per mutation endpoint.
-- List endpoints accept a typed filter interface (`*Filtres`) with optional pagination fields (`page`, `limit`, `sortBy`, `sortOrder`) spread into the query params.
-- Query keys are declared in a module-scoped constant object with `all` and parameterized `liste(...)` factories returning const-tuple arrays, used both in `useQuery` and `invalidateQueries`.
-- Mutations call `apiClient.post/delete`, unwrap `response.data?.data`, then invalidate the matching key prefix and surface user feedback via `toast.success` / `toast.error`.
-- Page components render through the shared `DataTable` with column definitions using `key`/`render`/`renderActions`, pin the first column left, and gate action buttons with `permission:` strings consumed by the global permission system.

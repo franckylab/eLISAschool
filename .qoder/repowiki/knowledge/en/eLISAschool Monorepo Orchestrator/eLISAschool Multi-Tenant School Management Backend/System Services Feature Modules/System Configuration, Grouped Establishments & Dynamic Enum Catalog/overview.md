@@ -1,1 +1,0 @@
-Provides the application configuration store with backup/restore and history, a multi-establishment grouping model with consolidated dashboards, and a dynamic enum catalog for per-establishment list values.

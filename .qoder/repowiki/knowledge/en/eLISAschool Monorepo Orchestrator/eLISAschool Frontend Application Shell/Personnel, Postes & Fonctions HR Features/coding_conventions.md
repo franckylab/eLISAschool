@@ -1,5 +1,0 @@
-- Each feature exposes a single `index.ts` barrel that re-exports all public types, hooks, and page/modal components — consumers import exclusively from the feature root.
-- Server state is encapsulated in `hooks/use-*.ts` files using React Query; queries use a module-scoped `*_KEYS` object built with nested factory functions to compose stable query keys, and mutations call `queryClient.invalidateQueries` on those same keys after success.
-- API responses are cast via `(res as any).data as T` when the backend returns untyped wrappers, and pagination is normalized into `{ items, meta }` or `PaginatedResult<T>` shapes inside the hook.
-- Mutations follow a uniform shape: `mutationFn` performs the `apiClient` call, `onSuccess` invalidates every affected query key and emits a `toast.success(...)` message, and `onError` surfaces `error?.response?.data?.message || error?.message` via `toast.error`.
-- Form-to-DTO adapters (e.g. `fromFormToCreateDto` in `personnel.types.ts`) accept loose `Record<string, any>` forms and coerce values (enum strings, date defaults, array wrapping) before sending typed DTOs to the API.

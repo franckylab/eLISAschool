@@ -1,4 +1,0 @@
-- All shell scripts follow the same skeleton: `set -e`, resolve `SCRIPT_DIR`/`PROJECT_ROOT` relative to the script location, define color-coded `log_info`/`log_warning`/`log_error` helpers, and use `docker exec` against the named container (`elisaschool_db`) rather than connecting directly.
-- Environment variables are parameterised everywhere with `${VAR:-default}` fallbacks so the same compose files work across local and cloud profiles without duplication.
-- Compose overlays are chosen by filename convention `{local,cloud}.{dev,prod}.yml` and selected through a single `case` statement in `deploy.sh`, keeping environment differences declarative rather than imperative.
-- Backup filenames encode type and date (`${DB_NAME}_${BACKUP_TYPE}_YYYYMMDD.sql.gz`) and rotation is implemented uniformly with `find ... -mtime +N -delete` per retention tier.

@@ -1,1 +1,0 @@
-Cron jobs are initialized via `initAuthCronJobs()` from `cron-jobs.ts` and run on a `Africa/Douala` timezone schedule (hourly cleanup of failed login attempts). The module's barrel export at `modules/auth/index.ts` explicitly re-exports `authMiddleware` and `optionalAuthMiddleware` to avoid naming conflicts with `UtilisateurAuth` from the DTO layer.

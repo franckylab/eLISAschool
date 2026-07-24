@@ -1,1 +1,0 @@
-React + TypeScript with `reactflow` (custom node/edge types, MiniMap, Controls, drag-connect) for the organigramme canvas; `sonner` for toast notifications; `lucide-react` icons; Zod schemas alongside TS interfaces for DTO validation.

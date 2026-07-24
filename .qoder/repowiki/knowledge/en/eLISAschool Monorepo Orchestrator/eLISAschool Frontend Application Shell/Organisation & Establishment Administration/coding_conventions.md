@@ -1,5 +1,0 @@
-- Each feature folder exposes a single `index.ts` barrel that re-exports all public hooks, types, and page components so consumers import from the feature root rather than internal paths.
-- CRUD operations are exposed as named composition hooks (`useCreerXxx`, `useModifierXxx`, `useSupprimerXxx`) wrapping mutations, instead of raw API calls inside components.
-- Domain models are declared as plain TS interfaces paired with a companion `.zod.ts` file holding the corresponding Zod schemas used for form/API validation.
-- The organigramme view separates concerns into small hooks per concern (`use-organigramme-flow` for data→RF conversion, `use-dnd-organigramme` for drag state, `use-layout-engine` for positioning) rather than one monolithic hook.
-- Tree-shaped API responses are converted to flat React Flow `nodes[]`/`edges[]` arrays via a dedicated layout utility (`computeLayout`) before being passed to `<ReactFlow>`.

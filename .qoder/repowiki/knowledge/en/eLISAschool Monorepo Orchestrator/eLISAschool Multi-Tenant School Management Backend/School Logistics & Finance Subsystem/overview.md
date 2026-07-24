@@ -1,1 +1,0 @@
-Express-based backend subsystem grouping the school's finance, payroll, and facility-logistics domains (canteen, transport, parking, equipment) as independently mounted Nest/Express modules sharing a uniform module layout.

@@ -1,1 +1,0 @@
-Express-based payroll module that computes monthly payslips for personnel, applying fixed/hourly/mixed/weekly remuneration modes and generating detailed salary elements.

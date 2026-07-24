@@ -1,1 +1,0 @@
-Three small feature modules providing the school's wallpaper rotation UI, system-wide configuration parameter management, and a widget-based dashboard landing page.

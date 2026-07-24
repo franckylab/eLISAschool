@@ -1,1 +1,0 @@
-No build scripts or special commands — modules are consumed by mounting their exported routers (`apparenceController`, `optionsController`) into the main Express application. The apparence service auto-creates the `uploads/fonds` directory on construction.

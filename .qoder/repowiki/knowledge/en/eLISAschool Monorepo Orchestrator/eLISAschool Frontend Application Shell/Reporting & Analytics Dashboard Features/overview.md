@@ -1,1 +1,0 @@
-Three React feature modules providing the KPI dashboard, global statistics overview, and report management pages backed by a shared analytics/statistics/reporting API.

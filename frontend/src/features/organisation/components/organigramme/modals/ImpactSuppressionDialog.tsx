@@ -94,50 +94,53 @@ export function ImpactSuppressionDialog({ open, onOpenChange, unite, onDeleted }
                 </ElisaButton>
             </>}
         >
-            <div className="space-y-4">
+            <div className="flex flex-col" style={{ gap: 'var(--space-md)' }}>
                 {/* Alerte */}
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10">
-                    <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-destructive" />
-                    <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                <div
+                    className="flex items-start rounded-lg bg-destructive/10"
+                    style={{ gap: 'var(--gap-sm)', padding: 'var(--space-sm)' }}
+                >
+                    <AlertTriangle className="flex-shrink-0 text-destructive" style={{ width: 'var(--icon-md)', height: 'var(--icon-md)', marginTop: '0.125rem' }} />
+                    <p style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)', color: 'var(--color-text-secondary)' }}>
                         {t('organigramme.impact.warning', 'Cette action est irréversible. Les unités enfants et les données associées seront également supprimées.')}
                     </p>
                 </div>
 
                 {/* Impact */}
                 {isLoadingImpact ? (
-                    <div className="flex items-center justify-center py-6">
-                        <Loader2 className="w-5 h-5 animate-spin text-[var(--color-text-muted)]" />
-                        <span className="ml-2 text-sm text-[var(--color-text-muted)]">
+                    <div className="flex items-center justify-center" style={{ padding: 'var(--space-xl) 0' }}>
+                        <Loader2 className="animate-spin text-[var(--color-text-muted)]" style={{ width: 'var(--icon-md)', height: 'var(--icon-md)' }} />
+                        <span className="ml-2 text-[var(--color-text-muted)]" style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}>
                             {t('organigramme.impact.calcul', 'Calcul de l\'impact...')}
                         </span>
                     </div>
                 ) : impact ? (
-                    <div className="space-y-2">
-                        <p className="text-xs font-medium uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>
+                    <div className="flex flex-col" style={{ gap: 'var(--gap-xs)' }}>
+                        <p className="font-medium uppercase tracking-wide" style={{ fontSize: 'clamp(0.6875rem, 0.65rem + 0.15vw, 0.75rem)', color: 'var(--color-text-muted)' }}>
                             {totalImpact > 0
                                 ? t('organigramme.impact.resume', 'Éléments affectés :')
                                 : t('organigramme.impact.aucunImpact', 'Aucun élément affecté')
                             }
                         </p>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2" style={{ gap: 'var(--gap-xs)' }}>
                             {impactItems.map(item => {
                                 const Icon = item.icon;
                                 return (
                                     <div
                                         key={item.label}
-                                        className="flex items-center gap-2 p-2.5 rounded-lg border"
-                                        style={{ borderColor: 'var(--color-bordure)' }}
+                                        className="flex items-center rounded-lg border"
+                                        style={{ gap: 'var(--gap-xs)', padding: 'var(--space-sm)', borderColor: 'var(--color-bordure)' }}
                                     >
-                                        <Icon className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--color-text-muted)' }} />
+                                        <Icon className="flex-shrink-0" style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)', color: 'var(--color-text-muted)' }} />
                                         <div className="min-w-0">
-                                            <div className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+                                            <div className="font-semibold" style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)', color: 'var(--color-text)' }}>
                                                 {item.value}
                                             </div>
-                                            <div className="text-[10px] truncate" style={{ color: 'var(--color-text-muted)' }}>
+                                            <div className="truncate" style={{ fontSize: 'clamp(0.625rem, 0.6rem + 0.1vw, 0.6875rem)', color: 'var(--color-text-muted)' }}>
                                                 {item.label}
                                             </div>
                                             {item.sub && (
-                                                <div className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                                                <div style={{ fontSize: 'clamp(0.625rem, 0.6rem + 0.1vw, 0.6875rem)', color: 'var(--color-text-muted)' }}>
                                                     {item.sub}
                                                 </div>
                                             )}

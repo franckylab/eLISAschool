@@ -83,91 +83,100 @@ export function OrganigrammeToolbar({
         exporterOrganigrammePNG(containerId, nomEtablissement || 'organigramme');
     }, [containerId, nomEtablissement]);
 
-    const btnClass = "flex items-center justify-center w-8 h-8 rounded-lg transition-colors hover:bg-[var(--color-dominant-50)] text-[var(--color-text-muted)] hover:text-[var(--color-dominant-600)]";
+    const btnClass = "flex items-center justify-center rounded-lg transition-colors hover:bg-[var(--color-dominant-50)] text-[var(--color-text-muted)] hover:text-[var(--color-dominant-600)]";
+    const btnStyle = { width: 'var(--icon-xl)', height: 'var(--icon-xl)' };
 
     return (
         <div
             role="toolbar"
             aria-label={t('organigramme.toolbar', 'Outils organigramme')}
-            className="flex items-center gap-1 px-3 py-2 rounded-xl border backdrop-blur-sm"
+            className="flex items-center rounded-xl border backdrop-blur-sm"
             style={{
+                gap: 'var(--gap-xxs, 0.25rem)',
+                padding: 'clamp(0.25rem, 0.2rem + 0.15vw, 0.375rem) clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem)',
                 backgroundColor: 'var(--color-surface)',
                 borderColor: 'var(--color-bordure)',
             }}
         >
             {/* Recherche */}
             {showSearch ? (
-                <div className="flex items-center gap-1 mr-2">
-                    <Search className="w-4 h-4 text-[var(--color-text-muted)]" />
+                <div className="flex items-center" style={{ gap: 'var(--gap-xxs, 0.25rem)', marginRight: 'var(--space-xs)' }}>
+                    <Search className="text-[var(--color-text-muted)]" style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={handleSearchChange}
                         placeholder={t('organigramme.rechercher', 'Rechercher...')}
                         className="flex-1 min-w-[120px] max-w-[200px] text-sm bg-transparent border-none outline-none placeholder:text-[var(--color-text-muted)]"
+                        style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
                         autoFocus
                     />
                     {searchQuery && (
-                        <button onClick={handleClearSearch} className={btnClass} title={t('organigramme.effacer', 'Effacer')}>
-                            <X className="w-3.5 h-3.5" />
+                        <button onClick={handleClearSearch} className={btnClass} style={btnStyle} title={t('organigramme.effacer', 'Effacer')}>
+                            <X style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
                         </button>
                     )}
                 </div>
             ) : (
-                <button onClick={() => setShowSearch(true)} className={btnClass} title={t('organigramme.rechercher', 'Rechercher')}>
-                    <Search className="w-4 h-4" />
+                <button onClick={() => setShowSearch(true)} className={btnClass} style={btnStyle} title={t('organigramme.rechercher', 'Rechercher')}>
+                    <Search style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
                 </button>
             )}
 
-            <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--color-bordure)' }} />
+            <div className="mx-0.5" style={{ width: '1px', height: 'var(--icon-md)', backgroundColor: 'var(--color-bordure)' }} />
 
             {/* Zoom */}
-            <button onClick={() => dispatchToolbarCommand('zoom-out')} className={btnClass} title={t('organigramme.zoomOut', 'Zoom arrière')}>
-                <ZoomOut className="w-4 h-4" />
+            <button onClick={() => dispatchToolbarCommand('zoom-out')} className={btnClass} style={btnStyle} title={t('organigramme.zoomOut', 'Zoom arrière')}>
+                <ZoomOut style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
             </button>
-            <button onClick={() => dispatchToolbarCommand('zoom-in')} className={btnClass} title={t('organigramme.zoomIn', 'Zoom avant')}>
-                <ZoomIn className="w-4 h-4" />
+            <button onClick={() => dispatchToolbarCommand('zoom-in')} className={btnClass} style={btnStyle} title={t('organigramme.zoomIn', 'Zoom avant')}>
+                <ZoomIn style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
             </button>
-            <button onClick={() => dispatchToolbarCommand('fit-view')} className={btnClass} title={t('organigramme.fitView', 'Ajuster')}>
-                <Maximize2 className="w-4 h-4" />
+            <button onClick={() => dispatchToolbarCommand('fit-view')} className={btnClass} style={btnStyle} title={t('organigramme.fitView', 'Ajuster')}>
+                <Maximize2 style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
             </button>
 
-            <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--color-bordure)' }} />
+            <div className="mx-0.5" style={{ width: '1px', height: 'var(--icon-md)', backgroundColor: 'var(--color-bordure)' }} />
 
             {/* Expand/Collapse */}
-            <button onClick={() => dispatchToolbarCommand('expand-all')} className={btnClass} title={t('organigramme.toutDeplier', 'Tout déplier')}>
-                {direction === 'TB' ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            <button onClick={() => dispatchToolbarCommand('expand-all')} className={btnClass} style={btnStyle} title={t('organigramme.toutDeplier', 'Tout déplier')}>
+                {direction === 'TB' ? <ChevronDown style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} /> : <ChevronRight style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />}
             </button>
-            <button onClick={() => dispatchToolbarCommand('collapse-all')} className={btnClass} title={t('organigramme.toutReplier', 'Tout replier')}>
-                {direction === 'TB' ? <ChevronUp className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            <button onClick={() => dispatchToolbarCommand('collapse-all')} className={btnClass} style={btnStyle} title={t('organigramme.toutReplier', 'Tout replier')}>
+                {direction === 'TB' ? <ChevronUp style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} /> : <ChevronLeft style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />}
             </button>
 
-            <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--color-bordure)' }} />
+            <div className="mx-0.5" style={{ width: '1px', height: 'var(--icon-md)', backgroundColor: 'var(--color-bordure)' }} />
 
             {/* Plein écran */}
-            <button onClick={handleToggleFullscreen} className={btnClass} title={isFullscreen ? t('organigramme.quitterPleinEcran', 'Quitter le plein écran') : t('organigramme.pleinEcran', 'Plein écran')}>
-                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            <button onClick={handleToggleFullscreen} className={btnClass} style={btnStyle} title={isFullscreen ? t('organigramme.quitterPleinEcran', 'Quitter le plein écran') : t('organigramme.pleinEcran', 'Plein écran')}>
+                {isFullscreen ? <Minimize2 style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} /> : <Maximize2 style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />}
             </button>
 
             {/* Export */}
-            <button onClick={handleExport} className={btnClass} title={t('organigramme.exporter', 'Exporter PNG')}>
-                <Download className="w-4 h-4" />
+            <button onClick={handleExport} className={btnClass} style={btnStyle} title={t('organigramme.exporter', 'Exporter PNG')}>
+                <Download style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
             </button>
 
             {/* Mode édition */}
             {canEdit && onToggleEditMode && (
                 <>
-                    <div className="w-px h-5 mx-1" style={{ backgroundColor: 'var(--color-bordure)' }} />
+                    <div className="mx-0.5" style={{ width: '1px', height: 'var(--icon-md)', backgroundColor: 'var(--color-bordure)' }} />
                     <button
                         onClick={onToggleEditMode}
-                        className={`flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-xs font-medium transition-colors ${
+                        className={`flex items-center rounded-lg text-xs font-medium transition-colors ${
                             isEditMode
                                 ? 'bg-[var(--color-dominant-600)] text-white'
                                 : 'hover:bg-[var(--color-dominant-50)] text-[var(--color-text-muted)] hover:text-[var(--color-dominant-600)]'
                         }`}
+                        style={{
+                            gap: 'var(--gap-xxs, 0.25rem)',
+                            padding: 'clamp(0.25rem, 0.2rem + 0.15vw, 0.375rem) clamp(0.375rem, 0.3rem + 0.2vw, 0.625rem)',
+                            height: 'var(--icon-xl)',
+                        }}
                         title={isEditMode ? t('organigramme.quitterModification', 'Quitter le mode édition') : t('organigramme.modeModification', 'Mode édition')}
                     >
-                        <Pencil className="w-3.5 h-3.5" />
+                        <Pencil style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
                         {!isEditMode && <span className="hidden sm:inline">{t('organigramme.modifier', 'Modifier')}</span>}
                     </button>
                 </>

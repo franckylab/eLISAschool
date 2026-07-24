@@ -1,1 +1,0 @@
-Frontend feature modules for the admin panel: user/role/permission management, security incident/rondes monitoring, and system configuration (modules, parameters, backups).

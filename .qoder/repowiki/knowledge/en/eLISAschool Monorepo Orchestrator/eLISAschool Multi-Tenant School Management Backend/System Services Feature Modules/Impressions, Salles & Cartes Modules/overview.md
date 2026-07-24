@@ -1,1 +1,0 @@
-Three independent NestJS feature modules providing document printing queues and templates, physical room management with availability scheduling, and school card lifecycle/batch generation.

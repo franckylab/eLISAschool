@@ -1,1 +1,0 @@
-TypeScript + Express (router per controller), TypeORM with explicit `@Entity`/`@Index` annotations, `node-cron` for scheduled jobs, Zod for request validation, and the shared `AppDataSource` / `AppError` / logger from `@common`.

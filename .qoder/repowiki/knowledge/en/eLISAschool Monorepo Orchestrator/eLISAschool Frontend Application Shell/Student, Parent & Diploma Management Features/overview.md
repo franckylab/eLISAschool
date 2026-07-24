@@ -1,1 +1,0 @@
-Frontend feature modules for managing students (CRUD, import/export, multi-step form), student parents/guardians, and student diplomas, each exposing a page, detail view, and modal.

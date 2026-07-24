@@ -1,1 +1,0 @@
-React + TypeScript with TanStack Query (`@tanstack/react-query`) for data fetching/caching, `sonner` for toast notifications, and a custom `apiClient` wrapper around fetch/Axios. Authentication state comes from a Zustand store (`@/stores/auth.store`).

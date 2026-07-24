@@ -1,6 +1,0 @@
-- Each service class exports both a default class and a singleton instance (e.g., `AuthService` + `authService`, `TokenService` + `tokenService`) for easy dependency injection-free usage.
-- Controllers follow a uniform pattern: validate body with `validateDto(schema, req.body)`, call a service method, return `{ success, data, message, timestamp }` JSON, and forward errors via `next(error)`.
-- All configuration-sensitive behavior reads from centralized config via `getParam*/getParamNumber/getParamBoolean` helpers rather than environment variables directly.
-- Entity classes use TypeORM decorators (`@Entity`, `@Column`, `@OneToMany`, etc.) with `@BeforeInsert/@BeforeUpdate` hooks for automatic side effects like password hashing.
-- Errors are thrown as `AppError` instances with a machine-readable code string (e.g., `'ACCOUNT_LOCKED'`, `'INVALID_CREDENTIALS'`) passed as the third argument.
-- Audit logging is consistently invoked through `auditService.log({ utilisateurId, action, description, module })` using `AuditAction` and `AuditSeverity` enums.

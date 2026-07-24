@@ -1,1 +1,0 @@
-TypeScript 5.7 compiled to CommonJS; runtime dependency is only `zod ^3.24.1` for schema validation. No framework (no Express, no React) — pure value types and configuration.

@@ -1,6 +1,0 @@
-- Each feature exposes a single page component exported from its `index.ts` barrel, while all hooks and types are re-exported alongside it for consumers.
-- Data access follows a uniform pattern: a `*_KEYS` object defining query key factories, then `useQuery`/`useMutation` hooks that call `apiClient.get/post/patch/delete` against `/api/{feature}...` endpoints.
-- Every mutation hook invalidates relevant query keys via `queryClient.invalidateQueries` after success and shows a French-language toast message via `sonner` for both success and error paths.
-- Read-only queries are gated behind `enabled: isAuthenticated` using `useAuthStore`, ensuring unauthenticated users do not trigger network requests.
-- TypeScript interfaces in `types/*.ts` mirror server DTOs exactly, with separate `Creer*Dto` interfaces for creation payloads and `*Filtres` interfaces for query parameters.
-- Hooks accept optional filter objects typed as `*Filtres` and pass them as `{ params: filtres as any }` to the API client, keeping pagination and filtering consistent across features.

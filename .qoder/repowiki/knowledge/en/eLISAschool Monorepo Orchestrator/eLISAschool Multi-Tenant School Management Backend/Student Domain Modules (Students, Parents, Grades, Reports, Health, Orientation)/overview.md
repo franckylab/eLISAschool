@@ -1,1 +1,0 @@
-Collection of TypeORM-backed NestJS modules implementing the student-centric domain: student records, parent access control, grades and report cards, health dossiers, academic follow-up, orientation, and diplomas.

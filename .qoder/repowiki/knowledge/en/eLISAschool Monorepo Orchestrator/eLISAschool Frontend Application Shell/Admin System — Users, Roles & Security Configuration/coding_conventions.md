@@ -1,6 +1,0 @@
-- Each feature exposes a barrel `index.ts` re-exporting its public types, hooks, and page components so consumers import from the feature root rather than internal paths.
-- Server state is modeled as one React Query hook per resource area, with a module-scoped `*_KEYS` constant defining hierarchical query-key factories used consistently across queries and invalidations.
-- Mutations follow a uniform shape: `mutationFn` calls `apiClient.<method>` against an `/api/<feature>/...` endpoint, `onSuccess` invalidates the relevant query keys, and `onError` surfaces `error.response?.data?.error?.message` via `toast.error`.
-- Read-only list/detail hooks accept an optional filters object and build query params by spreading only non-empty fields, keeping request payloads minimal.
-- Types live in a dedicated `types/*.types.ts` file co-located with the feature, and DTOs (`Creer*Dto`, `Modifier*Dto`, `Update*Dto`) mirror the API contract rather than the domain model.
-- Components are organized as small presentational pieces (tabs, modals, cards) composed by a top-level page component, with business logic kept in hooks instead of inline in JSX.

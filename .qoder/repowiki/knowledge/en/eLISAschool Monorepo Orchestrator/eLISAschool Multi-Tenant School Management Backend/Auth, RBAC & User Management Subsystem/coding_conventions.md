@@ -1,3 +1,0 @@
-- Entities live exclusively in `auth/entities`; `rbac` and `utilisateurs` import them directly instead of defining duplicates.
-- Each module follows the controller → service → TypeORM repository pattern with an `index.ts` barrel re-exporting public symbols.
-- Authorization is applied uniformly via `@UseGuards(CheckPermissionGuard)` or `EtablissementMiddleware`/`PermissionMiddleware` rather than ad-hoc checks inside services.

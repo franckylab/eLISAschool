@@ -1,5 +1,0 @@
-- Every entity carries an `etablissementId` foreign key and every service method scopes reads/writes by this tenant column, enforcing single-tenant isolation at the repository level.
-- Status-driven workflows are modelled as dedicated enums (`StatutOffreEmploi`, `StatutCandidature`, `StatutEntretien`, `StatutOnboarding`) and state transitions are enforced inside service methods that throw `AppError` with typed codes when a transition is invalid.
-- All mutating service methods accept an optional `Request` and, when `req?.utilisateur?.id` is present, emit an audit entry via `auditService.log({ module: 'recrutement', action: '<ENTITY>_CREATE|UPDATE|...' })`.
-- List endpoints follow a uniform pattern: build a `createQueryBuilder` with `leftJoinAndSelect` for eager relations, apply optional filters from a Query DTO, whitelist `sortBy` against an `allowedFields` array, then delegate pagination to `paginateWithQueryBuilder(qb, page, limit, false)`.
-- Entities use `PrimaryGeneratedColumn('uuid')` + `@Index([...])` annotations for frequently filtered columns, and `@ManyToOne` / `@JoinColumn` pairs are always declared alongside their nullable FK column.

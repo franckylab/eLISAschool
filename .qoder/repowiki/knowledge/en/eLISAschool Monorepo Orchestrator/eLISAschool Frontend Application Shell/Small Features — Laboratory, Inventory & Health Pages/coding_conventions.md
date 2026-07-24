@@ -1,6 +1,0 @@
-- Each feature ships its own query-key constant object (e.g. `LABORATOIRE_KEYS`, `INVENTAIRE_KEYS`, `SANTE_KEYS`) that centralizes all `useQuery`/`useMutation` keys so mutations can invalidate only the affected slices via `queryClient.invalidateQueries`.
-- Every hook reads `isAuthenticated` from `useAuthStore()` and passes it as `enabled` on `useQuery` so unauthenticated users never fire requests.
-- List endpoints return `{ success, data, meta }` envelopes; hooks unwrap them by returning `response.data?.data` (and forwarding `meta` when pagination is involved), while mutations return `response.data?.data` directly.
-- Mutations follow a uniform shape: `mutationFn` performs the API call, `onSuccess` invalidates the relevant query keys and emits a French `toast.success(...)` message.
-- Page components render list views exclusively through the shared `<DataTable>` component, defining columns as arrays of `{ key, header, render, className }` descriptors rather than inline JSX tables.
-- Enum-like display values (status, category, orientation, etc.) are mapped locally inside the page component to `{ label, color }` objects used for badge rendering, keeping backend enum strings decoupled from presentation.

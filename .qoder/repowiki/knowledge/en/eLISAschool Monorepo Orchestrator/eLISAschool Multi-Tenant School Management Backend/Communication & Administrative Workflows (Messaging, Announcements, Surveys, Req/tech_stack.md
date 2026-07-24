@@ -1,1 +1,0 @@
-TypeORM entities with PostgreSQL-specific types (`jsonb`, `simple-json`, `timestamptz`, array columns); Server-Sent Events backed by Redis pub/sub for real-time messaging; Socket.IO (lazy-initialized) for survey live updates; `node-cron` for scheduled activation/expiry/recurrence of polls; in-process `Map` cache with TTL for announcements listing.

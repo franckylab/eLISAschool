@@ -149,16 +149,16 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
                 </ElisaButton>
             </>}
         >
-            <form id="poste-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form id="poste-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col" style={{ gap: 'var(--space-md)' }}>
                 {/* Intitulé */}
                 <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    <label className="block font-medium" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-xxs)' }}>
                         {t('organigramme.form.intitule', 'Intitulé')} *
                     </label>
                     <input
                         {...register('intitule')}
-                        className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
-                        style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
+                        className="w-full rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
+                        style={{ padding: 'clamp(0.375rem, 0.3rem + 0.2vw, 0.5rem) clamp(0.625rem, 0.5rem + 0.3vw, 0.75rem)', borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
                         placeholder={t('organigramme.form.phIntitulePoste')}
                     />
                     {errors.intitule && <p className="text-xs mt-1 text-destructive">{errors.intitule.message}</p>}
@@ -166,26 +166,26 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
 
                 {/* Code */}
                 <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    <label className="block font-medium" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-xxs)' }}>
                         {t('organigramme.form.codePoste', 'Code')}
                     </label>
                     <input
                         {...register('code')}
-                        className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
-                        style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
+                        className="w-full rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
+                        style={{ padding: 'clamp(0.375rem, 0.3rem + 0.2vw, 0.5rem) clamp(0.625rem, 0.5rem + 0.3vw, 0.75rem)', borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
                         placeholder={t('organigramme.form.phCode')}
                     />
                 </div>
 
                 {/* Niveau de responsabilité */}
                 <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    <label className="block font-medium" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-xxs)' }}>
                         {t('organigramme.form.niveauResponsabilite', 'Niveau de responsabilité')}
                     </label>
                     <select
                         {...register('niveauResponsabiliteId')}
-                        className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
-                        style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
+                        className="w-full rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
+                        style={{ padding: 'clamp(0.375rem, 0.3rem + 0.2vw, 0.5rem) clamp(0.625rem, 0.5rem + 0.3vw, 0.75rem)', borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
                     >
                         <option value="">{t('organigramme.form.selectionner', 'Sélectionner...')}</option>
                         {niveaux?.map(n => (
@@ -196,26 +196,26 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
 
                 {/* Description */}
                 <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    <label className="block font-medium" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-xxs)' }}>
                         {t('organigramme.form.description', 'Description')}
                     </label>
                     <textarea
                         {...register('description')}
                         rows={2}
-                        className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)] resize-none"
-                        style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
+                        className="w-full rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)] resize-none"
+                        style={{ padding: 'clamp(0.375rem, 0.3rem + 0.2vw, 0.5rem) clamp(0.625rem, 0.5rem + 0.3vw, 0.75rem)', borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
                         placeholder={t('organigramme.form.phDescriptionPoste')}
                     />
                 </div>
 
                 {/* Suppléant */}
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className="flex items-center cursor-pointer" style={{ gap: 'var(--gap-xs)' }}>
                     <input
                         {...register('estSuppleant')}
                         type="checkbox"
                         className="w-4 h-4 rounded border-[var(--color-bordure)]"
                     />
-                    <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                    <span style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)', color: 'var(--color-text-secondary)' }}>
                         {t('organigramme.form.suppleant', 'Poste de suppléant')}
                     </span>
                 </label>

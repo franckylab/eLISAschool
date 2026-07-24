@@ -1,6 +1,0 @@
-- Every entity declares its own enums (`TypeConversation`, `AnnonceStatut`, `StatutSondage`, `TypeRequete`, …) co-located in the same file as the entity, never imported from a shared enum package.
-- Multi-tenancy is enforced by requiring an `etablissementId` column on every persistent entity and joining it into all read/write queries; no cross-establishment access path exists.
-- Services acquire repositories through `AppDataSource.getRepository(Entity)` in the constructor instead of Nest DI, keeping modules independently instantiable.
-- Business errors are thrown as `new AppError(message, httpCode, CODE)` with uppercase snake-case codes, never raw exceptions.
-- Real-time channels follow a `<domain>:<resource>` naming convention (`messagerie:events`, `user:<id>`, `sondage:<id>`) and are emitted/published via dedicated helper services rather than directly from controllers.
-- Barrel files at each module root re-export only the four sub-folders (`entities`, `dto`, `services`, `controllers`) via `export * from './...'`.

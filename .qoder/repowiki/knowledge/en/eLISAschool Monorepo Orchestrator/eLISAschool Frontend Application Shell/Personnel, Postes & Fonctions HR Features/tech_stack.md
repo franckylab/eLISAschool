@@ -1,1 +1,0 @@
-React Query (`@tanstack/react-query`) for server state, `sonner` for toast notifications, Zod schemas in `poste.zod.ts` for payload validation, and a shared `PaginatedResult<F>` type from `@shared/types/api.types` for list endpoints.

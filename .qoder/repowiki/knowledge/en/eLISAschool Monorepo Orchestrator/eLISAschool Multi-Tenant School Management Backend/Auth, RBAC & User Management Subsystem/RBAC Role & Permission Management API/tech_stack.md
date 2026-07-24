@@ -1,1 +1,0 @@
-TypeScript/Express with TypeORM repositories, Zod runtime validation (`z.object(...)`), and shared error/response utilities from `@common/filters/error.filter` and `@common/utils/api-response.util`.

@@ -1,3 +1,0 @@
-- Every resource follows a one-file-per-concern layout: `<resource>.controller.ts`, `<resource>.service.ts`, `<resource>.dto.ts`, `<resource>.entity.ts` grouped under parallel subfolders.
-- Module entry points re-export everything via a single `index.ts` barrel (`export * from './entities' | './dto' | './services' | './controllers'`) consumed by the app bootstrap.
-- Cross-module relationships are expressed through TypeORM relations between entities of different modules (e.g. `Recrutement` → `Personnel`) rather than direct imports between services.

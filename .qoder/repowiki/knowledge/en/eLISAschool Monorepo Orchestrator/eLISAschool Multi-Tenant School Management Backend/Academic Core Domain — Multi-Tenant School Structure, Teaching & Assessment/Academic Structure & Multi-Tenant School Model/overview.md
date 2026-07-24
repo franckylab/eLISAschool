@@ -1,1 +1,0 @@
-Defines the multi-tenant academic structure entities (Etablissement, Cycle, Niveau, Filière, Spécialité, Année Scolaire) and their thin CRUD controllers/services for organizing a school's pedagogical hierarchy.

@@ -1,1 +1,0 @@
-Express Router for HTTP, TypeORM repositories accessed through the global `AppDataSource` singleton, Zod schemas via `validateDto` from `@common/utils`, and Server-Sent Events for real-time dashboard stream updates.

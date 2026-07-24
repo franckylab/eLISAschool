@@ -1,1 +1,0 @@
-TypeScript/NestJS with TypeORM entities (UUID primary keys, `simple-json`/`jsonb` columns, `@Index`/unique constraints), Zod for request validation, and dynamic `import()` for cross-module entity resolution.

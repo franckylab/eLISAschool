@@ -1,6 +1,0 @@
-- Every controller route wraps its handler in try/catch and forwards errors to Express's `next(error)` so a single global error filter can translate them into `{ success, data, timestamp }` responses.
-- Input validation is performed at the controller layer using `validateDto(schema, req.body|req.query)` against a Zod schema exported from `../dto`; services never accept raw request objects.
-- Domain mutations that must be audited call `auditService.log` (or `auditUtilisateur.*`) with `module: 'utilisateurs'`, capturing `anciennesValeurs`/`nouvellesValeurs` around the change.
-- CRUD methods return a `formatUtilisateurResponse` DTO that flattens `profil.nom`/`prenom` onto the root level and optionally attaches `roleEtablissement`, `actifDansEtablissement`, and `membrePersonnel`.
-- Multi-table writes use a `QueryRunner` transaction (`startTransaction` / `commitTransaction` / `rollbackTransaction` / `release`) wrapping all steps of `remove` and `removeCascade`.
-- Errors are thrown as `AppError(message, httpCode, errorCode)` with a machine-readable `errorCode` string (e.g. `EMAIL_EXISTS`, `USER_NOT_FOUND`, `LAST_SUPER_ADMIN`) instead of plain exceptions.

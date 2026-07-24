@@ -1,1 +1,0 @@
-Aggregates three sibling NestJS modules — personnel, recrutement and suivi-personnel — that together cover the full staff lifecycle from hiring through employment to ongoing performance tracking.

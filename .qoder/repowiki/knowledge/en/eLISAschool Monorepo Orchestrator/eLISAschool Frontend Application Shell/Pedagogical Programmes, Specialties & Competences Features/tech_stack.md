@@ -1,1 +1,0 @@
-React with TypeScript, @tanstack/react-query for server state (useQuery/useMutation), sonner for toast notifications, and a custom `@/lib/api-client` HTTP client. Types are imported from `@shared/types/api.types` (e.g. `PaginatedResult`). Authentication gating is done via `@/stores/auth.store`'s `isAuthenticated` selector.

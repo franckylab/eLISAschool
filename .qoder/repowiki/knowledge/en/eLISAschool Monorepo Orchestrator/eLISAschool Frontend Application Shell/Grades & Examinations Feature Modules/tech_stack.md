@@ -1,1 +1,0 @@
-React + TypeScript with `@tanstack/react-query` for server state, `sonner` for user notifications, and a project-wide `apiClient` HTTP wrapper; `examens-nationaux` additionally consumes the shared `PaginatedResult<T>` type from `@shared/types/api.types`.

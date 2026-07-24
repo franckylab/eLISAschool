@@ -1,6 +1,0 @@
-- Every feature exposes a single `index.ts` barrel that re-exports all types, all hooks, and exactly one `*Page` component.
-- Hooks live in a `hooks/use-<feature>.ts` file and are named as React hooks (`useOuvrages`, `useCreerOuvrage`, `useTelechargerArchive`, …); read hooks return `useQuery` results, write hooks return `useMutation` results.
-- A module-level const object (e.g. `DOCUMENTS_KEYS`, `BIBLIOTHEQUE_KEYS`, `ARCHIVES_KEYS`) centralises query keys using nested factory functions so lists, details and stats can be invalidated atomically.
-- Mutations invalidate at least the list key and the `stats()` key, then surface user feedback via `toast.success(...)` before returning.
-- File-upload mutations build a `FormData` payload, append `tags` as `JSON.stringify(...)`, and trigger downloads by creating a temporary `<a>` element pointing at a Blob URL.
-- Authenticated-only queries read `isAuthenticated` from `@/stores/auth.store` and set `enabled: isAuthenticated`; detail/list queries add `staleTime` (5–10 min) and `placeholderData` to keep previous content visible.

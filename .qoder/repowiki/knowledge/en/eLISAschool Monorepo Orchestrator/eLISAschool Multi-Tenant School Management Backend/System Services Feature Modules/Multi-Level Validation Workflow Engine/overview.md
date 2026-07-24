@@ -1,1 +1,0 @@
-Generic multi-level approval workflow engine that lets any business module (notes, bulletins, cantine, etc.) define configurable role-based validation chains with audit history and reporting.

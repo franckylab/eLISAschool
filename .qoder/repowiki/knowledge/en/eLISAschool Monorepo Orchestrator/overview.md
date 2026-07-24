@@ -1,1 +1,0 @@
-Root orchestrates the eLISAschool monorepo, wiring Express backend, React frontend and shared domain kernel via npm workspaces plus Docker Compose for local/cloud environments.
