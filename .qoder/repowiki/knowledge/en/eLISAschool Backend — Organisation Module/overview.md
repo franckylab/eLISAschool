@@ -1,0 +1,1 @@
+Backend module providing organizational structure management (units, positions, hierarchies, organigrams, nomenclatures) for the multi-tenant eLISAschool school management system.

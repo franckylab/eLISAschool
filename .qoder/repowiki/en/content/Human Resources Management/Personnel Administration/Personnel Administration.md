@@ -15,18 +15,19 @@
 - [backend/database/migrations/031-suivi-personnel.sql](file://backend/database/migrations/031-suivi-personnel.sql)
 - [backend/src/modules/personnel/index.ts](file://backend/src/modules/personnel/index.ts)
 - [backend/src/modules/recrutement/index.ts](file://backend/src/modules/recrutement/index.ts)
-- [backend/src/modules/postes/index.ts](file://backend/src/modules/postes/index.ts)
 - [backend/src/modules/fonctions/index.ts](file://backend/src/modules/fonctions/index.ts)
 - [backend/src/shared/constants/personnel.constants.ts](file://backend/src/shared/constants/personnel.constants.ts)
 - [backend/src/routes/route-registry.ts](file://backend/src/routes/route-registry.ts)
+- [backend/database/migrations/121-fonction-categorie-drop-type-personnel.sql](file://backend/database/migrations/121-fonction-categorie-drop-type-personnel.sql)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Updated course hour management section to reflect streamlined implementation with simplified DTO schemas
-- Removed references to complex configuration options that were eliminated during the refactoring
-- Maintained core functionality while documenting the simplified architecture
-- Updated technical specifications to align with current codebase state
+- Updated organizational structure section to reflect the elimination of TypePersonnel entity and consolidation into fonction entity with category support
+- Revised migration references to include the new refactoring migration that removes type-personnel system
+- Updated architectural diagrams to show the integrated category-based approach
+- Modified practical examples to demonstrate the new consolidated model
+- Enhanced troubleshooting guide with migration-specific guidance for the refactoring changes
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -41,26 +42,24 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document describes eLISAschool's personnel administration system with a focus on the end-to-end staff lifecycle: recruitment, onboarding, profile management, contract administration, and offboarding. It also explains the organizational structure (functions, positions, hierarchy), contract types and employment terms, and document handling workflows. The system has been optimized for performance with streamlined course hour management capabilities. Practical examples are provided for data entry, organizational chart creation, and attaching documents. Compliance and privacy considerations, as well as integration points with external HR systems, are addressed.
+This document describes eLISAschool's personnel administration system with a focus on the end-to-end staff lifecycle: recruitment, onboarding, profile management, contract administration, and offboarding. The system has undergone a major refactoring that eliminates the separate TypePersonnel entity and consolidates functionality into the fonction (function) entity with integrated category support. This change simplifies the organizational structure while maintaining comprehensive staff management capabilities. The documentation covers the complete staff lifecycle from initial recruitment through onboarding, profile management, and eventual offboarding, along with the streamlined organizational structure using functions, positions, and hierarchical relationships.
 
 ## Project Structure
 The personnel module is implemented across backend database migrations and TypeScript modules. The key areas include:
 - Database schema evolution for personnel, recruitment, contracts, and tracking
-- Module entry points for personnel, recruitment, positions, and functions
+- Module entry points for personnel, recruitment, and functions
 - Shared constants used by personnel-related logic
 - Route registration to expose APIs
-- Streamlined course hour management with simplified DTO schemas
+- **Updated**: Refactored organizational structure with integrated category support replacing the separate type-personnel system
 
 ```mermaid
 graph TB
 subgraph "Backend Modules"
 P["personnel/index.ts"]
 R["recrutement/index.ts"]
-PO["postes/index.ts"]
 F["fonctions/index.ts"]
 C["shared/constants/personnel.constants.ts"]
 RT["routes/route-registry.ts"]
-CHM["Course Hour Management (Streamlined)"]
 end
 subgraph "Database Migrations"
 M16["016-module-personnel-rh-phase1.sql"]
@@ -74,12 +73,12 @@ M26["026-personnel-champs-additionnels.sql"]
 M45["045-module-recrutement.sql"]
 M46["046-types-contrat-personnalises.sql"]
 M31["031-suivi-personnel.sql"]
+M121["121-fonction-categorie-drop-type-personnel.sql"]
 end
 RT --> P
 RT --> R
-RT --> PO
 RT --> F
-RT --> CHM
+RT --> C
 P --> M16
 P --> M17
 P --> M18
@@ -91,62 +90,37 @@ P --> M26
 R --> M45
 P --> M46
 P --> M31
-P --> C
-CHM --> P
+F --> M121
 ```
 
 **Diagram sources**
 - [backend/src/modules/personnel/index.ts](file://backend/src/modules/personnel/index.ts)
 - [backend/src/modules/recrutement/index.ts](file://backend/src/modules/recrutement/index.ts)
-- [backend/src/modules/postes/index.ts](file://backend/src/modules/postes/index.ts)
 - [backend/src/modules/fonctions/index.ts](file://backend/src/modules/fonctions/index.ts)
 - [backend/src/shared/constants/personnel.constants.ts](file://backend/src/shared/constants/personnel.constants.ts)
 - [backend/src/routes/route-registry.ts](file://backend/src/routes/route-registry.ts)
-- [backend/database/migrations/016-module-personnel-rh-phase1.sql](file://backend/database/migrations/016-module-personnel-rh-phase1.sql)
-- [backend/database/migrations/017-module-personnel-rh-phase2.sql](file://backend/database/migrations/017-module-personnel-rh-phase2.sql)
-- [backend/database/migrations/018-module-personnel-rh-phase3.sql](file://backend/database/migrations/018-module-personnel-rh-phase3.sql)
-- [backend/database/migrations/019-module-personnel-rh-phase4.sql](file://backend/database/migrations/019-module-personnel-rh-phase4.sql)
-- [backend/database/migrations/020-module-personnel-rh-phase5.sql](file://backend/database/migrations/020-module-personnel-rh-phase5.sql)
-- [backend/database/migrations/021-module-personnel-rh-permissions-attribution.sql](file://backend/database/migrations/021-module-personnel-rh-permissions-attribution.sql)
-- [backend/database/migrations/022-module-personnel-rh-complete.sql](file://backend/database/migrations/022-module-personnel-rh-complete.sql)
-- [backend/database/migrations/026-personnel-champs-additionnels.sql](file://backend/database/migrations/026-personnel-champs-additionnels.sql)
-- [backend/database/migrations/045-module-recrutement.sql](file://backend/database/migrations/045-module-recrutement.sql)
-- [backend/database/migrations/046-types-contrat-personnalises.sql](file://backend/database/migrations/046-types-contrat-personnalises.sql)
-- [backend/database/migrations/031-suivi-personnel.sql](file://backend/database/migrations/031-suivi-personnel.sql)
+- [backend/database/migrations/121-fonction-categorie-drop-type-personnel.sql](file://backend/database/migrations/121-fonction-categorie-drop-type-personnel.sql)
 
 **Section sources**
 - [backend/src/modules/personnel/index.ts](file://backend/src/modules/personnel/index.ts)
 - [backend/src/modules/recrutement/index.ts](file://backend/src/modules/recrutement/index.ts)
-- [backend/src/modules/postes/index.ts](file://backend/src/modules/postes/index.ts)
 - [backend/src/modules/fonctions/index.ts](file://backend/src/modules/fonctions/index.ts)
 - [backend/src/shared/constants/personnel.constants.ts](file://backend/src/shared/constants/personnel.constants.ts)
 - [backend/src/routes/route-registry.ts](file://backend/src/routes/route-registry.ts)
-- [backend/database/migrations/016-module-personnel-rh-phase1.sql](file://backend/database/migrations/016-module-personnel-rh-phase1.sql)
-- [backend/database/migrations/017-module-personnel-rh-phase2.sql](file://backend/database/migrations/017-module-personnel-rh-phase2.sql)
-- [backend/database/migrations/018-module-personnel-rh-phase3.sql](file://backend/database/migrations/018-module-personnel-rh-phase3.sql)
-- [backend/database/migrations/019-module-personnel-rh-phase4.sql](file://backend/database/migrations/019-module-personnel-rh-phase4.sql)
-- [backend/database/migrations/020-module-personnel-rh-phase5.sql](file://backend/database/migrations/020-module-personnel-rh-phase5.sql)
-- [backend/database/migrations/021-module-personnel-rh-permissions-attribution.sql](file://backend/database/migrations/021-module-personnel-rh-permissions-attribution.sql)
-- [backend/database/migrations/022-module-personnel-rh-complete.sql](file://backend/database/migrations/022-module-personnel-rh-complete.sql)
-- [backend/database/migrations/026-personnel-champs-additionnels.sql](file://backend/database/migrations/026-personnel-champs-additionnels.sql)
-- [backend/database/migrations/045-module-recrutement.sql](file://backend/database/migrations/045-module-recrutement.sql)
-- [backend/database/migrations/046-types-contrat-personnalises.sql](file://backend/database/migrations/046-types-contrat-personnalises.sql)
-- [backend/database/migrations/031-suivi-personnel.sql](file://backend/database/migrations/031-suivi-personnel.sql)
+- [backend/database/migrations/121-fonction-categorie-drop-type-personnel.sql](file://backend/database/migrations/121-fonction-categorie-drop-type-personnel.sql)
 
 ## Core Components
 - Personnel core entities and lifecycle states are defined through phased migrations that progressively add tables, fields, and constraints. These cover personal details, employment records, roles, and auditability.
 - Recruitment pipeline is modeled via dedicated migration artifacts that capture candidates, applications, interviews, offers, and conversion to employees.
-- Organizational structure includes functions (roles/responsibilities) and positions (job slots within the organization), enabling hierarchical relationships and assignment to personnel.
+- **Updated**: Organizational structure now uses the consolidated fonction entity with integrated category support, eliminating the separate TypePersonnel entity. Functions define responsibilities, skill sets, and categories (e.g., teaching, administrative, technical).
 - Contract management supports standardized and customizable contract types, with employment terms such as start/end dates, work schedule, and compensation references.
 - Document handling is integrated into personnel records, allowing attachments linked to profiles, contracts, or recruitment stages.
 - Tracking and analytics are supported by a dedicated personnel tracking migration, enabling performance and activity logs.
-- **Updated**: Course hour management has been significantly streamlined with simplified DTO schemas and removed complex configuration options while maintaining core functionality.
 
 Practical examples:
-- Staff data entry: Create a candidate record, convert to employee, assign function and position, attach contract and documents.
-- Organizational chart: Define functions and positions, link them hierarchically, then assign incumbents.
+- Staff data entry: Create a candidate record, convert to employee, assign function with appropriate category, attach contract and documents.
+- Organizational chart: Define functions with categories and hierarchical relationships, then assign incumbents based on their functional roles.
 - Document attachment: Upload documents during recruitment, contract signing, or profile updates; maintain versioning and access controls.
-- **Updated**: Course scheduling: Assign simplified course hours to personnel based on their assigned functions and positions.
 
 **Section sources**
 - [backend/database/migrations/016-module-personnel-rh-phase1.sql](file://backend/database/migrations/016-module-personnel-rh-phase1.sql)
@@ -160,14 +134,15 @@ Practical examples:
 - [backend/database/migrations/045-module-recrutement.sql](file://backend/database/migrations/045-module-recrutement.sql)
 - [backend/database/migrations/046-types-contrat-personnalises.sql](file://backend/database/migrations/046-types-contrat-personnalises.sql)
 - [backend/database/migrations/031-suivi-personnel.sql](file://backend/database/migrations/031-suivi-personnel.sql)
+- [backend/database/migrations/121-fonction-categorie-drop-type-personnel.sql](file://backend/database/migrations/121-fonction-categorie-drop-type-personnel.sql)
 
 ## Architecture Overview
-The personnel administration architecture follows a layered approach with streamlined course hour management:
+The personnel administration architecture follows a layered approach with an integrated organizational structure:
 - API layer: Routes registered centrally and dispatched to module controllers/services.
-- Domain modules: Personnel, Recruitment, Positions, Functions encapsulate business logic.
-- Data layer: Relational schema evolved via migrations ensures integrity and extensibility.
+- Domain modules: Personnel, Recruitment, and Functions encapsulate business logic with the consolidated category-based approach.
+- Data layer: Relational schema evolved via migrations ensures integrity and extensibility, including the refactoring that eliminates TypePersonnel.
 - Cross-cutting concerns: Permissions, audit trails, and shared constants support security and consistency.
-- **Updated**: Simplified course hour management with reduced complexity and improved performance.
+- **Updated**: Integrated category-based organizational structure replaces the separate type-personnel system, providing simplified function management with built-in categorization.
 
 ```mermaid
 sequenceDiagram
@@ -176,7 +151,7 @@ participant FE as "Frontend UI"
 participant RT as "Route Registry"
 participant PM as "Personnel Module"
 participant RM as "Recruitment Module"
-participant CHM as "Streamlined Course Hour Management"
+participant FM as "Functions Module"
 participant DB as "Database"
 Admin->>FE : "Start new recruitment"
 FE->>RT : "POST /recruitment/candidates"
@@ -193,33 +168,31 @@ RM->>DB : "Persist offer"
 FE->>RT : "POST /personnel/employees"
 RT->>PM : "Convert candidate to employee"
 PM->>DB : "Create employee record"
-PM->>DB : "Assign function and position"
+PM->>FM : "Assign function with category"
+FM->>DB : "Store consolidated function data"
 PM->>DB : "Attach contract and documents"
-FE->>RT : "POST /personnel/course-hours"
-RT->>CHM : "Assign simplified course hours"
-CHM->>DB : "Store streamlined course data"
-DB-->>CHM : "Confirmation"
-CHM-->>FE : "Course hours assigned"
-PM-->>FE : "Employee onboarded"
+DB-->>PM : "Employee onboarded"
+PM-->>FE : "Employee created successfully"
 ```
 
 **Diagram sources**
 - [backend/src/routes/route-registry.ts](file://backend/src/routes/route-registry.ts)
 - [backend/src/modules/recrutement/index.ts](file://backend/src/modules/recrutement/index.ts)
 - [backend/src/modules/personnel/index.ts](file://backend/src/modules/personnel/index.ts)
+- [backend/src/modules/fonctions/index.ts](file://backend/src/modules/fonctions/index.ts)
 - [backend/database/migrations/045-module-recrutement.sql](file://backend/database/migrations/045-module-recrutement.sql)
-- [backend/database/migrations/016-module-personnel-rh-phase1.sql](file://backend/database/migrations/016-module-personnel-rh-phase1.sql)
+- [backend/database/migrations/121-fonction-categorie-drop-type-personnel.sql](file://backend/database/migrations/121-fonction-categorie-drop-type-personnel.sql)
 
 ## Detailed Component Analysis
 
 ### Staff Lifecycle Workflow
 End-to-end flow from recruitment to offboarding:
 - Recruitment: Candidate intake, application processing, interview scheduling, offer issuance.
-- Onboarding: Convert candidate to employee, assign function and position, sign contract, attach required documents.
+- Onboarding: Convert candidate to employee, assign function with appropriate category, sign contract, attach required documents.
 - Profile Management: Maintain personal data, qualifications, emergency contacts, and sensitive information with access controls.
 - Contract Management: Manage contract type, terms, renewals, amendments, and termination events.
 - Offboarding: Terminate contract, archive documents, revoke access, and retain audit trail.
-- **Updated**: Course Assignment: Streamlined process for assigning course hours to personnel based on their roles and availability.
+- **Updated**: Function Assignment: Streamlined process for assigning functions with integrated categories instead of separate type-personnel management.
 
 ```mermaid
 flowchart TD
@@ -230,12 +203,11 @@ Interview --> Offer["Issue Offer"]
 Offer --> Decision{"Offer Accepted?"}
 Decision --> |No| CloseRecruit["Close Recruitment"]
 Decision --> |Yes| Onboard["Onboard Employee"]
-Onboard --> AssignRole["Assign Function & Position"]
-AssignRole --> Contract["Sign Contract"]
+Onboard --> AssignFunction["Assign Function with Category"]
+AssignFunction --> Contract["Sign Contract"]
 Contract --> Docs["Attach Documents"]
 Docs --> Active["Active Employment"]
-Active --> CourseAssign["Assign Course Hours (Streamlined)"]
-CourseAssign --> Review["Periodic Reviews"]
+Active --> Review["Periodic Reviews"]
 Review --> Renewal{"Renew/Amend?"}
 Renewal --> |Yes| Contract
 Renewal --> |No| Continue["Continue Employment"]
@@ -246,28 +218,37 @@ Archive --> End(["Offboarding Complete"])
 
 [No sources needed since this diagram shows conceptual workflow, not actual code structure]
 
-### Organizational Structure: Functions and Positions
-- Functions define responsibilities and skill sets (e.g., teacher, administrator).
-- Positions represent specific job slots within the organization, often tied to departments or units.
-- Hierarchical relationships allow reporting lines and delegation.
-- Assignment links personnel to positions and functions, enabling role-based access and workload planning.
-- **Updated**: Course hour assignments are now simplified and directly linked to functional roles rather than complex configurations.
+### Organizational Structure: Consolidated Functions with Categories
+**Updated** The organizational structure has been significantly refactored:
+- **Elimination of TypePersonnel**: The separate TypePersonnel entity has been completely removed from the system.
+- **Integrated Category Support**: Functions now include built-in category support for better organization and classification.
+- **Simplified Relationships**: The consolidation reduces complexity while maintaining comprehensive organizational modeling.
+- **Enhanced Functionality**: Functions now serve as the single source of truth for role definitions, responsibilities, and categorization.
+
+Key improvements:
+- Single entity model for all personnel types and categories
+- Simplified database schema with fewer joins and dependencies
+- Improved query performance due to reduced table relationships
+- Enhanced user experience with unified function management interface
 
 ```mermaid
 classDiagram
-class Function {
+class Fonction {
 +id
 +name
 +description
++category
 +skills_required
-+parent_function_id
-+course_hour_capacity
++parent_fonction_id
++status
++created_at
++updated_at
 }
 class Position {
 +id
 +title
 +department
-+function_id
++fonction_id
 +manager_position_id
 +status
 }
@@ -275,10 +256,9 @@ class Employee {
 +id
 +personal_info
 +position_id
-+function_id
++fonction_id
 +contract_id
 +status
-+assigned_course_hours
 }
 class Contract {
 +id
@@ -289,11 +269,11 @@ class Contract {
 +employee_id
 }
 Employee --> Position : "assigned_to"
-Employee --> Function : "performs"
-Position --> Function : "requires"
+Employee --> Fonction : "performs"
+Position --> Fonction : "requires"
 Position --> Position : "reports_to"
 Employee --> Contract : "has"
-Function --> Employee : "enables_course_assignment"
+Fonction --> Employee : "enables_assignment"
 ```
 
 **Diagram sources**
@@ -303,8 +283,8 @@ Function --> Employee : "enables_course_assignment"
 - [backend/database/migrations/019-module-personnel-rh-phase4.sql](file://backend/database/migrations/019-module-personnel-rh-phase4.sql)
 - [backend/database/migrations/020-module-personnel-rh-phase5.sql](file://backend/database/migrations/020-module-personnel-rh-phase5.sql)
 - [backend/database/migrations/046-types-contrat-personnalises.sql](file://backend/database/migrations/046-types-contrat-personnalises.sql)
+- [backend/database/migrations/121-fonction-categorie-drop-type-personnel.sql](file://backend/database/migrations/121-fonction-categorie-drop-type-personnel.sql)
 - [backend/src/modules/fonctions/index.ts](file://backend/src/modules/fonctions/index.ts)
-- [backend/src/modules/postes/index.ts](file://backend/src/modules/postes/index.ts)
 - [backend/src/modules/personnel/index.ts](file://backend/src/modules/personnel/index.ts)
 
 ### Contract Types and Employment Terms
@@ -312,14 +292,12 @@ Function --> Employee : "enables_course_assignment"
 - Customizable contract types can be added via configuration-driven migrations.
 - Employment terms include start/end dates, probation periods, work schedule, compensation references, and renewal conditions.
 - Amendments and renewals are tracked with versioning and effective dates.
-- **Updated**: Course hour allocations are now integrated into contract terms with simplified configuration options.
 
 ```mermaid
 flowchart TD
 Init["Initiate Contract"] --> Type["Select Contract Type"]
 Type --> Terms["Define Employment Terms"]
-Terms --> CourseHours["Define Course Hour Allocation (Simplified)"]
-CourseHours --> Review["Legal/HR Review"]
+Terms --> Review["Legal/HR Review"]
 Review --> Approve{"Approved?"}
 Approve --> |No| Revise["Revise Terms"]
 Approve --> |Yes| Sign["Sign Contract"]
@@ -369,89 +347,46 @@ API-->>User : "Document served or error"
 - [backend/database/migrations/021-module-personnel-rh-permissions-attribution.sql](file://backend/database/migrations/021-module-personnel-rh-permissions-attribution.sql)
 - [backend/src/modules/personnel/index.ts](file://backend/src/modules/personnel/index.ts)
 
-### Streamlined Course Hour Management
-**Updated** The course hour management system has undergone significant simplification:
-- **Simplified DTO Schemas**: Complex nested structures have been flattened to improve performance and reduce overhead.
-- **Removed Configuration Options**: Many advanced configuration parameters have been eliminated to streamline the user experience.
-- **Maintained Core Functionality**: All essential course assignment features remain intact while reducing complexity.
-- **Improved Performance**: Reduced data transfer and processing overhead through streamlined operations.
-
-Key improvements:
-- Direct course-to-personnel assignment without intermediate configuration layers
-- Simplified validation rules and data structures
-- Optimized database queries for course hour calculations
-- Enhanced API response times through reduced payload sizes
-
-```mermaid
-flowchart TD
-OldProcess["Complex Course Hour Management"] --> NewProcess["Streamlined Process"]
-OldProcess --> ConfigLayer["Configuration Layer"]
-ConfigLayer --> Assignment["Assignment Logic"]
-Assignment --> Validation["Validation Rules"]
-Validation --> Storage["Data Storage"]
-NewProcess --> DirectAssignment["Direct Assignment"]
-DirectAssignment --> SimplifiedValidation["Simplified Validation"]
-SimplifiedValidation --> OptimizedStorage["Optimized Storage"]
-NewProcess -.-> 97Additions["97 Code Additions"]
-NewProcess -.-> 211Deletions["211 Code Deletions"]
-NewProcess -.-> SimplifiedDTO["Simplified DTO Schemas"]
-```
-
-**Diagram sources**
-- [backend/src/modules/personnel/index.ts](file://backend/src/modules/personnel/index.ts)
-- [backend/database/migrations/016-module-personnel-rh-phase1.sql](file://backend/database/migrations/016-module-personnel-rh-phase1.sql)
-
 ### Practical Examples
 - Staff data entry:
   - Create candidate record with contact and background info.
   - Add application details and upload CV.
   - Schedule interviews and record outcomes.
   - Issue offer and accept it.
-  - Convert to employee, assign function and position, sign contract, attach required documents.
+  - Convert to employee, assign function with appropriate category, sign contract, attach required documents.
 - Organizational chart creation:
-  - Define functions with skills and parent-child relationships.
+  - Define functions with categories (teaching, administrative, technical) and parent-child relationships.
   - Create positions under departments, set manager positions.
   - Assign incumbents to positions and update reporting lines.
 - Document attachment processes:
   - During recruitment: attach CV, transcripts, references.
   - During onboarding: attach contract, identification, certifications.
   - During employment: attach performance reviews, training certificates.
-- **Updated**: Course hour assignment:
-  - Select personnel based on their assigned functions and positions.
-  - Assign simplified course hours directly without complex configuration.
-  - Validate availability and capacity using streamlined rules.
-  - Generate schedules with optimized performance.
 
 [No sources needed since this section provides practical guidance without analyzing specific files]
 
 ## Dependency Analysis
 Module dependencies and interactions:
 - Route registry centralizes endpoints and delegates to modules.
-- Personnel module depends on shared constants and integrates with recruitment and contract configurations.
+- Personnel module depends on shared constants and integrates with recruitment and function configurations.
 - Recruitment module feeds into personnel onboarding flows.
-- Positions and functions provide structural context for assignments.
-- **Updated**: Streamlined course hour management reduces dependency complexity and improves module isolation.
+- Functions module provides the consolidated organizational structure with category support.
+- **Updated**: Refactored dependency structure eliminates TypePersonnel dependencies and streamlines function management.
 
 ```mermaid
 graph LR
 RT["route-registry.ts"] --> P["personnel/index.ts"]
 RT --> R["recrutement/index.ts"]
-RT --> PO["postes/index.ts"]
 RT --> F["fonctions/index.ts"]
-RT --> CHM["Streamlined Course Hour Management"]
 P --> C["shared/constants/personnel.constants.ts"]
 R --> P
-P --> PO
 P --> F
-CHM --> P
-CHM --> F
 ```
 
 **Diagram sources**
 - [backend/src/routes/route-registry.ts](file://backend/src/routes/route-registry.ts)
 - [backend/src/modules/personnel/index.ts](file://backend/src/modules/personnel/index.ts)
 - [backend/src/modules/recrutement/index.ts](file://backend/src/modules/recrutement/index.ts)
-- [backend/src/modules/postes/index.ts](file://backend/src/modules/postes/index.ts)
 - [backend/src/modules/fonctions/index.ts](file://backend/src/modules/fonctions/index.ts)
 - [backend/src/shared/constants/personnel.constants.ts](file://backend/src/shared/constants/personnel.constants.ts)
 
@@ -459,7 +394,6 @@ CHM --> F
 - [backend/src/routes/route-registry.ts](file://backend/src/routes/route-registry.ts)
 - [backend/src/modules/personnel/index.ts](file://backend/src/modules/personnel/index.ts)
 - [backend/src/modules/recrutement/index.ts](file://backend/src/modules/recrutement/index.ts)
-- [backend/src/modules/postes/index.ts](file://backend/src/modules/postes/index.ts)
 - [backend/src/modules/fonctions/index.ts](file://backend/src/modules/fonctions/index.ts)
 - [backend/src/shared/constants/personnel.constants.ts](file://backend/src/shared/constants/personnel.constants.ts)
 
@@ -469,11 +403,11 @@ CHM --> F
 - Caching: Cache static organizational structures (functions, positions) where appropriate to minimize repeated queries.
 - Batch operations: Use batch inserts/updates for bulk onboarding or mass document linking.
 - File storage: Stream large documents and avoid loading entire files into memory; store metadata in the database and binaries in object storage.
-- **Updated**: Course hour management optimizations:
-  - Simplified DTO schemas reduce network overhead and processing time.
-  - Removed complex configuration layers eliminate unnecessary database queries.
-  - Streamlined validation rules improve response times.
-  - Optimized data structures enhance overall system performance.
+- **Updated**: Performance improvements from the refactoring:
+  - Eliminated TypePersonnel entity reduces database joins and query complexity.
+  - Consolidated function management improves data retrieval performance.
+  - Simplified relationships enhance overall system efficiency.
+  - Reduced schema complexity leads to faster migrations and backups.
 
 [No sources needed since this section provides general guidance]
 
@@ -492,20 +426,22 @@ Common issues and resolutions:
   - Validate file size limits and MIME type restrictions.
 - Audit trail gaps:
   - Confirm audit logging is enabled and write permissions exist for audit tables.
-- **Updated**: Course hour management issues:
-  - If course assignments fail, verify that simplified DTO schemas are being used correctly.
-  - Check that complex configuration options have been properly migrated to the streamlined system.
-  - Validate that course hour calculations use the updated simplified logic.
-  - Ensure API responses match the new streamlined data structures.
+- **Updated**: Post-refactoring issues:
+  - If function assignments fail, verify that the TypePersonnel entity has been properly eliminated.
+  - Check that the migration 121-fonction-categorie-drop-type-personnel.sql has been executed successfully.
+  - Ensure all references to TypePersonnel have been updated to use the consolidated fonction entity.
+  - Validate that category-based function assignments are working correctly.
+  - Review any custom code that may still reference the old TypePersonnel structure.
 
 **Section sources**
 - [backend/database/migrations/021-module-personnel-rh-permissions-attribution.sql](file://backend/database/migrations/021-module-personnel-rh-permissions-attribution.sql)
 - [backend/database/migrations/016-module-personnel-rh-phase1.sql](file://backend/database/migrations/016-module-personnel-rh-phase1.sql)
 - [backend/database/migrations/026-personnel-champs-additionnels.sql](file://backend/database/migrations/026-personnel-champs-additionnels.sql)
 - [backend/database/migrations/046-types-contrat-personnalises.sql](file://backend/database/migrations/046-types-contrat-personnalises.sql)
+- [backend/database/migrations/121-fonction-categorie-drop-type-personnel.sql](file://backend/database/migrations/121-fonction-categorie-drop-type-personnel.sql)
 
 ## Conclusion
-eLISAschool's personnel administration system provides a comprehensive foundation for managing the complete staff lifecycle. Through structured migrations and modular services, it supports recruitment pipelines, robust employee profiles, flexible contract management, and secure document handling. The recent streamlining of course hour management has significantly improved system performance while maintaining all essential functionality. The organizational model enables clear hierarchies and role assignments, while compliance and privacy safeguards protect sensitive data. With careful attention to performance and troubleshooting practices, the system scales effectively to meet institutional needs.
+eLISAschool's personnel administration system provides a comprehensive foundation for managing the complete staff lifecycle. Through structured migrations and modular services, it supports recruitment pipelines, robust employee profiles, flexible contract management, and secure document handling. The recent major refactoring that eliminates the TypePersonnel entity and consolidates functionality into the fonction entity with integrated category support has significantly simplified the organizational structure while maintaining all essential capabilities. This consolidation improves system performance, reduces complexity, and provides a more intuitive user experience. The organizational model enables clear hierarchies and role assignments, while compliance and privacy safeguards protect sensitive data. With careful attention to performance and troubleshooting practices, the system scales effectively to meet institutional needs.
 
 ## Appendices
 
@@ -525,6 +461,9 @@ eLISAschool's personnel administration system provides a comprehensive foundatio
 - Idempotency: Design endpoints to handle retries safely.
 - Error handling: Provide consistent error codes and messages for downstream consumers.
 - Webhooks: Notify external systems of state changes (e.g., contract termination).
-- **Updated**: Course hour integration: Simplified API endpoints for course assignment synchronization with external systems.
+- **Updated**: Integration considerations for the refactored system:
+  - Update integration endpoints to use the consolidated fonction entity instead of TypePersonnel.
+  - Ensure category-based function assignments are properly synchronized with external systems.
+  - Validate that migration changes don't break existing integration workflows.
 
 [No sources needed since this section provides general guidance]

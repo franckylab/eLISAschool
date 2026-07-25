@@ -38,6 +38,14 @@
 - [perodes.module.ts](file://backend/src/modules/periodes/periodes.module.ts)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Enhanced notes module with batch operations for improved performance and scalability
+- Added enhanced validation mechanisms for data integrity and consistency
+- Implemented new bulletin generation service with PDF creation capabilities and professional formatting
+- Updated performance optimizations across the evaluation system
+- Expanded report card generation with advanced template support and multi-language capabilities
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -51,13 +59,13 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document explains eLISAschool’s Grade & Evaluation System with a focus on competency-based assessment, continuous and periodic evaluation, national examination integration, grade calculation algorithms, academic standing determination, competency tracking, report card generation (including customizable templates and multi-language support), and exam management for internal assessments and national coordination. It provides practical examples of workflows, rules, and customization patterns to help educators and administrators implement consistent and transparent grading practices.
+This document explains eLISAschool's Grade & Evaluation System with a focus on competency-based assessment, continuous and periodic evaluation, national examination integration, grade calculation algorithms, academic standing determination, competency tracking, report card generation (including customizable templates and multi-language support), and exam management for internal assessments and national coordination. The system has been significantly enhanced with batch processing capabilities, improved validation mechanisms, and advanced PDF generation for professional report cards. It provides practical examples of workflows, rules, and customization patterns to help educators and administrators implement consistent and transparent grading practices.
 
 ## Project Structure
 The system is organized into backend modules that encapsulate domain responsibilities:
-- Notes: captures continuous and periodic grades per student, subject, period, and class.
+- Notes: captures continuous and periodic grades per student, subject, period, and class with enhanced batch operations.
 - Competences: defines skills, descriptors, levels, and tracks student progress against competencies.
-- Bulletins: generates report cards from evaluated data, supports templates and localization.
+- Bulletins: generates report cards from evaluated data, supports templates, localization, and PDF creation with professional formatting.
 - Examens Nationaux: manages national exams, schedules, results, and integration with school records.
 - Scoring: centralizes grade computation, weighting, scales, and academic standing logic.
 - Periodes: configures academic periods, term boundaries, and template scoping.
@@ -71,7 +79,7 @@ CLS["Classes"]
 ELC["Eleves"]
 end
 subgraph "Assessment"
-NOTES["Notes Module"]
+NOTES["Notes Module<br/>Enhanced with Batch Operations"]
 COMP["Competences Module"]
 EXN["Examens Nationaux Module"]
 end
@@ -79,7 +87,7 @@ subgraph "Computation"
 SCORE["Scoring Service"]
 end
 subgraph "Reporting"
-BULL["Bulletins Module"]
+BULL["Bulletins Module<br/>PDF Generation & Professional Formatting"]
 end
 PER --> NOTES
 MAT --> NOTES
@@ -95,10 +103,10 @@ SCORE --> BULL
 [No sources needed since this diagram shows conceptual workflow, not actual code structure]
 
 ## Core Components
-- Notes Module: Stores and manages all types of evaluations (continuous, periodic, remediation). Supports coefficients, weights, and validation constraints.
+- Notes Module: Stores and manages all types of evaluations (continuous, periodic, remediation) with significant improvements including batch operations for high-volume data processing, enhanced validation constraints, and performance optimizations.
 - Competences Module: Defines skill taxonomies, proficiency levels, and evidence-based assessment entries linked to students and subjects.
 - Scoring Service: Implements weighted aggregation, scale mapping, and academic standing determination based on configured policies.
-- Bulletins Module: Produces report cards using configurable templates and localized content; aggregates scores and competencies.
+- Bulletins Module: Produces report cards using configurable templates and localized content; now includes advanced PDF generation capabilities with professional formatting and multi-language support.
 - Examens Nationaux Module: Coordinates national exam scheduling, result ingestion, and alignment with school reporting.
 - Periodes Module: Manages academic calendar, period definitions, and template scoping for reports.
 
@@ -111,31 +119,31 @@ SCORE --> BULL
 - [perodes.service.ts](file://backend/src/modules/periodes/services/periodes.service.ts)
 
 ## Architecture Overview
-The evaluation architecture follows a layered approach:
-- Data Layer: Migrations define tables for bulletins, competencies, notes, and related entities.
-- Service Layer: Business logic for scoring, validation, and report generation.
-- Controller Layer: REST endpoints for CRUD and operations like compute, publish, and export.
-- Template Engine: Configurable report templates with multi-language support.
+The evaluation architecture follows a layered approach with enhanced performance and reliability:
+- Data Layer: Migrations define tables for bulletins, competencies, notes, and related entities with optimized indexing.
+- Service Layer: Business logic for scoring, validation, and report generation with batch processing capabilities.
+- Controller Layer: REST endpoints for CRUD and operations like compute, publish, export, and PDF generation.
+- Template Engine: Configurable report templates with multi-language support and professional PDF output.
 
 ```mermaid
 sequenceDiagram
 participant Teacher as "Teacher"
 participant API as "Notes Controller"
-participant Svc as "Notes Service"
+participant Svc as "Notes Service<br/>Batch Processing"
 participant DB as "Database"
 participant Score as "Scoring Service"
-participant Bull as "Bulletins Service"
-Teacher->>API : Submit evaluation entry
-API->>Svc : Validate and persist
-Svc->>DB : Insert/update note
-Note over Svc,DB : Continuous or periodic evaluation recorded
+participant Bull as "Bulletins Service<br/>PDF Generation"
+Teacher->>API : Submit batch evaluation entries
+API->>Svc : Validate and process in batches
+Svc->>DB : Bulk insert/update notes
+Note over Svc,DB : Optimized batch operations
 Teacher->>API : Request computed score
 API->>Score : Compute weighted average + scale
 Score-->>API : Finalized score and standing
-API-->>Teacher : Return computed result
-Admin->>Bull : Generate report card
+Admin->>Bull : Generate PDF bulletin
 Bull->>DB : Aggregate notes and competencies
-Bull-->>Admin : Rendered bulletin (localized)
+Bull->>Bull : Apply professional formatting
+Bull-->>Admin : Download PDF bulletin
 ```
 
 **Diagram sources**
@@ -147,20 +155,20 @@ Bull-->>Admin : Rendered bulletin (localized)
 ## Detailed Component Analysis
 
 ### Evaluation Framework: Continuous, Periodic, and National Exams
-- Continuous Assessment: Frequent formative evaluations captured via the Notes module, supporting multiple attempts and feedback.
-- Periodic Exams: Summative evaluations aligned with academic periods defined by the Periodes module.
-- National Examination Integration: The Examens Nationaux module coordinates external exam schedules and results, merging them into school records and reports.
+- Continuous Assessment: Frequent formative evaluations captured via the Notes module, supporting multiple attempts and feedback with enhanced batch processing for large datasets.
+- Periodic Exams: Summative evaluations aligned with academic periods defined by the Periodes module, now optimized for high-volume entry scenarios.
+- National Examination Integration: The Examens Nationaux module coordinates external exam schedules and results, merging them into school records and reports with improved validation.
 
 ```mermaid
 flowchart TD
 Start(["Evaluation Entry"]) --> Type{"Type?"}
-Type --> |Continuous| Cont["Record continuous evaluation<br/>with coefficient and weight"]
+Type --> |Continuous| Cont["Record continuous evaluation<br/>with batch processing support"]
 Type --> |Periodic| Per["Record periodic exam<br/>linked to period and class"]
 Type --> |National| Nat["Ingest national exam result<br/>and align with curriculum"]
-Cont --> Validate["Validate inputs and constraints"]
+Cont --> Validate["Enhanced validation and constraints"]
 Per --> Validate
 Nat --> Validate
-Validate --> Persist["Persist to database"]
+Validate --> Persist["Optimized database operations"]
 Persist --> Compute["Trigger scoring computation"]
 Compute --> Standing["Determine academic standing"]
 Standing --> End(["Ready for reporting"])
@@ -228,24 +236,28 @@ Evaluation <.. StudentCompetence : "informs"
 - [competences.controller.ts](file://backend/src/modules/competences/controllers/competences.controller.ts)
 - [competences.module.ts](file://backend/src/modules/competences/competences.module.ts)
 
-### Report Card Generation: Customizable Templates and Multi-Language Support
-- Template Configuration: Reports are generated using configurable templates scoped to periods and institutions.
-- Localization: Templates support multiple languages for labels, comments, and descriptions.
+### Report Card Generation: Customizable Templates, Multi-Language Support, and PDF Creation
+- Template Configuration: Reports are generated using configurable templates scoped to periods and institutions with enhanced rendering capabilities.
+- Localization: Templates support multiple languages for labels, comments, and descriptions with improved language switching.
 - Content Aggregation: Bulletins combine numeric grades, competency summaries, and teacher remarks.
+- **New PDF Generation**: Advanced PDF creation with professional formatting, layout optimization, and print-ready output.
 
 ```mermaid
 sequenceDiagram
 participant Admin as "Administrator"
 participant BullCtrl as "Bulletins Controller"
-participant BullSvc as "Bulletins Service"
+participant BullSvc as "Bulletins Service<br/>PDF Generation"
 participant DB as "Database"
 participant Temp as "Template Engine"
-Admin->>BullCtrl : Generate bulletin (period, language)
+participant PDF as "PDF Generator"
+Admin->>BullCtrl : Generate bulletin (period, language, format)
 BullCtrl->>BullSvc : Prepare data and select template
 BullSvc->>DB : Fetch grades, competencies, remarks
 BullSvc->>Temp : Render template with localized content
-Temp-->>BullSvc : Rendered report
-BullSvc-->>Admin : Download/view bulletin
+Temp-->>BullSvc : Rendered HTML content
+BullSvc->>PDF : Convert to professional PDF
+PDF-->>BullSvc : Formatted PDF document
+BullSvc-->>Admin : Download/view PDF bulletin
 ```
 
 **Diagram sources**
@@ -260,14 +272,14 @@ BullSvc-->>Admin : Download/view bulletin
 - [105-migration-templates-v5.sql](file://backend/database/migrations/105-migration-templates-v5.sql)
 
 ### Exam Management: Internal Assessments and National Coordination
-- Internal Assessments: Managed through the Notes module with clear linkage to periods and classes.
+- Internal Assessments: Managed through the Notes module with clear linkage to periods and classes, now supporting batch operations for efficiency.
 - National Exams: The Examens Nationaux module handles scheduling, result ingestion, and alignment with curriculum standards.
 - Integration Points: Results flow into scoring and reporting pipelines, ensuring consistency across internal and external evaluations.
 
 ```mermaid
 flowchart TD
 Plan["Plan internal and national exams"] --> Schedule["Set dates and scopes"]
-Schedule --> Ingest["Ingest results (internal/national)"]
+Schedule --> Ingest["Ingest results (internal/national)<br/>with enhanced validation"]
 Ingest --> Validate["Validate and reconcile"]
 Validate --> Publish["Publish to reports and dashboards"]
 ```
@@ -281,7 +293,8 @@ Validate --> Publish["Publish to reports and dashboards"]
 - Grade Entry Workflow:
   - Select class, subject, and period.
   - Enter evaluation type (continuous/periodic), score, coefficient, and optional remarks.
-  - Save and validate; system computes preliminary score.
+  - Use batch operations for bulk data entry when processing large cohorts.
+  - Save and validate; system computes preliminary score with enhanced validation.
 - Calculation Rules:
   - Apply coefficients and weights per evaluation.
   - Map raw averages to institutional grading scale.
@@ -289,23 +302,23 @@ Validate --> Publish["Publish to reports and dashboards"]
 - Report Customization:
   - Choose template variant per period and institution.
   - Configure localized labels and comments.
-  - Preview and export PDF or digital formats.
+  - Preview and export PDF or digital formats with professional styling.
 
 [No sources needed since this section provides general guidance]
 
 ## Dependency Analysis
-Module interactions and dependencies:
-- Notes depends on Matieres, Classes, Eleves, and Periodes for context and scoping.
+Module interactions and dependencies with enhanced performance characteristics:
+- Notes depends on Matieres, Classes, Eleves, and Periodes for context and scoping, now optimized for batch operations.
 - Competences integrates with Notes to link skill achievements to evaluations.
 - Scoring consumes Notes and Competences outputs to compute final grades and standing.
-- Bulletins aggregates Scoring outputs and renders localized templates.
+- Bulletins aggregates Scoring outputs and renders localized templates with PDF generation capabilities.
 - Examens Nationaux feeds external results into Notes and Scoring.
 
 ```mermaid
 graph TB
-NOTES["Notes Module"] --> SCORE["Scoring Service"]
+NOTES["Notes Module<br/>Enhanced Performance"] --> SCORE["Scoring Service"]
 COMP["Competences Module"] --> SCORE
-SCORE --> BULL["Bulletins Module"]
+SCORE --> BULL["Bulletins Module<br/>PDF Generation"]
 EXN["Examens Nationaux Module"] --> NOTES
 PER["Periodes Module"] --> NOTES
 ```
@@ -328,9 +341,10 @@ PER["Periodes Module"] --> NOTES
 
 ## Performance Considerations
 - Indexing: Ensure indexes on frequently queried columns such as studentId, matiereId, periodeId, and classeId to optimize retrieval during report generation.
-- Batch Processing: Use batch computations for large cohorts when generating bulletins to reduce database load.
+- **Batch Processing**: Utilize enhanced batch operations for large cohort processing when generating bulletins and entering grades to reduce database load and improve throughput.
 - Caching: Cache computed scores and template renderings where appropriate to improve responsiveness.
-- Validation Efficiency: Perform lightweight client-side validations before server submission to minimize round-trips.
+- Validation Efficiency: Perform lightweight client-side validations before server submission to minimize round-trips, with server-side enhanced validation for data integrity.
+- **PDF Generation Optimization**: Leverage efficient PDF rendering engines and template caching for fast report card generation.
 
 [No sources needed since this section provides general guidance]
 
@@ -340,6 +354,8 @@ Common issues and resolutions:
 - Period Misalignment: Ensure evaluations are scoped to the correct period; use period boundaries to filter eligible entries.
 - Template Rendering Errors: Confirm template availability and localization keys; validate placeholders match data schema.
 - National Exam Integration Failures: Check result ingestion mappings and reconciliation rules; log discrepancies for manual review.
+- **Batch Operation Issues**: Monitor batch processing logs for failed operations and implement retry mechanisms for transient errors.
+- **PDF Generation Problems**: Verify template compatibility with PDF engine and check memory limits for large document generation.
 
 **Section sources**
 - [notes.service.ts](file://backend/src/modules/notes/services/notes.service.ts)
@@ -347,7 +363,7 @@ Common issues and resolutions:
 - [examens-nationaux.service.ts](file://backend/src/modules/examens-nationaux/services/examens-nationaux.service.ts)
 
 ## Conclusion
-eLISAschool’s Grade & Evaluation System provides a robust framework for competency-based assessment, comprehensive grading calculations, and flexible report generation. By integrating continuous and periodic evaluations with national examinations, it ensures transparency and alignment with institutional policies. The modular architecture supports customization, localization, and scalability, enabling schools to tailor assessment practices to their needs while maintaining consistency and reliability.
+eLISAschool's Grade & Evaluation System provides a robust framework for competency-based assessment, comprehensive grading calculations, and flexible report generation. The recent enhancements include significant improvements to the notes module with batch operations, enhanced validation mechanisms, and performance optimizations. The new bulletin generation service offers advanced PDF creation capabilities with professional formatting and multi-language support. By integrating continuous and periodic evaluations with national examinations, it ensures transparency and alignment with institutional policies. The modular architecture supports customization, localization, and scalability, enabling schools to tailor assessment practices to their needs while maintaining consistency and reliability.
 
 ## Appendices
 

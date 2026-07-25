@@ -1,0 +1,1 @@
+TypeScript + Express.js with TypeORM for database access, Zod for DTO validation, Redis (ioredis) for optional distributed caching, Winston for logging, JWT-based authentication with RBAC permissions (`organisation:unites:*`, `organisation:postes:*`, etc.), and PostgreSQL for persistence.

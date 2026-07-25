@@ -8,82 +8,87 @@ source_files:
     - backend/src/common/filters/error.filter.ts
     - backend/src/common/filters/not-found.filter.ts
     - backend/src/app.ts
-    - backend/src/common/utils/api-response.util.ts
+    - backend/src/index.ts
     - backend/src/common/middlewares/tenant.middleware.ts
+    - backend/src/common/utils/api-response.util.ts
 ---
 
-The eLISAschool backend implements a centralized error handling system built around a custom `AppError` class and Express middleware, providing consistent error responses across the entire API.
+The eLISAschool backend implements a centralized error handling system built around a custom `AppError` class and Express middleware, providing consistent error propagation, standardized API responses, and structured logging across all modules.
 
-## Core Architecture
+## Core System Architecture
 
-**Custom Error Class**: The `AppError` class (`backend/src/common/filters/error.filter.ts`) extends Node's native `Error` and adds structured properties:
-- `statusCode`: HTTP status code (defaults to 500)
-- `code`: Machine-readable error code string (e.g., 'UNAUTHORIZED', 'NOT_FOUND')
-- `isOperational`: Boolean flag distinguishing operational errors from programming bugs
-- `details`: Optional structured data for additional context
-- `message`: Human-readable error message
+**Primary Error Type**: The `AppError` class in `backend/src/common/filters/error.filter.ts` extends the native `Error` with structured properties:
+- `statusCode`: HTTP status code (401, 403, 404, 409, 500)
+- `code`: Machine-readable error code (e.g., 'UNAUTHORIZED', 'FORBIDDEN', 'NOT_FOUND')
+- `isOperational`: Distinguishes operational errors from programming bugs
+- `details`: Optional structured error details
 
-**Predefined Error Constants**: An `Errors` object provides reusable sentinel instances for common scenarios:
+**Predefined Error Constants**: The `Errors` object provides singleton instances for common scenarios:
 - Authentication: `UNAUTHORIZED`, `INVALID_TOKEN`
 - Authorization: `FORBIDDEN`, `INSUFFICIENT_PERMISSIONS`
-- Resource: `NOT_FOUND`, `USER_NOT_FOUND`
+- Resources: `NOT_FOUND`, `USER_NOT_FOUND`
 - Validation: `BAD_REQUEST`, `VALIDATION_ERROR`
-- Conflict: `CONFLICT`, `DUPLICATE_ENTRY`
+- Conflicts: `CONFLICT`, `DUPLICATE_ENTRY`
 - Server: `INTERNAL_ERROR`, `DATABASE_ERROR`
 
-## Global Error Middleware
+## Global Error Processing Pipeline
 
-The `errorHandler` middleware in `error.filter.ts` serves as the central error processing point:
-- Distinguishes between `AppError` instances and generic errors
-- Logs 5xx errors with full stack traces via the application logger
-- Returns standardized JSON responses with `success: false`, `error.code`, `error.message`, optional `error.details`, `timestamp`, and `path`
-- Includes stack traces only in development mode (`NODE_ENV === 'development'`)
+**Centralized Error Handler**: The `errorHandler` middleware in `app.ts` processes all uncaught errors through a unified pipeline:
+- Detects `AppError` instances vs generic errors
+- Logs appropriately (error for 5xx, warn for 4xx) with request context
+- Returns standardized JSON response format with `success`, `error`, `timestamp`, and `path`
+- Includes stack traces only in development (`NODE_ENV === 'development'`)
 
-**404 Handler**: A separate `notFoundHandler` catches unmatched routes and returns consistent 404 responses with the same structure.
+**404 Route Handler**: The `notFoundHandler` catches undefined routes with consistent error formatting.
 
-## Usage Patterns
+**Application Bootstrap**: Errors during server startup are caught in `index.ts` with graceful shutdown via SIGTERM/SIGINT handlers.
 
-**Service Layer**: Business logic throws `AppError` instances with descriptive messages and appropriate codes:
+## Error Propagation Patterns
+
+**Middleware Integration**: Middlewares like `tenant.middleware.ts` throw `AppError` instances for authorization failures:
 ```typescript
-throw new AppError('Établissement requis pour créer une année scolaire', 400, 'MISSING_ETABLISSEMENT');
+throw new AppError('Accès non autorisé à cet établissement', 403, 'ACCESS_DENIED');
 ```
 
-**Middleware Layer**: Cross-cutting concerns like tenant isolation throw domain-specific errors:
-```typescript
-throw new AppError('Établissement non trouvé dans le contexte', 404, 'ETABLISSEMENT_NOT_FOUND');
-```
+**Service Layer Usage**: Utilities consistently use `AppError` for business logic validation:
+- `validate-dto.util.ts`: Validation failures
+- `image-processor.util.ts`: File processing errors
+- `system-guard.util.ts`: Entity existence checks
 
-**Validation Utilities**: Input validation functions throw structured errors:
-```typescript
-throw new AppError('Erreur de validation', 400, 'VALIDATION_ERROR');
-```
+**Controller Pattern**: Controllers wrap async operations in try-catch blocks, passing errors to the global handler via `next(error)`.
 
 ## Response Standardization
 
-Successful responses follow a consistent format via helper functions in `api-response.util.ts`:
-```typescript
+**Success Responses**: The `api-response.util.ts` provides helper functions (`sendSuccess`, `sendMessage`, `sendCreated`, `successResponse`) ensuring consistent success response formats.
+
+**Error Response Format**:
+```json
 {
-  success: true,
-  data?: any,
-  message?: string,
-  meta?: { pagination info }
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Non autorisé",
+    "details": {}
+  },
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "path": "/api/resource"
 }
 ```
 
-## Frontend Integration
+## Security and Monitoring Integration
 
-The frontend handles errors by accessing the standardized response structure:
-```typescript
-// Accessing error details from backend responses
-error.response?.data?.error?.message
-```
+**Rate Limiting**: Built-in rate limiting with custom error responses for brute force protection on authentication endpoints.
 
-Toast notifications display user-friendly messages while preserving technical error codes for logging.
+**Structured Logging**: All errors are logged with contextual information including HTTP method, path, IP address, and stack traces for server errors.
 
-## Key Files
-- `backend/src/common/filters/error.filter.ts` - Core error class, constants, and global handler
-- `backend/src/common/filters/not-found.filter.ts` - 404 route handler
-- `backend/src/app.ts` - Error middleware registration (lines 470-474)
-- `backend/src/common/utils/api-response.util.ts` - Success response helpers
-- `backend/src/common/middlewares/tenant.middleware.ts` - Example of business error throwing
-- `backend/src/common/utils/system-guard.util.ts` - Utility error throwing patterns
+**Development vs Production**: Stack traces and detailed debugging information are suppressed in production environments while maintaining full visibility in development.
+
+## Conventions for Developers
+
+1. **Always throw `AppError`** for business logic violations instead of generic `Error`
+2. **Use predefined error codes** from the `Errors` object when possible
+3. **Include meaningful messages** in French for user-facing errors
+4. **Provide structured details** for complex validation errors
+5. **Let the global handler manage responses** — never send responses directly in catch blocks
+6. **Use appropriate HTTP status codes** that match the error semantics
+7. **Log contextually** — let the errorHandler handle logging automatically

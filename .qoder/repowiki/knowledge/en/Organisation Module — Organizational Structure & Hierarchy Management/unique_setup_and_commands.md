@@ -1,1 +1,0 @@
-Module routes are registered in `backend/src/app.ts` under `/api/organisation` with `authMiddleware`, `filterByEtablissement()`, and `requireModuleActive('organisation')`. Database migrations live in `backend/database/migrations/` (numbered SQL files). The module requires the 'organisation' feature flag to be active via the configuration module's middleware chain.

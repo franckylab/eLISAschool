@@ -1,0 +1,6 @@
+- Each controller route validates requests using `validateDto(schema, req.body)` or `req.query` before calling service methods, and throws `AppError` with structured error codes for business violations.
+- All endpoints require `authMiddleware` followed by `requirePermission('organisation:<resource>:<action>')` for fine-grained RBAC authorization on each route.
+- Multi-tenancy is enforced by extracting `etablissementId` from `req.utilisateur.etablissementId` via a local `getEtablissementId(req)` helper passed to every service call.
+- Services follow a class-per-domain pattern with repository injection through `AppDataSource.getRepository(Entity)`, and expose async methods returning typed results or throwing `AppError`.
+- Barrel `index.ts` files at module root re-export all entities, DTOs, services, and controllers for clean `@modules/organisation` imports throughout the codebase.
+- Entity definitions use TypeORM decorators with explicit column types, indexes on frequently queried fields (`etablissementId`, `parentId`, `code`), and cascade/delete rules defined per relationship.

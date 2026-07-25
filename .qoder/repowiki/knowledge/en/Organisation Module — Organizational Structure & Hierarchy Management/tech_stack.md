@@ -1,1 +1,0 @@
-TypeORM with PostgreSQL (UUIDs, indexes on etablissementId/parentId/code), Zod for DTO validation, Express Router for routing, Redis for caching (with fallback to in-memory), Winston for logging, and bcryptjs/jwt for auth integration. PDF generation uses a dedicated service for org charts.
