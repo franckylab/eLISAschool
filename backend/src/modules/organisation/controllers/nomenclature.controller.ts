@@ -1,4 +1,47 @@
-// ... existing code (imports + guard function) ...
+/**
+ * ==================================
+ * eLISAschool - Contrôleur Nomenclatures Organisation
+ * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Routes CRUD pour les nomenclatures organisationnelles :
+ * - Échelons structurels
+ * - Niveaux de responsabilité
+ * - Modes de rémunération
+ * - Templates d'organisation
+ * - Génération d'organisation
+ */
+
+import { Router, Request, Response, NextFunction } from 'express';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
+import { validateDto } from '@common/utils';
+import { AppError } from '@common/filters/error.filter';
+import {
+    createEchelonStructurelSchema, updateEchelonStructurelSchema,
+    createNiveauResponsabiliteSchema, updateNiveauResponsabiliteSchema,
+    createModeRemunerationSchema, updateModeRemunerationSchema,
+    createTemplateOrganisationSchema, updateTemplateOrganisationSchema,
+} from '../dto/nomenclature.dto';
+import { genererOrganisationSchema } from '../dto/generation.dto';
+import { echelonStructurelService } from '../services/echelon-structurel.service';
+import { niveauResponsabiliteService } from '../services/niveau-responsabilite.service';
+import { modeRemunerationService } from '../services/mode-remuneration.service';
+import { templateOrganisationService } from '../services/template-organisation.service';
+import { generationService } from '../services/generation.service';
+
+const router = Router();
+
+/** Middleware helper : extraire et valider etablissementId depuis le JWT */
+function getEtablissementId(req: Request): string {
+    const id = req.utilisateur?.etablissementId;
+    if (!id) throw new AppError('etablissementId manquant dans le token', 400, 'MISSING_ETABLISSEMENT_ID');
+    return id;
+}
+
+// ==================================
+// ÉCHELONS STRUCTURELS
+// ==================================
 
 router.get('/echelons-structurels', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {

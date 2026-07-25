@@ -20,10 +20,11 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive documentation for the new EmptyState component pattern
-- Updated UI components section to include empty state management strategies
-- Enhanced component composition guidelines with empty state examples
-- Added best practices for consistent empty state handling throughout the application
+- Updated documentation to reflect enhanced organizational chart components with improved drawer functionality
+- Added comprehensive coverage of simplified deletion dialogs and better node component interactions
+- Enhanced component interaction patterns section with new organizational chart examples
+- Updated UI component library section to include advanced drawer and dialog implementations
+- Strengthened performance optimization guidelines for complex interactive components
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -41,7 +42,7 @@
 
 This document provides comprehensive guidance on component architecture patterns and best practices used throughout the eLISA School application. It covers custom hooks patterns, global state management with Zustand stores, provider patterns for context management, error handling strategies, loading states management, form handling patterns, component composition principles, prop drilling avoidance techniques, performance optimization methods, testing patterns, code organization principles, and naming conventions.
 
-The eLISA School application is a comprehensive educational management system built with React, TypeScript, and modern frontend architecture patterns. The application follows industry best practices to ensure maintainability, scalability, and performance.
+The eLISA School application is a comprehensive educational management system built with React, TypeScript, and modern frontend architecture patterns. The application follows industry best practices to ensure maintainability, scalability, and performance, with recent enhancements to organizational chart components featuring improved drawer functionality, simplified deletion dialogs, and better node component interactions.
 
 ## Project Structure
 
@@ -115,7 +116,7 @@ The application uses Zustand for efficient global state management:
 Manages user authentication state, token storage, and user profile information.
 
 #### UI Store
-Handles UI-related state such as theme preferences, modal states, and navigation state.
+Handles UI-related state such as theme preferences, modal states, navigation state, and drawer management for complex interactive components.
 
 ### Provider Patterns
 
@@ -134,7 +135,10 @@ The application includes a comprehensive set of reusable UI components:
 #### EmptyState Component
 The EmptyState component provides consistent empty state management throughout the application, offering better visual hierarchy and user guidance when no data is available. This sophisticated component replaces simple text messages with engaging empty state displays that include conditional action buttons and contextual messaging.
 
-**Updated** Added comprehensive EmptyState component for consistent empty state management
+#### Enhanced Organizational Chart Components
+The application now features advanced organizational chart components with improved drawer functionality for detailed node inspection, simplified deletion dialogs for streamlined user interactions, and enhanced node component interactions for better user experience. These components provide sophisticated tree visualization capabilities with smooth animations and responsive design.
+
+**Updated** Added comprehensive organizational chart components with improved drawer functionality, simplified deletion dialogs, and better node component interactions
 
 **Section sources**
 - [hooks/use-auth.ts:1-200](file://frontend/src/hooks/use-auth.ts#L1-L200)
@@ -154,24 +158,28 @@ subgraph "Presentation Layer"
 A[Components] --> B[Custom Hooks]
 B --> C[UI State]
 C --> D[EmptyState Manager]
+D --> E[Organizational Chart Components]
 end
 subgraph "Business Logic Layer"
-E[Feature Services] --> F[Permission Engine]
-F --> G[Authentication Manager]
+F[Feature Services] --> G[Permission Engine]
+G --> H[Authentication Manager]
+H --> I[Drawer State Manager]
 end
 subgraph "Data Layer"
-H[Zustand Stores] --> I[API Client]
-I --> J[Backend API]
+J[Zustand Stores] --> K[API Client]
+K --> L[Backend API]
 end
 subgraph "Context Layer"
-K[AuthProvider] --> L[ThemeProvider]
-L --> M[Global Contexts]
+M[AuthProvider] --> N[ThemeProvider]
+N --> O[Global Contexts]
+O --> P[Drawer Context]
 end
-A --> E
-E --> H
-H --> I
-K --> A
+A --> F
+F --> J
+J --> K
+M --> A
 D --> A
+E --> A
 ```
 
 **Diagram sources**
@@ -256,6 +264,72 @@ PaginationHook <|-- ClientPagination
 **Diagram sources**
 - [hooks/use-pagination.ts:1-150](file://frontend/src/hooks/use-pagination.ts#L1-L150)
 
+### Enhanced Component Interaction Patterns
+
+#### Organizational Chart Components
+The application now features sophisticated organizational chart components with advanced interaction capabilities:
+
+```mermaid
+classDiagram
+class OrganizationalChart {
++Node[] nodes
++Node selectedNode
++boolean isDrawerOpen
++function handleNodeClick(node)
++function openDrawer(node)
++function closeDrawer()
++function deleteNode(nodeId)
+}
+class NodeComponent {
++NodeData data
++boolean isSelected
++function handleClick()
++function handleContextMenu()
++function renderChildren()
+}
+class DrawerComponent {
++NodeData currentNode
++boolean isOpen
++function handleClose()
++function handleDelete()
++function handleEdit()
+}
+class DialogComponent {
++string title
++string message
++boolean isOpen
++function handleConfirm()
++function handleCancel()
+}
+OrganizationalChart --> NodeComponent : "contains"
+OrganizationalChart --> DrawerComponent : "manages"
+OrganizationalChart --> DialogComponent : "uses"
+```
+
+**Diagram sources**
+- [components/ui/EmptyState.tsx:1-150](file://frontend/src/components/ui/EmptyState.tsx#L1-L150)
+
+#### Simplified Deletion Dialogs
+The application implements streamlined deletion confirmation dialogs that provide clear user feedback while maintaining simplicity:
+
+```mermaid
+sequenceDiagram
+participant User as "User"
+participant Node as "Node Component"
+participant Dialog as "Deletion Dialog"
+participant Store as "UI Store"
+User->>Node : Click Delete Button
+Node->>Dialog : Open Confirmation Dialog
+Dialog->>User : Show Confirmation Message
+User->>Dialog : Confirm Deletion
+Dialog->>Store : Update State
+Store-->>Node : Trigger Re-render
+Node-->>User : Show Success Feedback
+```
+
+**Diagram sources**
+- [stores/ui-store.ts:1-100](file://frontend/src/stores/ui-store.ts#L1-L100)
+
 ### EmptyState Component Pattern
 
 The EmptyState component provides a standardized approach to handling empty states across the application:
@@ -308,15 +382,19 @@ class UIStore {
 +ThemeState theme
 +ModalState modals
 +NavigationState navigation
++DrawerState drawers
 +function setTheme(theme)
 +function openModal(id)
 +function closeModal(id)
 +function navigateTo(path)
++function openDrawer(id)
++function closeDrawer(id)
 }
 class StoreSelectors {
 +function selectUser()
 +function selectIsAuthenticated()
 +function selectActiveModal()
++function selectActiveDrawer()
 }
 AuthStore --> StoreSelectors : "uses"
 UIStore --> StoreSelectors : "uses"
@@ -362,25 +440,29 @@ subgraph "Hooks Layer"
 A[useAuth] --> B[Auth Store]
 C[usePermissions] --> D[Auth Store]
 E[usePagination] --> F[API Client]
+G[useDrawer] --> H[UI Store]
 end
 subgraph "Stores Layer"
-B[Auth Store] --> G[API Client]
-H[UI Store] --> I[Local Storage]
+B[Auth Store] --> I[API Client]
+J[UI Store] --> K[Local Storage]
 end
 subgraph "Services Layer"
-G[API Client] --> J[Error Handler]
-K[Permission Engine] --> L[Auth Store]
+I[API Client] --> L[Error Handler]
+M[Permission Engine] --> N[Auth Store]
+O[Drawer Manager] --> P[UI Store]
 end
 subgraph "Components Layer"
-M[Protected Route] --> N[useAuth]
-O[DataTable] --> P[usePagination]
-Q[AdminPanel] --> R[usePermissions]
-S[EmptyState] --> T[UI Store]
+Q[Protected Route] --> R[useAuth]
+S[DataTable] --> T[usePagination]
+U[AdminPanel] --> V[usePermissions]
+W[EmptyState] --> X[UI Store]
+Y[OrganizationalChart] --> Z[useDrawer]
 end
-A --> M
-C --> Q
-E --> O
-S --> M
+A --> Q
+C --> U
+E --> S
+W --> Q
+Y --> W
 ```
 
 **Diagram sources**
@@ -418,10 +500,20 @@ S --> M
 - Use debouncing for search inputs
 - Implement optimistic updates for better UX
 
-### Empty State Performance
+### Complex Component Performance
+- Optimize organizational chart rendering with virtual scrolling for large trees
+- Implement efficient drawer state management to prevent unnecessary re-renders
+- Use memoization for node components to improve interaction performance
 - Cache empty state configurations to avoid repeated computations
-- Use lazy loading for complex empty state content
-- Implement virtual scrolling for lists with many empty states
+- Implement lazy loading for complex empty state content
+- Use virtual scrolling for lists with many empty states
+
+### Interactive Component Optimization
+- Debounce user interactions in organizational charts
+- Implement efficient deletion dialog state management
+- Optimize node component re-renders during drag operations
+- Use requestAnimationFrame for smooth animations
+- Implement proper cleanup for event listeners in complex components
 
 ## Troubleshooting Guide
 
@@ -442,10 +534,17 @@ S --> M
 - Verify conditional rendering logic for empty states
 - Check for proper accessibility attributes in empty state displays
 
+#### Organizational Chart Issues
+- Debug drawer state synchronization issues
+- Verify node component interaction handlers
+- Check for memory leaks in event listeners
+- Ensure proper cleanup of animation frames
+
 #### Performance Bottlenecks
 - Identify components causing excessive re-renders
 - Analyze bundle size and implement code splitting
 - Monitor network requests and optimize API calls
+- Profile complex interactive components for performance issues
 
 **Section sources**
 - [lib/error-handler.ts:1-100](file://frontend/src/lib/error-handler.ts#L1-L100)
@@ -464,8 +563,9 @@ Key architectural decisions include:
 - Robust error handling and loading state management
 - Performance optimization through memoization and lazy loading
 - **New**: Consistent empty state management through the EmptyState component
+- **Enhanced**: Advanced organizational chart components with improved drawer functionality, simplified deletion dialogs, and better node component interactions
 
-These patterns ensure the application remains maintainable, testable, and performant as it continues to grow in complexity and feature set.
+These patterns ensure the application remains maintainable, testable, and performant as it continues to grow in complexity and feature set, particularly in handling complex interactive components like organizational charts.
 
 ## Appendices
 
@@ -511,3 +611,25 @@ These patterns ensure the application remains maintainable, testable, and perfor
 - Offer appropriate call-to-action buttons
 - Maintain consistency across the application
 - Ensure accessibility compliance
+
+### Organizational Chart Component Guidelines
+
+#### Component Interaction Patterns
+- Implement consistent click handlers for node selection
+- Provide smooth transitions for drawer opening/closing
+- Ensure keyboard accessibility for all interactive elements
+- Handle edge cases like circular references in tree structures
+
+#### Performance Optimization for Charts
+- Use virtual scrolling for large organizational structures
+- Implement efficient diffing algorithms for tree updates
+- Cache computed layout calculations
+- Optimize animation performance with CSS transforms
+- Debounce rapid user interactions to prevent performance issues
+
+#### Deletion Dialog Best Practices
+- Provide clear confirmation messages before deletion
+- Implement undo functionality where possible
+- Show appropriate success/failure feedback
+- Handle cascading deletions safely
+- Maintain data consistency across the application

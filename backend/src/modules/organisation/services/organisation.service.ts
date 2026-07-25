@@ -775,7 +775,7 @@ export class OrganisationService {
             SELECT
                 COUNT(*)::int AS "totalHierarchies",
                 COUNT(*) FILTER (WHERE actif = true)::int AS "hierarchiesActives"
-            FROM hierarchies_personnel
+            FROM hierarchie_personnel
             WHERE "etablissementId" = $1
         `, [etablissementId]);
         const totalHierarchies: number = hierarchieStats[0]?.totalHierarchies || 0;

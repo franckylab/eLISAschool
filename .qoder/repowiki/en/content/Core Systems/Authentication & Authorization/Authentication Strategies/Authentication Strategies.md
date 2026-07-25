@@ -15,6 +15,13 @@
 - [AUDIT-FRONTEND-STRUCTURE-ACADEMIQUE-COMPLET.md](file://docs/audits/AUDIT-FRONTEND-STRUCTURE-ACADEMIQUE-COMPLET.md)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Updated JWT token validation section to reflect enhanced establishment ID extraction patterns
+- Added documentation for centralized getEtablissementId function replacing direct req.utilisateur.etablishmentId access
+- Enhanced multi-tenant authentication flow with improved tenant context propagation
+- Updated code examples and implementation patterns for better consistency
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
@@ -28,7 +35,7 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document explains eLISAschool’s authentication strategies and flows, focusing on:
+This document explains eLISAschool's authentication strategies and flows, focusing on:
 - Passport.js strategy configuration for multiple methods (email/password, matricule-based login, JWT validation)
 - Multi-tenant authentication flow, tenant context propagation, and cross-tenant scenarios
 - JWT token generation, refresh token mechanism, and token validation process
@@ -36,7 +43,7 @@ This document explains eLISAschool’s authentication strategies and flows, focu
 - Integration with audit logging for authentication events
 - Rate limiting for login attempts and security measures against brute force and credential stuffing
 
-The content synthesizes the repository’s implementation and tests to provide a clear, actionable reference for developers integrating or extending authentication.
+The content synthesizes the repository's implementation and tests to provide a clear, actionable reference for developers integrating or extending authentication.
 
 ## Project Structure
 Authentication-related code is organized under backend/src/modules/auth and related integration points:
@@ -187,6 +194,8 @@ Deny --> End
   - Signature verification and expiration checks
   - Tenant context enforced per request
 
+**Updated** Enhanced JWT token validation now uses centralized getEtablissementId function for establishment ID extraction, replacing direct req.utilisateur.etablishmentId access patterns. This provides consistent tenant context handling across all authentication strategies.
+
 ```mermaid
 sequenceDiagram
 participant Client as "Client"
@@ -208,6 +217,25 @@ API-->>Client : {access_token, new_refresh_token}
 
 **Section sources**
 - [route-registry.ts](file://backend/src/routes/route-registry.ts)
+
+### Centralized Establishment ID Extraction
+**New** The authentication system now implements a centralized approach for extracting establishment IDs from requests, improving consistency and maintainability.
+
+Key improvements:
+- **Centralized Function**: All establishment ID extraction now goes through a single `getEtablissementId` function
+- **Consistent Patterns**: Replaces direct `req.utilisateur.etablishmentId` access with standardized extraction logic
+- **Enhanced Validation**: Includes proper null checking and fallback mechanisms
+- **Improved Error Handling**: Provides meaningful error messages when establishment context is missing
+
+Implementation benefits:
+- Reduced code duplication across authentication strategies
+- Consistent tenant context propagation throughout the application
+- Better error handling and debugging capabilities
+- Simplified testing and maintenance of authentication flows
+
+**Section sources**
+- [app.ts](file://backend/src/app.ts)
+- [index.ts](file://backend/src/index.ts)
 
 ### Custom Strategy Implementation Guide
 Steps to implement a custom strategy:
@@ -284,6 +312,7 @@ G["User/Tenant Service"]
 H["JWT Manager"]
 I["Audit Logger"]
 J["Rate Limiter"]
+K["Establishment ID Extractor"]
 end
 A --> C
 B --> C
@@ -295,6 +324,7 @@ E --> G
 F --> H
 H --> I
 C --> J
+F --> K
 ```
 
 **Diagram sources**
@@ -312,6 +342,7 @@ C --> J
 - Use short-lived access tokens and long-lived refresh tokens to reduce re-auth overhead
 - Apply tenant-scoped indexes to speed up user queries
 - Avoid heavy computations in verification callbacks; delegate to background jobs when necessary
+- Leverage centralized establishment ID extraction to reduce redundant calculations
 
 [No sources needed since this section provides general guidance]
 
@@ -329,6 +360,9 @@ Common issues and resolutions:
 - Audit logs missing:
   - Ensure logger initialization and event emission
   - Validate storage backend connectivity
+- Establishment ID extraction errors:
+  - Verify centralized getEtablissementId function is properly configured
+  - Check request context for required tenant information
 
 **Section sources**
 - [IMPLÉMENTATION-AUTH-COMPLETE.md](file://docs/implementations/IMPLÉMENTATION-AUTH-COMPLETE.md)
@@ -336,7 +370,9 @@ Common issues and resolutions:
 - [CORRECTION-CONNEXION-MATRICULE.md](file://docs/corrections/CORRECTION-CONNEXION-MATRICULE.md)
 
 ## Conclusion
-eLISAschool’s authentication system combines robust Passport.js strategies with multi-tenant support, secure JWT workflows, and comprehensive security controls. By following the patterns outlined here—strategy composition, tenant context propagation, token lifecycle management, and integrated audit/logging—you can extend and maintain a resilient authentication layer that scales across tenants and resists common attacks.
+eLISAschool's authentication system combines robust Passport.js strategies with multi-tenant support, secure JWT workflows, and comprehensive security controls. By following the patterns outlined here—strategy composition, tenant context propagation, token lifecycle management, and integrated audit/logging—you can extend and maintain a resilient authentication layer that scales across tenants and resists common attacks.
+
+The recent enhancements to establishment ID extraction and JWT validation further strengthen the system's reliability and maintainability.
 
 [No sources needed since this section summarizes without analyzing specific files]
 
