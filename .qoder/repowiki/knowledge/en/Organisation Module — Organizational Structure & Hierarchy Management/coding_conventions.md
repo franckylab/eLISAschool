@@ -1,0 +1,5 @@
+- Each controller file defines an Express Router, validates requests with `validateDto(schema, body/query)`, extracts `etablissementId` from `req.utilisateur.etablissementId`, and delegates all business logic to corresponding service methods.
+- Entities use TypeORM decorators with UUID primary keys, `@Index` for frequently queried columns (etablissementId, parentId, code), and `@ManyToOne`/`@OneToMany` relations with explicit `onDelete` strategies.
+- Services follow a single-responsibility pattern with one class per domain area, using `AppDataSource.getRepository(Entity)` for data access and throwing `AppError` with structured error codes for business exceptions.
+- All public APIs return `{ success: boolean, data?: any, message?: string }` responses, with errors routed through the global `errorHandler` filter.
+- Multi-tenancy is enforced by always passing `etablissementId` as a where clause parameter to every database query, never trusting client-supplied tenant identifiers.

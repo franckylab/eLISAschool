@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(ls -la /mnt/DONNEES/projets/eLISAschool/frontend/src/features/notes/components/ /mnt/DONNEES/projets/eLISAschool/frontend/src/features/bulletins/components/ /mnt/DONNEES/projets/eLISAschool/frontend/src/features/notes/hooks/ /mnt/DONNEES/projets/eLISAschool/frontend/src/features/bulletins/hooks/; wc -l /mnt/DONNEES/projets/eLISAschool/frontend/src/features/notes/**/* /mnt/DONNEES/projets/eLISAschool/frontend/src/features/bulletins/**/* /mnt/DONNEES/projets/eLISAschool/frontend/src/features/notes/index.ts /mnt/DONNEES/projets/eLISAschool/frontend/src/features/bulletins/index.ts 2>/dev/null)"
     ]
   }
 }

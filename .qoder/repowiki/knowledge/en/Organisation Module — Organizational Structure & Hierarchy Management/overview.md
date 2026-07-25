@@ -1,0 +1,1 @@
+Backend module managing the school's organizational structure: units, positions, hierarchies, nomenclatures, and org chart generation with multi-tenant isolation and role-based permissions.

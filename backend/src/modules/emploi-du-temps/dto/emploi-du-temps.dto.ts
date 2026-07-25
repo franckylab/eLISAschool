@@ -72,7 +72,7 @@ export const queryCreneauxSchema = z.object({
     periodeId: z.string().uuid().optional(),
     genereAutomatiquement: z.coerce.boolean().optional(),
     page: z.coerce.number().int().min(1).default(1),
-    limit: z.coerce.number().int().min(1).max(200).default(50),
+    limit: z.coerce.number().int().min(1).max(500).default(50),
     orderBy: z.enum(['jour', 'heureDebut', 'createdAt']).default('jour'),
     orderDir: z.enum(['ASC', 'DESC']).default('ASC'),
 });

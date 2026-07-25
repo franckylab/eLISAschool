@@ -28,30 +28,32 @@
 
 ## Update Summary
 **Changes Made**
-- Added comprehensive documentation for new enhanced components: ErrorMessage, SearchInput, Tabs, TransfertList, TreeView, RowActions, and Breadcrumbs
-- Updated all components with dark mode compatibility and consistent visual appearance across light and dark themes
+- Enhanced documentation for organization-related UI components with improved drawer management capabilities
+- Updated deletion dialog components with simplified user interactions and enhanced confirmation flows
+- Improved node component interactions with better performance optimization strategies
+- Added best practices for consistent empty state management across all components
 - Enhanced accessibility features with improved aria-label translations throughout the component library
-- Expanded component coverage to include advanced data manipulation and navigation components
-- Updated styling patterns to support theme-aware color schemes and responsive design
+- Expanded dark mode compatibility and responsive design considerations for all components
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Enhanced Components](#enhanced-components)
-5. [Architecture Overview](#architecture-overview)
-6. [Detailed Component Analysis](#detailed-component-analysis)
-7. [Dark Mode and Accessibility](#dark-mode-and-accessibility)
-8. [Dependency Analysis](#dependency-analysis)
-9. [Performance Considerations](#performance-considerations)
-10. [Troubleshooting Guide](#troubleshooting-guide)
-11. [Conclusion](#conclusion)
-12. [Appendices](#appendices)
+5. [Organization-Related Components](#organization-related-components)
+6. [Architecture Overview](#architecture-overview)
+7. [Detailed Component Analysis](#detailed-component-analysis)
+8. [Dark Mode and Accessibility](#dark-mode-and-accessibility)
+9. [Performance Optimization Strategies](#performance-optimization-strategies)
+10. [Dependency Analysis](#dependency-analysis)
+11. [Troubleshooting Guide](#troubleshooting-guide)
+12. [Conclusion](#conclusion)
+13. [Appendices](#appendices)
 
 ## Introduction
 This document provides comprehensive documentation for the shared UI component library used across the application. It covers reusable components, their props interfaces, customization options using Tailwind CSS, accessibility features, usage examples, composition patterns, and integration guidelines. The library has been significantly enhanced with dark mode compatibility, improved accessibility features including aria-label translations, and consistent visual appearance across light and dark themes.
 
-The component library now includes both core primitives (Button, Input, Select, Card, DataTable, Modal) and enhanced components (ErrorMessage, SearchInput, Tabs, TransfertList, TreeView, RowActions, Breadcrumbs), along with feedback components (LoadingState, ErrorBoundary, EmptyState) and layout components (Header, Sidebar, PageLayout).
+The component library now includes both core primitives (Button, Input, Select, Card, DataTable, Modal) and enhanced components (ErrorMessage, SearchInput, Tabs, TransfertList, TreeView, RowActions, Breadcrumbs), along with feedback components (LoadingState, ErrorBoundary, EmptyState) and layout components (Header, Sidebar, PageLayout). Recent updates have focused on organization-related components with improved drawer management, simplified deletion dialogs, and enhanced node component interactions.
 
 ## Project Structure
 The shared UI components are organized under a feature-based structure within the frontend package:
@@ -59,6 +61,7 @@ The shared UI components are organized under a feature-based structure within th
   - **Core Primitives**: Button, Input, Select, Card, DataTable, Modal
   - **Form Components**: Form and Field for form building blocks
   - **Enhanced Components**: ErrorMessage, SearchInput, Tabs, TransfertList, TreeView, RowActions, Breadcrumbs
+  - **Organization Components**: Drawer, Dialog, Node components with enhanced interactions
   - **Feedback**: LoadingState, ErrorBoundary, EmptyState
   - **Layout**: Header, Sidebar, PageLayout
 - Each component is implemented as a single file with its own TypeScript types and Tailwind CSS styling, featuring dark mode support and enhanced accessibility attributes.
@@ -87,6 +90,9 @@ R["TransfertList"]
 S["TreeView"]
 T["RowActions"]
 U["Breadcrumbs"]
+V["Drawer"]
+W["Dialog"]
+X["Node"]
 end
 G --> H
 N --> L
@@ -116,6 +122,9 @@ S --> A
 S --> B
 U --> A
 U --> B
+V --> F
+W --> F
+X --> S
 ```
 
 [No sources needed since this diagram shows conceptual workflow, not actual code structure]
@@ -230,15 +239,44 @@ This section documents the newly enhanced components that provide advanced funct
 - [frontend/src/components/ui/RowActions/RowActions.tsx](file://frontend/src/components/ui/RowActions/RowActions.tsx)
 - [frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx](file://frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx)
 
+## Organization-Related Components
+This section documents the enhanced organization-related components that provide specialized functionality for managing organizational structures with improved drawer management and simplified deletion workflows.
+
+- Drawer
+  - Purpose: Slide-out panel for displaying additional content or actions without leaving the current context.
+  - Key props: isOpen, onClose, title, size, position (left, right, top, bottom), children, overlay.
+  - Customization: Size variants, animation duration, overlay behavior, z-index management with theme support.
+  - Accessibility: Focus trap within drawer, aria-modal when modal, Escape key handling, improved focus management.
+
+- Dialog
+  - Purpose: Simplified confirmation dialogs for critical actions like deletion with enhanced user experience.
+  - Key props: isOpen, onClose, title, message, confirmAction, cancelAction, variant, icon.
+  - Customization: Confirmation flow, button variants, icon support, responsive layout with theme awareness.
+  - Accessibility: Clear confirmation prompts, keyboard navigation, aria-live for dynamic content, screen reader announcements.
+
+- Node
+  - Purpose: Interactive tree node component with enhanced performance optimization and smooth interactions.
+  - Key props: data, level, expanded, selected, onExpand, onSelect, onDrag, onDrop, children, className.
+  - Customization: Node styling, expansion animations, drag-and-drop indicators, selection highlighting with performance optimizations.
+  - Accessibility: Keyboard navigation with arrow keys, aria-expanded on nodes, role="treeitem", improved focus management.
+
+**Updated** Enhanced organization components with improved drawer management, simplified deletion dialogs, and optimized node interactions
+
+**Section sources**
+- [frontend/src/components/ui/Drawer/Drawer.tsx](file://frontend/src/components/ui/Drawer/Drawer.tsx)
+- [frontend/src/components/ui/Dialog/Dialog.tsx](file://frontend/src/components/ui/Dialog/Dialog.tsx)
+- [frontend/src/components/ui/Node/Node.tsx](file://frontend/src/components/ui/Node/Node.tsx)
+
 ## Architecture Overview
 The UI library follows a layered architecture with enhanced component support:
 - **Primitives**: Button, Input, Select, Card
 - **Composite**: DataTable, Modal, Form, Field
 - **Enhanced**: ErrorMessage, SearchInput, Tabs, TransfertList, TreeView, RowActions, Breadcrumbs
+- **Organization**: Drawer, Dialog, Node components with specialized functionality
 - **Feedback**: LoadingState, ErrorBoundary, EmptyState
 - **Layout**: Header, Sidebar, PageLayout
 
-Primitives compose into higher-level components. Enhanced components provide specialized functionality for complex user interactions. Layout components orchestrate overall page structure with theme support.
+Primitives compose into higher-level components. Enhanced components provide specialized functionality for complex user interactions. Organization components offer specialized solutions for hierarchical data management. Layout components orchestrate overall page structure with theme support.
 
 ```mermaid
 classDiagram
@@ -385,6 +423,37 @@ class Breadcrumbs {
 +onNavigate()
 +className
 }
+class Drawer {
++isOpen
++onClose()
++title
++size
++position
++children
++overlay
+}
+class Dialog {
++isOpen
++onClose()
++title
++message
++confirmAction()
++cancelAction()
++variant
++icon
+}
+class Node {
++data
++level
++expanded
++selected
++onExpand()
++onSelect()
++onDrag()
++onDrop()
++children
++className
+}
 class LoadingState {
 +message
 +size
@@ -437,6 +506,9 @@ TreeView --> Button : "uses"
 TreeView --> Input : "uses"
 Breadcrumbs --> Button : "uses"
 Breadcrumbs --> Input : "uses"
+Drawer --> Modal : "extends"
+Dialog --> Modal : "extends"
+Node --> TreeView : "extends"
 PageLayout --> Header : "composes"
 PageLayout --> Sidebar : "composes"
 PageLayout --> Card : "wraps content"
@@ -461,6 +533,9 @@ PageLayout --> EmptyState : "shows"
 - [frontend/src/components/ui/TreeView/TreeView.tsx](file://frontend/src/components/ui/TreeView/TreeView.tsx)
 - [frontend/src/components/ui/RowActions/RowActions.tsx](file://frontend/src/components/ui/RowActions/RowActions.tsx)
 - [frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx](file://frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx)
+- [frontend/src/components/ui/Drawer/Drawer.tsx](file://frontend/src/components/ui/Drawer/Drawer.tsx)
+- [frontend/src/components/ui/Dialog/Dialog.tsx](file://frontend/src/components/ui/Dialog/Dialog.tsx)
+- [frontend/src/components/ui/Node/Node.tsx](file://frontend/src/components/ui/Node/Node.tsx)
 - [frontend/src/components/ui/Feedback/LoadingState.tsx](file://frontend/src/components/ui/Feedback/LoadingState.tsx)
 - [frontend/src/components/ui/Feedback/ErrorBoundary.tsx](file://frontend/src/components/ui/Feedback/ErrorBoundary.tsx)
 - [frontend/src/components/ui/Feedback/EmptyState.tsx](file://frontend/src/components/ui/Feedback/EmptyState.tsx)
@@ -667,6 +742,35 @@ Submit --> End
 **Section sources**
 - [frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx](file://frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx)
 
+### Organization Components Analysis
+
+#### Drawer
+- Props interface: isOpen, onClose, title, size, position, children, overlay, className.
+- Styling: Slide animations, size variants, overlay behavior, z-index management with theme support.
+- Accessibility: Focus trap within drawer, aria-modal when modal, Escape key handling, improved focus management.
+- Usage example: Create slide-out panels for detailed views or action forms without disrupting the main workflow.
+
+**Section sources**
+- [frontend/src/components/ui/Drawer/Drawer.tsx](file://frontend/src/components/ui/Drawer/Drawer.tsx)
+
+#### Dialog
+- Props interface: isOpen, onClose, title, message, confirmAction, cancelAction, variant, icon, className.
+- Styling: Confirmation flow, button variants, icon support, responsive layout with theme awareness.
+- Accessibility: Clear confirmation prompts, keyboard navigation, aria-live for dynamic content, screen reader announcements.
+- Usage example: Implement simplified deletion confirmations with clear messaging and intuitive action flows.
+
+**Section sources**
+- [frontend/src/components/ui/Dialog/Dialog.tsx](file://frontend/src/components/ui/Dialog/Dialog.tsx)
+
+#### Node
+- Props interface: data, level, expanded, selected, onExpand, onSelect, onDrag, onDrop, children, className.
+- Styling: Node styling, expansion animations, drag-and-drop indicators, selection highlighting with performance optimizations.
+- Accessibility: Keyboard navigation with arrow keys, aria-expanded on nodes, role="treeitem", improved focus management.
+- Usage example: Build interactive hierarchical structures with smooth animations and optimized performance for large datasets.
+
+**Section sources**
+- [frontend/src/components/ui/Node/Node.tsx](file://frontend/src/components/ui/Node/Node.tsx)
+
 ### Feedback Components
 - LoadingState
   - Props: message, size, fullScreen.
@@ -711,7 +815,7 @@ The component library has been significantly enhanced with comprehensive dark mo
 ### Dark Mode Implementation
 - **Theme-Aware Colors**: All components use CSS custom properties and Tailwind's dark mode variants for consistent theming.
 - **Contrast Ratios**: Enhanced color combinations ensure WCAG AA compliance in both light and dark themes.
-- **Background Adaptation**: Cards, modals, and overlays automatically adjust backgrounds based on the active theme.
+- **Background Adaptation**: Cards, modals, overlays, drawers, and dialogs automatically adjust backgrounds based on the active theme.
 - **Icon Support**: SVG icons switch between light and dark variants for optimal visibility.
 
 ### Accessibility Enhancements
@@ -719,19 +823,46 @@ The component library has been significantly enhanced with comprehensive dark mo
 - **Screen Reader Support**: Enhanced live regions and announcements for dynamic content updates.
 - **Keyboard Navigation**: Improved keyboard traversal with logical focus order and visible focus indicators.
 - **Semantic Markup**: Better use of HTML5 semantic elements and ARIA roles for assistive technologies.
+- **Focus Management**: Enhanced focus trapping in modals, drawers, and dialogs with proper focus restoration.
 
 ### Theme Configuration
 Components automatically detect and respond to theme changes through CSS media queries and JavaScript theme detection. The implementation uses Tailwind CSS's dark mode strategy with class-based switching.
 
-**Updated** Enhanced dark mode compatibility and accessibility features across all components
+**Updated** Enhanced dark mode compatibility and accessibility features across all components, including organization-related components
+
+## Performance Optimization Strategies
+The component library incorporates several performance optimization strategies to ensure smooth user experiences:
+
+### Virtualization and Memory Management
+- **Virtual Scrolling**: DataTable and TreeView components implement virtual scrolling for large datasets to reduce DOM overhead.
+- **Memoization**: Expensive computations wrapped in React.memo where appropriate to avoid unnecessary re-renders.
+- **Lazy Loading**: Non-critical content deferred until needed; modal and drawer content loaded on demand.
+
+### Interaction Optimizations
+- **Debouncing**: Search and filter inputs in DataTable and SearchInput components use debouncing to reduce frequent re-rendering.
+- **Event Throttling**: Drag-and-drop operations in Node components optimized with throttled event handlers.
+- **Animation Performance**: Smooth CSS transitions and transforms for drawer and dialog animations.
+
+### Rendering Optimizations
+- **Conditional Rendering**: Components only render when necessary (e.g., modal content only when open).
+- **State Colocation**: Related state managed at appropriate levels to minimize prop drilling.
+- **Memory Cleanup**: Proper cleanup of event listeners and timers in component unmount lifecycle.
+
+### Best Practices for Empty State Management
+- **Consistent Patterns**: Standardized empty state components with clear messaging and actionable next steps.
+- **Progressive Disclosure**: Empty states guide users toward meaningful actions rather than just displaying "no data".
+- **Contextual Help**: Empty states include helpful tips and links to relevant documentation or setup guides.
+
+**Updated** Added comprehensive performance optimization strategies and best practices for consistent empty state management
 
 ## Dependency Analysis
 The UI library exhibits clear dependency relationships with enhanced component support:
 - **Primitives** (Button, Input, Select, Card) are independent foundation components.
 - **Composite components** (DataTable, Modal, Form, Field) depend on primitives.
 - **Enhanced components** (ErrorMessage, SearchInput, Tabs, TransfertList, TreeView, RowActions, Breadcrumbs) build upon primitives for specialized functionality.
+- **Organization components** (Drawer, Dialog, Node) extend existing components for specialized use cases.
 - **Feedback components** are standalone but often composed by layout shells.
-- **Layout components** orchestrate primitives, composites, and enhanced components to build pages.
+- **Layout components** orchestrate primitives, composites, enhanced, and organization components to build pages.
 
 ```mermaid
 graph TB
@@ -750,6 +881,9 @@ E4["TransfertList"]
 E5["TreeView"]
 E6["RowActions"]
 E7["Breadcrumbs"]
+O1["Drawer"]
+O2["Dialog"]
+O3["Node"]
 F1["LoadingState"]
 F2["ErrorBoundary"]
 F3["EmptyState"]
@@ -777,6 +911,9 @@ E5 --> P1
 E5 --> P2
 E7 --> P1
 E7 --> P2
+O1 --> C2
+O2 --> C2
+O3 --> E5
 L3 --> L1
 L3 --> L2
 L3 --> P4
@@ -801,6 +938,9 @@ L3 --> F3
 - [frontend/src/components/ui/TreeView/TreeView.tsx](file://frontend/src/components/ui/TreeView/TreeView.tsx)
 - [frontend/src/components/ui/RowActions/RowActions.tsx](file://frontend/src/components/ui/RowActions/RowActions.tsx)
 - [frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx](file://frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx)
+- [frontend/src/components/ui/Drawer/Drawer.tsx](file://frontend/src/components/ui/Drawer/Drawer.tsx)
+- [frontend/src/components/ui/Dialog/Dialog.tsx](file://frontend/src/components/ui/Dialog/Dialog.tsx)
+- [frontend/src/components/ui/Node/Node.tsx](file://frontend/src/components/ui/Node/Node.tsx)
 - [frontend/src/components/ui/Feedback/LoadingState.tsx](file://frontend/src/components/ui/Feedback/LoadingState.tsx)
 - [frontend/src/components/ui/Feedback/ErrorBoundary.tsx](file://frontend/src/components/ui/Feedback/ErrorBoundary.tsx)
 - [frontend/src/components/ui/Feedback/EmptyState.tsx](file://frontend/src/components/ui/Feedback/EmptyState.tsx)
@@ -811,16 +951,6 @@ L3 --> F3
 **Section sources**
 - [frontend/src/components/ui/index.ts](file://frontend/src/components/ui/index.ts)
 
-## Performance Considerations
-- **Virtualization**: For large datasets in DataTable and TreeView, consider virtualized rows to reduce DOM overhead.
-- **Memoization**: Wrap expensive computations in React.memo where appropriate to avoid re-renders.
-- **Lazy Loading**: Defer non-critical modal content until opened; implement lazy loading for large tree structures.
-- **CSS Optimization**: Leverage Tailwind's utility-first approach to minimize style bloat; ensure unused classes are purged in production builds.
-- **Event Handling**: Debounce search/filter inputs in DataTable and SearchInput to reduce frequent re-renders.
-- **Theme Switching**: Optimize theme transitions to prevent layout shifts and maintain smooth user experience.
-
-**Updated** Added performance considerations for enhanced components and theme switching
-
 ## Troubleshooting Guide
 - **Modal focus issues**: Ensure focus trap is active and aria-modal is set; verify Escape key handler closes the modal.
 - **Form validation errors**: Confirm Field components have correct name and error mapping; check aria-describedby associations.
@@ -830,8 +960,12 @@ L3 --> F3
 - **Dark mode issues**: Check CSS custom property definitions and Tailwind dark mode configuration; verify theme detection logic.
 - **Accessibility problems**: Test with screen readers and keyboard-only navigation; validate ARIA attributes and semantic markup.
 - **Translation issues**: Ensure aria-label translation functions are properly configured and locale files are loaded.
+- **Drawer interaction problems**: Verify overlay click handlers and focus management; test touch interactions on mobile devices.
+- **Dialog confirmation flows**: Ensure proper state management for confirm/cancel actions; verify async operation handling.
+- **Node performance issues**: Check for memory leaks in drag-and-drop operations; optimize re-renders with memoization.
+- **Empty state consistency**: Use standardized EmptyState components; ensure consistent messaging and actionable guidance.
 
-**Updated** Added troubleshooting guidance for dark mode, accessibility, and translation issues
+**Updated** Added troubleshooting guidance for organization components, performance issues, and empty state management
 
 **Section sources**
 - [frontend/src/components/ui/Feedback/ErrorBoundary.tsx](file://frontend/src/components/ui/Feedback/ErrorBoundary.tsx)
@@ -841,9 +975,14 @@ L3 --> F3
 - [frontend/src/components/ui/Form/Form.tsx](file://frontend/src/components/ui/Form/Form.tsx)
 - [frontend/src/components/ui/Form/Field.tsx](file://frontend/src/components/ui/Form/Field.tsx)
 - [frontend/src/components/ui/DataTable/DataTable.tsx](file://frontend/src/components/ui/DataTable/DataTable.tsx)
+- [frontend/src/components/ui/Drawer/Drawer.tsx](file://frontend/src/components/ui/Drawer/Drawer.tsx)
+- [frontend/src/components/ui/Dialog/Dialog.tsx](file://frontend/src/components/ui/Dialog/Dialog.tsx)
+- [frontend/src/components/ui/Node/Node.tsx](file://frontend/src/components/ui/Node/Node.tsx)
 
 ## Conclusion
-The shared UI component library provides a comprehensive and cohesive set of primitives, composites, enhanced components, feedback, and layout components built with Tailwind CSS and designed for accessibility. The recent enhancements with dark mode compatibility, improved accessibility features including aria-label translations, and consistent visual appearance across light and dark themes significantly improve the user experience and developer productivity.
+The shared UI component library provides a comprehensive and cohesive set of primitives, composites, enhanced components, organization-specific components, feedback, and layout components built with Tailwind CSS and designed for accessibility. The recent enhancements with dark mode compatibility, improved accessibility features including aria-label translations, consistent visual appearance across light and dark themes, and specialized organization components significantly improve the user experience and developer productivity.
+
+The addition of organization-related components with improved drawer management, simplified deletion dialogs, and enhanced node interactions provides developers with powerful tools for building complex hierarchical interfaces. Performance optimization strategies and best practices for empty state management ensure smooth user experiences even with large datasets and complex interactions.
 
 By following the documented props interfaces, styling patterns, and composition strategies, teams can maintain consistency, improve usability, and scale the application effectively while ensuring accessibility compliance and cross-theme compatibility.
 
@@ -856,6 +995,7 @@ By following the documented props interfaces, styling patterns, and composition 
 - Compose complex screens using PageLayout, wrapping content in Card and providing feedback via LoadingState/EmptyState/ErrorBoundary.
 - Configure theme support by ensuring proper CSS custom property definitions and Tailwind dark mode setup.
 - Implement internationalization by providing translation functions for aria-labels and component messages.
+- Use organization components (Drawer, Dialog, Node) for hierarchical data management and complex interactions.
 
 **Section sources**
 - [frontend/src/components/ui/index.ts](file://frontend/src/components/ui/index.ts)
@@ -867,8 +1007,11 @@ By following the documented props interfaces, styling patterns, and composition 
 - Sidebar should collapse on narrow viewports; expose toggle controls.
 - Enhanced components like TreeView and TransfertList should handle touch interactions appropriately.
 - Breadcrumbs should truncate or collapse gracefully on smaller screens.
+- Drawer components should adapt positioning based on screen size (bottom sheet on mobile, side panel on desktop).
+- Dialog components should be responsive with appropriate sizing for different devices.
+- Node components should handle touch gestures for mobile interactions.
 
-**Updated** Added responsive considerations for enhanced components
+**Updated** Added responsive considerations for organization components and mobile interactions
 
 ### Cross-Browser Compatibility
 - Test focus management and keyboard interactions across browsers.
@@ -876,8 +1019,11 @@ By following the documented props interfaces, styling patterns, and composition 
 - Ensure aria attributes are supported and announced by screen readers.
 - Test dark mode functionality across different browsers and operating systems.
 - Validate theme switching performance and visual consistency.
+- Test drawer animations and transitions across different browser engines.
+- Verify drag-and-drop functionality in Node components across browsers.
+- Test touch interactions on mobile devices and tablets.
 
-**Updated** Added cross-browser testing considerations for dark mode and theme switching
+**Updated** Added cross-browser testing considerations for organization components and touch interactions
 
 ### Theme Configuration Reference
 - **CSS Custom Properties**: Define theme variables for colors, backgrounds, and borders.
@@ -885,4 +1031,20 @@ By following the documented props interfaces, styling patterns, and composition 
 - **JavaScript Theme Detection**: Implement automatic theme detection and manual switching.
 - **Component Theme Support**: Ensure all components respect theme context and CSS custom properties.
 
-**New Section** Added theme configuration reference for developers implementing dark mode support
+### Performance Monitoring
+- **Bundle Size Analysis**: Monitor component bundle sizes and identify optimization opportunities.
+- **Runtime Performance**: Track render times and memory usage for large datasets.
+- **User Experience Metrics**: Monitor interaction responsiveness and animation smoothness.
+- **Accessibility Testing**: Regularly test with screen readers and keyboard navigation.
+
+**New Section** Added theme configuration reference and performance monitoring guidelines for developers implementing dark mode support and performance optimization
+
+### Best Practices for Empty State Management
+- **Consistent Messaging**: Use clear, actionable language in empty states.
+- **Progressive Guidance**: Provide step-by-step guidance for getting started.
+- **Contextual Help**: Include links to relevant documentation or tutorials.
+- **Visual Clarity**: Use appropriate illustrations and spacing for empty states.
+- **Action-Oriented**: Always provide clear next steps for users.
+- **Testing**: Verify empty states work correctly with different data scenarios.
+
+**New Section** Added best practices for consistent empty state management across all components
