@@ -333,7 +333,7 @@ export class AuthService {
             email: utilisateur.email,
             role: roleToUse, // Use establishment-specific role if available
             roles: userRoles.map(r => r.code), // NOUVEAU : tous les rôles
-            permissions: Array.from(resolvedPermissions), // NOUVEAU : permissions résolues
+            // Permissions absentes du JWT (résolues côté serveur) : évite HTTP 431 (header > 16KB)
             etablissementId: etablissementActifId, // Défini si mono-établissement
             etablissements: etablissementsPayload, // TOUJOURS présent après validation
         };
@@ -520,8 +520,7 @@ export class AuthService {
             relations: ['role'],
         });
 
-        // Re-résolution des permissions (pour prendre en compte les changements)
-        const resolvedPermissions = await permissionResolverService.resolvePermissions(utilisateur.id, affectationPrincipale?.etablissementId);
+        // Re-résolution des rôles (les permissions sont résolues côté serveur, jamais dans le JWT)
         const userRoles = await permissionResolverService.getUserRoles(utilisateur.id, affectationPrincipale?.etablissementId);
 
         const payload: JwtPayload = {
@@ -529,7 +528,6 @@ export class AuthService {
             email: utilisateur.email,
             role: affectationPrincipale?.role.code || utilisateur.role,
             roles: userRoles.map(r => r.code),
-            permissions: Array.from(resolvedPermissions),
             etablissementId: affectationPrincipale?.etablissementId, // v4.0: via utilisateur_etablissements
         };
 

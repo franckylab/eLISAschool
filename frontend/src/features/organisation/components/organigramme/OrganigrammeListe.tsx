@@ -20,7 +20,7 @@ interface OrganigrammeListeProps {
     onNodeSelect?: (unite: OrganigrammeNode) => void;
 }
 
-function convertirEnTreeNode(nodes: OrganigrammeNode[], t: (key: string, fallback?: string) => string): TreeNode<OrganigrammeNode>[] {
+function convertirEnTreeNode(nodes: OrganigrammeNode[], t: (key: string, options?: { defaultValue?: string }) => string): TreeNode<OrganigrammeNode>[] {
     return nodes.map((n) => ({
         id: n.id,
         label: `${n.nom}${n.code ? ` (${n.code})` : ''}`,
@@ -37,16 +37,16 @@ function convertirEnTreeNode(nodes: OrganigrammeNode[], t: (key: string, fallbac
                         {n.echelonStructurelLabel}
                     </span>
                 )}
-                <span className="flex items-center gap-0.5" title={t('organigramme.liste.postes', 'Postes')}>
+                <span className="flex items-center gap-0.5" title={t('organigramme.liste.postes', { defaultValue: 'Postes' })}>
                     <Briefcase className="h-3 w-3" />
                     {n.postes?.length || 0}
                 </span>
-                <span className="flex items-center gap-0.5" title={t('organigramme.liste.membres', 'Membres')}>
+                <span className="flex items-center gap-0.5" title={t('organigramme.liste.membres', { defaultValue: 'Membres' })}>
                     <Users className="h-3 w-3" />
                     {n.totalMembres || 0}
                 </span>
                 {(n.postesVacants || 0) > 0 && (
-                    <span className="text-[var(--color-warning)] font-medium" title={t('organigramme.liste.postesVacants', 'Postes vacants')}>
+                    <span className="text-[var(--color-warning)] font-medium" title={t('organigramme.liste.postesVacants', { defaultValue: 'Postes vacants' })}>
                         {n.postesVacants}v
                     </span>
                 )}

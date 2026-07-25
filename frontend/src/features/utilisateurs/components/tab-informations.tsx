@@ -291,8 +291,8 @@ export function TabInformations({ utilisateur }: { utilisateur: Utilisateur }) {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                             <InfoField label="Matricule" value={mp.matricule} icon={<Briefcase className="h-3.5 w-3.5" />} />
                             <InfoField
-                                label="Type"
-                                value={mp.typePersonnel?.nom || mp.typePersonnelId || 'Non défini'}
+                                label={t('categorie', { defaultValue: 'Catégorie' })}
+                                value={mp.categorie ? t(`personnel:categorie_${mp.categorie}`, { defaultValue: mp.categorie }) : 'Non définie'}
                                 icon={<User className="h-3.5 w-3.5" />}
                             />
                             <InfoField
@@ -338,7 +338,7 @@ export function TabInformations({ utilisateur }: { utilisateur: Utilisateur }) {
                                 placeholder={t('selectionnerPersonnel')}
                                 options={personnelDisponibles?.map((p) => ({
                                     value: p.id,
-                                    label: `${p.matricule} — ${p.specialitePrincipale || p.typePersonnel?.nom || '—'}`,
+                                    label: `${p.matricule} — ${p.specialitePrincipale || (p.categorie ? t(`personnel:categorie_${p.categorie}`, { defaultValue: p.categorie }) : '—')}`,
                                 })) ?? []}
                                 className="min-w-[250px]"
                             />

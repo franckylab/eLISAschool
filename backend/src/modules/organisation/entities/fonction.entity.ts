@@ -22,12 +22,12 @@ import {
     Index,
 } from 'typeorm';
 import { Etablissement } from '@modules/etablissement/entities';
-import { TypePersonnel } from './type-personnel.entity';
+import { CategorieFonction } from '../../../shared/constants/personnel.constants';
 
 @Entity('fonctions')
 @Index(['parentId'])
 @Index(['etablissementId'])
-@Index(['typePersonnelId'])
+@Index(['categorie'])
 @Index(['code', 'etablissementId'], { unique: true })
 export class Fonction {
     @PrimaryGeneratedColumn('uuid')
@@ -59,14 +59,10 @@ export class Fonction {
     @Column({ type: 'varchar', length: 500, nullable: true })
     chemin?: string;
 
-    // Type statutaire porté par la fonction (ex: fonction « Professeur » ⟹ ENSEIGNANT).
-    // Permet au poste de dériver son type attendu via poste.fonction.typePersonnel.
-    @Column({ type: 'uuid', nullable: true })
-    typePersonnelId?: string;
-
-    @ManyToOne(() => TypePersonnel, { nullable: true, onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'typePersonnelId' })
-    typePersonnel?: TypePersonnel;
+    // Catégorie de personnel portée par la fonction (ex: fonction « Professeur » ⟹ ENSEIGNANT).
+    // Source unique de catégorisation : la catégorie d'un membre est dérivée de ses fonctions.
+    @Column({ type: 'varchar', length: 20, default: CategorieFonction.AUTRE })
+    categorie!: CategorieFonction;
 
     @Column({ type: 'jsonb', nullable: true })
     primesDefaut?: Record<string, any>;

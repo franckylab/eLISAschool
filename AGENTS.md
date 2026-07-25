@@ -3,52 +3,51 @@
 ## Objective
 Refactorer le module organisation et ses nomenclatures en une source de vérité unique, avec routes dédiées, composants génériques, i18n 100% flat, et permissions granulaires.
 
-## Décisions Architecturales (grill-me session — consolidé v4.0)
-### Modèle de données — 8 entités + 1 template (réduction 33% depuis 12)
-- **Poste** : pivot central unifiant les 3 axes (où=unite, quoi=fonction, qui=occupant). `categoriePosteId` supprimé — catégorie dérivée via `poste.fonction.typePersonnel`.
+## Décisions Architecturales (consolidé v5.0 — TypePersonnel supprimé)
+### Modèle de données — 7 entités + 1 template
+- **Poste** : pivot central unifiant les 3 axes (où=unite, quoi=fonction, qui=occupant). Catégorie dérivée via `poste.fonction.categorie`.
 - **EchelonStructurel** (ex-NiveauOrganisation + UsageUnite) : fusion des deux concepts. Champs : `niveau` (int), `code` (string, ex: 'DIRECTION'), `label`, `description`, `couleur`, `estSysteme`, `etablissementId`. `UniteOrganisationnelle` référence uniquement `echelonStructurelId`.
 - **NiveauResponsabilite** : table `niveaux_responsabilite`. Axe orthogonal à EchelonStructurel (poids hiérarchique vs profondeur structurelle).
-- **TypePersonnel** : entité **globale** (pas d'`etablissementId`), 8 seeds protégés (TYPE_ENSEIGNANT, etc.). `modeRemunerationDefaut` supprimé (anomalie global→multi-tenant, déjà porté par TypeContratPersonnalise).
 - **ModeRemunerationEntity** : source unique de vérité pour les modes de rémunération. L'enum `ModeRemuneration` du module paie est **supprimée**. FK uuid dans ContratPersonnel et TypeContratPersonnalise.
-- **HierarchiePersonnel** : `typeRelationId` (FK) remplacé par `typeRelation` (varchar enum : DIRECT, FONCTIONNEL). `uniteOrganisationnelleId` supprimé (redondant avec Poste).
-- **Fonction** : nomenclature multi-tenant hiérarchique. Porte `typePersonnelId` (FK → type global).
+- **HierarchiePersonnel** : `typeRelationId` (FK) remplacé par `typeRelation` (varchar enum : DIRECT, FONCTIONNEL). `uniteOrganisationnelleId` supprimé (redondant avec Poste). **v4.1** : sémantique duale explicite — personne→personne (`personnelId`+`superieurId`) OU poste→poste (`posteId`+`superieurPosteId`, colonne ajoutée migration 122).
+- **Fonction** : nomenclature multi-tenant hiérarchique. Porte `categorie` varchar(20) NOT NULL DEFAULT 'AUTRE' (enum `CategorieFonction` : ENSEIGNANT, DIRECTION, ADMINISTRATIF, TECHNIQUE, SERVICE, SANTE, SOCIAL, AUTRE). Remplace l'ancienne FK `typePersonnelId`.
+- **Catégorie membre** : TOUJOURS dérivée (jamais stockée) via fonctions des postes occupés. API retourne `categorie`, `estEnseignant`, `categorieSource`.
 - **JSONB** : `missions`, `competencesRequises` conservés sur Poste.
 - **TemplateOrganisation** : JSONB (lecture seule, 22 templates). Interfaces adaptées : `TemplatePoste.categoriePosteId` supprimé, `NoeudTemplateOrganisation.usageUnite` → `echelonCode`, `niveau` supprimé.
 - **Validation** : anti-cycle arborescence via CTE récursif PostgreSQL.
 - **Protection seeds** : `assertNotSystem()` guard backend, UI bouton Supprimer caché + Dupliquer.
 
-### Entités supprimées (4)
+### Entités supprimées (5)
 - ❌ `UsageUnite` → fusionné dans EchelonStructurel
-- ❌ `CategoriePoste` → dérivé via Fonction.typePersonnel
+- ❌ `CategoriePoste` → dérivé via Fonction.categorie
 - ❌ `TypeRelationHierarchique` → enum varchar sur HierarchiePersonnel
 - ❌ `NiveauOrganisation` → renommé EchelonStructurel
+- ❌ `TypePersonnel` (v5.0) → remplacé par `Fonction.categorie` (migration 121 : drop `types_personnel` CASCADE + drop `fonctions.typePersonnelId`)
 
 ### Modules backend
 - **Postes** : dans `organisation/`. Route `/api/organisation/postes`.
-- **Fonctions** : entité dans `organisation/entities/`, service/contrôleur propres.
-- **TypePersonnel** : entité dans `organisation/entities/`, accessible depuis `personnel/` via barrel. Routes dans `personnel/controllers/`.
-- **Nomenclatures** : 4 CRUD dans `nomenclature.controller.ts` : echelons-structurels, niveaux-responsabilite, modes-remuneration. Types-personnel dans personnel.
-- **Seeds** : `seed-nomenclatures.ts` (global : echelons_structurels, niveaux_responsabilite, modes_remuneration), `seed-type-personnel.ts` (global, 8 types), `seed-organisation.ts` (par établissement : fonctions + unités + postes + hiérarchies).
+- **Fonctions** : entité dans `organisation/entities/`, service/contrôleur propres. Filtre `?categorie=` disponible.
+- **Nomenclatures** : 3 CRUD dans `nomenclature.controller.ts` : echelons-structurels, niveaux-responsabilite, modes-remuneration. (Types-personnel supprimé v5.0.)
+- **Seeds** : `seed-nomenclatures.ts` (global : echelons_structurels, niveaux_responsabilite, modes_remuneration), `seed-organisation.ts` (par établissement : fonctions avec `categorie` + unités + postes + hiérarchies).
 - **Routes API REST** : pur pluriel. Actions via query params ou sous-ressources.
 
 ### Frontend
-- **Navigation** : Sidebar « Organisation » : Vue d'ensemble, Unités, Postes, Fonctions, Organigramme (vue unifiée), Nomenclatures (4 onglets : Échelons, Responsabilités, Types personnel, Modes rémun.), Modèles.
+- **Navigation** : Sidebar « Organisation » : Vue d'ensemble, Unités, Postes, Fonctions, Organigramme (vue unifiée), Nomenclatures (3 onglets : Échelons, Responsabilités, Modes rémun.), Modèles.
 - **Layout** : `_auth.organisation.tsx` → Breadcrumbs + motion + ErrorBoundary + `<Outlet/>`.
-- **Composants** : `NomenclatureCrudPage<T>` générique (4 nomenclatures). Pages supprimées : `categories-poste-page`, `usages-unite-page`, `niveaux-organisation-page`, `types-relation-page`.
-- **Hooks** : unitaires, barrel `features/organisation/index.ts`.
-- **i18n** : 100% flat. Clés obsolètes nettoyées (categoriePoste, usageUnite, niveauOrganisation, typeRelation seeds).
+- **Composants** : `NomenclatureCrudPage<T>` générique (3 nomenclatures). Pages supprimées : `categories-poste-page`, `usages-unite-page`, `niveaux-organisation-page`, `types-relation-page`, `types-personnel-page` (v5.0).
+- **Hooks** : unitaires, barrel `features/organisation/index.ts`. `use-types-personnel.ts` supprimé (v5.0).
+- **i18n** : 100% flat. Clés obsolètes nettoyées (categoriePoste, usageUnite, niveauOrganisation, typeRelation, typePersonnel). Nouvelles clés `personnel.categorie_*` (common.json) + `categorie_*` (organisation.json).
 - **Permissions** : sous-permissions CRUD + section. `organisation:unites:read`, `organisation:postes:write`, etc.
-- **Icônes** : Building2(module), GitBranch(unités), Briefcase(postes), Workflow(fonctions), Network(organigramme), Layers(échelons), ArrowUpDown(responsabilités), UserCheck(types-personnel), Wallet(modes-rémun.), FileText(modèles), Sparkles(génération).
+- **Icônes** : Building2(module), GitBranch(unités/arbre structurel), Briefcase(postes), Workflow(fonctions — partout, y compris arbre/modal/détail), Network(organigramme), Layers(échelons), ArrowUpDown(responsabilités), Wallet(modes-rémun. — DollarSign banni), FileText(modèles), Sparkles(génération), GraduationCap(catégorie ENSEIGNANT), ListTree(hiérarchie), Link2(relations hiérarchiques — toggle toolbar, drawer relation, badge FONCTIONNEL, modal hiérarchie, stat hiérarchies), Maximize(fit-view — Maximize2/Minimize2 réservés au plein écran), Route(spécialités — dédup vs GitBranch unités).
 
 ### Sidebar
 - "Organisation" expandable : Vue d'ensemble, Unités, Postes, Fonctions, Organigramme, Nomenclatures, Modèles.
 - Icône mère : Building2.
 
 ### Seeds ordre (initial.seed.ts)
-10. seedTypePersonnel() — global, 8 types (TYPE_ENSEIGNANT, etc.). `modeRemunerationDefaut` supprimé des seeds.
 10b. seedTypesContrat() — global
 10c. seedNomenclatures() — global : echelons_structurels (fusion niveaux_organisation + usages_unite), niveaux_responsabilite, modes_remuneration
-11. seedOrganisation(etablissementId) — par établissement : fonctions + unités + postes + hiérarchies (FK résolues)
+11. seedOrganisation(etablissementId) — par établissement : fonctions (avec `categorie`, seed système ENSEIGNANT protégé) + unités + postes + hiérarchies (FK résolues)
 12. seedTemplatesOrganisation() — global, 22 templates (interfaces adaptées : echelonCode, sans categoriePosteId)
 
 ### Seeds demo ordre (run-demo-seeds.ts)
@@ -103,17 +102,114 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 - `npm run start:ts` → ✅ (serveur démarre, health endpoint 200)
 - Schéma `heures_cours` : `classeAnneeId uuid NOT NULL` avec FK→`classes_annees`. Table `creneaux_horaires` créée. Ancienne `emploi_du_temps` intacte (données inertes).
 
+## Travail effectué — Session 2026-07-25 (refonte Notes + Bulletins full-stack)
+### Backend — Phase A (16 fichiers modifiés + 1 créé, 0 erreur TS in scope)
+- **5 bugs critiques corrigés** : `createBulk` sans `classeAnneeId` ; permissions inexistantes `notes:read`/`bulletins:read` → remplacées par `notes:view`/`bulletins:view` (+ `bulletins:delete` créé et attribué aux 7 rôles ayant `bulletins:generate`) ; SQL brut snake_case → camelCase quoté (`"eleveId"`, `statut::text = ANY($n)`) dans notes-batch-loader, bulletins.service (calculerStatsMatieres), dashboard-dataloader ; `enseignantId` = MembrePersonnel.id (nullable, résolu via `MembrePersonnel.utilisateurId`) ; notes VALIDEE+PUBLIEE comptées dans les moyennes (`In([VALIDEE, PUBLIEE])`).
+- **notes.service.ts** : createBulk avec guards (période clôturée, AffectationEleve active batch → 400 avec liste, `notes.allow_bulk_entry` → 403), `notes.validation_levels` config, multi-tenancy findOne/update/remove, `findAll` → `PaginatedResult` + `recherche` ILIKE, nouvelle méthode `getStatistiques` (moyenne/médiane/min/max/écart-type/distribution/parType/parStatut).
+- **notes.controller.ts** : perms `notes:view/create/edit/delete/bulk:create/statistiques:view` ; route `/statistiques` AVANT `/:id`.
+- **bulletins** : index unique classe `['etablissementId','eleveId','periodeId']` (était mal déclaré au niveau propriété) ; `bulletins.require_validation` (fallback ancienne clé `validation_workflow`, seed corrigé) ; rangs + moyenneClasse/Min/Max renseignées ; `DELETE /:id` (400 si publié) + AuditAction.BULLETIN_DELETE ; **`bulletin.pdf.service.ts` créé** (export HTML A4 imprimable, sans dépendance) ; `GET /:id/export` avant `/:id` ; PATCH `publie:true` exige `bulletins:publier`.
+- **Adaptations** : verification-suppression.service (join bulletins↔notes corrigé), portal-parent.service (retour paginé).
+- ⚠️ **Migration DB à générer** : enseignantId nullable, index unique bulletin, enum audit BULLETIN_DELETE.
+
+### Frontend — Phase B (3 196 lignes, pattern `utilisateurs`)
+- **Notes** : `notes-page.tsx` (DataTable serveur, recherche debounced, 5 filtres collapsibles, badges statut/type, helper `note-couleur.ts` — remplace classes cassées `bg-${color}-100`) ; `notes-saisie-masse-page.tsx` + route `/notes/saisie` (grille tableur, navigation clavier Enter/flèches, validation inline valeur ≤ barème, moyenne prévisionnelle, POST `/api/notes/bulk`, gestion 400 élèves non affectés, cartes < 480px) ; `note-detail-page.tsx` (TabsBar : Informations / Statistiques gated `notes:statistiques:view` / Validation workflow gated `notes:validate`) ; `note-form-modal.tsx` migré BaseFormModal → CustomModal + RHF/zod.
+- **Bulletins** : `bulletin-generate-modal.tsx` (nouveau, classe+période → POST `/generate`) ; `bulletins-page.tsx` (DataTable serveur, actions export/delete gated) ; `bulletin-detail-page.tsx` (TabsBar Synthèse/Matières, publier/dépublier, export HTML→print via Blob URL).
+- **Hooks** : URLs corrigées (`/en-masse`→`/bulk`, `/generer`→`/generate`, `/statistiques`), PaginatedResult typé, `useHandleError`, invalidations ciblées.
+- **Sidebar** : Notes expandable (« Liste » /notes, « Saisie en masse » /notes/saisie gated `notes:bulk:create`) ; prop `permission?` ajoutée à `NavItem`.
+- **i18n** : notes.json 126 clés FR+EN, bulletins.json 79 clés FR+EN.
+- **Qualité** : 0 `any`, 0 couleur hardcodée, 0 chaîne FR en dur, tsc 0 erreur in scope, routeTree régénéré.
+
+### Docs
+- Skill `elisaschool-business-logic` : section « Domaine 1 » (notes/bulletins) réécrite avec les règles corrigées.
+
+## Travail effectué — Session 2026-07-25 (hiérarchie v4.1 — audit + intégration Voie A)
+### Audit — Verdict
+- **Nomenclature TypeRelationHierarchique** : 100% supprimée du runtime (enum varchar DIRECT/FONCTIONNEL sur HierarchiePersonnel). Résidus nettoyés : migration doublon `src/database/migrations/110-consolidation-organisation.sql` supprimée, 4 permissions legacy `HIERARCHIE_VIEW/CREATE/EDIT/DELETE` retirées de `roles.enum.ts` (les granulaires `organisation:hierarchie:read|write|delete` restent), `config.registry.ts` aligné, clés i18n mortes retirées.
+- **HierarchiePersonnel** : conservée (conforme grill-me v4.0). Suppression totale NON recommandée — écritures réelles (auto-création contrat, templates, seeds, CRUD REST).
+- **Bug sémantique corrigé** : `seed-organisation.ts` et `generation.service.ts` stockaient des ids de **Poste** dans `superieurId` (censé référencer MembrePersonnel) → corruption silencieuse.
+
+### Modèle dual — `superieurPosteId` (nouvelle colonne)
+- `HierarchiePersonnel` porte désormais 2 sémantiques explicites :
+  - **personne→personne** : `personnelId` + `superieurId` (auto-création via contrat.service)
+  - **poste→poste** : `posteId` + `superieurPosteId` (seeds, templates, organigramme)
+- DTO : `.refine()` exige (personnelId+superieurId) OU (posteId+superieurPosteId).
+- Anti-cycle : nouveau CTE récursif `verifierPasDeCyclePostes` (chaînes de postes), en plus du CTE personnes.
+- **Migration 122** (`122-hierarchie-superieur-poste.sql`, idempotente) : ADD COLUMN + index + FK→postes ON DELETE SET NULL + **backfill** (`superieurId` contenant un id de poste → déplacé vers `superieurPosteId`) + backfill `etablissementId` via postes→unités.
+- `contrat.service.autoCreerHierarchie` renseigne aussi `superieurPosteId` (affectation active du supérieur).
+- `generation.service.supprimerArbreUnites` nettoie aussi `superieurPosteId: In(posteIds)`.
+
+### Frontend — Réintégration page Hiérarchie
+- **Sidebar** : « Hiérarchie » réintégré (`/organisation/hierarchie`, icône `ListTree`) entre Organigramme et Nomenclatures.
+- **`tab-hierarchie.tsx`** réécrit : zéro UUID affiché — helper partagé `hierarchie-libelles.ts` (`libelleExtremite`, `estRelationPoste`, `uniteRelation`) ; icônes User/Briefcase + sous-labels ; badges typeRelation (DIRECT plein, FONCTIONNEL pointillé), badges statut ; filtres segmentés Tous|Personnes|Postes|DIRECT|FONCTIONNEL (aria-pressed, tactile 44px) ; états vide/erreur+retry.
+- **`hierarchie-form-modal.tsx`** réécrit : sélecteur segmenté Personne→Personne / Poste→Poste, selects postes via `useTousPostes()`, validation zod miroir backend (`relationIncomplete`).
+- **Organigramme — overlay relations** : nouveau `RelationEdge.tsx` (Bézier pointillé, `--color-accent-600` FONCTIONNEL / `--color-dominant-600` DIRECT, compteur si >1) ; agrégation poste→poste par couples d'unités (même unité ignorée) dans `use-organigramme-flow.ts` ; toggle GitBranch dans la toolbar, état `showRelations` remonté dans `OrganigrammePage`.
+- **Hooks** : orphelins `useSuperieurs`/`useSubordonnes` supprimés (+ query keys).
+- **i18n** : parité FR/EN complète (statutRelation_*, filtres, modes, relationIncomplete, afficherRelations/masquerRelations, section toasts EN 27 clés).
+- **Qualité** : 0 `any` nouveau, 0 couleur hardcodée, 0 UUID exposé, aucune nouvelle erreur tsc (erreurs préexistantes hors périmètre intactes).
+
 ## Next Move
-Implémenter la refonte v4.0 du modèle organisation (grill-me consolidé) :
-1. **Backend — Migration SQL** : rename niveaux_organisation → echelons_structurels (+ code, couleur), drop usages_unite/categories_poste/types_relation_hierarchique, add FK modeRemunerationId sur contrats/types_contrat, drop modeRemunerationDefaut sur types_personnel, drop categoriePosteId sur postes, HierarchiePersonnel.typeRelationId → typeRelation varchar
-2. **Backend — Entités/Services/DTOs** : renommer/créer/supprimer les fichiers correspondants
-3. **Backend — Seeds** : adapter seed-nomenclatures, seed-type-personnel, seed-templates
-4. **Backend — Enum paie** : supprimer `paie/entities/mode-remuneration.enum.ts`, remplacer par constantes TS
-5. **Frontend — Pages** : supprimer 4 pages nomenclature, créer page onglets 4 tabs
-6. **Frontend — Composants** : mettre à jour unite-detail, poste-form, types, organigramme
-7. **Frontend — i18n** : nettoyer clés obsolètes, ajouter echelonStructurel
-8. **Frontend — Sidebar** : retirer "Hiérarchie", ajouter "Organigramme"
-9. **Tests** : phase dédiée après stabilisation
+Refonte v4.0 organisation : ✅ terminée. Hiérarchie v4.1 (superieurPosteId + réintégration page + overlay organigramme) : ✅ terminée.
+1. ~~Exécuter la migration 122~~ ✅ appliquée en local (2026-07-25) : étape 5 ajoutée (purge des 26 relations orphelines — superieurId nullé par l'ancienne FK). État final : 26 poste→poste + 1 personne→personne, 0 orphelin, serveur OK (health 200).
+2. ~~Migration DB Notes/Bulletins~~ ✅ `123-refonte-notes-bulletins.sql` appliquée en local (2026-07-25) : enseignantId nullable=YES, index unique bulletins présent, 0 remap nécessaire (UPDATE 0/DELETE 0). Reste à appliquer sur staging/prod.
+3. ~~Migration 124~~ ✅ `124-fix-hierarchie-orphelins.sql` créée + appliquée en local (2026-07-25) : NULL-out idempotent des références orphelines (superieurId/superieurPosteId/personnelId/posteId) + purge des lignes sans sémantique. 0 changement (DB déjà assainie), 27 relations valides. À appliquer sur staging/prod.
+4. **Tests** : phase dédiée après stabilisation (organisation + hiérarchie + notes/bulletins)
+5. **Migrations 125 + 126** : ✅ appliquées en local (2026-07-25, session grill-me organisation). À appliquer sur staging/prod (avec 122/123/124).
+6. ~~Data gap seeds~~ ✅ résolu (2026-07-25) : `seed-matieres-niveaux.ts` refondu — 7 profils de programme (MATERNELLE, PRIMAIRE_BAS/HAUT, COLLEGE_BAS/HAUT, LYCEE_BAS/HAUT) mappés sur les 31 niveaux FR+EN. Exécuté pour les 2 établissements : +176 associations, total 498, 0 niveau sans programme. Vérifié : génération bulletins Quatrième → moyennes pondérées correctes (2.52/1.91), rangs 1/2, 18 bulletins_matieres. Données de test nettoyées. Standalone du seed boucle désormais sur tous les établissements.
+
+## Travail effectué — Session 2026-07-25 (grill-me organisation — UX, permissions, organigramme)
+### Décisions validées
+- **Clic sur lien organigramme** = drawer détail + surbrillance des extrémités + tooltip au survol (options 1+2+4).
+- **ENSEIGNANT / ELEVE / PARENT** : `organisation:organigramme:read` UNIQUEMENT (aucune autre page organisation).
+- **Multi-casquettes enseignant** : élévation via attribution manuelle admin + enrichissement du rôle COORDINATEUR_DISCIPLINE (lecture organisation complète).
+
+### Phase 1 — Fixes P0
+- `onToggleRelations` câblé correctement (toolbar → OrganigrammePage), toggle relations fonctionnel.
+
+### Phase 2 — Permissions & rôles (migration 125)
+- **`125-organigramme-read-tous-roles.sql`** (idempotente ON CONFLICT/NOT EXISTS) : crée `organisation:organigramme:read` et l'attribue à TOUS les rôles ; CENSEUR + COORDINATEUR_DISCIPLINE reçoivent la lecture organisation complète (`organisation:*:read`).
+- `roles.enum.ts` (`DEFAULT_ROLE_PERMISSIONS`) aligné : ENSEIGNANT/ELEVE/PARENT organigramme-only.
+
+### Phase 3 — Liens organigramme cliquables
+- **`organigramme/drawer/RelationDetailDrawer.tsx`** (nouveau) : drawer détail relation (type, extrémités, unités, statut, compteur agrégé).
+- Clic sur `RelationEdge` → ouvre le drawer + surbrillance des nœuds source/cible ; tooltip au survol de l'edge.
+- `use-organigramme-flow.ts` : relations poste→poste remappées vers l'ancêtre visible quand une unité est repliée (les edges ne disparaissent plus au collapse).
+
+### Phase 4 — Bugs P1 backend (migration 126)
+- **Enum `postes_statut_enum` = MAJUSCULES** ('ACTIF'/'VACANT'/'SUPPRIME'/'EN_ATTENTE') — la migration 120 comparait en minuscules → vues matérialisées silencieusement vides.
+- **`126-fix-vues-materialisees-statuts.sql`** : recrée `mv_stats_organisation` + `mv_postes_vacants_critiques` avec valeurs UPPERCASE, alias snake_case `etablissement_id`, sous-agrégat hiérarchie (au lieu du join multiplicateur).
+- **Backfill** : 26 lignes `postes` corrigées (occupantsCount/statut, cast `::postes_statut_enum`).
+- `organigramme.pdf.service.ts` + statistiques : coercions/adaptations post-v4 ; DTO template : `z.nativeEnum` pour les facettes.
+- ⚠️ **Accès Postgres** : `docker exec elisaschool_db psql -h 127.0.0.1 -p 7002 -U elisaschool_user -d elisaschool` (port 7002 DANS le conteneur).
+
+### Phase 5 — Icônes & polish UX
+- **Canon icônes appliqué** (voir section Icônes plus haut) : Link2=relations hiérarchiques (5 sites : toolbar, RelationDetailDrawer, badge FONCTIONNEL tab-hierarchie, hierarchie-form-modal, StatCard synthèse), Maximize=fit-view (Maximize2/Minimize2 réservés plein écran), Wallet remplace DollarSign (3 sites), Workflow remplace Briefcase pour les fonctions (6 sites), Route=Spécialités sidebar (dédup GitBranch). GitBranch conservé pour les contextes structurels (Sidebar Unités, UniteDetailDrawer).
+- **Deep-linking `?tab=`** ajouté aux 3 pages détail organisation (fonction/unite/poste) — pattern utilisateurs : `useSearch({ from: routeId }) as { tab?: string }` + `navigate({ search: { tab } as never })` (`as never`, jamais `as any`).
+- **`use-templates.ts` corrigé** (2 bugs) : `apiClient.get(url, params)` — le 2e argument EST le record de params (pas `{ params }`) ; générique = type interne (ApiResponse wrappe déjà dans `.data`, ne pas double-wrapper `{ data: X }`).
+- `#fff` explicitement accepté (pas de var `--color-text-inverse` — ne pas inventer de CSS vars).
+
+### Qualité
+- **0 erreur tsc in-scope** (features/organisation, fonctions, postes, Sidebar, organigramme). Erreurs préexistantes hors périmètre intactes (ex : `unauthorized-page.tsx` route `/communication`).
+- 0 `any` nouveau, 0 couleur hardcodée nouvelle, i18n complet.
+- Migrations 125 + 126 appliquées en local. Reste : staging/prod.
+
+## Travail effectué — Session 2026-07-25 (fix 431 + walkthrough API notes/bulletins)
+### Bug HTTP 431 — permissions retirées du JWT
+- **Cause** : claim `permissions` (~12KB pour SUPER_ADMIN) → token 16 453 octets > limite header Node 16KB.
+- **Fix** : permissions supprimées des 4 sites de construction JWT (`auth.service.ts` login+refresh, `etablissement-selection.service.ts` completeLogin+temp). `authMiddleware`/`optionalAuthMiddleware` résolvent désormais les permissions côté serveur (`permissionResolverService.resolvePermissions(sub, etablissementId)`, caché) et les attachent à `req.utilisateur.permissions` → tous les consommateurs (check-permission, permission.guard, controllers) inchangés. `JwtPayload.permissions` supprimé du DTO. Corps de réponse login/getCurrentUser conservent `permissions`.
+- **Résultat** : token temp 685 o, token complet 829 o (vs 16 453).
+- **Route sélection établissement** : `POST /api/auth/complete-login` (pas select-etablissement), body `{etablissementId}`, Bearer token temporaire.
+
+### Permissions ADMIN notes/bulletins
+- `DEFAULT_ROLE_PERMISSIONS[Role.ADMIN]` (roles.enum.ts) : 17 permissions notes:*/bulletins:* ajoutées + INSERT role_permissions en DB (17 lignes).
+
+### Walkthrough API réel (SUPER_ADMIN, établissement ETAB-001) — tout vert
+- GET /api/notes (paginé) → 200 ; GET /api/notes/statistiques → 200 (moyenne/mediane/distribution)
+- POST /api/notes/bulk → 201 (⚠️ `typeEvaluation` attend l'enum MAJUSCULE : `DEVOIR`)
+- PATCH /api/notes/:id `{statut:"VALIDEE"}` → 200
+- POST /api/bulletins/generate → 200 (moyennes pondérées via matieres_niveaux, rangs, moyClasse/min/max, bulletinMatieres recréées)
+- GET /api/bulletins/:id → 200 (relation `bulletinMatieres` chargée) ; GET /:id/export → 200 text/html A4 (10,7 Ko)
+- PATCH publie:true → 200 ; DELETE bulletin publié → 400 BULLETIN_PUBLIE (garde OK) ; dépublication → 200
+- Frontend :7001 → 200. Données de test Quatrième nettoyées.
 
 ## Travail effectué — Session 2026-07-24 (grill-me audit + corrections)
 ### Backend — Bugs critiques corrigés
@@ -419,3 +515,102 @@ MatiereNiveau (source vérité volume horaire)
 - **12 migrations** pour le module organisation (044, 045, 046, 109, 110, 112, 120 + anciennes)
 - **Migration 120** : corrige les vues matérialisées cassées par les refontes 109-112
 - **Cohérence vérifiée** : entités ↔ migrations ↔ service ↔ vues matérialisées
+
+## Travail effectué — Session 2026-07-25 (refonte complète des modèles d'organisation)
+
+### Contexte
+Les 22 templates existants manquaient de cohérence, de logique et de contextualisation. Aucun metadata (nature juridique, système éducatif, langue, niveaux, complexité). Pas de filtrage dans la galerie. Fonctions non adaptées au système anglophone/bilingue.
+
+### Analyse et recherche
+- **Inspection approfondie** du code actuel (entités, seeds, templates, services, frontend)
+- **Recherche web** sur les modèles réels d'établissements scolaires :
+  - Système éducatif camerounais (MINESEC, MINEDUB) : lycées, collèges, écoles primaires
+  - Système anglophone (British/American) : Head Teacher, Deputy Head, Head of Year, Form Tutor, SENCO
+  - Système bilingue (Cameroun) : Coordinateur linguistique, Directeurs de section
+  - Enseignement technique : Chef des travaux, Chefs d'atelier, Moniteurs
+  - Centres de formation professionnelle : Coordinateurs de filière, Formateurs, Tuteurs entreprise
+
+### Décisions architecturales (v6.0 — Templates catégorisés)
+
+#### 5 axes de classification ajoutés à `TemplateOrganisation`
+1. **Nature juridique** (`NatureJuridique`) : PUBLIC_ETATIQUE, PUBLIC_COMMUNAL, PRIVE_LAIC, PRIVE_CONFESSIONNEL, PRIVE_ASSOCIATIF, COMPLEXE
+2. **Système éducatif** (`SystemeEducatif`) : GENERAL, TECHNIQUE, PROFESSIONNEL, NORMAL, SUPERIEUR
+3. **Langue d'enseignement** (`LangueEnseignement`) : FRANCOPHONE, ANGLOPHONE, BILINGUE
+4. **Niveaux** (`NiveauEnseignement[]`) : MATERNEL, PRIMAIRE, COLLEGE, LYCEE, POST_BAC
+5. **Complexité structurelle** (`ComplexiteStructurelle`) : STANDARD, AVANCE
+
+#### Colonnes ajoutées à l'entité
+- `nature`, `systeme`, `langue`, `niveaux` (simple-array), `complexite`, `categorie`, `ordre`, `icone`, `metadata` (jsonb), `nomEn`
+- 5 index partiels pour optimiser les filtres
+
+#### 4 nouveaux échelons structurels
+- SECTION_LINGUISTIQUE (niveau 2, #8b5cf6)
+- CYCLE (niveau 2, #06b6d4)
+- FILIERE (niveau 2, #f59e0b)
+- POLE_FORMATION (niveau 2, #10b981)
+
+#### 10 nouvelles fonctions (anglophone + bilingue)
+- Anglophone : HEAD-TEACHER, DEPUTY-HEAD, HEAD-OF-YEAR, FORM-TUTOR, SENCO, BUSINESS-MGR, EXAMS-OFF
+- Bilingue : COORD-LING, DIR-SECTION-FR, DIR-SECTION-EN
+
+#### 25 templates catégorisés (remplacent les 22 anciens)
+- T01-T02 : Lycée général public (standard + avancé)
+- T03-T04 : Collège public (standard + avancé)
+- T05-T07 : Lycée/Collège technique public
+- T08-T09 : École primaire publique (standard + avancé)
+- T10 : École maternelle publique
+- T11-T12 : Complexes scolaires privés (bilingue + francophone)
+- T13 : Collège-Lycée privé confessionnel
+- T14-T15 : British schools (secondary + primary)
+- T16 : Bilingual school (avancé)
+- T17-T19 : CFP / Institut / Grande école
+- T20-T21 : ENIEG / Université
+- T22-T24 : Écoles bilingues/communales
+- T25 : Organisation standard (générique)
+
+#### Matrice de combinaisons valides
+- 25 combinaisons logiques documentées
+- Incompatibilités exclues : MATERNEL+TECHNIQUE, NORMAL+PRIMAIRE, CFP+MATERNEL/PRIMAIRE, COMPLEXE+un_seul_niveau
+
+### Backend — Fichiers modifiés (7)
+1. **`template-organisation.entity.ts`** : 5 enums + 9 colonnes + 6 index partiels
+2. **`127-templates-organisation-categorisation.sql`** : Migration (ALTER TABLE + index + échelons)
+3. **`seed-nomenclatures.ts`** : 4 nouveaux échelons structurels
+4. **`seed-organisation.ts`** : 10 nouvelles fonctions anglophone/bilingue
+5. **`seed-templates.ts`** : 25 templates catégorisés (remplace les 22 anciens)
+6. **`template-organisation.service.ts`** : 3 nouvelles méthodes (`findAllFiltered`, `getCombinaisonsValides`, `clonerTemplate`)
+7. **`nomenclature.controller.ts`** : 3 nouvelles routes (GET /templates avec filtres, GET /templates/combinaisons, POST /templates/:id/cloner)
+
+### Frontend — Fichiers modifiés (6)
+1. **`organisation.types.ts`** : 5 enums miroir + `TemplateFiltres` + `CombinaisonsValides`
+2. **`query-keys.ts`** : Clés de cache `filtered()` et `combinaisons`
+3. **`use-templates.ts`** : 3 hooks (filtres, combinaisons, clonage)
+4. **`modeles-page.tsx`** : FacetFilters (5 groupes) + TemplateBadges + SearchInput + grille responsive 1→4 cols
+5. **`fr/organisation.json`** : Traductions FR (natures, systemes, langues, niveaux, complexites, filtres)
+6. **`en/organisation.json`** : Traductions EN (mêmes clés)
+
+### API REST — Nouvelles routes
+- `GET /api/organisation/templates?nature=&systeme=&langue=&niveaux=&complexite=&search=` (filtrage par facets)
+- `GET /api/organisation/templates/combinaisons` (matrice des combinaisons valides + compteurs)
+- `POST /api/organisation/templates/:id/cloner` (clonage avec nom optionnel)
+
+### Qualité code
+- **0 `any`** (sauf 1 contournement TypeORM mineur dans le seed)
+- **0 couleurs hardcodées** — toutes via CSS variables
+- **0 chaînes FR en dur** — toutes via `t()`
+- **Responsive** — grille 1→4 colonnes, `clamp()` partout
+- **Multi-tenant** — isolation par `etablissementId`
+- **RBAC** — permissions granulaires sur toutes les routes
+
+### Résultats
+- Migration 127 appliquée : ✅ (10 colonnes, 5 index, 4 échelons)
+- Seeds exécutés : ✅ (13 templates créés, 12 mis à jour, 10 fonctions par établissement)
+- Compilation TS : ✅ (0 erreur après correction `intitulé` → `intitule`)
+- Vérification 10/10 points : ✅
+
+### Prochaines étapes recommandées
+1. Tester la galerie avec filtres dans le frontend
+2. Tester le clonage de templates
+3. Tester la génération avec les nouveaux templates
+4. Valider la cohérence des fonctionRef dans chaque template
+5. Ajouter des tests unitaires pour `findAllFiltered()` et `clonerTemplate()`

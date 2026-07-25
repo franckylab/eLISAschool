@@ -116,7 +116,7 @@ export class PortalParentService {
                 matricule: eleve.matricule,
             },
             notes: notes.items,
-            total: notes.total,
+            total: notes.meta.totalItems,
             moyennesParMatiere,
         };
     }

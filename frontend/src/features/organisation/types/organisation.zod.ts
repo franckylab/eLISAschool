@@ -22,17 +22,36 @@ export const createUniteSchema = z.object({
 
 export const updateUniteSchema = createUniteSchema.partial().omit({ code: true });
 
-export const createHierarchieSchema = z.object({
+export const createHierarchieSchema = z
+    .object({
+        personnelId: z.string().optional().or(z.literal('')),
+        superieurId: z.string().optional().or(z.literal('')),
+        typeRelation: z.enum(['DIRECT', 'FONCTIONNEL']).default('DIRECT'),
+        statut: z.enum(['ACTIVE', 'HISTORIQUE', 'PLANIFIEE']).default('ACTIVE'),
+        posteId: z.string().optional().or(z.literal('')),
+        superieurPosteId: z.string().optional().or(z.literal('')),
+        dateDebut: z.string().optional(),
+        dateFin: z.string().optional(),
+        commentaire: z.string().optional(),
+    })
+    .refine(
+        (data) =>
+            (!!data.personnelId && !!data.superieurId) ||
+            (!!data.posteId && !!data.superieurPosteId),
+        { message: 'relationIncomplete', path: ['personnelId'] },
+    );
+
+export const updateHierarchieSchema = z.object({
     personnelId: z.string().optional().or(z.literal('')),
     superieurId: z.string().optional().or(z.literal('')),
-    typeRelation: z.enum(['DIRECT', 'FONCTIONNEL']).default('DIRECT'),
-    posteId: z.string().optional(),
+    typeRelation: z.enum(['DIRECT', 'FONCTIONNEL']).optional(),
+    statut: z.enum(['ACTIVE', 'HISTORIQUE', 'PLANIFIEE']).optional(),
+    posteId: z.string().optional().or(z.literal('')),
+    superieurPosteId: z.string().optional().or(z.literal('')),
     dateDebut: z.string().optional(),
     dateFin: z.string().optional(),
     commentaire: z.string().optional(),
 });
-
-export const updateHierarchieSchema = createHierarchieSchema.partial();
 
 export type CreateUniteFormData = z.infer<typeof createUniteSchema>;
 export type UpdateUniteFormData = z.infer<typeof updateUniteSchema>;

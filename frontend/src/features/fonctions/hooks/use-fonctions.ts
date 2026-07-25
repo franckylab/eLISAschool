@@ -135,7 +135,7 @@ export function useModifierFonction() {
         },
         onSuccess: (data) => {
             qc.invalidateQueries({ queryKey: FONCTIONS_KEYS.all });
-            qc.invalidateQueries({ queryKey: FONCTIONS_KEYS.detail(data.id) });
+            if (data) qc.invalidateQueries({ queryKey: FONCTIONS_KEYS.detail(data.id) });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
             toast.success(t('toasts.fonctionModifiee'));

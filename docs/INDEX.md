@@ -65,10 +65,11 @@
 
 ---
 
-### 🔨 Implémentations (41 documents)
+### 🔨 Implémentations (42 documents)
 
 | Document | Description | Statut |
 |----------|-------------|--------|
+| [IMPLEMENTATION-SUPPRESSION-TYPEPERSONNEL-CATEGORIE-FONCTION.md](implementations/IMPLEMENTATION-SUPPRESSION-TYPEPERSONNEL-CATEGORIE-FONCTION.md) | Suppression TypePersonnel → Fonction.categorie (v5.0) | ✅ Actif |
 | [IMPLEMENTATION-MODULE-ELEVES-COMPLETE.md](implementations/IMPLEMENTATION-MODULE-ELEVES-COMPLETE.md) | Module élèves complet | ✅ Actif |
 | [IMPLEMENTATION-MULTI-TENANT-CORRECTIONS-COMPLETE.md](implementations/IMPLEMENTATION-MULTI-TENANT-CORRECTIONS-COMPLETE.md) | Multi-tenant corrections | ✅ Actif |
 | [IMPLEMENTATION-SESSION-RESUME-FINAL.md](implementations/IMPLEMENTATION-SESSION-RESUME-FINAL.md) | Session management | ✅ Actif |

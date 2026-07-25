@@ -74,7 +74,17 @@
         "titre": "Organisation"
     },
     "personnel": {
-        "titre": "Staff"
+        "titre": "Staff",
+        "categorie": "Category",
+        "toutesCategories": "All categories",
+        "categorie_ENSEIGNANT": "Teaching",
+        "categorie_DIRECTION": "Management",
+        "categorie_ADMINISTRATIF": "Administrative",
+        "categorie_TECHNIQUE": "Technical",
+        "categorie_SERVICE": "Service",
+        "categorie_SANTE": "Health",
+        "categorie_SOCIAL": "Social",
+        "categorie_AUTRE": "Other"
     },
     "messages": {
         "succesEnregistrement": "Saved successfully",

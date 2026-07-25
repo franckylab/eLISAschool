@@ -10,7 +10,7 @@
  * - mv_postes_vacants_critiques: alertes postes vacants
  */
 
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { logger } from '@common/utils/logger.util';
 import { AppError } from '@common/filters/error.filter';
@@ -131,7 +131,7 @@ export class StatistiquesOrganisationOptimiseesService {
                 code: row.code,
                 uniteNom: row.unite_nom,
                 uniteCode: row.unite_code,
-                joursVacance: parseInt(row.jours_vacance) || 0,
+                joursVacance: parseInt(String(row.jours_vacance ?? '0'), 10) || 0,
                 niveauAlerte: row.niveau_alerte,
             }));
         } catch (error) {
@@ -177,17 +177,17 @@ export class StatistiquesOrganisationOptimiseesService {
         const uniteIds = (await uniteRepo.find({
             where: { etablissementId },
             select: ['id'],
-        })).map((u: { id: string }) => u.id);
+        })).map((u) => u.id as string);
 
         const [totalPostes, postesOccupes, postesVacants] = await Promise.all([
             uniteIds.length > 0
-                ? posteRepo.count({ where: { uniteOrganisationnelleId: uniteIds } })
+                ? posteRepo.count({ where: { uniteOrganisationnelleId: In(uniteIds) } })
                 : 0,
             uniteIds.length > 0
-                ? posteRepo.count({ where: { uniteOrganisationnelleId: uniteIds, statut: StatutPoste.ACTIF } })
+                ? posteRepo.count({ where: { uniteOrganisationnelleId: In(uniteIds), statut: StatutPoste.ACTIF } })
                 : 0,
             uniteIds.length > 0
-                ? posteRepo.count({ where: { uniteOrganisationnelleId: uniteIds, statut: StatutPoste.VACANT } })
+                ? posteRepo.count({ where: { uniteOrganisationnelleId: In(uniteIds), statut: StatutPoste.VACANT } })
                 : 0,
         ]);
 

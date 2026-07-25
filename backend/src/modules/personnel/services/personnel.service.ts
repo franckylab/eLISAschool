@@ -6,9 +6,9 @@
 
 import { Repository, IsNull } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { MembrePersonnel, TypePersonnel, StatutPersonnel } from '../entities';
-import { Fonction } from '@modules/organisation/entities';
-import { CreatePersonnelDto, UpdatePersonnelDto, CreateTypePersonnelDto, UpdateTypePersonnelDto, QueryPersonnelDto } from '../dto';
+import { MembrePersonnel, StatutPersonnel } from '../entities';
+import { CreatePersonnelDto, UpdatePersonnelDto, QueryPersonnelDto } from '../dto';
+import { CategorieFonction, CategorieSource } from '../../../shared/constants/personnel.constants';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
@@ -17,80 +17,92 @@ import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 
+export interface MembrePersonnelEnrichi extends MembrePersonnel {
+    categorie: CategorieFonction | null;
+    estEnseignant: boolean;
+    categorieSource: CategorieSource;
+}
+
 export class PersonnelService {
     private personnelRepo: Repository<MembrePersonnel>;
-    private typeRepo: Repository<TypePersonnel>;
-    private typesCache: { data: TypePersonnel[]; timestamp: number } | null = null;
-    private readonly CACHE_TTL = 5 * 60 * 1000;
+
+    /**
+     * Derivation SQL de la categorie d'un membre (fonction principale active,
+     * sinon fonction du poste de l'affectation ACTIF la plus recente).
+     */
+    private static readonly CATEGORIE_SQL = `
+        COALESCE(
+            (SELECT f.categorie FROM membres_fonctions mf
+             JOIN fonctions f ON f.id = mf."fonctionId"
+             WHERE mf."membrePersonnelId" = p.id
+               AND (mf."dateFin" IS NULL OR mf."dateFin" >= CURRENT_DATE)
+             ORDER BY mf."estPrincipale" DESC, mf."dateDebut" DESC LIMIT 1),
+            (SELECT f2.categorie FROM affectations_postes ap
+             JOIN postes po ON po.id = ap."posteId"
+             JOIN fonctions f2 ON f2.id = po."fonctionId"
+             WHERE ap."membrePersonnelId" = p.id AND ap.statut = 'ACTIF'
+             ORDER BY ap."dateDebut" DESC LIMIT 1)
+        )`;
 
     constructor() {
         this.personnelRepo = AppDataSource.getRepository(MembrePersonnel);
-        this.typeRepo = AppDataSource.getRepository(TypePersonnel);
     }
 
-    // ==== TYPES DE PERSONNEL ====
+    // ==== CATEGORIE DERIVEE ====
 
-    private invalidateTypesCache(): void {
-        this.typesCache = null;
-    }
+    /**
+     * Derive en batch la categorie de fonction de plusieurs membres (anti-N+1).
+     */
+    async deriverCategories(membreIds: string[]): Promise<Map<string, { categorie: CategorieFonction | null; source: CategorieSource }>> {
+        const result = new Map<string, { categorie: CategorieFonction | null; source: CategorieSource }>();
+        if (membreIds.length === 0) return result;
 
-    async createType(dto: CreateTypePersonnelDto): Promise<TypePersonnel> {
-        const existing = await this.typeRepo.findOne({ where: { code: dto.code } });
-        if (existing) throw new AppError('Code type personnel déjà utilisé', 409, 'TYPE_EXISTS');
+        const rows: { id: string; mf_categorie: string | null; ap_categorie: string | null }[] =
+            await this.personnelRepo.query(`
+                SELECT p.id, mf_cat.categorie AS mf_categorie, ap_cat.categorie AS ap_categorie
+                FROM membres_personnel p
+                LEFT JOIN LATERAL (
+                    SELECT f.categorie FROM membres_fonctions mf
+                    JOIN fonctions f ON f.id = mf."fonctionId"
+                    WHERE mf."membrePersonnelId" = p.id
+                      AND (mf."dateFin" IS NULL OR mf."dateFin" >= CURRENT_DATE)
+                    ORDER BY mf."estPrincipale" DESC, mf."dateDebut" DESC LIMIT 1
+                ) mf_cat ON true
+                LEFT JOIN LATERAL (
+                    SELECT f2.categorie FROM affectations_postes ap
+                    JOIN postes po ON po.id = ap."posteId"
+                    JOIN fonctions f2 ON f2.id = po."fonctionId"
+                    WHERE ap."membrePersonnelId" = p.id AND ap.statut = 'ACTIF'
+                    ORDER BY ap."dateDebut" DESC LIMIT 1
+                ) ap_cat ON true
+                WHERE p.id = ANY($1)
+            `, [membreIds]);
 
-        const type = this.typeRepo.create(dto);
-        await this.typeRepo.save(type);
-        this.invalidateTypesCache();
-        return type;
-    }
-
-    async getTypes(): Promise<TypePersonnel[]> {
-        if (this.typesCache && Date.now() - this.typesCache.timestamp < this.CACHE_TTL) {
-            return this.typesCache.data;
+        for (const row of rows) {
+            if (row.mf_categorie) {
+                result.set(row.id, { categorie: row.mf_categorie as CategorieFonction, source: 'FONCTION' });
+            } else if (row.ap_categorie) {
+                result.set(row.id, { categorie: row.ap_categorie as CategorieFonction, source: 'AFFECTATION' });
+            } else {
+                result.set(row.id, { categorie: null, source: null });
+            }
         }
-        const types = await this.typeRepo.find({ order: { nom: 'ASC' } });
-        this.typesCache = { data: types, timestamp: Date.now() };
-        return types;
+        return result;
     }
 
-    async findTypeById(id: string): Promise<TypePersonnel> {
-        const type = await this.typeRepo.findOne({ where: { id } });
-        if (!type) throw new AppError('Type de personnel non trouvé', 404, 'NOT_FOUND');
-        return type;
-    }
-
-    async updateType(id: string, dto: UpdateTypePersonnelDto): Promise<TypePersonnel> {
-        const type = await this.findTypeById(id);
-
-        if (dto.code && dto.code !== type.code) {
-            const existing = await this.typeRepo.findOne({ where: { code: dto.code } });
-            if (existing) throw new AppError('Code type personnel déjà utilisé', 409, 'TYPE_EXISTS');
-        }
-
-        Object.assign(type, dto);
-        await this.typeRepo.save(type);
-        this.invalidateTypesCache();
-        return type;
-    }
-
-    async deleteType(id: string): Promise<void> {
-        const type = await this.findTypeById(id);
-        if (type.estSysteme) throw new AppError('Impossible de supprimer un type système', 403, 'FORBIDDEN');
-
-        const countMembres = await this.personnelRepo.count({ where: { typePersonnelId: id } });
-        const countFonctions = await AppDataSource.getRepository(Fonction).count({ where: { typePersonnelId: id } });
-
-        if (countMembres > 0 || countFonctions > 0) {
-            throw new AppError(
-                `Type utilisé par ${countMembres} membre(s) et ${countFonctions} fonction(s). Veuillez réaffecter avant de supprimer.`,
-                409,
-                'TYPE_IN_USE',
-            );
-        }
-
-        await this.typeRepo.remove(type);
-        this.invalidateTypesCache();
-        logger.info(`Type personnel supprimé: ${type.code} (${id})`);
+    /**
+     * Enrichit des membres avec categorie / estEnseignant / categorieSource derives.
+     */
+    async enrichirCategories(membres: MembrePersonnel[]): Promise<MembrePersonnelEnrichi[]> {
+        const map = await this.deriverCategories(membres.map((m) => m.id));
+        return membres.map((m) => {
+            const info = map.get(m.id) ?? { categorie: null, source: null };
+            return Object.assign(m, {
+                categorie: info.categorie,
+                estEnseignant: info.categorie === CategorieFonction.ENSEIGNANT,
+                categorieSource: info.source,
+            }) as MembrePersonnelEnrichi;
+        });
     }
 
     // ==== MEMBRES PERSONNEL ====
@@ -136,13 +148,12 @@ export class PersonnelService {
      * Rechercher tous les membres du personnel avec pagination et filtres
      */
     async findAll(query: QueryPersonnelDto, etablissementId?: string): Promise<PaginatedResult<MembrePersonnel>> {
-        const { page, limit, search, typePersonnelId, typeCode, statut } = query;
+        const { page, limit, search, categorie, estEnseignant, statut } = query;
 
         const qb = this.personnelRepo
             .createQueryBuilder('p')
             .leftJoinAndSelect('p.utilisateur', 'u')
             .leftJoinAndSelect('u.profil', 'prof')
-            .leftJoinAndSelect('p.typePersonnel', 'tp')
             .where('1=1');
 
         // Filtre par établissement (multi-tenancy)
@@ -150,13 +161,15 @@ export class PersonnelService {
             qb.andWhere('p.etablissementId = :etablissementId', { etablissementId });
         }
 
-        // Filtres optionnels
-        if (typePersonnelId) {
-            qb.andWhere('p.typePersonnelId = :typePersonnelId', { typePersonnelId });
-        }
-
-        if (typeCode) {
-            qb.andWhere('tp.code = :typeCode', { typeCode });
+        // Filtres sur la catégorie dérivée (fonction principale ou affectation active)
+        if (categorie) {
+            qb.andWhere(`${PersonnelService.CATEGORIE_SQL} = :categorie`, { categorie });
+        } else if (estEnseignant !== undefined) {
+            if (estEnseignant) {
+                qb.andWhere(`${PersonnelService.CATEGORIE_SQL} = :catEns`, { catEns: CategorieFonction.ENSEIGNANT });
+            } else {
+                qb.andWhere(`${PersonnelService.CATEGORIE_SQL} IS DISTINCT FROM :catEns`, { catEns: CategorieFonction.ENSEIGNANT });
+            }
         }
 
         if (statut) {
@@ -177,22 +190,28 @@ export class PersonnelService {
         qb.orderBy(`p.${orderField}`, query.sortOrder);
 
         // Pagination optimisée
-        return paginateWithQueryBuilder(qb, page, limit, false);
+        const result = await paginateWithQueryBuilder(qb, page, limit, false);
+        const enrichis = await this.enrichirCategories(result.items);
+        return { ...result, items: enrichis };
     }
 
-    async findOne(id: string, etablissementId?: string): Promise<MembrePersonnel> {
+    async findOne(id: string, etablissementId?: string): Promise<MembrePersonnelEnrichi> {
         const where: any = { id };
         if (etablissementId) where.etablissementId = etablissementId;
         const membre = await this.personnelRepo.findOne({
             where,
-            relations: ['utilisateur', 'utilisateur.profil', 'typePersonnel'],
+            relations: ['utilisateur', 'utilisateur.profil'],
         });
         if (!membre) throw new AppError('Membre non trouvé', 404, 'NOT_FOUND');
-        return membre;
+        const [enrichi] = await this.enrichirCategories([membre]);
+        return enrichi;
     }
 
-    async findByUserId(userId: string): Promise<MembrePersonnel | null> {
-        return this.personnelRepo.findOne({ where: { utilisateurId: userId }, relations: ['typePersonnel'] });
+    async findByUserId(userId: string): Promise<MembrePersonnelEnrichi | null> {
+        const membre = await this.personnelRepo.findOne({ where: { utilisateurId: userId } });
+        if (!membre) return null;
+        const [enrichi] = await this.enrichirCategories([membre]);
+        return enrichi;
     }
 
     async linkUser(membreId: string, utilisateurId: string): Promise<MembrePersonnel> {
@@ -283,33 +302,6 @@ export class PersonnelService {
         }
 
         return membre;
-    }
-
-    async updateTypePersonnelMembre(id: string, typePersonnelId: string, userId?: string): Promise<MembrePersonnel> {
-        const membre = await this.findOne(id);
-        const ancienTypeId = membre.typePersonnelId;
-        const ancienType = membre.typePersonnel;
-
-        const type = await this.findTypeById(typePersonnelId);
-        if (!type.actif) throw new AppError('Ce type de personnel est inactif', 400, 'TYPE_INACTIF');
-
-        membre.typePersonnelId = typePersonnelId;
-        await this.personnelRepo.save(membre);
-
-        if (userId) {
-            await auditService.log({
-                utilisateurId: userId,
-                action: AuditAction.PERSONNEL_UPDATE,
-                cible: 'MembrePersonnel',
-                cibleId: id,
-                description: `Type personnel modifié: ${ancienType?.nom ?? ancienTypeId} → ${type.nom}`,
-                anciennesValeurs: { typePersonnelId: ancienTypeId },
-                nouvellesValeurs: { typePersonnelId },
-                module: 'personnel',
-            });
-        }
-
-        return this.findOne(id);
     }
 
     async updateDateEntree(id: string, dateEmbauche: Date, userId?: string): Promise<MembrePersonnel> {

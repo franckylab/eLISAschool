@@ -12,7 +12,7 @@ import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { logger } from '@common/utils/logger.util';
 import { Eleve } from '@modules/eleves/entities';
-import { Note } from '@modules/notes/entities';
+import { Note, StatutNote } from '@modules/notes/entities';
 import { AffectationEleve } from '@modules/classes/entities';
 
 interface BatchResult {
@@ -54,17 +54,18 @@ export class DashboardDataLoaderService {
         this.batchStats.totalBatches++;
         
         // Requête batch UNIQUE au lieu de N requêtes
+        // NB: colonnes camelCase quotées (pas de NamingStrategy dans le projet)
         const query = `
             SELECT 
-                etablissement_id,
+                "etablissementId",
                 COUNT(*) as total,
                 COUNT(*) FILTER (WHERE statut = 'ACTIF') as actifs,
                 COUNT(*) FILTER (WHERE statut = 'INACTIF') as inactifs,
                 COUNT(*) FILTER (WHERE sexe = 'M') as masculin,
                 COUNT(*) FILTER (WHERE sexe = 'F') as feminin
             FROM eleves
-            WHERE etablissement_id = ANY($1)
-            GROUP BY etablissement_id
+            WHERE "etablissementId" = ANY($1)
+            GROUP BY "etablissementId"
         `;
 
         const results = await this.eleveRepo.query(query, [etablissementIds]);
@@ -83,7 +84,7 @@ export class DashboardDataLoaderService {
 
         // Remplir avec les résultats
         for (const row of results) {
-            statsMap.set(row.etablissement_id, {
+            statsMap.set(row.etablissementId, {
                 total: parseInt(row.total),
                 actifs: parseInt(row.actifs),
                 inactifs: parseInt(row.inactifs),
@@ -118,20 +119,23 @@ export class DashboardDataLoaderService {
 
         this.batchStats.totalBatches++;
 
+        // NB: colonnes camelCase quotées (pas de NamingStrategy dans le projet)
+        // Statuts comptés unifiés : VALIDEE + PUBLIEE
         const query = `
             SELECT 
-                ae.classe_id,
-                AVG(n.valeur / n.bareme * 20) as moyenne
+                ae."classeId",
+                AVG(n.valeur / NULLIF(n.bareme, 0) * 20) as moyenne
             FROM notes n
-            INNER JOIN affectations_eleves ae ON n.eleve_id = ae.eleve_id
-            WHERE ae.classe_id = ANY($1)
+            INNER JOIN affectations_eleves ae ON n."eleveId" = ae."eleveId"
+            WHERE ae."classeId" = ANY($1)
             AND ae.statut = 'ACTIVE'
-            AND n.statut = 'VALIDEE'
-            ${periodeId ? 'AND n.periode_id = $2' : ''}
-            GROUP BY ae.classe_id
+            AND n.statut::text = ANY($2)
+            ${periodeId ? 'AND n."periodeId" = $3' : ''}
+            GROUP BY ae."classeId"
         `;
 
-        const params = periodeId ? [classeIds, periodeId] : [classeIds];
+        const statutsComptes = [StatutNote.VALIDEE, StatutNote.PUBLIEE];
+        const params = periodeId ? [classeIds, statutsComptes, periodeId] : [classeIds, statutsComptes];
         const results = await this.noteRepo.query(query, params);
         
         const moyennesMap = new Map<string, number>();
@@ -141,7 +145,7 @@ export class DashboardDataLoaderService {
         }
 
         for (const row of results) {
-            moyennesMap.set(row.classe_id, Math.round(parseFloat(row.moyenne) * 100) / 100);
+            moyennesMap.set(row.classeId, Math.round(parseFloat(row.moyenne) * 100) / 100);
         }
 
         this.batchCache.set(cacheKey, moyennesMap);

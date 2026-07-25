@@ -46,6 +46,11 @@ export async function seedNomenclatures(): Promise<{
         { code: 'ATELIER', niveau: 3, label: 'Atelier', description: 'Atelier technique ou artistique', couleur: '#0891b2', estSysteme: true },
         { code: 'LABORATOIRE', niveau: 3, label: 'Laboratoire', description: 'Laboratoire scientifique', couleur: '#65a30d', estSysteme: true },
         { code: 'CDI', niveau: 3, label: 'CDI', description: 'Centre de documentation et d\'information', couleur: '#e11d48', estSysteme: true },
+        // v5.1 — 4 nouveaux échelons pour la catégorisation des templates
+        { code: 'SECTION_LINGUISTIQUE', niveau: 2, label: 'Section linguistique', description: 'Section organisée par langue d\'enseignement', couleur: '#8b5cf6', estSysteme: true },
+        { code: 'CYCLE', niveau: 2, label: 'Cycle', description: 'Cycle pédagogique (ex: Cycle 2, Cycle 3)', couleur: '#06b6d4', estSysteme: true },
+        { code: 'FILIERE', niveau: 2, label: 'Filière', description: 'Filière de formation (général, technique, etc.)', couleur: '#f59e0b', estSysteme: true },
+        { code: 'POLE_FORMATION', niveau: 2, label: 'Pôle de formation', description: 'Pôle organisé par domaine de compétence', couleur: '#10b981', estSysteme: true },
     ], 'code');
     logger.info(`   Échelons structurels: ${echelonsStructurels.size}`);
 

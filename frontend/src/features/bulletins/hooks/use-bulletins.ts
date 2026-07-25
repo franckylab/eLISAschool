@@ -2,15 +2,28 @@
  * ==================================
  * eLISAschool - Hooks Bulletins
  * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Hooks TanStack Query du module Bulletins.
+ * Endpoints backend : /api/bulletins, /api/bulletins/generate,
+ * /api/bulletins/:id/export (HTML A4 imprimable).
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/stores/auth.store';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
-import type { Bulletin, GenererBulletinDto, BulletinFiltres } from '../types/bulletin.types';
+import { useHandleError } from './use-handle-error';
+import type {
+    Bulletin,
+    GenererBulletinsDto,
+    ModifierBulletinDto,
+    BulletinFiltres,
+} from '../types/bulletin.types';
 
-const BULLETINS_KEYS = {
+export const BULLETINS_KEYS = {
     all: ['bulletins'] as const,
     listes: () => [...BULLETINS_KEYS.all, 'liste'] as const,
     liste: (filtres: BulletinFiltres) => [...BULLETINS_KEYS.listes(), filtres] as const,
@@ -18,105 +31,116 @@ const BULLETINS_KEYS = {
     detail: (id: string) => [...BULLETINS_KEYS.details(), id] as const,
 };
 
+/**
+ * Ne conserve que les paramètres non vides.
+ */
+function nettoyerParams(source: Record<string, string | number | undefined>): Record<string, string | number> {
+    const params: Record<string, string | number> = {};
+    for (const [cle, valeur] of Object.entries(source)) {
+        if (valeur !== undefined && valeur !== '') {
+            params[cle] = valeur;
+        }
+    }
+    return params;
+}
+
 export function useBulletins(filtres: BulletinFiltres = {}) {
     const { isAuthenticated } = useAuthStore();
+
     return useQuery({
         queryKey: BULLETINS_KEYS.liste(filtres),
         queryFn: async () => {
             const response = await apiClient.getPaginated<Bulletin>('/api/bulletins', {
                 page: filtres.page || 1,
                 limit: filtres.limit || 20,
-                ...filtres,
+                ...nettoyerParams({
+                    recherche: filtres.recherche,
+                    eleveId: filtres.eleveId,
+                    classeAnneeId: filtres.classeAnneeId,
+                    periodeId: filtres.periodeId,
+                    publie: filtres.publie,
+                    sortBy: filtres.sortBy,
+                    sortOrder: filtres.sortOrder,
+                }),
             });
             return response.data;
         },
         enabled: isAuthenticated,
-        staleTime: 10 * 60 * 1000,
+        staleTime: 5 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 
 export function useBulletin(id: string) {
     const { isAuthenticated } = useAuthStore();
-    
+
     return useQuery({
         queryKey: BULLETINS_KEYS.detail(id),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: Bulletin }>(`/api/bulletins/${id}`);
-            return response.data?.data;
+            const response = await apiClient.get<Bulletin>(`/api/bulletins/${id}`);
+            return response.data;
         },
         enabled: isAuthenticated && !!id,
-        staleTime: 10 * 60 * 1000,
+        staleTime: 5 * 60 * 1000,
         placeholderData: (previousData) => previousData,
     });
 }
 
-export function useGenererBulletin() {
+/**
+ * Génération de bulletins — POST /api/bulletins/generate.
+ * Génère pour toute la classe si eleveId est omis.
+ */
+export function useGenererBulletins() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('bulletins');
+    const handleError = useHandleError();
 
     return useMutation({
-        mutationFn: async (dto: GenererBulletinDto) => {
-            const response = await apiClient.post<{ success: boolean; data: Bulletin }>('/api/bulletins/generer', dto);
-            return response.data?.data;
+        mutationFn: async (dto: GenererBulletinsDto) => {
+            const response = await apiClient.post<Bulletin[]>('/api/bulletins/generate', dto);
+            return response.data ?? [];
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: BULLETINS_KEYS.listes() });
-            toast.success('Bulletin généré avec succès');
+        onSuccess: (bulletins) => {
+            queryClient.invalidateQueries({ queryKey: BULLETINS_KEYS.all });
+            toast.success(t('toastGeneres', { count: bulletins.length }));
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de la génération');
-        },
+        onError: (e: unknown) => handleError(e, t('erreurGeneration')),
     });
 }
 
-export function useGenererBulletinsEnMasse() {
+/**
+ * Modification d'un bulletin (appréciations, publication).
+ * publie: true exige bulletins:publier côté backend.
+ */
+export function useModifierBulletin() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('bulletins');
+    const handleError = useHandleError();
 
     return useMutation({
-        mutationFn: async (data: { classeId: string; periodeId: string; anneeScolaireId: string }) => {
-            const response = await apiClient.post<{ success: boolean; data: { genere: number; total: number } }>(
-                '/api/bulletins/generer-en-masse',
-                data
-            );
-            return response.data?.data;
-        },
-        onSuccess: (result) => {
-            queryClient.invalidateQueries({ queryKey: BULLETINS_KEYS.listes() });
-            if (result) {
-                toast.success(`${result.genere}/${result.total} bulletins générés avec succès`);
-            }
-        },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de la génération en masse');
-        },
-    });
-}
-
-export function useExporterBulletin() {
-    return useMutation({
-        mutationFn: async (bulletinId: string) => {
-            const response = await apiClient.get(`/api/bulletins/${bulletinId}/export`, {
-                responseType: 'blob',
-            });
+        mutationFn: async ({ id, ...dto }: ModifierBulletinDto) => {
+            const response = await apiClient.patch<Bulletin>(`/api/bulletins/${id}`, dto);
             return response.data;
         },
-        onSuccess: (data) => {
-            const url = window.URL.createObjectURL(new Blob([data as BlobPart]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `bulletin.pdf`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            toast.success('Bulletin téléchargé');
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: BULLETINS_KEYS.listes() });
+            queryClient.invalidateQueries({ queryKey: BULLETINS_KEYS.detail(variables.id) });
+            if (variables.publie === true) {
+                toast.success(t('toastPublie'));
+            } else if (variables.publie === false) {
+                toast.success(t('toastDepublie'));
+            } else {
+                toast.success(t('toastModifie'));
+            }
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de l\'export');
-        },
+        onError: (e: unknown) => handleError(e, t('erreurModification')),
     });
 }
 
 export function useSupprimerBulletin() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('bulletins');
+    const handleError = useHandleError();
 
     return useMutation({
         mutationFn: async (id: string) => {
@@ -125,10 +149,50 @@ export function useSupprimerBulletin() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: BULLETINS_KEYS.listes() });
-            toast.success('Bulletin supprimé avec succès');
+            toast.success(t('toastSupprime'));
         },
-        onError: (error: any) => {
-            toast.error(error.response?.data?.error?.message || 'Erreur lors de la suppression');
+        onError: (e: unknown) => handleError(e, t('erreurSuppression')),
+    });
+}
+
+/**
+ * Export d'un bulletin : récupère le document HTML A4 du backend
+ * puis l'ouvre dans un nouvel onglet et déclenche l'impression.
+ */
+export function useExporterBulletin() {
+    const { t } = useTranslation('bulletins');
+    const handleError = useHandleError();
+
+    return useMutation({
+        mutationFn: async (bulletinId: string) => {
+            const baseUrl: string = import.meta.env.VITE_API_URL ?? '';
+            const token = apiClient.getAccessToken();
+            const response = await fetch(`${baseUrl}/api/bulletins/${bulletinId}/export`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                credentials: 'include',
+            });
+            if (!response.ok) {
+                throw new Error(t('erreurExport'));
+            }
+            return response.text();
         },
+        onSuccess: (html) => {
+            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const fenetre = window.open(url, '_blank');
+            if (!fenetre) {
+                URL.revokeObjectURL(url);
+                toast.error(t('erreurPopupBloquee'));
+                return;
+            }
+            fenetre.focus();
+            // Laisse le temps au document de se rendre avant l'impression
+            fenetre.addEventListener('load', () => {
+                fenetre.setTimeout(() => fenetre.print(), 300);
+                URL.revokeObjectURL(url);
+            });
+            toast.success(t('toastExporte'));
+        },
+        onError: (e: unknown) => handleError(e, t('erreurExport')),
     });
 }

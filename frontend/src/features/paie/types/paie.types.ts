@@ -120,7 +120,7 @@ export interface MembrePersonnel {
             photo?: string;
         };
     };
-    typePersonnelId?: string;
+    categorie?: string;
     matricule: string;
     dateEmbauche: string;
     statut: string;

@@ -6,7 +6,6 @@
  * Icônes Lucide, filtrage par permissions, collapse/expand
  */
 
-import { useTranslation } from 'react-i18next';
 import { Link, useMatchRoute } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -37,21 +36,25 @@ import {
     Medal,
     FileBadge2,
     GitBranch,
+    Route,
     LayoutGrid,
     ChevronDown,
     ChevronRight,
     Brain,
     Workflow,
     Network,
+    ListTree,
     BookOpen,
     DoorOpen,
     FileSignature,
     Wallet,
+    ClipboardList,
+    ListPlus,
     type LucideIcon,
 } from 'lucide-react';
 import { useSidebarStore } from '@/stores/sidebar.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { useModulePermissions } from '@/hooks';
+import { useModulePermissions, usePermissions } from '@/hooks';
 import { useEtablissement } from '@/features/etablissement';
 import { useAnneeScolaireActive } from '@/features/annees-scolaires';
 import { usePeriodeActive } from '@/features/periodes';
@@ -65,6 +68,7 @@ interface NavItem {
     path: string;
     icon: LucideIcon;
     module?: string;
+    permission?: string;
     children?: NavItem[];
 }
 
@@ -208,12 +212,13 @@ const NAV_SECTIONS: NavSection[] = [
                 icon: Building2,
                 module: 'organisation',
                 children: [
-                    { label: 'Unités', path: '/organisation/unites', icon: GitBranch, module: 'organisation' },
-                    { label: 'Postes', path: '/organisation/postes', icon: Briefcase, module: 'organisation' },
-                    { label: 'Fonctions', path: '/organisation/fonctions', icon: Workflow, module: 'organisation' },
-                    { label: 'Organigramme', path: '/organisation', icon: Network, module: 'organisation' },
-                    { label: 'Nomenclatures', path: '/organisation/nomenclatures', icon: LayoutGrid, module: 'organisation' },
-                    { label: 'Modèles', path: '/organisation/modeles', icon: FileText, module: 'organisation' },
+                    { label: 'Unités', path: '/organisation/unites', icon: GitBranch, permission: 'organisation:unites:read' },
+                    { label: 'Postes', path: '/organisation/postes', icon: Briefcase, permission: 'organisation:postes:read' },
+                    { label: 'Fonctions', path: '/organisation/fonctions', icon: Workflow, permission: 'organisation:fonctions:read' },
+                    { label: 'Organigramme', path: '/organisation', icon: Network, permission: 'organisation:organigramme:read' },
+                    { label: 'Hiérarchie', path: '/organisation/hierarchie', icon: ListTree, permission: 'organisation:hierarchie:read' },
+                    { label: 'Nomenclatures', path: '/organisation/nomenclatures', icon: LayoutGrid, permission: 'organisation:nomenclatures:read' },
+                    { label: 'Modèles', path: '/organisation/modeles', icon: FileText, permission: 'organisation:templates:read' },
                 ]
             },
 
@@ -226,7 +231,7 @@ const NAV_SECTIONS: NavSection[] = [
                     { label: 'Cycles', path: '/cycles', icon: IterationCcw, module: 'cycles' },
                     { label: 'Niveaux', path: '/niveaux', icon: Gauge, module: 'niveaux' },
                     { label: 'Filières', path: '/filieres', icon: Split, module: 'filieres' },
-                    { label: 'Spécialités', path: '/specialites', icon: GitBranch, module: 'specialites' },
+                    { label: 'Spécialités', path: '/specialites', icon: Route, module: 'specialites' },
 
                     { label: 'Examens Nationaux', path: '/examens-nationaux', icon: FileBadge2, module: 'examens-nationaux' },
                     { label: 'Diplômes Élèves', path: '/diplomes-eleves', icon: Medal, module: 'diplomes-eleves' },
@@ -263,7 +268,16 @@ const NAV_SECTIONS: NavSection[] = [
             { label: 'Paie', path: '/paie', icon: Wallet, module: 'paie' },
             // { label: 'Enseignants', path: '/enseignants', icon: GraduationCap, module: 'enseignants' }, // Merged into Personnel
             { label: 'Périodes', path: '/periodes', icon: Calendar, module: 'periodes' },
-            { label: 'Notes', path: '/notes', icon: TrendingUp, module: 'notes' },
+            {
+                label: 'Notes',
+                path: '/notes',
+                icon: TrendingUp,
+                module: 'notes',
+                children: [
+                    { label: 'Liste', path: '/notes', icon: ClipboardList, module: 'notes' },
+                    { label: 'Saisie en masse', path: '/notes/saisie', icon: ListPlus, module: 'notes', permission: 'notes:bulk:create' },
+                ],
+            },
             { label: 'Bulletins', path: '/bulletins', icon: FileText, module: 'bulletins' },
             { label: 'Emploi du temps', path: '/emploi-du-temps', icon: Calendar, module: 'emploi-du-temps' },
             { label: 'Salles', path: '/salles', icon: DoorOpen, module: 'salles' },
@@ -290,12 +304,12 @@ const NAV_SECTIONS: NavSection[] = [
 ];
 
 export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } = {}) {
-    const { t } = useTranslation('common');
     const { isCollapsed: storeCollapsed } = useSidebarStore();
     // Le drawer mobile (forceExpanded) affiche toujours les libellés, indépendamment du repli desktop.
     const collapsed = forceExpanded ? false : storeCollapsed;
-    const { utilisateur, etablissementId } = useAuthStore();
+    const { etablissementId } = useAuthStore();
     const matchRoute = useMatchRoute();
+    const { hasPermission } = usePermissions();
 
     // Charger le logo de l'établissement
     const { data: etablissement } = useEtablissement(etablissementId || '');
@@ -345,6 +359,10 @@ export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } =
                 // Si l'item a des children, filtrer les children selon les permissions
                 if (item.children) {
                     const filteredChildren = item.children.filter((child) => {
+                        // Vérifier d'abord la permission granulaire si définie
+                        if (child.permission && !hasPermission(child.permission)) {
+                            return false;
+                        }
                         if (!child.module) return true;
                             const permsMap: Record<string, { canAccess: boolean }> = {
                                 cycles: cyclesPerms,
@@ -355,6 +373,7 @@ export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } =
                                 'examens-nationaux': examensNationauxPerms,
                                 'diplomes-eleves': diplomesElevesPerms,
                                 organisation: organisationPerms,
+                                notes: notesPerms,
                             };
                             const perms = permsMap[child.module];
                         return perms?.canAccess ?? true;

@@ -1,4 +1,4 @@
-import { Repository, FindOptionsWhere } from 'typeorm';
+import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { ModeRemunerationEntity } from '../entities';
 import { CreateModeRemunerationDto, UpdateModeRemunerationDto } from '../dto';
@@ -45,15 +45,19 @@ class ModeRemunerationService {
     }
 
     async findById(id: string, etablissementId?: string): Promise<ModeRemunerationEntity> {
-        const where: FindOptionsWhere<ModeRemunerationEntity> = { id };
-        if (etablissementId) where.etablissementId = etablissementId;
-        const entity = await this.repo.findOne({ where });
+        const qb = this.repo.createQueryBuilder('m').where('m.id = :id', { id });
+        if (etablissementId) {
+            // Visible si tenant OU global/système (nomenclatures partagées)
+            qb.andWhere('(m.etablissementId = :eid OR m.etablissementId IS NULL OR m.estSysteme = TRUE)', { eid: etablissementId });
+        }
+        const entity = await qb.getOne();
         if (!entity) throw new AppError('Mode de rémunération non trouvé', 404, 'MODE_REMUNERATION_NOT_FOUND');
         return entity;
     }
 
     async update(id: string, dto: UpdateModeRemunerationDto, etablissementId?: string): Promise<ModeRemunerationEntity> {
         const entity = await this.findById(id, etablissementId);
+        assertNotSystem(entity, 'modifier');
         Object.assign(entity, dto);
         return this.repo.save(entity);
     }

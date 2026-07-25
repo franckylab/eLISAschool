@@ -920,7 +920,7 @@ sortOrder: 'DESC' as const
 
 ```typescript
 // ❌ INCORRECT — Paramètres séparés
-const result = await service.findAll(typeId, etablissementId);
+const result = await service.findAll(fonctionId, etablissementId);
 
 // ✅ CORRECT — Objet DTO complet
 const result = await service.findAll({
@@ -928,7 +928,7 @@ const result = await service.findAll({
     limit: 100,
     sortBy: 'createdAt',
     sortOrder: 'DESC' as const,  // ← IMPORTANT: as const
-    typePersonnelId: typeId
+    fonctionId
 }, etablissementId);
 ```
 

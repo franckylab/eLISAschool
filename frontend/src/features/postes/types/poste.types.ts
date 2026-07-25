@@ -1,13 +1,5 @@
 export type StatutPoste = 'ACTIF' | 'VACANT' | 'SUPPRIME' | 'EN_ATTENTE';
 
-export interface TypePersonnelLite {
-    id: string;
-    code: string;
-    nom: string;
-    estSysteme: boolean;
-    actif: boolean;
-}
-
 export interface Poste {
     id: string;
     intitule: string;
@@ -16,7 +8,7 @@ export interface Poste {
     niveauResponsabiliteId?: string;
     niveauResponsabilite?: { id: string; code: string; label: string; niveau: number };
     fonctionId: string;
-    fonction?: { id: string; nom: string; code: string; typePersonnel?: TypePersonnelLite };
+    fonction?: { id: string; nom: string; code: string; categorie?: string };
     statut: StatutPoste;
     actif: boolean;
     uniteOrganisationnelleId: string;

@@ -18,7 +18,6 @@ import {
 } from 'typeorm';
 import { Utilisateur } from '@modules/utilisateurs/entities/utilisateur.entity';
 import { Etablissement } from '@modules/etablissement/entities';
-import { TypePersonnel } from '@modules/organisation/entities';
 import type { MembreFonction } from './membre-fonction.entity';
 
 /**
@@ -44,13 +43,6 @@ export class MembrePersonnel {
     @OneToOne(() => Utilisateur, u => u.membrePersonnel, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'utilisateurId' })
     utilisateur?: Utilisateur;
-
-    @Column({ type: 'uuid', nullable: true })
-    typePersonnelId?: string;
-
-    @ManyToOne(() => TypePersonnel)
-    @JoinColumn({ name: 'typePersonnelId' })
-    typePersonnel?: TypePersonnel;
 
     @Column({ type: 'varchar', length: 50, unique: true })
     matricule!: string;

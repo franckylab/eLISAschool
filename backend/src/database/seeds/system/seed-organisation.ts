@@ -3,7 +3,7 @@ import { UniteOrganisationnelle, StatutUnite } from '@modules/organisation/entit
 import { Poste, StatutPoste } from '@modules/organisation/entities/poste.entity';
 import { HierarchiePersonnel, StatutRelation, TypeRelationHierarchique } from '@modules/organisation/entities/hierarchie-personnel.entity';
 import { Fonction } from '@modules/organisation/entities/fonction.entity';
-import { TypePersonnel } from '@modules/organisation/entities/type-personnel.entity';
+import { CategorieFonction } from '../../../shared/constants/personnel.constants';
 import { logger } from '@common/utils/logger.util';
 
 interface UniteSeed {
@@ -32,33 +32,45 @@ interface HierarchieSeed {
     supCode: string;
 }
 
-function makeFonctionTree(typePersMap: Map<string, string>): Array<{ code: string; nom: string; parentCode?: string; typePersonnelCode: string; description: string; niveau: number; ordre: number }> {
+function makeFonctionTree(): Array<{ code: string; nom: string; parentCode?: string; categorie: CategorieFonction; description: string; niveau: number; ordre: number }> {
     return [
-        { code: 'DIR-ETAB', nom: 'Direction d\'Établissement', parentCode: undefined,       typePersonnelCode: 'TYPE_DIRECTION',   description: 'Direction générale', niveau: 0, ordre: 1 },
-        { code: 'PROVISEUR', nom: 'Proviseur',                 parentCode: 'DIR-ETAB',       typePersonnelCode: 'TYPE_DIRECTION',   description: 'Chef d\'établissement', niveau: 1, ordre: 10 },
-        { code: 'PROVISEUR-ADJ', nom: 'Proviseur Adjoint',     parentCode: 'DIR-ETAB',       typePersonnelCode: 'TYPE_DIRECTION',   description: 'Adjoint au chef d\'établissement', niveau: 1, ordre: 20 },
-        { code: 'CENSEUR', nom: 'Censeur',                     parentCode: 'DIR-ETAB',       typePersonnelCode: 'TYPE_DIRECTION',   description: 'Responsable vie scolaire', niveau: 1, ordre: 30 },
-        { code: 'CDEPT', nom: 'Chef de Département',            parentCode: undefined,        typePersonnelCode: 'TYPE_ENSEIGNANT', description: 'Coordination pédagogique', niveau: 0, ordre: 100 },
-        { code: 'PROF-TIT', nom: 'Professeur Titulaire',       parentCode: 'CDEPT',          typePersonnelCode: 'TYPE_ENSEIGNANT', description: 'Professeur titulaire', niveau: 1, ordre: 110 },
-        { code: 'PROF-CERT', nom: 'Professeur Certifié',       parentCode: 'CDEPT',          typePersonnelCode: 'TYPE_ENSEIGNANT', description: 'Professeur certifié', niveau: 1, ordre: 120 },
-        { code: 'PROF-VAC', nom: 'Professeur Vacataire',       parentCode: 'CDEPT',          typePersonnelCode: 'TYPE_ENSEIGNANT', description: 'Professeur vacataire', niveau: 1, ordre: 130 },
-        { code: 'CHEF-ADM', nom: 'Chef Administration',        parentCode: undefined,        typePersonnelCode: 'TYPE_ADMINISTRATIF', description: 'Responsable administratif', niveau: 0, ordre: 200 },
-        { code: 'COMPTABLE', nom: 'Comptable',                 parentCode: 'CHEF-ADM',       typePersonnelCode: 'TYPE_ADMINISTRATIF', description: 'Gestion comptable', niveau: 1, ordre: 210 },
-        { code: 'AGENT-COMPTA', nom: 'Agent Comptable',        parentCode: 'CHEF-ADM',       typePersonnelCode: 'TYPE_ADMINISTRATIF', description: 'Agent comptable', niveau: 1, ordre: 220 },
-        { code: 'CHEF-SCOL', nom: 'Chef Scolarité',            parentCode: 'CHEF-ADM',       typePersonnelCode: 'TYPE_ADMINISTRATIF', description: 'Gestion scolarité', niveau: 1, ordre: 230 },
-        { code: 'AGENT-SCOL', nom: 'Agent Scolarité',          parentCode: 'CHEF-ADM',       typePersonnelCode: 'TYPE_ADMINISTRATIF', description: 'Agent scolarité', niveau: 1, ordre: 240 },
-        { code: 'RESP-RH', nom: 'Responsable RH',              parentCode: 'CHEF-ADM',       typePersonnelCode: 'TYPE_ADMINISTRATIF', description: 'Gestion RH', niveau: 1, ordre: 250 },
-        { code: 'INTENDANT', nom: 'Intendant',                 parentCode: 'CHEF-ADM',       typePersonnelCode: 'TYPE_ADMINISTRATIF', description: 'Gestion intendance', niveau: 1, ordre: 260 },
-        { code: 'RESP-SURV', nom: 'Responsable Surveillance',   parentCode: undefined,        typePersonnelCode: 'TYPE_AUTRE',      description: 'Encadrement surveillance', niveau: 0, ordre: 300 },
-        { code: 'SURV-GEN', nom: 'Surveillant Général',        parentCode: 'RESP-SURV',      typePersonnelCode: 'TYPE_AUTRE',      description: 'Surveillant général', niveau: 1, ordre: 310 },
-        { code: 'SURV', nom: 'Surveillant',                    parentCode: 'RESP-SURV',      typePersonnelCode: 'TYPE_AUTRE',      description: 'Surveillant', niveau: 1, ordre: 320 },
-        { code: 'RESP-TECH', nom: 'Responsable Technique',     parentCode: undefined,        typePersonnelCode: 'TYPE_TECHNIQUE',  description: 'Responsable technique', niveau: 0, ordre: 400 },
-        { code: 'TECH-INFO', nom: 'Technicien Informatique',   parentCode: 'RESP-TECH',      typePersonnelCode: 'TYPE_TECHNIQUE',  description: 'Support informatique', niveau: 1, ordre: 410 },
-        { code: 'ANIMATEUR', nom: 'Animateur',                 parentCode: undefined,        typePersonnelCode: 'TYPE_AUTRE',      description: 'Animation culturelle', niveau: 0, ordre: 500 },
-        { code: 'COACH-SPORT', nom: 'Coach Sportif',           parentCode: undefined,        typePersonnelCode: 'TYPE_AUTRE',      description: 'Encadrement sportif', niveau: 0, ordre: 510 },
-        { code: 'ORIENTEUR', nom: 'Conseiller d\'Orientation',  parentCode: undefined,        typePersonnelCode: 'TYPE_AUTRE',      description: 'Orientation scolaire et professionnelle', niveau: 0, ordre: 600 },
-        { code: 'DOCUMENTALISTE', nom: 'Documentaliste',       parentCode: undefined,        typePersonnelCode: 'TYPE_AUTRE',      description: 'Gestion documentaire et CDI', niveau: 0, ordre: 610 },
-        { code: 'INFIRMIER', nom: 'Infirmier Scolaire',         parentCode: undefined,        typePersonnelCode: 'TYPE_SANTE',     description: 'Soins infirmiers en milieu scolaire', niveau: 0, ordre: 620 },
+        { code: 'DIR-ETAB', nom: 'Direction d\'Établissement', parentCode: undefined,       categorie: CategorieFonction.DIRECTION,   description: 'Direction générale', niveau: 0, ordre: 1 },
+        { code: 'PROVISEUR', nom: 'Proviseur',                 parentCode: 'DIR-ETAB',       categorie: CategorieFonction.DIRECTION,   description: 'Chef d\'établissement', niveau: 1, ordre: 10 },
+        { code: 'PROVISEUR-ADJ', nom: 'Proviseur Adjoint',     parentCode: 'DIR-ETAB',       categorie: CategorieFonction.DIRECTION,   description: 'Adjoint au chef d\'établissement', niveau: 1, ordre: 20 },
+        { code: 'CENSEUR', nom: 'Censeur',                     parentCode: 'DIR-ETAB',       categorie: CategorieFonction.DIRECTION,   description: 'Responsable vie scolaire', niveau: 1, ordre: 30 },
+        { code: 'CDEPT', nom: 'Chef de Département',            parentCode: undefined,        categorie: CategorieFonction.ENSEIGNANT, description: 'Coordination pédagogique', niveau: 0, ordre: 100 },
+        { code: 'PROF-TIT', nom: 'Professeur Titulaire',       parentCode: 'CDEPT',          categorie: CategorieFonction.ENSEIGNANT, description: 'Professeur titulaire', niveau: 1, ordre: 110 },
+        { code: 'PROF-CERT', nom: 'Professeur Certifié',       parentCode: 'CDEPT',          categorie: CategorieFonction.ENSEIGNANT, description: 'Professeur certifié', niveau: 1, ordre: 120 },
+        { code: 'PROF-VAC', nom: 'Professeur Vacataire',       parentCode: 'CDEPT',          categorie: CategorieFonction.ENSEIGNANT, description: 'Professeur vacataire', niveau: 1, ordre: 130 },
+        { code: 'CHEF-ADM', nom: 'Chef Administration',        parentCode: undefined,        categorie: CategorieFonction.ADMINISTRATIF, description: 'Responsable administratif', niveau: 0, ordre: 200 },
+        { code: 'COMPTABLE', nom: 'Comptable',                 parentCode: 'CHEF-ADM',       categorie: CategorieFonction.ADMINISTRATIF, description: 'Gestion comptable', niveau: 1, ordre: 210 },
+        { code: 'AGENT-COMPTA', nom: 'Agent Comptable',        parentCode: 'CHEF-ADM',       categorie: CategorieFonction.ADMINISTRATIF, description: 'Agent comptable', niveau: 1, ordre: 220 },
+        { code: 'CHEF-SCOL', nom: 'Chef Scolarité',            parentCode: 'CHEF-ADM',       categorie: CategorieFonction.ADMINISTRATIF, description: 'Gestion scolarité', niveau: 1, ordre: 230 },
+        { code: 'AGENT-SCOL', nom: 'Agent Scolarité',          parentCode: 'CHEF-ADM',       categorie: CategorieFonction.ADMINISTRATIF, description: 'Agent scolarité', niveau: 1, ordre: 240 },
+        { code: 'RESP-RH', nom: 'Responsable RH',              parentCode: 'CHEF-ADM',       categorie: CategorieFonction.ADMINISTRATIF, description: 'Gestion RH', niveau: 1, ordre: 250 },
+        { code: 'INTENDANT', nom: 'Intendant',                 parentCode: 'CHEF-ADM',       categorie: CategorieFonction.ADMINISTRATIF, description: 'Gestion intendance', niveau: 1, ordre: 260 },
+        { code: 'RESP-SURV', nom: 'Responsable Surveillance',   parentCode: undefined,        categorie: CategorieFonction.AUTRE,      description: 'Encadrement surveillance', niveau: 0, ordre: 300 },
+        { code: 'SURV-GEN', nom: 'Surveillant Général',        parentCode: 'RESP-SURV',      categorie: CategorieFonction.AUTRE,      description: 'Surveillant général', niveau: 1, ordre: 310 },
+        { code: 'SURV', nom: 'Surveillant',                    parentCode: 'RESP-SURV',      categorie: CategorieFonction.AUTRE,      description: 'Surveillant', niveau: 1, ordre: 320 },
+        { code: 'RESP-TECH', nom: 'Responsable Technique',     parentCode: undefined,        categorie: CategorieFonction.TECHNIQUE,  description: 'Responsable technique', niveau: 0, ordre: 400 },
+        { code: 'TECH-INFO', nom: 'Technicien Informatique',   parentCode: 'RESP-TECH',      categorie: CategorieFonction.TECHNIQUE,  description: 'Support informatique', niveau: 1, ordre: 410 },
+        { code: 'ANIMATEUR', nom: 'Animateur',                 parentCode: undefined,        categorie: CategorieFonction.AUTRE,      description: 'Animation culturelle', niveau: 0, ordre: 500 },
+        { code: 'COACH-SPORT', nom: 'Coach Sportif',           parentCode: undefined,        categorie: CategorieFonction.AUTRE,      description: 'Encadrement sportif', niveau: 0, ordre: 510 },
+        { code: 'ORIENTEUR', nom: 'Conseiller d\'Orientation',  parentCode: undefined,        categorie: CategorieFonction.AUTRE,      description: 'Orientation scolaire et professionnelle', niveau: 0, ordre: 600 },
+        { code: 'DOCUMENTALISTE', nom: 'Documentaliste',       parentCode: undefined,        categorie: CategorieFonction.AUTRE,      description: 'Gestion documentaire et CDI', niveau: 0, ordre: 610 },
+        { code: 'INFIRMIER', nom: 'Infirmier Scolaire',         parentCode: undefined,        categorie: CategorieFonction.SANTE,     description: 'Soins infirmiers en milieu scolaire', niveau: 0, ordre: 620 },
+        // v5.1 — Fonctions anglophones
+        { code: 'HEAD-TEACHER', nom: 'Head Teacher',            parentCode: undefined,        categorie: CategorieFonction.DIRECTION,   description: 'Chef d\'établissement (système anglophone)', niveau: 0, ordre: 700 },
+        { code: 'DEPUTY-HEAD', nom: 'Deputy Head Teacher',      parentCode: 'HEAD-TEACHER',   categorie: CategorieFonction.DIRECTION,   description: 'Adjoint au chef d\'établissement', niveau: 1, ordre: 710 },
+        { code: 'HEAD-OF-YEAR', nom: 'Head of Year',            parentCode: 'HEAD-TEACHER',   categorie: CategorieFonction.ENSEIGNANT,  description: 'Responsable de niveau d\'années', niveau: 1, ordre: 720 },
+        { code: 'FORM-TUTOR', nom: 'Form Tutor',                parentCode: 'HEAD-OF-YEAR',   categorie: CategorieFonction.ENSEIGNANT,  description: 'Tuteur de classe (système anglophone)', niveau: 1, ordre: 730 },
+        { code: 'SENCO', nom: 'SEN Coordinator',                parentCode: undefined,        categorie: CategorieFonction.AUTRE,      description: 'Coordinateur des besoins éducatifs spéciaux', niveau: 0, ordre: 740 },
+        { code: 'BUSINESS-MGR', nom: 'Business Manager',        parentCode: 'HEAD-TEACHER',   categorie: CategorieFonction.ADMINISTRATIF, description: 'Directeur administratif et financier', niveau: 1, ordre: 750 },
+        { code: 'EXAMS-OFF', nom: 'Exams Officer',              parentCode: 'HEAD-TEACHER',   categorie: CategorieFonction.ADMINISTRATIF, description: 'Responsable des examens', niveau: 1, ordre: 760 },
+        // v5.1 — Fonctions bilingues
+        { code: 'COORD-LING', nom: 'Coordinateur Linguistique',  parentCode: undefined,        categorie: CategorieFonction.ENSEIGNANT,  description: 'Coordinateur des sections linguistiques', niveau: 0, ordre: 800 },
+        { code: 'DIR-SECTION-FR', nom: 'Directeur de Section Francophone', parentCode: undefined, categorie: CategorieFonction.DIRECTION, description: 'Responsable de la section francophone', niveau: 0, ordre: 810 },
+        { code: 'DIR-SECTION-EN', nom: 'Director of English Section', parentCode: undefined,    categorie: CategorieFonction.DIRECTION,   description: 'Responsable de la section anglophone', niveau: 0, ordre: 820 },
     ];
 }
 
@@ -75,20 +87,20 @@ export async function seedOrganisation(
     const posteRepo = AppDataSource.getRepository(Poste);
     const hierRepo = AppDataSource.getRepository(HierarchiePersonnel);
     const foncRepo = AppDataSource.getRepository(Fonction);
-    const typePersRepo = AppDataSource.getRepository(TypePersonnel);
-
-    const typePersMap = new Map<string, string>();
-    const typesPers = await typePersRepo.find({ select: ['id', 'code'] });
-    for (const tp of typesPers) typePersMap.set(tp.code, tp.id);
 
     const prefix = nomEtablissement.includes('Lycée') ? 'LB' : 'CP';
 
     // --- FONCTIONS (hiérarchiques, par établissement) ---
     const fonctionsMap = new Map<string, string>();
-    const fonctionsData = makeFonctionTree(typePersMap);
+    const fonctionsData = makeFonctionTree();
     for (const f of fonctionsData) {
         const existing = await foncRepo.findOne({ where: { code: f.code, etablissementId } });
         if (existing) {
+            // Réalignement v5.0 : les fonctions créées avant l'ajout de `categorie` sont restées en AUTRE
+            if (existing.categorie !== f.categorie) {
+                await foncRepo.update(existing.id, { categorie: f.categorie });
+                logger.info(`  Fonction mise à jour: ${existing.nom} (${existing.code}) → catégorie ${f.categorie}`);
+            }
             fonctionsMap.set(f.code, existing.id);
             continue;
         }
@@ -100,7 +112,7 @@ export async function seedOrganisation(
             niveau: f.niveau,
             ordre: f.ordre,
             parentId,
-            typePersonnelId: typePersMap.get(f.typePersonnelCode),
+            categorie: f.categorie,
             chemin: f.parentCode ? `${fonctionsMap.get(f.parentCode)}/${f.code}` : f.code,
             etablissementId,
             estSysteme: true,
@@ -236,16 +248,17 @@ export async function seedOrganisation(
         const sup = postesMap.get(h.supCode);
         if (!sub || !sup) continue;
 
-        const existing = await hierRepo.findOne({ where: { posteId: sub.id, superieurId: sup.id } });
+        const existing = await hierRepo.findOne({ where: { posteId: sub.id, superieurPosteId: sup.id } });
         if (existing) continue;
 
         const hier = hierRepo.create({
             posteId: sub.id,
-            superieurId: sup.id,
+            superieurPosteId: sup.id,
             typeRelation: TypeRelationHierarchique.DIRECT,
             statut: StatutRelation.ACTIVE,
             actif: true,
             dateDebut: new Date(),
+            etablissementId,
         });
         await hierRepo.save(hier);
         logger.info(`  Hiérarchie: ${sub.code} → ${sup.code}`);

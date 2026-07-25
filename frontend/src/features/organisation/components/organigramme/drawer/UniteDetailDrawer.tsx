@@ -179,9 +179,9 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                                             <div className="flex flex-col">
                                                 <span className="flex items-center" style={{ gap: 'var(--gap-xxs, 0.25rem)' }}>
                                                     <span style={{ color: 'var(--color-text)' }}>{p.intitule}</span>
-                                                    {p.typePersonnelLabel && (
+                                                    {p.categorie && (
                                                         <span className="text-[9px] px-1 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'var(--color-dominant-50)', color: 'var(--color-dominant-600)' }}>
-                                                            {p.typePersonnelLabel}
+                                                            {t(`categorie_${p.categorie}`, p.categorie)}
                                                         </span>
                                                     )}
                                                 </span>

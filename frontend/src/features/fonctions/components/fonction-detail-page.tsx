@@ -9,9 +9,9 @@
  */
 
 import { useState } from 'react';
-import { useParams, useNavigate } from '@tanstack/react-router';
+import { useParams, useNavigate, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Edit, Briefcase, CheckCircle, XCircle, Info, Workflow, Users, UserRound } from 'lucide-react';
+import { Edit, CheckCircle, XCircle, Info, Workflow, Users, UserRound } from 'lucide-react';
 import { useFonction, useModifierFonction, useFonctionMembres, useSupprimerFonction } from '../hooks/use-fonctions';
 import type { Fonction as FonctionType, ModifierFonctionDto } from '../types/fonction.types';
 import { FonctionFormModal } from './fonction-form-modal';
@@ -45,8 +45,10 @@ export function FonctionDetailPage() {
     const { hasPermission } = usePermissions();
     const { data: fonction, isLoading, error, refetch } = useFonction(id);
     const { data: membres } = useFonctionMembres(id);
+    const search = useSearch({ from: '/_auth/organisation/fonctions/$id' }) as { tab?: string };
     const [formOpen, setFormOpen] = useState(false);
-    const [tab, setTab] = useState('infos');
+    const tab = search?.tab || 'infos';
+    const setTab = (nouveau: string) => navigate({ to: '/organisation/fonctions/$id', params: { id }, search: { tab: nouveau } as never });
     const [fonctionToDelete, setFonctionToDelete] = useState<FonctionType | null>(null);
     const modifier = useModifierFonction();
     const supprimer = useSupprimerFonction();
@@ -95,7 +97,7 @@ export function FonctionDetailPage() {
             >
                 <div className="flex items-start gap-4">
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
-                        <Briefcase className="h-7 w-7 text-white" />
+                        <Workflow className="h-7 w-7 text-white" />
                     </div>
                     <div className="space-y-2">
                         <h1 className="text-2xl font-bold text-white leading-tight">{fonction.nom}</h1>

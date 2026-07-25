@@ -23,22 +23,6 @@ export function useModifierStatut() {
     });
 }
 
-export function useModifierTypePersonnel() {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async ({ id, typePersonnelId }: { id: string; typePersonnelId: string }) => {
-            const response = await apiClient.post<MembrePersonnel>(`/api/personnel/${id}/type-personnel`, { typePersonnelId });
-            return response.data;
-        },
-        onSuccess: (data) => {
-            queryClient.invalidateQueries({ queryKey: ['personnel'] });
-            if (data) queryClient.setQueryData(PERSONNEL_KEYS.detail(data.id), data);
-            toast.success('Type de personnel mis à jour');
-        },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la mise à jour du type'),
-    });
-}
-
 export function useModifierDateEntree() {
     const queryClient = useQueryClient();
     return useMutation({

@@ -9,6 +9,7 @@ import {
     StatutUnite,
     StatutPoste,
     StatutRelation,
+    TypeRelationHierarchique,
     TemplateOrganisation,
     NoeudTemplateOrganisation,
     TemplatePoste,
@@ -65,7 +66,12 @@ export class GenerationService {
         let structure: NoeudTemplateOrganisation;
         if (dto.templateId) {
             const repo = AppDataSource.getRepository(TemplateOrganisation);
-            const template = await repo.findOne({ where: { id: dto.templateId } });
+            const template = await repo.findOne({
+                where: [
+                    { id: dto.templateId, etablissementId },
+                    { id: dto.templateId, estSysteme: true },
+                ],
+            });
             if (!template) throw new AppError('Template non trouvé', 404, 'TEMPLATE_NOT_FOUND');
             structure = template.structure as NoeudTemplateOrganisation;
         } else if (dto.structure) {
@@ -77,8 +83,8 @@ export class GenerationService {
         // 1b. Valider la structure AVANT toute écriture
         validerNoeud(structure, 'racine');
 
-        // 2. Contexte = etablissementId direct
-        const context_etablissementId = dto.etablissementId || etablissementId;
+        // 2. Contexte tenant : toujours celui du JWT (jamais le body)
+        const context_etablissementId = etablissementId;
 
         // 3. Préparer contexte et ouvrir transaction
         const queryRunner = AppDataSource.createQueryRunner();
@@ -96,10 +102,12 @@ export class GenerationService {
                 await this.genererHierarchie(structure, context);
             }
 
-            // 6. Construire arborescence retour
+            await queryRunner.commitTransaction();
+
+            // 6. Construire arborescence retour (après commit : buildArborescence
+            // utilise une connexion séparée qui ne voit pas la transaction en cours)
             context.result.arborescence = await organisationService.buildArborescence(context_etablissementId);
 
-            await queryRunner.commitTransaction();
             return context.result;
         } catch (error) {
             await queryRunner.rollbackTransaction();
@@ -184,6 +192,7 @@ export class GenerationService {
             );
             // Liens hiérarchiques référençant ces postes (SET NULL auto, mais on anticipe)
             await queryRunner.manager.delete(HierarchiePersonnel, { posteId: In(posteIds) });
+            await queryRunner.manager.delete(HierarchiePersonnel, { superieurPosteId: In(posteIds) });
             await queryRunner.manager.delete(HierarchiePersonnel, { superieurId: In(posteIds) });
             // Contrats, bulletins et offres d'emploi référençant ces postes (FK NO ACTION)
             await queryRunner.query(
@@ -347,6 +356,29 @@ export class GenerationService {
         return null;
     }
 
+    /**
+     * Résout une ref de template vers un Poste.
+     * 1. Ref de poste exacte (ex: "Direction.DIRECTEUR") via posteRefMap.
+     * 2. Ref d'unité (ex: "Direction") via uniteRefMap → premier poste actif de l'unité.
+     */
+    private async resoudrePosteDepuisRef(
+        ref: string,
+        ctx: GenerationContext,
+    ): Promise<Poste | null> {
+        const posteId = ctx.posteRefMap.get(ref);
+        if (posteId) {
+            return ctx.queryRunner.manager.findOne(Poste, { where: { id: posteId } });
+        }
+
+        const uniteId = ctx.uniteRefMap.get(ref);
+        if (!uniteId) return null;
+
+        return ctx.queryRunner.manager.findOne(Poste, {
+            where: { uniteOrganisationnelleId: uniteId, actif: true },
+            order: { createdAt: 'ASC' },
+        });
+    }
+
     private async genererHierarchie(
         noeud: NoeudTemplateOrganisation,
         ctx: GenerationContext,
@@ -354,38 +386,20 @@ export class GenerationService {
         if (!noeud.hierarchie) return;
 
         for (const lien of noeud.hierarchie) {
-            const superieurUniteId = ctx.uniteRefMap.get(lien.superieurRef);
-            const subordonneUniteId = ctx.uniteRefMap.get(lien.subordonneRef);
-
-            if (!superieurUniteId || !subordonneUniteId) {
-                continue;
-            }
-
-            const superieurPoste = await ctx.queryRunner.manager.findOne(Poste, {
-                where: {
-                    uniteOrganisationnelleId: superieurUniteId,
-                    actif: true,
-                },
-                order: { createdAt: 'ASC' },
-            });
-
-            const subordonnePoste = await ctx.queryRunner.manager.findOne(Poste, {
-                where: {
-                    uniteOrganisationnelleId: subordonneUniteId,
-                    actif: true,
-                },
-                order: { createdAt: 'ASC' },
-            });
+            const superieurPoste = await this.resoudrePosteDepuisRef(lien.superieurRef, ctx);
+            const subordonnePoste = await this.resoudrePosteDepuisRef(lien.subordonneRef, ctx);
 
             if (superieurPoste && subordonnePoste) {
-                // superieurId est une référence sémantique vers MembrePersonnel (pas de FK).
-                // À la génération, aucun personnel n'est encore affecté : on laisse null.
-                // Le poste supérieur est référencé via des moyens externes (affectations futures).
+                // Relation poste → poste : encodée via posteId + superieurPosteId.
+                // personnelId/superieurId (personnes) seront renseignés lors des affectations futures.
                 const hierarchie = ctx.queryRunner.manager.create(HierarchiePersonnel, {
-                    personnelId: undefined, // sera renseigné lors de l'affectation du subordonné
-                    superieurId: undefined, // sera renseigné lorsque le supérieur aura un occupant
+                    personnelId: undefined,
+                    superieurId: undefined,
                     posteId: subordonnePoste.id,
-                    typeRelation: (lien.typeRelation as 'DIRECT' | 'FONCTIONNEL') || 'DIRECT',
+                    superieurPosteId: superieurPoste.id,
+                    typeRelation: lien.typeRelation === 'FONCTIONNEL'
+                        ? TypeRelationHierarchique.FONCTIONNEL
+                        : TypeRelationHierarchique.DIRECT,
                     statut: StatutRelation.ACTIVE,
                     actif: true,
                     etablissementId: ctx.etablissementId,

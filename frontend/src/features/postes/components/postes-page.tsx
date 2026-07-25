@@ -86,9 +86,9 @@ export function PostesPage() {
             render: (p) => <span className="text-sm text-secondary">{p.uniteOrganisationnelle?.nom || '—'}</span>,
         },
         {
-            key: 'typePersonnel',
-            header: t('type'),
-            render: (p) => <span className="text-sm text-secondary">{p.fonction?.typePersonnel?.nom || '—'}</span>,
+            key: 'categorie',
+            header: t('categorieFonction'),
+            render: (p) => <span className="text-sm text-secondary">{p.fonction?.categorie ? t(`categorie_${p.fonction.categorie}`, p.fonction.categorie) : '—'}</span>,
         },
         {
             key: 'statut',
@@ -188,7 +188,7 @@ export function PostesPage() {
                     ]}
                     onSearchChange={(search) => setFiltres((prev) => ({ ...prev, search, page: 1 }))}
                     onFilterChange={(key, value) => {
-                        if (key === 'statut') setFiltres((prev) => ({ ...prev, statut: value || undefined, page: 1 }));
+                        if (key === 'statut') setFiltres((prev) => ({ ...prev, statut: (value || undefined) as StatutPoste | undefined, page: 1 }));
                     }}
                     onClearFilters={() => setFiltres((prev) => ({ ...prev, statut: undefined, page: 1 }))}
                     pagination={meta ? {

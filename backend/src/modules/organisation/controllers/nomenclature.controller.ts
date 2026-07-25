@@ -22,6 +22,7 @@ import {
     createNiveauResponsabiliteSchema, updateNiveauResponsabiliteSchema,
     createModeRemunerationSchema, updateModeRemunerationSchema,
     createTemplateOrganisationSchema, updateTemplateOrganisationSchema,
+    filtrerTemplatesSchema, clonerTemplateSchema,
 } from '../dto/nomenclature.dto';
 import { genererOrganisationSchema } from '../dto/generation.dto';
 import { echelonStructurelService } from '../services/echelon-structurel.service';
@@ -155,20 +156,44 @@ router.delete('/niveaux-responsabilite/:id', authMiddleware, requirePermission('
 
 router.get('/templates', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
-        const search = req.query.search as string | undefined;
-        const actif = req.query.actif !== undefined ? req.query.actif === 'true' : undefined;
+        const filtres = validateDto(filtrerTemplatesSchema, req.query);
+        const eid = getEtablissementId(req);
 
-        if (req.query.page || req.query.limit) {
-            const { data, total } = await templateOrganisationService.findAllPaginated(
-                page, limit, getEtablissementId(req), search, actif
-            );
-            res.json({ success: true, data, pagination: { page, limit, total, totalPages: Math.ceil(total / limit), hasNext: page * limit < total, hasPrev: page > 1 } });
+        // Si des filtres de catégorisation sont présents, utiliser findAllFiltered
+        const hasFilters = filtres.nature || filtres.systeme || filtres.langue
+            || filtres.niveau || filtres.complexite || filtres.categorie || filtres.search;
+
+        if (hasFilters || filtres.page || filtres.limit) {
+            const { data, total } = await templateOrganisationService.findAllFiltered(filtres, eid);
+            const page = filtres.page ?? 1;
+            const limit = Math.min(filtres.limit ?? 50, 100);
+            res.json({
+                success: true,
+                data,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit),
+                    hasNext: page * limit < total,
+                    hasPrev: page > 1,
+                },
+            });
         } else {
-            const data = await templateOrganisationService.findAll(getEtablissementId(req));
+            const data = await templateOrganisationService.findAll(eid);
             res.json({ success: true, data });
         }
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /api/organisation/templates/combinaisons
+ * Retourne les valeurs disponibles pour chaque facette de filtrage
+ */
+router.get('/templates/combinaisons', authMiddleware, requirePermission('organisation:nomenclatures:read'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const data = await templateOrganisationService.getCombinaisonsValides(getEtablissementId(req));
+        res.json({ success: true, data });
     } catch (error) { next(error); }
 });
 
@@ -185,6 +210,19 @@ router.get('/templates/:id', authMiddleware, requirePermission('organisation:nom
     try {
         const data = await templateOrganisationService.findById(req.params.id, getEtablissementId(req));
         res.json({ success: true, data });
+    } catch (error) { next(error); }
+});
+
+/**
+ * POST /api/organisation/templates/:id/cloner
+ * Cloner un template pour l'établissement courant
+ */
+router.post('/templates/:id/cloner', authMiddleware, requirePermission('organisation:templates:write'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validateDto(clonerTemplateSchema, req.body);
+        dto.etablissementId = getEtablissementId(req);
+        const cloned = await templateOrganisationService.clonerTemplate(req.params.id, dto);
+        res.status(201).json({ success: true, data: cloned });
     } catch (error) { next(error); }
 });
 

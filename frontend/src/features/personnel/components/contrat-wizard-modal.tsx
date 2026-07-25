@@ -87,9 +87,6 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
         .filter((f: any) => f.actif !== false && f.id !== form.fonctionId)
         .map((f: any) => ({ value: f.id, label: `${f.nom} (${f.code})` }));
 
-    const membreSelectionne = membres.find((m) => m.id === form.membrePersonnelId);
-    const membreTypeCode = membreSelectionne?.typePersonnel?.code;
-
     const isPosteCompatible = (_poste: Poste): boolean => {
         return true;
     };

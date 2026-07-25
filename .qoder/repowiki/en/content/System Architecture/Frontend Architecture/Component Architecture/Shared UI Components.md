@@ -24,16 +24,19 @@
 - [frontend/src/components/ui/TreeView/TreeView.tsx](file://frontend/src/components/ui/TreeView/TreeView.tsx)
 - [frontend/src/components/ui/RowActions/RowActions.tsx](file://frontend/src/components/ui/RowActions/RowActions.tsx)
 - [frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx](file://frontend/src/components/ui/Breadcrumbs/Breadcrumbs.tsx)
+- [frontend/src/components/ui/Drawer/Drawer.tsx](file://frontend/src/components/ui/Drawer/Drawer.tsx)
+- [frontend/src/components/ui/Dialog/Dialog.tsx](file://frontend/src/components/ui/Dialog/Dialog.tsx)
+- [frontend/src/components/ui/Node/Node.tsx](file://frontend/src/components/ui/Node/Node.tsx)
 </cite>
 
 ## Update Summary
 **Changes Made**
-- Enhanced documentation for organization-related UI components with improved drawer management capabilities
-- Updated deletion dialog components with simplified user interactions and enhanced confirmation flows
-- Improved node component interactions with better performance optimization strategies
-- Added best practices for consistent empty state management across all components
-- Enhanced accessibility features with improved aria-label translations throughout the component library
-- Expanded dark mode compatibility and responsive design considerations for all components
+- Enhanced documentation for organization-related UI components (Drawer, Dialog, Node) with substantial improvements
+- Updated Drawer component with enhanced focus management and accessibility features
+- Improved Dialog component with simplified confirmation handling for deletion operations
+- Enhanced Node component with better performance optimization strategies and smooth interactions
+- Added comprehensive accessibility improvements across all organizational components
+- Expanded usage examples with practical implementation patterns for complex hierarchical interfaces
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -242,23 +245,26 @@ This section documents the newly enhanced components that provide advanced funct
 ## Organization-Related Components
 This section documents the enhanced organization-related components that provide specialized functionality for managing organizational structures with improved drawer management and simplified deletion workflows.
 
-- Drawer
-  - Purpose: Slide-out panel for displaying additional content or actions without leaving the current context.
-  - Key props: isOpen, onClose, title, size, position (left, right, top, bottom), children, overlay.
-  - Customization: Size variants, animation duration, overlay behavior, z-index management with theme support.
-  - Accessibility: Focus trap within drawer, aria-modal when modal, Escape key handling, improved focus management.
+### Drawer Component
+- Purpose: Slide-out panel for displaying additional content or actions without leaving the current context.
+- Key props: isOpen, onClose, title, size, position (left, right, top, bottom), children, overlay, className.
+- Customization: Size variants, animation duration, overlay behavior, z-index management with theme support.
+- Accessibility: Enhanced focus trap within drawer, aria-modal when modal, Escape key handling, improved focus management with proper focus restoration.
+- Usage Examples: Create slide-out panels for detailed views or action forms without disrupting the main workflow. Supports various positions and sizes with smooth animations.
 
-- Dialog
-  - Purpose: Simplified confirmation dialogs for critical actions like deletion with enhanced user experience.
-  - Key props: isOpen, onClose, title, message, confirmAction, cancelAction, variant, icon.
-  - Customization: Confirmation flow, button variants, icon support, responsive layout with theme awareness.
-  - Accessibility: Clear confirmation prompts, keyboard navigation, aria-live for dynamic content, screen reader announcements.
+### Dialog Component  
+- Purpose: Simplified confirmation dialogs for critical actions like deletion with enhanced user experience.
+- Key props: isOpen, onClose, title, message, confirmAction, cancelAction, variant, icon, className.
+- Customization: Confirmation flow, button variants, icon support, responsive layout with theme awareness.
+- Accessibility: Clear confirmation prompts, keyboard navigation, aria-live for dynamic content, screen reader announcements with improved messaging.
+- Usage Examples: Implement simplified deletion confirmations with clear messaging and intuitive action flows. Supports various confirmation scenarios with customizable button arrangements.
 
-- Node
-  - Purpose: Interactive tree node component with enhanced performance optimization and smooth interactions.
-  - Key props: data, level, expanded, selected, onExpand, onSelect, onDrag, onDrop, children, className.
-  - Customization: Node styling, expansion animations, drag-and-drop indicators, selection highlighting with performance optimizations.
-  - Accessibility: Keyboard navigation with arrow keys, aria-expanded on nodes, role="treeitem", improved focus management.
+### Node Component
+- Purpose: Interactive tree node component with enhanced performance optimization and smooth interactions.
+- Key props: data, level, expanded, selected, onExpand, onSelect, onDrag, onDrop, children, className.
+- Customization: Node styling, expansion animations, drag-and-drop indicators, selection highlighting with performance optimizations.
+- Accessibility: Keyboard navigation with arrow keys, aria-expanded on nodes, role="treeitem", improved focus management with enhanced traversal.
+- Usage Examples: Build interactive hierarchical structures with smooth animations and optimized performance for large datasets. Supports drag-and-drop operations and complex tree interactions.
 
 **Updated** Enhanced organization components with improved drawer management, simplified deletion dialogs, and optimized node interactions
 
@@ -431,6 +437,7 @@ class Drawer {
 +position
 +children
 +overlay
++className
 }
 class Dialog {
 +isOpen
@@ -441,6 +448,7 @@ class Dialog {
 +cancelAction()
 +variant
 +icon
++className
 }
 class Node {
 +data
@@ -747,8 +755,10 @@ Submit --> End
 #### Drawer
 - Props interface: isOpen, onClose, title, size, position, children, overlay, className.
 - Styling: Slide animations, size variants, overlay behavior, z-index management with theme support.
-- Accessibility: Focus trap within drawer, aria-modal when modal, Escape key handling, improved focus management.
+- Accessibility: Enhanced focus trap within drawer, aria-modal when modal, Escape key handling, improved focus management with proper focus restoration.
 - Usage example: Create slide-out panels for detailed views or action forms without disrupting the main workflow.
+
+**Updated** Enhanced accessibility features with improved focus management and proper focus restoration
 
 **Section sources**
 - [frontend/src/components/ui/Drawer/Drawer.tsx](file://frontend/src/components/ui/Drawer/Drawer.tsx)
@@ -756,8 +766,10 @@ Submit --> End
 #### Dialog
 - Props interface: isOpen, onClose, title, message, confirmAction, cancelAction, variant, icon, className.
 - Styling: Confirmation flow, button variants, icon support, responsive layout with theme awareness.
-- Accessibility: Clear confirmation prompts, keyboard navigation, aria-live for dynamic content, screen reader announcements.
+- Accessibility: Clear confirmation prompts, keyboard navigation, aria-live for dynamic content, screen reader announcements with improved messaging.
 - Usage example: Implement simplified deletion confirmations with clear messaging and intuitive action flows.
+
+**Updated** Simplified confirmation handling for deletion operations with enhanced user experience
 
 **Section sources**
 - [frontend/src/components/ui/Dialog/Dialog.tsx](file://frontend/src/components/ui/Dialog/Dialog.tsx)
@@ -765,8 +777,10 @@ Submit --> End
 #### Node
 - Props interface: data, level, expanded, selected, onExpand, onSelect, onDrag, onDrop, children, className.
 - Styling: Node styling, expansion animations, drag-and-drop indicators, selection highlighting with performance optimizations.
-- Accessibility: Keyboard navigation with arrow keys, aria-expanded on nodes, role="treeitem", improved focus management.
+- Accessibility: Keyboard navigation with arrow keys, aria-expanded on nodes, role="treeitem", improved focus management with enhanced traversal.
 - Usage example: Build interactive hierarchical structures with smooth animations and optimized performance for large datasets.
+
+**Updated** Enhanced performance optimization strategies and smooth interactions for large datasets
 
 **Section sources**
 - [frontend/src/components/ui/Node/Node.tsx](file://frontend/src/components/ui/Node/Node.tsx)
@@ -828,7 +842,7 @@ The component library has been significantly enhanced with comprehensive dark mo
 ### Theme Configuration
 Components automatically detect and respond to theme changes through CSS media queries and JavaScript theme detection. The implementation uses Tailwind CSS's dark mode strategy with class-based switching.
 
-**Updated** Enhanced dark mode compatibility and accessibility features across all components, including organization-related components
+**Updated** Enhanced dark mode compatibility and accessibility features across all components, including organization-related components with improved focus management and simplified confirmation flows
 
 ## Performance Optimization Strategies
 The component library incorporates several performance optimization strategies to ensure smooth user experiences:
@@ -853,7 +867,7 @@ The component library incorporates several performance optimization strategies t
 - **Progressive Disclosure**: Empty states guide users toward meaningful actions rather than just displaying "no data".
 - **Contextual Help**: Empty states include helpful tips and links to relevant documentation or setup guides.
 
-**Updated** Added comprehensive performance optimization strategies and best practices for consistent empty state management
+**Updated** Added comprehensive performance optimization strategies and best practices for consistent empty state management, including enhanced Node component performance optimizations
 
 ## Dependency Analysis
 The UI library exhibits clear dependency relationships with enhanced component support:
@@ -965,7 +979,7 @@ L3 --> F3
 - **Node performance issues**: Check for memory leaks in drag-and-drop operations; optimize re-renders with memoization.
 - **Empty state consistency**: Use standardized EmptyState components; ensure consistent messaging and actionable guidance.
 
-**Updated** Added troubleshooting guidance for organization components, performance issues, and empty state management
+**Updated** Added troubleshooting guidance for organization components, performance issues, and empty state management with specific focus on Drawer, Dialog, and Node components
 
 **Section sources**
 - [frontend/src/components/ui/Feedback/ErrorBoundary.tsx](file://frontend/src/components/ui/Feedback/ErrorBoundary.tsx)
@@ -1011,7 +1025,7 @@ By following the documented props interfaces, styling patterns, and composition 
 - Dialog components should be responsive with appropriate sizing for different devices.
 - Node components should handle touch gestures for mobile interactions.
 
-**Updated** Added responsive considerations for organization components and mobile interactions
+**Updated** Added responsive considerations for organization components and mobile interactions with specific guidance for Drawer, Dialog, and Node components
 
 ### Cross-Browser Compatibility
 - Test focus management and keyboard interactions across browsers.
@@ -1023,7 +1037,7 @@ By following the documented props interfaces, styling patterns, and composition 
 - Verify drag-and-drop functionality in Node components across browsers.
 - Test touch interactions on mobile devices and tablets.
 
-**Updated** Added cross-browser testing considerations for organization components and touch interactions
+**Updated** Added cross-browser testing considerations for organization components and touch interactions with specific focus on Drawer, Dialog, and Node components
 
 ### Theme Configuration Reference
 - **CSS Custom Properties**: Define theme variables for colors, backgrounds, and borders.
@@ -1037,8 +1051,6 @@ By following the documented props interfaces, styling patterns, and composition 
 - **User Experience Metrics**: Monitor interaction responsiveness and animation smoothness.
 - **Accessibility Testing**: Regularly test with screen readers and keyboard navigation.
 
-**New Section** Added theme configuration reference and performance monitoring guidelines for developers implementing dark mode support and performance optimization
-
 ### Best Practices for Empty State Management
 - **Consistent Messaging**: Use clear, actionable language in empty states.
 - **Progressive Guidance**: Provide step-by-step guidance for getting started.
@@ -1046,5 +1058,3 @@ By following the documented props interfaces, styling patterns, and composition 
 - **Visual Clarity**: Use appropriate illustrations and spacing for empty states.
 - **Action-Oriented**: Always provide clear next steps for users.
 - **Testing**: Verify empty states work correctly with different data scenarios.
-
-**New Section** Added best practices for consistent empty state management across all components

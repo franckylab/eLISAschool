@@ -3,7 +3,6 @@ import { z } from 'zod';
 export const genererOrganisationSchema = z.object({
     templateId: z.string().uuid().optional(),
     structure: z.record(z.any()).optional(),
-    etablissementId: z.string().uuid(),
     options: z.object({
         prefixeCode: z.string().max(20).optional(),
         creerHierarchie: z.boolean().default(true),
@@ -23,7 +22,7 @@ export interface ResultatGeneration {
     unites: Array<{ ref: string; id: string; nom: string; code: string }>;
     postes: Array<{ ref: string; id: string; intitule: string; code: string }>;
     hierarchies: Array<{ superieurRef: string; subordonneRef: string; id: string }>;
-    arborescence: unknown[];
+    arborescence: unknown[] | null;
 }
 
 export const optionsGenerationSchema = z.object({

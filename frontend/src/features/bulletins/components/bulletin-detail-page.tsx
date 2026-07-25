@@ -1,48 +1,75 @@
-import { useState } from 'react';
+/**
+ * ==================================
+ * eLISAschool - Page détail Bulletin
+ * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Détail d'un bulletin : onglets Synthèse / Matières,
+ * actions Publier-Dépublier (bulletins:publier), Exporter (bulletins:export),
+ * Modifier appréciations (bulletins:edit), Supprimer (bulletins:delete, refusé si publié).
+ */
+
+import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { FileText, Trash2, Download, Award } from 'lucide-react';
+import {
+    FileText, Trash2, Download, Award, Edit,
+    Send, Undo2, BookOpen, LayoutDashboard, TrendingUp, Users, Star,
+} from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { Card } from '@/components/ui/Card';
+import { InfoField } from '@/components/ui/InfoField';
+import { StatCard } from '@/components/ui/StatCard';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
-import { useBulletin, useSupprimerBulletin, useExporterBulletin } from '../hooks/use-bulletins';
-import { usePermissions } from '@/hooks';
+import { CustomModal } from '@/components/modals/CustomModal';
+import { TabsBar, TabsContent } from '@/components/ui';
+import type { Tab } from '@/components/ui';
+import { useTabState, usePermissions } from '@/hooks';
+import { useBulletin, useSupprimerBulletin, useExporterBulletin, useModifierBulletin } from '../hooks/use-bulletins';
+import { getMentionKey } from '../utils/bulletin-mention';
+import { getNoteBadgeClass, formatNote } from '@/features/notes/utils/note-couleur';
 import type { BulletinMatiere } from '../types/bulletin.types';
 
 interface BulletinDetailPageProps {
     bulletinId: string;
 }
 
-function NoteMatiereRow({ m }: { m: BulletinMatiere }) {
+type OngletActif = 'synthese' | 'matieres';
+
+function MatiereRow({ m }: { m: BulletinMatiere }) {
+    const { t } = useTranslation('bulletins');
     return (
-        <div className="flex items-center justify-between rounded-lg border border-[var(--color-border)] p-3">
-            <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-sm font-bold text-primary">
+        <div className="flex flex-col gap-[var(--gap-sm)] rounded-[var(--radius-lg)] border border-border bg-card p-[var(--padding-table-cell)] min-[480px]:flex-row min-[480px]:items-center min-[480px]:justify-between">
+            <div className="flex items-center gap-[var(--gap-sm)] min-w-0">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-sm font-bold text-primary">
                     {m.matiere?.nom?.charAt(0) || '?'}
                 </div>
-                <div>
-                    <p className="font-medium">{m.matiere?.nom}</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">{m.matiere?.code} · Coef. {m.coefficient}</p>
+                <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">{m.matiere?.nom}</p>
+                    <p className="text-xs text-muted-foreground">
+                        {m.matiere?.code} · {t('coefficientCourt', { coefficient: m.coefficient })} · {t('nombreNotes', { count: m.nombreNotes })}
+                    </p>
                 </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-[clamp(0.5rem,1.5vw,1rem)]">
                 {m.appreciation && (
-                    <span className="max-w-[200px] truncate text-xs italic text-[var(--color-text-muted)]">{m.appreciation}</span>
+                    <span className="max-w-[200px] truncate text-xs italic text-muted-foreground">{m.appreciation}</span>
+                )}
+                {typeof m.moyenneClasse === 'number' && (
+                    <span className="text-xs text-muted-foreground">
+                        {t('moyenneClasseCourt', { moyenne: Math.round(m.moyenneClasse * 100) / 100 })}
+                    </span>
                 )}
                 <div className="text-right">
-                    <span className={`inline-flex items-center justify-center rounded-lg px-3 py-1 text-lg font-bold ${
-                        m.moyenne >= 16 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                        m.moyenne >= 14 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
-                        m.moyenne >= 12 ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400' :
-                        m.moyenne >= 10 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                        'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                    }`}>
-                        {m.moyenne.toFixed(2)}
+                    <span className={`inline-flex items-center justify-center rounded-[var(--radius-lg)] px-[clamp(0.5rem,1vw,0.75rem)] py-1 text-[clamp(0.875rem,1.2vw,1.125rem)] font-bold ${getNoteBadgeClass(m.moyenne, 20)}`}>
+                        {formatNote(m.moyenne, 20)}
                     </span>
-                    {m.rang && (
-                        <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">#{m.rang}</p>
+                    {typeof m.rangMatiere === 'number' && (
+                        <p className="mt-0.5 text-xs text-muted-foreground">#{m.rangMatiere}</p>
                     )}
                 </div>
             </div>
@@ -52,14 +79,28 @@ function NoteMatiereRow({ m }: { m: BulletinMatiere }) {
 
 export function BulletinDetailPage({ bulletinId }: BulletinDetailPageProps) {
     const navigate = useNavigate();
-    const { t } = useTranslation('bulletins');
+    const { t, i18n } = useTranslation('bulletins');
     const { hasPermission } = usePermissions();
 
     const { data: bulletin, isLoading, error, refetch } = useBulletin(bulletinId);
     const supprimer = useSupprimerBulletin();
     const exporter = useExporterBulletin();
+    const modifier = useModifierBulletin();
 
+    const [ongletActif, setOngletActif] = useTabState<OngletActif>('synthese');
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [publierConfirmOpen, setPublierConfirmOpen] = useState(false);
+    const [appreciationOpen, setAppreciationOpen] = useState(false);
+    const [appreciationBrouillon, setAppreciationBrouillon] = useState('');
+
+    useEffect(() => {
+        if (appreciationOpen) {
+            setAppreciationBrouillon(bulletin?.appreciationConseil ?? '');
+        }
+    }, [appreciationOpen, bulletin]);
+
+    const formatDate = (d: string): string =>
+        new Date(d).toLocaleDateString(i18n.language, { year: 'numeric', month: 'long', day: 'numeric' });
 
     const handleDelete = async () => {
         await supprimer.mutateAsync(bulletinId);
@@ -67,36 +108,86 @@ export function BulletinDetailPage({ bulletinId }: BulletinDetailPageProps) {
         navigate({ to: '/bulletins' });
     };
 
+    const handleTogglePublication = async () => {
+        if (!bulletin) return;
+        await modifier.mutateAsync({ id: bulletinId, publie: !bulletin.publie });
+        setPublierConfirmOpen(false);
+    };
+
+    const handleEnregistrerAppreciation = async () => {
+        await modifier.mutateAsync({ id: bulletinId, appreciationConseil: appreciationBrouillon });
+        setAppreciationOpen(false);
+    };
+
     if (isLoading) {
-        return <div className="p-6"><PageSkeleton showHeader showTable /></div>;
+        return <div className="p-[clamp(0.75rem,2vw,1.5rem)]"><PageSkeleton showHeader showTable /></div>;
     }
 
     if (error || !bulletin) {
         return (
-            <div className="p-6">
-                <ErrorMessage
-                    message={t('chargement')}
-                    onRetry={() => refetch()}
-                />
+            <div className="p-[clamp(0.75rem,2vw,1.5rem)]">
+                <ErrorMessage message={t('chargement')} onRetry={() => refetch()} />
             </div>
         );
     }
 
+    const onglets: Tab[] = [
+        { id: 'synthese', label: t('synthese'), icon: LayoutDashboard },
+        { id: 'matieres', label: t('matieres'), icon: BookOpen },
+    ];
+
     return (
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col gap-[var(--gap-sm)] p-[clamp(0.75rem,2vw,1.5rem)]">
             <PageHeader
                 variant="gradient"
                 icon={FileText}
-                title={t('titre')}
-                subtitle={`${bulletin.eleve?.prenom} ${bulletin.eleve?.nom} · ${bulletin.classeAnnee?.classe?.nom} · ${bulletin.periode?.nom}`}
+                title={`${bulletin.eleve?.prenom ?? ''} ${bulletin.eleve?.nom ?? ''}`.trim() || t('titre')}
+                subtitle={`${bulletin.classeAnnee?.classe?.nom ?? '—'} · ${bulletin.periode?.nom ?? '—'}`}
                 onBack={() => navigate({ to: '/bulletins' })}
                 actions={
                     <div className="flex flex-wrap gap-2">
-                        <ElisaButton variant="outline" size="sm" icon={<Download className="h-4 w-4" />} onClick={() => exporter.mutateAsync(bulletin.id)}>
-                            {t('exporterPdf')}
-                        </ElisaButton>
-                        {hasPermission('bulletins:delete') && (
-                            <ElisaButton variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />} isLoading={supprimer.isPending} onClick={() => setDeleteConfirmOpen(true)}>
+                        {hasPermission('bulletins:publier') && (
+                            <ElisaButton
+                                variant={bulletin.publie ? 'outline' : 'primary'}
+                                size="sm"
+                                icon={bulletin.publie
+                                    ? <Undo2 className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
+                                    : <Send className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                                isLoading={modifier.isPending}
+                                onClick={() => setPublierConfirmOpen(true)}
+                            >
+                                {bulletin.publie ? t('depublier') : t('publier')}
+                            </ElisaButton>
+                        )}
+                        {hasPermission('bulletins:export') && (
+                            <ElisaButton
+                                variant="outline"
+                                size="sm"
+                                icon={<Download className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                                isLoading={exporter.isPending}
+                                onClick={() => { void exporter.mutateAsync(bulletin.id); }}
+                            >
+                                {t('exporter')}
+                            </ElisaButton>
+                        )}
+                        {hasPermission('bulletins:edit') && (
+                            <ElisaButton
+                                variant="outline"
+                                size="sm"
+                                icon={<Edit className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                                onClick={() => setAppreciationOpen(true)}
+                            >
+                                {t('modifierAppreciation')}
+                            </ElisaButton>
+                        )}
+                        {hasPermission('bulletins:delete') && !bulletin.publie && (
+                            <ElisaButton
+                                variant="danger"
+                                size="sm"
+                                icon={<Trash2 className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                                isLoading={supprimer.isPending}
+                                onClick={() => setDeleteConfirmOpen(true)}
+                            >
                                 {t('supprimer')}
                             </ElisaButton>
                         )}
@@ -104,67 +195,162 @@ export function BulletinDetailPage({ bulletinId }: BulletinDetailPageProps) {
                 }
             />
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <div className="lg:col-span-2 flex flex-col gap-4">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-semibold text-[var(--color-text-strong)]">{t('matieres')}</h3>
-                    </div>
-                    {bulletin.matieres?.length ? (
-                        <div className="flex flex-col gap-2">
-                            {bulletin.matieres.map((m) => (
-                                <NoteMatiereRow key={m.id} m={m} />
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-sm text-[var(--color-text-muted)]">Aucune matière</p>
-                    )}
+            <TabsBar
+                tabs={onglets}
+                activeTab={ongletActif}
+                onTabChange={(tabId) => setOngletActif(tabId as OngletActif)}
+                variant="underline"
+            />
 
-                    {bulletin.appreciation && (
-                        <div className="mt-4 rounded-lg border border-[var(--color-border)] p-4">
-                            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">{t('appreciation')}</p>
-                            <p className="text-sm italic">{bulletin.appreciation}</p>
+            <TabsContent activeTab={ongletActif}>
+                {ongletActif === 'synthese' && (
+                    <div className="space-y-6">
+                        <div className="flex flex-wrap gap-[var(--gap-sm)]">
+                            <StatCard icon={TrendingUp} label={t('moyenne')} value={formatNote(bulletin.moyenneGenerale, 20)} tone="dominant" />
+                            {typeof bulletin.moyenneClasse === 'number' && (
+                                <StatCard icon={Users} label={t('moyenneClasse')} value={formatNote(bulletin.moyenneClasse, 20)} tone="info" />
+                            )}
+                            {typeof bulletin.moyenneMax === 'number' && (
+                                <StatCard icon={Star} label={t('moyenneMax')} value={formatNote(bulletin.moyenneMax, 20)} tone="success" />
+                            )}
+                            {typeof bulletin.moyenneMin === 'number' && (
+                                <StatCard icon={TrendingUp} label={t('moyenneMin')} value={formatNote(bulletin.moyenneMin, 20)} tone="danger" />
+                            )}
+                            {typeof bulletin.rang === 'number' && (
+                                <StatCard icon={Award} label={t('rangLabel')} value={bulletin.rang} tone="purple" />
+                            )}
                         </div>
-                    )}
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-[clamp(0.75rem,2vw,1.5rem)]">
+                            <Card>
+                                <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+                                    <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
+                                        <FileText className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-primary inline mr-2" />
+                                        {t('informations')}
+                                    </h3>
+                                    <div className="border-b border-border mb-4" />
+                                    <div className="space-y-3">
+                                        <InfoField label={t('eleve')} value={`${bulletin.eleve?.prenom ?? ''} ${bulletin.eleve?.nom ?? ''}`.trim() || '—'} />
+                                        <InfoField label={t('classe')} value={bulletin.classeAnnee?.classe?.nom ?? '—'} />
+                                        <InfoField label={t('periode')} value={bulletin.periode?.nom ?? '—'} />
+                                        <InfoField label={t('mention')} value={t(getMentionKey(bulletin.moyenneGenerale))} />
+                                        <InfoField
+                                            label={t('statut')}
+                                            value={
+                                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${bulletin.publie ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
+                                                    {bulletin.publie ? t('publie') : t('nonPublie')}
+                                                </span>
+                                            }
+                                        />
+                                        <InfoField label={t('dateGeneration')} value={formatDate(bulletin.createdAt)} />
+                                    </div>
+                                </div>
+                            </Card>
+
+                            <Card>
+                                <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+                                    <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
+                                        <Award className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-success inline mr-2" />
+                                        {t('appreciation')}
+                                    </h3>
+                                    <div className="border-b border-border mb-4" />
+                                    <div className="space-y-4">
+                                        <p className="text-sm italic text-foreground">
+                                            {bulletin.appreciationConseil || t('aucuneAppreciation')}
+                                        </p>
+                                        {bulletin.encouragements && bulletin.encouragements.length > 0 && (
+                                            <div>
+                                                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('encouragements')}</p>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {bulletin.encouragements.map((e) => (
+                                                        <span key={e} className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">{e}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {bulletin.sanctions && bulletin.sanctions.length > 0 && (
+                                            <div>
+                                                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('sanctions')}</p>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {bulletin.sanctions.map((s) => (
+                                                        <span key={s} className="rounded-full bg-danger/10 px-2 py-0.5 text-xs font-medium text-danger">{s}</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </Card>
+                        </div>
+                    </div>
+                )}
+
+                {ongletActif === 'matieres' && (
+                    <Card>
+                        <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+                            <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
+                                <BookOpen className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-primary inline mr-2" />
+                                {t('matieres')}
+                            </h3>
+                            <div className="border-b border-border mb-4" />
+                            {bulletin.bulletinMatieres?.length ? (
+                                <div className="flex flex-col gap-[var(--gap-sm)]">
+                                    {bulletin.bulletinMatieres.map((m) => (
+                                        <MatiereRow key={m.id} m={m} />
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">{t('aucuneMatiere')}</p>
+                            )}
+                        </div>
+                    </Card>
+                )}
+            </TabsContent>
+
+            {/* Modal appréciation du conseil */}
+            <CustomModal
+                open={appreciationOpen}
+                onOpenChange={setAppreciationOpen}
+                title={t('modifierAppreciation')}
+                size="md"
+                footer={
+                    <div className="flex justify-end gap-[var(--gap-sm)]">
+                        <ElisaButton variant="outline" size="sm" onClick={() => setAppreciationOpen(false)}>
+                            {t('annuler')}
+                        </ElisaButton>
+                        <ElisaButton
+                            variant="primary"
+                            size="sm"
+                            isLoading={modifier.isPending}
+                            onClick={handleEnregistrerAppreciation}
+                        >
+                            {t('enregistrer')}
+                        </ElisaButton>
+                    </div>
+                }
+            >
+                <div className="flex flex-col gap-1.5">
+                    <label htmlFor="bulletin-appreciation" className="text-sm font-medium text-foreground">{t('appreciation')}</label>
+                    <textarea
+                        id="bulletin-appreciation"
+                        className="flex min-h-[120px] w-full rounded-[var(--radius-lg)] border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        value={appreciationBrouillon}
+                        onChange={(e) => setAppreciationBrouillon(e.target.value)}
+                        placeholder={t('appreciationPlaceholder')}
+                    />
                 </div>
+            </CustomModal>
 
-                <div className="flex flex-col gap-4">
-                    <div className="rounded-lg border border-[var(--color-border)] p-4">
-                        <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">{t('moyenne')}</p>
-                        <span className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-2xl font-bold ${
-                            bulletin.moyenneGenerale >= 16 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                            bulletin.moyenneGenerale >= 14 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
-                            bulletin.moyenneGenerale >= 12 ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400' :
-                            bulletin.moyenneGenerale >= 10 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                            'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                        }`}>
-                            {bulletin.moyenneGenerale.toFixed(2)}/20
-                        </span>
-                    </div>
-
-                    <div className="rounded-lg border border-[var(--color-border)] p-4">
-                        <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">{t('rang')}</p>
-                        <div className="flex items-center gap-2">
-                            <Award className="h-5 w-5 text-[var(--color-warning)]" />
-                            <span className="text-xl font-bold">
-                                {t('rang', { rang: bulletin.rang })}
-                            </span>
-                            <span className="text-sm text-[var(--color-text-muted)]">/ {bulletin.effectifClasse}</span>
-                        </div>
-                    </div>
-
-                    {bulletin.dateGeneration && (
-                        <div className="rounded-lg border border-[var(--color-border)] p-4">
-                            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">{t('dateGeneration')}</p>
-                            <p className="text-sm">{new Date(bulletin.dateGeneration).toLocaleDateString()}</p>
-                        </div>
-                    )}
-
-                    <div className="rounded-lg border border-[var(--color-border)] p-4">
-                        <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">{t('effectif')}</p>
-                        <p className="text-sm font-medium">{bulletin.effectifClasse}</p>
-                    </div>
-                </div>
-            </div>
+            <ConfirmDialog
+                open={publierConfirmOpen}
+                onOpenChange={setPublierConfirmOpen}
+                onConfirm={handleTogglePublication}
+                title={bulletin.publie ? t('confirmerDepublierTitre') : t('confirmerPublierTitre')}
+                description={bulletin.publie ? t('confirmerDepublierMessage') : t('confirmerPublierMessage')}
+                confirmText={bulletin.publie ? t('depublier') : t('publier')}
+                variant="info"
+                isLoading={modifier.isPending}
+            />
 
             <ConfirmDialog
                 open={deleteConfirmOpen}
@@ -172,6 +358,7 @@ export function BulletinDetailPage({ bulletinId }: BulletinDetailPageProps) {
                 onConfirm={handleDelete}
                 title={t('confirmerSupprimerTitre')}
                 description={t('confirmerSupprimerMessage')}
+                confirmText={t('supprimer')}
                 variant="danger"
                 isLoading={supprimer.isPending}
             />

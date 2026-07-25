@@ -63,27 +63,56 @@ export interface UniteFiltres {
 
 // ==================== HIÉRARCHIE ====================
 
+export interface HierarchiePersonneRef {
+    id: string;
+    matricule?: string;
+    utilisateur?: {
+        profil?: {
+            nom?: string;
+            prenom?: string;
+        };
+    };
+}
+
+export interface HierarchiePosteRef {
+    id: string;
+    intitule?: string;
+    code?: string;
+    uniteOrganisationnelle?: {
+        id: string;
+        nom: string;
+        code?: string;
+    };
+}
+
 export interface HierarchiePersonnel {
     id: string;
-    personnelId?: string;
-    superieurId?: string;
+    personnelId?: string | null;
+    superieurId?: string | null;
     typeRelation: TypeRelationHierarchique;
     statut: StatutRelation;
     actif: boolean;
-    posteId?: string;
+    posteId?: string | null;
+    superieurPosteId?: string | null;
     etablissementId?: string;
     dateDebut?: string;
     dateFin?: string;
     commentaire?: string;
     createdAt: string;
     updatedAt: string;
+    personnel?: HierarchiePersonneRef | null;
+    superieur?: HierarchiePersonneRef | null;
+    poste?: HierarchiePosteRef | null;
+    superieurPoste?: HierarchiePosteRef | null;
 }
 
 export interface CreerHierarchieDto {
     personnelId?: string;
     superieurId?: string;
     typeRelation?: TypeRelationHierarchique;
+    statut?: StatutRelation;
     posteId?: string;
+    superieurPosteId?: string;
     etablissementId?: string | null;
     dateDebut?: string;
     dateFin?: string;
@@ -122,7 +151,7 @@ export interface OrganigrammePoste {
     nombrePostes: number;
     fonctionLabel?: string;
     niveauResponsabiliteLabel?: string;
-    typePersonnelLabel?: string;
+    categorie?: string;
     uniteOrganisationnelleId?: string;
 }
 
@@ -146,19 +175,6 @@ export interface ModeRemuneration {
     label: string;
     description?: string;
     etablissementId?: string | null;
-    estSysteme: boolean;
-    createdAt: string;
-    updatedAt: string;
-}
-
-// ==================== TYPE PERSONNEL ====================
-
-export interface TypePersonnel {
-    id: string;
-    code: string;
-    nom: string;
-    description?: string;
-    actif: boolean;
     estSysteme: boolean;
     createdAt: string;
     updatedAt: string;
@@ -236,19 +252,90 @@ export interface TemplateStructure {
 export interface TemplateOrganisation {
     id: string;
     nom: string;
+    nomEn?: string;
     description?: string;
     structure: TemplateStructure;
     etablissementId?: string | null;
     estSysteme: boolean;
     actif: boolean;
+    // Catégorisation (v5.1)
+    nature?: NatureJuridique;
+    systeme?: SystemeEducatif;
+    langue?: LangueEnseignement;
+    niveaux?: NiveauEnseignement[];
+    complexite?: ComplexiteStructurelle;
+    categorie?: string;
+    ordre?: number;
+    icone?: string;
+    metadata?: Record<string, unknown>;
     createdAt: string;
     updatedAt: string;
+}
+
+// ==================== CATÉGORISATION TEMPLATES (v5.1) ====================
+
+export enum NatureJuridique {
+    PUBLIC_ETATIQUE = 'PUBLIC_ETATIQUE',
+    PUBLIC_COMMUNAL = 'PUBLIC_COMMUNAL',
+    PRIVE_LAIC = 'PRIVE_LAIC',
+    PRIVE_CONFESSIONNEL = 'PRIVE_CONFESSIONNEL',
+    PRIVE_ASSOCIATIF = 'PRIVE_ASSOCIATIF',
+    COMPLEXE = 'COMPLEXE',
+}
+
+export enum SystemeEducatif {
+    GENERAL = 'GENERAL',
+    TECHNIQUE = 'TECHNIQUE',
+    PROFESSIONNEL = 'PROFESSIONNEL',
+    NORMAL = 'NORMAL',
+    SUPERIEUR = 'SUPERIEUR',
+}
+
+export enum LangueEnseignement {
+    FRANCOPHONE = 'FRANCOPHONE',
+    ANGLOPHONE = 'ANGLOPHONE',
+    BILINGUE = 'BILINGUE',
+}
+
+export enum NiveauEnseignement {
+    MATERNEL = 'MATERNEL',
+    PRIMAIRE = 'PRIMAIRE',
+    COLLEGE = 'COLLEGE',
+    LYCEE = 'LYCEE',
+    POST_BAC = 'POST_BAC',
+}
+
+export enum ComplexiteStructurelle {
+    STANDARD = 'STANDARD',
+    AVANCE = 'AVANCE',
+}
+
+export interface TemplateFiltres {
+    nature?: string;
+    systeme?: string;
+    langue?: string;
+    niveau?: string;
+    complexite?: string;
+    categorie?: string;
+    search?: string;
+    actif?: boolean;
+    page?: number;
+    limit?: number;
+}
+
+export interface CombinaisonsValides {
+    natures: string[];
+    systemes: string[];
+    langues: string[];
+    niveaux: string[];
+    complexites: string[];
+    categories: string[];
+    compteurs: Record<string, number>;
 }
 
 export interface GenererOrganisationDto {
     templateId?: string;
     structure?: TemplateStructure;
-    etablissementId: string;
     options?: {
         prefixeCode?: string;
         creerHierarchie?: boolean;

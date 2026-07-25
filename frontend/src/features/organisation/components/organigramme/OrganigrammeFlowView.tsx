@@ -19,13 +19,17 @@ import ReactFlow, {
     type NodeTypes,
     type EdgeTypes,
     type Node,
+    type Edge,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { UniteNode } from './nodes/UniteNode';
 import { HierarchieEdge } from './edges/HierarchieEdge';
+import { RelationEdge, type RelationEdgeData } from './edges/RelationEdge';
+import { RelationDetailDrawer } from './drawer/RelationDetailDrawer';
 import { useOrganigrammeFlow } from './hooks/use-organigramme-flow';
 import { useDndOrganigramme } from './hooks/use-dnd-organigramme';
 import { useModifierPoste } from '../../hooks/use-postes';
+import { useHierarchies } from '../../hooks/use-hierarchies';
 import type { OrganigrammeNode } from '../../types/organisation.types';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useTranslation } from 'react-i18next';
@@ -37,13 +41,14 @@ interface OrganigrammeFlowViewProps {
     containerId?: string;
     onNodeSelect?: (unite: OrganigrammeNode) => void;
     isEditMode?: boolean;
+    showRelations?: boolean;
     onEditUnite?: (unite: OrganigrammeNode) => void;
     onAddChildUnite?: (unite: OrganigrammeNode) => void;
     onDeleteUnite?: (unite: OrganigrammeNode) => void;
 }
 
 const nodeTypes: NodeTypes = { uniteNode: UniteNode };
-const edgeTypes: EdgeTypes = { hierarchieEdge: HierarchieEdge };
+const edgeTypes: EdgeTypes = { hierarchieEdge: HierarchieEdge, relationEdge: RelationEdge };
 
 function FlowViewInner({
     data,
@@ -51,6 +56,7 @@ function FlowViewInner({
     containerId = 'organigramme-flow-container',
     onNodeSelect,
     isEditMode,
+    showRelations,
     onEditUnite,
     onAddChildUnite,
     onDeleteUnite,
@@ -59,6 +65,7 @@ function FlowViewInner({
     const isDesktop = useMediaQuery('(min-width: 1280px)');
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
     const { fitView, zoomIn, zoomOut } = useReactFlow();
+    const { data: hierarchies } = useHierarchies();
 
     const { dndState, onNodeDrag, onNodeDragStop, onNodeMouseEnter, onNodeMouseLeave, onConnect, onConnectStart, onConnectEnd } = useDndOrganigramme({ arbre: data, isEditMode });
 
@@ -68,10 +75,43 @@ function FlowViewInner({
         defaultCollapseDepth: 2,
         isEditMode,
         dndVisualState: { draggedNodeId: dndState.draggedNodeId, dropTargetId: dndState.dropTargetId, isValid: dndState.isValid, isDragging: dndState.isDragging, isConnecting: dndState.isConnecting },
+        relations: showRelations ? hierarchies || [] : undefined,
     });
 
     const { mutateAsync: modifierPoste } = useModifierPoste();
     const [posteDropTarget, setPosteDropTarget] = useState<string | null>(null);
+
+    // Drawer détail relation (clic sur un lien overlay)
+    const [openedRelationEdgeId, setOpenedRelationEdgeId] = useState<string | null>(null);
+    const openedRelationData = useMemo(() => {
+        if (!openedRelationEdgeId) return null;
+        const edge = edges.find(e => e.id === openedRelationEdgeId && e.type === 'relationEdge');
+        return (edge?.data as RelationEdgeData | undefined) ?? null;
+    }, [edges, openedRelationEdgeId]);
+
+    const handleOpenRelation = useCallback((edgeId: string) => {
+        setOpenedRelationEdgeId(edgeId);
+    }, []);
+
+    const handleCloseRelation = useCallback(() => {
+        setOpenedRelationEdgeId(null);
+    }, []);
+
+    // Injecter le handler d'ouverture + état sélectionné dans les edges relation
+    const edgesWithHandlers = useMemo<Edge[]>(() =>
+        edges.map(e => e.type === 'relationEdge'
+            ? { ...e, selected: e.id === openedRelationEdgeId, data: { ...(e.data as RelationEdgeData), onOpen: handleOpenRelation } }
+            : e
+        ),
+        [edges, openedRelationEdgeId, handleOpenRelation]
+    );
+
+    // Unités reliées par le lien ouvert → surbrillance
+    const highlightedNodeIds = useMemo(() => {
+        if (!openedRelationEdgeId) return null;
+        const edge = edges.find(e => e.id === openedRelationEdgeId);
+        return edge ? new Set([edge.source, edge.target]) : null;
+    }, [edges, openedRelationEdgeId]);
 
     const handleNodeSelect = useCallback((unite: OrganigrammeNode) => {
         selectNode(unite);
@@ -88,9 +128,10 @@ function FlowViewInner({
                 onEdit: onEditUnite,
                 onAddChild: onAddChildUnite,
                 onDelete: onDeleteUnite,
+                isSearchMatch: n.data.isSearchMatch || !!highlightedNodeIds?.has(n.id),
             },
         })),
-        [nodes, handleNodeSelect, isEditMode, onEditUnite, onAddChildUnite, onDeleteUnite]
+        [nodes, handleNodeSelect, isEditMode, onEditUnite, onAddChildUnite, onDeleteUnite, highlightedNodeIds]
     );
 
     const onInit = useCallback(() => {
@@ -154,7 +195,7 @@ function FlowViewInner({
         >
             <ReactFlow
                 nodes={nodesWithSelect}
-                edges={edges}
+                edges={edgesWithHandlers}
                 nodeTypes={nodeTypes}
                 edgeTypes={edgeTypes}
                 onInit={onInit}
@@ -202,6 +243,11 @@ function FlowViewInner({
                     className="!bg-[var(--color-surface)] !border !border-[var(--color-bordure)] !rounded-lg !shadow-sm"
                 />
             </ReactFlow>
+            <RelationDetailDrawer
+                data={openedRelationData}
+                open={!!openedRelationData}
+                onClose={handleCloseRelation}
+            />
         </div>
     );
 }

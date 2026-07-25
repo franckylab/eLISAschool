@@ -83,8 +83,6 @@
     "nombrePostes": "Number of positions",
     "niveauResponsabilite": "Responsibility level",
     "hierarchie": "Hierarchy",
-    "nouvelleRelation": "New hierarchy relation",
-    "modifierRelation": "Edit hierarchy relation",
     "typeRelation": "Relation type",
     "superviseur": "Supervisor",
     "subordonne": "Subordinate",
@@ -119,6 +117,20 @@
     "niveauxResponsabilite_STAGIAIRE": "Intern",
     "typeRelation_DIRECT": "Direct hierarchy",
     "typeRelation_FONCTIONNEL": "Functional attachment",
+    "statutRelation_ACTIVE": "Active",
+    "statutRelation_PLANIFIEE": "Planned",
+    "statutRelation_HISTORIQUE": "Historical",
+    "filtreTous": "All",
+    "filtrePersonnes": "People",
+    "filtrePostes": "Positions",
+    "modePersonne": "Person → Person",
+    "modePoste": "Position → Position",
+    "posteSubordonne": "Subordinate position",
+    "posteSuperieur": "Superior position",
+    "dateDebut": "Start date",
+    "dateFin": "End date",
+    "commentaire": "Comment",
+    "relationIncomplete": "Select both ends of the relation",
     "descriptionSection": "Description",
     "aucuneDescription": "No description provided.",
     "statutSection": "Status",
@@ -317,9 +329,9 @@
     "aucunMembre": "No member",
     "aucuneSousFonction": "No sub-function",
     "racine": "Root",
-        "ajouterMission": "Add a mission",
-        "ajouterCompetence": "Add a competency",
-        "aucuneFonctionIndication": "No functions. Create your first function.",
+    "ajouterMission": "Add a mission",
+    "ajouterCompetence": "Add a competency",
+    "aucuneFonctionIndication": "No functions. Create your first function.",
     "majorationDefaut": "Default increase",
     "principale": "Primary",
     "generationPersonnalisee": "Custom generation",
@@ -334,7 +346,11 @@
         "subtitle": "Interactive view of the organizational structure",
         "vertical": "Vertical",
         "horizontal": "Horizontal",
-        "liste": "List",
+        "liste": {
+            "postes": "Positions",
+            "membres": "Members",
+            "postesVacants": "Vacant positions"
+        },
         "synthese": "Overview",
         "vueLabel": "View mode",
         "toolbar": "Org chart tools",
@@ -375,7 +391,15 @@
             "ajouterEnfant": "Child",
             "fermer": "Close",
             "echelon": "Echelon",
-            "localisation": "Location"
+            "localisation": "Location",
+            "responsable": "Manager"
+        },
+        "relations": {
+            "ouvrirDetail": "View relation details",
+            "nbRelations": "{{count}} relation(s)",
+            "liste": "Relations",
+            "supervise": "supervises",
+            "voirPageHierarchie": "Manage hierarchies"
         },
         "dnd": {
             "confirmTitle": "Move unit?",
@@ -401,6 +425,8 @@
         "modeModification": "Edit mode",
         "quitterModification": "Exit edit mode",
         "modifier": "Edit",
+        "afficherRelations": "Show relations",
+        "masquerRelations": "Hide relations",
         "form": {
             "nom": "Name",
             "code": "Code",
@@ -424,7 +450,8 @@
             "phDescriptionPoste": "Position description...",
             "validationMin2": "Minimum 2 characters",
             "validationRequis": "Required",
-            "validationEmail": "Invalid email"
+            "validationEmail": "Invalid email",
+            "fonction": "Function"
         },
         "modal": {
             "creerUnite": "New unit",
@@ -448,17 +475,86 @@
             "membresDirect": "{{count}} direct",
             "hierarchies": "Hierarchies"
         },
-        "liste": {
-            "postes": "Positions",
-            "membres": "Members",
-            "postesVacants": "Vacant positions"
-        },
         "empty": {
             "titre": "No organisational unit",
             "description": "Start by creating your first unit or generate a complete organisation from a template.",
             "creerUnite": "Create a unit",
             "genererDepuisModele": "Generate from template",
             "astuce": "You can also use a predefined template to automatically generate the entire structure."
-        }
+        },
+        "vueListe": "List"
+    },
+    "natures": {
+        "PUBLIC_ETATIQUE": "Public state",
+        "PUBLIC_COMMUNAL": "Public municipal",
+        "PRIVE_LAIC": "Private secular",
+        "PRIVE_CONFESSIONNEL": "Private religious",
+        "PRIVE_ASSOCIATIF": "Private non-profit",
+        "COMPLEXE": "Multi-status complex"
+    },
+    "systemes": {
+        "GENERAL": "General",
+        "TECHNIQUE": "Technical",
+        "PROFESSIONNEL": "Vocational",
+        "NORMAL": "Teacher training",
+        "SUPERIEUR": "Higher education"
+    },
+    "langues": {
+        "FRANCOPHONE": "Francophone",
+        "ANGLOPHONE": "Anglophone",
+        "BILINGUE": "Bilingual"
+    },
+    "niveaux": {
+        "MATERNEL": "Pre-school",
+        "PRIMAIRE": "Primary",
+        "COLLEGE": "Middle school",
+        "LYCEE": "High school",
+        "POST_BAC": "Post-secondary"
+    },
+    "complexites": {
+        "STANDARD": "Standard",
+        "AVANCE": "Advanced"
+    },
+    "filtres": "Filters",
+    "natureJuridique": "Legal status",
+    "systemeEducatif": "Education system",
+    "langueEnseignement": "Language of instruction",
+    "niveauEnseignement": "Level",
+    "complexite": "Complexity",
+    "reinitialiserFiltres": "Reset filters",
+    "rechercherTemplate": "Search for a template...",
+    "template(s)": "template(s)",
+    "filtreActif": "filtered",
+    "cloner": "Clone",
+    "dansCategorie": "in this category",
+    "toasts": {
+        "uniteCreee": "Unit created",
+        "uniteModifiee": "Unit updated",
+        "uniteSupprimee": "Unit deleted",
+        "uniteCreeeAvecPostes": "Unit created with its positions",
+        "ordreMajour": "Order updated",
+        "hierarchieCreee": "Hierarchy relation created",
+        "hierarchieModifiee": "Hierarchy relation updated",
+        "hierarchieSupprimee": "Hierarchy relation deleted",
+        "echelonCree": "Echelon created",
+        "echelonModifie": "Echelon updated",
+        "echelonSupprime": "Echelon deleted",
+        "niveauCree": "Level created",
+        "niveauModifie": "Level updated",
+        "niveauSupprime": "Level deleted",
+        "modeCree": "Pay mode created",
+        "modeModifie": "Pay mode updated",
+        "modeSupprime": "Pay mode deleted",
+        "templateCree": "Template created",
+        "templateModifie": "Template updated",
+        "templateSupprime": "Template deleted",
+        "templateClone": "Template cloned successfully",
+        "organisationGeneree": "Organisation generated successfully",
+        "posteCree": "Position created successfully",
+        "posteModifie": "Position updated successfully",
+        "posteSupprime": "Position deleted",
+        "fonctionCreee": "Function created successfully",
+        "fonctionModifiee": "Function updated successfully",
+        "fonctionSupprimee": "Function deleted"
     }
 }

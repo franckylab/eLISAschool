@@ -649,7 +649,7 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
             Permission.ORGANISATION_VIEW,
             Permission.UNITES_VIEW,
             Permission.POSTES_VIEW,
-            Permission.HIERARCHIE_VIEW,
+            Permission.ORGANISATION_HIERARCHIE_READ,
             Permission.ORGANIGRAMME_VIEW,
         ],
         dependencies: [ModuleName.AUTH],

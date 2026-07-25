@@ -197,32 +197,70 @@ logger.info('Requête exécutée', {
 
 ---
 
-## Domaine 11 : Organisation — TypePersonnel vs Fonction
+## Domaine 11 : Organisation — Modèle complet (v6.0)
 
-Deux nomenclatures **orthogonales**, à ne pas fusionner :
+**`TypePersonnel` n'existe plus** (table `types_personnel` supprimée, migration 121). La catégorie statutaire est portée par **`Fonction.categorie`** :
 
-| Axe | `TypePersonnel` (`types_personnel`) | `Fonction` (`fonctions`) |
+| Axe | `Fonction.categorie` (enum varchar) | `Fonction` (`fonctions`) |
 |-----|-------------------------------------|--------------------------|
-| Sens | Statut RH (*quel type d'employé*) | Fonction hiérarchique (*quel rôle exercé*) |
-| Portée | **Global** (pas d'`etablissementId`) | **Multi-tenant** (`etablissementId` requis) |
-| Structure | Plat | Hiérarchique (parent/enfant, `chemin`) |
-| Par personne | 1 (via `MembrePersonnel.typePersonnelId`) | N dans le temps (via `MembreFonction`) |
-| Pilote | `modeRemunerationDefaut` (paie), règles de contrat | `primesDefaut`, `majorationDefaut` (primes/carrière) |
+| Sens | Catégorie statutaire (*quel type de rôle*) | Fonction hiérarchique (*quel rôle exercé*) |
+| Valeurs | `ENSEIGNANT`, `DIRECTION`, `ADMINISTRATIF`, `TECHNIQUE`, `SERVICE`, `SANTE`, `SOCIAL`, `AUTRE` | — |
+| Stockage | varchar(20) NOT NULL DEFAULT 'AUTRE' | Multi-tenant, hiérarchique (parent/enfant, `chemin`) |
 
 ### Règles métier critiques
 
-- Le **type d'une personne** vit sur `MembrePersonnel.typePersonnelId` (une seule valeur).
-- Une personne exerce **N fonctions** dans le temps via `MembreFonction` (dates, `estPrincipale`, contrat).
-- Le **type attendu d'un poste** est **dérivé** de sa fonction : `poste.fonction.typePersonnel`. Il n'est **jamais** stocké sur `Poste`.
-- `Fonction.typePersonnelId` (FK optionnelle vers le type global) porte le type statutaire — ex. fonction « Professeur » ⟹ ENSEIGNANT.
-- Compatibilité (`contrat.service`) : *seul un ENSEIGNANT peut occuper un poste dont la fonction est de type ENSEIGNANT* → contrôle via `poste.fonction?.typePersonnel?.code`.
-- `TypePersonnel.modeRemunerationDefaut` pilote la paie. **Aucun** rôle/permission par défaut sur le type : le RBAC passe **uniquement** par `utilisateur_etablissements` (voir Domaine 2).
+- La **catégorie d'une personne** est **toujours dérivée** (jamais stockée) : via les fonctions des postes occupés (`affectations → poste.fonction.categorie`), fallback fonctions directes (`MembreFonction`).
+- L'API personnel expose `categorie`, `estEnseignant`, `categorieSource` (champs calculés).
+- Un membre est **enseignant** ⟺ il occupe un poste dont `fonction.categorie === 'ENSEIGNANT'`.
+- La **catégorie attendue d'un poste** est dérivée : `poste.fonction.categorie`. Jamais stockée sur `Poste`.
+- Compatibilité (`contrat.service`) : contrôle via `poste.fonction?.categorie`.
+- **Aucun** rôle/permission par défaut lié à la catégorie : le RBAC passe **uniquement** par `utilisateur_etablissements` (voir Domaine 2).
 
 ### À ne pas faire
 
-- Ne **pas** re-stocker `typePersonnelId` sur `Poste` ni sur `HierarchiePersonnel` (dérivable → source d'incohérence).
-- Ne **pas** ajouter de `roleIdParDefaut`/`permissionsDefaut` sur `TypePersonnel` (contredit le RBAC contextuel).
-- Ne **pas** fusionner Type et Fonction : rôles distincts (statut/paie vs fonction/primes).
+- Ne **pas** re-stocker la catégorie sur `MembrePersonnel`, `Poste` ni `HierarchiePersonnel` (dérivable → source d'incohérence).
+- Ne **pas** recréer une entité/table pour la catégorie : c'est un enum applicatif (`CategorieFonction` dans shared).
+- Ne **pas** ajouter de `roleIdParDefaut`/`permissionsDefaut` liés à la catégorie (contredit le RBAC contextuel).
+
+### HierarchiePersonnel — sémantique duale (v4.1)
+
+Une seule table `hierarchie_personnel`, **deux types de relations mutuellement exclusifs** :
+
+| Relation | Champs | Alimentée par |
+|----------|--------|---------------|
+| personne→personne | `personnelId` + `superieurId` (FK → membres_personnel) | `contrat.service.autoCreerHierarchie` |
+| poste→poste | `posteId` + `superieurPosteId` (FK → postes) | seeds, templates (`generation.service`), CRUD REST |
+
+- **Interdit** : mettre un id de `Poste` dans `superieurId` (bug historique corrigé, backfill migration 122).
+- Le DTO impose (personnelId+superieurId) **OU** (posteId+superieurPosteId) via `.refine()`.
+- Anti-cycle : 2 CTE récursifs distincts (chaînes de personnes ET chaînes de postes).
+- `typeRelation` : enum varchar `DIRECT` | `FONCTIONNEL` (la table nomenclature TypeRelationHierarchique n'existe plus).
+- L'organigramme structurel est bâti sur `unites.parentId` ; les relations poste→poste sont un **overlay optionnel** (edges pointillés).
+
+### Templates d'organisation catégorisés (v6.0 — migration 127)
+
+**25 templates** remplaçant les 22 anciens, classés sur **5 axes** :
+
+| Axe | Enum | Valeurs |
+|-----|------|---------|
+| Nature juridique | `NatureJuridique` | `PRIVE`, `PUBLIC`, `COMPLEXE_SCOLAIRE`, `CFP`, `CENTRE_FORMATION` |
+| Système éducatif | `SystemeEducatif` | `FRANCOPHONE_GENERAL`, `FRANCOPHONE_TECHNIQUE`, `ANGLOPHONE`, `BILINGUE`, `SIMPLE` |
+| Langue enseignement | `LangueEnseignement` | `FR`, `EN`, `BILINGUE_FR_EN` |
+| Niveau enseignement | `NiveauEnseignement` (JSONB array) | `MATERNEL`, `PRIMAIRE`, `SECONDAIRE_COLLEGE`, `SECONDAIRE_LYCEE`, `FORMATION_PRO`, `FORMATION_DIVERS` |
+| Complexité | `ComplexiteStructurelle` | `SIMPLE`, `STANDARD`, `AVANCE`, `COMPLEXE` |
+
+**Règles métier** :
+- **Incompatibilités** : MATERNEL+TECHNIQUE, NORMAL+PRIMAIRE, CFP+MATERNEL/PRIMAIRE, COMPLEXE+un_seul_niveau
+- **Fonctions anglophone/bilingue** : 10 codes spécifiques (HEAD-TEACHER, DEPUTY-HEAD, HEAD-OF-YEAR, FORM-TUTOR, SENCO, BUSINESS-MGR, EXAMS-OFF, COORD-LING, DIR-SECTION-FR, DIR-SECTION-EN)
+- **Échelons structurels étendus** : 4 nouveaux (SECTION_LINGUISTIQUE, CYCLE, FILIERE, POLE_FORMATION) → 14 total
+- **Clonage** : `POST /templates/:id/cloner` crée une copie modifiable (etablissementId scopé)
+- **Filtrage API** : `GET /templates?nature=&systeme=&langue=&niveaux=&complexite=&search=`
+- **Combinaisons valides** : `GET /templates/combinaisons` → matrice 25 combinaisons + compteurs
+
+**À ne pas faire** :
+- Ne **pas** créer des templates sans métadonnées de catégorisation (tous les axes requis)
+- Ne **pas** mélanger systèmes éducatifs dans un même template (sauf BILINGUE explicite)
+- Ne **pas** utiliser `intitulé` (accent) — le champ entity est `intitule` (sans accent)
 
 ---
 
@@ -235,34 +273,42 @@ Configuration (bareme_defaut=20, require_validation=true)
         ↓
 Cycles → Niveaux → MatiereNiveau (coefficient, barème, obligatoire)
         ↓
-Classes (Niveau + AnnéeScolaire) → AffectationElèves + AffectationMatières
+ClasseAnnee (Niveau + AnnéeScolaire) → AffectationEleve + AffectationMatiere
         ↓
 Périodes (dans AnnéeScolaire, poids configurable)
         ↓
-Notes (Élève × Matière × Période × Classe)
+Notes (Élève × Matière × Période × ClasseAnnee)
   → standardisation sur /20 : noteSur20 = (valeur / barème) × 20
   → workflow : BROUILLON → VALIDÉE → PUBLIÉE
         ↓
-Bulletins = agrégation de toutes les notes publiées d'un élève pour une période
-  → moyenneMatière = notesService.calculerMoyenne(eleveId, matiereId, periodeId)
+Bulletins = agrégation des notes VALIDÉE + PUBLIÉE d'un élève pour une période
+  → moyenneMatière : SQL agrégé (batch loader) pondéré coefficient, base 20
   → moyenneGénérale = Σ(moyenneMatière × coeffNiveau) / Σ(coefficients)
-  → stats : moyenneClasse, min, max, rang
+  → stats : moyenneClasse/Min/Max + rangs calculés (calculerRangs)
 ```
 
 ### Règles métier critiques
 
-**Notes** :
-- Si `require_validation = true` (config), note créée en `BROUILLON`, sinon directement `VALIDÉE`
-- Seules les notes `PUBLIÉE` comptent dans le calcul de moyenne
-- `calculerMoyenne()` : moyenne pondérée sur base 20, arrondi 2 décimales
-- `createBulk()` : crée N notes d'un coup pour une classe entière
-- L'`anneeScolaireId` est auto-résolu depuis la période si non fourni
+**Notes** (refonte 2026-07) :
+- Si `notes.require_validation = true` (config), note créée en `BROUILLON`, sinon directement `VALIDÉE`
+- Les notes `VALIDÉE` **et** `PUBLIÉE` comptent dans les moyennes (`In([VALIDEE, PUBLIEE])`)
+- `enseignantId` référence **MembrePersonnel.id** (nullable) — résolu depuis `req.utilisateur.id` via `MembrePersonnel.utilisateurId`
+- `createBulk()` (`POST /api/notes/bulk`) : renseigne `classeAnneeId`, refuse si période clôturée, vérifie que chaque élève a une `AffectationEleve` active (400 avec liste), gated par `notes.allow_bulk_entry` (403)
+- `anneeScolaireId` auto-résolu depuis la période si non fourni
+- `updateNoteSchema` : `eleveId/matiereId/classeAnneeId/periodeId` immuables
+- `GET /api/notes` → `PaginatedResult { items, meta }` + `recherche` ILIKE
+- `GET /api/notes/statistiques` (perm `notes:statistiques:view`) : moyenne, médiane, min/max, écart-type, distribution, par type/statut
+- Niveaux de validation : config `notes.validation_levels` (plus de valeur codée en dur)
+- SQL brut : colonnes camelCase **toujours quotées** (`"eleveId"`, `"classeAnneeId"`…) et `statut::text = ANY($n)`
 
-**Bulletins** :
-- Génération = opération lourde qui traverse 4 services (classes, périodes, matières, notes)
-- **Upsert** : un bulletin par tuple (eleveId, classeId, periodeId) — mise à jour si existant
-- Le programme du niveau (`MatiereNiveau`) détermine quelles matières entrent dans le bulletin
-- TODO connu : le calcul des rangs n'est pas encore implémenté
+**Bulletins** (refonte 2026-07) :
+- **Upsert** : index unique classe `['etablissementId','eleveId','periodeId']`
+- Le programme du niveau (`MatiereNiveau`) détermine matières + coefficients du bulletin
+- Rangs implémentés (`calculerRangs`) ; `moyenneClasse/Min/Max` renseignées avant calcul
+- Config : `bulletins.require_validation` (ancienne clé `bulletins.validation_workflow` en fallback)
+- `DELETE /api/bulletins/:id` (perm `bulletins:delete`) refusé si publié (400)
+- `GET /api/bulletins/:id/export` (perm `bulletins:export`) → HTML A4 imprimable (`bulletin.pdf.service.ts`, sans dépendance)
+- `PATCH` avec `publie: true` exige `bulletins:publier`
 
 **Classes** :
 - Si `anneeScolaireId` non fourni → récupère l'année active automatiquement

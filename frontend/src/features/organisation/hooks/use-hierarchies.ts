@@ -38,30 +38,6 @@ export function useHierarchies(params?: { personnelId?: string }) {
     });
 }
 
-export function useSuperieurs(personnelId: string) {
-    const { isAuthenticated } = useAuthStore();
-    return useQuery({
-        queryKey: ORGA_KEYS.hierarchie.superieurs(personnelId),
-        queryFn: async () => {
-            const response = await apiClient.get<HierarchiePersonnel[]>(`/api/organisation/hierarchie/superieurs/${personnelId}`);
-            return response.data || [];
-        },
-        enabled: !!personnelId && isAuthenticated,
-    });
-}
-
-export function useSubordonnes(superieurId: string) {
-    const { isAuthenticated } = useAuthStore();
-    return useQuery({
-        queryKey: ORGA_KEYS.hierarchie.subordonnes(superieurId),
-        queryFn: async () => {
-            const response = await apiClient.get<HierarchiePersonnel[]>(`/api/organisation/hierarchie/subordonnes/${superieurId}`);
-            return response.data || [];
-        },
-        enabled: !!superieurId && isAuthenticated,
-    });
-}
-
 export function useCreerHierarchie() {
     const qc = useQueryClient();
     const handleError = useHandleError();

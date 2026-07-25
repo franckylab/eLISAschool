@@ -46,7 +46,7 @@ export class NotesBatchLoaderService {
      * @param batchKeys - Liste de combinaisons (élève, matière, période)
      * @returns Map de Map: eleveId -> (matiereId -> moyenne)
      */
-    async batchLoadMoyennes(batchKeys: BatchKey[]): Promise<Map<string, Map<string, number>>> {
+    async batchLoadMoyennes(batchKeys: BatchKey[], etablissementId?: string): Promise<Map<string, Map<string, number>>> {
         if (batchKeys.length === 0) {
             return new Map();
         }
@@ -71,7 +71,7 @@ export class NotesBatchLoaderService {
             const matiereIds = [...new Set(keys.map(k => k.matiereId))];
 
             // Créer la clé de cache
-            const cacheKey = `batch:${periodKey}:${eleveIds.sort().join(',')}:${matiereIds.sort().join(',')}`;
+            const cacheKey = `batch:${periodKey}:${etablissementId || 'all'}:${eleveIds.sort().join(',')}:${matiereIds.sort().join(',')}`;
 
             // Vérifier le cache pour cette période
             const cachedData = this.batchCache.get(cacheKey);
@@ -89,22 +89,32 @@ export class NotesBatchLoaderService {
             }
 
             // Requête batch UNIQUE
+            // NB: colonnes camelCase quotées (pas de NamingStrategy dans le projet)
+            const conditions: string[] = [
+                `"eleveId" = ANY($1)`,
+                `"matiereId" = ANY($2)`,
+                `statut::text = ANY($3)`,
+            ];
+            const params: unknown[] = [eleveIds, matiereIds, [StatutNote.VALIDEE, StatutNote.PUBLIEE]];
+
+            if (periodKey !== 'all') {
+                params.push(periodKey);
+                conditions.push(`"periodeId" = $${params.length}`);
+            }
+            if (etablissementId) {
+                params.push(etablissementId);
+                conditions.push(`"etablissementId" = $${params.length}`);
+            }
+
             const query = `
                 SELECT 
-                    eleve_id,
-                    matiere_id,
-                    AVG(valeur / bareme * 20 * coefficient) / AVG(coefficient) as moyenne
+                    "eleveId",
+                    "matiereId",
+                    AVG(valeur / NULLIF(bareme, 0) * 20 * coefficient) / NULLIF(AVG(coefficient), 0) as moyenne
                 FROM notes
-                WHERE eleve_id = ANY($1)
-                AND matiere_id = ANY($2)
-                AND statut = 'PUBLIEE'
-                ${periodKey !== 'all' ? 'AND periode_id = $3' : ''}
-                GROUP BY eleve_id, matiere_id
+                WHERE ${conditions.join('\n                AND ')}
+                GROUP BY "eleveId", "matiereId"
             `;
-
-            const params = periodKey !== 'all' 
-                ? [eleveIds, matiereIds, periodKey]
-                : [eleveIds, matiereIds];
 
             const results = await this.noteRepo.query(query, params);
 
@@ -121,8 +131,8 @@ export class NotesBatchLoaderService {
 
             // Remplir avec les résultats réels
             for (const row of results) {
-                const eleveId = row.eleve_id;
-                const matiereId = row.matiere_id;
+                const eleveId = row.eleveId;
+                const matiereId = row.matiereId;
                 const moyenne = Math.round(parseFloat(row.moyenne) * 100) / 100;
 
                 if (!periodResult.has(eleveId)) {
@@ -163,7 +173,8 @@ export class NotesBatchLoaderService {
      */
     async batchLoadMoyennesGenerales(
         eleveIds: string[], 
-        periodeId?: string
+        periodeId?: string,
+        etablissementId?: string
     ): Promise<Map<string, number>> {
         if (eleveIds.length === 0) {
             return new Map();
@@ -171,25 +182,38 @@ export class NotesBatchLoaderService {
 
         this.stats.totalBatches++;
 
-        const cacheKey = `batch:moyennes-gen:${eleveIds.sort().join(',')}:${periodeId || 'all'}`;
+        const cacheKey = `batch:moyennes-gen:${eleveIds.sort().join(',')}:${periodeId || 'all'}:${etablissementId || 'all'}`;
         
         if (this.batchCache.has(cacheKey)) {
             return this.batchCache.get(cacheKey)!;
         }
 
         // Requête batch pour toutes les moyennes générales
+        // NB: colonnes camelCase quotées (pas de NamingStrategy dans le projet)
+        const conditions: string[] = [
+            `"eleveId" = ANY($1)`,
+            `statut::text = ANY($2)`,
+        ];
+        const params: unknown[] = [eleveIds, [StatutNote.VALIDEE, StatutNote.PUBLIEE]];
+
+        if (periodeId) {
+            params.push(periodeId);
+            conditions.push(`"periodeId" = $${params.length}`);
+        }
+        if (etablissementId) {
+            params.push(etablissementId);
+            conditions.push(`"etablissementId" = $${params.length}`);
+        }
+
         const query = `
             SELECT 
-                eleve_id,
-                AVG(valeur / bareme * 20 * coefficient) / AVG(coefficient) as moyenne_generale
+                "eleveId",
+                AVG(valeur / NULLIF(bareme, 0) * 20 * coefficient) / NULLIF(AVG(coefficient), 0) as moyenne_generale
             FROM notes
-            WHERE eleve_id = ANY($1)
-            AND statut = 'PUBLIEE'
-            ${periodeId ? 'AND periode_id = $2' : ''}
-            GROUP BY eleve_id
+            WHERE ${conditions.join('\n            AND ')}
+            GROUP BY "eleveId"
         `;
 
-        const params = periodeId ? [eleveIds, periodeId] : [eleveIds];
         const results = await this.noteRepo.query(query, params);
 
         const moyennesMap = new Map<string, number>();
@@ -201,7 +225,7 @@ export class NotesBatchLoaderService {
 
         // Remplir avec les résultats
         for (const row of results) {
-            moyennesMap.set(row.eleve_id, Math.round(parseFloat(row.moyenne_generale) * 100) / 100);
+            moyennesMap.set(row.eleveId, Math.round(parseFloat(row.moyenne_generale) * 100) / 100);
         }
 
         // Cache (5 min)

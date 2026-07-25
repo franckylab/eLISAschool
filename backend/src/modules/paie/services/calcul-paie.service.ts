@@ -89,7 +89,6 @@ export class CalculPaieService {
 
         const membre = await this.personnelRepo.findOne({
             where: { id: membrePersonnelId, etablissementId },
-            relations: ['typePersonnel'],
         });
 
         if (!membre) {
@@ -191,7 +190,6 @@ export class CalculPaieService {
 
         const membre = await this.personnelRepo.findOne({
             where: { id: membrePersonnelId },
-            relations: ['typePersonnel'],
         });
 
         const mode = contrat.modeRemuneration?.code

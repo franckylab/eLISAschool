@@ -312,6 +312,7 @@ export enum Permission {
     BULLETINS_EDIT = 'bulletins:edit',
     BULLETINS_PUBLIER = 'bulletins:publier',
     BULLETINS_EXPORT = 'bulletins:export',
+    BULLETINS_DELETE = 'bulletins:delete',
 
     // ==================================
     // EMPLOI DU TEMPS
@@ -905,6 +906,9 @@ export enum Permission {
     // Permissions granulaires — Génération
     ORGANISATION_GENERATION_EXECUTE = 'organisation:generation:execute',
     
+    // Permissions granulaires — Organigramme (lecture seule, ouverte à tous les rôles)
+    ORGANISATION_ORGANIGRAMME_READ = 'organisation:organigramme:read',
+    
     // Permissions legacy (compatibilité)
     UNITES_VIEW = 'unites:view',
     UNITES_CREATE = 'unites:create',
@@ -918,10 +922,6 @@ export enum Permission {
     POSTES_DELETE = 'postes:delete',
     POSTES_ASSIGNER = 'postes:assigner',
     
-    HIERARCHIE_VIEW = 'hierarchie:view',
-    HIERARCHIE_CREATE = 'hierarchie:create',
-    HIERARCHIE_EDIT = 'hierarchie:edit',
-    HIERARCHIE_DELETE = 'hierarchie:delete',
     ORGANIGRAMME_VIEW = 'organigramme:view',
 }
 
@@ -964,6 +964,12 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.PERIODES_LABELS_VIEW, Permission.PERIODES_LABELS_EDIT,
         Permission.NIVEAUX_PERIODE_VIEW, Permission.NIVEAUX_PERIODE_CREATE, Permission.NIVEAUX_PERIODE_EDIT, Permission.NIVEAUX_PERIODE_DELETE,
         Permission.USAGES_NIVEAU_VIEW, Permission.USAGES_NIVEAU_CREATE, Permission.USAGES_NIVEAU_EDIT, Permission.USAGES_NIVEAU_DELETE,
+        // Notes & Bulletins
+        Permission.NOTES_VIEW, Permission.NOTES_CREATE, Permission.NOTES_EDIT, Permission.NOTES_DELETE,
+        Permission.NOTES_VALIDATE, Permission.NOTES_BULK_CREATE, Permission.NOTES_IMPORT, Permission.NOTES_EXPORT,
+        Permission.NOTES_STATISTIQUES_VIEW, Permission.NOTES_EDITER_APRES_CLOTURE,
+        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT, Permission.BULLETINS_EDIT,
+        Permission.BULLETINS_PUBLIER, Permission.BULLETINS_EXPORT, Permission.BULLETINS_DELETE,
         // Validation permissions
         Permission.VALIDATION_NOTES_LEVEL1, Permission.VALIDATION_NOTES_LEVEL2, Permission.VALIDATION_NOTES_LEVEL3,
         Permission.VALIDATION_BULLETINS_LEVEL1, Permission.VALIDATION_BULLETINS_LEVEL2, Permission.VALIDATION_BULLETINS_LEVEL3,
@@ -1042,6 +1048,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.ORGANISATION_TEMPLATES_WRITE,
         Permission.ORGANISATION_TEMPLATES_DELETE,
         Permission.ORGANISATION_GENERATION_EXECUTE,
+        Permission.ORGANISATION_ORGANIGRAMME_READ,
         // Apparence
         Permission.APPARENCE_FONDS_VIEW,
         Permission.APPARENCE_FONDS_MANAGE,
@@ -1128,7 +1135,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.NIVEAUX_PERIODE_VIEW, Permission.NIVEAUX_PERIODE_CREATE, Permission.NIVEAUX_PERIODE_EDIT, Permission.NIVEAUX_PERIODE_DELETE,
         Permission.USAGES_NIVEAU_VIEW, Permission.USAGES_NIVEAU_CREATE, Permission.USAGES_NIVEAU_EDIT, Permission.USAGES_NIVEAU_DELETE,
         Permission.NOTES_VIEW, Permission.NOTES_VALIDATE,
-        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT,
+        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT, Permission.BULLETINS_DELETE,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
         Permission.CONFIG_VIEW, Permission.CONFIG_MODULE_VIEW, Permission.CONFIG_PARAM_VIEW, Permission.CONFIG_HISTORY_VIEW,
         Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
@@ -1318,7 +1325,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.MATIERES_VIEW, Permission.MATIERES_EDIT,
         Permission.CYCLES_VIEW, Permission.NIVEAUX_VIEW,
         Permission.NOTES_VIEW, Permission.NOTES_VALIDATE,
-        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT,
+        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT, Permission.BULLETINS_DELETE,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
         Permission.CONFIG_VIEW, Permission.CONFIG_MODULE_VIEW, Permission.CONFIG_PARAM_VIEW, Permission.CONFIG_HISTORY_VIEW,
         Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
@@ -1364,7 +1371,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.MATIERES_VIEW, Permission.MATIERES_EDIT,
         Permission.CYCLES_VIEW, Permission.NIVEAUX_VIEW,
         Permission.NOTES_VIEW, Permission.NOTES_VALIDATE,
-        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT,
+        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT, Permission.BULLETINS_DELETE,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
         Permission.CONFIG_VIEW, Permission.CONFIG_MODULE_VIEW, Permission.CONFIG_PARAM_VIEW, Permission.CONFIG_HISTORY_VIEW,
         Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
@@ -1401,7 +1408,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.MATIERES_VIEW, Permission.MATIERES_EDIT,
         Permission.CYCLES_VIEW, Permission.NIVEAUX_VIEW,
         Permission.NOTES_VIEW,
-        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE,
+        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_DELETE,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE,
         Permission.CONFIG_VIEW, Permission.CONFIG_MODULE_VIEW, Permission.CONFIG_PARAM_VIEW, Permission.CONFIG_HISTORY_VIEW,
         Permission.MESSAGES_SEND,
@@ -1458,6 +1465,12 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.EMPLOI_DU_TEMPS_REALISATION_CREATE,
         Permission.EMPLOI_DU_TEMPS_REALISATION_VALIDATE,
         Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
+        // Organisation — lecture (rôle intermédiaire « discipline & organisation »)
+        Permission.ORGANISATION_VIEW,
+        Permission.ORGANISATION_UNITES_READ,
+        Permission.ORGANISATION_POSTES_READ,
+        Permission.ORGANISATION_FONCTIONS_READ,
+        Permission.ORGANISATION_HIERARCHIE_READ,
     ],
 
     [Role.DIRECTEUR_ADJOINT]: [
@@ -1469,7 +1482,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.MATIERES_VIEW, Permission.MATIERES_EDIT,
         Permission.CYCLES_VIEW, Permission.NIVEAUX_VIEW,
         Permission.NOTES_VIEW, Permission.NOTES_VALIDATE,
-        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE,
+        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_DELETE,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE,
         Permission.MESSAGES_SEND,
         Permission.REQUETES_VIEW, Permission.REQUETES_APPROVE,
@@ -1595,7 +1608,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
     [Role.PROFESSEUR_PRINCIPAL]: [
         // Responsable de classe - vision complète de SA classe
         Permission.NOTES_VIEW, Permission.NOTES_CREATE, Permission.NOTES_EDIT,
-        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE,
+        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_DELETE,
         Permission.CLASSES_VIEW,
         Permission.ELEVES_VIEW,
         Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
@@ -1625,6 +1638,12 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.PROGRAMMES_CHAPITRE_VALIDATE,
         Permission.PROGRAMMES_CORRELATION_READ, Permission.PROGRAMMES_CORRELATION_EVALUATE,
         Permission.PROGRAMMES_DASHBOARD_READ,
+        // Organisation — lecture (rôle intermédiaire « chef de département »)
+        Permission.ORGANISATION_VIEW,
+        Permission.ORGANISATION_UNITES_READ,
+        Permission.ORGANISATION_POSTES_READ,
+        Permission.ORGANISATION_FONCTIONS_READ,
+        Permission.ORGANISATION_HIERARCHIE_READ,
     ],
 
     // ==================================
@@ -1953,7 +1972,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.ELEVES_VIEW,
         Permission.CLASSES_VIEW,
         Permission.NOTES_VIEW, Permission.NOTES_VALIDATE,
-        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT,
+        Permission.BULLETINS_VIEW, Permission.BULLETINS_GENERATE, Permission.BULLETINS_PRINT, Permission.BULLETINS_DELETE,
         Permission.BULLETINS_EXPORT,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
         Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
@@ -2115,5 +2134,13 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.REQUETES_VIEW,
     ],
 };
+
+// L'organigramme est consultable par toute la communauté scolaire (enseignants,
+// élèves, parents, personnel…) sans donner accès au reste du module organisation.
+for (const permissions of Object.values(DEFAULT_ROLE_PERMISSIONS)) {
+    if (permissions && !permissions.includes(Permission.ORGANISATION_ORGANIGRAMME_READ)) {
+        permissions.push(Permission.ORGANISATION_ORGANIGRAMME_READ);
+    }
+}
 
 export default { Role, Permission, DEFAULT_ROLE_PERMISSIONS };

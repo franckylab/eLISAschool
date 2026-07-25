@@ -206,8 +206,6 @@ export interface UtilisateurResponseDto {
         matricule: string;
         statut: string;
         dateEmbauche: Date;
-        typePersonnelId?: string;
-        typePersonnel?: { id: string; code: string; nom: string };
         specialitePrincipale?: string;
         departement?: string;
     };

@@ -16,7 +16,6 @@ import { seedAnneesScolaires } from './system/seed-annees-scolaires';
 import { seedClassesParDefaut } from './system/seed-classes-par-defaut';
 import { seedMatieres } from './system/seed-matieres';
 import { seedMatieresNiveaux } from './system/seed-matieres-niveaux';
-import { seedTypePersonnel } from './system/seed-type-personnel';
 import { seedTypesContrat } from './system/seed-types-contrat';
 import { seedNomenclatures } from './system/seed-nomenclatures';
 import { seedOrganisation } from './system/seed-organisation';
@@ -78,10 +77,7 @@ export async function runSystemSeeds(): Promise<{
     // 9. Super admin
     await seedSuperAdmin(etablissementPrincipalId, etablissementSecondaireId);
 
-    // 10. Types de personnel
-    await seedTypePersonnel();
-
-    // 10b. Types de contrat
+    // 10. Types de contrat
     await seedTypesContrat();
 
     // 10c. Nomenclatures organisation (global — 6 tables)

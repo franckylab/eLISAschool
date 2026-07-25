@@ -17,12 +17,14 @@ import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useCreerPoste, useModifierPoste } from '../../../hooks/use-postes';
 import { useNiveauxResponsabilite } from '../../../hooks/use-niveaux-responsabilite';
+import { useToutesFonctions } from '@/features/fonctions/hooks/use-fonctions';
 import { useAuthStore } from '@/stores/auth.store';
 import type { OrganigrammeNode, OrganigrammePoste } from '../../../types/organisation.types';
 
 type PosteFormData = {
     intitule: string;
     code: string;
+    fonctionId: string;
     niveauResponsabiliteId: string;
     description: string;
     estSuppleant: boolean;
@@ -42,6 +44,7 @@ interface PosteFormModalProps {
 const FORM_INIT: PosteFormData = {
     intitule: '',
     code: '',
+    fonctionId: '',
     niveauResponsabiliteId: '',
     description: '',
     estSuppleant: false,
@@ -53,12 +56,18 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
 
     const posteFormSchema = useMemo(() => z.object({
         intitule: z.string().min(2, t('organigramme.form.validationMin2')).max(150),
-        code: z.string().max(20).optional().or(z.literal('')),
+        code: mode === 'create'
+            ? z.string().min(2, t('organigramme.form.validationMin2')).max(50)
+            : z.string().max(50).optional().or(z.literal('')),
+        fonctionId: mode === 'create'
+            ? z.string().min(1, t('organigramme.form.validationRequis'))
+            : z.string().optional().or(z.literal('')),
         niveauResponsabiliteId: z.string().optional().or(z.literal('')),
         description: z.string().max(500).optional().or(z.literal('')),
         estSuppleant: z.boolean().default(false),
-    }), [t]);
+    }), [t, mode]);
     const { data: niveaux } = useNiveauxResponsabilite();
+    const { data: fonctions } = useToutesFonctions();
     const { mutateAsync: creerPoste, isPending: isCreating } = useCreerPoste();
     const { mutateAsync: modifierPoste, isPending: isUpdating } = useModifierPoste();
 
@@ -78,6 +87,7 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
             reset({
                 intitule: poste.intitule || '',
                 code: poste.code || '',
+                fonctionId: '',
                 niveauResponsabiliteId: '',
                 description: '',
                 estSuppleant: false,
@@ -101,12 +111,12 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
             });
         } else {
             await creerPoste({
-                ...data,
-                code: data.code || undefined,
+                intitule: data.intitule,
+                code: data.code,
+                fonctionId: data.fonctionId,
                 niveauResponsabiliteId: data.niveauResponsabiliteId || undefined,
                 description: data.description || undefined,
                 uniteOrganisationnelleId: unite.id,
-                etablissementId,
             });
         }
 
@@ -175,7 +185,28 @@ export function PosteFormModal({ open, onOpenChange, mode, unite, poste, onSucce
                         style={{ padding: 'clamp(0.375rem, 0.3rem + 0.2vw, 0.5rem) clamp(0.625rem, 0.5rem + 0.3vw, 0.75rem)', borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
                         placeholder={t('organigramme.form.phCode')}
                     />
+                    {errors.code && <p className="text-xs mt-1 text-destructive">{errors.code.message}</p>}
                 </div>
+
+                {/* Fonction (création uniquement — pivot v5.0) */}
+                {mode === 'create' && (
+                    <div>
+                        <label className="block font-medium" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-xxs)' }}>
+                            {t('organigramme.form.fonction', 'Fonction')} *
+                        </label>
+                        <select
+                            {...register('fonctionId')}
+                            className="w-full rounded-lg border text-sm outline-none transition-colors focus:ring-2 focus:ring-[var(--color-dominant-400)]"
+                            style={{ padding: 'clamp(0.375rem, 0.3rem + 0.2vw, 0.5rem) clamp(0.625rem, 0.5rem + 0.3vw, 0.75rem)', borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
+                        >
+                            <option value="">{t('organigramme.form.selectionner', 'Sélectionner...')}</option>
+                            {fonctions?.map(f => (
+                                <option key={f.id} value={f.id}>{f.nom}</option>
+                            ))}
+                        </select>
+                        {errors.fonctionId && <p className="text-xs mt-1 text-destructive">{errors.fonctionId.message}</p>}
+                    </div>
+                )}
 
                 {/* Niveau de responsabilité */}
                 <div>

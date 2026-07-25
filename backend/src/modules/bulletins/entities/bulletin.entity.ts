@@ -26,6 +26,7 @@ import { BulletinMatiere } from './bulletin-matiere.entity';
 @Index(['classeAnneeId'])
 @Index(['periodeId'])
 @Index(['etablissementId'])
+@Index(['etablissementId', 'eleveId', 'periodeId'], { unique: true })
 export class Bulletin {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -94,8 +95,6 @@ export class Bulletin {
     @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
-
-    @Index(['etablissementId', 'eleveId', 'periodeId'], { unique: true })
 
     @CreateDateColumn()
     createdAt!: Date;

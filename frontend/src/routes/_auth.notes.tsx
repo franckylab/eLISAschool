@@ -27,6 +27,7 @@ function NotesLayout() {
                     labelsMap={{
                         notes: t('notes'),
                         nouvelle: t('nouvelleNote'),
+                        saisie: t('saisieMasse'),
                         detail: t('detail'),
                     }}
                 />

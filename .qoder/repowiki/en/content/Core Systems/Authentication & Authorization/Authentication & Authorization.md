@@ -28,6 +28,8 @@
 - Enhanced tenant context propagation documentation with standardized approach
 - Added architectural improvement notes for multi-tenant architecture standardization
 - Updated practical examples to demonstrate the new centralized pattern
+- Revised guard system documentation to emphasize centralized establishment ID extraction
+- Updated troubleshooting guide with new centralized pattern considerations
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -44,9 +46,9 @@
 ## Introduction
 This document explains eLISAschool's authentication and authorization system with a focus on:
 - Multi-strategy authentication supporting email/password and matricule-based login
-- Multi-tenant JWT handling across establishments with centralized establishment ID extraction
+- Multi-tenant JWT handling across establishments with centralized establishment ID extraction via getEtablissementId function
 - Role-based access control (RBAC) with permission inheritance, granular permissions, and dynamic evaluation
-- Guard system including PermissionGuard, RoleGuard, and custom guards for tenant isolation
+- Guard system including PermissionGuard, RoleGuard, and custom guards for tenant isolation using centralized establishment ID extraction
 - Practical flows for registration, login/logout, token management, and permission checks
 - Audit trail integration for security events
 - Session management, password policies, account lockout mechanisms, and security best practices
@@ -66,6 +68,7 @@ C --> E["RBAC Module<br/>backend/src/modules/rbac/*"]
 D --> F["Database Migrations<br/>backend/database/migrations/027-auth-multi-mode.sql"]
 E --> G["RBAC Docs & Conventions<br/>docs/rbac-system.md<br/>docs/CONVENTIONS-PERMISSIONS.md<br/>docs/PERMISSIONS-BASE-DONNEES.md"]
 C --> H["Integration Tests<br/>backend/test/integration/*.spec.ts"]
+D --> I["Establishment Utils<br/>getEtablissementId()"]
 ```
 
 **Diagram sources**
@@ -101,7 +104,7 @@ C --> H["Integration Tests<br/>backend/test/integration/*.spec.ts"]
 - Guard system
   - PermissionGuard for fine-grained checks
   - RoleGuard for role-based checks
-  - Custom guards for tenant isolation and policy enforcement
+  - Custom guards for tenant isolation and policy enforcement using centralized establishment ID extraction
 - Audit trail integration
   - Security event logging for authz decisions and failures
 - Session and token lifecycle
@@ -122,10 +125,10 @@ Key implementation references:
 - [PERMISSIONS-BASE-DONNEES.md](file://docs/PERMISSIONS-BASE-DONNEES.md)
 
 ## Architecture Overview
-The system uses a layered approach with enhanced tenant context propagation:
+The system uses a layered approach with enhanced tenant context propagation through centralized establishment ID extraction:
 - HTTP layer: Controllers receive requests and delegate to services
-- Service layer: Orchestrates authentication, RBAC checks, and tenant scoping using centralized establishment ID extraction
-- Guard layer: Enforces policies at route/controller boundaries with tenant isolation
+- Service layer: Orchestrates authentication, RBAC checks, and tenant scoping using centralized establishment ID extraction via getEtablissementId function
+- Guard layer: Enforces policies at route/controller boundaries with tenant isolation using standardized establishment ID extraction
 - Persistence layer: Stores users, roles, permissions, audit logs, and tenant metadata
 - Test layer: Validates multi-tenant behavior and configuration
 
@@ -170,17 +173,17 @@ API-->>Client : "200 OK {token}"
   - User lookup adapts to strategy
   - Password verification and account status checks
 - Output:
-  - JWT containing user identity, roles, permissions, and tenant context
+  - JWT containing user identity, roles, permissions, and tenant context extracted via centralized establishment ID extraction
 
 Practical flow:
 - Registration creates user with credentials and default role(s)
-- Login selects strategy, verifies credentials, resolves RBAC, issues JWT
+- Login selects strategy, verifies credentials, resolves RBAC, issues JWT with centralized establishment ID extraction
 - Logout invalidates token or clears session state per policy
 
 Security considerations:
 - Rate limiting and lockout after repeated failures
 - Secure password hashing and policy enforcement
-- Tenant isolation enforced via claims and middleware
+- Tenant isolation enforced via claims and middleware using centralized establishment ID extraction
 
 **Section sources**
 - [027-auth-multi-mode.sql](file://backend/database/migrations/027-auth-multi-mode.sql)
@@ -202,7 +205,7 @@ Operational notes:
 - Switching tenants requires re-authentication or explicit token update
 - Standardized approach ensures consistent tenant context propagation across all modules
 
-**Updated** The multi-tenant JWT handling has been enhanced with centralized establishment ID extraction using the getEtablissementId function. This architectural improvement standardizes tenant context propagation across the entire multi-tenant architecture, replacing previous direct property access patterns with a unified approach.
+**Updated** The multi-tenant JWT handling has been significantly enhanced with centralized establishment ID extraction using the getEtablissementId function. This architectural improvement replaces previous non-centralized tenant context handling patterns across guards and token management with a unified approach that ensures consistency and maintainability throughout the multi-tenant architecture.
 
 **Section sources**
 - [auth-multi-etablissement.spec.ts](file://backend/test/integration/auth-multi-etablissement.spec.ts)
@@ -237,7 +240,7 @@ Implementation references:
 - RoleGuard:
   - Checks required roles against current user's roles
 - Custom guards:
-  - Tenant isolation guard enforces establishment scoping using centralized establishment ID extraction
+  - Tenant isolation guard enforces establishment scoping using centralized establishment ID extraction via getEtablissementId function
   - Policy-based guards evaluate contextual conditions
 
 Usage patterns:
@@ -250,7 +253,7 @@ Extensibility:
 - Register guards in dependency injection container
 - Compose guards for complex scenarios
 
-**Updated** Custom guards now leverage the centralized getEtablissementId function for consistent tenant context extraction, ensuring uniform tenant isolation across all guard implementations.
+**Updated** Custom guards now leverage the centralized getEtablissementId function for consistent tenant context extraction, replacing previous non-centralized patterns and ensuring uniform tenant isolation across all guard implementations.
 
 **Section sources**
 - [guards-exemples-implémentation.ts](file://docs/guards-exemples-implémentation.ts)
@@ -301,7 +304,7 @@ References:
 - User registration flow:
   - Validate input, hash password, assign default role(s), create user, log audit event
 - Login/logout processes:
-  - Strategy selection, credential verification, RBAC resolution, JWT issuance with centralized establishment ID extraction
+  - Strategy selection, credential verification, RBAC resolution, JWT issuance with centralized establishment ID extraction via getEtablissementId function
   - Logout invalidation or client-side token removal
 - Token management:
   - Issuance, refresh, rotation, revocation
@@ -311,7 +314,7 @@ References:
   - Programmatic checks in service logic
   - Dynamic evaluation for complex policies
 
-**Updated** Login processes now utilize the centralized getEtablissementId function for consistent establishment ID extraction, ensuring uniform tenant context throughout the authentication flow.
+**Updated** Login processes now utilize the centralized getEtablissementId function for consistent establishment ID extraction, replacing previous non-centralized patterns and ensuring uniform tenant context throughout the authentication flow.
 
 Code example references:
 - Guard examples file
@@ -325,7 +328,7 @@ Code example references:
 - [CORRECTION-PERMISSIONS-COMPLETE-LOGIN.md](file://docs/corrections/CORRECTION-PERMISSIONS-COMPLETE-LOGIN.md)
 
 ## Dependency Analysis
-High-level dependencies among core components with enhanced tenant context propagation:
+High-level dependencies among core components with enhanced tenant context propagation through centralized establishment ID extraction:
 
 ```mermaid
 graph LR
@@ -360,7 +363,7 @@ RbacSvc --> Audit
 - Batch permission checks when possible
 - Avoid heavy computations in hot paths; defer to background jobs if needed
 - Keep audit writes asynchronous to prevent latency spikes
-- **Updated**: Centralized establishment ID extraction reduces redundant tenant context processing across multiple modules
+- **Updated**: Centralized establishment ID extraction reduces redundant tenant context processing across multiple modules, improving performance and consistency
 
 [No sources needed since this section provides general guidance]
 
@@ -373,7 +376,7 @@ Common issues and resolutions:
   - Confirm role assignments and permission inheritance
   - Validate super-admin all-permission flags
 - Multi-tenant isolation failures
-  - Ensure tenant context is present in JWT and propagated through centralized extraction
+  - Ensure tenant context is present in JWT and propagated through centralized establishment ID extraction
   - Review tenant isolation guard logic and getEtablissementId usage
 
 Diagnostic resources:
@@ -381,7 +384,7 @@ Diagnostic resources:
 - Permissions completion for login
 - Super-admin all-permission fix
 
-**Updated** For multi-tenant isolation issues, verify that the centralized getEtablissementId function is properly configured and that tenant context is consistently propagated through all authentication flows.
+**Updated** For multi-tenant isolation issues, verify that the centralized getEtablissementId function is properly configured and that tenant context is consistently propagated through all authentication flows, replacing any remaining non-centralized patterns.
 
 **Section sources**
 - [CORRECTION-401-JWT-SECRET-DYNAMIQUE.md](file://docs/corrections/CORRECTION-401-JWT-SECRET-DYNAMIQUE.md)
@@ -389,9 +392,9 @@ Diagnostic resources:
 - [CORRECTION-SUPER-ADMIN-ALL-PERMISSION.md](file://docs/corrections/CORRECTION-SUPER-ADMIN-ALL-PERMISSION.md)
 
 ## Conclusion
-eLISAschool's authentication and authorization system combines flexible multi-strategy login, robust RBAC with inheritance and dynamic evaluation, and strong multi-tenant isolation enhanced by centralized establishment ID extraction. The guard system enables declarative and programmatic access control, while audit trails ensure visibility into security events. With clear extensibility points and standardized tenant context propagation, teams can implement custom strategies and permission rules to meet evolving business needs.
+eLISAschool's authentication and authorization system combines flexible multi-strategy login, robust RBAC with inheritance and dynamic evaluation, and strong multi-tenant isolation enhanced by centralized establishment ID extraction. The guard system enables declarative and programmatic access control, while audit trails ensure visibility into security events. With clear extensibility points and standardized tenant context propagation through the getEtablissementId function, teams can implement custom strategies and permission rules to meet evolving business needs.
 
-**Updated** The recent enhancement with centralized establishment ID extraction using getEtablissementId function significantly improves consistency and maintainability of tenant context propagation across the multi-tenant architecture.
+**Updated** The recent enhancement with centralized establishment ID extraction using the getEtablissementId function represents a significant architectural improvement that eliminates previous non-centralized tenant context handling patterns, providing consistent and maintainable multi-tenant support across the entire authentication and authorization system.
 
 [No sources needed since this section summarizes without analyzing specific files]
 
@@ -415,12 +418,12 @@ eLISAschool's authentication and authorization system combines flexible multi-st
 
 ### Appendix B: Guard Implementation Checklist
 - Define guard interface and constructor parameters
-- Implement decision logic using current user context and centralized establishment ID extraction
+- Implement decision logic using current user context and centralized establishment ID extraction via getEtablissementId function
 - Register guard in DI container
 - Apply guard at route/controller level
 - Add unit tests for edge cases and policy variations
 
-**Updated** Guard implementations should now use the centralized getEtablissementId function for consistent tenant context extraction rather than direct property access patterns.
+**Updated** Guard implementations should now use the centralized getEtablissementId function for consistent tenant context extraction, replacing any remaining non-centralized patterns that directly access establishment ID properties.
 
 **Section sources**
 - [guards-exemples-implémentation.ts](file://docs/guards-exemples-implémentation.ts)
@@ -434,8 +437,24 @@ eLISAschool's authentication and authorization system combines flexible multi-st
   - Reduced code duplication
   - Improved maintainability
   - Enhanced security through centralized validation
+  - Elimination of non-centralized patterns across guards and token management
 
-**New Section** The centralized establishment ID extraction pattern represents a key architectural improvement that standardizes how tenant context is propagated throughout the authentication and authorization system.
+**New Section** The centralized establishment ID extraction pattern represents a key architectural improvement that standardizes how tenant context is propagated throughout the authentication and authorization system, replacing previous non-centralized approaches with a unified getEtablissementId function.
+
+**Section sources**
+- [auth-multi-etablissement.spec.ts](file://backend/test/integration/auth-multi-etablissement.spec.ts)
+- [configuration-multi-tenant.spec.ts](file://backend/test/integration/configuration-multi-tenant.spec.ts)
+
+### Appendix D: Migration from Non-Centralized Patterns
+- Previous approach: Direct establishment ID property access across guards and token management
+- New approach: Centralized getEtablissementId function for all establishment ID extraction
+- Migration benefits:
+  - Consistent tenant context handling
+  - Reduced maintenance overhead
+  - Improved security through centralized validation
+  - Better testability and debugging capabilities
+
+**New Section** This appendix documents the migration from non-centralized establishment ID handling patterns to the centralized getEtablissementId function approach, highlighting the architectural improvements and benefits.
 
 **Section sources**
 - [auth-multi-etablissement.spec.ts](file://backend/test/integration/auth-multi-etablissement.spec.ts)

@@ -1,10 +1,10 @@
 import { createFileRoute, Outlet, useLocation } from '@tanstack/react-router';
-import { requireModulePermission } from '@/app/permission-guards';
+import { requirePermission } from '@/app/permission-guards';
 import { motion } from 'framer-motion';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 
 export const Route = createFileRoute('/_auth/organisation/postes')({
-    beforeLoad: () => requireModulePermission('postes'),
+    beforeLoad: () => requirePermission('organisation:postes:read'),
     component: PostesLayout,
 });
 

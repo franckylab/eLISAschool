@@ -62,12 +62,8 @@ export interface Utilisateur {
         matricule: string;
         statut: string;
         dateEmbauche: string;
-        typePersonnel?: {
-            id: string;
-            code: string;
-            nom: string;
-        };
-        typePersonnelId?: string;
+        categorie?: string;
+        estEnseignant?: boolean;
         specialitePrincipale?: string;
         departement?: string;
     };

@@ -9,9 +9,14 @@
  * Permet de construire l'organigramme dynamique et de gérer les relations
  * de subordination/supervision.
  *
+ * Sémantique des colonnes :
+ * - personnelId / superieurId : relations personne → personne (MembrePersonnel)
+ * - posteId / superieurPosteId : relations poste → poste (Poste — organigramme, templates, seeds)
+ *
  * Refonte v4.0 :
  * - typeRelationId (FK) → typeRelation (varchar enum : DIRECT, FONCTIONNEL)
  * - uniteOrganisationnelleId supprimé (redondant avec Poste)
+ * - superieurPosteId ajouté (le poste supérieur n'est plus stocké dans superieurId)
  */
 
 import {
@@ -54,6 +59,7 @@ export enum TypeRelationHierarchique {
 @Index(['superieurId'])
 @Index(['typeRelation'])
 @Index(['posteId'])
+@Index(['superieurPosteId'])
 @Index(['etablissementId'])
 export class HierarchiePersonnel {
     @PrimaryGeneratedColumn('uuid')
@@ -67,9 +73,13 @@ export class HierarchiePersonnel {
     @JoinColumn({ name: 'personnelId' })
     personnel?: MembrePersonnel;
 
-    // Supérieur hiérarchique (nullable)
+    // Supérieur hiérarchique — personne (nullable)
     @Column({ type: 'uuid', nullable: true })
     superieurId?: string;
+
+    @ManyToOne(() => MembrePersonnel, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'superieurId' })
+    superieur?: MembrePersonnel;
 
     // Type de relation (enum varchar — remplace la FK TypeRelationHierarchique)
     @Column({ type: 'varchar', length: 30, default: TypeRelationHierarchique.DIRECT })
@@ -92,10 +102,18 @@ export class HierarchiePersonnel {
     @Column({ type: 'uuid', nullable: true })
     posteId?: string;
 
-    // Référence au poste (FK — permet de lier sans personnel assigné)
+    // Référence au poste subordonné (FK — permet de lier sans personnel assigné)
     @ManyToOne(() => Poste, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'posteId' })
     poste?: Poste;
+
+    // Poste supérieur hiérarchique (relations poste → poste : organigramme, templates, seeds)
+    @Column({ type: 'uuid', nullable: true })
+    superieurPosteId?: string;
+
+    @ManyToOne(() => Poste, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'superieurPosteId' })
+    superieurPoste?: Poste;
 
     // Dates de validité de la relation
     @Column({ type: 'timestamp', nullable: true })

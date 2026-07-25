@@ -76,7 +76,7 @@ export function useStatistiquesPersonnel(filtres?: FiltresStatistiques) {
         queryKey: STATISTIQUES_KEYS.parModule('personnel', filtres),
         queryFn: async () => {
             const params: Record<string, any> = {};
-            if (filtres?.typePersonnelId) params.typePersonnelId = filtres.typePersonnelId;
+            if (filtres?.categorie) params.categorie = filtres.categorie;
             if (filtres?.dateDebut) params.dateDebut = filtres.dateDebut;
             if (filtres?.dateFin) params.dateFin = filtres.dateFin;
 

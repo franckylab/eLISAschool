@@ -151,7 +151,7 @@ export function useModifierPoste() {
         },
         onSuccess: (data) => {
             qc.invalidateQueries({ queryKey: POSTES_KEYS.all });
-            qc.invalidateQueries({ queryKey: POSTES_KEYS.detail(data.id) });
+            if (data) qc.invalidateQueries({ queryKey: POSTES_KEYS.detail(data.id) });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
             toast.success(t('toasts.posteModifie'));

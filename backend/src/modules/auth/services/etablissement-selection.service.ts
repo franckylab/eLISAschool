@@ -160,13 +160,7 @@ export class EtablissementSelectionService {
             throw new AppError('Utilisateur non trouvé', 404, 'NOT_FOUND');
         }
 
-        // Permissions globales (sans contexte établissement) pour le token temporaire
-        // Si l'utilisateur a un établissement principal, utiliser ses permissions
-        const etablissementPrincipal = utilisateurEtablissements.find(ue => ue.etablissementPrincipal);
-        const resolvedPermissions = await permissionResolverService.resolvePermissions(
-            utilisateurId, 
-            etablissementPrincipal?.etablissementId
-        );
+        // Permissions absentes du token temporaire (résolues côté serveur à chaque requête)
         const userRoles = await permissionResolverService.getUserRoles(utilisateurId);
 
         const payloadTemporaire: JwtPayload = {
@@ -174,7 +168,7 @@ export class EtablissementSelectionService {
             email: utilisateur.email,
             role: utilisateur.role,
             roles: userRoles.map(r => r.code),
-            permissions: Array.from(resolvedPermissions),
+            // Permissions absentes du JWT (résolues côté serveur) : évite HTTP 431 (header > 16KB)
             etablissementId: undefined, // ← Token incomplet - sélection requise
             etablissements: utilisateurEtablissements.map(ue => ({
                                 etablissementId: ue.etablissementId,
@@ -276,7 +270,7 @@ export class EtablissementSelectionService {
             email: utilisateur.email,
             role: affectation.role.code,
             roles: userRoles.map(r => r.code),
-            permissions: Array.from(permissionsEtablissement), // Permissions contextuelles
+            // Permissions absentes du JWT (résolues côté serveur) : évite HTTP 431 (header > 16KB)
             etablissementId: etablissementId,
             roleDansEtablissement: affectation.role.code, // NOUVEAU v3.0
             etablissements: etablissementsPayload,

@@ -12,7 +12,7 @@
 export const ORGA_KEYS = {
     unites: {
         all: ['organisation', 'unites'] as const,
-        liste: (filtres: Record<string, unknown>) => [...ORGA_KEYS.unites.all, filtres] as const,
+        liste: (filtres: object) => [...ORGA_KEYS.unites.all, filtres] as const,
         detail: (id: string) => [...ORGA_KEYS.unites.all, 'detail', id] as const,
         arborescence: ['organisation', 'unites', 'arborescence'] as const,
         chemin: (uniteId: string) => [...ORGA_KEYS.unites.all, 'chemin', uniteId] as const,
@@ -26,8 +26,6 @@ export const ORGA_KEYS = {
     hierarchie: {
         all: ['organisation', 'hierarchie'] as const,
         liste: (params?: { personnelId?: string }) => [...ORGA_KEYS.hierarchie.all, params] as const,
-        superieurs: (personnelId: string) => [...ORGA_KEYS.hierarchie.all, 'superieurs', personnelId] as const,
-        subordonnes: (superieurId: string) => [...ORGA_KEYS.hierarchie.all, 'subordonnes', superieurId] as const,
     },
     validation: {
         all: ['organisation', 'validation'] as const,
@@ -43,5 +41,7 @@ export const ORGA_KEYS = {
     },
     templates: {
         all: ['organisation', 'templates'] as const,
+        filtered: (filtres: object) => [...ORGA_KEYS.templates.all, 'filtered', filtres] as const,
+        combinaisons: ['organisation', 'templates', 'combinaisons'] as const,
     },
 } as const;

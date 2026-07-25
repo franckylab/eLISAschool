@@ -47,6 +47,7 @@ export enum AuditAction {
     // Bulletins
     BULLETIN_GENERATE = 'BULLETIN_GENERATE',
     BULLETIN_UPDATE = 'BULLETIN_UPDATE',
+    BULLETIN_DELETE = 'BULLETIN_DELETE',
 
     // Académique
     CYCLE_CREATE = 'CYCLE_CREATE',

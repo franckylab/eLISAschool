@@ -9,12 +9,13 @@
  * Gère le collapse/expand et les 2 directions (TB/LR).
  */
 
-import { useMemo, useCallback, useState } from 'react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
 import type { Node, Edge } from 'reactflow';
 import { MarkerType } from 'reactflow';
-import type { OrganigrammeNode } from '../../../types/organisation.types';
+import type { OrganigrammeNode, HierarchiePersonnel } from '../../../types/organisation.types';
 import { computeLayout, type LayoutDirection } from '../utils/layout';
 import type { UniteNodeData } from '../nodes/UniteNode';
+import type { RelationEdgeData } from '../edges/RelationEdge';
 
 /** état DnD propagé aux noeuds pour le feedback visuel */
 export interface DndVisualState {
@@ -31,15 +32,69 @@ interface UseOrganigrammeFlowOptions {
     defaultCollapseDepth?: number; // Noeuds au-delà de cette profondeur sont collapse par défaut
     isEditMode?: boolean;
     dndVisualState?: DndVisualState;
+    /** Relations hiérarchiques poste→poste à superposer (overlay) */
+    relations?: HierarchiePersonnel[];
 }
 
-export function useOrganigrammeFlow({ data, direction, defaultCollapseDepth = 2, isEditMode = false, dndVisualState }: UseOrganigrammeFlowOptions) {
+/** Agrège les relations poste→poste par couple d'unités visibles.
+ * Les unités masquées (sous-arbre replié) sont remontées vers leur premier ancêtre visible. */
+function construireEdgesRelations(
+    relations: HierarchiePersonnel[],
+    visibleIds: Set<string>,
+    nomById: Map<string, string>,
+    parentById: Map<string, string | undefined>,
+): Edge<RelationEdgeData>[] {
+    const resoudreVisible = (id: string): string | null => {
+        let courant: string | undefined = id;
+        while (courant && !visibleIds.has(courant)) {
+            courant = parentById.get(courant);
+        }
+        return courant ?? null;
+    };
+    const groupes = new Map<string, { source: string; target: string; typeRelation: HierarchiePersonnel['typeRelation']; relations: HierarchiePersonnel[] }>();
+    for (const r of relations) {
+        const sourceUniteBrute = r.superieurPoste?.uniteOrganisationnelle?.id;
+        const targetUniteBrute = r.poste?.uniteOrganisationnelle?.id;
+        if (!sourceUniteBrute || !targetUniteBrute || sourceUniteBrute === targetUniteBrute) continue;
+        const sourceUnite = resoudreVisible(sourceUniteBrute);
+        const targetUnite = resoudreVisible(targetUniteBrute);
+        if (!sourceUnite || !targetUnite || sourceUnite === targetUnite) continue;
+        const cle = `${sourceUnite}-${targetUnite}-${r.typeRelation}`;
+        const existant = groupes.get(cle);
+        if (existant) {
+            existant.relations.push(r);
+        } else {
+            groupes.set(cle, { source: sourceUnite, target: targetUnite, typeRelation: r.typeRelation, relations: [r] });
+        }
+    }
+    return Array.from(groupes.entries()).map(([cle, g]) => {
+        const couleur = g.typeRelation === 'FONCTIONNEL' ? 'var(--color-accent-600)' : 'var(--color-dominant-600)';
+        return {
+            id: `relation-${cle}`,
+            source: g.source,
+            target: g.target,
+            type: 'relationEdge',
+            data: {
+                typeRelation: g.typeRelation,
+                count: g.relations.length,
+                relations: g.relations,
+                sourceNom: nomById.get(g.source),
+                targetNom: nomById.get(g.target),
+            },
+            markerEnd: { type: MarkerType.ArrowClosed, color: couleur, width: 14, height: 14 },
+            animated: false,
+            zIndex: 0,
+        };
+    });
+}
+
+export function useOrganigrammeFlow({ data, direction, defaultCollapseDepth = 2, isEditMode = false, dndVisualState, relations }: UseOrganigrammeFlowOptions) {
     const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [searchMatchIds, setSearchMatchIds] = useState<Set<string>>(new Set());
 
     // Initialiser les collapses par défaut (profondeur > seuil)
-    useMemo(() => {
+    useEffect(() => {
         if (data.length === 0) return;
         const ids = new Set<string>();
         const collecter = (unites: OrganigrammeNode[], depth: number) => {
@@ -52,6 +107,7 @@ export function useOrganigrammeFlow({ data, direction, defaultCollapseDepth = 2,
         };
         collecter(data, 0);
         setCollapsedIds(ids);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data]); // Seulement au chargement initial des données
 
     const toggleCollapse = useCallback((id: string) => {
@@ -196,8 +252,22 @@ export function useOrganigrammeFlow({ data, direction, defaultCollapseDepth = 2,
             animated: false,
         }));
 
+        if (relations?.length) {
+            const visibleIds = new Set(layoutNodes.map(ln => ln.id));
+            const nomById = new Map(layoutNodes.map(ln => [ln.id, ln.data.nom]));
+            const parentById = new Map<string, string | undefined>();
+            const collecterParents = (unites: OrganigrammeNode[], parentId?: string) => {
+                for (const u of unites) {
+                    parentById.set(u.id, parentId);
+                    if (u.enfants) collecterParents(u.enfants, u.id);
+                }
+            };
+            collecterParents(data);
+            rfEdges.push(...construireEdgesRelations(relations, visibleIds, nomById, parentById));
+        }
+
         return { nodes: rfNodes, edges: rfEdges };
-    }, [data, direction, collapsedIds, selectedId, toggleCollapse, selectNode, searchMatchIds, isEditMode, dndVisualState]);
+    }, [data, direction, collapsedIds, selectedId, toggleCollapse, selectNode, searchMatchIds, isEditMode, dndVisualState, relations]);
 
     // Statistiques pour la toolbar
     const stats = useMemo(() => {

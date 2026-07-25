@@ -22,7 +22,7 @@ import {
     UserCheck,
     UserX,
     CheckCircle,
-    GitBranch,
+    Link2,
     Users,
     AlertTriangle,
     Layers,
@@ -172,7 +172,7 @@ export function OrganigrammeSynthese({ data, statsApi }: OrganigrammeSynthesePro
 
             {/* 7. Hiérarchies actives */}
             <StatCard
-                icon={GitBranch}
+                icon={Link2}
                 label={t('organigramme.stats.hierarchiesActives', 'Hiérarchies actives')}
                 value={hierarchiesActives}
                 subtitle={`${totalHierarchies}`}

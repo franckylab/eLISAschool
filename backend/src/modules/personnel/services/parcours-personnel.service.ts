@@ -65,7 +65,7 @@ export class ParcoursPersonnelService {
         // 1. Récupérer le membre
         const membre = await this.membreRepo.findOne({
             where: { id: membreId, etablissementId },
-            relations: ['utilisateur', 'typePersonnel'],
+            relations: ['utilisateur'],
         });
 
         if (!membre) {

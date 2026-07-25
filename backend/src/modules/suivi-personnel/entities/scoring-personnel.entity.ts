@@ -21,7 +21,7 @@ import {
     UpdateDateColumn,
     Index,
 } from 'typeorm';
-import { MembrePersonnel, TypePersonnel } from '@modules/personnel/entities';
+import { MembrePersonnel } from '@modules/personnel/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
 import { Periode } from '@modules/periodes/entities';
@@ -38,13 +38,13 @@ import { Classe } from '@modules/classes/entities';
 @Index(['etablissementId'])
 @Index(['anneeScolaireId'])
 @Index(['periodeId'])
-@Index(['typePersonnelId'])
+@Index(['categorie'])
 @Index(['matiereId'])
 @Index(['classeId'])
 @Index(['scoreGlobal'])
 @Index(['rangGlobal'])
 @Index(['anneeScolaireId', 'membrePersonnelId'])
-@Index(['typePersonnelId', 'scoreGlobal'])
+@Index(['categorie', 'scoreGlobal'])
 @Index(['matiereId', 'scoreGlobal'])
 @Index(['classeId', 'scoreGlobal'])
 export class ScorePersonnel {
@@ -79,12 +79,9 @@ export class ScorePersonnel {
     @JoinColumn({ name: 'periodeId' })
     periode?: Periode;
 
-    @Column({ type: 'uuid', nullable: true })
-    typePersonnelId?: string;
-
-    @ManyToOne(() => TypePersonnel, { nullable: true })
-    @JoinColumn({ name: 'typePersonnelId' })
-    typePersonnel?: TypePersonnel;
+    // Snapshot de la catégorie de fonction du membre au moment du calcul (dérivée, non FK)
+    @Column({ type: 'varchar', length: 20, nullable: true })
+    categorie?: string;
 
     @Column({ type: 'uuid', nullable: true })
     matiereId?: string;
@@ -211,10 +208,7 @@ export class RegleScoringPersonnel {
     conditionsSupplementaires?: Record<string, any>;
 
     @Column({ type: 'varchar', length: 50, nullable: true })
-    categorieCible?: string; // ENSEIGNANT, ADMIN, etc.
-
-    @Column({ type: 'varchar', length: 50, nullable: true })
-    typePersonnelCible?: string;
+    categorieCible?: string; // ENSEIGNANT, ADMINISTRATIF, etc. (CategorieFonction)
 
     @Column({ type: 'date', nullable: true })
     dateDebut?: Date;

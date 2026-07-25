@@ -5,7 +5,7 @@
  * Éclaté depuis nomenclature.service.ts
  */
 
-import { Repository, FindOptionsWhere } from 'typeorm';
+import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { NiveauResponsabilite } from '../entities';
 import { CreateNiveauResponsabiliteDto, UpdateNiveauResponsabiliteDto } from '../dto';
@@ -55,15 +55,19 @@ class NiveauResponsabiliteService {
     }
 
     async findById(id: string, etablissementId?: string): Promise<NiveauResponsabilite> {
-        const where: FindOptionsWhere<NiveauResponsabilite> = { id };
-        if (etablissementId) where.etablissementId = etablissementId;
-        const entity = await this.repo.findOne({ where });
+        const qb = this.repo.createQueryBuilder('n').where('n.id = :id', { id });
+        if (etablissementId) {
+            // Visible si tenant OU global/système (nomenclatures partagées)
+            qb.andWhere('(n.etablissementId = :eid OR n.etablissementId IS NULL OR n.estSysteme = TRUE)', { eid: etablissementId });
+        }
+        const entity = await qb.getOne();
         if (!entity) throw new AppError('Niveau de responsabilité non trouvé', 404, 'NIVEAU_RESP_NOT_FOUND');
         return entity;
     }
 
     async update(id: string, dto: UpdateNiveauResponsabiliteDto, etablissementId?: string): Promise<NiveauResponsabilite> {
         const entity = await this.findById(id, etablissementId);
+        assertNotSystem(entity, 'modifier');
         Object.assign(entity, dto);
         return this.repo.save(entity);
     }

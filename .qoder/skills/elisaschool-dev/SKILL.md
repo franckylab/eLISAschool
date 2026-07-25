@@ -470,9 +470,9 @@ Puis mettre à jour le DTO si la FK est requise en entrée, et ajouter la relati
 
 Quand une entité a besoin d'un « type attendu » qui existe déjà comme nomenclature ailleurs, **ne pas dupliquer la FK** : la porter sur une nomenclature intermédiaire et **dériver** par jointure.
 
-- Exemple de référence : le type statutaire d'un `Poste` n'est **pas** stocké sur `Poste`. Il est porté par `Fonction.typePersonnelId` (FK optionnelle vers le type **global** `types_personnel`) et dérivé via `poste.fonction.typePersonnel`.
+- Exemple de référence : la catégorie statutaire d'un `Poste` n'est **pas** stockée sur `Poste`. Elle est portée par `Fonction.categorie` (enum varchar `CategorieFonction`, v5.0 — l'entité `TypePersonnel` a été supprimée) et dérivée via `poste.fonction.categorie`.
 - Une FK vers une nomenclature **globale** (sans `etablissementId`) depuis une entité **multi-tenant** est valide (`onDelete: 'SET NULL'`).
-- Charger la chaîne dans le service : `relations: ['fonction', 'fonction.typePersonnel']`, puis exposer un label dérivé (`typePersonnelLabel`) plutôt qu'un id brut.
+- Charger la chaîne dans le service : `relations: ['fonction']`, puis exposer un label dérivé (`categorieLabel`) plutôt qu'une valeur brute.
 - Ne jamais ajouter de champs « par défaut » qui court-circuitent une source de vérité (ex. pas de `roleIdParDefaut` sur un type : le RBAC passe par `utilisateur_etablissements`).
 
 ---

@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, Edit, Trash2, Eye, Users } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { usePersonnel, useSupprimerPersonnel } from '../hooks/use-personnel';
-import { useTypesPersonnel } from '../hooks/use-types-personnel';
+import { CATEGORIES_FONCTION, getCategorieColors, type CategorieFonction } from '@/lib/categorie-fonction';
 import { PersonnelFormModal } from './personnel-form-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -23,8 +23,6 @@ export function PersonnelPage() {
     const { t } = useTranslation();
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<PersonnelFiltres>({ page: 1, limit: 20 });
-    const { data: typesData } = useTypesPersonnel();
-    const typeOptions = (typesData || []).map((tp: any) => ({ value: tp.id, label: `${tp.nom} (${tp.code})` }));
     const [modalOpen, setModalOpen] = useState(false);
     const [membreSelected, setMembreSelected] = useState<MembrePersonnel | undefined>();
     const [modeFormulaire, setModeFormulaire] = useState<'creation' | 'edition'>('creation');
@@ -79,6 +77,21 @@ export function PersonnelPage() {
                             <p className="text-xs text-[var(--color-text-muted)]">{email || tel || '-'}</p>
                         </div>
                     </button>
+                );
+            },
+        },
+        {
+            key: 'categorie',
+            header: t('personnel.categorie', { defaultValue: 'Catégorie' }),
+            className: 'text-center',
+            render: (p) => {
+                if (!p.categorie) return <span className="text-xs text-muted-foreground">-</span>;
+                const colors = getCategorieColors(p.categorie);
+                return (
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${colors.bg} ${colors.text}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${colors.dot}`} />
+                        {t(`personnel.categorie_${p.categorie}`, { defaultValue: p.categorie })}
+                    </span>
                 );
             },
         },
@@ -175,24 +188,25 @@ export function PersonnelPage() {
                 ) : undefined}
             />
 
-            {/* Filtre par type de personnel */}
+            {/* Filtre par catégorie de fonction */}
             <div className="flex items-center gap-3">
                 <div className="relative w-64">
-                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <select
-                        value={filtres.typePersonnelId || ''}
-                        onChange={(e) => setFiltres((prev) => ({ ...prev, typePersonnelId: e.target.value || undefined, page: 1 }))}
-                        className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 appearance-none cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={filtres.categorie || ''}
+                        onChange={(e) => setFiltres((prev) => ({ ...prev, categorie: (e.target.value || undefined) as CategorieFonction | undefined, page: 1 }))}
+                        className="w-full pl-9 pr-3 py-2 text-sm border border-input rounded-lg bg-background text-foreground appearance-none cursor-pointer focus:ring-2 focus:ring-primary focus:border-primary"
                     >
-                        <option value="">Tous les types</option>
-                        {typeOptions.map((opt: { value: string; label: string }) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        <option value="">{t('personnel.toutesCategories', { defaultValue: 'Toutes les catégories' })}</option>
+                        {CATEGORIES_FONCTION.map((c) => (
+                            <option key={c} value={c}>{t(`personnel.categorie_${c}`, { defaultValue: c })}</option>
                         ))}
                     </select>
                 </div>
             </div>
 
             <DataTable
+                tableId="personnel"
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}

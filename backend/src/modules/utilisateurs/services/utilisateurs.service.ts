@@ -143,8 +143,7 @@ export class UtilisateursService {
 
         // LEFT JOIN sur membrePersonnel pour afficher la liaison dans la colonne Personnel
         queryBuilder
-            .leftJoinAndSelect('u.membrePersonnel', 'mp_list')
-            .leftJoinAndSelect('mp_list.typePersonnel', 'tp_list');
+            .leftJoinAndSelect('u.membrePersonnel', 'mp_list');
 
         // Si filtrage par établissement, utiliser la table de jointure
         if (etablissementId) {
@@ -269,7 +268,7 @@ export class UtilisateursService {
     async findOne(id: string): Promise<UtilisateurResponseDto> {
         const utilisateur = await this.utilisateurRepository.findOne({
             where: { id },
-            relations: ['membrePersonnel', 'membrePersonnel.typePersonnel', 'utilisateurPermissions', 'utilisateurPermissions.permission'],
+            relations: ['membrePersonnel', 'utilisateurPermissions', 'utilisateurPermissions.permission'],
         });
 
         if (!utilisateur) {
@@ -919,12 +918,6 @@ export class UtilisateursService {
                 matricule: mp.matricule,
                 statut: mp.statut,
                 dateEmbauche: mp.dateEmbauche,
-                typePersonnelId: mp.typePersonnelId,
-                typePersonnel: mp.typePersonnel ? {
-                    id: mp.typePersonnel.id,
-                    code: mp.typePersonnel.code,
-                    nom: mp.typePersonnel.nom,
-                } : undefined,
                 specialitePrincipale: mp.specialitePrincipale,
                 departement: mp.departement,
             } : undefined,

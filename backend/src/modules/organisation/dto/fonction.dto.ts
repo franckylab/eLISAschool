@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CategorieFonction } from '../../../shared/constants/personnel.constants';
 
 export const createFonctionSchema = z.object({
     nom: z.string().min(2).max(150),
@@ -6,7 +7,7 @@ export const createFonctionSchema = z.object({
     description: z.string().optional(),
     parentId: z.string().uuid().nullable().optional(),
     ordre: z.number().int().min(0).default(1),
-    typePersonnelId: z.string().uuid().nullable().optional(),
+    categorie: z.nativeEnum(CategorieFonction).default(CategorieFonction.AUTRE),
     primesDefaut: z.record(z.any()).nullable().optional(),
     majorationDefaut: z.number().min(0).max(100).nullable().optional(),
     actif: z.boolean().default(true),
@@ -19,6 +20,7 @@ export const queryFonctionsSchema = z.object({
     limit: z.coerce.number().int().min(1).max(100).default(20).optional(),
     search: z.string().optional(),
     parentId: z.string().uuid().nullable().optional(),
+    categorie: z.nativeEnum(CategorieFonction).optional(),
     actif: z.coerce.boolean().optional(),
     sortBy: z.string().default('ordre').optional(),
     sortOrder: z.enum(['ASC', 'DESC']).default('ASC').optional(),

@@ -56,7 +56,7 @@ export interface FiltresStatistiques {
     etablissementId?: string;
     typeStat?: 'eleves' | 'personnel' | 'finances' | 'pedagogique' | 'vieScolaire';
     classeId?: string;
-    typePersonnelId?: string;
+    categorie?: string;
     typePaiement?: string;
     type?: string;
     matiereId?: string;

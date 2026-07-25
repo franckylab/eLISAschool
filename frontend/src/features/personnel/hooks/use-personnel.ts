@@ -37,7 +37,7 @@ export function usePersonnel(filtres: PersonnelFiltres = {}) {
 
             // Ajouter uniquement les filtres non vides
             if (filtres.recherche) params.search = filtres.recherche;
-            if (filtres.typePersonnelId) params.typePersonnelId = filtres.typePersonnelId;
+            if (filtres.categorie) params.categorie = filtres.categorie;
             if (filtres.actif !== undefined) params.actif = filtres.actif;
             if (filtres.statut) params.statut = filtres.statut;
 

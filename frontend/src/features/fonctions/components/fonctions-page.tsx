@@ -2,7 +2,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Eye, Edit, Trash2, Briefcase, Workflow, AlertCircle } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Workflow, AlertCircle } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -59,7 +59,7 @@ export function FonctionsPage() {
             header: t('code'),
             render: (f) => (
                 <div className="flex items-center gap-2">
-                    <Briefcase className="h-4 w-4 text-primary" />
+                    <Workflow className="h-4 w-4 text-primary" />
                     <span className="font-semibold text-sm">{f.code}</span>
                 </div>
             ),
@@ -141,7 +141,7 @@ export function FonctionsPage() {
         if (fonctionToEdit) {
             await modifier.mutateAsync({ id: fonctionToEdit.id, dto: data });
         } else {
-            await creer.mutateAsync(data);
+            await creer.mutateAsync(data as CreerFonctionDto);
         }
         setShowFormModal(false);
         setFonctionToEdit(null);

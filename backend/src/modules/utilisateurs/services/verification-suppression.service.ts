@@ -718,10 +718,12 @@ export class VerificationSuppressionService {
             const query = `
                 SELECT COUNT(DISTINCT n.id)
                 FROM notes n
-                INNER JOIN bulletins b ON b.id = n."bulletinId"
+                INNER JOIN bulletins b
+                    ON b."eleveId" = n."eleveId"
+                    AND b."periodeId" = n."periodeId"
                 WHERE n."enseignantId" = $1
                 AND b."etablissementId" = $2
-                AND b.statut IN ('PUBLIE', 'VALIDE', 'CLOTURE')
+                AND b."publie" = true
             `;
             const result = await AppDataSource.query(query, [membrePersonnelId, etablissementId]);
             return parseInt(result[0]?.count || '0');
@@ -741,10 +743,12 @@ export class VerificationSuppressionService {
             const query = `
                 SELECT COUNT(DISTINCT b.id)
                 FROM bulletins b
-                INNER JOIN notes n ON n."bulletinId" = b.id
+                INNER JOIN notes n
+                    ON n."eleveId" = b."eleveId"
+                    AND n."periodeId" = b."periodeId"
                 WHERE n."enseignantId" = $1
                 AND b."etablissementId" = $2
-                AND b.statut IN ('VALIDE', 'CLOTURE')
+                AND b."publie" = true
             `;
             const result = await AppDataSource.query(query, [membrePersonnelId, etablissementId]);
             return parseInt(result[0]?.count || '0');

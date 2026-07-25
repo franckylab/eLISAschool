@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(git:*)",
-      "Bash(ls -la /mnt/DONNEES/projets/eLISAschool/frontend/src/features/notes/components/ /mnt/DONNEES/projets/eLISAschool/frontend/src/features/bulletins/components/ /mnt/DONNEES/projets/eLISAschool/frontend/src/features/notes/hooks/ /mnt/DONNEES/projets/eLISAschool/frontend/src/features/bulletins/hooks/; wc -l /mnt/DONNEES/projets/eLISAschool/frontend/src/features/notes/**/* /mnt/DONNEES/projets/eLISAschool/frontend/src/features/bulletins/**/* /mnt/DONNEES/projets/eLISAschool/frontend/src/features/notes/index.ts /mnt/DONNEES/projets/eLISAschool/frontend/src/features/bulletins/index.ts 2>/dev/null)"
+      "Bash(ls -la /mnt/DONNEES/projets/eLISAschool/frontend/src/features/notes/components/ /mnt/DONNEES/projets/eLISAschool/frontend/src/features/bulletins/components/ /mnt/DONNEES/projets/eLISAschool/frontend/src/features/notes/hooks/ /mnt/DONNEES/projets/eLISAschool/frontend/src/features/bulletins/hooks/; wc -l /mnt/DONNEES/projets/eLISAschool/frontend/src/features/notes/**/* /mnt/DONNEES/projets/eLISAschool/frontend/src/features/bulletins/**/* /mnt/DONNEES/projets/eLISAschool/frontend/src/features/notes/index.ts /mnt/DONNEES/projets/eLISAschool/frontend/src/features/bulletins/index.ts 2>/dev/null)",
+      "Bash(grep -rn -i \"hierarchie\" /mnt/DONNEES/projets/eLISAschool/backend/src --include=\"*.ts\" | grep -v \"seed-templates\\\\|contrat.service\\\\|statistiques-optimisees\\\\|organisation.service\\\\|hierarchie-personnel.entity\\\\|hierarchie.controller\\\\|seed-organisation\\\\|110-consolidation\\\\|111-refactoring\\\\|112-refactoring\\\\|1783507895000000\" | head -80)",
+      "Bash(cd /mnt/DONNEES/projets/eLISAschool/backend && npx tsc --noEmit 2>&1 | grep -v '^npm notice' > /tmp/tsc-out.txt; grep -E 'modules/\\(notes|bulletins\\)/|dashboard-dataloader|verification-suppression|configuration-seed|portal-parent|audit-log' /tmp/tsc-out.txt; echo \"---TOTAL: $\\(grep -c 'error TS' /tmp/tsc-out.txt\\)\")",
+      "Bash(find /mnt/DONNEES/projets/eLISAschool -type f -name \"*.ts\" -o -name \"*.tsx\" | grep -i -E \"\\(template|organisation|seed|generat\\)\" | head -50)",
+      "Bash(cd /mnt/DONNEES/projets/eLISAschool/backend && npx ts-node --transpile-only -r tsconfig-paths/register src/index.ts > /tmp/elisa-server.log 2>&1 & sleep 12 && cat /tmp/elisa-server.log | tail -25 && kill %1 2>/dev/null; true)"
     ]
   }
 }

@@ -6,51 +6,13 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { PersonnelService } from '../services';
-import { createPersonnelSchema, updatePersonnelSchema, createTypePersonnelSchema, updateTypePersonnelSchema, queryPersonnelSchema, updateStatutSchema, updateTypePersonnelMembreSchema, updateDateEntreeSchema, updateCompetencesSchema, linkUtilisateurSchema } from '../dto';
+import { createPersonnelSchema, updatePersonnelSchema, queryPersonnelSchema, updateStatutSchema, updateDateEntreeSchema, updateCompetencesSchema, linkUtilisateurSchema } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 
 const router = Router();
 const service = new PersonnelService();
-
-// Types Personnel
-router.get('/types', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const types = await service.getTypes();
-        res.json({ success: true, data: types });
-    } catch (error) { next(error); }
-});
-
-router.post('/types', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const dto = validateDto(createTypePersonnelSchema, req.body);
-        const type = await service.createType(dto);
-        res.status(201).json({ success: true, data: type });
-    } catch (error) { next(error); }
-});
-
-router.get('/types/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const type = await service.findTypeById(req.params.id);
-        res.json({ success: true, data: type });
-    } catch (error) { next(error); }
-});
-
-router.patch('/types/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const dto = validateDto(updateTypePersonnelSchema, req.body);
-        const type = await service.updateType(req.params.id, dto);
-        res.json({ success: true, data: type });
-    } catch (error) { next(error); }
-});
-
-router.delete('/types/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        await service.deleteType(req.params.id);
-        res.json({ success: true, message: 'Type de personnel supprimé' });
-    } catch (error) { next(error); }
-});
 
 // Membres
 router.get('/', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
@@ -127,14 +89,6 @@ router.post('/:id/statut', authMiddleware, requirePermission('personnel:edit:ide
     try {
         const dto = validateDto(updateStatutSchema, req.body);
         const membre = await service.updateStatut(req.params.id, dto.statut as any, req.utilisateur?.id);
-        res.json({ success: true, data: membre });
-    } catch (error) { next(error); }
-});
-
-router.post('/:id/type-personnel', authMiddleware, requirePermission('personnel:edit:type'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const dto = validateDto(updateTypePersonnelMembreSchema, req.body);
-        const membre = await service.updateTypePersonnelMembre(req.params.id, dto.typePersonnelId, req.utilisateur?.id);
         res.json({ success: true, data: membre });
     } catch (error) { next(error); }
 });

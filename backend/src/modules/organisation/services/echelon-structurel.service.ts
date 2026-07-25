@@ -8,7 +8,7 @@
  * Service de gestion des échelons structurels (fusion NiveauOrganisation + UsageUnite).
  */
 
-import { Repository, FindOptionsWhere } from 'typeorm';
+import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { EchelonStructurel } from '../entities';
 import {
@@ -59,15 +59,19 @@ class EchelonStructurelService {
     }
 
     async findById(id: string, etablissementId?: string): Promise<EchelonStructurel> {
-        const where: FindOptionsWhere<EchelonStructurel> = { id };
-        if (etablissementId) where.etablissementId = etablissementId;
-        const entity = await this.repo.findOne({ where });
+        const qb = this.repo.createQueryBuilder('e').where('e.id = :id', { id });
+        if (etablissementId) {
+            // Visible si tenant OU global/système (nomenclatures partagées)
+            qb.andWhere('(e.etablissementId = :eid OR e.etablissementId IS NULL OR e.estSysteme = TRUE)', { eid: etablissementId });
+        }
+        const entity = await qb.getOne();
         if (!entity) throw new AppError('Échelon structurel non trouvé', 404, 'ECHELON_STRUCTUREL_NOT_FOUND');
         return entity;
     }
 
     async update(id: string, dto: UpdateEchelonStructurelDto, etablissementId?: string): Promise<EchelonStructurel> {
         const entity = await this.findById(id, etablissementId);
+        assertNotSystem(entity, 'modifier');
         Object.assign(entity, dto);
         return this.repo.save(entity);
     }

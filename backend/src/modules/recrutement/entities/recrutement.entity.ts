@@ -23,7 +23,7 @@ import {
     Index,
 } from 'typeorm';
 import { Etablissement } from '@modules/etablissement/entities';
-import { MembrePersonnel, TypePersonnel } from '@modules/personnel/entities';
+import { MembrePersonnel } from '@modules/personnel/entities';
 import { UniteOrganisationnelle, Poste } from '@modules/organisation/entities';
 
 // =====================================================

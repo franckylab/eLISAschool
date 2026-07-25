@@ -21,5 +21,4 @@ export { NomenclaturesPage } from './components/nomenclatures-page';
 export { NomenclatureCrudPage } from './components/nomenclature-crud-page';
 export { EchelonsStructurelsPage } from './components/echelons-structurels-page';
 export { NiveauxResponsabilitePage } from './components/niveaux-responsabilite-page';
-export { TypesPersonnelPage } from './components/types-personnel-page';
 export { ModesRemunerationPage } from './components/modes-remuneration-page';

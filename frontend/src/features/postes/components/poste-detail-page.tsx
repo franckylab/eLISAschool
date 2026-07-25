@@ -9,7 +9,7 @@
  */
 
 import { useState } from 'react';
-import { useParams, useNavigate } from '@tanstack/react-router';
+import { useParams, useNavigate, useSearch } from '@tanstack/react-router';
 import { Edit, Trash2, Briefcase, Building2, Target, ListChecks, ChevronRight, UserRound, Info, Users, Network } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -38,7 +38,9 @@ export function PosteDetailPage() {
 
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [tab, setTab] = useState('infos');
+    const search = useSearch({ from: '/_auth/organisation/postes/$id' }) as { tab?: string };
+    const tab = search?.tab || 'infos';
+    const setTab = (nouveau: string) => navigate({ to: '/organisation/postes/$id', params: { id }, search: { tab: nouveau } as never });
 
     if (isLoading) return <PageSkeleton showHeader />;
     if (error || !poste) {
@@ -51,7 +53,7 @@ export function PosteDetailPage() {
 
     const statutOption = STATUT_POSTE_OPTIONS.find((o) => o.value === poste.statut);
     const statutLabel = statutOption ? t(statutOption.labelKey) : poste.statut;
-    const typeNom = poste.fonction?.typePersonnel?.nom || '—';
+    const typeNom = poste.fonction?.categorie ? t(`categorie_${poste.fonction.categorie}`, poste.fonction.categorie) : '—';
     const niveauLabel = poste.niveauResponsabilite?.label || '—';
     const occupantsList = occupants || [];
 
@@ -88,7 +90,7 @@ export function PosteDetailPage() {
                         <div className="flex flex-wrap items-center gap-2">
                             <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90 font-mono">{poste.code}</span>
                             <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90">{statutLabel}</span>
-                            {poste.fonction?.typePersonnel?.nom && <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90">{poste.fonction.typePersonnel.nom}</span>}
+                            {poste.fonction?.categorie && <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white/90">{t(`categorie_${poste.fonction.categorie}`, poste.fonction.categorie)}</span>}
                         </div>
                     </div>
                 </div>

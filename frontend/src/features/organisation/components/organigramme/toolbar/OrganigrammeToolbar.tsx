@@ -12,9 +12,9 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import {
-    Search, ZoomIn, ZoomOut, Maximize2, Minimize2,
+    Search, ZoomIn, ZoomOut, Maximize, Maximize2, Minimize2,
     ChevronDown, ChevronUp, ChevronRight, ChevronLeft,
-    Download, X, Pencil,
+    Download, X, Pencil, Link2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { exporterOrganigrammePNG } from '../utils/export';
@@ -36,6 +36,8 @@ interface OrganigrammeToolbarProps {
     isEditMode?: boolean;
     onToggleEditMode?: () => void;
     canEdit?: boolean;
+    showRelations?: boolean;
+    onToggleRelations?: () => void;
 }
 
 export function OrganigrammeToolbar({
@@ -45,6 +47,8 @@ export function OrganigrammeToolbar({
     isEditMode,
     onToggleEditMode,
     canEdit = true,
+    showRelations,
+    onToggleRelations,
 }: OrganigrammeToolbarProps) {
     const { t } = useTranslation('organisation');
     const [searchQuery, setSearchQuery] = useState('');
@@ -133,7 +137,7 @@ export function OrganigrammeToolbar({
                 <ZoomIn style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
             </button>
             <button onClick={() => dispatchToolbarCommand('fit-view')} className={btnClass} style={btnStyle} title={t('organigramme.fitView', 'Ajuster')}>
-                <Maximize2 style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
+                <Maximize style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
             </button>
 
             <div className="mx-0.5" style={{ width: '1px', height: 'var(--icon-md)', backgroundColor: 'var(--color-bordure)' }} />
@@ -157,6 +161,23 @@ export function OrganigrammeToolbar({
             <button onClick={handleExport} className={btnClass} style={btnStyle} title={t('organigramme.exporter', 'Exporter PNG')}>
                 <Download style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
             </button>
+
+            {/* Toggle overlay relations */}
+            {onToggleRelations && (
+                <button
+                    onClick={onToggleRelations}
+                    aria-pressed={!!showRelations}
+                    className={`flex items-center justify-center rounded-lg transition-colors ${
+                        showRelations
+                            ? 'bg-[var(--color-dominant-600)] text-white'
+                            : 'hover:bg-[var(--color-dominant-50)] text-[var(--color-text-muted)] hover:text-[var(--color-dominant-600)]'
+                    }`}
+                    style={btnStyle}
+                    title={showRelations ? t('organigramme.masquerRelations', 'Masquer les relations') : t('organigramme.afficherRelations', 'Afficher les relations')}
+                >
+                    <Link2 style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
+                </button>
+            )}
 
             {/* Mode édition */}
             {canEdit && onToggleEditMode && (

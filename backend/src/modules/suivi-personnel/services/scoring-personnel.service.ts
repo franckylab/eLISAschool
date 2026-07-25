@@ -251,7 +251,7 @@ export class ScoringPersonnelService {
      * Obtenir le classement du personnel avec filtres multi-dimensionnels
      */
     async getClassement(dto: ClassementPersonnelDto, etablissementId: string): Promise<{ data: ScorePersonnel[]; total: number; pagination: any }> {
-        const { page, limit, anneeScolaireId, periodeId, typePersonnelId, matiereId, classeId, sortBy, sortOrder } = dto;
+        const { page, limit, anneeScolaireId, periodeId, categorie, matiereId, classeId, sortBy, sortOrder } = dto;
 
         const offset = (page - 1) * limit;
 
@@ -262,14 +262,14 @@ export class ScoringPersonnelService {
         };
 
         if (periodeId) where.periodeId = periodeId;
-        if (typePersonnelId) where.typePersonnelId = typePersonnelId;
+        if (categorie) where.categorie = categorie;
         if (matiereId) where.matiereId = matiereId;
         if (classeId) where.classeId = classeId;
 
         // Récupérer les données avec pagination
         const [data, total] = await this.scoreRepo.findAndCount({
             where,
-            relations: ['membrePersonnel', 'membrePersonnel.utilisateur', 'typePersonnel', 'matiere', 'classe'],
+            relations: ['membrePersonnel', 'membrePersonnel.utilisateur', 'matiere', 'classe'],
             select: {
                 id: true,
                 scoreGlobal: true,
@@ -288,6 +288,7 @@ export class ScoringPersonnelService {
                 rangParCategorie: true,
                 rangParMatiere: true,
                 rangParClasse: true,
+                categorie: true,
                 membrePersonnel: {
                     id: true,
                     matricule: true,
@@ -296,10 +297,6 @@ export class ScoringPersonnelService {
                         id: true,
                         email: true,
                     },
-                },
-                typePersonnel: {
-                    id: true,
-                    nom: true,
                 },
                 matiere: {
                     id: true,

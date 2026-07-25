@@ -10,6 +10,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Network, ArrowDown, ArrowRight, List, BarChart3, Building2, Sparkles } from 'lucide-react';
@@ -41,6 +42,7 @@ function getStoredVue(): VueMode {
 
 export function OrganigrammePage() {
     const { t } = useTranslation('organisation');
+    const navigate = useNavigate();
     useDocumentTitle(t('organigramme.titre', 'Organigramme'));
 
     const isMobile = useMediaQuery('(max-width: 479px)');
@@ -63,6 +65,9 @@ export function OrganigrammePage() {
 
     // Mode édition
     const [isEditMode, setIsEditMode] = useState(false);
+
+    // Overlay relations hiérarchiques
+    const [showRelations, setShowRelations] = useState(false);
 
     // Modals état
     const [uniteFormModal, setUniteFormModal] = useState<{
@@ -168,7 +173,7 @@ export function OrganigrammePage() {
         { id: 'synthese' as const, label: t('organigramme.synthese', 'Synthèse'), icon: BarChart3 },
         { id: 'vertical' as const, label: t('organigramme.vertical', 'Vertical'), icon: ArrowDown },
         { id: 'horizontal' as const, label: t('organigramme.horizontal', 'Horizontal'), icon: ArrowRight },
-        { id: 'liste' as const, label: t('organigramme.liste', 'Liste'), icon: List },
+        { id: 'liste' as const, label: t('organigramme.vueListe', 'Liste'), icon: List },
     ];
 
     if (isError) {
@@ -275,10 +280,7 @@ export function OrganigrammePage() {
                             <ElisaButton
                                 variant="outline"
                                 icon={<Sparkles className="h-4 w-4" />}
-                                onClick={() => {
-                                    // Naviguer vers la page modèles
-                                    window.location.hash = '#/organisation/modeles';
-                                }}
+                                onClick={() => navigate({ to: '/organisation/modeles' })}
                             >
                                 {t('organigramme.empty.genererDepuisModele', 'Générer depuis un modèle')}
                             </ElisaButton>
@@ -369,6 +371,8 @@ export function OrganigrammePage() {
                     isEditMode={isEditMode}
                     onToggleEditMode={handleToggleEditMode}
                     canEdit={canEdit || canDelete}
+                    showRelations={showRelations}
+                    onToggleRelations={() => setShowRelations(prev => !prev)}
                 />
             )}
 
@@ -391,6 +395,7 @@ export function OrganigrammePage() {
                                 containerId={containerId}
                                 onNodeSelect={handleNodeSelect}
                                 isEditMode={isEditMode}
+                                showRelations={showRelations}
                                 onEditUnite={canEdit ? handleEditUnite : undefined}
                                 onAddChildUnite={canEdit ? handleAddChildUnite : undefined}
                                 onDeleteUnite={canDelete ? handleDeleteUnite : undefined}

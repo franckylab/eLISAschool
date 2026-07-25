@@ -36,19 +36,32 @@ export type UpdateUniteOrganisationnelleDto = z.infer<typeof updateUniteOrganisa
 
 // ==================== Hierarchie Personnel ====================
 
-export const createHierarchiePersonnelSchema = z.object({
+const hierarchiePersonnelBaseSchema = z.object({
     personnelId: z.string().uuid().optional(),
     superieurId: z.string().uuid().optional(),
     typeRelation: z.enum(['DIRECT', 'FONCTIONNEL']).default('DIRECT'), // enum varchar (remplace FK TypeRelationHierarchique)
     statut: z.enum(['ACTIVE', 'HISTORIQUE', 'PLANIFIEE']).default('ACTIVE'),
     posteId: z.string().uuid().optional(),
+    superieurPosteId: z.string().uuid().optional(),
     etablissementId: z.string().uuid().optional(),
     dateDebut: z.string().datetime().optional(),
     dateFin: z.string().datetime().optional(),
     commentaire: z.string().optional(),
 });
 
-export const updateHierarchiePersonnelSchema = createHierarchiePersonnelSchema.partial();
+export const createHierarchiePersonnelSchema = hierarchiePersonnelBaseSchema.refine(
+    (data) => (!!data.personnelId && !!data.superieurId) || (!!data.posteId && !!data.superieurPosteId),
+    {
+        message: 'Une relation hiérarchique requiert soit un couple personne (personnelId + superieurId), soit un couple poste (posteId + superieurPosteId)',
+    },
+);
+
+export const updateHierarchiePersonnelSchema = hierarchiePersonnelBaseSchema.partial().refine(
+    (data) => !((data.personnelId || data.superieurId) && (data.posteId || data.superieurPosteId)),
+    {
+        message: 'Impossible de mélanger les sémantiques : fournir soit des champs personne (personnelId/superieurId), soit des champs poste (posteId/superieurPosteId)',
+    },
+);
 
 export type CreateHierarchiePersonnelDto = z.infer<typeof createHierarchiePersonnelSchema>;
 export type UpdateHierarchiePersonnelDto = z.infer<typeof updateHierarchiePersonnelSchema>;

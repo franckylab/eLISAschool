@@ -74,7 +74,17 @@
         "titre": "Organisation"
     },
     "personnel": {
-        "titre": "Personnel"
+        "titre": "Personnel",
+        "categorie": "Catégorie",
+        "toutesCategories": "Toutes les catégories",
+        "categorie_ENSEIGNANT": "Enseignant",
+        "categorie_DIRECTION": "Direction",
+        "categorie_ADMINISTRATIF": "Administratif",
+        "categorie_TECHNIQUE": "Technique",
+        "categorie_SERVICE": "Service",
+        "categorie_SANTE": "Santé",
+        "categorie_SOCIAL": "Social",
+        "categorie_AUTRE": "Autre"
     },
     "messages": {
         "succesEnregistrement": "Enregistré avec succès",

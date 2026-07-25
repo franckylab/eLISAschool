@@ -1,4 +1,4 @@
-import { DollarSign } from 'lucide-react';
+import { Wallet } from 'lucide-react';
 import { NomenclatureCrudPage } from './nomenclature-crud-page';
 import { NomenclatureFormModal } from './nomenclature-form-modal';
 import {
@@ -18,7 +18,7 @@ function ModeFormWrapper({ initialData, onSuccess, onCancel }: { initialData?: M
             onOpenChange={(v: boolean) => { if (!v) onCancel(); }}
             initialData={initialData}
             titleKey={initialData ? 'modifierModeRemuneration' : 'nouveauModeRemuneration'}
-            icon={DollarSign}
+            icon={Wallet}
             fields={[
                 { key: 'code', labelKey: 'code', required: true, span: 'col-span-1' },
                 { key: 'label', labelKey: 'label', required: true, span: 'col-span-1' },
@@ -49,7 +49,7 @@ export function ModesRemunerationPage({ embedded }: { embedded?: boolean } = {})
         <NomenclatureCrudPage
             tableId="modes-remuneration"
             titleKey="modesRemuneration"
-            icon={DollarSign}
+            icon={Wallet}
             permission="organisation:nomenclatures"
             embedded={embedded}
             columns={columns}

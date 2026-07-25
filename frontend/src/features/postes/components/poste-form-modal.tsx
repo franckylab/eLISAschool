@@ -116,8 +116,9 @@ export function PosteFormModal({ open, onOpenChange, poste, onSuccess }: Props) 
             if (isEdit && poste) {
                 await modifier.mutateAsync({ id: poste.id, dto: payload });
             } else {
-                payload.code = payload.code.toUpperCase();
-                await creer.mutateAsync(payload);
+                const createPayload = payload as CreatePosteFormData;
+                createPayload.code = createPayload.code.toUpperCase();
+                await creer.mutateAsync(createPayload);
             }
             onSuccess?.();
             onOpenChange(false);

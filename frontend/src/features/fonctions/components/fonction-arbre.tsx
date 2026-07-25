@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { ChevronRight, ChevronDown, Edit, Trash2, Briefcase, Loader2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, Edit, Trash2, Workflow, Loader2 } from 'lucide-react';
 import type { Fonction } from '../types/fonction.types';
 interface FonctionArbreProps {
     fonctions: Fonction[];
@@ -51,7 +51,7 @@ function FonctionTreeNode({
                     )}
                 </button>
 
-                <Briefcase className={`h-4 w-4 ${fonction.actif ? 'text-primary' : 'text-muted-foreground'}`} />
+                <Workflow className={`h-4 w-4 ${fonction.actif ? 'text-primary' : 'text-muted-foreground'}`} />
 
                 <button
                     onClick={() => onView(fonction)}
@@ -119,6 +119,7 @@ function FonctionTreeNode({
 }
 
 export function FonctionArbre({ fonctions, isLoading, onEdit, onDelete, onView, compact }: FonctionArbreProps) {
+    const { t } = useTranslation('organisation');
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-12">
@@ -130,7 +131,7 @@ export function FonctionArbre({ fonctions, isLoading, onEdit, onDelete, onView, 
     if (!fonctions || fonctions.length === 0) {
         return (
             <div className="text-center py-12 text-muted-foreground">
-                <Briefcase className="h-12 w-12 mx-auto mb-3 opacity-40" />
+                <Workflow className="h-12 w-12 mx-auto mb-3 opacity-40" />
                 <p>{t('aucuneFonctionIndication')}</p>
             </div>
         );

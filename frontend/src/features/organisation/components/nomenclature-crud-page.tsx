@@ -28,7 +28,6 @@ import type { ActionConfig } from '@/components/ui/RowActions';
 interface EntityWithId {
     id: string;
     estSysteme?: boolean;
-    [key: string]: unknown;
 }
 
 interface NomenclatureCrudConfig<T extends EntityWithId> {
@@ -42,7 +41,7 @@ interface NomenclatureCrudConfig<T extends EntityWithId> {
     useUpdate?: () => unknown;
     useDelete: () => UseMutationResult<void, unknown, string>;
     formComponent: (props: {
-        initialData?: T;
+        initialData?: T | null;
         onSuccess: () => void;
         onCancel: () => void;
     }) => React.ReactElement;
@@ -111,7 +110,8 @@ export function NomenclatureCrudPage<T extends EntityWithId>({
                         icon: Copy,
                         label: t('dupliquer'),
                         onClick: async () => {
-                            const { id, estSysteme, createdAt, updatedAt, ...rest } = item;
+                            const { id, estSysteme, createdAt, updatedAt, ...rest } = item as T & { createdAt?: unknown; updatedAt?: unknown };
+                            void id; void estSysteme; void createdAt; void updatedAt;
                             await create.mutateAsync({ ...rest, estSysteme: false } as unknown as Partial<T>);
                             refetch();
                         },
@@ -179,7 +179,6 @@ export function NomenclatureCrudPage<T extends EntityWithId>({
                     enablePinning
                     enableColumnVisibility
                     searchable={!noSearch}
-                    disableClientSearch
                     emptyMessage={t('aucuneDonnee')}
                 />
             )}

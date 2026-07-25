@@ -7,6 +7,7 @@
  */
 
 import { z } from 'zod';
+import { CategorieFonction } from '../../../shared/constants/personnel.constants';
 
 // =====================================================
 // DTOs pour ScorePersonnel
@@ -36,7 +37,6 @@ export const createRegleScoringSchema = z.object({
     priorite: z.number().int().default(0),
     conditionsSupplementaires: z.record(z.string(), z.any()).optional(),
     categorieCible: z.string().max(50).optional(),
-    typePersonnelCible: z.string().max(50).optional(),
     dateDebut: z.string().date().optional(),
     dateFin: z.string().date().optional(),
 });
@@ -74,7 +74,7 @@ export const classementPersonnelSchema = z.object({
     etablissementId: z.string().uuid().optional(),
     anneeScolaireId: z.string().uuid(),
     periodeId: z.string().uuid().optional(),
-    typePersonnelId: z.string().uuid().optional(),
+    categorie: z.nativeEnum(CategorieFonction).optional(),
     matiereId: z.string().uuid().optional(),
     classeId: z.string().uuid().optional(),
     sortBy: z.enum(['scoreGlobal', 'scoreAssiduite', 'scoreComportement', 'scorePerformance', 'scorePedagogie']).default('scoreGlobal'),

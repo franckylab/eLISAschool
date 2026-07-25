@@ -52,7 +52,7 @@ export class FonctionsService {
             description: dto.description,
             parentId: dto.parentId ?? undefined,
             ordre: dto.ordre,
-            typePersonnelId: dto.typePersonnelId ?? undefined,
+            categorie: dto.categorie,
             primesDefaut: dto.primesDefaut ?? undefined,
             majorationDefaut: dto.majorationDefaut ?? undefined,
             actif: dto.actif,
@@ -69,16 +69,19 @@ export class FonctionsService {
     }
 
     async findAll(query: QueryFonctionsDto = {}, etablissementId: string): Promise<PaginatedResult<Fonction>> {
-        const { page = 1, limit = 20, search, parentId, actif, sortBy = 'ordre', sortOrder = 'ASC' } = query;
+        const { page = 1, limit = 20, search, parentId, categorie, actif, sortBy = 'ordre', sortOrder = 'ASC' } = query;
 
         const qb = this.repo.createQueryBuilder('fonction')
             .leftJoinAndSelect('fonction.parent', 'parent')
             .leftJoinAndSelect('fonction.enfants', 'enfants')
-            .leftJoinAndSelect('fonction.typePersonnel', 'typePersonnel')
             .where('fonction.etablissementId = :etablissementId', { etablissementId });
 
         if (search) {
             qb.andWhere('(fonction.nom ILIKE :search OR fonction.code ILIKE :search)', { search: `%${search}%` });
+        }
+
+        if (categorie) {
+            qb.andWhere('fonction.categorie = :categorie', { categorie });
         }
 
         if (parentId !== undefined) {
@@ -136,7 +139,7 @@ export class FonctionsService {
     async findOne(id: string, etablissementId: string): Promise<Fonction> {
         const fonction = await this.repo.findOne({
             where: { id, etablissementId },
-            relations: ['parent', 'enfants', 'typePersonnel'],
+            relations: ['parent', 'enfants'],
         });
         if (!fonction) {
             throw new AppError('Fonction non trouvée', 404, 'NOT_FOUND');

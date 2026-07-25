@@ -124,6 +124,6 @@ export default defineConfig({
         },
     },
     optimizeDeps: {
-        include: ['react', 'react-dom', '@tanstack/react-query', 'zustand', 'i18next'],
+        include: ['react', 'react-dom', '@tanstack/react-query', 'zustand', 'i18next', 'html-to-image'],
     },
 });

@@ -16,6 +16,8 @@ export const generateBulletinSchema = z.object({
 
 export const updateBulletinSchema = z.object({
     appreciationConseil: z.string().optional(),
+    sanctions: z.array(z.string()).optional(),
+    encouragements: z.array(z.string()).optional(),
     publie: z.boolean().optional(),
 });
 
@@ -30,6 +32,7 @@ export const queryBulletinsSchema = paginationSchema.extend({
     classeAnneeId: z.string().uuid().optional(),
     periodeId: z.string().uuid().optional(),
     publie: z.string().transform((v) => v === 'true').optional(),
+    recherche: z.string().max(255).optional(),
 });
 
 export type QueryBulletinsDto = z.infer<typeof queryBulletinsSchema>;

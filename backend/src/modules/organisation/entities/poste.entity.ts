@@ -7,10 +7,10 @@
  *
  * Représente un poste au sein d'une unité organisationnelle.
  * La relation avec le personnel se fait via AffectationPoste (module personnel).
- * La catégorie du poste est dérivée via poste.fonction.typePersonnel.
+ * La catégorie du poste est dérivée via poste.fonction.categorie.
  *
  * Refonte v4.0 :
- * - categoriePosteId supprimé (dérivé via fonction.typePersonnel)
+ * - categoriePosteId supprimé (dérivé via fonction.categorie)
  */
 
 import {
@@ -54,7 +54,7 @@ export class Poste {
     @Column({ type: 'varchar', length: 50 })
     code!: string;
 
-    // FK vers Fonction — le type attendu du poste est dérivé via fonction.typePersonnel
+    // FK vers Fonction — la catégorie attendue du poste est dérivée via fonction.categorie
     @Column({ type: 'uuid', nullable: true })
     fonctionId?: string;
 

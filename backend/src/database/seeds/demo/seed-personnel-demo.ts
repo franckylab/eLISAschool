@@ -1,13 +1,12 @@
 import { AppDataSource } from '@database/data-source';
 import { Utilisateur } from '@modules/auth/entities';
-import { MembrePersonnel, StatutPersonnel, TypePersonnel } from '@modules/personnel/entities';
+import { MembrePersonnel, StatutPersonnel } from '@modules/personnel/entities';
 import { ContratPersonnel, StatutContrat } from '@modules/personnel/entities';
 import { ModeRemunerationEntity } from '@modules/organisation/entities';
 import { logger } from '@common/utils/logger.util';
 
 interface StaffTemplate {
   email: string;
-  typePersonnelCode: string;
   matricule: string;
   posteExact: string;
   service: string;
@@ -24,7 +23,6 @@ interface StaffTemplate {
 const STAFF_MEMBERS: StaffTemplate[] = [
   {
     email: 'enseignant@elisaschool.cm',
-    typePersonnelCode: 'ENSEIGNANT',
     matricule: 'ENS-001',
     posteExact: 'Professeur de Mathématiques',
     service: 'Second Cycle Scientifique',
@@ -39,7 +37,6 @@ const STAFF_MEMBERS: StaffTemplate[] = [
   },
   {
     email: 'prof.certifie@elisaschool.cm',
-    typePersonnelCode: 'ENSEIGNANT',
     matricule: 'PCERT-001',
     posteExact: 'Professeur Certifié de Français',
     service: 'Premier Cycle Littéraire',
@@ -54,7 +51,6 @@ const STAFF_MEMBERS: StaffTemplate[] = [
   },
   {
     email: 'prof.agrege@elisaschool.cm',
-    typePersonnelCode: 'ENSEIGNANT',
     matricule: 'PAGREG-001',
     posteExact: 'Professeur Agrégé de Physique-Chimie',
     service: 'Second Cycle Scientifique',
@@ -69,7 +65,6 @@ const STAFF_MEMBERS: StaffTemplate[] = [
   },
   {
     email: 'comptable@elisaschool.cm',
-    typePersonnelCode: 'ADMINISTRATIF',
     matricule: 'COMPT-001',
     posteExact: 'Comptable en Chef',
     service: 'Finances',
@@ -82,7 +77,6 @@ const STAFF_MEMBERS: StaffTemplate[] = [
   },
   {
     email: 'secretaire@elisaschool.cm',
-    typePersonnelCode: 'ADMINISTRATIF',
     matricule: 'SECRET-001',
     posteExact: 'Secrétaire de Direction',
     service: 'Administration',
@@ -95,7 +89,6 @@ const STAFF_MEMBERS: StaffTemplate[] = [
   },
   {
     email: 'surveillant@elisaschool.cm',
-    typePersonnelCode: 'SERVICE',
     matricule: 'SURV-001',
     posteExact: 'Surveillant Principal',
     service: 'Surveillance',
@@ -108,7 +101,6 @@ const STAFF_MEMBERS: StaffTemplate[] = [
   },
   {
     email: 'technicien.info@elisaschool.cm',
-    typePersonnelCode: 'TECHNIQUE',
     matricule: 'TECHINFO-001',
     posteExact: 'Technicien Informatique',
     service: 'Support Technique',
@@ -121,7 +113,6 @@ const STAFF_MEMBERS: StaffTemplate[] = [
   },
   {
     email: 'rh@elisaschool.cm',
-    typePersonnelCode: 'ADMINISTRATIF',
     matricule: 'RH-001',
     posteExact: 'Responsable des Ressources Humaines',
     service: 'Administration',
@@ -134,7 +125,6 @@ const STAFF_MEMBERS: StaffTemplate[] = [
   },
   {
     email: 'gestionnaire.paie@elisaschool.cm',
-    typePersonnelCode: 'ADMINISTRATIF',
     matricule: 'GESTPAIE-001',
     posteExact: 'Gestionnaire de Paie',
     service: 'Administration',
@@ -147,7 +137,6 @@ const STAFF_MEMBERS: StaffTemplate[] = [
   },
   {
     email: 'validateur.paie@elisaschool.cm',
-    typePersonnelCode: 'DIRECTION',
     matricule: 'VALIDPAIE-001',
     posteExact: 'Validateur Paie',
     service: 'Direction Financière',
@@ -163,7 +152,6 @@ const STAFF_MEMBERS: StaffTemplate[] = [
 export async function seedPersonnelDemo(etablissementId: string): Promise<number> {
   const userRepo = AppDataSource.getRepository(Utilisateur);
   const membreRepo = AppDataSource.getRepository(MembrePersonnel);
-  const typeRepo = AppDataSource.getRepository(TypePersonnel);
   const contratRepo = AppDataSource.getRepository(ContratPersonnel);
   const modeRemunRepo = AppDataSource.getRepository(ModeRemunerationEntity);
 
@@ -189,11 +177,9 @@ export async function seedPersonnelDemo(etablissementId: string): Promise<number
       logger.debug(`  ⏭ Membre déjà existant: ${staff.email}`);
       // Still create contrat if missing
     } else {
-      const typePersonnel = await typeRepo.findOne({ where: { code: staff.typePersonnelCode } });
       membre = membreRepo.create({
         utilisateurId: user.id,
         matricule: staff.matricule,
-        typePersonnelId: typePersonnel?.id,
         posteExact: staff.posteExact,
         service: staff.service,
         dateEmbauche: staff.dateEmbauche,

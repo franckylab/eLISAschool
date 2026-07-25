@@ -1,102 +1,110 @@
-import { useState } from 'react';
+/**
+ * ==================================
+ * eLISAschool - Onglet Hiérarchie (relations hiérarchiques)
+ * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Liste des relations hiérarchiques (personne→personne et poste→poste)
+ * avec libellés lisibles, filtres segmentés et actions CRUD.
+ */
+
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Users, Plus, Edit, Trash2, ArrowUp, ArrowDown, User, Briefcase, Network } from 'lucide-react';
-import { TreeView, type TreeNode } from '@/components/ui/TreeView';
+import { Plus, Edit, Trash2, User, Briefcase, Network, ArrowUpRight, Link2, RefreshCw } from 'lucide-react';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Badge } from '@/components/ui/Badge';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { usePermissions, useDocumentTitle } from '@/hooks';
-import { useOrganigramme, useHierarchies, useSupprimerHierarchie } from '../hooks/use-organisation';
-import { usePostes } from '@/features/postes/hooks/use-postes';
+import { useHierarchies, useSupprimerHierarchie } from '../hooks/use-organisation';
 import { HierarchieFormModal } from './hierarchie-form-modal';
-import type { HierarchiePersonnel, OrganigrammeNode, OrganigrammePoste } from '../types/organisation.types';
+import { libelleExtremite, estRelationPoste, uniteRelation } from './hierarchie-libelles';
+import type { HierarchiePersonnel, StatutRelation } from '../types/organisation.types';
+
+type FiltreHierarchie = 'tous' | 'personnes' | 'postes' | 'DIRECT' | 'FONCTIONNEL';
+
+const STATUT_VARIANT: Record<StatutRelation, 'success' | 'warning' | 'secondary'> = {
+    ACTIVE: 'success',
+    PLANIFIEE: 'warning',
+    HISTORIQUE: 'secondary',
+};
+
+function CelluleExtremite({ h, cote }: { h: HierarchiePersonnel; cote: 'subordonne' | 'superieur' }) {
+    const ext = libelleExtremite(h, cote);
+    const Icone = ext.type === 'poste' ? Briefcase : User;
+    return (
+        <div className="flex items-center" style={{ gap: 'var(--gap-sm)' }}>
+            <Icone className="shrink-0 text-[var(--color-text-muted)]" style={{ width: 'var(--icon-sm)', height: 'var(--icon-sm)' }} aria-hidden />
+            <div className="flex flex-col min-w-0">
+                <span className="font-medium text-foreground truncate">{ext.label}</span>
+                {ext.sousLabel && (
+                    <span className="text-xs text-[var(--color-text-muted)] truncate">{ext.sousLabel}</span>
+                )}
+            </div>
+        </div>
+    );
+}
 
 export function TabHierarchie() {
     const { t } = useTranslation('organisation');
     const { hasPermission } = usePermissions();
     useDocumentTitle('eLISAschool | Hiérarchie');
-    const { data: organigramme, isLoading: orgLoading } = useOrganigramme();
-    const { data: hierarchies, isLoading: hierLoading } = useHierarchies();
-        const { data: postesData } = usePostes();
-        const postes = postesData?.items || [];
+    const { data: hierarchies, isLoading, isError, refetch } = useHierarchies();
     const supprimer = useSupprimerHierarchie();
 
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [editHierarchie, setEditHierarchie] = useState<HierarchiePersonnel | null>(null);
     const [deleteHierarchieId, setDeleteHierarchieId] = useState<string | null>(null);
+    const [filtre, setFiltre] = useState<FiltreHierarchie>('tous');
 
-    const organigrammeNodes = organigramme || [];
+    const FILTRES: Array<{ value: FiltreHierarchie; label: string }> = [
+        { value: 'tous', label: t('filtreTous') },
+        { value: 'personnes', label: t('filtrePersonnes') },
+        { value: 'postes', label: t('filtrePostes') },
+        { value: 'DIRECT', label: t('typeRelation_DIRECT') },
+        { value: 'FONCTIONNEL', label: t('typeRelation_FONCTIONNEL') },
+    ];
 
-    const compterOccupes = (postes: OrganigrammePoste[]): number =>
-        postes.reduce((acc: number, p: OrganigrammePoste) => acc + (p.occupantsCount || 0), 0);
+    const donnees = useMemo(() => {
+        const liste = hierarchies || [];
+        if (filtre === 'personnes') return liste.filter((h) => !estRelationPoste(h));
+        if (filtre === 'postes') return liste.filter(estRelationPoste);
+        if (filtre === 'DIRECT' || filtre === 'FONCTIONNEL') return liste.filter((h) => h.typeRelation === filtre);
+        return liste;
+    }, [hierarchies, filtre]);
 
-    const buildOrganigramTree = (nodes: OrganigrammeNode[]): TreeNode<OrganigrammeNode>[] => {
-        return nodes.map((n: OrganigrammeNode) => {
-            const postesLocaux: OrganigrammePoste[] = n.postes || [];
-            const occupes = compterOccupes(postesLocaux);
-            const total = postesLocaux.reduce((acc: number, p: OrganigrammePoste) => acc + (p.nombrePostes || 1), 0);
-            const capacite = total > 0 ? ` [${occupes}/${total}]` : '';
-            return {
-                id: n.id,
-                label: `${n.nom} ${n.code ? `(${n.code})` : ''}${capacite}`,
-                data: n,
-                icon: <Users className="h-4 w-4 text-muted-foreground" />,
-                children: n.enfants ? buildOrganigramTree(n.enfants as OrganigrammeNode[]) : [],
-            };
-        });
-    };
-
-    const hierColumns: Column<HierarchiePersonnel>[] = [
-        {
-            key: 'subordonne',
-            header: t('colSubordonne'),
-            render: (h) => (
-                <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium text-foreground">{h.personnelId || '-'}</span>
-                </div>
-            ),
-        },
-        {
-            key: 'relation',
-            header: '',
-            render: () => (
-                <div className="flex items-center justify-center">
-                    <ArrowUp className="h-4 w-4 text-primary" />
-                </div>
-            ),
-        },
-        {
-            key: 'superieur',
-            header: t('colSuperieur'),
-            render: (h) => (
-                <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-primary" />
-                    <span className="font-medium text-foreground">{h.superieurId || '-'}</span>
-                </div>
-            ),
-        },
+    const colonnes: Column<HierarchiePersonnel>[] = [
+        { key: 'subordonne', header: t('colSubordonne'), render: (h) => <CelluleExtremite h={h} cote="subordonne" /> },
+        { key: 'superieur', header: t('colSuperieur'), render: (h) => <CelluleExtremite h={h} cote="superieur" /> },
         {
             key: 'typeRelation',
             header: t('colTypeRelation'),
-            render: (h) => (
-                <Badge variant="default" size="sm">
-                    {h.typeRelation || '-'}
+            render: (h) => h.typeRelation === 'FONCTIONNEL' ? (
+                <Badge variant="outline" size="sm" className="border-dashed" icon={<Link2 style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} aria-hidden />}>
+                    {t('typeRelation_FONCTIONNEL')}
+                </Badge>
+            ) : (
+                <Badge variant="default" size="sm" className="bg-primary/10" icon={<ArrowUpRight style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} aria-hidden />}>
+                    {t('typeRelation_DIRECT')}
                 </Badge>
             ),
         },
         {
-            key: 'poste',
-            header: t('colPoste'),
+            key: 'unite',
+            header: t('colUnite'),
+            render: (h) => uniteRelation(h)
+                ? <span className="text-sm text-foreground truncate">{uniteRelation(h)}</span>
+                : <span className="text-sm text-[var(--color-text-muted)]">—</span>,
+        },
+        {
+            key: 'statut',
+            header: t('colStatut'),
             render: (h) => (
-                h.posteId ? (
-                    <div className="flex items-center gap-2 text-sm text-secondary">
-                        <Briefcase className="h-3.5 w-3.5" />
-                        {h.posteId}
-                    </div>
-                ) : <span className="text-sm text-muted-foreground">-</span>
+                <Badge variant={STATUT_VARIANT[h.statut] || 'secondary'} size="sm">
+                    {t(`statutRelation_${h.statut}`)}
+                </Badge>
             ),
         },
         {
@@ -104,22 +112,8 @@ export function TabHierarchie() {
             header: t('colActions'),
             className: 'text-right w-24',
             renderActions: (h) => [
-                {
-                    key: 'modifier',
-                    icon: Edit,
-                    label: t('modifier'),
-                    onClick: () => setEditHierarchie(h),
-                    permission: 'organisation:hierarchie:write',
-                    variant: 'warning' as const,
-                },
-                {
-                    key: 'supprimer',
-                    icon: Trash2,
-                    label: t('supprimer'),
-                    onClick: () => setDeleteHierarchieId(h.id),
-                    permission: 'organisation:hierarchie:delete',
-                    variant: 'danger' as const,
-                },
+                { key: 'modifier', icon: Edit, label: t('modifier'), onClick: () => setEditHierarchie(h), permission: 'organisation:hierarchie:write', variant: 'warning' as const },
+                { key: 'supprimer', icon: Trash2, label: t('supprimer'), onClick: () => setDeleteHierarchieId(h.id), permission: 'organisation:hierarchie:delete', variant: 'danger' as const },
             ],
         },
     ];
@@ -131,57 +125,53 @@ export function TabHierarchie() {
                 subtitle={t('relationsHierarchiques')}
                 icon={Network}
                 variant="gradient"
+                actions={hasPermission('organisation:hierarchie:write') ? (
+                    <ElisaButton variant="primary" size="sm" icon={<Plus style={{ width: 'var(--icon-sm)', height: 'var(--icon-sm)' }} aria-hidden />}
+                        onClick={() => setShowCreateModal(true)}>
+                        {t('nouvelleRelationBtn')}
+                    </ElisaButton>
+                ) : undefined}
             />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-card rounded-lg border border-border p-6">
-                    <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                        <Users className="h-5 w-5 text-primary" />
-                        {t('vueOrganigramme')}
-                    </h3>
-                    <TreeView
-                        nodes={buildOrganigramTree(organigrammeNodes)}
-                        loading={orgLoading}
-                        emptyMessage={t('aucuneUniteOrganigramme')}
-                    />
-                </div>
 
-                <div className="bg-card rounded-lg border border-border p-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                            <ArrowDown className="h-5 w-5 text-primary" />
-                            {t('relationsHierarchiques')}
-                        </h3>
-                        {hasPermission('organisation:hierarchie:write') && (
-                            <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />}
-                                onClick={() => setShowCreateModal(true)}>
-                                {t('nouvelleRelationBtn')}
-                            </ElisaButton>
-                        )}
-                    </div>
-
-                    <DataTable
-                        tableId="hierarchie-table"
-                        columns={hierColumns}
-                        data={hierarchies || []}
-                        isLoading={hierLoading}
-                        disableClientSearch
-                    />
-                </div>
+            <div role="group" aria-label={t('colTypeRelation')} className="flex flex-wrap items-center" style={{ gap: 'var(--gap-sm)' }}>
+                {FILTRES.map((f) => (
+                    <button
+                        key={f.value}
+                        type="button"
+                        aria-pressed={filtre === f.value}
+                        onClick={() => setFiltre(f.value)}
+                        className={`rounded-full border px-3 text-sm transition-colors min-h-[44px] ${filtre === f.value
+                            ? 'border-transparent bg-[var(--color-dominant-600)] text-white'
+                            : 'border-[var(--color-bordure)] bg-transparent text-[var(--color-text-muted)] hover:bg-[var(--color-dominant-50)] hover:text-[var(--color-dominant-600)]'}`}
+                    >
+                        {f.label}
+                    </button>
+                ))}
             </div>
 
-            <HierarchieFormModal
-                open={showCreateModal}
-                onOpenChange={setShowCreateModal}
-                postes={postes || []}
-            />
+            {isError ? (
+                <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card text-center" style={{ gap: 'var(--gap-md)', padding: 'var(--space-xl)' }}>
+                    <p className="text-sm text-destructive">{t('erreurChargement')}</p>
+                    <ElisaButton variant="secondary" size="sm" icon={<RefreshCw style={{ width: 'var(--icon-sm)', height: 'var(--icon-sm)' }} aria-hidden />} onClick={() => refetch()}>
+                        {t('reessayer')}
+                    </ElisaButton>
+                </div>
+            ) : (
+                <DataTable
+                    tableId="hierarchie-table"
+                    columns={colonnes}
+                    data={donnees}
+                    isLoading={isLoading}
+                    emptyMessage={t('aucuneHierarchie')}
+                />
+            )}
+
+            {showCreateModal && (
+                <HierarchieFormModal open={showCreateModal} onOpenChange={setShowCreateModal} />
+            )}
 
             {editHierarchie && (
-                <HierarchieFormModal
-                    open={!!editHierarchie}
-                    onOpenChange={() => setEditHierarchie(null)}
-                    postes={postes || []}
-                    hierarchie={editHierarchie}
-                />
+                <HierarchieFormModal open={!!editHierarchie} onOpenChange={() => setEditHierarchie(null)} hierarchie={editHierarchie} />
             )}
 
             <ConfirmationModal

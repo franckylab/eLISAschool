@@ -14,16 +14,7 @@
  *   → utiliser specialitePrincipale, diplomes, posteExact, dateEmbauche
  */
 
-export interface TypePersonnel {
-    id: string;
-    code: string;
-    nom: string;
-    description?: string;
-    actif: boolean;
-    estSysteme: boolean;
-    createdAt: string;
-    updatedAt: string;
-}
+import type { CategorieFonction, CategorieSource } from '@/lib/categorie-fonction';
 
 export interface MembrePersonnel {
     id: string;
@@ -45,8 +36,10 @@ export interface MembrePersonnel {
             photo?: string;
         };
     };
-    typePersonnelId?: string;
-    typePersonnel?: TypePersonnel;
+    /** Catégorie dérivée (fonction principale → affectation poste), jamais stockée */
+    categorie?: CategorieFonction | null;
+    estEnseignant?: boolean;
+    categorieSource?: CategorieSource;
     matricule: string;
     dateEmbauche: string;
     statut: string;
@@ -65,7 +58,6 @@ export interface MembrePersonnel {
 
 export interface CreerPersonnelDto {
     utilisateurId?: string;
-    typePersonnelId?: string;
     matricule: string;
     dateEmbauche: string;
     statut?: 'ACTIF' | 'INACTIF' | 'CONGE';
@@ -80,7 +72,6 @@ export function fromFormToCreateDto(form: Record<string, any>): CreerPersonnelDt
         statut: ((form.statut || 'actif') === 'en_conge' ? 'CONGE' : (form.statut || 'actif').toUpperCase()) as 'ACTIF' | 'INACTIF' | 'CONGE',
         specialites: form.specialitePrincipale ? [form.specialitePrincipale] : form.specialites || undefined,
         diplomes: form.diplomes || undefined,
-        typePersonnelId: form.typePersonnelId || undefined,
         departement: form.departement || undefined,
     };
 }
@@ -262,7 +253,7 @@ export interface PersonnelFiltres {
     departement?: string;
     typeContrat?: 'cdi' | 'cdd' | 'vacataire' | 'stage';
     statut?: 'actif' | 'inactif' | 'en_conge' | 'demission';
-    typePersonnelId?: string;
+    categorie?: CategorieFonction;
     actif?: boolean;
     recherche?: string;
     page?: number;

@@ -1,4 +1,4 @@
-import { type ReactNode, type ComponentType } from 'react';
+import { type ReactNode, type ComponentType, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, AlertCircle, X } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
@@ -48,6 +48,11 @@ export function BaseFormModal({
 }: BaseFormModalProps) {
     const { t } = useTranslation('organisation');
     const c = colorMap[color] ?? colorMap.blue;
+    const [errorDismissed, setErrorDismissed] = useState(false);
+
+    useEffect(() => {
+        setErrorDismissed(false);
+    }, [apiError]);
 
     return (
         <CustomModal
@@ -76,11 +81,11 @@ export function BaseFormModal({
             }
         >
             <div className="space-y-4">
-                {apiError && (
+                {apiError && !errorDismissed && (
                     <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/30">
                         <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
                         <p className="text-sm text-destructive">{apiError}</p>
-                        <button onClick={() => {}} className="ml-auto text-destructive/60 hover:text-destructive" type="button">
+                        <button onClick={() => setErrorDismissed(true)} aria-label={t('fermer')} className="ml-auto text-destructive/60 hover:text-destructive" type="button">
                             <X className="h-4 w-4" />
                         </button>
                     </div>

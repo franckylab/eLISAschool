@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { Briefcase } from 'lucide-react';
+import { Workflow } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useToutesFonctions } from '../hooks/use-fonctions';
-import { useTypePersonnelOptions } from '@/features/personnel/hooks/use-types-personnel';
+import { CATEGORIES_FONCTION, type CategorieFonction } from '@/lib/categorie-fonction';
 import type { Fonction, CreerFonctionDto, ModifierFonctionDto } from '../types/fonction.types';
 
 interface FonctionFormModalProps {
@@ -18,13 +18,12 @@ interface FonctionFormModalProps {
 export function FonctionFormModal({ open, onOpenChange, fonction, onSave, isLoading }: FonctionFormModalProps) {
     const { t } = useTranslation('organisation');
     const { data: allFonctions } = useToutesFonctions();
-    const typePersonnelOptions = useTypePersonnelOptions();
     const [nom, setNom] = useState('');
     const [code, setCode] = useState('');
     const [description, setDescription] = useState('');
     const [parentId, setParentId] = useState<string>('');
     const [ordre, setOrdre] = useState(1);
-    const [typePersonnelId, setTypePersonnelId] = useState<string>('');
+    const [categorie, setCategorie] = useState<CategorieFonction>('AUTRE');
     const [majorationDefaut, setMajorationDefaut] = useState<string>('');
     const [actif, setActif] = useState(true);
 
@@ -35,7 +34,7 @@ export function FonctionFormModal({ open, onOpenChange, fonction, onSave, isLoad
             setDescription(fonction.description || '');
             setParentId(fonction.parentId || '');
             setOrdre(fonction.ordre);
-            setTypePersonnelId(fonction.typePersonnelId || '');
+            setCategorie(fonction.categorie || 'AUTRE');
             setMajorationDefaut(fonction.majorationDefaut != null ? String(fonction.majorationDefaut) : '');
             setActif(fonction.actif);
         } else {
@@ -44,7 +43,7 @@ export function FonctionFormModal({ open, onOpenChange, fonction, onSave, isLoad
             setDescription('');
             setParentId('');
             setOrdre(1);
-            setTypePersonnelId('');
+            setCategorie('AUTRE');
             setMajorationDefaut('');
             setActif(true);
         }
@@ -60,7 +59,7 @@ export function FonctionFormModal({ open, onOpenChange, fonction, onSave, isLoad
             description: description.trim() || undefined,
             parentId: parentId || null,
             ordre,
-            typePersonnelId: typePersonnelId || null,
+            categorie,
             majorationDefaut: majorationDefaut ? Number(majorationDefaut) : null,
             actif,
         });
@@ -98,7 +97,7 @@ export function FonctionFormModal({ open, onOpenChange, fonction, onSave, isLoad
                         variant="primary"
                         onClick={handleSubmit}
                         disabled={!nom.trim() || !code.trim() || isLoading}
-                        icon={<Briefcase className="h-4 w-4" />}
+                        icon={<Workflow className="h-4 w-4" />}
                     >
                         {isLoading ? t('enregistrementEnCours') : fonction ? t('modifier') : t('creer')}
                     </ElisaButton>
@@ -164,22 +163,19 @@ export function FonctionFormModal({ open, onOpenChange, fonction, onSave, isLoad
 
                 <div>
                     <label className="text-sm font-medium text-foreground mb-2 block">
-                        {t('typePersonnelStatut')}
+                        {t('categorieFonction')} <span className="text-destructive">*</span>
                     </label>
                     <select
-                        value={typePersonnelId}
-                        onChange={(e) => setTypePersonnelId(e.target.value)}
+                        value={categorie}
+                        onChange={(e) => setCategorie(e.target.value as CategorieFonction)}
                         className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
                     >
-                        <option value="">{t('aucun')}</option>
-                        {typePersonnelOptions
-                            .filter((o) => o.actif !== false)
-                            .map((o) => (
-                                <option key={o.value} value={o.value}>{o.label}</option>
-                            ))}
+                        {CATEGORIES_FONCTION.map((c) => (
+                            <option key={c} value={c}>{t(`categorie_${c}`)}</option>
+                        ))}
                     </select>
                     <p className="mt-1 text-xs text-muted-foreground">
-                        {t('typePersonnelStatutAide')}
+                        {t('categorieFonctionAide')}
                     </p>
                 </div>
 

@@ -6,10 +6,11 @@
  * Auteur: franck arlos chendjou
  */
 
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 
 /**
- * Exporte le conteneur React Flow en PNG
+ * Exporte le conteneur React Flow en PNG.
+ * Utilise html-to-image (SVG foreignObject) pour supporter oklch/oklab.
  */
 export async function exporterOrganigrammePNG(
     elementId: string,
@@ -19,16 +20,16 @@ export async function exporterOrganigrammePNG(
     if (!element) return;
 
     try {
-        const canvas = await html2canvas(element, {
-            backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--color-surface').trim() || '#ffffff',
-            scale: 2,
-            logging: false,
-            useCORS: true,
+        const dataUrl = await toPng(element, {
+            pixelRatio: 2,
+            cacheBust: true,
+            backgroundColor: getComputedStyle(document.documentElement)
+                .getPropertyValue('--color-surface').trim() || '#ffffff',
         });
 
         const link = document.createElement('a');
         link.download = `${nomEtablissement.replace(/\s+/g, '_')}_organigramme_${new Date().toISOString().slice(0, 10)}.png`;
-        link.href = canvas.toDataURL('image/png');
+        link.href = dataUrl;
         link.click();
     } catch (error) {
         console.error('Erreur export PNG:', error);

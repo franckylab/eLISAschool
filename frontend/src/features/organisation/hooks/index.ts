@@ -13,7 +13,7 @@ export {
 
 // Hiérarchie + Organigramme + Stats + Validation
 export {
-    useHierarchies, useSuperieurs, useSubordonnes,
+    useHierarchies,
     useCreerHierarchie, useModifierHierarchie, useSupprimerHierarchie,
     useOrganigramme, useStatistiquesOrganisation, useValiderArborescence,
 } from './use-hierarchies';

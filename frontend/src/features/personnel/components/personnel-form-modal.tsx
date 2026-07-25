@@ -13,7 +13,6 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Save, User } from 'lucide-react';
 import { useCreerPersonnel, useModifierPersonnel, useMembrePersonnel, useLinkPersonnelUtilisateur, useUnlinkPersonnelUtilisateur } from '../hooks/use-personnel';
-import { useTypePersonnelOptions } from '../hooks/use-types-personnel';
 import { useUtilisateursDisponibles } from '@/features/utilisateurs/hooks/use-utilisateurs';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -38,7 +37,6 @@ const formNormalizer = {
     specialites: (m?: MembrePersonnel) => m?.specialites?.length ? m.specialites : m?.specialitePrincipale ? [m.specialitePrincipale] : [] as string[],
     diplomes: (m?: MembrePersonnel) => m?.diplomes || '',
     dateEmbauche: (m?: MembrePersonnel) => m?.dateEmbauche?.split('T')[0] || new Date().toISOString().split('T')[0],
-    typePersonnelId: (m?: MembrePersonnel) => m?.typePersonnelId || '',
 };
 
 function buildFormData<M extends MembrePersonnel | undefined>(m: M): Record<string, any> {
@@ -47,7 +45,6 @@ function buildFormData<M extends MembrePersonnel | undefined>(m: M): Record<stri
         statut: formNormalizer.statut(m?.statut),
         specialites: formNormalizer.specialites(m),
         diplomes: formNormalizer.diplomes(m),
-        typePersonnelId: formNormalizer.typePersonnelId(m),
     };
 }
 
@@ -58,7 +55,6 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
     const linkUser = useLinkPersonnelUtilisateur();
     const unlinkUser = useUnlinkPersonnelUtilisateur();
     const isMutating = creerPersonnel.isPending || modifierPersonnel.isPending || linkUser.isPending || unlinkUser.isPending;
-    const typeOptions = useTypePersonnelOptions();
     const { data: utilisateursData } = useUtilisateursDisponibles();
 
     const editId = mode === 'edition' ? membre?.id ?? '' : '';
@@ -214,14 +210,6 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                     )}
                 </div>
 
-                {/* Type de personnel */}
-                <ElisaSelect
-                    label={t('typePersonnel')}
-                    value={formData.typePersonnelId || ''}
-                    onValueChange={(value: string) => handleChange('typePersonnelId', value)}
-                    options={typeOptions}
-                    placeholder={t('form.selectionnerType')}
-                />
                 {/* Statut et Date d'entrée */}
                 <div className="grid grid-cols-2 gap-4">
                     <ElisaSelect

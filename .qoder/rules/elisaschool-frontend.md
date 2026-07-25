@@ -2326,6 +2326,7 @@ function NotFoundPage() {
 
 ### Permissions
 - Toujours granulaires : `module:section:read|write|delete`. Ne jamais utiliser une permission grossière type `module:edit`.
+- **Rôles consultation** (ENSEIGNANT, ELEVE, PARENT) : attribuer UNIQUEMENT la permission de la vue publique du module (ex : `organisation:organigramme:read`), jamais les autres sections. La sidebar filtre les sous-menus par permission — un rôle consultation ne voit que l'entrée autorisée.
 
 ---
 

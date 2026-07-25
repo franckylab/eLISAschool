@@ -66,7 +66,6 @@ export class PostesService {
         const qb = this.posteRepo.createQueryBuilder('p')
             .leftJoinAndSelect('p.uniteOrganisationnelle', 'uo')
             .leftJoinAndSelect('p.fonction', 'f')
-            .leftJoinAndSelect('f.typePersonnel', 'ftp')
             .leftJoinAndSelect('p.niveauResponsabilite', 'nr');
 
         if (etablissementId) {
@@ -99,7 +98,7 @@ export class PostesService {
     async findAllSimple(etablissementId?: string): Promise<Poste[]> {
         return this.posteRepo.find({
             where: { actif: true, uniteOrganisationnelle: { etablissementId } },
-            relations: ['uniteOrganisationnelle', 'fonction', 'fonction.typePersonnel', 'niveauResponsabilite'],
+            relations: ['uniteOrganisationnelle', 'fonction', 'niveauResponsabilite'],
             order: { intitule: 'ASC' },
         });
     }
@@ -118,7 +117,7 @@ export class PostesService {
     async findByFonction(fonctionId: string, etablissementId?: string): Promise<Poste[]> {
         return this.posteRepo.find({
             where: { fonctionId, uniteOrganisationnelle: { etablissementId } },
-            relations: ['uniteOrganisationnelle', 'fonction', 'fonction.typePersonnel', 'niveauResponsabilite'],
+            relations: ['uniteOrganisationnelle', 'fonction', 'niveauResponsabilite'],
             order: { intitule: 'ASC' },
         });
     }
@@ -127,7 +126,6 @@ export class PostesService {
         const qb = this.posteRepo.createQueryBuilder('p')
             .leftJoinAndSelect('p.uniteOrganisationnelle', 'uo')
             .leftJoinAndSelect('p.fonction', 'f')
-            .leftJoinAndSelect('f.typePersonnel', 'ftp')
             .leftJoinAndSelect('p.niveauResponsabilite', 'nr')
             .where('p.id = :id', { id });
         if (etablissementId) {

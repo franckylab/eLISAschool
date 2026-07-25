@@ -41,7 +41,7 @@ import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/paginat
 /**
  * Noeud d'arborescence organisationnelle (type récursif)
  */
-interface ArborescenceNode extends Partial<UniteOrganisationnelle> {
+interface ArborescenceNode extends Omit<Partial<UniteOrganisationnelle>, 'enfants' | 'postes'> {
     id: string;
     enfants: ArborescenceNode[];
     depth?: number;
@@ -59,7 +59,7 @@ interface PosteOrganigramme extends Partial<Poste> {
     id: string;
     fonctionLabel?: string;
     niveauResponsabiliteLabel?: string;
-    typePersonnelLabel?: string;
+    categorie?: string;
     occupantsCount?: number;
     statut?: StatutPoste;
 }
@@ -188,10 +188,10 @@ export class OrganisationService {
         const unite = this.uniteRepo.create({
             nom: dto.nom,
             description: dto.description,
-            echelonStructurelId: dto.echelonStructurelId,
+            echelonStructurelId: dto.echelonStructurelId ?? undefined,
             code: dto.code,
             etablissementId: dto.etablissementId,
-            parentId: dto.parentId,
+            parentId: dto.parentId ?? undefined,
             ordre: dto.ordre,
             responsableNom: dto.responsableNom,
             responsableId: dto.responsableId,
@@ -242,7 +242,8 @@ export class OrganisationService {
         const qb = this.uniteRepo.createQueryBuilder('u')
             .leftJoinAndSelect('u.parent', 'parent');
 
-        const eid = filtres.etablissementId || etablissementId;
+        // Multi-tenant : l'etablissementId du token prime toujours sur le filtre client
+        const eid = etablissementId || filtres.etablissementId;
         if (eid) {
             qb.andWhere('u.etablissementId = :eid', { eid });
         }
@@ -499,8 +500,9 @@ export class OrganisationService {
         // Construire la hiérarchie
         unites.forEach((unite) => {
             const node = unitesMap.get(unite.id);
-            if (unite.parentId && unitesMap.has(unite.parentId)) {
-                const parent = unitesMap.get(unite.parentId);
+            if (!node) return;
+            const parent = unite.parentId ? unitesMap.get(unite.parentId) : undefined;
+            if (parent) {
                 parent.enfants.push(node);
             } else {
                 racines.push(node);
@@ -542,21 +544,27 @@ export class OrganisationService {
 
     async getCheminHierarchique(uniteId: string, etablissementId?: string): Promise<UniteOrganisationnelle[]> {
         // CTE récursif qui remonte de l'unité vers la racine
+        const params: string[] = [uniteId];
+        let anchorFilter = '';
+        if (etablissementId) {
+            params.push(etablissementId);
+            anchorFilter = ' AND "etablissementId" = $2';
+        }
         const rows = await this.uniteRepo.query(`
             WITH RECURSIVE chemin_up AS (
                 SELECT id, "parentId", nom, code, description, "echelonStructurelId",
-                       "etablissementId", ordre, responsableNom, statut, actif, 1 AS depth
+                       "etablissementId", ordre, "responsableNom", statut, actif, 1 AS depth
                 FROM unites_organisationnelles
-                WHERE id = $1
+                WHERE id = $1${anchorFilter}
                 UNION ALL
                 SELECT u.id, u."parentId", u.nom, u.code, u.description, u."echelonStructurelId",
-                       u."etablissementId", u.ordre, u.responsableNom, u.statut, u.actif, cu.depth + 1
+                       u."etablissementId", u.ordre, u."responsableNom", u.statut, u.actif, cu.depth + 1
                 FROM unites_organisationnelles u
                 INNER JOIN chemin_up cu ON u.id = cu."parentId"
                 WHERE cu.depth < 100
             )
             SELECT * FROM chemin_up ORDER BY depth DESC
-        `, [uniteId]);
+        `, params);
 
         return rows.map((r: any) => ({
             id: r.id,
@@ -576,9 +584,14 @@ export class OrganisationService {
     // ==================== HIERARCHIE PERSONNEL ====================
 
     async createHierarchie(dto: CreateHierarchiePersonnelDto): Promise<HierarchiePersonnel> {
-        // Vérifier qu'il n'y a pas de cycle hiérarchique
+        // Vérifier qu'il n'y a pas de cycle hiérarchique (personne → personne)
         if (dto.personnelId && dto.superieurId) {
             await this.verifierPasDeCycle(dto.personnelId, dto.superieurId, dto.etablissementId || '');
+        }
+
+        // Vérifier qu'il n'y a pas de cycle hiérarchique (poste → poste)
+        if (dto.posteId && dto.superieurPosteId) {
+            await this.verifierPasDeCyclePostes(dto.posteId, dto.superieurPosteId);
         }
 
         const hierarchie = this.hierarchieRepo.create({
@@ -586,6 +599,7 @@ export class OrganisationService {
             superieurId: dto.superieurId,
             typeRelation: dto.typeRelation as TypeRelationHierarchique,
             posteId: dto.posteId,
+            superieurPosteId: dto.superieurPosteId,
             etablissementId: dto.etablissementId,
             dateDebut: dto.dateDebut ? new Date(dto.dateDebut) : undefined,
             dateFin: dto.dateFin ? new Date(dto.dateFin) : undefined,
@@ -598,6 +612,8 @@ export class OrganisationService {
         logger.info(`Relation hiérarchique créée`, {
             personnelId: saved.personnelId,
             superieurId: saved.superieurId,
+            posteId: saved.posteId,
+            superieurPosteId: saved.superieurPosteId,
         });
         return saved;
     }
@@ -640,6 +656,40 @@ export class OrganisationService {
         }
     }
 
+    private async verifierPasDeCyclePostes(posteId: string, superieurPosteId: string): Promise<void> {
+        if (posteId === superieurPosteId) {
+            throw new AppError(
+                'Un poste ne peut pas être son propre supérieur',
+                400,
+                'HIERARCHIE_CYCLE'
+            );
+        }
+
+        // CTE récursif PostgreSQL : détection de cycle sur la chaîne poste → poste supérieur
+        const result = await this.hierarchieRepo.query(
+            `WITH RECURSIVE chaine AS (
+                SELECT h."superieurPosteId" AS id, 1 AS depth
+                FROM hierarchie_personnel h
+                WHERE h."posteId" = $1 AND h.actif = true
+            UNION ALL
+                SELECT h."superieurPosteId", c.depth + 1
+                FROM hierarchie_personnel h
+                INNER JOIN chaine c ON c.id = h."posteId"
+                WHERE h.actif = true AND c.depth < 50
+            )
+            SELECT COUNT(*) > 0 AS cycle FROM chaine WHERE id = $2`,
+            [posteId, superieurPosteId],
+        );
+
+        if (result[0]?.cycle) {
+            throw new AppError(
+                'Cycle hiérarchique détecté : ce poste supérieur est déjà subordonné (directement ou indirectement) à ce poste',
+                400,
+                'HIERARCHIE_CYCLE'
+            );
+        }
+    }
+
     private async verifierProgressionNiveau(parent: UniteOrganisationnelle, enfantEchelonStructurelId?: string | null): Promise<void> {
         if (!enfantEchelonStructurelId) return;
 
@@ -662,6 +712,20 @@ export class OrganisationService {
         }
     }
 
+    /** Relations chargées pour l'affichage des hiérarchies (noms via utilisateur.profil, unités pour l'organigramme) */
+    private readonly hierarchieRelations: string[] = [
+        'personnel',
+        'personnel.utilisateur',
+        'personnel.utilisateur.profil',
+        'superieur',
+        'superieur.utilisateur',
+        'superieur.utilisateur.profil',
+        'poste',
+        'poste.uniteOrganisationnelle',
+        'superieurPoste',
+        'superieurPoste.uniteOrganisationnelle',
+    ];
+
     async findHierarchies(etablissementId: string, personnelId?: string): Promise<HierarchiePersonnel[]> {
         const where: FindOptionsWhere<HierarchiePersonnel> = { etablissementId, actif: true };
 
@@ -671,6 +735,7 @@ export class OrganisationService {
 
         return this.hierarchieRepo.find({
             where,
+            relations: this.hierarchieRelations,
             order: { createdAt: 'DESC' },
         });
     }
@@ -682,6 +747,7 @@ export class OrganisationService {
                 etablissementId,
                 actif: true,
             },
+            relations: this.hierarchieRelations,
             order: { createdAt: 'DESC' },
         });
     }
@@ -693,6 +759,7 @@ export class OrganisationService {
                 etablissementId,
                 actif: true,
             },
+            relations: this.hierarchieRelations,
             order: { createdAt: 'DESC' },
         });
     }
@@ -707,6 +774,13 @@ export class OrganisationService {
 
         if (dto.superieurId && dto.superieurId !== hierarchie.superieurId) {
             await this.verifierPasDeCycle(hierarchie.personnelId!, dto.superieurId, hierarchie.etablissementId!);
+        }
+
+        if (dto.superieurPosteId && dto.superieurPosteId !== hierarchie.superieurPosteId) {
+            const posteId = dto.posteId ?? hierarchie.posteId;
+            if (posteId) {
+                await this.verifierPasDeCyclePostes(posteId, dto.superieurPosteId);
+            }
         }
 
         Object.assign(hierarchie, dto);
@@ -1119,10 +1193,10 @@ export class OrganisationService {
             const unite = queryRunner.manager.create(UniteOrganisationnelle, {
                 nom: dto.nom,
                 description: dto.description,
-                echelonStructurelId: dto.echelonStructurelId,
+                echelonStructurelId: dto.echelonStructurelId ?? undefined,
                 code: dto.code,
                 etablissementId: dto.etablissementId,
-                parentId: dto.parentId,
+                parentId: dto.parentId ?? undefined,
                 ordre: dto.ordre,
                 responsableNom: dto.responsableNom,
                 responsableId: dto.responsableId,
@@ -1193,7 +1267,7 @@ export class OrganisationService {
         tousEchelons.forEach((e) => echelonMap.set(e.id, { label: e.label, code: e.code, couleur: e.couleur }));
         const tousPostes = await this.posteRepo.find({
             where: { uniteOrganisationnelleId: In(Array.from(uniteIds)) },
-            relations: ['fonction', 'fonction.typePersonnel', 'niveauResponsabilite'],
+            relations: ['fonction', 'niveauResponsabilite'],
         });
 
         const postesParUnite = new Map<string, PosteOrganigramme[]>();
@@ -1205,8 +1279,8 @@ export class OrganisationService {
                 ...p,
                 fonctionLabel: p.fonction?.nom,
                 niveauResponsabiliteLabel: p.niveauResponsabilite?.label,
-                // Type statutaire dérivé de la fonction du poste (jamais stocké sur le poste)
-                typePersonnelLabel: p.fonction?.typePersonnel?.nom,
+                // Catégorie dérivée de la fonction du poste (jamais stockée sur le poste)
+                categorie: p.fonction?.categorie,
             });
         });
 

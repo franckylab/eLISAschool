@@ -43,151 +43,136 @@ export async function seedMatieresNiveaux(etablissementId: string): Promise<void
     const niveauMap = new Map<string, string>();
     niveaux.forEach(n => niveauMap.set(n.code, n.id));
 
-    // Configuration des matières par niveau avec coefficients
+    // Profils de programme partagés (coefficient + horaire hebdo par matière)
+    type ProgrammeMatiere = { code: string; coefficient: number; horaireHebdo: number };
+
+    const PROFILS: Record<string, ProgrammeMatiere[]> = {
+        // Maternelle (FR: PS/MS/GS — EN: NURSERY1/2) : éveil
+        MATERNELLE: [
+            { code: 'FR', coefficient: 2, horaireHebdo: 6 },
+            { code: 'MATH', coefficient: 2, horaireHebdo: 4 },
+            { code: 'ANG', coefficient: 1, horaireHebdo: 2 },
+            { code: 'ART', coefficient: 1, horaireHebdo: 3 },
+            { code: 'MUS', coefficient: 1, horaireHebdo: 2 },
+            { code: 'EPS', coefficient: 1, horaireHebdo: 3 },
+        ],
+        // Primaire cycle 1 (CI/CP/CE1/CE2 — STD1-3)
+        PRIMAIRE_BAS: [
+            { code: 'FR', coefficient: 3, horaireHebdo: 8 },
+            { code: 'MATH', coefficient: 3, horaireHebdo: 6 },
+            { code: 'ANG', coefficient: 1, horaireHebdo: 2 },
+            { code: 'SVT', coefficient: 2, horaireHebdo: 2 },
+            { code: 'EPS', coefficient: 1, horaireHebdo: 2 },
+            { code: 'ART', coefficient: 1, horaireHebdo: 2 },
+            { code: 'EMC', coefficient: 1, horaireHebdo: 1 },
+        ],
+        // Primaire cycle 2 (CM1/CM2 — STD4-6)
+        PRIMAIRE_HAUT: [
+            { code: 'MATH', coefficient: 3, horaireHebdo: 6 },
+            { code: 'FR', coefficient: 3, horaireHebdo: 8 },
+            { code: 'ANG', coefficient: 2, horaireHebdo: 3 },
+            { code: 'HG', coefficient: 2, horaireHebdo: 3 },
+            { code: 'SVT', coefficient: 2, horaireHebdo: 2 },
+            { code: 'EPS', coefficient: 1, horaireHebdo: 2 },
+            { code: 'ART', coefficient: 1, horaireHebdo: 2 },
+            { code: 'EMC', coefficient: 1, horaireHebdo: 1 },
+        ],
+        // Collège 1er cycle (6EME/5EME — FORM1/2)
+        COLLEGE_BAS: [
+            { code: 'MATH', coefficient: 3, horaireHebdo: 5 },
+            { code: 'FR', coefficient: 3, horaireHebdo: 5 },
+            { code: 'ANG', coefficient: 2, horaireHebdo: 3 },
+            { code: 'HG', coefficient: 2, horaireHebdo: 3 },
+            { code: 'SVT', coefficient: 2, horaireHebdo: 2 },
+            { code: 'PC', coefficient: 2, horaireHebdo: 2 },
+            { code: 'INFO', coefficient: 1, horaireHebdo: 1 },
+            { code: 'EPS', coefficient: 1, horaireHebdo: 2 },
+            { code: 'ART', coefficient: 1, horaireHebdo: 1 },
+            { code: 'EMC', coefficient: 1, horaireHebdo: 1 },
+        ],
+        // Collège 2e cycle (4EME/3EME — FORM3/4/5)
+        COLLEGE_HAUT: [
+            { code: 'MATH', coefficient: 4, horaireHebdo: 5 },
+            { code: 'FR', coefficient: 4, horaireHebdo: 5 },
+            { code: 'ANG', coefficient: 3, horaireHebdo: 3 },
+            { code: 'HG', coefficient: 3, horaireHebdo: 3 },
+            { code: 'SVT', coefficient: 3, horaireHebdo: 2 },
+            { code: 'PC', coefficient: 3, horaireHebdo: 2 },
+            { code: 'INFO', coefficient: 1, horaireHebdo: 1 },
+            { code: 'EPS', coefficient: 1, horaireHebdo: 2 },
+            { code: 'EMC', coefficient: 1, horaireHebdo: 1 },
+        ],
+        // Lycée 2nde/1ère (SECONDE/PREMIERE — LOWER6)
+        LYCEE_BAS: [
+            { code: 'MATH', coefficient: 5, horaireHebdo: 6 },
+            { code: 'SVT', coefficient: 4, horaireHebdo: 4 },
+            { code: 'PC', coefficient: 4, horaireHebdo: 4 },
+            { code: 'FR', coefficient: 4, horaireHebdo: 4 },
+            { code: 'ANG', coefficient: 3, horaireHebdo: 3 },
+            { code: 'HG', coefficient: 3, horaireHebdo: 3 },
+            { code: 'SE', coefficient: 2, horaireHebdo: 2 },
+            { code: 'INFO', coefficient: 1, horaireHebdo: 1 },
+            { code: 'EPS', coefficient: 1, horaireHebdo: 2 },
+        ],
+        // Lycée terminal (TERMINALE — UPPER6) : Série D
+        LYCEE_HAUT: [
+            { code: 'MATH', coefficient: 7, horaireHebdo: 7 },
+            { code: 'SVT', coefficient: 6, horaireHebdo: 6 },
+            { code: 'PC', coefficient: 6, horaireHebdo: 6 },
+            { code: 'FR', coefficient: 3, horaireHebdo: 3 },
+            { code: 'ANG', coefficient: 3, horaireHebdo: 3 },
+            { code: 'HG', coefficient: 2, horaireHebdo: 2 },
+            { code: 'PHILO', coefficient: 3, horaireHebdo: 3 },
+            { code: 'EPS', coefficient: 1, horaireHebdo: 2 },
+        ],
+    };
+
+    // Mapping niveau → profil (couvre les 31 niveaux des deux sous-systèmes)
+    const NIVEAU_PROFILS: Array<{ niveauCode: string; sousSysteme: SousSysteme; profil: keyof typeof PROFILS }> = [
+        // Francophone
+        { niveauCode: 'PS', sousSysteme: SousSysteme.FRANCOPHONE, profil: 'MATERNELLE' },
+        { niveauCode: 'MS', sousSysteme: SousSysteme.FRANCOPHONE, profil: 'MATERNELLE' },
+        { niveauCode: 'GS', sousSysteme: SousSysteme.FRANCOPHONE, profil: 'MATERNELLE' },
+        { niveauCode: 'CI', sousSysteme: SousSysteme.FRANCOPHONE, profil: 'PRIMAIRE_BAS' },
+        { niveauCode: 'CP', sousSysteme: SousSysteme.FRANCOPHONE, profil: 'PRIMAIRE_BAS' },
+        { niveauCode: 'CE1', sousSysteme: SousSysteme.FRANCOPHONE, profil: 'PRIMAIRE_BAS' },
+        { niveauCode: 'CE2', sousSysteme: SousSysteme.FRANCOPHONE, profil: 'PRIMAIRE_BAS' },
+        { niveauCode: 'CM1', sousSysteme: SousSysteme.FRANCOPHONE, profil: 'PRIMAIRE_HAUT' },
+        { niveauCode: 'CM2', sousSysteme: SousSysteme.FRANCOPHONE, profil: 'PRIMAIRE_HAUT' },
+        { niveauCode: '6EME', sousSysteme: SousSysteme.FRANCOPHONE, profil: 'COLLEGE_BAS' },
+        { niveauCode: '5EME', sousSysteme: SousSysteme.FRANCOPHONE, profil: 'COLLEGE_BAS' },
+        { niveauCode: '4EME', sousSysteme: SousSysteme.FRANCOPHONE, profil: 'COLLEGE_HAUT' },
+        { niveauCode: '3EME', sousSysteme: SousSysteme.FRANCOPHONE, profil: 'COLLEGE_HAUT' },
+        { niveauCode: 'SECONDE', sousSysteme: SousSysteme.FRANCOPHONE, profil: 'LYCEE_BAS' },
+        { niveauCode: 'PREMIERE', sousSysteme: SousSysteme.FRANCOPHONE, profil: 'LYCEE_BAS' },
+        { niveauCode: 'TERMINALE', sousSysteme: SousSysteme.FRANCOPHONE, profil: 'LYCEE_HAUT' },
+        // Anglophone
+        { niveauCode: 'NURSERY1', sousSysteme: SousSysteme.ANGLOPHONE, profil: 'MATERNELLE' },
+        { niveauCode: 'NURSERY2', sousSysteme: SousSysteme.ANGLOPHONE, profil: 'MATERNELLE' },
+        { niveauCode: 'STD1', sousSysteme: SousSysteme.ANGLOPHONE, profil: 'PRIMAIRE_BAS' },
+        { niveauCode: 'STD2', sousSysteme: SousSysteme.ANGLOPHONE, profil: 'PRIMAIRE_BAS' },
+        { niveauCode: 'STD3', sousSysteme: SousSysteme.ANGLOPHONE, profil: 'PRIMAIRE_BAS' },
+        { niveauCode: 'STD4', sousSysteme: SousSysteme.ANGLOPHONE, profil: 'PRIMAIRE_HAUT' },
+        { niveauCode: 'STD5', sousSysteme: SousSysteme.ANGLOPHONE, profil: 'PRIMAIRE_HAUT' },
+        { niveauCode: 'STD6', sousSysteme: SousSysteme.ANGLOPHONE, profil: 'PRIMAIRE_HAUT' },
+        { niveauCode: 'FORM1', sousSysteme: SousSysteme.ANGLOPHONE, profil: 'COLLEGE_BAS' },
+        { niveauCode: 'FORM2', sousSysteme: SousSysteme.ANGLOPHONE, profil: 'COLLEGE_BAS' },
+        { niveauCode: 'FORM3', sousSysteme: SousSysteme.ANGLOPHONE, profil: 'COLLEGE_HAUT' },
+        { niveauCode: 'FORM4', sousSysteme: SousSysteme.ANGLOPHONE, profil: 'COLLEGE_HAUT' },
+        { niveauCode: 'FORM5', sousSysteme: SousSysteme.ANGLOPHONE, profil: 'COLLEGE_HAUT' },
+        { niveauCode: 'LOWER6', sousSysteme: SousSysteme.ANGLOPHONE, profil: 'LYCEE_BAS' },
+        { niveauCode: 'UPPER6', sousSysteme: SousSysteme.ANGLOPHONE, profil: 'LYCEE_HAUT' },
+    ];
+
     const matieresNiveauxData: Array<{
         niveauCode: string;
         sousSysteme: SousSysteme;
-        matieres: Array<{ code: string; coefficient: number; horaireHebdo: number }>;
-    }> = [
-        // Primaire Francophone (CI-CM2)
-        {
-            niveauCode: 'CM2',
-            sousSysteme: SousSysteme.FRANCOPHONE,
-            matieres: [
-                { code: 'MATH', coefficient: 3, horaireHebdo: 6 },
-                { code: 'FR', coefficient: 3, horaireHebdo: 8 },
-                { code: 'ANG', coefficient: 2, horaireHebdo: 3 },
-                { code: 'HG', coefficient: 2, horaireHebdo: 3 },
-                { code: 'SVT', coefficient: 2, horaireHebdo: 2 },
-                { code: 'EPS', coefficient: 1, horaireHebdo: 2 },
-                { code: 'ART', coefficient: 1, horaireHebdo: 2 },
-                { code: 'EMC', coefficient: 1, horaireHebdo: 1 },
-            ],
-        },
-        {
-            niveauCode: 'CM1',
-            sousSysteme: SousSysteme.FRANCOPHONE,
-            matieres: [
-                { code: 'MATH', coefficient: 3, horaireHebdo: 6 },
-                { code: 'FR', coefficient: 3, horaireHebdo: 8 },
-                { code: 'ANG', coefficient: 2, horaireHebdo: 2 },
-                { code: 'HG', coefficient: 2, horaireHebdo: 3 },
-                { code: 'SVT', coefficient: 2, horaireHebdo: 2 },
-                { code: 'EPS', coefficient: 1, horaireHebdo: 2 },
-                { code: 'ART', coefficient: 1, horaireHebdo: 2 },
-                { code: 'EMC', coefficient: 1, horaireHebdo: 1 },
-            ],
-        },
-
-        // Collège Francophone
-        {
-            niveauCode: '6EME',
-            sousSysteme: SousSysteme.FRANCOPHONE,
-            matieres: [
-                { code: 'MATH', coefficient: 3, horaireHebdo: 5 },
-                { code: 'FR', coefficient: 3, horaireHebdo: 5 },
-                { code: 'ANG', coefficient: 2, horaireHebdo: 3 },
-                { code: 'HG', coefficient: 2, horaireHebdo: 3 },
-                { code: 'SVT', coefficient: 2, horaireHebdo: 2 },
-                { code: 'PC', coefficient: 2, horaireHebdo: 2 },
-                { code: 'EPS', coefficient: 1, horaireHebdo: 2 },
-                { code: 'ART', coefficient: 1, horaireHebdo: 1 },
-                { code: 'EMC', coefficient: 1, horaireHebdo: 1 },
-            ],
-        },
-        {
-            niveauCode: '3EME',
-            sousSysteme: SousSysteme.FRANCOPHONE,
-            matieres: [
-                { code: 'MATH', coefficient: 4, horaireHebdo: 5 },
-                { code: 'FR', coefficient: 4, horaireHebdo: 5 },
-                { code: 'ANG', coefficient: 3, horaireHebdo: 3 },
-                { code: 'HG', coefficient: 3, horaireHebdo: 3 },
-                { code: 'SVT', coefficient: 3, horaireHebdo: 2 },
-                { code: 'PC', coefficient: 3, horaireHebdo: 2 },
-                { code: 'PHILO', coefficient: 2, horaireHebdo: 2 },
-                { code: 'EPS', coefficient: 1, horaireHebdo: 2 },
-                { code: 'EMC', coefficient: 1, horaireHebdo: 1 },
-            ],
-        },
-
-        // Lycée Francophone - Série D
-        {
-            niveauCode: 'TERMINALE',
-            sousSysteme: SousSysteme.FRANCOPHONE,
-            matieres: [
-                { code: 'MATH', coefficient: 7, horaireHebdo: 7 },
-                { code: 'SVT', coefficient: 6, horaireHebdo: 6 },
-                { code: 'PC', coefficient: 6, horaireHebdo: 6 },
-                { code: 'FR', coefficient: 3, horaireHebdo: 3 },
-                { code: 'ANG', coefficient: 3, horaireHebdo: 3 },
-                { code: 'HG', coefficient: 2, horaireHebdo: 2 },
-                { code: 'PHILO', coefficient: 3, horaireHebdo: 3 },
-                { code: 'EPS', coefficient: 1, horaireHebdo: 2 },
-            ],
-        },
-
-        // Primaire Anglophone
-        {
-            niveauCode: 'STD6',
-            sousSysteme: SousSysteme.ANGLOPHONE,
-            matieres: [
-                { code: 'MATH', coefficient: 3, horaireHebdo: 6 },
-                { code: 'ANG', coefficient: 3, horaireHebdo: 8 },
-                { code: 'FR', coefficient: 2, horaireHebdo: 3 },
-                { code: 'HG', coefficient: 2, horaireHebdo: 3 },
-                { code: 'SVT', coefficient: 2, horaireHebdo: 2 },
-                { code: 'EPS', coefficient: 1, horaireHebdo: 2 },
-                { code: 'ART', coefficient: 1, horaireHebdo: 2 },
-            ],
-        },
-
-        // Collège Anglophone
-        {
-            niveauCode: 'FORM1',
-            sousSysteme: SousSysteme.ANGLOPHONE,
-            matieres: [
-                { code: 'MATH', coefficient: 3, horaireHebdo: 5 },
-                { code: 'ANG', coefficient: 3, horaireHebdo: 5 },
-                { code: 'FR', coefficient: 2, horaireHebdo: 3 },
-                { code: 'HG', coefficient: 2, horaireHebdo: 3 },
-                { code: 'SVT', coefficient: 2, horaireHebdo: 2 },
-                { code: 'PC', coefficient: 2, horaireHebdo: 2 },
-                { code: 'EPS', coefficient: 1, horaireHebdo: 2 },
-                { code: 'ART', coefficient: 1, horaireHebdo: 1 },
-            ],
-        },
-        {
-            niveauCode: 'FORM5',
-            sousSysteme: SousSysteme.ANGLOPHONE,
-            matieres: [
-                { code: 'MATH', coefficient: 4, horaireHebdo: 5 },
-                { code: 'ANG', coefficient: 4, horaireHebdo: 5 },
-                { code: 'FR', coefficient: 3, horaireHebdo: 3 },
-                { code: 'HG', coefficient: 3, horaireHebdo: 3 },
-                { code: 'SVT', coefficient: 3, horaireHebdo: 2 },
-                { code: 'PC', coefficient: 3, horaireHebdo: 2 },
-                { code: 'PHILO', coefficient: 2, horaireHebdo: 2 },
-                { code: 'EPS', coefficient: 1, horaireHebdo: 2 },
-            ],
-        },
-
-        // Lycée Anglophone
-        {
-            niveauCode: 'UPPER6',
-            sousSysteme: SousSysteme.ANGLOPHONE,
-            matieres: [
-                { code: 'MATH', coefficient: 7, horaireHebdo: 7 },
-                { code: 'SVT', coefficient: 6, horaireHebdo: 6 },
-                { code: 'PC', coefficient: 6, horaireHebdo: 6 },
-                { code: 'ANG', coefficient: 3, horaireHebdo: 3 },
-                { code: 'FR', coefficient: 3, horaireHebdo: 3 },
-                { code: 'HG', coefficient: 2, horaireHebdo: 2 },
-                { code: 'PHILO', coefficient: 3, horaireHebdo: 3 },
-                { code: 'EPS', coefficient: 1, horaireHebdo: 2 },
-            ],
-        },
-    ];
+        matieres: ProgrammeMatiere[];
+    }> = NIVEAU_PROFILS.map((n) => ({
+        niveauCode: n.niveauCode,
+        sousSysteme: n.sousSysteme,
+        matieres: PROFILS[n.profil],
+    }));
 
     let createdCount = 0;
     let skippedCount = 0;
@@ -245,18 +230,17 @@ if (require.main === module) {
 
             const { Etablissement } = await import('@modules/etablissement/entities');
             const etablissementRepo = AppDataSource.getRepository(Etablissement);
-            const etablissement = await etablissementRepo.findOne({
-                where: { codeEtablissement: 'ETAB-001' },
-            });
+            const etablissements = await etablissementRepo.find();
 
-            if (!etablissement) {
-                logger.error('Établissement par défaut non trouvé');
+            if (etablissements.length === 0) {
+                logger.error('Aucun établissement trouvé');
                 process.exit(1);
             }
 
-            logger.info(`Établissement: ${etablissement.nom} (${etablissement.id})`);
-
-            await seedMatieresNiveaux(etablissement.id);
+            for (const etablissement of etablissements) {
+                logger.info(`Établissement: ${etablissement.nom} (${etablissement.id})`);
+                await seedMatieresNiveaux(etablissement.id);
+            }
 
             await AppDataSource.destroy();
             logger.info('✅ Seed des matières-niveaux terminé');

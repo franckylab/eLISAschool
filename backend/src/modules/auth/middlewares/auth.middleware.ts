@@ -8,6 +8,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { TokenService } from '../services/token.service';
+import { permissionResolverService } from '../services/permission-resolver.service';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 
@@ -39,7 +40,7 @@ const tokenService = new TokenService();
  * Vérifie le token et attache l'utilisateur à la requête
  */
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
-    try {
+    (async () => {
         // Récupération du token depuis le header Authorization
         const authHeader = req.headers.authorization;
 
@@ -62,13 +63,19 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
             throw new AppError('Token invalide ou expiré', 401, 'INVALID_TOKEN');
         }
 
+        // Résolution des permissions côté serveur (avec cache) — plus jamais embarquées dans le JWT
+        const resolvedPermissions = await permissionResolverService.resolvePermissions(
+            payload.sub,
+            payload.etablissementId
+        );
+
         // Attache l'utilisateur à la requête
         req.utilisateur = {
             id: payload.sub,
             email: payload.email,
             role: payload.role,
             roles: payload.roles || [payload.role], // NOUVEAU : tous les rôles
-            permissions: payload.permissions, // NOUVEAU : permissions résolues
+            permissions: Array.from(resolvedPermissions), // Résolues côté serveur (cache)
             etablissementId: payload.etablissementId,
             etablissements: payload.etablissements, // NOUVEAU : multi-établissements
         };
@@ -80,9 +87,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
         }
 
         next();
-    } catch (error) {
-        next(error);
-    }
+    })().catch(next);
 }
 
 /**
@@ -90,7 +95,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
  * N'échoue pas si le token est absent, mais l'attache s'il est présent
  */
 export function optionalAuthMiddleware(req: Request, res: Response, next: NextFunction): void {
-    try {
+    (async () => {
         const authHeader = req.headers.authorization;
 
         if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -98,12 +103,17 @@ export function optionalAuthMiddleware(req: Request, res: Response, next: NextFu
             const payload = tokenService.verifyAccessToken(token);
 
             if (payload) {
+                const resolvedPermissions = await permissionResolverService.resolvePermissions(
+                    payload.sub,
+                    payload.etablissementId
+                );
+
                 req.utilisateur = {
                     id: payload.sub,
                     email: payload.email,
                     role: payload.role,
                     roles: payload.roles || [payload.role], // NOUVEAU : tous les rôles
-                    permissions: payload.permissions, // NOUVEAU : permissions résolues
+                    permissions: Array.from(resolvedPermissions), // Résolues côté serveur (cache)
                     etablissementId: payload.etablissementId,
                     etablissements: payload.etablissements, // NOUVEAU : multi-établissements
                 };
@@ -111,10 +121,10 @@ export function optionalAuthMiddleware(req: Request, res: Response, next: NextFu
         }
 
         next();
-    } catch (error) {
+    })().catch(() => {
         // On ignore les erreurs d'authentification optionnelle
         next();
-    }
+    });
 }
 
 export default authMiddleware;

@@ -96,6 +96,7 @@ import { Route as AuthOrganisationNomenclaturesRouteImport } from './routes/_aut
 import { Route as AuthOrganisationModelesRouteImport } from './routes/_auth.organisation.modeles'
 import { Route as AuthOrganisationHierarchieRouteImport } from './routes/_auth.organisation.hierarchie'
 import { Route as AuthOrganisationFonctionsRouteImport } from './routes/_auth.organisation.fonctions'
+import { Route as AuthNotesSaisieRouteImport } from './routes/_auth.notes.saisie'
 import { Route as AuthNotesIdRouteImport } from './routes/_auth.notes.$id'
 import { Route as AuthNiveauxIdRouteImport } from './routes/_auth.niveaux.$id'
 import { Route as AuthMatieresIdRouteImport } from './routes/_auth.matieres.$id'
@@ -576,6 +577,11 @@ const AuthOrganisationFonctionsRoute =
     path: '/fonctions',
     getParentRoute: () => AuthOrganisationRoute,
   } as any)
+const AuthNotesSaisieRoute = AuthNotesSaisieRouteImport.update({
+  id: '/saisie',
+  path: '/saisie',
+  getParentRoute: () => AuthNotesRoute,
+} as any)
 const AuthNotesIdRoute = AuthNotesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -829,6 +835,7 @@ export interface FileRoutesByFullPath {
   '/matieres/$id': typeof AuthMatieresIdRoute
   '/niveaux/$id': typeof AuthNiveauxIdRoute
   '/notes/$id': typeof AuthNotesIdRoute
+  '/notes/saisie': typeof AuthNotesSaisieRoute
   '/organisation/fonctions': typeof AuthOrganisationFonctionsRouteWithChildren
   '/organisation/hierarchie': typeof AuthOrganisationHierarchieRouteWithChildren
   '/organisation/modeles': typeof AuthOrganisationModelesRoute
@@ -929,6 +936,7 @@ export interface FileRoutesByTo {
   '/matieres/$id': typeof AuthMatieresIdRoute
   '/niveaux/$id': typeof AuthNiveauxIdRoute
   '/notes/$id': typeof AuthNotesIdRoute
+  '/notes/saisie': typeof AuthNotesSaisieRoute
   '/organisation/modeles': typeof AuthOrganisationModelesRoute
   '/paie/configuration': typeof AuthPaieConfigurationRoute
   '/periodes/$id': typeof AuthPeriodesIdRoute
@@ -1048,6 +1056,7 @@ export interface FileRoutesById {
   '/_auth/matieres/$id': typeof AuthMatieresIdRoute
   '/_auth/niveaux/$id': typeof AuthNiveauxIdRoute
   '/_auth/notes/$id': typeof AuthNotesIdRoute
+  '/_auth/notes/saisie': typeof AuthNotesSaisieRoute
   '/_auth/organisation/fonctions': typeof AuthOrganisationFonctionsRouteWithChildren
   '/_auth/organisation/hierarchie': typeof AuthOrganisationHierarchieRouteWithChildren
   '/_auth/organisation/modeles': typeof AuthOrganisationModelesRoute
@@ -1172,6 +1181,7 @@ export interface FileRouteTypes {
     | '/matieres/$id'
     | '/niveaux/$id'
     | '/notes/$id'
+    | '/notes/saisie'
     | '/organisation/fonctions'
     | '/organisation/hierarchie'
     | '/organisation/modeles'
@@ -1272,6 +1282,7 @@ export interface FileRouteTypes {
     | '/matieres/$id'
     | '/niveaux/$id'
     | '/notes/$id'
+    | '/notes/saisie'
     | '/organisation/modeles'
     | '/paie/configuration'
     | '/periodes/$id'
@@ -1390,6 +1401,7 @@ export interface FileRouteTypes {
     | '/_auth/matieres/$id'
     | '/_auth/niveaux/$id'
     | '/_auth/notes/$id'
+    | '/_auth/notes/saisie'
     | '/_auth/organisation/fonctions'
     | '/_auth/organisation/hierarchie'
     | '/_auth/organisation/modeles'
@@ -2066,6 +2078,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthOrganisationFonctionsRouteImport
       parentRoute: typeof AuthOrganisationRoute
     }
+    '/_auth/notes/saisie': {
+      id: '/_auth/notes/saisie'
+      path: '/saisie'
+      fullPath: '/notes/saisie'
+      preLoaderRoute: typeof AuthNotesSaisieRouteImport
+      parentRoute: typeof AuthNotesRoute
+    }
     '/_auth/notes/$id': {
       id: '/_auth/notes/$id'
       path: '/$id'
@@ -2499,11 +2518,13 @@ const AuthNiveauxRouteWithChildren = AuthNiveauxRoute._addFileChildren(
 
 interface AuthNotesRouteChildren {
   AuthNotesIdRoute: typeof AuthNotesIdRoute
+  AuthNotesSaisieRoute: typeof AuthNotesSaisieRoute
   AuthNotesIndexRoute: typeof AuthNotesIndexRoute
 }
 
 const AuthNotesRouteChildren: AuthNotesRouteChildren = {
   AuthNotesIdRoute: AuthNotesIdRoute,
+  AuthNotesSaisieRoute: AuthNotesSaisieRoute,
   AuthNotesIndexRoute: AuthNotesIndexRoute,
 }
 

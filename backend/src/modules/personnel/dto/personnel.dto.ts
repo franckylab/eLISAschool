@@ -7,16 +7,10 @@
 
 import { z } from 'zod';
 import { paginationWithSortSchema, searchSchema } from '@common/dto/pagination.dto';
-
-export const createTypePersonnelSchema = z.object({
-    code: z.string().min(2).max(50),
-    nom: z.string().min(2).max(100),
-    description: z.string().max(200).optional(),
-});
+import { CategorieFonction } from '../../../shared/constants/personnel.constants';
 
 export const createPersonnelSchema = z.object({
     utilisateurId: z.string().uuid().optional(),
-    typePersonnelId: z.string().uuid().optional(),
     matricule: z.string().min(2).max(50),
     dateEmbauche: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
     statut: z.enum(['ACTIF', 'INACTIF', 'CONGE']).default('ACTIF'),
@@ -30,13 +24,6 @@ export const createPersonnelSchema = z.object({
 
 export const updatePersonnelSchema = createPersonnelSchema.partial().omit({ utilisateurId: true });
 
-export const updateTypePersonnelSchema = createTypePersonnelSchema.partial().extend({
-    actif: z.boolean().optional(),
-    estSysteme: z.boolean().optional(),
-});
-
-export type CreateTypePersonnelDto = z.infer<typeof createTypePersonnelSchema>;
-export type UpdateTypePersonnelDto = z.infer<typeof updateTypePersonnelSchema>;
 export type CreatePersonnelDto = z.infer<typeof createPersonnelSchema>;
 export type UpdatePersonnelDto = z.infer<typeof updatePersonnelSchema>;
 
@@ -46,8 +33,8 @@ export type UpdatePersonnelDto = z.infer<typeof updatePersonnelSchema>;
 export const queryPersonnelSchema = paginationWithSortSchema
     .merge(searchSchema)
     .extend({
-        typePersonnelId: z.string().uuid().optional(),
-        typeCode: z.string().max(50).optional(),
+        categorie: z.nativeEnum(CategorieFonction).optional(),
+        estEnseignant: z.coerce.boolean().optional(),
         etablissementId: z.string().uuid().optional(),
         statut: z.enum(['ACTIF', 'INACTIF', 'CONGE']).optional(),
         actif: z.coerce.boolean().optional(),
@@ -57,10 +44,6 @@ export const queryPersonnelSchema = paginationWithSortSchema
 
 export const updateStatutSchema = z.object({
     statut: z.enum(['ACTIF', 'INACTIF', 'CONGE']),
-});
-
-export const updateTypePersonnelMembreSchema = z.object({
-    typePersonnelId: z.string().uuid(),
 });
 
 export const updateDateEntreeSchema = z.object({

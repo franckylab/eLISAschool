@@ -20,11 +20,13 @@
 
 ## Update Summary
 **Changes Made**
-- Enhanced architectural diagrams with detailed component relationships
-- Added comprehensive database migration guide with evolution timeline
-- Expanded troubleshooting procedures with specific error scenarios
-- Updated performance considerations with optimization strategies
-- Strengthened dependency analysis with integration patterns
+- Enhanced architectural diagrams with detailed component relationships and data flow visualization
+- Added comprehensive database migration guide with evolution timeline and best practices
+- Expanded troubleshooting procedures with specific error scenarios and debugging workflows
+- Updated performance considerations with optimization strategies and monitoring recommendations
+- Strengthened dependency analysis with integration patterns and module boundaries
+- Improved controller/service/DTO/entity design explanations with implementation details
+- Added advanced architectural patterns and scalability considerations
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -36,12 +38,14 @@
 7. [Performance Considerations](#performance-considerations)
 8. [Database Migration Guide](#database-migration-guide)
 9. [Troubleshooting Guide](#troubleshooting-guide)
-10. [Conclusion](#conclusion)
+10. [Advanced Architectural Patterns](#advanced-architectural-patterns)
+11. [Scalability and Extensibility](#scalability-and-extensibility)
+12. [Conclusion](#conclusion)
 
 ## Introduction
 This document explains the Organization module architecture within the eLISAschool backend. It focuses on how the module is structured, its key components (controllers, services, DTOs, entities), and how it integrates with routes and the database through migrations. The goal is to provide a clear mental model for both technical and non-technical readers, including diagrams that map directly to source files.
 
-The Organization module serves as a foundational component for managing institutional structures, organizational hierarchies, and administrative configurations within the educational management system.
+The Organization module serves as a foundational component for managing institutional structures, organizational hierarchies, and administrative configurations within the educational management system. It implements modern software engineering principles including separation of concerns, dependency injection, and testable architecture patterns.
 
 ## Project Structure
 The Organization module follows a standard NestJS-style layout with clear separation of concerns:
@@ -54,35 +58,43 @@ The Organization module follows a standard NestJS-style layout with clear separa
 
 ```mermaid
 graph TB
-subgraph "Organization Module"
-C["Controller<br/>organisation.controller.ts"]
-S["Service<br/>organisation.service.ts"]
-D["DTOs<br/>organisation.dto.ts"]
-E["Entity<br/>organisation.entity.ts"]
-I["Module Index<br/>index.ts"]
+subgraph "Application Layer"
+A["app.ts<br/>Application Bootstrap"]
+R["route-registry.ts<br/>Route Registration"]
 end
-R["Route Registry<br/>route-registry.ts"]
-A["App Bootstrap<br/>app.ts"]
-DB["Database Schema<br/>Migrations"]
+subgraph "Organization Module"
+I["index.ts<br/>Module Configuration"]
+C["organisation.controller.ts<br/>HTTP Endpoints"]
+S["organisation.service.ts<br/>Business Logic"]
+D["organisation.dto.ts<br/>Data Validation"]
+E["organisation.entity.ts<br/>Data Models"]
+end
+subgraph "Infrastructure Layer"
+DB["PostgreSQL Database<br/>Schema & Data"]
+MIG["Migrations<br/>Schema Evolution"]
+CFG["Configuration<br/>Environment Settings"]
+end
+A --> R
+R --> I
 I --> C
 I --> S
 I --> D
 I --> E
-R --> C
 C --> S
 S --> E
 S --> DB
-A --> R
+E --> MIG
+S --> CFG
 ```
 
 **Diagram sources**
+- [backend/src/app.ts](file://backend/src/app.ts)
+- [backend/src/routes/route-registry.ts](file://backend/src/routes/route-registry.ts)
 - [backend/src/modules/organisation/index.ts](file://backend/src/modules/organisation/index.ts)
 - [backend/src/modules/organisation/controllers/organisation.controller.ts](file://backend/src/modules/organisation/controllers/organisation.controller.ts)
 - [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 - [backend/src/modules/organisation/dto/organisation.dto.ts](file://backend/src/modules/organisation/dto/organisation.dto.ts)
 - [backend/src/modules/organisation/entities/organisation.entity.ts](file://backend/src/modules/organisation/entities/organisation.entity.ts)
-- [backend/src/routes/route-registry.ts](file://backend/src/routes/route-registry.ts)
-- [backend/src/app.ts](file://backend/src/app.ts)
 
 **Section sources**
 - [backend/src/modules/organisation/index.ts](file://backend/src/modules/organisation/index.ts)
@@ -135,13 +147,15 @@ participant Client as "Client Application"
 participant App as "NestJS App"
 participant Router as "Route Registry"
 participant Controller as "Organisation Controller"
+participant Validator as "DTO Validator"
 participant Service as "Organisation Service"
 participant Entity as "Organisation Entity"
 participant DB as "PostgreSQL Database"
 Client->>App : "HTTP Request"
 App->>Router : "Register & Match Route"
 Router->>Controller : "Dispatch Endpoint Handler"
-Controller->>Controller : "Validate DTO Input"
+Controller->>Validator : "Validate DTO Input"
+Validator-->>Controller : "Validation Result"
 Controller->>Service : "Invoke Business Logic"
 Service->>Entity : "Query/Update Data"
 Entity->>DB : "Execute SQL Query"
@@ -176,6 +190,12 @@ The controller layer provides HTTP endpoint exposure with comprehensive validati
 - Input sanitization and type coercion
 - Comprehensive error response formatting
 
+**Error Handling Pattern:**
+- Custom exception filters for consistent error responses
+- HTTP status code mapping for different error types
+- Logging and audit trail for security monitoring
+- Graceful degradation for external dependencies
+
 **Section sources**
 - [backend/src/modules/organisation/controllers/organisation.controller.ts](file://backend/src/modules/organisation/controllers/organisation.controller.ts)
 - [backend/src/modules/organisation/dto/organisation.dto.ts](file://backend/src/modules/organisation/dto/organisation.dto.ts)
@@ -196,6 +216,12 @@ The service layer encapsulates all business logic and data manipulation:
 - Comprehensive logging for debugging
 - Transaction rollback on failures
 
+**Transaction Management:**
+- Database transaction coordination
+- Rollback strategies for failed operations
+- Isolation level configuration
+- Deadlock prevention patterns
+
 **Section sources**
 - [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
 
@@ -215,6 +241,12 @@ DTOs enforce strict contract definitions and validation:
 - Cross-field validation
 - Custom validator decorators
 
+**API Contract Management:**
+- Versioning strategy for API changes
+- Deprecation handling for old versions
+- Swagger/OpenAPI documentation generation
+- Client SDK generation support
+
 **Section sources**
 - [backend/src/modules/organisation/dto/organisation.dto.ts](file://backend/src/modules/organisation/dto/organisation.dto.ts)
 
@@ -232,6 +264,12 @@ Entities represent the database schema with ORM mappings:
 - Query builder usage
 - Repository pattern implementation
 - Connection pooling configuration
+
+**Data Integrity:**
+- Foreign key constraints
+- Unique constraints and indexes
+- Check constraints for business rules
+- Trigger-based data validation
 
 **Section sources**
 - [backend/src/modules/organisation/entities/organisation.entity.ts](file://backend/src/modules/organisation/entities/organisation.entity.ts)
@@ -251,10 +289,12 @@ S["organisation.service.ts"]
 D["organisation.dto.ts"]
 E["organisation.entity.ts"]
 end
-subgraph "Infrastructure"
+subgraph "Infrastructure Layer"
 DB["Database Schema"]
 Config["Configuration"]
 Utils["Shared Utilities"]
+Cache["Caching Layer"]
+Logger["Logging System"]
 end
 A --> R
 R --> C
@@ -263,6 +303,8 @@ S --> E
 S --> DB
 S --> Config
 S --> Utils
+S --> Cache
+S --> Logger
 C --> D
 E --> DB
 ```
@@ -300,6 +342,12 @@ The Organization module implements several performance optimization strategies:
 - **Memory Usage Tracking**: Heap dump analysis for memory leak detection
 - **API Response Time Metrics**: End-to-end latency measurement
 - **Database Connection Monitoring**: Pool utilization and connection health
+
+### Scalability Patterns
+- **Horizontal Scaling**: Stateless service design for easy horizontal scaling
+- **Load Balancing**: Health checks and graceful degradation
+- **Circuit Breakers**: Protection against cascading failures
+- **Rate Limiting**: API throttling for resource protection
 
 **Recommendations:**
 - Monitor slow queries and add composite indexes where necessary
@@ -371,6 +419,12 @@ style Views fill:#e8f5e8
 - **Performance Testing**: Test migration execution time on production-like data volumes
 - **Monitoring**: Track migration success rates and execution times
 
+### Migration Execution Strategy
+- **Zero-Downtime Deployments**: Blue-green deployment patterns
+- **Feature Flags**: Gradual rollout of schema changes
+- **Backward Compatibility**: Support for multiple schema versions during transition
+- **Automated Testing**: CI/CD pipeline integration for migration validation
+
 **Section sources**
 - [backend/database/migrations/109-refonte-organisation.sql](file://backend/database/migrations/109-refonte-organisation.sql)
 - [backend/database/migrations/110-consolidation-organisation.sql](file://backend/database/migrations/110-consolidation-organisation.sql)
@@ -415,10 +469,74 @@ Common issues and their resolutions when working with the Organization module:
 - **Permission Errors**: Suggest insufficient roles or organization access
 - **Timeout Errors**: Indicate performance issues requiring optimization
 
+### Performance Debugging Tools
+- **Database Query Profiling**: PostgreSQL EXPLAIN ANALYZE for query optimization
+- **Memory Profiling**: Node.js heap snapshots for memory leak detection
+- **Network Monitoring**: API response time analysis and bottleneck identification
+- **Application Performance Monitoring**: APM tools for end-to-end request tracing
+
 **Section sources**
 - [backend/src/modules/organisation/controllers/organisation.controller.ts](file://backend/src/modules/organisation/controllers/organisation.controller.ts)
 - [backend/src/modules/organisation/dto/organisation.dto.ts](file://backend/src/modules/organisation/dto/organisation.dto.ts)
 - [backend/database/migrations/120-correction-vues-materialisees-organisation.sql](file://backend/database/migrations/120-correction-vues-materialisees-organisation.sql)
+
+## Advanced Architectural Patterns
+The Organization module implements several advanced architectural patterns to ensure scalability, maintainability, and testability:
+
+### Dependency Injection Pattern
+- **Inversion of Control**: Loose coupling between components through DI containers
+- **Interface Segregation**: Small, focused interfaces for better testability
+- **Constructor Injection**: Explicit dependencies for better code clarity
+- **Mock Support**: Easy mocking for unit testing scenarios
+
+### Repository Pattern
+- **Data Access Abstraction**: Separation of business logic from data access
+- **Unit of Work**: Transaction management across multiple repositories
+- **Specification Pattern**: Composable query specifications
+- **Generic Repositories**: Reusable data access patterns
+
+### Event-Driven Architecture
+- **Domain Events**: Decoupled communication between bounded contexts
+- **Event Sourcing**: Audit trail and state reconstruction capabilities
+- **CQRS Pattern**: Separate read and write models for performance
+- **Message Queuing**: Asynchronous processing for heavy operations
+
+### Security Patterns
+- **Authorization Guards**: Role-based and permission-based access control
+- **Input Sanitization**: Protection against injection attacks
+- **Audit Logging**: Comprehensive activity tracking
+- **Encryption at Rest**: Sensitive data protection
+
+**Section sources**
+- [backend/src/modules/organisation/services/organisation.service.ts](file://backend/src/modules/organisation/services/organisation.service.ts)
+- [backend/src/modules/organisation/controllers/organisation.controller.ts](file://backend/src/modules/organisation/controllers/organisation.controller.ts)
+
+## Scalability and Extensibility
+The Organization module is designed for horizontal scaling and easy extension:
+
+### Horizontal Scaling Strategies
+- **Stateless Services**: No shared state between instances
+- **Database Read Replicas**: Offload read operations to replicas
+- **Cache Distribution**: Distributed caching with Redis cluster
+- **Load Balancing**: Health checks and traffic distribution
+
+### Extension Points
+- **Plugin Architecture**: Modular feature extensions
+- **Middleware Pipeline**: Request/response interception points
+- **Event Hooks**: Custom business logic integration
+- **Configuration Overrides**: Environment-specific customization
+
+### Monitoring and Observability
+- **Structured Logging**: Machine-readable log formats
+- **Metrics Collection**: Prometheus-compatible metrics
+- **Distributed Tracing**: Request flow tracking across services
+- **Health Checks**: Service availability and readiness probes
+
+### Deployment Strategies
+- **Container Orchestration**: Kubernetes-ready deployments
+- **Blue-Green Deployments**: Zero-downtime updates
+- **Feature Toggles**: Gradual feature rollouts
+- **Rollback Procedures**: Automated rollback on failures
 
 ## Conclusion
 The Organization module represents a well-architected component within the eLISAschool backend, implementing modern software engineering principles and best practices. Its layered architecture ensures maintainability, scalability, and testability while providing robust functionality for managing organizational structures.
@@ -429,5 +547,9 @@ Key strengths of the implementation include:
 - **Performance Optimization**: Strategic indexing, caching, and query optimization techniques
 - **Scalable Database Design**: Evolved schema through systematic migrations with backward compatibility
 - **Maintainable Codebase**: Consistent patterns and conventions that facilitate future development
+- **Advanced Architectural Patterns**: Dependency injection, repository pattern, and event-driven architecture
+- **Robust Monitoring**: Comprehensive logging, metrics, and observability features
 
 The module's architecture supports both current requirements and future extensibility, making it a solid foundation for the educational management system's organizational features. By following the documented patterns and recommendations, developers can confidently extend and maintain the module while ensuring reliability and performance.
+
+The enhanced documentation now provides comprehensive coverage of architectural decisions, implementation details, performance considerations, and operational guidance, enabling teams to effectively develop, deploy, and maintain the Organization module in production environments.

@@ -1,8 +1,10 @@
 import { createFileRoute, Outlet, useLocation } from '@tanstack/react-router';
+import { requirePermission } from '@/app/permission-guards';
 import { motion } from 'framer-motion';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 
 export const Route = createFileRoute('/_auth/organisation/unites')({
+    beforeLoad: () => requirePermission('organisation:unites:read'),
     component: UnitesLayout,
 });
 

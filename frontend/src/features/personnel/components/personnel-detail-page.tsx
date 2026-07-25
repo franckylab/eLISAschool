@@ -6,7 +6,7 @@
  * Auteur: franck arlos chendjou
  */
 
-import { useState, useMemo, createElement } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import {
@@ -33,10 +33,9 @@ import { OngletParcours } from '@/features/enseignants/components/enseignant-det
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 import { LoadingState } from '@/components/ui/ErrorMessage';
-import { getTypeColor, getTypeIcon } from '@/features/personnel/constants/type-personnel-colors';
+import { getCategorieColors } from '@/lib/categorie-fonction';
 import { InlineEditField, InlineEditActions } from './InlineEditField';
-import { useModifierStatut, useModifierTypePersonnel, useModifierDateEntree, useModifierCompetences } from '../hooks/use-personnel-edit';
-import { useTypesPersonnel } from '../hooks/use-types-personnel';
+import { useModifierStatut, useModifierDateEntree, useModifierCompetences } from '../hooks/use-personnel-edit';
 import type { ContratPersonnel, BulletinPaie } from '../types/personnel.types';
 import type { AffectationPoste } from '../types/affectation.types';
 
@@ -51,6 +50,17 @@ const LABELS_TYPE_CONTRAT: Record<string, string> = {
 
 const MODE_LABEL: Record<string, string> = {
     MENSUEL: 'Mensuel', HORAIRE: 'Horaire', MIXTE: 'Mixte', HEBDOMADAIRE: 'Hebdo',
+};
+
+const LABELS_CATEGORIE: Record<string, string> = {
+    ENSEIGNANT: 'Enseignant',
+    DIRECTION: 'Direction',
+    ADMINISTRATIF: 'Administratif',
+    TECHNIQUE: 'Technique',
+    SERVICE: 'Service',
+    SANTE: 'Santé',
+    SOCIAL: 'Social',
+    AUTRE: 'Autre',
 };
 
 const LABELS_STATUT: Record<string, string> = {
@@ -92,23 +102,19 @@ export function PersonnelDetailPage() {
         (Date.now() - new Date(membre.dateEmbauche || '').getTime()) / (1000 * 60 * 60 * 24 * 365)
     ) : 0;
 
-    const estEnseignant = membre?.typePersonnel?.code === 'ENSEIGNANT';
+    const estEnseignant = membre?.estEnseignant === true;
 
     // ─── Inline Editing ───
     const { hasPermission } = usePermissions();
     const canEditIdentity = hasPermission('personnel:edit:identity');
-    const canEditType = hasPermission('personnel:edit:type');
     const canEditCompetences = hasPermission('personnel:edit:competences');
 
     const [editing, setEditing] = useState<string | null>(null); // field name being edited
     const [editValue, setEditValue] = useState<string>('');
 
     const modifierStatut = useModifierStatut();
-    const modifierTypePersonnel = useModifierTypePersonnel();
     const modifierDateEntree = useModifierDateEntree();
     const modifierCompetences = useModifierCompetences();
-
-    const { data: typesPersonnel } = useTypesPersonnel();
 
     const startEdit = (field: string, currentValue: string) => {
         setEditValue(currentValue);
@@ -214,19 +220,15 @@ export function PersonnelDetailPage() {
                             <span className={`px-3 py-1 rounded-full text-sm font-medium border ${COULEURS_STATUT[membre.statut]}`}>
                                 {LABELS_STATUT[membre.statut]}
                             </span>
-                            {membre.typePersonnel && (
-                                <span
-                                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border"
-                                    style={{
-                                        backgroundColor: `${getTypeColor(membre.typePersonnel.code)}15`,
-                                        borderColor: `${getTypeColor(membre.typePersonnel.code)}30`,
-                                        color: getTypeColor(membre.typePersonnel.code),
-                                    }}
-                                >
-                                    {createElement(getTypeIcon(membre.typePersonnel.code), { className: 'h-3.5 w-3.5' })}
-                                    {membre.typePersonnel.nom}
-                                </span>
-                            )}
+                            {membre.categorie && (() => {
+                                const colors = getCategorieColors(membre.categorie);
+                                return (
+                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${colors.bg} ${colors.text}`}>
+                                        <span className={`h-2 w-2 rounded-full ${colors.dot}`} />
+                                        {LABELS_CATEGORIE[membre.categorie] ?? membre.categorie}
+                                    </span>
+                                );
+                            })()}
                         </div>
 
                         <p className="text-lg text-white/70 mb-3">{membre.posteExact ?? 'Enseignant'}</p>
@@ -306,46 +308,27 @@ export function PersonnelDetailPage() {
                     </InlineEditField>
                 </div>
 
-                {/* Type personnel */}
+                {/* Catégorie (dérivée de la fonction — lecture seule) */}
                 <div className="group">
                     <InlineEditField
-                        label="Type"
+                        label="Catégorie"
                         value={
-                            membre.typePersonnel ? (
-                                <span className="inline-flex items-center gap-1.5 text-sm font-medium" style={{ color: `${getTypeColor(membre.typePersonnel.code)}dd` }}>
-                                    {createElement(getTypeIcon(membre.typePersonnel.code), { className: 'h-4 w-4' })}
-                                    {membre.typePersonnel.nom}
-                                </span>
-                            ) : 'Non défini'
+                            membre.categorie ? (() => {
+                                const colors = getCategorieColors(membre.categorie);
+                                return (
+                                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-medium ${colors.bg} ${colors.text}`}>
+                                        <span className={`h-1.5 w-1.5 rounded-full ${colors.dot}`} />
+                                        {LABELS_CATEGORIE[membre.categorie] ?? membre.categorie}
+                                    </span>
+                                );
+                            })() : 'Non définie'
                         }
                         icon={GraduationCap}
                         color="#a855f7"
-                        editable={canEditType}
-                        editing={editing === 'typePersonnel'}
-                        onStartEdit={() => startEdit('typePersonnel', membre.typePersonnelId ?? '')}
+                        editable={false}
+                        editing={false}
                     >
-                        <select
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-gray-900"
-                            autoFocus
-                        >
-                            <option value="">Sélectionner un type</option>
-                            {typesPersonnel?.filter((t: any) => t.actif).map((tp: any) => (
-                                <option key={tp.id} value={tp.id}>
-                                    {tp.nom} ({tp.code})
-                                </option>
-                            ))}
-                        </select>
-                        <InlineEditActions
-                            onSave={() => {
-                                if (editValue) modifierTypePersonnel.mutate({ id, typePersonnelId: editValue });
-                                cancelEdit();
-                            }}
-                            onCancel={cancelEdit}
-                            saving={modifierTypePersonnel.isPending}
-                            disabled={!editValue}
-                        />
+                        {null}
                     </InlineEditField>
                 </div>
 

@@ -48,7 +48,7 @@ export function requireModulePermission(module: string, fallbackAction: string =
 
         return (
             moduleName === module &&
-            (action === 'view' || action === fallbackAction || action === 'manage' || action === 'list')
+            (action === 'view' || action === 'read' || action === fallbackAction || action === 'manage' || action === 'list')
         );
     });
 

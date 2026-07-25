@@ -40,7 +40,7 @@ export function useCreerAffectation() {
             const response = await apiClient.post<AffectationPoste>('/api/personnel/affectations', dto);
             return response.data;
         },
-        onSuccess: (data) => {
+        onSuccess: () => {
             qc.invalidateQueries({ queryKey: AFFECTATION_KEYS.all });
             qc.invalidateQueries({ queryKey: ['personnel', 'detail'] });
             toast.success('Affectation créée avec succès');

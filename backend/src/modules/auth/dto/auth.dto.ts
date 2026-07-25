@@ -87,7 +87,9 @@ export interface JwtPayload {
     email: string;
     role: string;
     roles?: string[];
-    permissions?: string[];
+    // Permissions volontairement exclues du JWT : elles sont résolues côté serveur
+    // à chaque requête (permissionResolverService, avec cache) pour éviter un
+    // token > 16KB qui provoquerait des erreurs HTTP 431.
     etablissementId?: string;
     roleDansEtablissement?: string; // NOUVEAU v3.0 : rôle spécifique à l'établissement actif
     etablissements?: Array<{

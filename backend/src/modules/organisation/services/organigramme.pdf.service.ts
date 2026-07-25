@@ -46,26 +46,26 @@ export class OrganigrammePdfService {
      */
     async genererOrganigrammeHTML(etablissementId: string): Promise<string> {
         const organigramme = await this.organisationService.getOrganigramme(etablissementId);
-        
-        if (!organigramme) {
+
+        if (!organigramme || organigramme.length === 0) {
             throw new AppError('Organigramme non trouvé', 404, 'ORGANIGRAMME_NOT_FOUND');
         }
 
-        const html = this.construireHTML(organigramme);
+        const html = this.construireHTML(organigramme as unknown as NoeudOrganigramme[]);
         return html;
     }
 
     /**
      * Construire le HTML de l'organigramme
      */
-    private construireHTML(organigramme: NoeudOrganigramme): string {
+    private construireHTML(racines: NoeudOrganigramme[]): string {
         return `
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organigramme - ${organigramme.nom}</title>
+    <title>Organigramme - ${racines[0]?.nom || 'Organisation'}</title>
     <style>
         * {
             margin: 0;
@@ -265,9 +265,9 @@ export class OrganigrammePdfService {
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Organigramme</h1>
+            <h1>Organigramme</h1>
             <div class="meta">
-                <p><strong>${organigramme.nom || 'Organisation'}</strong></p>
+                <p><strong>${racines[0]?.nom || 'Organisation'}</strong></p>
                 <p>Généré le ${new Date().toLocaleDateString('fr-FR', { 
                     weekday: 'long', 
                     year: 'numeric', 
@@ -279,25 +279,25 @@ export class OrganigrammePdfService {
 
         <div class="stats">
             <div class="stat-card">
-                <div class="value">${this.compterUnites(organigramme)}</div>
+                <div class="value">${racines.reduce((sum, r) => sum + this.compterUnites(r), 0)}</div>
                 <div class="label">Unités</div>
             </div>
             <div class="stat-card">
-                <div class="value">${this.compterPostes(organigramme)}</div>
+                <div class="value">${racines.reduce((sum, r) => sum + this.compterPostes(r), 0)}</div>
                 <div class="label">Postes</div>
             </div>
             <div class="stat-card">
-                <div class="value">${this.compterPostesOccupes(organigramme)}</div>
+                <div class="value">${racines.reduce((sum, r) => sum + this.compterPostesOccupes(r), 0)}</div>
                 <div class="label">Postes occupés</div>
             </div>
             <div class="stat-card">
-                <div class="value">${this.compterPostesVacants(organigramme)}</div>
+                <div class="value">${racines.reduce((sum, r) => sum + this.compterPostesVacants(r), 0)}</div>
                 <div class="label">Postes vacants</div>
             </div>
         </div>
 
         <div class="org-chart">
-            ${this.renderUnites(organigramme.enfants || [organigramme])}
+            ${this.renderUnites(racines)}
         </div>
 
         <div class="footer">
@@ -330,13 +330,13 @@ export class OrganigrammePdfService {
 
                 ${unite.postes && unite.postes.length > 0 ? `
                     <div class="postes">
-                        <h4>📋 Postes (${unite.postes.length})</h4>
+                        <h4>Postes (${unite.postes.length})</h4>
                         ${unite.postes.map((poste: PosteOrganigrammePDF) => `
                             <div class="poste ${poste.statut === 'vacant' ? 'vacant' : ''}">
                                 <div class="intitule">${poste.intitule}</div>
-                                ${poste.occupantsCount > 0
-                                    ? `<div class="occupant">👤 ${poste.occupantsCount} occupant(s)</div>`
-                                    : '<div class="occupant">⚠️ Poste vacant</div>'
+                                ${(poste.occupantsCount ?? 0) > 0
+                                    ? `<div class="occupant">${poste.occupantsCount} occupant(s)</div>`
+                                    : '<div class="occupant">Poste vacant</div>'
                                 }
                             </div>
                         `).join('')}

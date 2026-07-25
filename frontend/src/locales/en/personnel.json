@@ -21,7 +21,16 @@
         "demission": "Resigned"
     },
     "statut": "Status",
-    "typePersonnel": "Staff type",
+    "categorie": "Category",
+    "toutesCategories": "All categories",
+    "categorie_ENSEIGNANT": "Teaching",
+    "categorie_DIRECTION": "Management",
+    "categorie_ADMINISTRATIF": "Administrative",
+    "categorie_TECHNIQUE": "Technical",
+    "categorie_SERVICE": "Service",
+    "categorie_SANTE": "Health",
+    "categorie_SOCIAL": "Social",
+    "categorie_AUTRE": "Other",
     "form": {
         "titreCreation": "Add a staff member",
         "titreEdition": "Edit staff member",

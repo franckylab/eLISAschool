@@ -19,7 +19,6 @@ interface PersonnelSearchFieldProps {
     label?: string;
     placeholder?: string;
     error?: string;
-    typeCode?: string;
 }
 
 export function PersonnelSearchField({
@@ -28,7 +27,6 @@ export function PersonnelSearchField({
     label,
     placeholder,
     error,
-    typeCode,
 }: PersonnelSearchFieldProps) {
     const { t } = useTranslation('organisation');
     const [query, setQuery] = useState('');
@@ -46,10 +44,9 @@ export function PersonnelSearchField({
             setSearching(true);
             try {
                 const params: Record<string, string | number> = { search: query.trim(), limit: 10 };
-                if (typeCode) params.typeCode = typeCode;
                 const raw = await apiClient.get<{ items: MembrePersonnel[] }>('/api/personnel', params);
                 // La réponse est paginée : { success, data: { items: MembrePersonnel[], meta } }
-                const membres = raw?.data?.items ?? raw?.data ?? [];
+                const membres = raw?.data?.items ?? [];
                 const mapped: PersonnelSearchResult[] = membres.map((m) => ({
                     id: m.id,
                     nom: m.utilisateur?.profil?.nom ?? '',

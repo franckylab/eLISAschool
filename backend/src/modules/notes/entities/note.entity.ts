@@ -60,13 +60,17 @@ export class Note {
     @JoinColumn({ name: 'eleveId' })
     eleve!: Eleve;
 
-    @Column({ type: 'uuid' })
-    enseignantId!: string;
+    /**
+     * Enseignant auteur de la note (MembrePersonnel, cohérent avec AffectationMatiere).
+     * Nullable : l'utilisateur créateur peut ne pas être rattaché au personnel
+     * (ex: administrateur), auquel cas la note est créée sans enseignant.
+     */
+    @Column({ type: 'uuid', nullable: true })
+    enseignantId?: string;
 
-    // L'enseignant est un MembrePersonnel (cohérent avec AffectationMatiere)
-    @ManyToOne(() => MembrePersonnel)
+    @ManyToOne(() => MembrePersonnel, { nullable: true })
     @JoinColumn({ name: 'enseignantId' })
-    enseignant!: MembrePersonnel;
+    enseignant?: MembrePersonnel;
 
     @Column({ type: 'uuid' })
     matiereId!: string;

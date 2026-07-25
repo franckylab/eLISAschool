@@ -139,6 +139,7 @@ export class ContratService {
                 superieurId: aff.membrePersonnelId,
                 statut: StatutRelation.ACTIVE,
                 posteId: poste.id,
+                superieurPosteId: aff.posteId,
                 etablissementId,
                 dateDebut,
             });
@@ -223,26 +224,8 @@ export class ContratService {
             }
         }
 
-        // Valider la compatibilité type poste ↔ type membre
-        // Le type attendu du poste est dérivé de sa fonction (poste.fonction.typePersonnel).
-        if (dto.posteId) {
-            const poste = await this.posteRepo.findOne({
-                where: { id: dto.posteId },
-                relations: ['fonction', 'fonction.typePersonnel'],
-            });
-            if (poste?.fonction?.typePersonnel?.code === 'ENSEIGNANT') {
-                const membre = await this.membrePersonnelRepo.findOne({
-                    where: { id: dto.membrePersonnelId },
-                    relations: ['typePersonnel'],
-                });
-                if (membre?.typePersonnel?.code !== 'ENSEIGNANT') {
-                    throw new AppError(
-                        'Seul un personnel enseignant peut être affecté à un poste de type ENSEIGNANT',
-                        400, 'TYPE_POSTE_INCOMPATIBLE',
-                    );
-                }
-            }
-        }
+        // Note : la catégorie d'un membre est dérivée de ses fonctions/affectations.
+        // Affecter un poste de fonction ENSEIGNANT rend le membre enseignant — aucun garde-fou requis.
 
         if (dto.statut === 'ACTIF') {
             const contratActif = await this.repo.findOne({

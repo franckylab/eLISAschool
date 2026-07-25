@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from '@tanstack/react-router';
+import { useParams, useNavigate, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Building2, FolderTree, Briefcase, MapPin, User, Info, Edit, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -28,7 +28,9 @@ export function UniteDetailPage() {
     const { data: unite, isLoading, error, refetch } = useUnite(id);
     const { hasPermission } = usePermissions();
     const supprimerUnite = useSupprimerUnite();
-    const [tab, setTab] = useState('infos');
+    const search = useSearch({ from: '/_auth/organisation/unites/$id' }) as { tab?: string };
+    const tab = search?.tab || 'infos';
+    const setTab = (nouveau: string) => navigate({ to: '/organisation/unites/$id', params: { id }, search: { tab: nouveau } as never });
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 

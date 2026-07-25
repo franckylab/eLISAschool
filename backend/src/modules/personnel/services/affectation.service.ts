@@ -27,6 +27,43 @@ export class AffectationService {
     }
 
     /**
+     * Charge un poste et vérifie qu'il appartient bien à l'établissement (via son unité).
+     */
+    private async chargerPosteVerifie(
+        manager: { getRepository: typeof AppDataSource.getRepository },
+        posteId: string,
+        etablissementId: string,
+    ): Promise<Poste> {
+        const poste = await manager.getRepository(Poste).findOne({
+            where: { id: posteId },
+            relations: ['uniteOrganisationnelle'],
+        });
+        if (!poste) throw new AppError('Poste non trouvé', 404, 'POSTE_NOT_FOUND');
+        const uniteEtab = poste.uniteOrganisationnelle?.etablissementId;
+        if (uniteEtab && uniteEtab !== etablissementId) {
+            throw new AppError('Poste non trouvé', 404, 'POSTE_NOT_FOUND');
+        }
+        return poste;
+    }
+
+    /**
+     * Recompte les affectations actives d'un poste et synchronise
+     * occupantsCount + statut (ACTIF si occupé, VACANT sinon).
+     */
+    private async recalculerOccupantsCount(
+        manager: { getRepository: typeof AppDataSource.getRepository },
+        posteId: string,
+    ): Promise<void> {
+        const count = await manager.getRepository(AffectationPoste).count({
+            where: { posteId, statut: StatutAffectation.ACTIF },
+        });
+        await manager.getRepository(Poste).update(posteId, {
+            occupantsCount: count,
+            statut: count > 0 ? StatutPoste.ACTIF : StatutPoste.VACANT,
+        });
+    }
+
+    /**
      * Affecter un personnel à un poste (méthode unifiée).
      * Orchestre en une transaction : vérification occupation + création AffectationPoste.
      * L'occupation est calculée via les affectations actives (plus de Poste.occupantId).
@@ -47,10 +84,8 @@ export class AffectationService {
         await queryRunner.startTransaction();
 
         try {
-            // 1. Charger le poste avec validation
-            const posteRepo = queryRunner.manager.getRepository(Poste);
-            const poste = await posteRepo.findOne({ where: { id: posteId } });
-            if (!poste) throw new AppError('Poste non trouvé', 404, 'POSTE_NOT_FOUND');
+            // 1. Charger le poste avec validation tenant (via son unité)
+            const poste = await this.chargerPosteVerifie(queryRunner.manager, posteId, etablissementId);
 
             // Vérifier si le poste est déjà occupé par un autre membre (via affectations actives)
             const affectationPosteRepo = queryRunner.manager.getRepository(AffectationPoste);
@@ -61,11 +96,7 @@ export class AffectationService {
                 throw new AppError('Ce poste est déjà occupé', 409, 'POSTE_DEJA_OCCUPE');
             }
 
-            // 2. Mettre à jour le statut du poste
-            poste.statut = StatutPoste.ACTIF;
-            await queryRunner.manager.save(poste);
-
-            // 3. Terminer l'ancienne affectation active si existante
+            // 2. Terminer l'ancienne affectation active si existante
             const ancienneActive = await queryRunner.manager.findOne(AffectationPoste, {
                 where: { membrePersonnelId, etablissementId, statut: StatutAffectation.ACTIF },
             });
@@ -75,7 +106,7 @@ export class AffectationService {
                 await queryRunner.manager.save(ancienneActive);
             }
 
-            // 4. Créer la nouvelle affectation
+            // 3. Créer la nouvelle affectation
             const affectation = queryRunner.manager.create(AffectationPoste, {
                 membrePersonnelId,
                 posteId,
@@ -87,6 +118,12 @@ export class AffectationService {
                 etablissementId,
             });
             const saved = await queryRunner.manager.save(affectation);
+
+            // 4. Synchroniser occupantsCount + statut des postes impactés
+            await this.recalculerOccupantsCount(queryRunner.manager, posteId);
+            if (ancienneActive && ancienneActive.posteId !== posteId) {
+                await this.recalculerOccupantsCount(queryRunner.manager, ancienneActive.posteId);
+            }
 
             await queryRunner.commitTransaction();
 
@@ -114,10 +151,8 @@ export class AffectationService {
         await queryRunner.startTransaction();
 
         try {
-            // Vérifier si le poste existe et n'est pas déjà occupé par un autre membre
-            const posteRepo = queryRunner.manager.getRepository(Poste);
-            const poste = await posteRepo.findOne({ where: { id: dto.posteId } });
-            if (!poste) throw new AppError('Poste non trouvé', 404, 'POSTE_NOT_FOUND');
+            // Vérifier si le poste existe, appartient à l'établissement, et n'est pas occupé par un autre membre
+            const poste = await this.chargerPosteVerifie(queryRunner.manager, dto.posteId, etablissementId);
             // Vérifier si le poste est déjà occupé par un autre membre (via affectations actives)
             const affectationPosteRepo = queryRunner.manager.getRepository(AffectationPoste);
             const occupantActif = await affectationPosteRepo.findOne({
@@ -144,10 +179,6 @@ export class AffectationService {
                 logger.info(`Affectation ${affectationActive.id} terminée automatiquement`);
             }
 
-            // Mettre à jour le statut du poste
-            poste.statut = StatutPoste.ACTIF;
-            await queryRunner.manager.save(poste);
-
             // Créer la nouvelle affectation
             const affectation = new AffectationPoste();
             Object.assign(affectation, dto, {
@@ -159,6 +190,12 @@ export class AffectationService {
             });
 
             await queryRunner.manager.save(affectation);
+
+            // Synchroniser occupantsCount + statut des postes impactés
+            await this.recalculerOccupantsCount(queryRunner.manager, dto.posteId);
+            if (affectationActive && affectationActive.posteId !== dto.posteId) {
+                await this.recalculerOccupantsCount(queryRunner.manager, affectationActive.posteId);
+            }
 
             await queryRunner.commitTransaction();
 
@@ -330,11 +367,8 @@ export class AffectationService {
         affectation.dateFin = new Date();
         await this.repo.save(affectation);
 
-        // Libérer le poste (statut → VACANT)
-        const posteRepo = AppDataSource.getRepository('Poste');
-        await posteRepo.update(affectation.posteId, {
-            statut: 'VACANT',
-        });
+        // Synchroniser occupantsCount + statut du poste (VACANT si plus d'occupant actif)
+        await this.recalculerOccupantsCount(AppDataSource, affectation.posteId);
 
         // Audit
         await auditService.log({

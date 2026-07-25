@@ -2,21 +2,26 @@
  * ==================================
  * eLISAschool - Page Modèles & Génération
  * ==================================
- * Version: 2.0.0
+ * Version: 3.0.0
  * Auteur: franck arlos chendjou
  *
- * Galerie de modèles d'organisation + builder visuel par nœuds
- * + wizard de génération 3 étapes (CustomModal). Séparée des nomenclatures.
+ * Galerie de modèles d'organisation avec filtres par facettes (v5.1)
+ * + builder visuel par nœuds + wizard de génération 3 étapes (CustomModal).
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { FileText, Plus, Play, Trash2, Edit, Sparkles, Building2, Briefcase, ChevronRight, X, Copy, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    FileText, Plus, Play, Trash2, Edit, Sparkles, Building2, Briefcase,
+    ChevronRight, ChevronDown, X, Copy, AlertCircle, Filter, RotateCcw,
+    GraduationCap, Globe, Layers, Shield,
+} from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { PageSkeleton } from '@/components/ui/Skeleton';
@@ -24,9 +29,12 @@ import { usePermissions, useDocumentTitle } from '@/hooks';
 import {
     useTemplatesOrganisation, useCreerTemplateOrganisation,
     useModifierTemplateOrganisation, useSupprimerTemplateOrganisation,
+    useCombinaisonsTemplates, useClonerTemplateOrganisation,
 } from '../hooks/use-templates';
 import { GenerationWizard } from './generation-wizard';
-import type { TemplateOrganisation } from '../types/organisation.types';
+import type {
+    TemplateOrganisation, TemplateStructure, TemplateFiltres,
+} from '../types/organisation.types';
 
 interface NoeudTemplate {
     niveau: number;
@@ -39,6 +47,202 @@ interface NoeudTemplate {
 
 function noeudVide(niveau = 0): NoeudTemplate {
     return { niveau, echelonCode: 'SERVICE', nom: '', count: 1, postes: [], enfants: [] };
+}
+
+// ─── Badge de facette ───
+function FacetBadge({ label, active, count, onClick }: {
+    label: string; active: boolean; count?: number; onClick: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={[
+                'inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-all',
+                active
+                    ? 'border-[var(--color-dominant-500)] bg-[var(--color-dominant-50)] text-[var(--color-dominant-700)] dark:bg-[var(--color-dominant-900)]/30 dark:text-[var(--color-dominant-300)]'
+                    : 'border-[var(--color-bordure)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:border-[var(--color-dominant-300)] hover:text-[var(--color-text-primary)]',
+            ].join(' ')}
+            style={{ fontSize: 'clamp(0.65rem, 0.6rem + 0.2vw, 0.75rem)' }}
+        >
+            {label}
+            {count !== undefined && (
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] leading-none ${active ? 'bg-[var(--color-dominant-200)] text-[var(--color-dominant-800)]' : 'bg-[var(--color-surface-hover)] text-[var(--color-text-muted)]'}`}>
+                    {count}
+                </span>
+            )}
+        </button>
+    );
+}
+
+// ─── Panneau de filtres par facettes ───
+function FacetFilters({ filtres, combinaisons, onChange, onReset }: {
+    filtres: TemplateFiltres;
+    combinaisons: { natures: string[]; systemes: string[]; langues: string[]; niveaux: string[]; complexites: string[]; compteurs: Record<string, number> };
+    onChange: (f: TemplateFiltres) => void;
+    onReset: () => void;
+}) {
+    const { t } = useTranslation('organisation');
+    const [expanded, setExpanded] = useState(true);
+
+    const hasActiveFilters = filtres.nature || filtres.systeme || filtres.langue || filtres.niveau || filtres.complexite;
+
+    const toggle = (key: keyof TemplateFiltres, value: string) => {
+        onChange({ ...filtres, [key]: filtres[key] === value ? undefined : value });
+    };
+
+    return (
+        <div className="rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)]">
+            <button
+                type="button"
+                onClick={() => setExpanded(!expanded)}
+                className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] transition-colors rounded-t-lg"
+            >
+                <span className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-[var(--color-dominant-600)]" />
+                    {t('filtres', 'Filtres')}
+                    {hasActiveFilters && (
+                        <Badge variant="default" size="xs" className="ml-1">!</Badge>
+                    )}
+                </span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+                {expanded && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="space-y-3 px-4 pb-4">
+                            {/* Nature juridique */}
+                            {combinaisons.natures.length > 0 && (
+                                <div>
+                                    <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)]">
+                                        <Shield className="h-3 w-3" />
+                                        {t('natureJuridique', 'Nature juridique')}
+                                    </p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {combinaisons.natures.map((n) => (
+                                            <FacetBadge key={n} label={t(`natures.${n}`, n)} active={filtres.nature === n} onClick={() => toggle('nature', n)} />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Système éducatif */}
+                            {combinaisons.systemes.length > 0 && (
+                                <div>
+                                    <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)]">
+                                        <GraduationCap className="h-3 w-3" />
+                                        {t('systemeEducatif', 'Système éducatif')}
+                                    </p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {combinaisons.systemes.map((s) => (
+                                            <FacetBadge key={s} label={t(`systemes.${s}`, s)} active={filtres.systeme === s} onClick={() => toggle('systeme', s)} />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Langue */}
+                            {combinaisons.langues.length > 0 && (
+                                <div>
+                                    <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)]">
+                                        <Globe className="h-3 w-3" />
+                                        {t('langueEnseignement', 'Langue')}
+                                    </p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {combinaisons.langues.map((l) => (
+                                            <FacetBadge key={l} label={t(`langues.${l}`, l)} active={filtres.langue === l} onClick={() => toggle('langue', l)} />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Niveau */}
+                            {combinaisons.niveaux.length > 0 && (
+                                <div>
+                                    <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)]">
+                                        <Layers className="h-3 w-3" />
+                                        {t('niveauEnseignement', 'Niveau')}
+                                    </p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {combinaisons.niveaux.map((n) => (
+                                            <FacetBadge key={n} label={t(`niveaux.${n}`, n)} active={filtres.niveau === n} onClick={() => toggle('niveau', n)} />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Complexité */}
+                            {combinaisons.complexites.length > 0 && (
+                                <div>
+                                    <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[var(--color-text-muted)]">
+                                        {t('complexite', 'Complexité')}
+                                    </p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {combinaisons.complexites.map((c) => (
+                                            <FacetBadge key={c} label={t(`complexites.${c}`, c)} active={filtres.complexite === c} onClick={() => toggle('complexite', c)} />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Reset */}
+                            {hasActiveFilters && (
+                                <button
+                                    type="button"
+                                    onClick={onReset}
+                                    className="flex items-center gap-1 text-xs text-[var(--color-dominant-600)] hover:underline"
+                                >
+                                    <RotateCcw className="h-3 w-3" />
+                                    {t('reinitialiserFiltres', 'Réinitialiser les filtres')}
+                                </button>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
+
+// ─── Badge de catégorie sur la carte ───
+function TemplateBadges({ tpl }: { tpl: TemplateOrganisation }) {
+    const { t } = useTranslation('organisation');
+    return (
+        <div className="flex flex-wrap gap-1">
+            {tpl.nature && (
+                <Badge variant="secondary" size="xs" className="bg-[var(--color-dominant-50)] text-[var(--color-dominant-700)] dark:bg-[var(--color-dominant-900)]/30 dark:text-[var(--color-dominant-300)]">
+                    {t(`natures.${tpl.nature}`, tpl.nature)}
+                </Badge>
+            )}
+            {tpl.systeme && (
+                <Badge variant="secondary" size="xs">
+                    {t(`systemes.${tpl.systeme}`, tpl.systeme)}
+                </Badge>
+            )}
+            {tpl.langue && (
+                <Badge variant="secondary" size="xs" className="bg-[var(--color-info-50)] text-[var(--color-info-700)] dark:bg-[var(--color-info-900)]/30 dark:text-[var(--color-info-300)]">
+                    {t(`langues.${tpl.langue}`, tpl.langue)}
+                </Badge>
+            )}
+            {tpl.complexite === 'AVANCE' && (
+                <Badge variant="warning" size="xs">
+                    {t('complexites.AVANCE', 'Avancé')}
+                </Badge>
+            )}
+            {tpl.estSysteme && (
+                <Badge variant="secondary" size="xs">
+                    {t('systeme', 'Système')}
+                </Badge>
+            )}
+        </div>
+    );
 }
 
 // ─── Éditeur récursif de nœud (builder visuel) ───
@@ -125,10 +329,22 @@ export function ModelesPage() {
     const { hasPermission } = usePermissions();
     useDocumentTitle(`eLISAschool | ${t('modeles')}`);
 
-    const { data: templates, isLoading, isError, refetch } = useTemplatesOrganisation();
+    // Filtres
+    const [filtres, setFiltres] = useState<TemplateFiltres>({});
+    const [search, setSearch] = useState('');
+
+    // Hooks data
+    const filtresAvecSearch = useMemo(() => ({
+        ...filtres,
+        search: search || undefined,
+    }), [filtres, search]);
+
+    const { data: templates, isLoading, isError, refetch } = useTemplatesOrganisation(filtresAvecSearch);
+    const { data: combinaisons } = useCombinaisonsTemplates();
     const creer = useCreerTemplateOrganisation();
     const modifier = useModifierTemplateOrganisation();
     const supprimer = useSupprimerTemplateOrganisation();
+    const cloner = useClonerTemplateOrganisation();
 
     const canWrite = hasPermission('organisation:templates:write');
     const canGenerate = hasPermission('organisation:generation:execute');
@@ -155,14 +371,30 @@ export function ModelesPage() {
         if (nom.trim().length < 2) return;
         const payload = { nom: nom.trim(), description: description || undefined, structure: structure as unknown as TemplateStructure };
         try {
-            // editing.id vide = duplication d'un modèle système → création (POST), pas PATCH
             if (editing && editing.id) await modifier.mutateAsync({ id: editing.id, ...payload });
             else await creer.mutateAsync(payload);
             setBuilderOpen(false);
         } catch {
-            // erreur déjà notifiée par le hook (toast) ; on garde le modal ouvert
+            // erreur déjà notifiée par le hook
         }
     };
+
+    const handleClone = async (tpl: TemplateOrganisation) => {
+        try {
+            await cloner.mutateAsync({ id: tpl.id });
+        } catch {
+            // erreur déjà notifiée
+        }
+    };
+
+    const resetFiltres = () => {
+        setFiltres({});
+        setSearch('');
+    };
+
+    // Compter les résultats par catégorie
+    const compteurs = combinaisons?.compteurs ?? {};
+    const totalVisible = (templates || []).length;
 
     if (isLoading && !templates) return <PageSkeleton showTable />;
 
@@ -201,8 +433,37 @@ export function ModelesPage() {
                 }
             />
 
+            {/* Barre de recherche + résultats */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <SearchInput
+                    value={search}
+                    onChange={setSearch}
+                    placeholder={t('rechercherTemplate', 'Rechercher un modèle...')}
+                    debounceMs={300}
+                />
+                <span className="text-xs text-[var(--color-text-muted)]">
+                    {totalVisible} {t('template(s)', 'modèle(s)')}
+                    {(filtres.nature || filtres.systeme || filtres.langue || filtres.niveau || filtres.complexite) && (
+                        <span className="ml-1 text-[var(--color-dominant-600)]">({t('filtreActif', 'filtré')})</span>
+                    )}
+                </span>
+            </div>
+
+            {/* Filtres par facettes */}
+            {combinaisons && (
+                <FacetFilters
+                    filtres={filtres}
+                    combinaisons={combinaisons}
+                    onChange={setFiltres}
+                    onReset={resetFiltres}
+                />
+            )}
+
+            {/* Grille de templates */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+                style={{ gap: 'clamp(0.75rem, 1vw + 0.5rem, 1.25rem)' }}
+            >
                 {(templates || []).length === 0 && (
                     <p className="col-span-full text-center text-sm text-muted-foreground py-10">{t('aucunTemplate')}</p>
                 )}
@@ -210,22 +471,50 @@ export function ModelesPage() {
                     <Card key={tpl.id} className="p-4 flex flex-col gap-3 hover:border-primary/30 transition-colors">
                         <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2 min-w-0">
-                                <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0"><FileText className="h-4 w-4" /></div>
+                                <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+                                    <FileText className="h-4 w-4" />
+                                </div>
                                 <div className="min-w-0">
-                                    <p className="font-medium text-foreground truncate">{tpl.nom}</p>
-                                    {tpl.description && <p className="text-xs text-muted-foreground truncate">{tpl.description}</p>}
+                                    <p className="font-medium text-foreground truncate" style={{ fontSize: 'clamp(0.8rem, 0.75rem + 0.2vw, 0.95rem)' }}>
+                                        {tpl.nom}
+                                    </p>
+                                    {tpl.description && (
+                                        <p className="text-xs text-muted-foreground line-clamp-2">{tpl.description}</p>
+                                    )}
                                 </div>
                             </div>
-                            {tpl.estSysteme && <Badge variant="secondary" size="sm">⚙ {t('systeme')}</Badge>}
                         </div>
+
+                        {/* Badges de catégorisation */}
+                        <TemplateBadges tpl={tpl} />
+
+                        {/* Aperçu structure */}
                         <div className="rounded-md border border-border bg-surface-alt/40 p-2 max-h-28 overflow-auto">
                             <StructurePreview noeud={tpl.structure as unknown as NoeudTemplate} />
                         </div>
+
+                        {/* Compteur catégorie */}
+                        {tpl.categorie && compteurs[tpl.categorie] && (
+                            <p className="text-[10px] text-[var(--color-text-muted)]">
+                                {compteurs[tpl.categorie]} {t('dansCategorie', 'dans cette catégorie')}
+                            </p>
+                        )}
+
+                        {/* Actions */}
                         <div className="flex items-center justify-end gap-1 pt-1 border-t border-border">
                             {canGenerate && (
                                 <ElisaButton variant="ghost" size="xs" icon={<Play className="h-3.5 w-3.5" />} onClick={() => openWizard(tpl.id)}>
                                     {t('generer')}
                                 </ElisaButton>
+                            )}
+                            {canWrite && (
+                                <button
+                                    onClick={() => handleClone(tpl)}
+                                    className="p-1.5 rounded text-muted-foreground hover:bg-accent hover:text-[var(--color-dominant-600)]"
+                                    title={t('cloner', 'Cloner')}
+                                >
+                                    <Copy className="h-4 w-4" />
+                                </button>
                             )}
                             {canWrite && !tpl.estSysteme && (
                                 <>

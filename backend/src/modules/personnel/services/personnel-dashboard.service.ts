@@ -35,17 +35,31 @@ export class PersonnelDashboardService {
         const currentMonth = now.getMonth() + 1;
         const currentYear = now.getFullYear();
 
-        // Total personnel par type
-        const totalPersonnelRaw = await this.membreRepo
-            .createQueryBuilder('membre')
-            .where('membre.etablissementId = :etablissementId', { etablissementId })
-            .select(['membre.type', 'COUNT(membre.id) as count'])
-            .groupBy('membre.type')
-            .getRawMany();
+        // Total personnel par catégorie de fonction (dérivée, jamais stockée)
+        const totalPersonnelRaw: { categorie: string | null; count: string }[] = await this.membreRepo.query(`
+            SELECT COALESCE(mf_cat.categorie, ap_cat.categorie, 'AUTRE') AS categorie, COUNT(*)::int AS count
+            FROM membres_personnel p
+            LEFT JOIN LATERAL (
+                SELECT f.categorie FROM membres_fonctions mf
+                JOIN fonctions f ON f.id = mf."fonctionId"
+                WHERE mf."membrePersonnelId" = p.id
+                  AND (mf."dateFin" IS NULL OR mf."dateFin" >= CURRENT_DATE)
+                ORDER BY mf."estPrincipale" DESC, mf."dateDebut" DESC LIMIT 1
+            ) mf_cat ON true
+            LEFT JOIN LATERAL (
+                SELECT f2.categorie FROM affectations_postes ap
+                JOIN postes po ON po.id = ap."posteId"
+                JOIN fonctions f2 ON f2.id = po."fonctionId"
+                WHERE ap."membrePersonnelId" = p.id AND ap.statut = 'ACTIF'
+                ORDER BY ap."dateDebut" DESC LIMIT 1
+            ) ap_cat ON true
+            WHERE p."etablissementId" = $1
+            GROUP BY 1
+        `, [etablissementId]);
 
         const totalPersonnel: Record<string, number> = {};
-        totalPersonnelRaw.forEach((r: any) => {
-            totalPersonnel[r.membre_type] = parseInt(r.count);
+        totalPersonnelRaw.forEach((r) => {
+            totalPersonnel[r.categorie ?? 'AUTRE'] = parseInt(r.count as unknown as string, 10);
         });
 
         // Contrats expirant dans les 30 prochains jours
@@ -101,7 +115,20 @@ export class PersonnelDashboardService {
         const evaluationsEnRetard = await this.membreRepo
             .createQueryBuilder('membre')
             .where('membre.etablissementId = :etablissementId', { etablissementId })
-            .andWhere('membre.type = :type', { type: 'ENSEIGNANT' })
+            .andWhere(`EXISTS (
+                SELECT 1 FROM membres_fonctions mf
+                JOIN fonctions f ON f.id = mf."fonctionId"
+                WHERE mf."membrePersonnelId" = membre.id
+                  AND (mf."dateFin" IS NULL OR mf."dateFin" >= CURRENT_DATE)
+                  AND f.categorie = :catEnseignant
+                UNION
+                SELECT 1 FROM affectations_postes ap
+                JOIN postes po ON po.id = ap."posteId"
+                JOIN fonctions f2 ON f2.id = po."fonctionId"
+                WHERE ap."membrePersonnelId" = membre.id
+                  AND ap.statut = 'ACTIF'
+                  AND f2.categorie = :catEnseignant
+            )`, { catEnseignant: 'ENSEIGNANT' })
             .andWhere((qb) => {
                 const subQuery = qb.subQuery()
                     .from(EvaluationEnseignant, 'eval')

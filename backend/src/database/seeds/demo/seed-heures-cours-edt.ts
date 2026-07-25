@@ -9,7 +9,7 @@
  */
 
 import { AppDataSource } from '@database/data-source';
-import { MembrePersonnel, StatutPersonnel, TypePersonnel, ContratPersonnel, StatutContrat, HeureCours, StatutEffectue } from '@modules/personnel/entities';
+import { MembrePersonnel, StatutPersonnel, ContratPersonnel, StatutContrat, HeureCours, StatutEffectue } from '@modules/personnel/entities';
 import { ModeRemunerationEntity } from '@modules/organisation/entities';
 import { CreneauHoraire, JourSemaine, TypeCreneau, StatutCreneau } from '@modules/emploi-du-temps/entities';
 import { AffectationMatiere } from '@modules/matieres/entities';
@@ -41,7 +41,6 @@ export async function seedHeuresCoursEtEdt(etablissementId: string): Promise<voi
     const classeAnneeRepo = AppDataSource.getRepository(ClasseAnnee);
     const matiereRepo = AppDataSource.getRepository(Matiere);
     const anneeRepo = AppDataSource.getRepository(AnneeScolaire);
-    const typePersonnelRepo = AppDataSource.getRepository(TypePersonnel);
     const edtRepo = AppDataSource.getRepository(CreneauHoraire);
     const affectationRepo = AppDataSource.getRepository(AffectationMatiere);
     const hcRepo = AppDataSource.getRepository(HeureCours);
@@ -55,12 +54,10 @@ export async function seedHeuresCoursEtEdt(etablissementId: string): Promise<voi
 
     let enseignant = await membreRepo.findOne({ where: { utilisateurId: enseignantUser.id } });
     if (!enseignant) {
-        const typeEns = await typePersonnelRepo.findOne({ where: { code: 'ENSEIGNANT' } });
         enseignant = new MembrePersonnel();
         Object.assign(enseignant, {
             utilisateurId: enseignantUser.id,
             matricule: 'ENS-001',
-            typePersonnelId: typeEns?.id,
             statut: StatutPersonnel.ACTIF,
             dateEmbauche: new Date('2023-09-01'),
             etablissementId,
