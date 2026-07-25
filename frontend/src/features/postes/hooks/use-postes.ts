@@ -7,9 +7,11 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
 import { useHandleError } from '@/features/organisation/hooks/use-handle-error';
+import { ORGA_KEYS } from '@/features/organisation/hooks/query-keys';
 import type { Poste, CreatePosteDto, UpdatePosteDto, PosteFiltres } from '../types/poste.types';
 import type { AffectationPoste } from '@/features/personnel/types/affectation.types';
 
@@ -45,6 +47,7 @@ export function usePostes(filtres?: PosteFiltres) {
             };
         },
         enabled: isAuthenticated,
+        staleTime: 30_000,
         placeholderData: (previousData) => previousData,
     });
 }
@@ -86,6 +89,7 @@ export function usePostesParFonction(fonctionId: string) {
             return res.data ?? [];
         },
         enabled: !!fonctionId && isAuthenticated,
+        staleTime: 30_000,
         placeholderData: (previousData) => previousData,
     });
 }
@@ -99,6 +103,7 @@ export function usePoste(id: string) {
             return res.data;
         },
         enabled: !!id && isAuthenticated,
+        staleTime: 2 * 60 * 1000,
         placeholderData: (previousData) => previousData,
     });
 }
@@ -112,12 +117,14 @@ export function usePosteOccupants(id: string) {
             return res.data ?? [];
         },
         enabled: !!id && isAuthenticated,
+        staleTime: 30_000,
     });
 }
 
 export function useCreerPoste() {
     const qc = useQueryClient();
     const handleError = useHandleError();
+    const { t } = useTranslation('organisation');
     return useMutation({
         mutationFn: async (dto: CreatePosteDto) => {
             const res = await apiClient.post<Poste>('/api/organisation/postes', dto);
@@ -125,17 +132,18 @@ export function useCreerPoste() {
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: POSTES_KEYS.all });
-            qc.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
-            qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
-            toast.success('Poste créé avec succès');
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
+            toast.success(t('toasts.posteCree'));
         },
-        onError: (e) => handleError(e, 'Erreur lors de la création du poste'),
+        onError: (e: unknown) => handleError(e, 'Erreur lors de la création du poste'),
     });
 }
 
 export function useModifierPoste() {
     const qc = useQueryClient();
     const handleError = useHandleError();
+    const { t } = useTranslation('organisation');
     return useMutation({
         mutationFn: async ({ id, dto }: { id: string; dto: UpdatePosteDto }) => {
             const res = await apiClient.patch<Poste>(`/api/organisation/postes/${id}`, dto);
@@ -144,27 +152,28 @@ export function useModifierPoste() {
         onSuccess: (data) => {
             qc.invalidateQueries({ queryKey: POSTES_KEYS.all });
             qc.invalidateQueries({ queryKey: POSTES_KEYS.detail(data.id) });
-            qc.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
-            qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
-            toast.success('Poste modifié avec succès');
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
+            toast.success(t('toasts.posteModifie'));
         },
-        onError: (e) => handleError(e, 'Erreur lors de la modification du poste'),
+        onError: (e: unknown) => handleError(e, 'Erreur lors de la modification du poste'),
     });
 }
 
 export function useSupprimerPoste() {
     const qc = useQueryClient();
     const handleError = useHandleError();
+    const { t } = useTranslation('organisation');
     return useMutation({
         mutationFn: async (id: string) => {
             await apiClient.delete(`/api/organisation/postes/${id}`);
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: POSTES_KEYS.all });
-            qc.invalidateQueries({ queryKey: ['organisation', 'organigramme'] });
-            qc.invalidateQueries({ queryKey: ['organisation', 'unites'] });
-            toast.success('Poste supprimé');
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
+            qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
+            toast.success(t('toasts.posteSupprime'));
         },
-        onError: (e) => handleError(e, 'Erreur lors de la suppression du poste'),
+        onError: (e: unknown) => handleError(e, 'Erreur lors de la suppression du poste'),
     });
 }

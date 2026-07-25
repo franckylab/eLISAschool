@@ -9,18 +9,13 @@
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api-client';
 import { useHandleError } from './use-handle-error';
 import type { TemplateOrganisation, GenererOrganisationDto, ResultatGeneration } from '../types/organisation.types';
+import { ORGA_KEYS } from './query-keys';
 
-const KEYS = { all: ['organisation', 'templates'] as const };
-
-/** Clés de cache pour invalidation croisée après génération */
-const ORGA_KEYS = {
-    unites: { all: ['organisation', 'unites'] as const },
-    organigramme: { all: ['organisation', 'organigramme'] as const },
-    stats: { all: ['organisation', 'statistiques'] as const },
-};
+const KEYS = ORGA_KEYS.templates;
 
 export function useTemplatesOrganisation() {
     const { isAuthenticated } = useAuthStore();
@@ -28,15 +23,17 @@ export function useTemplatesOrganisation() {
         queryKey: KEYS.all,
         queryFn: async () => { const res = await apiClient.get<TemplateOrganisation[]>('/api/organisation/templates'); return res.data || []; },
         enabled: isAuthenticated,
+        staleTime: 30_000,
     });
 }
 
 export function useCreerTemplateOrganisation() {
     const qc = useQueryClient();
     const handleError = useHandleError();
+    const { t } = useTranslation('organisation');
     return useMutation({
         mutationFn: async (dto: Partial<TemplateOrganisation>) => { const res = await apiClient.post<TemplateOrganisation>('/api/organisation/templates', dto); return res.data!; },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Template créé'); },
+        onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success(t('toasts.templateCree')); },
         onError: (e: unknown) => handleError(e, 'Erreur création template'),
     });
 }
@@ -44,9 +41,10 @@ export function useCreerTemplateOrganisation() {
 export function useModifierTemplateOrganisation() {
     const qc = useQueryClient();
     const handleError = useHandleError();
+    const { t } = useTranslation('organisation');
     return useMutation({
         mutationFn: async ({ id, ...data }: { id: string } & Partial<TemplateOrganisation>) => { const res = await apiClient.patch<TemplateOrganisation>(`/api/organisation/templates/${id}`, data); return res.data!; },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Template modifié'); },
+        onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success(t('toasts.templateModifie')); },
         onError: (e: unknown) => handleError(e, 'Erreur modification template'),
     });
 }
@@ -54,9 +52,10 @@ export function useModifierTemplateOrganisation() {
 export function useSupprimerTemplateOrganisation() {
     const qc = useQueryClient();
     const handleError = useHandleError();
+    const { t } = useTranslation('organisation');
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/organisation/templates/${id}`); },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success('Template supprimé'); },
+        onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); toast.success(t('toasts.templateSupprime')); },
         onError: (e: unknown) => handleError(e, 'Erreur suppression template'),
     });
 }
@@ -64,13 +63,14 @@ export function useSupprimerTemplateOrganisation() {
 export function useGenererOrganisation() {
     const qc = useQueryClient();
     const handleError = useHandleError();
+    const { t } = useTranslation('organisation');
     return useMutation({
         mutationFn: async (dto: GenererOrganisationDto) => { const res = await apiClient.post<ResultatGeneration>('/api/organisation/generer', dto); return res.data!; },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
-            toast.success('Organisation générée avec succès');
+            toast.success(t('toasts.organisationGeneree'));
         },
         onError: (e: unknown) => handleError(e, 'Erreur génération organisation'),
     });

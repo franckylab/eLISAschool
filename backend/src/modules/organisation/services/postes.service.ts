@@ -7,6 +7,15 @@ import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 import type { CreatePosteDto, UpdatePosteDto, QueryPostesDto } from '../dto/poste.dto';
 
+/**
+ * Statistiques des postes pour un établissement
+ */
+export interface StatistiquesPostes {
+    total: number;
+    occupants: number;
+    vacants: number;
+}
+
 export class PostesService {
     private posteRepo: Repository<Poste>;
     private affectationRepo: Repository<AffectationPoste>;
@@ -158,28 +167,22 @@ export class PostesService {
         });
     }
 
-    async getStatistiques(etablissementId?: string): Promise<any> {
-        const qb = this.posteRepo.createQueryBuilder('p')
-            .leftJoin('p.uniteOrganisationnelle', 'uo')
-            .where('uo.etablissementId = :eid', { eid: etablissementId });
+    async getStatistiques(etablissementId?: string): Promise<StatistiquesPostes> {
+        const result = await this.posteRepo.query(`
+            SELECT
+                COUNT(*)::int AS total,
+                COUNT(*) FILTER (WHERE "occupantsCount" > 0)::int AS occupants,
+                COUNT(*) FILTER (WHERE actif = true AND "occupantsCount" < "nombrePostes" AND statut != $2)::int AS vacants
+            FROM postes p
+            INNER JOIN unites_organisationnelles uo ON uo.id = p."uniteOrganisationnelleId"
+            WHERE uo."etablissementId" = $1
+        `, [etablissementId, StatutPoste.SUPPRIME]);
 
-        const total = await qb.getCount();
-
-        const vacants = await this.posteRepo.createQueryBuilder('p')
-            .leftJoin('p.uniteOrganisationnelle', 'uo')
-            .where('uo.etablissementId = :eid', { eid: etablissementId })
-            .andWhere('p.actif = :actif', { actif: true })
-            .andWhere('p."occupantsCount" < p."nombrePostes"')
-            .andWhere('p.statut != :supprime', { supprime: StatutPoste.SUPPRIME })
-            .getCount();
-
-        const occupants = await this.posteRepo.createQueryBuilder('p')
-            .leftJoin('p.uniteOrganisationnelle', 'uo')
-            .where('uo.etablissementId = :eid', { eid: etablissementId })
-            .andWhere('p."occupantsCount" > 0')
-            .getCount();
-
-        return { total, occupants, vacants };
+        return {
+            total: result[0]?.total || 0,
+            occupants: result[0]?.occupants || 0,
+            vacants: result[0]?.vacants || 0,
+        };
     }
 }
 

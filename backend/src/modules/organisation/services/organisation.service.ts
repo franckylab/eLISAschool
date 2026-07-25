@@ -14,7 +14,7 @@
  * Les unités sont rattachées directement à l'établissement.
  */
 
-import { Repository, In, Like, FindOptionsWhere, IsNull } from 'typeorm';
+import { Repository, In, FindOptionsWhere, IsNull } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import {
     UniteOrganisationnelle,
@@ -313,35 +313,8 @@ export class OrganisationService {
                     throw new AppError('Opération invalide : le parent choisi est un descendant de cette unité', 400, 'CYCLE_DETECTED');
                 }
                 // Vérifier profondeur max (6 niveaux)
-                const profondeurResult = await this.uniteRepo.query(`
-                    WITH RECURSIVE depth_calc AS (
-                        SELECT id, "parentId", 1 AS depth
-                        FROM unites_organisationnelles
-                        WHERE id = $1 AND "etablissementId" = $2
-                        UNION ALL
-                        SELECT u.id, u."parentId", dc.depth + 1
-                        FROM unites_organisationnelles u
-                        INNER JOIN depth_calc dc ON u."parentId" = dc.id
-                        WHERE dc.depth < 100
-                    )
-                    SELECT MAX(depth)::int AS max_depth FROM depth_calc
-                `, [dto.parentId, unite.etablissementId]);
-                const profondeurActuelle = profondeurResult[0]?.max_depth || 0;
-                // Calculer la profondeur de l'unité elle-même
-                const profondeurUniteResult = await this.uniteRepo.query(`
-                    WITH RECURSIVE depth_calc AS (
-                        SELECT id, "parentId", 1 AS depth
-                        FROM unites_organisationnelles
-                        WHERE id = $1 AND "etablissementId" = $2
-                        UNION ALL
-                        SELECT u.id, u."parentId", dc.depth + 1
-                        FROM unites_organisationnelles u
-                        INNER JOIN depth_calc dc ON u."parentId" = dc.id
-                        WHERE dc.depth < 100
-                    )
-                    SELECT MAX(depth)::int AS max_depth FROM depth_calc
-                `, [id, unite.etablissementId]);
-                const profondeurUnite = profondeurUniteResult[0]?.max_depth || 0;
+                const profondeurActuelle = await this.calculerProfondeurSousArbre(dto.parentId, unite.etablissementId);
+                const profondeurUnite = await this.calculerProfondeurSousArbre(id, unite.etablissementId);
                 // La profondeur résultante = profondeur du nouveau parent + sous-arbre de l'unité
                 // On vérifie que le parent ne dépasse pas le niveau 5 (pour laisser 1 niveau aux enfants)
                 if (profondeurActuelle > 5) {
@@ -474,10 +447,13 @@ export class OrganisationService {
             ];
         }
 
-        // Mettre à jour les ordres en batch
-        await Promise.all(newOrder.map((id, index) =>
-            this.uniteRepo.update(id, { ordre: index })
-        ));
+        // Mettre à jour les ordres en un seul UPDATE batch (CASE WHEN)
+        const caseWhen = newOrder.map((id, i) => `WHEN id = $${i * 2 + 3} THEN ${i}`).join(' ');
+        await this.uniteRepo.query(
+            `UPDATE unites_organisationnelles SET ordre = CASE ${caseWhen} ELSE ordre END
+             WHERE id IN (${newOrder.map((_, i) => `$${i * 2 + 3}`).join(', ')})`,
+            newOrder.flatMap((id, i) => [id, i]),
+        );
 
         logger.info(`Unité réordonnée: ${uniteId} après ${apresId || 'null'}`, { uniteId, apresId });
         await this.invalidateArborescenceCache(unite.etablissementId);
@@ -565,31 +541,36 @@ export class OrganisationService {
     }
 
     async getCheminHierarchique(uniteId: string, etablissementId?: string): Promise<UniteOrganisationnelle[]> {
-        const where: FindOptionsWhere<UniteOrganisationnelle> = { id: uniteId };
-        if (etablissementId) where.etablissementId = etablissementId;
-        const unite = await this.uniteRepo.findOne({ where });
-        if (!unite) return [];
+        // CTE récursif qui remonte de l'unité vers la racine
+        const rows = await this.uniteRepo.query(`
+            WITH RECURSIVE chemin_up AS (
+                SELECT id, "parentId", nom, code, description, "echelonStructurelId",
+                       "etablissementId", ordre, responsableNom, statut, actif, 1 AS depth
+                FROM unites_organisationnelles
+                WHERE id = $1
+                UNION ALL
+                SELECT u.id, u."parentId", u.nom, u.code, u.description, u."echelonStructurelId",
+                       u."etablissementId", u.ordre, u.responsableNom, u.statut, u.actif, cu.depth + 1
+                FROM unites_organisationnelles u
+                INNER JOIN chemin_up cu ON u.id = cu."parentId"
+                WHERE cu.depth < 100
+            )
+            SELECT * FROM chemin_up ORDER BY depth DESC
+        `, [uniteId]);
 
-        // Charger toutes les unités de l'établissement en une seule requête
-        const toutesUnites = await this.uniteRepo.find({
-            where: { etablissementId: unite.etablissementId },
-        });
-
-        // Construire un map pour accès rapide
-        const unitesMap = new Map<string, UniteOrganisationnelle>();
-        toutesUnites.forEach((u) => unitesMap.set(u.id, u));
-
-        // Construire le chemin en mémoire
-        const chemin: UniteOrganisationnelle[] = [];
-        let currentId: string | undefined = uniteId;
-
-        while (currentId && unitesMap.has(currentId)) {
-            const current: UniteOrganisationnelle = unitesMap.get(currentId)!;
-            chemin.unshift(current);
-            currentId = current.parentId;
-        }
-
-        return chemin;
+        return rows.map((r: any) => ({
+            id: r.id,
+            parentId: r.parentId,
+            nom: r.nom,
+            code: r.code,
+            description: r.description,
+            echelonStructurelId: r.echelonStructurelId,
+            etablissementId: r.etablissementId,
+            ordre: r.ordre,
+            responsableNom: r.responsableNom,
+            statut: r.statut,
+            actif: r.actif,
+        }));
     }
 
     // ==================== HIERARCHIE PERSONNEL ====================
@@ -750,83 +731,110 @@ export class OrganisationService {
     // ==================== STATISTIQUES ET ANALYSES ====================
 
     async getStatistiquesOrganisation(etablissementId: string): Promise<StatistiquesOrganisationResult> {
-        const unites = await this.uniteRepo.find({ where: { etablissementId } });
-        const uniteIds = unites.map((u) => u.id);
-        const postes = uniteIds.length > 0
-            ? await this.posteRepo.find({ where: { uniteOrganisationnelleId: In(uniteIds) } })
-            : [];
+        // 1. Statistiques unités (SQL agrégé — pas de chargement en mémoire)
+        const uniteStats = await this.uniteRepo.query(`
+            SELECT
+                COUNT(*)::int AS "totalUnites",
+                COUNT(*) FILTER (WHERE actif = true)::int AS "unitesActives"
+            FROM unites_organisationnelles
+            WHERE "etablissementId" = $1
+        `, [etablissementId]);
+        const totalUnites: number = uniteStats[0]?.totalUnites || 0;
+        const unitesActives: number = uniteStats[0]?.unitesActives || 0;
 
-        // Unités
-        const totalUnites = unites.length;
-        const unitesActives = unites.filter((u) => u.actif).length;
+        // 2. Statistiques postes (SQL agrégé)
+        const posteStats = await this.posteRepo.query(`
+            SELECT
+                COUNT(*)::int AS "totalPostes",
+                COUNT(*) FILTER (WHERE statut = $2)::int AS "postesActifs",
+                COUNT(*) FILTER (WHERE "occupantsCount" > 0)::int AS "postesOccupes",
+                COUNT(*) FILTER (WHERE statut = $3 OR (actif = true AND "occupantsCount" < "nombrePostes"))::int AS "postesVacants"
+            FROM postes
+            WHERE "uniteOrganisationnelleId" IN (
+                SELECT id FROM unites_organisationnelles WHERE "etablissementId" = $1
+            )
+        `, [etablissementId, StatutPoste.ACTIF, StatutPoste.VACANT]);
+        const totalPostes: number = posteStats[0]?.totalPostes || 0;
+        const postesActifs: number = posteStats[0]?.postesActifs || 0;
+        const postesOccupes: number = posteStats[0]?.postesOccupes || 0;
+        const postesVacants: number = posteStats[0]?.postesVacants || 0;
 
-        // Postes
-        const totalPostes = postes.length;
-        const postesActifs = postes.filter((p) => p.statut === StatutPoste.ACTIF).length;
-        const postesOccupes = postes.filter((p) => p.occupantsCount > 0).length;
-        const postesVacants = postes.filter((p) => p.statut === StatutPoste.VACANT || (p.actif && p.occupantsCount < p.nombrePostes)).length;
+        // 3. Unités sans postes (SQL)
+        const unitesSansPostesResult = await this.uniteRepo.query(`
+            SELECT COUNT(*)::int AS cnt
+            FROM unites_organisationnelles u
+            WHERE u."etablissementId" = $1
+            AND NOT EXISTS (
+                SELECT 1 FROM postes p WHERE p."uniteOrganisationnelleId" = u.id
+            )
+        `, [etablissementId]);
+        const unitesSansPostes: number = unitesSansPostesResult[0]?.cnt || 0;
 
-        // Unités sans postes
-        const unitesAvecPostes = new Set(postes.map((p) => p.uniteOrganisationnelleId));
-        const unitesSansPostes = unites.filter((u) => !unitesAvecPostes.has(u.id)).length;
+        // 4. Hiérarchies (SQL agrégé)
+        const hierarchieStats = await this.uniteRepo.query(`
+            SELECT
+                COUNT(*)::int AS "totalHierarchies",
+                COUNT(*) FILTER (WHERE actif = true)::int AS "hierarchiesActives"
+            FROM hierarchies_personnel
+            WHERE "etablissementId" = $1
+        `, [etablissementId]);
+        const totalHierarchies: number = hierarchieStats[0]?.totalHierarchies || 0;
+        const hierarchiesActives: number = hierarchieStats[0]?.hierarchiesActives || 0;
 
-        // Hiérarchies
-        const hierarchieRepo = AppDataSource.getRepository('HierarchiePersonnel');
-        const [totalHierarchies, hierarchiesActives] = uniteIds.length > 0
-            ? await Promise.all([
-                hierarchieRepo.count({ where: { etablissementId } }),
-                hierarchieRepo.count({ where: { etablissementId, actif: true } }),
-            ])
-            : [0, 0];
+        // 5. Profondeur max (CTE récursif)
+        const profondeurResult = await this.uniteRepo.query(`
+            WITH RECURSIVE depth_calc AS (
+                SELECT id, 1 AS depth
+                FROM unites_organisationnelles
+                WHERE "parentId" IS NULL AND "etablissementId" = $1
+                UNION ALL
+                SELECT u.id, dc.depth + 1
+                FROM unites_organisationnelles u
+                INNER JOIN depth_calc dc ON u."parentId" = dc.id
+                WHERE dc.depth < 100
+            )
+            SELECT MAX(depth)::int AS "profondeurMax" FROM depth_calc
+        `, [etablissementId]);
+        const profondeurMax: number = profondeurResult[0]?.profondeurMax || 0;
 
-        // Profondeur max
-        const profondeurMax = this.calculerProfondeurMax(unites);
+        // 6. Répartition par échelon (SQL GROUP BY + JOIN pour labels)
+        const parEchelonRows = await this.uniteRepo.query(`
+            SELECT
+                COALESCE(u."echelonStructurelId"::text, 'SANS_ECHELON') AS "echelonId",
+                COUNT(*)::int AS count,
+                e.label, e.code, e.couleur
+            FROM unites_organisationnelles u
+            LEFT JOIN echelons_structurels e ON e.id = u."echelonStructurelId"
+            WHERE u."etablissementId" = $1
+            GROUP BY u."echelonStructurelId", e.label, e.code, e.couleur
+            ORDER BY count DESC
+        `, [etablissementId]);
 
-        // Répartition par échelon structurel
-        const parEchelon = unites.reduce((acc, unite) => {
-            const key = unite.echelonStructurelId || 'SANS_ECHELON';
-            acc[key] = (acc[key] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
-
-        // Détails par échelon avec labels et couleurs
-        // Inclure les échelons globaux (etablissementId NULL) ET locaux
-        const echelons = await this.echelonRepo.find({
-            where: [
-                { etablissementId },
-                { etablissementId: IsNull() },
-            ],
-            select: ['id', 'label', 'code', 'couleur'],
-        });
-        const echelonMap = new Map(echelons.map(e => [e.id, e]));
-        const parEchelonDetails = Object.entries(parEchelon).map(([echelonId, count]) => {
-            const echelon = echelonId === 'SANS_ECHELON' ? null : echelonMap.get(echelonId);
-            return {
-                echelonId,
-                label: echelon?.label || 'Sans échelon',
-                code: echelon?.code || 'N/A',
-                couleur: echelon?.couleur,
-                count,
-            };
-        }).sort((a, b) => b.count - a.count);
+        const parEchelon: Record<string, number> = {};
+        const parEchelonDetails: StatistiquesOrganisationResult['parEchelonDetails'] = [];
+        for (const row of parEchelonRows) {
+            parEchelon[row.echelonId] = row.count;
+            parEchelonDetails.push({
+                echelonId: row.echelonId,
+                label: row.label || 'Sans échelon',
+                code: row.code || 'N/A',
+                couleur: row.couleur,
+                count: row.count,
+            });
+        }
 
         return {
-            // Unités
             totalUnites,
             unitesActives,
             unitesSansPostes,
-            // Postes
             totalPostes,
             postesActifs,
             postesOccupes,
             postesVacants,
             tauxOccupation: totalPostes > 0 ? Math.round((postesOccupes / totalPostes) * 10000) / 100 : 0,
-            // Hiérarchies
             totalHierarchies,
             hierarchiesActives,
-            // Arborescence
             profondeurMax,
-            // Répartition par échelon structurel
             parEchelon,
             parEchelonDetails,
         };
@@ -834,151 +842,159 @@ export class OrganisationService {
 
     /**
      * Validation complète de la cohérence de l'arborescence
-     * Détecte les cycles, orphelins et incohérences
+     * Utilise des requêtes SQL optimisées au lieu du DFS applicatif.
      */
     async validerArborescence(etablissementId: string): Promise<ValidationArborescenceResult> {
         const erreurs: string[] = [];
         const avertissements: string[] = [];
 
-        const unites = await this.uniteRepo.find({
-            where: { etablissementId },
-            order: { ordre: 'ASC' },
-        });
+        // 1. Détection de cycles via CTE récursif PostgreSQL
+        const cycleRows = await this.uniteRepo.query(`
+            WITH RECURSIVE path_check AS (
+                SELECT id, "parentId", ARRAY[id] AS path_ids, 1 AS depth
+                FROM unites_organisationnelles
+                WHERE "etablissementId" = $1 AND "parentId" IS NULL
+                UNION ALL
+                SELECT u.id, u."parentId", pc.path_ids || u.id, pc.depth + 1
+                FROM unites_organisationnelles u
+                INNER JOIN path_check pc ON u."parentId" = pc.id
+                WHERE pc.depth < 100
+                  AND u.id != ALL(pc.path_ids)
+            ),
+            orphan_nodes AS (
+                SELECT id FROM unites_organisationnelles
+                WHERE "etablissementId" = $1
+                  AND "parentId" IS NOT NULL
+                  AND id NOT IN (SELECT id FROM path_check)
+            )
+            SELECT u.id, u.nom, u.code, 'CYCLE' AS type_erreur
+            FROM unites_organisationnelles u
+            WHERE u."etablissementId" = $1
+              AND u.id IN (SELECT id FROM orphan_nodes)
+        `, [etablissementId]);
 
-        if (unites.length === 0) {
+        for (const row of cycleRows) {
+            erreurs.push(`Cycle détecté impliquant l'unité ${row.nom} (${row.code})`);
+        }
+
+        // 2. Orphelins (parentId inexistant)
+        const orphelinRows = await this.uniteRepo.query(`
+            SELECT u.id, u.nom, u.code, u."parentId"
+            FROM unites_organisationnelles u
+            WHERE u."etablissementId" = $1
+              AND u."parentId" IS NOT NULL
+              AND u."parentId" NOT IN (
+                  SELECT id FROM unites_organisationnelles WHERE "etablissementId" = $1
+              )
+        `, [etablissementId]);
+
+        for (const row of orphelinRows) {
+            erreurs.push(
+                `L'unité ${row.nom} (${row.code}) référence un parent inexistant (${row.parentId})`
+            );
+        }
+
+        // 3. Codes en double
+        const doublonRows = await this.uniteRepo.query(`
+            SELECT code, COUNT(*)::int AS nb
+            FROM unites_organisationnelles
+            WHERE "etablissementId" = $1
+            GROUP BY code
+            HAVING COUNT(*) > 1
+        `, [etablissementId]);
+
+        for (const row of doublonRows) {
+            erreurs.push(`Code en double: ${row.code} (${row.nb} occurrences)`);
+        }
+
+        // 4. Unités sans poste + statistiques en une seule requête
+        const statsRows = await this.uniteRepo.query(`
+            SELECT
+                COUNT(*)::int AS "totalUnites",
+                (SELECT COUNT(*)::int FROM postes p
+                 INNER JOIN unites_organisationnelles uo ON uo.id = p."uniteOrganisationnelleId"
+                 WHERE uo."etablissementId" = $1) AS "totalPostes",
+                COUNT(*) FILTER (WHERE NOT EXISTS (
+                    SELECT 1 FROM postes p WHERE p."uniteOrganisationnelleId" = u.id
+                ))::int AS "unitesSansPoste"
+            FROM unites_organisationnelles u
+            WHERE u."etablissementId" = $1
+        `, [etablissementId]);
+
+        const totalUnites: number = statsRows[0]?.totalUnites || 0;
+        const totalPostes: number = statsRows[0]?.totalPostes || 0;
+        const unitesSansPoste: number = statsRows[0]?.unitesSansPoste || 0;
+
+        // Avertissements pour unités sans poste (noms uniquement)
+        if (unitesSansPoste > 0) {
+            const sansPosteNoms = await this.uniteRepo.query(`
+                SELECT u.nom, u.code
+                FROM unites_organisationnelles u
+                WHERE u."etablissementId" = $1
+                  AND NOT EXISTS (SELECT 1 FROM postes p WHERE p."uniteOrganisationnelleId" = u.id)
+                LIMIT 10
+            `, [etablissementId]);
+            for (const row of sansPosteNoms) {
+                avertissements.push(`L'unité ${row.nom} (${row.code}) n'a aucun poste défini`);
+            }
+            if (unitesSansPoste > 10) {
+                avertissements.push(`... et ${unitesSansPoste - 10} autres unités sans poste`);
+            }
+        }
+
+        // 5. Profondeur max via CTE récursif
+        const profondeurResult = await this.uniteRepo.query(`
+            WITH RECURSIVE depth_calc AS (
+                SELECT id, 1 AS depth
+                FROM unites_organisationnelles
+                WHERE "parentId" IS NULL AND "etablissementId" = $1
+                UNION ALL
+                SELECT u.id, dc.depth + 1
+                FROM unites_organisationnelles u
+                INNER JOIN depth_calc dc ON u."parentId" = dc.id
+                WHERE dc.depth < 100
+            )
+            SELECT MAX(depth)::int AS "profondeurMax" FROM depth_calc
+        `, [etablissementId]);
+        const profondeurMax: number = profondeurResult[0]?.profondeurMax || 0;
+
+        // Cas particulier : aucune unité
+        if (totalUnites === 0) {
             return {
                 valide: true,
                 erreurs: [],
                 avertissements: ['Aucune unité dans cet établissement'],
-                statistiques: {
-                    totalUnites: 0,
-                    totalPostes: 0,
-                    unitesSansPoste: 0,
-                    profondeurMax: 0,
-                },
+                statistiques: { totalUnites: 0, totalPostes: 0, unitesSansPoste: 0, profondeurMax: 0 },
             };
         }
-
-        // 1. Détecter les cycles dans la hiérarchie
-        const unitesMap = new Map<string, UniteOrganisationnelle>();
-        unites.forEach((u) => unitesMap.set(u.id, u));
-
-        const visited = new Set<string>();
-        const inStack = new Set<string>();
-
-        const detecterCycle = (uniteId: string): boolean => {
-            if (inStack.has(uniteId)) {
-                return true;
-            }
-            if (visited.has(uniteId)) {
-                return false;
-            }
-
-            visited.add(uniteId);
-            inStack.add(uniteId);
-
-            const enfants = unites.filter((u) => u.parentId === uniteId);
-            for (const enfant of enfants) {
-                if (detecterCycle(enfant.id)) {
-                    return true;
-                }
-            }
-
-            inStack.delete(uniteId);
-            return false;
-        };
-
-        const racines = unites.filter((u) => !u.parentId);
-        for (const racine of racines) {
-            if (detecterCycle(racine.id)) {
-                erreurs.push(`Cycle détecté dans la branche de l'unité ${racine.nom} (${racine.code})`);
-            }
-        }
-
-        // 2. Vérifier que tous les parentId pointent vers des unités existantes
-        for (const unite of unites) {
-            if (unite.parentId && !unitesMap.has(unite.parentId)) {
-                erreurs.push(
-                    `L'unité ${unite.nom} (${unite.code}) référence un parent inexistant (${unite.parentId})`
-                );
-            }
-        }
-
-        // 3. Vérifier les codes en double
-        const codesCount = new Map<string, number>();
-        unites.forEach((u) => {
-            codesCount.set(u.code, (codesCount.get(u.code) || 0) + 1);
-        });
-
-        codesCount.forEach((count, code) => {
-            if (count > 1) {
-                erreurs.push(`Code en double: ${code} (${count} occurrences)`);
-            }
-        });
-
-        // 4. Vérifier les unités sans poste
-        const postes = await this.posteRepo.find({
-            where: { uniteOrganisationnelleId: In(unites.map((u) => u.id)) },
-        });
-
-        const postesParUnite = new Map<string, number>();
-        postes.forEach((p) => {
-            postesParUnite.set(
-                p.uniteOrganisationnelleId,
-                (postesParUnite.get(p.uniteOrganisationnelleId) || 0) + 1
-            );
-        });
-
-        let unitesSansPoste = 0;
-        for (const unite of unites) {
-            if (!postesParUnite.has(unite.id)) {
-                unitesSansPoste++;
-                avertissements.push(`L'unité ${unite.nom} (${unite.code}) n'a aucun poste défini`);
-            }
-        }
-
-        // 5. Statistiques
-        const statistiques = {
-            totalUnites: unites.length,
-            totalPostes: postes.length,
-            unitesSansPoste,
-            profondeurMax: this.calculerProfondeurMax(unites),
-        };
 
         return {
             valide: erreurs.length === 0,
             erreurs,
             avertissements,
-            statistiques,
+            statistiques: { totalUnites, totalPostes, unitesSansPoste, profondeurMax },
         };
     }
 
     /**
-     * Calcule la profondeur maximale de l'arborescence
+     * Calcule la profondeur maximale d'un sous-arbre via CTE récursif PostgreSQL.
+     * Utilisé pour valider qu'un déplacement ne dépasse pas 6 niveaux.
      */
-    private calculerProfondeurMax(unites: UniteOrganisationnelle[]): number {
-        const unitesMap = new Map<string, UniteOrganisationnelle>();
-        unites.forEach((u) => unitesMap.set(u.id, u));
-
-        let maxProfondeur = 0;
-
-        const calculerProfondeur = (uniteId: string, profondeur: number): void => {
-            if (profondeur > maxProfondeur) {
-                maxProfondeur = profondeur;
-            }
-
-            const enfants = unites.filter((u) => u.parentId === uniteId);
-            for (const enfant of enfants) {
-                calculerProfondeur(enfant.id, profondeur + 1);
-            }
-        };
-
-        const racines = unites.filter((u) => !u.parentId);
-        for (const racine of racines) {
-            calculerProfondeur(racine.id, 1);
-        }
-
-        return maxProfondeur;
+    private async calculerProfondeurSousArbre(uniteId: string, etablissementId: string): Promise<number> {
+        const result = await this.uniteRepo.query(`
+            WITH RECURSIVE depth_calc AS (
+                SELECT id, "parentId", 1 AS depth
+                FROM unites_organisationnelles
+                WHERE id = $1 AND "etablissementId" = $2
+                UNION ALL
+                SELECT u.id, u."parentId", dc.depth + 1
+                FROM unites_organisationnelles u
+                INNER JOIN depth_calc dc ON u."parentId" = dc.id
+                WHERE dc.depth < 100
+            )
+            SELECT MAX(depth)::int AS max_depth FROM depth_calc
+        `, [uniteId, etablissementId]);
+        return result[0]?.max_depth || 0;
     }
 
     /**

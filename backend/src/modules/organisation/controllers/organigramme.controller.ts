@@ -6,38 +6,37 @@ import { AppError } from '@common/filters/error.filter';
 
 const router = Router();
 
+/** Guard : vérifie que etablissementId est présent dans le token */
+function getEtablissementId(req: Request): string {
+    const id = req.utilisateur?.etablissementId;
+    if (!id) throw new AppError('etablissementId manquant dans le token', 400, 'MISSING_ETABLISSEMENT_ID');
+    return id;
+}
+
 router.get('/statistiques', authMiddleware, requirePermission('organisation:organigramme:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const etablissementId = req.utilisateur?.etablissementId;
-        if (!etablissementId) throw new AppError('Établissement requis', 400, 'ETABLISSEMENT_REQUIRED');
-        const stats = await organisationService.getStatistiquesOrganisation(etablissementId);
+        const stats = await organisationService.getStatistiquesOrganisation(getEtablissementId(req));
         res.json({ success: true, data: stats });
     } catch (error) { next(error); }
 });
 
 router.get('/organigramme', authMiddleware, requirePermission('organisation:organigramme:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const etablissementId = req.utilisateur?.etablissementId;
-        if (!etablissementId) throw new AppError('Établissement requis', 400, 'ETABLISSEMENT_REQUIRED');
-        const organigramme = await organisationService.getOrganigramme(etablissementId);
+        const organigramme = await organisationService.getOrganigramme(getEtablissementId(req));
         res.json({ success: true, data: organigramme });
     } catch (error) { next(error); }
 });
 
 router.get('/valider-arborescence', authMiddleware, requirePermission('organisation:organigramme:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const etablissementId = req.utilisateur?.etablissementId;
-        if (!etablissementId) throw new AppError('Établissement requis', 400, 'ETABLISSEMENT_REQUIRED');
-        const validation = await organisationService.validerArborescence(etablissementId);
+        const validation = await organisationService.validerArborescence(getEtablissementId(req));
         res.json({ success: true, data: validation });
     } catch (error) { next(error); }
 });
 
 router.get('/export-pdf', authMiddleware, requirePermission('organisation:organigramme:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const etablissementId = req.utilisateur?.etablissementId;
-        if (!etablissementId) throw new AppError('Établissement requis', 400, 'ETABLISSEMENT_REQUIRED');
-        const html = await organigrammePdfService.genererOrganigrammeHTML(etablissementId);
+        const html = await organigrammePdfService.genererOrganigrammeHTML(getEtablissementId(req));
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.send(html);
     } catch (error) { next(error); }

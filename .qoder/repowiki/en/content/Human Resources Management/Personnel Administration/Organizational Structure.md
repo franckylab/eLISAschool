@@ -16,11 +16,11 @@
 
 ## Update Summary
 **Changes Made**
-- Updated CSS styling standardization section to reflect the application of inline styles with CSS variables across organigramme components
-- Enhanced frontend interface documentation with details about spacing consistency and rendering improvements
-- Added specific information about loading sections and distribution features corrections
-- Updated troubleshooting guide with CSS variable-related issues and solutions
-- Strengthened performance considerations section with CSS variable optimization details
+- Enhanced CSS styling standardization section to reflect the application of inline styles with CSS variables across organigramme components including OrganigrammeListe, OrganigrammePage, UniteDetailDrawer, and modal components
+- Updated responsive design documentation with details about clamp() function implementation for improved adaptability
+- Added specific information about standardized inline styles and CSS variable usage throughout organizational chart components
+- Enhanced troubleshooting guide with CSS variable-related issues and solutions for organigramme components
+- Strengthened performance considerations section with CSS variable optimization details and responsive design improvements
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -37,17 +37,17 @@
 12. [Appendices](#appendices)
 
 ## Introduction
-This document explains the organizational structure sub-feature for an educational institution following major architectural consolidation with enhanced security measures and CSS styling standardization. The system has undergone significant restructuring with the consolidation of multiple entities (NiveauOrganisation, UsageUnite, CategoriePoste, TypeRelationHierarchique) into a unified EchelonStructurel model via migration 114-normalisation-echelons-structurels.sql, simplifying backend services from 4 specialized services to a single EchelonStructurelService, and consolidating frontend pages from separate management interfaces to a unified echelons structurels interface with enhanced CSS variables and internationalization support. The system now includes comprehensive multi-tenant filtering by etablissementId across all services and controllers, with all organization routes secured through authentication controls and enhanced type safety improvements that remove any types. Recent updates have standardized CSS styling across organigramme components using inline styles with CSS variables instead of utility classes, ensuring consistent gaps and paddings throughout the organizational chart interface. This improves code readability and corrects rendering issues in loading sections and distribution features. It covers how to define organizational units, establish reporting relationships, manage position hierarchies, and link these structures to access control permissions through optimized APIs and enhanced user interfaces with improved performance, security, multi-tenant isolation, and consistent visual styling.
+This document explains the organizational structure sub-feature for an educational institution following major architectural consolidation with enhanced security measures and comprehensive CSS styling standardization. The system has undergone significant restructuring with the consolidation of multiple entities (NiveauOrganisation, UsageUnite, CategoriePoste, TypeRelationHierarchique) into a unified EchelonStructurel model via migration 114-normalisation-echelons-structurels.sql, simplifying backend services from 4 specialized services to a single EchelonStructurelService, and consolidating frontend pages from separate management interfaces to a unified echelons structurels interface with enhanced CSS variables and internationalization support. Recent updates have significantly enhanced organigramme components with improved CSS styling using the clamp() function for responsive design and standardized inline styles with CSS variables across all organizational chart components including OrganigrammeListe, OrganigrammePage, UniteDetailDrawer, and modal components. The system now includes comprehensive multi-tenant filtering by etablissementId across all services and controllers, with all organization routes secured through authentication controls and enhanced type safety improvements that remove any types. This CSS styling standardization ensures consistent gaps and paddings throughout the organizational chart interface, improves code readability, corrects rendering issues in loading sections and distribution features, and provides better responsive behavior across different screen sizes. It covers how to define organizational units, establish reporting relationships, manage position hierarchies, and link these structures to access control permissions through optimized APIs and enhanced user interfaces with improved performance, security, multi-tenant isolation, and consistent visual styling.
 
 ## Project Structure
-The organizational structure is now implemented as a consolidated backend module with unified EchelonStructurel functionality, streamlined service architecture, and enhanced security measures, complemented by unified frontend components with standardized CSS styling and internationalization:
+The organizational structure is now implemented as a consolidated backend module with unified EchelonStructurel functionality, streamlined service architecture, and enhanced security measures, complemented by unified frontend components with standardized CSS styling, responsive design using clamp() function, and internationalization:
 - Database schema and indexes are defined in migration files under the database/migrations directory, including the latest consolidation migrations that created the EchelonStructurel model and normalized structural echelons with multi-tenant support.
 - Business logic and API endpoints are organized within the unified organisation module with simplified service architecture centered around EchelonStructurelService and enhanced nomenclature management, all secured with authentication controls.
-- Frontend components have been consolidated into unified interfaces for managing echelons structurels with standardized CSS styling using inline styles and CSS variables, improved user experience, and internationalization support.
+- Frontend components have been consolidated into unified interfaces for managing echelons structurels with standardized CSS styling using inline styles and CSS variables, improved responsive design with clamp() function, enhanced user experience, and internationalization support.
 - Access control integrates with the RBAC module to enforce permissions based on roles and permissions with enhanced guard mechanisms and multi-tenant filtering.
 - Enhanced nomenclature management provides standardized terminology across the organization with dedicated table support instead of database enums.
 - Multi-tenant filtering ensures data isolation by etablissementId across all organizational operations with automatic context propagation.
-- Standardized CSS styling ensures consistent visual appearance across all organigramme components with proper spacing and padding through CSS variables.
+- Standardized CSS styling ensures consistent visual appearance across all organigramme components with proper spacing and padding through CSS variables and responsive design using clamp() function.
 
 ```mermaid
 graph TB
@@ -71,6 +71,11 @@ EnhancedSearch["Enhanced Personnel Search"]
 StreamlinedComponents["Streamlined Components with CSS Variables"]
 I18nSupport["Internationalization Support"]
 StandardizedStyling["Standardized CSS Styling"]
+ResponsiveDesign["Responsive Design with clamp()"]
+OrganigrammeListe["OrganigrammeListe Component"]
+OrganigrammePage["OrganigrammePage Component"]
+UniteDetailDrawer["UniteDetailDrawer Component"]
+ModalComponents["Modal Components"]
 end
 subgraph "Routing"
 Router["Route Registry"]
@@ -89,7 +94,12 @@ UnifiedInterface --> OrgCtrl
 EnhancedSearch --> UnifiedInterface
 StreamlinedComponents --> UnifiedInterface
 StandardizedStyling --> StreamlinedComponents
+ResponsiveDesign --> StreamlinedComponents
 I18nSupport --> StreamlinedComponents
+OrganigrammeListe --> StreamlinedComponents
+OrganigrammePage --> StreamlinedComponents
+UniteDetailDrawer --> StreamlinedComponents
+ModalComponents --> StreamlinedComponents
 ```
 
 **Diagram sources**
@@ -108,14 +118,14 @@ I18nSupport --> StreamlinedComponents
 - Unified EchelonStructurel management: Consolidated former NiveauOrganisation, UsageUnite, CategoriePoste, and TypeRelationHierarchique functionality into a single cohesive model through streamlined controllers and services with enhanced validation, error handling, and multi-tenant filtering.
 - Simplified service architecture: Reduced from 4 specialized services to single EchelonStructurelService with consolidated business logic, improved maintainability, enhanced nomenclature integration, and automatic etablissementId filtering.
 - Enhanced nomenclature management: Standardized terminology and definitions across organizational units with centralized management using dedicated tables instead of database enums, providing better flexibility and multilingual support.
-- Consolidated frontend interfaces: Unified management interfaces for echelons structurels with streamlined user experience, standardized CSS styling using inline styles and CSS variables, and internationalization support for global deployment.
+- Consolidated frontend interfaces: Unified management interfaces for echelons structurels with streamlined user experience, standardized CSS styling using inline styles and CSS variables, responsive design with clamp() function, and internationalization support.
 - Advanced personnel search: Enhanced search capabilities with sophisticated filtering, sorting, and real-time search functionality for better user productivity.
 - Interactive organizational charts: Build department trees and position hierarchies with real-time visualization capabilities using unified approach and consistent styling.
 - Advanced reporting and analytics: Generate comprehensive organizational reports with performance optimizations and improved error handling.
 - Access control integration: Restrict operations based on RBAC roles and permissions with enhanced guard mechanisms, better scoping, and multi-tenant isolation.
 - Authentication controls: All organization routes are now secured with authentication middleware ensuring only authenticated users can access organizational data.
 - Multi-tenant filtering: Automatic filtering by etablissementId ensures data isolation between different educational institutions with proper context propagation.
-- Standardized CSS styling: Consistent visual appearance across all organigramme components with inline styles using CSS variables for proper spacing, gaps, and padding throughout the organizational chart interface.
+- Standardized CSS styling: Consistent visual appearance across all organigramme components with inline styles using CSS variables for proper spacing, gaps, and padding throughout the organizational chart interface, enhanced with responsive design using clamp() function for optimal display across devices.
 
 Key implementation references:
 - Unified EchelonStructurel management: [organisation.controller.ts](file://backend/src/modules/organisation/controllers/organisation.controller.ts), [echelon-structurel.service.ts](file://backend/src/modules/organisation/services/echelon-structurel.service.ts)
@@ -132,14 +142,14 @@ Key implementation references:
 - [personnel.constants.ts](file://backend/src/shared/constants/personnel.constants.ts)
 
 ## Architecture Overview
-The system follows a streamlined consolidated architecture after major refactoring with unified EchelonStructurel model, simplified service layer, consolidated frontend interfaces, enhanced nomenclature support, comprehensive security measures, and standardized CSS styling:
+The system follows a streamlined consolidated architecture after major refactoring with unified EchelonStructurel model, simplified service layer, consolidated frontend interfaces, enhanced nomenclature support, comprehensive security measures, and standardized CSS styling with responsive design:
 - Controllers handle HTTP requests with consolidated functionality, simplified routing patterns, improved error handling, and mandatory authentication controls.
 - Single EchelonStructurelService encapsulates all business logic replacing previous 4 specialized services with optimized data access patterns, enhanced nomenclature support using dedicated tables, and automatic multi-tenant filtering by etablissementId.
-- Frontend interfaces have been consolidated into unified echelons structurels management with reduced complexity, better state management, standardized CSS styling using inline styles and CSS variables for consistent spacing and padding, and internationalization support.
+- Frontend interfaces have been consolidated into unified echelons structurels management with reduced complexity, better state management, standardized CSS styling using inline styles and CSS variables for consistent spacing and padding, responsive design with clamp() function, and internationalization support.
 - Database migrations define unified EchelonStructurel entity and relationships with enhanced performance, data integrity through consolidation migrations, and multi-tenant isolation.
 - RBAC guard intercepts requests to enforce permissions with improved efficiency, scoping capabilities, and establishment-based filtering.
 - Authentication middleware secures all organization routes ensuring only authenticated users can access organizational data.
-- Standardized CSS styling ensures consistent visual appearance across all organigramme components with proper spacing and padding through CSS variables.
+- Standardized CSS styling ensures consistent visual appearance across all organigramme components with proper spacing and padding through CSS variables and responsive design using clamp() function.
 
 ```mermaid
 sequenceDiagram
@@ -147,14 +157,15 @@ participant Client as "Client"
 param UnifiedInterface as "Unified Echelons Interface"
 param Search as "Personnel Search"
 param Router as "Route Registry"
-participant Ctrl as "Organisation Controller"
+param Ctrl as "Organisation Controller"
 param Auth as "Authentication Control"
 param Guard as "RBAC Guard"
 param Svc as "EchelonStructurel Service"
 param NomenclatureSvc as "Enhanced Nomenclature Service"
 param MultiTenant as "Multi-Tenant Filter"
 param CSSVars as "CSS Variables System"
-participant DB as "Database"
+param Responsive as "Responsive Design (clamp())"
+param DB as "Database"
 Client->>UnifiedInterface : "Request organizational data"
 UnifiedInterface->>Search : "Apply filters & sorting"
 Search->>Ctrl : "Optimized API call"
@@ -175,8 +186,9 @@ Svc-->>Ctrl : "Result"
 NomenclatureSvc-->>Ctrl : "Nomenclature data"
 Ctrl-->>UnifiedInterface : "Consolidated response"
 UnifiedInterface->>CSSVars : "Apply standardized styling"
-CSSVars-->>UnifiedInterface : "Consistent spacing & padding"
-UnifiedInterface-->>Client : "Enhanced UI response with i18n & styling"
+CSSVars->>Responsive : "Apply clamp() responsive values"
+Responsive-->>UnifiedInterface : "Adaptive layout"
+UnifiedInterface-->>Client : "Enhanced UI response with i18n, styling & responsiveness"
 ```
 
 **Diagram sources**
@@ -324,22 +336,23 @@ L["Establishment Context"] --> E
 - [nomenclature.service.ts](file://backend/src/modules/organisation/services/nomenclature.service.ts)
 
 ### Consolidated Frontend Interfaces
-**Updated** From separate management interfaces to unified echelons structurels interface with standardized CSS styling using inline styles and CSS variables
+**Updated** From separate management interfaces to unified echelons structurels interface with standardized CSS styling using inline styles and CSS variables, enhanced with responsive design using clamp() function
 
 - Capabilities:
   - Unified management interface for all echelon structurel types through single consolidated view with consistent styling using CSS variables and authentication requirements.
-  - Streamlined navigation between different echelon types with improved user experience, responsive design, and secure access controls.
+  - Streamlined navigation between different echelon types with improved user experience, responsive design using clamp() function, and secure access controls.
   - Integrated form handling for creating and editing various echelon types with shared validation, standardized CSS styling with inline styles and CSS variables, and establishment context.
   - Enhanced search and filtering across all echelon types with unified query interface, internationalization support, and multi-tenant filtering.
   - Consistent visual design system using CSS variables for theming and customization with proper spacing and padding.
   - Multi-language support with dynamic content switching and locale-aware formatting.
   - Standardized spacing and padding throughout the organizational chart interface using inline styles with CSS variables.
+  - Responsive design implementation using clamp() function for optimal display across different screen sizes and devices.
 - Typical outputs:
   - Single dashboard view for managing all organizational echelons with tabbed interface, consistent styling using CSS variables, and establishment-based data isolation.
   - Consolidated reporting views showing relationships between different echelon types with localized labels and secure access.
   - Unified export functionality for all echelon data with consistent formatting, language support, and establishment context.
   - Responsive design that adapts to various screen sizes while maintaining consistent appearance and security with standardized CSS styling.
-  - Corrected rendering in loading sections and distribution features through improved CSS variable usage.
+  - Corrected rendering in loading sections and distribution features through improved CSS variable usage and responsive design.
 
 ```mermaid
 flowchart TD
@@ -351,7 +364,7 @@ D --> G
 F --> G
 G --> H["Interactive Visualization"]
 H --> I["Internationalization Processing"]
-I --> J["Responsive Layout"]
+I --> J["Responsive Layout (clamp())"]
 J --> K["Unified Operations"]
 K --> L["Consolidated Reporting"]
 L --> M["Integrated Export"]
@@ -360,6 +373,7 @@ O["Authentication Required"] --> A
 P["Establishment Context"] --> F
 Q["Standardized CSS Styling"] --> G
 R["Inline Styles with CSS Variables"] --> Q
+S["Responsive Design (clamp())"] --> J
 ```
 
 **Diagram sources**
@@ -427,14 +441,15 @@ end
 ### Unified Echelons Structurels Interface
 The unified echelons structurels interface has replaced separate management interfaces to provide:
 - Single consolidated view for managing all echelon types with tabbed navigation, consistent CSS variable theming, and authentication requirements
-- Streamlined form handling with shared validation logic across different echelon types, responsive design, and establishment context
+- Streamlined form handling with shared validation logic across different echelon types, responsive design using clamp() function, and establishment context
 - Enhanced search capabilities with unified filtering across all echelon categories, internationalization support, and multi-tenant filtering
-- Improved responsive design for various screen sizes and devices with adaptive layouts and secure access
+- Improved responsive design for various screen sizes and devices with adaptive layouts using clamp() function and secure access
 - Better loading states and error handling with unified error management, localized messages, and authentication feedback
 - Reduced bundle size through code optimization, shared components with tree shaking, and lazy loading
 - CSS variable system for consistent theming and easy customization with standardized spacing and padding
 - Internationalization framework supporting multiple languages with dynamic content switching and establishment-specific content
 - Standardized CSS styling using inline styles with CSS variables for consistent gaps and paddings throughout the organizational chart interface
+- Responsive design implementation using clamp() function for optimal display across different screen sizes and devices
 
 ### Enhanced Personnel Search Field
 The personnel search field has been significantly enhanced with improved capabilities:
@@ -446,6 +461,7 @@ The personnel search field has been significantly enhanced with improved capabil
 - Enhanced accessibility with keyboard navigation, screen reader support, ARIA labels, and authentication feedback
 - Internationalization support for search results, filter labels, and establishment-specific terminology
 - CSS variable-driven styling for consistent appearance across themes and establishment branding with standardized spacing
+- Responsive design using clamp() function for optimal search field sizing across different screen sizes
 
 ### Streamlined Components
 Frontend components have been streamlined with reduced complexity and improved maintainability:
@@ -458,6 +474,38 @@ Frontend components have been streamlined with reduced complexity and improved m
 - Internationalization hooks for dynamic content localization and establishment-specific content
 - Performance optimizations with memoization, lazy loading, and efficient multi-tenant filtering
 - Standardized CSS styling using inline styles with CSS variables for consistent gaps and paddings throughout the organizational chart interface
+- Responsive design implementation using clamp() function for optimal component sizing and layout adaptation
+
+### Organigramme Components Enhancement
+**Updated** Enhanced organigramme components with improved CSS styling, responsive design using clamp() function, and standardized inline styles with CSS variables
+
+- OrganigrammeListe Component:
+  - Enhanced with standardized CSS styling using inline styles and CSS variables for consistent spacing and padding
+  - Responsive design implementation using clamp() function for optimal list item sizing across different screen sizes
+  - Improved visual hierarchy with consistent gaps and margins throughout the organizational chart interface
+  - Better accessibility with proper ARIA labels and keyboard navigation support
+  - Enhanced loading states and error handling with consistent styling
+
+- OrganigrammePage Component:
+  - Enhanced with standardized CSS styling using inline styles and CSS variables for consistent page layout
+  - Responsive design using clamp() function for optimal page element sizing and spacing
+  - Improved navigation flow with consistent button sizing and interactive element styling
+  - Better mobile experience with adaptive layouts and touch-friendly interactions
+  - Enhanced print styles for organizational chart printing with proper scaling
+
+- UniteDetailDrawer Component:
+  - Enhanced with standardized CSS styling using inline styles and CSS variables for consistent drawer appearance
+  - Responsive design using clamp() function for optimal drawer width and content sizing
+  - Improved form elements with consistent spacing, padding, and alignment
+  - Better scroll behavior and content overflow handling
+  - Enhanced close button and navigation controls with consistent styling
+
+- Modal Components:
+  - Enhanced with standardized CSS styling using inline styles and CSS variables for consistent modal appearance
+  - Responsive design using clamp() function for optimal modal sizing across different screen sizes
+  - Improved overlay and backdrop styling with consistent opacity and blur effects
+  - Better focus management and keyboard navigation support
+  - Enhanced animation transitions with smooth scaling and positioning
 
 ```mermaid
 flowchart TD
@@ -470,12 +518,17 @@ F --> G["Unified Interface Processing"]
 G --> H["Optimized API Calls"]
 H --> I["Cached Results"]
 I --> J["Streamlined UI Updates"]
-J --> K["Responsive Layout"]
+J --> K["Responsive Layout (clamp())"]
 K --> L["Improved User Experience"]
 M["Authentication Check"] --> B
 N["Establishment Context"] --> C
 O["Standardized CSS Styling"] --> E
 P["Inline Styles with CSS Variables"] --> O
+Q["Responsive Design (clamp())"] --> K
+R["OrganigrammeListe"] --> O
+S["OrganigrammePage"] --> O
+T["UniteDetailDrawer"] --> O
+U["Modal Components"] --> O
 ```
 
 **Diagram sources**
@@ -579,7 +632,7 @@ end
   - PostgreSQL for persistence with enhanced indexing strategies, improved query performance, and multi-tenant isolation.
   - Central route registry for endpoint registration with simplified routing patterns and authentication middleware.
   - Modern React ecosystem with improved hooks, state management patterns, internationalization libraries, and security best practices.
-  - CSS-in-JS or CSS variable systems for consistent theming, responsive design, and establishment branding with standardized spacing.
+  - CSS-in-JS or CSS variable systems for consistent theming, responsive design using clamp() function, and establishment branding with standardized spacing.
   - JWT authentication for secure API access with token validation and session management.
 
 ```mermaid
@@ -601,6 +654,11 @@ CSSVariables["CSS Variables System"] --> UnifiedInterface
 I18nSupport["Internationalization"] --> UnifiedInterface
 JWT["JWT Authentication"] --> Auth
 StandardizedStyling["Standardized CSS Styling"] --> CSSVariables
+ResponsiveDesign["Responsive Design (clamp())"] --> CSSVariables
+OrganigrammeListe["OrganigrammeListe"] --> StandardizedStyling
+OrganigrammePage["OrganigrammePage"] --> StandardizedStyling
+UniteDetailDrawer["UniteDetailDrawer"] --> StandardizedStyling
+ModalComponents["Modal Components"] --> StandardizedStyling
 ```
 
 **Diagram sources**
@@ -638,6 +696,8 @@ StandardizedStyling["Standardized CSS Styling"] --> CSSVariables
   - CSS variable system reduces style recalculation, improves rendering performance, and supports establishment branding with standardized spacing and padding.
   - Internationalization support with lazy-loaded translations minimizes initial bundle size and supports establishment-specific content.
   - Standardized CSS styling using inline styles with CSS variables improves code readability and corrects rendering issues in loading sections and distribution features.
+  - Responsive design using clamp() function optimizes layout calculations and reduces reflow/repaint cycles for better performance across different screen sizes.
+  - CSS variable optimization reduces browser style computation overhead and improves rendering performance for organigramme components.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -659,6 +719,7 @@ Common issues and resolutions:
   - Check missing indexes and heavy queries; add targeted indexes with monitoring, performance profiling, and multi-tenant query optimization.
   - Monitor nomenclature lookup performance and optimize caching strategies with better metrics, dedicated table queries, and establishment-based caching.
   - Investigate frontend performance issues with component rendering, hook optimization, CSS variable processing, and authentication state management.
+  - Monitor responsive design performance with clamp() function usage and ensure optimal layout calculations across different screen sizes.
 - Data integrity:
   - Validate referential integrity when deleting organizational units or positions with children with enhanced cascade handling and establishment scoping.
   - Ensure nomenclature consistency across all organizational references with automated validation, dedicated table constraints, and establishment context.
@@ -680,6 +741,8 @@ Common issues and resolutions:
   - Test responsive design across different screen sizes and devices with CSS variable theming and establishment branding.
   - Check CSS styling standardization with inline styles and CSS variables for consistent spacing and padding throughout the organizational chart interface.
   - Verify loading sections and distribution features render correctly with the new CSS variable approach.
+  - Test organigramme components (OrganigrammeListe, OrganigrammePage, UniteDetailDrawer, modal components) for proper CSS styling and responsive behavior.
+  - Validate clamp() function implementation for responsive design across different screen sizes and device orientations.
 - Multi-tenant filtering issues:
   - Verify establishmentId context propagation throughout the request lifecycle with proper middleware configuration.
   - Check database queries for proper establishment filtering and prevent cross-establishment data access.
@@ -691,6 +754,10 @@ Common issues and resolutions:
   - Ensure loading sections and distribution features display correctly with the standardized CSS approach.
   - Validate responsive design maintains consistent appearance across different screen sizes with CSS variable theming.
   - Monitor browser compatibility for CSS variable support and fallback mechanisms.
+  - Test clamp() function implementation for optimal responsive behavior across different viewport sizes.
+  - Verify organigramme components render correctly with standardized CSS styling and responsive design.
+  - Check CSS variable inheritance and scope for nested organigramme components.
+  - Validate print styles and export functionality with CSS variable theming.
 
 **Section sources**
 - [rbac.guard.ts](file://backend/src/modules/rbac/guards/rbac.guard.ts)
@@ -702,7 +769,7 @@ Common issues and resolutions:
 - [114-normalisation-echelons-structurels.sql](file://backend/database/migrations/114-normalisation-echelons-structurels.sql)
 
 ## Conclusion
-The organizational structure sub-feature provides a robust foundation for modeling functions and positions with clear reporting lines and strong access control. Following the major architectural consolidation that merged multiple entities (NiveauOrganisation, UsageUnite, CategoriePoste, TypeRelationHierarchique) into unified EchelonStructurel model through migration 114-normalisation-echelons-structurels.sql, simplified backend services from 4 specialized services to single EchelonStructurelService, consolidated frontend pages from separate management interfaces to unified echelons structurels interface with enhanced CSS variables and internationalization support, and implemented comprehensive security measures including multi-tenant filtering by etablissementId and authentication controls for all organization routes, institutions can maintain accurate organizational charts, manage changes efficiently, and ensure secure, role-based access to sensitive HR data through streamlined interfaces with enhanced performance, security, multi-tenant isolation, and standardized CSS styling. The recent consolidation improvements further enhance the user experience and operational efficiency for managing complex organizational structures through simplified architecture, reduced nomenclature controller complexity, unified interfaces, comprehensive internationalization support, robust authentication, establishment-based data isolation, and standardized CSS styling using inline styles with CSS variables for consistent spacing and padding throughout the organizational chart interface. This CSS styling standardization improves code readability and corrects rendering issues in loading sections and distribution features, ensuring a consistent visual appearance across all organigramme components.
+The organizational structure sub-feature provides a robust foundation for modeling functions and positions with clear reporting lines and strong access control. Following the major architectural consolidation that merged multiple entities (NiveauOrganisation, UsageUnite, CategoriePoste, TypeRelationHierarchique) into unified EchelonStructurel model through migration 114-normalisation-echelons-structurels.sql, simplified backend services from 4 specialized services to single EchelonStructurelService, consolidated frontend pages from separate management interfaces to unified echelons structurels interface with enhanced CSS variables and internationalization support, and implemented comprehensive security measures including multi-tenant filtering by etablissementId and authentication controls for all organization routes, institutions can maintain accurate organizational charts, manage changes efficiently, and ensure secure, role-based access to sensitive HR data through streamlined interfaces with enhanced performance, security, multi-tenant isolation, and standardized CSS styling. The recent consolidation improvements further enhance the user experience and operational efficiency for managing complex organizational structures through simplified architecture, reduced nomenclature controller complexity, unified interfaces, comprehensive internationalization support, robust authentication, establishment-based data isolation, and standardized CSS styling using inline styles with CSS variables for consistent spacing and padding throughout the organizational chart interface. The enhanced organigramme components with improved CSS styling, responsive design using clamp() function, and standardized inline styles across OrganigrammeListe, OrganigrammePage, UniteDetailDrawer, and modal components ensure consistent visual appearance, optimal responsive behavior, and improved user experience across different devices and screen sizes. This CSS styling standardization improves code readability, corrects rendering issues in loading sections and distribution features, and provides better performance through optimized CSS variable usage and responsive design implementation.
 
 ## Appendices
 
@@ -712,7 +779,7 @@ The organizational structure sub-feature provides a robust foundation for modeli
   - Define top-level echelons using the unified EchelonStructurel model with enhanced validation, CSS variable theming, and establishment context.
   - Add sub-echelons by setting parent relationships through consolidated controllers with improved error handling, internationalization support, and multi-tenant filtering.
   - Build position hierarchies by assigning reporting managers with enhanced validation, cycle detection, localized labels, and establishment scoping.
-  - Combine both views to produce comprehensive org charts via optimized endpoints with unified approach, responsive design, and secure access.
+  - Combine both views to produce comprehensive org charts via optimized endpoints with unified approach, responsive design using clamp() function, and secure access.
 
 - Assigning staff to positions:
   - Select a valid position linked to a standardized function through nomenclature management with dedicated table support and establishment context.
@@ -743,13 +810,14 @@ The organizational structure sub-feature provides a robust foundation for modeli
   - Track terminology usage and identify outdated or conflicting terms with improved monitoring, reporting, versioning capabilities, and establishment isolation.
 
 - Using consolidated frontend interfaces:
-  - Utilize the unified echelons structurels interface for comprehensive organizational management with streamlined navigation, CSS variable theming, responsive design, and authentication requirements.
+  - Utilize the unified echelons structurels interface for comprehensive organizational management with streamlined navigation, CSS variable theming, responsive design using clamp() function, and authentication requirements.
   - Employ enhanced search capabilities with advanced filtering, sorting, internationalization, real-time updates, establishment filtering, and secure access.
   - Take advantage of consolidated forms for faster echelon creation and editing with shared validation, localized labels, consistent styling, and establishment context.
   - Benefit from unified reporting views for better organizational analysis, decision making, internationalized output formats, and establishment scoping.
   - Leverage internationalization features for global deployment with dynamic language switching, locale-aware formatting, and establishment-specific content.
   - Utilize CSS variable system for consistent theming, easy customization, establishment branding, and responsive design across different institutional requirements.
   - Apply standardized CSS styling using inline styles with CSS variables for consistent spacing and padding throughout the organizational chart interface.
+  - Test organigramme components (OrganigrammeListe, OrganigrammePage, UniteDetailDrawer, modal components) for proper CSS styling and responsive behavior with clamp() function.
 
 - Implementing multi-tenant filtering:
   - Configure establishmentId context propagation throughout the application with proper middleware setup and request interception.
@@ -772,3 +840,7 @@ The organizational structure sub-feature provides a robust foundation for modeli
   - Verify responsive design maintains consistent appearance across different screen sizes with CSS variable theming.
   - Monitor browser compatibility for CSS variable support and implement appropriate fallback mechanisms.
   - Test all organigramme components for consistent visual appearance and proper spacing implementation.
+  - Implement clamp() function for responsive design across different screen sizes and device orientations.
+  - Verify organigramme components (OrganigrammeListe, OrganigrammePage, UniteDetailDrawer, modal components) render correctly with standardized CSS styling and responsive design.
+  - Test CSS variable inheritance and scope for nested organigramme components.
+  - Validate print styles and export functionality with CSS variable theming and responsive design.

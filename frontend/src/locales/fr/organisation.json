@@ -461,5 +461,34 @@
             "genererDepuisModele": "Générer depuis un modèle",
             "astuce": "Vous pouvez aussi utiliser un modèle prédéfini pour générer automatiquement toute la structure."
         }
+    },
+    "toasts": {
+        "uniteCreee": "Unité créée",
+        "uniteModifiee": "Unité modifiée",
+        "uniteSupprimee": "Unité supprimée",
+        "uniteCreeeAvecPostes": "Unité créée avec ses postes",
+        "ordreMajour": "Ordre mis à jour",
+        "hierarchieCreee": "Relation hiérarchique créée",
+        "hierarchieModifiee": "Relation hiérarchique modifiée",
+        "hierarchieSupprimee": "Relation hiérarchique supprimée",
+        "echelonCree": "Échelon créé",
+        "echelonModifie": "Échelon modifié",
+        "echelonSupprime": "Échelon supprimé",
+        "niveauCree": "Niveau créé",
+        "niveauModifie": "Niveau modifié",
+        "niveauSupprime": "Niveau supprimé",
+        "modeCree": "Mode de rémunération créé",
+        "modeModifie": "Mode de rémunération modifié",
+        "modeSupprime": "Mode de rémunération supprimé",
+        "templateCree": "Template créé",
+        "templateModifie": "Template modifié",
+        "templateSupprime": "Template supprimé",
+        "organisationGeneree": "Organisation générée avec succès",
+        "posteCree": "Poste créé avec succès",
+        "posteModifie": "Poste modifié avec succès",
+        "posteSupprime": "Poste supprimé",
+        "fonctionCreee": "Fonction créée avec succès",
+        "fonctionModifiee": "Fonction modifiée avec succès",
+        "fonctionSupprimee": "Fonction supprimée"
     }
 }

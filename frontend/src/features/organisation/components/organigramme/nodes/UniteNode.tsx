@@ -214,8 +214,8 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
 
             {/* Header */}
             <div
-                className="px-3 py-2 flex items-center gap-1"
-                style={{ backgroundColor: unite.echelonStructurelCouleur || 'var(--color-dominant-600)' }}
+                className="flex items-center"
+                style={{ padding: 'var(--space-xxs) var(--space-sm)', gap: 'var(--gap-xxs, 0.25rem)', backgroundColor: unite.echelonStructurelCouleur || 'var(--color-dominant-600)' }}
             >
                 <span
                     className="text-white font-medium truncate text-xs flex-1 min-w-0"
@@ -254,13 +254,14 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: -4 }}
                                         transition={{ duration: 0.15, ease: 'easeOut' }}
-                                        className="absolute top-full right-0 mt-1 py-1 rounded-[var(--radius-md)] shadow-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] z-50 min-w-[140px]"
-                                        style={{ transformOrigin: 'top right' }}
+                                        className="absolute top-full right-0 py-1 rounded-[var(--radius-md)] shadow-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] z-50 min-w-[140px]"
+                                        style={{ marginTop: 'var(--space-xxs)', transformOrigin: 'top right' }}
                                     >
                                         {onEdit && (
                                             <button
                                                 onClick={handleEdit}
-                                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-dominant-50)] transition-colors"
+                                                className="w-full flex items-center text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-dominant-50)] transition-colors"
+                                                style={{ gap: 'var(--gap-xs)', padding: 'var(--space-xxs) var(--space-sm)' }}
                                             >
                                                 <Pencil className="w-3 h-3" />
                                                 {t('modifier', 'Modifier')}
@@ -269,7 +270,8 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                                         {onAddChild && (
                                             <button
                                                 onClick={handleAddChild}
-                                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-dominant-50)] transition-colors"
+                                                className="w-full flex items-center text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-dominant-50)] transition-colors"
+                                                style={{ gap: 'var(--gap-xs)', padding: 'var(--space-xxs) var(--space-sm)' }}
                                             >
                                                 <Plus className="w-3 h-3 text-[var(--color-dominant-600)]" />
                                                 {t('ajouterEnfant', 'Ajouter enfant')}
@@ -278,7 +280,8 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                                         {onDelete && (
                                             <button
                                                 onClick={handleDelete}
-                                                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-[var(--color-danger)] hover:bg-danger/10 transition-colors"
+                                                className="w-full flex items-center text-xs text-[var(--color-danger)] hover:bg-danger/10 transition-colors"
+                                                style={{ gap: 'var(--gap-xs)', padding: 'var(--space-xxs) var(--space-sm)' }}
                                             >
                                                 <Trash2 className="w-3 h-3" />
                                                 {t('supprimer', 'Supprimer')}
@@ -308,14 +311,14 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
             </div>
 
             {/* Body — Postes */}
-            <div className="px-3 py-2 space-y-1">
+            <div className="flex flex-col" style={{ padding: 'var(--space-xxs) var(--space-sm)', gap: 'var(--gap-xxs, 0.25rem)' }}>
                 {postesAffiches.map((poste: OrganigrammeNode['postes'][number]) => (
                     <div
                         key={poste.id}
-                        className="flex items-center gap-1.5 text-[var(--color-text-secondary)]"
-                        style={{ fontSize: 'clamp(0.625rem, 0.6rem + 0.1vw, 0.6875rem)' }}
+                        className="flex items-center text-[var(--color-text-secondary)]"
+                        style={{ gap: 'var(--gap-xxs, 0.25rem)', fontSize: 'clamp(0.625rem, 0.6rem + 0.1vw, 0.6875rem)' }}
                     >
-                        <Briefcase className="h-3 w-3 flex-shrink-0 text-[var(--color-text-muted)]" />
+                        <Briefcase className="flex-shrink-0 text-[var(--color-text-muted)]" style={{ width: 'var(--icon-xxs, 0.75rem)', height: 'var(--icon-xxs, 0.75rem)' }} />
                         <span className="truncate">{poste.intitule}</span>
                     </div>
                 ))}
@@ -339,15 +342,15 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
 
             {/* Footer — Stats */}
             <div
-                className="px-3 py-1.5 flex items-center justify-between border-t border-[var(--color-bordure)]"
-                style={{ fontSize: 'clamp(0.5625rem, 0.54rem + 0.08vw, 0.625rem)' }}
+                className="flex items-center justify-between border-t border-[var(--color-bordure)]"
+                style={{ padding: 'var(--space-xxs) var(--space-sm)', fontSize: 'clamp(0.5625rem, 0.54rem + 0.08vw, 0.625rem)' }}
             >
-                <span className="flex items-center gap-1 text-[var(--color-text-muted)]">
-                    <Briefcase className="h-3 w-3" />
+                <span className="flex items-center text-[var(--color-text-muted)]" style={{ gap: 'var(--gap-xxs, 0.25rem)' }}>
+                    <Briefcase style={{ width: 'var(--icon-xxs, 0.75rem)', height: 'var(--icon-xxs, 0.75rem)' }} />
                     {postes.length}
                 </span>
-                <span className="flex items-center gap-1 text-[var(--color-text-muted)]">
-                    <Users className="h-3 w-3" />
+                <span className="flex items-center text-[var(--color-text-muted)]" style={{ gap: 'var(--gap-xxs, 0.25rem)' }}>
+                    <Users style={{ width: 'var(--icon-xxs, 0.75rem)', height: 'var(--icon-xxs, 0.75rem)' }} />
                     {unite.totalMembres || 0}
                 </span>
                 {unite.postesVacants > 0 && (

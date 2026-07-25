@@ -12,30 +12,14 @@
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api-client';
 import { useHandleError } from './use-handle-error';
 import type {
     HierarchiePersonnel, CreerHierarchieDto, ModifierHierarchieDto,
     OrganigrammeNode, StatistiquesOrganisation, ValidationArborescence,
 } from '../types/organisation.types';
-
-const ORGA_KEYS = {
-    hierarchie: {
-        all: ['organisation', 'hierarchie'] as const,
-        liste: (params?: { personnelId?: string }) => [...ORGA_KEYS.hierarchie.all, params] as const,
-        superieurs: (personnelId: string) => [...ORGA_KEYS.hierarchie.all, 'superieurs', personnelId] as const,
-        subordonnes: (superieurId: string) => [...ORGA_KEYS.hierarchie.all, 'subordonnes', superieurId] as const,
-    },
-    organigramme: {
-        all: ['organisation', 'organigramme'] as const,
-    },
-    stats: {
-        all: ['organisation', 'statistiques'] as const,
-    },
-    validation: {
-        all: ['organisation', 'validation'] as const,
-    },
-};
+import { ORGA_KEYS } from './query-keys';
 
 // ─── HIÉRARCHIE ───
 
@@ -50,6 +34,7 @@ export function useHierarchies(params?: { personnelId?: string }) {
             return response.data || [];
         },
         enabled: isAuthenticated,
+        staleTime: 30_000,
     });
 }
 
@@ -80,6 +65,7 @@ export function useSubordonnes(superieurId: string) {
 export function useCreerHierarchie() {
     const qc = useQueryClient();
     const handleError = useHandleError();
+    const { t } = useTranslation('organisation');
     return useMutation({
         mutationFn: async (dto: CreerHierarchieDto) => {
             const response = await apiClient.post<HierarchiePersonnel>('/api/organisation/hierarchie', dto);
@@ -89,7 +75,7 @@ export function useCreerHierarchie() {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.hierarchie.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
-            toast.success('Relation hiérarchique créée');
+            toast.success(t('toasts.hierarchieCreee'));
         },
         onError: (e: unknown) => handleError(e, 'Erreur création hiérarchie'),
     });
@@ -98,6 +84,7 @@ export function useCreerHierarchie() {
 export function useModifierHierarchie() {
     const qc = useQueryClient();
     const handleError = useHandleError();
+    const { t } = useTranslation('organisation');
     return useMutation({
         mutationFn: async ({ id, ...dto }: { id: string } & ModifierHierarchieDto) => {
             const response = await apiClient.patch<HierarchiePersonnel>(`/api/organisation/hierarchie/${id}`, dto);
@@ -107,7 +94,7 @@ export function useModifierHierarchie() {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.hierarchie.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
-            toast.success('Relation hiérarchique modifiée');
+            toast.success(t('toasts.hierarchieModifiee'));
         },
         onError: (e: unknown) => handleError(e, 'Erreur modification hiérarchie'),
     });
@@ -116,6 +103,7 @@ export function useModifierHierarchie() {
 export function useSupprimerHierarchie() {
     const qc = useQueryClient();
     const handleError = useHandleError();
+    const { t } = useTranslation('organisation');
     return useMutation({
         mutationFn: async (id: string) => {
             await apiClient.delete(`/api/organisation/hierarchie/${id}`);
@@ -125,7 +113,7 @@ export function useSupprimerHierarchie() {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.hierarchie.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
-            toast.success('Relation hiérarchique supprimée');
+            toast.success(t('toasts.hierarchieSupprimee'));
         },
         onError: (e: unknown) => handleError(e, 'Erreur suppression hiérarchie'),
     });
@@ -142,6 +130,7 @@ export function useOrganigramme() {
             return response.data || [];
         },
         enabled: !!etablissementId && isAuthenticated,
+        staleTime: 30_000,
     });
 }
 
@@ -156,6 +145,7 @@ export function useStatistiquesOrganisation() {
             return response.data;
         },
         enabled: !!etablissementId && isAuthenticated,
+        staleTime: 30_000,
     });
 }
 

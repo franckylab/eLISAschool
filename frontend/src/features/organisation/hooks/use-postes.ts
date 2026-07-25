@@ -14,13 +14,7 @@ import {
 } from '@/features/postes/hooks/use-postes';
 import type { ModifierPosteDto } from '../types/organisation.types';
 import type { CreatePosteDto } from '@/features/postes/types/poste.types';
-
-/** Clés de cache partagées pour l'invalidation */
-const ORGA_KEYS = {
-    organigramme: { all: ['organisation', 'organigramme'] as const },
-    unites: { all: ['organisation', 'unites'] as const },
-    stats: { all: ['organisation', 'statistiques'] as const },
-};
+import { ORGA_KEYS } from './query-keys';
 
 function invaliderCacheOrg(qc: ReturnType<typeof useQueryClient>) {
     qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });

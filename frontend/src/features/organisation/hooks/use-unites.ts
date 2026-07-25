@@ -12,27 +12,13 @@
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api-client';
 import { useHandleError } from './use-handle-error';
 import type {
     UniteOrganisationnelle, CreerUniteDto, ModifierUniteDto, UniteFiltres,
 } from '../types/organisation.types';
-
-const ORGA_KEYS = {
-    unites: {
-        all: ['organisation', 'unites'] as const,
-        liste: (filtres: UniteFiltres) => [...ORGA_KEYS.unites.all, filtres] as const,
-        detail: (id: string) => [...ORGA_KEYS.unites.all, 'detail', id] as const,
-        arborescence: ['organisation', 'unites', 'arborescence'] as const,
-        chemin: (uniteId: string) => [...ORGA_KEYS.unites.all, 'chemin', uniteId] as const,
-    },
-    organigramme: {
-        all: ['organisation', 'organigramme'] as const,
-    },
-    stats: {
-        all: ['organisation', 'statistiques'] as const,
-    },
-};
+import { ORGA_KEYS } from './query-keys';
 
 // ─── UNITÉS ORGANISATIONNELLES ───
 
@@ -58,12 +44,14 @@ export function useUnite(id: string) {
             return response.data;
         },
         enabled: !!id && isAuthenticated,
+        staleTime: 2 * 60 * 1000,
     });
 }
 
 export function useCreerUnite() {
     const qc = useQueryClient();
     const handleError = useHandleError();
+    const { t } = useTranslation('organisation');
     return useMutation({
         mutationFn: async (dto: CreerUniteDto) => {
             const response = await apiClient.post<UniteOrganisationnelle>('/api/organisation/unites', dto);
@@ -73,7 +61,7 @@ export function useCreerUnite() {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
-            toast.success('Unité créée');
+            toast.success(t('toasts.uniteCreee'));
         },
         onError: (e: unknown) => handleError(e, 'Erreur création unité'),
     });
@@ -82,6 +70,7 @@ export function useCreerUnite() {
 export function useModifierUnite() {
     const qc = useQueryClient();
     const handleError = useHandleError();
+    const { t } = useTranslation('organisation');
     return useMutation({
         mutationFn: async ({ id, ...dto }: { id: string } & ModifierUniteDto) => {
             const response = await apiClient.patch<UniteOrganisationnelle>(`/api/organisation/unites/${id}`, dto);
@@ -92,7 +81,7 @@ export function useModifierUnite() {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.detail(vars.id) });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
-            toast.success('Unité modifiée');
+            toast.success(t('toasts.uniteModifiee'));
         },
         onError: (e: unknown) => handleError(e, 'Erreur modification unité'),
     });
@@ -101,6 +90,7 @@ export function useModifierUnite() {
 export function useSupprimerUnite() {
     const qc = useQueryClient();
     const handleError = useHandleError();
+    const { t } = useTranslation('organisation');
     return useMutation({
         mutationFn: async (id: string) => {
             await apiClient.delete(`/api/organisation/unites/${id}`);
@@ -110,7 +100,7 @@ export function useSupprimerUnite() {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
-            toast.success('Unité supprimée');
+            toast.success(t('toasts.uniteSupprimee'));
         },
         onError: (e: unknown) => handleError(e, 'Erreur suppression unité'),
     });
@@ -129,10 +119,12 @@ export function useArborescence() {
     });
 }
 
-/** Récupérer l'impact de suppression d'une unité */
-export function useGetImpactUnite() {
-    return useMutation({
-        mutationFn: async (id: string) => {
+/** Récupérer l'impact de suppression d'une unité (GET on-demand) */
+export function useGetImpactUnite(uniteId: string | null) {
+    const { isAuthenticated } = useAuthStore();
+    return useQuery({
+        queryKey: [...ORGA_KEYS.unites.all, 'impact', uniteId] as const,
+        queryFn: async () => {
             const response = await apiClient.get<{
                 enfants: number;
                 descendants: number;
@@ -141,9 +133,11 @@ export function useGetImpactUnite() {
                 membresDirect: number;
                 membresTotal: number;
                 hierarchies: number;
-            }>(`/api/organisation/unites/${id}/impact`);
+            }>(`/api/organisation/unites/${uniteId}/impact`);
             return response.data;
         },
+        enabled: !!uniteId && isAuthenticated,
+        staleTime: 10_000, // 10s — donnée ponctuelle
     });
 }
 
@@ -151,6 +145,7 @@ export function useGetImpactUnite() {
 export function useCreerUniteAvecPostes() {
     const qc = useQueryClient();
     const handleError = useHandleError();
+    const { t } = useTranslation('organisation');
     return useMutation({
         mutationFn: async (data: CreerUniteDto & { postes?: Array<{ intitule: string; code?: string; description?: string; estSuppleant?: boolean }> }) => {
             const response = await apiClient.post<UniteOrganisationnelle>('/api/organisation/unites/avec-postes', data);
@@ -160,7 +155,7 @@ export function useCreerUniteAvecPostes() {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
-            toast.success('Unité créée avec ses postes');
+            toast.success(t('toasts.uniteCreeeAvecPostes'));
         },
         onError: (e: unknown) => handleError(e, 'Erreur création unité'),
     });
@@ -170,6 +165,7 @@ export function useCreerUniteAvecPostes() {
 export function useReordonnerUnite() {
     const qc = useQueryClient();
     const handleError = useHandleError();
+    const { t } = useTranslation('organisation');
     return useMutation({
         mutationFn: async ({ uniteId, apresId }: { uniteId: string; apresId: string | null }) => {
             await apiClient.patch(`/api/organisation/unites/${uniteId}/reordonner`, { apresId });
@@ -178,7 +174,7 @@ export function useReordonnerUnite() {
             qc.invalidateQueries({ queryKey: ORGA_KEYS.organigramme.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.unites.all });
             qc.invalidateQueries({ queryKey: ORGA_KEYS.stats.all });
-            toast.success('Ordre mis à jour');
+            toast.success(t('toasts.ordreMajour'));
         },
         onError: (e: unknown) => handleError(e, 'Erreur réordonnancement'),
     });

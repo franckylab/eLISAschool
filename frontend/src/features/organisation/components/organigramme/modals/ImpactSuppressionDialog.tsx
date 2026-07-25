@@ -9,7 +9,6 @@
  * hiérarchies) avant de confirmer la suppression.
  */
 
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, GitBranch, Briefcase, Users, Link2, Loader2 } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
@@ -26,18 +25,8 @@ interface ImpactSuppressionDialogProps {
 
 export function ImpactSuppressionDialog({ open, onOpenChange, unite, onDeleted }: ImpactSuppressionDialogProps) {
     const { t } = useTranslation('organisation');
-    const { mutateAsync: getImpact, data: impact, isPending: isLoadingImpact, reset: resetImpact } = useGetImpactUnite();
+    const { data: impact, isLoading: isLoadingImpact } = useGetImpactUnite(open && unite?.id ? unite.id : null);
     const { mutateAsync: supprimerUnite, isPending: isDeleting } = useSupprimerUnite();
-
-    // Charger l'impact à l'ouverture
-    useEffect(() => {
-        if (open && unite?.id) {
-            getImpact(unite.id).catch(() => {});
-        }
-        if (!open) {
-            resetImpact();
-        }
-    }, [open, unite?.id, getImpact, resetImpact]);
 
     const handleConfirm = async () => {
         if (!unite) return;

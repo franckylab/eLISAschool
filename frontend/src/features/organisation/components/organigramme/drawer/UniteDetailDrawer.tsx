@@ -171,12 +171,13 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
                                             e.dataTransfer.effectAllowed = 'move';
                                             onPosteDragStart?.(p.id);
                                         }}
-                                        className="flex items-center justify-between text-sm px-2 py-1.5 rounded-lg hover:bg-[var(--color-dominant-50)] cursor-grab active:cursor-grabbing"
+                                        className="flex items-center justify-between text-sm rounded-lg hover:bg-[var(--color-dominant-50)] cursor-grab active:cursor-grabbing"
+                                        style={{ padding: 'var(--space-xxs) var(--space-xs)' }}
                                     >
-                                        <div className="flex items-center gap-1.5">
-                                            <GripVertical className="w-3 h-3 text-[var(--color-text-muted)]" />
+                                        <div className="flex items-center" style={{ gap: 'var(--gap-xxs, 0.25rem)' }}>
+                                            <GripVertical className="text-[var(--color-text-muted)]" style={{ width: 'var(--icon-xxs, 0.75rem)', height: 'var(--icon-xxs, 0.75rem)' }} />
                                             <div className="flex flex-col">
-                                                <span className="flex items-center gap-1.5">
+                                                <span className="flex items-center" style={{ gap: 'var(--gap-xxs, 0.25rem)' }}>
                                                     <span style={{ color: 'var(--color-text)' }}>{p.intitule}</span>
                                                     {p.typePersonnelLabel && (
                                                         <span className="text-[9px] px-1 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'var(--color-dominant-50)', color: 'var(--color-dominant-600)' }}>
@@ -207,16 +208,16 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
 
                     {/* Enfants */}
                     <div className={sectionClass} style={sectionStyle}>
-                        <div className="flex items-center gap-2 mb-2">
-                            <GitBranch className="w-4 h-4" style={{ color: 'var(--color-dominant-600)' }} />
-                            <span className={labelClass} style={{ color: 'var(--color-text)' }}>
+                        <div className="flex items-center" style={{ gap: 'var(--gap-xs)', marginBottom: 'var(--space-xxs)' }}>
+                            <GitBranch style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)', color: 'var(--color-dominant-600)' }} />
+                            <span className={labelClass} style={labelStyle}>
                                 {t('organigramme.drawer.enfants', 'Unités enfants')} ({unite.enfants?.length || 0})
                             </span>
                         </div>
                         {unite.enfants?.length ? (
                             <ul className="flex flex-col" style={{ gap: 'var(--gap-xs)' }}>
                                 {unite.enfants.map(e => (
-                                    <li key={e.id} className="text-sm px-2 py-1.5 rounded-lg hover:bg-[var(--color-dominant-50)]" style={{ color: 'var(--color-text)' }}>
+                                    <li key={e.id} className="text-sm rounded-lg hover:bg-[var(--color-dominant-50)]" style={{ padding: 'var(--space-xxs) var(--space-xs)', color: 'var(--color-text)' }}>
                                         {e.nom} <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>({e.code})</span>
                                     </li>
                                 ))}
@@ -228,7 +229,7 @@ export function UniteDetailDrawer({ unite, open, onClose, onEdit, onDelete, onAd
 
                     {/* Actions */}
                     <div className={sectionClass} style={sectionStyle}>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap" style={{ gap: 'var(--gap-xs)' }}>
                             {onEdit && (
                                 <ElisaButton variant="primary" size="sm" icon={<Edit className="w-3.5 h-3.5" />} onClick={() => onEdit(unite)} className="flex-1">
                                     {t('organigramme.drawer.modifier', 'Modifier')}
