@@ -13,6 +13,7 @@
 import { memo, useState } from 'react';
 import { getBezierPath, EdgeLabelRenderer, type EdgeProps } from 'reactflow';
 import { useTranslation } from 'react-i18next';
+import { resolveColor } from '../utils/css-var-resolver';
 import type { HierarchiePersonnel, TypeRelationHierarchique } from '../../../types/organisation.types';
 
 export interface RelationEdgeData {
@@ -49,7 +50,7 @@ function RelationEdgeComponent({
     });
 
     const estFonctionnel = data?.typeRelation === 'FONCTIONNEL';
-    const couleur = estFonctionnel ? 'var(--color-accent-600)' : 'var(--color-dominant-600)';
+    const couleur = resolveColor(estFonctionnel ? 'var(--color-accent-600)' : 'var(--color-dominant-600)');
     const dasharray = estFonctionnel ? '3 4' : '8 4';
     const count = data?.count ?? 1;
     const actif = isHovered || selected;
@@ -107,7 +108,7 @@ function RelationEdgeComponent({
                         onMouseLeave={() => setIsHovered(false)}
                         className="cursor-pointer rounded-full font-medium leading-none transition-all"
                         style={{
-                            backgroundColor: actif ? couleur : 'var(--color-surface)',
+                            backgroundColor: actif ? couleur : resolveColor('var(--org-node-bg)'),
                             border: `1px solid ${couleur}`,
                             color: actif ? '#fff' : couleur,
                             fontSize: 'clamp(9px, 0.7vw + 0.3rem, 11px)',
@@ -125,9 +126,9 @@ function RelationEdgeComponent({
                             className="absolute rounded-lg border shadow-lg whitespace-nowrap"
                             style={{
                                 top: 'calc(100% + 6px)',
-                                backgroundColor: 'var(--color-surface)',
+                                backgroundColor: resolveColor('var(--org-node-bg)'),
                                 borderColor: couleur,
-                                color: 'var(--color-text)',
+                                color: resolveColor('var(--org-node-text)'),
                                 fontSize: 'clamp(10px, 0.7vw + 0.35rem, 12px)',
                                 padding: '4px 8px',
                                 pointerEvents: 'none',

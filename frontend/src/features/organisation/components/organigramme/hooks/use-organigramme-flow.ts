@@ -14,6 +14,7 @@ import type { Node, Edge } from 'reactflow';
 import { MarkerType } from 'reactflow';
 import type { OrganigrammeNode, HierarchiePersonnel } from '../../../types/organisation.types';
 import { computeLayout, type LayoutDirection } from '../utils/layout';
+import { resolveColor } from '../utils/css-var-resolver';
 import type { UniteNodeData } from '../nodes/UniteNode';
 import type { HierarchieEdgeData } from '../edges/HierarchieEdge';
 import type { RelationEdgeData } from '../edges/RelationEdge';
@@ -69,7 +70,7 @@ function construireEdgesRelations(
         }
     }
     return Array.from(groupes.entries()).map(([cle, g]) => {
-        const couleur = g.typeRelation === 'FONCTIONNEL' ? 'var(--color-accent-600)' : 'var(--color-dominant-600)';
+        const couleur = resolveColor(g.typeRelation === 'FONCTIONNEL' ? 'var(--color-accent-600)' : 'var(--color-dominant-600)');
         return {
             id: `relation-${cle}`,
             source: g.source,
@@ -257,7 +258,7 @@ export function useOrganigrammeFlow({ data, direction, defaultCollapseDepth = 2,
                 targetNom: nomById.get(le.target),
                 nbPostes: postesById.get(le.target),
             },
-            markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--color-dominant-400)', width: 12, height: 12 },
+            markerEnd: { type: MarkerType.ArrowClosed, color: resolveColor('var(--color-dominant-400)'), width: 12, height: 12 },
             animated: false,
             zIndex: 0,
         }));

@@ -227,12 +227,12 @@ function FlowViewInner({
                 zoomOnDoubleClick={false}
                 proOptions={{ hideAttribution: true }}
             >
-                <Background gap={20} size={1} color="var(--color-bordure)" />
+                <Background gap={20} size={1} color="var(--org-node-border)" />
                 {isDesktop && (
                     <MiniMap
                         nodeColor={() => 'var(--color-dominant-400)'}
                         maskColor="rgba(0,0,0,0.08)"
-                        className="!bg-[var(--color-surface)] !border !border-[var(--color-bordure)] !rounded-lg"
+                        className="!bg-[var(--org-node-bg)] !border !border-[var(--org-node-border)] !rounded-lg"
                         position="bottom-right"
                         pannable
                         zoomable
@@ -240,7 +240,7 @@ function FlowViewInner({
                 )}
                 <Controls
                     showInteractive={false}
-                    className="!bg-[var(--color-surface)] !border !border-[var(--color-bordure)] !rounded-lg !shadow-sm"
+                    className="!bg-[var(--org-node-bg)] !border !border-[var(--org-node-border)] !rounded-lg !shadow-sm"
                 />
             </ReactFlow>
             <RelationDetailDrawer

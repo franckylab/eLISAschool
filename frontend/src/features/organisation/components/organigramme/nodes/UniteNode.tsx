@@ -184,11 +184,11 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                     : !isDragged && !isDropTarget && isSelected
                         ? 'border-[var(--color-dominant-600)] shadow-[0_0_12px_rgba(var(--color-dominant-600-rgb),0.3)]'
                         : !isDragged && !isDropTarget && !isSelected
-                            ? 'border-[var(--color-bordure)] hover:border-[var(--color-dominant-400)] hover:shadow-md hover:scale-[1.02]'
+                            ? 'border-[var(--org-node-border)] hover:border-[var(--org-node-border-hover)] hover:shadow-md hover:scale-[1.02]'
                             : ''
                 }
                 ${isEditMode && !isDragged && !isDropTarget ? 'border-dashed border-[var(--color-dominant-300)]/50' : ''}
-                bg-[var(--color-surface)]
+                bg-[var(--org-node-bg)]
             `}
             style={{ width: 220 }}
         >
@@ -199,8 +199,8 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                 className={`
                     transition-all duration-200
                     ${isEditMode
-                        ? '!w-3 !h-3 !border-[var(--color-surface)] !border-2 !bg-[var(--color-dominant-400)] hover:!bg-[var(--color-dominant-600)] !cursor-crosshair'
-                        : '!w-2 !h-2 !bg-[var(--color-text-muted)] !opacity-30'
+                        ? '!w-3 !h-3 !border-[var(--org-node-bg)] !border-2 !bg-[var(--color-dominant-400)] hover:!bg-[var(--color-dominant-600)] !cursor-crosshair'
+                        : '!w-2 !h-2 !bg-[var(--org-node-text-muted)] !opacity-30'
                     }
                     ${isConnecting && isEditMode
                         ? '!bg-[var(--color-success)] !w-4 !h-4 !shadow-[0_0_8px_rgba(var(--color-success),0.6)]'
@@ -254,13 +254,13 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95, y: -4 }}
                                         transition={{ duration: 0.15, ease: 'easeOut' }}
-                                        className="absolute top-full right-0 py-1 rounded-[var(--radius-md)] shadow-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] z-50 min-w-[140px]"
+                                        className="absolute top-full right-0 py-1 rounded-[var(--radius-md)] shadow-lg border border-[var(--org-node-border)] bg-[var(--org-node-bg)] z-50 min-w-[140px]"
                                         style={{ marginTop: 'var(--space-xxs)', transformOrigin: 'top right' }}
                                     >
                                         {onEdit && (
                                             <button
                                                 onClick={handleEdit}
-                                                className="w-full flex items-center text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-dominant-50)] transition-colors"
+                                                className="w-full flex items-center text-xs text-[var(--org-node-text)] hover:bg-[var(--color-dominant-50)] transition-colors"
                                                 style={{ gap: 'var(--gap-xs)', padding: 'var(--space-xxs) var(--space-sm)' }}
                                             >
                                                 <Pencil className="w-3 h-3" />
@@ -270,7 +270,7 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                                         {onAddChild && (
                                             <button
                                                 onClick={handleAddChild}
-                                                className="w-full flex items-center text-xs text-[var(--color-text-primary)] hover:bg-[var(--color-dominant-50)] transition-colors"
+                                                className="w-full flex items-center text-xs text-[var(--org-node-text)] hover:bg-[var(--color-dominant-50)] transition-colors"
                                                 style={{ gap: 'var(--gap-xs)', padding: 'var(--space-xxs) var(--space-sm)' }}
                                             >
                                                 <Plus className="w-3 h-3 text-[var(--color-dominant-600)]" />
@@ -315,16 +315,16 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                 {postesAffiches.map((poste: OrganigrammeNode['postes'][number]) => (
                     <div
                         key={poste.id}
-                        className="flex items-center text-[var(--color-text-secondary)]"
+                        className="flex items-center text-[var(--org-node-text-secondary)]"
                         style={{ gap: 'var(--gap-xxs, 0.25rem)', fontSize: 'clamp(0.625rem, 0.6rem + 0.1vw, 0.6875rem)' }}
                     >
-                        <Briefcase className="flex-shrink-0 text-[var(--color-text-muted)]" style={{ width: 'var(--icon-xxs, 0.75rem)', height: 'var(--icon-xxs, 0.75rem)' }} />
+                        <Briefcase className="flex-shrink-0 text-[var(--org-node-text-muted)]" style={{ width: 'var(--icon-xxs, 0.75rem)', height: 'var(--icon-xxs, 0.75rem)' }} />
                         <span className="truncate">{poste.intitule}</span>
                     </div>
                 ))}
                 {postesRestants > 0 && (
                     <div
-                        className="text-[var(--color-text-muted)] italic"
+                        className="text-[var(--org-node-text-muted)] italic"
                         style={{ fontSize: 'clamp(0.5625rem, 0.55rem + 0.08vw, 0.625rem)' }}
                     >
                         +{t('autres', { count: postesRestants })}
@@ -332,7 +332,7 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                 )}
                 {postes.length === 0 && (
                     <div
-                        className="text-[var(--color-text-muted)] italic"
+                        className="text-[var(--org-node-text-muted)] italic"
                         style={{ fontSize: 'clamp(0.5625rem, 0.55rem + 0.08vw, 0.625rem)' }}
                     >
                         {t('aucunPosteCourt')}
@@ -342,14 +342,14 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
 
             {/* Footer — Stats */}
             <div
-                className="flex items-center justify-between border-t border-[var(--color-bordure)]"
+                className="flex items-center justify-between border-t border-[var(--org-node-border)]"
                 style={{ padding: 'var(--space-xxs) var(--space-sm)', fontSize: 'clamp(0.5625rem, 0.54rem + 0.08vw, 0.625rem)' }}
             >
-                <span className="flex items-center text-[var(--color-text-muted)]" style={{ gap: 'var(--gap-xxs, 0.25rem)' }}>
+                <span className="flex items-center text-[var(--org-node-text-muted)]" style={{ gap: 'var(--gap-xxs, 0.25rem)' }}>
                     <Briefcase style={{ width: 'var(--icon-xxs, 0.75rem)', height: 'var(--icon-xxs, 0.75rem)' }} />
                     {postes.length}
                 </span>
-                <span className="flex items-center text-[var(--color-text-muted)]" style={{ gap: 'var(--gap-xxs, 0.25rem)' }}>
+                <span className="flex items-center text-[var(--org-node-text-muted)]" style={{ gap: 'var(--gap-xxs, 0.25rem)' }}>
                     <Users style={{ width: 'var(--icon-xxs, 0.75rem)', height: 'var(--icon-xxs, 0.75rem)' }} />
                     {unite.totalMembres || 0}
                 </span>
@@ -367,7 +367,7 @@ function UniteNodeComponent({ data }: NodeProps<UniteNodeData>) {
                 className={`
                     transition-all duration-200
                     ${isEditMode
-                        ? '!w-3 !h-3 !border-[var(--color-surface)] !border-2 !bg-[var(--color-dominant-600)] hover:!bg-[var(--color-dominant-700)] !cursor-crosshair'
+                        ? '!w-3 !h-3 !border-[var(--org-node-bg)] !border-2 !bg-[var(--color-dominant-600)] hover:!bg-[var(--color-dominant-700)] !cursor-crosshair'
                         : '!w-2 !h-2 !bg-[var(--color-dominant-600)] !opacity-30'
                     }
                     ${isConnecting && isEditMode

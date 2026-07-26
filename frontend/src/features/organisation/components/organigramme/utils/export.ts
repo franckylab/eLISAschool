@@ -2,32 +2,69 @@
  * ==================================
  * eLISAschool - Export organigramme (PNG/PDF)
  * ==================================
- * Version: 2.0.0
+ * Version: 3.0.0
  * Auteur: franck arlos chendjou
  *
- * Export configurable : format, résolution, coloration, titre/date/légende,
- * portée (visible ou tout déplié). Utilise html-to-image (SVG foreignObject)
- * pour supporter oklch/oklab de Tailwind v4.
+ * Export configurable : presets de taille, qualité, coloration,
+ * titre/date/légende, portée (visible ou tout déplié).
+ * Fond blanc forcé pour export fidèle. Résolution CSS vars avant capture.
+ * Utilise html-to-image (SVG foreignObject) pour oklch/oklab Tailwind v4.
  */
 
-import { toPng, toJpeg } from 'html-to-image';
+import { toPng } from 'html-to-image';
+import { resolveColor, clearResolverCache } from './css-var-resolver';
+import {
+    type ExportOptions,
+    type EstimationExport,
+    FILTRES_COLORATION,
+    getTaillePreset,
+    getQualiteConfig,
+    estimerExport,
+} from './export-types';
 
-export interface ExportOptions {
-    format: 'png' | 'pdf';
-    resolution: 1 | 2 | 3 | 4;
-    coloration: 'couleur' | 'monochrome' | 'noirBlanc';
-    inclureTitre: boolean;
-    inclureDate: boolean;
-    inclureLegende: boolean;
-    titre: string;
-    portee: 'visible' | 'etendu';
+const COULEURS_EXPORT = {
+    bg: '#ffffff',
+    text: '#1f2937',
+    textStrong: '#0f172a',
+    textSecondary: '#4b5563',
+    textMuted: '#9ca3af',
+    border: '#e5e7eb',
+    dominant: '#28a745',
+    dominantLight: '#4ade80',
+    accent: '#007bff',
+} as const;
+
+function preparerPourExport(element: HTMLElement): void {
+    element.querySelectorAll('[style*="var("]').forEach((el) => {
+        const htmlEl = el as HTMLElement;
+        const style = htmlEl.style;
+        for (let i = 0; i < style.length; i++) {
+            const prop = style[i];
+            const val = style.getPropertyValue(prop);
+            if (val.includes('var(')) {
+                const resolved = val.replace(/var\(\s*(--[\w-]+)\s*(?:,\s*([^)]+))?\)/g, (_match, varName, fallback) => {
+                    const r = resolveColor(`var(${varName})`);
+                    return r || fallback || '';
+                });
+                if (resolved !== val) {
+                    style.setProperty(prop, resolved);
+                }
+            }
+        }
+    });
+
+    element.querySelectorAll('svg [stroke*="var("], svg [fill*="var("]').forEach((el) => {
+        const svgEl = el as SVGElement;
+        const stroke = svgEl.getAttribute('stroke');
+        if (stroke?.includes('var(')) {
+            svgEl.setAttribute('stroke', resolveColor(stroke));
+        }
+        const fill = svgEl.getAttribute('fill');
+        if (fill?.includes('var(')) {
+            svgEl.setAttribute('fill', resolveColor(fill));
+        }
+    });
 }
-
-const FILTRES_COLORATION: Record<string, string> = {
-    couleur: 'none',
-    monochrome: 'grayscale(0.75) contrast(1.1) saturate(0.4)',
-    noirBlanc: 'grayscale(1) contrast(1.3) brightness(1.05)',
-};
 
 function creerOverlay(options: ExportOptions): HTMLDivElement {
     const overlay = document.createElement('div');
@@ -35,7 +72,7 @@ function creerOverlay(options: ExportOptions): HTMLDivElement {
         position: absolute; top: 0; left: 0; right: 0; z-index: 100;
         display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
         padding: 12px 20px; pointer-events: none;
-        background: linear-gradient(180deg, var(--color-surface) 0%, transparent 100%);
+        background: linear-gradient(180deg, ${COULEURS_EXPORT.bg} 0%, transparent 100%);
     `;
 
     const gauche = document.createElement('div');
@@ -46,7 +83,7 @@ function creerOverlay(options: ExportOptions): HTMLDivElement {
         titreEl.textContent = options.titre;
         titreEl.style.cssText = `
             font-size: 16px; font-weight: 700;
-            color: var(--color-text-strong, var(--color-text));
+            color: ${COULEURS_EXPORT.textStrong};
             letter-spacing: -0.01em;
         `;
         gauche.appendChild(titreEl);
@@ -57,9 +94,7 @@ function creerOverlay(options: ExportOptions): HTMLDivElement {
         dateEl.textContent = new Date().toLocaleDateString('fr-FR', {
             day: 'numeric', month: 'long', year: 'numeric',
         });
-        dateEl.style.cssText = `
-            font-size: 11px; color: var(--color-text-muted);
-        `;
+        dateEl.style.cssText = `font-size: 11px; color: ${COULEURS_EXPORT.textMuted};`;
         gauche.appendChild(dateEl);
     }
 
@@ -71,13 +106,13 @@ function creerOverlay(options: ExportOptions): HTMLDivElement {
         const legende = document.createElement('div');
         legende.style.cssText = `
             display: flex; align-items: center; gap: 16px;
-            font-size: 10px; color: var(--color-text-secondary);
+            font-size: 10px; color: ${COULEURS_EXPORT.textSecondary};
         `;
 
         const items = [
-            { label: 'Hiérarchie', dasharray: '', color: 'var(--color-dominant-400)', width: '2' },
-            { label: 'Rel. directe', dasharray: '6 3', color: 'var(--color-dominant-600)', width: '1.5' },
-            { label: 'Rel. fonctionnelle', dasharray: '2 3', color: 'var(--color-accent-600)', width: '1.5' },
+            { label: 'Hiérarchie', dasharray: '', color: COULEURS_EXPORT.dominantLight, width: '2' },
+            { label: 'Rel. directe', dasharray: '6 3', color: COULEURS_EXPORT.dominant, width: '1.5' },
+            { label: 'Rel. fonctionnelle', dasharray: '2 3', color: COULEURS_EXPORT.accent, width: '1.5' },
         ];
 
         for (const item of items) {
@@ -118,6 +153,10 @@ async function capturerElement(
     element: HTMLElement,
     options: ExportOptions,
 ): Promise<string> {
+    clearResolverCache();
+
+    preparerPourExport(element);
+
     const overlay = creerOverlay(options);
     element.style.position = element.style.position || 'relative';
     element.appendChild(overlay);
@@ -128,24 +167,26 @@ async function capturerElement(
         element.style.filter = filtre;
     }
 
-    const bgColor = getComputedStyle(document.documentElement)
-        .getPropertyValue('--color-surface').trim() || '#ffffff';
+    const taille = getTaillePreset(options.taillePreset);
+    const qualite = getQualiteConfig(options.qualite);
+    const estimation = estimerExport(element.offsetWidth, element.offsetHeight, taille, qualite);
 
     try {
         const dataUrl = await toPng(element, {
-            pixelRatio: options.resolution,
+            pixelRatio: estimation.pixelRatio,
             cacheBust: true,
-            backgroundColor: bgColor,
+            backgroundColor: COULEURS_EXPORT.bg,
             filter: (node) => {
-                if (node instanceof HTMLElement && node.classList.contains('react-flow__controls')) {
-                    return false;
+                if (node instanceof HTMLElement) {
+                    if (node.classList.contains('react-flow__controls')) return false;
+                    if (node.classList.contains('react-flow__minimap')) return false;
                 }
                 return true;
             },
         });
         return dataUrl;
     } finally {
-        element.removeChild(overlay);
+        if (overlay.parentNode) element.removeChild(overlay);
         if (filtre !== 'none') {
             element.style.filter = ancienFiltre;
         }
@@ -157,44 +198,6 @@ function telecharger(dataUrl: string, nomFichier: string): void {
     link.download = nomFichier;
     link.href = dataUrl;
     link.click();
-}
-
-function exporterPdf(dataUrl: string): void {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    const doc = printWindow.document;
-
-    const style = doc.createElement('style');
-    style.textContent = `
-        @page { size: landscape; margin: 10mm; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            display: flex; align-items: center; justify-content: center;
-            min-height: 100vh; background: #fff;
-        }
-        img {
-            max-width: 100%; max-height: 95vh;
-            object-fit: contain;
-        }
-        @media print {
-            body { background: none; }
-            img { page-break-inside: avoid; }
-        }
-    `;
-
-    const img = doc.createElement('img');
-    img.src = dataUrl;
-    img.alt = 'Organigramme';
-
-    doc.head.appendChild(doc.createElement('meta')).setAttribute('charset', 'utf-8');
-    doc.title = 'Organigramme';
-    doc.head.appendChild(style);
-    doc.body.appendChild(img);
-
-    printWindow.addEventListener('load', () => {
-        setTimeout(() => { printWindow.print(); }, 300);
-    });
 }
 
 function genererNomFichier(titre: string, format: 'png' | 'pdf'): string {
@@ -222,7 +225,13 @@ export async function exporterOrganigramme(
         const nomFichier = genererNomFichier(options.titre, options.format);
 
         if (options.format === 'pdf') {
-            exporterPdf(dataUrl);
+            const { exporterPdfJsPdf } = await import('./export-pdf');
+            await exporterPdfJsPdf(dataUrl, {
+                titre: options.titre,
+                inclureDate: options.inclureDate,
+                inclureLegende: options.inclureLegende,
+                pageFormat: options.pageFormat || 'a4',
+            });
         } else {
             telecharger(dataUrl, nomFichier);
         }
@@ -235,30 +244,15 @@ export async function exporterOrganigramme(
     }
 }
 
-/**
- * @deprecated Utiliser exporterOrganigramme() avec ExportOptions
- */
-export async function exporterOrganigrammePNG(
+export function calculerEstimation(
     elementId: string,
-    nomEtablissement: string = 'organigramme',
-): Promise<void> {
+    taillePresetId: string,
+    qualiteId: string,
+): EstimationExport | null {
     const element = document.getElementById(elementId);
-    if (!element) return;
+    if (!element) return null;
 
-    try {
-        const dataUrl = await toJpeg(element, {
-            pixelRatio: 2,
-            cacheBust: true,
-            quality: 0.95,
-            backgroundColor: getComputedStyle(document.documentElement)
-                .getPropertyValue('--color-surface').trim() || '#ffffff',
-        });
-
-        const link = document.createElement('a');
-        link.download = `${nomEtablissement.replace(/\s+/g, '_')}_organigramme_${new Date().toISOString().slice(0, 10)}.jpg`;
-        link.href = dataUrl;
-        link.click();
-    } catch (error) {
-        console.error('Erreur export PNG:', error);
-    }
+    const taille = getTaillePreset(taillePresetId);
+    const qualite = getQualiteConfig(qualiteId);
+    return estimerExport(element.offsetWidth, element.offsetHeight, taille, qualite);
 }

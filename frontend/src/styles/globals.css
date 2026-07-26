@@ -95,6 +95,15 @@
     --color-card: #ffffff;
     --color-card-foreground: #212529;
     --color-muted-foreground: var(--color-text-muted);
+
+    /* Organigramme — couleurs constantes (identiques light/dark) pour export fidèle */
+    --org-node-bg: #ffffff;
+    --org-node-text: #1f2937;
+    --org-node-text-secondary: #4b5563;
+    --org-node-text-muted: #9ca3af;
+    --org-node-border: #e5e7eb;
+    --org-node-border-hover: #a5d6a7;
+    --org-node-surface-alt: #f3f4f6;
 }
 
 /* ===== Variables CSS runtime — Règle 60-30-10 (Vert par défaut) ===== */
@@ -192,6 +201,15 @@
         --color-card: #1a2744;
         --color-card-foreground: #eaeaea;
         --color-error: #ef4444;
+
+        /* Organigramme — couleurs constantes (identiques light/dark) pour export fidèle */
+        --org-node-bg: #ffffff;
+        --org-node-text: #1f2937;
+        --org-node-text-secondary: #4b5563;
+        --org-node-text-muted: #9ca3af;
+        --org-node-border: #e5e7eb;
+        --org-node-border-hover: #a5d6a7;
+        --org-node-surface-alt: #f3f4f6;
     }
 }
 

@@ -6,7 +6,8 @@
       "Bash(grep -rn -i \"hierarchie\" /mnt/DONNEES/projets/eLISAschool/backend/src --include=\"*.ts\" | grep -v \"seed-templates\\\\|contrat.service\\\\|statistiques-optimisees\\\\|organisation.service\\\\|hierarchie-personnel.entity\\\\|hierarchie.controller\\\\|seed-organisation\\\\|110-consolidation\\\\|111-refactoring\\\\|112-refactoring\\\\|1783507895000000\" | head -80)",
       "Bash(cd /mnt/DONNEES/projets/eLISAschool/backend && npx tsc --noEmit 2>&1 | grep -v '^npm notice' > /tmp/tsc-out.txt; grep -E 'modules/\\(notes|bulletins\\)/|dashboard-dataloader|verification-suppression|configuration-seed|portal-parent|audit-log' /tmp/tsc-out.txt; echo \"---TOTAL: $\\(grep -c 'error TS' /tmp/tsc-out.txt\\)\")",
       "Bash(find /mnt/DONNEES/projets/eLISAschool -type f -name \"*.ts\" -o -name \"*.tsx\" | grep -i -E \"\\(template|organisation|seed|generat\\)\" | head -50)",
-      "Bash(cd /mnt/DONNEES/projets/eLISAschool/backend && npx ts-node --transpile-only -r tsconfig-paths/register src/index.ts > /tmp/elisa-server.log 2>&1 & sleep 12 && cat /tmp/elisa-server.log | tail -25 && kill %1 2>/dev/null; true)"
+      "Bash(cd /mnt/DONNEES/projets/eLISAschool/backend && npx ts-node --transpile-only -r tsconfig-paths/register src/index.ts > /tmp/elisa-server.log 2>&1 & sleep 12 && cat /tmp/elisa-server.log | tail -25 && kill %1 2>/dev/null; true)",
+      "Bash(cat /mnt/DONNEES/projets/eLISAschool/frontend/src/locales/fr/organisation.json | python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:v for k,v in d.items\\(\\) if 'export' in k.lower\\(\\) or 'organigramme.export' in str\\(k\\)}, indent=2, ensure_ascii=False\\)\\)\" 2>/dev/null || cat /mnt/DONNEES/projets/eLISAschool/frontend/src/locales/fr/organisation.json | grep -A2 -B1 \"export\")"
     ]
   }
 }
