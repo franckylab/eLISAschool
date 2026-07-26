@@ -482,7 +482,36 @@
             "genererDepuisModele": "Generate from template",
             "astuce": "You can also use a predefined template to automatically generate the entire structure."
         },
-        "vueListe": "List"
+        "vueListe": "List",
+        "legendes": {
+            "titre": "Links legend",
+            "hierarchie": "Hierarchy link",
+            "relationDirect": "Direct relation",
+            "relationFonctionnelle": "Functional relation"
+        },
+        "liens": {
+            "hierarchie": "Hierarchy link",
+            "nbPostes": "{{count}} position(s)"
+        },
+        "export": {
+            "titre": "Export org chart",
+            "description": "Configure export options",
+            "format": "Format",
+            "resolution": "Resolution",
+            "coloration": "Color scheme",
+            "couleur": "Color",
+            "monochrome": "Monochrome",
+            "noirBlanc": "Black & white",
+            "portee": "Scope",
+            "porteeVisible": "Current view",
+            "porteeEtendu": "Fully expanded",
+            "inclusions": "Included elements",
+            "avecTitre": "Institution name",
+            "avecDate": "Today's date",
+            "avecLegende": "Links legend",
+            "exporter": "Export",
+            "enCours": "Exporting..."
+        }
     },
     "natures": {
         "PUBLIC_ETATIQUE": "Public state",

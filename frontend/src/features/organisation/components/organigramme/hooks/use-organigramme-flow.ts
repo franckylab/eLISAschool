@@ -15,6 +15,7 @@ import { MarkerType } from 'reactflow';
 import type { OrganigrammeNode, HierarchiePersonnel } from '../../../types/organisation.types';
 import { computeLayout, type LayoutDirection } from '../utils/layout';
 import type { UniteNodeData } from '../nodes/UniteNode';
+import type { HierarchieEdgeData } from '../edges/HierarchieEdge';
 import type { RelationEdgeData } from '../edges/RelationEdge';
 
 /** état DnD propagé aux noeuds pour le feedback visuel */
@@ -83,7 +84,7 @@ function construireEdgesRelations(
             },
             markerEnd: { type: MarkerType.ArrowClosed, color: couleur, width: 14, height: 14 },
             animated: false,
-            zIndex: 0,
+            zIndex: 1,
         };
     });
 }
@@ -243,18 +244,26 @@ export function useOrganigrammeFlow({ data, direction, defaultCollapseDepth = 2,
             style: { transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' },
         }));
 
-        const rfEdges: Edge[] = layoutEdges.map(le => ({
+        const nomById = new Map(layoutNodes.map(ln => [ln.id, ln.data.nom]));
+        const postesById = new Map(layoutNodes.map(ln => [ln.id, ln.data.postes?.length ?? 0]));
+
+        const rfEdges: Edge<HierarchieEdgeData>[] = layoutEdges.map(le => ({
             id: le.id,
             source: le.source,
             target: le.target,
             type: 'hierarchieEdge',
-            markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--color-text-muted)', width: 12, height: 12 },
+            data: {
+                sourceNom: nomById.get(le.source),
+                targetNom: nomById.get(le.target),
+                nbPostes: postesById.get(le.target),
+            },
+            markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--color-dominant-400)', width: 12, height: 12 },
             animated: false,
+            zIndex: 0,
         }));
 
         if (relations?.length) {
             const visibleIds = new Set(layoutNodes.map(ln => ln.id));
-            const nomById = new Map(layoutNodes.map(ln => [ln.id, ln.data.nom]));
             const parentById = new Map<string, string | undefined>();
             const collecterParents = (unites: OrganigrammeNode[], parentId?: string) => {
                 for (const u of unites) {

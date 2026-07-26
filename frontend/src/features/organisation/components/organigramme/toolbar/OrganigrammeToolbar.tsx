@@ -14,10 +14,10 @@ import { useState, useCallback, useEffect } from 'react';
 import {
     Search, ZoomIn, ZoomOut, Maximize, Maximize2, Minimize2,
     ChevronDown, ChevronUp, ChevronRight, ChevronLeft,
-    Download, X, Pencil, Link2,
+    Download, X, Pencil, Link2, Info,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { exporterOrganigrammePNG } from '../utils/export';
+import { ExportDialog } from '../modals/ExportDialog';
 
 /** Type des commandes envoyées via événement custom */
 export type ToolbarCommand = 'zoom-in' | 'zoom-out' | 'fit-view' | 'expand-all' | 'collapse-all' | 'search' | 'fullscreen-toggle';
@@ -54,6 +54,8 @@ export function OrganigrammeToolbar({
     const [searchQuery, setSearchQuery] = useState('');
     const [showSearch, setShowSearch] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [showLegend, setShowLegend] = useState(false);
+    const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
     // Synchroniser l'état plein écran avec le Fullscreen API
     useEffect(() => {
@@ -84,13 +86,14 @@ export function OrganigrammeToolbar({
     }, [containerId]);
 
     const handleExport = useCallback(() => {
-        exporterOrganigrammePNG(containerId, nomEtablissement || 'organigramme');
-    }, [containerId, nomEtablissement]);
+        setExportDialogOpen(true);
+    }, []);
 
     const btnClass = "flex items-center justify-center rounded-lg transition-colors hover:bg-[var(--color-dominant-50)] text-[var(--color-text-muted)] hover:text-[var(--color-dominant-600)]";
     const btnStyle = { width: 'var(--icon-xl)', height: 'var(--icon-xl)' };
 
     return (
+        <>
         <div
             role="toolbar"
             aria-label={t('organigramme.toolbar', 'Outils organigramme')}
@@ -162,6 +165,74 @@ export function OrganigrammeToolbar({
                 <Download style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
             </button>
 
+            {/* Légende liens */}
+            <div className="relative">
+                <button
+                    onClick={() => setShowLegend(prev => !prev)}
+                    aria-pressed={showLegend}
+                    className={`flex items-center justify-center rounded-lg transition-colors ${
+                        showLegend
+                            ? 'bg-[var(--color-dominant-600)] text-white'
+                            : 'hover:bg-[var(--color-dominant-50)] text-[var(--color-text-muted)] hover:text-[var(--color-dominant-600)]'
+                    }`}
+                    style={btnStyle}
+                    title={t('organigramme.legendes.titre', 'Légende des liens')}
+                >
+                    <Info style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
+                </button>
+                {showLegend && (
+                    <div
+                        className="absolute right-0 top-full mt-1 rounded-lg border shadow-lg"
+                        style={{
+                            backgroundColor: 'var(--color-surface)',
+                            borderColor: 'var(--color-bordure)',
+                            padding: 'clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem)',
+                            zIndex: 50,
+                            minWidth: '200px',
+                        }}
+                    >
+                        <p
+                            className="font-semibold mb-2"
+                            style={{ fontSize: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.8125rem)', color: 'var(--color-text)' }}
+                        >
+                            {t('organigramme.legendes.titre', 'Légende des liens')}
+                        </p>
+                        <div className="flex flex-col" style={{ gap: 'var(--gap-xs, 0.375rem)' }}>
+                            {/* Hiérarchie */}
+                            <div className="flex items-center" style={{ gap: 'var(--gap-sm, 0.5rem)' }}>
+                                <svg width="32" height="8" viewBox="0 0 32 8">
+                                    <line x1="0" y1="4" x2="32" y2="4"
+                                        stroke="var(--color-dominant-400)" strokeWidth="2" />
+                                </svg>
+                                <span style={{ fontSize: 'clamp(0.6875rem, 0.6rem + 0.25vw, 0.75rem)', color: 'var(--color-text-secondary)' }}>
+                                    {t('organigramme.legendes.hierarchie', 'Lien hiérarchique')}
+                                </span>
+                            </div>
+                            {/* Relation DIRECT */}
+                            <div className="flex items-center" style={{ gap: 'var(--gap-sm, 0.5rem)' }}>
+                                <svg width="32" height="8" viewBox="0 0 32 8">
+                                    <line x1="0" y1="4" x2="32" y2="4"
+                                        stroke="var(--color-dominant-600)" strokeWidth="1.5" strokeDasharray="8 4" />
+                                </svg>
+                                <span style={{ fontSize: 'clamp(0.6875rem, 0.6rem + 0.25vw, 0.75rem)', color: 'var(--color-text-secondary)' }}>
+                                    {t('organigramme.legendes.relationDirect', 'Relation directe')}
+                                </span>
+                            </div>
+                            {/* Relation FONCTIONNEL */}
+                            <div className="flex items-center" style={{ gap: 'var(--gap-sm, 0.5rem)' }}>
+                                <svg width="32" height="8" viewBox="0 0 32 8">
+                                    <line x1="0" y1="4" x2="32" y2="4"
+                                        stroke="var(--color-accent-600)" strokeWidth="1.5" strokeDasharray="3 4" />
+                                </svg>
+                                <span style={{ fontSize: 'clamp(0.6875rem, 0.6rem + 0.25vw, 0.75rem)', color: 'var(--color-text-secondary)' }}>
+                                    {t('organigramme.legendes.relationFonctionnelle', 'Relation fonctionnelle')}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {/* Toggle overlay relations */}
             {onToggleRelations && (
                 <button
@@ -203,5 +274,13 @@ export function OrganigrammeToolbar({
                 </>
             )}
         </div>
+
+        <ExportDialog
+            open={exportDialogOpen}
+            onOpenChange={setExportDialogOpen}
+            containerId={containerId}
+            nomEtablissement={nomEtablissement || 'organigramme'}
+        />
+        </>
     );
 }

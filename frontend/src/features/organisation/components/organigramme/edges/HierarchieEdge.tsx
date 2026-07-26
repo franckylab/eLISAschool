@@ -2,15 +2,23 @@
  * ==================================
  * eLISAschool - Edge Hiérarchique pour React Flow
  * ==================================
- * Version: 2.0.0
+ * Version: 3.0.0
  * Auteur: franck arlos chendjou
  *
- * Edge Bézier courbe avec style thème, highlight au hover,
- * animation d'apparition (dash) pour les nouvelles connexions.
+ * Edge Bézier courbe liant les unités organisationnelles (parent→enfant).
+ * Tooltip au survol (source → cible), animation d'apparition,
+ * style épuré avec distinction visuelle par rapport aux edges relation.
  */
 
 import { memo, useState } from 'react';
-import { getBezierPath, type EdgeProps } from 'reactflow';
+import { getBezierPath, EdgeLabelRenderer, type EdgeProps } from 'reactflow';
+import { useTranslation } from 'react-i18next';
+
+export interface HierarchieEdgeData {
+    sourceNom?: string;
+    targetNom?: string;
+    nbPostes?: number;
+}
 
 function HierarchieEdgeComponent({
     id,
@@ -20,16 +28,14 @@ function HierarchieEdgeComponent({
     targetY,
     sourcePosition,
     targetPosition,
+    data,
     style = {},
     markerEnd,
-}: EdgeProps) {
+}: EdgeProps<HierarchieEdgeData>) {
+    const { t } = useTranslation('organisation');
     const [isHovered, setIsHovered] = useState(false);
-    const [isNew] = useState(() => {
-        // Marque l'edge comme "nouveau" pour l'animation d'apparition
-        return true;
-    });
 
-    const [edgePath] = getBezierPath({
+    const [edgePath, labelX, labelY] = getBezierPath({
         sourceX,
         sourceY,
         sourcePosition,
@@ -38,35 +44,40 @@ function HierarchieEdgeComponent({
         targetPosition,
     });
 
+    const couleur = isHovered
+        ? 'var(--color-dominant-600)'
+        : 'var(--color-dominant-400)';
+    const epaisseur = isHovered ? 2.5 : 2;
+
     return (
-        <g
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-        >
-            {/* Zone de clic élargie */}
-            <path
-                d={edgePath}
-                fill="none"
-                stroke="transparent"
-                strokeWidth={12}
-                className="cursor-pointer"
-            />
-            {/* Edge visible */}
-            <path
-                id={id}
-                className="react-flow__edge-path"
-                d={edgePath}
-                style={{
-                    ...style,
-                    stroke: isHovered ? 'var(--color-dominant-600)' : 'var(--color-text-muted)',
-                    strokeWidth: isHovered ? 2.5 : 1.5,
-                    transition: 'stroke 0.2s ease, stroke-width 0.2s ease',
-                }}
-                markerEnd={markerEnd}
-                strokeDasharray={isNew ? '2000' : undefined}
-                strokeDashoffset={isNew ? '2000' : undefined}
+        <>
+            <g
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
             >
-                {isNew && (
+                {/* Zone de clic élargie */}
+                <path
+                    d={edgePath}
+                    fill="none"
+                    stroke="transparent"
+                    strokeWidth={14}
+                    className="cursor-pointer"
+                />
+                {/* Edge visible */}
+                <path
+                    id={id}
+                    className="react-flow__edge-path"
+                    d={edgePath}
+                    style={{
+                        ...style,
+                        stroke: couleur,
+                        strokeWidth: epaisseur,
+                        transition: 'stroke 0.2s ease, stroke-width 0.2s ease',
+                    }}
+                    markerEnd={markerEnd}
+                    strokeDasharray="2000"
+                    strokeDashoffset="2000"
+                >
                     <animate
                         attributeName="stroke-dashoffset"
                         from="2000"
@@ -76,9 +87,39 @@ function HierarchieEdgeComponent({
                         calcMode="spline"
                         keySplines="0.4 0 0.2 1"
                     />
-                )}
-            </path>
-        </g>
+                </path>
+            </g>
+
+            {/* Tooltip au survol */}
+            {isHovered && data?.sourceNom && data?.targetNom && (
+                <EdgeLabelRenderer>
+                    <div
+                        className="nodrag nopan absolute rounded-lg border shadow-lg whitespace-nowrap"
+                        style={{
+                            transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+                            top: '-8px',
+                            backgroundColor: 'var(--color-surface)',
+                            borderColor: 'var(--color-dominant-400)',
+                            color: 'var(--color-text)',
+                            fontSize: 'clamp(10px, 0.7vw + 0.35rem, 12px)',
+                            padding: '4px 8px',
+                            pointerEvents: 'none',
+                            zIndex: 20,
+                        }}
+                    >
+                        <span className="font-semibold" style={{ color: 'var(--color-dominant-600)' }}>
+                            {t('organigramme.liens.hierarchie', 'Lien hiérarchique')}
+                        </span>
+                        <span> — {data.sourceNom} → {data.targetNom}</span>
+                        {data.nbPostes != null && data.nbPostes > 0 && (
+                            <span style={{ color: 'var(--color-text-muted)' }}>
+                                {' '}· {t('organigramme.liens.nbPostes', '{{count}} poste(s)', { count: data.nbPostes })}
+                            </span>
+                        )}
+                    </div>
+                </EdgeLabelRenderer>
+            )}
+        </>
     );
 }
 

@@ -482,7 +482,36 @@
             "genererDepuisModele": "Générer depuis un modèle",
             "astuce": "Vous pouvez aussi utiliser un modèle prédéfini pour générer automatiquement toute la structure."
         },
-        "vueListe": "Liste"
+        "vueListe": "Liste",
+        "legendes": {
+            "titre": "Légende des liens",
+            "hierarchie": "Lien hiérarchique",
+            "relationDirect": "Relation directe",
+            "relationFonctionnelle": "Relation fonctionnelle"
+        },
+        "liens": {
+            "hierarchie": "Lien hiérarchique",
+            "nbPostes": "{{count}} poste(s)"
+        },
+        "export": {
+            "titre": "Exporter l'organigramme",
+            "description": "Configurez les options d'export",
+            "format": "Format",
+            "resolution": "Résolution",
+            "coloration": "Coloration",
+            "couleur": "Couleur",
+            "monochrome": "Monochrome",
+            "noirBlanc": "Noir & blanc",
+            "portee": "Portée",
+            "porteeVisible": "Vue actuelle",
+            "porteeEtendu": "Tout déplié",
+            "inclusions": "Éléments inclus",
+            "avecTitre": "Titre de l'établissement",
+            "avecDate": "Date du jour",
+            "avecLegende": "Légende des liens",
+            "exporter": "Exporter",
+            "enCours": "Export en cours..."
+        }
     },
     "natures": {
         "PUBLIC_ETATIQUE": "Public étatique",
