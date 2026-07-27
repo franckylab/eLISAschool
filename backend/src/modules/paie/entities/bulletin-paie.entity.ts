@@ -13,6 +13,7 @@ import {
     UpdateDateColumn,
     Index,
 } from 'typeorm';
+import { numericTransformer } from '@common/utils/numeric-transformer.util';
 import { Poste } from '@modules/organisation/entities';
 import { ContratPersonnel } from '@modules/personnel/entities/contrat-personnel.entity';
 import { Etablissement } from '@modules/etablissement/entities';
@@ -65,22 +66,22 @@ export class BulletinPaie {
     @Column({ type: 'int' })
     annee!: number;
 
-    @Column({ type: 'decimal', precision: 12, scale: 2 })
+    @Column({ type: 'decimal', precision: 12, scale: 2, transformer: numericTransformer })
     salaireBase!: number;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2 })
+    @Column({ type: 'decimal', precision: 10, scale: 2, transformer: numericTransformer })
     heuresEffectuees!: number;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2 })
+    @Column({ type: 'decimal', precision: 10, scale: 2, transformer: numericTransformer })
     montantHeuresSup!: number;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+    @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, transformer: numericTransformer })
     primes!: number;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+    @Column({ type: 'decimal', precision: 10, scale: 2, default: 0, transformer: numericTransformer })
     deductions!: number;
 
-    @Column({ type: 'decimal', precision: 12, scale: 2 })
+    @Column({ type: 'decimal', precision: 12, scale: 2, transformer: numericTransformer })
     salaireNet!: number;
 
     @Column({ type: 'varchar', length: 30, default: StatutBulletinPaie.GENERE })

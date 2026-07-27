@@ -31,10 +31,21 @@ const COULEURS_EXPORT = {
     border: '#e5e7eb',
     dominant: '#28a745',
     dominantLight: '#4ade80',
+    secondary: '#f59e0b',
     accent: '#007bff',
 } as const;
 
 function preparerPourExport(element: HTMLElement): void {
+    element.querySelectorAll('animate, animateTransform').forEach(el => el.remove());
+
+    element.querySelectorAll<SVGElement>('path[stroke-dashoffset]').forEach(el => {
+        el.removeAttribute('stroke-dashoffset');
+    });
+
+    element.querySelectorAll<SVGElement>('path[stroke-dasharray="2000"]').forEach(el => {
+        el.removeAttribute('stroke-dasharray');
+    });
+
     element.querySelectorAll('[style*="var("]').forEach((el) => {
         const htmlEl = el as HTMLElement;
         const style = htmlEl.style;
@@ -53,15 +64,24 @@ function preparerPourExport(element: HTMLElement): void {
         }
     });
 
-    element.querySelectorAll('svg [stroke*="var("], svg [fill*="var("]').forEach((el) => {
-        const svgEl = el as SVGElement;
-        const stroke = svgEl.getAttribute('stroke');
+    element.querySelectorAll<SVGElement>('svg [stroke*="var("], svg [fill*="var("]').forEach((el) => {
+        const stroke = el.getAttribute('stroke');
         if (stroke?.includes('var(')) {
-            svgEl.setAttribute('stroke', resolveColor(stroke));
+            const resolved = resolveColor(stroke);
+            if (resolved) el.setAttribute('stroke', resolved);
         }
-        const fill = svgEl.getAttribute('fill');
+        const fill = el.getAttribute('fill');
         if (fill?.includes('var(')) {
-            svgEl.setAttribute('fill', resolveColor(fill));
+            const resolved = resolveColor(fill);
+            if (resolved) el.setAttribute('fill', resolved);
+        }
+    });
+
+    element.querySelectorAll<SVGElement>('svg[style*="background"], svg[style*="background-color"]').forEach(el => {
+        const computed = getComputedStyle(el);
+        const bg = computed.backgroundColor;
+        if (bg && bg !== 'rgba(0, 0, 0, 0)') {
+            el.style.backgroundColor = bg;
         }
     });
 }
@@ -110,9 +130,9 @@ function creerOverlay(options: ExportOptions): HTMLDivElement {
         `;
 
         const items = [
-            { label: 'Hiérarchie', dasharray: '', color: COULEURS_EXPORT.dominantLight, width: '2' },
-            { label: 'Rel. directe', dasharray: '6 3', color: COULEURS_EXPORT.dominant, width: '1.5' },
-            { label: 'Rel. fonctionnelle', dasharray: '2 3', color: COULEURS_EXPORT.accent, width: '1.5' },
+            { label: 'Hiérarchie', dasharray: '', color: COULEURS_EXPORT.dominant, width: '2.5' },
+            { label: 'Rel. directe', dasharray: '10 5', color: COULEURS_EXPORT.secondary, width: '2' },
+            { label: 'Rel. fonctionnelle', dasharray: '4 5', color: COULEURS_EXPORT.accent, width: '2' },
         ];
 
         for (const item of items) {
@@ -180,6 +200,8 @@ async function capturerElement(
                 if (node instanceof HTMLElement) {
                     if (node.classList.contains('react-flow__controls')) return false;
                     if (node.classList.contains('react-flow__minimap')) return false;
+                    if (node.classList.contains('react-flow__attribution')) return false;
+                    if (node.getAttribute('role') === 'toolbar') return false;
                 }
                 return true;
             },

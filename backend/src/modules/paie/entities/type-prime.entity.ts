@@ -16,6 +16,7 @@ import {
     UpdateDateColumn,
     Index,
 } from 'typeorm';
+import { numericTransformer } from '@common/utils/numeric-transformer.util';
 import { Etablissement } from '@modules/etablissement/entities';
 
 export enum TypePrimeCalcul {
@@ -25,13 +26,13 @@ export enum TypePrimeCalcul {
 }
 
 @Entity('types_primes')
-@Index(['code'], { unique: true })
+@Index(['code', 'etablissementId'], { unique: true })
 @Index(['etablissementId'])
 export class TypePrime {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'varchar', length: 30, unique: true })
+    @Column({ type: 'varchar', length: 30 })
     code!: string; // ANCIENNETE, RENDEMENT, TRANSPORT, LOGEMENT
 
     @Column({ type: 'varchar', length: 100 })
@@ -40,7 +41,7 @@ export class TypePrime {
     @Column({ type: 'varchar', length: 20 })
     typeCalcul!: TypePrimeCalcul;
 
-    @Column({ type: 'decimal', precision: 12, scale: 2 })
+    @Column({ type: 'decimal', precision: 12, scale: 2, transformer: numericTransformer })
     valeur!: number;
 
     @Column({ type: 'text', nullable: true })

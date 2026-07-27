@@ -69,8 +69,8 @@ export function RelationDetailDrawer({ data, open, onClose }: RelationDetailDraw
     if (!open || !data) return null;
 
     const estFonctionnel = data.typeRelation === 'FONCTIONNEL';
-    const couleur = estFonctionnel ? 'var(--color-accent-600)' : 'var(--color-dominant-600)';
-    const fond = estFonctionnel ? 'var(--color-accent-50)' : 'var(--color-dominant-50)';
+    const couleur = estFonctionnel ? 'var(--color-accent-600)' : 'var(--color-secondary-500)';
+    const fond = estFonctionnel ? 'var(--color-accent-50)' : 'var(--color-secondary-50)';
     const typeLabel = t(estFonctionnel ? 'typeRelation_FONCTIONNEL' : 'typeRelation_DIRECT');
 
     const handleConfirmDelete = async () => {

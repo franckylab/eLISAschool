@@ -18,6 +18,7 @@ import {
     UpdateDateColumn,
     Index,
 } from 'typeorm';
+import { numericTransformer } from '@common/utils/numeric-transformer.util';
 import { BulletinPaie } from './bulletin-paie.entity';
 import { Etablissement } from '@modules/etablissement/entities';
 
@@ -61,13 +62,13 @@ export class ElementSalaire {
     @Column({ type: 'varchar', length: 200 })
     libelle!: string;
 
-    @Column({ type: 'decimal', precision: 12, scale: 2 })
+    @Column({ type: 'decimal', precision: 12, scale: 2, transformer: numericTransformer })
     montant!: number;
 
-    @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+    @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true, transformer: numericTransformer })
     baseCalcul?: number;
 
-    @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+    @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true, transformer: numericTransformer })
     taux?: number;
 
     @Column({ type: 'int', default: 0 })

@@ -70,7 +70,7 @@ function construireEdgesRelations(
         }
     }
     return Array.from(groupes.entries()).map(([cle, g]) => {
-        const couleur = resolveColor(g.typeRelation === 'FONCTIONNEL' ? 'var(--color-accent-600)' : 'var(--color-dominant-600)');
+        const couleur = resolveColor(g.typeRelation === 'FONCTIONNEL' ? 'var(--color-accent-600)' : 'var(--color-secondary-500)');
         return {
             id: `relation-${cle}`,
             source: g.source,
@@ -83,7 +83,7 @@ function construireEdgesRelations(
                 sourceNom: nomById.get(g.source),
                 targetNom: nomById.get(g.target),
             },
-            markerEnd: { type: MarkerType.ArrowClosed, color: couleur, width: 14, height: 14 },
+            markerEnd: { type: MarkerType.ArrowClosed, color: couleur, width: 16, height: 16 },
             animated: false,
             zIndex: 1,
         };
@@ -258,7 +258,7 @@ export function useOrganigrammeFlow({ data, direction, defaultCollapseDepth = 2,
                 targetNom: nomById.get(le.target),
                 nbPostes: postesById.get(le.target),
             },
-            markerEnd: { type: MarkerType.ArrowClosed, color: resolveColor('var(--color-dominant-400)'), width: 12, height: 12 },
+            markerEnd: { type: MarkerType.ArrowClosed, color: resolveColor('var(--color-dominant-500)'), width: 14, height: 14 },
             animated: false,
             zIndex: 0,
         }));

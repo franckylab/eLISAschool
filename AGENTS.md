@@ -147,6 +147,37 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 - **i18n** : parité FR/EN complète (statutRelation_*, filtres, modes, relationIncomplete, afficherRelations/masquerRelations, section toasts EN 27 clés).
 - **Qualité** : 0 `any` nouveau, 0 couleur hardcodée, 0 UUID exposé, aucune nouvelle erreur tsc (erreurs préexistantes hors périmètre intactes).
 
+## Travail effectué — Session 2026-07-27 (organigramme — export PNG/PDF, edges, toolbar, légende)
+
+### Export PNG/PDF — Bugs critiques corrigés
+- **`export-types.ts`** : `estimerExport()` réécrit — le `pixelRatio` effectif est maintenant calculé pour remplir les dimensions du preset de taille (Standard→8K), pas seulement basé sur la qualité. `Math.max(qualite.pixelRatio, ratioPourTaille)` capped à 8.
+- **`export.ts`** : `preparerPourExport()` supprime les `<animate>` SVG (animation draw-in des liens hiérarchiques) qui rendaient les edges invisibles si capturés avant la fin de l'animation. Supprime `stroke-dashoffset` et `stroke-dasharray="2000"` (valeurs d'animation uniquement), préserve les dasharray stylés (`8 4`, `3 4`). Résolution des variables CSS pour les styles inline et attributs SVG.
+- **Overlay export** : légende avec traits plus épais (2.5/2/2), couleurs plus sombres, dasharray cohérents avec les nouveaux edges.
+- **Filtre export** : exclusion controls, minimap, attribution, toolbar.
+
+### Edges — Routing orthogonal (smooth step)
+- **`HierarchieEdge.tsx`** v4.0.0 : `getBezierPath()` → `getSmoothStepPath()` (routing orthogonal avec coins arrondis, borderRadius=8, offset=4). Animation SVG `<animate>` supprimée (causait le bug export). Épaisseurs augmentées (2.5/3), couleur `--color-dominant-500` (plus sombre).
+- **`RelationEdge.tsx`** v3.0.0 : `getBezierPath()` → `getSmoothStepPath()` (borderRadius=12). Offset différencié par type (fonctionnel=16, direct=8) pour séparer visuellement les edges superposés. Dasharray mis à jour (fonctionnel=`4 5`, direct=`10 5`). Épaisseurs augmentées (2.5/3). Badge agrandi.
+- **`use-organigramme-flow.ts`** : couleur marker hiérarchie `--color-dominant-500` (était `-400`), taille markers augmentée (14/16).
+
+### Toolbar et légende — UX améliorée
+- **`OrganigrammeToolbar.tsx`** v4.0.0 :
+  - Légende popup : animation Framer Motion (AnimatePresence + opacity/y/scale), click-outside-to-close (mousedown listener), fermeture Escape, ref pour détection clic extérieur.
+  - Helper `sep()` pour les séparateurs (JSX plus propre).
+  - `toggleBtnClass()` pour boutons actif/inactif.
+  - `flex-wrap` pour responsive.
+  - Légende SVG : traits plus épais (2.5/2/2), viewBox 36×10, dasharray cohérents avec les nouveaux edges.
+
+### Couleur relation directe — différenciée du vert (feedback utilisateur)
+- **Canon couleurs liens** : hiérarchie = vert `--color-dominant-500/600`, relation DIRECTE = ambre `--color-secondary-500` (#f59e0b, retenu vs -600 #ffc107 trop clair), relation FONCTIONNELLE = bleu `--color-accent-600`.
+- Sites modifiés (5) : `RelationEdge.tsx:45` (stroke+badge+tooltip), `use-organigramme-flow.ts:73` (marker flèche), `RelationDetailDrawer.tsx:72-73` (couleur + fond `--color-secondary-50`), `OrganigrammeToolbar.tsx` (légende SVG), `export.ts` (`COULEURS_EXPORT.secondary` #f59e0b + légende overlay, dasharray alignés `10 5`/`4 5`).
+- Badges `tab-hierarchie.tsx` : variants génériques Badge, pas de vert codé — inchangés.
+
+### Qualité
+- 0 `any` nouveau, 0 couleur hardcodée, 0 chaîne FR en dur.
+- `tsc --noEmit` : 0 erreur in-scope.
+- 5 fichiers modifiés (export-types.ts déjà committé dans b340a14).
+
 ## Next Move
 Refonte v4.0 organisation : ✅ terminée. Hiérarchie v4.1 (superieurPosteId + réintégration page + overlay organigramme) : ✅ terminée.
 1. ~~Exécuter la migration 122~~ ✅ appliquée en local (2026-07-25) : étape 5 ajoutée (purge des 26 relations orphelines — superieurId nullé par l'ancienne FK). État final : 26 poste→poste + 1 personne→personne, 0 orphelin, serveur OK (health 200).

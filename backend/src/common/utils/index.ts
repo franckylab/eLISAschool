@@ -11,6 +11,7 @@ export * from './api-response.util';
 export * from './pagination.util';
 export { validateDto, validateQuery } from './validate-dto.util';
 export { assertNotSystem } from './system-guard.util';
+export { ColumnNumericTransformer, numericTransformer } from './numeric-transformer.util';
 
 // Exports spécifiques pour cursor pagination
 export {

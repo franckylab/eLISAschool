@@ -16,6 +16,7 @@ import {
     UpdateDateColumn,
     Index,
 } from 'typeorm';
+import { numericTransformer } from '@common/utils/numeric-transformer.util';
 import { Etablissement } from '@modules/etablissement/entities';
 
 export enum TypeRetenueFrequence {
@@ -24,13 +25,13 @@ export enum TypeRetenueFrequence {
 }
 
 @Entity('types_retenues')
-@Index(['code'], { unique: true })
+@Index(['code', 'etablissementId'], { unique: true })
 @Index(['etablissementId'])
 export class TypeRetenue {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'varchar', length: 30, unique: true })
+    @Column({ type: 'varchar', length: 30 })
     code!: string; // AVANCE, PRET, SANCTION
 
     @Column({ type: 'varchar', length: 100 })
@@ -39,7 +40,7 @@ export class TypeRetenue {
     @Column({ type: 'varchar', length: 20 })
     frequence!: TypeRetenueFrequence;
 
-    @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+    @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true, transformer: numericTransformer })
     montantMax?: number;
 
     @Column({ type: 'text', nullable: true })

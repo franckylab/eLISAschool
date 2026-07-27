@@ -18,6 +18,7 @@ import {
     UpdateDateColumn,
     Index,
 } from 'typeorm';
+import { numericTransformer } from '@common/utils/numeric-transformer.util';
 import { Etablissement } from '@modules/etablissement/entities';
 
 export enum TypeCotisation {
@@ -27,14 +28,14 @@ export enum TypeCotisation {
 }
 
 @Entity('cotisations')
-@Index(['code'], { unique: true })
+@Index(['code', 'etablissementId'], { unique: true })
 @Index(['etablissementId'])
 @Index(['actif'])
 export class Cotisation {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ type: 'varchar', length: 20, unique: true })
+    @Column({ type: 'varchar', length: 20 })
     code!: string; // CNPS, AMO, IRPP, etc.
 
     @Column({ type: 'varchar', length: 100 })
@@ -43,13 +44,13 @@ export class Cotisation {
     @Column({ type: 'varchar', length: 20 })
     type!: TypeCotisation;
 
-    @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+    @Column({ type: 'decimal', precision: 5, scale: 2, default: 0, transformer: numericTransformer })
     tauxPatronal!: number;
 
-    @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+    @Column({ type: 'decimal', precision: 5, scale: 2, default: 0, transformer: numericTransformer })
     tauxSalarial!: number;
 
-    @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+    @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true, transformer: numericTransformer })
     plafond?: number;
 
     @Column({ type: 'text', nullable: true })

@@ -18,13 +18,13 @@ import { BulletinPaie, StatutBulletinPaie } from '../entities/bulletin-paie.enti
 import { ElementSalaire, TypeElementSalaire, CategorieElementSalaire } from '../entities/element-salaire.entity';
 import { Cotisation } from '../entities/cotisation.entity';
 import { TypePrime } from '../entities/type-prime.entity';
-import { MembrePersonnel, ContratPersonnel } from '@modules/personnel/entities';
+import { MembrePersonnel, ContratPersonnel, StatutContrat } from '@modules/personnel/entities';
 import { heureCoursService } from '@modules/personnel/services';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
-import { getParamBoolean } from '@modules/configuration/utils/config.helper';
+import { getParamBoolean, getParamNumber } from '@modules/configuration/utils/config.helper';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
 
 export interface DetailMatiereSimulation {
@@ -96,13 +96,13 @@ export class CalculPaieService {
         }
 
         const contrat = await this.contratRepo.findOne({
-            where: { membrePersonnelId: membrePersonnelId },
+            where: { membrePersonnelId, etablissementId, statut: StatutContrat.ACTIF },
             order: { dateDebut: 'DESC' },
-            relations: ['typeContratEntity'],
+            relations: ['typeContratEntity', 'typeContratEntity.modeRemuneration', 'modeRemuneration'],
         });
 
         if (!contrat) {
-            throw new AppError('Aucun contrat trouvé pour ce membre', 404, 'NO_CONTRACT');
+            throw new AppError('Aucun contrat actif trouvé pour ce membre', 404, 'NO_CONTRACT');
         }
 
         const simulation = await this.simulerPaie(membrePersonnelId, etablissementId, mois, annee);
@@ -179,13 +179,13 @@ export class CalculPaieService {
         let ordre = 0;
 
         const contrat = await this.contratRepo.findOne({
-            where: { membrePersonnelId },
+            where: { membrePersonnelId, etablissementId, statut: StatutContrat.ACTIF },
             order: { dateDebut: 'DESC' },
-            relations: ['typeContratEntity'],
+            relations: ['typeContratEntity', 'typeContratEntity.modeRemuneration', 'modeRemuneration'],
         });
 
         if (!contrat) {
-            throw new AppError('Aucun contrat trouvé', 404, 'NO_CONTRACT');
+            throw new AppError('Aucun contrat actif trouvé', 404, 'NO_CONTRACT');
         }
 
         const membre = await this.personnelRepo.findOne({
@@ -250,7 +250,11 @@ export class CalculPaieService {
                     ));
                 }
                 heuresSup = Math.max(0, heuresEffectuees - seuil);
-                montantHeuresSup = +(heuresSup * tarifHoraire * 1.5).toFixed(2);
+                const tauxMajoration = await getParamNumber('paie.taux_majoration_heures_sup', {
+                    etablissementId,
+                    defaultValue: 1.5,
+                });
+                montantHeuresSup = +(heuresSup * tarifHoraire * tauxMajoration).toFixed(2);
                 salaireBase = fixe + montantHeuresSup;
 
                 elements.push(this.creerElement(
@@ -261,7 +265,7 @@ export class CalculPaieService {
                 if (heuresSup > 0) {
                     elements.push(this.creerElement(
                         TypeElementSalaire.GAIN, CategorieElementSalaire.HEURE_SUP,
-                        `Heures sup (${heuresSup}h × ${tarifHoraire} × 1.5)`,
+                        `Heures sup (${heuresSup}h × ${tarifHoraire} × ${tauxMajoration})`,
                         montantHeuresSup, heuresSup, tarifHoraire, ordre++
                     ));
                 }
@@ -269,7 +273,7 @@ export class CalculPaieService {
             }
 
             case 'HEBDOMADAIRE': {
-                const tarifHebdo = contrat.tarifHebdomadaire || contrat.salaireBase || 0;
+                const tarifHebdo = contrat.tarifHebdomadaire || 0;
                 salaireBase = +(tarifHebdo * 52 / 12).toFixed(2);
                 elements.push(this.creerElement(
                     TypeElementSalaire.GAIN, CategorieElementSalaire.SALAIRE_BASE,
@@ -332,8 +336,8 @@ export class CalculPaieService {
             }
         }
 
-        const salaireNet = salaireBase + totalPrimes - totalCotisationsSalariales;
-        const coutTotalEmployeur = salaireBase + totalPrimes + totalCotisationsPatronales;
+        const salaireNet = +(salaireBase + totalPrimes - totalCotisationsSalariales).toFixed(2);
+        const coutTotalEmployeur = +(salaireBase + totalPrimes + totalCotisationsPatronales).toFixed(2);
 
         return {
             salaireBase,
@@ -341,10 +345,10 @@ export class CalculPaieService {
             heuresSup,
             montantHeuresSup,
             detailParMatiere,
-            primes: totalPrimes,
-            cotisationsPatronales: totalCotisationsPatronales,
-            cotisationsSalariales: totalCotisationsSalariales,
-            totalRetenues: totalCotisationsSalariales,
+            primes: +totalPrimes.toFixed(2),
+            cotisationsPatronales: +totalCotisationsPatronales.toFixed(2),
+            cotisationsSalariales: +totalCotisationsSalariales.toFixed(2),
+            totalRetenues: +totalCotisationsSalariales.toFixed(2),
             salaireNet,
             coutTotalEmployeur,
             elements,

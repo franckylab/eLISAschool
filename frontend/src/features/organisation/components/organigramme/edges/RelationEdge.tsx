@@ -2,16 +2,17 @@
  * ==================================
  * eLISAschool - Edge Relation hiérarchique (overlay) pour React Flow
  * ==================================
- * Version: 2.0.0
+ * Version: 3.0.0
  * Auteur: franck arlos chendjou
  *
- * Edge Bézier pointillé représentant les relations poste→poste agrégées
- * entre deux unités. Couleur et pointillé selon le type de relation,
- * badge compteur cliquable, tooltip au survol, clic → drawer de détail.
+ * Edge orthogonal (smooth step) pointillé représentant les relations
+ * poste→poste agrégées entre deux unités. Couleur et pointillé selon
+ * le type de relation, badge compteur cliquable, tooltip au survol,
+ * clic → drawer de détail. Routing qui évite les cartes d'unité.
  */
 
 import { memo, useState } from 'react';
-import { getBezierPath, EdgeLabelRenderer, type EdgeProps } from 'reactflow';
+import { getSmoothStepPath, EdgeLabelRenderer, type EdgeProps } from 'reactflow';
 import { useTranslation } from 'react-i18next';
 import { resolveColor } from '../utils/css-var-resolver';
 import type { HierarchiePersonnel, TypeRelationHierarchique } from '../../../types/organisation.types';
@@ -29,9 +30,9 @@ function RelationEdgeComponent({
     id,
     sourceX,
     sourceY,
+    sourcePosition,
     targetX,
     targetY,
-    sourcePosition,
     targetPosition,
     data,
     selected,
@@ -40,20 +41,22 @@ function RelationEdgeComponent({
     const { t } = useTranslation('organisation');
     const [isHovered, setIsHovered] = useState(false);
 
-    const [edgePath, labelX, labelY] = getBezierPath({
+    const estFonctionnel = data?.typeRelation === 'FONCTIONNEL';
+    const couleur = resolveColor(estFonctionnel ? 'var(--color-accent-600)' : 'var(--color-secondary-500)');
+    const dasharray = estFonctionnel ? '4 5' : '10 5';
+    const count = data?.count ?? 1;
+    const actif = isHovered || selected;
+
+    const [edgePath, labelX, labelY] = getSmoothStepPath({
         sourceX,
         sourceY,
         sourcePosition,
         targetX,
         targetY,
         targetPosition,
+        borderRadius: 12,
+        offset: estFonctionnel ? 16 : 8,
     });
-
-    const estFonctionnel = data?.typeRelation === 'FONCTIONNEL';
-    const couleur = resolveColor(estFonctionnel ? 'var(--color-accent-600)' : 'var(--color-dominant-600)');
-    const dasharray = estFonctionnel ? '3 4' : '8 4';
-    const count = data?.count ?? 1;
-    const actif = isHovered || selected;
 
     const handleOpen = () => data?.onOpen?.(id);
 
@@ -66,15 +69,13 @@ function RelationEdgeComponent({
                 role="button"
                 aria-label={t(estFonctionnel ? 'typeRelation_FONCTIONNEL' : 'typeRelation_DIRECT')}
             >
-                {/* Zone de clic élargie */}
                 <path
                     d={edgePath}
                     fill="none"
                     stroke="transparent"
-                    strokeWidth={14}
+                    strokeWidth={16}
                     className="cursor-pointer"
                 />
-                {/* Edge visible */}
                 <path
                     id={id}
                     className="react-flow__edge-path"
@@ -82,9 +83,9 @@ function RelationEdgeComponent({
                     fill="none"
                     style={{
                         stroke: couleur,
-                        strokeWidth: actif ? 2.5 : 1.5,
+                        strokeWidth: actif ? 3 : 2,
                         strokeDasharray: dasharray,
-                        opacity: actif ? 1 : 0.75,
+                        opacity: actif ? 1 : 0.8,
                         transition: 'stroke-width 0.2s ease, opacity 0.2s ease',
                         pointerEvents: 'none',
                     }}
@@ -100,7 +101,6 @@ function RelationEdgeComponent({
                         zIndex: actif ? 10 : 1,
                     }}
                 >
-                    {/* Badge compteur cliquable */}
                     <button
                         type="button"
                         onClick={handleOpen}
@@ -109,18 +109,22 @@ function RelationEdgeComponent({
                         className="cursor-pointer rounded-full font-medium leading-none transition-all"
                         style={{
                             backgroundColor: actif ? couleur : resolveColor('var(--org-node-bg)'),
-                            border: `1px solid ${couleur}`,
+                            border: `1.5px solid ${couleur}`,
                             color: actif ? '#fff' : couleur,
                             fontSize: 'clamp(9px, 0.7vw + 0.3rem, 11px)',
-                            padding: '2px 7px',
-                            boxShadow: actif ? '0 2px 8px rgba(0,0,0,0.18)' : 'none',
+                            padding: '3px 8px',
+                            minHeight: '20px',
+                            minWidth: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: actif ? '0 2px 8px rgba(0,0,0,0.18)' : '0 1px 3px rgba(0,0,0,0.08)',
                         }}
                         aria-label={t('organigramme.relations.ouvrirDetail', 'Voir le détail des relations')}
                     >
                         {count}
                     </button>
 
-                    {/* Tooltip au survol */}
                     {actif && (
                         <div
                             className="absolute rounded-lg border shadow-lg whitespace-nowrap"

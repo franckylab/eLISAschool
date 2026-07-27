@@ -16,6 +16,7 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
+import { numericTransformer } from '@common/utils/numeric-transformer.util';
 import { MembrePersonnel } from './personnel.entity';
 import { Etablissement } from '@modules/etablissement/entities';
 import { TypeContratPersonnalise } from './type-contrat.entity';
@@ -84,10 +85,10 @@ export class ContratPersonnel {
     @Column({ type: 'date', nullable: true })
     dateFin?: Date | null;
 
-    @Column({ type: 'decimal', precision: 12, scale: 0 })
+    @Column({ type: 'decimal', precision: 12, scale: 0, transformer: numericTransformer })
     salaireBase!: number;
 
-    @Column({ type: 'decimal', precision: 10, scale: 0, nullable: true })
+    @Column({ type: 'decimal', precision: 10, scale: 0, nullable: true, transformer: numericTransformer })
     tarifHoraire?: number | null;
 
     @Column({ type: 'uuid', nullable: true })
@@ -97,10 +98,10 @@ export class ContratPersonnel {
     @JoinColumn({ name: 'modeRemunerationId' })
     modeRemuneration?: ModeRemunerationEntity | null;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+    @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, transformer: numericTransformer })
     heuresContractuellesMois?: number | null;
 
-    @Column({ type: 'decimal', precision: 12, scale: 0, nullable: true })
+    @Column({ type: 'decimal', precision: 12, scale: 0, nullable: true, transformer: numericTransformer })
     tarifHebdomadaire?: number | null;
 
     @Column({ type: 'varchar', length: 30, default: StatutContrat.ACTIF })
