@@ -10,6 +10,7 @@ import {
     Column,
     CreateDateColumn,
     UpdateDateColumn,
+    DeleteDateColumn,
     OneToOne,
     OneToMany,
     ManyToOne,
@@ -33,6 +34,7 @@ export enum StatutPersonnel {
 @Entity('membres_personnel')
 @Index(['utilisateurId'])
 @Index(['etablissementId'])
+@Index(['matricule', 'etablissementId'], { unique: true })
 export class MembrePersonnel {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -44,7 +46,7 @@ export class MembrePersonnel {
     @JoinColumn({ name: 'utilisateurId' })
     utilisateur?: Utilisateur;
 
-    @Column({ type: 'varchar', length: 50, unique: true })
+    @Column({ type: 'varchar', length: 50 })
     matricule!: string;
 
     @Column({ type: 'date' })
@@ -112,4 +114,7 @@ export class MembrePersonnel {
 
     @UpdateDateColumn()
     updatedAt!: Date;
+
+    @DeleteDateColumn()
+    deletedAt?: Date | null;
 }

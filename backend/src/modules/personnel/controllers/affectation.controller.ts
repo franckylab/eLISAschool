@@ -41,6 +41,7 @@ router.post(
 router.get(
     '/',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const query = validateDto(queryAffectationSchema, req.query);
@@ -59,6 +60,7 @@ router.get(
 router.get(
     '/membres/:id/historique',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const historique = await affectationService.getHistoriqueByMembre(req.params.id, req.etablissementId!);
@@ -76,6 +78,7 @@ router.get(
 router.get(
     '/membres/:id/actif',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const affectation = await affectationService.getAffectationActive(req.params.id, req.etablissementId!);

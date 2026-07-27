@@ -45,8 +45,8 @@ export function useCreerAffectation() {
             qc.invalidateQueries({ queryKey: ['personnel', 'detail'] });
             toast.success('Affectation créée avec succès');
         },
-        onError: (e: any) => {
-            toast.error(e?.response?.data?.message || e?.message || 'Erreur lors de la création');
+        onError: (error: unknown) => {
+            toast.error((error as Error)?.message || 'Erreur lors de la création');
         },
     });
 }
@@ -63,8 +63,8 @@ export function useTerminerAffectation() {
             qc.invalidateQueries({ queryKey: ['personnel', 'detail'] });
             toast.success('Affectation terminée');
         },
-        onError: (e: any) => {
-            toast.error(e?.response?.data?.message || e?.message || 'Erreur lors de la terminaison');
+        onError: (error: unknown) => {
+            toast.error((error as Error)?.message || 'Erreur lors de la terminaison');
         },
     });
 }

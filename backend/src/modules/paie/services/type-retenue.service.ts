@@ -4,6 +4,7 @@ import { TypeRetenue } from '../entities/type-retenue.entity';
 import { CreateTypeRetenueDto, UpdateTypeRetenueDto } from '../dto/paie-etendue.dto';
 import { AppError } from '@common/filters/error.filter';
 import { auditService } from '@modules/auth/services/audit.service';
+import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 
 export class TypeRetenueService {
     private repo: Repository<TypeRetenue>;
@@ -21,7 +22,7 @@ export class TypeRetenueService {
         await this.repo.save(entity);
 
         if (userId) {
-            await auditService.log({ utilisateurId: userId, action: 'RETENUE_CREATE' as any, cible: 'TypeRetenue', cibleId: entity.id, description: `Création type retenue ${dto.code}`, nouvellesValeurs: dto, module: 'personnel' }, req);
+            await auditService.log({ utilisateurId: userId, action: AuditAction.RETENUE_CREATE, cible: 'TypeRetenue', cibleId: entity.id, description: `Création type retenue ${dto.code}`, nouvellesValeurs: dto, module: 'personnel' }, req);
         }
         return entity;
     }
@@ -43,7 +44,7 @@ export class TypeRetenueService {
         await this.repo.save(entity);
 
         if (userId) {
-            await auditService.log({ utilisateurId: userId, action: 'RETENUE_UPDATE' as any, cible: 'TypeRetenue', cibleId: id, description: `Mise à jour type retenue ${entity.code}`, anciennesValeurs: oldValues, nouvellesValeurs: dto, module: 'personnel' }, req);
+            await auditService.log({ utilisateurId: userId, action: AuditAction.RETENUE_UPDATE, cible: 'TypeRetenue', cibleId: id, description: `Mise à jour type retenue ${entity.code}`, anciennesValeurs: oldValues, nouvellesValeurs: dto, module: 'personnel' }, req);
         }
         return entity;
     }
@@ -53,7 +54,7 @@ export class TypeRetenueService {
         await this.repo.remove(entity);
 
         if (userId) {
-            await auditService.log({ utilisateurId: userId, action: 'RETENUE_DELETE' as any, cible: 'TypeRetenue', cibleId: id, description: `Suppression type retenue ${entity.code}`, module: 'personnel' }, req);
+            await auditService.log({ utilisateurId: userId, action: AuditAction.RETENUE_DELETE, cible: 'TypeRetenue', cibleId: id, description: `Suppression type retenue ${entity.code}`, module: 'personnel' }, req);
         }
     }
 }

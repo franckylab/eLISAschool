@@ -2,19 +2,26 @@
  * ==================================
  * eLISAschool - Hook Élèves
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  *
  * Intégration API avec TanStack Query pour le module Élèves
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api-client';
 import { useAuthStore } from '@/stores/auth.store';
-import type { Eleve, CreerEleveDto, ModifierEleveDto, EleveFiltres } from '../types/eleve.types';
+import { useHandleError } from '@/hooks/use-handle-error';
 import { toast } from 'sonner';
+import type {
+    Eleve,
+    CreerEleveDto,
+    ModifierEleveDto,
+    EleveFiltres,
+    EleveStats,
+} from '../types/eleve.types';
 
-// Clés de requête
 const ELEVES_KEYS = {
     all: ['eleves'] as const,
     listes: () => [...ELEVES_KEYS.all, 'liste'] as const,
@@ -26,10 +33,9 @@ const ELEVES_KEYS = {
 
 // ─── QUERIES ─────────────────────────────────────────
 
-// Lister les élèves (paginé)
 export function useEleves(filtres: EleveFiltres = {}) {
     const { isAuthenticated } = useAuthStore();
-    
+
     return useQuery({
         queryKey: ELEVES_KEYS.liste(filtres),
         queryFn: async () => {
@@ -42,12 +48,11 @@ export function useEleves(filtres: EleveFiltres = {}) {
             });
             return response.data;
         },
-        enabled: isAuthenticated, // Ne pas appeler si non authentifié
-        staleTime: 5 * 60 * 1000, // 5 min
+        enabled: isAuthenticated,
+        staleTime: 5 * 60 * 1000,
     });
 }
 
-// Détail d'un élève
 export function useEleve(id: string) {
     return useQuery({
         queryKey: ELEVES_KEYS.detail(id),
@@ -56,30 +61,30 @@ export function useEleve(id: string) {
             return response.data;
         },
         enabled: !!id,
-        staleTime: 10 * 60 * 1000, // 10 min
+        staleTime: 10 * 60 * 1000,
         placeholderData: (previousData) => previousData,
     });
 }
 
-// Statistiques élèves
 export function useElevesStats(etablissementId?: string) {
     return useQuery({
         queryKey: ELEVES_KEYS.stats(),
         queryFn: async () => {
-            const response = await apiClient.get<{ data: any }>('/api/eleves/stats');
+            const response = await apiClient.get<EleveStats>('/api/eleves/stats');
             return response.data;
         },
         enabled: !!etablissementId,
-        staleTime: 15 * 60 * 1000, // 15 min
+        staleTime: 15 * 60 * 1000,
         placeholderData: (previousData) => previousData,
     });
 }
 
 // ─── MUTATIONS ───────────────────────────────────────
 
-// Créer un élève
 export function useCreerEleve() {
     const queryClient = useQueryClient();
+    const handleError = useHandleError();
+    const { t } = useTranslation('eleves');
 
     return useMutation({
         mutationFn: async (dto: CreerEleveDto) => {
@@ -89,17 +94,18 @@ export function useCreerEleve() {
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ELEVES_KEYS.listes() });
             queryClient.invalidateQueries({ queryKey: ELEVES_KEYS.stats() });
-            toast.success(`Élève ${data?.data?.prenom} ${data?.data?.nom} créé avec succès`);
+            toast.success(t('toasts.eleveCree', { nom: data?.data?.nom, prenom: data?.data?.prenom }));
         },
-        onError: (error: any) => {
-            toast.error(error?.message || 'Erreur lors de la création');
+        onError: (err: unknown) => {
+            handleError(err, t('toasts.erreurCreation'));
         },
     });
 }
 
-// Modifier un élève
 export function useModifierEleve() {
     const queryClient = useQueryClient();
+    const handleError = useHandleError();
+    const { t } = useTranslation('eleves');
 
     return useMutation({
         mutationFn: async (dto: ModifierEleveDto) => {
@@ -109,19 +115,22 @@ export function useModifierEleve() {
         },
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ELEVES_KEYS.listes() });
-            queryClient.invalidateQueries({ queryKey: ELEVES_KEYS.detail(data?.data?.id) });
+            if (data?.data?.id) {
+                queryClient.invalidateQueries({ queryKey: ELEVES_KEYS.detail(data.data.id) });
+            }
             queryClient.invalidateQueries({ queryKey: ELEVES_KEYS.stats() });
-            toast.success(`Élève ${data?.data?.prenom} ${data?.data?.nom} modifié avec succès`);
+            toast.success(t('toasts.eleveModifie', { nom: data?.data?.nom, prenom: data?.data?.prenom }));
         },
-        onError: (error: any) => {
-            toast.error(error?.message || 'Erreur lors de la modification');
+        onError: (err: unknown) => {
+            handleError(err, t('toasts.erreurModification'));
         },
     });
 }
 
-// Supprimer un élève
 export function useSupprimerEleve() {
     const queryClient = useQueryClient();
+    const handleError = useHandleError();
+    const { t } = useTranslation('eleves');
 
     return useMutation({
         mutationFn: async (id: string) => {
@@ -130,17 +139,18 @@ export function useSupprimerEleve() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ELEVES_KEYS.listes() });
             queryClient.invalidateQueries({ queryKey: ELEVES_KEYS.stats() });
-            toast.success('Élève supprimé avec succès');
+            toast.success(t('toasts.eleveSupprime'));
         },
-        onError: (error: any) => {
-            toast.error(error?.message || 'Erreur lors de la suppression');
+        onError: (err: unknown) => {
+            handleError(err, t('toasts.erreurSuppression'));
         },
     });
 }
 
-// Importer des élèves (CSV/Excel)
 export function useImporterEleves() {
     const queryClient = useQueryClient();
+    const handleError = useHandleError();
+    const { t } = useTranslation('eleves');
 
     return useMutation({
         mutationFn: async (formData: FormData) => {
@@ -153,37 +163,39 @@ export function useImporterEleves() {
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ELEVES_KEYS.listes() });
             queryClient.invalidateQueries({ queryKey: ELEVES_KEYS.stats() });
-            toast.success(`${data?.data?.importe} élèves importés avec succès`);
+            toast.success(t('toasts.importReussi', { count: data?.data?.importe }));
         },
-        onError: (error: any) => {
-            toast.error(error?.message || 'Erreur lors de l\'import');
+        onError: (err: unknown) => {
+            handleError(err, t('toasts.erreurImport'));
         },
     });
 }
 
-// Exporter les élèves
 export function useExporterEleves() {
+    const handleError = useHandleError();
+    const { t } = useTranslation('eleves');
+
     return useMutation({
         mutationFn: async (filtres?: EleveFiltres) => {
             const response = await apiClient.get<Blob>('/api/eleves/export', {
                 format: 'csv',
                 ...filtres,
             });
-            return response;
+            return response.data;
         },
         onSuccess: (data) => {
-            // Créer un lien de téléchargement
-            const url = window.URL.createObjectURL(new Blob([data]));
+            if (!data) return;
+            const url = window.URL.createObjectURL(data instanceof Blob ? data : new Blob([data]));
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', `eleves_${new Date().toISOString().split('T')[0]}.csv`);
             document.body.appendChild(link);
             link.click();
             link.remove();
-            toast.success('Export réussi');
+            toast.success(t('toasts.exportReussi'));
         },
-        onError: (error: any) => {
-            toast.error(error?.message || 'Erreur lors de l\'export');
+        onError: (err: unknown) => {
+            handleError(err, t('toasts.erreurExport'));
         },
     });
 }

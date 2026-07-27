@@ -1,0 +1,167 @@
+/**
+ * ==================================
+ * eLISAschool - Types Emploi du Temps
+ * ==================================
+ * Version: 1.0.0
+ * Auteur: franck arlos chendjou
+ */
+
+// ─── Enums ────────────────────────────────────────────
+
+export type JourSemaine = 'LUNDI' | 'MARDI' | 'MERCREDI' | 'JEUDI' | 'VENDREDI' | 'SAMEDI' | 'DIMANCHE';
+export type TypeCreneau = 'COURS' | 'TD' | 'TP' | 'RECREATION' | 'PAUSE' | 'PERMANENCE' | 'AUTRE';
+export type StatutCreneau = 'PLANIFIE' | 'VALIDE';
+
+// ─── Interfaces ───────────────────────────────────────
+
+export interface CreneauHoraire {
+    id: string;
+    affectationMatiereId: string;
+    jour: JourSemaine;
+    heureDebut: string;
+    heureFin: string;
+    typeCreneau: TypeCreneau;
+    statut: StatutCreneau;
+    salleId?: string;
+    periodeId: string;
+    anneeScolaireId: string;
+    etablissementId: string;
+    couleur?: string;
+    notes?: string;
+    genereAutomatiquement: boolean;
+    createdAt: string;
+    updatedAt: string;
+    dureeMinutes?: number;
+    dureeHeures?: number;
+    plageHoraire?: string;
+    classeAnneeId?: string;
+    matiereId?: string;
+    enseignantId?: string;
+    affectationMatiere?: {
+        id: string;
+        matiereId: string;
+        classeAnneeId: string;
+        enseignantId: string;
+        coefficient: number | null;
+        obligatoire: boolean;
+        statutValidation: string;
+        matiere?: { id: string; nom: string; code?: string; couleur?: string };
+        enseignant?: { id: string; nom: string; prenom: string };
+        classeAnnee?: {
+            id: string;
+            classe: { id: string; nom: string; niveau?: string };
+            anneeScolaire: { id: string; nom?: string; anneeDebut?: number };
+        };
+    };
+    salle?: { id: string; nom: string; code?: string };
+}
+
+export interface PaginatedResponse<T> {
+    items: T[];
+    meta: {
+        currentPage: number;
+        itemsPerPage: number;
+        totalItems: number;
+        totalPages: number;
+        itemCount: number;
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
+    };
+}
+
+export interface CreneauFilters {
+    classeAnneeId?: string;
+    enseignantId?: string;
+    salleId?: string;
+    affectationMatiereId?: string;
+    jour?: JourSemaine;
+    typeCreneau?: TypeCreneau;
+    statut?: StatutCreneau;
+    anneeScolaireId?: string;
+    periodeId?: string;
+    genereAutomatiquement?: boolean;
+    inclureHeuresCours?: boolean;
+    typeSource?: 'creneau' | 'heure_cours';
+    page?: number;
+    limit?: number;
+    orderBy?: string;
+    orderDir?: 'ASC' | 'DESC';
+}
+
+export interface PreferenceEDT {
+    id: string;
+    etablissementId: string;
+    heureDebutCours: string;
+    heureFinCours: string;
+    dureeCreneauStandard: number;
+    dureeRecreation: number;
+    joursOuvrables: string[];
+    maxCreneauxParJour: number;
+    maxCreneauxMatiereParJour: number;
+    maxCreneauxConsecutifs: number;
+    pauseDebut?: string | null;
+    pauseFin?: string | null;
+    pauseMatineeDebut?: string | null;
+    pauseMatineeFin?: string | null;
+    pauseApresMidiDebut?: string | null;
+    pauseApresMidiFin?: string | null;
+    creneauxImposables?: CreneauImposable[];
+    repartitionEquilibree: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface CreneauImposable {
+    jour: JourSemaine;
+    heureDebut: string;
+    heureFin: string;
+    motif?: string;
+}
+
+// ─── Conflits ───────────────────────────────────────
+
+export type TypeConflit = 'CONFLIT_CLASSE' | 'CONFLIT_ENSEIGNANT' | 'CONFLIT_SALLE' | 'DEPASSEMENT_VOLUME_HORAIRE' | 'CRENEAU_IMPOSABLE';
+export type SeveriteConflit = 'BLOQUANT' | 'AVERTISSEMENT';
+
+export interface Conflit {
+    type: TypeConflit;
+    severite: SeveriteConflit;
+    message: string;
+    details: Record<string, unknown>;
+}
+
+export interface DonneesVerification {
+    affectationMatiereId?: string;
+    jour: JourSemaine;
+    heureDebut: string;
+    heureFin: string;
+    salleId?: string;
+    excludeCreneauId?: string;
+}
+
+// ─── Templates ──────────────────────────────────────
+
+export interface TemplateEDTConfiguration {
+    joursTravailles?: string[];
+    heureDebutCours?: string;
+    heureFinCours?: string;
+}
+
+export interface TemplateEDT {
+    id: string;
+    nom: string;
+    description?: string;
+    etablissementId: string;
+    configuration: TemplateEDTConfiguration | null;
+    creneauxTypes: string[];
+    actif: boolean;
+    estPartage: boolean;
+    createdAt: string;
+}
+
+// ─── Validation ─────────────────────────────────────
+
+export interface ResultatValidationClasse {
+    valide: number;
+    total: number;
+}

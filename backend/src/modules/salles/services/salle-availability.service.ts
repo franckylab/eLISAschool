@@ -1,12 +1,12 @@
 import { Repository, LessThan, MoreThan } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Salle, StatutSalle } from '../entities';
-import { EmploiDuTemps } from '@modules/emploi-du-temps/entities';
+import { CreneauHoraire } from '@modules/emploi-du-temps/entities';
 import { HeureCours } from '@modules/personnel/entities';
 import { logger } from '@common/utils/logger.util';
 
 export interface ConflitSalle {
-    source: 'emploi_du_temps' | 'heure_cours';
+    source: 'creneau_horaire' | 'heure_cours';
     id: string;
     date?: Date;
     jour?: string;
@@ -17,12 +17,12 @@ export interface ConflitSalle {
 
 export class SalleAvailabilityService {
     private salleRepo: Repository<Salle>;
-    private edtRepo: Repository<EmploiDuTemps>;
+    private edtRepo: Repository<CreneauHoraire>;
     private heureCoursRepo: Repository<HeureCours>;
 
     constructor() {
         this.salleRepo = AppDataSource.getRepository(Salle);
-        this.edtRepo = AppDataSource.getRepository(EmploiDuTemps);
+        this.edtRepo = AppDataSource.getRepository(CreneauHoraire);
         this.heureCoursRepo = AppDataSource.getRepository(HeureCours);
     }
 
@@ -46,14 +46,14 @@ export class SalleAvailabilityService {
         if (!salle) {
             return {
                 disponible: false,
-                conflits: [{ source: 'emploi_du_temps', id: '', heureDebut: '', heureFin: '', details: { reason: 'NOT_FOUND' } }],
+                conflits: [{ source: 'creneau_horaire', id: '', heureDebut: '', heureFin: '', details: { reason: 'NOT_FOUND' } }],
             };
         }
 
         if (!salle.disponible || salle.statut !== StatutSalle.DISPONIBLE) {
             return {
                 disponible: false,
-                conflits: [{ source: 'emploi_du_temps', id: '', heureDebut: '', heureFin: '', details: { reason: salle.statut } }],
+                conflits: [{ source: 'creneau_horaire', id: '', heureDebut: '', heureFin: '', details: { reason: salle.statut } }],
             };
         }
 
@@ -85,7 +85,6 @@ export class SalleAvailabilityService {
         const where: any = {
             salleId,
             jour: options.jour,
-            actif: true,
         };
 
         if (options.anneeScolaireId) {
@@ -98,7 +97,7 @@ export class SalleAvailabilityService {
             .filter(c => c.id !== options.excludeEmploiId)
             .filter(c => options.heureDebut < c.heureFin && options.heureFin > c.heureDebut)
             .map(c => ({
-                source: 'emploi_du_temps' as const,
+                source: 'creneau_horaire' as const,
                 id: c.id,
                 jour: c.jour,
                 heureDebut: c.heureDebut,
@@ -132,7 +131,7 @@ export class SalleAvailabilityService {
                 date: c.date,
                 heureDebut: c.heureDebut,
                 heureFin: c.heureFin,
-                details: { matiereId: c.matiereId, classeId: c.classeId },
+                details: { matiereId: c.matiereId, classeAnneeId: c.classeAnneeId },
             }));
     }
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Save, BookOpen } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -10,11 +11,12 @@ interface MatiereFormModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     matiere?: Matiere | null;
-    onSave: (data: any) => void;
+    onSave: (data: CreerMatiereDto) => void;
     isLoading?: boolean;
 }
 
 export function MatiereFormModal({ open, onOpenChange, matiere, onSave, isLoading }: MatiereFormModalProps) {
+    const { t } = useTranslation('matieres');
     const [nom, setNom] = useState('');
     const [code, setCode] = useState('');
     const [nomAnglais, setNomAnglais] = useState('');
@@ -45,8 +47,8 @@ export function MatiereFormModal({ open, onOpenChange, matiere, onSave, isLoadin
 
     const valider = (): boolean => {
         const e: Record<string, string> = {};
-        if (!nom.trim()) e.nom = 'Le nom de la matière est requis';
-        if (code && code.length > 50) e.code = '50 caractères maximum';
+        if (!nom.trim()) e.nom = t('nomMatiereRequis');
+        if (code && code.length > 50) e.code = t('max50');
         setErreurs(e);
         return Object.keys(e).length === 0;
     };
@@ -59,25 +61,25 @@ export function MatiereFormModal({ open, onOpenChange, matiere, onSave, isLoadin
             code: code.trim() || undefined,
             nomAnglais: nomAnglais.trim() || undefined,
             couleur,
-            sousSysteme: sousSysteme || undefined,
+            sousSysteme: (sousSysteme || '') as SousSysteme | undefined,
             actif,
         };
         onSave(data);
     };
 
-    const titre = matiere ? 'Modifier la matière' : 'Créer une matière';
+    const titre = matiere ? t('modifierMatiere') : t('creerMatiere');
 
     return (
         <CustomModal
             open={open}
             onOpenChange={onOpenChange}
             title={titre}
-            description={matiere ? 'Modifiez les informations de la matière' : 'Renseignez les informations de la matière'}
+            description={matiere ? t('modifierMatiereDescription') : t('creerMatiereDescription')}
             size="2xl"
             footer={
                 <>
                     <ElisaButton variant="outline" onClick={() => onOpenChange(false)} type="button">
-                        Annuler
+                        {t('annuler')}
                     </ElisaButton>
                     <ElisaButton
                         variant="primary"
@@ -86,7 +88,7 @@ export function MatiereFormModal({ open, onOpenChange, matiere, onSave, isLoadin
                         icon={<Save className="h-4 w-4" />}
                         onClick={handleSubmit}
                     >
-                        {matiere ? 'Enregistrer' : 'Créer'}
+                        {matiere ? t('enregistrer') : t('creer')}
                     </ElisaButton>
                 </>
             }
@@ -94,23 +96,23 @@ export function MatiereFormModal({ open, onOpenChange, matiere, onSave, isLoadin
             <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="grid grid-cols-2 gap-4">
                     <ElisaInput
-                        label="Nom de la matière"
+                        label={t('nomMatiere')}
                         value={nom}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setNom(e.target.value); if (erreurs.nom) setErreurs((p) => { const n = { ...p }; delete n.nom; return n; }); }}
                         error={erreurs.nom}
-                        placeholder="Ex: Mathématiques"
+                        placeholder={t('nomMatierePlaceholder')}
                         required
                     />
                     <ElisaInput
-                        label="Code"
+                        label={t('code')}
                         value={code}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCode(e.target.value.toUpperCase())}
-                        placeholder="Ex: MATH"
+                        placeholder={t('codePlaceholder')}
                     />
                 </div>
 
                 <ElisaInput
-                    label="Nom anglais"
+                    label={t('nomAnglais')}
                     value={nomAnglais}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNomAnglais(e.target.value)}
                     placeholder="Ex: Mathematics"
@@ -118,43 +120,43 @@ export function MatiereFormModal({ open, onOpenChange, matiere, onSave, isLoadin
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Couleur</label>
+                        <label className="block text-sm font-medium text-secondary mb-2">{t('couleur')}</label>
                         <div className="flex items-center gap-3">
                             <input
                                 type="color"
                                 value={couleur}
                                 onChange={(e) => setCouleur(e.target.value)}
-                                className="w-12 h-10 rounded border border-gray-300 cursor-pointer"
+                                className="w-12 h-10 rounded border border-border cursor-pointer"
                             />
-                            <span className="text-sm text-gray-600 font-mono">{couleur}</span>
+                            <span className="text-sm text-muted-foreground font-mono">{couleur}</span>
                         </div>
                     </div>
                     <ElisaSelect
-                        label="Sous-système"
+                        label={t('sousSysteme')}
                         value={sousSysteme}
                         onValueChange={(v: string) => setSousSysteme(v as SousSysteme | '')}
                         options={[
-                            { value: '', label: 'Commun aux deux systèmes' },
-                            { value: 'FRANCOPHONE', label: 'Francophone' },
-                            { value: 'ANGLOPHONE', label: 'Anglophone' },
-                            { value: 'BICULTUREL', label: 'Biculturel' },
+                            { value: '', label: t('communDeuxSystemes') },
+                            { value: 'FRANCOPHONE', label: t('francophone') },
+                            { value: 'ANGLOPHONE', label: t('anglophone') },
+                            { value: 'BICULTUREL', label: t('biculturel') },
                         ]}
                     />
                 </div>
 
                 <ElisaSelect
-                    label="Statut"
+                    label={t('statut')}
                     value={actif ? 'true' : 'false'}
                     onValueChange={(v: string) => setActif(v === 'true')}
                     options={[
-                        { value: 'true', label: 'Actif' },
-                        { value: 'false', label: 'Inactif' },
+                        { value: 'true', label: t('active') },
+                        { value: 'false', label: t('inactive') },
                     ]}
                 />
 
-                <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+                <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg text-sm text-primary">
                     <BookOpen className="h-4 w-4 shrink-0" />
-                    <span>Les coefficients et volumes horaires se configurent par niveau et par classe dans les sections Programme et Configuration.</span>
+                    <span>{t('infoCoefficients')}</span>
                 </div>
             </form>
         </CustomModal>

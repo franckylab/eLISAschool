@@ -4,6 +4,7 @@ import { Cotisation } from '../entities/cotisation.entity';
 import { CreateCotisationDto, UpdateCotisationDto } from '../dto/paie-etendue.dto';
 import { AppError } from '@common/filters/error.filter';
 import { auditService } from '@modules/auth/services/audit.service';
+import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 
 export class CotisationService {
     private repo: Repository<Cotisation>;
@@ -21,7 +22,7 @@ export class CotisationService {
         await this.repo.save(entity);
 
         if (userId) {
-            await auditService.log({ utilisateurId: userId, action: 'COTISATION_CREATE' as any, cible: 'Cotisation', cibleId: entity.id, description: `Création cotisation ${dto.code}`, nouvellesValeurs: dto, module: 'personnel' }, req);
+            await auditService.log({ utilisateurId: userId, action: AuditAction.COTISATION_CREATE, cible: 'Cotisation', cibleId: entity.id, description: `Création cotisation ${dto.code}`, nouvellesValeurs: dto, module: 'personnel' }, req);
         }
         return entity;
     }
@@ -43,7 +44,7 @@ export class CotisationService {
         await this.repo.save(entity);
 
         if (userId) {
-            await auditService.log({ utilisateurId: userId, action: 'COTISATION_UPDATE' as any, cible: 'Cotisation', cibleId: id, description: `Mise à jour cotisation ${entity.code}`, anciennesValeurs: oldValues, nouvellesValeurs: dto, module: 'personnel' }, req);
+            await auditService.log({ utilisateurId: userId, action: AuditAction.COTISATION_UPDATE, cible: 'Cotisation', cibleId: id, description: `Mise à jour cotisation ${entity.code}`, anciennesValeurs: oldValues, nouvellesValeurs: dto, module: 'personnel' }, req);
         }
         return entity;
     }
@@ -53,7 +54,7 @@ export class CotisationService {
         await this.repo.remove(entity);
 
         if (userId) {
-            await auditService.log({ utilisateurId: userId, action: 'COTISATION_DELETE' as any, cible: 'Cotisation', cibleId: id, description: `Suppression cotisation ${entity.code}`, module: 'personnel' }, req);
+            await auditService.log({ utilisateurId: userId, action: AuditAction.COTISATION_DELETE, cible: 'Cotisation', cibleId: id, description: `Suppression cotisation ${entity.code}`, module: 'personnel' }, req);
         }
     }
 }

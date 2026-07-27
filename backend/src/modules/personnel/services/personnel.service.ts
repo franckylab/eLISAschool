@@ -75,7 +75,7 @@ export class PersonnelService {
                     WHERE ap."membrePersonnelId" = p.id AND ap.statut = 'ACTIF'
                     ORDER BY ap."dateDebut" DESC LIMIT 1
                 ) ap_cat ON true
-                WHERE p.id = ANY($1)
+                WHERE p.id = ANY($1) AND p."deletedAt" IS NULL
             `, [membreIds]);
 
         for (const row of rows) {
@@ -108,8 +108,13 @@ export class PersonnelService {
     // ==== MEMBRES PERSONNEL ====
 
     async createMembre(dto: CreatePersonnelDto, etablissementId?: string, createurId?: string): Promise<MembrePersonnel> {
-        const existing = await this.personnelRepo.findOne({ where: { matricule: dto.matricule } });
-        if (existing) throw new AppError('Matricule déjà utilisé', 409, 'MATRICULE_EXISTS');
+        const existing = await this.personnelRepo.findOne({ 
+            where: { 
+                matricule: dto.matricule,
+                ...(etablissementId ? { etablissementId } : {})
+            } 
+        });
+        if (existing) throw new AppError('Matricule déjà utilisé dans cet établissement', 409, 'MATRICULE_EXISTS');
 
         // Vérifier utilisateur unique
         if (dto.utilisateurId) {
@@ -214,8 +219,8 @@ export class PersonnelService {
         return enrichi;
     }
 
-    async linkUser(membreId: string, utilisateurId: string): Promise<MembrePersonnel> {
-        const membre = await this.findOne(membreId);
+    async linkUser(membreId: string, utilisateurId: string, etablissementId?: string): Promise<MembrePersonnel> {
+        const membre = await this.findOne(membreId, etablissementId);
         if (membre.utilisateurId) {
             throw new AppError('Ce membre est déjà lié à un utilisateur', 409, 'ALREADY_LINKED');
         }
@@ -240,18 +245,18 @@ export class PersonnelService {
         });
 
         logger.info(`Utilisateur ${utilisateurId} lié au membre ${membreId}`);
-        return this.findOne(membreId);
+        return this.findOne(membreId, etablissementId);
     }
 
-    async unlinkUser(membreId: string): Promise<MembrePersonnel> {
-        const membre = await this.findOne(membreId);
+    async unlinkUser(membreId: string, etablissementId?: string): Promise<MembrePersonnel> {
+        const membre = await this.findOne(membreId, etablissementId);
         if (!membre.utilisateurId) {
             throw new AppError('Ce membre n\'a pas d\'utilisateur lié', 400, 'NOT_LINKED');
         }
         membre.utilisateurId = undefined;
         await this.personnelRepo.save(membre);
         logger.info(`Utilisateur délié du membre ${membreId}`);
-        return this.findOne(membreId);
+        return this.findOne(membreId, etablissementId);
     }
 
     async getPersonnelSansCompte(etablissementId: string): Promise<{ count: number; total: number; pourcentage: number }> {
@@ -267,23 +272,23 @@ export class PersonnelService {
     async update(id: string, dto: UpdatePersonnelDto, etablissementId?: string): Promise<MembrePersonnel> {
         const membre = await this.findOne(id, etablissementId);
 
-        if (dto.dateEmbauche) dto.dateEmbauche = new Date(dto.dateEmbauche) as any;
-
-        Object.assign(membre, dto);
+        const { dateEmbauche, ...reste } = dto;
+        Object.assign(membre, reste);
+        if (dateEmbauche) membre.dateEmbauche = new Date(dateEmbauche);
         await this.personnelRepo.save(membre);
         return membre;
     }
 
     async delete(id: string, etablissementId?: string): Promise<void> {
         const membre = await this.findOne(id, etablissementId);
-        await this.personnelRepo.remove(membre);
-        logger.info(`Membre personnel supprimé: ${id}`);
+        await this.personnelRepo.softRemove(membre);
+        logger.info(`Membre personnel supprimé (soft): ${id}`);
     }
 
     // ─── Inline Edit Methods ───
 
-    async updateStatut(id: string, statut: StatutPersonnel, userId?: string): Promise<MembrePersonnel> {
-        const membre = await this.findOne(id);
+    async updateStatut(id: string, statut: StatutPersonnel, userId?: string, etablissementId?: string): Promise<MembrePersonnel> {
+        const membre = await this.findOne(id, etablissementId);
         const ancienStatut = membre.statut;
         membre.statut = statut;
         await this.personnelRepo.save(membre);
@@ -304,8 +309,8 @@ export class PersonnelService {
         return membre;
     }
 
-    async updateDateEntree(id: string, dateEmbauche: Date, userId?: string): Promise<MembrePersonnel> {
-        const membre = await this.findOne(id);
+    async updateDateEntree(id: string, dateEmbauche: Date, userId?: string, etablissementId?: string): Promise<MembrePersonnel> {
+        const membre = await this.findOne(id, etablissementId);
         const ancienneDate = membre.dateEmbauche;
         membre.dateEmbauche = dateEmbauche;
         await this.personnelRepo.save(membre);
@@ -336,10 +341,11 @@ export class PersonnelService {
             educationNiveau?: string;
             anneesExperience?: number;
         },
-        userId?: string
+        userId?: string,
+        etablissementId?: string
     ): Promise<MembrePersonnel> {
-        const membre = await this.findOne(id);
-        const anciennes: Record<string, any> = {};
+        const membre = await this.findOne(id, etablissementId);
+        const anciennes: Record<string, unknown> = {};
 
         if (data.specialites !== undefined) { anciennes.specialites = membre.specialites; membre.specialites = data.specialites; }
         if (data.diplomes !== undefined) { anciennes.diplomes = membre.diplomes; membre.diplomes = data.diplomes; }
@@ -363,7 +369,7 @@ export class PersonnelService {
             });
         }
 
-        return this.findOne(id);
+        return this.findOne(id, etablissementId);
     }
 }
 

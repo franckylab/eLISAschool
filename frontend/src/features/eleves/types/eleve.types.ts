@@ -140,3 +140,53 @@ export interface EleveFiltres {
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
 }
+
+export interface EleveStats {
+    total: number;
+    actifs: number;
+    exclus: number;
+    abandons: number;
+    diplomés: number;
+    totalFil: number;
+    totalGarcon: number;
+    boursiers: number;
+    transport: number;
+    cantine: number;
+}
+
+export interface ResponsableEleve {
+    id: string;
+    utilisateurId: string;
+    enfantId: string;
+    lienParente: string;
+    responsablePrincipal: boolean;
+    utilisateur?: {
+        id: string;
+        nom: string;
+        prenom: string;
+        email: string;
+        telephone?: string;
+    };
+}
+
+export interface IncidentEleve {
+    id: string;
+    eleveId: string;
+    date: string;
+    type: 'INCIDENT' | 'SANCTION' | 'FELICITATION' | 'OBSERVATION';
+    description: string;
+    gravite?: 'LEGER' | 'MOYEN' | 'GRAVE';
+    sanction?: string;
+    auteurId: string;
+    auteur?: {
+        nom: string;
+        prenom: string;
+    };
+    createdAt: string;
+}
+
+export interface DocumentJustificatif {
+    url: string;
+    type: string;
+    dateUpload: string;
+}

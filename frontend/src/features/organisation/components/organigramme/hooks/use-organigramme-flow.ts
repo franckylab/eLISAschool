@@ -14,7 +14,8 @@ import type { Node, Edge } from 'reactflow';
 import { MarkerType } from 'reactflow';
 import type { OrganigrammeNode, HierarchiePersonnel } from '../../../types/organisation.types';
 import { computeLayout, type LayoutDirection } from '../utils/layout';
-import { resolveColor } from '../utils/css-var-resolver';
+import { resolveColor } from '@/lib/export';
+import { EDGE_STYLE } from '../edges/BaseEdge';
 import type { UniteNodeData } from '../nodes/UniteNode';
 import type { HierarchieEdgeData } from '../edges/HierarchieEdge';
 import type { RelationEdgeData } from '../edges/RelationEdge';
@@ -83,9 +84,9 @@ function construireEdgesRelations(
                 sourceNom: nomById.get(g.source),
                 targetNom: nomById.get(g.target),
             },
-            markerEnd: { type: MarkerType.ArrowClosed, color: couleur, width: 16, height: 16 },
+            markerEnd: { type: MarkerType.ArrowClosed, color: couleur, width: EDGE_STYLE.markerSize, height: EDGE_STYLE.markerSize },
             animated: false,
-            zIndex: 1,
+            zIndex: g.typeRelation === 'FONCTIONNEL' ? 2 : 1,
         };
     });
 }
@@ -258,7 +259,7 @@ export function useOrganigrammeFlow({ data, direction, defaultCollapseDepth = 2,
                 targetNom: nomById.get(le.target),
                 nbPostes: postesById.get(le.target),
             },
-            markerEnd: { type: MarkerType.ArrowClosed, color: resolveColor('var(--color-dominant-500)'), width: 14, height: 14 },
+            markerEnd: { type: MarkerType.ArrowClosed, color: resolveColor('var(--color-dominant-500)'), width: EDGE_STYLE.markerSize, height: EDGE_STYLE.markerSize },
             animated: false,
             zIndex: 0,
         }));

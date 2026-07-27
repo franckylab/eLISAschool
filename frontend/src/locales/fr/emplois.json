@@ -111,7 +111,8 @@
         "creationFermer": "Fermer",
         "supprimerTitre": "Supprimer le template",
         "supprimerMessage": "Êtes-vous sûr de vouloir supprimer ce template\u00A0? Cette action est irréversible.",
-        "supprimerConfirmer": "Supprimer"
+        "supprimerConfirmer": "Supprimer",
+        "bientotDisponible": "Fonctionnalité à venir"
     },
     "calendrier": {
         "heure": "Heure",
@@ -186,19 +187,46 @@
             "notesPlaceholder": "Notes optionnelles…",
             "conflitsDetectes": "{{count}} conflit(s) détecté(s)",
             "conflitsBloquants": "Conflits bloquants — impossible de valider",
-            "avertissements": "{{count}} avertissement(s)"
+            "avertissements": "{{count}} avertissement(s)",
+            "selectionnerAffectation": "Sélectionner une affectation",
+            "aucuneSalle": "Aucune salle"
         }
     },
     "heureCours": {
         "modal": {
             "titre": "Édition de l'heure de cours",
             "statut": "Statut",
+            "statuts": {
+                "planifie": "Planifié",
+                "effectue": "Effectué",
+                "annule": "Annulé",
+                "remplace": "Remplacé"
+            },
             "remplacant": "Remplaçant",
+            "remplacantPlaceholder": "ID ou nom du remplaçant",
             "salleOverride": "Salle (override ponctuel)",
             "sallePlaceholder": "Laisser vide pour conserver la salle habituelle",
             "salleAide": "Si vide, la salle du créneau habituel est conservée.",
             "commentaire": "Commentaire",
             "commentairePlaceholder": "Commentaire optionnel…"
         }
+    },
+    "toasts": {
+        "creneauCree": "Créneau créé avec succès",
+        "creneauModifie": "Créneau modifié avec succès",
+        "creneauSupprime": "Créneau supprimé",
+        "creneauValide": "Créneau validé",
+        "classeValide": "{{count}} créneau(x) validé(s)",
+        "heureCoursModifiee": "Heure de cours mise à jour",
+        "preferencesMaj": "Préférences mises à jour",
+        "templateCree": "Template créé avec succès",
+        "templateSupprime": "Template supprimé",
+        "templateDuplique": "Template dupliqué",
+        "erreurCreation": "Erreur lors de la création",
+        "erreurModification": "Erreur lors de la modification",
+        "erreurSuppression": "Erreur lors de la suppression",
+        "erreurValidation": "Erreur lors de la validation",
+        "erreurGeneration": "Erreur lors de la génération",
+        "erreurPreferences": "Erreur lors de la mise à jour des préférences"
     }
 }

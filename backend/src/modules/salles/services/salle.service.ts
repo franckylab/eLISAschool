@@ -18,7 +18,7 @@ import { AppDataSource } from '@database/data-source';
 import { Salle, TypeSalle, StatutSalle } from '../entities';
 import { ClasseAnnee } from '@modules/classes/entities';
 import { CreateSalleDto, UpdateSalleDto, QuerySallesDto } from '../dto';
-import { EmploiDuTemps } from '@modules/emploi-du-temps/entities';
+import { CreneauHoraire } from '@modules/emploi-du-temps/entities';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { salleAvailabilityService } from './salle-availability.service';
@@ -227,8 +227,8 @@ export class SalleService {
     }> {
         await this.findOne(salleId, etablissementId);
 
-        const emploiRepo = AppDataSource.getRepository(EmploiDuTemps);
-        const where: any = { salleId, actif: true };
+        const emploiRepo = AppDataSource.getRepository(CreneauHoraire);
+        const where: any = { salleId };
         if (anneeScolaireId) where.anneeScolaireId = anneeScolaireId;
 
         const creneaux = await emploiRepo.find({ where });

@@ -53,7 +53,7 @@ export class PersonnelDashboardService {
                 WHERE ap."membrePersonnelId" = p.id AND ap.statut = 'ACTIF'
                 ORDER BY ap."dateDebut" DESC LIMIT 1
             ) ap_cat ON true
-            WHERE p."etablissementId" = $1
+            WHERE p."etablissementId" = $1 AND p."deletedAt" IS NULL
             GROUP BY 1
         `, [etablissementId]);
 

@@ -16,7 +16,7 @@
     "etape1": "Identité",
     "etape2": "Coordonnées",
     "etape3": "Parents",
-    "etape4": "Complément",
+    "etape4": "Scolarité",
     "etape1Description": "Informations personnelles de l'élève",
     "etape2Description": "Adresse et contact",
     "etape3Description": "Parents ou tuteurs légaux",
@@ -40,7 +40,9 @@
     "ville": "Ville",
     "quartier": "Quartier",
     "photo": "Photo",
-    "photoPlaceholder": "Cliquez pour ajouter une photo",
+    "photoPlaceholder": "Ajouter une photo",
+    "changerPhoto": "Changer la photo",
+    "supprimerPhoto": "Supprimer",
     
     "nomPere": "Nom du père",
     "professionPere": "Profession du père",
@@ -65,7 +67,44 @@
     "allergiesPlaceholder": "Séparez les allergies par des virgules",
     "pere": "Père",
     "mere": "Mère",
-    "tuteur": "Tuteur légal"
+    "tuteur": "Tuteur légal",
+
+    "servicesOptionnels": "Services optionnels",
+    "exNom": "Ex: DIALLO",
+    "exPrenom": "Ex: Mamadou",
+    "exLieuNaissance": "Ex: Yaoundé",
+    "formatDate": "Format: JJ/MM/AAAA",
+    "aideNationalite": "Nationalité de l'élève",
+    "aideSysteme": "Système éducatif",
+    "aideGroupeSanguin": "Important pour les urgences médicales",
+    "aideAllergies": "Listez les allergies connues (alimentaires, médicamenteuses, etc.)",
+    "placeholderNomPere": "Nom complet du père",
+    "placeholderProfessionPere": "Ex: Enseignant",
+    "placeholderTelephonePere": "+237 6XX XXX XXX",
+    "placeholderEmailPere": "pere@example.com",
+    "placeholderNomMere": "Nom complet de la mère",
+    "placeholderProfessionMere": "Ex: Médecin",
+    "placeholderTelephoneMere": "+237 6XX XXX XXX",
+    "placeholderEmailMere": "mere@example.com",
+    "placeholderNomTuteur": "Nom du tuteur légal",
+    "placeholderLienParente": "Ex: Oncle, Grand-père, etc.",
+    "placeholderTelephoneTuteur": "+237 6XX XXX XXX",
+    "placeholderAdresse": "Ex: Quartier Bastos, Rue 123",
+    "placeholderVille": "Ex: Yaoundé",
+    "placeholderQuartier": "Ex: Bastos",
+    "placeholderNationalite": "Ex: Camerounaise",
+    "aideClasse": "Classe dans laquelle l'élève sera inscrit",
+    "aideAnneeScolaire": "Année scolaire en cours",
+    "descTransport": "L'élève utilisera le transport scolaire",
+    "descCantine": "L'élève prendra ses repas à la cantine",
+    "descBoursier": "L'élève bénéficie d'une bourse",
+    "descRedoublement": "L'élève est en situation de redoublement",
+    "formatsPhoto": "Formats acceptés : JPG, PNG, GIF • Taille max : 2 Mo",
+    "etapeSur": "Étape {{current}} sur {{total}}",
+    "brouillonAuto": "Brouillon auto-sauvegardé",
+    "afficherAide": "Afficher l'aide",
+    "aidePrefix": "Aide :",
+    "selectionner": "-- Sélectionner --"
   },
 
   "statut": {
@@ -89,7 +128,11 @@
     "toutesAnnees": "Toutes les années",
     "tousStatuts": "Tous les statuts",
     "tousSexes": "Tous",
-    "resetFiltres": "Réinitialiser"
+    "resetFiltres": "Réinitialiser",
+    "classe": "Classe",
+    "annee": "Année",
+    "sexe": "Sexe",
+    "statut": "Statut"
   },
 
   "import": {
@@ -120,6 +163,30 @@
     "telephoneInvalide": "Format de téléphone invalide"
   },
 
+  "toasts": {
+    "eleveCree": "Élève {{prenom}} {{nom}} créé avec succès",
+    "eleveModifie": "Élève {{prenom}} {{nom}} modifié avec succès",
+    "eleveSupprime": "Élève supprimé avec succès",
+    "importReussi": "{{count}} élèves importés avec succès",
+    "exportReussi": "Export réussi",
+    "erreurCreation": "Erreur lors de la création",
+    "erreurModification": "Erreur lors de la modification",
+    "erreurSuppression": "Erreur lors de la suppression",
+    "erreurImport": "Erreur lors de l'import",
+    "erreurExport": "Erreur lors de l'export",
+    "photoAjoutee": "Photo ajoutée",
+    "photoSupprimee": "Photo supprimée",
+    "photoTropVolumineuse": "Photo trop volumineuse",
+    "photoTailleMax": "La taille maximale autorisée est de 2 Mo",
+    "formatInvalide": "Format invalide",
+    "selectionnerImage": "Veuillez sélectionner une image (JPG, PNG, etc.)",
+    "erreurLecture": "Erreur de lecture",
+    "impossibleLireFichier": "Impossible de lire le fichier",
+    "brouillonRestaure": "Brouillon restauré",
+    "brouillonDescription": "Vos modifications précédentes ont été restaurées",
+    "erreurEnregistrement": "Erreur lors de l'enregistrement"
+  },
+
   "messages": {
     "confirmationSuppression": "Êtes-vous sûr de vouloir supprimer cet élève? Cette action est irréversible.",
     "eleveCree": "Élève créé avec succès",
@@ -147,13 +214,27 @@
     "exporterSelection": "Exporter la sélection"
   },
 
+  "statistiques": {
+    "total": "Total",
+    "actifs": "Actifs",
+    "exclus": "Exclus",
+    "diplomes": "Diplômés"
+  },
+
+  "confirmation": {
+    "supprimerTitre": "Supprimer cet élève",
+    "supprimerMessage": "Êtes-vous sûr de vouloir supprimer l'élève {{prenom}} {{nom}} ?",
+    "supprimerDetails": "Cette action est irréversible et supprimera toutes les données associées (notes, bulletins, présence, etc.)."
+  },
+
   "detail": {
     "titre": "Fiche élève",
     "retourListe": "Retour à la liste",
     "matricule": "Matricule",
     "neLe": "Né(e) le",
     "a": "à",
-    "age": "ans",
+    "age": "Âge",
+    "ans": "ans",
     
     "sectionIdentite": "Identité",
     "sectionContact": "Coordonnées",
@@ -162,6 +243,26 @@
     "sectionTuteur": "Tuteur légal",
     "sectionServices": "Services",
     "sectionMedical": "Informations médicales",
+    
+    "nomComplet": "Nom complet",
+    "sexe": "Sexe",
+    "masculin": "Masculin",
+    "feminin": "Féminin",
+    "nationalite": "Nationalité",
+    "nationaliteDefaut": "Camerounaise",
+    "sousSysteme": "Sous-système",
+    "francophone": "Francophone",
+    "anglophone": "Anglophone",
+    "ville": "Ville",
+    "nom": "Nom",
+    "transport": "Transport",
+    "cantine": "Cantine",
+    "boursier": "Boursier",
+    "redoublement": "Redoublement",
+    "exporterFiche": "Exporter fiche",
+    "eleveNonTrouve": "Élève non trouvé",
+    "nomPere": "Nom du père",
+    "nomMere": "Nom de la mère",
     
     "profession": "Profession",
     "nonDefini": "Non défini",
@@ -173,6 +274,14 @@
     "nombreNotes": "Notes",
     "nombreAbsences": "Absences",
     "nombreRetards": "Retards",
+    "moduleNotesPlaceholder": "Module Notes & Bulletins — données du backend à intégrer",
+    "notesResume": "Notes & évaluations",
+    "notesDescription": "Consulter l'ensemble des notes et évaluations de cet élève.",
+    "voirNotes": "Voir les notes",
+    "bulletinsResume": "Bulletins scolaires",
+    "bulletinsDescription": "Consulter les bulletins scolaires de cet élève par période.",
+    "voirBulletins": "Voir les bulletins",
+    "moduleFinancesPlaceholder": "Module Finances — données du backend à intégrer",
     
     "financesResume": "Résumé financier",
     "totalFactures": "Total factures",

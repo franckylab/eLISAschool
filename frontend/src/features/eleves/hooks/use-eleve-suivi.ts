@@ -2,28 +2,12 @@
  * ==================================
  * eLISAschool - Hook Suivi d'un Élève
  * ==================================
- * Récupère le suivi disciplinaire d'un élève (incidents, sanctions, félicitations)
  */
 
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
-
-export interface IncidentEleve {
-    id: string;
-    eleveId: string;
-    date: string;
-    type: 'INCIDENT' | 'SANCTION' | 'FELICITATION' | 'OBSERVATION';
-    description: string;
-    gravite?: 'LEGER' | 'MOYEN' | 'GRAVE';
-    sanction?: string;
-    auteurId: string;
-    auteur?: {
-        nom: string;
-        prenom: string;
-    };
-    createdAt: string;
-}
+import type { IncidentEleve } from '../types/eleve.types';
 
 const SUIVI_KEYS = {
     all: ['suivi-eleves'] as const,
@@ -42,7 +26,7 @@ export function useEleveSuivi(eleveId: string) {
             return response.data;
         },
         enabled: !!eleveId && isAuthenticated,
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: 5 * 60 * 1000,
         placeholderData: (previousData) => previousData,
     });
 }

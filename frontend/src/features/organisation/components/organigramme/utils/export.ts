@@ -2,20 +2,26 @@
  * ==================================
  * eLISAschool - Export organigramme (PNG/PDF)
  * ==================================
- * Version: 3.0.0
+ * Version: 4.0.0
  * Auteur: franck arlos chendjou
  *
  * Export configurable : presets de taille, qualité, coloration,
- * titre/date/légende, portée (visible ou tout déplié).
+ * titre/date/légende, minimap, portée (visible ou tout déplié),
+ * progression par étapes (callback onProgress).
+ * L'overlay (titre/date/légende) n'est incrusté que pour le PNG :
+ * le PDF dessine son propre en-tête/légende via jsPDF (zéro redondance).
+ * Légende alignée sur le thème actif (couleurs des liens résolues au runtime).
  * Fond blanc forcé pour export fidèle. Résolution CSS vars avant capture.
  * Utilise html-to-image (SVG foreignObject) pour oklch/oklab Tailwind v4.
  */
 
 import { toPng } from 'html-to-image';
-import { resolveColor, clearResolverCache } from './css-var-resolver';
+import { resolveColor, clearResolverCache, normaliserCouleurHex, attendreStabilisationDom, telecharger, genererNomFichier, tailleDataUrlOctets } from '@/lib/export';
 import {
     type ExportOptions,
     type EstimationExport,
+    type FormatExport,
+    type EtapeExport,
     FILTRES_COLORATION,
     getTaillePreset,
     getQualiteConfig,
@@ -29,14 +35,70 @@ const COULEURS_EXPORT = {
     textSecondary: '#4b5563',
     textMuted: '#9ca3af',
     border: '#e5e7eb',
-    dominant: '#28a745',
-    dominantLight: '#4ade80',
-    secondary: '#f59e0b',
-    accent: '#007bff',
 } as const;
+
+/** Couleurs canon des liens (fallbacks si le thème n'est pas résolu) */
+const COULEURS_LIENS_DEFAUT = {
+    hierarchie: '#28a745',
+    directe: '#f59e0b',
+    fonctionnelle: '#007bff',
+} as const;
+
+export interface CouleursLiens {
+    hierarchie: string;
+    directe: string;
+    fonctionnelle: string;
+}
+
+/** Libellés de la légende (traduits, fournis par le composant appelant) */
+export interface LibellesLegende {
+    hierarchie: string;
+    directe: string;
+    fonctionnelle: string;
+}
+
+const LIBELLES_LEGENDE_DEFAUT: LibellesLegende = {
+    hierarchie: 'Hiérarchie',
+    directe: 'Rel. directe',
+    fonctionnelle: 'Rel. fonctionnelle',
+};
+
+export interface ResultatExport {
+    format: FormatExport;
+    tailleOctets: number;
+    largeurPx: number;
+    hauteurPx: number;
+}
+
+export type OnProgressExport = (etape: EtapeExport) => void;
+
+/**
+ * Résout les couleurs réelles des liens depuis le thème actif.
+ * Les liens hiérarchiques suivent la couleur dominante de l'établissement :
+ * la légende exportée doit refléter ces couleurs, pas des hex figés.
+ */
+export function resoudreCouleursLiens(): CouleursLiens {
+    return {
+        hierarchie: normaliserCouleurHex(
+            resolveColor('var(--color-dominant-500)'), COULEURS_LIENS_DEFAUT.hierarchie),
+        directe: normaliserCouleurHex(
+            resolveColor('var(--color-secondary-500)'), COULEURS_LIENS_DEFAUT.directe),
+        fonctionnelle: normaliserCouleurHex(
+            resolveColor('var(--color-accent-600)'), COULEURS_LIENS_DEFAUT.fonctionnelle),
+    };
+}
 
 function preparerPourExport(element: HTMLElement): void {
     element.querySelectorAll('animate, animateTransform').forEach(el => el.remove());
+
+    // Fix remplissage noir : le `fill: none` des edges vient de la classe CSS
+    // `.react-flow__edge-path`, perdue lors de la sérialisation SVG de la capture.
+    // Sans fill explicite, un path smoothstep à angles est rempli en noir.
+    element.querySelectorAll<SVGElement>('.react-flow__edges path, .react-flow__edge path').forEach(p => {
+        if (!p.getAttribute('fill')) {
+            p.setAttribute('fill', 'none');
+        }
+    });
 
     element.querySelectorAll<SVGElement>('path[stroke-dashoffset]').forEach(el => {
         el.removeAttribute('stroke-dashoffset');
@@ -86,7 +148,11 @@ function preparerPourExport(element: HTMLElement): void {
     });
 }
 
-function creerOverlay(options: ExportOptions): HTMLDivElement {
+function creerOverlay(
+    options: ExportOptions,
+    couleursLiens: CouleursLiens,
+    libelles: LibellesLegende,
+): HTMLDivElement {
     const overlay = document.createElement('div');
     overlay.style.cssText = `
         position: absolute; top: 0; left: 0; right: 0; z-index: 100;
@@ -107,6 +173,13 @@ function creerOverlay(options: ExportOptions): HTMLDivElement {
             letter-spacing: -0.01em;
         `;
         gauche.appendChild(titreEl);
+
+        if (options.nomEtablissement) {
+            const etabEl = document.createElement('div');
+            etabEl.textContent = options.nomEtablissement;
+            etabEl.style.cssText = `font-size: 12px; font-weight: 500; color: ${COULEURS_EXPORT.textSecondary};`;
+            gauche.appendChild(etabEl);
+        }
     }
 
     if (options.inclureDate) {
@@ -130,9 +203,9 @@ function creerOverlay(options: ExportOptions): HTMLDivElement {
         `;
 
         const items = [
-            { label: 'Hiérarchie', dasharray: '', color: COULEURS_EXPORT.dominant, width: '2.5' },
-            { label: 'Rel. directe', dasharray: '10 5', color: COULEURS_EXPORT.secondary, width: '2' },
-            { label: 'Rel. fonctionnelle', dasharray: '4 5', color: COULEURS_EXPORT.accent, width: '2' },
+            { label: libelles.hierarchie, dasharray: '', color: couleursLiens.hierarchie, width: '2.5' },
+            { label: libelles.directe, dasharray: '10 5', color: couleursLiens.directe, width: '2.5' },
+            { label: libelles.fonctionnelle, dasharray: '4 5', color: couleursLiens.fonctionnelle, width: '2.5' },
         ];
 
         for (const item of items) {
@@ -172,14 +245,23 @@ function creerOverlay(options: ExportOptions): HTMLDivElement {
 async function capturerElement(
     element: HTMLElement,
     options: ExportOptions,
-): Promise<string> {
+    couleursLiens: CouleursLiens,
+    libelles: LibellesLegende,
+): Promise<{ dataUrl: string; estimation: EstimationExport }> {
     clearResolverCache();
 
     preparerPourExport(element);
 
-    const overlay = creerOverlay(options);
-    element.style.position = element.style.position || 'relative';
-    element.appendChild(overlay);
+    // L'overlay n'est incrusté que pour le PNG : le PDF dessine son propre
+    // en-tête/date/légende via jsPDF — l'incruster aussi dans l'image
+    // dupliquerait titre, établissement, date et légende.
+    const overlay = options.format === 'png'
+        ? creerOverlay(options, couleursLiens, libelles)
+        : null;
+    if (overlay) {
+        element.style.position = element.style.position || 'relative';
+        element.appendChild(overlay);
+    }
 
     const filtre = FILTRES_COLORATION[options.coloration] || 'none';
     const ancienFiltre = element.style.filter;
@@ -199,65 +281,95 @@ async function capturerElement(
             filter: (node) => {
                 if (node instanceof HTMLElement) {
                     if (node.classList.contains('react-flow__controls')) return false;
-                    if (node.classList.contains('react-flow__minimap')) return false;
+                    if (node.classList.contains('react-flow__minimap')) return options.inclureMinimap;
                     if (node.classList.contains('react-flow__attribution')) return false;
                     if (node.getAttribute('role') === 'toolbar') return false;
                 }
                 return true;
             },
         });
-        return dataUrl;
+        return { dataUrl, estimation };
     } finally {
-        if (overlay.parentNode) element.removeChild(overlay);
+        if (overlay?.parentNode) element.removeChild(overlay);
         if (filtre !== 'none') {
             element.style.filter = ancienFiltre;
         }
     }
 }
 
-function telecharger(dataUrl: string, nomFichier: string): void {
-    const link = document.createElement('a');
-    link.download = nomFichier;
-    link.href = dataUrl;
-    link.click();
-}
-
-function genererNomFichier(titre: string, format: 'png' | 'pdf'): string {
-    const date = new Date().toISOString().slice(0, 10);
-    const base = titre.replace(/\s+/g, '_') || 'organigramme';
-    return `${base}_organigramme_${date}.${format}`;
-}
-
 export async function exporterOrganigramme(
     elementId: string,
     options: ExportOptions,
-): Promise<void> {
+    onProgress?: OnProgressExport,
+    libellesLegende?: LibellesLegende,
+): Promise<ResultatExport | null> {
     const element = document.getElementById(elementId);
-    if (!element) return;
+    if (!element) return null;
+
+    const libelles = libellesLegende ?? LIBELLES_LEGENDE_DEFAUT;
+
+    onProgress?.('preparation');
 
     if (options.portee === 'etendu') {
+        onProgress?.('depliage');
         window.dispatchEvent(new CustomEvent('organigramme:toolbar-command', {
             detail: { command: 'expand-all' },
         }));
-        await new Promise(r => setTimeout(r, 600));
+        await attendreStabilisationDom(element);
+    }
+
+    const couleursLiens = resoudreCouleursLiens();
+
+    // Minimap force-mount pour mobile/tablette (< 1280px) : la minimap n'est
+    // rendue que sur desktop. Si l'export la demande, on la monte temporairement.
+    let minimapForcee = false;
+    if (options.inclureMinimap) {
+        window.dispatchEvent(new CustomEvent('organigramme:toolbar-command', {
+            detail: { command: 'force-minimap', visible: true },
+        }));
+        minimapForcee = true;
+        await attendreStabilisationDom(element);
     }
 
     try {
-        const dataUrl = await capturerElement(element, options);
-        const nomFichier = genererNomFichier(options.titre, options.format);
+        onProgress?.('capture');
+        const { dataUrl, estimation } = await capturerElement(element, options, couleursLiens, libelles);
+        const nomFichier = genererNomFichier(options.nomEtablissement, 'organigramme', options.format);
 
+        onProgress?.('generation');
+        let tailleOctets: number;
         if (options.format === 'pdf') {
             const { exporterPdfJsPdf } = await import('./export-pdf');
-            await exporterPdfJsPdf(dataUrl, {
-                titre: options.titre,
+            tailleOctets = await exporterPdfJsPdf(dataUrl, {
+                titre: options.inclureTitre ? options.titre : '',
+                nomEtablissement: options.inclureTitre ? options.nomEtablissement : '',
+                nomFichier,
                 inclureDate: options.inclureDate,
                 inclureLegende: options.inclureLegende,
                 pageFormat: options.pageFormat || 'a4',
+                orientation: options.orientation,
+                pagination: options.pagination,
+                couleursLegende: couleursLiens,
+                libellesLegende: libelles,
             });
         } else {
+            tailleOctets = tailleDataUrlOctets(dataUrl);
+            onProgress?.('telechargement');
             telecharger(dataUrl, nomFichier);
         }
+
+        return {
+            format: options.format,
+            tailleOctets,
+            largeurPx: estimation.largeurPx,
+            hauteurPx: estimation.hauteurPx,
+        };
     } finally {
+        if (minimapForcee) {
+            window.dispatchEvent(new CustomEvent('organigramme:toolbar-command', {
+                detail: { command: 'force-minimap', visible: false },
+            }));
+        }
         if (options.portee === 'etendu') {
             window.dispatchEvent(new CustomEvent('organigramme:toolbar-command', {
                 detail: { command: 'collapse-all' },

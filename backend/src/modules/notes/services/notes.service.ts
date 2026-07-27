@@ -11,7 +11,7 @@
 
 import { Repository, FindOptionsWhere, In } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Note, TypeEvaluation, StatutNote } from '../entities';
+import { Note, TypeEvaluation, StatutNote, NoteVersion } from '../entities';
 import { AffectationEleve } from '@modules/classes/entities';
 import { CreateNoteDto, UpdateNoteDto, CreateBulkNotesDto, QueryNotesDto, QueryNotesStatistiquesDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
@@ -60,9 +60,11 @@ export interface NotesStatistiquesResult {
 
 export class NotesService {
     private noteRepository: Repository<Note>;
+    private versionRepository: Repository<NoteVersion>;
 
     constructor() {
         this.noteRepository = AppDataSource.getRepository(Note);
+        this.versionRepository = AppDataSource.getRepository(NoteVersion);
     }
 
     private async getNotesParams() {
@@ -529,36 +531,46 @@ export class NotesService {
             }
         }
 
+        // Snapshot de l'état AVANT modification pour l'historique
+        const snapshotAvant: Record<string, unknown> = {
+            valeur: note.valeur,
+            bareme: note.bareme,
+            coefficient: note.coefficient,
+            typeEvaluation: note.typeEvaluation,
+            description: note.description,
+            commentaire: note.commentaire,
+            dateEvaluation: note.dateEvaluation,
+            statut: note.statut,
+            enseignantId: note.enseignantId,
+            validateurId: note.validateurId,
+        };
+
         // Si on change le statut, utiliser le workflow de validation
         if (updateDto.statut) {
             const workflow = await validationWorkflowService.findByModuleAndEntite('notes', id);
             
             if (workflow && workflow.statut === StatutWorkflow.EN_COURS) {
-                // Déterminer la décision basée sur le statut demandé
                 const decision = updateDto.statut === StatutNote.VALIDEE || updateDto.statut === StatutNote.PUBLIEE
                     ? DecisionValidation.APPROUVE
                     : DecisionValidation.REJETE;
 
-                // Traiter la validation via le workflow
                 const updatedWorkflow = await validationWorkflowService.traiterValidation(
                     workflow.id,
                     { decision, commentaire: updateDto.commentaire },
                     utilisateurId
                 );
 
-                // Mettre à jour le statut de la note selon le workflow
                 if (updatedWorkflow.statut === StatutWorkflow.COMPLETEE) {
-                    note.statut = StatutNote.PUBLIEE; // Workflow complet = publiée
+                    note.statut = StatutNote.PUBLIEE;
                 } else if (updatedWorkflow.statut === StatutWorkflow.REJETEE) {
-                    note.statut = StatutNote.BROUILLON; // Rejet = retour brouillon
+                    note.statut = StatutNote.BROUILLON;
                 } else {
-                    note.statut = StatutNote.VALIDEE; // En cours = validée partiellement
+                    note.statut = StatutNote.VALIDEE;
                 }
 
                 note.validateurId = utilisateurId;
                 note.valideeAt = new Date();
             } else {
-                // Pas de workflow ou déjà complet, mise à jour directe
                 Object.assign(note, updateDto);
                 if (updateDto.statut === StatutNote.VALIDEE || updateDto.statut === StatutNote.PUBLIEE) {
                     note.validateurId = utilisateurId;
@@ -566,9 +578,11 @@ export class NotesService {
                 }
             }
         } else {
-            // Mise à jour normale sans changement de statut
             Object.assign(note, updateDto);
         }
+
+        // Créer la version avant de sauvegarder
+        await this.creerVersion(note.id, snapshotAvant, utilisateurId, note.etablissementId, updateDto.commentaire);
 
         await this.noteRepository.save(note);
         return note;
@@ -736,6 +750,45 @@ export class NotesService {
             parType,
             parStatut,
         };
+    }
+
+    async creerVersion(
+        noteId: string,
+        snapshot: Record<string, unknown>,
+        modifiePar: string,
+        etablissementId: string,
+        raison?: string,
+    ): Promise<NoteVersion> {
+        const dernierNumero = await this.versionRepository
+            .createQueryBuilder('v')
+            .select('MAX(v.version)', 'maxVersion')
+            .where('v.noteId = :noteId', { noteId })
+            .getRawOne<{ maxVersion: number | null }>();
+
+        const version = (dernierNumero?.maxVersion ?? 0) + 1;
+
+        const noteVersion = this.versionRepository.create({
+            noteId,
+            version,
+            snapshot,
+            modifiePar,
+            etablissementId,
+            ...(raison ? { raison: raison.substring(0, 50) } : {}),
+        });
+
+        await this.versionRepository.save(noteVersion);
+        logger.info(`NoteVersion créée: note ${noteId}, version ${version}`);
+        return noteVersion;
+    }
+
+    async getHistorique(noteId: string, etablissementId?: string): Promise<NoteVersion[]> {
+        return this.versionRepository.find({
+            where: {
+                noteId,
+                ...(etablissementId ? { etablissementId } : {}),
+            },
+            order: { version: 'DESC' },
+        });
     }
 }
 

@@ -4,11 +4,53 @@ import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
 import type { BulletinPaie, Cotisation, TypePrime, TypeRetenue, RapportPaieMensuel, ElementSalaire } from '../types/paie.types';
 
+export interface PaginationMeta {
+    totalItems: number;
+    currentPage: number;
+    itemsPerPage: number;
+    totalPages: number;
+}
+
+export interface PaginatedBulletins {
+    items: BulletinPaie[];
+    meta: PaginationMeta;
+}
+
+export interface BulletinsFiltres {
+    page?: number;
+    limit?: number;
+    membrePersonnelId?: string;
+    mois?: number;
+    annee?: number;
+    statut?: string;
+}
+
+export interface SimulationPaie {
+    salaireBrut: number;
+    salaireNet: number;
+    totalPrimes: number;
+    totalRetenues: number;
+    totalCotisationsSalariales: number;
+    totalCotisationsPatronales: number;
+    elements?: ElementSalaire[];
+}
+
+function messageErreur(e: unknown, fallback: string): string {
+    const err = e as { response?: { data?: { message?: string } }; message?: string };
+    return err?.response?.data?.message || err?.message || fallback;
+}
+
+function extraireListe<T>(data: unknown): T[] {
+    if (Array.isArray(data)) return data as T[];
+    const items = (data as { items?: T[] })?.items;
+    return items || [];
+}
+
 const PAIE_KEYS = {
     all: ['paie'] as const,
     bulletins: {
         all: ['paie', 'bulletins'] as const,
-        liste: (params?: any) => [...PAIE_KEYS.bulletins.all, params] as const,
+        liste: (params?: BulletinsFiltres) => [...PAIE_KEYS.bulletins.all, params] as const,
         detail: (id: string) => [...PAIE_KEYS.bulletins.all, id] as const,
     },
     cotisations: {
@@ -22,15 +64,16 @@ const PAIE_KEYS = {
     },
 };
 
-export function useBulletins(params?: { page?: number; limit?: number; membrePersonnelId?: string; mois?: number; annee?: number; statut?: string }) {
+export function useBulletins(params?: BulletinsFiltres) {
     const { isAuthenticated } = useAuthStore();
-    return useQuery({
+    return useQuery<PaginatedBulletins>({
         queryKey: PAIE_KEYS.bulletins.liste(params),
         queryFn: async () => {
-            const response = await apiClient.get<any>('/api/paie/bulletins', params as any);
-            return (response.data as any)?.items || response.data || [];
+            const response = await apiClient.get<PaginatedBulletins>('/api/paie/bulletins', params as Record<string, string | number>);
+            return response.data as PaginatedBulletins;
         },
         enabled: isAuthenticated,
+        placeholderData: (previousData) => previousData,
     });
 }
 
@@ -42,7 +85,7 @@ export function useCreerBulletin() {
             return response.data;
         },
         onSuccess: () => { qc.invalidateQueries({ queryKey: PAIE_KEYS.bulletins.all }); toast.success('Bulletin créé'); },
-        onError: (e: any) => toast.error(e?.response?.data?.message || e?.message || 'Erreur création bulletin'),
+        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur création bulletin')),
     });
 }
 
@@ -54,7 +97,7 @@ export function useGenererBulletin() {
             return response.data;
         },
         onSuccess: () => { qc.invalidateQueries({ queryKey: PAIE_KEYS.bulletins.all }); toast.success('Bulletin généré'); },
-        onError: (e: any) => toast.error(e?.response?.data?.message || e?.message || 'Erreur génération bulletin'),
+        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur génération bulletin')),
     });
 }
 
@@ -63,7 +106,7 @@ export function useElementsBulletin(bulletinId: string | null) {
         queryKey: ['bulletins', bulletinId, 'elements'],
         queryFn: async () => {
             const response = await apiClient.get<ElementSalaire[]>(`/api/paie/bulletins/${bulletinId}/elements`);
-            return (response as any).data || [];
+            return response.data || [];
         },
         enabled: !!bulletinId,
         placeholderData: (previousData) => previousData,
@@ -73,12 +116,12 @@ export function useElementsBulletin(bulletinId: string | null) {
 export function useModifierBulletin() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async ({ id, ...dto }: { id: string } & Record<string, any>) => {
+        mutationFn: async ({ id, ...dto }: { id: string } & Partial<Pick<BulletinPaie, 'salaireBase' | 'primes' | 'deductions' | 'statut' | 'datePaiement'>>) => {
             const response = await apiClient.patch<BulletinPaie>(`/api/paie/bulletins/${id}`, dto);
             return response.data;
         },
         onSuccess: () => { qc.invalidateQueries({ queryKey: PAIE_KEYS.bulletins.all }); toast.success('Bulletin modifié'); },
-        onError: (e: any) => toast.error(e?.response?.data?.message || e?.message || 'Erreur modification bulletin'),
+        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur modification bulletin')),
     });
 }
 
@@ -87,7 +130,7 @@ export function useSupprimerBulletin() {
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/paie/bulletins/${id}`); },
         onSuccess: () => { qc.invalidateQueries({ queryKey: PAIE_KEYS.bulletins.all }); toast.success('Bulletin supprimé'); },
-        onError: (e: any) => toast.error(e?.response?.data?.message || e?.message || 'Erreur suppression bulletin'),
+        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur suppression bulletin')),
     });
 }
 
@@ -96,8 +139,8 @@ export function useCotisations(params?: { actif?: boolean; type?: string; page?:
     return useQuery({
         queryKey: [...PAIE_KEYS.cotisations.all, params],
         queryFn: async () => {
-            const response = await apiClient.get<Cotisation[]>('/api/paie/cotisations', params as any);
-            return (response.data as any)?.items || response.data || [];
+            const response = await apiClient.get<Cotisation[]>('/api/paie/cotisations', params as Record<string, string | number>);
+            return extraireListe<Cotisation>(response.data);
         },
         enabled: isAuthenticated,
     });
@@ -111,19 +154,19 @@ export function useCreerCotisation() {
             return response.data;
         },
         onSuccess: () => { qc.invalidateQueries({ queryKey: PAIE_KEYS.cotisations.all }); toast.success('Cotisation créée'); },
-        onError: (e: any) => toast.error(e?.response?.data?.message || e?.message || 'Erreur création cotisation'),
+        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur création cotisation')),
     });
 }
 
 export function useModifierCotisation() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async ({ id, ...dto }: { id: string } & Record<string, any>) => {
+        mutationFn: async ({ id, ...dto }: { id: string } & Partial<Omit<Cotisation, 'id' | 'createdAt' | 'updatedAt'>>) => {
             const response = await apiClient.patch<Cotisation>(`/api/paie/cotisations/${id}`, dto);
             return response.data;
         },
         onSuccess: () => { qc.invalidateQueries({ queryKey: PAIE_KEYS.cotisations.all }); toast.success('Cotisation modifiée'); },
-        onError: (e: any) => toast.error(e?.response?.data?.message || e?.message || 'Erreur modification cotisation'),
+        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur modification cotisation')),
     });
 }
 
@@ -132,7 +175,7 @@ export function useSupprimerCotisation() {
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/paie/cotisations/${id}`); },
         onSuccess: () => { qc.invalidateQueries({ queryKey: PAIE_KEYS.cotisations.all }); toast.success('Cotisation supprimée'); },
-        onError: (e: any) => toast.error(e?.response?.data?.message || e?.message || 'Erreur suppression cotisation'),
+        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur suppression cotisation')),
     });
 }
 
@@ -141,8 +184,8 @@ export function useTypesPrimes(params?: { actif?: boolean; page?: number; limit?
     return useQuery({
         queryKey: [...PAIE_KEYS.primes.all, params],
         queryFn: async () => {
-            const response = await apiClient.get<TypePrime[]>('/api/paie/types-primes', params as any);
-            return (response.data as any)?.items || response.data || [];
+            const response = await apiClient.get<TypePrime[]>('/api/paie/types-primes', params as Record<string, string | number>);
+            return extraireListe<TypePrime>(response.data);
         },
         enabled: isAuthenticated,
     });
@@ -156,19 +199,19 @@ export function useCreerTypePrime() {
             return response.data;
         },
         onSuccess: () => { qc.invalidateQueries({ queryKey: PAIE_KEYS.primes.all }); toast.success('Type prime créé'); },
-        onError: (e: any) => toast.error(e?.response?.data?.message || e?.message || 'Erreur création type prime'),
+        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur création type prime')),
     });
 }
 
 export function useModifierTypePrime() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async ({ id, ...dto }: { id: string } & Record<string, any>) => {
+        mutationFn: async ({ id, ...dto }: { id: string } & Partial<Omit<TypePrime, 'id' | 'createdAt' | 'updatedAt'>>) => {
             const response = await apiClient.patch<TypePrime>(`/api/paie/types-primes/${id}`, dto);
             return response.data;
         },
         onSuccess: () => { qc.invalidateQueries({ queryKey: PAIE_KEYS.primes.all }); toast.success('Type prime modifié'); },
-        onError: (e: any) => toast.error(e?.response?.data?.message || e?.message || 'Erreur modification type prime'),
+        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur modification type prime')),
     });
 }
 
@@ -177,7 +220,7 @@ export function useSupprimerTypePrime() {
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/paie/types-primes/${id}`); },
         onSuccess: () => { qc.invalidateQueries({ queryKey: PAIE_KEYS.primes.all }); toast.success('Type prime supprimé'); },
-        onError: (e: any) => toast.error(e?.response?.data?.message || e?.message || 'Erreur suppression'),
+        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur suppression')),
     });
 }
 
@@ -186,8 +229,8 @@ export function useTypesRetenues(params?: { page?: number; limit?: number }) {
     return useQuery({
         queryKey: [...PAIE_KEYS.retenues.all, params],
         queryFn: async () => {
-            const response = await apiClient.get<TypeRetenue[]>('/api/paie/types-retenues', params as any);
-            return (response.data as any)?.items || response.data || [];
+            const response = await apiClient.get<TypeRetenue[]>('/api/paie/types-retenues', params as Record<string, string | number>);
+            return extraireListe<TypeRetenue>(response.data);
         },
         enabled: isAuthenticated,
     });
@@ -201,19 +244,19 @@ export function useCreerTypeRetenue() {
             return response.data;
         },
         onSuccess: () => { qc.invalidateQueries({ queryKey: PAIE_KEYS.retenues.all }); toast.success('Type retenue créé'); },
-        onError: (e: any) => toast.error(e?.response?.data?.message || e?.message || 'Erreur création type retenue'),
+        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur création type retenue')),
     });
 }
 
 export function useModifierTypeRetenue() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async ({ id, ...dto }: { id: string } & Record<string, any>) => {
+        mutationFn: async ({ id, ...dto }: { id: string } & Partial<Omit<TypeRetenue, 'id' | 'createdAt' | 'updatedAt'>>) => {
             const response = await apiClient.patch<TypeRetenue>(`/api/paie/types-retenues/${id}`, dto);
             return response.data;
         },
         onSuccess: () => { qc.invalidateQueries({ queryKey: PAIE_KEYS.retenues.all }); toast.success('Type retenue modifié'); },
-        onError: (e: any) => toast.error(e?.response?.data?.message || e?.message || 'Erreur modification type retenue'),
+        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur modification type retenue')),
     });
 }
 
@@ -222,15 +265,17 @@ export function useSupprimerTypeRetenue() {
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/paie/types-retenues/${id}`); },
         onSuccess: () => { qc.invalidateQueries({ queryKey: PAIE_KEYS.retenues.all }); toast.success('Type retenue supprimé'); },
-        onError: (e: any) => toast.error(e?.response?.data?.message || e?.message || 'Erreur suppression'),
+        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur suppression')),
     });
 }
 
 export function useSimulerPaie() {
     return useMutation({
         mutationFn: async ({ membreId, mois, annee }: { membreId: string; mois: number; annee: number }) => {
-            const response = await apiClient.post<any>(`/api/paie/simuler/${membreId}`, { mois, annee });
-            return response.data?.data || response.data;
+            const response = await apiClient.post<SimulationPaie | { data: SimulationPaie }>(`/api/paie/calcul/simuler/${membreId}`, { mois, annee });
+            const payload = response.data as SimulationPaie | { data: SimulationPaie } | undefined;
+            if (payload && 'data' in payload) return payload.data;
+            return payload as SimulationPaie;
         },
     });
 }
@@ -244,9 +289,9 @@ export function useGenererBulletinsMasse() {
                 try {
                     await apiClient.post(`/api/paie/bulletins/generer/${membre.id}`, { mois, annee });
                     results.success++;
-                } catch (e: any) {
+                } catch (e: unknown) {
                     results.errors++;
-                    results.details.push(`Échec ${membre.id.slice(0, 8)}: ${e?.response?.data?.message || e?.message}`);
+                    results.details.push(`Échec ${membre.id.slice(0, 8)}: ${messageErreur(e, 'erreur inconnue')}`);
                 }
             }
             return results;
@@ -255,7 +300,7 @@ export function useGenererBulletinsMasse() {
             qc.invalidateQueries({ queryKey: PAIE_KEYS.bulletins.all });
             toast.success(`${data.success} bulletin(s) généré(s)` + (data.errors > 0 ? `, ${data.errors} erreur(s)` : ''));
         },
-        onError: (e: any) => toast.error(e?.message || 'Erreur génération masse'),
+        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur génération masse')),
     });
 }
 
@@ -263,8 +308,8 @@ export function useRapportPaie(mois: number, annee: number) {
     return useQuery<RapportPaieMensuel>({
         queryKey: ['paie', 'rapport', mois, annee],
         queryFn: async () => {
-            const response = await apiClient.get(`/api/paie/bulletins/rapport-comptable?mois=${mois}&annee=${annee}`);
-            return (response as any).data;
+            const response = await apiClient.get<RapportPaieMensuel>(`/api/paie/bulletins/rapport-comptable?mois=${mois}&annee=${annee}`);
+            return response.data as RapportPaieMensuel;
         },
     });
 }

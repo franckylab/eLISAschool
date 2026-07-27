@@ -19,12 +19,6 @@ import type { Column } from '@/components/ui/DataTable';
 
 type OngletId = 'cotisations' | 'primes' | 'retenues';
 
-const ONGLETS = [
-    { id: 'cotisations', label: 'Cotisations', icon: Percent },
-    { id: 'primes', label: 'Types de primes', icon: Gift },
-    { id: 'retenues', label: 'Types de retenues', icon: Ban },
-];
-
 function CotisationsSection() {
     const { t } = useTranslation('paie');
     const perms = usePaiePermissions();
@@ -44,23 +38,23 @@ function CotisationsSection() {
         {
             key: 'type', header: t('type'), render: (c) => (
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                    c.type === 'PATRONALE' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
-                    c.type === 'SALARIALE' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                    c.type === 'PATRONALE' ? 'bg-secondary/10 text-secondary' :
+                    c.type === 'SALARIALE' ? 'bg-primary/10 text-primary' :
+                    'bg-success/10 text-success'
                 }`}>{c.type}</span>
             ),
         },
-        { key: 'tauxPatronal', header: 'Taux patr.', className: 'text-right', render: (c) => <span>{c.tauxPatronal}%</span> },
-        { key: 'tauxSalarial', header: 'Taux sal.', className: 'text-right', render: (c) => <span>{c.tauxSalarial}%</span> },
+        { key: 'tauxPatronal', header: t('tauxPatronalCourt'), className: 'text-right', render: (c) => <span>{c.tauxPatronal}%</span> },
+        { key: 'tauxSalarial', header: t('tauxSalarialCourt'), className: 'text-right', render: (c) => <span>{c.tauxSalarial}%</span> },
         {
-            key: 'actif', header: t('statut'), className: 'text-center', render: (c) => (
+            key: 'actif', header: t('colonne.statut'), className: 'text-center', render: (c) => (
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                    c.actif ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                    c.actif ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
                 }`}>{c.actif ? t('actif') : t('inactif')}</span>
             ),
         },
         {
-            key: 'actions', header: t('actions'), className: 'text-right',
+            key: 'actions', header: t('colonne.actions'), className: 'text-right',
             renderActions: (c) => [
                 { key: 'edit', icon: Edit, label: t('actions.modifier'), onClick: () => { setEditing(c); setShowModal(true); }, permission: 'paie:edit' },
                 { key: 'delete', icon: Trash2, label: t('actions.supprimer'), onClick: () => setDeleting(c), permission: 'paie:delete', variant: 'danger' as const },
@@ -110,7 +104,7 @@ function CotisationsSection() {
 }
 
 function PrimesSection() {
-    const { t } = useTranslation('paie');
+    const { t, i18n } = useTranslation('paie');
     const perms = usePaiePermissions();
     const { data: primes, isLoading, isError, error, refetch } = useTypesPrimes();
     const creer = useCreerTypePrime();
@@ -127,21 +121,21 @@ function PrimesSection() {
         { key: 'nom', header: t('nom'), render: (p) => <span className="text-sm font-medium">{p.nom}</span> },
         {
             key: 'typeCalcul', header: t('typeCalcul'), render: (p) => (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
                     {p.typeCalcul}
                 </span>
             ),
         },
-        { key: 'valeur', header: t('valeur'), className: 'text-right', render: (p) => <span>{p.valeur.toLocaleString('fr-FR')}</span> },
+        { key: 'valeur', header: t('valeur'), className: 'text-right', render: (p) => <span>{p.valeur.toLocaleString(i18n.language)}</span> },
         {
-            key: 'actif', header: t('statut'), className: 'text-center', render: (p) => (
+            key: 'actif', header: t('colonne.statut'), className: 'text-center', render: (p) => (
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                    p.actif ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                    p.actif ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
                 }`}>{p.actif ? t('actif') : t('inactif')}</span>
             ),
         },
         {
-            key: 'actions', header: t('actions'), className: 'text-right',
+            key: 'actions', header: t('colonne.actions'), className: 'text-right',
             renderActions: (p) => [
                 { key: 'edit', icon: Edit, label: t('actions.modifier'), onClick: () => { setEditing(p); setShowModal(true); }, permission: 'paie:edit' },
                 { key: 'delete', icon: Trash2, label: t('actions.supprimer'), onClick: () => setDeleting(p), permission: 'paie:delete', variant: 'danger' as const },
@@ -191,7 +185,7 @@ function PrimesSection() {
 }
 
 function RetenuesSection() {
-    const { t } = useTranslation('paie');
+    const { t, i18n } = useTranslation('paie');
     const perms = usePaiePermissions();
     const { data: retenues, isLoading, isError, error, refetch } = useTypesRetenues();
     const creer = useCreerTypeRetenue();
@@ -208,14 +202,14 @@ function RetenuesSection() {
         { key: 'nom', header: t('nom'), render: (r) => <span className="text-sm font-medium">{r.nom}</span> },
         {
             key: 'frequence', header: t('frequence'), render: (r) => (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning/10 text-warning">
                     {r.frequence}
                 </span>
             ),
         },
-        { key: 'montantMax', header: t('montantMax'), className: 'text-right', render: (r) => <span>{r.montantMax ? `${r.montantMax.toLocaleString('fr-FR')} F` : '-'}</span> },
+        { key: 'montantMax', header: t('montantMax'), className: 'text-right', render: (r) => <span>{r.montantMax ? `${r.montantMax.toLocaleString(i18n.language)} F` : '-'}</span> },
         {
-            key: 'actions', header: t('actions'), className: 'text-right',
+            key: 'actions', header: t('colonne.actions'), className: 'text-right',
             renderActions: (r) => [
                 { key: 'edit', icon: Edit, label: t('actions.modifier'), onClick: () => { setEditing(r); setShowModal(true); }, permission: 'paie:edit' },
                 { key: 'delete', icon: Trash2, label: t('actions.supprimer'), onClick: () => setDeleting(r), permission: 'paie:delete', variant: 'danger' as const },
@@ -269,6 +263,12 @@ export function PaieConfigPage() {
     const { t } = useTranslation('paie');
     const [ongletActif, setOngletActif] = useState<OngletId>('cotisations');
 
+    const onglets = [
+        { id: 'cotisations', label: t('ongletCotisations'), icon: Percent },
+        { id: 'primes', label: t('ongletPrimes'), icon: Gift },
+        { id: 'retenues', label: t('ongletRetenues'), icon: Ban },
+    ];
+
     return (
         <div className="flex flex-col gap-6 p-6">
             <PageHeader
@@ -280,19 +280,15 @@ export function PaieConfigPage() {
             />
 
             <TabsBar
-                tabs={ONGLETS}
+                tabs={onglets}
                 activeTab={ongletActif}
                 onTabChange={(v) => setOngletActif(v as OngletId)}
             />
 
             <TabsContent activeTab={ongletActif}>
-                <CotisationsSection />
-            </TabsContent>
-            <TabsContent activeTab={ongletActif}>
-                <PrimesSection />
-            </TabsContent>
-            <TabsContent activeTab={ongletActif}>
-                <RetenuesSection />
+                {ongletActif === 'cotisations' && <CotisationsSection />}
+                {ongletActif === 'primes' && <PrimesSection />}
+                {ongletActif === 'retenues' && <RetenuesSection />}
             </TabsContent>
         </div>
     );

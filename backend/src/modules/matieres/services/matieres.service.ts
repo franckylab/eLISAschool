@@ -9,8 +9,11 @@
 
 import { Repository, ILike } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Matiere, GroupeMatiere, MatiereNiveau, AffectationMatiere, StatutAffectationMatiere, StatutMatiereNiveau } from '../entities';
+import { Matiere, GroupeMatiere, MatiereNiveau, AffectationMatiere, StatutAffectationMatiere, StatutMatiereNiveau, StatutValidationAffectation } from '../entities';
 import { ProgrammeMatiere } from '@modules/programmes/entities';
+import { MembrePersonnel, ContratPersonnel, StatutContrat } from '@modules/personnel/entities';
+import { personnelService } from '@modules/personnel/services/personnel.service';
+import { CategorieFonction } from '../../../shared/constants/personnel.constants';
 import { CreateMatiereDto, UpdateMatiereDto, CreateGroupeMatiereDto, CreateMatiereNiveauDto, UpdateMatiereNiveauDto, AffecterEnseignantDto, QueryMatieresDto, MoveAffectationDto } from '../dto';
 import { anneesScolairesService } from '@modules/annees-scolaires/services';
 import { classesService } from '@modules/classes/services';
@@ -159,9 +162,9 @@ export class MatieresService {
         return prog;
     }
 
-    async getMatieresParNiveau(niveauId: string): Promise<MatiereNiveau[]> {
+    async getMatieresParNiveau(niveauId: string, etablissementId: string): Promise<MatiereNiveau[]> {
         return this.niveauRepo.find({
-            where: { niveauId },
+            where: { niveauId, matiere: { etablissementId } },
             relations: ['matiere', 'groupe'],
             order: { groupe: { ordre: 'ASC' }, matiere: { nom: 'ASC' } }
         });
@@ -175,15 +178,17 @@ export class MatieresService {
         });
     }
 
-    async deleteMatiereNiveau(id: string): Promise<void> {
-        const prog = await this.niveauRepo.findOne({ where: { id } });
+    async deleteMatiereNiveau(id: string, etablissementId: string): Promise<void> {
+        const prog = await this.niveauRepo.findOne({ where: { id, matiere: { etablissementId } } });
         if (!prog) throw new AppError('Programme matière-niveau non trouvé', 404, 'NOT_FOUND');
         await this.niveauRepo.remove(prog);
         logger.info(`Programme matière-niveau supprimé: ${id}`);
     }
 
     async updateMatiereNiveau(id: string, dto: UpdateMatiereNiveauDto, createurId: string, etablissementId?: string): Promise<MatiereNiveau> {
-        const prog = await this.niveauRepo.findOne({ where: { id } });
+        const prog = await this.niveauRepo.findOne({
+            where: etablissementId ? { id, matiere: { etablissementId } } : { id },
+        });
         if (!prog) throw new AppError('Programme non trouvé', 404, 'NOT_FOUND');
         Object.assign(prog, dto);
         await this.niveauRepo.save(prog);
@@ -207,7 +212,37 @@ export class MatieresService {
 
     // ==== AFFECTATIONS ENSEIGNANTS ====
 
+    /**
+     * Garde stricte : le membre doit exister dans le tenant, avoir un contrat
+     * actif et être de catégorie dérivée ENSEIGNANT.
+     */
+    private async verifierEnseignant(enseignantId: string, etablissementId: string): Promise<void> {
+        const membreRepo = AppDataSource.getRepository(MembrePersonnel);
+        const membre = await membreRepo.findOne({ where: { id: enseignantId, etablissementId } });
+        if (!membre) {
+            throw new AppError('Membre du personnel introuvable dans cet établissement', 400, 'ENSEIGNANT_NOT_FOUND');
+        }
+
+        const contratRepo = AppDataSource.getRepository(ContratPersonnel);
+        const contratActif = await contratRepo.findOne({
+            where: { membrePersonnelId: enseignantId, statut: StatutContrat.ACTIF },
+        });
+        if (!contratActif) {
+            throw new AppError('Ce membre du personnel n\'a pas de contrat actif', 400, 'ENSEIGNANT_SANS_CONTRAT_ACTIF');
+        }
+
+        const categories = await personnelService.deriverCategories([enseignantId]);
+        const info = categories.get(enseignantId);
+        if (info?.categorie !== CategorieFonction.ENSEIGNANT) {
+            throw new AppError('Ce membre du personnel n\'est pas de catégorie enseignant', 400, 'MEMBRE_NON_ENSEIGNANT');
+        }
+    }
+
     async affecterEnseignant(dto: AffecterEnseignantDto, createurId: string, etablissementId?: string): Promise<AffectationMatiere> {
+        if (!etablissementId) {
+            throw new AppError('Établissement requis', 400, 'ETABLISSEMENT_REQUIRED');
+        }
+
         const classeAnneeRepo = AppDataSource.getRepository('ClasseAnnee');
         const classeAnnee = await classeAnneeRepo.findOne({
             where: { id: dto.classeAnneeId },
@@ -223,53 +258,57 @@ export class MatieresService {
         });
         if (!prog) throw new AppError('Cette matière n\'est pas au programme de ce niveau', 400, 'MATIERE_NOT_IN_LEVEL');
 
+        await this.verifierEnseignant(dto.enseignantId, etablissementId);
+
         const requireValidation = await getParamBoolean('matieres.require_validation', { defaultValue: false, etablissementId });
 
+        // Historisation : désactiver l'affectation active existante (remplacement d'enseignant)
         const existing = await this.affectationRepo.findOne({
             where: {
                 matiereId: dto.matiereId,
-                classeAnneeId: dto.classeAnneeId
+                classeAnneeId: dto.classeAnneeId,
+                etablissementId,
+                actif: true,
             }
         });
 
-        if (existing) {
-            existing.enseignantId = dto.enseignantId;
+        if (existing && existing.enseignantId === dto.enseignantId) {
+            // Même enseignant : mise à jour simple des attributs
             if (dto.dateDebut) existing.dateDebut = new Date(dto.dateDebut);
             if (dto.dateFin !== undefined) existing.dateFin = new Date(dto.dateFin);
             if (dto.coefficient !== undefined) existing.coefficient = dto.coefficient;
-            if (dto.actif !== undefined) existing.actif = dto.actif;
-            existing.statut = requireValidation
-                ? StatutAffectationMatiere.EN_ATTENTE_VALIDATION
-                : StatutAffectationMatiere.ACTIVE;
+            if (dto.coEnseignantIds !== undefined) existing.coEnseignantIds = dto.coEnseignantIds;
             await this.affectationRepo.save(existing);
-
-            if (requireValidation) {
-                await validationWorkflowService.createWorkflow({
-                    module: 'matieres',
-                    entiteId: existing.id,
-                    entiteType: 'AffectationMatiere',
-                    niveauxRequis: 2,
-                    etablissementId,
-                    commentaire: 'Modification affectation enseignant',
-                }, createurId);
-            }
-
+            logger.info(`Affectation enseignant mise à jour: ${dto.enseignantId} → ${dto.matiereId}`);
             return existing;
+        }
+
+        if (existing) {
+            existing.actif = false;
+            existing.statut = StatutAffectationMatiere.INACTIVE;
+            existing.dateFin = new Date();
+            await this.affectationRepo.save(existing);
+            logger.info(`Affectation historisée (remplacement): ${existing.enseignantId} → ${dto.matiereId} (classe ${dto.classeAnneeId})`);
         }
 
         const affectation = this.affectationRepo.create({
             matiereId: dto.matiereId,
             classeAnneeId: dto.classeAnneeId,
             enseignantId: dto.enseignantId,
-            etablissementId: etablissementId!,
+            etablissementId,
             dateDebut: dto.dateDebut || new Date().toISOString().split('T')[0],
             ...(dto.dateFin ? { dateFin: dto.dateFin } : {}),
             ...(dto.coefficient !== undefined ? { coefficient: dto.coefficient } : {}),
             ...(dto.actif !== undefined ? { actif: dto.actif } : {}),
+            ...(dto.obligatoire !== undefined ? { obligatoire: dto.obligatoire } : {}),
+            ...(dto.statutValidation !== undefined ? { statutValidation: dto.statutValidation as StatutValidationAffectation } : {}),
             statut: requireValidation
                 ? StatutAffectationMatiere.EN_ATTENTE_VALIDATION
                 : StatutAffectationMatiere.ACTIVE,
         });
+        if (dto.coEnseignantIds !== undefined) {
+            affectation.coEnseignantIds = dto.coEnseignantIds;
+        }
         await this.affectationRepo.save(affectation);
 
         if (requireValidation) {
@@ -309,8 +348,13 @@ export class MatieresService {
     async deleteAffectation(id: string, etablissementId: string): Promise<void> {
         const affectation = await this.affectationRepo.findOne({ where: { id, etablissementId } });
         if (!affectation) throw new AppError('Affectation non trouvée', 404, 'NOT_FOUND');
-        await this.affectationRepo.remove(affectation);
-        logger.info(`Affectation supprimée: ${id}`);
+        // Désactivation (historisation) plutôt que hard delete : les notes et heures
+        // de cours passées référencent cette affectation.
+        affectation.actif = false;
+        affectation.statut = StatutAffectationMatiere.INACTIVE;
+        if (!affectation.dateFin) affectation.dateFin = new Date();
+        await this.affectationRepo.save(affectation);
+        logger.info(`Affectation désactivée: ${id}`);
     }
 
     async moveAffectation(id: string, dto: MoveAffectationDto, etablissementId: string): Promise<AffectationMatiere> {
@@ -337,9 +381,9 @@ export class MatieresService {
 
     // ==== GRILLE PAR MATIÈRE (MatiereNiveau filtré par matière) ====
 
-    async findProgrammeByMatiere(matiereId: string): Promise<MatiereNiveau[]> {
+    async findProgrammeByMatiere(matiereId: string, etablissementId: string): Promise<MatiereNiveau[]> {
         return this.niveauRepo.find({
-            where: { matiereId },
+            where: { matiereId, matiere: { etablissementId } },
             relations: ['niveau', 'groupe', 'filiere'],
             order: { createdAt: 'ASC' },
         });
@@ -384,23 +428,11 @@ export class MatieresService {
         const programmeIds = [...new Set(affectations.map(a => (a.classeAnnee as any)?.programmeId).filter(Boolean))];
         const programmeMatieres: Map<string, ProgrammeMatiere> = new Map();
         if (programmeIds.length > 0 && matiereIds.length > 0 && niveauIds.length > 0) {
-            const pms = await this.programmeMatiereRepo.find({
-                where: programmeIds.map(pid => ({
-                    programmeId: pid,
-                    matiereNiveau: {
-                        matiereId: matiereIds[0], // fallback — on va charger plus largement
-                    },
-                })),
-                relations: ['matiereNiveau'],
-            }).catch(() => []);
-            // Rechargement plus large si nécessaire
-            const allPMs = programmeIds.length > 0
-                ? await this.programmeMatiereRepo.createQueryBuilder('pm')
-                    .leftJoinAndSelect('pm.matiereNiveau', 'mn')
-                    .where('pm.programmeId IN (:...programmeIds)', { programmeIds })
-                    .andWhere('mn.matiereId IN (:...matiereIds)', { matiereIds })
-                    .getMany()
-                : [];
+            const allPMs = await this.programmeMatiereRepo.createQueryBuilder('pm')
+                .leftJoinAndSelect('pm.matiereNiveau', 'mn')
+                .where('pm.programmeId IN (:...programmeIds)', { programmeIds })
+                .andWhere('mn.matiereId IN (:...matiereIds)', { matiereIds })
+                .getMany();
             for (const pm of allPMs) {
                 programmeMatieres.set(`${pm.matiereNiveau.matiereId}::${pm.matiereNiveau.niveauId}::${pm.programmeId}`, pm);
             }

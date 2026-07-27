@@ -19,7 +19,9 @@ import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { LoadingState } from '@/components/feedback';
-import type { MembrePersonnel, CreerPersonnelDto } from '../types/personnel.types';
+import type { MembrePersonnel, ModifierPersonnelDto } from '../types/personnel.types';
+import { fromFormToCreateDto } from '../types/personnel.types';
+import type { Utilisateur } from '@/features/utilisateurs/types/utilisateur.types';
 
 interface PersonnelFormModalProps {
     mode: 'creation' | 'edition';
@@ -39,7 +41,15 @@ const formNormalizer = {
     dateEmbauche: (m?: MembrePersonnel) => m?.dateEmbauche?.split('T')[0] || new Date().toISOString().split('T')[0],
 };
 
-function buildFormData<M extends MembrePersonnel | undefined>(m: M): Record<string, any> {
+interface FormState {
+    dateEmbauche: string;
+    statut: string;
+    specialites: string[];
+    diplomes: string;
+    _linkUserId?: string;
+}
+
+function buildFormData<M extends MembrePersonnel | undefined>(m: M): FormState {
     return {
         dateEmbauche: formNormalizer.dateEmbauche(m),
         statut: formNormalizer.statut(m?.statut),
@@ -61,7 +71,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
     const { data: apiData, isLoading: isFetching } = useMembrePersonnel(editId);
     const source = mode === 'edition' && apiData ? apiData : membre;
 
-    const [formData, setFormData] = useState<Record<string, any>>(buildFormData(source));
+    const [formData, setFormData] = useState<FormState>(buildFormData(source));
 
     const [erreurs, setErreurs] = useState<Record<string, string>>({});
 
@@ -82,24 +92,28 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!valider()) return;
 
         try {
+            const formForDto = {
+                dateEmbauche: formData.dateEmbauche,
+                statut: formData.statut,
+                specialites: formData.specialites,
+                diplomes: formData.diplomes,
+            };
+            const dto = fromFormToCreateDto(formForDto);
+
             if (mode === 'creation') {
-                const payload = { ...formData } as Record<string, any>;
-                if (payload._linkUserId) {
-                    payload.utilisateurId = payload._linkUserId;
+                if (formData._linkUserId) {
+                    dto.utilisateurId = formData._linkUserId;
                 }
-                delete payload._linkUserId;
-                await creerPersonnel.mutateAsync(payload as CreerPersonnelDto);
+                await creerPersonnel.mutateAsync(dto);
             } else if (source) {
-                const payload = { ...formData };
-                delete payload._linkUserId;
-                await modifierPersonnel.mutateAsync({
+                const patch: ModifierPersonnelDto = {
                     id: source.id,
-                    ...payload,
-                });
+                    ...dto,
+                };
+                await modifierPersonnel.mutateAsync(patch);
             }
             onSuccess();
         } catch (error) {
@@ -107,7 +121,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
         }
     };
 
-    const handleChange = (field: string, value: any) => {
+    const handleChange = (field: string, value: string | string[]) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (erreurs[field]) {
             setErreurs(prev => {
@@ -148,8 +162,8 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
             ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Utilisateur lié */}
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-3">
-                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <div className="bg-muted rounded-lg border border-border p-4 space-y-3">
+                    <h4 className="text-sm font-semibold text-secondary flex items-center gap-2">
                         <User className="h-4 w-4" />
                         {t('form.compteUtilisateur')}
                     </h4>
@@ -157,7 +171,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-sm">
                                 <span className="font-medium">{source.utilisateur.profil?.prenom} {source.utilisateur.profil?.nom}</span>
-                                <span className="text-gray-500 dark:text-gray-400">({source.utilisateur.email})</span>
+                                <span className="text-muted-foreground">({source.utilisateur.email})</span>
                             </div>
                             <ElisaButton
                                 variant="ghost"
@@ -175,7 +189,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                                 label=""
                                 value={formData._linkUserId || ''}
                                 onValueChange={(value: string) => handleChange('_linkUserId', value)}
-                                options={(utilisateursData?.items || []).map((u: any) => ({
+                                options={(utilisateursData?.items || []).map((u: Utilisateur) => ({
                                     value: u.id,
                                     label: `${u.nom || ''} ${u.prenom || ''} - ${u.email}`,
                                 }))}
@@ -201,7 +215,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
                             label=""
                             value={formData._linkUserId || ''}
                             onValueChange={(value: string) => handleChange('_linkUserId', value)}
-                            options={(utilisateursData?.items || []).map((u: any) => ({
+                            options={(utilisateursData?.items || []).map((u: Utilisateur) => ({
                                 value: u.id,
                                 label: `${u.nom || ''} ${u.prenom || ''} - ${u.email}`,
                             }))}

@@ -5,18 +5,22 @@ import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Loader2 } from 'lucide-react';
 
+import type { TypePrime } from '../types/paie.types';
+
+type PrimeFormData = Omit<TypePrime, 'id' | 'actif' | 'etablissementId' | 'createdAt' | 'updatedAt'>;
+
 interface PrimeModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSave: (data: any) => Promise<void>;
+    onSave: (data: PrimeFormData) => Promise<void>;
     isLoading?: boolean;
-    prime?: any | null;
+    prime?: TypePrime | null;
 }
 
-const FORM_INIT = {
+const FORM_INIT: PrimeFormData = {
     code: '',
     nom: '',
-    typeCalcul: 'FIXE' as string,
+    typeCalcul: 'FIXE',
     valeur: 0,
     description: '',
 };
@@ -62,7 +66,7 @@ export function PrimeModal({ open, onOpenChange, onSave, isLoading, prime }: Pri
                             type="text"
                             value={form.code}
                             onChange={(e) => setForm(p => ({ ...p, code: e.target.value }))}
-                            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                            className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                             required
                         />
                     </div>
@@ -72,7 +76,7 @@ export function PrimeModal({ open, onOpenChange, onSave, isLoading, prime }: Pri
                             type="text"
                             value={form.nom}
                             onChange={(e) => setForm(p => ({ ...p, nom: e.target.value }))}
-                            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                            className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                             required
                         />
                     </div>
@@ -81,8 +85,8 @@ export function PrimeModal({ open, onOpenChange, onSave, isLoading, prime }: Pri
                     <label className="block text-sm font-medium mb-1">{t('typeCalcul')}</label>
                     <select
                         value={form.typeCalcul}
-                        onChange={(e) => setForm(p => ({ ...p, typeCalcul: e.target.value }))}
-                        className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                        onChange={(e) => setForm(p => ({ ...p, typeCalcul: e.target.value as PrimeFormData['typeCalcul'] }))}
+                        className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                     >
                         <option value="FIXE">{t('fixe')}</option>
                         <option value="POURCENTAGE">{t('pourcentage')}</option>
@@ -96,16 +100,16 @@ export function PrimeModal({ open, onOpenChange, onSave, isLoading, prime }: Pri
                         step="0.01"
                         value={form.valeur}
                         onChange={(e) => setForm(p => ({ ...p, valeur: parseFloat(e.target.value) }))}
-                        className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                        className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                     />
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
                     <ElisaButton variant="outline" onClick={() => onOpenChange(false)}>
-                        {t('commun:annuler')}
+                        {t('common:boutons.annuler')}
                     </ElisaButton>
                     <ElisaButton type="submit" variant="primary" isLoading={isLoading}>
                         {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                        {prime ? t('commun:enregistrer') : t('commun:creer')}
+                        {prime ? t('common:boutons.enregistrer') : t('common:boutons.creer')}
                     </ElisaButton>
                 </div>
             </form>

@@ -36,7 +36,8 @@ export enum StatutAffectationEleve {
 @Index(['anneeScolaireId'])
 @Index(['etablissementId'])
 @Index(['statut'])
-@Index(['eleveId', 'anneeScolaireId', 'statut']) // Index composite pour requêtes d'historique
+@Index(['eleveId', 'anneeScolaireId', 'statut'])
+@Index(['eleveId', 'anneeScolaireId'], { unique: true })
 export class AffectationEleve {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -109,8 +110,6 @@ export class AffectationEleve {
     @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
-
-    @Index(['eleveId', 'anneeScolaireId'], { unique: true })
 
     @CreateDateColumn()
     createdAt!: Date;

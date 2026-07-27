@@ -129,9 +129,14 @@ router.get('/personnel/:membrePersonnelId/evaluations', async (req: Request, res
 
 router.get('/personnel/:membrePersonnelId/dashboard', async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const anneeScolaireId = req.query.anneeScolaireId as string;
+        if (!anneeScolaireId) {
+            throw new AppError('anneeScolaireId requis', 400, 'VALIDATION_ERROR');
+        }
         const dashboard = await suiviPersonnelService.getDashboardPersonnel(
             req.params.membrePersonnelId,
-            req.utilisateur!.etablissementId!
+            req.utilisateur!.etablissementId!,
+            anneeScolaireId
         );
         res.json({ success: true, data: dashboard });
     } catch (error) {

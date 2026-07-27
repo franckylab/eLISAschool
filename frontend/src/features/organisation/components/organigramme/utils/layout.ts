@@ -28,7 +28,7 @@ export interface LayoutEdge {
     target: string;
 }
 
-const NODE_WIDTH = 240;
+const NODE_WIDTH = 220;
 const NODE_HEIGHT_BASE = 120;
 const NODE_HEIGHT_PER_POSTE = 24;
 const MAX_POSTES_VISIBLE = 3;
@@ -51,10 +51,12 @@ export function computeLayout(
 ): { nodes: LayoutNode[]; edges: LayoutEdge[] } {
     const g = new dagre.graphlib.Graph();
     g.setDefaultEdgeLabel(() => ({}));
+    const spacing = direction === 'TB' ? LAYOUT_SPACING.TB : LAYOUT_SPACING.LR;
     g.setGraph({
         rankdir: direction,
-        nodesep: direction === 'TB' ? 60 : 80,
-        ranksep: direction === 'TB' ? 100 : 120,
+        nodesep: spacing.nodesep,
+        ranksep: spacing.ranksep,
+        edgesep: spacing.edgesep,
         marginx: 40,
         marginy: 40,
     });
@@ -173,3 +175,9 @@ export function estNoeudVisible(
 }
 
 export { NODE_WIDTH, NODE_HEIGHT_BASE, MAX_POSTES_VISIBLE };
+
+/** Espacement dagre par direction — utilisé pour le calcul de routing des edges */
+export const LAYOUT_SPACING = {
+    TB: { nodesep: 80, ranksep: 120, edgesep: 20 },
+    LR: { nodesep: 100, ranksep: 140, edgesep: 20 },
+} as const;

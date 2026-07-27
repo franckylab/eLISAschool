@@ -7,7 +7,8 @@
  */
 
 import { useState, useMemo } from 'react';
-import { useParams, useNavigate } from '@tanstack/react-router';
+import { useParams, useNavigate, useSearch } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
     Mail, Phone, MapPin, Calendar, Briefcase, Users,
@@ -25,6 +26,9 @@ import { TabFonctions } from './tab-fonctions';
 import { PosteCapaciteIndicator } from '@/features/postes/components/PosteCapaciteIndicator';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Badge } from '@/components/ui/Badge';
+import { TabsBar } from '@/components/ui/Tabs';
+import type { Tab } from '@/components/ui/Tabs';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { OngletMatieres } from '@/features/enseignants/components/enseignant-detail/onglet-matieres';
 import { OngletEdt } from '@/features/enseignants/components/enseignant-detail/onglet-edt';
 import { OngletEvaluations } from '@/features/enseignants/components/enseignant-detail/onglet-evaluations';
@@ -39,59 +43,48 @@ import { useModifierStatut, useModifierDateEntree, useModifierCompetences } from
 import type { ContratPersonnel, BulletinPaie } from '../types/personnel.types';
 import type { AffectationPoste } from '../types/affectation.types';
 
-type OngletActif = 'informations' | 'affectations' | 'matieres' | 'edt' | 'contrat-salaire' | 'heures-cours' | 'evaluations' | 'absences' | 'parcours' | 'fonctions' | 'documents';
+type OngletActif = 'informations' | 'affectations' | 'matieres' | 'edt' | 'contrat-salaire' | 'heures-cours' | 'evaluations' | 'absences' | 'parcours' | 'fonctions';
 
-const LABELS_TYPE_CONTRAT: Record<string, string> = {
-    cdi: 'CDI',
-    cdd: 'CDD',
-    vacataire: 'Vacataire',
-    stage: 'Stage',
-};
-
-const MODE_LABEL: Record<string, string> = {
-    MENSUEL: 'Mensuel', HORAIRE: 'Horaire', MIXTE: 'Mixte', HEBDOMADAIRE: 'Hebdo',
-};
-
-const LABELS_CATEGORIE: Record<string, string> = {
-    ENSEIGNANT: 'Enseignant',
-    DIRECTION: 'Direction',
-    ADMINISTRATIF: 'Administratif',
-    TECHNIQUE: 'Technique',
-    SERVICE: 'Service',
-    SANTE: 'Santé',
-    SOCIAL: 'Social',
-    AUTRE: 'Autre',
-};
-
-const LABELS_STATUT: Record<string, string> = {
-    ACTIF: 'Actif',
-    INACTIF: 'Inactif',
-    CONGE: 'En congé',
-    actif: 'Actif',
-    inactif: 'Inactif',
-    en_conge: 'En congé',
-    demission: 'Démission',
+const STATUT_KEY: Record<string, string> = {
+    ACTIF: 'ACTIF',
+    INACTIF: 'INACTIF',
+    CONGE: 'CONGE',
+    actif: 'ACTIF',
+    inactif: 'INACTIF',
+    en_conge: 'CONGE',
+    demission: 'DEMISSION',
 };
 
 const COULEURS_STATUT: Record<string, string> = {
-    ACTIF: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700',
-    INACTIF: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700',
-    CONGE: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 dark:text-blue-300 border-blue-200 dark:border-blue-700',
-    actif: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700',
-    inactif: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700',
-    en_conge: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 dark:text-blue-300 border-blue-200 dark:border-blue-700',
-    demission: 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700',
+    ACTIF: 'bg-success/10 text-success border-success/20',
+    INACTIF: 'bg-muted text-muted-foreground border-border',
+    CONGE: 'bg-primary/10 text-primary border-primary/20',
+    DEMISSION: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
 export function PersonnelDetailPage() {
+    const { t, i18n } = useTranslation('personnel');
     const { id } = useParams({ from: '/_auth/personnel/$id' });
     const navigate = useNavigate();
-    const [ongletActif, setOngletActif] = useState<OngletActif>('informations');
+    const search = useSearch({ from: '/_auth/personnel/$id' }) as { tab?: string };
+    const ongletActif = (search.tab && (search.tab as OngletActif)) || 'informations';
+    const setOngletActif = (tab: string) => navigate({ search: { tab } as never });
 
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+    const labelStatut = (statut: string) => t(`statut_${STATUT_KEY[statut] ?? statut}`, { defaultValue: statut });
+    const labelCategorie = (categorie: string) => t(`categorie_${categorie}`, { defaultValue: categorie });
+    const labelTypeContrat = (code?: string) => {
+        const c = code ?? 'cdi';
+        return t(`typesContrats.${c.toLowerCase()}`, { defaultValue: c });
+    };
+    const labelMode = (code?: string | null) => (code ? t(`modes.${code}`, { defaultValue: code }) : '—');
+    const formatDate = (date: string | Date) => new Date(date).toLocaleDateString(i18n.language);
+    const formatMontant = (montant?: number | null) => montant?.toLocaleString(i18n.language);
 
     const { data: membre, isLoading } = useMembrePersonnel(id);
-    useDocumentTitle(`eLISAschool | ${membre ? (membre.utilisateur?.profil?.prenom ?? '') + ' ' + (membre.utilisateur?.profil?.nom ?? '') : 'Détail personnel'}`);
+    useDocumentTitle(`eLISAschool | ${membre ? (membre.utilisateur?.profil?.prenom ?? '') + ' ' + (membre.utilisateur?.profil?.nom ?? '') : t('detail.titreParDefaut')}`);
     const supprimer = useSupprimerPersonnel();
     const { data: affectations, isLoading: loadingAffectations } = useAffectationsMembre(id);
     const { data: contrats, isLoading: loadingContrats } = usePersonnelContrats(id);
@@ -126,46 +119,46 @@ export function PersonnelDetailPage() {
         setEditValue('');
     };
 
-    const onglets = useMemo(() => {
-        const communs = [
-            { id: 'informations' as const, label: 'Informations', icon: FileText },
-            { id: 'affectations' as const, label: 'Affectations', icon: Briefcase },
-            { id: 'contrat-salaire' as const, label: 'Contrat & Salaire', icon: FileText },
-            { id: 'fonctions' as const, label: 'Fonctions', icon: Award },
+    const onglets: Tab[] = useMemo(() => {
+        const communs: Tab[] = [
+            { id: 'informations', label: t('detail.ongletInformations'), icon: FileText },
+            { id: 'affectations', label: t('detail.ongletAffectations'), icon: Briefcase },
+            { id: 'contrat-salaire', label: t('detail.ongletContratSalaire'), icon: FileText },
+            { id: 'fonctions', label: t('detail.ongletFonctions'), icon: Award },
         ];
 
         if (estEnseignant) {
             return [
                 ...communs.slice(0, 2),
-                { id: 'matieres' as const, label: 'Matières & Classes', icon: BookOpen },
-                { id: 'edt' as const, label: 'Emploi du temps', icon: CalendarDays },
+                { id: 'matieres', label: t('detail.ongletMatieres'), icon: BookOpen },
+                { id: 'edt', label: t('detail.ongletEdt'), icon: CalendarDays },
                 ...communs.slice(2, 3),
-                { id: 'heures-cours' as const, label: 'Heures de cours', icon: Clock },
-                { id: 'evaluations' as const, label: 'Évaluations', icon: Star },
-                { id: 'absences' as const, label: 'Absences', icon: UserRound },
-                { id: 'parcours' as const, label: 'Parcours', icon: Footprints },
+                { id: 'heures-cours', label: t('detail.ongletHeuresCours'), icon: Clock },
+                { id: 'evaluations', label: t('detail.ongletEvaluations'), icon: Star },
+                { id: 'absences', label: t('detail.ongletAbsences'), icon: UserRound },
+                { id: 'parcours', label: t('detail.ongletParcours'), icon: Footprints },
                 ...communs.slice(3),
             ];
         }
 
         return [
             ...communs.slice(0, 3),
-            { id: 'heures-cours' as const, label: 'Heures de cours', icon: Clock },
+            { id: 'heures-cours', label: t('detail.ongletHeuresCours'), icon: Clock },
             ...communs.slice(3),
         ];
-    }, [estEnseignant]);
+    }, [estEnseignant, t]);
 
     if (isLoading) {
-        return <div className="p-6"><LoadingState message="Chargement du dossier personnel..." /></div>;
+        return <div className="p-6"><LoadingState message={t('detail.chargement')} /></div>;
     }
 
     if (!membre) {
         return (
             <div className="flex flex-col items-center justify-center h-64 p-6">
-                <AlertCircle className="h-16 w-16 text-gray-400 dark:text-gray-500 mb-4" />
-                <p className="text-lg text-gray-600 dark:text-gray-300">Membre du personnel non trouvé</p>
+                <AlertCircle className="h-16 w-16 text-muted-foreground mb-4" />
+                <p className="text-lg text-secondary">{t('detail.nonTrouve')}</p>
                 <ElisaButton variant="primary" onClick={() => navigate({ to: '/personnel' })} className="mt-4">
-                    Retour à la liste
+                    {t('detail.retourListe')}
                 </ElisaButton>
             </div>
         );
@@ -175,7 +168,7 @@ export function PersonnelDetailPage() {
         <div className="flex flex-col gap-6 p-6">
             <PageHeader
                 variant="gradient"
-                icon={<Users className="h-8 w-8 text-white" />}
+                icon={Users}
                 onBack={() => navigate({ to: '/personnel' })}
                 actions={
                     <div className="flex flex-wrap gap-2">
@@ -185,29 +178,23 @@ export function PersonnelDetailPage() {
                             icon={<Edit className="h-4 w-4" />}
                             onClick={() => setShowEditModal(true)}
                         >
-                            Modifier
+                            {t('detail.modifier')}
                         </ElisaButton>
                         <ElisaButton
                             variant="danger"
                             size="sm"
                             icon={<Trash2 className="h-4 w-4" />}
                             isLoading={supprimer.isPending}
-                            onClick={() => {
-                                if (confirm(`Supprimer ${membre.utilisateur?.profil?.prenom ?? ''} ${membre.utilisateur?.profil?.nom ?? ''} du personnel ?`)) {
-                                    supprimer.mutateAsync(id).then(() => {
-                                        navigate({ to: '/personnel' });
-                                    });
-                                }
-                            }}
+                            onClick={() => setShowDeleteModal(true)}
                         >
-                            Supprimer
+                            {t('detail.supprimer')}
                         </ElisaButton>
                     </div>
                 }
             >
                 <div className="flex items-start gap-6">
                     {/* Avatar */}
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg shrink-0">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[var(--color-dominant-500)] to-[var(--color-accent-600)] flex items-center justify-center text-white text-3xl font-bold shadow-lg shrink-0">
                         {(membre.utilisateur?.profil?.prenom ?? '')?.charAt(0)}{(membre.utilisateur?.profil?.nom ?? '')?.charAt(0)}
                     </div>
 
@@ -218,25 +205,25 @@ export function PersonnelDetailPage() {
                                 {membre.utilisateur?.profil?.prenom ?? ''} {membre.utilisateur?.profil?.nom ?? ''}
                             </h1>
                             <span className={`px-3 py-1 rounded-full text-sm font-medium border ${COULEURS_STATUT[membre.statut]}`}>
-                                {LABELS_STATUT[membre.statut]}
+                                {labelStatut(membre.statut)}
                             </span>
                             {membre.categorie && (() => {
                                 const colors = getCategorieColors(membre.categorie);
                                 return (
                                     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${colors.bg} ${colors.text}`}>
                                         <span className={`h-2 w-2 rounded-full ${colors.dot}`} />
-                                        {LABELS_CATEGORIE[membre.categorie] ?? membre.categorie}
+                                        {labelCategorie(membre.categorie)}
                                     </span>
                                 );
                             })()}
                         </div>
 
-                        <p className="text-lg text-white/70 mb-3">{membre.posteExact ?? 'Enseignant'}</p>
+                        <p className="text-lg text-white/70 mb-3">{membre.posteExact ?? t('detail.enseignant')}</p>
 
                         <div className="flex flex-wrap gap-4 text-sm text-white/60">
                             <div className="flex items-center gap-2">
                                 <Briefcase className="h-4 w-4" />
-                                <span>{LABELS_TYPE_CONTRAT[contrats?.[0]?.typeContrat ?? 'cdi']}</span>
+                                <span>{labelTypeContrat(contrats?.[0]?.typeContrat)}</span>
                             </div>
                             {(membre.departement ?? '') && (
                                 <div className="flex items-center gap-2">
@@ -246,7 +233,7 @@ export function PersonnelDetailPage() {
                             )}
                             <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4" />
-                                <span>Ancienneté: {anciennete} an{anciennete > 1 ? 's' : ''}</span>
+                                <span>{t('detail.anciennete', { count: anciennete })}</span>
                             </div>
                             {membre.matricule && (
                                 <div className="flex items-center gap-2">
@@ -257,7 +244,7 @@ export function PersonnelDetailPage() {
                             {membre.utilisateur && (
                                 <div
                                     className="flex items-center gap-2 cursor-pointer hover:text-white/90 transition-colors"
-                                    onClick={() => navigate({ to: '/utilisateurs/$id', params: { id: membre.utilisateur!.id }, search: {} as any })}
+                                    onClick={() => navigate({ to: '/utilisateurs/$id', params: { id: membre.utilisateur!.id }, search: {} as never })}
                                 >
                                     <UserCheck className="h-4 w-4" />
                                     <span className="underline underline-offset-2 decoration-dotted">
@@ -275,10 +262,10 @@ export function PersonnelDetailPage() {
                 {/* Statut */}
                 <div className="group">
                     <InlineEditField
-                        label="Statut"
+                        label={t('statut')}
                         value={
                             <span className={`px-2.5 py-1 rounded-full text-sm font-medium border inline-block ${COULEURS_STATUT[membre.statut]}`}>
-                                {LABELS_STATUT[membre.statut]}
+                                {labelStatut(membre.statut)}
                             </span>
                         }
                         icon={UserCheck}
@@ -290,12 +277,12 @@ export function PersonnelDetailPage() {
                         <select
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-900"
+                            className="w-full px-3 py-2 text-sm border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-[var(--color-dominant-500)] bg-[var(--color-surface)] text-[var(--color-text)]"
                             autoFocus
                         >
-                            <option value="ACTIF">Actif</option>
-                            <option value="INACTIF">Inactif</option>
-                            <option value="CONGE">En congé</option>
+                            <option value="ACTIF">{t('statut_ACTIF')}</option>
+                            <option value="INACTIF">{t('statut_INACTIF')}</option>
+                            <option value="CONGE">{t('statut_CONGE')}</option>
                         </select>
                         <InlineEditActions
                             onSave={() => {
@@ -311,17 +298,17 @@ export function PersonnelDetailPage() {
                 {/* Catégorie (dérivée de la fonction — lecture seule) */}
                 <div className="group">
                     <InlineEditField
-                        label="Catégorie"
+                        label={t('categorie')}
                         value={
                             membre.categorie ? (() => {
                                 const colors = getCategorieColors(membre.categorie);
                                 return (
                                     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-medium ${colors.bg} ${colors.text}`}>
                                         <span className={`h-1.5 w-1.5 rounded-full ${colors.dot}`} />
-                                        {LABELS_CATEGORIE[membre.categorie] ?? membre.categorie}
+                                        {labelCategorie(membre.categorie)}
                                     </span>
                                 );
-                            })() : 'Non définie'
+                            })() : t('detail.nonDefinie')
                         }
                         icon={GraduationCap}
                         color="#a855f7"
@@ -335,8 +322,8 @@ export function PersonnelDetailPage() {
                 {/* Date d'entrée */}
                 <div className="group">
                     <InlineEditField
-                        label="Date d'embauche"
-                        value={new Date(membre.dateEmbauche || '').toLocaleDateString('fr-FR')}
+                        label={t('detail.dateEmbauche')}
+                        value={formatDate(membre.dateEmbauche || '')}
                         icon={Calendar}
                         color="#3b82f6"
                         editable={canEditIdentity}
@@ -347,7 +334,7 @@ export function PersonnelDetailPage() {
                             type="date"
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full px-3 py-2 text-sm border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-[var(--color-dominant-500)] bg-[var(--color-surface)] text-[var(--color-text)]"
                             autoFocus
                         />
                         <InlineEditActions
@@ -364,8 +351,8 @@ export function PersonnelDetailPage() {
                 {/* Qualification */}
                 <div className="group">
                     <InlineEditField
-                        label="Qualification"
-                        value={(membre.diplomes || '') || 'Non spécifié'}
+                        label={t('qualification')}
+                        value={(membre.diplomes || '') || t('detail.nonSpecifie')}
                         icon={Award}
                         color="#f97316"
                         editable={canEditCompetences}
@@ -376,8 +363,8 @@ export function PersonnelDetailPage() {
                             type="text"
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                            placeholder="Diplôme ou qualification"
+                            className="w-full px-3 py-2 text-sm border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-[var(--color-dominant-500)] bg-[var(--color-surface)] text-[var(--color-text)]"
+                            placeholder={t('detail.placeholderDiplome')}
                             autoFocus
                         />
                         <InlineEditActions
@@ -394,8 +381,8 @@ export function PersonnelDetailPage() {
                 {/* Spécialité */}
                 <div className="group">
                     <InlineEditField
-                        label="Spécialité"
-                        value={(membre.specialitePrincipale ?? membre.specialites?.[0] ?? '') || 'Non spécifié'}
+                        label={t('specialite')}
+                        value={(membre.specialitePrincipale ?? membre.specialites?.[0] ?? '') || t('detail.nonSpecifie')}
                         icon={Star}
                         color="#06b6d4"
                         editable={canEditCompetences}
@@ -406,8 +393,8 @@ export function PersonnelDetailPage() {
                             type="text"
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-                            placeholder="Spécialité principale"
+                            className="w-full px-3 py-2 text-sm border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-[var(--color-dominant-500)] bg-[var(--color-surface)] text-[var(--color-text)]"
+                            placeholder={t('detail.placeholderSpecialite')}
                             autoFocus
                         />
                         <InlineEditActions
@@ -423,27 +410,7 @@ export function PersonnelDetailPage() {
             </div>
 
             {/* Onglets */}
-            <div className="border-b border-gray-200 dark:border-gray-700">
-                <nav className="-mb-px flex gap-6">
-                    {onglets.map((onglet) => {
-                        const Icon = onglet.icon;
-                        return (
-                            <button
-                                key={onglet.id}
-                                onClick={() => setOngletActif(onglet.id)}
-                                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                                    ongletActif === onglet.id
-                                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                        : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
-                                }`}
-                            >
-                                <Icon className="h-4 w-4" />
-                                {onglet.label}
-                            </button>
-                        );
-                    })}
-                </nav>
-            </div>
+            <TabsBar tabs={onglets} activeTab={ongletActif} onTabChange={setOngletActif} variant="underline" scrollable />
 
             {/* Contenu des onglets */}
             <motion.div
@@ -455,62 +422,62 @@ export function PersonnelDetailPage() {
                 {ongletActif === 'informations' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Informations personnelles */}
-                        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                        <div className="bg-card rounded-lg border border-border p-6">
                             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                                <UserCheck className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                                Informations personnelles
+                                <UserCheck className="h-5 w-5 text-primary" />
+                                {t('detail.infosPersonnelles')}
                             </h3>
                             <dl className="space-y-4">
                                 <div>
-                                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Date de naissance</dt>
-                                    <dd className="mt-1 text-gray-900 dark:text-gray-100">
-                                        {new Date(membre.utilisateur?.profil?.dateNaissance ?? '').toLocaleDateString('fr-FR')}
+                                    <dt className="text-sm font-medium text-muted-foreground">{t('detail.dateNaissance')}</dt>
+                                    <dd className="mt-1 text-foreground">
+                                        {formatDate(membre.utilisateur?.profil?.dateNaissance ?? '')}
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Sexe</dt>
-                                    <dd className="mt-1 text-gray-900 dark:text-gray-100">{membre.utilisateur?.profil?.genre === 'M' ? 'Masculin' : 'Féminin'}</dd>
+                                    <dt className="text-sm font-medium text-muted-foreground">{t('detail.sexe')}</dt>
+                                    <dd className="mt-1 text-foreground">{membre.utilisateur?.profil?.genre === 'M' ? t('detail.masculin') : t('detail.feminin')}</dd>
                                 </div>
                                 {(membre.specialites?.[0] ?? '') && (
                                     <div>
-                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Spécialité</dt>
-                                        <dd className="mt-1 text-gray-900 dark:text-gray-100">{membre.specialites?.[0] ?? ''}</dd>
+                                        <dt className="text-sm font-medium text-muted-foreground">{t('specialite')}</dt>
+                                        <dd className="mt-1 text-foreground">{membre.specialites?.[0] ?? ''}</dd>
                                     </div>
                                 )}
                             </dl>
                         </div>
 
                         {/* Contact */}
-                        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                        <div className="bg-card rounded-lg border border-border p-6">
                             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                                <Mail className="h-5 w-5 text-green-600 dark:text-green-400" />
-                                Coordonnées
+                                <Mail className="h-5 w-5 text-success" />
+                                {t('detail.coordonnees')}
                             </h3>
                             <dl className="space-y-4">
                                 {(membre.utilisateur?.email ?? '') && (
                                     <div className="flex items-center gap-3">
-                                        <Mail className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                                        <Mail className="h-5 w-5 text-muted-foreground" />
                                         <div>
-                                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</dt>
-                                            <dd className="text-gray-900 dark:text-gray-100">{membre.utilisateur?.email ?? ''}</dd>
+                                            <dt className="text-sm font-medium text-muted-foreground">{t('detail.email')}</dt>
+                                            <dd className="text-foreground">{membre.utilisateur?.email ?? ''}</dd>
                                         </div>
                                     </div>
                                 )}
                                 {(membre.utilisateur?.profil?.telephone ?? '') && (
                                     <div className="flex items-center gap-3">
-                                        <Phone className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                                        <Phone className="h-5 w-5 text-muted-foreground" />
                                         <div>
-                                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Téléphone</dt>
-                                            <dd className="text-gray-900 dark:text-gray-100">{membre.utilisateur?.profil?.telephone ?? ''}</dd>
+                                            <dt className="text-sm font-medium text-muted-foreground">{t('detail.telephone')}</dt>
+                                            <dd className="text-foreground">{membre.utilisateur?.profil?.telephone ?? ''}</dd>
                                         </div>
                                     </div>
                                 )}
                                 {(membre.utilisateur?.profil?.adresse ?? '') && (
                                     <div className="flex items-start gap-3">
-                                        <MapPin className="h-5 w-5 text-gray-400 dark:text-gray-500 mt-1" />
+                                        <MapPin className="h-5 w-5 text-muted-foreground mt-1" />
                                         <div>
-                                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Adresse</dt>
-                                            <dd className="text-gray-900 dark:text-gray-100">{membre.utilisateur?.profil?.adresse ?? ''}</dd>
+                                            <dt className="text-sm font-medium text-muted-foreground">{t('detail.adresse')}</dt>
+                                            <dd className="text-foreground">{membre.utilisateur?.profil?.adresse ?? ''}</dd>
                                         </div>
                                     </div>
                                 )}
@@ -518,41 +485,41 @@ export function PersonnelDetailPage() {
                         </div>
 
                         {/* Informations professionnelles */}
-                        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                        <div className="bg-card rounded-lg border border-border p-6">
                             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                                <Briefcase className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                                Informations professionnelles
+                                <Briefcase className="h-5 w-5 text-accent" />
+                                {t('detail.infosProfessionnelles')}
                             </h3>
                             <dl className="space-y-4">
                                 <div>
-                                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Poste</dt>
-                                    <dd className="mt-1 text-gray-900 dark:text-gray-100">{membre.posteExact ?? 'Enseignant'}</dd>
+                                    <dt className="text-sm font-medium text-muted-foreground">{t('poste')}</dt>
+                                    <dd className="mt-1 text-foreground">{membre.posteExact ?? t('detail.enseignant')}</dd>
                                 </div>
                                 {(membre.departement ?? '') && (
                                     <div>
-                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Département</dt>
-                                        <dd className="mt-1 text-gray-900 dark:text-gray-100">{membre.departement ?? ''}</dd>
+                                        <dt className="text-sm font-medium text-muted-foreground">{t('departement')}</dt>
+                                        <dd className="mt-1 text-foreground">{membre.departement ?? ''}</dd>
                                     </div>
                                 )}
                                 <div>
-                                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Type de contrat</dt>
+                                    <dt className="text-sm font-medium text-muted-foreground">{t('typeContrat')}</dt>
                                     <dd className="mt-1">
-                                        <span className="px-2 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
-                                            {LABELS_TYPE_CONTRAT[contrats?.[0]?.typeContrat ?? 'cdi']}
+                                        <span className="px-2 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary">
+                                            {labelTypeContrat(contrats?.[0]?.typeContrat)}
                                         </span>
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Date d'embauche</dt>
-                                    <dd className="mt-1 text-gray-900 dark:text-gray-100">
-                                        {new Date(membre.dateEmbauche || '').toLocaleDateString('fr-FR')}
+                                    <dt className="text-sm font-medium text-muted-foreground">{t('detail.dateEmbauche')}</dt>
+                                    <dd className="mt-1 text-foreground">
+                                        {formatDate(membre.dateEmbauche || '')}
                                     </dd>
                                 </div>
                                 { (contrats?.[0]?.dateFin && new Date(contrats[0].dateFin) < new Date()) && (
                                     <div>
-                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Date de sortie</dt>
-                                        <dd className="mt-1 text-red-600 dark:text-red-400 font-medium">
-                                            {new Date(contrats[0].dateFin).toLocaleDateString('fr-FR')}
+                                        <dt className="text-sm font-medium text-muted-foreground">{t('detail.dateSortie')}</dt>
+                                        <dd className="mt-1 text-destructive font-medium">
+                                            {formatDate(contrats[0].dateFin)}
                                         </dd>
                                     </div>
                                 )}
@@ -560,16 +527,16 @@ export function PersonnelDetailPage() {
                         </div>
 
                         {/* Métadonnées */}
-                        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                        <div className="bg-card rounded-lg border border-border p-6">
                             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                                <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                                Métadonnées
+                                <Clock className="h-5 w-5 text-[var(--color-warning)]" />
+                                {t('detail.metadonnees')}
                             </h3>
                             <dl className="space-y-4">
                                 <div>
-                                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Créé le</dt>
-                                    <dd className="mt-1 text-gray-900 dark:text-gray-100">
-                                        {new Date(membre.createdAt).toLocaleDateString('fr-FR', {
+                                    <dt className="text-sm font-medium text-muted-foreground">{t('detail.creeLe')}</dt>
+                                    <dd className="mt-1 text-foreground">
+                                        {new Date(membre.createdAt).toLocaleDateString(i18n.language, {
                                             year: 'numeric',
                                             month: 'long',
                                             day: 'numeric',
@@ -577,9 +544,9 @@ export function PersonnelDetailPage() {
                                     </dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Dernière modification</dt>
-                                    <dd className="mt-1 text-gray-900 dark:text-gray-100">
-                                        {new Date(membre.updatedAt).toLocaleDateString('fr-FR', {
+                                    <dt className="text-sm font-medium text-muted-foreground">{t('detail.derniereModification')}</dt>
+                                    <dd className="mt-1 text-foreground">
+                                        {new Date(membre.updatedAt).toLocaleDateString(i18n.language, {
                                             year: 'numeric',
                                             month: 'long',
                                             day: 'numeric',
@@ -594,36 +561,36 @@ export function PersonnelDetailPage() {
                 {ongletActif === 'contrat-salaire' && (
                     <div className="space-y-6">
                         {/* Contrats */}
-                        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                            <h3 className="text-lg font-semibold mb-4">Contrats</h3>
+                        <div className="bg-card rounded-lg border border-border p-6">
+                            <h3 className="text-lg font-semibold mb-4">{t('detail.contrats')}</h3>
                             {loadingContrats ? (
-                                <div className="flex items-center justify-center h-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>
+                                <div className="flex items-center justify-center h-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-dominant-600)]" /></div>
                             ) : contrats && contrats.length > 0 ? (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-sm">
                                         <thead>
-                                            <tr className="border-b border-gray-200 dark:border-gray-700">
-                                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Type</th>
-                                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Poste</th>
-                                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Fonction</th>
-                                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Mode</th>
-                                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Période</th>
-                                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Salaire</th>
-                                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Statut</th>
+                                            <tr className="border-b border-border">
+                                                <th className="text-left py-3 px-4 font-medium text-muted-foreground">{t('detail.colType')}</th>
+                                                <th className="text-left py-3 px-4 font-medium text-muted-foreground">{t('detail.colPoste')}</th>
+                                                <th className="text-left py-3 px-4 font-medium text-muted-foreground">{t('detail.colFonction')}</th>
+                                                <th className="text-left py-3 px-4 font-medium text-muted-foreground">{t('detail.colMode')}</th>
+                                                <th className="text-left py-3 px-4 font-medium text-muted-foreground">{t('detail.colPeriode')}</th>
+                                                <th className="text-right py-3 px-4 font-medium text-muted-foreground">{t('detail.colSalaire')}</th>
+                                                <th className="text-center py-3 px-4 font-medium text-muted-foreground">{t('detail.colStatut')}</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-100">
+                                        <tbody className="divide-y divide-border">
                                             {contrats.map((c: ContratPersonnel) => (
-                                                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                                <tr key={c.id} className="hover:bg-muted">
                                                     <td className="py-3 px-4 font-medium">{c.typeContrat}</td>
                                                     <td className="py-3 px-4">
                                                         {c.posteId ? (
-                                                            <a href={`/organisation/postes/${c.posteId}`} className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:underline">
+                                                            <a href={`/organisation/postes/${c.posteId}`} className="flex items-center gap-1.5 text-primary hover:underline">
                                                                 <Briefcase className="h-3.5 w-3.5 shrink-0" />
                                                                 <span className="truncate max-w-[120px]">{c.poste?.intitule || c.posteId?.slice(0, 8)}</span>
                                                             </a>
                                                         ) : (
-                                                            <span className="text-gray-400 dark:text-gray-500 italic">—</span>
+                                                            <span className="text-muted-foreground italic">—</span>
                                                         )}
                                                     </td>
                                                     <td className="py-3 px-4">
@@ -632,17 +599,17 @@ export function PersonnelDetailPage() {
                                                                 {c.fonction?.nom || c.fonctionId?.slice(0, 8)}
                                                             </span>
                                                         ) : (
-                                                            <span className="text-gray-400 dark:text-gray-500 italic">—</span>
+                                                            <span className="text-muted-foreground italic">—</span>
                                                         )}
                                                     </td>
-                                                    <td className="py-3 px-4"><Badge variant={c.statut === 'ACTIF' ? 'success' : 'default'}>{MODE_LABEL[c.modeRemuneration?.code || ''] || c.modeRemuneration?.code || '—'}</Badge></td>
-                                                    <td className="py-3 px-4 text-gray-600 dark:text-gray-300">
-                                                        <span className="text-xs">{new Date(c.dateDebut).toLocaleDateString('fr-FR')}</span>
-                                                        {c.dateFin && <><span className="text-gray-300 mx-1">→</span><span className="text-xs">{new Date(c.dateFin).toLocaleDateString('fr-FR')}</span></>}
+                                                    <td className="py-3 px-4"><Badge variant={c.statut === 'ACTIF' ? 'success' : 'default'}>{labelMode(c.modeRemuneration?.code)}</Badge></td>
+                                                    <td className="py-3 px-4 text-secondary">
+                                                        <span className="text-xs">{formatDate(c.dateDebut)}</span>
+                                                        {c.dateFin && <><span className="text-muted-foreground mx-1">→</span><span className="text-xs">{formatDate(c.dateFin)}</span></>}
                                                     </td>
                                                     <td className="py-3 px-4 text-right">
-                                                        <div className="font-medium">{c.salaireBase?.toLocaleString('fr-FR')} F</div>
-                                                        {c.tarifHoraire && <div className="text-xs text-gray-400 dark:text-gray-500">{c.tarifHoraire.toLocaleString('fr-FR')} F/h</div>}
+                                                        <div className="font-medium">{formatMontant(c.salaireBase)} F</div>
+                                                        {c.tarifHoraire && <div className="text-xs text-muted-foreground">{formatMontant(c.tarifHoraire)} F/h</div>}
                                                     </td>
                                                     <td className="py-3 px-4 text-center">
                                                         <Badge variant={c.statut === 'ACTIF' ? 'success' : 'secondary'}>{c.statut}</Badge>
@@ -653,45 +620,45 @@ export function PersonnelDetailPage() {
                                     </table>
                                 </div>
                             ) : (
-                                <p className="text-gray-500 dark:text-gray-400 text-center py-8">Aucun contrat enregistré</p>
+                                <p className="text-muted-foreground text-center py-8">{t('detail.aucunContrat')}</p>
                             )}
                         </div>
 
                         {/* Bulletins de paie */}
-                        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                            <h3 className="text-lg font-semibold mb-4">Bulletins de paie</h3>
+                        <div className="bg-card rounded-lg border border-border p-6">
+                            <h3 className="text-lg font-semibold mb-4">{t('detail.bulletinsPaie')}</h3>
                             {loadingBulletins ? (
-                                <div className="flex items-center justify-center h-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>
+                                <div className="flex items-center justify-center h-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-dominant-600)]" /></div>
                             ) : bulletins && bulletins.length > 0 ? (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-sm">
                                         <thead>
-                                            <tr className="border-b border-gray-200 dark:border-gray-700">
-                                                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Période</th>
-                                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Base</th>
-                                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Primes</th>
-                                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Retenues</th>
-                                                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Net</th>
-                                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Statut</th>
-                                                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">PDF</th>
+                                            <tr className="border-b border-border">
+                                                <th className="text-left py-3 px-4 font-medium text-muted-foreground">{t('detail.colPeriode')}</th>
+                                                <th className="text-right py-3 px-4 font-medium text-muted-foreground">{t('detail.colBase')}</th>
+                                                <th className="text-right py-3 px-4 font-medium text-muted-foreground">{t('detail.colPrimes')}</th>
+                                                <th className="text-right py-3 px-4 font-medium text-muted-foreground">{t('detail.colRetenues')}</th>
+                                                <th className="text-right py-3 px-4 font-medium text-muted-foreground">{t('detail.colNet')}</th>
+                                                <th className="text-center py-3 px-4 font-medium text-muted-foreground">{t('detail.colStatut')}</th>
+                                                <th className="text-center py-3 px-4 font-medium text-muted-foreground">{t('detail.colPdf')}</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-100">
+                                        <tbody className="divide-y divide-border">
                                             {bulletins.map((b: BulletinPaie) => (
-                                                <tr key={b.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                                <tr key={b.id} className="hover:bg-muted">
                                                     <td className="py-3 px-4 font-medium">{b.mois}/{b.annee}</td>
-                                                    <td className="py-3 px-4 text-right">{b.salaireBase?.toLocaleString('fr-FR')} F</td>
-                                                    <td className="py-3 px-4 text-right text-green-600 dark:text-green-400">+{b.primes?.toLocaleString('fr-FR')} F</td>
-                                                    <td className="py-3 px-4 text-right text-red-600 dark:text-red-400">−{b.deductions?.toLocaleString('fr-FR')} F</td>
-                                                    <td className="py-3 px-4 text-right font-semibold">{b.salaireNet?.toLocaleString('fr-FR')} F</td>
+                                                    <td className="py-3 px-4 text-right">{formatMontant(b.salaireBase)} F</td>
+                                                    <td className="py-3 px-4 text-right text-success">+{formatMontant(b.primes)} F</td>
+                                                    <td className="py-3 px-4 text-right text-destructive">−{formatMontant(b.deductions)} F</td>
+                                                    <td className="py-3 px-4 text-right font-semibold">{formatMontant(b.salaireNet)} F</td>
                                                     <td className="py-3 px-4 text-center">
                                                         <Badge variant={b.statut === 'paye' ? 'success' : 'warning'}>{b.statut}</Badge>
                                                     </td>
                                                     <td className="py-3 px-4 text-center">
                                                         <button
                                                             onClick={() => window.open(`/api/personnel/bulletins/${b.id}/pdf`, '_blank')}
-                                                            className="p-1.5 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
-                                                            title="Télécharger le bulletin"
+                                                            className="p-1.5 rounded-md hover:bg-primary/10 text-primary transition-colors"
+                                                            title={t('detail.telechargerBulletin')}
                                                         >
                                                             <FileDown className="h-4 w-4" />
                                                         </button>
@@ -702,50 +669,50 @@ export function PersonnelDetailPage() {
                                     </table>
                                 </div>
                             ) : (
-                                <p className="text-gray-500 dark:text-gray-400 text-center py-8">Aucun bulletin de paie</p>
+                                <p className="text-muted-foreground text-center py-8">{t('detail.aucunBulletin')}</p>
                             )}
                         </div>
                     </div>
                 )}
 
                 {ongletActif === 'affectations' && (
-                    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                    <div className="bg-card rounded-lg border border-border p-6">
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-semibold">Historique des affectations</h3>
+                            <h3 className="text-lg font-semibold">{t('detail.historiqueAffectations')}</h3>
                         </div>
 
                         {loadingAffectations ? (
                             <div className="flex items-center justify-center h-32">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-dominant-600)]" />
                             </div>
                         ) : affectations && affectations.length > 0 ? (
                             <div className="space-y-3">
                                 {affectations.map((affectation: AffectationPoste) => (
                                     <div
                                         key={affectation.id}
-                                        className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+                                        className="p-4 rounded-lg border border-border hover:border-border transition-colors"
                                     >
                                         <div className="flex items-start justify-between">
                                             <div className="flex items-start gap-3">
                                                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
                                                     affectation.statut === 'ACTIF'
-                                                        ? 'bg-green-100 dark:bg-green-900/30'
-                                                        : 'bg-gray-100 dark:bg-gray-800'
+                                                        ? 'bg-success/10'
+                                                        : 'bg-muted'
                                                 }`}>
                                                     {affectation.statut === 'ACTIF'
-                                                        ? <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                                                        : <XCircle className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                                                        ? <CheckCircle className="h-5 w-5 text-success" />
+                                                        : <XCircle className="h-5 w-5 text-muted-foreground" />
                                                     }
                                                 </div>
                                                 <div>
                                                     <div className="flex items-center gap-2 mb-1">
-                                                        <p className="font-medium text-gray-900 dark:text-gray-100">
-                                                            {affectation.poste?.intitule || 'Poste'}
+                                                        <p className="font-medium text-foreground">
+                                                            {affectation.poste?.intitule || t('poste')}
                                                         </p>
                                                         <Badge
                                                             variant={affectation.statut === 'ACTIF' ? 'success' : 'secondary'}
                                                         >
-                                                            {affectation.statut === 'ACTIF' ? 'Actif' : 'Terminé'}
+                                                            {affectation.statut === 'ACTIF' ? t('detail.affectationActive') : t('detail.affectationTerminee')}
                                                         </Badge>
                                                         {affectation.poste && (
                                                             <PosteCapaciteIndicator
@@ -754,12 +721,12 @@ export function PersonnelDetailPage() {
                                                             />
                                                         )}
                                                     </div>
-                                                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
+                                                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                                                         <span className="flex items-center gap-1">
                                                             <Calendar className="h-3.5 w-3.5" />
-                                                            {new Date(affectation.dateDebut).toLocaleDateString('fr-FR')}
+                                                            {formatDate(affectation.dateDebut)}
                                                             {affectation.dateFin && (
-                                                                <> → {new Date(affectation.dateFin).toLocaleDateString('fr-FR')}</>
+                                                                <> → {formatDate(affectation.dateFin)}</>
                                                             )}
                                                         </span>
                                                         {affectation.poste?.uniteOrganisationnelle && (
@@ -769,20 +736,17 @@ export function PersonnelDetailPage() {
                                                             </span>
                                                         )}
                                                         {affectation.contrat && (
-                                                            <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                                                            <span className="flex items-center gap-1 text-primary">
                                                                 <FileText className="h-3.5 w-3.5" />
-                                                                Contrat {affectation.contrat.typeContrat}
+                                                                {t('detail.contratType', { type: affectation.contrat.typeContrat })}
                                                             </span>
                                                         )}
-                                                        <span className="text-gray-400 dark:text-gray-500">
-                                                            {affectation.typeMutation === 'NOUVELLE' ? 'Nouvelle' :
-                                                             affectation.typeMutation === 'PROMOTION' ? 'Promotion' :
-                                                             affectation.typeMutation === 'TRANSFERT' ? 'Transfert' :
-                                                             affectation.typeMutation === 'INTERIM' ? 'Intérim' : 'Réintégration'}
+                                                        <span className="text-muted-foreground">
+                                                            {t(`detail.mutation_${affectation.typeMutation}`, { defaultValue: affectation.typeMutation })}
                                                         </span>
                                                     </div>
                                                     {affectation.commentaire && (
-                                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 italic">{affectation.commentaire}</p>
+                                                        <p className="text-sm text-muted-foreground mt-1 italic">{affectation.commentaire}</p>
                                                     )}
                                                 </div>
                                             </div>
@@ -792,10 +756,10 @@ export function PersonnelDetailPage() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                <Briefcase className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
-                                <p className="text-gray-600 dark:text-gray-300 mb-2">Aucune affectation enregistrée</p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">Les affectations seront visibles ici une fois créées</p>
+                            <div className="text-center py-12 bg-muted rounded-lg">
+                                <Briefcase className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                                <p className="text-secondary mb-2">{t('detail.aucuneAffectation')}</p>
+                                <p className="text-sm text-muted-foreground">{t('detail.aucuneAffectationDesc')}</p>
                             </div>
                         )}
                     </div>
@@ -841,21 +805,6 @@ export function PersonnelDetailPage() {
                     </div>
                 )}
 
-                {ongletActif === 'documents' && (
-                    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-semibold">Documents et certifications</h3>
-                            <ElisaButton variant="primary" size="sm" icon={<Award className="h-4 w-4" />}>
-                                Ajouter un document
-                            </ElisaButton>
-                        </div>
-                        <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                            <Award className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
-                            <p className="text-gray-600 dark:text-gray-300 mb-2">Aucun document uploadé</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">CV, diplômes, certificats seront visibles ici</p>
-                        </div>
-                    </div>
-                )}
             </motion.div>
 
             {showEditModal && (
@@ -866,6 +815,16 @@ export function PersonnelDetailPage() {
                     onCancel={() => setShowEditModal(false)}
                 />
             )}
+
+            <ConfirmationModal
+                isOpen={showDeleteModal}
+                title={t('detail.confirmSuppressionTitre')}
+                message={t('detail.confirmSuppressionMessage', { nom: `${membre.utilisateur?.profil?.prenom ?? ''} ${membre.utilisateur?.profil?.nom ?? ''}`.trim() })}
+                variant="danger"
+                isLoading={supprimer.isPending}
+                onConfirm={async () => { await supprimer.mutateAsync(id); navigate({ to: '/personnel' }); }}
+                onCancel={() => setShowDeleteModal(false)}
+            />
         </div>
     );
 }

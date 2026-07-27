@@ -535,7 +535,7 @@ export class RecrutementService {
     async createOnboarding(dto: CreateOnboardingDto, userId: string, etablissementId: string, req?: Request): Promise<Onboarding> {
         // Vérifier que le membre existe
         const membre = await this.candidatureRepo.manager.query(
-            'SELECT id FROM membres_personnel WHERE id = $1 AND etablissementId = $2',
+            'SELECT id FROM membres_personnel WHERE id = $1 AND "etablissementId" = $2 AND "deletedAt" IS NULL',
             [dto.membrePersonnelId, etablissementId]
         );
 

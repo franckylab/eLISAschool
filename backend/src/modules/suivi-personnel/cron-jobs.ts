@@ -15,7 +15,7 @@ import cron from 'node-cron';
 import { logger } from '@common/utils/logger.util';
 import { scoringPersonnelService } from './services/scoring-personnel.service';
 import { AppDataSource } from '@database/data-source';
-import { MembrePersonnel } from '@modules/personnel/entities';
+import { MembrePersonnel, StatutPersonnel } from '@modules/personnel/entities';
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 
 /**
@@ -40,7 +40,7 @@ export function initScoringPersonnelCronJobs(): void {
             const membrePersonnelRepo = AppDataSource.getRepository(MembrePersonnel);
             const membres = await membrePersonnelRepo.find({
                 select: ['id', 'utilisateurId'],
-                where: { statut: 'ACTIF' },
+                where: { statut: StatutPersonnel.ACTIF },
             });
 
             logger.info(`[Scoring-Personnel] ${membres.length} membres du personnel à traiter`);

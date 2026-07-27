@@ -12,7 +12,7 @@ export const modeRemunerationSchema = z.enum(['MENSUEL', 'HORAIRE', 'MIXTE', 'HE
 
 export const createContratSchema = z.object({
     membrePersonnelId: z.string().uuid(),
-    typeContrat: z.enum(['CDD', 'CDI', 'VACATAIRE', 'STAGIAIRE']),
+    typeContrat: z.string().min(1).max(50),
     typeContratId: z.string().uuid().optional(),
     fonctionId: z.string().uuid().optional(),
     posteId: z.string().uuid().optional(),
@@ -35,8 +35,8 @@ export const queryContratSchema = paginationWithSortSchema
     .merge(searchSchema)
     .extend({
         membrePersonnelId: z.string().uuid().optional(),
-        typeContrat: z.enum(['CDD', 'CDI', 'VACATAIRE', 'STAGIAIRE']).optional(),
-        statut: z.enum(['ACTIF', 'EXPIRE', 'RENEGOCIE', 'ROMPU']).optional(),
+        typeContrat: z.string().min(1).max(50).optional(),
+        statut: z.enum(['EN_ATTENTE_VALIDATION', 'ACTIF', 'EXPIRE', 'RENEGOCIE', 'ROMPU']).optional(),
     });
 
 export type CreateContratDto = z.infer<typeof createContratSchema>;

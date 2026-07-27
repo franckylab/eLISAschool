@@ -5,21 +5,25 @@ import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Loader2 } from 'lucide-react';
 
+import type { Cotisation } from '../types/paie.types';
+
+type CotisationFormData = Omit<Cotisation, 'id' | 'actif' | 'etablissementId' | 'createdAt' | 'updatedAt'>;
+
 interface CotisationModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSave: (data: any) => Promise<void>;
+    onSave: (data: CotisationFormData) => Promise<void>;
     isLoading?: boolean;
-    cotisation?: any | null;
+    cotisation?: Cotisation | null;
 }
 
-const FORM_INIT = {
+const FORM_INIT: CotisationFormData = {
     code: '',
     nom: '',
-    type: 'SALARIALE' as string,
+    type: 'SALARIALE',
     tauxPatronal: 0,
     tauxSalarial: 0,
-    plafond: undefined as number | undefined,
+    plafond: undefined,
     description: '',
 };
 
@@ -66,7 +70,7 @@ export function CotisationModal({ open, onOpenChange, onSave, isLoading, cotisat
                             type="text"
                             value={form.code}
                             onChange={(e) => setForm(p => ({ ...p, code: e.target.value }))}
-                            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                            className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                             required
                         />
                     </div>
@@ -76,7 +80,7 @@ export function CotisationModal({ open, onOpenChange, onSave, isLoading, cotisat
                             type="text"
                             value={form.nom}
                             onChange={(e) => setForm(p => ({ ...p, nom: e.target.value }))}
-                            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                            className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                             required
                         />
                     </div>
@@ -85,8 +89,8 @@ export function CotisationModal({ open, onOpenChange, onSave, isLoading, cotisat
                     <label className="block text-sm font-medium mb-1">{t('type')}</label>
                     <select
                         value={form.type}
-                        onChange={(e) => setForm(p => ({ ...p, type: e.target.value }))}
-                        className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                        onChange={(e) => setForm(p => ({ ...p, type: e.target.value as CotisationFormData['type'] }))}
+                        className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                     >
                         <option value="PATRONALE">Patronale</option>
                         <option value="SALARIALE">Salariale</option>
@@ -101,7 +105,7 @@ export function CotisationModal({ open, onOpenChange, onSave, isLoading, cotisat
                             step="0.01"
                             value={form.tauxPatronal}
                             onChange={(e) => setForm(p => ({ ...p, tauxPatronal: parseFloat(e.target.value) }))}
-                            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                            className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                         />
                     </div>
                     <div>
@@ -111,7 +115,7 @@ export function CotisationModal({ open, onOpenChange, onSave, isLoading, cotisat
                             step="0.01"
                             value={form.tauxSalarial}
                             onChange={(e) => setForm(p => ({ ...p, tauxSalarial: parseFloat(e.target.value) }))}
-                            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                            className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                         />
                     </div>
                 </div>
@@ -121,16 +125,16 @@ export function CotisationModal({ open, onOpenChange, onSave, isLoading, cotisat
                         type="number"
                         value={form.plafond || ''}
                         onChange={(e) => setForm(p => ({ ...p, plafond: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                        className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                        className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                     />
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
                     <ElisaButton variant="outline" onClick={() => onOpenChange(false)}>
-                        {t('commun:annuler')}
+                        {t('common:boutons.annuler')}
                     </ElisaButton>
                     <ElisaButton type="submit" variant="primary" isLoading={isLoading}>
                         {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                        {cotisation ? t('commun:enregistrer') : t('commun:creer')}
+                        {cotisation ? t('common:boutons.enregistrer') : t('common:boutons.creer')}
                     </ElisaButton>
                 </div>
             </form>

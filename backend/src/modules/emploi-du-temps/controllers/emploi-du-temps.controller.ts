@@ -11,13 +11,14 @@ import {
 } from '../dto';
 import { conflitDetectionService } from '../services/conflit-detection.service';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
+import { auditService, AuditAction } from '@modules/auth';
 import { AppError } from '@common/filters/error.filter';
 import { validateDto, validateQuery } from '@common/utils';
 import { CreerTemplateDto } from '../services/template.service';
 
 const router = Router();
 
-router.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', authMiddleware, requirePermission('emploi-du-temps:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const query = validateQuery(queryCreneauxSchema, req.query);
         const result = await emploiDuTempsService.findAll(query, req.etablissementId!);
@@ -29,6 +30,14 @@ router.post('/', authMiddleware, requirePermission('emploi-du-temps:create'), as
     try {
         const dto = validateDto(creerCreneauSchema, req.body);
         const creneau = await emploiDuTempsService.creerCreneau(dto, req.etablissementId!);
+        await auditService.log({
+            utilisateurId: req.utilisateur!.id,
+            action: AuditAction.CRENEAU_CREATE,
+            cible: 'CreneauHoraire',
+            cibleId: creneau.id,
+            description: `Créneau créé: ${dto.jour} ${dto.heureDebut}-${dto.heureFin}`,
+            module: 'emploi-du-temps',
+        });
         return res.status(201).json({ success: true, data: creneau });
     } catch (error) { next(error); }
 });
@@ -41,7 +50,7 @@ router.post('/generer', authMiddleware, requirePermission('emploi-du-temps:gener
     } catch (error) { next(error); }
 });
 
-router.get('/preferences', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/preferences', authMiddleware, requirePermission('emploi-du-temps:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const preferences = await emploiDuTempsService.getPreferences(req.etablissementId!);
         return res.json({ success: true, data: preferences });
@@ -56,7 +65,7 @@ router.put('/preferences', authMiddleware, requirePermission('emploi-du-temps:pr
     } catch (error) { next(error); }
 });
 
-router.get('/templates', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/templates', authMiddleware, requirePermission('emploi-du-temps:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const templates = await templateService.findAll(req.etablissementId!);
         return res.json({ success: true, data: templates });
@@ -71,7 +80,7 @@ router.post('/templates', authMiddleware, requirePermission('emploi-du-temps:tem
     } catch (error) { next(error); }
 });
 
-router.get('/templates/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/templates/:id', authMiddleware, requirePermission('emploi-du-temps:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const template = await templateService.findOne(req.params.id, req.etablissementId!);
         return res.json({ success: true, data: template });
@@ -99,7 +108,7 @@ router.post('/templates/:id/dupliquer', authMiddleware, requirePermission('emplo
     } catch (error) { next(error); }
 });
 
-router.post('/verifier-conflits', authMiddleware, requirePermission('emploi-du-temps:view'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/verifier-conflits', authMiddleware, requirePermission('emploi-du-temps:verifier-conflits'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(verifierConflitsSchema, req.body);
         const conflits = await conflitDetectionService.detecterConflits(dto, req.etablissementId!);
@@ -109,7 +118,16 @@ router.post('/verifier-conflits', authMiddleware, requirePermission('emploi-du-t
 
 router.get('/export/html/:classeAnneeId', authMiddleware, requirePermission('emploi-du-temps:export'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const html = await emploiDuTempsPdfService.generateHTML(req.params.classeAnneeId, { format: 'html', colorBy: (req.query.colorBy as any) || 'matiere' });
+        const anneeScolaireId = req.query.anneeScolaireId as string || '';
+        const html = await emploiDuTempsPdfService.generateHTML(req.params.classeAnneeId, anneeScolaireId, { format: 'html', colorBy: (req.query.colorBy as string) || 'matiere' });
+        await auditService.log({
+            utilisateurId: req.utilisateur!.id,
+            action: AuditAction.EDT_EXPORT,
+            cible: 'EmploiDuTemps',
+            cibleId: req.params.classeAnneeId,
+            description: 'Export HTML emploi du temps',
+            module: 'emploi-du-temps',
+        });
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         return res.send(html);
     } catch (error) { next(error); }
@@ -117,14 +135,53 @@ router.get('/export/html/:classeAnneeId', authMiddleware, requirePermission('emp
 
 router.get('/export/pdf/:classeAnneeId', authMiddleware, requirePermission('emploi-du-temps:export'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const pdf = await emploiDuTempsPdfService.generatePDF(req.params.classeAnneeId, { format: 'pdf', colorBy: (req.query.colorBy as any) || 'matiere' });
+        const anneeScolaireId = req.query.anneeScolaireId as string || '';
+        const pdf = await emploiDuTempsPdfService.generatePDF(req.params.classeAnneeId, anneeScolaireId, { format: 'pdf', colorBy: (req.query.colorBy as string) || 'matiere' });
+        await auditService.log({
+            utilisateurId: req.utilisateur!.id,
+            action: AuditAction.EDT_EXPORT,
+            cible: 'EmploiDuTemps',
+            cibleId: req.params.classeAnneeId,
+            description: 'Export PDF emploi du temps',
+            module: 'emploi-du-temps',
+        });
         res.setHeader('Content-Type', 'text/html');
         res.setHeader('Content-Disposition', 'inline');
         return res.send(pdf);
     } catch (error) { next(error); }
 });
 
-router.get('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:id/valider', authMiddleware, requirePermission('emploi-du-temps:edit'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const creneau = await emploiDuTempsService.validerCreneau(req.params.id, req.etablissementId!);
+        await auditService.log({
+            utilisateurId: req.utilisateur!.id,
+            action: AuditAction.CRENEAU_VALIDER,
+            cible: 'CreneauHoraire',
+            cibleId: req.params.id,
+            description: 'Créneau validé',
+            module: 'emploi-du-temps',
+        });
+        return res.json({ success: true, data: creneau, message: 'Créneau validé' });
+    } catch (error) { next(error); }
+});
+
+router.post('/valider-classe/:classeAnneeId', authMiddleware, requirePermission('emploi-du-temps:edit'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const resultat = await emploiDuTempsService.validerCreneauxClasse(req.params.classeAnneeId, req.etablissementId!);
+        await auditService.log({
+            utilisateurId: req.utilisateur!.id,
+            action: AuditAction.EDT_VALIDER,
+            cible: 'EmploiDuTemps',
+            cibleId: req.params.classeAnneeId,
+            description: `Validation en lot: ${resultat.valide} créneau(x)`,
+            module: 'emploi-du-temps',
+        });
+        return res.json({ success: true, data: resultat, message: `${resultat.valide} créneau(x) validé(s)` });
+    } catch (error) { next(error); }
+});
+
+router.get('/:id', authMiddleware, requirePermission('emploi-du-temps:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const creneau = await emploiDuTempsService.findOne(req.params.id, req.etablissementId!);
         return res.json({ success: true, data: creneau });
@@ -135,6 +192,14 @@ router.patch('/:id', authMiddleware, requirePermission('emploi-du-temps:edit'), 
     try {
         const dto = validateDto(modifierCreneauSchema, req.body);
         const creneau = await emploiDuTempsService.updateCreneau(req.params.id, dto, req.etablissementId!);
+        await auditService.log({
+            utilisateurId: req.utilisateur!.id,
+            action: AuditAction.CRENEAU_UPDATE,
+            cible: 'CreneauHoraire',
+            cibleId: req.params.id,
+            description: 'Créneau modifié',
+            module: 'emploi-du-temps',
+        });
         return res.json({ success: true, data: creneau });
     } catch (error) { next(error); }
 });
@@ -142,6 +207,14 @@ router.patch('/:id', authMiddleware, requirePermission('emploi-du-temps:edit'), 
 router.delete('/:id', authMiddleware, requirePermission('emploi-du-temps:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await emploiDuTempsService.supprimerCreneau(req.params.id, req.etablissementId!);
+        await auditService.log({
+            utilisateurId: req.utilisateur!.id,
+            action: AuditAction.CRENEAU_DELETE,
+            cible: 'CreneauHoraire',
+            cibleId: req.params.id,
+            description: 'Créneau supprimé',
+            module: 'emploi-du-temps',
+        });
         return res.json({ success: true, message: 'Créneau supprimé' });
     } catch (error) { next(error); }
 });

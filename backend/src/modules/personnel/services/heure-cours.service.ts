@@ -6,7 +6,7 @@
  * Migration complète classeId → classeAnneeId (v4.0)
  */
 
-import { Repository, Between, In } from 'typeorm';
+import { Repository, Between, In, Not } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { HeureCours, StatutEffectue, ContratPersonnel, StatutContrat } from '../entities';
 import { CreateHeureCoursDto, UpdateHeureCoursDto, QueryHeureCoursDto, GenererHeuresCoursFromEdtDto } from '../dto';
@@ -58,26 +58,27 @@ export class HeureCoursService {
         return heureCours;
     }
 
-    private async verifierConflitCreneau(dto: CreateHeureCoursDto): Promise<void> {
-        const conflit = await this.repo.findOne({
+    private async verifierConflitCreneau(dto: CreateHeureCoursDto, excludeId?: string): Promise<void> {
+        const coursDuJour = await this.repo.find({
             where: {
                 enseignantId: dto.enseignantId,
                 date: new Date(dto.date) as any,
-                statutEffectue: { $not: StatutEffectue.ANNULE } as any,
+                statutEffectue: Not(StatutEffectue.ANNULE),
+                ...(excludeId ? { id: Not(excludeId) } : {}),
             },
         });
 
-        if (conflit) {
+        for (const cours of coursDuJour) {
             const overlap = this.verifierOverlapHoraire(
-                conflit.heureDebut,
-                conflit.heureFin,
+                cours.heureDebut,
+                cours.heureFin,
                 dto.heureDebut,
                 dto.heureFin
             );
 
             if (overlap) {
                 throw new AppError(
-                    `Conflit de créneau: l'enseignant a déjà un cours de ${conflit.heureDebut} à ${conflit.heureFin} ce jour-là`,
+                    `Conflit de créneau: l'enseignant a déjà un cours de ${cours.heureDebut} à ${cours.heureFin} ce jour-là`,
                     409,
                     'CRENEAU_CONFLIT'
                 );
@@ -183,7 +184,7 @@ export class HeureCoursService {
                 heureFin: dto.heureFin || heureCours.heureFin,
                 statutEffectue: (dto.statutEffectue as any) || heureCours.statutEffectue || 'PLANIFIE',
             };
-            await this.verifierConflitCreneau(conflitDto as CreateHeureCoursDto);
+            await this.verifierConflitCreneau(conflitDto as CreateHeureCoursDto, id);
         }
 
         await this.repo.save(heureCours);
@@ -445,10 +446,17 @@ export class HeureCoursService {
                     continue;
                 }
 
+                const slotClasseAnneeId = slot.affectationMatiere?.classeAnneeId;
+                const slotMatiereId = slot.affectationMatiere?.matiereId || slot.matiereId;
+                if (!slotClasseAnneeId || !slotMatiereId) {
+                    skipped++;
+                    continue;
+                }
+
                 const hc = this.repo.create({
                     enseignantId,
-                    classeAnneeId: slot.affectationMatiere?.classeAnneeId || '',
-                    matiereId: slot.affectationMatiere?.matiereId || slot.matiereId || '',
+                    classeAnneeId: slotClasseAnneeId,
+                    matiereId: slotMatiereId,
                     periodeId: periodeId || slot.periodeId,
                     creneauId: slot.id,
                     salleId: slot.salleId,

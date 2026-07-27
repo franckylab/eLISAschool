@@ -244,7 +244,7 @@ export class VerificationSuppressionService {
             
             // Emploi du temps et enseignement
             emploiDuTemps: membrePersonnel
-                ? await this.countViaMembrePersonnel('EmploiDuTemps', membrePersonnel.id, etablissementId)
+                ? await this.countCreneauxEnseignant(membrePersonnel.id, etablissementId)
                 : { nombre: 0 },
             classesResponsabilisees: membrePersonnel
                 ? await this.countClassesResponsabilisees(membrePersonnel.id, etablissementId)
@@ -396,6 +396,24 @@ export class VerificationSuppressionService {
             return { nombre: count };
         } catch (error) {
             logger.warn(`[VerificationSuppression] Erreur comptage ${entityName}:`, error);
+            return { nombre: 0 };
+        }
+    }
+
+    private async countCreneauxEnseignant(
+        membrePersonnelId: string,
+        etablissementId: string
+    ): Promise<{ nombre: number }> {
+        try {
+            const count = await AppDataSource.getRepository('CreneauHoraire')
+                .createQueryBuilder('ch')
+                .innerJoin('ch.affectationMatiere', 'am')
+                .where('am.enseignantId = :membrePersonnelId', { membrePersonnelId })
+                .andWhere('ch.etablissementId = :etablissementId', { etablissementId })
+                .getCount();
+            return { nombre: count };
+        } catch (error) {
+            logger.warn('[VerificationSuppression] Erreur comptage CreneauHoraire:', error);
             return { nombre: 0 };
         }
     }

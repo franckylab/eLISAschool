@@ -1,3 +1,11 @@
+/**
+ * ==================================
+ * eLISAschool - Page détail classe
+ * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ */
+
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
@@ -32,7 +40,7 @@ const creneauKey: Record<string, string> = {
 };
 
 function Skeleton({ className }: { className?: string }) {
-    return <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded ${className || ''}`} />;
+    return <div className={`animate-pulse bg-muted rounded ${className || ''}`} />;
 }
 
 function formatDateTime(dateStr: string): string {
@@ -92,8 +100,14 @@ export function ClasseDetailPage() {
             header: t('colonnes.nomComplet'),
             render: (e) => (
                 <div>
-                    <p className="font-medium">{e.prenom} {e.nom}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-200">
+                    <button
+                        type="button"
+                        className="font-medium text-left text-foreground hover:text-primary transition-colors"
+                        onClick={() => navigate({ to: '/eleves/$id', params: { id: e.id } })}
+                    >
+                        {e.prenom} {e.nom}
+                    </button>
+                    <p className="text-xs text-muted-foreground">
                         {e.sexe === 'M' ? t('sexe.masculin') : t('sexe.feminin')}
                     </p>
                 </div>
@@ -110,8 +124,8 @@ export function ClasseDetailPage() {
             render: (e) => (
                 <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
                     e.statut === 'ACTIF'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                        ? 'bg-success/10 text-success'
+                        : 'bg-muted text-muted-foreground'
                 }`}>
                     {e.statut === 'ACTIF' ? t('statut.actif') : t('statut.inactif')}
                 </span>
@@ -163,12 +177,12 @@ export function ClasseDetailPage() {
     if (erreurClasse || !classe) {
         return (
             <div className="flex flex-col items-center justify-center py-20">
-                <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
-                <p className="text-xl font-semibold text-red-600 mb-2">
+                <AlertCircle className="h-16 w-16 text-destructive mb-4" />
+                <p className="text-xl font-semibold text-destructive mb-2">
                     {t('erreurs.classeNonTrouvee')}
                 </p>
-                <p className="text-gray-500 dark:text-gray-200 mb-6">
-                    {t('erreurs.classeNonTrouveeMessage') || "La classe demandée n'existe pas ou a été supprimée."}
+                <p className="text-muted-foreground mb-6">
+                    {t('erreurs.classeNonTrouveeMessage')}
                 </p>
                 <ElisaButton variant="outline" onClick={() => navigate({ to: '/classes' })}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
@@ -188,12 +202,12 @@ export function ClasseDetailPage() {
     const effectifMax = classe.effectifMax || null;
 
     const typeColors: Record<string, { text: string; bg: string }> = {
-        NORMALE: { text: 'text-blue-700', bg: 'bg-blue-50' },
-        BILINGUE: { text: 'text-purple-700', bg: 'bg-purple-50' },
-        RENFORCEE: { text: 'text-orange-700', bg: 'bg-orange-50' },
-        INTERNATIONALE: { text: 'text-indigo-700', bg: 'bg-indigo-50' },
+        NORMALE: { text: 'text-info', bg: 'bg-info/10' },
+        BILINGUE: { text: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-500/10' },
+        RENFORCEE: { text: 'text-warning', bg: 'bg-warning/10' },
+        INTERNATIONALE: { text: 'text-accent', bg: 'bg-accent/10' },
     };
-    const tc = typeColors[classe.typeClasse] || { text: 'text-gray-700 dark:text-gray-400', bg: 'bg-gray-50' };
+    const tc = typeColors[classe.typeClasse] || { text: 'text-secondary', bg: 'bg-muted' };
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -274,7 +288,7 @@ export function ClasseDetailPage() {
                     />
                 </CardGrid>
 
-                <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+                <div className="border-b border-border mb-6">
                     <nav className="flex gap-6">
                         {onglets.map((onglet) => {
                             const Icon = onglet.icon;
@@ -285,7 +299,7 @@ export function ClasseDetailPage() {
                                     className={`flex items-center gap-2 py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
                                         ongletActif === onglet.id
                                             ? 'border-dominant-600 text-dominant-600'
-                                            : 'border-transparent text-gray-500 dark:text-gray-200 hover:text-gray-700 hover:border-gray-300'
+                                            : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                                     }`}
                                 >
                                     <Icon className="h-4 w-4" />
@@ -309,33 +323,33 @@ export function ClasseDetailPage() {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.1 }}
-                                    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+                                    className="bg-card rounded-xl shadow-sm border border-border p-6"
                                 >
-                                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-5 flex items-center gap-2">
-                                        <BookOpen className="h-5 w-5 text-blue-500" />
+                                    <h2 className="text-lg font-semibold text-foreground mb-5 flex items-center gap-2">
+                                        <BookOpen className="h-5 w-5 text-primary" />
                                         {t('info.titreGeneral')}
                                     </h2>
                                     <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
                                         <div>
-                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">{t('info.nomClasse')}</dt>
-                                            <dd className="text-sm font-semibold text-gray-900 dark:text-gray-200">{classe.nom}</dd>
+                                            <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t('info.nomClasse')}</dt>
+                                            <dd className="text-sm font-semibold text-foreground">{classe.nom}</dd>
                                         </div>
                                         <div>
-                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">{t('info.code')}</dt>
-                                            <dd className="text-sm font-semibold text-gray-900 dark:text-gray-200 font-mono">{classe.code}</dd>
+                                            <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t('info.code')}</dt>
+                                            <dd className="text-sm font-semibold text-foreground font-mono">{classe.code}</dd>
                                         </div>
                                         <div>
-                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">{t('info.niveau')}</dt>
-                                            <dd className="text-sm font-semibold text-gray-900 dark:text-gray-200">{niveauNom}</dd>
+                                            <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t('info.niveau')}</dt>
+                                            <dd className="text-sm font-semibold text-foreground">{niveauNom}</dd>
                                         </div>
                                         {cycleNom && (
                                             <div>
-                                                <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">{t('info.cycle')}</dt>
-                                                <dd className="text-sm font-semibold text-gray-900 dark:text-gray-200">{cycleNom}</dd>
+                                                <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t('info.cycle')}</dt>
+                                                <dd className="text-sm font-semibold text-foreground">{cycleNom}</dd>
                                             </div>
                                         )}
                                         <div>
-                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">{t('info.typeClasse')}</dt>
+                                            <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t('info.typeClasse')}</dt>
                                             <dd>
                                                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${tc.bg} ${tc.text}`}>
                                                     <GraduationCap className="h-3.5 w-3.5" />
@@ -344,8 +358,8 @@ export function ClasseDetailPage() {
                                             </dd>
                                         </div>
                                         <div>
-                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">{t('info.creneau')}</dt>
-                                            <dd className="text-sm font-semibold text-gray-900 dark:text-gray-200">
+                                            <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t('info.creneau')}</dt>
+                                            <dd className="text-sm font-semibold text-foreground">
                                                 {t(`creneaux.${creneauKey[classe.creneauHoraire] || 'matin'}`)}
                                             </dd>
                                         </div>
@@ -356,26 +370,26 @@ export function ClasseDetailPage() {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.2 }}
-                                    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+                                    className="bg-card rounded-xl shadow-sm border border-border p-6"
                                 >
-                                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-5 flex items-center gap-2">
-                                        <MapPin className="h-5 w-5 text-green-500" />
+                                    <h2 className="text-lg font-semibold text-foreground mb-5 flex items-center gap-2">
+                                        <MapPin className="h-5 w-5 text-success" />
                                         {t('info.titreConfig')}
                                     </h2>
                                     <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
                                         <div>
-                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">{t('info.effectifMax')}</dt>
-                                            <dd className="text-sm font-semibold text-gray-900 dark:text-gray-200">{effectifMax || t('info.illimite')}</dd>
+                                            <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t('info.effectifMax')}</dt>
+                                            <dd className="text-sm font-semibold text-foreground">{effectifMax || t('info.illimite')}</dd>
                                         </div>
                                         <div>
-                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">{t('info.sallePrincipale')}</dt>
-                                            <dd className="text-sm font-semibold text-gray-900 dark:text-gray-200">{salleNom}</dd>
+                                            <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t('info.sallePrincipale')}</dt>
+                                            <dd className="text-sm font-semibold text-foreground">{salleNom}</dd>
                                         </div>
                                         <div>
-                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">{t('info.statut')}</dt>
+                                            <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t('info.statut')}</dt>
                                             <dd>
                                                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
-                                                    classe.actif ? 'bg-green-100 text-green-800' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                                                    classe.actif ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'
                                                 }`}>
                                                     {classe.actif ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
                                                     {classe.actif ? t('statut.actif') : t('statut.inactif')}
@@ -383,40 +397,39 @@ export function ClasseDetailPage() {
                                             </dd>
                                         </div>
                                         <div>
-                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">{t('info.anneeScolaire')}</dt>
-                                            <dd className="text-sm font-semibold text-gray-900 dark:text-gray-200">{classe.anneeScolaire?.libelle || '-'}</dd>
+                                            <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t('info.anneeScolaire')}</dt>
+                                            <dd className="text-sm font-semibold text-foreground">{classe.anneeScolaire?.libelle || '-'}</dd>
                                         </div>
                                         <div>
-                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-1">{t('info.filiere')}</dt>
-                                            <dd className="text-sm font-semibold text-gray-900 dark:text-gray-200">{classe.filiere?.nom || '-'}</dd>
+                                            <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t('info.filiere')}</dt>
+                                            <dd className="text-sm font-semibold text-foreground">{classe.filiere?.nom || '-'}</dd>
                                         </div>
                                     </dl>
                                     {classe.description && (
-                                        <div className="mt-6 pt-5 border-t border-gray-100 dark:border-gray-700">
-                                            <dt className="text-xs font-medium text-gray-500 dark:text-gray-200 uppercase tracking-wider mb-2">{t('info.description')}</dt>
-                                            <dd className="text-sm text-gray-700 dark:text-gray-400 leading-relaxed">{classe.description}</dd>
+                                        <div className="mt-6 pt-5 border-t border-border">
+                                            <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">{t('info.description')}</dt>
+                                            <dd className="text-sm text-secondary leading-relaxed">{classe.description}</dd>
                                         </div>
                                     )}
                                 </motion.div>
 
-                                {/* EDT preview plié */}
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.3 }}
-                                    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+                                    className="bg-card rounded-xl shadow-sm border border-border p-6"
                                 >
-                                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
-                                        <Calendar className="h-4 w-4 text-indigo-500" />
-                                        Emploi du temps
+                                    <h4 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                                        <Calendar className="h-4 w-4 text-accent" />
+                                        {t('info.edtTitre')}
                                     </h4>
-                                    <div className="rounded-lg bg-indigo-50 border border-indigo-100 p-4 text-center">
-                                        <Calendar className="h-8 w-8 mx-auto text-indigo-400 mb-2" />
-                                        <p className="text-sm font-medium text-indigo-700 mb-1">
-                                            Visualisation de l'emploi du temps
+                                    <div className="rounded-lg bg-accent/10 border border-accent/20 p-4 text-center">
+                                        <Calendar className="h-8 w-8 mx-auto text-accent mb-2" />
+                                        <p className="text-sm font-medium text-accent mb-1">
+                                            {t('info.edtDescription')}
                                         </p>
-                                        <p className="text-xs text-indigo-500">
-                                            L'affichage détaillé de l'emploi du temps sera disponible dans une prochaine version.
+                                        <p className="text-xs text-accent/70">
+                                            {t('info.edtBientot')}
                                         </p>
                                     </div>
                                 </motion.div>
@@ -428,22 +441,22 @@ export function ClasseDetailPage() {
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: 0.15 }}
                                     className={`rounded-xl shadow-sm border p-6 ${
-                                        classe.actif ? 'bg-green-50 border-green-200' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200'
+                                        classe.actif ? 'bg-success/10 border-success/20' : 'bg-muted border-border'
                                     }`}
                                 >
                                     <div className="flex items-center gap-3 mb-3">
                                         {classe.actif
-                                            ? <CheckCircle className="h-6 w-6 text-green-600" />
-                                            : <XCircle className="h-6 w-6 text-gray-400 dark:text-gray-100" />
+                                            ? <CheckCircle className="h-6 w-6 text-success" />
+                                            : <XCircle className="h-6 w-6 text-muted-foreground" />
                                         }
-                                        <span className={`font-semibold text-lg ${classe.actif ? 'text-green-800' : 'text-gray-600 dark:text-gray-300'}`}>
+                                        <span className={`font-semibold text-lg ${classe.actif ? 'text-success' : 'text-secondary'}`}>
                                             {classe.actif ? t('statut.actif') : t('statut.inactif')}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                                    <p className="text-sm text-secondary">
                                         {classe.actif
-                                            ? t('statut.actifDescription') || 'Cette classe est actuellement active et utilisable.'
-                                            : t('statut.inactifDescription') || 'Cette classe est actuellement inactive.'}
+                                            ? t('statut.actifDescription')
+                                            : t('statut.inactifDescription')}
                                     </p>
                                 </motion.div>
 
@@ -451,24 +464,24 @@ export function ClasseDetailPage() {
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: 0.25 }}
-                                    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+                                    className="bg-card rounded-xl shadow-sm border border-border p-6"
                                 >
-                                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
-                                        <Users className="h-4 w-4 text-gray-400 dark:text-gray-100" />
+                                    <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                                        <Users className="h-4 w-4 text-muted-foreground" />
                                         {t('stats.effectif')}
                                     </h3>
                                     <div className="space-y-3">
-                                        <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                                            <span className="text-sm text-gray-600 dark:text-gray-300">{t('sexe.garcons')}</span>
-                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-200">{statsSexe.garcons}</span>
+                                        <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted">
+                                            <span className="text-sm text-secondary">{t('sexe.garcons')}</span>
+                                            <span className="text-sm font-semibold text-foreground">{statsSexe.garcons}</span>
                                         </div>
-                                        <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                                            <span className="text-sm text-gray-600 dark:text-gray-300">{t('sexe.filles')}</span>
-                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-200">{statsSexe.filles}</span>
+                                        <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted">
+                                            <span className="text-sm text-secondary">{t('sexe.filles')}</span>
+                                            <span className="text-sm font-semibold text-foreground">{statsSexe.filles}</span>
                                         </div>
-                                        <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                                            <span className="text-sm text-gray-600 dark:text-gray-300">{t('stats.total')}</span>
-                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-200">{statsSexe.total}</span>
+                                        <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted">
+                                            <span className="text-sm text-secondary">{t('stats.total')}</span>
+                                            <span className="text-sm font-semibold text-foreground">{statsSexe.total}</span>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -477,20 +490,20 @@ export function ClasseDetailPage() {
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: 0.35 }}
-                                    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"
+                                    className="bg-card rounded-xl shadow-sm border border-border p-6"
                                 >
-                                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
-                                        <Calendar className="h-4 w-4 text-gray-400 dark:text-gray-100" />
-                                        {t('info.systeme') || 'Informations système'}
+                                    <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                                        {t('info.systeme')}
                                     </h3>
                                     <div className="space-y-3 text-sm">
                                         <div>
-                                            <p className="text-gray-500 dark:text-gray-200 text-xs">{t('info.creeLe') || 'Créé le'}</p>
-                                            <p className="font-medium text-gray-900 dark:text-gray-200">{formatDateTime(classe.createdAt)}</p>
+                                            <p className="text-muted-foreground text-xs">{t('info.creeLe')}</p>
+                                            <p className="font-medium text-foreground">{formatDateTime(classe.createdAt)}</p>
                                         </div>
                                         <div>
-                                            <p className="text-gray-500 dark:text-gray-200 text-xs">{t('info.modifieLe') || 'Modifié le'}</p>
-                                            <p className="font-medium text-gray-900 dark:text-gray-200">{formatDateTime(classe.updatedAt)}</p>
+                                            <p className="text-muted-foreground text-xs">{t('info.modifieLe')}</p>
+                                            <p className="font-medium text-foreground">{formatDateTime(classe.updatedAt)}</p>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -501,7 +514,7 @@ export function ClasseDetailPage() {
                     {ongletActif === 'eleves' && (
                         <div>
                             <div className={`flex ${estMobile ? 'flex-col gap-3' : 'items-center justify-between'} mb-4`}>
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200">
+                                <h3 className="text-lg font-semibold text-foreground">
                                     {t('eleves.inscrits')} ({statsEleves?.total ?? 0})
                                 </h3>
                                 <div className={`flex ${estMobile ? 'flex-col gap-2' : 'items-center gap-3'}`}>
@@ -511,7 +524,7 @@ export function ClasseDetailPage() {
                                             placeholder={t('eleves.rechercher')}
                                             value={rechercheEleves}
                                             onChange={(e) => { setRechercheEleves(e.target.value); setPageEleves(1); }}
-                                            className="pl-3 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                            className="pl-3 pr-3 py-1.5 rounded-lg border border-border bg-card text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                                             style={{ width: 'clamp(120px, 30vw, 200px)' }}
                                         />
                                     </div>
@@ -526,14 +539,14 @@ export function ClasseDetailPage() {
                                 </div>
                             </div>
                             {loadingEleves ? (
-                                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                                <div className="bg-card rounded-xl shadow-sm border border-border p-6">
                                     <Skeleton className="h-10 w-full mb-4" />
                                     {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-12 w-full mb-2" />)}
                                 </div>
                             ) : eleves.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-12 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
-                                    <Users className="h-12 w-12 text-gray-300 dark:text-gray-400 mb-3" />
-                                    <p className="text-gray-500 dark:text-gray-200">{t('eleves.aucunEleve')}</p>
+                                <div className="flex flex-col items-center justify-center py-12 rounded-xl bg-muted border border-border">
+                                    <Users className="h-12 w-12 text-muted-foreground mb-3" />
+                                    <p className="text-muted-foreground">{t('eleves.aucunEleve')}</p>
                                 </div>
                             ) : (
                                 <DataTable
@@ -559,84 +572,84 @@ export function ClasseDetailPage() {
 
                     {ongletActif === 'statistiques' && (
                         <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-6`}>
-                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4">{t('stats.tauxOccupation')}</h3>
+                            <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+                                <h3 className="text-lg font-semibold text-foreground mb-4">{t('stats.tauxOccupation')}</h3>
                                 {tauxOccupation ? (
                                     <div className="space-y-4">
                                         <div>
                                             <div className="flex justify-between text-sm mb-1">
-                                                <span className="text-gray-600 dark:text-gray-300">Effectif / Capacité max</span>
-                                                <span className="font-medium text-gray-900 dark:text-gray-200">
+                                                <span className="text-secondary">{t('stats.effectifCapaciteMax')}</span>
+                                                <span className="font-medium text-foreground">
                                                     {tauxOccupation.effectif} / {tauxOccupation.capacite}
                                                 </span>
                                             </div>
-                                            <div className="overflow-hidden h-3 rounded bg-blue-100">
+                                            <div className="overflow-hidden h-3 rounded bg-primary/20">
                                                 <motion.div
                                                     initial={{ width: 0 }}
                                                     animate={{ width: `${Math.min(tauxOccupation.pourcentage, 100)}%` }}
                                                     transition={{ duration: 0.8, ease: 'easeOut' }}
-                                                    className="h-full bg-blue-500 rounded"
+                                                    className="h-full bg-primary rounded"
                                                 />
                                             </div>
-                                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-200">
+                                            <p className="mt-1 text-xs text-muted-foreground">
                                                 {tauxOccupation.pourcentage.toFixed(1)}% {t('stats.rempli')}
                                             </p>
                                         </div>
                                         {classe.salle?.capacite && (
                                             <div>
                                                 <div className="flex justify-between text-sm mb-1">
-                                                    <span className="text-gray-600 dark:text-gray-300">Effectif / Capacité salle</span>
-                                                    <span className="font-medium text-gray-900 dark:text-gray-200">
+                                                    <span className="text-secondary">{t('stats.effectifCapaciteSalle')}</span>
+                                                    <span className="font-medium text-foreground">
                                                         {tauxOccupation.effectif} / {classe.salle.capacite}
                                                     </span>
                                                 </div>
-                                                <div className="overflow-hidden h-3 rounded bg-emerald-100">
+                                                <div className="overflow-hidden h-3 rounded bg-success/20">
                                                     <motion.div
                                                         initial={{ width: 0 }}
                                                         animate={{ width: `${Math.min((tauxOccupation.effectif / classe.salle.capacite) * 100, 100)}%` }}
                                                         transition={{ duration: 0.8, ease: 'easeOut' }}
-                                                        className={`h-full rounded ${tauxOccupation.effectif > classe.salle.capacite ? 'bg-red-500' : 'bg-emerald-500'}`}
+                                                        className={`h-full rounded ${tauxOccupation.effectif > classe.salle.capacite ? 'bg-destructive' : 'bg-success'}`}
                                                     />
                                                 </div>
-                                                <p className="mt-1 text-xs text-gray-500 dark:text-gray-200">
-                                                    {Math.min((tauxOccupation.effectif / classe.salle.capacite) * 100, 100).toFixed(1)}% utilisé
+                                                <p className="mt-1 text-xs text-muted-foreground">
+                                                    {Math.min((tauxOccupation.effectif / classe.salle.capacite) * 100, 100).toFixed(1)}% {t('stats.utilise')}
                                                 </p>
                                             </div>
                                         )}
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-gray-400 dark:text-gray-100">{t('stats.pasDeLimite')}</p>
+                                    <p className="text-sm text-muted-foreground">{t('stats.pasDeLimite')}</p>
                                 )}
                             </div>
 
-                            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-200 mb-4">{t('stats.repartitionSexe')}</h3>
+                            <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+                                <h3 className="text-lg font-semibold text-foreground mb-4">{t('stats.repartitionSexe')}</h3>
                                 <div className="space-y-4">
                                     <div>
                                         <div className="flex justify-between mb-1 text-sm">
-                                            <span className="text-gray-600 dark:text-gray-300">{t('sexe.garcons')}</span>
-                                            <span className="font-medium text-gray-900 dark:text-gray-200">{statsSexe.garcons}</span>
+                                            <span className="text-secondary">{t('sexe.garcons')}</span>
+                                            <span className="font-medium text-foreground">{statsSexe.garcons}</span>
                                         </div>
-                                        <div className="overflow-hidden h-2 rounded bg-blue-100">
+                                        <div className="overflow-hidden h-2 rounded bg-primary/20">
                                             <div
                                                 style={{ width: `${statsSexe.pourcentageGarcons}%` }}
-                                                className="h-full bg-blue-500 transition-all duration-500"
+                                                className="h-full bg-primary transition-all duration-500"
                                             />
                                         </div>
                                     </div>
                                     <div>
                                         <div className="flex justify-between mb-1 text-sm">
-                                            <span className="text-gray-600 dark:text-gray-300">{t('sexe.filles')}</span>
-                                            <span className="font-medium text-gray-900 dark:text-gray-200">{statsSexe.filles}</span>
+                                            <span className="text-secondary">{t('sexe.filles')}</span>
+                                            <span className="font-medium text-foreground">{statsSexe.filles}</span>
                                         </div>
-                                        <div className="overflow-hidden h-2 rounded bg-pink-100">
+                                        <div className="overflow-hidden h-2 rounded bg-pink-500/20">
                                             <div
                                                 style={{ width: `${statsSexe.pourcentageFilles}%` }}
                                                 className="h-full bg-pink-500 transition-all duration-500"
                                             />
                                         </div>
                                     </div>
-                                    <p className="text-xs text-gray-400 dark:text-gray-100 pt-2">{t('stats.totalEleves')}: {statsSexe.total}</p>
+                                    <p className="text-xs text-muted-foreground pt-2">{t('stats.totalEleves')}: {statsSexe.total}</p>
                                 </div>
                             </div>
                         </div>
@@ -711,7 +724,7 @@ function ModalAffectationEleve({ classeId, onClose }: ModalAffectationEleveProps
     const { data: elevesAffectesData } = useElevesClasse(classeId, 1, 500);
 
     const elevesDejaAffectes = new Set(
-        (elevesAffectesData?.eleves?.items || []).map((e: any) => e.id)
+        (elevesAffectesData?.eleves?.items || []).map((e: Eleve) => e.id)
     );
     const elevesDisponibles = (tousElevesData?.items || []).filter(
         (e: Eleve) => !elevesDejaAffectes.has(e.id)
@@ -781,14 +794,14 @@ function ModalAffectationEleve({ classeId, onClose }: ModalAffectationEleveProps
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">
+                        <label className="block text-sm font-medium text-secondary mb-1">
                             {t('affectation.date')}
                         </label>
                         <input
                             type="date"
                             value={dateAffectation}
                             onChange={(e) => setDateAffectation(e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                            className="w-full px-3 py-2 rounded-lg border border-border bg-card text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                         />
                     </div>
                     <ElisaSelect
@@ -800,7 +813,7 @@ function ModalAffectationEleve({ classeId, onClose }: ModalAffectationEleveProps
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">
+                    <label className="block text-sm font-medium text-secondary mb-1">
                         {t('affectation.commentaire')}
                     </label>
                     <textarea
@@ -808,7 +821,7 @@ function ModalAffectationEleve({ classeId, onClose }: ModalAffectationEleveProps
                         onChange={(e) => setCommentaire(e.target.value)}
                         placeholder={t('affectation.commentairePlaceholder')}
                         rows={3}
-                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+                        className="w-full px-3 py-2 rounded-lg border border-border bg-card text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none"
                     />
                 </div>
             </div>

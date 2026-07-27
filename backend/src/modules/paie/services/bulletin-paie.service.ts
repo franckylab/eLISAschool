@@ -49,7 +49,7 @@ export class BulletinPaieService {
         if (userId) {
             await auditService.log({
                 utilisateurId: userId,
-                action: 'ELEMENT_SALAIRE_CREATE' as any,
+                action: AuditAction.ELEMENT_SALAIRE_CREATE,
                 cible: 'ElementSalaire',
                 cibleId: element.id,
                 description: `Ajout élément salaire ${dto.libelle} au bulletin ${bulletinId}`,
@@ -71,7 +71,7 @@ export class BulletinPaieService {
         if (userId) {
             await auditService.log({
                 utilisateurId: userId,
-                action: 'ELEMENT_SALAIRE_UPDATE' as any,
+                action: AuditAction.ELEMENT_SALAIRE_UPDATE,
                 cible: 'ElementSalaire',
                 cibleId: elementId,
                 description: `Modification élément salaire ${element.libelle}`,
@@ -91,7 +91,7 @@ export class BulletinPaieService {
         if (userId) {
             await auditService.log({
                 utilisateurId: userId,
-                action: 'ELEMENT_SALAIRE_DELETE' as any,
+                action: AuditAction.ELEMENT_SALAIRE_DELETE,
                 cible: 'ElementSalaire',
                 cibleId: elementId,
                 description: `Suppression élément salaire ${element.libelle} du bulletin ${bulletinId}`,
@@ -102,13 +102,33 @@ export class BulletinPaieService {
 
     async create(dto: CreateBulletinPaieDto, etablissementId: string, createurId?: string, req?: any) {
         // Vérifier si validation requise
-            const requireValidation = await getParamBoolean('personnel.paie.require_validation', { defaultValue: true });
-        
-        // Calculer le salaire net
-        const salaireNet = this.calculerSalaireNet(dto);
+        const requireValidation = await getParamBoolean('personnel.paie.require_validation', { defaultValue: true });
+
+        // Le contrat fournit le salaire de base (vérification tenant incluse)
+        const contrat = await this.contratRepo.findOne({
+            where: { id: dto.contratId, etablissementId },
+        });
+        if (!contrat) {
+            throw new AppError('Contrat non trouvé pour cet établissement', 404, 'NOT_FOUND');
+        }
+        if (contrat.membrePersonnelId !== dto.membrePersonnelId) {
+            throw new AppError('Le contrat ne correspond pas au membre du personnel', 400, 'CONTRAT_MEMBRE_MISMATCH');
+        }
+
+        // Unicité : un bulletin par membre/mois/année
+        const existant = await this.repo.findOne({
+            where: { membrePersonnelId: dto.membrePersonnelId, mois: dto.mois, annee: dto.annee, etablissementId },
+        });
+        if (existant) {
+            throw new AppError(`Un bulletin existe déjà pour ${dto.mois}/${dto.annee}`, 409, 'BULLETIN_EXISTS');
+        }
+
+        const salaireBase = Number(contrat.salaireBase) || 0;
+        const salaireNet = this.calculerSalaireNet({ ...dto, salaireBase });
 
         const entity = this.repo.create({
             ...dto,
+            salaireBase,
             salaireNet,
             heuresEffectuees: 0,
             montantHeuresSup: 0,
@@ -219,14 +239,34 @@ export class BulletinPaieService {
     async delete(id: string, userId: string, etablissementId: string, req?: any) {
         const entity = await this.findOne(id, etablissementId);
 
-        await this.repo.remove(entity);
+        // Un bulletin validé ou payé ne peut pas être supprimé : on l'annule (traçabilité)
+        if (entity.statut === StatutBulletinPaie.VALIDE || entity.statut === StatutBulletinPaie.PAYE) {
+            if (entity.statut === StatutBulletinPaie.PAYE) {
+                throw new AppError('Un bulletin payé ne peut être ni supprimé ni annulé', 400, 'BULLETIN_PAYE');
+            }
+            entity.statut = StatutBulletinPaie.ANNULE;
+            await this.repo.save(entity);
+
+            await auditService.log({
+                utilisateurId: userId,
+                action: AuditAction.BULLETIN_PAI_UPDATE,
+                cible: 'BulletinPaie',
+                cibleId: id,
+                description: `Annulation bulletin paie ${id} (validé, suppression interdite)`,
+                module: 'personnel',
+            }, req);
+
+            return { success: true, annule: true };
+        }
+
+        await this.repo.softRemove(entity);
 
         await auditService.log({
             utilisateurId: userId,
             action: AuditAction.BULLETIN_PAI_DELETE,
             cible: 'BulletinPaie',
             cibleId: id,
-            description: `Suppression bulletin paie ${id}`,
+            description: `Suppression (soft) bulletin paie ${id}`,
             module: 'personnel',
         }, req);
 
@@ -287,13 +327,13 @@ export class BulletinPaieService {
         };
     }
 
-    private calculerSalaireNet(dto: any): number {
+    private calculerSalaireNet(dto: { salaireBase?: number; montantHeuresSup?: number; primes?: number; deductions?: number }): number {
         const salaireBase = Number(dto.salaireBase) || 0;
         const montantHeuresSup = Number(dto.montantHeuresSup) || 0;
         const primes = Number(dto.primes) || 0;
         const deductions = Number(dto.deductions) || 0;
 
-        return salaireBase + montantHeuresSup + primes - deductions;
+        return +(salaireBase + montantHeuresSup + primes - deductions).toFixed(2);
     }
 }
 

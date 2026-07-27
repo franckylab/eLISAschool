@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Settings, Clock, Calendar, BarChart3, Loader2, Check } from 'lucide-react';
 import { usePreferencesEDT, useUpdatePreferencesEDT } from '../hooks/use-emploi-du-temps';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { toast } from 'sonner';
 
 const JOURS_SEMAINE = [
@@ -21,7 +19,6 @@ const JOURS_SEMAINE = [
 
 export function EDTPreferencesPage() {
     const { t } = useTranslation('emplois');
-    const navigate = useNavigate();
     const { data: preferences, isLoading, error, refetch } = usePreferencesEDT();
     const updatePreferences = useUpdatePreferencesEDT();
 
@@ -92,16 +89,7 @@ export function EDTPreferencesPage() {
     const inputClass = "w-full px-4 py-2 rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] text-[var(--color-text-primary)] focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent transition-colors";
 
     return (
-        <div className="flex flex-col gap-6">
-            <PageHeader
-                variant="gradient"
-                icon={Settings}
-                title={t('preferences.titre')}
-                subtitle={t('preferences.description')}
-                onBack={() => navigate({ to: '/emploi-du-temps' })}
-            />
-
-            <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
                 <motion.div
                     className="p-6 rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-sm"
                     initial={{ opacity: 0, y: 10 }}
@@ -255,6 +243,5 @@ export function EDTPreferencesPage() {
                     </ElisaButton>
                 </motion.div>
             </form>
-        </div>
     );
 }

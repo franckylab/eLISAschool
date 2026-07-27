@@ -1,4 +1,4 @@
-import { Repository, LessThanOrEqual, In } from 'typeorm';
+import { Repository, LessThanOrEqual, In, IsNull } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { ContratPersonnel, StatutContrat, TypeContratPersonnalise, AffectationPoste, StatutAffectation, TypeMutation, MembreFonction, MembrePersonnel } from '../entities';
 import { CreateContratDto, UpdateContratDto, QueryContratDto } from '../dto';
@@ -11,6 +11,8 @@ import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 import { Poste, StatutPoste, Fonction } from '@modules/organisation/entities';
 import { HierarchiePersonnel, StatutRelation } from '@modules/organisation/entities';
+import { AffectationMatiere, StatutAffectationMatiere } from '@modules/matieres/entities';
+import { recalculerOccupantsEtStatut, verifierCapacitePoste } from './poste-occupation.helper';
 
 export class ContratService {
     private repo: Repository<ContratPersonnel>;
@@ -21,6 +23,7 @@ export class ContratService {
     private membrePersonnelRepo: Repository<MembrePersonnel>;
     private fonctionRepo: Repository<Fonction>;
     private hierarchieRepo: Repository<HierarchiePersonnel>;
+    private affectationMatiereRepo: Repository<AffectationMatiere>;
 
     constructor() {
         this.repo = AppDataSource.getRepository(ContratPersonnel);
@@ -31,16 +34,27 @@ export class ContratService {
         this.membrePersonnelRepo = AppDataSource.getRepository(MembrePersonnel);
         this.fonctionRepo = AppDataSource.getRepository(Fonction);
         this.hierarchieRepo = AppDataSource.getRepository(HierarchiePersonnel);
+        this.affectationMatiereRepo = AppDataSource.getRepository(AffectationMatiere);
     }
 
-    private async syncTypeContrat(dto: CreateContratDto | UpdateContratDto): Promise<void> {
+    private async syncTypeContrat(dto: CreateContratDto | UpdateContratDto, etablissementId?: string): Promise<void> {
         if (dto.typeContratId) {
-            const typeEntity = await this.typeContratRepo.findOne({ where: { id: dto.typeContratId } });
+            const typeEntity = await this.typeContratRepo.findOne({ 
+                where: { 
+                    id: dto.typeContratId,
+                    ...(etablissementId ? { etablissementId } : {})
+                } 
+            });
             if (!typeEntity) throw new AppError('Type de contrat non trouvé', 404, 'TYPE_CONTRAT_NOT_FOUND');
-            (dto as any).typeContrat = typeEntity.code;
+            dto.typeContrat = typeEntity.code;
         } else if (dto.typeContrat && !dto.typeContratId) {
-            const typeEntity = await this.typeContratRepo.findOne({ where: { code: dto.typeContrat } });
-            if (typeEntity) (dto as any).typeContratId = typeEntity.id;
+            const typeEntity = await this.typeContratRepo.findOne({ 
+                where: { 
+                    code: dto.typeContrat,
+                    ...(etablissementId ? { etablissementId } : {})
+                } 
+            });
+            if (typeEntity) dto.typeContratId = typeEntity.id;
         }
     }
 
@@ -55,21 +69,22 @@ export class ContratService {
         // 1. Libérer l'ancien poste si existant
         if (ancienPosteId) {
             await this.terminerAffectationActive(contrat.membrePersonnelId, etablissementId);
-            await this.recalculerOccupantsCount(ancienPosteId);
+            await recalculerOccupantsEtStatut(ancienPosteId);
         }
 
         // 2. Assigner le nouveau poste
         if (newPosteId) {
-            const poste = await this.posteRepo.findOne({ where: { id: newPosteId } });
+            const poste = await this.posteRepo.findOne({
+                where: { id: newPosteId },
+                relations: ['uniteOrganisationnelle'],
+            });
             if (!poste) throw new AppError('Poste non trouvé', 404, 'POSTE_NOT_FOUND');
+            if (poste.uniteOrganisationnelle && poste.uniteOrganisationnelle.etablissementId !== etablissementId) {
+                throw new AppError('Poste non trouvé', 404, 'POSTE_NOT_FOUND');
+            }
 
             // Vérifier capacité (multi-occupants)
-            if (poste.occupantsCount >= poste.nombrePostes) {
-                throw new AppError(
-                    `Ce poste a atteint son nombre maximum d'affectations (${poste.nombrePostes}/${poste.nombrePostes})`,
-                    409, 'POSTE_COMPLET',
-                );
-            }
+            await verifierCapacitePoste(poste, contrat.membrePersonnelId);
 
             // 3. Créer AffectationPoste
             const affectation = this.affectationRepo.create({
@@ -85,21 +100,14 @@ export class ContratService {
             });
             await this.affectationRepo.save(affectation);
 
-            await this.recalculerOccupantsCount(newPosteId);
+            await recalculerOccupantsEtStatut(newPosteId);
             contrat.posteId = newPosteId;
 
             // 4. Auto-créer hiérarchie depuis la fonction du poste
             await this.autoCreerHierarchie(poste, contrat.membrePersonnelId, contrat.dateDebut, etablissementId);
         } else {
-            contrat.posteId = null as any;
+            contrat.posteId = null;
         }
-    }
-
-    private async recalculerOccupantsCount(posteId: string): Promise<void> {
-        const count = await this.affectationRepo.count({
-            where: { posteId, statut: StatutAffectation.ACTIF },
-        });
-        await this.posteRepo.update(posteId, { occupantsCount: count });
     }
 
     private async autoCreerHierarchie(
@@ -159,47 +167,89 @@ export class ContratService {
         }
     }
 
+    /**
+     * Cascade : désactive toutes les affectations matière actives d'un enseignant.
+     * Les créneaux EDT liés conservent leur historique via l'affectation inactive.
+     */
+    private async libererAffectationsMatieres(membrePersonnelId: string): Promise<number> {
+        const affectations = await this.affectationMatiereRepo.find({
+            where: { enseignantId: membrePersonnelId, actif: true },
+        });
+        if (affectations.length === 0) return 0;
+
+        const aujourdHui = new Date();
+        for (const aff of affectations) {
+            aff.actif = false;
+            aff.statut = StatutAffectationMatiere.INACTIVE;
+            aff.dateFin = aujourdHui;
+        }
+        await this.affectationMatiereRepo.save(affectations);
+        logger.info(`Cascade départ enseignant: ${affectations.length} affectation(s) matière désactivée(s) pour ${membrePersonnelId}`);
+        return affectations.length;
+    }
+
     private async syncFonctions(
         contrat: ContratPersonnel,
         fonctionId: string | undefined,
         fonctionsSecondairesIds: string[] | undefined,
         etablissementId: string,
     ): Promise<void> {
-        // 1. Supprimer les MembreFonction liés à ce contrat (pour resynchro)
-        if (contrat.id) {
-            await this.membreFonctionRepo.delete({ contratId: contrat.id });
+        // Liste cible : fonction principale + secondaires (dédupliquées)
+        const secondairesCibles = (fonctionsSecondairesIds ?? []).filter((fid) => fid !== fonctionId);
+        const ciblesIds = new Set<string>([...(fonctionId ? [fonctionId] : []), ...secondairesCibles]);
+
+        // 1. Clôturer (dateFin) les MembreFonction actifs devenus obsolètes — préserve l'historique
+        const existants = contrat.id
+            ? await this.membreFonctionRepo.find({ where: { contratId: contrat.id, dateFin: IsNull() } })
+            : [];
+        const aClore = existants.filter((mf) => !ciblesIds.has(mf.fonctionId));
+        if (aClore.length > 0) {
+            for (const mf of aClore) mf.dateFin = new Date();
+            await this.membreFonctionRepo.save(aClore);
         }
 
-        // 2. Ajouter la fonction principale
+        // 2. Fonction principale : réutiliser si déjà active, sinon créer
         if (fonctionId) {
-            const mf = this.membreFonctionRepo.create({
-                membrePersonnelId: contrat.membrePersonnelId,
-                fonctionId,
-                contratId: contrat.id,
-                dateDebut: contrat.dateDebut,
-                estPrincipale: true,
-                etablissementId,
-            });
-            await this.membreFonctionRepo.save(mf);
+            const dejaActif = existants.find((mf) => mf.fonctionId === fonctionId);
+            if (dejaActif) {
+                if (!dejaActif.estPrincipale) {
+                    dejaActif.estPrincipale = true;
+                    await this.membreFonctionRepo.save(dejaActif);
+                }
+            } else {
+                const mf = this.membreFonctionRepo.create({
+                    membrePersonnelId: contrat.membrePersonnelId,
+                    fonctionId,
+                    contratId: contrat.id,
+                    dateDebut: contrat.dateDebut,
+                    estPrincipale: true,
+                    etablissementId,
+                });
+                await this.membreFonctionRepo.save(mf);
+            }
             contrat.fonctionId = fonctionId;
         } else {
             contrat.fonctionId = null as any;
         }
 
-        // 3. Ajouter les fonctions secondaires
-        if (fonctionsSecondairesIds?.length) {
-            const secondaires = fonctionsSecondairesIds
-                .filter((fid) => fid !== fonctionId)
-                .map((fid) => this.membreFonctionRepo.create({
+        // 3. Fonctions secondaires : créer uniquement les manquantes, rétrograder si besoin
+        for (const fid of secondairesCibles) {
+            const dejaActif = existants.find((mf) => mf.fonctionId === fid);
+            if (dejaActif) {
+                if (dejaActif.estPrincipale) {
+                    dejaActif.estPrincipale = false;
+                    await this.membreFonctionRepo.save(dejaActif);
+                }
+            } else {
+                const mf = this.membreFonctionRepo.create({
                     membrePersonnelId: contrat.membrePersonnelId,
                     fonctionId: fid,
                     contratId: contrat.id,
                     dateDebut: contrat.dateDebut,
                     estPrincipale: false,
                     etablissementId,
-                }));
-            if (secondaires.length > 0) {
-                await this.membreFonctionRepo.save(secondaires);
+                });
+                await this.membreFonctionRepo.save(mf);
             }
         }
     }
@@ -210,7 +260,7 @@ export class ContratService {
         createurId?: string,
         req?: any,
     ): Promise<ContratPersonnel> {
-        await this.syncTypeContrat(dto);
+        await this.syncTypeContrat(dto, etablissementId);
 
         // Validation conditionnelle selon le mode de rémunération
         // Le mode étant maintenant une FK, on vérifie via le modeRemunerationId
@@ -237,10 +287,14 @@ export class ContratService {
                 // Libérer l'ancien poste du contrat renegocié (via affectations)
                 if (contratActif.posteId) {
                     await this.terminerAffectationActive(dto.membrePersonnelId, etablissementId);
-                    await this.recalculerOccupantsCount(contratActif.posteId);
+                    await recalculerOccupantsEtStatut(contratActif.posteId);
                 }
+                // Cascade : désactiver les affectations matière de l'ancien contrat
+                await this.libererAffectationsMatieres(dto.membrePersonnelId);
             }
         }
+
+        const requireValidation = await getParamBoolean('personnel.contrat_require_validation', { defaultValue: false });
 
         const contrat = this.repo.create({
             membrePersonnelId: dto.membrePersonnelId,
@@ -255,7 +309,9 @@ export class ContratService {
             modeRemunerationId: dto.modeRemunerationId,
             heuresContractuellesMois: dto.heuresContractuellesMois,
             tarifHebdomadaire: dto.tarifHebdomadaire,
-            statut: dto.statut as any,
+            statut: requireValidation
+                ? StatutContrat.EN_ATTENTE_VALIDATION
+                : ((dto.statut as StatutContrat) || StatutContrat.ACTIF),
             renouvellementAuto: dto.renouvellementAuto || false,
             clauses: dto.clauses,
             etablissementId,
@@ -274,7 +330,6 @@ export class ContratService {
             await this.repo.save(contrat);
         }
 
-        const requireValidation = await getParamBoolean('personnel.contrat_require_validation', { defaultValue: false });
         if (requireValidation && createurId) {
             await validationWorkflowService.createWorkflow({
                 module: 'personnel', entiteId: contrat.id, entiteType: 'ContratPersonnel',
@@ -347,7 +402,7 @@ export class ContratService {
         id: string, dto: UpdateContratDto, userId: string, etablissementId: string, req?: any,
     ): Promise<ContratPersonnel> {
         const contrat = await this.findOne(id, etablissementId);
-        await this.syncTypeContrat(dto);
+        await this.syncTypeContrat(dto, etablissementId);
 
         const anciennesValeurs = {
             typeContrat: contrat.typeContrat, statut: contrat.statut,
@@ -395,11 +450,14 @@ export class ContratService {
         // Libérer le poste
         if (contrat.posteId) {
             await this.terminerAffectationActive(contrat.membrePersonnelId, etablissementId);
-            await this.recalculerOccupantsCount(contrat.posteId);
+            await recalculerOccupantsEtStatut(contrat.posteId);
         }
 
         // Terminer les MembreFonction liés
         await this.membreFonctionRepo.update({ contratId: id }, { dateFin: new Date() });
+
+        // Cascade : désactiver les affectations matière (enseignements)
+        await this.libererAffectationsMatieres(contrat.membrePersonnelId);
 
         await auditService.log({
             utilisateurId: userId, action: AuditAction.CONTRAT_PERSONNEL_DELETE,
@@ -429,9 +487,10 @@ export class ContratService {
             await this.repo.save(contrat);
             if (contrat.posteId) {
                 await this.terminerAffectationActive(contrat.membrePersonnelId, contrat.etablissementId);
-                await this.recalculerOccupantsCount(contrat.posteId);
+                await recalculerOccupantsEtStatut(contrat.posteId);
             }
             await this.membreFonctionRepo.update({ contratId: contrat.id }, { dateFin: today });
+            await this.libererAffectationsMatieres(contrat.membrePersonnelId);
         }
         if (expired.length > 0) logger.info(`${expired.length} contrats expirés traités`);
         return expired.length;

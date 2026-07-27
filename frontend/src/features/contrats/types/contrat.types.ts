@@ -22,6 +22,7 @@ export interface ContratPersonnel {
     salaireBase: number;
     tarifHoraire?: number | null;
     modeRemuneration?: ModeRemuneration | null;
+    modeRemunerationId?: string | null;
     heuresContractuellesMois?: number | null;
     tarifHebdomadaire?: number | null;
     statut: string;
@@ -63,8 +64,39 @@ export interface ContratFilters {
     typeContrat?: string;
     statut?: string;
     posteId?: string;
+    recherche?: string;
     page?: number;
     limit?: number;
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
+}
+
+export interface CreerContratDto {
+    membrePersonnelId: string;
+    typeContrat: string;
+    typeContratId?: string;
+    posteId?: string;
+    fonctionId?: string;
+    fonctionsSecondairesIds?: string[];
+    dateDebut: string;
+    dateFin?: string;
+    modeRemunerationId?: string;
+    salaireBase: number;
+    tarifHoraire?: number;
+    heuresContractuellesMois?: number;
+    tarifHebdomadaire?: number;
+    renouvellementAuto?: boolean;
+    clauses?: string;
+}
+
+export interface PaginationMeta {
+    totalItems: number;
+    currentPage: number;
+    itemsPerPage: number;
+    totalPages: number;
+}
+
+export interface PaginatedContrats {
+    items: ContratPersonnel[];
+    meta: PaginationMeta;
 }

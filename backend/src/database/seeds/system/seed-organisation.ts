@@ -92,16 +92,29 @@ export async function seedOrganisation(
 
     // --- FONCTIONS (hiérarchiques, par établissement) ---
     const fonctionsMap = new Map<string, string>();
+    // Chemin matérialisé par code — même convention que fonctions.service.ts : segments = ids, séparateur '.'
+    const cheminsMap = new Map<string, string>();
     const fonctionsData = makeFonctionTree();
     for (const f of fonctionsData) {
+        const parentChemin = f.parentCode ? cheminsMap.get(f.parentCode) : undefined;
         const existing = await foncRepo.findOne({ where: { code: f.code, etablissementId } });
         if (existing) {
+            const updates: Partial<Fonction> = {};
             // Réalignement v5.0 : les fonctions créées avant l'ajout de `categorie` sont restées en AUTRE
             if (existing.categorie !== f.categorie) {
-                await foncRepo.update(existing.id, { categorie: f.categorie });
-                logger.info(`  Fonction mise à jour: ${existing.nom} (${existing.code}) → catégorie ${f.categorie}`);
+                updates.categorie = f.categorie;
+            }
+            // Réalignement chemin : ancien format "parentId/CODE" → convention service "parentChemin.id"
+            const cheminAttendu = parentChemin ? `${parentChemin}.${existing.id}` : existing.id;
+            if (existing.chemin !== cheminAttendu) {
+                updates.chemin = cheminAttendu;
+            }
+            if (Object.keys(updates).length > 0) {
+                await foncRepo.update(existing.id, updates);
+                logger.info(`  Fonction mise à jour: ${existing.nom} (${existing.code})`);
             }
             fonctionsMap.set(f.code, existing.id);
+            cheminsMap.set(f.code, cheminAttendu);
             continue;
         }
         const parentId = f.parentCode ? fonctionsMap.get(f.parentCode) : undefined;
@@ -113,12 +126,14 @@ export async function seedOrganisation(
             ordre: f.ordre,
             parentId,
             categorie: f.categorie,
-            chemin: f.parentCode ? `${fonctionsMap.get(f.parentCode)}/${f.code}` : f.code,
             etablissementId,
             estSysteme: true,
             actif: true,
         }));
+        saved.chemin = parentChemin ? `${parentChemin}.${saved.id}` : saved.id;
+        await foncRepo.save(saved);
         fonctionsMap.set(f.code, saved.id);
+        cheminsMap.set(f.code, saved.chemin);
         logger.info(`  Fonction créée: ${saved.nom} (${saved.code})`);
     }
 

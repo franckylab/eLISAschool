@@ -43,14 +43,15 @@ export function PaiePage() {
 
     const statutBadge = (statut: string) => {
         const variants: Record<string, string> = {
-            brouillon: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
-            valide: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-            paye: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-            annule: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+            GENERE: 'bg-muted text-muted-foreground',
+            EN_ATTENTE_VALIDATION: 'bg-warning/10 text-warning',
+            VALIDE: 'bg-success/10 text-success',
+            PAYE: 'bg-primary/10 text-primary',
+            ANNULE: 'bg-destructive/10 text-destructive',
         };
         return (
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variants[statut] || variants.brouillon}`}>
-                {statut}
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${variants[statut] || variants.GENERE}`}>
+                {t(`statut.${statut}`, { defaultValue: statut })}
             </span>
         );
     };

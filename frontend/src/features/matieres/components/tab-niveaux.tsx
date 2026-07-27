@@ -11,6 +11,7 @@ import { useAjouterMatiereNiveau, useModifierMatiereNiveau, useSupprimerMatiereN
 import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
 import { useToutesFilieres } from '@/features/filieres/hooks/use-filieres';
 import type { MatiereNiveau } from '../types/matiere.types';
+import type { Niveau } from '@/features/niveaux/types/niveau.types';
 
 interface TabNiveauxProps {
     matiereNiveaux: MatiereNiveau[] | undefined;
@@ -49,7 +50,7 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const existingNiveauIds = new Set(matiereNiveaux?.map(mn => mn.niveauId) || []);
-    const niveauxDisponibles = niveaux.filter((n: any) => !existingNiveauIds.has(n.id));
+    const niveauxDisponibles = niveaux.filter((n: Niveau) => !existingNiveauIds.has(n.id));
 
     const handleAdd = async () => {
         if (!addNiveauId) return;
@@ -155,7 +156,7 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                                     value={addNiveauId}
                                     onValueChange={setAddNiveauId}
                                     placeholder="Sélectionner..."
-                                    options={niveauxDisponibles.map((n: any) => ({
+                                    options={niveauxDisponibles.map((n: Niveau) => ({
                                         value: n.id,
                                         label: `${n.nom} ${n.filiere ? `(${n.filiere.nom})` : ''}`,
                                     }))}

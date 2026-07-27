@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, FileSignature, CheckCircle, XCircle, Calendar, DollarSign, Clock, User, Briefcase } from 'lucide-react';
+import { Edit, Trash2, FileSignature, CheckCircle, XCircle, Calendar, Wallet, Clock, User, Briefcase } from 'lucide-react';
 import { useContrats, useSupprimerContrat } from '../hooks/use-contrats';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/ui/Skeleton';
@@ -11,7 +11,15 @@ import { InfoField } from '@/components/ui/InfoField';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePermissions } from '@/hooks';
-import type { ContratPersonnel } from '../types/contrat.types';
+import { ContratWizardModal } from './contrat-wizard-modal';
+
+const STATUT_CLASSES: Record<string, string> = {
+    EN_ATTENTE_VALIDATION: 'bg-warning/10 text-warning',
+    ACTIF: 'bg-success/10 text-success',
+    EXPIRE: 'bg-muted text-muted-foreground',
+    ROMPU: 'bg-destructive/10 text-destructive',
+    RENEGOCIE: 'bg-primary/10 text-primary',
+};
 
 function formatDate(d: string) {
     return new Date(d).toLocaleDateString('fr-FR', {
@@ -24,13 +32,12 @@ export function ContratDetailPage({ contratId }: { contratId: string }) {
     const { t } = useTranslation('contrats');
     const { hasPermission } = usePermissions();
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
 
     const { data: contrats, isLoading, isError, error, refetch } = useContrats();
     const supprimer = useSupprimerContrat();
 
-    const contrat = (contrats as any)?.items
-        ? (contrats as any).items.find((c: ContratPersonnel) => c.id === contratId)
-        : (contrats as ContratPersonnel[])?.find((c: ContratPersonnel) => c.id === contratId);
+    const contrat = contrats?.items.find((c) => c.id === contratId);
 
     const handleDelete = async () => {
         await supprimer.mutateAsync(contratId);
@@ -56,7 +63,7 @@ export function ContratDetailPage({ contratId }: { contratId: string }) {
                 actions={
                     <div className="flex gap-2">
                         {hasPermission('contrats:edit') && (
-                            <ElisaButton variant="primary" size="sm" icon={<Edit className="h-4 w-4" />}>
+                            <ElisaButton variant="primary" size="sm" icon={<Edit className="h-4 w-4" />} onClick={() => setEditOpen(true)}>
                                 {t('actions.modifier')}
                             </ElisaButton>
                         )}
@@ -81,7 +88,7 @@ export function ContratDetailPage({ contratId }: { contratId: string }) {
                                 <InfoField label={t('colonne.typeContrat')} value={contrat.typeContrat} icon={<Briefcase className="h-3.5 w-3.5" />} />
                                 <InfoField label={t('detail.dateDebut')} value={formatDate(contrat.dateDebut)} icon={<Calendar className="h-3.5 w-3.5" />} />
                                 <InfoField label={t('detail.dateFin')} value={contrat.dateFin ? formatDate(contrat.dateFin) : '-'} icon={<Calendar className="h-3.5 w-3.5" />} />
-                                <InfoField label={t('colonne.salaireBase')} value={`${contrat.salaireBase.toLocaleString()} FCFA`} icon={<DollarSign className="h-3.5 w-3.5" />} />
+                                <InfoField label={t('colonne.salaireBase')} value={`${contrat.salaireBase.toLocaleString()} FCFA`} icon={<Wallet className="h-3.5 w-3.5" />} />
                                 <InfoField label={t('detail.modeRemuneration')} value={contrat.modeRemuneration || '-'} icon={<Clock className="h-3.5 w-3.5" />} />
                                 {contrat.tarifHoraire != null && (
                                     <InfoField label={t('detail.tarifHoraire')} value={`${contrat.tarifHoraire} FCFA/h`} icon={<Clock className="h-3.5 w-3.5" />} />
@@ -106,13 +113,7 @@ export function ContratDetailPage({ contratId }: { contratId: string }) {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <InfoField label={t('colonne.statut')} value={
-                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                    contrat.statut === 'ACTIF'
-                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                        : contrat.statut === 'TERMINE'
-                                            ? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                }`}>
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUT_CLASSES[contrat.statut] || 'bg-muted text-muted-foreground'}`}>
                                     {contrat.statut === 'ACTIF' ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
                                     {t(`statut.${contrat.statut}`)}
                                 </span>
@@ -126,6 +127,12 @@ export function ContratDetailPage({ contratId }: { contratId: string }) {
                     </Card>
                 </div>
             </div>
+
+            <ContratWizardModal
+                open={editOpen}
+                onOpenChange={setEditOpen}
+                editing={contrat}
+            />
 
             <ConfirmDialog
                 open={deleteConfirmOpen}

@@ -21,7 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ExportDialog } from '../modals/ExportDialog';
 
-export type ToolbarCommand = 'zoom-in' | 'zoom-out' | 'fit-view' | 'expand-all' | 'collapse-all' | 'search' | 'fullscreen-toggle';
+export type ToolbarCommand = 'zoom-in' | 'zoom-out' | 'fit-view' | 'expand-all' | 'collapse-all' | 'search' | 'fullscreen-toggle' | 'export';
 
 export function dispatchToolbarCommand(command: ToolbarCommand, detail?: Record<string, unknown>) {
     window.dispatchEvent(new CustomEvent('organigramme:toolbar-command', {
@@ -67,6 +67,16 @@ export function OrganigrammeToolbar({
         const handler = () => setIsFullscreen(!!document.fullscreenElement);
         document.addEventListener('fullscreenchange', handler);
         return () => document.removeEventListener('fullscreenchange', handler);
+    }, []);
+
+    // Écouter la commande export depuis les contrôles flottants ReactFlow
+    useEffect(() => {
+        const handler = (e: Event) => {
+            const { command } = (e as CustomEvent).detail;
+            if (command === 'export') setExportDialogOpen(true);
+        };
+        window.addEventListener('organigramme:toolbar-command', handler);
+        return () => window.removeEventListener('organigramme:toolbar-command', handler);
     }, []);
 
     useEffect(() => {
@@ -243,7 +253,7 @@ export function OrganigrammeToolbar({
                                 <div className="flex items-center" style={{ gap: 'var(--gap-sm, 0.5rem)' }}>
                                     <svg width="36" height="10" viewBox="0 0 36 10">
                                         <line x1="0" y1="5" x2="36" y2="5"
-                                            stroke="var(--color-secondary-500)" strokeWidth="2" strokeDasharray="10 5" />
+                                            stroke="var(--color-secondary-500)" strokeWidth="2.5" strokeDasharray="10 5" />
                                     </svg>
                                     <span style={{ fontSize: 'clamp(0.6875rem, 0.6rem + 0.25vw, 0.75rem)', color: 'var(--color-text-secondary)' }}>
                                         {t('organigramme.legendes.relationDirect', 'Relation directe')}
@@ -252,7 +262,7 @@ export function OrganigrammeToolbar({
                                 <div className="flex items-center" style={{ gap: 'var(--gap-sm, 0.5rem)' }}>
                                     <svg width="36" height="10" viewBox="0 0 36 10">
                                         <line x1="0" y1="5" x2="36" y2="5"
-                                            stroke="var(--color-accent-600)" strokeWidth="2" strokeDasharray="4 5" />
+                                            stroke="var(--color-accent-600)" strokeWidth="2.5" strokeDasharray="4 5" />
                                     </svg>
                                     <span style={{ fontSize: 'clamp(0.6875rem, 0.6rem + 0.25vw, 0.75rem)', color: 'var(--color-text-secondary)' }}>
                                         {t('organigramme.legendes.relationFonctionnelle', 'Relation fonctionnelle')}

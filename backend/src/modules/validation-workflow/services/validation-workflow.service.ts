@@ -52,6 +52,11 @@ export class ValidationWorkflowService {
         return { niveauxRequis, configRoles };
     }
 
+    private async getRolesConfig(module: string, etablissementId?: string): Promise<Record<string, string>> {
+        const { configRoles } = await this.getModuleConfig(module, etablissementId);
+        return configRoles;
+    }
+
     /**
      * Rôles par défaut selon le module
      */
@@ -232,6 +237,11 @@ export class ValidationWorkflowService {
 
         await this.workflowRepo.save(workflow);
 
+        // Appliquer l'effet sur l'entité cible quand le workflow est terminé
+        if (workflow.statut === StatutWorkflow.COMPLETEE || workflow.statut === StatutWorkflow.REJETEE) {
+            await this.appliquerEffetEntite(workflow);
+        }
+
         logger.info(
             `[${workflow.module}] Validation ${dto.decision} au niveau ${niveauSuivant}/${workflow.niveauxRequis} par ${validateurId}`
         );
@@ -260,6 +270,210 @@ export class ValidationWorkflowService {
         }
 
         return workflow;
+    }
+
+    /**
+     * Applique l'effet du workflow terminé sur l'entité cible.
+     * Non bloquant : un échec est logué mais n'annule pas la validation.
+     * Imports lazy pour éviter les dépendances circulaires (paie/personnel → validation-workflow).
+     */
+    private async appliquerEffetEntite(workflow: WorkflowValidation): Promise<void> {
+        const approuve = workflow.statut === StatutWorkflow.COMPLETEE;
+        try {
+            switch (workflow.entiteType) {
+                case 'BulletinPaie': {
+                    const { BulletinPaie, StatutBulletinPaie } = await import('@modules/paie/entities/bulletin-paie.entity');
+                    const repo = AppDataSource.getRepository(BulletinPaie);
+                    const bulletin = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!bulletin || bulletin.statut !== StatutBulletinPaie.EN_ATTENTE_VALIDATION) return;
+                    bulletin.statut = approuve ? StatutBulletinPaie.VALIDE : StatutBulletinPaie.GENERE;
+                    await repo.save(bulletin);
+                    logger.info(`[ValidationWorkflow] BulletinPaie ${workflow.entiteId} → ${bulletin.statut}`);
+                    break;
+                }
+                case 'ContratPersonnel': {
+                    const { ContratPersonnel, StatutContrat } = await import('@modules/personnel/entities/contrat-personnel.entity');
+                    const repo = AppDataSource.getRepository(ContratPersonnel);
+                    const contrat = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!contrat || contrat.statut !== StatutContrat.EN_ATTENTE_VALIDATION) return;
+                    if (approuve) {
+                        contrat.statut = StatutContrat.ACTIF;
+                        await repo.save(contrat);
+                    } else {
+                        const { contratService } = await import('@modules/personnel/services/contrat.service');
+                        await contratService.delete(
+                            workflow.entiteId,
+                            workflow.dernierValidateurId ?? '',
+                            workflow.etablissementId
+                        );
+                    }
+                    logger.info(`[ValidationWorkflow] ContratPersonnel ${workflow.entiteId} → ${approuve ? 'ACTIF' : 'ROMPU'}`);
+                    break;
+                }
+                case 'MembrePersonnel': {
+                    const { MembrePersonnel, StatutPersonnel } = await import('@modules/personnel/entities/personnel.entity');
+                    const repo = AppDataSource.getRepository(MembrePersonnel);
+                    const membre = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!membre || membre.statut !== StatutPersonnel.EN_ATTENTE_VALIDATION) return;
+                    membre.statut = approuve ? StatutPersonnel.ACTIF : StatutPersonnel.INACTIF;
+                    await repo.save(membre);
+                    logger.info(`[ValidationWorkflow] MembrePersonnel ${workflow.entiteId} → ${membre.statut}`);
+                    break;
+                }
+                case 'AffectationPoste': {
+                    const { AffectationPoste, StatutAffectation } = await import('@modules/personnel/entities/affectation-poste.entity');
+                    const repo = AppDataSource.getRepository(AffectationPoste);
+                    const affectation = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!affectation || affectation.statut !== StatutAffectation.EN_ATTENTE) return;
+                    affectation.statut = approuve ? StatutAffectation.ACTIF : StatutAffectation.TERMINE;
+                    await repo.save(affectation);
+                    logger.info(`[ValidationWorkflow] AffectationPoste ${workflow.entiteId} → ${affectation.statut}`);
+                    break;
+                }
+                case 'AffectationMatiere': {
+                    const { AffectationMatiere, StatutAffectationMatiere } = await import('@modules/matieres/entities/affectation-matiere.entity');
+                    const repo = AppDataSource.getRepository(AffectationMatiere);
+                    const ent = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!ent || ent.statut !== StatutAffectationMatiere.EN_ATTENTE_VALIDATION) return;
+                    ent.statut = approuve ? StatutAffectationMatiere.ACTIVE : StatutAffectationMatiere.INACTIVE;
+                    ent.actif = approuve;
+                    await repo.save(ent);
+                    logger.info(`[ValidationWorkflow] AffectationMatiere ${workflow.entiteId} → ${ent.statut}`);
+                    break;
+                }
+                case 'MatiereNiveau': {
+                    const { MatiereNiveau, StatutMatiereNiveau } = await import('@modules/matieres/entities/matiere-niveau.entity');
+                    const repo = AppDataSource.getRepository(MatiereNiveau);
+                    const ent = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!ent || ent.statut !== StatutMatiereNiveau.EN_ATTENTE_VALIDATION) return;
+                    ent.statut = approuve ? StatutMatiereNiveau.ACTIF : StatutMatiereNiveau.INACTIF;
+                    await repo.save(ent);
+                    logger.info(`[ValidationWorkflow] MatiereNiveau ${workflow.entiteId} → ${ent.statut}`);
+                    break;
+                }
+                case 'AffectationEleve': {
+                    const { AffectationEleve, StatutAffectationEleve } = await import('@modules/classes/entities/affectation-eleve.entity');
+                    const repo = AppDataSource.getRepository(AffectationEleve);
+                    const ent = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!ent || ent.statut !== StatutAffectationEleve.EN_ATTENTE_VALIDATION) return;
+                    ent.statut = approuve ? StatutAffectationEleve.ACTIVE : StatutAffectationEleve.INACTIVE;
+                    await repo.save(ent);
+                    logger.info(`[ValidationWorkflow] AffectationEleve ${workflow.entiteId} → ${ent.statut}`);
+                    break;
+                }
+                case 'ClasseAnnee': {
+                    const { ClasseAnnee, StatutClasseAnnee } = await import('@modules/classes/entities/classe-annee.entity');
+                    const repo = AppDataSource.getRepository(ClasseAnnee);
+                    const ent = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!ent || ent.statut !== StatutClasseAnnee.EN_ATTENTE_VALIDATION) return;
+                    ent.statut = approuve ? StatutClasseAnnee.ACTIVE : StatutClasseAnnee.INACTIVE;
+                    await repo.save(ent);
+                    logger.info(`[ValidationWorkflow] ClasseAnnee ${workflow.entiteId} → ${ent.statut}`);
+                    break;
+                }
+                case 'CarteScolaire': {
+                    const { Carte, StatutCarte } = await import('@modules/cartes/entities/carte.entity');
+                    const repo = AppDataSource.getRepository(Carte);
+                    const ent = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!ent || ent.statut !== StatutCarte.EN_ATTENTE_VALIDATION) return;
+                    ent.statut = approuve ? StatutCarte.ACTIVE : StatutCarte.INACTIVE;
+                    await repo.save(ent);
+                    logger.info(`[ValidationWorkflow] CarteScolaire ${workflow.entiteId} → ${ent.statut}`);
+                    break;
+                }
+                case 'InscriptionCantine': {
+                    const { InscriptionCantine, StatutInscriptionCantine } = await import('@modules/cantine/entities/cantine.entity');
+                    const repo = AppDataSource.getRepository(InscriptionCantine);
+                    const ent = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!ent || ent.statut !== StatutInscriptionCantine.EN_ATTENTE_VALIDATION) return;
+                    ent.statut = approuve ? StatutInscriptionCantine.ACTIVE : StatutInscriptionCantine.RESILIEE;
+                    await repo.save(ent);
+                    logger.info(`[ValidationWorkflow] InscriptionCantine ${workflow.entiteId} → ${ent.statut}`);
+                    break;
+                }
+                case 'Etablissement': {
+                    const { Etablissement, StatutEtablissement } = await import('@modules/etablissement/entities/etablissement.entity');
+                    const repo = AppDataSource.getRepository(Etablissement);
+                    const ent = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!ent || ent.statut !== StatutEtablissement.EN_ATTENTE_VALIDATION) return;
+                    ent.statut = approuve ? StatutEtablissement.ACTIF : StatutEtablissement.INACTIF;
+                    await repo.save(ent);
+                    logger.info(`[ValidationWorkflow] Etablissement ${workflow.entiteId} → ${ent.statut}`);
+                    break;
+                }
+                case 'Club': {
+                    const { Club, StatutClub } = await import('@modules/clubs/entities/club.entity');
+                    const repo = AppDataSource.getRepository(Club);
+                    const ent = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!ent || ent.statut !== StatutClub.EN_ATTENTE_VALIDATION) return;
+                    ent.statut = approuve ? StatutClub.ACTIF : StatutClub.INACTIF;
+                    await repo.save(ent);
+                    logger.info(`[ValidationWorkflow] Club ${workflow.entiteId} → ${ent.statut}`);
+                    break;
+                }
+                case 'Eleve': {
+                    const { Eleve, StatutEleve } = await import('@modules/eleves/entities/eleve.entity');
+                    const repo = AppDataSource.getRepository(Eleve);
+                    const ent = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!ent || ent.statut !== StatutEleve.EN_ATTENTE_VALIDATION) return;
+                    if (approuve) {
+                        ent.statut = StatutEleve.ACTIF;
+                        await repo.save(ent);
+                    }
+                    logger.info(`[ValidationWorkflow] Eleve ${workflow.entiteId} → ${approuve ? 'ACTIF' : 'rejété (statut inchangé)'}`);
+                    break;
+                }
+                case 'Materiel': {
+                    const { Materiel, StatutMateriel } = await import('@modules/materiel/entities/materiel.entity');
+                    const repo = AppDataSource.getRepository(Materiel);
+                    const ent = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!ent || ent.statut !== StatutMateriel.EN_ATTENTE_VALIDATION) return;
+                    ent.statut = approuve ? StatutMateriel.DISPONIBLE : StatutMateriel.INDISPONIBLE;
+                    await repo.save(ent);
+                    logger.info(`[ValidationWorkflow] Materiel ${workflow.entiteId} → ${ent.statut}`);
+                    break;
+                }
+                case 'PretMateriel': {
+                    const { PretMateriel, StatutPretMateriel } = await import('@modules/materiel/entities/materiel.entity');
+                    const repo = AppDataSource.getRepository(PretMateriel);
+                    const ent = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!ent || ent.statut !== StatutPretMateriel.EN_ATTENTE_VALIDATION) return;
+                    ent.statut = approuve ? StatutPretMateriel.EN_COURS : StatutPretMateriel.REFUSE;
+                    await repo.save(ent);
+                    logger.info(`[ValidationWorkflow] PretMateriel ${workflow.entiteId} → ${ent.statut}`);
+                    break;
+                }
+                case 'Note': {
+                    const { Note, StatutNote } = await import('@modules/notes/entities/note.entity');
+                    const repo = AppDataSource.getRepository(Note);
+                    const ent = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!ent || ent.statut !== StatutNote.BROUILLON) return;
+                    if (approuve) {
+                        ent.statut = StatutNote.VALIDEE;
+                        await repo.save(ent);
+                    }
+                    logger.info(`[ValidationWorkflow] Note ${workflow.entiteId} → ${approuve ? 'VALIDEE' : 'rejétée (brouillon)'}`);
+                    break;
+                }
+                case 'SanctionEleve': {
+                    const { SanctionEleve, StatutSanction } = await import('@modules/suivi-eleves/entities/sanction-eleve.entity');
+                    const repo = AppDataSource.getRepository(SanctionEleve);
+                    const ent = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!ent || ent.statut !== StatutSanction.EN_ATTENTE_VALIDATION) return;
+                    ent.statut = approuve ? StatutSanction.VALIDEE : StatutSanction.ANNULEE;
+                    await repo.save(ent);
+                    logger.info(`[ValidationWorkflow] SanctionEleve ${workflow.entiteId} → ${ent.statut}`);
+                    break;
+                }
+                default:
+                    break;
+            }
+        } catch (error) {
+            logger.warn(
+                `[ValidationWorkflow] Échec application effet sur ${workflow.entiteType} ${workflow.entiteId} (non bloquant)`,
+                error
+            );
+        }
     }
 
     /**
@@ -422,6 +636,23 @@ export class ValidationWorkflowService {
      * Validations en attente pour un rôle donné
      */
     async getValidationsEnAttente(role: string, etablissementId?: string, limit = 20): Promise<WorkflowValidation[]> {
+        // Trouver les modules et niveaux où ce rôle est assigné
+        const modules = ['notes', 'bulletins', 'cantine', 'transport', 'requetes', 'classes', 'matieres', 'periodes', 'eleves', 'personnel', 'clubs', 'materiel', 'cartes', 'annees_scolaires', 'etablissement'];
+        const filters: Array<{ module: string; niveau: number }> = [];
+
+        for (const module of modules) {
+            const rolesConfig = await this.getRolesConfig(module, etablissementId);
+            for (const [niveauStr, roleConfig] of Object.entries(rolesConfig)) {
+                if (roleConfig === role) {
+                    filters.push({ module, niveau: parseInt(niveauStr) });
+                }
+            }
+        }
+
+        if (filters.length === 0) {
+            return [];
+        }
+
         const qb = this.workflowRepo.createQueryBuilder('w')
             .where('w.statut = :statut', { statut: StatutWorkflow.EN_COURS })
             .orderBy('w.createdAt', 'ASC')
@@ -430,6 +661,16 @@ export class ValidationWorkflowService {
         if (etablissementId) {
             qb.andWhere('w.etablissementId = :etablissementId', { etablissementId });
         }
+
+        // Filtrer par module ET niveau correspondant au rôle
+        qb.andWhere(
+            filters.map((f, i) => `(w.module = :module${i} AND w.niveauActuel = :niveau${i})`).join(' OR '),
+            filters.reduce((acc, f, i) => {
+                acc[`module${i}`] = f.module;
+                acc[`niveau${i}`] = f.niveau;
+                return acc;
+            }, {} as Record<string, string | number>)
+        );
 
         return qb.getMany();
     }

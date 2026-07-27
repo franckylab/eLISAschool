@@ -161,7 +161,12 @@ frontend/
 │   │   ├── validators.ts         # Schémas Zod partagés
 │   │   ├── pdf-generator.ts      # Génération PDF
 │   │   ├── image-compressor.ts   # Compression images
-│   │   └── qr-utils.ts           # Utilitaires QR code
+│   │   ├── qr-utils.ts           # Utilitaires QR code
+│   │   └── export/               # Utilitaires d'export partagés (multi-module)
+│   │       ├── index.ts          # Barrel export
+│   │       ├── css-var-resolver.ts   # resolveCssVar, normaliserCouleurHex
+│   │       ├── dom-stabilisation.ts  # attendreStabilisationDom (MutationObserver)
+│   │       └── tuiles.ts         # calculerGrilleTuiles, decouperTuile (à extraire)
 │   ├── stores/                   # Stores Zustand globaux
 │   │   ├── auth.store.ts
 │   │   ├── theme.store.ts
@@ -2327,6 +2332,195 @@ function NotFoundPage() {
 ### Permissions
 - Toujours granulaires : `module:section:read|write|delete`. Ne jamais utiliser une permission grossière type `module:edit`.
 - **Rôles consultation** (ENSEIGNANT, ELEVE, PARENT) : attribuer UNIQUEMENT la permission de la vue publique du module (ex : `organisation:organigramme:read`), jamais les autres sections. La sidebar filtre les sous-menus par permission — un rôle consultation ne voit que l'entrée autorisée.
+
+---
+
+## 31.10 Pattern Header Intégré avec Onglets Glass (pages immersives)
+
+**Référence** : `OrganigrammePage.tsx` — header gradient avec onglets de mode de vue intégrés.
+
+### Quand utiliser ce pattern
+- Pages **immersives** où les onglets font partie de l'identité visuelle (modes de vue, filtres visuels).
+- **NE PAS** utiliser pour les pages CRUD standard → utiliser `PageHeader variant="gradient"` + `TabsBar` classique.
+
+### Structure
+```tsx
+<div className="relative overflow-hidden rounded-2xl" style={{
+    background: 'linear-gradient(135deg, var(--color-dominant-600), var(--color-dominant-800))',
+    padding: 'clamp(1rem, 0.8rem + 1vw, 1.5rem) clamp(1.25rem, 1rem + 1.2vw, 2rem)',
+}}>
+    {/* Watermark icône */}
+    <div className="absolute -right-6 -top-6 pointer-events-none select-none" aria-hidden>
+        <Icon className="text-white/[0.07]" style={{ width: 'clamp(8rem, 15vw, 14rem)', height: 'clamp(8rem, 15vw, 14rem)' }} />
+    </div>
+    {/* Breadcrumbs inversés */}
+    <Breadcrumbs currentLabel={titre} inverted />
+    {/* Contenu : titre + onglets */}
+    <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        {/* Titre avec icône glass */}
+        <div className="flex items-center gap-3">
+            <div className="rounded-2xl flex items-center justify-center shrink-0"
+                 style={{ width: 'clamp(2.5rem,2rem+1.5vw,3.5rem)', height: 'clamp(2.5rem,2rem+1.5vw,3.5rem)',
+                          backgroundColor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
+                <Icon className="text-white" style={{ width: 'clamp(1.25rem,1rem+0.8vw,1.75rem)' }} />
+            </div>
+            <div>
+                <h1 className="text-white font-bold" style={{ fontSize: 'clamp(1.125rem, 1rem + 0.5vw, 1.5rem)' }}>...</h1>
+                <p className="text-white/70" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>...</p>
+            </div>
+        </div>
+        {/* Onglets glass (desktop) / select natif (mobile < 480px) */}
+        {!isMobile ? (
+            <div role="tablist" style={{
+                backgroundColor: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255,255,255,0.15)', borderRadius: 'clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem)',
+                padding: 'clamp(0.25rem, 0.2rem + 0.15vw, 0.375rem)',
+            }}>
+                {vues.map(v => (
+                    <button key={v.id} role="tab" aria-selected={isActive}
+                        style={{
+                            backgroundColor: isActive ? 'rgba(255,255,255,0.28)' : 'transparent',
+                            color: 'white', opacity: isActive ? 1 : 0.7,
+                            borderRadius: 'clamp(0.375rem, 0.3rem + 0.2vw, 0.5rem)',
+                        }}>
+                        <Icon />{v.label}
+                    </button>
+                ))}
+            </div>
+        ) : (
+            <select value={vueActive} onChange={...} style={{
+                backgroundColor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)',
+                color: 'white', border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: 'clamp(0.375rem, 0.3rem + 0.2vw, 0.5rem)',
+            }}>
+                {vues.map(v => <option key={v.id} value={v.id} style={{ color: '#1a1a1a' }}>{v.label}</option>)}
+            </select>
+        )}
+    </div>
+</div>
+```
+
+### Règles
+- **Glass-morphism** : `rgba(255,255,255,0.12)` + `backdrop-filter: blur(12px)` + bordure `rgba(255,255,255,0.15)`.
+- **Mobile < 480px** : `<select>` natif stylé glass (meilleur tactile que des pills).
+- **Breadcrumbs** : prop `inverted` pour texte blanc sur fond gradient.
+- **Watermark** : icône du module en `text-white/[0.07]`, positionnée `-right-6 -top-6`.
+- **NE PAS** utiliser `PageHeader` pour ce pattern (le prop `actions` applique `gradientActionStyle()` qui cascade sur les enfants).
+
+---
+
+## 31.11 Pattern ReactFlow Controls Panel (boutons d'action flottants)
+
+**Référence** : `OrganigrammeFlowView.tsx` — boutons custom dans le panneau de contrôles ReactFlow.
+
+### Ajout de boutons custom dans `<Controls>`
+```tsx
+import { Controls, ControlButton } from 'reactflow';
+
+<Controls showInteractive={false} className="!border-[var(--color-bordure)] !bg-[var(--color-surface)]">
+    {/* Boutons standard (zoom in/out/fit) */}
+    {/* Boutons custom */}
+    <ControlButton onClick={handleToggleFullscreen} title={t('pleinEcran')}>
+        {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+    </ControlButton>
+    <ControlButton onClick={onToggleRelations} title={t('afficherRelations')}
+        style={showRelations ? { backgroundColor: 'var(--color-dominant-600)', color: '#fff' } : undefined}>
+        <Link2 className="w-4 h-4" />
+    </ControlButton>
+    <ControlButton onClick={onExport} title={t('exporter')}>
+        <Download className="w-4 h-4" />
+    </ControlButton>
+</Controls>
+```
+
+### Communication Controls ↔ Toolbar (ExportDialog)
+- L'`ExportDialog` vit dans le **toolbar** (pas dans le FlowView).
+- Le bouton export dans les contrôles dispatche un événement custom :
+  ```typescript
+  window.dispatchEvent(new CustomEvent('organigramme:toolbar-command', { detail: { command: 'export' } }));
+  ```
+- Le toolbar écoute cet événement et ouvre le dialog.
+- **Avantage** : pas de duplication de state, pas de prop drilling.
+
+### Fullscreen API
+```typescript
+const [isFullscreen, setIsFullscreen] = useState(false);
+useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+}, []);
+
+const handleToggleFullscreen = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) document.exitFullscreen();
+    else el.requestFullscreen();
+}, []);
+```
+
+---
+
+## 31.12 Pattern BaseEdge — Edges ReactFlow unifiés (organigramme)
+
+**Référence** : `features/organisation/components/organigramme/edges/BaseEdge.tsx`
+
+### Quand utiliser ce pattern
+- Plusieurs types d'edges partagent le même routing (smoothstep), hit-testing, et tooltip.
+- **NE PAS** créer un composant BaseEdge pour un seul type d'edge.
+
+### Architecture
+```typescript
+// Constantes de routing (offset progressif anti-chevauchement)
+export const EDGE_ROUTING = {
+    hierarchie: { offset: 6, borderRadius: 10 },
+    direct: { offset: 14, borderRadius: 10 },
+    fonctionnel: { offset: 24, borderRadius: 10 },
+} as const;
+
+// Styles visuels unifiés
+export const EDGE_STYLE = {
+    strokeWidth: 2.5,
+    strokeWidthHover: 3.5,
+    opacity: 1.0,
+    markerSize: 15,
+    transition: 'stroke 0.2s ease, stroke-width 0.2s ease, opacity 0.2s ease',
+} as const;
+```
+
+### Composants partagés
+- **`useBaseEdge(config)`** : hook — calcule `getSmoothStepPath`, gère hover, retourne `{ edgePath, labelX, labelY, isHovered, handlers }`.
+- **`EdgeShell`** : composant — hit-testing transparent (16px) + path visible + transitions. Accepte `children` pour badge/tooltip.
+- **`EdgeTooltip`** : tooltip unifié — position `above` (hiérarchie) ou `below` (badge relation).
+
+### Stratégie anti-chevauchement — 5 couches de défense
+1. **dagre `edgesep` (20px)** : sépare les edges aux bornes des noeuds (anti-congestion fan-out).
+2. **dagre `nodesep`/`ranksep`** : TB 80/120, LR 100/140 — espace suffisant entre noeuds pour le routing des relation edges.
+3. **`EDGE_ROUTING` offset progressif** (6/14/24) : gap min 8px entre types adjacents → edges parallèles même paire jamais superposés.
+4. **zIndex layering** : hiérarchie=0, DIRECT=1, FONCTIONNEL=2 → l'overlay le plus important est au-dessus.
+5. **Hit-testing 16px** : zone de clic élargie même si edges visuellement proches.
+
+### Constantes layout exportées
+```typescript
+// utils/layout.ts — single source of truth pour le spacing dagre
+export const LAYOUT_SPACING = {
+    TB: { nodesep: 80, ranksep: 120, edgesep: 20 },
+    LR: { nodesep: 100, ranksep: 140, edgesep: 20 },
+} as const;
+```
+
+### Règles
+- **Marker unifié** : `EDGE_STYLE.markerSize` (15×15) pour tous les types — importé dans `use-organigramme-flow.ts`.
+- **NE PAS** modifier `NODE_WIDTH` sans vérifier la largeur render du `UniteNode` (actuellement 220px).
+- **NE PAS** réduire les offsets en dessous de 6/14/24 sans audit visuel.
+
+### Fichiers
+- `edges/BaseEdge.tsx` — hook + composants partagés + constantes + documentation anti-chevauchement
+- `edges/HierarchieEdge.types.ts` — type extrait (évite imports circulaires)
+- `edges/HierarchieEdge.tsx` — utilise BaseEdge (v5.0)
+- `edges/RelationEdge.tsx` — utilise BaseEdge (v4.0)
+- `utils/layout.ts` — dagre layout + `LAYOUT_SPACING` exporté + `NODE_WIDTH` aligné sur render
+- `hooks/use-organigramme-flow.ts` — importe `EDGE_STYLE` pour markers
 
 ---
 

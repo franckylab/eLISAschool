@@ -4,7 +4,7 @@
  * ==================================
  */
 
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
 import { Eleve, StatutEleve } from '../entities';
@@ -32,7 +32,7 @@ export class ElevesService {
     async create(dto: CreateEleveDto, etablissementId?: string, req?: Request): Promise<Eleve> {
         // OPTIMISATION : Vérifications en parallèle
         const [existing, userUsed] = await Promise.all([
-            this.repo.findOne({ where: { matricule: dto.matricule } }),
+            this.repo.findOne({ where: { matricule: dto.matricule, ...(etablissementId && { etablissementId }) } }),
             this.repo.findOne({ where: { utilisateurId: dto.utilisateurId } }),
         ]);
 
@@ -136,8 +136,11 @@ export class ElevesService {
         return paginateWithQueryBuilder(qb, page, limit, false);
     }
 
-    async findOne(id: string): Promise<Eleve> {
-        const eleve = await this.repo.findOne({ where: { id }, relations: ['utilisateur'] });
+    async findOne(id: string, etablissementId?: string): Promise<Eleve> {
+        const where: any = { id };
+        if (etablissementId) where.etablissementId = etablissementId;
+
+        const eleve = await this.repo.findOne({ where, relations: ['utilisateur'] });
         if (!eleve) throw new AppError('Élève non trouvé', 404, 'NOT_FOUND');
         return eleve;
     }
@@ -146,8 +149,8 @@ export class ElevesService {
         return this.repo.findOne({ where: { utilisateurId: userId } });
     }
 
-    async update(id: string, dto: UpdateEleveDto, req?: Request): Promise<Eleve> {
-        const eleve = await this.findOne(id);
+    async update(id: string, dto: UpdateEleveDto, etablissementId?: string, req?: Request): Promise<Eleve> {
+        const eleve = await this.findOne(id, etablissementId);
         const anciennesValeurs = {
             matricule: eleve.matricule,
             nomTuteur: eleve.nomTuteur,
@@ -177,9 +180,9 @@ export class ElevesService {
         return eleve;
     }
 
-    async delete(id: string, req?: Request): Promise<void> {
-        const eleve = await this.findOne(id);
-        await this.repo.remove(eleve);
+    async delete(id: string, etablissementId?: string, req?: Request): Promise<void> {
+        const eleve = await this.findOne(id, etablissementId);
+        await this.repo.softRemove(eleve);
         
         // Audit
         if (req?.utilisateur?.id) {
@@ -188,14 +191,39 @@ export class ElevesService {
                 action: AuditAction.ELEVE_DELETE,
                 cible: 'Eleve',
                 cibleId: id,
-                description: `Suppression dossier élève: ${eleve.matricule}`,
+                description: `Suppression (soft) dossier élève: ${eleve.matricule}`,
                 anciennesValeurs: { matricule: eleve.matricule },
                 module: 'eleves',
                 severity: 'WARNING' as any,
             }, req);
         }
         
-        logger.info(`Dossier élève supprimé: ${id}`);
+        logger.info(`Dossier élève supprimé (soft delete): ${id}`);
+    }
+
+    async restaurer(id: string, etablissementId: string, req?: Request): Promise<Eleve> {
+        const eleve = await this.repo.findOne({
+            where: { id, etablissementId },
+            withDeleted: true,
+        });
+        if (!eleve) throw new AppError('Élève non trouvé', 404, 'NOT_FOUND');
+        if (!eleve.deletedAt) throw new AppError('Cet élève n\'est pas supprimé', 400, 'NON_SUPPRIME');
+
+        await this.repo.restore(id);
+
+        if (req?.utilisateur?.id) {
+            await auditService.log({
+                utilisateurId: req.utilisateur.id,
+                action: AuditAction.ELEVE_RESTORE,
+                cible: 'Eleve',
+                cibleId: id,
+                description: `Restauration dossier élève: ${eleve.matricule}`,
+                module: 'eleves',
+            }, req);
+        }
+
+        logger.info(`Dossier élève restauré: ${id}`);
+        return this.findOne(id, etablissementId);
     }
 
     // ==================================
@@ -483,9 +511,10 @@ export class ElevesService {
         preinscriptionId: string,
         dto: ConvertirPreinscriptionDto,
         personnelId: string,
+        etablissementId?: string,
         req?: Request
     ): Promise<Eleve> {
-        const preinscription = await this.findOne(preinscriptionId);
+        const preinscription = await this.findOne(preinscriptionId, etablissementId);
 
         if (!preinscription.estPreinscription) {
             throw new AppError('Cet élève n\'est pas une préinscription', 400, 'NOT_PREINSCRIPTION');
@@ -563,9 +592,10 @@ export class ElevesService {
         preinscriptionId: string,
         motif: string,
         personnelId: string,
+        etablissementId?: string,
         req?: Request
     ): Promise<Eleve> {
-        const preinscription = await this.findOne(preinscriptionId);
+        const preinscription = await this.findOne(preinscriptionId, etablissementId);
 
         if (!preinscription.estPreinscription) {
             throw new AppError('Cet élève n\'est pas une préinscription', 400, 'NOT_PREINSCRIPTION');
@@ -643,9 +673,10 @@ export class ElevesService {
         eleveId: string,
         documentUrl: string,
         type: string,
+        etablissementId?: string,
         req?: Request
     ): Promise<Eleve> {
-        const eleve = await this.findOne(eleveId);
+        const eleve = await this.findOne(eleveId, etablissementId);
 
         const documents = eleve.documentsJustificatifs || [];
         documents.push({
@@ -816,7 +847,8 @@ export class ElevesService {
      */
     async getClasseActuelle(
         eleveId: string,
-        anneeScolaireId?: string
+        anneeScolaireId?: string,
+        etablissementId?: string
     ): Promise<Classe | null> {
         const affectationRepo = AppDataSource.getRepository(AffectationEleve);
         
@@ -824,7 +856,7 @@ export class ElevesService {
         
         // Si pas d'année spécifiée, trouver l'année en cours de l'établissement
         if (!anneeId) {
-            const eleve = await this.findOne(eleveId);
+            const eleve = await this.findOne(eleveId, etablissementId);
             const anneeRepo = AppDataSource.getRepository(AnneeScolaire);
             const anneeEnCours = await anneeRepo.findOne({
                 where: {

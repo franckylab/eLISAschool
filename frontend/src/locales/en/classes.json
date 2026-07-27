@@ -74,7 +74,10 @@
         "filiere": "Track",
         "systeme": "System information",
         "creeLe": "Created on",
-        "modifieLe": "Modified on"
+        "modifieLe": "Modified on",
+        "edtTitre": "Timetable",
+        "edtDescription": "Timetable visualization",
+        "edtBientot": "Detailed timetable view will be available in a future version."
     },
     "stats": {
         "effectif": "Enrollment",
@@ -89,6 +92,9 @@
         "total": "Total classes",
         "actives": "Active",
         "effectifTotal": "Total enrollment",
+        "effectifCapaciteMax": "Enrollment / Max capacity",
+        "effectifCapaciteSalle": "Enrollment / Room capacity",
+        "utilise": "used",
         "niveaux": "Levels"
     },
     "eleves": {
@@ -177,6 +183,8 @@
         "sallePlaceholder": "E.g.: Room 101",
         "effectifMax": "Maximum enrollment",
         "effectifMaxHint": "Maximum number of students (1-100)",
+        "capaciteSalle": "Room capacity: {{count}} seats",
+        "limiteeParSalle": "Limited by room capacity (max {{max}})",
         "actif": "Active",
         "programme": "Curriculum",
         "selectionnerProgramme": "Select a curriculum"
@@ -198,11 +206,43 @@
         "resumeModele": "Model information",
         "resumeInstance": "Annual configuration",
         "confirmMessage": "Please verify the information before creating the class.",
-        "creerClasse": "Create the class"
+        "creerClasse": "Create the class",
+        "etape": "Step",
+        "verifierModifications": "Review changes before saving"
     },
     "validation": {
         "nomRequis": "Class name is required",
         "niveauRequis": "Level is required",
         "anneeRequise": "School year is required"
+    },
+    "changerSalle": {
+        "titre": "Change main room",
+        "classeLabel": "Class: {{nom}} ({{code}})",
+        "salleActuelle": "Current room",
+        "nouvelleSalle": "New room",
+        "confirmer": "Confirm change",
+        "places": "{{count}} seats",
+        "type": "Type",
+        "equipements": "Equipment"
+    },
+    "hooks": {
+        "succesCreation": "Class created successfully",
+        "erreurCreation": "Error creating class",
+        "succesModification": "Class updated successfully",
+        "erreurModification": "Error updating class",
+        "succesSuppression": "Class deleted successfully",
+        "erreurSuppression": "Error deleting class",
+        "succesAffectation": "Student assigned successfully",
+        "erreurAffectation": "Error assigning student",
+        "succesReconciliation": "Enrollment reconciled: {{ancien}} → {{nouveau}}",
+        "effectifDejaCoherent": "Enrollment already consistent",
+        "erreurReconciliation": "Error reconciling enrollment",
+        "succesActivation": "Class activated successfully",
+        "succesDesactivation": "Class deactivated successfully",
+        "erreurChangementStatut": "Error changing status",
+        "reponseInvalide": "Invalid API response",
+        "classeNonTrouvee": "Class not found",
+        "statsNonDisponibles": "Statistics unavailable",
+        "aucuneClasse": "No classes available"
     }
 }

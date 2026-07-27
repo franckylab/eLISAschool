@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useCreerTypeContrat, useModifierTypeContrat, useTypesContrat } from '../hooks/use-contrats';
-import type { TypeContratPersonnalise } from '../types/contrat.types';
+import type { ModeRemuneration } from '../types/contrat.types';
 
 interface TypeContratModalProps {
     open: boolean;
@@ -16,7 +16,7 @@ const FORM_INIT = {
     nom: '',
     description: '',
     categorie: '',
-    modeRemuneration: 'MENSUEL' as string,
+    modeRemuneration: 'MENSUEL' as ModeRemuneration,
     ordre: 0,
     renouvellementAutoDefaut: false,
     dureeMaxMois: undefined as number | undefined,
@@ -31,11 +31,7 @@ export function TypeContratModal({ open, onOpenChange, typeContratId }: TypeCont
     const creer = useCreerTypeContrat();
     const modifier = useModifierTypeContrat();
 
-    const typeExistant = typeContratId
-        ? (types as any)?.items
-            ? (types as any).items.find((tc: TypeContratPersonnalise) => tc.id === typeContratId)
-            : (types as TypeContratPersonnalise[])?.find((tc: TypeContratPersonnalise) => tc.id === typeContratId)
-        : undefined;
+    const typeExistant = typeContratId ? types?.find((tc) => tc.id === typeContratId) : undefined;
 
     useEffect(() => {
         if (typeExistant) {
@@ -62,7 +58,7 @@ export function TypeContratModal({ open, onOpenChange, typeContratId }: TypeCont
         }
     }, [open]);
 
-    const handleChange = (field: string, value: any) => {
+    const handleChange = (field: string, value: string | number | boolean | undefined) => {
         setForm((prev) => ({ ...prev, [field]: value }));
         setHasUnsavedChanges(true);
     };
@@ -102,7 +98,7 @@ export function TypeContratModal({ open, onOpenChange, typeContratId }: TypeCont
                         <input
                             value={form.code}
                             onChange={(e) => handleChange('code', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+                            className="w-full rounded-lg border border-border bg-card text-foreground px-3 py-2 text-sm"
                         />
                     </div>
                     <div>
@@ -110,7 +106,7 @@ export function TypeContratModal({ open, onOpenChange, typeContratId }: TypeCont
                         <input
                             value={form.nom}
                             onChange={(e) => handleChange('nom', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+                            className="w-full rounded-lg border border-border bg-card text-foreground px-3 py-2 text-sm"
                         />
                     </div>
                 </div>
@@ -120,7 +116,7 @@ export function TypeContratModal({ open, onOpenChange, typeContratId }: TypeCont
                         value={form.description}
                         onChange={(e) => handleChange('description', e.target.value)}
                         rows={3}
-                        className="w-full rounded-lg border border-gray-300 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+                        className="w-full rounded-lg border border-border bg-card text-foreground px-3 py-2 text-sm"
                     />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -129,7 +125,7 @@ export function TypeContratModal({ open, onOpenChange, typeContratId }: TypeCont
                         <input
                             value={form.categorie}
                             onChange={(e) => handleChange('categorie', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+                            className="w-full rounded-lg border border-border bg-card text-foreground px-3 py-2 text-sm"
                         />
                     </div>
                     <div>
@@ -137,7 +133,7 @@ export function TypeContratModal({ open, onOpenChange, typeContratId }: TypeCont
                         <select
                             value={form.modeRemuneration}
                             onChange={(e) => handleChange('modeRemuneration', e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+                            className="w-full rounded-lg border border-border bg-card text-foreground px-3 py-2 text-sm"
                         >
                             <option value="MENSUEL">MENSUEL</option>
                             <option value="HORAIRE">HORAIRE</option>
@@ -153,7 +149,7 @@ export function TypeContratModal({ open, onOpenChange, typeContratId }: TypeCont
                             type="number"
                             value={form.ordre}
                             onChange={(e) => handleChange('ordre', parseInt(e.target.value) || 0)}
-                            className="w-full rounded-lg border border-gray-300 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+                            className="w-full rounded-lg border border-border bg-card text-foreground px-3 py-2 text-sm"
                         />
                     </div>
                     <div>
@@ -162,7 +158,7 @@ export function TypeContratModal({ open, onOpenChange, typeContratId }: TypeCont
                             type="number"
                             value={form.dureeMaxMois ?? ''}
                             onChange={(e) => handleChange('dureeMaxMois', e.target.value ? parseInt(e.target.value) : undefined)}
-                            className="w-full rounded-lg border border-gray-300 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100 px-3 py-2 text-sm"
+                            className="w-full rounded-lg border border-border bg-card text-foreground px-3 py-2 text-sm"
                         />
                     </div>
                 </div>
@@ -172,7 +168,7 @@ export function TypeContratModal({ open, onOpenChange, typeContratId }: TypeCont
                         id="renouvellementAutoDefaut"
                         checked={form.renouvellementAutoDefaut}
                         onChange={(e) => handleChange('renouvellementAutoDefaut', e.target.checked)}
-                        className="rounded border-gray-300"
+                        className="rounded border-border"
                     />
                     <label htmlFor="renouvellementAutoDefaut" className="text-sm font-medium">
                         {t('typeContrat.renouvellementAutoDefaut')}

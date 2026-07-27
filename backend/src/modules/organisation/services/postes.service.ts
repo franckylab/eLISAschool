@@ -140,6 +140,17 @@ export class PostesService {
 
     async update(id: string, dto: UpdatePosteDto, etablissementId?: string): Promise<Poste> {
         const poste = await this.findById(id, etablissementId);
+
+        // Vérifier que la nouvelle unité cible appartient à l'établissement
+        if (etablissementId && dto.uniteOrganisationnelleId && dto.uniteOrganisationnelleId !== poste.uniteOrganisationnelleId) {
+            const unite = await AppDataSource.getRepository('UniteOrganisationnelle').findOne({
+                where: { id: dto.uniteOrganisationnelleId, etablissementId },
+            });
+            if (!unite) {
+                throw new AppError('Unité organisationnelle non trouvée dans votre établissement', 404, 'UNITE_NOT_FOUND');
+            }
+        }
+
         Object.assign(poste, dto);
 
         const updated = await this.posteRepo.save(poste);

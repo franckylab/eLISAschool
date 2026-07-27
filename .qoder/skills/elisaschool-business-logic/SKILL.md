@@ -264,6 +264,28 @@ Une seule table `hierarchie_personnel`, **deux types de relations mutuellement e
 
 ---
 
+## Domaine 12 : RH — Contrats, Personnel, Paie (v1.0 — 2026-07)
+
+### Règles métier consolidées (mandat grill-me RH)
+
+- **Workflow de validation effectif** : les créations RH soumises à validation passent par `validationWorkflowService` avec **dispatch réel sur l'entité** à l'approbation finale (le statut de l'entité change, pas seulement celui du workflow).
+- **Multi-occupants unifié** : la capacité d'un poste est `nombrePostes` ; les occupants sont comptés via les affectations actives (helper partagé). Ne jamais dériver l'occupation autrement.
+- **Soft delete complet** : MembrePersonnel, ContratPersonnel et entités paie utilisent `@DeleteDateColumn()`. Les suppressions RH sont récupérables ; les requêtes excluent les soft-deleted par défaut.
+- **Type de contrat** : chaîne dynamique adossée à `TypeContratPersonnalise` (nomenclature) — **pas d'enum figé**. Libellés frontend via helpers `labelTypeContrat()` / `labelMode()`.
+- **Mode de rémunération** : FK uuid vers `ModeRemunerationEntity` (source unique, voir Domaine 11).
+- **Chemin matérialisé `Fonction.chemin`** : convention unique = segments **ids**, séparateur **`.`** (`parentChemin.id`). Le seed `seed-organisation.ts` et `fonctions.service.ts` sont alignés ; le seed réaligne les chemins obsolètes (ancien format `parentId/CODE`).
+- **Migration 029 (paie étendue)** : réécrite v3.0 — FK vers `bulletins_paie` (la table `bulletin_paies` n'existe pas), colonnes camelCase quotées alignées entités, unicité composite `(code, "etablissementId")` multi-tenant, seeds SQL supprimés (gérés par `seed-cotisations.ts` / `seed-types-primes.ts` par établissement). Bloc DO $$ de rattrapage pour les bases v2 snake_case.
+- **RBAC personnel** : routes protégées par permissions granulaires ; les routes multi-usages utilisent `requireAnyPermission(...)` (jamais un guard unique trop large).
+
+### À ne pas faire
+
+- Ne **pas** réintroduire d'enum figé pour `typeContrat` (nomenclature dynamique).
+- Ne **pas** insérer de seeds SQL de nomenclatures paie sans `etablissementId` (NOT NULL multi-tenant).
+- Ne **pas** construire `Fonction.chemin` avec des codes ou le séparateur `/`.
+- Ne **pas** hard-deleter du personnel/contrats/paie — toujours soft delete.
+
+---
+
 ## Domaine 1 : Chaîne académique (calcul notes → bulletins)
 
 ### Flux de données complet

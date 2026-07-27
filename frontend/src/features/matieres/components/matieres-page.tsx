@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Plus, Edit, Trash2, Eye, Globe, BookOpen, TrendingUp, Filter } from 'lucide-react';
 import { useMatieres, useSupprimerMatiere, useCreerMatiere, useModifierMatiere } from '../hooks/use-matieres';
@@ -14,11 +15,23 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useConfirmation } from '@/components/ui/ConfirmationModal';
 import { usePermissions } from '@/hooks';
-import type { Matiere, MatiereFiltres } from '../types/matiere.types';
+import type { Matiere, MatiereFiltres, CreerMatiereDto, SousSysteme } from '../types/matiere.types';
 import type { Column } from '@/components/ui/DataTable';
+
+const SOUS_SYSTEME_STYLES: Record<string, string> = {
+    FRANCOPHONE: 'bg-info/10 text-info',
+    ANGLOPHONE: 'bg-success/10 text-success',
+    BICULTUREL: 'bg-purple/10 text-purple',
+};
+
+const STATUT_STYLES: Record<string, string> = {
+    actif: 'bg-success/10 text-success',
+    inactif: 'bg-muted text-muted-foreground',
+};
 
 export function MatieresPage() {
     const { t } = useTranslation('matieres');
+    const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<MatiereFiltres>({ page: 1, limit: 50 });
     const [formOpen, setFormOpen] = useState(false);
@@ -35,18 +48,16 @@ export function MatieresPage() {
         const total = data?.meta?.totalItems || 0;
         const countFR = items.filter(m => m.sousSysteme === 'FRANCOPHONE').length;
         const countAN = items.filter(m => m.sousSysteme === 'ANGLOPHONE').length;
-        const countBI = items.filter(m => m.sousSysteme === 'BICULTUREL').length;
         const countCO = items.filter(m => !m.sousSysteme).length;
         const countActif = items.filter(m => m.actif).length;
-        const countInactif = items.filter(m => !m.actif).length;
-        return { total, countFR, countAN, countBI, countCO, countActif, countInactif };
+        return { total, countFR, countAN, countCO, countActif };
     }, [data]);
 
-    const handleSave = async (data: any) => {
+    const handleSave = async (formData: CreerMatiereDto) => {
         if (matiereToEdit) {
-            await modifier.mutateAsync({ id: matiereToEdit.id, ...data });
+            await modifier.mutateAsync({ id: matiereToEdit.id, ...formData });
         } else {
-            await creer.mutateAsync(data);
+            await creer.mutateAsync(formData);
         }
         setFormOpen(false);
         setMatiereToEdit(null);
@@ -89,13 +100,13 @@ export function MatieresPage() {
             sortable: true,
             render: (m) => (
                 <button
-                    onClick={() => window.location.href = `/matieres/${m.id}`}
+                    onClick={() => navigate({ to: '/matieres/$id', params: { id: m.id } })}
                     className="hover:underline cursor-pointer text-left"
                 >
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: m.couleur }} />
                         <p className="font-medium">{m.nom}</p>
-                        {m.nomAnglais && <span className="text-xs text-gray-400 dark:text-gray-100">({m.nomAnglais})</span>}
+                        {m.nomAnglais && <span className="text-xs text-muted-foreground">({m.nomAnglais})</span>}
                     </div>
                 </button>
             ),
@@ -107,10 +118,8 @@ export function MatieresPage() {
             className: 'text-center',
             render: (m) => (
                 <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                    !m.sousSysteme ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400' :
-                    m.sousSysteme === 'FRANCOPHONE' ? 'bg-blue-100 text-blue-700' :
-                    m.sousSysteme === 'ANGLOPHONE' ? 'bg-green-100 text-green-700' :
-                    'bg-purple-100 text-purple-700'
+                    !m.sousSysteme ? 'bg-muted text-muted-foreground' :
+                    SOUS_SYSTEME_STYLES[m.sousSysteme] || 'bg-muted text-muted-foreground'
                 }`}>
                     {sousSystemeLabel(m.sousSysteme)}
                 </span>
@@ -122,7 +131,7 @@ export function MatieresPage() {
             sortable: true,
             className: 'text-center',
             render: (m) => (
-                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${m.actif ? 'bg-green-100 text-green-800' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'}`}>
+                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${m.actif ? STATUT_STYLES.actif : STATUT_STYLES.inactif}`}>
                     {m.actif ? t('statutActif') : t('statutInactif')}
                 </span>
             ),
@@ -135,8 +144,8 @@ export function MatieresPage() {
                 {
                     key: 'voir',
                     icon: Eye,
-                    label: 'Voir détails',
-                    onClick: () => window.location.href = `/matieres/${m.id}`,
+                    label: t('voirDetails'),
+                    onClick: () => navigate({ to: '/matieres/$id', params: { id: m.id } }),
                     variant: 'info' as const,
                 },
                 {
@@ -211,7 +220,7 @@ export function MatieresPage() {
                         <Filter className="h-4 w-4 text-muted-foreground" />
                         <ElisaSelect
                             value={filtres.sousSysteme || ''}
-                            onValueChange={(value) => setFiltres(prev => ({ ...prev, sousSysteme: value as any, page: 1 }))}
+                            onValueChange={(value) => setFiltres(prev => ({ ...prev, sousSysteme: (value || '') as SousSysteme | '', page: 1 }))}
                             options={sousSystemeOptions}
                             className="min-w-[160px]"
                         />
@@ -234,7 +243,7 @@ export function MatieresPage() {
                     data={data?.items || []}
                     columns={colonnes}
                     isLoading={isLoading}
-                isFetching={isFetching}
+                    isFetching={isFetching}
                     enableReordering
                     enablePinning
                     enableColumnVisibility

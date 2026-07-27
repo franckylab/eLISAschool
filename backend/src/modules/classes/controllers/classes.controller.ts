@@ -6,6 +6,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { ClassesService } from '../services';
+import { classesAnneesService } from '../services/classes-annees.service';
 import { createClasseSchema, updateClasseSchema, affecterEleveSchema } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
@@ -154,6 +155,23 @@ router.post('/:id/activer', authMiddleware, requirePermission('classes:edit'), a
         }
         const classe = await service.toggleActif(req.params.id, actif, req.etablissementId);
         res.json({ success: true, data: classe });
+    } catch (error) { next(error); }
+});
+
+/**
+ * @route   POST /api/classes/:id/promouvoir
+ * @desc    Promouvoir une classe année : crée N+1 et réaffecte les élèves actifs
+ * @access  Authentifié avec permission classes:edit
+ * @param   id - ID de la ClasseAnnee source
+ */
+router.post('/:id/promouvoir', authMiddleware, requirePermission('classes:edit'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const resultat = await classesAnneesService.promouvoirClasse(req.params.id, req.etablissementId!);
+        res.json({
+            success: true,
+            data: resultat,
+            message: `${resultat.elevesPromus} élève(s) promu(s)`,
+        });
     } catch (error) { next(error); }
 });
 

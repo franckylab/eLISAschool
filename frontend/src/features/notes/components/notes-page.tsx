@@ -153,7 +153,7 @@ export function NotesPage() {
                     <button
                         type="button"
                         className="font-medium text-left text-foreground hover:text-primary transition-colors"
-                        onClick={() => navigate({ to: '/notes/$id', params: { id: n.id } })}
+                        onClick={() => navigate({ to: '/eleves/$id', params: { id: n.eleve!.id } })}
                     >
                         {n.eleve?.prenom} {n.eleve?.nom}
                     </button>
@@ -167,7 +167,13 @@ export function NotesPage() {
             sortable: true,
             render: (n) => (
                 <div>
-                    <p className="font-medium">{n.matiere?.nom}</p>
+                    <button
+                        type="button"
+                        className="font-medium text-left text-foreground hover:text-primary transition-colors"
+                        onClick={() => navigate({ to: '/matieres/$id', params: { id: n.matiere!.id } })}
+                    >
+                        {n.matiere?.nom}
+                    </button>
                     <p className="text-xs text-muted-foreground">{n.matiere?.code}</p>
                 </div>
             ),
@@ -176,7 +182,17 @@ export function NotesPage() {
             key: 'classe',
             header: t('classe'),
             render: (n) => (
-                <span className="text-sm font-medium">{n.classeAnnee?.classe?.nom ?? '—'}</span>
+                n.classeAnnee?.classe ? (
+                    <button
+                        type="button"
+                        className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                        onClick={() => navigate({ to: '/classes/$id', params: { id: n.classeAnnee!.classe!.id } })}
+                    >
+                        {n.classeAnnee.classe.nom}
+                    </button>
+                ) : (
+                    <span className="text-sm text-muted-foreground">—</span>
+                )
             ),
         },
         {

@@ -1,12 +1,22 @@
+/**
+ * ==================================
+ * eLISAschool - Hook Matières
+ * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
+import { useHandleError } from '@/hooks/use-handle-error';
+import { toast } from 'sonner';
 import type {
     Matiere, CreerMatiereDto, ModifierMatiereDto, MatiereFiltres,
     MatiereNiveau, AffectationMatiere,
 } from '../types/matiere.types';
 import type { ProgrammeMatiere } from '@/features/programmes/types/programme.types';
-import { toast } from 'sonner';
 
 const MATIERES_KEYS = {
     all: ['matieres'] as const,
@@ -25,7 +35,7 @@ export function useMatieres(filtres: MatiereFiltres = {}) {
     return useQuery({
         queryKey: MATIERES_KEYS.liste(filtres),
         queryFn: async () => {
-            const params: Record<string, any> = {
+            const params: Record<string, string | number> = {
                 page: filtres.page || 1,
                 limit: filtres.limit || 50,
                 ...(filtres.recherche ? { recherche: filtres.recherche } : {}),
@@ -43,6 +53,7 @@ export function useMatieres(filtres: MatiereFiltres = {}) {
 
 export function useMatiere(id: string) {
     const { isAuthenticated } = useAuthStore();
+    const { t } = useTranslation('matieres');
     return useQuery({
         queryKey: MATIERES_KEYS.detail(id),
         queryFn: async () => {
@@ -52,8 +63,8 @@ export function useMatiere(id: string) {
             } catch {
                 const listResponse = await apiClient.getPaginated<Matiere>('/api/matieres', { page: 1, limit: 100 });
                 const items = listResponse.data?.items || [];
-                const found = items.find((m: Matiere) => m.id === id);
-                if (!found) throw new Error('Matière non trouvée');
+                const found = items.find((m) => m.id === id);
+                if (!found) throw new Error(t('matiereNonTrouvee'));
                 return found;
             }
         },
@@ -130,6 +141,8 @@ export function useMatiereAffectations(matiereId: string) {
 
 export function useCreerMatiere() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('matieres');
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: CreerMatiereDto) => {
             const response = await apiClient.post<Matiere>('/api/matieres', dto);
@@ -137,14 +150,16 @@ export function useCreerMatiere() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.listes() });
-            toast.success('Matière créée avec succès');
+            toast.success(t('succesCreation'));
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la création'),
+        onError: (error: unknown) => handleError(error, t('erreurCreation')),
     });
 }
 
 export function useModifierMatiere() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('matieres');
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: ModifierMatiereDto) => {
             const { id, ...data } = dto;
@@ -154,23 +169,25 @@ export function useModifierMatiere() {
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.listes() });
             queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.detail(variables.id) });
-            toast.success('Matière modifiée avec succès');
+            toast.success(t('succesModification'));
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la modification'),
+        onError: (error: unknown) => handleError(error, t('erreurModification')),
     });
 }
 
 export function useSupprimerMatiere() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('matieres');
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (id: string) => {
             await apiClient.delete(`/api/matieres/${id}`);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.listes() });
-            toast.success('Matière supprimée');
+            toast.success(t('succesSuppression'));
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la suppression'),
+        onError: (error: unknown) => handleError(error, t('erreurSuppression')),
     });
 }
 
@@ -178,6 +195,8 @@ export function useSupprimerMatiere() {
 
 export function useAjouterMatiereNiveau() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('matieres');
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: { matiereId: string; niveauId: string; coefficient?: number; bareme?: number; credits?: number; volumeHoraire?: number; obligatoire?: boolean; filiereId?: string }) => {
             const response = await apiClient.post<MatiereNiveau>('/api/matieres/programme', dto);
@@ -186,14 +205,16 @@ export function useAjouterMatiereNiveau() {
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.programme(variables.matiereId) });
             queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.tousNiveaux() });
-            toast.success('Niveau ajouté au programme');
+            toast.success(t('succesAjout'));
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de l\'ajout'),
+        onError: (error: unknown) => handleError(error, t('erreurAjout')),
     });
 }
 
 export function useModifierMatiereNiveau() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('matieres');
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (params: { id: string; matiereId: string; coefficient?: number; bareme?: number; credits?: number; volumeHoraire?: number; obligatoire?: boolean }) => {
             const { id, matiereId, ...dto } = params;
@@ -203,14 +224,16 @@ export function useModifierMatiereNiveau() {
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.programme(variables.matiereId) });
             queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.tousNiveaux() });
-            toast.success('Programme matière-niveau modifié');
+            toast.success(t('succesModificationProgramme'));
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la modification'),
+        onError: (error: unknown) => handleError(error, t('erreurModification')),
     });
 }
 
 export function useSupprimerMatiereNiveau() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('matieres');
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (params: { id: string; matiereId: string }) => {
             await apiClient.delete(`/api/matieres/programme/${params.id}`);
@@ -219,9 +242,9 @@ export function useSupprimerMatiereNiveau() {
         onSuccess: (matiereId) => {
             queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.programme(matiereId) });
             queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.tousNiveaux() });
-            toast.success('Niveau retiré du programme');
+            toast.success(t('succesRetrait'));
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la suppression'),
+        onError: (error: unknown) => handleError(error, t('erreurRetrait')),
     });
 }
 
@@ -237,6 +260,8 @@ export interface AffectationPayload {
 
 export function useCreerAffectation() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('matieres');
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: AffectationPayload) => {
             const response = await apiClient.post<AffectationMatiere>('/api/matieres/affectations', dto);
@@ -244,14 +269,16 @@ export function useCreerAffectation() {
         },
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.affectations(variables.matiereId) });
-            toast.success('Enseignant affecté avec succès');
+            toast.success(t('succesAffectation'));
         },
-        onError: (error: any) => toast.error(error?.message || "Erreur lors de l'affectation"),
+        onError: (error: unknown) => handleError(error, t('erreurAffectation')),
     });
 }
 
 export function useModifierAffectation() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('matieres');
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async ({ id, ...dto }: { id: string; matiereId: string } & Partial<AffectationPayload>) => {
             const response = await apiClient.patch<AffectationMatiere>(`/api/matieres/affectations/${id}`, dto);
@@ -259,14 +286,16 @@ export function useModifierAffectation() {
         },
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.affectations(variables.matiereId) });
-            toast.success('Affectation modifiée');
+            toast.success(t('succesModificationAffectation'));
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la modification'),
+        onError: (error: unknown) => handleError(error, t('erreurModification')),
     });
 }
 
 export function useSupprimerAffectation() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('matieres');
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async ({ id, matiereId }: { id: string; matiereId: string }) => {
             await apiClient.delete(`/api/matieres/affectations/${id}`);
@@ -274,9 +303,9 @@ export function useSupprimerAffectation() {
         },
         onSuccess: (matiereId) => {
             queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.affectations(matiereId) });
-            toast.success('Affectation supprimée');
+            toast.success(t('succesSuppressionAffectation'));
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la suppression'),
+        onError: (error: unknown) => handleError(error, t('erreurSuppression')),
     });
 }
 
@@ -284,21 +313,25 @@ export function useSupprimerAffectation() {
 
 export function useAjouterMatiereProgramme() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('matieres');
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: { programmeId: string; matiereNiveauId: string; coefficient?: number; obligatoire?: boolean; ordre?: number }) => {
-            const response = await apiClient.post<any>('/api/programmes/matieres', dto);
+            const response = await apiClient.post<ProgrammeMatiere>('/api/programmes/matieres', dto);
             return response.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.all });
-            toast.success('Matière ajoutée au programme');
+            toast.success(t('succesProgramme'));
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de l\'ajout'),
+        onError: (error: unknown) => handleError(error, t('erreurAjout')),
     });
 }
 
 export function useRetirerMatiereProgramme() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('matieres');
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (id: string) => {
             await apiClient.delete(`/api/programmes/matieres/${id}`);
@@ -306,23 +339,25 @@ export function useRetirerMatiereProgramme() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.all });
-            toast.success('Matière retirée du programme');
+            toast.success(t('succesRetraitProgramme'));
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors du retrait'),
+        onError: (error: unknown) => handleError(error, t('erreurRetrait')),
     });
 }
 
 export function useModifierMatiereProgramme() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('matieres');
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async ({ id, ...dto }: { id: string; coefficient?: number; obligatoire?: boolean; ordre?: number }) => {
-            const response = await apiClient.patch<any>(`/api/programmes/matieres/${id}`, dto);
+            const response = await apiClient.patch<ProgrammeMatiere>(`/api/programmes/matieres/${id}`, dto);
             return response.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: MATIERES_KEYS.all });
-            toast.success('Programme matière modifié');
+            toast.success(t('succesModificationProgramme'));
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la modification'),
+        onError: (error: unknown) => handleError(error, t('erreurModification')),
     });
 }

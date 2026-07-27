@@ -65,6 +65,7 @@ import { Route as AuthSallesIndexRouteImport } from './routes/_auth.salles.index
 import { Route as AuthProgrammesIndexRouteImport } from './routes/_auth.programmes.index'
 import { Route as AuthPersonnelIndexRouteImport } from './routes/_auth.personnel.index'
 import { Route as AuthPeriodesIndexRouteImport } from './routes/_auth.periodes.index'
+import { Route as AuthPaieIndexRouteImport } from './routes/_auth.paie.index'
 import { Route as AuthOrganisationIndexRouteImport } from './routes/_auth.organisation.index'
 import { Route as AuthNotesIndexRouteImport } from './routes/_auth.notes.index'
 import { Route as AuthNiveauxIndexRouteImport } from './routes/_auth.niveaux.index'
@@ -76,6 +77,7 @@ import { Route as AuthEnseignantsIndexRouteImport } from './routes/_auth/enseign
 import { Route as AuthElevesIndexRouteImport } from './routes/_auth.eleves.index'
 import { Route as AuthDiplomesElevesIndexRouteImport } from './routes/_auth.diplomes-eleves.index'
 import { Route as AuthCyclesIndexRouteImport } from './routes/_auth.cycles.index'
+import { Route as AuthContratsIndexRouteImport } from './routes/_auth.contrats.index'
 import { Route as AuthCompetencesIndexRouteImport } from './routes/_auth.competences.index'
 import { Route as AuthClassesIndexRouteImport } from './routes/_auth.classes.index'
 import { Route as AuthBulletinsIndexRouteImport } from './routes/_auth.bulletins.index'
@@ -416,6 +418,11 @@ const AuthPeriodesIndexRoute = AuthPeriodesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthPeriodesRoute,
 } as any)
+const AuthPaieIndexRoute = AuthPaieIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthPaieRoute,
+} as any)
 const AuthOrganisationIndexRoute = AuthOrganisationIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -471,6 +478,11 @@ const AuthCyclesIndexRoute = AuthCyclesIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthCyclesRoute,
+} as any)
+const AuthContratsIndexRoute = AuthContratsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthContratsRoute,
 } as any)
 const AuthCompetencesIndexRoute = AuthCompetencesIndexRouteImport.update({
   id: '/',
@@ -856,6 +868,7 @@ export interface FileRoutesByFullPath {
   '/bulletins/': typeof AuthBulletinsIndexRoute
   '/classes/': typeof AuthClassesIndexRoute
   '/competences/': typeof AuthCompetencesIndexRoute
+  '/contrats/': typeof AuthContratsIndexRoute
   '/cycles/': typeof AuthCyclesIndexRoute
   '/diplomes-eleves/': typeof AuthDiplomesElevesIndexRoute
   '/eleves/': typeof AuthElevesIndexRoute
@@ -867,6 +880,7 @@ export interface FileRoutesByFullPath {
   '/niveaux/': typeof AuthNiveauxIndexRoute
   '/notes/': typeof AuthNotesIndexRoute
   '/organisation/': typeof AuthOrganisationIndexRoute
+  '/paie/': typeof AuthPaieIndexRoute
   '/periodes/': typeof AuthPeriodesIndexRoute
   '/personnel/': typeof AuthPersonnelIndexRoute
   '/programmes/': typeof AuthProgrammesIndexRoute
@@ -900,7 +914,6 @@ export interface FileRoutesByTo {
   '/bibliotheque': typeof AuthBibliothequeRoute
   '/change-password': typeof AuthChangePasswordRoute
   '/configuration': typeof AuthConfigurationRoute
-  '/contrats': typeof AuthContratsRouteWithChildren
   '/dashboard': typeof AuthDashboardRoute
   '/emploi-du-temps': typeof AuthEmploiDuTempsRoute
   '/finances': typeof AuthFinancesRoute
@@ -913,7 +926,6 @@ export interface FileRoutesByTo {
   '/modules-pedagogiques': typeof AuthModulesPedagogiquesRoute
   '/modules-reporting': typeof AuthModulesReportingRoute
   '/modules-rh': typeof AuthModulesRhRoute
-  '/paie': typeof AuthPaieRouteWithChildren
   '/parametres': typeof AuthParametresRoute
   '/responsables-eleves': typeof AuthResponsablesElevesRouteWithChildren
   '/transport': typeof AuthTransportRoute
@@ -952,6 +964,7 @@ export interface FileRoutesByTo {
   '/bulletins': typeof AuthBulletinsIndexRoute
   '/classes': typeof AuthClassesIndexRoute
   '/competences': typeof AuthCompetencesIndexRoute
+  '/contrats': typeof AuthContratsIndexRoute
   '/cycles': typeof AuthCyclesIndexRoute
   '/diplomes-eleves': typeof AuthDiplomesElevesIndexRoute
   '/eleves': typeof AuthElevesIndexRoute
@@ -963,6 +976,7 @@ export interface FileRoutesByTo {
   '/niveaux': typeof AuthNiveauxIndexRoute
   '/notes': typeof AuthNotesIndexRoute
   '/organisation': typeof AuthOrganisationIndexRoute
+  '/paie': typeof AuthPaieIndexRoute
   '/periodes': typeof AuthPeriodesIndexRoute
   '/personnel': typeof AuthPersonnelIndexRoute
   '/programmes': typeof AuthProgrammesIndexRoute
@@ -1077,6 +1091,7 @@ export interface FileRoutesById {
   '/_auth/bulletins/': typeof AuthBulletinsIndexRoute
   '/_auth/classes/': typeof AuthClassesIndexRoute
   '/_auth/competences/': typeof AuthCompetencesIndexRoute
+  '/_auth/contrats/': typeof AuthContratsIndexRoute
   '/_auth/cycles/': typeof AuthCyclesIndexRoute
   '/_auth/diplomes-eleves/': typeof AuthDiplomesElevesIndexRoute
   '/_auth/eleves/': typeof AuthElevesIndexRoute
@@ -1088,6 +1103,7 @@ export interface FileRoutesById {
   '/_auth/niveaux/': typeof AuthNiveauxIndexRoute
   '/_auth/notes/': typeof AuthNotesIndexRoute
   '/_auth/organisation/': typeof AuthOrganisationIndexRoute
+  '/_auth/paie/': typeof AuthPaieIndexRoute
   '/_auth/periodes/': typeof AuthPeriodesIndexRoute
   '/_auth/personnel/': typeof AuthPersonnelIndexRoute
   '/_auth/programmes/': typeof AuthProgrammesIndexRoute
@@ -1202,6 +1218,7 @@ export interface FileRouteTypes {
     | '/bulletins/'
     | '/classes/'
     | '/competences/'
+    | '/contrats/'
     | '/cycles/'
     | '/diplomes-eleves/'
     | '/eleves/'
@@ -1213,6 +1230,7 @@ export interface FileRouteTypes {
     | '/niveaux/'
     | '/notes/'
     | '/organisation/'
+    | '/paie/'
     | '/periodes/'
     | '/personnel/'
     | '/programmes/'
@@ -1246,7 +1264,6 @@ export interface FileRouteTypes {
     | '/bibliotheque'
     | '/change-password'
     | '/configuration'
-    | '/contrats'
     | '/dashboard'
     | '/emploi-du-temps'
     | '/finances'
@@ -1259,7 +1276,6 @@ export interface FileRouteTypes {
     | '/modules-pedagogiques'
     | '/modules-reporting'
     | '/modules-rh'
-    | '/paie'
     | '/parametres'
     | '/responsables-eleves'
     | '/transport'
@@ -1298,6 +1314,7 @@ export interface FileRouteTypes {
     | '/bulletins'
     | '/classes'
     | '/competences'
+    | '/contrats'
     | '/cycles'
     | '/diplomes-eleves'
     | '/eleves'
@@ -1309,6 +1326,7 @@ export interface FileRouteTypes {
     | '/niveaux'
     | '/notes'
     | '/organisation'
+    | '/paie'
     | '/periodes'
     | '/personnel'
     | '/programmes'
@@ -1422,6 +1440,7 @@ export interface FileRouteTypes {
     | '/_auth/bulletins/'
     | '/_auth/classes/'
     | '/_auth/competences/'
+    | '/_auth/contrats/'
     | '/_auth/cycles/'
     | '/_auth/diplomes-eleves/'
     | '/_auth/eleves/'
@@ -1433,6 +1452,7 @@ export interface FileRouteTypes {
     | '/_auth/niveaux/'
     | '/_auth/notes/'
     | '/_auth/organisation/'
+    | '/_auth/paie/'
     | '/_auth/periodes/'
     | '/_auth/personnel/'
     | '/_auth/programmes/'
@@ -1861,6 +1881,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthPeriodesIndexRouteImport
       parentRoute: typeof AuthPeriodesRoute
     }
+    '/_auth/paie/': {
+      id: '/_auth/paie/'
+      path: '/'
+      fullPath: '/paie/'
+      preLoaderRoute: typeof AuthPaieIndexRouteImport
+      parentRoute: typeof AuthPaieRoute
+    }
     '/_auth/organisation/': {
       id: '/_auth/organisation/'
       path: '/'
@@ -1937,6 +1964,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/cycles/'
       preLoaderRoute: typeof AuthCyclesIndexRouteImport
       parentRoute: typeof AuthCyclesRoute
+    }
+    '/_auth/contrats/': {
+      id: '/_auth/contrats/'
+      path: '/'
+      fullPath: '/contrats/'
+      preLoaderRoute: typeof AuthContratsIndexRouteImport
+      parentRoute: typeof AuthContratsRoute
     }
     '/_auth/competences/': {
       id: '/_auth/competences/'
@@ -2383,10 +2417,12 @@ const AuthCompetencesRouteWithChildren = AuthCompetencesRoute._addFileChildren(
 
 interface AuthContratsRouteChildren {
   AuthContratsIdRoute: typeof AuthContratsIdRoute
+  AuthContratsIndexRoute: typeof AuthContratsIndexRoute
 }
 
 const AuthContratsRouteChildren: AuthContratsRouteChildren = {
   AuthContratsIdRoute: AuthContratsIdRoute,
+  AuthContratsIndexRoute: AuthContratsIndexRoute,
 }
 
 const AuthContratsRouteWithChildren = AuthContratsRoute._addFileChildren(
@@ -2635,11 +2671,13 @@ const AuthOrganisationRouteWithChildren =
 
 interface AuthPaieRouteChildren {
   AuthPaieConfigurationRoute: typeof AuthPaieConfigurationRoute
+  AuthPaieIndexRoute: typeof AuthPaieIndexRoute
   AuthPaieBulletinsIdRoute: typeof AuthPaieBulletinsIdRoute
 }
 
 const AuthPaieRouteChildren: AuthPaieRouteChildren = {
   AuthPaieConfigurationRoute: AuthPaieConfigurationRoute,
+  AuthPaieIndexRoute: AuthPaieIndexRoute,
   AuthPaieBulletinsIdRoute: AuthPaieBulletinsIdRoute,
 }
 

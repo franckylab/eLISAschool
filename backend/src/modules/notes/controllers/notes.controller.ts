@@ -46,6 +46,13 @@ router.get('/statistiques', requirePermission('notes:statistiques:view'), async 
     } catch (error) { next(error); }
 });
 
+router.get('/:id/versions', requirePermission('notes:view'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const versions = await notesService.getHistorique(req.params.id, req.etablissementId);
+        res.json({ success: true, data: versions });
+    } catch (error) { next(error); }
+});
+
 router.get('/:id', requirePermission('notes:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const note = await notesService.findOne(req.params.id, req.etablissementId);

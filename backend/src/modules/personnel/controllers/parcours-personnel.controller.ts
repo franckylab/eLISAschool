@@ -41,6 +41,7 @@ router.get(
 router.get(
     '/membres/:id/parcours-resume',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const resume = await parcoursPersonnelService.getResumeParcours(

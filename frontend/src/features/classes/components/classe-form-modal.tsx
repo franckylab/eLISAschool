@@ -498,8 +498,8 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                                     </span>
                                     <span className={`ml-2 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
                                         modeleData.actif
-                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                                            ? 'bg-success/10 text-success'
+                                            : 'bg-muted text-muted-foreground'
                                     }`}>
                                         {modeleData.actif ? t('statut.actif') : t('statut.inactif')}
                                     </span>
@@ -533,8 +533,8 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                                 />
                             ) : (
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-700">{t('champs.anneeScolaire')}</label>
-                                    <div className="px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-700">
+                                    <label className="text-sm font-medium text-secondary">{t('champs.anneeScolaire')}</label>
+                                    <div className="px-3 py-2 rounded-lg border border-border bg-muted text-sm text-secondary">
                                         {classe?.anneeScolaire?.libelle || '-'}
                                     </div>
                                 </div>
@@ -551,8 +551,8 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                             <div className="space-y-1">
                                 {selectedCapacite && (
                                     <div className="flex items-center gap-2 mb-1">
-                                        <span className="inline-flex items-center rounded-full bg-blue-100 dark:bg-blue-900 px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-200">
-                                            Capacité salle: {selectedCapacite} places
+                                        <span className="inline-flex items-center rounded-full bg-info/10 px-2.5 py-0.5 text-xs font-medium text-info">
+                                            {t('champs.capaciteSalle', { count: selectedCapacite })}
                                         </span>
                                     </div>
                                 )}
@@ -563,7 +563,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                                     onChange={(e: ChangeEvent<HTMLInputElement>) => handleChangeInstance('effectifMax', parseInt(e.target.value) || 50)}
                                     min="1"
                                     max={selectedCapacite || 200}
-                                    hint={selectedCapacite ? `Limitée par la capacité de la salle (max ${selectedCapacite})` : t('champs.effectifMaxHint')}
+                                    hint={selectedCapacite ? t('champs.limiteeParSalle', { max: selectedCapacite }) : t('champs.effectifMaxHint')}
                                 />
                             </div>
                         </div>
@@ -592,7 +592,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                                 className="text-[var(--color-text-primary)]"
                                 style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
                             >
-                                {mode === 'creation' ? t('formulaire.confirmMessage') : 'Vérifiez les modifications avant d\'enregistrer'}
+                                {mode === 'creation' ? t('formulaire.confirmMessage') : t('formulaire.verifierModifications')}
                             </p>
                         </div>
 

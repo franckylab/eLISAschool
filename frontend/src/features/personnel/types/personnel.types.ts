@@ -15,6 +15,9 @@
  */
 
 import type { CategorieFonction, CategorieSource } from '@/lib/categorie-fonction';
+import type { PostePartial } from '@/features/contrats/types/contrat.types';
+
+export type { PostePartial };
 
 export interface MembrePersonnel {
     id: string;
@@ -65,14 +68,23 @@ export interface CreerPersonnelDto {
     diplomes?: string;
 }
 
-export function fromFormToCreateDto(form: Record<string, any>): CreerPersonnelDto & Record<string, any> {
+export interface PersonnelFormData {
+    matricule?: string;
+    dateEmbauche?: string;
+    statut?: string;
+    specialitePrincipale?: string;
+    specialites?: string[];
+    diplomes?: string;
+    departement?: string;
+}
+
+export function fromFormToCreateDto(form: PersonnelFormData): CreerPersonnelDto {
     return {
         matricule: form.matricule || `EMP-${Date.now().toString(36).toUpperCase()}`,
         dateEmbauche: form.dateEmbauche || new Date().toISOString().split('T')[0],
         statut: ((form.statut || 'actif') === 'en_conge' ? 'CONGE' : (form.statut || 'actif').toUpperCase()) as 'ACTIF' | 'INACTIF' | 'CONGE',
         specialites: form.specialitePrincipale ? [form.specialitePrincipale] : form.specialites || undefined,
         diplomes: form.diplomes || undefined,
-        departement: form.departement || undefined,
     };
 }
 
@@ -118,14 +130,6 @@ export interface ContratPersonnel {
     etablissementId: string;
     createdAt: string;
     updatedAt: string;
-}
-
-export interface PostePartial {
-    id: string;
-    intitule: string;
-    code: string;
-    uniteOrganisationnelle?: { id: string; nom: string };
-    fonction?: { id: string; nom: string };
 }
 
 export interface BulletinPaie {

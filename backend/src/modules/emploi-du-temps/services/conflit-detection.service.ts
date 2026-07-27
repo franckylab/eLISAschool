@@ -81,7 +81,7 @@ export class ConflitDetectionService {
             if (donnees.affectationMatiereId) {
                 affectation = await this.affectationRepo.findOne({
                     where: { id: donnees.affectationMatiereId },
-                    relations: ['classeAnnee'],
+                    relations: ['classeAnnee', 'classeAnnee.classe'],
                 });
             }
 
@@ -93,12 +93,18 @@ export class ConflitDetectionService {
                 if (conflitClasse) conflits.push(conflitClasse);
             }
 
-            // 2. Conflit d'enseignant (BLOQUANT)
+            // 2. Conflit d'enseignant (BLOQUANT) — inclut co-enseignants
             if (affectation?.enseignantId) {
-                const conflitEnseignant = await this.detecterConflitEnseignant(
-                    donnees, affectation.enseignantId, etablissementId,
-                );
-                if (conflitEnseignant) conflits.push(conflitEnseignant);
+                const tousEnseignants = [
+                    affectation.enseignantId,
+                    ...(affectation.coEnseignantIds || []),
+                ];
+                for (const ensId of tousEnseignants) {
+                    const conflitEnseignant = await this.detecterConflitEnseignant(
+                        donnees, ensId, etablissementId,
+                    );
+                    if (conflitEnseignant) conflits.push(conflitEnseignant);
+                }
             }
 
             // 3. Conflit de salle (BLOQUANT)
@@ -177,7 +183,10 @@ export class ConflitDetectionService {
         const creneauxExistants = await this.creneauRepo
             .createQueryBuilder('ch')
             .innerJoin('ch.affectationMatiere', 'am')
-            .where('am.enseignantId = :enseignantId', { enseignantId })
+            .where('(am.enseignantId = :enseignantId OR am."coEnseignantIds" LIKE :likeId)', {
+                enseignantId,
+                likeId: `%${enseignantId}%`,
+            })
             .andWhere('ch.jour = :jour', { jour: donnees.jour })
             .andWhere('ch.etablissementId = :etablissementId', { etablissementId })
             .andWhere('ch.heureDebut < :heureFin', { heureFin: donnees.heureFin })
@@ -231,7 +240,7 @@ export class ConflitDetectionService {
         const matiereNiveau = await this.matiereNiveauRepo.findOne({
             where: {
                 matiereId: affectation.matiereId,
-                niveauId: affectation.classeAnnee?.niveauId ?? '',
+                niveauId: affectation.classeAnnee?.classe?.niveauId ?? '',
             },
         });
 

@@ -111,7 +111,8 @@
         "creationFermer": "Close",
         "supprimerTitre": "Delete template",
         "supprimerMessage": "Are you sure you want to delete this template? This action is irreversible.",
-        "supprimerConfirmer": "Delete"
+        "supprimerConfirmer": "Delete",
+        "bientotDisponible": "Coming soon"
     },
     "calendrier": {
         "heure": "Time",
@@ -186,19 +187,46 @@
             "notesPlaceholder": "Optional notes…",
             "conflitsDetectes": "{{count}} conflict(s) detected",
             "conflitsBloquants": "Blocking conflicts — cannot validate",
-            "avertissements": "{{count}} warning(s)"
+            "avertissements": "{{count}} warning(s)",
+            "selectionnerAffectation": "Select an assignment",
+            "aucuneSalle": "No room"
         }
     },
     "heureCours": {
         "modal": {
             "titre": "Edit class hour",
             "statut": "Status",
+            "statuts": {
+                "planifie": "Scheduled",
+                "effectue": "Completed",
+                "annule": "Cancelled",
+                "remplace": "Substituted"
+            },
             "remplacant": "Substitute",
+            "remplacantPlaceholder": "Substitute ID or name",
             "salleOverride": "Room (one-time override)",
             "sallePlaceholder": "Leave empty to keep the usual room",
             "salleAide": "If empty, the usual slot's room is kept.",
             "commentaire": "Comment",
             "commentairePlaceholder": "Optional comment…"
         }
+    },
+    "toasts": {
+        "creneauCree": "Slot created successfully",
+        "creneauModifie": "Slot updated successfully",
+        "creneauSupprime": "Slot deleted",
+        "creneauValide": "Slot validated",
+        "classeValide": "{{count}} slot(s) validated",
+        "heureCoursModifiee": "Class hour updated",
+        "preferencesMaj": "Preferences updated",
+        "templateCree": "Template created successfully",
+        "templateSupprime": "Template deleted",
+        "templateDuplique": "Template duplicated",
+        "erreurCreation": "Error creating",
+        "erreurModification": "Error updating",
+        "erreurSuppression": "Error deleting",
+        "erreurValidation": "Error validating",
+        "erreurGeneration": "Error generating",
+        "erreurPreferences": "Error updating preferences"
     }
 }

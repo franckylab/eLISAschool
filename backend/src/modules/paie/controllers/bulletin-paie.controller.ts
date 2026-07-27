@@ -4,9 +4,10 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission, checkPermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
+import { AppError } from '@common/filters/error.filter';
 import { bulletinPaieService } from '../services/bulletin-paie.service';
 import {
     createBulletinSchema,
@@ -41,6 +42,7 @@ router.post(
 router.get(
     '/',
     authMiddleware,
+    requirePermission('paie:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const query = validateDto(queryBulletinSchema, req.query);
@@ -59,6 +61,7 @@ router.get(
 router.get(
     '/membres/:id',
     authMiddleware,
+    requirePermission('paie:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const query = validateDto(queryBulletinSchema, {
@@ -85,7 +88,7 @@ router.get(
         try {
             const { mois, annee } = req.query;
             if (!mois || !annee) {
-                throw new Error('Les paramètres mois et annee sont requis');
+                throw new AppError('Les paramètres mois et annee sont requis', 400, 'VALIDATION_ERROR');
             }
             const rapport = await bulletinPaieService.getTotalPaiesMensuelles(
                 parseInt(mois as string),
@@ -108,7 +111,7 @@ router.post(
         try {
             const { mois, annee } = req.body;
             if (!mois || !annee) {
-                throw new Error('Les paramètres mois et annee sont requis');
+                throw new AppError('Les paramètres mois et annee sont requis', 400, 'VALIDATION_ERROR');
             }
             const bulletin = await bulletinPaieService.genererBulletin(
                 req.params.membreId,
@@ -129,6 +132,7 @@ router.post(
 router.get(
     '/:id',
     authMiddleware,
+    requirePermission('paie:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const entity = await bulletinPaieService.findOne(
@@ -150,6 +154,19 @@ router.patch(
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(updateBulletinPaieSchema, req.body);
+
+            // Garde supplémentaire : valider ou payer un bulletin exige paie:valider
+            if (dto.statut === 'VALIDE' || dto.statut === 'PAYE') {
+                const utilisateur = (req as any).utilisateur;
+                const roles: string[] = utilisateur?.roles?.length ? utilisateur.roles : [utilisateur?.role];
+                if (!roles.includes('SUPER_ADMIN')) {
+                    const peutValider = await checkPermission(utilisateur.id, 'paie:valider', utilisateur.etablissementId);
+                    if (!peutValider) {
+                        throw new AppError('Permission requise: paie:valider', 403, 'INSUFFICIENT_PERMISSIONS');
+                    }
+                }
+            }
+
             const updated = await bulletinPaieService.update(
                 req.params.id,
                 dto,
@@ -180,8 +197,8 @@ router.get(
                 (req as any).etablissementId
             );
 
-            const nom = bulletin.membrePersonnel?.utilisateur?.profil?.prenom ?? '—';
-            const prenom = bulletin.membrePersonnel?.utilisateur?.profil?.nom ?? bulletin.membrePersonnelId?.slice(0, 8) ?? '—';
+            const nom = bulletin.membrePersonnel?.utilisateur?.profil?.nom ?? '—';
+            const prenom = bulletin.membrePersonnel?.utilisateur?.profil?.prenom ?? bulletin.membrePersonnelId?.slice(0, 8) ?? '—';
             const matricule = bulletin.membrePersonnel?.matricule ?? '—';
             const moisNom = new Date(bulletin.annee, bulletin.mois - 1, 1)
                 .toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
@@ -337,7 +354,7 @@ router.delete(
 
 // ─── ÉLÉMENTS DE SALAIRE (CRUD nested sous bulletin) ───
 
-router.get('/:id/elements', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id/elements', authMiddleware, requirePermission('paie:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const elements = await bulletinPaieService.getElements(req.params.id, (req as any).etablissementId);
         res.json({ success: true, data: elements });

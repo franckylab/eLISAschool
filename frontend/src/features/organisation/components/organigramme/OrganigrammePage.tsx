@@ -21,12 +21,13 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { usePermissions, useDocumentTitle } from '@/hooks';
 import { useAuthStore } from '@/stores/auth.store';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { OrganigrammeFlowView } from './OrganigrammeFlowView';
 import { OrganigrammeListe } from './OrganigrammeListe';
 import { OrganigrammeSynthese } from './synthese/OrganigrammeSynthese';
-import { OrganigrammeToolbar } from './toolbar/OrganigrammeToolbar';
+import { OrganigrammeToolbar, dispatchToolbarCommand } from './toolbar/OrganigrammeToolbar';
 import { UniteDetailDrawer } from './drawer/UniteDetailDrawer';
 import { UniteFormModal } from './modals/UniteFormModal';
 import { ImpactSuppressionDialog } from './modals/ImpactSuppressionDialog';
@@ -142,6 +143,11 @@ export function OrganigrammePage() {
     // Handlers mode édition
     const handleToggleEditMode = useCallback(() => {
         setIsEditMode(prev => !prev);
+    }, []);
+
+    // Handler export (délègue au toolbar qui gère l'ExportDialog)
+    const handleExport = useCallback(() => {
+        dispatchToolbarCommand('export');
     }, []);
 
     const handleEditUnite = useCallback((unite: OrganigrammeNode) => {
@@ -319,47 +325,92 @@ export function OrganigrammePage() {
             className="flex flex-col h-full"
             style={{ gap: 'var(--gap-md)', padding: 'var(--space-lg)' }}
         >
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between" style={{ gap: 'var(--gap-sm)' }}>
-                <PageHeader
-                    title={nomEtablissement || t('organigramme.titre', 'Organigramme')}
-                    subtitle={t('organigramme.subtitle', 'Vue interactive de la structure organisationnelle')}
-                    icon={Network}
-                    variant="gradient"
-                />
+            {/* Header avec onglets intégrés */}
+            <div
+                className="relative overflow-hidden rounded-2xl"
+                style={{
+                    background: 'linear-gradient(135deg, var(--color-dominant-600), var(--color-dominant-800))',
+                    padding: 'clamp(1rem, 0.8rem + 1vw, 1.5rem) clamp(1.25rem, 1rem + 1.2vw, 2rem)',
+                }}
+            >
+                {/* Watermark décoratif */}
+                <div className="absolute -right-6 -top-6 pointer-events-none select-none" aria-hidden>
+                    <Network className="text-white/[0.07]" style={{ width: 'clamp(8rem, 15vw, 14rem)', height: 'clamp(8rem, 15vw, 14rem)' }} />
+                </div>
 
-                {/* SegmentedControl */}
-                {!isMobile && (
-                    <div
-                        role="tablist"
-                        aria-label={t('organigramme.vueLabel', 'Mode d\'affichage')}
-                        className="flex items-center gap-0.5 p-1 rounded-xl border"
-                        style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-bordure)' }}
-                    >
-                        {vues.map(v => {
-                            const Icon = v.icon;
-                            const isActive = vueActive === v.id;
-                            return (
-                                <button
-                                    key={v.id}
-                                    role="tab"
-                                    aria-selected={isActive}
-                                    onClick={() => changerVue(v.id)}
-                                    className="flex items-center rounded-lg text-xs font-medium transition-all"
-                                    style={{
-                                        gap: 'var(--gap-xxs, 0.25rem)',
-                                        padding: 'clamp(0.25rem, 0.2rem + 0.15vw, 0.375rem) clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem)',
-                                        backgroundColor: isActive ? 'var(--color-dominant-600)' : 'transparent',
-                                        color: isActive ? '#fff' : 'var(--color-text-muted)',
-                                    }}
-                                >
-                                    <Icon className="w-3.5 h-3.5" />
-                                    {v.label}
-                                </button>
-                            );
-                        })}
+                {/* Breadcrumbs */}
+                <Breadcrumbs currentLabel={nomEtablissement || t('organigramme.titre', 'Organigramme')} inverted />
+
+                {/* Contenu : titre + onglets */}
+                <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    {/* Titre */}
+                    <div className="flex items-center gap-3">
+                        <div className="rounded-2xl flex items-center justify-center shrink-0" style={{ width: 'clamp(2.5rem, 5vw, 3.25rem)', height: 'clamp(2.5rem, 5vw, 3.25rem)', backgroundColor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
+                            <Network className="text-white" style={{ width: 'clamp(1.25rem, 2.5vw, 1.625rem)', height: 'clamp(1.25rem, 2.5vw, 1.625rem)' }} />
+                        </div>
+                        <div>
+                            <h1 className="text-white font-bold" style={{ fontSize: 'clamp(1.25rem, 1rem + 1vw, 1.875rem)', lineHeight: 1.2 }}>
+                                {nomEtablissement || t('organigramme.titre', 'Organigramme')}
+                            </h1>
+                            <p className="text-white/70" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem)', marginTop: '0.125rem' }}>
+                                {t('organigramme.subtitle', 'Vue interactive de la structure organisationnelle')}
+                            </p>
+                        </div>
                     </div>
-                )}
+
+                    {/* Onglets — glass pill desktop, select mobile */}
+                    {!isMobile ? (
+                        <div
+                            role="tablist"
+                            aria-label={t('organigramme.vueLabel', 'Mode d\'affichage')}
+                            className="flex items-center gap-0.5 rounded-xl"
+                            style={{ padding: '0.25rem', backgroundColor: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.15)' }}
+                        >
+                            {vues.map(v => {
+                                const Icon = v.icon;
+                                const isActive = vueActive === v.id;
+                                return (
+                                    <button
+                                        key={v.id}
+                                        role="tab"
+                                        aria-selected={isActive}
+                                        onClick={() => changerVue(v.id)}
+                                        className="flex items-center rounded-lg text-xs font-medium transition-all"
+                                        style={{
+                                            gap: 'var(--gap-xxs, 0.25rem)',
+                                            padding: 'clamp(0.3rem, 0.25rem + 0.15vw, 0.4375rem) clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem)',
+                                            backgroundColor: isActive ? 'rgba(255,255,255,0.28)' : 'transparent',
+                                            color: 'white',
+                                            opacity: isActive ? 1 : 0.7,
+                                        }}
+                                    >
+                                        <Icon className="w-3.5 h-3.5" />
+                                        {v.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <select
+                            value={vueActive}
+                            onChange={(e) => changerVue(e.target.value as VueMode)}
+                            className="rounded-lg border text-sm font-medium"
+                            style={{
+                                backgroundColor: 'rgba(255,255,255,0.15)',
+                                borderColor: 'rgba(255,255,255,0.2)',
+                                color: 'white',
+                                padding: '0.375rem 0.75rem',
+                                backdropFilter: 'blur(8px)',
+                            }}
+                        >
+                            {vues.map(v => (
+                                <option key={v.id} value={v.id} style={{ color: '#1a1a1a', backgroundColor: '#fff' }}>
+                                    {v.label}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+                </div>
             </div>
 
             {/* Toolbar (pas pour liste/synthèse) */}
@@ -396,6 +447,8 @@ export function OrganigrammePage() {
                                 onNodeSelect={handleNodeSelect}
                                 isEditMode={isEditMode}
                                 showRelations={showRelations}
+                                onToggleRelations={() => setShowRelations(prev => !prev)}
+                                onExport={handleExport}
                                 onEditUnite={canEdit ? handleEditUnite : undefined}
                                 onAddChildUnite={canEdit ? handleAddChildUnite : undefined}
                                 onDeleteUnite={canDelete ? handleDeleteUnite : undefined}

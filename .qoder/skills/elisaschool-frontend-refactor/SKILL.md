@@ -1121,6 +1121,63 @@ Pour les modals comme QRScanner qui ont besoin d'un comportement spécial :
 
 ---
 
+## Workflow : Extraire des utilitaires partagés dans `lib/`
+
+### Quand extraire
+
+Un utilitaire spécifique à une feature doit être extrait dans `src/lib/` quand :
+- **2+ modules** ont besoin de la même fonction (ex : organigramme + emploi du temps + bulletins)
+- La fonction n'a **pas de dépendance React** (pure logique DOM/Canvas/data)
+- Le pattern est **réutilisable** sans adaptation majeure
+
+### Structure `lib/export/`
+
+```
+src/lib/export/
+├── index.ts                  # Barrel export
+├── css-var-resolver.ts       # resolveCssVar, normaliserCouleurHex
+├── dom-stabilisation.ts      # attendreStabilisationDom (MutationObserver)
+├── capture-element.ts        # Wrapper html-to-image (à extraire)
+├── progression.ts            # Pattern EtapeExport + onProgress (à extraire)
+├── telecharger.ts            # telecharger(), genererNomFichier() (à extraire)
+└── tuiles.ts                 # calculerGrilleTuiles(), decouperTuile() (à extraire)
+```
+
+### Règles d'extraction
+
+1. **Zéro dépendance React** dans `lib/` — les utilitaires doivent être importables depuis un Web Worker
+2. **Barrel export** obligatoire (`index.ts`) — les consommateurs importent depuis `@/lib/export`
+3. **Supprimer l'ancien fichier** après migration — pas de shim, pas de re-export
+4. **Types exportés** — chaque fonction publique doit avoir ses types exportés
+
+### Pattern force-mount via CustomEvent
+
+Pour exporter un composant conditionnel (ex : minimap uniquement à ≥1280px), utiliser un canal d'événements existant avec une commande `force-*` :
+
+```typescript
+// Composant cible — écoute la commande force-mount
+window.addEventListener('organigramme:toolbar-command', (e) => {
+    if ((e as CustomEvent).detail.command === 'force-minimap') {
+        setForceMinimap(!!(e as CustomEvent).detail.visible);
+    }
+});
+
+// Export — force le montage avant capture, démonte après
+window.dispatchEvent(new CustomEvent('organigramme:toolbar-command', {
+    detail: { command: 'force-minimap', visible: true },
+}));
+await attendreStabilisationDom(element);
+// ... capture ...
+// finally: visible: false
+```
+
+**Règles** :
+- Toujours nettoyer en `finally` (garantir le démontage même en cas d'erreur)
+- Attendre la stabilisation DOM après le force-mount (`attendreStabilisationDom`)
+- Réutiliser le canal d'événements existant du module (pas de nouveau bus)
+
+---
+
 ## Maintenance et Évolution
 
 Ce skill est un document **vivant**.

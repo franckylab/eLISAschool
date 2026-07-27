@@ -2,27 +2,12 @@
  * ==================================
  * eLISAschool - Hook Responsables d'un Élève
  * ==================================
- * Récupère les responsables liés à un élève
  */
 
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
-
-export interface ResponsableEleve {
-    id: string;
-    utilisateurId: string;
-    enfantId: string;
-    lienParente: string;
-    responsablePrincipal: boolean;
-    utilisateur?: {
-        id: string;
-        nom: string;
-        prenom: string;
-        email: string;
-        telephone?: string;
-    };
-}
+import type { ResponsableEleve } from '../types/eleve.types';
 
 const RESPONSABLES_KEYS = {
     all: ['responsables'] as const,
@@ -41,7 +26,7 @@ export function useEleveResponsables(eleveId: string) {
             return response.data;
         },
         enabled: !!eleveId && isAuthenticated,
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: 5 * 60 * 1000,
         placeholderData: (previousData) => previousData,
     });
 }

@@ -14,6 +14,7 @@ import ReactFlow, {
     ReactFlowProvider,
     MiniMap,
     Controls,
+    ControlButton,
     Background,
     useReactFlow,
     type NodeTypes,
@@ -22,6 +23,7 @@ import ReactFlow, {
     type Edge,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
+import { Maximize2, Minimize2, Link2, Download } from 'lucide-react';
 import { UniteNode } from './nodes/UniteNode';
 import { HierarchieEdge } from './edges/HierarchieEdge';
 import { RelationEdge, type RelationEdgeData } from './edges/RelationEdge';
@@ -42,6 +44,8 @@ interface OrganigrammeFlowViewProps {
     onNodeSelect?: (unite: OrganigrammeNode) => void;
     isEditMode?: boolean;
     showRelations?: boolean;
+    onToggleRelations?: () => void;
+    onExport?: () => void;
     onEditUnite?: (unite: OrganigrammeNode) => void;
     onAddChildUnite?: (unite: OrganigrammeNode) => void;
     onDeleteUnite?: (unite: OrganigrammeNode) => void;
@@ -57,6 +61,8 @@ function FlowViewInner({
     onNodeSelect,
     isEditMode,
     showRelations,
+    onToggleRelations,
+    onExport,
     onEditUnite,
     onAddChildUnite,
     onDeleteUnite,
@@ -80,6 +86,18 @@ function FlowViewInner({
 
     const { mutateAsync: modifierPoste } = useModifierPoste();
     const [posteDropTarget, setPosteDropTarget] = useState<string | null>(null);
+
+    // Minimap forcée pour export mobile/tablette (< 1280px)
+    const [forceMinimap, setForceMinimap] = useState(false);
+
+    // Plein écran (contrôles flottants)
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    useEffect(() => {
+        const handler = () => setIsFullscreen(!!document.fullscreenElement);
+        document.addEventListener('fullscreenchange', handler);
+        return () => document.removeEventListener('fullscreenchange', handler);
+    }, []);
 
     // Drawer détail relation (clic sur un lien overlay)
     const [openedRelationEdgeId, setOpenedRelationEdgeId] = useState<string | null>(null);
@@ -160,11 +178,24 @@ function FlowViewInner({
                 case 'search':
                     handleSearch((e as CustomEvent).detail.query || '');
                     break;
+                case 'force-minimap':
+                    setForceMinimap(!!(e as CustomEvent).detail.visible);
+                    break;
             }
         };
         window.addEventListener('organigramme:toolbar-command', handler);
         return () => window.removeEventListener('organigramme:toolbar-command', handler);
     }, [zoomIn, zoomOut, fitView, expandAll, collapseAll, handleSearch]);
+
+    const handleToggleFullscreen = useCallback(() => {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        if (!document.fullscreenElement) {
+            el.requestFullscreen().catch(() => {});
+        } else {
+            document.exitFullscreen().catch(() => {});
+        }
+    }, [containerId]);
 
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -228,8 +259,9 @@ function FlowViewInner({
                 proOptions={{ hideAttribution: true }}
             >
                 <Background gap={20} size={1} color="var(--org-node-border)" />
-                {isDesktop && (
+                {(isDesktop || forceMinimap) && (
                     <MiniMap
+                        ariaLabel={t('organigramme.flow.minimapLabel', "Vue miniature de l'organigramme")}
                         nodeColor={() => 'var(--color-dominant-400)'}
                         maskColor="rgba(0,0,0,0.08)"
                         className="!bg-[var(--org-node-bg)] !border !border-[var(--org-node-border)] !rounded-lg"
@@ -241,7 +273,31 @@ function FlowViewInner({
                 <Controls
                     showInteractive={false}
                     className="!bg-[var(--org-node-bg)] !border !border-[var(--org-node-border)] !rounded-lg !shadow-sm"
-                />
+                >
+                    <ControlButton
+                        onClick={handleToggleFullscreen}
+                        title={isFullscreen ? t('organigramme.quitterPleinEcran', 'Quitter le plein écran') : t('organigramme.pleinEcran', 'Plein écran')}
+                    >
+                        {isFullscreen ? <Minimize2 style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} /> : <Maximize2 style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />}
+                    </ControlButton>
+                    {onToggleRelations && (
+                        <ControlButton
+                            onClick={onToggleRelations}
+                            title={showRelations ? t('organigramme.masquerRelations', 'Masquer les relations') : t('organigramme.afficherRelations', 'Afficher les relations')}
+                            style={showRelations ? { backgroundColor: 'var(--color-dominant-600)', color: '#fff' } : undefined}
+                        >
+                            <Link2 style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
+                        </ControlButton>
+                    )}
+                    {onExport && (
+                        <ControlButton
+                            onClick={onExport}
+                            title={t('organigramme.exporter', 'Exporter')}
+                        >
+                            <Download style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
+                        </ControlButton>
+                    )}
+                </Controls>
             </ReactFlow>
             <RelationDetailDrawer
                 data={openedRelationData}

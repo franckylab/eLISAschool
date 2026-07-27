@@ -160,11 +160,40 @@ export interface ElevesClasseStats {
 }
 
 /**
+ * Élève avec données d'affectation à une classe
+ */
+export interface EleveClasse {
+    id: string;
+    matricule: string;
+    nom: string;
+    prenom: string;
+    dateNaissance: string;
+    sexe: 'M' | 'F';
+    email?: string;
+    telephone?: string;
+    photoUrl?: string;
+    classeId?: string;
+    affectationId?: string;
+    [key: string]: string | number | boolean | undefined | null | Date;
+}
+
+/**
+ * Statistiques globales des classes
+ */
+export interface ClassesStats {
+    totalClasses: number;
+    classesActives: number;
+    totalEleves: number;
+    effectifMoyen: number;
+    [key: string]: string | number | boolean | undefined | null;
+}
+
+/**
  * Résultat de l'endpoint GET /api/classes/:id/eleves
  */
 export interface ElevesClasseResult {
     eleves: {
-        items: Array<Record<string, any> & { classeId?: string; affectationId?: string }>;
+        items: EleveClasse[];
         meta: {
             currentPage: number;
             itemsPerPage: number;

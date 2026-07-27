@@ -5,12 +5,24 @@ import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Loader2 } from 'lucide-react';
 
+import type { BulletinPaie } from '../types/paie.types';
+
+interface BulletinFormData {
+    membrePersonnelId: string;
+    contratId: string;
+    mois: number;
+    annee: number;
+    salaireBase: number;
+    primes: number;
+    deductions: number;
+}
+
 interface BulletinFormModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSave: (data: any) => Promise<void>;
+    onSave: (data: BulletinFormData) => Promise<void>;
     isLoading?: boolean;
-    bulletin?: any | null;
+    bulletin?: BulletinPaie | null;
 }
 
 const FORM_INIT = {
@@ -47,7 +59,7 @@ export function BulletinFormModal({ open, onOpenChange, onSave, isLoading, bulle
         }
     }, [open, bulletin]);
 
-    const handleChange = (field: string, value: any) => {
+    const handleChange = (field: string, value: string | number) => {
         setForm(prev => ({ ...prev, [field]: value }));
         setHasUnsavedChanges(true);
     };
@@ -75,7 +87,7 @@ export function BulletinFormModal({ open, onOpenChange, onSave, isLoading, bulle
                             max={12}
                             value={form.mois}
                             onChange={(e) => handleChange('mois', parseInt(e.target.value))}
-                            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                            className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                         />
                     </div>
                     <div>
@@ -84,7 +96,7 @@ export function BulletinFormModal({ open, onOpenChange, onSave, isLoading, bulle
                             type="number"
                             value={form.annee}
                             onChange={(e) => handleChange('annee', parseInt(e.target.value))}
-                            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                            className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                         />
                     </div>
                 </div>
@@ -94,7 +106,7 @@ export function BulletinFormModal({ open, onOpenChange, onSave, isLoading, bulle
                         type="number"
                         value={form.salaireBase}
                         onChange={(e) => handleChange('salaireBase', parseFloat(e.target.value))}
-                        className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                        className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                     />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -104,7 +116,7 @@ export function BulletinFormModal({ open, onOpenChange, onSave, isLoading, bulle
                             type="number"
                             value={form.primes}
                             onChange={(e) => handleChange('primes', parseFloat(e.target.value))}
-                            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                            className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                         />
                     </div>
                     <div>
@@ -113,17 +125,17 @@ export function BulletinFormModal({ open, onOpenChange, onSave, isLoading, bulle
                             type="number"
                             value={form.deductions}
                             onChange={(e) => handleChange('deductions', parseFloat(e.target.value))}
-                            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                            className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                         />
                     </div>
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
                     <ElisaButton variant="outline" onClick={() => onOpenChange(false)}>
-                        {t('commun:annuler')}
+                        {t('common:boutons.annuler')}
                     </ElisaButton>
                     <ElisaButton type="submit" variant="primary" isLoading={isLoading}>
                         {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                        {bulletin ? t('commun:enregistrer') : t('commun:creer')}
+                        {bulletin ? t('common:boutons.enregistrer') : t('common:boutons.creer')}
                     </ElisaButton>
                 </div>
             </form>

@@ -706,6 +706,8 @@ export function useSupprimerEleve() {
 }
 ```
 
+> **TanStack Query v5 — Inférence de types** : Ne **JAMAIS** annoter explicitement le retour de `queryFn` (ex: `async (): Promise<Eleve> =>`). Laisser TypeScript inférer le type depuis `response.data`. Les annotations explicites causent des erreurs TS2322 car `response.data` peut être `T | undefined` selon la signature d'`apiClient`.
+
 ### Étape 4 : Composant de la page
 
 **Fichier :** `src/features/eleves/components/eleves-page.tsx`
@@ -1824,6 +1826,31 @@ function MonFormModal({ open, onClose }: { open: boolean; onClose: () => void })
         </CustomModal>
     );
 }
+```
+
+### Pattern FORM_INIT avec types littéraux (unions)
+
+Quand l'entité a des champs avec des types littéraux (`'FIXE' | 'POURCENTAGE'`), **TOUJOURS** typer explicitement `FORM_INIT` et caster le `onChange` des `<select>` :
+
+```tsx
+type FormData = Omit<Entity, 'id' | 'etablissementId' | 'createdAt' | 'updatedAt'>;
+
+// ✅ CORRECT — FORM_INIT typé avec le type FormData
+const FORM_INIT: FormData = {
+    code: '',
+    nom: '',
+    type: 'FIXE',           // littéral inféré comme 'FIXE' (pas string)
+    valeur: 0,
+};
+
+// ✅ CORRECT — Cast sur onChange du select
+<select onChange={(e) => setForm(p => ({ ...p, type: e.target.value as FormData['type'] }))}>
+    <option value="FIXE">Fixe</option>
+    <option value="POURCENTAGE">Pourcentage</option>
+</select>
+
+// ❌ INCORRECT — FORM_INIT non typé → type inféré comme string
+const FORM_INIT = { type: 'FIXE' }; // type: string
 ```
 
 ### Tailles Disponibles

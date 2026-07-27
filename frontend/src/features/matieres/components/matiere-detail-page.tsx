@@ -1,11 +1,21 @@
+/**
+ * ==================================
+ * eLISAschool - Page Détail Matière
+ * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ */
+
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import type { LucideIcon } from 'lucide-react';
 import {
     BookOpen, Clock, FileText, Users,
     Edit, Trash2, TrendingUp,
     Layers, CheckCircle, XCircle,
-    Globe, UserCheck, UserPlus, Plus,
+    Globe, UserCheck, UserPlus,
 } from 'lucide-react';
 import { useMatiere, useSupprimerMatiere, useModifierMatiere, useMatiereProgramme, useMatiereProgrammesPedagogiques, useMatiereAffectations, useCreerAffectation, useModifierAffectation, useSupprimerAffectation } from '../hooks/use-matieres';
 import { MatiereFormModal } from './matiere-form-modal';
@@ -25,47 +35,60 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { InfoField } from '@/components/ui/InfoField';
 import { StatCard } from '@/components/ui/StatCard';
 import { useConfirmation } from '@/components/ui/ConfirmationModal';
-import type { AffectationMatiere } from '../types/matiere.types';
+import type { AffectationMatiere, Matiere, CreerMatiereDto } from '../types/matiere.types';
 import type { AffectationPayload } from '../hooks/use-matieres';
+import { format } from 'date-fns';
+import { fr as frLocale, enUS } from 'date-fns/locale';
 
 type OngletActif = 'informations' | 'niveaux' | 'programme' | 'affectations' | 'emploi-du-temps';
 
 function StatutBadge({ actif }: { actif: boolean }) {
+    const { t } = useTranslation('matieres');
     return (
         <span className={`inline-flex items-center gap-1 rounded-full px-[clamp(0.375rem,1vw,0.625rem)] py-[clamp(0.125rem,0.5vw,0.25rem)] text-[clamp(0.75rem,1.25vw,0.875rem)] font-medium ${
             actif ? 'bg-success/10 text-success' : 'bg-muted/10 text-muted-foreground'
         }`}>
             {actif ? <CheckCircle className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" /> : <XCircle className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" />}
-            {actif ? 'Active' : 'Inactive'}
+            {actif ? t('active') : t('inactive')}
         </span>
     );
 }
 
-const sousSystemeConfig: Record<string, { label: string; bg: string; text: string }> = {
-    FRANCOPHONE: { label: 'Francophone', bg: 'bg-info/10', text: 'text-info' },
-    ANGLOPHONE: { label: 'Anglophone', bg: 'bg-success/10', text: 'text-success' },
-    BICULTUREL: { label: 'Biculturel', bg: 'bg-purple/10', text: 'text-purple' },
+const SOUS_SYSTEME_STYLES: Record<string, { bg: string; text: string }> = {
+    FRANCOPHONE: { bg: 'bg-info/10', text: 'text-info' },
+    ANGLOPHONE: { bg: 'bg-success/10', text: 'text-success' },
+    BICULTUREL: { bg: 'bg-purple/10', text: 'text-purple' },
 };
 
 function SousSystemeBadge({ value }: { value: string | null }) {
-    if (!value) return <span className="text-xs text-gray-500 dark:text-gray-200">Commun</span>;
-    const cfg = sousSystemeConfig[value] || { label: value, bg: 'bg-muted/10', text: 'text-text-secondary' };
+    const { t } = useTranslation('matieres');
+    if (!value) return <span className="text-[clamp(0.625rem,1vw,0.75rem)] text-muted-foreground">{t('commun')}</span>;
+    const style = SOUS_SYSTEME_STYLES[value] || { bg: 'bg-muted/10', text: 'text-secondary' };
+    const labelMap: Record<string, string> = {
+        FRANCOPHONE: t('francophone'),
+        ANGLOPHONE: t('anglophone'),
+        BICULTUREL: t('biculturel'),
+    };
+    const label = labelMap[value] || value;
     return (
-        <span className={`inline-flex items-center gap-1 rounded-full px-[clamp(0.25rem,0.75vw,0.375rem)] py-[clamp(0.0625rem,0.25vw,0.125rem)] text-[clamp(0.625rem,1vw,0.75rem)] font-medium ${cfg.bg} ${cfg.text}`}>
+        <span className={`inline-flex items-center gap-1 rounded-full px-[clamp(0.25rem,0.75vw,0.375rem)] py-[clamp(0.0625rem,0.25vw,0.125rem)] text-[clamp(0.625rem,1vw,0.75rem)] font-medium ${style.bg} ${style.text}`}>
             <Globe className="h-3 w-3" />
-            {cfg.label}
+            {label}
         </span>
     );
 }
 
-function formatDate(d: string) {
-    return new Date(d).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+function formatDate(d: string, locale: string) {
+    const date = new Date(d);
+    const loc = locale.startsWith('en') ? enUS : frLocale;
+    return format(date, 'dd MMMM yyyy', { locale: loc });
 }
 
 export function MatiereDetailPage() {
     const { id } = useParams({ from: '/_auth/matieres/$id' });
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
+    const { t, i18n } = useTranslation('matieres');
 
     const { data: matiere, isLoading, error } = useMatiere(id);
     const [formOpen, setFormOpen] = useState(false);
@@ -100,7 +123,7 @@ export function MatiereDetailPage() {
         };
     }, [programmeQuery.data, affectationsQuery.data]);
 
-    const handleSave = async (data: any) => {
+    const handleSave = async (data: CreerMatiereDto) => {
         await modifier.mutateAsync({ id, ...data });
         setFormOpen(false);
     };
@@ -135,9 +158,9 @@ export function MatiereDetailPage() {
             <div className="p-6">
                 <div className="flex flex-col items-center justify-center h-64 gap-4">
                     <div className="flex flex-col items-center gap-4">
-                        <p className="text-lg text-gray-600 dark:text-gray-300">Matière non trouvée</p>
+                        <p className="text-[clamp(0.875rem,1.5vw,1rem)] text-secondary">{t('matiereNonTrouvee')}</p>
                         <ElisaButton variant="primary" onClick={() => navigate({ to: '/matieres' })}>
-                            Retour à la liste
+                            {t('retourListe')}
                         </ElisaButton>
                     </div>
                 </div>
@@ -146,11 +169,11 @@ export function MatiereDetailPage() {
     }
 
     const onglets: Tab[] = [
-        { id: 'informations', label: 'Informations', icon: BookOpen },
-        { id: 'niveaux', label: 'Niveaux', icon: Layers, count: programmeQuery.data?.length },
-        { id: 'programme', label: 'Programmes', icon: BookOpen, count: programmesPedagogiquesQuery.data?.length },
-        { id: 'affectations', label: 'Enseignants', icon: Users, count: affectationsQuery.data?.length },
-        { id: 'emploi-du-temps', label: 'Emploi du temps', icon: Clock, count: edtQuery.data?.data?.items?.length },
+        { id: 'informations', label: t('ongletInformations'), icon: BookOpen },
+        { id: 'niveaux', label: t('niveaux'), icon: Layers, count: programmeQuery.data?.length },
+        { id: 'programme', label: t('ongletProgrammes'), icon: BookOpen, count: programmesPedagogiquesQuery.data?.length },
+        { id: 'affectations', label: t('enseignants'), icon: Users, count: affectationsQuery.data?.length },
+        { id: 'emploi-du-temps', label: t('emploiDuTemps'), icon: Clock, count: edtQuery.data?.data?.items?.length },
     ];
 
     return (
@@ -164,17 +187,17 @@ export function MatiereDetailPage() {
                     <div className="flex gap-2">
                         {hasPermission('config:edit') && (
                             <ElisaButton variant="outline" size="sm" icon={<Edit className="h-4 w-4" />} onClick={() => setFormOpen(true)}>
-                                Modifier
+                                {t('modifier')}
                             </ElisaButton>
                         )}
                         {hasPermission('config:edit') && (
                             <ElisaButton variant="danger" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => askDelete({
-                                title: 'Supprimer cette matière',
-                                message: `Êtes-vous sûr de vouloir supprimer "${matiere.nom}" ?`,
-                                details: 'Cette action est irréversible et supprimera toutes les données associées (programme, affectations, configurations).',
+                                title: t('supprimerMatiereTitre'),
+                                message: t('supprimerMatiereMessage', { nom: matiere.nom }),
+                                details: t('supprimerMatiereDetails'),
                                 onConfirm: handleDelete,
                             })}>
-                                Supprimer
+                                {t('supprimer')}
                             </ElisaButton>
                         )}
                     </div>
@@ -196,20 +219,20 @@ export function MatiereDetailPage() {
             </PageHeader>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-[clamp(0.5rem,1.5vw,1rem)]">
-                <StatCard icon={Layers} label="Niveaux" value={programmeQuery.data?.length ?? 0} tone="info" />
-                <StatCard icon={Users} label="Enseignants" value={affectationsQuery.data?.length ?? 0} tone="success" />
-                <StatCard icon={BookOpen} label="Programmes" value={programmesPedagogiquesQuery.data?.length ?? 0} tone="purple" />
+                <StatCard icon={Layers} label={t('niveauxCount')} value={programmeQuery.data?.length ?? 0} tone="info" />
+                <StatCard icon={Users} label={t('enseignantsCount')} value={affectationsQuery.data?.length ?? 0} tone="success" />
+                <StatCard icon={BookOpen} label={t('programmesCount')} value={programmesPedagogiquesQuery.data?.length ?? 0} tone="purple" />
             </div>
 
             {niveauxSansAffectation.length > 0 && (
                 <ErrorMessage
-                    message={`${niveauxSansAffectation.length} niveau(x) sans enseignant assigné`}
+                    message={t('niveauxSansEnseignant', { count: niveauxSansAffectation.length })}
                 />
             )}
 
             {affectationsInactives.length > 0 && (
                 <ErrorMessage
-                    message={`${affectationsInactives.length} affectation(s) inactive(s)`}
+                    message={t('affectationsInactives', { count: affectationsInactives.length })}
                 />
             )}
 
@@ -217,7 +240,7 @@ export function MatiereDetailPage() {
 
             <motion.div key={ongletActif} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                 {ongletActif === 'informations' && (
-                    <InformationsTab matiere={matiere} />
+                    <InformationsTab matiere={matiere} locale={i18n.language} />
                 )}
                 {ongletActif === 'niveaux' && (
                     <TabNiveaux
@@ -240,13 +263,14 @@ export function MatiereDetailPage() {
                         data={affectationsQuery.data}
                         isLoading={affectationsQuery.isLoading}
                         matiereId={id}
+                        locale={i18n.language}
                         onEdit={(a) => { setAffectationToEdit(a); setAffectationModalOpen(true); }}
-                        onDelete={(id) => {
-                            setDeleteAffectationId(id);
+                        onDelete={(aId) => {
+                            setDeleteAffectationId(aId);
                             askDeleteAffectation({
-                                title: 'Supprimer cette affectation',
-                                message: 'Êtes-vous sûr de vouloir supprimer cette affectation ?',
-                                details: 'Cette action est irréversible.',
+                                title: t('supprimerAffectation'),
+                                message: t('supprimerAffectationMessage'),
+                                details: t('supprimerAffectationDetails'),
                                 onConfirm: handleDeleteAffectation,
                             });
                         }}
@@ -257,12 +281,12 @@ export function MatiereDetailPage() {
                 {ongletActif === 'emploi-du-temps' && (
                     <div className="space-y-4">
                         {edtQuery.isLoading ? (
-                            <div className="py-12"><LoadingState message="Chargement de l'emploi du temps..." /></div>
+                            <div className="py-12"><LoadingState message={t('chargementEDT')} /></div>
                         ) : !edtQuery.data?.data?.items?.length ? (
-                        <div className="bg-[var(--color-card)] rounded-lg border border-border p-[clamp(1.5rem,5vw,3rem)] text-center">
-                            <Clock className="h-[clamp(2rem,6vw,3rem)] w-[clamp(2rem,6vw,3rem)] text-text-muted mx-auto mb-[clamp(0.5rem,2vw,0.75rem)]" />
-                            <p className="text-text-secondary font-medium mb-[clamp(0.125rem,0.5vw,0.25rem)] text-[clamp(0.875rem,1.5vw,1rem)]">Aucun créneau pour cette matière</p>
-                            <p className="text-[clamp(0.75rem,1.25vw,0.875rem)] text-text-muted">Les créneaux apparaîtront ici une fois l'emploi du temps généré.</p>
+                        <div className="bg-card rounded-lg border border-border p-[clamp(1.5rem,5vw,3rem)] text-center">
+                            <Clock className="h-[clamp(2rem,6vw,3rem)] w-[clamp(2rem,6vw,3rem)] text-muted-foreground mx-auto mb-[clamp(0.5rem,2vw,0.75rem)]" />
+                            <p className="text-secondary font-medium mb-[clamp(0.125rem,0.5vw,0.25rem)] text-[clamp(0.875rem,1.5vw,1rem)]">{t('aucunCreneau')}</p>
+                            <p className="text-[clamp(0.75rem,1.25vw,0.875rem)] text-muted-foreground">{t('aucunCreneauDescription')}</p>
                         </div>
                         ) : (
                             <EDTCalendar creneaux={edtQuery.data.data.items} />
@@ -298,23 +322,24 @@ export function MatiereDetailPage() {
     );
 }
 
-function InformationsTab({ matiere }: { matiere: any }) {
+function InformationsTab({ matiere, locale }: { matiere: Matiere; locale: string }) {
+    const { t } = useTranslation('matieres');
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <BookOpen className="h-5 w-5 text-[var(--color-dominant-600)]" />
-                        Informations générales
+                        {t('informationsGenerales')}
                     </CardTitle>
                 </CardHeader>
                 <div className="border-b border-border mx-4 sm:mx-5" />
                 <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <InfoField label="Nom" value={matiere.nom} />
-                        <InfoField label="Code" value={matiere.code || '-'} />
-                        {matiere.nomAnglais && <InfoField label="Nom anglais" value={matiere.nomAnglais} />}
-                        <InfoField label="Sous-système" value={<SousSystemeBadge value={matiere.sousSysteme} />} />
+                        <InfoField label={t('nom')} value={matiere.nom} />
+                        <InfoField label={t('code')} value={matiere.code || '-'} />
+                        {matiere.nomAnglais && <InfoField label={t('nomAnglais')} value={matiere.nomAnglais} />}
+                        <InfoField label={t('sousSysteme')} value={<SousSystemeBadge value={matiere.sousSysteme} />} />
                     </div>
                 </CardContent>
             </Card>
@@ -323,22 +348,22 @@ function InformationsTab({ matiere }: { matiere: any }) {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <TrendingUp className="h-5 w-5 text-[var(--color-dominant-600)]" />
-                        Configuration
+                        {t('configuration')}
                     </CardTitle>
                 </CardHeader>
                 <div className="border-b border-border mx-4 sm:mx-5" />
                 <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <InfoField
-                            label="Couleur"
+                            label={t('couleur')}
                             value={
                                 <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-lg border-2 border-gray-200 dark:border-gray-700 shadow-sm" style={{ backgroundColor: matiere.couleur || '#3B82F6' }} />
-                                    <span className="font-mono text-sm">{matiere.couleur}</span>
+                                    <div className="w-6 h-6 rounded-lg border-2 border-border shadow-sm" style={{ backgroundColor: matiere.couleur || '#3B82F6' }} />
+                                    <span className="font-mono text-[clamp(0.75rem,1.25vw,0.875rem)]">{matiere.couleur}</span>
                                 </div>
                             }
                         />
-                        <InfoField label="Statut" value={<StatutBadge actif={matiere.actif} />} />
+                        <InfoField label={t('statut')} value={<StatutBadge actif={matiere.actif} />} />
                     </div>
                 </CardContent>
             </Card>
@@ -347,14 +372,14 @@ function InformationsTab({ matiere }: { matiere: any }) {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <FileText className="h-5 w-5 text-[var(--color-dominant-600)]" />
-                        Métadonnées
+                        {t('metadonnees')}
                     </CardTitle>
                 </CardHeader>
                 <div className="border-b border-border mx-4 sm:mx-5" />
                 <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <InfoField label="Créée le" value={formatDate(matiere.createdAt)} />
-                        <InfoField label="Dernière modification" value={formatDate(matiere.updatedAt)} />
+                        <InfoField label={t('creeeLe')} value={formatDate(matiere.createdAt, locale)} />
+                        <InfoField label={t('derniereModification')} value={formatDate(matiere.updatedAt, locale)} />
                     </div>
                 </CardContent>
             </Card>
@@ -362,66 +387,80 @@ function InformationsTab({ matiere }: { matiere: any }) {
     );
 }
 
-function AffectationsTab({ data, isLoading, onEdit, onDelete, onCreate, hasPermission }: {
+function AffectationsTab({ data, isLoading, onEdit, onDelete, onCreate, hasPermission, locale }: {
     data: AffectationMatiere[] | undefined;
     isLoading: boolean;
     matiereId: string;
+    locale: string;
     onEdit: (a: AffectationMatiere) => void;
     onDelete: (id: string) => void;
     onCreate: () => void;
     hasPermission: boolean;
 }) {
-    if (isLoading) return <div className="py-12 text-center text-gray-500 dark:text-gray-200"><LoadingState message="Chargement des affectations..." /></div>;
+    const { t } = useTranslation('matieres');
+    const navigate = useNavigate();
+
+    if (isLoading) return <div className="py-12 text-center text-muted-foreground"><LoadingState message={t('chargementAffectations')} /></div>;
 
     return (
         <div className="space-y-4">
             {hasPermission && (
                 <div className="flex justify-end">
                     <ElisaButton variant="primary" size="sm" icon={<UserPlus className="h-4 w-4" />} onClick={onCreate}>
-                        Affecter un enseignant
+                        {t('affecterEnseignantBouton')}
                     </ElisaButton>
                 </div>
             )}
 
             {!data || data.length === 0 ? (
-                <EmptyState icon={Users} message="Aucun enseignant assigné" sub="Utilisez le bouton ci-dessus pour affecter un enseignant à cette matière." />
+                <EmptyState icon={Users} message={t('aucunEnseignant')} sub={t('aucunEnseignantSub')} />
             ) : (
-                <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="bg-card rounded-lg border border-border overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead className="bg-gray-50 dark:bg-gray-800/50">
+                        <table className="w-full text-[clamp(0.75rem,1.25vw,0.875rem)]">
+                            <thead className="bg-muted/50">
                                 <tr>
-                                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Enseignant</th>
-                                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Classe</th>
-                                    <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Année scolaire</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Période</th>
-                                    <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Statut</th>
-                                    {hasPermission && <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Actions</th>}
+                                    <th className="text-left px-4 py-3 font-medium text-secondary">{t('enseignant')}</th>
+                                    <th className="text-left px-4 py-3 font-medium text-secondary">{t('classe')}</th>
+                                    <th className="text-left px-4 py-3 font-medium text-secondary">{t('anneeScolaire')}</th>
+                                    <th className="text-center px-4 py-3 font-medium text-secondary">{t('periode')}</th>
+                                    <th className="text-center px-4 py-3 font-medium text-secondary">{t('statut')}</th>
+                                    {hasPermission && <th className="text-center px-4 py-3 font-medium text-secondary">{t('actions')}</th>}
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-border">
                                 {data.map((a) => (
-                                    <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800/50">
+                                    <tr key={a.id} className="hover:bg-muted/50">
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-2">
-                                                <UserCheck className="h-4 w-4 text-gray-400 dark:text-gray-100" />
+                                                <UserCheck className="h-4 w-4 text-muted-foreground" />
                                                 <span className="font-medium">{a.enseignant ? `${a.enseignant.prenom} ${a.enseignant.nom}` : a.enseignantId}</span>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3">{a.classeAnnee?.classe?.nom || '-'}</td>
-                                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{a.classeAnnee?.anneeScolaire?.libelle || '-'}</td>
-                                        <td className="px-4 py-3 text-center text-xs text-gray-500 dark:text-gray-200">
-                                            {a.dateDebut ? formatDate(a.dateDebut) : '-'}
-                                            {a.dateFin ? ` → ${formatDate(a.dateFin)}` : ''}
+                                        <td className="px-4 py-3">
+                                            {a.classeAnnee?.classe ? (
+                                                <button
+                                                    type="button"
+                                                    className="font-medium text-foreground hover:text-primary transition-colors"
+                                                    onClick={() => navigate({ to: '/classes/$id', params: { id: a.classeAnnee!.classe!.id } })}
+                                                >
+                                                    {a.classeAnnee.classe.nom}
+                                                </button>
+                                            ) : '-'}
+                                        </td>
+                                        <td className="px-4 py-3 text-secondary">{a.classeAnnee?.anneeScolaire?.libelle || '-'}</td>
+                                        <td className="px-4 py-3 text-center text-[clamp(0.625rem,1vw,0.75rem)] text-muted-foreground">
+                                            {a.dateDebut ? formatDate(a.dateDebut, locale) : '-'}
+                                            {a.dateFin ? ` → ${formatDate(a.dateFin, locale)}` : ''}
                                         </td>
                                         <td className="px-4 py-3 text-center">
                                             {a.actif ? (
-                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700">
-                                                    <CheckCircle className="h-3 w-3" /> Actif
+                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[clamp(0.625rem,1vw,0.75rem)] font-medium bg-success/10 text-success">
+                                                    <CheckCircle className="h-3 w-3" /> {t('statutActif')}
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400">
-                                                    <XCircle className="h-3 w-3" /> Inactif
+                                                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[clamp(0.625rem,1vw,0.75rem)] font-medium bg-muted/10 text-muted-foreground">
+                                                    <XCircle className="h-3 w-3" /> {t('statutInactif')}
                                                 </span>
                                             )}
                                         </td>
@@ -432,7 +471,7 @@ function AffectationsTab({ data, isLoading, onEdit, onDelete, onCreate, hasPermi
                                                         <Edit className="h-3.5 w-3.5" />
                                                     </ElisaButton>
                                                     <ElisaButton variant="ghost" size="sm" onClick={() => onDelete(a.id)}>
-                                                        <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                                                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
                                                     </ElisaButton>
                                                 </div>
                                             </td>
@@ -448,29 +487,12 @@ function AffectationsTab({ data, isLoading, onEdit, onDelete, onCreate, hasPermi
     );
 }
 
-function VolumeBar({ value, max }: { value: number; max: number }) {
-    const pct = max > 0 ? (value / max) * 100 : 0;
+function EmptyState({ icon: Icon, message, sub }: { icon: LucideIcon; message: string; sub: string }) {
     return (
-        <div className="flex items-center gap-[clamp(0.25rem,0.75vw,0.375rem)] w-[clamp(4rem,12vw,6rem)]">
-            <div className="flex-1 h-[clamp(0.375rem,0.75vw,0.5rem)] bg-[var(--color-surface-alt)] rounded-full overflow-hidden">
-                <div className="h-full bg-[var(--color-accent)] rounded-full transition-all" style={{ width: `${pct}%` }} />
-            </div>
-            <span className="text-[clamp(0.625rem,1.25vw,0.75rem)] font-medium text-text-secondary w-[clamp(1.5rem,4vw,2rem)] text-right">{value}h</span>
-        </div>
-    );
-}
-
-function InheritedValue({ value, unit, prefix }: { value: number | null | undefined; unit: string; prefix?: string }) {
-    if (value == null) return <span className="text-[clamp(0.625rem,1.25vw,0.75rem)] text-text-muted italic">Hérité</span>;
-    return <span className="font-semibold text-[clamp(0.75rem,1.25vw,0.875rem)]">{prefix ?? ''}{value}{unit}</span>;
-}
-
-function EmptyState({ icon: Icon, message, sub }: { icon: any; message: string; sub: string }) {
-    return (
-        <div className="bg-[var(--color-card)] rounded-lg border border-border p-[clamp(1.5rem,5vw,3rem)] text-center">
-            <Icon className="h-[clamp(2rem,6vw,3rem)] w-[clamp(2rem,6vw,3rem)] text-text-muted mx-auto mb-[clamp(0.5rem,2vw,0.75rem)]" />
-            <p className="text-text-secondary font-medium mb-[clamp(0.125rem,0.5vw,0.25rem)] text-[clamp(0.875rem,1.5vw,1rem)]">{message}</p>
-            <p className="text-[clamp(0.75rem,1.25vw,0.875rem)] text-text-muted">{sub}</p>
+        <div className="bg-card rounded-lg border border-border p-[clamp(1.5rem,5vw,3rem)] text-center">
+            <Icon className="h-[clamp(2rem,6vw,3rem)] w-[clamp(2rem,6vw,3rem)] text-muted-foreground mx-auto mb-[clamp(0.5rem,2vw,0.75rem)]" />
+            <p className="text-secondary font-medium mb-[clamp(0.125rem,0.5vw,0.25rem)] text-[clamp(0.875rem,1.5vw,1rem)]">{message}</p>
+            <p className="text-[clamp(0.75rem,1.25vw,0.875rem)] text-muted-foreground">{sub}</p>
         </div>
     );
 }

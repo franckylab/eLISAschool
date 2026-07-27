@@ -175,8 +175,36 @@ export function NoteDetailPage() {
                                 </h3>
                                 <div className="border-b border-border mb-4" />
                                 <div className="space-y-3">
-                                    <InfoField label={t('eleve')} value={eleveLabel} icon={<User className="h-3.5 w-3.5" />} />
-                                    <InfoField label={t('matiere')} value={matiereLabel} icon={<BookOpen className="h-3.5 w-3.5" />} />
+                                    <InfoField
+                                        label={t('eleve')}
+                                        value={
+                                            note.eleve ? (
+                                                <button
+                                                    type="button"
+                                                    className="font-medium text-foreground hover:text-primary transition-colors"
+                                                    onClick={() => navigate({ to: '/eleves/$id', params: { id: note.eleve!.id } })}
+                                                >
+                                                    {eleveLabel}
+                                                </button>
+                                            ) : '—'
+                                        }
+                                        icon={<User className="h-3.5 w-3.5" />}
+                                    />
+                                    <InfoField
+                                        label={t('matiere')}
+                                        value={
+                                            note.matiere ? (
+                                                <button
+                                                    type="button"
+                                                    className="font-medium text-foreground hover:text-primary transition-colors"
+                                                    onClick={() => navigate({ to: '/matieres/$id', params: { id: note.matiere!.id } })}
+                                                >
+                                                    {matiereLabel}
+                                                </button>
+                                            ) : '—'
+                                        }
+                                        icon={<BookOpen className="h-3.5 w-3.5" />}
+                                    />
                                     <InfoField
                                         label={t('valeur')}
                                         value={
@@ -210,7 +238,20 @@ export function NoteDetailPage() {
                                 </h3>
                                 <div className="border-b border-border mb-4" />
                                 <div className="space-y-3">
-                                    <InfoField label={t('classe')} value={note.classeAnnee?.classe?.nom ?? '—'} />
+                                    <InfoField
+                                        label={t('classe')}
+                                        value={
+                                            note.classeAnnee?.classe ? (
+                                                <button
+                                                    type="button"
+                                                    className="font-medium text-foreground hover:text-primary transition-colors"
+                                                    onClick={() => navigate({ to: '/classes/$id', params: { id: note.classeAnnee!.classe!.id } })}
+                                                >
+                                                    {note.classeAnnee.classe.nom}
+                                                </button>
+                                            ) : '—'
+                                        }
+                                    />
                                     <InfoField label={t('periode')} value={note.periode?.nom ?? '—'} />
                                     {note.commentaire && (
                                         <InfoField label={t('remarque')} value={note.commentaire} />

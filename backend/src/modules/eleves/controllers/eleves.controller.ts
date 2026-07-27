@@ -2,13 +2,14 @@
  * ==================================
  * eLISAschool - Controller Élèves
  * ==================================
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { ElevesService } from '../services';
 import { createEleveSchema, updateEleveSchema, preinscriptionSchema, convertirPreinscriptionSchema, queryInscriptionsSchema } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
-import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 import { Etablissement } from '@modules/etablissement/entities';
 import { AppDataSource } from '@database/data-source';
@@ -16,6 +17,10 @@ import { AppError } from '@common/filters/error.filter';
 
 const router = Router();
 const service = new ElevesService();
+
+// ==================================
+// LISTE GÉNÉRIQUE
+// ==================================
 
 router.get('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -37,30 +42,8 @@ router.get('/', authMiddleware, requirePermission('config:edit'), async (req: Re
 router.post('/', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createEleveSchema, req.body);
-        const eleve = await service.create(dto, req.etablissementId);
+        const eleve = await service.create(dto, req.etablissementId, req);
         res.status(201).json({ success: true, data: eleve });
-    } catch (error) { next(error); }
-});
-
-router.get('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const eleve = await service.findOne(req.params.id);
-        res.json({ success: true, data: eleve });
-    } catch (error) { next(error); }
-});
-
-router.patch('/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const dto = validateDto(updateEleveSchema, req.body);
-        const eleve = await service.update(req.params.id, dto);
-        res.json({ success: true, data: eleve });
-    } catch (error) { next(error); }
-});
-
-router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        await service.delete(req.params.id);
-        res.json({ success: true, message: 'Dossier élève supprimé' });
     } catch (error) { next(error); }
 });
 
@@ -72,7 +55,6 @@ router.post('/preinscription', async (req: Request, res: Response, next: NextFun
     try {
         const dto = validateDto(preinscriptionSchema, req.body);
         
-        // Résoudre l'établissement depuis le code
         const etablissementRepo = AppDataSource.getRepository(Etablissement);
         const etablissement = await etablissementRepo.createQueryBuilder('e')
             .where('e.code = :code OR e.nom LIKE :code', { code: dto.codeEtablissement })
@@ -117,6 +99,7 @@ router.post('/preinscription/:id/convertir', authMiddleware, requirePermission('
             req.params.id,
             dto,
             personnelId || '',
+            req.etablissementId,
             req
         );
         res.json({ 
@@ -138,6 +121,7 @@ router.post('/preinscription/:id/refuser', authMiddleware, requirePermission('co
             req.params.id,
             motif,
             personnelId || '',
+            req.etablissementId,
             req
         );
         res.json({ 
@@ -145,26 +129,6 @@ router.post('/preinscription/:id/refuser', authMiddleware, requirePermission('co
             data: preinscription,
             message: 'Préinscription refusée'
         });
-    } catch (error) { next(error); }
-});
-
-// ==================================
-// DOCUMENTS JUSTIFICATIFS
-// ==================================
-
-router.post('/:id/documents', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { documentUrl, type } = req.body;
-        if (!documentUrl || !type) {
-            throw new AppError('documentUrl et type sont obligatoires', 400, 'MISSING_FIELDS');
-        }
-        const eleve = await service.uploadDocumentJustificatif(
-            req.params.id,
-            documentUrl,
-            type,
-            req
-        );
-        res.json({ success: true, data: eleve });
     } catch (error) { next(error); }
 });
 
@@ -187,7 +151,6 @@ router.get('/inscriptions', authMiddleware, requirePermission('config:edit'), as
             dateFin: req.query.dateFin as string,
         };
         
-        // Utiliser findAll avec filtres étendus
         const result = await service.findAll(query, req.etablissementId);
         res.json({ success: true, data: result });
     } catch (error) { next(error); }
@@ -210,7 +173,7 @@ router.get('/export', authMiddleware, requirePermission('personnel:manage'), asy
         
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', `attachment; filename="eleves_${new Date().toISOString().split('T')[0]}.csv"`);
-        res.send('\ufeff' + csvContent); // BOM UTF-8 pour Excel
+        res.send('\ufeff' + csvContent);
     } catch (error) { next(error); }
 });
 
@@ -228,6 +191,56 @@ router.post('/import', authMiddleware, requirePermission('personnel:manage'), as
         
         const result = await service.importElevesCSV(csvContent, req.etablissementId!, classeAnneeId);
         res.json({ success: true, data: result });
+    } catch (error) { next(error); }
+});
+
+// ==================================
+// ROUTES PARAMÉTRÉES (EN DERNIER pour ne pas shadow les routes littérales)
+// ==================================
+
+router.get('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const eleve = await service.findOne(req.params.id, req.etablissementId);
+        res.json({ success: true, data: eleve });
+    } catch (error) { next(error); }
+});
+
+router.patch('/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validateDto(updateEleveSchema, req.body);
+        const eleve = await service.update(req.params.id, dto, req.etablissementId, req);
+        res.json({ success: true, data: eleve });
+    } catch (error) { next(error); }
+});
+
+router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await service.delete(req.params.id, req.etablissementId, req);
+        res.json({ success: true, message: 'Dossier élève supprimé' });
+    } catch (error) { next(error); }
+});
+
+router.post('/:id/restaurer', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const eleve = await service.restaurer(req.params.id, req.etablissementId!, req);
+        res.json({ success: true, data: eleve, message: 'Dossier élève restauré' });
+    } catch (error) { next(error); }
+});
+
+router.post('/:id/documents', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { documentUrl, type } = req.body;
+        if (!documentUrl || !type) {
+            throw new AppError('documentUrl et type sont obligatoires', 400, 'MISSING_FIELDS');
+        }
+        const eleve = await service.uploadDocumentJustificatif(
+            req.params.id,
+            documentUrl,
+            type,
+            req.etablissementId,
+            req
+        );
+        res.json({ success: true, data: eleve });
     } catch (error) { next(error); }
 });
 

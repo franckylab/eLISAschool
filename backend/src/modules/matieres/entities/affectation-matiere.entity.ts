@@ -120,6 +120,13 @@ export class AffectationMatiere {
     dateFin?: Date;
 
     /**
+     * Co-enseignants associés à cette affectation (co-enseignement).
+     * L'enseignant principal reste enseignantId.
+     */
+    @Column({ type: 'simple-array', nullable: true })
+    coEnseignantIds?: string[];
+
+    /**
      * L'affectation est-elle actuellement active ?
      * Permet de gérer les remplacements d'enseignants en cours d'année
      */

@@ -1217,6 +1217,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.EMPLOI_DU_TEMPS_REALISATION_VALIDATE,
         Permission.EMPLOI_DU_TEMPS_PREFERENCES_MANAGE,
         Permission.EMPLOI_DU_TEMPS_TEMPLATES_MANAGE,
+        Permission.EMPLOI_DU_TEMPS_VERIFIER_CONFLITS,
         Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
         // Apparence
         Permission.APPARENCE_FONDS_VIEW,
@@ -1359,6 +1360,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.EMPLOI_DU_TEMPS_REALISATION_VALIDATE,
         Permission.EMPLOI_DU_TEMPS_PREFERENCES_MANAGE,
         Permission.EMPLOI_DU_TEMPS_TEMPLATES_MANAGE,
+        Permission.EMPLOI_DU_TEMPS_VERIFIER_CONFLITS,
         Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
     ],
 
@@ -1396,6 +1398,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.EMPLOI_DU_TEMPS_EXPORT,
         Permission.EMPLOI_DU_TEMPS_REALISATION_CREATE,
         Permission.EMPLOI_DU_TEMPS_REALISATION_VALIDATE,
+        Permission.EMPLOI_DU_TEMPS_VERIFIER_CONFLITS,
         Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
     ],
 
@@ -1464,6 +1467,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.EMPLOI_DU_TEMPS_EXPORT,
         Permission.EMPLOI_DU_TEMPS_REALISATION_CREATE,
         Permission.EMPLOI_DU_TEMPS_REALISATION_VALIDATE,
+        Permission.EMPLOI_DU_TEMPS_VERIFIER_CONFLITS,
         Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
         // Organisation — lecture (rôle intermédiaire « discipline & organisation »)
         Permission.ORGANISATION_VIEW,

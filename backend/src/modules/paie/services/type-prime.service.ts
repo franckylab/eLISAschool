@@ -4,6 +4,7 @@ import { TypePrime } from '../entities/type-prime.entity';
 import { CreateTypePrimeDto, UpdateTypePrimeDto } from '../dto/paie-etendue.dto';
 import { AppError } from '@common/filters/error.filter';
 import { auditService } from '@modules/auth/services/audit.service';
+import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 
 export class TypePrimeService {
     private repo: Repository<TypePrime>;
@@ -21,7 +22,7 @@ export class TypePrimeService {
         await this.repo.save(entity);
 
         if (userId) {
-            await auditService.log({ utilisateurId: userId, action: 'PRIME_CREATE' as any, cible: 'TypePrime', cibleId: entity.id, description: `Création type prime ${dto.code}`, nouvellesValeurs: dto, module: 'personnel' }, req);
+            await auditService.log({ utilisateurId: userId, action: AuditAction.PRIME_CREATE, cible: 'TypePrime', cibleId: entity.id, description: `Création type prime ${dto.code}`, nouvellesValeurs: dto, module: 'personnel' }, req);
         }
         return entity;
     }
@@ -43,7 +44,7 @@ export class TypePrimeService {
         await this.repo.save(entity);
 
         if (userId) {
-            await auditService.log({ utilisateurId: userId, action: 'PRIME_UPDATE' as any, cible: 'TypePrime', cibleId: id, description: `Mise à jour type prime ${entity.code}`, anciennesValeurs: oldValues, nouvellesValeurs: dto, module: 'personnel' }, req);
+            await auditService.log({ utilisateurId: userId, action: AuditAction.PRIME_UPDATE, cible: 'TypePrime', cibleId: id, description: `Mise à jour type prime ${entity.code}`, anciennesValeurs: oldValues, nouvellesValeurs: dto, module: 'personnel' }, req);
         }
         return entity;
     }
@@ -53,7 +54,7 @@ export class TypePrimeService {
         await this.repo.remove(entity);
 
         if (userId) {
-            await auditService.log({ utilisateurId: userId, action: 'PRIME_DELETE' as any, cible: 'TypePrime', cibleId: id, description: `Suppression type prime ${entity.code}`, module: 'personnel' }, req);
+            await auditService.log({ utilisateurId: userId, action: AuditAction.PRIME_DELETE, cible: 'TypePrime', cibleId: id, description: `Suppression type prime ${entity.code}`, module: 'personnel' }, req);
         }
     }
 }

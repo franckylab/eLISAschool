@@ -19,7 +19,7 @@ export function useModifierStatut() {
             if (data) queryClient.setQueryData(PERSONNEL_KEYS.detail(data.id), data);
             toast.success('Statut mis à jour');
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la mise à jour du statut'),
+        onError: (error: unknown) => toast.error((error as Error)?.message || 'Erreur lors de la mise à jour du statut'),
     });
 }
 
@@ -35,7 +35,7 @@ export function useModifierDateEntree() {
             if (data) queryClient.setQueryData(PERSONNEL_KEYS.detail(data.id), data);
             toast.success('Date d\'entrée mise à jour');
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la mise à jour de la date'),
+        onError: (error: unknown) => toast.error((error as Error)?.message || 'Erreur lors de la mise à jour de la date'),
     });
 }
 
@@ -51,6 +51,6 @@ export function useModifierCompetences() {
             if (data) queryClient.setQueryData(PERSONNEL_KEYS.detail(data.id), data);
             toast.success('Compétences mises à jour');
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la mise à jour des compétences'),
+        onError: (error: unknown) => toast.error((error as Error)?.message || 'Erreur lors de la mise à jour des compétences'),
     });
 }

@@ -11,6 +11,7 @@ import {
     JoinColumn,
     CreateDateColumn,
     UpdateDateColumn,
+    DeleteDateColumn,
     Index,
 } from 'typeorm';
 import { numericTransformer } from '@common/utils/numeric-transformer.util';
@@ -33,7 +34,7 @@ export enum StatutBulletinPaie {
 @Index(['annee'])
 @Index(['statut'])
 @Index(['etablissementId'])
-@Index(['membrePersonnelId', 'annee', 'mois'], { unique: true }) // Unique: 1 bulletin/mois/personne
+@Index(['membrePersonnelId', 'annee', 'mois'], { unique: true, where: '"deletedAt" IS NULL' }) // Unique: 1 bulletin actif/mois/personne
 @Index(['etablissementId', 'annee', 'mois']) // Composite pour rapports périodiques
 export class BulletinPaie {
     @PrimaryGeneratedColumn('uuid')
@@ -105,4 +106,7 @@ export class BulletinPaie {
 
     @UpdateDateColumn()
     updatedAt!: Date;
+
+    @DeleteDateColumn()
+    deletedAt?: Date | null;
 }

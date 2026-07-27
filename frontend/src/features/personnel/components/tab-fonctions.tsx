@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Calendar, CheckCircle, Briefcase, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useMembreFonctions } from '../hooks/use-membre-fonctions';
 import { useToutesFonctions } from '@/features/fonctions/hooks/use-fonctions';
 
@@ -9,6 +10,7 @@ interface TabFonctionsProps {
 }
 
 export function TabFonctions({ membreId }: TabFonctionsProps) {
+    const { t, i18n } = useTranslation('personnel');
     const { data: fonctionsMembre, isLoading } = useMembreFonctions(membreId);
     const { data: allFonctions } = useToutesFonctions();
 
@@ -18,7 +20,7 @@ export function TabFonctions({ membreId }: TabFonctionsProps) {
 
     return (
         <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-foreground">Fonctions assignées</h3>
+            <h3 className="text-lg font-semibold text-foreground">{t('fonctions.titre')}</h3>
 
             {isLoading ? (
                 <div className="flex justify-center py-8">
@@ -27,8 +29,8 @@ export function TabFonctions({ membreId }: TabFonctionsProps) {
             ) : !fonctionsMembre || fonctionsMembre.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                     <Briefcase className="h-12 w-12 mx-auto mb-3 opacity-40" />
-                    <p>Aucune fonction assignée</p>
-                    <p className="text-sm mt-1">Les fonctions sont gérées depuis le contrat du membre</p>
+                    <p>{t('fonctions.aucune')}</p>
+                    <p className="text-sm mt-1">{t('fonctions.aucuneDesc')}</p>
                 </div>
             ) : (
                 <div className="space-y-2">
@@ -58,28 +60,28 @@ export function TabFonctions({ membreId }: TabFonctionsProps) {
                                         </span>
                                         {mf.estPrincipale && (
                                             <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                                                Principale
+                                                {t('fonctions.principale')}
                                             </span>
                                         )}
                                     </div>
                                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                                         <span className="flex items-center gap-1">
                                             <Calendar className="h-3 w-3" />
-                                            {new Date(mf.dateDebut).toLocaleDateString('fr-FR')}
+                                            {new Date(mf.dateDebut).toLocaleDateString(i18n.language)}
                                         </span>
                                         {mf.dateFin && (
                                             <>
                                                 <span>→</span>
                                                 <span className="flex items-center gap-1">
                                                     <Calendar className="h-3 w-3" />
-                                                    {new Date(mf.dateFin).toLocaleDateString('fr-FR')}
+                                                    {new Date(mf.dateFin).toLocaleDateString(i18n.language)}
                                                 </span>
                                             </>
                                         )}
                                         {!mf.dateFin && (
-                                            <span className="flex items-center gap-1 text-green-600">
+                                            <span className="flex items-center gap-1 text-success">
                                                 <CheckCircle className="h-3 w-3" />
-                                                En cours
+                                                {t('fonctions.enCours')}
                                             </span>
                                         )}
                                     </div>

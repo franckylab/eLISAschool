@@ -26,7 +26,7 @@ export function useMembreFonctions(membrePersonnelId: string) {
             const res = await apiClient.get<MembreFonction[]>(
                 `/api/personnel/membres-fonctions/membre/${membrePersonnelId}`
             );
-            return (res as any).data as MembreFonction[];
+            return res.data;
         },
         enabled: !!membrePersonnelId,
         placeholderData: (previousData) => previousData,
@@ -44,15 +44,15 @@ export function useAssignerFonction() {
             estPrincipale?: boolean;
             commentaire?: string | null;
         }) => {
-            const res = await apiClient.post('/api/personnel/membres-fonctions', dto);
-            return (res as any).data as MembreFonction;
+            const res = await apiClient.post<MembreFonction>('/api/personnel/membres-fonctions', dto);
+            return res.data;
         },
         onSuccess: (data) => {
-            qc.invalidateQueries({ queryKey: MEMBRE_FONCTION_KEYS.byMembre(data.membrePersonnelId) });
+            if (data) qc.invalidateQueries({ queryKey: MEMBRE_FONCTION_KEYS.byMembre(data.membrePersonnelId) });
             toast.success('Fonction assignée au membre');
         },
-        onError: (e: any) => {
-            toast.error(e?.response?.data?.message || e?.message || 'Erreur lors de l\'assignation');
+        onError: (error: unknown) => {
+            toast.error((error as Error)?.message || 'Erreur lors de l\'assignation');
         },
     });
 }
@@ -60,16 +60,16 @@ export function useAssignerFonction() {
 export function useModifierMembreFonction() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async ({ id, dto }: { id: string; dto: any }) => {
-            const res = await apiClient.patch(`/api/personnel/membres-fonctions/${id}`, dto);
-            return (res as any).data as MembreFonction;
+        mutationFn: async ({ id, dto }: { id: string; dto: Partial<MembreFonction> }) => {
+            const res = await apiClient.patch<MembreFonction>(`/api/personnel/membres-fonctions/${id}`, dto);
+            return res.data;
         },
         onSuccess: (data) => {
-            qc.invalidateQueries({ queryKey: MEMBRE_FONCTION_KEYS.byMembre(data.membrePersonnelId) });
+            if (data) qc.invalidateQueries({ queryKey: MEMBRE_FONCTION_KEYS.byMembre(data.membrePersonnelId) });
             toast.success('Assignation mise à jour');
         },
-        onError: (e: any) => {
-            toast.error(e?.response?.data?.message || e?.message || 'Erreur lors de la mise à jour');
+        onError: (error: unknown) => {
+            toast.error((error as Error)?.message || 'Erreur lors de la mise à jour');
         },
     });
 }
@@ -85,8 +85,8 @@ export function useRetirerFonction() {
             qc.invalidateQueries({ queryKey: MEMBRE_FONCTION_KEYS.byMembre(data.membrePersonnelId) });
             toast.success('Fonction retirée du membre');
         },
-        onError: (e: any) => {
-            toast.error(e?.response?.data?.message || e?.message || 'Erreur lors du retrait');
+        onError: (error: unknown) => {
+            toast.error((error as Error)?.message || 'Erreur lors du retrait');
         },
     });
 }

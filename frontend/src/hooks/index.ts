@@ -57,5 +57,8 @@ export { useDocumentTitle } from './use-document-title';
 // Tab state management (URL-driven or local)
 export { useTabState } from './useTabState';
 
+// Gestion d'erreurs partagée (utilisée par notes, bulletins, organisation, EDT, etc.)
+export { useHandleError } from './use-handle-error';
+
 // i18n enum options helper
 export { useEnumOptions } from './use-enum-options';

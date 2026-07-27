@@ -5,19 +5,23 @@ import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Loader2 } from 'lucide-react';
 
+import type { TypeRetenue } from '../types/paie.types';
+
+type RetenueFormData = Omit<TypeRetenue, 'id' | 'etablissementId' | 'createdAt' | 'updatedAt'>;
+
 interface RetenueModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSave: (data: any) => Promise<void>;
+    onSave: (data: RetenueFormData) => Promise<void>;
     isLoading?: boolean;
-    retenue?: any | null;
+    retenue?: TypeRetenue | null;
 }
 
-const FORM_INIT = {
+const FORM_INIT: RetenueFormData = {
     code: '',
     nom: '',
-    frequence: 'PONCTUELLE' as string,
-    montantMax: undefined as number | undefined,
+    frequence: 'PONCTUELLE',
+    montantMax: undefined,
     description: '',
 };
 
@@ -62,7 +66,7 @@ export function RetenueModal({ open, onOpenChange, onSave, isLoading, retenue }:
                             type="text"
                             value={form.code}
                             onChange={(e) => setForm(p => ({ ...p, code: e.target.value }))}
-                            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                            className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                             required
                         />
                     </div>
@@ -72,7 +76,7 @@ export function RetenueModal({ open, onOpenChange, onSave, isLoading, retenue }:
                             type="text"
                             value={form.nom}
                             onChange={(e) => setForm(p => ({ ...p, nom: e.target.value }))}
-                            className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                            className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                             required
                         />
                     </div>
@@ -81,8 +85,8 @@ export function RetenueModal({ open, onOpenChange, onSave, isLoading, retenue }:
                     <label className="block text-sm font-medium mb-1">{t('frequence')}</label>
                     <select
                         value={form.frequence}
-                        onChange={(e) => setForm(p => ({ ...p, frequence: e.target.value }))}
-                        className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                        onChange={(e) => setForm(p => ({ ...p, frequence: e.target.value as RetenueFormData['frequence'] }))}
+                        className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                     >
                         <option value="PONCTUELLE">{t('ponctuelle')}</option>
                         <option value="RECURRENTE">{t('recurrente')}</option>
@@ -95,16 +99,16 @@ export function RetenueModal({ open, onOpenChange, onSave, isLoading, retenue }:
                         step="0.01"
                         value={form.montantMax || ''}
                         onChange={(e) => setForm(p => ({ ...p, montantMax: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                        className="w-full px-3 py-2 border rounded-lg dark:bg-gray-800 dark:border-gray-600"
+                        className="w-full px-3 py-2 border rounded-lg bg-input border-border"
                     />
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
                     <ElisaButton variant="outline" onClick={() => onOpenChange(false)}>
-                        {t('commun:annuler')}
+                        {t('common:boutons.annuler')}
                     </ElisaButton>
                     <ElisaButton type="submit" variant="primary" isLoading={isLoading}>
                         {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                        {retenue ? t('commun:enregistrer') : t('commun:creer')}
+                        {retenue ? t('common:boutons.enregistrer') : t('common:boutons.creer')}
                     </ElisaButton>
                 </div>
             </form>

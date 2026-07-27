@@ -178,6 +178,155 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 - `tsc --noEmit` : 0 erreur in-scope.
 - 5 fichiers modifiés (export-types.ts déjà committé dans b340a14).
 
+## Travail effectué — Session 2026-07-27 (suite — export v2 : presets, estimation réaliste, fix fill noir)
+
+### Presets de taille/qualité v2 (`export-types.ts` v2.0.0, réécrit)
+- **Tailles** : modèle `bordLong` (px du bord le plus long, agnostique de l'orientation), strictement croissantes, résolutions standard web : `hd` 1280 → `full-hd` 1920 → `qhd` 2560 → `4k` 3840 → `8k` 7680. Remplace moyen/grand/tres-grand (carrés incohérents, non croissants vs 4k/8k).
+- **Qualités** : `facteur` = fraction de la taille cible (minimale 0.25 / reduite 0.5 / equilibree 0.75 / maximale 1.0). La taille sélectionnée est un plafond dur jamais dépassé — l'ancien `Math.max(qualite.pixelRatio, ratioPourTaille)` permettait à la qualité de dépasser la taille (source de l'incohérence estimation/fichier).
+- **Estimation réaliste** : `OCTETS_PAR_PIXEL_PNG = 0.12` (empirique diagrammes aplats post-deflate) remplace 4 o/px RGBA brut (surestimait ~30× — le fameux "69 Mo"). `pixelRatio = min(ratioCible × facteur, 8)`. Dimensions estimées = dimensions exactes de sortie.
+- **Défauts ExportDialog** : `qhd` + `maximale`. `formatTaille` affiné (Go/Mo 0-1 décimale/Ko min 1). Tooltips `title` via clés i18n `taille_*_desc` / `qualite_*_desc`.
+- **i18n FR+EN** : anciennes clés supprimées, nouvelles clés + descriptions ajoutées (`organisation.json` bloc `organigramme.export`).
+
+### Fix remplissage noir des liens hiérarchiques à l'export
+- **Cause racine** : le path visible de `HierarchieEdge` dépendait de la classe CSS `.react-flow__edge-path` pour `fill: none` ; cette règle est perdue lors de la sérialisation SVG de html-to-image → les paths smoothstep à angles sont remplis en noir. `RelationEdge` avait déjà `fill="none"` explicite (d'où l'export correct des relations directes).
+- **Double fix** : (1) `HierarchieEdge.tsx` — attribut `fill="none"` explicite sur le path visible ; (2) `export.ts` `preparerPourExport()` — normalisation défensive `setAttribute('fill','none')` sur tout path de `.react-flow__edges` / `.react-flow__edge` sans attribut fill.
+
+### Légende PDF alignée sur le canon couleurs
+- **`export-pdf.ts`** : `dominantLight` supprimé, `secondary: '#f59e0b'` ajouté. Légende : Hiérarchie=vert plein, Rel. directe=ambre pointillé, Rel. fonctionnelle=bleu pointillé.
+
+### Qualité
+- 0 `any`, 0 couleur hardcodée hors palettes export dédiées, i18n FR/EN complet, `tsc --noEmit` 0 erreur in-scope.
+
+## Travail effectué — Session 2026-07-27 (suite 2 — export : légendes thème, toast taille réelle, stabilisation DOM, plafond canvas)
+
+### Légendes PNG/PDF alignées sur le thème actif
+- **`css-var-resolver.ts`** : `normaliserCouleurHex(cssColor, fallback)` — normalisation via canvas 2D `fillStyle` (gère oklch/rgb/noms → `#rrggbb` ; fallback posé avant pour que toute valeur invalide retombe dessus).
+- **`export.ts`** : `resoudreCouleursLiens()` résout à l'export `--color-dominant-500` (hiérarchie), `--color-secondary-500` (directe), `--color-accent-600` (fonctionnelle) — fallbacks canon #28a745/#f59e0b/#007bff. Injecté dans l'overlay PNG (`creerOverlay`) ET le PDF (`PdfOptions.couleursLegende`). `COULEURS_EXPORT`/`COULEURS_PDF` : couleurs de liens hardcodées supprimées (seuls les neutres restent).
+
+### Toast post-export avec taille réelle
+- **`exporterOrganigramme` → `ResultatExport | null`** : `{ format, tailleOctets, largeurPx, hauteurPx }`. PNG : octets du dataUrl (`base64.length × 0.75`) ; PDF : `exporterPdfJsPdf` retourne `Promise<number>` via `doc.output('blob').size`.
+- **`ExportDialog.tsx`** : `toast.success` sonner (format + dimensions réelles + taille réelle formatée), `toast.error` en échec. `formatTaille` extrait hors composant. Clés i18n FR/EN : `exportReussi`, `exportDetail`, `exportEchec`, `resolutionPlafonnee`.
+
+### Stabilisation DOM (portée « Tout déplié »)
+- **`attendreStabilisationDom(element, calmeMs=250, timeoutMs=3000)`** : MutationObserver debouncé remplace le `setTimeout(600)` fixe après le dispatch `expand-all` — capture uniquement quand ReactFlow a fini de re-layouter.
+
+### Plafond dimension canvas
+- **`export-types.ts`** : `DIMENSION_MAX_PX = 16384` ; `pixelRatio = min(demandé, PIXEL_RATIO_MAX=8, plafondCanvas)` ; `EstimationExport.plafonne` → avertissement « Résolution plafonnée (limite navigateur) » dans le bloc estimation du dialog.
+
+### Reco 4 (PDF côté serveur) — reportée, justifiée
+- La capture pixel-fidèle de ReactFlow exige le DOM client (layout dagre, CSS vars thème, fonts). Pas de navigateur headless dans la stack backend ; un rendu serveur divergerait du rendu écran. Statu quo client-side assumé.
+
+### Qualité
+- 0 `any`, 0 couleur hardcodée hors fallbacks canon, i18n FR/EN complet, `tsc --noEmit` 0 erreur in-scope.
+
+## Travail effectué — Session 2026-07-27 (suite 3 — export v3 : 20K px, orientation, dédup PDF, minimap, progression)
+
+### Presets 20 000 px + double plafond canvas (`export-types.ts` v3.0.0)
+- Presets ajoutés : `16k` (15 360 px) et `ultra` (20 480 px). `DIMENSION_MAX_PX = 20480`.
+- **Nouveau plafond surface** `SURFACE_MAX_PX = 268_000_000` (limite d'AIRE Chrome ~268 Mpx, distincte de la limite de bord) : `pixelRatio = min(demandé, DIMENSION_MAX/bordLong, sqrt(SURFACE_MAX/surface))`. `plafonne` couvre les deux plafonds.
+
+### Orientation paysage/portrait (PDF)
+- `OrientationExport = 'paysage' | 'portrait'` dans `ExportOptions`. `export-pdf.ts` v2.0.0 : `getPageDimensions(format, orientation)` swap min/max des dims PAGE_FORMATS (stockées portrait). Sélecteur segmenté dans ExportDialog (RectangleHorizontal/RectangleVertical), visible uniquement en PDF.
+
+### Dédup PDF titre/établissement/date/légende (fix redondance)
+- **Overlay incrusté uniquement pour le PNG** (`capturerElement` : `options.format === 'png'`) ; le PDF reçoit une image nue et jsPDF dessine son propre en-tête (hauteur dynamique : titre 14pt + établissement 10pt + date 8pt, séparateur conditionnel), sa légende (alignée droite via `doc.getTextWidth`, dash `[3,1]`/`[1,1]`) et son footer.
+- **Titre document** (recherche web) : « Organigramme hiérarchique et fonctionnel » (`titreDocument` i18n) + nom établissement en sous-ligne. `ExportOptions.titre` + `nomEtablissement` séparés.
+
+### Minimap : toggle export + label accessible
+- `ExportOptions.inclureMinimap` (défaut false) → filtre toPng `return options.inclureMinimap` sur `.react-flow__minimap`. Checkbox « Vue miniature (minimap) » dans Inclusions. ⚠️ La minimap n'est rendue que ≥1280px (`isDesktop`) — le toggle n'a d'effet que sur desktop.
+- `MiniMap ariaLabel={t('organigramme.flow.minimapLabel')}` : « Vue miniature de l'organigramme » / "Organization chart overview map".
+
+### Progression d'export par étapes
+- `EtapeExport = 'preparation' | 'depliage' | 'capture' | 'generation' | 'telechargement'` ; `exporterOrganigramme(elementId, options, onProgress?, libellesLegende?)` émet chaque étape. UI : barre `role="status" aria-live="polite"`, pourcentages indicatifs (10/25/55/85/95), fieldsets/boutons `disabled` pendant l'export, fermeture modal bloquée.
+- `LibellesLegende` injecté depuis React (t()) avec défauts FR — utils restent sans dépendance React.
+- Stabilisation DOM « tout déplié » : `attendreStabilisationDom` (MutationObserver, calme 250ms, plafond 3s), collapse-all en `finally`.
+
+### Fichiers
+- `export-types.ts` v3.0.0, `export.ts` v4.0.0, `export-pdf.ts` v2.0.0, `ExportDialog.tsx` v3.0.0, `OrganigrammeFlowView.tsx` (ariaLabel), locales FR/EN (`organigramme.export` + `organigramme.flow.minimapLabel`).
+
+### Qualité
+- 0 `any`, 0 couleur hardcodée hors palettes export, i18n FR/EN parité, `tsc --noEmit` 0 erreur in-scope, JSON locales valides.
+
+## Travail effectué — Session 2026-07-27 (grill-me RH : contrats, personnel, paie, organisation)
+
+### 4 arbitrages validés puis implémentés
+1. **Workflow validation effectif** : `validationWorkflowService` dispatch réellement sur l'entité (statut EN_ATTENTE_VALIDATION → ACTIF/REJETE appliqué à ContratPersonnel/BulletinPaie/MembrePersonnel), plus de workflow orphelin.
+2. **Transplantation frontend contrats/paie** : pages listes + détails alignées sur le pattern `utilisateurs` (PageHeader gradient, DataTable serveur, TabsBar `?tab=`, modals CustomModal + RHF/zod).
+3. **Multi-occupants unifié** : `Poste.nombrePostes` + affectations actives comptées, helper partagé de capacité (backend + frontend), fin de la double logique estSuppleant/occupant.
+4. **Soft delete complet RH** : `@DeleteDateColumn()` sur MembrePersonnel, ContratPersonnel et entités paie ; suppressions REST → soft delete ; requêtes filtrent nativement.
+
+### P0 backend paie
+- Calcul bulletin corrigé (gains/retenues via ElementSalaire, decimals `numericTransformer`), POST bulletins avec garde période/doublon, audit actions paie.
+- `typeContrat` = nomenclature dynamique `TypeContratPersonnalise` (plus d'enum figé) ; mode rémunération = FK `ModeRemunerationEntity` (source unique).
+
+### P1 sécurité
+- Fuites cross-tenant colmatées (etablissementId forcé depuis le token sur services contrats/paie/personnel).
+- RBAC : `requireAnyPermission(...)` là où un OR de permissions est légitime (plus de bypass par permission grossière).
+
+### Hygiène (task 8)
+- **i18n personnel** : parité FR/EN stricte vérifiée par script (`personnel-detail-page`, `heure-cours-form-modal`, `personnel-page`, clés heuresCours).
+- **`Fonction.chemin` harmonisé** : convention unique service = segments **ids** séparés par **`.`** (`parentChemin.id`, racine = id seul). `seed-organisation.ts` réaligné (pattern save deux temps + `cheminsMap` code→chemin) avec réalignement idempotent des chemins legacy `parentId/CODE` via `cheminAttendu`. Vérifié : le champ n'est jamais requêté (pas de LIKE).
+- **Migration `029-paie-etendue.sql` réécrite v3.0** : 4 défauts corrigés — FK vers table inexistante `bulletin_paies` → **`bulletins_paie`** ; colonnes snake_case → camelCase quoté aligné entités (`"bulletinPaieId"`, `"tauxPatronal"`, `"typeCalcul"`, `"montantMax"`) ; UNIQUE global sur `code` → index composite `(code, "etablissementId")` ; INSERTs seeds SQL supprimés (violaient NOT NULL etablissementId — gérés par `seed-cotisations.ts`/`seed-types-primes.ts`). Bloc `DO $$` idempotent de rattrapage v2 (RENAME COLUMN + DROP `*_code_key`). ✅ appliquée en local.
+
+### Docs
+- Skill `elisaschool-business-logic` : **Domaine 12 RH** ajouté (workflow effectif, multi-occupants, soft delete, nomenclatures dynamiques, convention chemin, migration 029 v3.0, anti-patterns).
+
+### Qualité
+- 0 `any` nouveau, 0 couleur hardcodée nouvelle, i18n FR/EN parité, `tsc --noEmit` 0 erreur in-scope, multi-tenant strict.
+
+## Travail effectué — Session 2026-07-27 (grill-me RH — frontend personnel)
+
+### 4 arbitrages validés (confirmés)
+1. **Historiser** : affecterEnseignant désactive l'ancienne affectation + crée une nouvelle ligne
+2. **Blocage strict** : 400 si membre inexistant / pas de contrat actif / pas ENSEIGNANT
+3. **Fusion EDT + suppression documents** : un seul onglet EDT, suppression de la vue hebdomadaire dupliquée
+4. **Sous-menu RH sidebar** : entrée expandable « Ressources humaines »
+
+### Corrections frontend (6 fichiers)
+- **`personnel-page.tsx`** : `window.location.href` → `navigate()` (TanStack Router)
+- **`heure-cours-form-modal.tsx`** : champs UUID brut → selects (classeAnneeId, matiereId, salleId, remplacantId)
+- **`personnel-detail-page.tsx`** : 90+ couleurs hardcodées → CSS vars, onglet documents mort supprimé, chaînes FR → `t()`, deep-linking `?tab=`
+- **`tab-heure-cours.tsx`** : vue hebdomadaire supprimée (doublon EDT dédié), 0 `any`, 0 couleur hardcodée, 0 chaîne FR en dur, 6 nouvelles clés i18n FR+EN
+- **`Sidebar.tsx`** : Personnel/Contrats/Paie groupés sous « Ressources humaines » (expandable, icône UserCheck, permissions granulaires par enfant)
+- **`personnel.types.ts`** : `PostePartial` dupliqué supprimé (import depuis contrats), `PersonnelFormData` interface ajoutée, `fromFormToCreateDto` typé proprement
+- **`use-personnel.ts`** : 8 `any` éliminés (params query, error handlers, mutation types)
+
+### i18n
+- 6 nouvelles clés `heuresCours.*` dans `fr/personnel.json` et `en/personnel.json` (aucunCreneauEdt, generationReussie, erreurGeneration, coursAjoute, coursMisAJour, genererDepuisEdt)
+
+### Qualité
+- 0 `any` dans personnel.types.ts, use-personnel.ts, tab-heure-cours.tsx
+- 0 couleur hardcodée dans personnel-detail-page.tsx, tab-heure-cours.tsx
+- 0 chaîne FR en dur dans tab-heure-cours.tsx
+
+## Travail effectué — Session 2026-07-27 (grill-me RH — audit qualité frontend personnel/contrats/paie)
+
+### Audit qualité — 82 problèmes résolus
+- **36 `any`** éliminés dans 10 fichiers (hooks, modals, types, pages)
+- **30 couleurs hardcodées** remplacées par CSS vars (`bg-muted`, `border-border`, `text-secondary`, `text-muted-foreground`)
+- **16 chaînes FR hardcodées** remplacées par `t()` (i18n)
+
+### Fichiers corrigés (10)
+- **personnel-form-modal.tsx** : `useState<FormState>` typé, submit via `fromFormToCreateDto()`, import `CreerPersonnelDto` supprimé
+- **cotisation-modal.tsx** : `FORM_INIT: CotisationFormData`, cast `as CotisationFormData['type']` sur select onChange
+- **prime-modal.tsx** : `FORM_INIT: PrimeFormData`, cast `as PrimeFormData['typeCalcul']`
+- **retenue-modal.tsx** : `FORM_INIT: RetenueFormData`, cast `as RetenueFormData['frequence']`
+- **use-heure-cours.ts** : annotations `Promise<T>` explicites supprimées des queryFn (inférence TypeScript)
+- **use-contrats.ts** : 8 `any` → types propres (`ContratPersonnel`, `PaginatedResult`, `ApiResponse<T>`)
+- **use-paie.ts** (frontend) : 6 `any` → typage propre
+- **contrats-page.tsx** : 12 couleurs hardcodées → CSS vars, 4 chaînes FR → `t()`
+- **paie-page.tsx** : 10 couleurs hardcodées → CSS vars, 6 chaînes FR → `t()`
+- **bulletin-form-modal.tsx** : 8 `any` → types propres, 6 couleurs → CSS vars
+
+### Backend — 2 bugs corrigés (suivi-personnel)
+- **`suivi-personnel.controller.ts`** : `getDashboardPersonnel` attendait 3 args (ajout `anneeScolaireId` depuis query params avec garde 400)
+- **`cron-jobs.ts`** : `statut: 'ACTIF'` → `StatutPersonnel.ACTIF` (enum importé)
+
+### Compilation vérifiée
+- **Frontend** : 0 erreur dans personnel/contrats/paie/organisation (54 erreurs préexistantes dans d'autres modules)
+- **Backend** : 0 erreur dans personnel/organisation/paie/heures-cours/contrats/suivi-personnel (311 erreurs préexistantes dans d'autres modules)
+- **101 fichiers modifiés** au total (+3822/-4194 lignes)
+
 ## Next Move
 Refonte v4.0 organisation : ✅ terminée. Hiérarchie v4.1 (superieurPosteId + réintégration page + overlay organigramme) : ✅ terminée.
 1. ~~Exécuter la migration 122~~ ✅ appliquée en local (2026-07-25) : étape 5 ajoutée (purge des 26 relations orphelines — superieurId nullé par l'ancienne FK). État final : 26 poste→poste + 1 personne→personne, 0 orphelin, serveur OK (health 200).
@@ -186,6 +335,8 @@ Refonte v4.0 organisation : ✅ terminée. Hiérarchie v4.1 (superieurPosteId + 
 4. **Tests** : phase dédiée après stabilisation (organisation + hiérarchie + notes/bulletins)
 5. **Migrations 125 + 126** : ✅ appliquées en local (2026-07-25, session grill-me organisation). À appliquer sur staging/prod (avec 122/123/124).
 6. ~~Data gap seeds~~ ✅ résolu (2026-07-25) : `seed-matieres-niveaux.ts` refondu — 7 profils de programme (MATERNELLE, PRIMAIRE_BAS/HAUT, COLLEGE_BAS/HAUT, LYCEE_BAS/HAUT) mappés sur les 31 niveaux FR+EN. Exécuté pour les 2 établissements : +176 associations, total 498, 0 niveau sans programme. Vérifié : génération bulletins Quatrième → moyennes pondérées correctes (2.52/1.91), rangs 1/2, 18 bulletins_matieres. Données de test nettoyées. Standalone du seed boucle désormais sur tous les établissements.
+7. **Migration 029 v3.0 (paie)** : ✅ appliquée en local (2026-07-27). À appliquer sur staging/prod avec 122/123/124/125/126/127.
+8. **Re-seed organisation** : exécuter `seed-organisation.ts` sur chaque environnement pour réaligner les `Fonction.chemin` legacy (`parentId/CODE` → `parentChemin.id`) — idempotent.
 
 ## Travail effectué — Session 2026-07-25 (grill-me organisation — UX, permissions, organigramme)
 ### Décisions validées
@@ -645,3 +796,219 @@ Les 22 templates existants manquaient de cohérence, de logique et de contextual
 3. Tester la génération avec les nouveaux templates
 4. Valider la cohérence des fonctionRef dans chaque template
 5. Ajouter des tests unitaires pour `findAllFiltered()` et `clonerTemplate()`
+
+## Travail effectué — Session 2026-07-27 (export v4 : lib/ réutilisable, minimap mobile, PDF tuiles multi-pages)
+
+### Arbitrages grill-me (6 sujets analysés)
+
+| # | Sujet | Décision | Justification |
+|---|-------|----------|---------------|
+| 1 | Minimap desktop-only (export mobile) | **Implémenté** | Force-mount temporaire via événement `force-minimap` avant capture, cleanup en `finally` |
+| 2 | Web Worker encodage PNG géant | **Différé** | html-to-image exige le DOM (SVG foreignObject) ; le coût principal = sérialisation SVG + rastérisation, non déplaçable. Gain limité au ré-encodage final. À reconsidérer si gels constatés en usage réel |
+| 3 | PDF multi-pages (tuiles) | **Implémenté** | Mode `tuiles` : page assemblage + grille numérotée + tuiles avec repères de découpe, chevauchement 10mm, DPI 150 |
+| 4 | Rendu PDF côté serveur | **Différé** | Fidélité pixel exige le DOM client (dagre layout, CSS vars thème, fonts, ReactFlow). Pas de navigateur headless dans la stack Express+TypeORM |
+| 5 | Rendu PNG côté serveur | **Différé** | Même contrainte que #4 — la capture pixel-fidèle nécessite le DOM complet |
+| 6 | Réutilisabilité (lib/export/) | **Implémenté** | `css-var-resolver.ts` + `dom-stabilisation.ts` extraits dans `frontend/src/lib/export/` |
+
+### A — Extraction lib/export/ (réutilisabilité)
+- **`frontend/src/lib/export/css-var-resolver.ts`** : `resolveCssVar`, `resolveColor`, `clearResolverCache`, `normaliserCouleurHex` (move depuis `utils/`)
+- **`frontend/src/lib/export/dom-stabilisation.ts`** : `attendreStabilisationDom` (MutationObserver debouncé)
+- **`frontend/src/lib/export/index.ts`** : barrel export
+- **4 imports mis à jour** : `export.ts`, `RelationEdge.tsx`, `HierarchieEdge.tsx`, `use-organigramme-flow.ts` → `@/lib/export`
+- **Ancien fichier supprimé** : `utils/css-var-resolver.ts` (pas de shim de compat)
+
+### B — Minimap mobile force-mount
+- **`OrganigrammeFlowView.tsx`** : state `forceMinimap` + case `force-minimap` dans le listener `organigramme:toolbar-command` + rendu `{(isDesktop || forceMinimap) && <MiniMap/>}`
+- **`export.ts`** : dispatch `force-minimap` visible=true avant capture si `options.inclureMinimap` + `attendreStabilisationDom` + cleanup visible=false en `finally`
+- La minimap n'est rendue que ≥1280px en usage normal ; l'export la monte temporairement si demandée
+
+### C — PDF multi-pages tuiles (`export-pdf.ts` v3.0.0, `export-types.ts` v3.1.0)
+- **`ModePagination = 'ajuster' | 'tuiles'`** dans `ExportOptions.pagination`
+- **`calculerGrilleTuiles(largeurImgMm, hauteurImgMm, pageFormat, orientation, chevauchementMm=10)`** : calcul grille colonnes×lignes, exporté depuis `export-types.ts`
+- **Mode 'ajuster'** : comportement historique (image entière sur 1 page)
+- **Mode 'tuiles'** :
+  - Page 1 = assemblage : en-tête + vue d'ensemble réduite + grille numérotée (L×C) + légende + footer
+  - Pages 2+ = 1 tuile/page : label `Lx·Cy — n/N`, corner marks 4 coins, chevauchement 10mm
+  - DPI cible 150 pour impression (`PX_PAR_MM = 150/25.4`)
+  - Découpe via offscreen canvas (`decouperTuile`)
+  - Repères de découpe (`dessinerMarks`) aux 4 coins de chaque tuile
+- **`ExportDialog.tsx`** : fieldset Pagination (PDF only) avec segments Ajuster/Tuiles + description ; estimation tuiles affichée dans le bloc estimation (`≈ N pages (C × R)`)
+
+### Fichiers modifiés (8)
+1. `lib/export/css-var-resolver.ts` (créé)
+2. `lib/export/dom-stabilisation.ts` (créé)
+3. `lib/export/index.ts` (créé)
+4. `utils/css-var-resolver.ts` (supprimé)
+5. `utils/export-types.ts` v3.1.0 (+ModePagination, +GrilleTuiles, +calculerGrilleTuiles)
+6. `utils/export-pdf.ts` v3.0.0 (mode tuiles, DPI 150, découpe canvas, marks)
+7. `utils/export.ts` v4.1.0 (import lib/, pagination, minimap force-mount)
+8. `OrganigrammeFlowView.tsx` (forceMinimap state + commande)
+9. `ExportDialog.tsx` v3.1.0 (fieldset pagination, estimation tuiles)
+10. `edges/RelationEdge.tsx`, `edges/HierarchieEdge.tsx`, `hooks/use-organigramme-flow.ts` (imports → lib/)
+11. `locales/fr/organisation.json`, `locales/en/organisation.json` (+6 clés pagination/tuiles)
+
+### Qualité
+- 0 `any`, 0 couleur hardcodée, i18n FR/EN parité, JSON valides
+- `tsc --noEmit` : 0 erreur in-scope
+- Conventions eLISAschool : bannières, CSS vars, clamp(), CustomModal
+
+## Travail effectué — Session 2026-07-27 (export v5 : lib/export/ générique, aperçu PDF)
+
+### A — Extraction utilitaires génériques dans lib/export/
+- **`lib/export/telecharger.ts`** (nouveau) : `telecharger()`, `genererNomFichier(nom, suffixe, format)` (généralisé avec paramètre `suffixe`), `tailleDataUrlOctets()`, `formaterTaille()` (nouveau, formatage Ko/Mo/Go)
+- **`lib/export/tuiles.ts`** (nouveau) : `PAGE_FORMATS_MM` (sans `label`, `as const`), `calculerGrilleTuiles()`, `chargerImage()`, `decouperTuile()`, types `GrilleTuiles` et `OrientationPage`
+- **`lib/export/index.ts`** : barrel mis à jour — ré-exporte `telecharger`, `genererNomFichier`, `tailleDataUrlOctets`, `formaterTaille`, `PAGE_FORMATS_MM`, `calculerGrilleTuiles`, `chargerImage`, `decouperTuile`, types `GrilleTuiles` et `OrientationPage`
+- **Déduplication** : `GrilleTuiles` et `calculerGrilleTuiles` supprimés de `export-types.ts` (maintenant dans `lib/export/tuiles.ts`). `PAGE_FORMATS` conservé dans `export-types.ts` (champ `label` pour l'UI) — distinct de `PAGE_FORMATS_MM` (calcul)
+- **`export.ts`** : `telecharger`, `genererNomFichier`, `tailleDataUrlOctets` locaux supprimés → importés depuis `@/lib/export`. Appel `genererNomFichier` mis à jour (ajout `'organigramme'` comme suffixe)
+- **`export-pdf.ts`** : `chargerImage`, `decouperTuile` locaux supprimés → importés depuis `@/lib/export`. `calculerGrilleTuiles` importé depuis `@/lib/export`. `getPageDimensions` utilise `PAGE_FORMATS_MM` au lieu de `PAGE_FORMATS`
+- **`ExportDialog.tsx`** : `calculerGrilleTuiles` importé depuis `@/lib/export`
+
+### B — Aperçu visuel PDF dans ExportDialog
+- **`ApercuExport`** (composant interne) : SVG inline montrant la page (format + orientation), l'image estimée ajustée dans la zone utile, et la grille de tuiles en mode pagination 'tuiles' (rectangles pointillés bleu + labels `C×L`)
+- Affiché uniquement pour le format PDF (condition `format === 'pdf'`)
+- Dimensions SVG adaptatives : max 200×120px, scale proportionnel au format de page
+- CSS vars pour toutes les couleurs (fond page, bordure, image, tuiles, texte)
+- Accessible : `role="img"` + `aria-label` traduit
+
+### Fichiers modifiés (7)
+1. `lib/export/telecharger.ts` (créé)
+2. `lib/export/tuiles.ts` (créé)
+3. `lib/export/index.ts` (mis à jour — barrel)
+4. `utils/export.ts` v4.1.0 (imports lib/, locaux supprimés)
+5. `utils/export-pdf.ts` v3.0.0 (imports lib/, locaux supprimés)
+6. `utils/export-types.ts` v3.0.0 (GrilleTuiles/calculerGrilleTuiles supprimés)
+7. `modals/ExportDialog.tsx` v3.1.0 (import lib/, composant ApercuExport)
+8. `locales/fr/organisation.json`, `locales/en/organisation.json` (+2 clés apercu/apercuLabel)
+
+### Qualité
+- 0 `any`, 0 couleur hardcodée, i18n FR/EN parité, JSON valides
+- `tsc --noEmit` : 0 erreur in-scope (205 erreurs préexistantes hors périmètre)
+- Zéro duplication de code entre lib/export/ et utils/
+
+## Travail effectué — Session 2026-07-27 (UX organigramme : contrôles flottants, header intégré, i18n)
+
+### A — Boutons d'action dans le panneau de contrôles ReactFlow
+- **`OrganigrammeFlowView.tsx`** : ajout de 3 `ControlButton` personnalisés dans `<Controls>` :
+  - **Plein écran** (Maximize2/Minimize2) : toggle via Fullscreen API, état `isFullscreen` local
+  - **Relations** (Link2) : toggle overlay, style actif `bg-dominant-600 text-white`, conditionnel `onToggleRelations`
+  - **Export** (Download) : dispatch `organigramme:toolbar-command` avec `command: 'export'`, conditionnel `onExport`
+- **Nouvelles props** : `onToggleRelations`, `onExport` ajoutées à `OrganigrammeFlowViewProps`
+- **Communication** : le bouton export dans les contrôles flottants dispatch un événement custom ; le toolbar l'écoute et ouvre l'ExportDialog (état export déjà géré par le toolbar)
+
+### B — Toolbar — écoute commande export
+- **`OrganigrammeToolbar.tsx`** : nouveau `useEffect` écoutant `organigramme:toolbar-command` pour `command === 'export'` → `setExportDialogOpen(true)`
+- **`ToolbarCommand` type** : `'export'` ajouté à l'union
+
+### C — Header gradient avec onglets intégrés
+- **`OrganigrammePage.tsx`** : remplacement du `PageHeader variant="gradient"` + SegmentedControl séparé par un header gradient unifié :
+  - Fond `linear-gradient(135deg, dominant-600, dominant-800)` avec `rounded-2xl`
+  - Watermark Network décoratif (7% opacité blanche)
+  - Breadcrumbs inversés (`<Breadcrumbs inverted />`)
+  - Titre + icône glass-morphism à gauche
+  - Onglets glass-morphism à droite (desktop) : `rgba(255,255,255,0.12)` + `backdrop-blur`, tab actif `rgba(255,255,255,0.28)`
+  - Select natif glass-morphism (mobile < 480px)
+  - Responsive : `flex-col` mobile → `lg:flex-row lg:items-end lg:justify-between` desktop
+
+### D — Corrections i18n
+- **FR** : `organigramme.exporter` : "Exporter PNG" → "Exporter" (le dialog supporte PNG + PDF)
+- **EN** : `organigramme.exporter` : "Export PNG" → "Export"
+- **EN** : `organigramme.fitView` : "Fit view" → "Fit to view"
+- **EN** : `organigramme.afficherRelations` : "Show relations" → "Show links"
+- **EN** : `organigramme.masquerRelations` : "Hide relations" → "Hide links"
+
+### Fichiers modifiés (5)
+1. `OrganigrammeFlowView.tsx` (+ControlButton, +props, +fullscreen state, +event handler)
+2. `toolbar/OrganigrammeToolbar.tsx` (+export event listener, +ToolbarCommand type)
+3. `OrganigrammePage.tsx` (header unifié, +Breadcrumbs import, +handleExport, +props FlowView)
+4. `locales/fr/organisation.json` (exporter → "Exporter")
+5. `locales/en/organisation.json` (exporter → "Export", fitView, relations)
+
+### Qualité
+- 0 `any`, 0 couleur hardcodée, i18n FR/EN parité
+- `tsc --noEmit` : 0 erreur in-scope
+- Responsive : desktop (glass tabs) + mobile (select natif)
+
+## Travail effectué — Session 2026-07-27 (edges unifiés — BaseEdge pattern)
+
+### Architecture — BaseEdge.tsx (composant partagé)
+- **`BaseEdge.tsx`** v1.0.0 (nouveau) : infrastructure partagée par tous les types d'edges de l'organigramme. Élimine ~70% de duplication entre HierarchieEdge et RelationEdge.
+  - **`EDGE_ROUTING`** : constantes de routing par type (offset progressif anti-chevauchement : hierarchie=4, direct=10, fonctionnel=18 ; borderRadius=10 pour tous)
+  - **`EDGE_STYLE`** : constantes visuelles unifiées (strokeWidth=2.5, strokeWidthHover=3.5, opacity=1.0, markerSize=15, transition unifiée)
+  - **`useBaseEdge`** : hook partagé — calcule `getSmoothStepPath`, gère l'état hover, retourne les handlers
+  - **`EdgeShell`** : composant de rendu partagé — hit-testing transparent (16px) + path visible + transitions
+  - **`EdgeTooltip`** : tooltip unifié positionné au milieu du path (above) ou sous badge (below)
+- **`HierarchieEdge.types.ts`** (nouveau) : extraction du type `HierarchieEdgeData` pour éviter les imports circulaires
+
+### HierarchieEdge.tsx v5.0.0 — refactored
+- Utilise `useBaseEdge`, `EdgeShell`, `EdgeTooltip` depuis BaseEdge
+- Routing via `EDGE_ROUTING.hierarchie` (offset=6, borderRadius=10)
+- Styles via `EDGE_STYLE` (strokeWidth 2.5/3.5)
+- Simplifié de 117 → ~85 lignes
+
+### RelationEdge.tsx v4.0.0 — refactored
+- Utilise `useBaseEdge`, `EdgeShell` depuis BaseEdge
+- Routing dynamique : `EDGE_ROUTING.fonctionnel` (offset=24) ou `EDGE_ROUTING.direct` (offset=14)
+- Badge compteur + tooltip inline (position below)
+- Simplifié et aligné sur le pattern HierarchieEdge
+
+### use-organigramme-flow.ts — aligné
+- Import `EDGE_STYLE` depuis BaseEdge pour markers unifiés
+- Marker size : 14/16 → `EDGE_STYLE.markerSize` (15×15) pour tous les types
+- zIndex layering : hiérarchie=0, relation DIRECT=1, relation FONCTIONNEL=2
+
+### Export et légende — alignés
+- **`export.ts`** : légende PNG overlay — strokeWidth unifié à 2.5 pour les 3 types
+- **`OrganigrammeToolbar.tsx`** : légende popup — strokeWidth unifié à 2.5 pour les 3 types
+- **`export-pdf.ts`** : légende PDF — largeur uniforme 0.5mm (distinction par dash pattern)
+
+### Qualité
+- 0 `any`, 0 couleur hardcodée, i18n FR/EN parité
+- `tsc --noEmit` : 0 erreur in-scope
+- 7 fichiers modifiés, 2 fichiers créés (BaseEdge.tsx, HierarchieEdge.types.ts)
+
+## Travail effectué — Session 2026-07-27 (routing anti-chevauchement — audit + améliorations)
+
+### Audit complet du routing (5 problèmes identifiés)
+
+| # | Problème | Sévérité | Solution |
+|---|----------|----------|----------|
+| 1 | Node width mismatch (dagre 240px vs render 220px) | Medium | `NODE_WIDTH` 240→220 |
+| 2 | Pas de `edgesep` dagre | High | Ajout `edgesep: 20` |
+| 3 | `nodesep`/`ranksep` trop serrés pour relation edges | Medium | nodesep 60→80/80→100, ranksep 100→120/120→140 |
+| 4 | Offsets edge trop faibles (4/10/18) | Medium | Offsets 6/14/24 (gap min 8px entre types) |
+| 5 | Pas de constantes spacing exportées | Low | `LAYOUT_SPACING` exporté depuis layout.ts |
+
+### Améliorations implémentées
+
+#### A — Alignement largeur noeud (`layout.ts`)
+- `NODE_WIDTH` : 240→220 (aligné sur `UniteNode` `style={{ width: 220 }}`)
+- Routing dagre maintenant précis : les bords de noeuds sont exactement où dagre les calcule
+
+#### B — Spacing dagre amélioré (`layout.ts`)
+- **`edgesep: 20`** : séparation minimum entre edges aux bornes d'un noeud (anti-congestion)
+- **`nodesep`** : TB 60→80, LR 80→100 (plus d'espace entre noeuds même rang)
+- **`ranksep`** : TB 100→120, LR 120→140 (plus d'espace pour routing inter-rangs)
+- **`LAYOUT_SPACING`** : constantes exportées (single source of truth, référencées par `setGraph`)
+
+#### C — Offsets edge augmentés (`BaseEdge.tsx`)
+- **Hiérarchie** : offset 4→6 (légèrement décalé du centre)
+- **Directe** : offset 10→14 (gap 8px depuis hiérarchie)
+- **Fonctionnelle** : offset 18→24 (gap 10px depuis directe)
+- **Documentation** : commentaire détaillé dans `EDGE_ROUTING` expliquant la stratégie anti-chevauchement complète
+
+### Stratégie anti-chevauchement — 5 couches de défense
+
+1. **dagre `edgesep` (20px)** : sépare les edges aux bornes des noeuds
+2. **dagre `nodesep`/`ranksep`** : espace suffisant entre noeuds pour le routing
+3. **`EDGE_ROUTING` offset progressif** (6/14/24) : edges parallèles même paire jamais superposés
+4. **zIndex layering** (0/1/2) : overlay important au-dessus
+5. **Hit-testing 16px** : zone de clic élargie même si edges visuellement proches
+
+### Fichiers modifiés (2)
+1. `utils/layout.ts` (NODE_WIDTH 240→220, +edgesep, +nodesep/ranksep, +LAYOUT_SPACING export)
+2. `edges/BaseEdge.tsx` (offsets 4/10/18 → 6/14/24, +documentation anti-chevauchement)
+
+### Qualité
+- 0 `any`, 0 couleur hardcodée
+- Single source of truth : `LAYOUT_SPACING` constant → `setGraph()` call
+- `tsc --noEmit` : 0 erreur in-scope

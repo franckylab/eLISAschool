@@ -93,19 +93,19 @@ export function AffectationFormModal({ open, onOpenChange, matiereId, affectatio
         >
             <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('enseignant')}</label>
+                    <label className="block text-sm font-medium text-secondary mb-1">{t('enseignant')}</label>
                     <div className="relative mb-2">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <input
                             type="text"
                             placeholder={t('rechercherEnseignant')}
                             value={rechercheEnseignant}
                             onChange={(e) => setRechercheEnseignant(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                            className="w-full pl-9 pr-3 py-2 border border-border rounded-lg text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
                         />
                     </div>
                     {personnelLoading ? (
-                        <div className="py-2 text-sm text-gray-500">{t('chargementEnseignants')}</div>
+                        <div className="py-2 text-sm text-muted-foreground">{t('chargementEnseignants')}</div>
                     ) : (
                         <ElisaSelect
                             value={enseignantId}
@@ -135,28 +135,28 @@ export function AffectationFormModal({ open, onOpenChange, matiereId, affectatio
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('dateDebut')}</label>
+                        <label className="block text-sm font-medium text-secondary mb-1">{t('dateDebut')}</label>
                         <input
                             type="date"
                             value={dateDebut}
                             onChange={(e) => setDateDebut(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('dateFin')}</label>
+                        <label className="block text-sm font-medium text-secondary mb-1">{t('dateFin')}</label>
                         <input
                             type="date"
                             value={dateFin}
                             onChange={(e) => setDateFin(e.target.value)}
                             min={dateDebut}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
                         />
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+                <div className="flex items-center gap-2 p-3 bg-primary/10 rounded-lg text-sm text-primary">
                     <UserPlus className="h-4 w-4 shrink-0" />
                     <span>{t('infoAffectation')}</span>
                 </div>

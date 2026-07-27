@@ -9,6 +9,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
 import type { MembrePersonnel, CreerPersonnelDto, ModifierPersonnelDto, PersonnelFiltres, ContratPersonnel, BulletinPaie } from '../types/personnel.types';
 import { fromFormToCreateDto } from '../types/personnel.types';
+import type { PersonnelFormData } from '../types/personnel.types';
 import { toast } from 'sonner';
 
 const enseignantKeys = {
@@ -30,7 +31,7 @@ export function usePersonnel(filtres: PersonnelFiltres = {}) {
     return useQuery({
         queryKey: PERSONNEL_KEYS.liste(filtres),
         queryFn: async () => {
-            const params: Record<string, any> = {
+            const params: Record<string, string | number | boolean> = {
                 page: filtres.page || 1,
                 limit: filtres.limit || 20,
             };
@@ -65,7 +66,7 @@ export function useMembrePersonnel(id: string) {
 export function useCreerPersonnel() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (dto: CreerPersonnelDto | Record<string, any>) => {
+        mutationFn: async (dto: CreerPersonnelDto | PersonnelFormData) => {
             const payload = ('dateEmbauche' in dto) ? dto : fromFormToCreateDto(dto);
             const response = await apiClient.post<MembrePersonnel>('/api/personnel', payload);
             return response.data;
@@ -81,17 +82,19 @@ export function useCreerPersonnel() {
                 toast.success(`${prenom} ${nom} ajouté(e) au personnel`);
             }
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la création'),
+        onError: (error: unknown) => toast.error((error as Error)?.message || 'Erreur lors de la création'),
     });
 }
 
 export function useModifierPersonnel() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (dto: ModifierPersonnelDto | Record<string, any>) => {
-            const { id, ...rest } = dto as Record<string, any>;
-            Object.keys(rest).forEach(k => rest[k] === undefined && delete rest[k]);
-            const response = await apiClient.patch<MembrePersonnel>(`/api/personnel/${id}`, rest);
+        mutationFn: async (dto: ModifierPersonnelDto) => {
+            const { id, ...rest } = dto;
+            const cleaned = Object.fromEntries(
+                Object.entries(rest).filter(([, v]) => v !== undefined)
+            );
+            const response = await apiClient.patch<MembrePersonnel>(`/api/personnel/${id}`, cleaned);
             return response.data;
         },
         onSuccess: (data) => {
@@ -105,7 +108,7 @@ export function useModifierPersonnel() {
                 toast.success(`${prenom} ${nom} modifié(e) avec succès`);
             }
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la modification'),
+        onError: (error: unknown) => toast.error((error as Error)?.message || 'Erreur lors de la modification'),
     });
 }
 
@@ -169,7 +172,7 @@ export function useLinkPersonnelUtilisateur() {
             }
             toast.success('Utilisateur lié au dossier personnel');
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors du lien utilisateur'),
+        onError: (error: unknown) => toast.error((error as Error)?.message || 'Erreur lors du lien utilisateur'),
     });
 }
 
@@ -187,7 +190,7 @@ export function useUnlinkPersonnelUtilisateur() {
             queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.stats() });
             toast.success('Utilisateur délié du dossier personnel');
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors du déliement utilisateur'),
+        onError: (error: unknown) => toast.error((error as Error)?.message || 'Erreur lors du déliement utilisateur'),
     });
 }
 
@@ -214,6 +217,6 @@ export function useSupprimerPersonnel() {
             queryClient.invalidateQueries({ queryKey: enseignantKeys.listes() });
             toast.success('Membre du personnel supprimé');
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la suppression'),
+        onError: (error: unknown) => toast.error((error as Error)?.message || 'Erreur lors de la suppression'),
     });
 }

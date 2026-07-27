@@ -17,6 +17,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { BulletinsService, bulletinPdfService } from '../services';
 import { generateBulletinSchema, updateBulletinSchema, queryBulletinsSchema } from '../dto';
 import { authMiddleware, requirePermission, checkPermission } from '@modules/auth/middlewares';
+import { auditService, AuditAction } from '@modules/auth';
 import { validateDto } from '@common/utils';
 import { AppError } from '@common/filters/error.filter';
 
@@ -45,6 +46,13 @@ router.post('/generate', authMiddleware, requirePermission('bulletins:generate')
     try {
         const dto = validateDto(generateBulletinSchema, req.body);
         const bulletins = await service.generate(dto, req.etablissementId, req.utilisateur!.id);
+        await auditService.log({
+            utilisateurId: req.utilisateur!.id,
+            action: AuditAction.BULLETIN_GENERATE,
+            cible: 'Bulletin',
+            description: `${bulletins.length} bulletin(s) généré(s)`,
+            module: 'bulletins',
+        });
         res.json({ success: true, count: bulletins.length, data: bulletins });
     } catch (error) { next(error); }
 });
@@ -64,6 +72,15 @@ router.get('/:id/export', authMiddleware, requirePermission('bulletins:export'),
     try {
         const bulletin = await service.findOne(req.params.id, req.etablissementId);
         const html = bulletinPdfService.genererHtml(bulletin);
+
+        await auditService.log({
+            utilisateurId: req.utilisateur!.id,
+            action: AuditAction.BULLETIN_EXPORT,
+            cible: 'Bulletin',
+            cibleId: req.params.id,
+            description: 'Export bulletin HTML',
+            module: 'bulletins',
+        });
 
         const nomEleve = bulletin.eleve
             ? `${bulletin.eleve.nom}-${bulletin.eleve.prenom}`.replace(/[^a-zA-Z0-9-]/g, '_')
@@ -103,6 +120,18 @@ router.patch('/:id', authMiddleware, requirePermission('bulletins:edit'), async 
         }
 
         const bulletin = await service.update(req.params.id, dto, req.etablissementId);
+
+        if (dto.publie !== undefined) {
+            await auditService.log({
+                utilisateurId: req.utilisateur!.id,
+                action: AuditAction.BULLETIN_PUBLIER,
+                cible: 'Bulletin',
+                cibleId: req.params.id,
+                description: dto.publie ? 'Bulletin publié' : 'Bulletin dépublié',
+                module: 'bulletins',
+            });
+        }
+
         res.json({ success: true, data: bulletin });
     } catch (error) { next(error); }
 });

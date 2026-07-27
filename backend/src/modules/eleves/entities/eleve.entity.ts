@@ -10,6 +10,7 @@ import {
     Column,
     CreateDateColumn,
     UpdateDateColumn,
+    DeleteDateColumn,
     OneToOne,
     ManyToOne,
     JoinColumn,
@@ -44,6 +45,7 @@ export enum TypeInscription {
 @Index(['matricule'])
 @Index(['etablissementId'])
 @Index(['nom', 'prenom'])
+@Index(['etablissementId', 'matricule'], { unique: true })
 export class Eleve {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -272,11 +274,12 @@ export class Eleve {
     @JoinColumn({ name: 'etablissementId' })
     etablissement?: Etablissement;
 
-    @Index(['etablissementId', 'matricule'], { unique: true })
-
     @CreateDateColumn()
     createdAt!: Date;
 
     @UpdateDateColumn()
     updatedAt!: Date;
+
+    @DeleteDateColumn()
+    deletedAt?: Date;
 }

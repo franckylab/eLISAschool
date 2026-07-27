@@ -28,6 +28,7 @@ import {
     ClockArrowUp,
     Atom,
     UserRound,
+    UserCheck,
     FolderTree,
     FileText,
     TrendingUp,
@@ -263,10 +264,17 @@ const NAV_SECTIONS: NavSection[] = [
         title: 'Académique',
         items: [
             { label: 'Élèves', path: '/eleves', icon: Users, module: 'eleves' },
-            { label: 'Personnel', path: '/personnel', icon: UserRound, module: 'personnel' },
-            { label: 'Contrats', path: '/contrats', icon: FileSignature, module: 'contrats' },
-            { label: 'Paie', path: '/paie', icon: Wallet, module: 'paie' },
-            // { label: 'Enseignants', path: '/enseignants', icon: GraduationCap, module: 'enseignants' }, // Merged into Personnel
+            {
+                label: 'Ressources humaines',
+                path: '/personnel',
+                icon: UserCheck,
+                module: 'personnel',
+                children: [
+                    { label: 'Personnel', path: '/personnel', icon: UserRound, module: 'personnel' },
+                    { label: 'Contrats', path: '/contrats', icon: FileSignature, module: 'contrats' },
+                    { label: 'Paie', path: '/paie', icon: Wallet, module: 'paie' },
+                ],
+            },
             { label: 'Périodes', path: '/periodes', icon: Calendar, module: 'periodes' },
             {
                 label: 'Notes',
@@ -374,6 +382,9 @@ export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } =
                                 'diplomes-eleves': diplomesElevesPerms,
                                 organisation: organisationPerms,
                                 notes: notesPerms,
+                                personnel: personnelPerms,
+                                contrats: contratsPerms,
+                                paie: paiePerms,
                             };
                             const perms = permsMap[child.module];
                         return perms?.canAccess ?? true;

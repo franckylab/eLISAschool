@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Copy, FileText, Plus, Trash2, Edit2 } from 'lucide-react';
 import {
@@ -8,17 +7,16 @@ import {
     useSupprimerTemplateEDT,
     useDupliquerTemplateEDT,
 } from '../hooks/use-emploi-du-temps';
+import type { TemplateEDT } from '../types/edt.types';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { toast } from 'sonner';
 
 export function EDTTemplatesPage() {
     const { t } = useTranslation('emplois');
-    const navigate = useNavigate();
     const { data: templates, isLoading, error, refetch } = useTemplatesEDT();
     const supprimerTemplate = useSupprimerTemplateEDT();
     const dupliquerTemplate = useDupliquerTemplateEDT();
@@ -42,21 +40,12 @@ export function EDTTemplatesPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6">
-            <PageHeader
-                variant="gradient"
-                icon={FileText}
-                title={t('templates.titre')}
-                subtitle={t('templates.description')}
-                onBack={() => navigate({ to: '/emploi-du-temps' })}
-                actions={
-                    <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-xl p-2">
-                        <ElisaButton variant="primary" size="xs" icon={<Plus className="h-4 w-4" />} onClick={() => setCreationModalOpen(true)}>
-                            {t('templates.nouveau')}
-                        </ElisaButton>
-                    </div>
-                }
-            />
+        <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-end">
+                <ElisaButton variant="primary" size="xs" icon={<Plus className="h-4 w-4" />} onClick={() => setCreationModalOpen(true)}>
+                    {t('templates.nouveau')}
+                </ElisaButton>
+            </div>
 
             {isLoading ? (
                 <PageSkeleton showHeader={false} showStats={false} showTable={false} />
@@ -71,7 +60,7 @@ export function EDTTemplatesPage() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {templates.data.map((template: { id: string; nom: string; description?: string; actif: boolean; configuration?: any; creneauxTypes?: any[]; estPartage?: boolean }, index: number) => (
+                    {templates.data.map((template: TemplateEDT, index: number) => (
                         <motion.div
                             key={template.id}
                             className="p-6 rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-sm hover:shadow-md transition-shadow"
@@ -133,7 +122,7 @@ export function EDTTemplatesPage() {
                                     {t('templates.dupliquer')}
                                 </ElisaButton>
                                 <ElisaButton variant="ghost" size="xs" icon={<Edit2 className="h-3 w-3" />}
-                                    onClick={() => toast.info('Fonctionnalité à venir')}
+                                    onClick={() => toast.info(t('templates.bientotDisponible'))}
                                 >
                                     {t('templates.modifier')}
                                 </ElisaButton>

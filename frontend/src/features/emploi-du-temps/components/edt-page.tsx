@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { Calendar, List, Settings, FileText, BookOpen, BarChart3 } from 'lucide-react';
+import { Calendar, List, Settings, FileText, BarChart3 } from 'lucide-react';
 import { useCreneaux } from '../hooks/use-emploi-du-temps';
 import { EDTCalendar } from './edt-calendar';
 import { EmploiDuTempsListe } from './edt-liste';
@@ -10,7 +10,7 @@ import { EDTPreferencesPage } from './edt-preferences';
 import { EDTTemplatesPage } from './edt-templates';
 import { EDTSynthese } from './edt-synthese';
 import { EDTCreneauModal } from './edt-creneau-modal';
-import type { CreneauHoraire } from '../hooks/use-emploi-du-temps';
+import type { CreneauHoraire } from '../types/edt.types';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/ui/Skeleton';
@@ -24,10 +24,19 @@ import { useToutesClasses } from '@/features/classes/hooks/use-toutes-classes';
 type EDTTab = 'calendrier' | 'liste' | 'synthese' | 'preferences' | 'templates';
 type ContexteType = 'classe' | 'enseignant' | 'salle';
 
+const EDT_TABS: EDTTab[] = ['calendrier', 'liste', 'synthese', 'preferences', 'templates'];
+
+function isEDTTab(v: unknown): v is EDTTab {
+    return typeof v === 'string' && EDT_TABS.includes(v as EDTTab);
+}
+
 export function EDTStandalonePage() {
     const { t } = useTranslation('emplois');
     const navigate = useNavigate();
-    const [tab, setTab] = useState<EDTTab>('calendrier');
+    const search = useSearch({ strict: false }) as { tab?: string };
+    const tab: EDTTab = isEDTTab(search.tab) ? search.tab : 'calendrier';
+    const setTab = (id: string) => navigate({ search: { tab: id } as never });
+
     const [contexteType, setContexteType] = useState<ContexteType>('classe');
     const [classeFilter, setClasseFilter] = useState('');
     const [genModalOpen, setGenModalOpen] = useState(false);
@@ -68,7 +77,6 @@ export function EDTStandalonePage() {
 
     const renderCalendrier = () => (
         <div className="space-y-4">
-            {/* Sélecteur contexte global */}
             <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-3">
                     <div className="flex rounded-lg border border-[var(--color-bordure)] overflow-hidden">
@@ -79,7 +87,7 @@ export function EDTStandalonePage() {
                                 className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                                     contexteType === ct
                                         ? 'bg-[var(--color-dominant-600)] text-white'
-                                        : 'bg-[var(--color-surface)] text-[var(--color-texte-secondaire)] hover:bg-[var(--color-surface-alt)]'
+                                        : 'bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]'
                                 }`}
                             >
                                 {t(`contexte.${ct}`)}
@@ -89,7 +97,7 @@ export function EDTStandalonePage() {
                     <select
                         value={classeFilter}
                         onChange={(e) => setClasseFilter(e.target.value)}
-                        className="rounded-lg border border-[var(--color-bordure)] px-3 py-2 text-sm focus:ring-2 focus:ring-[var(--color-dominante)] dark:bg-[var(--color-surface)] dark:text-[var(--color-texte)]"
+                        className="rounded-lg border border-[var(--color-bordure)] px-3 py-2 text-sm focus:ring-2 focus:ring-[var(--color-dominante)] bg-[var(--color-surface)] text-[var(--color-text-primary)]"
                     >
                         <option value="">{contexteType === 'classe' ? t('tousLesCreneaux') : t('selectionnerFiltre')}</option>
                         {classeOptions.map(o => (
@@ -113,8 +121,8 @@ export function EDTStandalonePage() {
             ) : creneaux.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center bg-[var(--color-surface)] rounded-lg border border-[var(--color-bordure)]">
                     <Calendar className="h-16 w-16 text-[var(--color-text-muted)] mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-[var(--color-texte)] mb-2">{t('aucunCreneau')}</h3>
-                    <p className="text-[var(--color-texte-secondaire)] mb-6 max-w-md mx-auto">{t('aucunCreneauDescription')}</p>
+                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-2">{t('aucunCreneau')}</h3>
+                    <p className="text-[var(--color-text-secondary)] mb-6 max-w-md mx-auto">{t('aucunCreneauDescription')}</p>
                     <ElisaButton variant="primary" size="sm" icon={<Calendar className="h-4 w-4" />} onClick={() => setGenModalOpen(true)}>
                         {t('genererEmploiDuTemps')}
                     </ElisaButton>
@@ -122,21 +130,6 @@ export function EDTStandalonePage() {
             ) : (
                 <EDTCalendar creneaux={creneaux} onCreneauClick={handleCreneauClick} />
             )}
-            <CustomModal
-                open={genModalOpen}
-                onOpenChange={setGenModalOpen}
-                title={t('genererEmploiDuTemps')}
-                description={t('configurerGeneration')}
-                size="2xl"
-            >
-                {classeFilter && (
-                    <EDTGenerationModal
-                        classeAnneeId={classeFilter}
-                        onSuccess={() => { setGenModalOpen(false); }}
-                        onClose={() => setGenModalOpen(false)}
-                    />
-                )}
-            </CustomModal>
         </div>
     );
 
@@ -145,8 +138,8 @@ export function EDTStandalonePage() {
             return (
                 <div className="flex flex-col items-center justify-center py-16 text-center bg-[var(--color-surface)] rounded-lg border border-[var(--color-bordure)]">
                     <List className="h-16 w-16 text-[var(--color-text-muted)] mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-[var(--color-texte)] mb-2">{t('aucuneClasseSelectionnee')}</h3>
-                    <p className="text-[var(--color-texte-secondaire)] max-w-md mx-auto">{t('selectionnerClassePourVoirListe')}</p>
+                    <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-2">{t('aucuneClasseSelectionnee')}</h3>
+                    <p className="text-[var(--color-text-secondary)] max-w-md mx-auto">{t('selectionnerClassePourVoirListe')}</p>
                 </div>
             );
         }
@@ -182,13 +175,28 @@ export function EDTStandalonePage() {
                 onBack={() => navigate({ to: '/' })}
             />
 
-            <TabsBar tabs={TABS} activeTab={tab} onTabChange={(id) => setTab(id as EDTTab)} />
+            <TabsBar tabs={TABS} activeTab={tab} onTabChange={setTab} />
 
             <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                 {renderTab()}
             </motion.div>
 
-            {/* Modal édition CréneauHoraire */}
+            <CustomModal
+                open={genModalOpen}
+                onOpenChange={setGenModalOpen}
+                title={t('genererEmploiDuTemps')}
+                description={t('configurerGeneration')}
+                size="2xl"
+            >
+                {classeFilter && (
+                    <EDTGenerationModal
+                        classeAnneeId={classeFilter}
+                        onSuccess={() => { setGenModalOpen(false); }}
+                        onClose={() => setGenModalOpen(false)}
+                    />
+                )}
+            </CustomModal>
+
             <EDTCreneauModal
                 open={creneauModalOpen}
                 onOpenChange={setCreneauModalOpen}

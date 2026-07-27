@@ -15,7 +15,7 @@ import { usePermissions } from '@/hooks';
 import type { Classe, ClasseFiltres } from '../types/classe.types';
 
 function Skeleton({ className }: { className?: string }) {
-    return <div className={`animate-pulse bg-gray-200 dark:bg-gray-700 rounded ${className || ''}`} />;
+    return <div className={`animate-pulse bg-muted rounded ${className || ''}`} />;
 }
 
 export function ClassesPage() {
@@ -84,7 +84,7 @@ export function ClassesPage() {
             render: (classe) => (
                 <button
                     onClick={() => handleVoirDetail(classe)}
-                    className="font-mono font-semibold text-blue-600 hover:underline cursor-pointer"
+                    className="font-mono font-semibold text-primary hover:underline cursor-pointer"
                 >
                     {classe.code}
                 </button>
@@ -100,8 +100,8 @@ export function ClassesPage() {
                     onClick={() => handleVoirDetail(classe)}
                     className="hover:underline cursor-pointer text-left"
                 >
-                    <p className="font-medium text-gray-900 dark:text-gray-200 text-sm">{classe.nom}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-200">
+                    <p className="font-medium text-foreground text-sm">{classe.nom}</p>
+                    <p className="text-xs text-muted-foreground">
                         {classe.niveau?.nom}
                         {classe.filiere && ` - ${classe.filiere.code}`}
                     </p>
@@ -115,8 +115,8 @@ export function ClassesPage() {
             className: 'text-center',
             render: (classe) => (
                 <div className="flex items-center justify-center gap-1">
-                    <Users className="h-3.5 w-3.5 text-gray-400 dark:text-gray-100" />
-                    <span className="font-medium text-sm text-gray-900 dark:text-gray-200">
+                    <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="font-medium text-sm text-foreground">
                         {classe.effectifActuel || 0} / {classe.effectifMax || '∞'}
                     </span>
                 </div>
@@ -126,7 +126,7 @@ export function ClassesPage() {
             key: 'salle',
             header: t('colonnes.salle'),
             render: (classe) => (
-                <span className="text-sm text-gray-700 dark:text-gray-400">
+                <span className="text-sm text-secondary">
                     {classe.salle?.nom || classe.sallePrincipaleId?.substring(0, 8) || '-'}
                 </span>
             ),
@@ -135,7 +135,7 @@ export function ClassesPage() {
             key: 'principal',
             header: t('colonnes.principal'),
             render: (classe) => (
-                <span className="text-sm text-gray-700 dark:text-gray-400">
+                <span className="text-sm text-secondary">
                     {classe.professeurPrincipal
                         ? `${classe.professeurPrincipal.prenom} ${classe.professeurPrincipal.nom}`
                         : '-'}
@@ -148,10 +148,10 @@ export function ClassesPage() {
             className: 'text-center',
             render: (classe) => {
                 const typeColors: Record<string, string> = {
-                    NORMALE: 'bg-blue-100 text-blue-800',
-                    BILINGUE: 'bg-purple-100 text-purple-800',
-                    RENFORCEE: 'bg-orange-100 text-orange-800',
-                    INTERNATIONALE: 'bg-indigo-100 text-indigo-800',
+                    NORMALE: 'bg-info/10 text-info',
+                    BILINGUE: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+                    RENFORCEE: 'bg-warning/10 text-warning',
+                    INTERNATIONALE: 'bg-accent/10 text-accent',
                 };
                 const typeLabels: Record<string, string> = {
                     NORMALE: t('types.normale'),
@@ -160,7 +160,7 @@ export function ClassesPage() {
                     INTERNATIONALE: t('types.internationale'),
                 };
                 return (
-                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${typeColors[classe.typeClasse] || 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'}`}>
+                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${typeColors[classe.typeClasse] || 'bg-muted text-foreground'}`}>
                         {typeLabels[classe.typeClasse] || classe.typeClasse}
                     </span>
                 );
@@ -177,7 +177,7 @@ export function ClassesPage() {
                     JOURNEE_COMPLETE: t('creneaux.journeeComplete'),
                 };
                 return (
-                    <span className="text-sm text-gray-500 dark:text-gray-200">
+                    <span className="text-sm text-muted-foreground">
                         {creneauLabels[classe.creneauHoraire] || classe.creneauHoraire}
                     </span>
                 );
@@ -191,8 +191,8 @@ export function ClassesPage() {
             render: (classe) => (
                 <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
                     classe.actif
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                        ? 'bg-success/10 text-success'
+                        : 'bg-muted text-muted-foreground'
                 }`}>
                     {classe.actif ? <CheckCircle className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
                     {classe.actif ? t('statut.actif') : t('statut.inactif')}
@@ -253,7 +253,7 @@ export function ClassesPage() {
     if (error) {
         return (
             <div className="p-6 flex flex-col items-center justify-center min-h-[300px] gap-4">
-                <p className="text-red-600 font-medium">{error.message || t('erreurs.chargement')}</p>
+                <p className="text-destructive font-medium">{error.message || t('erreurs.chargement')}</p>
                 <ElisaButton variant="outline" onClick={() => refetch()}>
                     {t('boutons.retour')}
                 </ElisaButton>

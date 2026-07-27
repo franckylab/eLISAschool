@@ -62,6 +62,7 @@ router.post(
 router.get(
     '/',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const query = validateDto(queryHeureCoursSchema, req.query);
@@ -81,6 +82,7 @@ router.get(
 router.get(
     '/enseignants/:id/edt',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const semaine = req.query.semaine as string || new Date().toISOString().split('T')[0];
@@ -105,6 +107,7 @@ router.get(
 router.get(
     '/enseignants/:id/volume-horaire',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { dateDebut, dateFin } = req.query;
@@ -138,6 +141,7 @@ router.get(
 router.get(
     '/enseignants/:id/resume-mensuel/:annee/:mois',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const annee = parseInt(req.params.annee);
@@ -171,6 +175,7 @@ router.get(
 router.get(
     '/:id',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const heureCours = await service.findOne(req.params.id, req.etablissementId!);

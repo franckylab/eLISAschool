@@ -12,6 +12,7 @@ import {
     Column,
     CreateDateColumn,
     UpdateDateColumn,
+    DeleteDateColumn,
     ManyToOne,
     JoinColumn,
     Index,
@@ -26,6 +27,7 @@ import { UniteOrganisationnelle, Poste, Fonction, ModeRemunerationEntity } from 
  * Statut du contrat
  */
 export enum StatutContrat {
+    EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
     ACTIF = 'ACTIF',
     EXPIRE = 'EXPIRE',
     RENEGOCIE = 'RENEGOCIE',
@@ -73,7 +75,7 @@ export class ContratPersonnel {
     fonction?: Fonction;
 
     @Column({ type: 'uuid', nullable: true })
-    posteId?: string;
+    posteId?: string | null;
 
     @ManyToOne(() => Poste, { nullable: true })
     @JoinColumn({ name: 'posteId' })
@@ -128,4 +130,7 @@ export class ContratPersonnel {
 
     @UpdateDateColumn()
     updatedAt!: Date;
+
+    @DeleteDateColumn()
+    deletedAt?: Date | null;
 }

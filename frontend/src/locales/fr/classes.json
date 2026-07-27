@@ -74,7 +74,10 @@
         "filiere": "Filière",
         "systeme": "Informations système",
         "creeLe": "Créé le",
-        "modifieLe": "Modifié le"
+        "modifieLe": "Modifié le",
+        "edtTitre": "Emploi du temps",
+        "edtDescription": "Visualisation de l'emploi du temps",
+        "edtBientot": "L'affichage détaillé de l'emploi du temps sera disponible dans une prochaine version."
     },
     "stats": {
         "effectif": "Effectif",
@@ -89,6 +92,9 @@
         "total": "Total classes",
         "actives": "Actives",
         "effectifTotal": "Effectif total",
+        "effectifCapaciteMax": "Effectif / Capacité max",
+        "effectifCapaciteSalle": "Effectif / Capacité salle",
+        "utilise": "utilisé",
         "niveaux": "Niveaux"
     },
     "eleves": {
@@ -177,6 +183,8 @@
         "sallePlaceholder": "Ex: Salle 101",
         "effectifMax": "Effectif maximal",
         "effectifMaxHint": "Nombre maximum d'élèves (1-100)",
+        "capaciteSalle": "Capacité salle : {{count}} places",
+        "limiteeParSalle": "Limitée par la capacité de la salle (max {{max}})",
         "actif": "Actif",
         "programme": "Programme pédagogique",
         "selectionnerProgramme": "Sélectionner un programme"
@@ -198,11 +206,43 @@
         "resumeModele": "Informations du modèle",
         "resumeInstance": "Configuration annuelle",
         "confirmMessage": "Vérifiez les informations avant de créer la classe.",
-        "creerClasse": "Créer la classe"
+        "creerClasse": "Créer la classe",
+        "etape": "Étape",
+        "verifierModifications": "Vérifiez les modifications avant d'enregistrer"
     },
     "validation": {
         "nomRequis": "Le nom de la classe est requis",
         "niveauRequis": "Le niveau est requis",
         "anneeRequise": "L'année scolaire est requise"
+    },
+    "changerSalle": {
+        "titre": "Changer la salle principale",
+        "classeLabel": "Classe : {{nom}} ({{code}})",
+        "salleActuelle": "Salle actuelle",
+        "nouvelleSalle": "Nouvelle salle",
+        "confirmer": "Confirmer le changement",
+        "places": "{{count}} places",
+        "type": "Type",
+        "equipements": "Équipements"
+    },
+    "hooks": {
+        "succesCreation": "Classe créée avec succès",
+        "erreurCreation": "Erreur lors de la création",
+        "succesModification": "Classe modifiée avec succès",
+        "erreurModification": "Erreur lors de la modification",
+        "succesSuppression": "Classe supprimée avec succès",
+        "erreurSuppression": "Erreur lors de la suppression",
+        "succesAffectation": "Élève affecté avec succès",
+        "erreurAffectation": "Erreur lors de l'affectation",
+        "succesReconciliation": "Effectif réconcilié : {{ancien}} → {{nouveau}}",
+        "effectifDejaCoherent": "Effectif déjà cohérent",
+        "erreurReconciliation": "Erreur lors de la réconciliation",
+        "succesActivation": "Classe activée avec succès",
+        "succesDesactivation": "Classe désactivée avec succès",
+        "erreurChangementStatut": "Erreur lors du changement de statut",
+        "reponseInvalide": "Réponse API invalide",
+        "classeNonTrouvee": "Classe non trouvée",
+        "statsNonDisponibles": "Statistiques non disponibles",
+        "aucuneClasse": "Aucune classe disponible"
     }
 }

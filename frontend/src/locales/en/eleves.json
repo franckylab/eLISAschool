@@ -16,7 +16,7 @@
     "etape1": "Identity",
     "etape2": "Contact details",
     "etape3": "Parents",
-    "etape4": "Additional info",
+    "etape4": "Enrollment",
     "etape1Description": "Student's personal information",
     "etape2Description": "Address and contact",
     "etape3Description": "Parents or legal guardians",
@@ -40,7 +40,9 @@
     "ville": "City",
     "quartier": "Neighborhood",
     "photo": "Photo",
-    "photoPlaceholder": "Click to add a photo",
+    "photoPlaceholder": "Add a photo",
+    "changerPhoto": "Change photo",
+    "supprimerPhoto": "Delete",
     
     "nomPere": "Father's name",
     "professionPere": "Father's occupation",
@@ -65,7 +67,44 @@
     "allergiesPlaceholder": "Separate allergies with commas",
     "pere": "Father",
     "mere": "Mother",
-    "tuteur": "Legal guardian"
+    "tuteur": "Legal guardian",
+
+    "servicesOptionnels": "Optional services",
+    "exNom": "E.g.: SMITH",
+    "exPrenom": "E.g.: John",
+    "exLieuNaissance": "E.g.: London",
+    "formatDate": "Format: DD/MM/YYYY",
+    "aideNationalite": "Student's nationality",
+    "aideSysteme": "Educational system",
+    "aideGroupeSanguin": "Important for medical emergencies",
+    "aideAllergies": "List known allergies (food, medication, etc.)",
+    "placeholderNomPere": "Father's full name",
+    "placeholderProfessionPere": "E.g.: Teacher",
+    "placeholderTelephonePere": "+237 6XX XXX XXX",
+    "placeholderEmailPere": "father@example.com",
+    "placeholderNomMere": "Mother's full name",
+    "placeholderProfessionMere": "E.g.: Doctor",
+    "placeholderTelephoneMere": "+237 6XX XXX XXX",
+    "placeholderEmailMere": "mother@example.com",
+    "placeholderNomTuteur": "Legal guardian's name",
+    "placeholderLienParente": "E.g.: Uncle, Grandfather, etc.",
+    "placeholderTelephoneTuteur": "+237 6XX XXX XXX",
+    "placeholderAdresse": "E.g.: Bastos Quarter, Street 123",
+    "placeholderVille": "E.g.: Yaounde",
+    "placeholderQuartier": "E.g.: Bastos",
+    "placeholderNationalite": "E.g.: Cameroonian",
+    "aideClasse": "Class the student will be enrolled in",
+    "aideAnneeScolaire": "Current academic year",
+    "descTransport": "The student will use school transport",
+    "descCantine": "The student will eat at the canteen",
+    "descBoursier": "The student receives a scholarship",
+    "descRedoublement": "The student is repeating a year",
+    "formatsPhoto": "Accepted formats: JPG, PNG, GIF • Max size: 2 MB",
+    "etapeSur": "Step {{current}} of {{total}}",
+    "brouillonAuto": "Draft auto-saved",
+    "afficherAide": "Show help",
+    "aidePrefix": "Help:",
+    "selectionner": "-- Select --"
   },
 
   "statut": {
@@ -89,7 +128,11 @@
     "toutesAnnees": "All years",
     "tousStatuts": "All statuses",
     "tousSexes": "All",
-    "resetFiltres": "Reset filters"
+    "resetFiltres": "Reset filters",
+    "classe": "Class",
+    "annee": "Year",
+    "sexe": "Gender",
+    "statut": "Status"
   },
 
   "import": {
@@ -120,6 +163,30 @@
     "telephoneInvalide": "Invalid phone format"
   },
 
+  "toasts": {
+    "eleveCree": "Student {{prenom}} {{nom}} created successfully",
+    "eleveModifie": "Student {{prenom}} {{nom}} updated successfully",
+    "eleveSupprime": "Student deleted successfully",
+    "importReussi": "{{count}} students imported successfully",
+    "exportReussi": "Export successful",
+    "erreurCreation": "Error creating student",
+    "erreurModification": "Error updating student",
+    "erreurSuppression": "Error deleting student",
+    "erreurImport": "Error importing students",
+    "erreurExport": "Error exporting students",
+    "photoAjoutee": "Photo added",
+    "photoSupprimee": "Photo deleted",
+    "photoTropVolumineuse": "Photo too large",
+    "photoTailleMax": "Maximum allowed size is 2 MB",
+    "formatInvalide": "Invalid format",
+    "selectionnerImage": "Please select an image (JPG, PNG, etc.)",
+    "erreurLecture": "Read error",
+    "impossibleLireFichier": "Unable to read file",
+    "brouillonRestaure": "Draft restored",
+    "brouillonDescription": "Your previous changes have been restored",
+    "erreurEnregistrement": "Error saving"
+  },
+
   "messages": {
     "confirmationSuppression": "Are you sure you want to delete this student? This action cannot be undone.",
     "eleveCree": "Student created successfully",
@@ -147,13 +214,27 @@
     "exporterSelection": "Export selection"
   },
 
+  "statistiques": {
+    "total": "Total",
+    "actifs": "Active",
+    "exclus": "Expelled",
+    "diplomes": "Graduated"
+  },
+
+  "confirmation": {
+    "supprimerTitre": "Delete this student",
+    "supprimerMessage": "Are you sure you want to delete student {{prenom}} {{nom}}?",
+    "supprimerDetails": "This action is irreversible and will delete all associated data (grades, report cards, attendance, etc.)."
+  },
+
   "detail": {
     "titre": "Student profile",
     "retourListe": "Back to list",
     "matricule": "Student ID",
     "neLe": "Born on",
     "a": "in",
-    "age": "years old",
+    "age": "Age",
+    "ans": "years old",
     
     "sectionIdentite": "Identity",
     "sectionContact": "Contact details",
@@ -162,6 +243,26 @@
     "sectionTuteur": "Legal guardian",
     "sectionServices": "Services",
     "sectionMedical": "Medical information",
+    
+    "nomComplet": "Full name",
+    "sexe": "Gender",
+    "masculin": "Male",
+    "feminin": "Female",
+    "nationalite": "Nationality",
+    "nationaliteDefaut": "Cameroonian",
+    "sousSysteme": "Subsystem",
+    "francophone": "Francophone",
+    "anglophone": "Anglophone",
+    "ville": "City",
+    "nom": "Name",
+    "transport": "Transport",
+    "cantine": "Canteen",
+    "boursier": "Scholarship",
+    "redoublement": "Repeating",
+    "exporterFiche": "Export profile",
+    "eleveNonTrouve": "Student not found",
+    "nomPere": "Father's name",
+    "nomMere": "Mother's name",
     
     "profession": "Occupation",
     "nonDefini": "Not defined",
@@ -173,6 +274,14 @@
     "nombreNotes": "Grades",
     "nombreAbsences": "Absences",
     "nombreRetards": "Late arrivals",
+    "moduleNotesPlaceholder": "Grades & Report Cards module — backend data to integrate",
+    "notesResume": "Grades & assessments",
+    "notesDescription": "View all grades and assessments for this student.",
+    "voirNotes": "View grades",
+    "bulletinsResume": "Report cards",
+    "bulletinsDescription": "View report cards for this student by period.",
+    "voirBulletins": "View report cards",
+    "moduleFinancesPlaceholder": "Finance module — backend data to integrate",
     
     "financesResume": "Financial summary",
     "totalFactures": "Total invoices",

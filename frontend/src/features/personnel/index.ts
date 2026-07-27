@@ -6,10 +6,8 @@
 
 export * from './types/personnel.types';
 export * from './hooks/use-personnel';
-export * from './hooks/use-paie';
 export * from './hooks/use-membre-fonctions';
 export { PersonnelPage } from './components/personnel-page';
 export { PersonnelFormModal } from './components/personnel-form-modal';
 export { PersonnelDetailPage } from './components/personnel-detail-page';
-export { ContratsPaiePage } from './components/contrats-paie-page';
 export { TabFonctions } from './components/tab-fonctions';

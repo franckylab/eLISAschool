@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Calendar, FileDown, Plus, RefreshCw, Clock } from 'lucide-react';
 import { useCreneaux } from '../hooks/use-emploi-du-temps';
@@ -8,7 +7,6 @@ import { EDTCalendar } from '../components/edt-calendar';
 import { EDTGenerationModal } from '../components/edt-generation-modal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { CustomModal } from '@/components/modals/CustomModal';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 
@@ -18,9 +16,8 @@ interface EmploiDuTempsListeProps {
     classeNom?: string;
 }
 
-export function EmploiDuTempsListe({ classeAnneeId, anneeScolaireId, classeNom }: EmploiDuTempsListeProps) {
+export function EmploiDuTempsListe({ classeAnneeId, anneeScolaireId }: EmploiDuTempsListeProps) {
     const { t } = useTranslation('emplois');
-    const navigate = useNavigate();
     const [generationModalOpen, setGenerationModalOpen] = useState(false);
 
     const { data: paginated, isLoading, error, refetch } = useCreneaux({ classeAnneeId, anneeScolaireId });
@@ -45,32 +42,23 @@ export function EmploiDuTempsListe({ classeAnneeId, anneeScolaireId, classeNom }
     }
 
     return (
-        <div className="flex flex-col gap-6">
-            <PageHeader
-                variant="gradient"
-                icon={Calendar}
-                title={t('liste.titre')}
-                subtitle={classeNom ? `${t('classe')} : ${classeNom}` : undefined}
-                onBack={() => navigate({ to: '/emploi-du-temps' })}
-                actions={
-                    <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-xl p-2 flex items-center gap-2">
-                        <ElisaButton variant="ghost" size="xs" icon={<RefreshCw className="h-4 w-4" />} onClick={() => refetch()}>
-                            {t('liste.actualiser')}
-                        </ElisaButton>
-                        <span className="w-px h-5 bg-white/20" />
-                        <ElisaButton variant="ghost" size="xs" icon={<FileDown className="h-4 w-4" />} onClick={handleExportHTML}>
-                            {t('liste.exportHtml')}
-                        </ElisaButton>
-                        <ElisaButton variant="ghost" size="xs" icon={<FileDown className="h-4 w-4" />} onClick={handleExportPDF}>
-                            {t('liste.exportPdf')}
-                        </ElisaButton>
-                        <span className="w-px h-5 bg-white/20" />
-                        <ElisaButton variant="primary" size="xs" icon={<Plus className="h-4 w-4" />} onClick={() => setGenerationModalOpen(true)}>
-                            {t('liste.genererModifier')}
-                        </ElisaButton>
-                    </div>
-                }
-            />
+        <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                    <ElisaButton variant="ghost" size="xs" icon={<RefreshCw className="h-4 w-4" />} onClick={() => refetch()}>
+                        {t('liste.actualiser')}
+                    </ElisaButton>
+                    <ElisaButton variant="ghost" size="xs" icon={<FileDown className="h-4 w-4" />} onClick={handleExportHTML}>
+                        {t('liste.exportHtml')}
+                    </ElisaButton>
+                    <ElisaButton variant="ghost" size="xs" icon={<FileDown className="h-4 w-4" />} onClick={handleExportPDF}>
+                        {t('liste.exportPdf')}
+                    </ElisaButton>
+                </div>
+                <ElisaButton variant="primary" size="xs" icon={<Plus className="h-4 w-4" />} onClick={() => setGenerationModalOpen(true)}>
+                    {t('liste.genererModifier')}
+                </ElisaButton>
+            </div>
 
             {isLoading ? (
                 <PageSkeleton showHeader={false} showStats={false} showTable />

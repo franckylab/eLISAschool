@@ -2,7 +2,7 @@
  * ==================================
  * eLISAschool - Page Élèves
  * ==================================
- * Version: 2.0.0
+ * Version: 3.0.0
  * Auteur: franck arlos chendjou
  * 
  * Page liste complète avec filtres avancés, modales, import/export
@@ -17,30 +17,39 @@ import { useEleves, useSupprimerEleve, useExporterEleves } from '../hooks/use-el
 import { EleveFormModal } from './eleve-form-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { PageSkeleton } from '@/components/ui/Skeleton';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCard } from '@/components/ui/StatCard';
 import { CardGrid } from '@/components/ui/CardGrid';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { LoadingState, ErrorState } from '@/components/feedback';
 import { usePermissions, useKeyboardShortcuts } from '@/hooks';
 import { useToutesClasses } from '@/features/classes/hooks/use-toutes-classes';
 import { useToutesAnneesScolaires } from '@/features/annees-scolaires/hooks/use-toutes-annees-scolaires';
-import { LoadingState, ErrorState } from '@/components/feedback';
-import type { Eleve, EleveFiltres, StatutEleve, Sexe } from '../types/eleve.types';
+import type { Eleve, EleveFiltres, StatutEleve } from '../types/eleve.types';
 import type { Column } from '@/components/ui/DataTable';
+
+const STATUT_STYLES: Record<StatutEleve, string> = {
+    ACTIF: 'bg-success/15 text-success',
+    EXCLU: 'bg-destructive/15 text-destructive',
+    ABANDON: 'bg-muted text-muted-foreground',
+    DIPLOME: 'bg-primary/15 text-primary',
+};
+
+const SEXE_STYLES: Record<string, string> = {
+    M: 'bg-primary/15 text-primary',
+    F: 'bg-accent/15 text-accent',
+};
 
 export function ElevesPage() {
     const { t } = useTranslation('eleves');
     const { hasPermission } = usePermissions();
     const navigate = useNavigate();
     
-    // States pour modales
     const [modalOpen, setModalOpen] = useState(false);
     const [modeModal, setModeModal] = useState<'creation' | 'edition'>('creation');
     const [eleveEdition, setEleveEdition] = useState<Eleve | null>(null);
     const [eleveToDelete, setEleveToDelete] = useState<Eleve | null>(null);
     
-    // States pour filtres
     const [filtres, setFiltres] = useState<EleveFiltres>({
         page: 1,
         limit: 20,
@@ -50,11 +59,9 @@ export function ElevesPage() {
     const supprimerEleve = useSupprimerEleve();
     const exporterEleves = useExporterEleves();
     
-    // Données pour dropdowns
     const { data: classes } = useToutesClasses();
     const { data: anneesScolaires } = useToutesAnneesScolaires();
 
-    // Raccourci clavier Ctrl+N pour nouveau
     useKeyboardShortcuts([
         {
             key: 'n',
@@ -68,7 +75,6 @@ export function ElevesPage() {
         },
     ]);
     
-    // Handlers
     const handleNouveau = () => {
         setModeModal('creation');
         setEleveEdition(null);
@@ -88,13 +94,11 @@ export function ElevesPage() {
     const handleExporter = () => {
         exporterEleves.mutate(filtres);
     };
-    
-
 
     const colonnes: Column<Eleve>[] = [
         {
             key: 'matricule',
-            header: 'Matricule',
+            header: t('detail.matricule'),
             sortable: true,
             render: (eleve) => (
                 <span className="font-mono text-sm font-medium text-[var(--color-dominant-600)]">
@@ -120,11 +124,15 @@ export function ElevesPage() {
                         </div>
                     )}
                     <div>
-                        <p className="font-medium text-[var(--color-text-primary)]">
+                        <button
+                            type="button"
+                            className="font-medium text-left text-foreground hover:text-primary transition-colors"
+                            onClick={() => navigate({ to: '/eleves/$id', params: { id: eleve.id } })}
+                        >
                             {eleve.prenom} {eleve.nom}
-                        </p>
-                        <p className="text-xs text-[var(--color-text-muted)]">
-                            {eleve.email || eleve.telephone || '-'}
+                        </button>
+                        <p className="text-xs text-muted-foreground">
+                            {eleve.utilisateur?.email || eleve.utilisateur?.telephone || '—'}
                         </p>
                     </div>
                 </div>
@@ -132,76 +140,74 @@ export function ElevesPage() {
         },
         {
             key: 'sexe',
-            header: 'Sexe',
+            header: t('detail.sexe'),
             sortable: true,
             className: 'text-center',
             render: (eleve) => (
                 <span
-                    className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                        eleve.sexe === 'M'
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                            : 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200'
-                    }`}
+                    className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${SEXE_STYLES[eleve.sexe] ?? 'bg-muted text-muted-foreground'}`}
                 >
-                    {eleve.sexe === 'M' ? 'Masculin' : 'Féminin'}
+                    {eleve.sexe === 'M' ? t('formulaire.masculin') : t('formulaire.feminin')}
                 </span>
             ),
         },
         {
             key: 'classe',
-            header: 'Classe',
+            header: t('formulaire.classe'),
             sortable: true,
             render: (eleve) => (
-                <span className="rounded bg-[var(--color-secondary-100)] px-2 py-1 text-xs font-medium text-[var(--color-secondary-700)] dark:bg-[var(--color-secondary-900)] dark:text-[var(--color-secondary-200)]">
-                    {eleve.classe?.nom || '-'}
-                </span>
+                eleve.classe ? (
+                    <button
+                        type="button"
+                        className="rounded bg-[var(--color-secondary-100)] px-2 py-1 text-xs font-medium text-[var(--color-secondary-700)] hover:bg-[var(--color-secondary-200)] transition-colors"
+                        onClick={() => navigate({ to: '/classes/$id', params: { id: eleve.classe!.id } })}
+                    >
+                        {eleve.classe.nom}
+                    </button>
+                ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                )
             ),
         },
         {
             key: 'statut',
-            header: t('commun.statut', { defaultValue: 'Statut' }),
+            header: t('commun.statut'),
             sortable: true,
             className: 'text-center',
             render: (eleve) => {
-                const statuts: Record<StatutEleve, { label: string; color: string }> = {
-                    ACTIF: { label: t('statut.actif'), color: 'green' },
-                    EXCLU: { label: t('statut.exclu'), color: 'red' },
-                    ABANDON: { label: t('statut.abandon'), color: 'gray' },
-                    DIPLOME: { label: t('statut.diplome'), color: 'blue' },
-                };
-                const statut = statuts[eleve.statut || 'ACTIF'];
+                const statut = eleve.statut || 'ACTIF';
                 return (
                     <span
-                        className={`inline-flex rounded-full px-2 py-1 text-xs font-medium bg-${statut.color}-100 text-${statut.color}-800 dark:bg-${statut.color}-900 dark:text-${statut.color}-200`}
+                        className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${STATUT_STYLES[statut]}`}
                     >
-                        {statut.label}
+                        {t(`statut.${statut.toLowerCase()}`)}
                     </span>
                 );
             },
         },
         {
             key: 'actions',
-            header: t('commun.actions', { defaultValue: 'Actions' }),
+            header: t('commun.actions'),
             className: 'text-right',
             renderActions: (eleve) => [
                 {
                     key: 'voir',
                     icon: Eye,
-                    label: t('actions.voir', { defaultValue: 'Voir' }),
+                    label: t('actions.voir'),
                     onClick: () => handleVoir(eleve),
                     variant: 'info' as const,
                 },
                 {
                     key: 'modifier',
                     icon: Edit,
-                    label: t('actions.modifier', { defaultValue: 'Modifier' }),
+                    label: t('actions.modifier'),
                     onClick: () => handleModifier(eleve),
                     permission: 'eleves:edit',
                 },
                 {
                     key: 'supprimer',
                     icon: Trash2,
-                    label: t('actions.supprimer', { defaultValue: 'Supprimer' }),
+                    label: t('actions.supprimer'),
                     onClick: () => setEleveToDelete(eleve),
                     permission: 'eleves:delete',
                     variant: 'danger' as const,
@@ -210,21 +216,19 @@ export function ElevesPage() {
         },
     ];
 
-    // Affichage skeleton uniquement au premier chargement
     if (isLoading && !data) {
         return (
             <div className="p-6">
-                <LoadingState message="Chargement des élèves..." />
+                <LoadingState message={t('chargement')} />
             </div>
         );
     }
 
-    // Affichage message d'erreur
     if (error) {
         return (
             <div className="p-6">
                 <ErrorState
-                    message={error.message || "Impossible de charger les élèves"}
+                    message={error.message || t('chargement')}
                     onRetry={() => refetch()}
                 />
             </div>
@@ -238,8 +242,8 @@ export function ElevesPage() {
     return (
         <div className="flex flex-col gap-6 p-6">
             <PageHeader
-                title={t('eleves.titre', { defaultValue: 'Élèves' })}
-                description={`${data?.meta?.totalItems || 0} élève(s) inscrit(s)`}
+                title={t('titre')}
+                description={t('statistiques.total') + ': ' + (data?.meta?.totalItems || 0)}
                 icon={Users}
                 variant="gradient"
                 actions={
@@ -279,56 +283,56 @@ export function ElevesPage() {
             />
 
             <CardGrid>
-                <StatCard label={t('statistiques.total', 'Total')} value={data?.meta?.totalItems || 0} icon={Users} tone="dominant" />
-                <StatCard label={t('statistiques.actifs', 'Actifs')} value={totalActifs} icon={UserCheck} tone="success" />
-                <StatCard label={t('statistiques.exclus', 'Exclus')} value={totalExclus} icon={UserX} tone="danger" />
-                <StatCard label={t('statistiques.diplomes', 'Diplômés')} value={totalDiplomes} icon={GraduationCap} tone="info" />
+                <StatCard label={t('statistiques.total')} value={data?.meta?.totalItems || 0} icon={Users} tone="dominant" />
+                <StatCard label={t('statistiques.actifs')} value={totalActifs} icon={UserCheck} tone="success" />
+                <StatCard label={t('statistiques.exclus')} value={totalExclus} icon={UserX} tone="danger" />
+                <StatCard label={t('statistiques.diplomes')} value={totalDiplomes} icon={GraduationCap} tone="info" />
             </CardGrid>
 
-            {/* Tableau */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
             >
                 <DataTable
+                    tableId="eleves-liste"
                     data={data?.items || []}
                     columns={colonnes}
                     isLoading={isLoading}
-                isFetching={isFetching}
+                    isFetching={isFetching}
                     searchPlaceholder={t('filtres.recherche')}
                     enableReordering
-                enablePinning
+                    enablePinning
                     filtres={[
                         {
                             key: 'classeId',
-                            label: t('filtres.classe', { defaultValue: 'Classe' }),
+                            label: t('filtres.classe'),
                             options: (classes || []).map((c) => ({ value: c.id, label: c.nom })),
                             allOptionLabel: t('filtres.toutesClasses'),
                         },
                         {
                             key: 'anneeScolaireId',
-                            label: t('filtres.annee', { defaultValue: 'Année' }),
+                            label: t('filtres.annee'),
                             options: (anneesScolaires || []).map((a) => ({ value: a.id, label: a.libelle })),
                             allOptionLabel: t('filtres.toutesAnnees'),
                         },
                         {
                             key: 'sexe',
-                            label: t('filtres.sexe', { defaultValue: 'Sexe' }),
+                            label: t('filtres.sexe'),
                             options: [
-                                { value: 'M', label: 'Masculin' },
-                                { value: 'F', label: 'Féminin' },
+                                { value: 'M', label: t('formulaire.masculin') },
+                                { value: 'F', label: t('formulaire.feminin') },
                             ],
                             allOptionLabel: t('filtres.tousSexes'),
                         },
                         {
                             key: 'statut',
-                            label: t('filtres.statut', { defaultValue: 'Statut' }),
+                            label: t('filtres.statut'),
                             options: [
-                                { value: 'ACTIF', label: 'Actif' },
-                                { value: 'EXCLU', label: 'Exclu' },
-                                { value: 'ABANDON', label: 'Abandon' },
-                                { value: 'DIPLOME', label: 'Diplômé' },
+                                { value: 'ACTIF', label: t('statut.actif') },
+                                { value: 'EXCLU', label: t('statut.exclu') },
+                                { value: 'ABANDON', label: t('statut.abandon') },
+                                { value: 'DIPLOME', label: t('statut.diplome') },
                             ],
                             allOptionLabel: t('filtres.tousStatuts'),
                         },
@@ -356,7 +360,6 @@ export function ElevesPage() {
                 />
             </motion.div>
 
-            {/* Modale Formulaire */}
             <EleveFormModal
                 open={modalOpen}
                 onOpenChange={setModalOpen}
@@ -364,12 +367,11 @@ export function ElevesPage() {
                 eleve={eleveEdition || undefined}
             />
 
-            {/* Modale Confirmation Suppression */}
             <ConfirmationModal
                 isOpen={!!eleveToDelete}
-                title="Supprimer cet élève"
-                message={`Êtes-vous sûr de vouloir supprimer l'élève ${eleveToDelete?.prenom} ${eleveToDelete?.nom} ?`}
-                details="Cette action est irréversible et supprimera toutes les données associées (notes, bulletins, présence, etc.)."
+                title={t('confirmation.supprimerTitre')}
+                message={t('confirmation.supprimerMessage', { prenom: eleveToDelete?.prenom, nom: eleveToDelete?.nom })}
+                details={t('confirmation.supprimerDetails')}
                 variant="danger"
                 onConfirm={async () => {
                     if (eleveToDelete) {

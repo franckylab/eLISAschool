@@ -5,6 +5,7 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Plus, Edit, Trash2, Eye, Users } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -19,8 +20,17 @@ import { usePermissions } from '@/hooks';
 import type { MembrePersonnel, PersonnelFiltres } from '../types/personnel.types';
 import type { Column } from '@/components/ui/DataTable';
 
+const STATUT_CLASSES: Record<string, string> = {
+    ACTIF: 'bg-success/10 text-success',
+    EN_ATTENTE_VALIDATION: 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]',
+    INACTIF: 'bg-muted text-muted-foreground',
+    CONGE: 'bg-primary/10 text-primary',
+    DEMISSION: 'bg-destructive/10 text-destructive',
+};
+
 export function PersonnelPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<PersonnelFiltres>({ page: 1, limit: 20 });
     const [modalOpen, setModalOpen] = useState(false);
@@ -54,7 +64,7 @@ export function PersonnelPage() {
     const colonnes: Column<MembrePersonnel>[] = [
         {
             key: 'matricule',
-            header: 'Matricule',
+            header: t('personnel:matricule'),
             sortable: true,
             render: (p) => <span className="font-mono text-sm font-medium text-[var(--color-dominant-600)]">{p.matricule}</span>,
         },
@@ -69,7 +79,7 @@ export function PersonnelPage() {
                 const tel = p.utilisateur?.profil?.telephone ?? '';
                 return (
                     <button
-                        onClick={() => window.location.href = `/personnel/${p.id}`}
+                        onClick={() => navigate({ to: '/personnel/$id', params: { id: p.id } })}
                         className="hover:underline cursor-pointer text-left"
                     >
                         <div>
@@ -97,11 +107,11 @@ export function PersonnelPage() {
         },
         {
             key: 'dateEntree',
-            header: 'Date entrée',
+            header: t('personnel:dateEntree'),
             sortable: true,
             render: (p) => {
                 const d = p.dateEmbauche;
-                return d ? new Date(d).toLocaleDateString('fr-FR') : '-';
+                return d ? new Date(d).toLocaleDateString(i18n.language) : '-';
             },
         },
         {
@@ -110,17 +120,13 @@ export function PersonnelPage() {
             sortable: true,
             className: 'text-center',
             render: (p) => {
-                const statuts: any = {
-                    ACTIF: { label: 'Actif', color: 'green' },
-                    INACTIF: { label: 'Inactif', color: 'gray' },
-                    CONGE: { label: 'En congé', color: 'blue' },
-                    actif: { label: 'Actif', color: 'green' },
-                    inactif: { label: 'Inactif', color: 'gray' },
-                    en_conge: { label: 'En congé', color: 'blue' },
-                    demission: { label: 'Démission', color: 'red' },
-                };
-                const s = statuts[p.statut] || statuts.ACTIF;
-                return <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium bg-${s.color}-100 text-${s.color}-800`}>{s.label}</span>;
+                const statutKey = (p.statut || 'ACTIF').toUpperCase().replace('EN_CONGE', 'CONGE');
+                const classes = STATUT_CLASSES[statutKey] ?? STATUT_CLASSES.ACTIF;
+                return (
+                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${classes}`}>
+                        {t(`personnel:statut_${statutKey}`, { defaultValue: statutKey })}
+                    </span>
+                );
             },
         },
         {
@@ -131,8 +137,8 @@ export function PersonnelPage() {
                 {
                     key: 'voir',
                     icon: Eye,
-                    label: 'Voir détails',
-                    onClick: () => window.location.href = `/personnel/${p.id}`,
+                    label: t('boutons.voir'),
+                    onClick: () => navigate({ to: '/personnel/$id', params: { id: p.id } }),
                     variant: 'info' as const,
                 },
                 {
@@ -158,7 +164,7 @@ export function PersonnelPage() {
     if (isLoading && !data) {
         return (
             <div className="p-6">
-                <LoadingState message="Chargement du personnel..." />
+                <LoadingState message={t('personnel:chargementListe')} />
             </div>
         );
     }
@@ -168,7 +174,7 @@ export function PersonnelPage() {
         return (
             <div className="p-6">
                 <ErrorState
-                    message={error.message || "Impossible de charger les données du personnel"}
+                    message={error.message || t('personnel:erreurChargement')}
                     onRetry={() => refetch()}
                 />
             </div>
@@ -179,7 +185,7 @@ export function PersonnelPage() {
         <div className="flex flex-col gap-6 p-6">
             <PageHeader
                 title={t('personnel.titre', { defaultValue: 'Personnel' })}
-                subtitle={`${data?.meta?.totalItems || 0} membre(s)`}
+                subtitle={t('personnel:membres', { count: data?.meta?.totalItems || 0 })}
                 icon={Users}
                 variant="gradient"
                 actions={hasPermission('personnel:create') ? (
@@ -243,9 +249,9 @@ export function PersonnelPage() {
 
             <ConfirmationModal
                 isOpen={!!membreToDelete}
-                title="Supprimer ce membre du personnel"
-                message={`Êtes-vous sûr de vouloir supprimer ${membreToDelete?.utilisateur?.profil?.prenom || ''} ${membreToDelete?.utilisateur?.profil?.nom || ''} ?`}
-                details="Cette action est irréversible et supprimera toutes les données associées."
+                title={t('personnel:detail.confirmSuppressionTitre')}
+                message={t('personnel:detail.confirmSuppressionMessage', { nom: `${membreToDelete?.utilisateur?.profil?.prenom ?? ''} ${membreToDelete?.utilisateur?.profil?.nom ?? ''}`.trim() })}
+                details={t('personnel:confirmSuppressionDetails')}
                 variant="danger"
                 onConfirm={async () => {
                     if (membreToDelete) {

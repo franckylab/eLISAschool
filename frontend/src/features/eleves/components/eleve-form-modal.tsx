@@ -7,7 +7,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { CustomModal } from '@/components/modals/CustomModal';
-import { EleveForm } from './eleve-form.v2'; // Version améliorée avec React Hook Form
+import { EleveForm } from './eleve-form';
 import type { Eleve } from '../types/eleve.types';
 
 interface EleveFormModalProps {

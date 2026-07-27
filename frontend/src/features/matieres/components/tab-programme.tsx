@@ -29,7 +29,6 @@ export function TabProgramme({
     const [pmModalOpen, setPmModalOpen] = useState(false);
     const [editPmId, setEditPmId] = useState<string | null>(null);
     const [editCoeff, setEditCoeff] = useState<number | ''>('');
-    const [editVol, setEditVol] = useState<number | ''>('');
     const [editOblig, setEditOblig] = useState(true);
     const [deletePmId, setDeletePmId] = useState<string | null>(null);
 
@@ -45,7 +44,6 @@ export function TabProgramme({
     const handleEdit = (pm: ProgrammeMatiere) => {
         setEditPmId(pm.id);
         setEditCoeff(pm.coefficient ?? '');
-        setEditVol(pm.volumeHoraire ?? '');
         setEditOblig(pm.obligatoire);
     };
 
@@ -54,7 +52,6 @@ export function TabProgramme({
         await modifier.mutateAsync({
             id: editPmId,
             coefficient: editCoeff !== '' ? Number(editCoeff) : undefined,
-            volumeHoraire: editVol !== '' ? Number(editVol) : undefined,
             obligatoire: editOblig,
         });
         setEditPmId(null);
@@ -160,7 +157,7 @@ export function TabProgramme({
                                                     <h5 className="text-[clamp(0.75rem,1.25vw,0.875rem)] font-medium text-text-secondary mb-[clamp(0.375rem,1vw,0.5rem)]">
                                                         {t('modifier')}
                                                     </h5>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-[clamp(0.5rem,1.5vw,0.75rem)] mb-[clamp(0.375rem,1vw,0.5rem)]">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-[clamp(0.5rem,1.5vw,0.75rem)] mb-[clamp(0.375rem,1vw,0.5rem)]">
                                                         <div>
                                                             <label className="block text-[clamp(0.625rem,1.25vw,0.75rem)] font-medium text-text-secondary mb-[clamp(0.125rem,0.5vw,0.25rem)]">
                                                                 {t('coefficient')}
@@ -168,17 +165,6 @@ export function TabProgramme({
                                                             <input type="number" step="0.5" min="0"
                                                                 value={editCoeff}
                                                                 onChange={(e) => setEditCoeff(e.target.value ? Number(e.target.value) : '')}
-                                                                placeholder="Hérité"
-                                                                className="w-full px-[clamp(0.5rem,1.5vw,0.625rem)] py-[clamp(0.375rem,1vw,0.5rem)] border border-border bg-[var(--color-card)] rounded-lg text-[clamp(0.75rem,1.25vw,0.875rem)] focus:border-[var(--color-dominante)] focus:ring-2 focus:ring-[var(--color-dominante)]/20 outline-none"
-                                                            />
-                                                        </div>
-                                                        <div>
-                                                            <label className="block text-[clamp(0.625rem,1.25vw,0.75rem)] font-medium text-text-secondary mb-[clamp(0.125rem,0.5vw,0.25rem)]">
-                                                                {t('volumeHoraire')}
-                                                            </label>
-                                                            <input type="number" step="1" min="0"
-                                                                value={editVol}
-                                                                onChange={(e) => setEditVol(e.target.value ? Number(e.target.value) : '')}
                                                                 placeholder="Hérité"
                                                                 className="w-full px-[clamp(0.5rem,1.5vw,0.625rem)] py-[clamp(0.375rem,1vw,0.5rem)] border border-border bg-[var(--color-card)] rounded-lg text-[clamp(0.75rem,1.25vw,0.875rem)] focus:border-[var(--color-dominante)] focus:ring-2 focus:ring-[var(--color-dominante)]/20 outline-none"
                                                             />
@@ -217,12 +203,6 @@ export function TabProgramme({
                                                         </span>
                                                     </div>
                                                     <div className="flex items-center gap-[clamp(0.25rem,0.75vw,0.375rem)] text-[clamp(0.75rem,1.25vw,0.875rem)]">
-                                                        <span className="text-text-muted">{t('volumeHoraire')}:</span>
-                                                        <span className={`font-semibold ${pm.volumeHoraire != null ? 'text-[var(--color-accent)]' : 'text-text-muted'}`}>
-                                                            {pm.volumeHoraire ? `${pm.volumeHoraire}h` : 'Hérité'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-[clamp(0.25rem,0.75vw,0.375rem)] text-[clamp(0.75rem,1.25vw,0.875rem)]">
                                                         <span className="text-text-muted">{t('statut')}:</span>
                                                         {pm.obligatoire ? (
                                                             <span className="inline-flex items-center gap-1 rounded-full px-[clamp(0.25rem,0.75vw,0.375rem)] py-[clamp(0.0625rem,0.25vw,0.125rem)] text-[clamp(0.625rem,1vw,0.75rem)] font-medium bg-success/10 text-success">
@@ -235,7 +215,7 @@ export function TabProgramme({
                                                         )}
                                                     </div>
                                                     <div className="flex items-center gap-[clamp(0.25rem,0.75vw,0.375rem)] text-[clamp(0.75rem,1.25vw,0.875rem)]">
-                                                        <span className="text-text-muted">Ordre:</span>
+                                                        <span className="text-text-muted">{t('ordre')}:</span>
                                                         <span className="font-mono text-[clamp(0.625rem,1vw,0.75rem)] text-text-secondary">#{pm.ordre}</span>
                                                     </div>
                                                 </div>

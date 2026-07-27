@@ -88,7 +88,8 @@ router.get('/programme', authMiddleware, async (req: Request, res: Response, nex
 
 router.get('/programme/:niveauId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const items = await service.getMatieresParNiveau(req.params.niveauId);
+        const etablissementId = req.utilisateur!.etablissementId!;
+        const items = await service.getMatieresParNiveau(req.params.niveauId, etablissementId);
         res.json({ success: true, data: items });
     } catch (error) { next(error); }
 });
@@ -111,7 +112,8 @@ router.patch('/programme/:id', authMiddleware, requirePermission('config:edit'),
 
 router.delete('/programme/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await service.deleteMatiereNiveau(req.params.id);
+        const etablissementId = req.utilisateur!.etablissementId!;
+        await service.deleteMatiereNiveau(req.params.id, etablissementId);
         res.json({ success: true, message: 'Programme matière-niveau supprimé' });
     } catch (error) { next(error); }
 });
@@ -128,7 +130,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
 // Programme par matière (MatiereNiveau)
 router.get('/:id/programme', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const prog = await service.findProgrammeByMatiere(req.params.id);
+        const prog = await service.findProgrammeByMatiere(req.params.id, req.utilisateur!.etablissementId!);
         res.json({ success: true, data: prog });
     } catch (error) { next(error); }
 });
@@ -156,15 +158,6 @@ router.get('/:id/affectations', authMiddleware, async (req: Request, res: Respon
         const etablissementId = req.utilisateur!.etablissementId!;
         const affectations = await service.findAffectationsByMatiere(req.params.id, etablissementId);
         res.json({ success: true, data: affectations });
-    } catch (error) { next(error); }
-});
-
-// Configurations par matière
-router.get('/:id/configurations', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const etablissementId = req.utilisateur!.etablissementId!;
-        const configs = await service.findConfigurationsByMatiere(req.params.id, etablissementId);
-        res.json({ success: true, data: configs });
     } catch (error) { next(error); }
 });
 

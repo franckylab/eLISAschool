@@ -15,6 +15,15 @@ import {
     useContrats,
     useSupprimerContrat,
 } from '../hooks/use-contrats';
+import { ContratWizardModal } from './contrat-wizard-modal';
+
+const STATUT_CLASSES: Record<string, string> = {
+    EN_ATTENTE_VALIDATION: 'bg-warning/10 text-warning',
+    ACTIF: 'bg-success/10 text-success',
+    EXPIRE: 'bg-muted text-muted-foreground',
+    ROMPU: 'bg-destructive/10 text-destructive',
+    RENEGOCIE: 'bg-primary/10 text-primary',
+};
 
 export function ContratsPage() {
     const navigate = useNavigate();
@@ -22,6 +31,8 @@ export function ContratsPage() {
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<ContratFilters>({ page: 1, limit: 20 });
     const [contratToDelete, setContratToDelete] = useState<ContratPersonnel | null>(null);
+    const [showModal, setShowModal] = useState(false);
+    const [editing, setEditing] = useState<ContratPersonnel | null>(null);
 
     const { data, isLoading, isError, error, refetch } = useContrats(filtres);
     const supprimer = useSupprimerContrat();
@@ -75,13 +86,7 @@ export function ContratsPage() {
             key: 'statut',
             header: t('colonne.statut'),
             render: (c: ContratPersonnel) => (
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    c.statut === 'ACTIF'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                        : c.statut === 'TERMINE'
-                            ? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                }`}>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${STATUT_CLASSES[c.statut] || 'bg-muted text-muted-foreground'}`}>
                     {t(`statut.${c.statut}`)}
                 </span>
             ),
@@ -102,7 +107,7 @@ export function ContratsPage() {
                     key: 'modifier',
                     icon: Edit,
                     label: t('actions.modifier'),
-                    onClick: () => navigate({ to: '/contrats/$id', params: { id: c.id } }),
+                    onClick: () => { setEditing(c); setShowModal(true); },
                     permission: 'contrats:edit',
                 },
                 {
@@ -138,7 +143,7 @@ export function ContratsPage() {
                 actions={
                     hasPermission('contrats:create') ? (
                         <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-xl p-2">
-                            <ElisaButton variant="primary" icon={<Plus className="h-4 w-4" />}>
+                            <ElisaButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => { setEditing(null); setShowModal(true); }}>
                                 {t('nouveauContrat')}
                             </ElisaButton>
                         </div>
@@ -168,6 +173,12 @@ export function ContratsPage() {
                 searchable
                 searchPlaceholder={t('rechercher')}
                 onSearchChange={(v) => setFiltres((prev) => ({ ...prev, recherche: v, page: 1 }))}
+            />
+
+            <ContratWizardModal
+                open={showModal}
+                onOpenChange={(v) => { setShowModal(v); if (!v) setEditing(null); }}
+                editing={editing}
             />
 
             <ConfirmDialog

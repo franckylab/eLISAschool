@@ -1,6 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Save, Trash2 } from 'lucide-react';
 import { useCreateHeureCours, useUpdateHeureCours, useDeleteHeureCours } from '../hooks/use-heure-cours';
+import { useClasses } from '@/features/classes/hooks/use-classes';
+import { useMatieres } from '@/features/matieres/hooks/use-matieres';
+import { useSalles } from '@/features/salles/hooks/use-salles';
+import { usePersonnel } from '../hooks/use-personnel';
+import type { CategorieFonction } from '@/lib/categorie-fonction';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
@@ -16,11 +22,11 @@ interface HeureCoursFormModalProps {
     onCancel: () => void;
 }
 
-const STATUTS = [
-    { value: 'PLANIFIE', label: 'Planifié' },
-    { value: 'EFFECTUE', label: 'Effectué' },
-    { value: 'ANNULE', label: 'Annulé' },
-    { value: 'REMPLACE', label: 'Remplacé' },
+const STATUT_VALUES = [
+    { value: 'PLANIFIE', labelKey: 'heuresCours.planifie' },
+    { value: 'EFFECTUE', labelKey: 'heuresCours.effectue' },
+    { value: 'ANNULE', labelKey: 'heuresCours.annule' },
+    { value: 'REMPLACE', labelKey: 'heuresCours.remplace' },
 ];
 
 interface FormData {
@@ -48,10 +54,43 @@ const emptyForm: FormData = {
 };
 
 export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCancel }: HeureCoursFormModalProps) {
+    const { t } = useTranslation('personnel');
     const createMutation = useCreateHeureCours();
     const updateMutation = useUpdateHeureCours();
     const deleteMutation = useDeleteHeureCours();
     const isPending = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+
+    const { data: classesData } = useClasses({ limit: 200, actif: true });
+    const { data: matieresData } = useMatieres({ limit: 200, actif: true });
+    const { data: salles } = useSalles();
+    const { data: enseignantsData } = usePersonnel({ categorie: 'ENSEIGNANT' as CategorieFonction, limit: 200, actif: true });
+
+    const classesOptions = useMemo(() => {
+        const items = classesData?.items ?? [];
+        return items
+            .filter(c => c.classeAnneeId)
+            .map(c => ({ value: c.classeAnneeId!, label: `${c.code} — ${c.nom}` }));
+    }, [classesData]);
+
+    const matieresOptions = useMemo(() => {
+        const items = matieresData?.items ?? [];
+        return items.map(m => ({ value: m.id, label: m.nom }));
+    }, [matieresData]);
+
+    const sallesOptions = useMemo(() => {
+        return (salles ?? []).map(s => ({ value: s.id, label: `${s.nom} (${s.code})` }));
+    }, [salles]);
+
+    const enseignantsOptions = useMemo(() => {
+        const items = enseignantsData?.items ?? [];
+        return items
+            .filter(e => e.id !== enseignantId)
+            .map(e => {
+                const prenom = e.utilisateur?.profil?.prenom ?? '';
+                const nom = e.utilisateur?.profil?.nom ?? '';
+                return { value: e.id, label: `${prenom} ${nom}`.trim() || e.matricule };
+            });
+    }, [enseignantsData, enseignantId]);
 
     const [form, setForm] = useState<FormData>(emptyForm);
     const [confirmDelete, setConfirmDelete] = useState(false);
@@ -79,14 +118,14 @@ export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCa
     };
 
     const handleSubmit = async () => {
-        const payload: any = {
+        const payload: Partial<HeureCours> = {
             date: form.date,
             heureDebut: form.heureDebut,
             heureFin: form.heureFin,
             classeAnneeId: form.classeAnneeId,
             matiereId: form.matiereId,
-            statutEffectue: form.statutEffectue,
-            salle: form.salle || undefined,
+            statutEffectue: form.statutEffectue as HeureCours['statutEffectue'],
+            salleId: form.salle || undefined,
             remplacantId: form.remplacantId || undefined,
             commentaire: form.commentaire || undefined,
         };
@@ -110,7 +149,7 @@ export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCa
         <CustomModal
             open={true}
             onOpenChange={(open) => { if (!open) onCancel(); }}
-            title={mode === 'creation' ? 'Ajouter un cours' : 'Modifier le cours'}
+            title={mode === 'creation' ? t('heuresCours.ajouterCours') : t('heuresCours.modifierCours')}
             size="lg"
             footer={
                 <div className="flex items-center justify-between w-full">
@@ -122,15 +161,15 @@ export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCa
                             onClick={handleDelete}
                             disabled={isPending}
                         >
-                            {confirmDelete ? 'Confirmer la suppression' : 'Supprimer'}
+                            {confirmDelete ? t('heuresCours.confirmerSuppression') : t('detail.supprimer')}
                         </ElisaButton>
                     )}
                     <div className="flex gap-3 ml-auto">
                         <ElisaButton variant="outline" size="sm" onClick={onCancel} disabled={isPending}>
-                            Annuler
+                            {t('form.annuler')}
                         </ElisaButton>
                         <ElisaButton size="sm" icon={<Save className="h-4 w-4" />} onClick={handleSubmit} disabled={isPending} isLoading={isPending}>
-                            {mode === 'creation' ? 'Créer' : 'Enregistrer'}
+                            {mode === 'creation' ? t('heuresCours.creer') : t('form.enregistrer')}
                         </ElisaButton>
                     </div>
                 </div>
@@ -140,23 +179,23 @@ export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCa
                 {isPending && <LoadingState />}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <ElisaInput label="Date" type="date" value={form.date} onChange={set('date')} required />
-                    <ElisaSelect label="Statut" value={form.statutEffectue} onValueChange={(v: string) => setForm(prev => ({ ...prev, statutEffectue: v }))} options={STATUTS} />
-                    <ElisaInput label="Début (HH:MM)" placeholder="08:00" value={form.heureDebut} onChange={set('heureDebut')} required />
-                    <ElisaInput label="Fin (HH:MM)" placeholder="09:00" value={form.heureFin} onChange={set('heureFin')} required />
-                    <ElisaInput label="Classe (UUID)" placeholder="ID de la classe-année" value={form.classeAnneeId} onChange={set('classeAnneeId')} required />
-                    <ElisaInput label="Matière (UUID)" placeholder="ID de la matière" value={form.matiereId} onChange={set('matiereId')} required />
-                    <ElisaInput label="Salle" placeholder="Nom ou ID de la salle" value={form.salle} onChange={set('salle')} />
-                    <ElisaInput label="Remplaçant (UUID)" placeholder="ID du remplaçant" value={form.remplacantId} onChange={set('remplacantId')} />
+                    <ElisaInput label={t('heuresCours.date')} type="date" value={form.date} onChange={set('date')} required />
+                    <ElisaSelect label={t('statut')} value={form.statutEffectue} onValueChange={(v: string) => setForm(prev => ({ ...prev, statutEffectue: v }))} options={STATUT_VALUES.map(s => ({ value: s.value, label: t(s.labelKey) }))} />
+                    <ElisaInput label={t('heuresCours.debut')} placeholder="08:00" value={form.heureDebut} onChange={set('heureDebut')} required />
+                    <ElisaInput label={t('heuresCours.fin')} placeholder="09:00" value={form.heureFin} onChange={set('heureFin')} required />
+                    <ElisaSelect label={t('heuresCours.classe')} value={form.classeAnneeId} onValueChange={(v: string) => setForm(prev => ({ ...prev, classeAnneeId: v }))} options={classesOptions} required />
+                    <ElisaSelect label={t('heuresCours.matiere')} value={form.matiereId} onValueChange={(v: string) => setForm(prev => ({ ...prev, matiereId: v }))} options={matieresOptions} required />
+                    <ElisaSelect label={t('heuresCours.salle')} value={form.salle} onValueChange={(v: string) => setForm(prev => ({ ...prev, salle: v }))} options={sallesOptions} />
+                    <ElisaSelect label={t('heuresCours.remplacant')} value={form.remplacantId} onValueChange={(v: string) => setForm(prev => ({ ...prev, remplacantId: v }))} options={enseignantsOptions} />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Commentaire</label>
+                    <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">{t('heuresCours.commentaire')}</label>
                     <textarea
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]"
+                        className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)] min-h-[80px]"
                         value={form.commentaire}
                         onChange={set('commentaire')}
-                        placeholder="Commentaire optionnel"
+                        placeholder={t('heuresCours.placeholderCommentaire')}
                     />
                 </div>
             </div>

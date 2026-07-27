@@ -1,19 +1,9 @@
 /**
  * ==================================
- * eLISAschool - Formulaire Élève Multi-Étapes (Amélioré)
+ * eLISAschool - Formulaire Élève Multi-Étapes
  * ==================================
- * Version: 2.0.0
+ * Version: 3.0.0
  * Auteur: franck arlos chendjou
- * 
- * Améliorations selon les meilleures pratiques :
- * - React Hook Form pour gestion optimisée des formulaires
- * - Validation en temps réel avec Zod
- * - Auto-save dans localStorage
- * - Champs conditionnels dynamiques
- * - Upload de photo avec preview
- * - Accessibilité améliorée (ARIA)
- * - Performance optimisée (useMemo, useCallback)
- * - UX améliorée (toasts, feedback visuel)
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -21,23 +11,23 @@ import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Check, ChevronLeft, ChevronRight, Upload, X, 
-    Camera, AlertCircle, Info, Save 
+import {
+    Check, ChevronLeft, ChevronRight, Upload, X,
+    Camera, AlertCircle, Info, Save
 } from 'lucide-react';
 import { useCreerEleve, useModifierEleve } from '../hooks/use-eleves';
 import { useToutesClasses } from '@/features/classes/hooks/use-toutes-classes';
 import { useToutesAnneesScolaires } from '@/features/annees-scolaires/hooks/use-toutes-annees-scolaires';
-import { 
-    etape1IdentiteSchema, 
-    etape2CoordonneesSchema, 
-    etape3ParentsSchema, 
-    etape4ComplementSchema 
+import {
+    etape1IdentiteSchema,
+    etape2CoordonneesSchema,
+    etape3ParentsSchema,
+    etape4ComplementSchema
 } from '../utils/eleve.schema';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { useHandleError } from '@/hooks/use-handle-error';
 import { toast } from 'sonner';
 import type { Eleve, CreerEleveDto } from '../types/eleve.types';
-import type { z } from 'zod';
 
 interface EleveFormProps {
     mode: 'creation' | 'edition';
@@ -46,39 +36,31 @@ interface EleveFormProps {
     onCancel: () => void;
 }
 
-// Types pour les schémas Zod
-type Etape1Data = z.infer<typeof etape1IdentiteSchema>;
-type Etape2Data = z.infer<typeof etape2CoordonneesSchema>;
-type Etape3Data = z.infer<typeof etape3ParentsSchema>;
-type Etape4Data = z.infer<typeof etape4ComplementSchema>;
 
-const ETAPES = [
-    { key: 'identite', label: 'Identité', icon: '👤' },
-    { key: 'coordonnees', label: 'Coordonnées', icon: '📍' },
-    { key: 'parents', label: 'Parents', icon: '👨‍👩‍👧' },
-    { key: 'scolarite', label: 'Scolarité', icon: '🎓' },
-] as const;
-
-// Clé pour localStorage
 const STORAGE_KEY = 'eleve-form-draft';
 
 export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) {
     const { t } = useTranslation('eleves');
+    const handleError = useHandleError();
     const [etapeActuelle, setEtapeActuelle] = useState(0);
     const [photoPreview, setPhotoPreview] = useState<string>(eleve?.photo || '');
     const [showAide, setShowAide] = useState(false);
-    
-    // Hooks TanStack Query
+
+    const ETAPES = useMemo(() => [
+        { key: 'identite', labelKey: 'formulaire.etape1', icon: '👤' },
+        { key: 'coordonnees', labelKey: 'formulaire.etape2', icon: '📍' },
+        { key: 'parents', labelKey: 'formulaire.etape3', icon: '👨‍👩‍👧' },
+        { key: 'scolarite', labelKey: 'formulaire.etape4', icon: '🎓' },
+    ] as const, []);
+
     const creerEleve = useCreerEleve();
     const modifierEleve = useModifierEleve();
     const { data: classesData } = useToutesClasses();
     const { data: anneesScolairesData } = useToutesAnneesScolaires();
-    
-    // Normaliser les données en tableaux (sécurité)
+
     const classes = Array.isArray(classesData) ? classesData : [];
     const anneesScolaires = Array.isArray(anneesScolairesData) ? anneesScolairesData : [];
 
-    // React Hook Form avec validation Zod
     const {
         register,
         handleSubmit,
@@ -87,18 +69,14 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
         setValue,
         trigger,
         reset,
-        setError,
-        clearErrors,
     } = useForm<CreerEleveDto>({
         resolver: zodResolver(getSchemaForEtape(etapeActuelle)),
         defaultValues: getDefaultValues(eleve),
-        mode: 'onChange', // Validation en temps réel
+        mode: 'onChange',
     });
 
-    // Récupérer les valeurs du formulaire pour photo preview
     const photoValue = watch('photo');
 
-    // Auto-save dans localStorage
     useEffect(() => {
         const subscription = watch((value) => {
             if (mode === 'creation') {
@@ -108,7 +86,6 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
         return () => subscription.unsubscribe();
     }, [watch, mode]);
 
-    // Charger le brouillon au montage
     useEffect(() => {
         if (mode === 'creation') {
             const draft = localStorage.getItem(STORAGE_KEY);
@@ -116,17 +93,16 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                 try {
                     const parsed = JSON.parse(draft);
                     reset(parsed);
-                    toast.info('Brouillon restauré', {
-                        description: 'Vos modifications précédentes ont été restaurées',
+                    toast.info(t('toasts.brouillonRestaure'), {
+                        description: t('toasts.brouillonDescription'),
                     });
                 } catch {
                     // Ignorer les erreurs de parsing
                 }
             }
         }
-    }, [mode, reset]);
+    }, [mode, reset, t]);
 
-    // Nettoyer le localStorage après succès
     useEffect(() => {
         if (!isSubmitting && !Object.keys(errors).length) {
             const subscription = watch((value) => {
@@ -138,13 +114,12 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
         }
     }, [isSubmitting, errors, watch]);
 
-    // Navigation entre étapes
     const etapeSuivante = useCallback(async () => {
         const isValid = await trigger();
         if (isValid && etapeActuelle < ETAPES.length - 1) {
             setEtapeActuelle(prev => prev + 1);
         }
-    }, [etapeActuelle, trigger]);
+    }, [etapeActuelle, trigger, ETAPES.length]);
 
     const etapePrecedente = useCallback(() => {
         if (etapeActuelle > 0) {
@@ -152,13 +127,10 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
         }
     }, [etapeActuelle]);
 
-    // Aller à une étape spécifique (en cliquant sur l'indicateur)
     const allerAEtape = useCallback(async (index: number) => {
         if (index < etapeActuelle) {
-            // Permet de revenir en arrière sans validation
             setEtapeActuelle(index);
         } else if (index > etapeActuelle) {
-            // Valider toutes les étapes intermédiaires
             const isValid = await trigger();
             if (isValid) {
                 setEtapeActuelle(index);
@@ -166,86 +138,79 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
         }
     }, [etapeActuelle, trigger]);
 
-    // Soumission du formulaire
     const onSubmit = useCallback(async (data: CreerEleveDto) => {
         try {
             if (mode === 'creation') {
                 await creerEleve.mutateAsync(data);
-                localStorage.removeItem(STORAGE_KEY); // Nettoyer le brouillon
-                toast.success('Élève créé avec succès');
+                localStorage.removeItem(STORAGE_KEY);
+                toast.success(t('toasts.eleveCree', { prenom: data.prenom, nom: data.nom }));
             } else if (eleve) {
                 await modifierEleve.mutateAsync({ id: eleve.id, ...data });
-                toast.success('Élève modifié avec succès');
+                toast.success(t('toasts.eleveModifie', { prenom: data.prenom, nom: data.nom }));
             }
             onSuccess();
-        } catch (error: any) {
-            toast.error(error?.message || 'Erreur lors de l\'enregistrement');
+        } catch (error: unknown) {
+            handleError(error, t('toasts.erreurEnregistrement'));
         }
-    }, [mode, eleve, creerEleve, modifierEleve, onSuccess]);
+    }, [mode, eleve, creerEleve, modifierEleve, onSuccess, handleError, t]);
 
-    // Gestion de la photo
     const handlePhotoUpload = useCallback(() => {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
-        
+
         input.onchange = (e: Event) => {
             const target = e.target as HTMLInputElement;
             const file = target.files?.[0];
-            
+
             if (!file) return;
-            
-            // Validation : taille max 2MB
+
             if (file.size > 2 * 1024 * 1024) {
-                toast.error('Photo trop volumineuse', {
-                    description: 'La taille maximale autorisée est de 2 Mo',
+                toast.error(t('toasts.photoTropVolumineuse'), {
+                    description: t('toasts.photoTailleMax'),
                 });
                 return;
             }
-            
-            // Validation : type de fichier
+
             if (!file.type.startsWith('image/')) {
-                toast.error('Format invalide', {
-                    description: 'Veuillez sélectionner une image (JPG, PNG, etc.)',
+                toast.error(t('toasts.formatInvalide'), {
+                    description: t('toasts.selectionnerImage'),
                 });
                 return;
             }
-            
-            // Conversion en base64
+
             const reader = new FileReader();
             reader.onload = (event) => {
                 const base64 = event.target?.result as string;
                 setPhotoPreview(base64);
                 setValue('photo', base64, { shouldValidate: true });
-                toast.success('Photo ajoutée', {
+                toast.success(t('toasts.photoAjoutee'), {
                     description: `${file.name} (${(file.size / 1024).toFixed(0)} Ko)`,
                 });
             };
             reader.onerror = () => {
-                toast.error('Erreur de lecture', {
-                    description: 'Impossible de lire le fichier',
+                toast.error(t('toasts.erreurLecture'), {
+                    description: t('toasts.impossibleLireFichier'),
                 });
             };
             reader.readAsDataURL(file);
         };
-        
+
         input.click();
-    }, [setValue]);
+    }, [setValue, t]);
 
     const handlePhotoRemove = useCallback(() => {
         setPhotoPreview('');
         setValue('photo', '', { shouldValidate: true });
-        toast.info('Photo supprimée');
-    }, [setValue]);
+        toast.info(t('toasts.photoSupprimee'));
+    }, [setValue, t]);
 
-    // Mise à jour du preview quand la valeur change
     useEffect(() => {
         if (photoValue) {
             setPhotoPreview(photoValue);
         }
     }, [photoValue]);
 
-    // Rendu d'un champ de texte avec gestion d'erreurs améliorée
     const renderField = useCallback((
         label: string,
         name: keyof CreerEleveDto,
@@ -265,7 +230,7 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
             <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-[var(--color-text-primary)]">
                     {label}
-                    {options?.required && <span className="text-red-500 ml-1" aria-label="requis">*</span>}
+                    {options?.required && <span className="text-destructive ml-1" aria-label="requis">*</span>}
                 </label>
 
                 {options?.help && (
@@ -281,13 +246,13 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                         disabled={options.disabled}
                         className={`rounded-lg border px-3 py-2 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20 ${
                             erreur
-                                ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                                ? 'border-destructive bg-destructive/10'
                                 : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-dominant-400)]'
                         } ${options.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                         aria-invalid={!!erreur}
                         aria-describedby={erreur ? `${name}-error` : undefined}
                     >
-                        <option value="">-- Sélectionner --</option>
+                        <option value="">{t('formulaire.selectionner')}</option>
                         {options.select.map((opt) => (
                             <option key={opt.value} value={opt.value}>
                                 {opt.label}
@@ -302,7 +267,7 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                         disabled={options?.disabled}
                         className={`rounded-lg border px-3 py-2 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20 ${
                             erreur
-                                ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                                ? 'border-destructive bg-destructive/10'
                                 : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-dominant-400)]'
                         } ${options?.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                         aria-invalid={!!erreur}
@@ -311,22 +276,22 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                 )}
 
                 {erreur && (
-                    <p id={`${name}-error`} className="text-xs text-red-600 flex items-center gap-1" role="alert">
+                    <p id={`${name}-error`} className="text-xs text-destructive flex items-center gap-1" role="alert">
                         <AlertCircle className="h-3 w-3" />
                         {erreur.message}
                     </p>
                 )}
             </div>
         );
-    }, [errors, register]);
+    }, [errors, register, t]);
 
-    // Rendu d'un toggle amélioré
     const renderToggle = useCallback((
-        label: string, 
+        label: string,
         name: keyof CreerEleveDto,
         description?: string
     ) => {
-        const { onChange, value, ...rest } = register(name, { value: false });
+        const { onChange, ref, name: fieldName, ...rest } = register(name);
+        const checked = watch(name) as boolean;
 
         return (
             <div className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 transition-all hover:border-[var(--color-dominant-400)]">
@@ -340,25 +305,26 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                     <input
                         type="checkbox"
                         {...rest}
-                        checked={!!value}
+                        ref={ref}
+                        name={fieldName}
+                        checked={checked}
                         onChange={(e) => {
                             onChange(e);
                         }}
                         className="peer sr-only"
                         aria-label={label}
                     />
-                    <div className="peer h-6 w-11 rounded-full bg-gray-200 dark:bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 dark:after:border-gray-600 after:bg-white dark:after:bg-gray-800 after:transition-all after:content-[''] peer-checked:bg-[var(--color-dominant-600)] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:ring-2 peer-focus:ring-[var(--color-dominant-500)]/20"></div>
+                    <div className="peer h-6 w-11 rounded-full bg-muted after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-[var(--color-border)] after:bg-[var(--color-surface)] after:transition-all after:content-[''] peer-checked:bg-[var(--color-dominant-600)] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:ring-2 peer-focus:ring-[var(--color-dominant-500)]/20"></div>
                 </label>
             </div>
         );
-    }, [register]);
+    }, [register, watch]);
 
-    // Rendu de la section photo
     const renderPhotoSection = useCallback(() => (
         <div className="md:col-span-2">
             <label className="text-sm font-medium">{t('formulaire.photo')}</label>
             <p className="text-xs text-[var(--color-text-secondary)] mb-2">
-                Formats acceptés : JPG, PNG, GIF • Taille max : 2 Mo
+                {t('formulaire.formatsPhoto')}
             </p>
             <div className="mt-2 flex items-center gap-4">
                 <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[var(--color-dominant-100)] to-[var(--color-dominant-200)] text-2xl overflow-hidden group cursor-pointer" onClick={handlePhotoUpload}>
@@ -371,8 +337,8 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                                     e.stopPropagation();
                                     handlePhotoRemove();
                                 }}
-                                className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                                aria-label="Supprimer la photo"
+                                className="absolute top-0 right-0 p-1 bg-destructive text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/80"
+                                aria-label={t('formulaire.supprimerPhoto')}
                             >
                                 <X className="h-4 w-4" />
                             </button>
@@ -392,7 +358,7 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                         onClick={handlePhotoUpload}
                         icon={<Upload className="h-4 w-4" />}
                     >
-                        {photoPreview ? 'Changer la photo' : t('formulaire.photoPlaceholder')}
+                        {photoPreview ? t('formulaire.changerPhoto') : t('formulaire.photoPlaceholder')}
                     </ElisaButton>
                     {photoPreview && (
                         <ElisaButton
@@ -402,7 +368,7 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                             onClick={handlePhotoRemove}
                             icon={<X className="h-4 w-4" />}
                         >
-                            Supprimer
+                            {t('formulaire.supprimerPhoto')}
                         </ElisaButton>
                     )}
                 </div>
@@ -410,27 +376,26 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
         </div>
     ), [photoPreview, handlePhotoUpload, handlePhotoRemove, t]);
 
-    // Contenu des étapes avec useMemo pour optimisation
     const renderEtape = useMemo(() => {
         switch (etapeActuelle) {
-            case 0: // Identité
+            case 0:
                 return (
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        {renderField(t('formulaire.nom'), 'nom', 'text', { 
+                        {renderField(t('formulaire.nom'), 'nom', 'text', {
                             required: true,
-                            placeholder: 'Ex: DIALLO' 
+                            placeholder: t('formulaire.exNom')
                         })}
-                        {renderField(t('formulaire.prenom'), 'prenom', 'text', { 
+                        {renderField(t('formulaire.prenom'), 'prenom', 'text', {
                             required: true,
-                            placeholder: 'Ex: Mamadou' 
+                            placeholder: t('formulaire.exPrenom')
                         })}
-                        {renderField(t('formulaire.dateNaissance'), 'dateNaissance', 'date', { 
+                        {renderField(t('formulaire.dateNaissance'), 'dateNaissance', 'date', {
                             required: true,
-                            help: 'Format: JJ/MM/AAAA'
+                            help: t('formulaire.formatDate')
                         })}
-                        {renderField(t('formulaire.lieuNaissance'), 'lieuNaissance', 'text', { 
+                        {renderField(t('formulaire.lieuNaissance'), 'lieuNaissance', 'text', {
                             required: true,
-                            placeholder: 'Ex: Yaoundé' 
+                            placeholder: t('formulaire.exLieuNaissance')
                         })}
                         {renderField(t('formulaire.sexe'), 'sexe', 'select', {
                             required: true,
@@ -440,31 +405,31 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                             ],
                         })}
                         {renderField(t('formulaire.nationalite'), 'nationalite', 'text', {
-                            placeholder: 'Ex: Camerounaise',
-                            help: 'Nationalité de l\'élève'
+                            placeholder: t('formulaire.placeholderNationalite'),
+                            help: t('formulaire.aideNationalite')
                         })}
                         {renderField(t('formulaire.sousSysteme'), 'sousSysteme', 'select', {
                             select: [
                                 { label: t('formulaire.francophone'), value: 'FRANCOPHONE' },
                                 { label: t('formulaire.anglophone'), value: 'ANGLOPHONE' },
                             ],
-                            help: 'Système éducatif'
+                            help: t('formulaire.aideSysteme')
                         })}
                         {renderPhotoSection()}
                     </div>
                 );
 
-            case 1: // Coordonnées
+            case 1:
                 return (
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         {renderField(t('formulaire.adresse'), 'adresseDomicile', 'text', {
-                            placeholder: 'Ex: Quartier Bastos, Rue 123'
+                            placeholder: t('formulaire.placeholderAdresse')
                         })}
                         {renderField(t('formulaire.ville'), 'ville', 'text', {
-                            placeholder: 'Ex: Yaoundé'
+                            placeholder: t('formulaire.placeholderVille')
                         })}
                         {renderField(t('formulaire.quartier'), 'quartier', 'text', {
-                            placeholder: 'Ex: Bastos'
+                            placeholder: t('formulaire.placeholderQuartier')
                         })}
                         {renderField(t('formulaire.groupeSanguin'), 'groupeSanguin', 'select', {
                             select: [
@@ -477,21 +442,20 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                                 { label: 'O+', value: 'O+' },
                                 { label: 'O-', value: 'O-' },
                             ],
-                            help: 'Important pour les urgences médicales'
+                            help: t('formulaire.aideGroupeSanguin')
                         })}
                         <div className="md:col-span-2">
                             {renderField(t('formulaire.allergies'), 'allergies', 'text', {
                                 placeholder: t('formulaire.allergiesPlaceholder'),
-                                help: 'Listez les allergies connues (alimentaires, médicamenteuses, etc.)'
+                                help: t('formulaire.aideAllergies')
                             })}
                         </div>
                     </div>
                 );
 
-            case 2: // Parents
+            case 2:
                 return (
                     <div className="space-y-6">
-                        {/* Père */}
                         <div className="rounded-lg border border-[var(--color-border)] p-4 bg-[var(--color-surface-alt)]">
                             <h3 className="mb-3 text-base font-semibold flex items-center gap-2">
                                 <span className="text-lg">👨</span>
@@ -499,21 +463,20 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                             </h3>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 {renderField(t('formulaire.nomPere'), 'nomPere', 'text', {
-                                    placeholder: 'Nom complet du père'
+                                    placeholder: t('formulaire.placeholderNomPere')
                                 })}
                                 {renderField(t('formulaire.professionPere'), 'professionPere', 'text', {
-                                    placeholder: 'Ex: Enseignant'
+                                    placeholder: t('formulaire.placeholderProfessionPere')
                                 })}
                                 {renderField(t('formulaire.telephonePere'), 'telephonePere', 'tel', {
-                                    placeholder: '+237 6XX XXX XXX'
+                                    placeholder: t('formulaire.placeholderTelephonePere')
                                 })}
                                 {renderField(t('formulaire.emailPere'), 'emailPere', 'email', {
-                                    placeholder: 'pere@example.com'
+                                    placeholder: t('formulaire.placeholderEmailPere')
                                 })}
                             </div>
                         </div>
 
-                        {/* Mère */}
                         <div className="rounded-lg border border-[var(--color-border)] p-4 bg-[var(--color-surface-alt)]">
                             <h3 className="mb-3 text-base font-semibold flex items-center gap-2">
                                 <span className="text-lg">👩</span>
@@ -521,21 +484,20 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                             </h3>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 {renderField(t('formulaire.nomMere'), 'nomMere', 'text', {
-                                    placeholder: 'Nom complet de la mère'
+                                    placeholder: t('formulaire.placeholderNomMere')
                                 })}
                                 {renderField(t('formulaire.professionMere'), 'professionMere', 'text', {
-                                    placeholder: 'Ex: Médecin'
+                                    placeholder: t('formulaire.placeholderProfessionMere')
                                 })}
                                 {renderField(t('formulaire.telephoneMere'), 'telephoneMere', 'tel', {
-                                    placeholder: '+237 6XX XXX XXX'
+                                    placeholder: t('formulaire.placeholderTelephoneMere')
                                 })}
                                 {renderField(t('formulaire.emailMere'), 'emailMere', 'email', {
-                                    placeholder: 'mere@example.com'
+                                    placeholder: t('formulaire.placeholderEmailMere')
                                 })}
                             </div>
                         </div>
 
-                        {/* Tuteur */}
                         <div className="rounded-lg border border-[var(--color-border)] p-4">
                             <h3 className="mb-3 text-base font-semibold flex items-center gap-2">
                                 <span className="text-lg">👤</span>
@@ -543,57 +505,57 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                             </h3>
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 {renderField(t('formulaire.nomTuteur'), 'nomTuteur', 'text', {
-                                    placeholder: 'Nom du tuteur légal'
+                                    placeholder: t('formulaire.placeholderNomTuteur')
                                 })}
                                 {renderField(t('formulaire.lienParente'), 'lienParenteTuteur', 'text', {
-                                    placeholder: 'Ex: Oncle, Grand-père, etc.'
+                                    placeholder: t('formulaire.placeholderLienParente')
                                 })}
                                 {renderField(t('formulaire.telephoneTuteur'), 'telephoneTuteur', 'tel', {
-                                    placeholder: '+237 6XX XXX XXX'
+                                    placeholder: t('formulaire.placeholderTelephoneTuteur')
                                 })}
                             </div>
                         </div>
                     </div>
                 );
 
-            case 3: // Scolarité
+            case 3:
                 return (
                     <div className="space-y-6">
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             {renderField(t('formulaire.classe'), 'classeId', 'select', {
                                 required: true,
                                 select: classes.map((c) => ({ label: c.nom, value: c.id })),
-                                help: 'Classe dans laquelle l\'élève sera inscrit'
+                                help: t('formulaire.aideClasse')
                             })}
                             {renderField(t('formulaire.anneeScolaire'), 'anneeScolaireId', 'select', {
                                 required: true,
                                 select: anneesScolaires.map((a) => ({ label: a.libelle, value: a.id })),
-                                help: 'Année scolaire en cours'
+                                help: t('formulaire.aideAnneeScolaire')
                             })}
                         </div>
 
                         <div className="rounded-lg border border-[var(--color-border)] p-4">
-                            <h3 className="mb-3 text-base font-semibold">Services optionnels</h3>
+                            <h3 className="mb-3 text-base font-semibold">{t('formulaire.servicesOptionnels')}</h3>
                             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                                 {renderToggle(
-                                    t('formulaire.transportScolaire'), 
+                                    t('formulaire.transportScolaire'),
                                     'transportScolaire',
-                                    'L\'élève utilisera le transport scolaire'
+                                    t('formulaire.descTransport')
                                 )}
                                 {renderToggle(
-                                    t('formulaire.cantine'), 
+                                    t('formulaire.cantine'),
                                     'cantine',
-                                    'L\'élève prendra ses repas à la cantine'
+                                    t('formulaire.descCantine')
                                 )}
                                 {renderToggle(
-                                    t('formulaire.boursier'), 
+                                    t('formulaire.boursier'),
                                     'boursier',
-                                    'L\'élève bénéficie d\'une bourse'
+                                    t('formulaire.descBoursier')
                                 )}
                                 {renderToggle(
-                                    t('formulaire.redoublement'), 
+                                    t('formulaire.redoublement'),
                                     'redoublement',
-                                    'L\'élève est en situation de redoublement'
+                                    t('formulaire.descRedoublement')
                                 )}
                             </div>
                         </div>
@@ -609,47 +571,44 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-            {/* Header avec titre et aide */}
-            <div className="flex items-center justify-between sticky top-0 bg-[var(--color-surface)] z-10 pb-2">
+            <div className="flex items-center justify-between pb-2">
                 <div className="flex items-center gap-2">
                     <span className="text-2xl">{ETAPES[etapeActuelle].icon}</span>
                     <div>
                         <h2 className="text-lg font-semibold">
-                            {ETAPES[etapeActuelle].label}
+                            {t(ETAPES[etapeActuelle].labelKey)}
                         </h2>
                         <p className="text-xs text-[var(--color-text-secondary)]">
-                            Étape {etapeActuelle + 1} sur {ETAPES.length}
+                            {t('formulaire.etapeSur', { current: etapeActuelle + 1, total: ETAPES.length })}
                         </p>
                     </div>
                 </div>
-                
+
                 <button
                     type="button"
                     onClick={() => setShowAide(!showAide)}
                     className="p-2 rounded-lg hover:bg-[var(--color-surface-alt)] transition-colors"
-                    aria-label="Afficher l'aide"
+                    aria-label={t('formulaire.afficherAide')}
                 >
                     <Info className="h-5 w-5 text-[var(--color-text-secondary)]" />
                 </button>
             </div>
 
-            {/* Message d'aide */}
             <AnimatePresence>
                 {showAide && (
                     <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3"
+                        className="rounded-lg bg-primary/10 border border-primary/20 p-3"
                     >
-                        <p className="text-sm text-blue-800 dark:text-blue-200">
-                            <strong>Aide :</strong> {t(`formulaire.etape${etapeActuelle + 1}Description`)}
+                        <p className="text-sm text-primary">
+                            <strong>{t('formulaire.aidePrefix')}</strong> {t(`formulaire.etape${etapeActuelle + 1}Description`)}
                         </p>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Indicateur de progression */}
             <div className="flex items-center justify-between">
                 {ETAPES.map((etape, index) => (
                     <div key={etape.key} className="flex flex-1 items-center">
@@ -662,9 +621,9 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                                     ? 'border-[var(--color-dominant-600)] bg-[var(--color-dominant-600)] text-white hover:bg-[var(--color-dominant-700)]'
                                     : index === etapeActuelle
                                     ? 'border-[var(--color-dominant-600)] text-[var(--color-dominant-600)] ring-2 ring-[var(--color-dominant-500)]/20'
-                                    : 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-300 cursor-not-allowed'
+                                    : 'border-[var(--color-border)] text-muted-foreground cursor-not-allowed'
                             }`}
-                            aria-label={`Étape ${index + 1}: ${etape.label}`}
+                            aria-label={`${t('formulaire.etapeSur', { current: index + 1, total: '' })} ${t(etape.labelKey)}`}
                             aria-current={index === etapeActuelle ? 'step' : undefined}
                         >
                             {index < etapeActuelle ? <Check className="h-5 w-5" /> : index + 1}
@@ -674,7 +633,7 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                                 className={`flex-1 border-t-2 transition-all ${
                                     index < etapeActuelle
                                         ? 'border-[var(--color-dominant-600)]'
-                                        : 'border-gray-300 dark:border-gray-600'
+                                        : 'border-[var(--color-border)]'
                                 }`}
                             />
                         )}
@@ -682,7 +641,6 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                 ))}
             </div>
 
-            {/* Contenu de l'étape */}
             <AnimatePresence mode="wait">
                 <motion.div
                     key={etapeActuelle}
@@ -695,16 +653,14 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                 </motion.div>
             </AnimatePresence>
 
-            {/* Indicateur de brouillon */}
             {mode === 'creation' && isDirty && (
                 <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
                     <Save className="h-3 w-3" />
-                    <span>Brouillon auto-sauvegardé</span>
+                    <span>{t('formulaire.brouillonAuto')}</span>
                 </div>
             )}
 
-            {/* Boutons de navigation */}
-            <div className="flex items-center justify-between border-t border-[var(--color-border)] pt-4 sticky bottom-0 bg-[var(--color-surface)] z-10">
+            <div className="flex items-center justify-between border-t border-[var(--color-border)] pt-4">
                 <ElisaButton
                     type="button"
                     variant="outline"
@@ -712,12 +668,12 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                     disabled={etapeActuelle === 0 || isLoading}
                     icon={<ChevronLeft className="h-4 w-4" />}
                 >
-                    {t('boutons.precedent', { defaultValue: 'Précédent' })}
+                    {t('boutons.precedent')}
                 </ElisaButton>
 
                 <div className="flex gap-2">
                     <ElisaButton type="button" variant="ghost" onClick={onCancel} disabled={isLoading}>
-                        {t('boutons.annuler', { defaultValue: 'Annuler' })}
+                        {t('boutons.annuler')}
                     </ElisaButton>
 
                     {etapeActuelle < ETAPES.length - 1 ? (
@@ -727,7 +683,7 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                             onClick={etapeSuivante}
                             iconRight={<ChevronRight className="h-4 w-4" />}
                         >
-                            {t('boutons.suivant', { defaultValue: 'Suivant' })}
+                            {t('boutons.suivant')}
                         </ElisaButton>
                     ) : (
                         <ElisaButton
@@ -737,8 +693,8 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
                             iconRight={<Check className="h-4 w-4" />}
                         >
                             {mode === 'creation'
-                                ? t('boutons.creer', { defaultValue: 'Créer l\'élève' })
-                                : t('boutons.enregistrer', { defaultValue: 'Enregistrer' })}
+                                ? t('boutons.creer')
+                                : t('boutons.enregistrer')}
                         </ElisaButton>
                     )}
                 </div>
@@ -747,7 +703,6 @@ export function EleveForm({ mode, eleve, onSuccess, onCancel }: EleveFormProps) 
     );
 }
 
-// Helper: Obtenir le schéma Zod pour l'étape courante
 function getSchemaForEtape(etape: number) {
     switch (etape) {
         case 0: return etape1IdentiteSchema;
@@ -758,7 +713,6 @@ function getSchemaForEtape(etape: number) {
     }
 }
 
-// Helper: Valeurs par défaut
 function getDefaultValues(eleve?: Eleve | null): Partial<CreerEleveDto> {
     if (!eleve) {
         return {

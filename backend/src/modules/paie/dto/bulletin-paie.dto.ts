@@ -19,6 +19,8 @@ export const createBulletinSchema = z.object({
 // Schéma de mise à jour
 export const updateBulletinPaieSchema = createBulletinSchema.partial().omit({
     membrePersonnelId: true,
+}).extend({
+    statut: z.enum(['GENERE', 'VALIDE', 'PAYE', 'ANNULE']).optional(),
 });
 
 // Schéma de requête avec filtres
@@ -28,7 +30,7 @@ export const queryBulletinSchema = z.object({
     membrePersonnelId: z.string().uuid().optional(),
     mois: z.coerce.number().int().min(1).max(12).optional(),
     annee: z.coerce.number().int().optional(),
-    statut: z.enum(['GENERE', 'VALIDE', 'PAYE']).optional(),
+    statut: z.enum(['GENERE', 'EN_ATTENTE_VALIDATION', 'VALIDE', 'PAYE', 'ANNULE']).optional(),
 });
 
 export type CreateBulletinPaieDto = z.infer<typeof createBulletinSchema>;
