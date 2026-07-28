@@ -19,6 +19,7 @@ import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { usePermissions } from '@/hooks';
 import type { MembrePersonnel, PersonnelFiltres } from '../types/personnel.types';
 import type { Column } from '@/components/ui/DataTable';
+import { formatDate } from '@/lib/date-utils';
 
 const STATUT_CLASSES: Record<string, string> = {
     ACTIF: 'bg-success/10 text-success',
@@ -111,7 +112,7 @@ export function PersonnelPage() {
             sortable: true,
             render: (p) => {
                 const d = p.dateEmbauche;
-                return d ? new Date(d).toLocaleDateString(i18n.language) : '-';
+                return d ? formatDate(d) : '-';
             },
         },
         {

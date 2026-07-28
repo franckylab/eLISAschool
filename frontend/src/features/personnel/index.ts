@@ -6,6 +6,7 @@
 
 export * from './types/personnel.types';
 export * from './hooks/use-personnel';
+export * from './hooks/use-personnel-detail';
 export * from './hooks/use-membre-fonctions';
 export { PersonnelPage } from './components/personnel-page';
 export { PersonnelFormModal } from './components/personnel-form-modal';

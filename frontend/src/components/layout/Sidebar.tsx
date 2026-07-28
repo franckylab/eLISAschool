@@ -344,7 +344,6 @@ export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } =
     const matieresPerms = useModulePermissions('matieres');
     const elevesPerms = useModulePermissions('eleves');
     const personnelPerms = useModulePermissions('personnel');
-    const enseignantsPerms = useModulePermissions('enseignants');
     const notesPerms = useModulePermissions('notes');
     const financesPerms = useModulePermissions('finances');
     const transportPerms = useModulePermissions('transport');
@@ -409,7 +408,6 @@ export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } =
                     'diplomes-eleves': diplomesElevesPerms,
                     eleves: elevesPerms,
                     'emploi-du-temps': emploiDuTempsPerms,
-                    enseignants: enseignantsPerms,
                     etablissements: etablissementsPerms,
                     'examens-nationaux': examensNationauxPerms,
                     filieres: filieresPerms,

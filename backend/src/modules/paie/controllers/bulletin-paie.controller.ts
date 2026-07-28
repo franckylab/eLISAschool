@@ -5,7 +5,6 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { authMiddleware, requirePermission, checkPermission } from '@modules/auth/middlewares';
-import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 import { AppError } from '@common/filters/error.filter';
 import { bulletinPaieService } from '../services/bulletin-paie.service';
@@ -27,8 +26,8 @@ router.post(
             const dto = validateDto(createBulletinSchema, req.body);
             const created = await bulletinPaieService.create(
                 dto,
-                (req as any).etablissementId,
-                (req as any).utilisateur?.id,
+                req.etablissementId!,
+                req.utilisateur?.id,
                 req
             );
             res.status(201).json({ success: true, data: created });
@@ -48,7 +47,7 @@ router.get(
             const query = validateDto(queryBulletinSchema, req.query);
             const result = await bulletinPaieService.findAll(
                 query,
-                (req as any).etablissementId
+                req.etablissementId!
             );
             res.json({ success: true, data: result });
         } catch (error) {
@@ -70,7 +69,7 @@ router.get(
             });
             const result = await bulletinPaieService.findAll(
                 query,
-                (req as any).etablissementId
+                req.etablissementId!
             );
             res.json({ success: true, data: result });
         } catch (error) {
@@ -93,7 +92,7 @@ router.get(
             const rapport = await bulletinPaieService.getTotalPaiesMensuelles(
                 parseInt(mois as string),
                 parseInt(annee as string),
-                (req as any).etablissementId
+                req.etablissementId!
             );
             res.json({ success: true, data: rapport });
         } catch (error) {
@@ -117,8 +116,8 @@ router.post(
                 req.params.membreId,
                 mois,
                 annee,
-                (req as any).etablissementId,
-                (req as any).utilisateur?.id,
+                req.etablissementId!,
+                req.utilisateur?.id,
                 req
             );
             res.status(201).json({ success: true, data: bulletin });
@@ -137,7 +136,7 @@ router.get(
         try {
             const entity = await bulletinPaieService.findOne(
                 req.params.id,
-                (req as any).etablissementId
+                req.etablissementId!
             );
             res.json({ success: true, data: entity });
         } catch (error) {
@@ -157,10 +156,10 @@ router.patch(
 
             // Garde supplémentaire : valider ou payer un bulletin exige paie:valider
             if (dto.statut === 'VALIDE' || dto.statut === 'PAYE') {
-                const utilisateur = (req as any).utilisateur;
+                const utilisateur = req.utilisateur;
                 const roles: string[] = utilisateur?.roles?.length ? utilisateur.roles : [utilisateur?.role];
                 if (!roles.includes('SUPER_ADMIN')) {
-                    const peutValider = await checkPermission(utilisateur.id, 'paie:valider', utilisateur.etablissementId);
+                    const peutValider = await checkPermission(utilisateur!.id, 'paie:valider', req.etablissementId!);
                     if (!peutValider) {
                         throw new AppError('Permission requise: paie:valider', 403, 'INSUFFICIENT_PERMISSIONS');
                     }
@@ -170,8 +169,8 @@ router.patch(
             const updated = await bulletinPaieService.update(
                 req.params.id,
                 dto,
-                (req as any).utilisateur?.id,
-                (req as any).etablissementId,
+                req.utilisateur?.id!,
+                req.etablissementId!,
                 req
             );
             res.json({ success: true, data: updated });
@@ -190,11 +189,11 @@ router.get(
         try {
             const bulletin = await bulletinPaieService.findOne(
                 req.params.id,
-                (req as any).etablissementId
+                req.etablissementId!
             );
             const elements = await bulletinPaieService.getElements(
                 req.params.id,
-                (req as any).etablissementId
+                req.etablissementId!
             );
 
             const nom = bulletin.membrePersonnel?.utilisateur?.profil?.nom ?? '—';
@@ -341,8 +340,8 @@ router.delete(
         try {
             const result = await bulletinPaieService.delete(
                 req.params.id,
-                (req as any).utilisateur?.id,
-                (req as any).etablissementId,
+                req.utilisateur?.id!,
+                req.etablissementId!,
                 req
             );
             res.json({ success: true, data: result });
@@ -356,7 +355,7 @@ router.delete(
 
 router.get('/:id/elements', authMiddleware, requirePermission('paie:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const elements = await bulletinPaieService.getElements(req.params.id, (req as any).etablissementId);
+        const elements = await bulletinPaieService.getElements(req.params.id, req.etablissementId!);
         res.json({ success: true, data: elements });
     } catch (e) { next(e); }
 });
@@ -366,8 +365,8 @@ router.post('/:id/elements', authMiddleware, requirePermission('paie:edit'), asy
         const { createElementSalaireSchema } = await import('../dto/paie-etendue.dto');
         const dto = validateDto(createElementSalaireSchema, req.body);
         const element = await bulletinPaieService.addElement(
-            req.params.id, dto, (req as any).etablissementId,
-            (req as any).utilisateur?.id, req
+            req.params.id, dto, req.etablissementId!,
+            req.utilisateur?.id, req
         );
         res.status(201).json({ success: true, data: element });
     } catch (e) { next(e); }
@@ -378,8 +377,8 @@ router.patch('/:id/elements/:elementId', authMiddleware, requirePermission('paie
         const { updateElementSalaireSchema } = await import('../dto/paie-etendue.dto');
         const dto = validateDto(updateElementSalaireSchema, req.body);
         const element = await bulletinPaieService.updateElement(
-            req.params.id, req.params.elementId, dto, (req as any).etablissementId,
-            (req as any).utilisateur?.id, req
+            req.params.id, req.params.elementId, dto, req.etablissementId!,
+            req.utilisateur?.id, req
         );
         res.json({ success: true, data: element });
     } catch (e) { next(e); }
@@ -388,8 +387,8 @@ router.patch('/:id/elements/:elementId', authMiddleware, requirePermission('paie
 router.delete('/:id/elements/:elementId', authMiddleware, requirePermission('paie:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         await bulletinPaieService.deleteElement(
-            req.params.id, req.params.elementId, (req as any).etablissementId,
-            (req as any).utilisateur?.id, req
+            req.params.id, req.params.elementId, req.etablissementId!,
+            req.utilisateur?.id, req
         );
         res.json({ success: true });
     } catch (e) { next(e); }

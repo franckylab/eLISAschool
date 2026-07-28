@@ -130,5 +130,23 @@
     "fallbackTypeCDI": "Permanent (CDI)",
     "fallbackTypeCDD": "Fixed-term (CDD)",
     "fallbackTypeVacataire": "Adjunct",
-    "fallbackTypeStagiaire": "Intern"
+    "fallbackTypeStagiaire": "Intern",
+    "toasts": {
+        "contratCree": "Contract created",
+        "contratModifie": "Contract updated",
+        "contratSupprime": "Contract deleted",
+        "typeContratCree": "Contract type created",
+        "typeContratModifie": "Contract type updated",
+        "typeContratSupprime": "Contract type deleted",
+        "statutModifie": "Status updated"
+    },
+    "erreurs": {
+        "creationContrat": "Error creating contract",
+        "modificationContrat": "Error updating contract",
+        "suppressionContrat": "Error deleting contract",
+        "creationTypeContrat": "Error creating contract type",
+        "modificationTypeContrat": "Error updating contract type",
+        "suppressionTypeContrat": "Error deleting contract type",
+        "modificationStatut": "Error updating status"
+    }
 }

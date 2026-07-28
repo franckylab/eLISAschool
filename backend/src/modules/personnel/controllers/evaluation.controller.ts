@@ -5,7 +5,6 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
-import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 import { evaluationService } from '../services/evaluation.service';
 import {
@@ -26,8 +25,8 @@ router.post(
             const dto = validateDto(createEvaluationSchema, req.body);
             const created = await evaluationService.create(
                 dto,
-                (req as any).etablissementId,
-                (req as any).utilisateur?.id,
+                req.etablissementId!,
+                req.utilisateur?.id,
                 req
             );
             res.status(201).json({ success: true, data: created });
@@ -41,31 +40,15 @@ router.post(
 router.get(
     '/',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const query = validateDto(queryEvaluationSchema, req.query);
             const result = await evaluationService.findAll(
                 query,
-                (req as any).etablissementId
+                req.etablissementId!
             );
             res.json({ success: true, data: result });
-        } catch (error) {
-            next(error);
-        }
-    }
-);
-
-// Obtenir une évaluation
-router.get(
-    '/:id',
-    authMiddleware,
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const entity = await evaluationService.findOne(
-                req.params.id,
-                (req as any).etablissementId
-            );
-            res.json({ success: true, data: entity });
         } catch (error) {
             next(error);
         }
@@ -76,6 +59,7 @@ router.get(
 router.get(
     '/enseignants/:id/moyenne-evaluations',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { dateDebut, dateFin } = req.query;
@@ -86,7 +70,7 @@ router.get(
                 req.params.id,
                 dateDebut as string,
                 dateFin as string,
-                req.etablissementId
+                req.etablissementId!
             );
             res.json({ success: true, data: moyenne });
         } catch (error) {
@@ -99,14 +83,34 @@ router.get(
 router.get(
     '/enseignants/:id/resume-categorie/:annee',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const annee = parseInt(req.params.annee);
             const resume = await evaluationService.getResumeParCategorie(
                 req.params.id,
-                annee
+                annee,
+                req.etablissementId!
             );
             res.json({ success: true, data: resume });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+// Obtenir une évaluation
+router.get(
+    '/:id',
+    authMiddleware,
+    requirePermission('personnel:view'),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const entity = await evaluationService.findOne(
+                req.params.id,
+                req.etablissementId!
+            );
+            res.json({ success: true, data: entity });
         } catch (error) {
             next(error);
         }
@@ -124,8 +128,8 @@ router.patch(
             const updated = await evaluationService.update(
                 req.params.id,
                 dto,
-                (req as any).utilisateur?.id,
-                (req as any).etablissementId,
+                req.utilisateur?.id!,
+                req.etablissementId!,
                 req
             );
             res.json({ success: true, data: updated });
@@ -144,8 +148,8 @@ router.delete(
         try {
             const result = await evaluationService.delete(
                 req.params.id,
-                (req as any).utilisateur?.id,
-                (req as any).etablissementId,
+                req.utilisateur?.id!,
+                req.etablissementId!,
                 req
             );
             res.json({ success: true, data: result });

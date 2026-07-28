@@ -87,6 +87,7 @@
         "aucunePeriode": "Aucune période configurée",
         "aucunePeriodeDesc": "Les périodes (trimestres, semestres, séquences) seront visibles ici une fois créées",
         "confirmerActiverMessage": "Êtes-vous sûr de vouloir activer l'année \"{{libelle}}\" ? Les autres années seront désactivées.",
-        "confirmerActiverDetail": "L'année deviendra l'année active. Les autres années seront automatiquement désactivées."
+        "confirmerActiverDetail": "L'année deviendra l'année active. Les autres années seront automatiquement désactivées.",
+        "historique": "Historique"
     }
 }

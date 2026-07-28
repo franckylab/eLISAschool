@@ -1,15 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { Mail, Phone, MapPin, Briefcase, UserCheck, Award, Calendar } from 'lucide-react';
-import type { Enseignant } from '../../types/enseignant.types';
-
-function formatDate(d: string | undefined) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
-}
+import type { MembrePersonnel } from '../../types/personnel.types';
+import { formatDate } from '@/lib/date-utils';
 
 const SECTION_CLASSES = 'rounded-xl border border-border bg-card p-5';
 
-export function OngletInfos({ enseignant }: { enseignant: Enseignant }) {
+export function OngletInfos({ enseignant }: { enseignant: MembrePersonnel }) {
     const { t } = useTranslation('personnel');
     const email = enseignant.utilisateur?.email;
     const telephone = enseignant.utilisateur?.profil?.telephone;

@@ -9,7 +9,11 @@
         "enseignants": "Teachers"
     },
     "activitesRecentes": "Recent activities",
-    "aucuneActivite": "No recent activities",
+    "aucuneActivite": "No recent activity",
+    "audit": {
+        "titre": "Activity log",
+        "totalLogs": "{{count}} total log(s)"
+    },
     "widgets": {
         "effectifs": {
             "eleves": "Students",

@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
 import type { MembrePersonnel } from '../types/personnel.types';
@@ -9,6 +10,7 @@ const PERSONNEL_KEYS = {
 
 export function useModifierStatut() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async ({ id, statut }: { id: string; statut: string }) => {
             const response = await apiClient.post<MembrePersonnel>(`/api/personnel/${id}/statut`, { statut });
@@ -17,14 +19,15 @@ export function useModifierStatut() {
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['personnel'] });
             if (data) queryClient.setQueryData(PERSONNEL_KEYS.detail(data.id), data);
-            toast.success('Statut mis à jour');
+            toast.success(t('toasts.statutMisAJour'));
         },
-        onError: (error: unknown) => toast.error((error as Error)?.message || 'Erreur lors de la mise à jour du statut'),
+        onError: (error: unknown) => toast.error((error as Error)?.message || t('erreurs.miseAJourStatut')),
     });
 }
 
 export function useModifierDateEntree() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async ({ id, dateEmbauche }: { id: string; dateEmbauche: string }) => {
             const response = await apiClient.post<MembrePersonnel>(`/api/personnel/${id}/date-entree`, { dateEmbauche });
@@ -33,14 +36,15 @@ export function useModifierDateEntree() {
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['personnel'] });
             if (data) queryClient.setQueryData(PERSONNEL_KEYS.detail(data.id), data);
-            toast.success('Date d\'entrée mise à jour');
+            toast.success(t('toasts.dateEntreeMiseAJour'));
         },
-        onError: (error: unknown) => toast.error((error as Error)?.message || 'Erreur lors de la mise à jour de la date'),
+        onError: (error: unknown) => toast.error((error as Error)?.message || t('erreurs.miseAJourDate')),
     });
 }
 
 export function useModifierCompetences() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async ({ id, ...data }: { id: string; specialites?: string[]; diplomes?: string; specialitePrincipale?: string; competences?: string[]; educationNiveau?: string; anneesExperience?: number }) => {
             const response = await apiClient.post<MembrePersonnel>(`/api/personnel/${id}/competences`, data);
@@ -49,8 +53,8 @@ export function useModifierCompetences() {
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['personnel'] });
             if (data) queryClient.setQueryData(PERSONNEL_KEYS.detail(data.id), data);
-            toast.success('Compétences mises à jour');
+            toast.success(t('toasts.competencesMisesAJour'));
         },
-        onError: (error: unknown) => toast.error((error as Error)?.message || 'Erreur lors de la mise à jour des compétences'),
+        onError: (error: unknown) => toast.error((error as Error)?.message || t('erreurs.miseAJourCompetences')),
     });
 }

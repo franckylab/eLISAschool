@@ -5,6 +5,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
 import type { MembrePersonnel, CreerPersonnelDto, ModifierPersonnelDto, PersonnelFiltres, ContratPersonnel, BulletinPaie } from '../types/personnel.types';
@@ -65,6 +66,7 @@ export function useMembrePersonnel(id: string) {
 
 export function useCreerPersonnel() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async (dto: CreerPersonnelDto | PersonnelFormData) => {
             const payload = ('dateEmbauche' in dto) ? dto : fromFormToCreateDto(dto);
@@ -79,15 +81,16 @@ export function useCreerPersonnel() {
                 queryClient.invalidateQueries({ queryKey: enseignantKeys.detail(data.id) });
                 const nom = data.utilisateur?.profil?.nom || '';
                 const prenom = data.utilisateur?.profil?.prenom || '';
-                toast.success(`${prenom} ${nom} ajouté(e) au personnel`);
+                toast.success(t('toasts.ajoutePersonnel', { prenom, nom }));
             }
         },
-        onError: (error: unknown) => toast.error((error as Error)?.message || 'Erreur lors de la création'),
+        onError: (error: unknown) => toast.error((error as Error)?.message || t('erreurs.creation')),
     });
 }
 
 export function useModifierPersonnel() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async (dto: ModifierPersonnelDto) => {
             const { id, ...rest } = dto;
@@ -105,10 +108,10 @@ export function useModifierPersonnel() {
                 queryClient.invalidateQueries({ queryKey: enseignantKeys.detail(data.id) });
                 const nom = data.utilisateur?.profil?.nom || '';
                 const prenom = data.utilisateur?.profil?.prenom || '';
-                toast.success(`${prenom} ${nom} modifié(e) avec succès`);
+                toast.success(t('toasts.modifiePersonnel', { prenom, nom }));
             }
         },
-        onError: (error: unknown) => toast.error((error as Error)?.message || 'Erreur lors de la modification'),
+        onError: (error: unknown) => toast.error((error as Error)?.message || t('erreurs.modification')),
     });
 }
 
@@ -158,6 +161,7 @@ export function usePersonnelDisponibles() {
 
 export function useLinkPersonnelUtilisateur() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async ({ membreId, utilisateurId }: { membreId: string; utilisateurId: string }) => {
             const response = await apiClient.post<MembrePersonnel>(`/api/personnel/${membreId}/link-user`, { utilisateurId });
@@ -170,14 +174,15 @@ export function useLinkPersonnelUtilisateur() {
             if (data.utilisateurId) {
                 queryClient.invalidateQueries({ queryKey: ['utilisateurs', 'detail', data.utilisateurId] });
             }
-            toast.success('Utilisateur lié au dossier personnel');
+            toast.success(t('toasts.utilisateurLie'));
         },
-        onError: (error: unknown) => toast.error((error as Error)?.message || 'Erreur lors du lien utilisateur'),
+        onError: (error: unknown) => toast.error((error as Error)?.message || t('erreurs.lienUtilisateur')),
     });
 }
 
 export function useUnlinkPersonnelUtilisateur() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async (membreId: string) => {
             const response = await apiClient.post<MembrePersonnel>(`/api/personnel/${membreId}/unlink-user`);
@@ -188,9 +193,9 @@ export function useUnlinkPersonnelUtilisateur() {
             queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.detail(data.id) });
             queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.listes() });
             queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.stats() });
-            toast.success('Utilisateur délié du dossier personnel');
+            toast.success(t('toasts.utilisateurDelie'));
         },
-        onError: (error: unknown) => toast.error((error as Error)?.message || 'Erreur lors du déliement utilisateur'),
+        onError: (error: unknown) => toast.error((error as Error)?.message || t('erreurs.deliementUtilisateur')),
     });
 }
 
@@ -207,6 +212,7 @@ export function usePersonnelSansCompte() {
 
 export function useSupprimerPersonnel() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async (id: string) => {
             await apiClient.delete(`/api/personnel/${id}`);
@@ -215,8 +221,8 @@ export function useSupprimerPersonnel() {
             queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.listes() });
             queryClient.invalidateQueries({ queryKey: PERSONNEL_KEYS.stats() });
             queryClient.invalidateQueries({ queryKey: enseignantKeys.listes() });
-            toast.success('Membre du personnel supprimé');
+            toast.success(t('toasts.membreSupprime'));
         },
-        onError: (error: unknown) => toast.error((error as Error)?.message || 'Erreur lors de la suppression'),
+        onError: (error: unknown) => toast.error((error as Error)?.message || t('erreurs.suppression')),
     });
 }

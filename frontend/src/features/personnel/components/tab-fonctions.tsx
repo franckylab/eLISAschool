@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Calendar, CheckCircle, Briefcase, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { formatDate } from '@/lib/date-utils';
 import { useMembreFonctions } from '../hooks/use-membre-fonctions';
 import { useToutesFonctions } from '@/features/fonctions/hooks/use-fonctions';
 
@@ -10,7 +11,7 @@ interface TabFonctionsProps {
 }
 
 export function TabFonctions({ membreId }: TabFonctionsProps) {
-    const { t, i18n } = useTranslation('personnel');
+    const { t } = useTranslation('personnel');
     const { data: fonctionsMembre, isLoading } = useMembreFonctions(membreId);
     const { data: allFonctions } = useToutesFonctions();
 
@@ -67,14 +68,14 @@ export function TabFonctions({ membreId }: TabFonctionsProps) {
                                     <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                                         <span className="flex items-center gap-1">
                                             <Calendar className="h-3 w-3" />
-                                            {new Date(mf.dateDebut).toLocaleDateString(i18n.language)}
+                                            {formatDate(mf.dateDebut)}
                                         </span>
                                         {mf.dateFin && (
                                             <>
                                                 <span>→</span>
                                                 <span className="flex items-center gap-1">
                                                     <Calendar className="h-3 w-3" />
-                                                    {new Date(mf.dateFin).toLocaleDateString(i18n.language)}
+                                                    {formatDate(mf.dateFin)}
                                                 </span>
                                             </>
                                         )}

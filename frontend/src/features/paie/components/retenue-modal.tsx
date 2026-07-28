@@ -1,9 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { Loader2 } from 'lucide-react';
+import { ElisaInput } from '@/components/ui/ElisaInput';
+import { ElisaSelect } from '@/components/ui/ElisaSelect';
 
 import type { TypeRetenue } from '../types/paie.types';
 
@@ -27,27 +31,38 @@ const FORM_INIT: RetenueFormData = {
 
 export function RetenueModal({ open, onOpenChange, onSave, isLoading, retenue }: RetenueModalProps) {
     const { t } = useTranslation('paie');
-    const [form, setForm] = useState(FORM_INIT);
 
-    useEffect(() => {
-        if (open) {
-            if (retenue) {
-                setForm({
-                    code: retenue.code || '',
-                    nom: retenue.nom || '',
-                    frequence: retenue.frequence || 'PONCTUELLE',
-                    montantMax: retenue.montantMax,
-                    description: retenue.description || '',
-                });
-            } else {
-                setForm(FORM_INIT);
-            }
-        }
-    }, [open, retenue]);
+    const schema = useMemo(() => z.object({
+        code: z.string().min(2, t('validation.codeMin')).max(30, t('validation.codeMax')),
+        nom: z.string().min(2, t('validation.nomMin')).max(100, t('validation.nomMax')),
+        frequence: z.enum(['PONCTUELLE', 'RECURRENTE']),
+        montantMax: z.number().optional(),
+        description: z.string().optional(),
+    }), [t]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        await onSave(form);
+    const { register, handleSubmit, control, reset, formState: { errors } } = useForm<RetenueFormData>({
+        resolver: zodResolver(schema),
+        defaultValues: FORM_INIT,
+    });
+
+    if (open && retenue) {
+        reset({
+            code: retenue.code || '',
+            nom: retenue.nom || '',
+            frequence: retenue.frequence || 'PONCTUELLE',
+            montantMax: retenue.montantMax,
+            description: retenue.description || '',
+        });
+    } else if (open && !retenue) {
+        reset(FORM_INIT);
+    }
+
+    const onSubmit = async (data: RetenueFormData) => {
+        const cleaned = {
+            ...data,
+            montantMax: Number.isNaN(data.montantMax) ? undefined : data.montantMax,
+        };
+        await onSave(cleaned);
     };
 
     return (
@@ -55,62 +70,58 @@ export function RetenueModal({ open, onOpenChange, onSave, isLoading, retenue }:
             open={open}
             onOpenChange={onOpenChange}
             title={retenue ? t('modifierTypeRetenue') : t('nouveauTypeRetenue')}
-        >
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <h4 className="text-sm font-semibold text-[var(--color-text-strong)]">{t('informationsRetenue')}</h4>
-                <SectionSeparator />
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium mb-1">{t('code')}</label>
-                        <input
-                            type="text"
-                            value={form.code}
-                            onChange={(e) => setForm(p => ({ ...p, code: e.target.value }))}
-                            className="w-full px-3 py-2 border rounded-lg bg-input border-border"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium mb-1">{t('nom')}</label>
-                        <input
-                            type="text"
-                            value={form.nom}
-                            onChange={(e) => setForm(p => ({ ...p, nom: e.target.value }))}
-                            className="w-full px-3 py-2 border rounded-lg bg-input border-border"
-                            required
-                        />
-                    </div>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium mb-1">{t('frequence')}</label>
-                    <select
-                        value={form.frequence}
-                        onChange={(e) => setForm(p => ({ ...p, frequence: e.target.value as RetenueFormData['frequence'] }))}
-                        className="w-full px-3 py-2 border rounded-lg bg-input border-border"
-                    >
-                        <option value="PONCTUELLE">{t('ponctuelle')}</option>
-                        <option value="RECURRENTE">{t('recurrente')}</option>
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium mb-1">{t('montantMax')}</label>
-                    <input
-                        type="number"
-                        step="0.01"
-                        value={form.montantMax || ''}
-                        onChange={(e) => setForm(p => ({ ...p, montantMax: e.target.value ? parseFloat(e.target.value) : undefined }))}
-                        className="w-full px-3 py-2 border rounded-lg bg-input border-border"
-                    />
-                </div>
-                <div className="flex justify-end gap-3 pt-4">
+            footer={
+                <>
                     <ElisaButton variant="outline" onClick={() => onOpenChange(false)}>
                         {t('common:boutons.annuler')}
                     </ElisaButton>
-                    <ElisaButton type="submit" variant="primary" isLoading={isLoading}>
-                        {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                    <ElisaButton type="submit" variant="primary" isLoading={isLoading} form="retenue-form">
                         {retenue ? t('common:boutons.enregistrer') : t('common:boutons.creer')}
                     </ElisaButton>
+                </>
+            }
+        >
+            <form id="retenue-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <h4 className="text-sm font-semibold text-[var(--color-text-strong)]">{t('informationsRetenue')}</h4>
+                <SectionSeparator />
+                <div className="grid grid-cols-2 gap-4">
+                    <ElisaInput
+                        label={t('code')}
+                        {...register('code')}
+                        error={errors.code?.message}
+                        required
+                    />
+                    <ElisaInput
+                        label={t('nom')}
+                        {...register('nom')}
+                        error={errors.nom?.message}
+                        required
+                    />
                 </div>
+                <Controller name="frequence" control={control} render={({ field }) => (
+                    <ElisaSelect
+                        label={t('frequence')}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        options={[
+                            { value: 'PONCTUELLE', label: t('ponctuelle') },
+                            { value: 'RECURRENTE', label: t('recurrente') },
+                        ]}
+                        error={errors.frequence?.message}
+                    />
+                )} />
+                <ElisaInput
+                    label={t('montantMax')}
+                    type="number"
+                    step="0.01"
+                    {...register('montantMax', { valueAsNumber: true })}
+                    error={errors.montantMax?.message}
+                />
+                <ElisaInput
+                    label={t('description')}
+                    {...register('description')}
+                    error={errors.description?.message}
+                />
             </form>
         </CustomModal>
     );

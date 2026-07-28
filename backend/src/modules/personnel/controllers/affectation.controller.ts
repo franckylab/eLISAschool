@@ -96,6 +96,7 @@ router.get(
 router.get(
     '/postes/:id/historique-occupants',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const historique = await affectationService.getHistoriqueOccupantsPoste(req.params.id, req.etablissementId!);
@@ -113,6 +114,7 @@ router.get(
 router.get(
     '/:id',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const affectation = await affectationService.findOne(req.params.id, req.etablissementId!);

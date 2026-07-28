@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Briefcase, FileText, TrendingUp } from 'lucide-react';
-import { useEnseignantContrats, useEnseignantBulletins } from '../../hooks/use-enseignants';
+import { useEnseignantContrats, useEnseignantBulletins } from '../../hooks/use-personnel-detail';
 import { MiniLineChart } from '@/components/charts/MiniLineChart';
 import { LoadingState } from '@/components/feedback';
-import type { ContratEnseignant, BulletinPaie } from '../../types/enseignant.types';
+import { formatDate } from '@/lib/date-utils';
+import { formatMontant } from '@/lib/format-utils';
+import type { ContratPersonnel, BulletinPaie } from '../../types/personnel.types';
 
 const LABELS_CONTRAT: Record<string, string> = {
     cdi: 'CDI', cdd: 'CDD', CDI: 'CDI', CDD: 'CDD',
@@ -36,23 +38,12 @@ const MOIS_CLE = [
 ] as const;
 
 export function OngletContrat({ enseignantId, isActive }: { enseignantId: string; isActive: boolean }) {
-    const { t, i18n } = useTranslation('personnel');
+    const { t } = useTranslation('personnel');
     const contrats = useEnseignantContrats(enseignantId);
     const bulletins = useEnseignantBulletins(enseignantId);
 
     const contratsData = isActive ? (contrats.data ?? []) : [];
     const bulletinsData = isActive ? (bulletins.data ?? []) : [];
-
-    const formatDate = useMemo(() => {
-        return (d: string | undefined) => {
-            if (!d) return '—';
-            return new Date(d).toLocaleDateString(i18n.language);
-        };
-    }, [i18n.language]);
-
-    const formatMontant = useMemo(() => {
-        return (v: number) => `${v.toLocaleString(i18n.language)} ${t('detail.devise')}`;
-    }, [i18n.language, t]);
 
     const salaireEvolution = useMemo(() => {
         return bulletinsData
@@ -102,13 +93,13 @@ export function OngletContrat({ enseignantId, isActive }: { enseignantId: string
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
-                                {contratsData.map((c: ContratEnseignant) => (
+                                {contratsData.map((c: ContratPersonnel) => (
                                     <tr key={c.id} className="hover:bg-muted/80">
                                         <td className="px-4 py-3 font-medium">
                                             {LABELS_CONTRAT[c.typeContrat] || c.typeContrat}
                                         </td>
                                         <td className="px-4 py-3 text-center text-muted-foreground text-xs">
-                                            {t(`modes.${c.modeRemuneration}`) || c.modeRemuneration || '—'}
+                                            {t(`modes.${c.modeRemuneration?.code}`) || c.modeRemuneration?.label || '—'}
                                         </td>
                                         <td className="px-4 py-3 text-center text-foreground">{formatDate(c.dateDebut)}</td>
                                         <td className="px-4 py-3 text-center text-foreground">{c.dateFin ? formatDate(c.dateFin) : '—'}</td>
@@ -154,9 +145,9 @@ export function OngletContrat({ enseignantId, isActive }: { enseignantId: string
                                         <td className="px-4 py-3 font-medium text-foreground">
                                             {t(`mois.${MOIS_CLE[b.mois - 1]}`)} {b.annee}
                                         </td>
-                                        <td className="px-4 py-3 text-center text-foreground">{b.salaireBase.toLocaleString(i18n.language)}</td>
-                                        <td className="px-4 py-3 text-center text-success font-medium">+{b.primes.toLocaleString(i18n.language)}</td>
-                                        <td className="px-4 py-3 text-center text-destructive font-medium">-{b.deductions.toLocaleString(i18n.language)}</td>
+                                        <td className="px-4 py-3 text-center text-foreground">{formatMontant(b.salaireBase)}</td>
+                                        <td className="px-4 py-3 text-center text-success font-medium">+{formatMontant(b.primes)}</td>
+                                        <td className="px-4 py-3 text-center text-destructive font-medium">-{formatMontant(b.deductions)}</td>
                                         <td className="px-4 py-3 text-center font-bold text-foreground">{formatMontant(b.salaireNet)}</td>
                                         <td className="px-4 py-3 text-center">
                                             <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${b.statut === 'paye' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>

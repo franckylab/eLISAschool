@@ -1,43 +1,44 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
 import type {
-    Enseignant, EnseignantFiltres,
+    MembrePersonnel, PersonnelFiltres,
     AffectationEnseignant, EdtEnseignant,
-    EvaluationEnseignant, ContratEnseignant,
+    EvaluationEnseignant, ContratPersonnel,
     BulletinPaie, ParcoursComplet,
     AbsenceEnseignant, AssiduiteStats,
     AffectationPayload,
-} from '../types/enseignant.types';
+} from '../types/personnel.types';
 
-const ENSEIGNANTS_KEYS = {
-    all: ['enseignants'] as const,
-    listes: () => [...ENSEIGNANTS_KEYS.all, 'liste'] as const,
-    liste: (filtres: EnseignantFiltres) => [...ENSEIGNANTS_KEYS.listes(), filtres] as const,
-    details: () => [...ENSEIGNANTS_KEYS.all, 'detail'] as const,
-    detail: (id: string) => [...ENSEIGNANTS_KEYS.details(), id] as const,
-    affectationsMatiere: (id: string) => [...ENSEIGNANTS_KEYS.all, 'affectations-matiere', id] as const,
-    evaluations: (id: string) => [...ENSEIGNANTS_KEYS.all, 'evaluations', id] as const,
-    moyenneEval: (id: string) => [...ENSEIGNANTS_KEYS.all, 'evaluations', id, 'moyenne'] as const,
-    heures: (id: string) => [...ENSEIGNANTS_KEYS.all, 'heures', id] as const,
-    edt: (id: string, semaine: string) => [...ENSEIGNANTS_KEYS.all, 'edt', id, semaine] as const,
-    absences: (id: string) => [...ENSEIGNANTS_KEYS.all, 'absences', id] as const,
-    assiduite: (id: string) => [...ENSEIGNANTS_KEYS.all, 'absences', id, 'assiduite'] as const,
-    contrats: (id: string) => [...ENSEIGNANTS_KEYS.all, 'contrats', id] as const,
-    bulletins: (id: string) => [...ENSEIGNANTS_KEYS.all, 'bulletins', id] as const,
-    parcours: (id: string) => [...ENSEIGNANTS_KEYS.all, 'parcours', id] as const,
+const PERSONNEL_DETAIL_KEYS = {
+    all: ['personnel-detail'] as const,
+    listes: () => [...PERSONNEL_DETAIL_KEYS.all, 'liste'] as const,
+    liste: (filtres: PersonnelFiltres) => [...PERSONNEL_DETAIL_KEYS.listes(), filtres] as const,
+    details: () => [...PERSONNEL_DETAIL_KEYS.all, 'detail'] as const,
+    detail: (id: string) => [...PERSONNEL_DETAIL_KEYS.details(), id] as const,
+    affectationsMatiere: (id: string) => [...PERSONNEL_DETAIL_KEYS.all, 'affectations-matiere', id] as const,
+    evaluations: (id: string) => [...PERSONNEL_DETAIL_KEYS.all, 'evaluations', id] as const,
+    moyenneEval: (id: string) => [...PERSONNEL_DETAIL_KEYS.all, 'evaluations', id, 'moyenne'] as const,
+    heures: (id: string) => [...PERSONNEL_DETAIL_KEYS.all, 'heures', id] as const,
+    edt: (id: string, semaine: string) => [...PERSONNEL_DETAIL_KEYS.all, 'edt', id, semaine] as const,
+    absences: (id: string) => [...PERSONNEL_DETAIL_KEYS.all, 'absences', id] as const,
+    assiduite: (id: string) => [...PERSONNEL_DETAIL_KEYS.all, 'absences', id, 'assiduite'] as const,
+    contrats: (id: string) => [...PERSONNEL_DETAIL_KEYS.all, 'contrats', id] as const,
+    bulletins: (id: string) => [...PERSONNEL_DETAIL_KEYS.all, 'bulletins', id] as const,
+    parcours: (id: string) => [...PERSONNEL_DETAIL_KEYS.all, 'parcours', id] as const,
 };
 
-export function useListeEnseignants(filtres: EnseignantFiltres = {}) {
+export function useListeEnseignants(filtres: PersonnelFiltres = {}) {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
-        queryKey: ENSEIGNANTS_KEYS.liste(filtres),
+        queryKey: PERSONNEL_DETAIL_KEYS.liste(filtres),
         queryFn: async () => {
-            const params: Record<string, any> = { page: filtres.page || 1, limit: filtres.limit || 20 };
+            const params: Record<string, string | number | boolean> = { page: filtres.page || 1, limit: filtres.limit || 20 };
             if (filtres.recherche) params.recherche = filtres.recherche;
             if (filtres.actif !== undefined) params.actif = filtres.actif;
-            const response = await apiClient.getPaginated<Enseignant>('/api/personnel', params);
+            const response = await apiClient.getPaginated<MembrePersonnel>('/api/personnel', params);
             return response.data;
         },
         enabled: isAuthenticated,
@@ -49,9 +50,9 @@ export function useListeEnseignants(filtres: EnseignantFiltres = {}) {
 export function useEnseignant(id: string) {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
-        queryKey: ENSEIGNANTS_KEYS.detail(id),
+        queryKey: PERSONNEL_DETAIL_KEYS.detail(id),
         queryFn: async () => {
-            const response = await apiClient.get<Enseignant>(`/api/personnel/${id}`);
+            const response = await apiClient.get<MembrePersonnel>(`/api/personnel/${id}`);
             return response.data;
         },
         enabled: !!id && isAuthenticated,
@@ -62,7 +63,7 @@ export function useEnseignant(id: string) {
 export function useEnseignantAffectationsMatiere(enseignantId: string) {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
-        queryKey: ENSEIGNANTS_KEYS.affectationsMatiere(enseignantId),
+        queryKey: PERSONNEL_DETAIL_KEYS.affectationsMatiere(enseignantId),
         queryFn: async () => {
             const response = await apiClient.get<AffectationEnseignant[]>(
                 `/api/matieres/enseignants/${enseignantId}/affectations`
@@ -80,7 +81,7 @@ export function useEnseignantEdt(enseignantId: string, semaine?: string, periode
     const defaultSemaine = now.toISOString().split('T')[0];
     const s = semaine || defaultSemaine;
     return useQuery({
-        queryKey: [...ENSEIGNANTS_KEYS.edt(enseignantId, s), periodeId || '__all__'],
+        queryKey: [...PERSONNEL_DETAIL_KEYS.edt(enseignantId, s), periodeId || '__all__'],
         queryFn: async () => {
             const params = new URLSearchParams({ semaine: s });
             if (periodeId) params.set('periodeId', periodeId);
@@ -96,9 +97,9 @@ export function useEnseignantEdt(enseignantId: string, semaine?: string, periode
 export function useEnseignantEvaluations(enseignantId: string) {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
-        queryKey: ENSEIGNANTS_KEYS.evaluations(enseignantId),
+        queryKey: PERSONNEL_DETAIL_KEYS.evaluations(enseignantId),
         queryFn: async () => {
-            const response = await apiClient.get<{ items: EvaluationEnseignant[]; meta: any }>(
+            const response = await apiClient.get<{ items: EvaluationEnseignant[]; meta: { totalItems: number } }>(
                 `/api/personnel/evaluations?enseignantId=${enseignantId}&limit=100`
             );
             return response.data?.items ?? [];
@@ -127,10 +128,10 @@ function getAnneeScolaireDates(): { dateDebut: string; dateFin: string } {
 export function useEnseignantMoyenneEvaluations(enseignantId: string) {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
-        queryKey: ENSEIGNANTS_KEYS.moyenneEval(enseignantId),
+        queryKey: PERSONNEL_DETAIL_KEYS.moyenneEval(enseignantId),
         queryFn: async () => {
             const { dateDebut, dateFin } = getAnneeScolaireDates();
-            const response = await apiClient.get<any>(
+            const response = await apiClient.get<{ moyenne: string; nombreEvaluations: number }>(
                 `/api/personnel/evaluations/enseignants/${enseignantId}/moyenne-evaluations?dateDebut=${dateDebut}&dateFin=${dateFin}`
             );
             return {
@@ -146,7 +147,7 @@ export function useEnseignantMoyenneEvaluations(enseignantId: string) {
 export function useEnseignantHeures(enseignantId: string, periodeId?: string) {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
-        queryKey: [...ENSEIGNANTS_KEYS.heures(enseignantId), periodeId || '__all__'],
+        queryKey: [...PERSONNEL_DETAIL_KEYS.heures(enseignantId), periodeId || '__all__'],
         queryFn: async () => {
             const now = new Date();
             const dateDebut = new Date(now.getFullYear(), 8, 1).toISOString().split('T')[0];
@@ -165,12 +166,12 @@ export function useEnseignantHeures(enseignantId: string, periodeId?: string) {
 export function useEnseignantAssiduite(enseignantId: string) {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
-        queryKey: ENSEIGNANTS_KEYS.assiduite(enseignantId),
+        queryKey: PERSONNEL_DETAIL_KEYS.assiduite(enseignantId),
         queryFn: async () => {
             const now = new Date();
             const dateDebut = new Date(now.getFullYear(), 8, 1).toISOString().split('T')[0];
             const dateFin = new Date(now.getFullYear() + 1, 6, 31).toISOString().split('T')[0];
-            const response = await apiClient.get<any>(
+            const response = await apiClient.get<{ totalAbsences: number; absencesJustifiees: number; absencesNonJustifiees: number; tauxPresence: number | null }>(
                 `/api/personnel/absences/membres/${enseignantId}/assiduite?dateDebut=${dateDebut}&dateFin=${dateFin}`
             );
             const d = response.data;
@@ -190,9 +191,9 @@ export function useEnseignantAssiduite(enseignantId: string) {
 export function useEnseignantAbsences(enseignantId: string) {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
-        queryKey: ENSEIGNANTS_KEYS.absences(enseignantId),
+        queryKey: PERSONNEL_DETAIL_KEYS.absences(enseignantId),
         queryFn: async () => {
-            const response = await apiClient.get<{ items: AbsenceEnseignant[]; meta: any }>(
+            const response = await apiClient.get<{ items: AbsenceEnseignant[]; meta: { totalItems: number } }>(
                 `/api/personnel/absences?membrePersonnelId=${enseignantId}&limit=50`
             );
             return {
@@ -208,9 +209,9 @@ export function useEnseignantAbsences(enseignantId: string) {
 export function useEnseignantContrats(enseignantId: string) {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
-        queryKey: ENSEIGNANTS_KEYS.contrats(enseignantId),
+        queryKey: PERSONNEL_DETAIL_KEYS.contrats(enseignantId),
         queryFn: async () => {
-            const response = await apiClient.get<ContratEnseignant[]>(
+            const response = await apiClient.get<ContratPersonnel[]>(
                 `/api/personnel/contrats/membres/${enseignantId}/historique`
             );
             return response.data;
@@ -223,7 +224,7 @@ export function useEnseignantContrats(enseignantId: string) {
 export function useEnseignantBulletins(enseignantId: string) {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
-        queryKey: ENSEIGNANTS_KEYS.bulletins(enseignantId),
+        queryKey: PERSONNEL_DETAIL_KEYS.bulletins(enseignantId),
         queryFn: async () => {
             const response = await apiClient.get<{ items: BulletinPaie[] }>(
                 `/api/paie/bulletins/membres/${enseignantId}`
@@ -238,7 +239,7 @@ export function useEnseignantBulletins(enseignantId: string) {
 export function useEnseignantParcours(enseignantId: string) {
     const { isAuthenticated } = useAuthStore();
     return useQuery({
-        queryKey: ENSEIGNANTS_KEYS.parcours(enseignantId),
+        queryKey: PERSONNEL_DETAIL_KEYS.parcours(enseignantId),
         queryFn: async () => {
             const response = await apiClient.get<ParcoursComplet>(
                 `/api/personnel/parcours/membres/${enseignantId}/parcours-complet`
@@ -254,6 +255,7 @@ export function useEnseignantParcours(enseignantId: string) {
 
 export function useCreerAffectationEnseignant() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async (dto: AffectationPayload) => {
             const response = await apiClient.post<AffectationEnseignant>('/api/matieres/affectations', {
@@ -266,19 +268,20 @@ export function useCreerAffectationEnseignant() {
             return response.data;
         },
         onSuccess: (_data, variables) => {
-            queryClient.invalidateQueries({ queryKey: ENSEIGNANTS_KEYS.affectationsMatiere(variables.enseignantId) });
-            queryClient.invalidateQueries({ queryKey: ENSEIGNANTS_KEYS.heures(variables.enseignantId) });
-            toast.success('Matière assignée avec succès');
+            queryClient.invalidateQueries({ queryKey: PERSONNEL_DETAIL_KEYS.affectationsMatiere(variables.enseignantId) });
+            queryClient.invalidateQueries({ queryKey: PERSONNEL_DETAIL_KEYS.heures(variables.enseignantId) });
+            toast.success(t('toasts.matiereAssignee'));
         },
-        onError: (error: any) => toast.error(error?.message || "Erreur lors de l'assignation"),
+        onError: (error: unknown) => toast.error((error instanceof Error ? error.message : undefined) || t('erreurs.assignation')),
     });
 }
 
 export function useModifierAffectationEnseignant() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async ({ id, ...dto }: { id: string; enseignantId: string } & Partial<AffectationPayload>) => {
-            const body: Record<string, any> = {};
+            const body: Record<string, string | number | boolean> = {};
             if (dto.dateDebut !== undefined) body.dateDebut = dto.dateDebut;
             if (dto.dateFin !== undefined) body.dateFin = dto.dateFin;
             if (dto.actif !== undefined) body.actif = dto.actif;
@@ -287,58 +290,61 @@ export function useModifierAffectationEnseignant() {
             return response.data;
         },
         onSuccess: (_data, variables) => {
-            queryClient.invalidateQueries({ queryKey: ENSEIGNANTS_KEYS.affectationsMatiere(variables.enseignantId) });
-            queryClient.invalidateQueries({ queryKey: ENSEIGNANTS_KEYS.heures(variables.enseignantId) });
-            toast.success('Affectation modifiée');
+            queryClient.invalidateQueries({ queryKey: PERSONNEL_DETAIL_KEYS.affectationsMatiere(variables.enseignantId) });
+            queryClient.invalidateQueries({ queryKey: PERSONNEL_DETAIL_KEYS.heures(variables.enseignantId) });
+            toast.success(t('toasts.affectationModifiee'));
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la modification'),
+        onError: (error: unknown) => toast.error((error instanceof Error ? error.message : undefined) || t('erreurs.modification')),
     });
 }
 
 export function useSupprimerAffectationEnseignant() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async ({ id, enseignantId }: { id: string; enseignantId: string }) => {
             await apiClient.delete(`/api/matieres/affectations/${id}`);
             return enseignantId;
         },
         onSuccess: (enseignantId) => {
-            queryClient.invalidateQueries({ queryKey: ENSEIGNANTS_KEYS.affectationsMatiere(enseignantId) });
-            queryClient.invalidateQueries({ queryKey: ENSEIGNANTS_KEYS.heures(enseignantId) });
-            toast.success('Affectation supprimée');
+            queryClient.invalidateQueries({ queryKey: PERSONNEL_DETAIL_KEYS.affectationsMatiere(enseignantId) });
+            queryClient.invalidateQueries({ queryKey: PERSONNEL_DETAIL_KEYS.heures(enseignantId) });
+            toast.success(t('toasts.affectationSupprimee'));
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors de la suppression'),
+        onError: (error: unknown) => toast.error((error instanceof Error ? error.message : undefined) || t('erreurs.suppression')),
     });
 }
 
 export function useToggleActifAffectation() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async ({ id, actif }: { id: string; actif: boolean; enseignantId: string }) => {
             const response = await apiClient.patch<AffectationEnseignant>(`/api/matieres/affectations/${id}`, { actif });
             return response.data;
         },
         onSuccess: (_data, variables) => {
-            queryClient.invalidateQueries({ queryKey: ENSEIGNANTS_KEYS.affectationsMatiere(variables.enseignantId) });
-            queryClient.invalidateQueries({ queryKey: ENSEIGNANTS_KEYS.heures(variables.enseignantId) });
-            toast.success(variables.actif ? 'Affectation activée' : 'Affectation désactivée');
+            queryClient.invalidateQueries({ queryKey: PERSONNEL_DETAIL_KEYS.affectationsMatiere(variables.enseignantId) });
+            queryClient.invalidateQueries({ queryKey: PERSONNEL_DETAIL_KEYS.heures(variables.enseignantId) });
+            toast.success(variables.actif ? t('toasts.affectationActivee') : t('toasts.affectationDesactivee'));
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors du changement de statut'),
+        onError: (error: unknown) => toast.error((error instanceof Error ? error.message : undefined) || t('erreurs.changementStatut')),
     });
 }
 
 export function useDeplacerAffectation() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async ({ id, cibleClasseAnneeId }: { id: string; cibleClasseAnneeId: string; enseignantId: string }) => {
             const response = await apiClient.patch<AffectationEnseignant>(`/api/matieres/affectations/${id}/move`, { cibleClasseAnneeId });
             return response.data;
         },
         onSuccess: (_data, variables) => {
-            queryClient.invalidateQueries({ queryKey: ENSEIGNANTS_KEYS.affectationsMatiere(variables.enseignantId) });
-            queryClient.invalidateQueries({ queryKey: ENSEIGNANTS_KEYS.heures(variables.enseignantId) });
-            toast.success('Matière déplacée vers une autre classe');
+            queryClient.invalidateQueries({ queryKey: PERSONNEL_DETAIL_KEYS.affectationsMatiere(variables.enseignantId) });
+            queryClient.invalidateQueries({ queryKey: PERSONNEL_DETAIL_KEYS.heures(variables.enseignantId) });
+            toast.success(t('toasts.matiereDeplacee'));
         },
-        onError: (error: any) => toast.error(error?.message || 'Erreur lors du déplacement'),
+        onError: (error: unknown) => toast.error((error instanceof Error ? error.message : undefined) || t('erreurs.deplacement')),
     });
 }

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
     Calendar, ClockArrowUp, Clock, Trash2,
     Play, Lock, Unlock, FileText,
-    CalendarDays, CheckCircle2, XCircle, Timer, Info
+    CalendarDays, CheckCircle2, XCircle, Timer, Info, History,
 } from 'lucide-react';
 import {
     useAnneeScolaire, useSupprimerAnneeScolaire,
@@ -21,6 +21,8 @@ import { Card } from '@/components/ui/Card';
 import { StatCard, TabsBar, TabsContent, CardSection, InfoField } from '@/components/ui';
 import type { Tab } from '@/components/ui';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { AuditTimeline } from '@/components/ui/AuditTimeline';
+import { usePermissions } from '@/hooks';
 
 const COULEURS_STATUT: Record<string, string> = {
     active: 'bg-[var(--color-dominant-50)] text-[var(--color-dominant-700)] border-[var(--color-dominant-200)]',
@@ -57,6 +59,7 @@ export function AnneeScolaireDetailPage() {
     const navigate = useNavigate();
     const { id } = useParams({ from: '/_auth/annees-scolaires/$id' });
     const { t, i18n } = useTranslation('annees-scolaires');
+    const { hasPermission } = usePermissions();
     const [ongletActif, setOngletActif] = useState('informations');
     const [confirmActiver, setConfirmActiver] = useState(false);
     const [confirmSupprimer, setConfirmSupprimer] = useState(false);
@@ -137,6 +140,9 @@ export function AnneeScolaireDetailPage() {
     const onglets: Tab[] = [
         { id: 'informations', label: t('detail.informations'), description: t('detail.tabInformationsDesc'), icon: FileText },
         { id: 'periodes', label: t('detail.periodes'), description: t('detail.tabPeriodesDesc'), icon: CalendarDays, count: totalPeriodes },
+        ...(hasPermission('audit:periodes:view') || hasPermission('audit:view')
+            ? [{ id: 'historique', label: t('detail.historique'), icon: History }]
+            : []),
     ];
 
     if (isLoading) {
@@ -432,6 +438,19 @@ export function AnneeScolaireDetailPage() {
                             </>
                         )}
                     </div>
+                )}
+
+                {ongletActif === 'historique' && (
+                    <Card>
+                        <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+                            <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
+                                <History className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-primary inline mr-2" />
+                                {t('detail.historique')}
+                            </h3>
+                            <div className="border-b border-border mb-4" />
+                            <AuditTimeline cible="AnneeScolaire" cibleId={id} module="annees-scolaires" />
+                        </div>
+                    </Card>
                 )}
             </TabsContent>
 

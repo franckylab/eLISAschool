@@ -14,7 +14,7 @@ import {
     Mail, Phone, MapPin, Calendar, Briefcase, Users,
     Edit, Trash2, FileText, Award, Clock, Building2,
     UserCheck, AlertCircle, CheckCircle, XCircle, Building, FileDown,
-    BookOpen, CalendarDays, Star, UserRound, Footprints, GraduationCap
+    BookOpen, CalendarDays, Star, UserRound, Footprints, GraduationCap, History,
 } from 'lucide-react';
 import { useMembrePersonnel, useSupprimerPersonnel, usePersonnelContrats, usePersonnelBulletins } from '../hooks/use-personnel';
 import { useDocumentTitle } from '@/hooks';
@@ -29,21 +29,25 @@ import { Badge } from '@/components/ui/Badge';
 import { TabsBar } from '@/components/ui/Tabs';
 import type { Tab } from '@/components/ui/Tabs';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
-import { OngletMatieres } from '@/features/enseignants/components/enseignant-detail/onglet-matieres';
-import { OngletEdt } from '@/features/enseignants/components/enseignant-detail/onglet-edt';
-import { OngletEvaluations } from '@/features/enseignants/components/enseignant-detail/onglet-evaluations';
-import { OngletAbsences } from '@/features/enseignants/components/enseignant-detail/onglet-absences';
-import { OngletParcours } from '@/features/enseignants/components/enseignant-detail/onglet-parcours';
+import { OngletMatieres } from './onglets/onglet-matieres';
+import { OngletEdt } from './onglets/onglet-edt';
+import { OngletEvaluations } from './onglets/onglet-evaluations';
+import { OngletAbsences } from './onglets/onglet-absences';
+import { OngletParcours } from './onglets/onglet-parcours';
+import { AuditTimeline } from '@/components/ui/AuditTimeline';
+import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
 import { LoadingState } from '@/components/ui/ErrorMessage';
 import { getCategorieColors } from '@/lib/categorie-fonction';
+import { formatDate } from '@/lib/date-utils';
+import { formatMontant } from '@/lib/format-utils';
 import { InlineEditField, InlineEditActions } from './InlineEditField';
 import { useModifierStatut, useModifierDateEntree, useModifierCompetences } from '../hooks/use-personnel-edit';
 import type { ContratPersonnel, BulletinPaie } from '../types/personnel.types';
 import type { AffectationPoste } from '../types/affectation.types';
 
-type OngletActif = 'informations' | 'affectations' | 'matieres' | 'edt' | 'contrat-salaire' | 'heures-cours' | 'evaluations' | 'absences' | 'parcours' | 'fonctions';
+type OngletActif = 'informations' | 'affectations' | 'matieres' | 'edt' | 'contrat-salaire' | 'heures-cours' | 'evaluations' | 'absences' | 'parcours' | 'fonctions' | 'historique';
 
 const STATUT_KEY: Record<string, string> = {
     ACTIF: 'ACTIF',
@@ -63,7 +67,7 @@ const COULEURS_STATUT: Record<string, string> = {
 };
 
 export function PersonnelDetailPage() {
-    const { t, i18n } = useTranslation('personnel');
+    const { t } = useTranslation('personnel');
     const { id } = useParams({ from: '/_auth/personnel/$id' });
     const navigate = useNavigate();
     const search = useSearch({ from: '/_auth/personnel/$id' }) as { tab?: string };
@@ -80,8 +84,6 @@ export function PersonnelDetailPage() {
         return t(`typesContrats.${c.toLowerCase()}`, { defaultValue: c });
     };
     const labelMode = (code?: string | null) => (code ? t(`modes.${code}`, { defaultValue: code }) : '—');
-    const formatDate = (date: string | Date) => new Date(date).toLocaleDateString(i18n.language);
-    const formatMontant = (montant?: number | null) => montant?.toLocaleString(i18n.language);
 
     const { data: membre, isLoading } = useMembrePersonnel(id);
     useDocumentTitle(`eLISAschool | ${membre ? (membre.utilisateur?.profil?.prenom ?? '') + ' ' + (membre.utilisateur?.profil?.nom ?? '') : t('detail.titreParDefaut')}`);
@@ -127,6 +129,11 @@ export function PersonnelDetailPage() {
             { id: 'fonctions', label: t('detail.ongletFonctions'), icon: Award },
         ];
 
+        const canAudit = hasPermission('audit:personnel:view') || hasPermission('audit:view');
+        const historiqueTab: Tab[] = canAudit
+            ? [{ id: 'historique', label: t('detail.ongletHistorique'), icon: History }]
+            : [];
+
         if (estEnseignant) {
             return [
                 ...communs.slice(0, 2),
@@ -138,6 +145,7 @@ export function PersonnelDetailPage() {
                 { id: 'absences', label: t('detail.ongletAbsences'), icon: UserRound },
                 { id: 'parcours', label: t('detail.ongletParcours'), icon: Footprints },
                 ...communs.slice(3),
+                ...historiqueTab,
             ];
         }
 
@@ -145,8 +153,9 @@ export function PersonnelDetailPage() {
             ...communs.slice(0, 3),
             { id: 'heures-cours', label: t('detail.ongletHeuresCours'), icon: Clock },
             ...communs.slice(3),
+            ...historiqueTab,
         ];
-    }, [estEnseignant, t]);
+    }, [estEnseignant, t, hasPermission]);
 
     if (isLoading) {
         return <div className="p-6"><LoadingState message={t('detail.chargement')} /></div>;
@@ -269,7 +278,6 @@ export function PersonnelDetailPage() {
                             </span>
                         }
                         icon={UserCheck}
-                        color="#22c55e"
                         editable={canEditIdentity}
                         editing={editing === 'statut'}
                         onStartEdit={() => startEdit('statut', membre.statut)}
@@ -311,7 +319,6 @@ export function PersonnelDetailPage() {
                             })() : t('detail.nonDefinie')
                         }
                         icon={GraduationCap}
-                        color="#a855f7"
                         editable={false}
                         editing={false}
                     >
@@ -325,7 +332,6 @@ export function PersonnelDetailPage() {
                         label={t('detail.dateEmbauche')}
                         value={formatDate(membre.dateEmbauche || '')}
                         icon={Calendar}
-                        color="#3b82f6"
                         editable={canEditIdentity}
                         editing={editing === 'dateEntree'}
                         onStartEdit={() => startEdit('dateEntree', (membre.dateEmbauche || '').split('T')[0])}
@@ -354,7 +360,6 @@ export function PersonnelDetailPage() {
                         label={t('qualification')}
                         value={(membre.diplomes || '') || t('detail.nonSpecifie')}
                         icon={Award}
-                        color="#f97316"
                         editable={canEditCompetences}
                         editing={editing === 'diplomes'}
                         onStartEdit={() => startEdit('diplomes', membre.diplomes || '')}
@@ -384,7 +389,6 @@ export function PersonnelDetailPage() {
                         label={t('specialite')}
                         value={(membre.specialitePrincipale ?? membre.specialites?.[0] ?? '') || t('detail.nonSpecifie')}
                         icon={Star}
-                        color="#06b6d4"
                         editable={canEditCompetences}
                         editing={editing === 'specialite'}
                         onStartEdit={() => startEdit('specialite', membre.specialitePrincipale ?? membre.specialites?.[0] ?? '')}
@@ -536,21 +540,13 @@ export function PersonnelDetailPage() {
                                 <div>
                                     <dt className="text-sm font-medium text-muted-foreground">{t('detail.creeLe')}</dt>
                                     <dd className="mt-1 text-foreground">
-                                        {new Date(membre.createdAt).toLocaleDateString(i18n.language, {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
+                                        {formatDate(membre.createdAt, 'dd MMMM yyyy')}
                                     </dd>
                                 </div>
                                 <div>
                                     <dt className="text-sm font-medium text-muted-foreground">{t('detail.derniereModification')}</dt>
                                     <dd className="mt-1 text-foreground">
-                                        {new Date(membre.updatedAt).toLocaleDateString(i18n.language, {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
+                                        {formatDate(membre.updatedAt, 'dd MMMM yyyy')}
                                     </dd>
                                 </div>
                             </dl>
@@ -608,8 +604,8 @@ export function PersonnelDetailPage() {
                                                         {c.dateFin && <><span className="text-muted-foreground mx-1">→</span><span className="text-xs">{formatDate(c.dateFin)}</span></>}
                                                     </td>
                                                     <td className="py-3 px-4 text-right">
-                                                        <div className="font-medium">{formatMontant(c.salaireBase)} F</div>
-                                                        {c.tarifHoraire && <div className="text-xs text-muted-foreground">{formatMontant(c.tarifHoraire)} F/h</div>}
+                                                        <div className="font-medium">{formatMontant(c.salaireBase)}</div>
+                                                        {c.tarifHoraire && <div className="text-xs text-muted-foreground">{formatMontant(c.tarifHoraire)}/h</div>}
                                                     </td>
                                                     <td className="py-3 px-4 text-center">
                                                         <Badge variant={c.statut === 'ACTIF' ? 'success' : 'secondary'}>{c.statut}</Badge>
@@ -647,10 +643,10 @@ export function PersonnelDetailPage() {
                                             {bulletins.map((b: BulletinPaie) => (
                                                 <tr key={b.id} className="hover:bg-muted">
                                                     <td className="py-3 px-4 font-medium">{b.mois}/{b.annee}</td>
-                                                    <td className="py-3 px-4 text-right">{formatMontant(b.salaireBase)} F</td>
-                                                    <td className="py-3 px-4 text-right text-success">+{formatMontant(b.primes)} F</td>
-                                                    <td className="py-3 px-4 text-right text-destructive">−{formatMontant(b.deductions)} F</td>
-                                                    <td className="py-3 px-4 text-right font-semibold">{formatMontant(b.salaireNet)} F</td>
+                                                    <td className="py-3 px-4 text-right">{formatMontant(b.salaireBase)}</td>
+                                                    <td className="py-3 px-4 text-right text-success">+{formatMontant(b.primes)}</td>
+                                                    <td className="py-3 px-4 text-right text-destructive">−{formatMontant(b.deductions)}</td>
+                                                    <td className="py-3 px-4 text-right font-semibold">{formatMontant(b.salaireNet)}</td>
                                                     <td className="py-3 px-4 text-center">
                                                         <Badge variant={b.statut === 'paye' ? 'success' : 'warning'}>{b.statut}</Badge>
                                                     </td>
@@ -803,6 +799,19 @@ export function PersonnelDetailPage() {
                     <div className="bg-card rounded-xl shadow-sm border border-border p-6">
                         <TabFonctions membreId={id} />
                     </div>
+                )}
+
+                {ongletActif === 'historique' && (
+                    <Card>
+                        <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+                            <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
+                                <History className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-primary inline mr-2" />
+                                {t('detail.ongletHistorique')}
+                            </h3>
+                            <div className="border-b border-border mb-4" />
+                            <AuditTimeline cible="MembrePersonnel" cibleId={id} module="personnel" />
+                        </div>
+                    </Card>
                 )}
 
             </motion.div>

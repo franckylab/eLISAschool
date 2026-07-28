@@ -5,7 +5,6 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
-import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 import {
     absencePersonnelService,
@@ -28,8 +27,8 @@ router.post(
             const dto = validateDto(createAbsenceSchema, req.body);
             const created = await absencePersonnelService.create(
                 dto,
-                (req as any).etablissementId,
-                (req as any).utilisateur?.id,
+                req.etablissementId!,
+                req.utilisateur?.id,
                 req
             );
             res.status(201).json({ success: true, data: created });
@@ -43,12 +42,13 @@ router.post(
 router.get(
     '/',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const query = validateDto(queryAbsenceSchema, req.query);
             const result = await absencePersonnelService.findAll(
                 query,
-                (req as any).etablissementId
+                req.etablissementId!
             );
             res.json({ success: true, data: result });
         } catch (error) {
@@ -57,17 +57,19 @@ router.get(
     }
 );
 
-// Obtenir une absence
+// Obtenir les absences non justifiées (DOIT être avant /:id)
 router.get(
-    '/:id',
+    '/non-justifiees',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const entity = await absencePersonnelService.findOne(
-                req.params.id,
-                (req as any).etablissementId
+            const jours = parseInt(req.query.jours as string) || 3;
+            const absences = await absencePersonnelService.getAbsencesNonJustifiees(
+                jours,
+                req.etablissementId!
             );
-            res.json({ success: true, data: entity });
+            res.json({ success: true, data: absences });
         } catch (error) {
             next(error);
         }
@@ -78,6 +80,7 @@ router.get(
 router.get(
     '/membres/:id/assiduite',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { dateDebut, dateFin } = req.query;
@@ -88,7 +91,7 @@ router.get(
                 req.params.id,
                 dateDebut as string,
                 dateFin as string,
-                (req as any).etablissementId
+                req.etablissementId!
             );
             res.json({ success: true, data: stats });
         } catch (error) {
@@ -97,18 +100,18 @@ router.get(
     }
 );
 
-// Obtenir les absences non justifiées
+// Obtenir une absence
 router.get(
-    '/non-justifiees',
+    '/:id',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const jours = parseInt(req.query.jours as string) || 3;
-            const absences = await absencePersonnelService.getAbsencesNonJustifiees(
-                jours,
-                (req as any).etablissementId
+            const entity = await absencePersonnelService.findOne(
+                req.params.id,
+                req.etablissementId!
             );
-            res.json({ success: true, data: absences });
+            res.json({ success: true, data: entity });
         } catch (error) {
             next(error);
         }
@@ -129,8 +132,8 @@ router.patch(
             const entity = await absencePersonnelService.justifier(
                 req.params.id,
                 justification,
-                (req as any).utilisateur?.id,
-                (req as any).etablissementId,
+                req.utilisateur?.id!,
+                req.etablissementId!,
                 req
             );
             res.json({ success: true, data: entity });
@@ -151,8 +154,8 @@ router.patch(
             const updated = await absencePersonnelService.update(
                 req.params.id,
                 dto,
-                (req as any).utilisateur?.id,
-                (req as any).etablissementId,
+                req.utilisateur?.id!,
+                req.etablissementId!,
                 req
             );
             res.json({ success: true, data: updated });
@@ -171,8 +174,8 @@ router.delete(
         try {
             const result = await absencePersonnelService.delete(
                 req.params.id,
-                (req as any).utilisateur?.id,
-                (req as any).etablissementId,
+                req.utilisateur?.id!,
+                req.etablissementId!,
                 req
             );
             res.json({ success: true, data: result });

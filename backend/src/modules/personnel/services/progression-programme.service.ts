@@ -119,11 +119,12 @@ export class ProgressionProgrammeService {
         return { success: true };
     }
 
-    async getProgressionClasseMatiere(classeId: string, matiereId: string, periodeId?: string) {
+    async getProgressionClasseMatiere(classeId: string, matiereId: string, periodeId: string | undefined, etablissementId: string) {
         const qb = this.repo
             .createQueryBuilder('progression')
             .where('progression.classeId = :classeId', { classeId })
             .andWhere('progression.matiereId = :matiereId', { matiereId })
+            .andWhere('progression.etablissementId = :etablissementId', { etablissementId })
             .leftJoinAndSelect('progression.enseignant', 'enseignant')
             .orderBy('progression.dateEvaluation', 'DESC');
 

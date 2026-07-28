@@ -19,6 +19,7 @@ import { usePostesVacants, useTousPostes } from '@/features/postes/hooks/use-pos
 import { useToutesFonctions } from '@/features/fonctions/hooks/use-fonctions';
 import { useModesRemuneration } from '@/features/organisation/hooks/use-modes-remuneration';
 import { PosteCapaciteIndicator } from '@/features/postes/components/PosteCapaciteIndicator';
+import { formatMontant } from '@/lib/format-utils';
 import { useTypesContrat, useCreerContrat, useModifierContrat } from '../hooks/use-contrats';
 import type { ContratPersonnel, CreerContratDto, TypeContratPersonnalise } from '../types/contrat.types';
 import type { MembrePersonnel } from '@/features/personnel/types/personnel.types';
@@ -356,13 +357,13 @@ export function ContratWizardModal({ open, onOpenChange, editing }: ContratWizar
                                 : t('recapAucune'))}
                             {recapRow(t('recapModeRemuneration'), mode?.label || t('recapAucun'))}
                             {(!modeCode || modeCode === 'MENSUEL' || modeCode === 'MIXTE') &&
-                                recapRow(t('recapSalaireBase'), `${form.salaireBase.toLocaleString('fr-FR')} F`)}
+                                recapRow(t('recapSalaireBase'), formatMontant(form.salaireBase))}
                             {(modeCode === 'HORAIRE' || modeCode === 'MIXTE') &&
-                                recapRow(t('recapTarifHoraire'), `${form.tarifHoraire.toLocaleString('fr-FR')} F/h`)}
+                                recapRow(t('recapTarifHoraire'), `${formatMontant(form.tarifHoraire)}/h`)}
                             {modeCode === 'MIXTE' &&
                                 recapRow(t('recapHeuresContractuelles'), `${form.heuresContractuellesMois} h/mois`)}
                             {modeCode === 'HEBDOMADAIRE' &&
-                                recapRow(t('recapTarifHebdomadaire'), `${form.tarifHebdomadaire.toLocaleString('fr-FR')} F/sem`)}
+                                recapRow(t('recapTarifHebdomadaire'), `${formatMontant(form.tarifHebdomadaire)}/sem`)}
                             {recapRow(t('recapDateDebut'), form.dateDebut)}
                             {recapRow(t('recapDateFin'), form.dateFin || t('recapAucune'))}
                             {recapRow(t('renouvellementAuto'), form.renouvellementAuto ? t('oui') : t('non'))}

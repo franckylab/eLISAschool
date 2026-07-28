@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
 
@@ -35,6 +36,7 @@ export function useMembreFonctions(membrePersonnelId: string) {
 
 export function useAssignerFonction() {
     const qc = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async (dto: {
             membrePersonnelId: string;
@@ -49,16 +51,17 @@ export function useAssignerFonction() {
         },
         onSuccess: (data) => {
             if (data) qc.invalidateQueries({ queryKey: MEMBRE_FONCTION_KEYS.byMembre(data.membrePersonnelId) });
-            toast.success('Fonction assignée au membre');
+            toast.success(t('toasts.fonctionAssignee'));
         },
         onError: (error: unknown) => {
-            toast.error((error as Error)?.message || 'Erreur lors de l\'assignation');
+            toast.error((error as Error)?.message || t('erreurs.assignation'));
         },
     });
 }
 
 export function useModifierMembreFonction() {
     const qc = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async ({ id, dto }: { id: string; dto: Partial<MembreFonction> }) => {
             const res = await apiClient.patch<MembreFonction>(`/api/personnel/membres-fonctions/${id}`, dto);
@@ -66,16 +69,17 @@ export function useModifierMembreFonction() {
         },
         onSuccess: (data) => {
             if (data) qc.invalidateQueries({ queryKey: MEMBRE_FONCTION_KEYS.byMembre(data.membrePersonnelId) });
-            toast.success('Assignation mise à jour');
+            toast.success(t('toasts.assignationMiseAJour'));
         },
         onError: (error: unknown) => {
-            toast.error((error as Error)?.message || 'Erreur lors de la mise à jour');
+            toast.error((error as Error)?.message || t('erreurs.miseAJour'));
         },
     });
 }
 
 export function useRetirerFonction() {
     const qc = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async ({ id, membrePersonnelId }: { id: string; membrePersonnelId: string }) => {
             await apiClient.delete(`/api/personnel/membres-fonctions/${id}`);
@@ -83,10 +87,10 @@ export function useRetirerFonction() {
         },
         onSuccess: (data) => {
             qc.invalidateQueries({ queryKey: MEMBRE_FONCTION_KEYS.byMembre(data.membrePersonnelId) });
-            toast.success('Fonction retirée du membre');
+            toast.success(t('toasts.fonctionRetiree'));
         },
         onError: (error: unknown) => {
-            toast.error((error as Error)?.message || 'Erreur lors du retrait');
+            toast.error((error as Error)?.message || t('erreurs.retrait'));
         },
     });
 }

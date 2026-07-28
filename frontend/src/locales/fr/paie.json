@@ -103,5 +103,50 @@
     "chargement": "Chargement des bulletins...",
     "aucunBulletin": "Aucun bulletin",
     "aucunBulletinDescription": "Aucun bulletin trouvé pour cette période.",
-    "erreur": "Erreur lors du chargement des bulletins"
+    "erreur": "Erreur lors du chargement des bulletins",
+    "toasts": {
+        "bulletinCree": "Bulletin créé",
+        "bulletinGenere": "Bulletin généré",
+        "bulletinModifie": "Bulletin modifié",
+        "bulletinSupprime": "Bulletin supprimé",
+        "cotisationCreee": "Cotisation créée",
+        "cotisationModifiee": "Cotisation modifiée",
+        "cotisationSupprimee": "Cotisation supprimée",
+        "typePrimeCree": "Type de prime créé",
+        "typePrimeModifie": "Type de prime modifié",
+        "typePrimeSupprime": "Type de prime supprimé",
+        "typeRetenueCree": "Type de retenue créé",
+        "typeRetenueModifie": "Type de retenue modifié",
+        "typeRetenueSupprime": "Type de retenue supprimé",
+        "bulletinsMasse": "{{count}} bulletin(s) généré(s)",
+        "bulletinsMasseErreurs": "{{count}} bulletin(s) généré(s), {{errors}} erreur(s)"
+    },
+    "erreurs": {
+        "creationBulletin": "Erreur création bulletin",
+        "generationBulletin": "Erreur génération bulletin",
+        "modificationBulletin": "Erreur modification bulletin",
+        "suppressionBulletin": "Erreur suppression bulletin",
+        "creationCotisation": "Erreur création cotisation",
+        "modificationCotisation": "Erreur modification cotisation",
+        "suppressionCotisation": "Erreur suppression cotisation",
+        "creationTypePrime": "Erreur création type prime",
+        "modificationTypePrime": "Erreur modification type prime",
+        "suppressionTypePrime": "Erreur suppression type prime",
+        "creationTypeRetenue": "Erreur création type retenue",
+        "modificationTypeRetenue": "Erreur modification type retenue",
+        "suppressionTypeRetenue": "Erreur suppression type retenue",
+        "generationMasse": "Erreur génération masse",
+        "erreurInconnue": "erreur inconnue"
+    },
+    "validation": {
+        "codeMin": "Le code doit contenir au moins 2 caractères",
+        "codeMax": "Le code ne peut pas dépasser 30 caractères",
+        "nomMin": "Le nom doit contenir au moins 2 caractères",
+        "nomMax": "Le nom ne peut pas dépasser 100 caractères",
+        "positif": "La valeur doit être positive",
+        "moisMin": "Le mois doit être au moins 1",
+        "moisMax": "Le mois ne peut pas dépasser 12",
+        "anneeMin": "L'année doit être au moins 2000",
+        "anneeMax": "L'année ne peut pas dépasser 2100"
+    }
 }

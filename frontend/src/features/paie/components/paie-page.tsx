@@ -9,6 +9,7 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { formatDate } from '@/lib/date-utils';
+import { formatMontant } from '@/lib/format-utils';
 import { usePaiePermissions } from '../hooks/use-paie-permissions';
 import { useBulletins, useSupprimerBulletin } from '../hooks/use-paie';
 import { BulletinFormModal } from './bulletin-form-modal';
@@ -79,13 +80,13 @@ export function PaiePage() {
             key: 'salaireBase',
             header: t('colonne.salaireBase'),
             className: 'text-right',
-            render: (b) => <span className="text-sm">{b.salaireBase?.toLocaleString('fr-FR')} F</span>,
+            render: (b) => <span className="text-sm">{formatMontant(b.salaireBase)}</span>,
         },
         {
             key: 'salaireNet',
             header: t('colonne.salaireNet'),
             className: 'text-right',
-            render: (b) => <span className="text-sm font-semibold">{b.salaireNet?.toLocaleString('fr-FR')} F</span>,
+            render: (b) => <span className="text-sm font-semibold">{formatMontant(b.salaireNet)}</span>,
         },
         {
             key: 'statut',

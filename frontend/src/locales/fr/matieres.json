@@ -124,6 +124,7 @@
     "niveauxSansEnseignant": "{{count}} niveau(x) sans enseignant assigné",
     "affectationsInactives": "{{count}} affectation(s) inactive(s)",
     "emploiDuTemps": "Emploi du temps",
+    "historique": "Historique",
     "informtionsGenerales": "Informations générales",
     "affecterEnseignantBouton": "Affecter un enseignant",
     "chargementAffectations": "Chargement des affectations...",

@@ -1315,6 +1315,36 @@ await auditLogService.log({
 });
 ```
 
+**Permissions RBAC** (migration 131) :
+- `audit:view` — accès global (ADMIN, SUPER_ADMIN)
+- `audit:{module}:view` — accès scopé par module (11 modules : notes, bulletins, personnel, contrats, paie, eleves, classes, matieres, periodes, emploi-du-temps, organisation)
+- **Middleware dynamique** `requireAuditAccess` : `audit:view` (global) OU `audit:{module}:view` (scopé via query param `module`)
+
+**Composants frontend partagés** :
+- `AuditTimeline` (`@/components/ui/AuditTimeline`) : timeline entity-scoped (`cible` + `cibleId`), double vérification permission
+- `DashboardAuditWidget` (`features/dashboard/components/`) : widget global (10 derniers logs, `audit:view` requis)
+
+**Wiring onglet Historique** (7 pages détail) :
+```tsx
+// Permission gate
+...(hasPermission('audit:{module}:view') || hasPermission('audit:view')
+    ? [{ id: 'historique', label: t('...'), icon: History }]
+    : []),
+
+// Contenu
+<AuditTimeline cible="{Entity}" cibleId={id} module="{module}" />
+```
+
+| Page | cible | module |
+|------|-------|--------|
+| bulletin-detail | `'Bulletin'` | `'bulletins'` |
+| personnel-detail | `'MembrePersonnel'` | `'personnel'` |
+| matiere-detail | `'Matiere'` | `'matieres'` |
+| annee-scolaire-detail | `'AnneeScolaire'` | `'annees-scolaires'` |
+| classe-detail | `'Classe'` | `'classes'` |
+| note-detail | `'Note'` | `'notes'` |
+| periode-detail | `'Periode'` | `'periodes'` |
+
 ### Configuration-driven (piloté par config)
 
 - **12+ modules** lisent leurs paramètres depuis `config.helper`

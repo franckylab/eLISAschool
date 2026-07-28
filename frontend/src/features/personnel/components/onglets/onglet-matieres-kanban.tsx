@@ -7,12 +7,12 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, BookOpen, Users, Clock } from 'lucide-react';
-import { useEnseignantAffectationsMatiere, useDeplacerAffectation } from '../../hooks/use-enseignants';
+import { useEnseignantAffectationsMatiere, useDeplacerAffectation } from '../../hooks/use-personnel-detail';
 import { LoadingState } from '@/components/feedback';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Badge } from '@/components/ui/Badge';
 import { formatVolumeMinutesToHours } from '@/lib/format-utils';
-import type { AffectationEnseignant } from '../../types/enseignant.types';
+import type { AffectationEnseignant } from '../../types/personnel.types';
 
 interface KanbanColumn {
     id: string;

@@ -7,6 +7,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
@@ -62,34 +63,37 @@ export function useContrats(params?: ContratFilters) {
 
 export function useCreerContrat() {
     const qc = useQueryClient();
+    const { t } = useTranslation('contrats');
     return useMutation({
         mutationFn: async (dto: CreerContratDto) => {
             const response = await apiClient.post<ContratPersonnel>('/api/personnel/contrats', dto);
             return response.data;
         },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: CONTRATS_KEYS.all }); toast.success('Contrat créé'); },
-        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur création contrat')),
+        onSuccess: () => { qc.invalidateQueries({ queryKey: CONTRATS_KEYS.all }); toast.success(t('toasts.contratCree')); },
+        onError: (e: unknown) => toast.error(messageErreur(e, t('erreurs.creationContrat'))),
     });
 }
 
 export function useModifierContrat() {
     const qc = useQueryClient();
+    const { t } = useTranslation('contrats');
     return useMutation({
         mutationFn: async ({ id, ...dto }: { id: string } & Partial<CreerContratDto>) => {
             const response = await apiClient.patch<ContratPersonnel>(`/api/personnel/contrats/${id}`, dto);
             return response.data;
         },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: CONTRATS_KEYS.all }); toast.success('Contrat modifié'); },
-        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur modification contrat')),
+        onSuccess: () => { qc.invalidateQueries({ queryKey: CONTRATS_KEYS.all }); toast.success(t('toasts.contratModifie')); },
+        onError: (e: unknown) => toast.error(messageErreur(e, t('erreurs.modificationContrat'))),
     });
 }
 
 export function useSupprimerContrat() {
     const qc = useQueryClient();
+    const { t } = useTranslation('contrats');
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/personnel/contrats/${id}`); },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: CONTRATS_KEYS.all }); toast.success('Contrat supprimé'); },
-        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur suppression contrat')),
+        onSuccess: () => { qc.invalidateQueries({ queryKey: CONTRATS_KEYS.all }); toast.success(t('toasts.contratSupprime')); },
+        onError: (e: unknown) => toast.error(messageErreur(e, t('erreurs.suppressionContrat'))),
     });
 }
 
@@ -110,6 +114,7 @@ export function useTypesContrat(params?: Record<string, string | number | boolea
 
 export function useCreerTypeContrat() {
     const qc = useQueryClient();
+    const { t } = useTranslation('contrats');
     return useMutation({
         mutationFn: async (dto: {
             code: string; nom: string; description?: string; categorie?: string;
@@ -119,40 +124,43 @@ export function useCreerTypeContrat() {
             const response = await apiClient.post<TypeContratPersonnalise>('/api/personnel/types-contrat', dto);
             return response.data;
         },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: CONTRATS_KEYS.typesContrat.all }); toast.success('Type contrat créé'); },
-        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur création type contrat')),
+        onSuccess: () => { qc.invalidateQueries({ queryKey: CONTRATS_KEYS.typesContrat.all }); toast.success(t('toasts.typeContratCree')); },
+        onError: (e: unknown) => toast.error(messageErreur(e, t('erreurs.creationTypeContrat'))),
     });
 }
 
 export function useModifierTypeContrat() {
     const qc = useQueryClient();
+    const { t } = useTranslation('contrats');
     return useMutation({
         mutationFn: async ({ id, ...dto }: { id: string } & Partial<TypeContratPersonnalise>) => {
             const response = await apiClient.patch<TypeContratPersonnalise>(`/api/personnel/types-contrat/${id}`, dto);
             return response.data;
         },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: CONTRATS_KEYS.typesContrat.all }); toast.success('Type contrat modifié'); },
-        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur modification type contrat')),
+        onSuccess: () => { qc.invalidateQueries({ queryKey: CONTRATS_KEYS.typesContrat.all }); toast.success(t('toasts.typeContratModifie')); },
+        onError: (e: unknown) => toast.error(messageErreur(e, t('erreurs.modificationTypeContrat'))),
     });
 }
 
 export function useSupprimerTypeContrat() {
     const qc = useQueryClient();
+    const { t } = useTranslation('contrats');
     return useMutation({
         mutationFn: async (id: string) => { await apiClient.delete(`/api/personnel/types-contrat/${id}`); },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: CONTRATS_KEYS.typesContrat.all }); toast.success('Type contrat supprimé'); },
-        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur suppression type contrat')),
+        onSuccess: () => { qc.invalidateQueries({ queryKey: CONTRATS_KEYS.typesContrat.all }); toast.success(t('toasts.typeContratSupprime')); },
+        onError: (e: unknown) => toast.error(messageErreur(e, t('erreurs.suppressionTypeContrat'))),
     });
 }
 
 export function useToggleTypeContrat() {
     const qc = useQueryClient();
+    const { t } = useTranslation('contrats');
     return useMutation({
         mutationFn: async (id: string) => {
             const response = await apiClient.post<TypeContratPersonnalise>(`/api/personnel/types-contrat/${id}/toggle`);
             return response.data;
         },
-        onSuccess: () => { qc.invalidateQueries({ queryKey: CONTRATS_KEYS.typesContrat.all }); toast.success('Statut modifié'); },
-        onError: (e: unknown) => toast.error(messageErreur(e, 'Erreur modification statut')),
+        onSuccess: () => { qc.invalidateQueries({ queryKey: CONTRATS_KEYS.typesContrat.all }); toast.success(t('toasts.statutModifie')); },
+        onError: (e: unknown) => toast.error(messageErreur(e, t('erreurs.modificationStatut'))),
     });
 }

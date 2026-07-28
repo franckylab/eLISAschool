@@ -124,6 +124,7 @@
     "niveauxSansEnseignant": "{{count}} level(s) without assigned teacher",
     "affectationsInactives": "{{count}} inactive assignment(s)",
     "emploiDuTemps": "Timetable",
+    "historique": "History",
     "informtionsGenerales": "General information",
     "affecterEnseignantBouton": "Assign teacher",
     "chargementAffectations": "Loading assignments...",

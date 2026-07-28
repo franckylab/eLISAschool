@@ -1,17 +1,15 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle, XCircle, TrendingUp, AlertTriangle } from 'lucide-react';
-import { useEnseignantAbsences, useEnseignantAssiduite } from '../../hooks/use-enseignants';
+import { useEnseignantAbsences, useEnseignantAssiduite } from '../../hooks/use-personnel-detail';
 import { MiniBarChart } from '@/components/charts/MiniBarChart';
 import { MiniPieChart } from '@/components/charts/MiniPieChart';
 import { LoadingState } from '@/components/feedback';
-import type { AbsenceEnseignant } from '../../types/enseignant.types';
+import type { AbsenceEnseignant } from '../../types/personnel.types';
+
+import { formatDate } from '@/lib/date-utils';
 
 const MOIS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-
-function formatDate(d: string) {
-    return new Date(d).toLocaleDateString('fr-FR');
-}
 
 export function OngletAbsences({ enseignantId, isActive }: { enseignantId: string; isActive: boolean }) {
     const { t } = useTranslation('personnel');

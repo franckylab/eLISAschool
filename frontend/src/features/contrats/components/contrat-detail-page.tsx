@@ -11,6 +11,8 @@ import { InfoField } from '@/components/ui/InfoField';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePermissions } from '@/hooks';
+import { formatDate } from '@/lib/date-utils';
+import { formatMontant } from '@/lib/format-utils';
 import { ContratWizardModal } from './contrat-wizard-modal';
 
 const STATUT_CLASSES: Record<string, string> = {
@@ -20,12 +22,6 @@ const STATUT_CLASSES: Record<string, string> = {
     ROMPU: 'bg-destructive/10 text-destructive',
     RENEGOCIE: 'bg-primary/10 text-primary',
 };
-
-function formatDate(d: string) {
-    return new Date(d).toLocaleDateString('fr-FR', {
-        year: 'numeric', month: 'long', day: 'numeric',
-    });
-}
 
 export function ContratDetailPage({ contratId }: { contratId: string }) {
     const navigate = useNavigate();
@@ -88,10 +84,10 @@ export function ContratDetailPage({ contratId }: { contratId: string }) {
                                 <InfoField label={t('colonne.typeContrat')} value={contrat.typeContrat} icon={<Briefcase className="h-3.5 w-3.5" />} />
                                 <InfoField label={t('detail.dateDebut')} value={formatDate(contrat.dateDebut)} icon={<Calendar className="h-3.5 w-3.5" />} />
                                 <InfoField label={t('detail.dateFin')} value={contrat.dateFin ? formatDate(contrat.dateFin) : '-'} icon={<Calendar className="h-3.5 w-3.5" />} />
-                                <InfoField label={t('colonne.salaireBase')} value={`${contrat.salaireBase.toLocaleString()} FCFA`} icon={<Wallet className="h-3.5 w-3.5" />} />
+                                <InfoField label={t('colonne.salaireBase')} value={formatMontant(contrat.salaireBase)} icon={<Wallet className="h-3.5 w-3.5" />} />
                                 <InfoField label={t('detail.modeRemuneration')} value={contrat.modeRemuneration || '-'} icon={<Clock className="h-3.5 w-3.5" />} />
                                 {contrat.tarifHoraire != null && (
-                                    <InfoField label={t('detail.tarifHoraire')} value={`${contrat.tarifHoraire} FCFA/h`} icon={<Clock className="h-3.5 w-3.5" />} />
+                                    <InfoField label={t('detail.tarifHoraire')} value={`${formatMontant(contrat.tarifHoraire)}/h`} icon={<Clock className="h-3.5 w-3.5" />} />
                                 )}
                                 {contrat.heuresContractuellesMois != null && (
                                     <InfoField label={t('detail.heuresContractuellesMois')} value={`${contrat.heuresContractuellesMois} h`} icon={<Clock className="h-3.5 w-3.5" />} />

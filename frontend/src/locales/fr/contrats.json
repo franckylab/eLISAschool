@@ -130,5 +130,23 @@
     "fallbackTypeCDI": "CDI",
     "fallbackTypeCDD": "CDD",
     "fallbackTypeVacataire": "Vacataire",
-    "fallbackTypeStagiaire": "Stagiaire"
+    "fallbackTypeStagiaire": "Stagiaire",
+    "toasts": {
+        "contratCree": "Contrat créé",
+        "contratModifie": "Contrat modifié",
+        "contratSupprime": "Contrat supprimé",
+        "typeContratCree": "Type de contrat créé",
+        "typeContratModifie": "Type de contrat modifié",
+        "typeContratSupprime": "Type de contrat supprimé",
+        "statutModifie": "Statut modifié"
+    },
+    "erreurs": {
+        "creationContrat": "Erreur création contrat",
+        "modificationContrat": "Erreur modification contrat",
+        "suppressionContrat": "Erreur suppression contrat",
+        "creationTypeContrat": "Erreur création type contrat",
+        "modificationTypeContrat": "Erreur modification type contrat",
+        "suppressionTypeContrat": "Erreur suppression type contrat",
+        "modificationStatut": "Erreur modification statut"
+    }
 }

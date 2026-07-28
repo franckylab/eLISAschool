@@ -7,36 +7,32 @@ import { validateDto } from '@common/utils';
 const router = Router();
 const service = new MembreFonctionService();
 
-router.get('/membre/:membrePersonnelId', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/membre/:membrePersonnelId', authMiddleware, requirePermission('personnel:view'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const etablissementId = req.utilisateur!.etablissementId!;
-        const data = await service.findByMembre(req.params.membrePersonnelId, etablissementId);
+        const data = await service.findByMembre(req.params.membrePersonnelId, req.etablissementId!);
         res.json({ success: true, data });
     } catch (error) { next(error); }
 });
 
-router.post('/', authMiddleware, requirePermission('personnel:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createMembreFonctionSchema, req.body);
-        const etablissementId = req.utilisateur!.etablissementId!;
-        const data = await service.create(dto, etablissementId);
+        const data = await service.create(dto, req.etablissementId!);
         res.status(201).json({ success: true, data });
     } catch (error) { next(error); }
 });
 
-router.patch('/:id', authMiddleware, requirePermission('personnel:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateMembreFonctionSchema, req.body);
-        const etablissementId = req.utilisateur!.etablissementId!;
-        const data = await service.update(req.params.id, dto, etablissementId);
+        const data = await service.update(req.params.id, dto, req.etablissementId!);
         res.json({ success: true, data });
     } catch (error) { next(error); }
 });
 
-router.delete('/:id', authMiddleware, requirePermission('personnel:edit'), async (req: Request, res: Response, next: NextFunction) => {
+router.delete('/:id', authMiddleware, requirePermission('personnel:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const etablissementId = req.utilisateur!.etablissementId!;
-        await service.delete(req.params.id, etablissementId);
+        await service.delete(req.params.id, req.etablissementId!);
         res.json({ success: true, message: 'Fonction retirée du membre' });
     } catch (error) { next(error); }
 });

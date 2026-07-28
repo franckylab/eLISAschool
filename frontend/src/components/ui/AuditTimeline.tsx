@@ -9,11 +9,13 @@
  * Utilise l'API /api/audit/logs avec filtre cible/cibleId.
  */
 
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { History, FileText, AlertTriangle, AlertCircle, Info } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { apiClient } from '@/lib/api-client';
+import { usePermissions } from '@/hooks';
 import { formatDistance } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 
@@ -80,6 +82,13 @@ export function AuditTimeline({
 }: AuditTimelineProps) {
     const { t, i18n } = useTranslation();
     const locale = i18n.language === 'en' ? enUS : fr;
+    const { hasPermission } = usePermissions();
+
+    const hasAuditAccess = useMemo(() => {
+        if (hasPermission('audit:view')) return true;
+        if (module && hasPermission(`audit:${module}:view`)) return true;
+        return false;
+    }, [hasPermission, module]);
 
     const { data, isLoading } = useQuery({
         queryKey: ['audit-logs', cible, cibleId, module],
@@ -98,9 +107,11 @@ export function AuditTimeline({
             );
             return res.data;
         },
-        enabled: !!cible && !!cibleId,
+        enabled: hasAuditAccess && !!cible && !!cibleId,
         staleTime: 30_000,
     });
+
+    if (!hasAuditAccess) return null;
 
     const logs = data?.items ?? [];
 

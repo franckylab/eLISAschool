@@ -1,9 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { Loader2 } from 'lucide-react';
+import { ElisaInput } from '@/components/ui/ElisaInput';
+import { ElisaSelect } from '@/components/ui/ElisaSelect';
 
 import type { TypePrime } from '../types/paie.types';
 
@@ -27,27 +31,34 @@ const FORM_INIT: PrimeFormData = {
 
 export function PrimeModal({ open, onOpenChange, onSave, isLoading, prime }: PrimeModalProps) {
     const { t } = useTranslation('paie');
-    const [form, setForm] = useState(FORM_INIT);
 
-    useEffect(() => {
-        if (open) {
-            if (prime) {
-                setForm({
-                    code: prime.code || '',
-                    nom: prime.nom || '',
-                    typeCalcul: prime.typeCalcul || 'FIXE',
-                    valeur: prime.valeur || 0,
-                    description: prime.description || '',
-                });
-            } else {
-                setForm(FORM_INIT);
-            }
-        }
-    }, [open, prime]);
+    const schema = useMemo(() => z.object({
+        code: z.string().min(2, t('validation.codeMin')).max(30, t('validation.codeMax')),
+        nom: z.string().min(2, t('validation.nomMin')).max(100, t('validation.nomMax')),
+        typeCalcul: z.enum(['FIXE', 'POURCENTAGE', 'VARIABLE']),
+        valeur: z.number().min(0, t('validation.positif')),
+        description: z.string().optional(),
+    }), [t]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        await onSave(form);
+    const { register, handleSubmit, control, reset, formState: { errors } } = useForm<PrimeFormData>({
+        resolver: zodResolver(schema),
+        defaultValues: FORM_INIT,
+    });
+
+    if (open && prime) {
+        reset({
+            code: prime.code || '',
+            nom: prime.nom || '',
+            typeCalcul: prime.typeCalcul || 'FIXE',
+            valeur: prime.valeur || 0,
+            description: prime.description || '',
+        });
+    } else if (open && !prime) {
+        reset(FORM_INIT);
+    }
+
+    const onSubmit = async (data: PrimeFormData) => {
+        await onSave(data);
     };
 
     return (
@@ -55,63 +66,59 @@ export function PrimeModal({ open, onOpenChange, onSave, isLoading, prime }: Pri
             open={open}
             onOpenChange={onOpenChange}
             title={prime ? t('modifierTypePrime') : t('nouveauTypePrime')}
-        >
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <h4 className="text-sm font-semibold text-[var(--color-text-strong)]">{t('informationsPrime')}</h4>
-                <SectionSeparator />
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium mb-1">{t('code')}</label>
-                        <input
-                            type="text"
-                            value={form.code}
-                            onChange={(e) => setForm(p => ({ ...p, code: e.target.value }))}
-                            className="w-full px-3 py-2 border rounded-lg bg-input border-border"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium mb-1">{t('nom')}</label>
-                        <input
-                            type="text"
-                            value={form.nom}
-                            onChange={(e) => setForm(p => ({ ...p, nom: e.target.value }))}
-                            className="w-full px-3 py-2 border rounded-lg bg-input border-border"
-                            required
-                        />
-                    </div>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium mb-1">{t('typeCalcul')}</label>
-                    <select
-                        value={form.typeCalcul}
-                        onChange={(e) => setForm(p => ({ ...p, typeCalcul: e.target.value as PrimeFormData['typeCalcul'] }))}
-                        className="w-full px-3 py-2 border rounded-lg bg-input border-border"
-                    >
-                        <option value="FIXE">{t('fixe')}</option>
-                        <option value="POURCENTAGE">{t('pourcentage')}</option>
-                        <option value="VARIABLE">{t('variable')}</option>
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium mb-1">{t('valeur')}</label>
-                    <input
-                        type="number"
-                        step="0.01"
-                        value={form.valeur}
-                        onChange={(e) => setForm(p => ({ ...p, valeur: parseFloat(e.target.value) }))}
-                        className="w-full px-3 py-2 border rounded-lg bg-input border-border"
-                    />
-                </div>
-                <div className="flex justify-end gap-3 pt-4">
+            footer={
+                <>
                     <ElisaButton variant="outline" onClick={() => onOpenChange(false)}>
                         {t('common:boutons.annuler')}
                     </ElisaButton>
-                    <ElisaButton type="submit" variant="primary" isLoading={isLoading}>
-                        {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                    <ElisaButton type="submit" variant="primary" isLoading={isLoading} form="prime-form">
                         {prime ? t('common:boutons.enregistrer') : t('common:boutons.creer')}
                     </ElisaButton>
+                </>
+            }
+        >
+            <form id="prime-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <h4 className="text-sm font-semibold text-[var(--color-text-strong)]">{t('informationsPrime')}</h4>
+                <SectionSeparator />
+                <div className="grid grid-cols-2 gap-4">
+                    <ElisaInput
+                        label={t('code')}
+                        {...register('code')}
+                        error={errors.code?.message}
+                        required
+                    />
+                    <ElisaInput
+                        label={t('nom')}
+                        {...register('nom')}
+                        error={errors.nom?.message}
+                        required
+                    />
                 </div>
+                <Controller name="typeCalcul" control={control} render={({ field }) => (
+                    <ElisaSelect
+                        label={t('typeCalcul')}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        options={[
+                            { value: 'FIXE', label: t('fixe') },
+                            { value: 'POURCENTAGE', label: t('pourcentage') },
+                            { value: 'VARIABLE', label: t('variable') },
+                        ]}
+                        error={errors.typeCalcul?.message}
+                    />
+                )} />
+                <ElisaInput
+                    label={t('valeur')}
+                    type="number"
+                    step="0.01"
+                    {...register('valeur', { valueAsNumber: true })}
+                    error={errors.valeur?.message}
+                />
+                <ElisaInput
+                    label={t('description')}
+                    {...register('description')}
+                    error={errors.description?.message}
+                />
             </form>
         </CustomModal>
     );

@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Star, TrendingUp } from 'lucide-react';
-import { useEnseignantEvaluations, useEnseignantMoyenneEvaluations } from '../../hooks/use-enseignants';
+import { useEnseignantEvaluations, useEnseignantMoyenneEvaluations } from '../../hooks/use-personnel-detail';
 import { MiniBarChart } from '@/components/charts/MiniBarChart';
 import { MiniPieChart } from '@/components/charts/MiniPieChart';
 import { LoadingState } from '@/components/feedback';
-import type { EvaluationEnseignant } from '../../types/enseignant.types';
+import { formatDate } from '@/lib/date-utils';
+import type { EvaluationEnseignant } from '../../types/personnel.types';
 
 const CATEGORIE_COLORS: Record<string, string> = {
     Pédagogie: 'var(--color-primary)', Discipline: 'var(--color-success)', 'Relationnel': 'var(--color-warning)',
@@ -13,10 +14,6 @@ const CATEGORIE_COLORS: Record<string, string> = {
 };
 
 const MOIS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-
-function formatDate(d: string) {
-    return new Date(d).toLocaleDateString('fr-FR');
-}
 
 export function OngletEvaluations({ enseignantId, isActive }: { enseignantId: string; isActive: boolean }) {
     const { t } = useTranslation('personnel');

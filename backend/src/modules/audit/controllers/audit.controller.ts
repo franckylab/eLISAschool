@@ -12,18 +12,63 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction, AuditSeverity } from '@modules/auth/entities/audit-log.entity';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
+import { permissionResolverService } from '@modules/auth/services/permission-resolver.service';
 import { Role } from '@shared/enums/roles.enum';
+import { AppError } from '@common/filters/error.filter';
 import { validateDto } from '@common/utils/validate-dto.util';
 import { auditFiltersSchema, auditExportSchema } from '../dto/audit-filters.dto';
 
 const router = Router();
+
+const MODULES_AUDIT_VALIDES = new Set([
+    'notes', 'bulletins', 'personnel', 'contrats', 'paie',
+    'eleves', 'classes', 'matieres', 'periodes', 'emploi-du-temps', 'organisation',
+]);
+
+/**
+ * Middleware dynamique : vérifie audit:{module}:view si module précisé,
+ * sinon audit:view (global). SUPER_ADMIN bypass automatique.
+ */
+async function requireAuditAccess(req: Request, _res: Response, next: NextFunction) {
+    try {
+        if (!req.utilisateur?.id) {
+            throw new AppError('Non authentifié', 401, 'UNAUTHORIZED');
+        }
+
+        const userRoles = req.utilisateur.roles?.length
+            ? req.utilisateur.roles
+            : [req.utilisateur.role];
+        if (userRoles.includes('SUPER_ADMIN')) return next();
+
+        const permissions = await permissionResolverService.resolvePermissions(
+            req.utilisateur.id,
+            req.utilisateur.etablissementId,
+        );
+
+        const module = req.query.module as string | undefined;
+
+        if (permissions.has('audit:view')) return next();
+
+        if (module && MODULES_AUDIT_VALIDES.has(module) && permissions.has(`audit:${module}:view`)) {
+            return next();
+        }
+
+        throw new AppError(
+            'Permission audit insuffisante',
+            403,
+            'INSUFFICIENT_PERMISSIONS',
+        );
+    } catch (error) {
+        next(error);
+    }
+}
 
 /**
  * GET /api/audit/logs
  * Récupère les logs d'audit avec filtres et pagination
  * Accès: ADMIN, SUPER_ADMIN
  */
-router.get('/logs', authMiddleware, requirePermission('monitoring:view'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/logs', authMiddleware, requireAuditAccess, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const filters = validateDto(auditFiltersSchema, req.query);
 
@@ -141,7 +186,7 @@ router.get('/logs/me', authMiddleware, async (req: Request, res: Response, next:
  * Export les logs d'audit en CSV ou JSON
  * Accès: ADMIN, SUPER_ADMIN
  */
-router.get('/logs/export', authMiddleware, requirePermission('monitoring:view'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/logs/export', authMiddleware, requireAuditAccess, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const exportParams = validateDto(auditExportSchema, req.query);
 

@@ -19,7 +19,7 @@ import {
     ClipboardList, FileText, TrendingUp, Users,
     BookOpen, User, Hash, Percent,
     Award, BarChart3, Edit, Trash2, ShieldCheck,
-    CheckCircle2, Send, Star,
+    CheckCircle2, Send, Star, History,
 } from 'lucide-react';
 import { useNote, useStatistiquesNotes, useSupprimerNote, useModifierNote } from '../hooks/use-notes';
 import { getNoteBadgeClass, formatNote } from '../utils/note-couleur';
@@ -32,9 +32,10 @@ import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { NoteFormModal } from './note-form-modal';
+import { AuditTimeline } from '@/components/ui/AuditTimeline';
 import type { StatutNote } from '../types/note.types';
 
-type OngletActif = 'informations' | 'statistiques' | 'validation';
+type OngletActif = 'informations' | 'statistiques' | 'validation' | 'historique';
 
 const STATUT_BADGES: Record<StatutNote, string> = {
     BROUILLON: 'bg-warning/10 text-warning',
@@ -117,6 +118,9 @@ export function NoteDetailPage() {
         { id: 'informations', label: t('informations'), icon: FileText },
         ...(peutVoirStats ? [{ id: 'statistiques', label: t('statistiques'), icon: TrendingUp }] : []),
         ...(peutValider ? [{ id: 'validation', label: t('validation'), icon: ShieldCheck }] : []),
+        ...(hasPermission('audit:notes:view') || hasPermission('audit:view')
+            ? [{ id: 'historique', label: t('historique'), icon: History }]
+            : []),
     ];
 
     const maxDistribution = stats?.distribution?.length
@@ -411,6 +415,19 @@ export function NoteDetailPage() {
                         </div>
                     </Card>
                 )}
+
+            {ongletActif === 'historique' && (
+                <Card>
+                    <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+                        <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
+                            <History className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-primary inline mr-2" />
+                            {t('historique')}
+                        </h3>
+                        <div className="border-b border-border mb-4" />
+                        <AuditTimeline cible="Note" cibleId={id} module="notes" />
+                    </div>
+                </Card>
+            )}
             </TabsContent>
 
             <NoteFormModal

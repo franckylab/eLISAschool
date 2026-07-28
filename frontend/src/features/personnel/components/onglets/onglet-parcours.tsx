@@ -2,13 +2,10 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LucideIcon } from 'lucide-react';
 import { Route, Briefcase, BookOpen, Star, Ban, TrendingUp, FileText, Calendar } from 'lucide-react';
-import { useEnseignantParcours } from '../../hooks/use-enseignants';
+import { useEnseignantParcours } from '../../hooks/use-personnel-detail';
 import { LoadingState } from '@/components/feedback';
-
-function formatDate(d: string | undefined) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short' });
-}
+import { formatDate } from '@/lib/date-utils';
+import { formatMontant } from '@/lib/format-utils';
 
 interface TimelineEvent {
     date: string;
@@ -17,12 +14,6 @@ interface TimelineEvent {
     description: string;
     icon: LucideIcon;
     color: string;
-}
-
-interface EvolutionSalariale {
-    date?: string;
-    montant?: number;
-    salaire?: number;
 }
 
 export function OngletParcours({ enseignantId, isActive }: { enseignantId: string; isActive: boolean }) {
@@ -39,7 +30,7 @@ export function OngletParcours({ enseignantId, isActive }: { enseignantId: strin
                 date: c.dateDebut,
                 type: 'contrat',
                 title: `${t('parcours.contrats')} ${c.typeContrat || ''}`,
-                description: `${t('detail.colSalaire')}: ${c.salaireBase?.toLocaleString() || '—'} FCFA`,
+                description: `${t('detail.colSalaire')}: ${formatMontant(c.salaireBase)}`,
                 icon: FileText,
                 color: 'primary',
             });
@@ -127,7 +118,7 @@ export function OngletParcours({ enseignantId, isActive }: { enseignantId: strin
                                     <div className="flex-1 rounded-lg border border-border bg-muted p-3">
                                         <div className="flex items-start justify-between gap-2">
                                             <p className="text-sm font-medium text-foreground">{event.title}</p>
-                                            <span className="shrink-0 text-xs text-muted-foreground">{formatDate(event.date)}</span>
+                                            <span className="shrink-0 text-xs text-muted-foreground">{formatDate(event.date, 'MMM yyyy')}</span>
                                         </div>
                                         {event.description && (
                                             <p className="mt-0.5 text-xs text-muted-foreground">{event.description}</p>
@@ -160,13 +151,13 @@ export function OngletParcours({ enseignantId, isActive }: { enseignantId: strin
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
-                                {parcours.evolutionSalariale.map((s: EvolutionSalariale, i: number) => (
+                                {parcours.evolutionSalariale.map((s, i: number) => (
                                     <tr key={i} className="hover:bg-muted/80">
                                         <td className="px-4 py-3 text-secondary">
-                                            {s.date ? new Date(s.date).toLocaleDateString('fr-FR') : '—'}
+                                            {s.mois && s.annee ? formatDate(`${s.annee}-${String(s.mois).padStart(2, '0')}-01`) : '—'}
                                         </td>
                                         <td className="px-4 py-3 text-center font-semibold text-foreground">
-                                            {s.montant?.toLocaleString() ?? s.salaire?.toLocaleString() ?? '—'} FCFA
+                                            {formatMontant(s.salaireNet)}
                                         </td>
                                     </tr>
                                 ))}

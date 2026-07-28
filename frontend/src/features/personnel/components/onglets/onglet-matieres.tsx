@@ -4,7 +4,7 @@ import {
     BookOpen, CheckCircle, XCircle, Users, Clock, Plus,
     Edit, Trash2, Filter, LayoutList, Columns3, CalendarDays,
 } from 'lucide-react';
-import { useEnseignantAffectationsMatiere, useCreerAffectationEnseignant, useModifierAffectationEnseignant, useSupprimerAffectationEnseignant, useToggleActifAffectation } from '../../hooks/use-enseignants';
+import { useEnseignantAffectationsMatiere, useCreerAffectationEnseignant, useModifierAffectationEnseignant, useSupprimerAffectationEnseignant, useToggleActifAffectation } from '../../hooks/use-personnel-detail';
 import { AffectationFormModal } from './affectation-form-modal';
 import { OngletMatieresKanban } from './onglet-matieres-kanban';
 import { OngletMatieresPlanning } from './onglet-matieres-planning';
@@ -12,12 +12,9 @@ import { LoadingState } from '@/components/feedback';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { Badge } from '@/components/ui/Badge';
-import type { AffectationEnseignant, AffectationPayload } from '../../types/enseignant.types';
+import type { AffectationEnseignant, AffectationPayload } from '../../types/personnel.types';
 import { formatVolumeMinutesToHours } from '@/lib/format-utils';
-
-function formatAnnee(d: string) {
-    return new Date(d).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short' });
-}
+import { formatDate } from '@/lib/date-utils';
 
 export function OngletMatieres({ enseignantId, isActive }: { enseignantId: string; isActive: boolean }) {
     const { t } = useTranslation('personnel');
@@ -258,9 +255,9 @@ export function OngletMatieres({ enseignantId, isActive }: { enseignantId: strin
                                             </td>
                                             <td className="px-4 py-3 text-center text-foreground">{a.effectifActuel ?? '—'}</td>
                                             <td className="px-4 py-3 text-center text-xs text-muted-foreground">
-                                                <span className="whitespace-nowrap">{a.dateDebut ? formatAnnee(a.dateDebut) : '-'}</span>
+                                                <span className="whitespace-nowrap">{a.dateDebut ? formatDate(a.dateDebut, 'MMM yyyy') : '-'}</span>
                                                 {a.dateFin && (
-                                                    <span className="whitespace-nowrap"> → {formatAnnee(a.dateFin)}</span>
+                                                    <span className="whitespace-nowrap"> → {formatDate(a.dateFin, 'MMM yyyy')}</span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3 text-center">

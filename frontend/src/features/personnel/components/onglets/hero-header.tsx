@@ -7,7 +7,7 @@ import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { CardGrid } from '@/components/ui/CardGrid';
 import { StatCard } from '@/components/ui/StatCard';
-import type { Enseignant } from '../../types/enseignant.types';
+import type { MembrePersonnel } from '../../types/personnel.types';
 
 type TFn = (key: string, opts?: Record<string, unknown>) => string;
 
@@ -33,7 +33,7 @@ function getStatutLabel(statut: string, t: TFn): string {
 }
 
 interface HeroHeaderProps {
-    enseignant: Enseignant;
+    enseignant: MembrePersonnel;
     nbMatieres?: number;
     moyenneEval?: { moyenne: number; total: number };
     totalHeures?: number;
@@ -54,11 +54,11 @@ function formatAnciennete(anciennete: number, t: TFn) {
     return `${annees} ${anLabel}${moisPart}`;
 }
 
-function nomPrenom(e: Enseignant): string {
+function nomPrenom(e: MembrePersonnel): string {
     return e.utilisateur?.profil?.prenom ?? '';
 }
 
-function nomFamille(e: Enseignant): string {
+function nomFamille(e: MembrePersonnel): string {
     return e.utilisateur?.profil?.nom ?? '';
 }
 

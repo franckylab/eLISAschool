@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     CalendarRange, Clock, Trash2,
     AlertCircle, Lock, Unlock, FileText,
-    BarChart3, CheckCircle2, Timer, Edit, Network,
+    BarChart3, CheckCircle2, Timer, Edit, Network, History,
 } from 'lucide-react';
 import {
     usePeriode, useSupprimerPeriode,
@@ -26,17 +26,13 @@ import { ModalCloturePeriode } from './modal-cloture-periode';
 import { ModalFormPeriode } from './modal-form-periode';
 import { ModalGestionCompositions } from './modal-gestion-compositions';
 import { usePermissions } from '@/hooks';
+import { StatutBadge } from '@/components/ui/StatutBadge';
 import { RowActions } from '@/components/ui/RowActions';
+import { AuditTimeline } from '@/components/ui/AuditTimeline';
 
 const EMPTY_COMPOSITIONS: PeriodeComposition[] = [];
 
-type OngletActif = 'informations' | 'structure' | 'donnees';
-
-const COULEURS_STATUT: Record<string, string> = {
-    OUVERTE: 'bg-[var(--color-dominant-50)] text-[var(--color-dominant-700)] border-[var(--color-dominant-200)]',
-    EN_ATTENTE_CLOTURE: 'bg-amber-50 text-amber-700 border-amber-200',
-    CLOTUREE: 'bg-[var(--color-surface-alt)] text-[var(--color-text-tertiary)] border-[var(--color-bordure)]',
-};
+type OngletActif = 'informations' | 'structure' | 'donnees' | 'historique';
 
 function formatDateFr(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString('fr-FR', {
@@ -54,17 +50,6 @@ function calculeProgression(dateDebut: string, dateFin: string): number {
     if (maintenant < debut) return 0;
     if (maintenant > fin) return 100;
     return Math.round(((maintenant - debut) / (fin - debut)) * 100);
-}
-
-function StatutBadge({ statut, label }: { statut: string; label: string }) {
-    return (
-        <span className={`inline-flex items-center gap-1 rounded-full px-[clamp(0.375rem,1vw,0.625rem)] py-[clamp(0.125rem,0.5vw,0.25rem)] text-[clamp(0.75rem,1.25vw,0.875rem)] font-medium ${COULEURS_STATUT[statut]}`}>
-            {statut === StatutPeriode.OUVERTE && <CheckCircle2 className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" />}
-            {statut === StatutPeriode.CLOTUREE && <Lock className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" />}
-            {statut === StatutPeriode.EN_ATTENTE_CLOTURE && <Timer className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" />}
-            {label}
-        </span>
-    );
 }
 
 export function PeriodeDetailPage() {
@@ -110,6 +95,9 @@ export function PeriodeDetailPage() {
         { id: 'informations' as const, label: t('detail.informations'), icon: FileText },
         { id: 'structure' as const, label: t('detail.structure'), icon: Network },
         { id: 'donnees' as const, label: t('detail.donneesLiees'), icon: BarChart3 },
+        ...(hasPermission('audit:periodes:view') || hasPermission('audit:view')
+            ? [{ id: 'historique' as const, label: t('detail.historique'), icon: History }]
+            : []),
     ];
 
     const { data: niveaux = [] } = useNiveauxPeriode();
@@ -222,7 +210,15 @@ export function PeriodeDetailPage() {
                     <div className="min-w-0 flex-1 space-y-1">
                         <h1 className="text-[clamp(1.5rem,4.5vw,3.5rem)] font-bold text-white leading-tight">{periode.nom}</h1>
                         <div className="flex flex-wrap items-center gap-2 pt-1">
-                            <StatutBadge statut={periode.statut} label={t(`statut.${periode.statut}`)} />
+                            <StatutBadge
+                                statut={periode.statut}
+                                label={t(`statut.${periode.statut}`)}
+                                icon={
+                                    periode.statut === StatutPeriode.OUVERTE ? <CheckCircle2 className="h-3.5 w-3.5" />
+                                    : periode.statut === StatutPeriode.CLOTUREE ? <Lock className="h-3.5 w-3.5" />
+                                    : <Timer className="h-3.5 w-3.5" />
+                                }
+                            />
                             {periode.niveau?.label && (
                                 <span className="rounded-full border px-[clamp(0.375rem,1vw,0.625rem)] py-[clamp(0.125rem,0.5vw,0.25rem)] text-[clamp(0.75rem,1.25vw,0.875rem)] font-medium bg-white/10 text-white/80 border-white/20">
                                     {periode.niveau.label}
@@ -347,9 +343,15 @@ export function PeriodeDetailPage() {
                                         <InfoField
                                             label={t('detail.statut')}
                                             value={
-                                                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium border ${COULEURS_STATUT[periode.statut]}`}>
-                                                    {t(`statut.${periode.statut}`)}
-                                                </span>
+                                                <StatutBadge
+                                                    statut={periode.statut}
+                                                    label={t(`statut.${periode.statut}`)}
+                                                    icon={
+                                                        periode.statut === StatutPeriode.OUVERTE ? <CheckCircle2 className="h-3.5 w-3.5" />
+                                                        : periode.statut === StatutPeriode.CLOTUREE ? <Lock className="h-3.5 w-3.5" />
+                                                        : <Timer className="h-3.5 w-3.5" />
+                                                    }
+                                                />
                                             }
                                         />
                                     </div>
@@ -632,6 +634,26 @@ export function PeriodeDetailPage() {
                         </div>
                     )}
                 </motion.div>
+
+                {ongletActif === 'historique' && (
+                    <motion.div
+                        key="historique"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <Card>
+                            <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+                                <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
+                                    <History className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-primary inline mr-2" />
+                                    {t('detail.historique')}
+                                </h3>
+                                <div className="border-b border-border mb-4" />
+                                <AuditTimeline cible="Periode" cibleId={id} module="periodes" />
+                            </div>
+                        </Card>
+                    </motion.div>
+                )}
             </AnimatePresence>
 
             <ModalFormPeriode

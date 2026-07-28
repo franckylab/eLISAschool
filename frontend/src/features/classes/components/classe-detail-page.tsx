@@ -14,7 +14,7 @@ import {
     ArrowLeft, Users, BookOpen, MapPin,
     Edit, Trash2, UserPlus, TrendingUp, Award, Power,
     Calendar, CheckCircle, XCircle, AlertCircle,
-    Group, GraduationCap, ArrowRightLeft,
+    Group, GraduationCap, ArrowRightLeft, History,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { CardGrid } from '@/components/ui/CardGrid';
@@ -30,9 +30,12 @@ import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { usePermissions } from '@/hooks';
+import { AuditTimeline } from '@/components/ui/AuditTimeline';
+import { Card } from '@/components/ui/Card';
 import type { Eleve } from '@/features/eleves/types/eleve.types';
 
-type OngletActif = 'informations' | 'eleves' | 'statistiques';
+type OngletActif = 'informations' | 'eleves' | 'statistiques' | 'historique';
 
 const creneauKey: Record<string, string> = {
     MATIN: 'matin',
@@ -56,6 +59,7 @@ export function ClasseDetailPage() {
     const { id } = useParams({ from: '/_auth/classes/$id' });
     const navigate = useNavigate();
     const estMobile = useMediaQuery('(max-width: 767px)');
+    const { hasPermission } = usePermissions();
 
     const [ongletActif, setOngletActif] = useState<OngletActif>('informations');
     const [modalEditionOpen, setModalEditionOpen] = useState(false);
@@ -154,6 +158,9 @@ export function ClasseDetailPage() {
         { id: 'informations' as const, label: t('onglets.informations'), icon: BookOpen },
         { id: 'eleves' as const, label: `${t('onglets.eleves')} (${statsEleves?.total ?? 0})`, icon: Users },
         { id: 'statistiques' as const, label: t('onglets.statistiques'), icon: TrendingUp },
+        ...(hasPermission('audit:classes:view') || hasPermission('audit:view')
+            ? [{ id: 'historique' as const, label: t('onglets.historique'), icon: History }]
+            : []),
     ];
 
     const handleSuppression = async () => {
@@ -672,6 +679,26 @@ export function ClasseDetailPage() {
                         </div>
                     )}
                 </motion.div>
+
+                {ongletActif === 'historique' && (
+                    <motion.div
+                        key="historique"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <Card>
+                            <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+                                <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
+                                    <History className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-primary inline mr-2" />
+                                    {t('onglets.historique')}
+                                </h3>
+                                <div className="border-b border-border mb-4" />
+                                <AuditTimeline cible="Classe" cibleId={id} module="classes" />
+                            </div>
+                        </Card>
+                    </motion.div>
+                )}
 
                 {modalChangerSalleOpen && (
                     <ChangerSalleModal

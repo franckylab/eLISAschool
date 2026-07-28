@@ -923,6 +923,22 @@ export enum Permission {
     POSTES_ASSIGNER = 'postes:assigner',
     
     ORGANIGRAMME_VIEW = 'organigramme:view',
+
+    // ==================================
+    // AUDIT — Logs d'audit par module
+    // ==================================
+    AUDIT_VIEW = 'audit:view',
+    AUDIT_NOTES_VIEW = 'audit:notes:view',
+    AUDIT_BULLETINS_VIEW = 'audit:bulletins:view',
+    AUDIT_PERSONNEL_VIEW = 'audit:personnel:view',
+    AUDIT_CONTRATS_VIEW = 'audit:contrats:view',
+    AUDIT_PAIE_VIEW = 'audit:paie:view',
+    AUDIT_ELEVES_VIEW = 'audit:eleves:view',
+    AUDIT_CLASSES_VIEW = 'audit:classes:view',
+    AUDIT_MATIERES_VIEW = 'audit:matieres:view',
+    AUDIT_PERIODES_VIEW = 'audit:periodes:view',
+    AUDIT_EMPLOI_DU_TEMPS_VIEW = 'audit:emploi-du-temps:view',
+    AUDIT_ORGANISATION_VIEW = 'audit:organisation:view',
 }
 
 /**
@@ -1117,6 +1133,14 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.PAIE_VIEW, Permission.PAIE_CREATE, Permission.PAIE_EDIT,
         Permission.PAIE_GENERER, Permission.PAIE_EXPORT,
         Permission.PAIE_CONFIG_VIEW,
+        // Audit — accès global à tous les modules
+        Permission.AUDIT_VIEW,
+        Permission.AUDIT_NOTES_VIEW, Permission.AUDIT_BULLETINS_VIEW,
+        Permission.AUDIT_PERSONNEL_VIEW, Permission.AUDIT_CONTRATS_VIEW,
+        Permission.AUDIT_PAIE_VIEW, Permission.AUDIT_ELEVES_VIEW,
+        Permission.AUDIT_CLASSES_VIEW, Permission.AUDIT_MATIERES_VIEW,
+        Permission.AUDIT_PERIODES_VIEW, Permission.AUDIT_EMPLOI_DU_TEMPS_VIEW,
+        Permission.AUDIT_ORGANISATION_VIEW,
     ],
 
     [Role.CHEF_ETABLISSEMENT]: [
@@ -1233,6 +1257,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.PAIE_EXPORT,
         Permission.PAIE_CONFIG_VIEW, Permission.PAIE_CONFIG_CREATE,
         Permission.PAIE_CONFIG_EDIT, Permission.PAIE_CONFIG_DELETE,
+        // Audit — 6 modules clés
+        Permission.AUDIT_NOTES_VIEW, Permission.AUDIT_BULLETINS_VIEW,
+        Permission.AUDIT_PERSONNEL_VIEW, Permission.AUDIT_ELEVES_VIEW,
+        Permission.AUDIT_CLASSES_VIEW, Permission.AUDIT_ORGANISATION_VIEW,
     ],
 
     [Role.ENSEIGNANT]: [
@@ -1498,6 +1526,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.FINANCES_DASHBOARD_VIEW,
         Permission.PROGRAMMES_CHAPITRE_READ,
         Permission.PROGRAMMES_DASHBOARD_READ,
+        // Audit — 4 modules pédagogiques
+        Permission.AUDIT_NOTES_VIEW, Permission.AUDIT_BULLETINS_VIEW,
+        Permission.AUDIT_ELEVES_VIEW, Permission.AUDIT_CLASSES_VIEW,
     ],
 
     [Role.RESPONSABLE_PEDAGOGIQUE]: [

@@ -15,7 +15,7 @@ import {
     BookOpen, Clock, FileText, Users,
     Edit, Trash2, TrendingUp,
     Layers, CheckCircle, XCircle,
-    Globe, UserCheck, UserPlus,
+    Globe, UserCheck, UserPlus, History,
 } from 'lucide-react';
 import { useMatiere, useSupprimerMatiere, useModifierMatiere, useMatiereProgramme, useMatiereProgrammesPedagogiques, useMatiereAffectations, useCreerAffectation, useModifierAffectation, useSupprimerAffectation } from '../hooks/use-matieres';
 import { MatiereFormModal } from './matiere-form-modal';
@@ -34,25 +34,15 @@ import type { Tab } from '@/components/ui';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { InfoField } from '@/components/ui/InfoField';
 import { StatCard } from '@/components/ui/StatCard';
+import { StatutBadge } from '@/components/ui/StatutBadge';
 import { useConfirmation } from '@/components/ui/ConfirmationModal';
+import { AuditTimeline } from '@/components/ui/AuditTimeline';
 import type { AffectationMatiere, Matiere, CreerMatiereDto } from '../types/matiere.types';
 import type { AffectationPayload } from '../hooks/use-matieres';
 import { format } from 'date-fns';
 import { fr as frLocale, enUS } from 'date-fns/locale';
 
-type OngletActif = 'informations' | 'niveaux' | 'programme' | 'affectations' | 'emploi-du-temps';
-
-function StatutBadge({ actif }: { actif: boolean }) {
-    const { t } = useTranslation('matieres');
-    return (
-        <span className={`inline-flex items-center gap-1 rounded-full px-[clamp(0.375rem,1vw,0.625rem)] py-[clamp(0.125rem,0.5vw,0.25rem)] text-[clamp(0.75rem,1.25vw,0.875rem)] font-medium ${
-            actif ? 'bg-success/10 text-success' : 'bg-muted/10 text-muted-foreground'
-        }`}>
-            {actif ? <CheckCircle className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" /> : <XCircle className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" />}
-            {actif ? t('active') : t('inactive')}
-        </span>
-    );
-}
+type OngletActif = 'informations' | 'niveaux' | 'programme' | 'affectations' | 'emploi-du-temps' | 'historique';
 
 const SOUS_SYSTEME_STYLES: Record<string, { bg: string; text: string }> = {
     FRANCOPHONE: { bg: 'bg-info/10', text: 'text-info' },
@@ -167,6 +157,9 @@ export function MatiereDetailPage() {
         { id: 'programme', label: t('ongletProgrammes'), icon: BookOpen, count: programmesPedagogiquesQuery.data?.length },
         { id: 'affectations', label: t('enseignants'), icon: Users, count: affectationsQuery.data?.length },
         { id: 'emploi-du-temps', label: t('emploiDuTemps'), icon: Clock, count: edtQuery.data?.items?.length },
+        ...(hasPermission('audit:matieres:view') || hasPermission('audit:view')
+            ? [{ id: 'historique' as const, label: t('historique'), icon: History }]
+            : []),
     ];
 
     return (
@@ -204,7 +197,7 @@ export function MatiereDetailPage() {
                         <h1 className="text-[clamp(1.5rem,4.5vw,3.5rem)] font-bold text-white leading-tight">{matiere.nom}</h1>
                         {matiere.code && <p className="text-[clamp(0.75rem,2vw,1.125rem)] text-white/70">{matiere.code}</p>}
                         <div className="flex flex-wrap items-center gap-2 pt-1">
-                            <StatutBadge actif={matiere.actif} />
+                            <StatutBadge statut={matiere.actif ? 'ACTIF' : 'INACTIF'} label={matiere.actif ? t('active') : t('inactive')} />
                             {matiere.sousSysteme && <SousSystemeBadge value={matiere.sousSysteme} />}
                         </div>
                     </div>
@@ -280,6 +273,19 @@ export function MatiereDetailPage() {
                         )}
                     </div>
                 )}
+
+                {ongletActif === 'historique' && (
+                    <Card>
+                        <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+                            <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
+                                <History className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-primary inline mr-2" />
+                                {t('historique')}
+                            </h3>
+                            <div className="border-b border-border mb-4" />
+                            <AuditTimeline cible="Matiere" cibleId={id} module="matieres" />
+                        </div>
+                    </Card>
+                )}
             </motion.div>
 
             {formOpen && (
@@ -350,7 +356,7 @@ function InformationsTab({ matiere, locale }: { matiere: Matiere; locale: string
                                 </div>
                             }
                         />
-                        <InfoField label={t('statut')} value={<StatutBadge actif={matiere.actif} />} />
+                        <InfoField label={t('statut')} value={<StatutBadge statut={matiere.actif ? 'ACTIF' : 'INACTIF'} label={matiere.actif ? t('active') : t('inactive')} />} />
                     </div>
                 </CardContent>
             </Card>

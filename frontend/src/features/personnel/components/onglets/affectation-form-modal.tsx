@@ -6,7 +6,7 @@ import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { useToutesClasses } from '@/features/classes/hooks/use-toutes-classes';
 import { useMatieres } from '@/features/matieres/hooks/use-matieres';
-import type { AffectationEnseignant, AffectationPayload } from '../../types/enseignant.types';
+import type { AffectationEnseignant, AffectationPayload } from '../../types/personnel.types';
 import type { Classe } from '@/features/classes/types/classe.types';
 import type { Matiere } from '@/features/matieres/types/matiere.types';
 

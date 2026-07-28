@@ -118,17 +118,14 @@ export class EvaluationService {
         return { success: true };
     }
 
-    async getMoyenneEnseignant(enseignantId: string, dateDebut: string, dateFin: string, etablissementId?: string) {
+    async getMoyenneEnseignant(enseignantId: string, dateDebut: string, dateFin: string, etablissementId: string) {
         const qb = this.repo
             .createQueryBuilder('evaluation')
             .where('evaluation.enseignantId = :enseignantId', { enseignantId })
+            .andWhere('evaluation.etablissementId = :etablissementId', { etablissementId })
             .andWhere('evaluation.dateEvaluation BETWEEN :dateDebut AND :dateFin', { dateDebut, dateFin })
             .select('AVG(evaluation.note)', 'moyenne')
             .addSelect('COUNT(evaluation.id)', 'nombreEvaluations');
-
-        if (etablissementId) {
-            qb.andWhere('evaluation.etablissementId = :etablissementId', { etablissementId });
-        }
 
         const result = await qb.getRawOne();
 
@@ -138,17 +135,18 @@ export class EvaluationService {
         };
     }
 
-    async getResumeParCategorie(enseignantId: string, annee: number) {
+    async getResumeParCategorie(enseignantId: string, annee: number, etablissementId: string) {
         const resultats = await this.repo
             .createQueryBuilder('evaluation')
             .where('evaluation.enseignantId = :enseignantId', { enseignantId })
+            .andWhere('evaluation.etablissementId = :etablissementId', { etablissementId })
             .andWhere('EXTRACT(YEAR FROM evaluation.dateEvaluation) = :annee', { annee })
             .select(['evaluation.categorie as categorie', 'AVG(evaluation.note) as moyenne'])
             .groupBy('evaluation.categorie')
             .getRawMany();
 
         const resume: Record<string, number> = {};
-        resultats.forEach((r: any) => {
+        resultats.forEach((r: { categorie: string; moyenne: string }) => {
             resume[r.categorie] = parseFloat(r.moyenne);
         });
 

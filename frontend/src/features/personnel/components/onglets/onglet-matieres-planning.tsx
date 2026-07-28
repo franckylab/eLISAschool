@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar, Clock, MapPin } from 'lucide-react';
-import { useEnseignantEdt } from '../../hooks/use-enseignants';
+import { useEnseignantEdt } from '../../hooks/use-personnel-detail';
 import { LoadingState } from '@/components/feedback';
+import { formatDate } from '@/lib/date-utils';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import type { EdtCreneau } from '../../types/enseignant.types';
+import type { EdtCreneau } from '../../types/personnel.types';
 
 const JOURS_ORDER = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
 const JOURS_I18N: Record<string, string> = {
@@ -49,7 +50,7 @@ export function OngletMatieresPlanning({ enseignantId, isActive }: Props) {
                     <Calendar className="h-5 w-5 text-muted-foreground" />
                     <span className="text-sm font-medium text-foreground">{t('affectations.planningHebdo', 'Planning hebdomadaire')}</span>
                     <span className="text-xs text-muted-foreground">
-                        {t('affectations.semaineDu', 'Semaine du')} {new Date(semaine).toLocaleDateString('fr-FR')}
+                        {t('affectations.semaineDu', 'Semaine du')} {formatDate(semaine)}
                     </span>
                     <span className="text-xs text-muted-foreground">· {totalCreneaux} {totalCreneaux > 1 ? t('affectations.creneaux', 'créneaux') : t('affectations.creneauSing', 'créneau')}</span>
                 </div>

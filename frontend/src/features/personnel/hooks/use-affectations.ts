@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
 import type { AffectationPoste, CreerAffectationDto } from '../types/affectation.types';
@@ -35,6 +36,7 @@ export function useAffectationActiveMembre(membreId: string) {
 
 export function useCreerAffectation() {
     const qc = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async (dto: CreerAffectationDto) => {
             const response = await apiClient.post<AffectationPoste>('/api/personnel/affectations', dto);
@@ -43,16 +45,17 @@ export function useCreerAffectation() {
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: AFFECTATION_KEYS.all });
             qc.invalidateQueries({ queryKey: ['personnel', 'detail'] });
-            toast.success('Affectation créée avec succès');
+            toast.success(t('toasts.affectationPosteCreee'));
         },
         onError: (error: unknown) => {
-            toast.error((error as Error)?.message || 'Erreur lors de la création');
+            toast.error((error as Error)?.message || t('erreurs.creationAffectationPoste'));
         },
     });
 }
 
 export function useTerminerAffectation() {
     const qc = useQueryClient();
+    const { t } = useTranslation('personnel');
     return useMutation({
         mutationFn: async (affectationId: string) => {
             const response = await apiClient.post<AffectationPoste>(`/api/personnel/affectations/${affectationId}/terminer`);
@@ -61,10 +64,10 @@ export function useTerminerAffectation() {
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: AFFECTATION_KEYS.all });
             qc.invalidateQueries({ queryKey: ['personnel', 'detail'] });
-            toast.success('Affectation terminée');
+            toast.success(t('toasts.affectationPosteTerminee'));
         },
         onError: (error: unknown) => {
-            toast.error((error as Error)?.message || 'Erreur lors de la terminaison');
+            toast.error((error as Error)?.message || t('erreurs.terminaisonAffectationPoste'));
         },
     });
 }

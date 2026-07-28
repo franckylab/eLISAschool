@@ -9,6 +9,7 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { formatDate } from '@/lib/date-utils';
+import { formatMontant } from '@/lib/format-utils';
 import { usePermissions } from '@/hooks';
 import type { Column } from '@/components/ui/DataTable';
 import type { ContratPersonnel, ContratFilters } from '../types/contrat.types';
@@ -66,7 +67,7 @@ export function ContratsPage() {
             key: 'salaireBase',
             header: t('colonne.salaireBase'),
             render: (c: ContratPersonnel) => (
-                <span className="text-sm font-medium">{c.salaireBase.toLocaleString()} FCFA</span>
+                <span className="text-sm font-medium">{formatMontant(c.salaireBase)}</span>
             ),
         },
         {

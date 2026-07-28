@@ -5,7 +5,6 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
-import { Role } from '@modules/auth/entities';
 import { personnelDashboardService } from '../services/personnel-dashboard.service';
 
 const router = Router();
@@ -14,11 +13,11 @@ const router = Router();
 router.get(
     '/dashboard',
     authMiddleware,
-    requirePermission('personnel:manage'),
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dashboard = await personnelDashboardService.getDashboardRH(
-                (req as any).etablissementId
+                req.etablissementId!
             );
             res.json({ success: true, data: dashboard });
         } catch (error) {
@@ -31,11 +30,12 @@ router.get(
 router.get(
     '/dashboard/enseignants/:id',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const stats = await personnelDashboardService.getStatistiquesEnseignant(
                 req.params.id,
-                (req as any).etablissementId
+                req.etablissementId!
             );
             res.json({ success: true, data: stats });
         } catch (error) {

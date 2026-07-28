@@ -10,6 +10,8 @@ import { HeureCoursFormModal } from './heure-cours-form-modal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { CardGrid } from '@/components/ui/CardGrid';
 import { StatCard } from '@/components/ui/StatCard';
+import { formatDate } from '@/lib/date-utils';
+import { formatMontant } from '@/lib/format-utils';
 
 interface Props {
     enseignantId: string;
@@ -19,7 +21,7 @@ export function TabHeureCours({ enseignantId }: Props) {
     const now = new Date();
     const [mois, setMois] = useState(now.getMonth() + 1);
     const [annee, setAnnee] = useState(now.getFullYear());
-    const { t, i18n } = useTranslation('personnel');
+    const { t } = useTranslation('personnel');
 
     const [modalMode, setModalMode] = useState<'creation' | null>(null);
 
@@ -60,7 +62,7 @@ export function TabHeureCours({ enseignantId }: Props) {
         );
     };
 
-    const nomMois = new Date(annee, mois - 1, 1).toLocaleDateString(i18n.language, { month: 'long', year: 'numeric' });
+    const nomMois = formatDate(new Date(annee, mois - 1, 1), 'MMMM yyyy');
 
     return (
         <div className="space-y-6">
@@ -127,8 +129,8 @@ export function TabHeureCours({ enseignantId }: Props) {
                                             <tr key={idx} className="hover:bg-muted">
                                                 <td className="py-3 px-4 font-medium">{d.matiereNom}</td>
                                                 <td className="py-3 px-4 text-right">{d.heures}h</td>
-                                                <td className="py-3 px-4 text-right">{d.tarifHoraire.toLocaleString(i18n.language)} F/h</td>
-                                                <td className="py-3 px-4 text-right font-semibold">{d.montant.toLocaleString(i18n.language)} F</td>
+                                                <td className="py-3 px-4 text-right">{`${formatMontant(d.tarifHoraire)}/h`}</td>
+                                                <td className="py-3 px-4 text-right font-semibold">{formatMontant(d.montant)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -137,7 +139,7 @@ export function TabHeureCours({ enseignantId }: Props) {
                                             <td className="py-3 px-4">{t('heuresCours.total')}</td>
                                             <td className="py-3 px-4 text-right">{resume.heuresEffectuees}h</td>
                                             <td className="py-3 px-4 text-right" />
-                                            <td className="py-3 px-4 text-right">{resume.detailParMatiere.reduce((s, d) => s + d.montant, 0).toLocaleString(i18n.language)} F</td>
+                                            <td className="py-3 px-4 text-right">{formatMontant(resume.detailParMatiere.reduce((s, d) => s + d.montant, 0))}</td>
                                         </tr>
                                     </tfoot>
                                 </table>

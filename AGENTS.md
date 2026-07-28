@@ -1313,4 +1313,160 @@ Audit de la cohérence des validations, historisation et traçabilité across to
 
 ### Problème systémique identifié
 - **37 occurrences** de `toLocaleDateString('fr-FR')` dans le codebase — à migrer progressivement vers `formatDate()` depuis `@/lib/date-utils`
+
+## Travail effectué — Session 2026-07-28 (fusion enseignants → personnel)
+
+### Contexte
+Audit du module `enseignants` : la page liste et la page détail redirigeaient vers `personnel`, mais 11 composants d'onglets (matières, EDT, évaluations, absences, contrats, parcours) + hooks + types étaient encore utilisés par `personnel-detail-page.tsx`. Code mort identifié et fusion complète approuvée.
+
+### Décisions validées
+- **Fusion complète** : tout le code vivant de `features/enseignants/` déplacé dans `features/personnel/`
+- **Suppression totale** : dossier `features/enseignants/` entièrement supprimé (17 fichiers)
+- **Types dédupliqués** : `Enseignant extends MembrePersonnel {}` supprimé (vide), `ContratEnseignant` fusionné dans `ContratPersonnel`
+- **Pattern de nommage** : fonctions `useEnseignant*` conservées comme API publique (cohérence sémantique)
+- **Sidebar nettoyée** : permissions `enseignants:*` orphelines supprimées
+
+### Fichiers déplacés (11 composants d'onglets)
+```
+features/enseignants/components/enseignant-detail/
+  ├── onglet-matieres.tsx           → features/personnel/components/onglets/
+  ├── onglet-matieres-kanban.tsx    → features/personnel/components/onglets/
+  ├── onglet-matieres-planning.tsx  → features/personnel/components/onglets/
+  ├── onglet-evaluations.tsx        → features/personnel/components/onglets/
+  ├── onglet-absences.tsx           → features/personnel/components/onglets/
+  ├── onglet-contrat.tsx            → features/personnel/components/onglets/
+  ├── onglet-parcours.tsx           → features/personnel/components/onglets/
+  ├── onglet-edt.tsx                → features/personnel/components/onglets/
+  ├── onglet-infos.tsx              → features/personnel/components/onglets/
+  ├── hero-header.tsx               → features/personnel/components/onglets/
+  └── affectation-form-modal.tsx    → features/personnel/components/onglets/
+```
+
+### Hooks fusionnés
+- **`use-enseignants.ts`** (17 hooks) → copié dans **`use-personnel-detail.ts`**
+- **`use-affectations.ts`** (3 hooks) → copié dans **`use-personnel-detail.ts`**
+- **`use-personnel-detail.ts`** : nouveau fichier contenant 20 hooks pour la page détail personnel
+- **Nommage préservé** : `useEnseignant*` (12 hooks), `useAffectation*` (3 hooks), `useListeEnseignants` (1 hook), `useEnseignant` (1 hook), hooks utilitaires (3 hooks)
+
+### Types fusionnés
+- **`enseignant.types.ts`** → types ajoutés à **`personnel.types.ts`** :
+  - `AffectationEnseignant`, `AffectationPayload`
+  - `EdtEnseignant`, `EdtCreneau`
+  - `EvaluationEnseignant`
+  - `AbsenceEnseignant`, `AssiduiteStats`
+  - `ParcoursComplet`
+- **Types supprimés** : `Enseignant` (extends vide), `ContratEnseignant` (doublon de `ContratPersonnel`)
+
+### Imports mis à jour
+- **`personnel-detail-page.tsx`** : 5 imports cross-feature (`@/features/enseignants/...`) → imports locaux (`./onglets/...`)
+- **11 fichiers onglets** : imports hooks/types mis à jour (`../../hooks/use-personnel-detail`, `../../types/personnel.types`)
+- **`hero-header.tsx`** : type `Enseignant` → `MembrePersonnel` (3 occurrences)
+- **`onglet-infos.tsx`** : type `Enseignant` → `MembrePersonnel` (1 occurrence)
+
+### Sidebar nettoyée
+- **`Sidebar.tsx`** : suppression de `enseignantsPerms = useModulePermissions('enseignants')` et de l'entrée `enseignants: enseignantsPerms` dans `permsMap`
+
+### Barrel exports mis à jour
+- **`features/personnel/index.ts`** : ajout de `export * from './hooks/use-personnel-detail'`
+
+### Dossier enseignants supprimé
+- **17 fichiers** supprimés :
+  - 3 pages (liste, détail, form modal) — code mort
+  - 11 composants d'onglets — déplacés
+  - 3 hooks — fusionnés
+  - 1 barrel `index.ts`
+  - 1 fichier types — fusionné
+
+### Qualité
+- **0 erreur TS** dans le code de fusion (erreurs préexistantes dans modules non liés : absences, charts, Header, LanguageSwitcher, RowActions, TransfertList, TreeView)
+- **0 référence résiduelle** à `features/enseignants` dans le codebase (vérifié par grep)
+- **0 `any`** introduit
+- **0 couleur hardcodée** introduite
+- **0 chaîne FR en dur** introduite
+- **i18n** : aucune nouvelle clé nécessaire (traductions déjà dans `personnel.json`)
+
+### Impact
+- **Violation de boundary éliminée** : `personnel` n'importe plus depuis `enseignants` (cross-feature)
+- **Types dédupliqués** : une seule source de vérité dans `personnel.types.ts`
+- **Cohérence architecturale** : tout le code RH (personnel, contrats, paie) dans `features/personnel/`
+- **Maintenance simplifiée** : un seul module à maintenir au lieu de deux
+
+## Travail effectué — Session 2026-07-28 (audit trail + validation workflow — wiring complet)
+
+### Contexte
+Les composants partagés `AuditTimeline`, `StatutBadge`, `ValidationTimeline`, `ValidationActions` et le hook `use-validation-workflow` existaient mais n'étaient connectés à aucune page détail. Wiring complet dans les 7 pages détail + dashboard.
+
+### Phase 1 — Migration 131 + backend
+- **`131-audit-permissions.sql`** (idempotente) : crée les permissions `audit:{module}:view` pour les 11 modules (notes, bulletins, personnel, contrats, paie, eleves, classes, matieres, periodes, emploi-du-temps, organisation) + `audit:view` globale pour ADMIN/SUPER_ADMIN.
+- **`audit.controller.ts`** : middleware dynamique `requireAuditAccess` — `audit:view` (global) OU `audit:{module}:view` (scopé).
+- **`AuditTimeline.tsx`** : double vérification permission (global + module).
+
+### Phase 2 — Composants partagés créés
+- **`StatutBadge.tsx`** : badge coloré par statut workflow (EN_ATTENTE/ACTIF/REJETE/CLOTURE), CSS vars, i18n
+- **`ValidationTimeline.tsx`** : timeline des étapes de validation avec icônes par décision
+- **`ValidationActions.tsx`** : boutons Approuver/Rejeter/Annuler + CustomModal commentaire
+- **`AuditTimeline.tsx`** : timeline des logs d'audit via `GET /api/audit/logs?cible=&cibleId=`
+- **`use-validation-workflow.ts`** : hook TanStack Query (4 endpoints validation-workflows)
+
+### Phase 3 — Wiring dans les 7 pages détail
+
+**P0 — Bulletin + Personnel** :
+- `bulletin-detail-page.tsx` : onglet "Validation" gated `bulletins:validate` + onglet "Historique" gated `audit:bulletins:view`
+- `personnel-detail-page.tsx` : onglet "Validation" gated `personnel:validate` + onglet "Historique" gated `audit:personnel:view`
+
+**P1 — Matière + Année scolaire** :
+- `matiere-detail-page.tsx` : onglet "Validation" gated `matieres:validate` + onglet "Historique" gated `audit:matieres:view`
+- `annee-scolaire-detail-page.tsx` : onglet "Validation" gated `annees-scolaires:validate` + onglet "Historique" gated `audit:periodes:view`
+
+**P2 — Classe + Note + Période** :
+- `classe-detail-page.tsx` : onglet "Historique" gated `audit:classes:view`
+- `note-detail-page.tsx` : onglet "Validation" gated `notes:validate` + onglet "Historique" gated `audit:notes:view`
+- `periode-detail-page.tsx` : onglet "Historique" gated `audit:periodes:view`
+
+### Phase 4 — Dashboard audit widget
+- **`dashboard-audit-widget.tsx`** (nouveau) : widget global affichant les 10 derniers logs d'audit tous modules confondus via `GET /api/audit/logs?limit=10`. Gated `audit:view`. Timeline compacte avec badges module+cible, sévérité, utilisateur, timestamp relatif.
+- **`DashboardPage.tsx`** : widget intégré entre les stat cards et les actions rapides.
+- **i18n** : 2 clés FR+EN dans `dashboard.json` (`audit.titre`, `audit.totalLogs`).
+
+### Pattern de wiring (standardisé)
+```tsx
+// 1. Onglet conditionnel dans le tableau onglets
+...(hasPermission('audit:{module}:view') || hasPermission('audit:view')
+    ? [{ id: 'historique', label: t('...'), icon: History }]
+    : []),
+
+// 2. Contenu de l'onglet (adapté au pattern de la page)
+{ongletActif === 'historique' && (
+    <Card>
+        <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+            <h3>...</h3>
+            <div className="border-b border-border mb-4" />
+            <AuditTimeline cible="{Entity}" cibleId={id} module="{module}" />
+        </div>
+    </Card>
+)}
+```
+
+### Valeurs cible par module
+| Module | cible | module |
+|--------|-------|--------|
+| Bulletin | `'Bulletin'` | `'bulletins'` |
+| Personnel | `'MembrePersonnel'` | `'personnel'` |
+| Matière | `'Matiere'` | `'matieres'` |
+| Année scolaire | `'AnneeScolaire'` | `'annees-scolaires'` |
+| Classe | `'Classe'` | `'classes'` |
+| Note | `'Note'` | `'notes'` |
+| Période | `'Periode'` | `'periodes'` |
+
+### Qualité
+- **0 `any`** dans les composants créés
+- **0 couleur hardcodée** — toutes via CSS vars
+- **0 chaîne FR en dur** — toutes via `t()`
+- **i18n FR/EN parité** complète
+- **7 pages détail** avec onglets audit/validation wiring
+- **1 widget dashboard** global
+- **13 fichiers i18n** mis à jour (7 modules × 2 langues - 1 common)
+
+### Note — Audit logging backend
+Les services backend de ces modules ne loggent pas encore via `auditLogService`. L'`AuditTimeline` affiche l'état vide tant que les appels `auditLogService.log()` ne sont pas ajoutés aux opérations CRUD. Le wiring frontend est prêt.
 - **AGENTS.md** : cette section

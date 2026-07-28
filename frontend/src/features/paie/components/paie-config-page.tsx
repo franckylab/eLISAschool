@@ -9,6 +9,7 @@ import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { TabsBar, TabsContent } from '@/components/ui/Tabs';
 import { usePaiePermissions } from '../hooks/use-paie-permissions';
+import { formatMontant, nombreFormate } from '@/lib/format-utils';
 import { useCotisations, useTypesPrimes, useTypesRetenues, useCreerCotisation, useModifierCotisation, useSupprimerCotisation, useCreerTypePrime, useModifierTypePrime, useSupprimerTypePrime, useCreerTypeRetenue, useModifierTypeRetenue, useSupprimerTypeRetenue } from '../hooks/use-paie';
 import { CotisationModal } from './cotisation-modal';
 import { PrimeModal } from './prime-modal';
@@ -104,7 +105,7 @@ function CotisationsSection() {
 }
 
 function PrimesSection() {
-    const { t, i18n } = useTranslation('paie');
+    const { t } = useTranslation('paie');
     const perms = usePaiePermissions();
     const { data: primes, isLoading, isError, error, refetch } = useTypesPrimes();
     const creer = useCreerTypePrime();
@@ -126,7 +127,7 @@ function PrimesSection() {
                 </span>
             ),
         },
-        { key: 'valeur', header: t('valeur'), className: 'text-right', render: (p) => <span>{p.valeur.toLocaleString(i18n.language)}</span> },
+        { key: 'valeur', header: t('valeur'), className: 'text-right', render: (p) => <span>{nombreFormate(p.valeur)}</span> },
         {
             key: 'actif', header: t('colonne.statut'), className: 'text-center', render: (p) => (
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -185,7 +186,7 @@ function PrimesSection() {
 }
 
 function RetenuesSection() {
-    const { t, i18n } = useTranslation('paie');
+    const { t } = useTranslation('paie');
     const perms = usePaiePermissions();
     const { data: retenues, isLoading, isError, error, refetch } = useTypesRetenues();
     const creer = useCreerTypeRetenue();
@@ -207,7 +208,7 @@ function RetenuesSection() {
                 </span>
             ),
         },
-        { key: 'montantMax', header: t('montantMax'), className: 'text-right', render: (r) => <span>{r.montantMax ? `${r.montantMax.toLocaleString(i18n.language)} F` : '-'}</span> },
+        { key: 'montantMax', header: t('montantMax'), className: 'text-right', render: (r) => <span>{r.montantMax ? formatMontant(r.montantMax) : '-'}</span> },
         {
             key: 'actions', header: t('colonne.actions'), className: 'text-right',
             renderActions: (r) => [

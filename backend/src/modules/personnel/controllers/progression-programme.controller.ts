@@ -5,7 +5,6 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
-import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 import { progressionProgrammeService } from '../services/progression-programme.service';
 import {
@@ -26,8 +25,8 @@ router.post(
             const dto = validateDto(createProgressionSchema, req.body);
             const created = await progressionProgrammeService.create(
                 dto,
-                (req as any).etablissementId,
-                (req as any).utilisateur?.id,
+                req.etablissementId!,
+                req.utilisateur?.id,
                 req
             );
             res.status(201).json({ success: true, data: created });
@@ -41,14 +40,53 @@ router.post(
 router.get(
     '/',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const query = validateDto(queryProgressionSchema, req.query);
             const result = await progressionProgrammeService.findAll(
                 query,
-                (req as any).etablissementId
+                req.etablissementId!
             );
             res.json({ success: true, data: result });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+// Obtenir la progression classe/matière (DOIT être avant /:id)
+router.get(
+    '/progressions/classe/:classeId/matiere/:matiereId',
+    authMiddleware,
+    requirePermission('personnel:view'),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { periodeId } = req.query;
+            const progression = await progressionProgrammeService.getProgressionClasseMatiere(
+                req.params.classeId,
+                req.params.matiereId,
+                periodeId as string,
+                req.etablissementId!
+            );
+            res.json({ success: true, data: progression });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+// Obtenir les alertes de retard (DOIT être avant /:id)
+router.get(
+    '/progressions/alertes-retard',
+    authMiddleware,
+    requirePermission('personnel:view'),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const alertes = await progressionProgrammeService.getAlertesRetard(
+                req.etablissementId!
+            );
+            res.json({ success: true, data: alertes });
         } catch (error) {
             next(error);
         }
@@ -59,48 +97,14 @@ router.get(
 router.get(
     '/:id',
     authMiddleware,
+    requirePermission('personnel:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const entity = await progressionProgrammeService.findOne(
                 req.params.id,
-                (req as any).etablissementId
+                req.etablissementId!
             );
             res.json({ success: true, data: entity });
-        } catch (error) {
-            next(error);
-        }
-    }
-);
-
-// Obtenir la progression classe/matière
-router.get(
-    '/progressions/classe/:classeId/matiere/:matiereId',
-    authMiddleware,
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const { periodeId } = req.query;
-            const progression = await progressionProgrammeService.getProgressionClasseMatiere(
-                req.params.classeId,
-                req.params.matiereId,
-                periodeId as string
-            );
-            res.json({ success: true, data: progression });
-        } catch (error) {
-            next(error);
-        }
-    }
-);
-
-// Obtenir les alertes de retard
-router.get(
-    '/progressions/alertes-retard',
-    authMiddleware,
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const alertes = await progressionProgrammeService.getAlertesRetard(
-                (req as any).etablissementId
-            );
-            res.json({ success: true, data: alertes });
         } catch (error) {
             next(error);
         }
@@ -118,8 +122,8 @@ router.patch(
             const updated = await progressionProgrammeService.update(
                 req.params.id,
                 dto,
-                (req as any).utilisateur?.id,
-                (req as any).etablissementId,
+                req.utilisateur?.id!,
+                req.etablissementId!,
                 req
             );
             res.json({ success: true, data: updated });
@@ -138,8 +142,8 @@ router.delete(
         try {
             const result = await progressionProgrammeService.delete(
                 req.params.id,
-                (req as any).utilisateur?.id,
-                (req as any).etablissementId,
+                req.utilisateur?.id!,
+                req.etablissementId!,
                 req
             );
             res.json({ success: true, data: result });

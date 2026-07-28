@@ -15,7 +15,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import {
     FileText, Trash2, Download, Award, Edit,
-    Send, Undo2, BookOpen, LayoutDashboard, TrendingUp, Users, Star,
+    Send, Undo2, BookOpen, LayoutDashboard, TrendingUp, Users, Star, History,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/ui/Skeleton';
@@ -26,6 +26,7 @@ import { InfoField } from '@/components/ui/InfoField';
 import { StatCard } from '@/components/ui/StatCard';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { CustomModal } from '@/components/modals/CustomModal';
+import { AuditTimeline } from '@/components/ui/AuditTimeline';
 import { TabsBar, TabsContent } from '@/components/ui';
 import type { Tab } from '@/components/ui';
 import { useTabState, usePermissions } from '@/hooks';
@@ -38,7 +39,7 @@ interface BulletinDetailPageProps {
     bulletinId: string;
 }
 
-type OngletActif = 'synthese' | 'matieres';
+type OngletActif = 'synthese' | 'matieres' | 'historique';
 
 function MatiereRow({ m }: { m: BulletinMatiere }) {
     const { t } = useTranslation('bulletins');
@@ -134,6 +135,9 @@ export function BulletinDetailPage({ bulletinId }: BulletinDetailPageProps) {
     const onglets: Tab[] = [
         { id: 'synthese', label: t('synthese'), icon: LayoutDashboard },
         { id: 'matieres', label: t('matieres'), icon: BookOpen },
+        ...(hasPermission('audit:bulletins:view') || hasPermission('audit:view')
+            ? [{ id: 'historique' as const, label: t('historique'), icon: History }]
+            : []),
     ];
 
     return (
@@ -302,6 +306,19 @@ export function BulletinDetailPage({ bulletinId }: BulletinDetailPageProps) {
                             ) : (
                                 <p className="text-sm text-muted-foreground">{t('aucuneMatiere')}</p>
                             )}
+                        </div>
+                    </Card>
+                )}
+
+                {ongletActif === 'historique' && (
+                    <Card>
+                        <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+                            <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
+                                <History className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-primary inline mr-2" />
+                                {t('historique')}
+                            </h3>
+                            <div className="border-b border-border mb-4" />
+                            <AuditTimeline cible="Bulletin" cibleId={bulletinId} module="bulletins" />
                         </div>
                     </Card>
                 )}

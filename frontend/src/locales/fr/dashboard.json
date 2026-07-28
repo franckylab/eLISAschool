@@ -10,6 +10,10 @@
     },
     "activitesRecentes": "Activités récentes",
     "aucuneActivite": "Aucune activité récente",
+    "audit": {
+        "titre": "Journal d'activité",
+        "totalLogs": "{{count}} log(s) au total"
+    },
     "widgets": {
         "effectifs": {
             "eleves": "Élèves",

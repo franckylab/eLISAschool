@@ -23,6 +23,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
 import { cn } from '@/lib/cn';
+import { DashboardAuditWidget } from './components/dashboard-audit-widget';
 
 interface WidgetData {
     title: string;
@@ -159,6 +160,11 @@ export function DashboardPage() {
                     ))}
                 </div>
             )}
+
+            {/* Journal d'audit — visible uniquement avec audit:view */}
+            <div className="mt-8">
+                <DashboardAuditWidget />
+            </div>
 
             {/* Actions rapides */}
             <div className="mt-8">

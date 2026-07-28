@@ -103,5 +103,50 @@
     "chargement": "Loading payslips...",
     "aucunBulletin": "No payslips",
     "aucunBulletinDescription": "No payslips found for this period.",
-    "erreur": "Error loading payslips"
+    "erreur": "Error loading payslips",
+    "toasts": {
+        "bulletinCree": "Payslip created",
+        "bulletinGenere": "Payslip generated",
+        "bulletinModifie": "Payslip updated",
+        "bulletinSupprime": "Payslip deleted",
+        "cotisationCreee": "Contribution created",
+        "cotisationModifiee": "Contribution updated",
+        "cotisationSupprimee": "Contribution deleted",
+        "typePrimeCree": "Bonus type created",
+        "typePrimeModifie": "Bonus type updated",
+        "typePrimeSupprime": "Bonus type deleted",
+        "typeRetenueCree": "Deduction type created",
+        "typeRetenueModifie": "Deduction type updated",
+        "typeRetenueSupprime": "Deduction type deleted",
+        "bulletinsMasse": "{{count}} payslip(s) generated",
+        "bulletinsMasseErreurs": "{{count}} payslip(s) generated, {{errors}} error(s)"
+    },
+    "erreurs": {
+        "creationBulletin": "Error creating payslip",
+        "generationBulletin": "Error generating payslip",
+        "modificationBulletin": "Error updating payslip",
+        "suppressionBulletin": "Error deleting payslip",
+        "creationCotisation": "Error creating contribution",
+        "modificationCotisation": "Error updating contribution",
+        "suppressionCotisation": "Error deleting contribution",
+        "creationTypePrime": "Error creating bonus type",
+        "modificationTypePrime": "Error updating bonus type",
+        "suppressionTypePrime": "Error deleting bonus type",
+        "creationTypeRetenue": "Error creating deduction type",
+        "modificationTypeRetenue": "Error updating deduction type",
+        "suppressionTypeRetenue": "Error deleting deduction type",
+        "generationMasse": "Error generating bulk payslips",
+        "erreurInconnue": "unknown error"
+    },
+    "validation": {
+        "codeMin": "Code must be at least 2 characters",
+        "codeMax": "Code cannot exceed 30 characters",
+        "nomMin": "Name must be at least 2 characters",
+        "nomMax": "Name cannot exceed 100 characters",
+        "positif": "Value must be positive",
+        "moisMin": "Month must be at least 1",
+        "moisMax": "Month cannot exceed 12",
+        "anneeMin": "Year must be at least 2000",
+        "anneeMax": "Year cannot exceed 2100"
+    }
 }

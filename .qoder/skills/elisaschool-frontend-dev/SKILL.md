@@ -1953,10 +1953,53 @@ const traiter = useTraiterValidation();
 
 ```tsx
 // Composant autonome — fetch et affiche les logs d'audit
-<AuditTimeline cibleType="Note" cibleId={noteId} />
+<AuditTimeline cible="Note" cibleId={noteId} module="notes" />
 
-// API sous-jacente : GET /api/audit/logs?cible=Note&cibleId={id}
+// API sous-jacente : GET /api/audit/logs?cible=Note&cibleId={id}&module=notes
 ```
+
+### Dashboard Audit Widget
+
+**Fichier** : `frontend/src/features/dashboard/components/dashboard-audit-widget.tsx`
+
+```tsx
+// Widget global — 10 derniers logs tous modules confondus
+// Gated par audit:view (retourne null sans permission)
+import { DashboardAuditWidget } from './components/dashboard-audit-widget';
+
+// Dans DashboardPage.tsx
+<DashboardAuditWidget />
+```
+
+### Permission gate — Onglets Historique et Validation
+
+```tsx
+// Pattern standardisé pour gater les onglets audit/validation
+import { usePermissions } from '@/hooks';
+const { hasPermission } = usePermissions();
+
+// Onglet Historique — visible si audit:view OU audit:{module}:view
+...(hasPermission('audit:{module}:view') || hasPermission('audit:view')
+    ? [{ id: 'historique', label: t('historique'), icon: History }]
+    : []),
+
+// Onglet Validation — visible si {module}:validate
+...(hasPermission('{module}:validate')
+    ? [{ id: 'validation', label: t('validation'), icon: Shield }]
+    : []),
+```
+
+### Wiring — 7 pages détail connectées
+
+| Page | cible | module | Validation gate | Historique gate |
+|------|-------|--------|-----------------|-----------------|
+| bulletin-detail | `'Bulletin'` | `'bulletins'` | `bulletins:validate` | `audit:bulletins:view` |
+| personnel-detail | `'MembrePersonnel'` | `'personnel'` | `personnel:validate` | `audit:personnel:view` |
+| matiere-detail | `'Matiere'` | `'matieres'` | `matieres:validate` | `audit:matieres:view` |
+| annee-scolaire-detail | `'AnneeScolaire'` | `'annees-scolaires'` | `annees-scolaires:validate` | `audit:periodes:view` |
+| classe-detail | `'Classe'` | `'classes'` | — | `audit:classes:view` |
+| note-detail | `'Note'` | `'notes'` | `notes:validate` | `audit:notes:view` |
+| periode-detail | `'Periode'` | `'periodes'` | — | `audit:periodes:view` |
 
 ### Pattern d'intégration dans une page détail
 
@@ -1978,7 +2021,7 @@ const traiter = useTraiterValidation();
 </TabsContent>
 
 <TabsContent value="historique">
-    <AuditTimeline cibleType="Note" cibleId={noteId} />
+    <AuditTimeline cible="Note" cibleId={noteId} module="notes" />
 </TabsContent>
 ```
 

@@ -10,18 +10,7 @@ import { InfoField } from '@/components/ui/InfoField';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { usePermissions } from '@/hooks';
 import { useConfirmation } from '@/components/ui/ConfirmationModal';
-import { CheckCircle, XCircle } from 'lucide-react';
-
-function StatutBadge({ actif }: { actif: boolean }) {
-    return (
-        <span className={`inline-flex items-center gap-1 rounded-full px-[clamp(0.375rem,1vw,0.625rem)] py-[clamp(0.125rem,0.5vw,0.25rem)] text-[clamp(0.75rem,1.25vw,0.875rem)] font-medium ${
-            actif ? 'bg-success/10 text-success' : 'bg-muted/10 text-muted-foreground'
-        }`}>
-            {actif ? <CheckCircle className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" /> : <XCircle className="h-[clamp(0.75rem,1.5vw,0.875rem)] w-[clamp(0.75rem,1.5vw,0.875rem)]" />}
-            {actif ? 'Actif' : 'Inactif'}
-        </span>
-    );
-}
+import { StatutBadge } from '@/components/ui/StatutBadge';
 
 function formatDate(d: string) {
     return new Date(d).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -92,7 +81,7 @@ export function CompetenceDetailPage() {
                         <h1 className="text-[clamp(1.5rem,4.5vw,3.5rem)] font-bold text-white leading-tight">{competence.libelle}</h1>
                         {competence.code && <p className="text-[clamp(0.75rem,2vw,1.125rem)] text-white/70 font-mono">{competence.code}</p>}
                         <div className="flex flex-wrap items-center gap-2 pt-1">
-                            <StatutBadge actif={competence.actif} />
+                            <StatutBadge statut={competence.actif ? 'ACTIF' : 'INACTIF'} />
                         </div>
                     </div>
                 </div>
@@ -127,7 +116,7 @@ export function CompetenceDetailPage() {
                             />
                             <InfoField
                                 label={t('detail.statut')}
-                                value={<StatutBadge actif={competence.actif} />}
+                                value={<StatutBadge statut={competence.actif ? 'ACTIF' : 'INACTIF'} />}
                             />
                         </div>
                     </CardContent>
