@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eLISAschool — Simulateur Stratégie Tarifaire</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --surface: #1a1f2e;
+    --surface2: #232a3b;
+    --border: #2d3548;
+    --text: #e8eaed;
+    --text2: #9aa0a6;
+    --accent: #28a745;
+    --accent2: #20913c;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    --purple: #8b5cf6;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.3);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1a4a2e, #0d2b1a);
+    border: 1px solid #28a74533;
+    border-radius: var(--radius);
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+  .header h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  .header h1 span { color: var(--accent); }
+  .header p { color: var(--text2); font-size: 14px; }
+
+  /* Constraints banner */
+  .constraints {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .constraint-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .constraint-icon {
+    width: 48px; height: 48px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .constraint-icon.min { background: #ef444422; color: var(--danger); }
+  .constraint-icon.range { background: #3b82f622; color: var(--info); }
+  .constraint-icon.target { background: #28a74522; color: var(--accent); }
+  .constraint-label { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+  .constraint-value { font-size: 20px; font-weight: 700; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .tab {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .tab:hover { color: var(--text); background: var(--surface2); }
+  .tab.active { background: var(--accent); color: white; }
+  .tab .tab-sub { display: block; font-size: 10px; font-weight: 400; opacity: 0.8; margin-top: 2px; }
+
+  /* Scenario buttons */
+  .scenarios {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .scenario-btn {
+    padding: 10px 20px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .scenario-btn:hover { border-color: var(--accent); }
+  .scenario-btn.active { border-color: var(--accent); background: #28a74515; color: var(--accent); }
+  .scenario-btn .badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+    font-weight: 400;
+  }
+
+  /* Main grid */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+  }
+  .card-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .icon { font-size: 18px; }
+
+  /* Slider controls */
+  .slider-group { margin-bottom: 20px; }
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .slider-label { font-size: 13px; font-weight: 600; }
+  .slider-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .slider-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text2);
+    margin-bottom: 4px;
+  }
+  input[type="range"] {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--surface2);
+    border-radius: 3px;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+  input[type="range"].warning::-webkit-slider-thumb { background: var(--warning); }
+  input[type="range"].danger::-webkit-slider-thumb { background: var(--danger); }
+
+  /* Constraint indicators */
+  .constraint-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-top: 4px;
+  }
+  .constraint-check.ok { background: #28a74515; color: var(--accent); }
+  .constraint-check.warn { background: #f59e0b15; color: var(--warning); }
+  .constraint-check.fail { background: #ef444415; color: var(--danger); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot.ok { background: var(--accent); }
+  .dot.warn { background: var(--warning); }
+  .dot.fail { background: var(--danger); }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    background: var(--surface2);
+    color: var(--text2);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  tr:hover td { background: #ffffff05; }
+  .num { text-align: right; font-weight: 600; }
+  .highlight { color: var(--accent); font-weight: 700; }
+  .danger-text { color: var(--danger); }
+  .warning-text { color: var(--warning); }
+
+  /* Full-width sections */
+  .full-width { grid-column: 1 / -1; }
+
+  /* Comparison table */
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 1100px) { .comparison-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .comparison-grid { grid-template-columns: 1fr; } }
+  .comparison-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .comparison-card h3 {
+    font-size: 14px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .comparison-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 12px;
+  }
+  .comparison-row .label { color: var(--text2); }
+  .comparison-row .value { font-weight: 600; }
+
+  /* Portfolio simulator */
+  .portfolio-input {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .portfolio-input label {
+    font-size: 12px;
+    color: var(--text2);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .portfolio-input input[type="number"] {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .portfolio-input input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  /* KPI row */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .kpi {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .kpi-value { font-size: 24px; font-weight: 800; }
+  .kpi-label { font-size: 11px; color: var(--text2); margin-top: 4px; }
+  .kpi.green .kpi-value { color: var(--accent); }
+  .kpi.blue .kpi-value { color: var(--info); }
+  .kpi.orange .kpi-value { color: var(--warning); }
+  .kpi.purple .kpi-value { color: var(--purple); }
+
+  /* Gauge */
+  .gauge-container {
+    position: relative;
+    height: 12px;
+    background: var(--surface2);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 8px 0;
+  }
+  .gauge-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.3s ease;
+  }
+  .gauge-fill.green { background: linear-gradient(90deg, #28a745, #34d058); }
+  .gauge-fill.orange { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .gauge-fill.red { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+  /* Analysis section */
+  .analysis {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .analysis h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: var(--accent);
+  }
+  .analysis p {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 8px;
+    line-height: 1.7;
+  }
+  .analysis strong { color: var(--text); }
+  .analysis ul { padding-left: 20px; margin-bottom: 12px; }
+  .analysis li { font-size: 13px; color: var(--text2); margin-bottom: 4px; }
+
+  /* Tags */
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .tag.ok { background: #28a74520; color: var(--accent); }
+  .tag.warn { background: #f59e0b20; color: var(--warning); }
+  .tag.fail { background: #ef444420; color: var(--danger); }
+  .tag.info { background: #3b82f620; color: var(--info); }
+
+  /* Section divider */
+  .section-title {
+    font-size: 20px;
+    font-weight: 800;
+    margin: 32px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent);
+    display: inline-block;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Responsive table wrapper */
+  .table-wrap { overflow-x: auto; }
+
+  /* Print */
+  @media print {
+    body { background: white; color: #1a1a1a; }
+    .card, .comparison-card, .analysis { border: 1px solid #ddd; }
+    .tab, .scenario-btn { display: none; }
+  }
+
+  .options-section { margin-top: 16px; }
+  .option-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .option-row:last-child { border-bottom: none; }
+  .option-name { font-weight: 500; }
+  .option-price { font-weight: 700; color: var(--accent); }
+
+  .verdict-box {
+    background: linear-gradient(135deg, #28a74510, #28a74505);
+    border: 1px solid #28a74530;
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-top: 16px;
+  }
+  .verdict-box h4 { color: var(--accent); font-size: 14px; margin-bottom: 8px; }
+  .verdict-box p { font-size: 13px; color: var(--text2); }
+
+  .alert-box {
+    background: linear-gradient(135deg, #ef444410, #ef444405);
+    border: 1px solid #ef444430;
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-top: 16px;
+  }
+  .alert-box h4 { color: var(--danger); font-size: 14px; margin-bottom: 8px; }
+  .alert-box p { font-size: 13px; color: var(--text2); }
+
+  .nav-pills {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .nav-pill {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text2);
+    transition: all 0.2s;
+  }
+  .nav-pill:hover { border-color: var(--accent); color: var(--text); }
+  .nav-pill.active { background: var(--accent); border-color: var(--accent); color: white; }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <h1>eLISA<span>SCHOOL</span> — Simulateur Stratégie Tarifaire</h1>
+    <p>Analyse approfondie des hypothèses de pricing × simulations cohérentes × validation par contraintes</p>
+  </div>
+
+  <!-- Constraints -->
+  <div class="constraints">
+    <div class="constraint-card">
+      <div class="constraint-icon min">⚡</div>
+      <div>
+        <div class="constraint-label">Revenu minimum / mois</div>
+        <div class="constraint-value">50 000 FCFA</div>
+      </div>
+    </div>
+    <div class="constraint-card">
+      <div class="constraint-icon range">📊</div>
+      <div>
+        <div class="constraint-label">Prix / élève / mois</div>
+        <div class="constraint-value">300 — 1 000 FCFA</div>
+      </div>
+    </div>
+    <div class="constraint-card">
+      <div class="constraint-icon target">🎯</div>
+      <div>
+        <div class="constraint-label">Cible marketing</div>
+        <div class="constraint-value">≤ 500 FCFA/élève/mois</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Branch Tabs -->
+  <div class="tabs" id="branchTabs">
+    <button class="tab active" data-branch="A" onclick="switchBranch('A')">
+      A — Licence Locale<span class="tab-sub">Achat unique, serveur client</span>
+    </button>
+    <button class="tab" data-branch="B" onclick="switchBranch('B')">
+      B — Abonnement Local<span class="tab-sub">Location, serveur client</span>
+    </button>
+    <button class="tab" data-branch="C" onclick="switchBranch('C')">
+      C — Licence Cloud<span class="tab-sub">Engagement annuel, VPS dédié</span>
+    </button>
+    <button class="tab" data-branch="D" onclick="switchBranch('D')">
+      D — SaaS Cloud<span class="tab-sub">Mensuel, multi-tenant</span>
+    </button>
+  </div>
+
+  <!-- Scenario Presets -->
+  <div class="scenarios" id="scenarioBtns">
+    <button class="scenario-btn" onclick="applyScenario('v2')">📄 Grille v2 (diagnostic)</button>
+    <button class="scenario-btn" onclick="applyScenario('penetration')">🚀 Pénétration</button>
+    <button class="scenario-btn" onclick="applyScenario('equilibre')">⚖️ Équilibrée</button>
+    <button class="scenario-btn" onclick="applyScenario('premium')">💎 Premium</button>
+    <button class="scenario-btn active" onclick="applyScenario('optimale')">✅ Optimale</button>
+  </div>
+
+  <!-- Main content -->
+  <div class="main-grid">
+    <!-- Left: Sliders -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🎚️</span> Prix de base par tranche — <span id="branchTitle">A. Licence Locale</span></div>
+      <div id="sliders"></div>
+    </div>
+
+    <!-- Right: Constraint validation -->
+    <div class="card">
+      <div class="card-title"><span class="icon">✅</span> Validation des contraintes</div>
+      <div class="table-wrap">
+        <table id="constraintTable">
+          <thead>
+            <tr>
+              <th>Tranche</th>
+              <th>Élèves</th>
+              <th class="num">Prix/mois</th>
+              <th class="num">FCFA/élève/mois</th>
+              <th>Min 50K</th>
+              <th>300-1000</th>
+            </tr>
+          </thead>
+          <tbody id="constraintBody"></tbody>
+        </table>
+      </div>
+      <div id="constraintSummary" style="margin-top:16px"></div>
+    </div>
+
+    <!-- Options pricing -->
+    <div class="card">
+      <div class="card-title"><span class="icon">📦</span> Options & Packs — Prix mensuels</div>
+      <div id="optionsPricing"></div>
+    </div>
+
+    <!-- Revenue per student analysis -->
+    <div class="card">
+      <div class="card-title"><span class="icon">📈</span> Analyse prix/élève par tranche</div>
+      <div id="pricePerStudent"></div>
+    </div>
+  </div>
+
+  <!-- Comparison Section -->
+  <div class="section-title">Comparaison des 4 Scénarios</div>
+  <div class="comparison-grid" id="scenarioComparison"></div>
+
+  <!-- Portfolio Simulator -->
+  <div class="section-title">Simulateur de Portefeuille Client</div>
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-title"><span class="icon">🏫</span> Combien de clients pour atteindre l'objectif ?</div>
+    <div class="portfolio-input">
+      <div>
+        <label>Objectif revenue mensuel (FCFA)</label>
+        <input type="number" id="targetRevenue" value="5000000" step="500000" onchange="updatePortfolio()">
+      </div>
+      <div>
+        <label>Part SaaS (%)</label>
+        <input type="number" id="partSaaS" value="50" min="0" max="100" onchange="updatePortfolio()">
+      </div>
+      <div>
+        <label>Part Abonnement Local (%)</label>
+        <input type="number" id="partLocal" value="20" min="0" max="100" onchange="updatePortfolio()">
+      </div>
+      <div>
+        <label>Part Licence Cloud (%)</label>
+        <input type="number" id="partCloud" value="15" min="0" max="100" onchange="updatePortfolio()">
+      </div>
+      <div>
+        <label>Part Licence Locale (%)</label>
+        <input type="number" id="partLicence" value="15" min="0" max="100" onchange="updatePortfolio()">
+      </div>
+      <div>
+        <label>Options moy./client (% du base)</label>
+        <input type="number" id="optionsRate" value="40" min="0" max="200" onchange="updatePortfolio()">
+      </div>
+    </div>
+    <div class="kpi-row" id="portfolioKPIs"></div>
+    <div class="table-wrap">
+      <table id="portfolioTable">
+        <thead>
+          <tr>
+            <th>Segment</th>
+            <th class="num">Part</th>
+            <th class="num">Clients</th>
+            <th class="num">Revenue/client/mois</th>
+            <th class="num">Revenue total/mois</th>
+            <th class="num">Revenue total/an</th>
+          </tr>
+        </thead>
+        <tbody id="portfolioBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Sensitivity Analysis -->
+  <div class="section-title">Analyse de Sensibilité</div>
+  <div class="card" style="margin-bottom:24px">
+    <div class="card-title"><span class="icon">🔬</span> Impact des variations sur le revenue annuel (SaaS T2, 300 élèves)</div>
+    <div class="table-wrap">
+      <table id="sensitivityTable">
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th class="num">-20%</th>
+            <th class="num">-10%</th>
+            <th class="num">Base</th>
+            <th class="num">+10%</th>
+            <th class="num">+20%</th>
+          </tr>
+        </thead>
+        <tbody id="sensitivityBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Analysis & Recommendations -->
+  <div class="section-title">Analyse & Recommandations</div>
+  <div id="analysisSection"></div>
+</div>
+
+<script>
+// ===== DATA MODEL =====
+const TRANCHES = [
+  { code: 'T1', label: 'Micro', min: 1, max: 100, mid: 80 },
+  { code: 'T2', label: 'Petit', min: 101, max: 500, mid: 300 },
+  { code: 'T3', label: 'Moyen', min: 501, max: 1500, mid: 1000 },
+  { code: 'T4', label: 'Grand', min: 1501, max: 5000, mid: 3000 },
+  { code: 'T5', label: 'Très grand', min: 5001, max: 10000, mid: 7000 },
+];
+
+const BRANCHES = {
+  A: { name: 'A. Licence Locale', type: 'licence', deployment: 'local', unit: 'FCFA unique', amortMonths: 36 },
+  B: { name: 'B. Abonnement Local', type: 'abonnement', deployment: 'local', unit: 'FCFA/mois', amortMonths: 1 },
+  C: { name: 'C. Licence Cloud', type: 'licence', deployment: 'cloud', unit: 'FCFA/an', amortMonths: 12 },
+  D: { name: 'D. SaaS Cloud', type: 'abonnement', deployment: 'cloud', unit: 'FCFA/mois', amortMonths: 1 },
+};
+
+// Pricing scenarios: monthly equivalent per student
+// For licences: convert to monthly by dividing by amortMonths
+const SCENARIOS = {
+  v2: {
+    name: 'Grille v2 (diagnostic)',
+    description: 'Prix de la stratégie v2 — diagnostic des violations. 19/20 combinaisons échouent.',
+    A: { T1: 250000, T2: 500000, T3: 1200000, T4: 2500000, T5: 4000000 },
+    B: { T1: 25000, T2: 50000, T3: 120000, T4: 250000, T5: 400000 },
+    C: { T1: 350000, T2: 700000, T3: 1500000, T4: 3000000, T5: 5000000 },
+    D: { T1: 30000, T2: 65000, T3: 140000, T4: 300000, T5: 500000 },
+    optionsMultiplier: { A: 1.0, B: 1.0, C: 1.15, D: 1.0 },
+  },
+  penetration: {
+    name: 'Pénétration',
+    description: 'Prix agressifs. B/D passent, A/C échouent (10 violations). Réaliste commercialement.',
+    A: { T1: 300000, T2: 600000, T3: 1500000, T4: 3000000, T5: 6000000 },
+    B: { T1: 50000, T2: 100000, T3: 320000, T4: 950000, T5: 2200000 },
+    C: { T1: 420000, T2: 840000, T3: 1800000, T4: 3600000, T5: 7200000 },
+    D: { T1: 55000, T2: 100000, T3: 320000, T4: 950000, T5: 2200000 },
+    optionsMultiplier: { A: 0.85, B: 0.85, C: 1.0, D: 0.85 },
+  },
+  equilibre: {
+    name: 'Équilibrée',
+    description: 'Compromis réaliste. B/C/D passent, A échoue (5 violations). Licence locale structurellement trop basse.',
+    A: { T1: 500000, T2: 1200000, T3: 3600000, T4: 10800000, T5: 25200000 },
+    B: { T1: 60000, T2: 120000, T3: 400000, T4: 1100000, T5: 2600000 },
+    C: { T1: 600000, T2: 1200000, T3: 4000000, T4: 12000000, T5: 28000000 },
+    D: { T1: 65000, T2: 130000, T3: 420000, T4: 1150000, T5: 2700000 },
+    optionsMultiplier: { A: 1.0, B: 1.0, C: 1.15, D: 1.0 },
+  },
+  premium: {
+    name: 'Premium',
+    description: 'Haut de gamme. 0 violations. Marge max, volume plus faible. Cible 500-600 F/élève/mois.',
+    A: { T1: 2880000, T2: 5400000, T3: 18000000, T4: 54000000, T5: 126000000 },
+    B: { T1: 75000, T2: 180000, T3: 550000, T4: 1600000, T5: 3800000 },
+    C: { T1: 900000, T2: 2160000, T3: 6600000, T4: 19200000, T5: 45600000 },
+    D: { T1: 80000, T2: 200000, T3: 600000, T4: 1700000, T5: 4000000 },
+    optionsMultiplier: { A: 1.2, B: 1.2, C: 1.3, D: 1.2 },
+  },
+  optimale: {
+    name: 'Optimale (recommandée)',
+    description: 'Minimum compliant — 0 violations. Prix mathématiques les plus bas respectant les 2 contraintes.',
+    A: { T1: 1800000, T2: 3240000, T3: 10800000, T4: 32400000, T5: 75600000 },
+    B: { T1: 50000, T2: 90000, T3: 300000, T4: 900000, T5: 2100000 },
+    C: { T1: 600000, T2: 1080000, T3: 3600000, T4: 10800000, T5: 25200000 },
+    D: { T1: 55000, T2: 100000, T3: 320000, T4: 950000, T5: 2200000 },
+    optionsMultiplier: { A: 1.0, B: 1.0, C: 1.0, D: 1.0 },
+  },
+};
+
+// Options base prices (monthly, SaaS)
+const OPTIONS_BASE = {
+  packs: [
+    { code: 'ACAD', name: 'Pack Académique', modules: 'Bulletins + EDT + Programmes + Examens', price: 15000 },
+    { code: 'COM', name: 'Pack Communication', modules: 'Messagerie + Annonces + Sondages + Requêtes', price: 8000 },
+    { code: 'LOG', name: 'Pack Logistique', modules: 'Cantine + Transport + Parking', price: 12000 },
+    { code: 'RH', name: 'Pack RH Complet', modules: 'Personnel + Contrats + Paie + Recrutement', price: 20000 },
+    { code: 'PERF', name: 'Pack Performance', modules: 'Gamification + Scoring + Orientation', price: 10000 },
+    { code: 'ORG', name: 'Pack Organisation', modules: 'Organigramme + Hiérarchie + Postes', price: 10000 },
+    { code: 'VIE', name: 'Pack Vie Scolaire', modules: 'Discipline + Santé + Clubs + Bibliothèque', price: 6000 },
+    { code: 'FIN', name: 'Pack Finances', modules: 'Finances + Comptabilité + Mobile Money', price: 18000 },
+    { code: 'INV', name: 'Pack Inventaire', modules: 'Matériel + Équipements', price: 5000 },
+  ],
+  services: [
+    { code: 'SMS', name: 'SMS en masse', modules: '15 FCFA/SMS', price: 0, unit: '/SMS' },
+    { code: 'SUP', name: 'Support Premium 24/7', modules: 'Réponse < 1h', price: 15000 },
+    { code: 'FOR', name: 'Formation continue', modules: '2h/mois accompagnement', price: 10000 },
+    { code: 'WL', name: 'White-label', modules: 'Branding total', price: 15000 },
+    { code: 'STO', name: 'Stockage extra', modules: '+100 Go', price: 2000 },
+  ],
+};
+
+// ===== STATE =====
+let currentBranch = 'A';
+let currentScenario = 'optimale';
+let prices = {};
+
+// ===== INITIALIZATION =====
+function init() {
+  loadScenario(currentScenario);
+  render();
+}
+
+function switchBranch(b) {
+  currentBranch = b;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.branch === b));
+  render();
+}
+
+function applyScenario(key) {
+  currentScenario = key;
+  document.querySelectorAll('.scenario-btn').forEach((btn, i) => {
+    const keys = ['v2','penetration','equilibre','premium','optimale'];
+    btn.classList.toggle('active', keys[i] === key);
+  });
+  loadScenario(key);
+  render();
+}
+
+function loadScenario(key) {
+  const sc = SCENARIOS[key];
+  prices = {};
+  for (const b of ['A','B','C','D']) {
+    prices[b] = { ...sc[b] };
+  }
+}
+
+// ===== CALCULATIONS =====
+function getMonthlyEquiv(branch, tranche) {
+  const info = BRANCHES[branch];
+  const price = prices[branch][tranche];
+  if (info.type === 'licence' && branch === 'A') return price / info.amortMonths;
+  if (info.type === 'licence' && branch === 'C') return price / info.amortMonths;
+  return price; // B and D are already monthly
+}
+
+function getPerStudentMonthly(branch, trancheCode) {
+  const t = TRANCHES.find(t => t.code === trancheCode);
+  const monthly = getMonthlyEquiv(branch, trancheCode);
+  return monthly / t.mid;
+}
+
+function validateConstraints(branch) {
+  const results = [];
+  for (const t of TRANCHES) {
+    const monthly = getMonthlyEquiv(branch, t.code);
+    const perStudent = monthly / t.mid;
+    const min50k = monthly >= 50000;
+    const range300_1000 = perStudent >= 300 && perStudent <= 1000;
+    const target500 = perStudent <= 500;
+    results.push({
+      tranche: t,
+      monthly,
+      perStudent,
+      min50k,
+      range300_1000,
+      target500,
+      allOk: min50k && range300_1000,
+    });
+  }
+  return results;
+}
+
+function countViolations(branch) {
+  return validateConstraints(branch).filter(r => !r.allOk).length;
+}
+
+function totalViolations() {
+  let total = 0;
+  for (const b of ['A','B','C','D']) total += countViolations(b);
+  return total;
+}
+
+// ===== RENDERING =====
+function render() {
+  renderSliders();
+  renderConstraintTable();
+  renderOptionsPricing();
+  renderPricePerStudent();
+  renderScenarioComparison();
+  renderPortfolio();
+  renderSensitivity();
+  renderAnalysis();
+}
+
+function renderSliders() {
+  const info = BRANCHES[currentBranch];
+  document.getElementById('branchTitle').textContent = info.name;
+  const sc = SCENARIOS[currentScenario];
+  const container = document.getElementById('sliders');
+
+  let html = '';
+  for (const t of TRANCHES) {
+    const price = prices[currentBranch][t.code];
+    const monthly = getMonthlyEquiv(currentBranch, t.code);
+    const perStudent = monthly / t.mid;
+
+    let min, max, step;
+    if (currentBranch === 'A') {
+      min = 50000; max = 10000000; step = 10000;
+    } else if (currentBranch === 'C') {
+      min = 100000; max = 15000000; step = 10000;
+    } else {
+      min = 10000; max = 1500000; step = 5000;
+    }
+
+    const statusClass = perStudent < 300 || perStudent > 1000 ? 'danger' : (monthly < 50000 ? 'warning' : '');
+
+    html += `
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label">${t.code} — ${t.label} (${t.min}-${t.max} élèves)</span>
+          <span class="slider-value">${formatNum(price)} ${info.unit}</span>
+        </div>
+        <div class="slider-meta">
+          <span>≈ ${formatNum(Math.round(monthly))} FCFA/mois équivalent</span>
+          <span>${formatNum(Math.round(perStudent))} F/élève/mois</span>
+        </div>
+        <input type="range" class="${statusClass}" min="${min}" max="${max}" step="${step}" value="${price}"
+          oninput="updatePrice('${currentBranch}','${t.code}',this.value)">
+        ${renderConstraintInline(monthly, perStudent)}
+      </div>
+    `;
+  }
+  container.innerHTML = html;
+}
+
+function renderConstraintInline(monthly, perStudent) {
+  const checks = [];
+  if (monthly < 50000) checks.push(`<span class="constraint-check fail"><span class="dot fail"></span>Min 50K: ${formatNum(Math.round(monthly))} F < 50 000 F</span>`);
+  else checks.push(`<span class="constraint-check ok"><span class="dot ok"></span>Min 50K: OK (${formatNum(Math.round(monthly))} F)</span>`);
+
+  if (perStudent < 300) checks.push(`<span class="constraint-check fail"><span class="dot fail"></span>Min 300F: ${Math.round(perStudent)} F < 300 F</span>`);
+  else if (perStudent > 1000) checks.push(`<span class="constraint-check fail"><span class="dot fail"></span>Max 1000F: ${Math.round(perStudent)} F > 1 000 F</span>`);
+  else if (perStudent > 500) checks.push(`<span class="constraint-check warn"><span class="dot warn"></span>Cible 500F: ${Math.round(perStudent)} F > 500 F</span>`);
+  else checks.push(`<span class="constraint-check ok"><span class="dot ok"></span>300-1000F: OK (${Math.round(perStudent)} F)</span>`);
+
+  return checks.join('');
+}
+
+function renderConstraintTable() {
+  const body = document.getElementById('constraintBody');
+  let html = '';
+  let allOk = true;
+
+  for (const b of ['A','B','C','D']) {
+    const info = BRANCHES[b];
+    const results = validateConstraints(b);
+    for (const r of results) {
+      const isCurrentBranch = b === currentBranch;
+      const rowStyle = isCurrentBranch ? '' : 'opacity:0.5;';
+      if (!r.allOk) allOk = false;
+      html += `
+        <tr style="${rowStyle}">
+          <td><strong>${b}</strong> ${r.tranche.code}</td>
+          <td>${r.tranche.min}-${r.tranche.max}</td>
+          <td class="num">${formatNum(Math.round(r.monthly))}</td>
+          <td class="num ${r.perStudent < 300 || r.perStudent > 1000 ? 'danger-text' : r.perStudent > 500 ? 'warning-text' : 'highlight'}">${Math.round(r.perStudent)}</td>
+          <td>${r.min50k ? '<span class="tag ok">✓</span>' : '<span class="tag fail">✗</span>'}</td>
+          <td>${r.range300_1000 ? '<span class="tag ok">✓</span>' : '<span class="tag fail">✗</span>'}</td>
+        </tr>
+      `;
+    }
+  }
+  body.innerHTML = html;
+
+  const summary = document.getElementById('constraintSummary');
+  const violations = totalViolations();
+  if (violations === 0) {
+    summary.innerHTML = `<div class="verdict-box"><h4>✅ Toutes les contraintes respectées</h4><p>Les 20 combinaisons (4 branches × 5 tranches) respectent le minimum 50 000 FCFA/mois et la plage 300-1 000 FCFA/élève/mois.</p></div>`;
+  } else {
+    summary.innerHTML = `<div class="alert-box"><h4>⚠️ ${violations} violation(s) détectée(s)</h4><p>Ajustez les prix avec les curseurs pour respecter les contraintes. Les cellules en rouge indiquent les violations.</p></div>`;
+  }
+}
+
+function renderOptionsPricing() {
+  const container = document.getElementById('optionsPricing');
+  const mult = SCENARIOS[currentScenario].optionsMultiplier[currentBranch];
+  let html = '<div class="options-section"><strong style="font-size:13px">Packs modules</strong>';
+  for (const pack of OPTIONS_BASE.packs) {
+    const price = Math.round(pack.price * mult);
+    html += `
+      <div class="option-row">
+        <span class="option-name">${pack.name} <span style="color:var(--text2);font-size:11px">(${pack.modules})</span></span>
+        <span class="option-price">${formatNum(price)} F/mois</span>
+      </div>
+    `;
+  }
+  html += '</div><div class="options-section" style="margin-top:12px"><strong style="font-size:13px">Services</strong>';
+  for (const svc of OPTIONS_BASE.services) {
+    if (svc.price === 0) {
+      html += `<div class="option-row"><span class="option-name">${svc.name}</span><span class="option-price">${svc.modules}</span></div>`;
+    } else {
+      const price = Math.round(svc.price * mult);
+      html += `<div class="option-row"><span class="option-name">${svc.name}</span><span class="option-price">${formatNum(price)} F/mois</span></div>`;
+    }
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function renderPricePerStudent() {
+  const container = document.getElementById('pricePerStudent');
+  let html = '<div class="table-wrap"><table><thead><tr><th>Tranche</th>';
+  for (const b of ['A','B','C','D']) html += `<th class="num">${b}</th>`;
+  html += '</tr></thead><tbody>';
+
+  for (const t of TRANCHES) {
+    html += `<tr><td><strong>${t.code}</strong> (${t.mid} élèves)</td>`;
+    for (const b of ['A','B','C','D']) {
+      const ps = getPerStudentMonthly(b, t.code);
+      const cls = ps < 300 || ps > 1000 ? 'danger-text' : ps > 500 ? 'warning-text' : 'highlight';
+      html += `<td class="num ${cls}">${Math.round(ps)} F</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table></div>';
+
+  // Gauges
+  html += '<div style="margin-top:16px">';
+  for (const t of TRANCHES) {
+    const ps = getPerStudentMonthly(currentBranch, t.code);
+    const pct = Math.min(100, Math.max(0, ((ps - 200) / 900) * 100));
+    const color = ps < 300 || ps > 1000 ? 'red' : ps > 500 ? 'orange' : 'green';
+    html += `
+      <div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:11px">
+          <span>${t.code} — ${Math.round(ps)} F/élève/mois</span>
+          <span style="color:var(--text2)">300 ← → 1000</span>
+        </div>
+        <div class="gauge-container">
+          <div class="gauge-fill ${color}" style="width:${pct}%"></div>
+        </div>
+      </div>
+    `;
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function renderScenarioComparison() {
+  const container = document.getElementById('scenarioComparison');
+  let html = '';
+
+  for (const [key, sc] of Object.entries(SCENARIOS)) {
+    let totalViolationsCount = 0;
+    let avgPerStudent = 0;
+    let count = 0;
+    let minRev = Infinity;
+
+    for (const b of ['A','B','C','D']) {
+      const origBranch = { ...prices[b] };
+      prices[b] = { ...sc[b] };
+      for (const t of TRANCHES) {
+        const monthly = getMonthlyEquiv(b, t.code);
+        const ps = monthly / t.mid;
+        if (monthly < 50000 || ps < 300 || ps > 1000) totalViolationsCount++;
+        if (b === 'D') {
+          avgPerStudent += ps;
+          count++;
+          minRev = Math.min(minRev, monthly);
+        }
+      }
+      prices[b] = origBranch;
+    }
+    avgPerStudent = count > 0 ? avgPerStudent / count : 0;
+
+    const isActive = key === currentScenario;
+    html += `
+      <div class="comparison-card" style="${isActive ? 'border-color:var(--accent)' : ''}">
+        <h3>${isActive ? '✅ ' : ''}${sc.name}</h3>
+        <p style="font-size:11px;color:var(--text2);margin-bottom:12px">${sc.description}</p>
+        <div class="comparison-row"><span class="label">Violations contraintes</span><span class="value ${totalViolationsCount > 0 ? 'danger-text' : 'highlight'}">${totalViolationsCount}/20</span></div>
+        <div class="comparison-row"><span class="label">SaaS moy. F/élève/mois</span><span class="value">${Math.round(avgPerStudent)} F</span></div>
+        <div class="comparison-row"><span class="label">SaaS T1 revenue/mois</span><span class="value">${formatNum(sc.D.T1)} F</span></div>
+        <div class="comparison-row"><span class="label">SaaS T4 revenue/mois</span><span class="value">${formatNum(sc.D.T4)} F</span></div>
+        <div class="comparison-row"><span class="label">Licence Locale T3</span><span class="value">${formatNum(sc.A.T3)} F</span></div>
+        <div class="comparison-row"><span class="label">Multiplicateur options</span><span class="value">×${sc.optionsMultiplier.D}</span></div>
+      </div>
+    `;
+  }
+  container.innerHTML = html;
+}
+
+function renderPortfolio() {
+  const target = parseInt(document.getElementById('targetRevenue').value) || 5000000;
+  const partS = parseInt(document.getElementById('partSaaS').value) || 0;
+  const partL = parseInt(document.getElementById('partLocal').value) || 0;
+  const partC = parseInt(document.getElementById('partCloud').value) || 0;
+  const partLic = parseInt(document.getElementById('partLicence').value) || 0;
+  const optRate = (parseInt(document.getElementById('optionsRate').value) || 0) / 100;
+  const total = partS + partL + partC + partLic;
+
+  const sc = SCENARIOS[currentScenario];
+  // Average revenue per client by segment (using T2-T3 mid-range as typical)
+  const avgSaaS = (sc.D.T2 + sc.D.T3) / 2;
+  const avgLocal = (sc.B.T2 + sc.B.T3) / 2;
+  const avgCloud = (sc.C.T2 + sc.C.T3) / 2 / 12; // annual to monthly
+  const avgLicence = (sc.A.T2 + sc.A.T3) / 2 / 36; // one-time to monthly
+
+  const segments = [
+    { name: 'SaaS Cloud', part: partS, avgClient: avgSaaS * (1 + optRate) },
+    { name: 'Abonnement Local', part: partL, avgClient: avgLocal * (1 + optRate) },
+    { name: 'Licence Cloud', part: partC, avgClient: avgCloud * (1 + optRate) },
+    { name: 'Licence Locale', part: partLic, avgClient: avgLicence * (1 + optRate) },
+  ];
+
+  // KPIs
+  const weightedAvg = segments.reduce((s, seg) => s + (seg.avgClient * seg.part / 100), 0);
+  const totalClientsNeeded = weightedAvg > 0 ? Math.ceil(target / weightedAvg) : 0;
+  const annualRevenue = target * 12;
+
+  let kpiHtml = `
+    <div class="kpi green"><div class="kpi-value">${formatNum(totalClientsNeeded)}</div><div class="kpi-label">Clients nécessaires</div></div>
+    <div class="kpi blue"><div class="kpi-value">${formatNum(Math.round(weightedAvg))} F</div><div class="kpi-label">Revenue moyen/client/mois</div></div>
+    <div class="kpi orange"><div class="kpi-value">${formatNum(target)}</div><div class="kpi-label">Objectif mensuel</div></div>
+    <div class="kpi purple"><div class="kpi-value">${formatNum(annualRevenue)}</div><div class="kpi-label">Objectif annuel</div></div>
+  `;
+  document.getElementById('portfolioKPIs').innerHTML = kpiHtml;
+
+  // Table
+  let tableHtml = '';
+  for (const seg of segments) {
+    const clients = total > 0 ? Math.round(totalClientsNeeded * seg.part / total) : 0;
+    const revMonth = clients * seg.avgClient;
+    const revYear = revMonth * 12;
+    tableHtml += `
+      <tr>
+        <td>${seg.name}</td>
+        <td class="num">${seg.part}%</td>
+        <td class="num">${clients}</td>
+        <td class="num">${formatNum(Math.round(seg.avgClient))} F</td>
+        <td class="num">${formatNum(Math.round(revMonth))} F</td>
+        <td class="num">${formatNum(Math.round(revYear))} F</td>
+      </tr>
+    `;
+  }
+  document.getElementById('portfolioBody').innerHTML = tableHtml;
+}
+
+function renderSensitivity() {
+  const body = document.getElementById('sensitivityBody');
+  const sc = SCENARIOS[currentScenario];
+  const basePrice = sc.D.T2; // SaaS T2
+  const students = 300;
+  const baseMonthly = basePrice;
+  const baseAnnual = baseMonthly * 12;
+  const baseOptions = baseMonthly * 0.4; // 40% options
+  const baseTotal = (baseMonthly + baseOptions) * 12;
+
+  const variables = [
+    { name: 'Prix base SaaS T2', getValue: (f) => basePrice * f, format: v => formatNum(Math.round(v)) + ' F/mois' },
+    { name: 'Nombre élèves T2', getValue: () => students, format: v => Math.round(v) + ' élèves', isCount: true },
+    { name: 'Taux options', getValue: (f) => 0.4 * f, format: v => Math.round(v * 100) + '%', isRate: true },
+    { name: 'Nombre clients SaaS', getValue: (f) => 10 * f, format: v => Math.round(v) + ' clients', isCount: true },
+  ];
+
+  const factors = [0.8, 0.9, 1.0, 1.1, 1.2];
+  let html = '';
+
+  for (const v of variables) {
+    html += `<tr><td><strong>${v.name}</strong></td>`;
+    for (const f of factors) {
+      const val = v.getValue(f);
+      let revenue;
+      if (v.isCount) {
+        revenue = val * (baseMonthly + baseOptions) * 12;
+      } else if (v.isRate) {
+        revenue = students * (baseMonthly + baseMonthly * val) * 12;
+      } else {
+        revenue = students * (val + val * 0.4) * 12;
+      }
+      const diff = ((revenue - baseTotal) / baseTotal * 100);
+      const cls = f === 1.0 ? 'highlight' : diff > 0 ? 'highlight' : 'danger-text';
+      html += `<td class="num ${cls}">${formatNum(Math.round(revenue))} F<br><span style="font-size:10px;color:var(--text2)">${diff > 0 ? '+' : ''}${Math.round(diff)}%</span></td>`;
+    }
+    html += '</tr>';
+  }
+  body.innerHTML = html;
+}
+
+function renderAnalysis() {
+  const container = document.getElementById('analysisSection');
+  const sc = SCENARIOS[currentScenario];
+
+  // Analyze v2 problems
+  const v2Violations = [];
+  for (const b of ['A','B','C','D']) {
+    const origBranch = { ...prices[b] };
+    prices[b] = { ...SCENARIOS.v2[b] };
+    for (const t of TRANCHES) {
+      const monthly = getMonthlyEquiv(b, t.code);
+      const ps = monthly / t.mid;
+      if (monthly < 50000) v2Violations.push(`${b}-${t.code}: revenue ${formatNum(Math.round(monthly))} F/mois < 50 000 F`);
+      if (ps < 300) v2Violations.push(`${b}-${t.code}: ${Math.round(ps)} F/élève < 300 F`);
+      if (ps > 1000) v2Violations.push(`${b}-${t.code}: ${Math.round(ps)} F/élève > 1 000 F`);
+    }
+    prices[b] = origBranch;
+  }
+
+  let html = '';
+
+  // Problem analysis
+  html += `
+    <div class="analysis">
+      <h3>🔍 Diagnostic de la grille v2</h3>
+      <p>La grille tarifaire v2 présente <strong>${v2Violations.length} violations</strong> des contraintes fixées :</p>
+      <ul>
+        <li><strong>Toutes branches, T2-T5</strong> : Le prix/élève est très bas (60-217 F/mois), bien en dessous de la borne 300 F. L'amortissement des licences (÷36 mois) et les prix SaaS trop bas en sont la cause.</li>
+        <li><strong>T1 (≤100 élèves)</strong> : Toutes les branches sont en dessous du minimum 50 000 FCFA/mois. Le SaaS T1 à 30 000 F et l'Abonnement Local T1 à 25 000 F sont les plus critiques.</li>
+        <li><strong>Licence Locale (A)</strong> : 250 000 F unique ÷ 36 = 6 944 F/mois pour T1. Très loin du minimum 50 000 F. Même les tranches supérieures échouent car l'amortissement dilue le prix.</li>
+      </ul>
+      <p><strong>Conclusion</strong> : La v2 ne respecte pas les contraintes sur la quasi-totalité des 20 combinaisons. Une refonte est nécessaire.</p>
+    </div>
+  `;
+
+  // Current scenario analysis
+  const currentViolations = [];
+  for (const b of ['A','B','C','D']) {
+    const results = validateConstraints(b);
+    for (const r of results) {
+      if (!r.allOk) {
+        const reasons = [];
+        if (!r.min50k) reasons.push(`min 50K (${formatNum(Math.round(r.monthly))} F)`);
+        if (!r.range300_1000) reasons.push(`300-1000 F (${Math.round(r.perStudent)} F)`);
+        currentViolations.push(`${b}-${r.tranche.code}: ${reasons.join(', ')}`);
+      }
+    }
+  }
+
+  if (currentViolations.length === 0) {
+    html += `
+      <div class="analysis">
+        <h3>✅ Scénario "${sc.name}" — Toutes contraintes respectées</h3>
+        <p>Ce scénario respecte les <strong>20 combinaisons</strong> (4 branches × 5 tranches).</p>
+        <ul>
+          <li><strong>SaaS T2 (300 élèves)</strong> : ${formatNum(sc.D.T2)} F/mois → ${Math.round(sc.D.T2/300)} F/élève/mois</li>
+          <li><strong>SaaS T3 (1000 élèves)</strong> : ${formatNum(sc.D.T3)} F/mois → ${Math.round(sc.D.T3/1000)} F/élève/mois</li>
+          <li><strong>Abonnement Local T2</strong> : ${formatNum(sc.B.T2)} F/mois → ${Math.round(sc.B.T2/300)} F/élève/mois</li>
+          <li><strong>Licence Locale T3</strong> : ${formatNum(sc.A.T3)} F unique → ${Math.round(sc.A.T3/36/1000)} F/élève/mois (amorti 3 ans)</li>
+        </ul>
+      </div>
+    `;
+  } else {
+    html += `
+      <div class="analysis">
+        <h3>⚠️ Scénario "${sc.name}" — ${currentViolations.length} violation(s)</h3>
+        <ul>${currentViolations.map(v => `<li>${v}</li>`).join('')}</ul>
+        <p>Utilisez les curseurs pour ajuster les prix et respecter les contraintes.</p>
+      </div>
+    `;
+  }
+
+  // Strategic recommendations
+  html += `
+    <div class="analysis">
+      <h3>💡 Recommandations stratégiques</h3>
+      <ul>
+        <li><strong>Conflit fondamental T1</strong> : Avec 80 élèves (mid T1), le minimum 50 000 F/mois impose 625 F/élève/mois — au-delà de la cible marketing ≤500 F. Ce conflit est <strong>mathématiquement inévitable</strong>. Solution : traiter T1 comme un "forfait micro-école" (50-65K/mois) sans communiquer au prix/élève.</li>
+        <li><strong>Paradoxe Licence Locale (A)</strong> : Pour respecter 300 F/élève/mois via amortissement ÷36, il faut T2 ≥ 3,24M, T3 ≥ 10,8M, T4 ≥ 32,4M FCFA. Ces prix sont <strong>commercialement irréalistes</strong> au Cameroun. Recommandation : accepter les violations A comme un positionnement "achat capex" distinct, ou réduire l'amortissement à 24 mois.</li>
+        <li><strong>Licence Cloud (C) — plus viable</strong> : L'amortissement ÷12 est plus favorable. À 600K/an pour T1 (50K/mois), c'est acceptable. Les scénarios Équilibrée et au-delà font passer C.</li>
+        <li><strong>SaaS Cloud (D) et Abonnement Local (B) — piliers</strong> : Ce sont les branches les plus faciles à rendre conformes. Le pricing mensuel direct permet un contrôle fin. Objectif 350-500 F/élève/mois pour T2-T3.</li>
+        <li><strong>T2-T3 (sweet spot)</strong> : Cible optimale 400-600 F/élève/mois. Le message marketing "moins de 500 F/élève" est crédible ici. T2 (300 élèves) à 100-200K/mois = 333-667 F/élève.</li>
+        <li><strong>T4-T5 (économie d'échelle)</strong> : Le prix/élève baisse naturellement mais doit rester ≥ 300 F. T4 (3000 élèves) à 950K-1,7M/mois = 317-567 F/élève. En dessous, dévaloriser le produit.</li>
+        <li><strong>Options à la carte</strong> : Taux d'attachement estimé 30-50% du prix de base. Sur un SaaS T2 à 100 000 F, les options ajoutent 30-50K → total 130-150K/mois. C'est la marge de manoeuvre réelle.</li>
+        <li><strong>Positionnement concurrentiel</strong> : À 300-500 F/élève/mois, eLISAschool est compétitif vs MyScol (~200 000 F/an pour effectif illimité) et Classe365 ($100+/mois ≈ 65 000 F/mois). Le rapport fonctionnalité/prix est l'argument clé.</li>
+      </ul>
+    </div>
+  `;
+
+  // Coherence analysis
+  html += `
+    <div class="analysis">
+      <h3>🔗 Cohérence inter-branches</h3>
+      <p>Règles à vérifier pour chaque scénario :</p>
+      <ul>
+        <li><strong>Licence Locale < Licence Cloud</strong> : Le client assume l'infrastructure → prix plus bas. Ratio typique : 0.7-0.8×.</li>
+        <li><strong>Abonnement Local ≈ Licence Locale / 36</strong> : Neutralité achat vs location. Si l'abonnement est trop cher vs l'amortissement licence, les clients achètent. Si trop bon marché, perte de revenue.</li>
+        <li><strong>SaaS Cloud > Abonnement Local</strong> : Infrastructure + maintenance incluses. Premium de 10-30%.</li>
+        <li><strong>Prix/élève décroissant</strong> : Chaque tranche supérieure doit avoir un prix/élève inférieur (économie d'échelle). Mais jamais < 300 F.</li>
+        <li><strong>Packs < somme modules</strong> : Incitation aux bundles. Remise typique 15-25% vs achat unitaire.</li>
+      </ul>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+// ===== INTERACTION =====
+function updatePrice(branch, tranche, value) {
+  prices[branch][tranche] = parseInt(value);
+  render();
+}
+
+// ===== UTILITIES =====
+function formatNum(n) {
+  return new Intl.NumberFormat('fr-FR').format(n);
+}
+
+// ===== START =====
+init();
+</script>
+</body>
+</html>

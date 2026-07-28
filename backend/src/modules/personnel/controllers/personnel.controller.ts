@@ -45,14 +45,14 @@ router.post('/', authMiddleware, requireAnyPermission(['personnel:create', 'pers
 router.patch('/:id', authMiddleware, requireAnyPermission(['personnel:edit', 'personnel:manage']), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updatePersonnelSchema, req.body);
-        const membre = await service.update(req.params.id, dto, req.etablissementId);
+        const membre = await service.update(req.params.id, dto, req.utilisateur?.id, req.etablissementId);
         res.json({ success: true, data: membre });
     } catch (error) { next(error); }
 });
 
 router.delete('/:id', authMiddleware, requireAnyPermission(['personnel:delete', 'personnel:manage']), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await service.delete(req.params.id, req.etablissementId);
+        await service.delete(req.params.id, req.utilisateur?.id, req.etablissementId);
         res.json({ success: true, message: 'Membre supprimé' });
     } catch (error) { next(error); }
 });

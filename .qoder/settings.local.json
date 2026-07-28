@@ -8,8 +8,7 @@
       "Bash(find /mnt/DONNEES/projets/eLISAschool -type f -name \"*.ts\" -o -name \"*.tsx\" | grep -i -E \"\\(template|organisation|seed|generat\\)\" | head -50)",
       "Bash(cd /mnt/DONNEES/projets/eLISAschool/backend && npx ts-node --transpile-only -r tsconfig-paths/register src/index.ts > /tmp/elisa-server.log 2>&1 & sleep 12 && cat /tmp/elisa-server.log | tail -25 && kill %1 2>/dev/null; true)",
       "Bash(cat /mnt/DONNEES/projets/eLISAschool/frontend/src/locales/fr/organisation.json | python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:v for k,v in d.items\\(\\) if 'export' in k.lower\\(\\) or 'organigramme.export' in str\\(k\\)}, indent=2, ensure_ascii=False\\)\\)\" 2>/dev/null || cat /mnt/DONNEES/projets/eLISAschool/frontend/src/locales/fr/organisation.json | grep -A2 -B1 \"export\")",
-      "Bash(ls /mnt/DONNEES/projets/eLISAschool/backend/src/modules/ && ls /mnt/DONNEES/projets/eLISAschool/backend/database/migrations/ 2>/dev/null | tail -50)",
-      "Bash(ls /mnt/DONNEES/projets/eLISAschool/backend/src && ls /mnt/DONNEES/projets/eLISAschool/backend/database/migrations | head -100)"
+      "Bash(ls /mnt/DONNEES/projets/eLISAschool/backend/src/modules/ && ls /mnt/DONNEES/projets/eLISAschool/backend/database/migrations/ 2>/dev/null | tail -50)"
     ]
   }
 }

@@ -118,14 +118,14 @@ export function ChapitresCataloguePage() {
             key: 'programmeNom',
             header: t('programme', 'Programme'),
             render: (c) => {
-                const progId = (c as any).programmeId;
-                const progNom = (c as any).programmeNom;
+                const progId = c.programmeId;
+                const progNom = c.programmeNom;
                 return progId ? (
                     <button onClick={() => navigate({ to: `/programmes/${progId}` })}
-                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                        className="text-sm text-primary hover:underline">
                         {progNom}
                     </button>
-                ) : <span className="text-sm text-[var(--color-texte-secondaire)]">-</span>;
+                ) : <span className="text-sm text-muted-foreground">-</span>;
             },
         },
         {
@@ -149,10 +149,10 @@ export function ChapitresCataloguePage() {
             render: (c) => (
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     c.statut === 'ACTIF'
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                        ? 'bg-success/10 text-success'
                         : c.statut === 'EN_ATTENTE_VALIDATION'
-                            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                            : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                            ? 'bg-warning/10 text-warning'
+                            : 'bg-muted text-muted-foreground'
                 }`}>
                     {t(`statutChapitre.${c.statut}`)}
                 </span>
@@ -210,16 +210,16 @@ export function ChapitresCataloguePage() {
             />
 
             {createStep === 'select-matiere' && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800 space-y-3">
-                    <h3 className="font-semibold text-sm text-blue-800 dark:text-blue-200">
+                <div className="bg-primary/5 rounded-lg p-4 border border-primary/20 space-y-3">
+                    <h3 className="font-semibold text-sm text-primary">
                         {t('nouveauChapitreSelectMatiere', 'Nouveau chapitre — sélectionnez la matière')}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">{t('programme', 'Programme')}</label>
+                            <label className="block text-xs font-medium text-primary/80 mb-1">{t('programme', 'Programme')}</label>
                             <select value={createProgrammeId}
                                 onChange={(e) => { setCreateProgrammeId(e.target.value); setCreateProgrammeMatiereId(''); }}
-                                className="w-full px-3 py-2 border border-blue-300 dark:border-blue-600 rounded-lg text-sm bg-white dark:bg-gray-800"
+                                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-background"
                             >
                                 <option value="">{t('selectionner', 'Sélectionner...')}</option>
                                 {programmes.map((p) => (
@@ -228,10 +228,10 @@ export function ChapitresCataloguePage() {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">{t('matiere', 'Matière')}</label>
+                            <label className="block text-xs font-medium text-primary/80 mb-1">{t('matiere', 'Matière')}</label>
                             <select value={createProgrammeMatiereId}
                                 onChange={(e) => setCreateProgrammeMatiereId(e.target.value)}
-                                className="w-full px-3 py-2 border border-blue-300 dark:border-blue-600 rounded-lg text-sm bg-white dark:bg-gray-800"
+                                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-background"
                             >
                                 <option value="">{t('selectionner', 'Sélectionner...')}</option>
                                 {(programmeMatieres ?? []).map((pm) => (

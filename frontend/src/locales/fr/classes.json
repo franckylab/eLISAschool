@@ -123,6 +123,17 @@
             "redoublement": "Redoublement"
         }
     },
+    "transfert": {
+        "titre": "Transférer l'élève",
+        "description": "Transférer {{nom}} vers une autre classe",
+        "nouvelleClasse": "Nouvelle classe",
+        "selectionnerClasse": "Sélectionner une classe",
+        "date": "Date de transfert",
+        "motif": "Motif",
+        "commentaire": "Commentaire",
+        "commentairePlaceholder": "Commentaire ou remarque (optionnel)...",
+        "transferer": "Transférer"
+    },
     "boutons": {
         "nouveau": "Nouvelle classe",
         "creer": "Créer",
@@ -234,6 +245,8 @@
         "erreurSuppression": "Erreur lors de la suppression",
         "succesAffectation": "Élève affecté avec succès",
         "erreurAffectation": "Erreur lors de l'affectation",
+        "succesTransfert": "Élève transféré avec succès",
+        "erreurTransfert": "Erreur lors du transfert",
         "succesReconciliation": "Effectif réconcilié : {{ancien}} → {{nouveau}}",
         "effectifDejaCoherent": "Effectif déjà cohérent",
         "erreurReconciliation": "Erreur lors de la réconciliation",

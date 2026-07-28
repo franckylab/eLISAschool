@@ -62,3 +62,17 @@ export { useHandleError } from './use-handle-error';
 
 // i18n enum options helper
 export { useEnumOptions } from './use-enum-options';
+
+// Workflow de validation multi-niveau
+export {
+    useCheckValidation,
+    useWorkflowDetail,
+    useTraiterValidation,
+    useAnnulerWorkflow,
+} from './use-validation-workflow';
+export type {
+    StatutWorkflow,
+    DecisionValidation,
+    ValidationNiveau,
+    WorkflowValidation,
+} from './use-validation-workflow';

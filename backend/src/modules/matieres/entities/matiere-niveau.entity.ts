@@ -105,17 +105,18 @@ export class MatiereNiveau {
     @Column({ type: 'date', nullable: true })
     dateFin?: string;
 
-    // Système Francophone
     @Column({ type: 'float', default: 1 })
     coefficient!: number;
 
-    // Système Anglophone (ou LMD)
-    @Column({ type: 'float', nullable: true })
-    credits?: number; // Correspond aux "Credits" du système anglophone
-
     @Column({ type: 'int', default: 20 })
-    bareme!: number; // Sur 20 ou Sur 100...
+    bareme!: number;
 
+    /**
+     * Volume horaire hebdomadaire en **minutes/semaine** (source unique de vérité — refonte EDT v4.0).
+     * Exemple : 240 = 4h/semaine. Utilisé par ConflitDetectionService (dépassement volume)
+     * et EmploiDuTempsService.genererEmploiDuTemps (nombre de créneaux à placer).
+     * Toujours comparer en minutes, jamais convertir en heures avant comparaison.
+     */
     @Column({ type: 'int', nullable: true })
     volumeHoraire?: number;
 

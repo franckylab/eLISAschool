@@ -2442,6 +2442,11 @@ import { Controls, ControlButton } from 'reactflow';
 - Le toolbar écoute cet événement et ouvre le dialog.
 - **Avantage** : pas de duplication de state, pas de prop drilling.
 
+### Export — Barre de progression toujours visible
+- La barre de progression est `sticky bottom-0 -mx-[var(--padding-modal-body)] mt-auto` dans le body du `CustomModal` — visible sans scroll.
+- `backgroundColor: var(--color-surface)` et `border-t` pour séparer du contenu au-dessus.
+- `await new Promise(resolve => setTimeout(resolve, 16))` après `onProgress?.('preparation')` dans `export.ts` pour laisser React peindre l'étape avant le travail lourd.
+
 ### Fullscreen API
 ```typescript
 const [isFullscreen, setIsFullscreen] = useState(false);
@@ -2461,66 +2466,58 @@ const handleToggleFullscreen = useCallback(() => {
 
 ---
 
-## 31.12 Pattern BaseEdge — Edges ReactFlow unifiés (organigramme)
+## 31.12 Pattern Edge — Edges ReactFlow (organigramme)
 
-**Référence** : `features/organisation/components/organigramme/edges/BaseEdge.tsx`
+**Références** : `edges/BaseEdge.tsx`, `lib/routing/markers.tsx`, `lib/routing/bezier-router.ts`
 
-### Quand utiliser ce pattern
-- Plusieurs types d'edges partagent le même routing (smoothstep), hit-testing, et tooltip.
-- **NE PAS** créer un composant BaseEdge pour un seul type d'edge.
+### Architecture v3 — Routage différencié
 
-### Architecture
-```typescript
-// Constantes de routing (offset progressif anti-chevauchement)
-export const EDGE_ROUTING = {
-    hierarchie: { offset: 6, borderRadius: 10 },
-    direct: { offset: 14, borderRadius: 10 },
-    fonctionnel: { offset: 24, borderRadius: 10 },
-} as const;
+| Type | Routing | Stratégie | Trait | Couleur |
+|------|---------|-----------|-------|---------|
+| **Hiérarchie** | `getSmoothStepPath` (axial) | offset=0, voie centrale | 3px plein | `--color-dominant-500` |
+| **DIRECT** | `getBezierPath` (latéral) | Côté intelligent + arc rangée | 2.5px `10 5` | `--color-secondary-500` |
+| **FONCTIONNEL** | `getBezierPath` (latéral) | Côté opposé au DIRECT | 2.5px `4 5` | `--color-accent-600` |
 
-// Styles visuels unifiés
-export const EDGE_STYLE = {
-    strokeWidth: 2.5,
-    strokeWidthHover: 3.5,
-    opacity: 1.0,
-    markerSize: 15,
-    transition: 'stroke 0.2s ease, stroke-width 0.2s ease, opacity 0.2s ease',
-} as const;
-```
+### Flèches manuelles (pas de SVG `<marker>`)
+- **NE PAS** utiliser `MarkerType.ArrowClosed` ReactFlow ni SVG `<marker>` (orient incohérent, `markerUnits` scaling parasite, vars CSS non résolues dans `<defs>`).
+- **TOUJOURS** utiliser le rendu manuel via `EdgeArrow` dans `BaseEdge.tsx` :
+  - `EdgeShell` prop `arrowColor?: string` — active la flèche et définit sa couleur
+  - `endTangentAngle(path)` — extrait l'angle de la tangente à l'extrémité du path string (supporte `M`, `L`, `C`)
+  - `EdgeArrow` — rend un `<path>` triangulaire à `(endX, endY)` avec `transform="rotate(angle)"`
+  - La couleur est **exactement** celle de `stroke` (pas de CSS var, pas de `currentColor`)
+- `MarkerDefs` conservé (rendu dans `<ReactFlow>` avant `<Background>`) pour compatibilité, mais **aucun edge ne l'utilise**.
 
-### Composants partagés
-- **`useBaseEdge(config)`** : hook — calcule `getSmoothStepPath`, gère hover, retourne `{ edgePath, labelX, labelY, isHovered, handlers }`.
-- **`EdgeShell`** : composant — hit-testing transparent (16px) + path visible + transitions. Accepte `children` pour badge/tooltip.
+### Composants partagés (`BaseEdge.tsx`)
+- **`useBaseEdge(config)`** : hook — `getSmoothStepPath` pour hiérarchie (axial, offset=0).
+- **`useBezierEdge(config)`** : hook — Bézier latéral pour relations, accepte `side/direction/waypoints/rowBounds`.
+- **`EdgeShell`** : composant — hit-testing transparent (16px) + path visible + transitions.
 - **`EdgeTooltip`** : tooltip unifié — position `above` (hiérarchie) ou `below` (badge relation).
 
-### Stratégie anti-chevauchement — 5 couches de défense
-1. **dagre `edgesep` (20px)** : sépare les edges aux bornes des noeuds (anti-congestion fan-out).
-2. **dagre `nodesep`/`ranksep`** : TB 80/120, LR 100/140 — espace suffisant entre noeuds pour le routing des relation edges.
-3. **`EDGE_ROUTING` offset progressif** (6/14/24) : gap min 8px entre types adjacents → edges parallèles même paire jamais superposés.
-4. **zIndex layering** : hiérarchie=0, DIRECT=1, FONCTIONNEL=2 → l'overlay le plus important est au-dessus.
-5. **Hit-testing 16px** : zone de clic élargie même si edges visuellement proches.
+### Routage intelligente (`lib/routing/`)
+3 modes de tracé selon la disposition source/target :
 
-### Constantes layout exportées
-```typescript
-// utils/layout.ts — single source of truth pour le spacing dagre
-export const LAYOUT_SPACING = {
-    TB: { nodesep: 80, ranksep: 120, edgesep: 20 },
-    LR: { nodesep: 100, ranksep: 140, edgesep: 20 },
-} as const;
-```
+1. **Même niveau** (`Math.abs(dy) < 60` en TB) → arc Bézier au-dessus de la rangée (`rowBounds.yMin - 80px`). Jamais à travers les cartes.
+2. **Relation descendante** (`dy > 60` en TB, target en dessous) → **ligne droite diagonale** avec offset latéral (`SIDE_OFFSET=50`) pointant directement vers la carte cible. Propre, professionnel, sans courbe.
+3. **Relation montante** (cas rare, source sous target) → courbe Bézier latérale classique.
 
-### Règles
-- **Marker unifié** : `EDGE_STYLE.markerSize` (15×15) pour tous les types — importé dans `use-organigramme-flow.ts`.
-- **NE PAS** modifier `NODE_WIDTH` sans vérifier la largeur render du `UniteNode` (actuellement 220px).
-- **NE PAS** réduire les offsets en dessous de 6/14/24 sans audit visuel.
+- **`CongestionManager`** : assigne DIRECT/FONCTIONNEL de côtés opposés (jamais même côté pour même paire).
+- **`computeRowBounds()`** : calcule la bounding-box d'une rangée pour le mode "même niveau".
+- **`computeWaypoints()`** : pour `depthDiff >= 3`, détecte nœuds bloquants dans le corridor latéral → segments en ligne droite (pas de courbes).
+- **Waypoint fallback** : chemins en lignes droites (`M... L...`), plus de Bezier — cohérent avec le mode descendant.
+- **`routeViaWaypoints()`** : segments `L` (straight line) au lieu de `C` (Bezier), pour une cohérence visuelle avec le mode descendant.
+- **Espacement dagre auto-adaptatif** : `relationCount` multiplie `nodesep`/`ranksep` (facteur 1.0–1.8).
 
 ### Fichiers
-- `edges/BaseEdge.tsx` — hook + composants partagés + constantes + documentation anti-chevauchement
-- `edges/HierarchieEdge.types.ts` — type extrait (évite imports circulaires)
-- `edges/HierarchieEdge.tsx` — utilise BaseEdge (v5.0)
-- `edges/RelationEdge.tsx` — utilise BaseEdge (v4.0)
-- `utils/layout.ts` — dagre layout + `LAYOUT_SPACING` exporté + `NODE_WIDTH` aligné sur render
-- `hooks/use-organigramme-flow.ts` — importe `EDGE_STYLE` pour markers
+- `lib/routing/markers.tsx` — marqueurs SVG custom + utilitaires
+- `lib/routing/bezier-router.ts` — calcul Bézier + rowBounds + waypoints v2
+- `lib/routing/congestion-manager.ts` — assignation de côté intelligente
+- `lib/routing/index.ts` — barrel
+- `edges/BaseEdge.tsx` — hooks + composants partagés (v2.0.0)
+- `edges/HierarchieEdge.types.ts` — type extrait
+- `edges/HierarchieEdge.tsx` — smoothStep axial, marker custom (v6.0.0)
+- `edges/RelationEdge.tsx` — Bézier latéral, marker custom (v5.0.0)
+- `utils/layout.ts` — espacement auto-adaptatif (v2.0.0)
+- `hooks/use-organigramme-flow.ts` — intègre toutes les briques (v2.0.0)
 
 ---
 

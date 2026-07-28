@@ -2,48 +2,47 @@
  * ==================================
  * eLISAschool - Edge de base partagé pour React Flow
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  *
  * Composants et hook partagés par tous les types d'edges de l'organigramme.
  * Élimine la duplication entre HierarchieEdge et RelationEdge :
- * - useBaseEdge : routing smoothstep unifié + état hover + handlers
+ * - useBaseEdge : routing smoothstep (hiérarchie axiale)
+ * - useBezierEdge : routing courbes de Bézier (relations latérales)
  * - EdgeShell : hit-testing + path visible + transitions
  * - EdgeTooltip : tooltip positionné au milieu du path
+ *
+ * Stratégie anti-chevauchement v2 :
+ * - Hiérarchie (smoothStep) : offset 0, ligne axiale
+ * - Relations DIRECT (Bezier) : côté intelligent (gauche/droite selon congestion)
+ * - Relations FONCTIONNEL (Bezier) : côté opposé aux DIRECT
  */
 
 import { memo, useState, useCallback, type ReactNode } from 'react';
 import { getSmoothStepPath, type Position } from 'reactflow';
 import { resolveColor } from '@/lib/export';
+import { useBezierPath } from '@/lib/routing';
 
 // ─── Configuration routing ───────────────────────────────────────────
 
-/**
- * Paramètres de routing par type d'edge.
- *
- * Stratégie anti-chevauchement :
- * - Offset progressif : chaque type est décalé du précédent (6→14→24)
- * - Gap minimum 8px entre types adjacents → jamais de superposition visuelle
- * - edgesep dagre (20px) sépare les edges aux bornes des noeuds
- * - nodesep (80/100px) + ranksep (120/140px) laissent l'espace nécessaire
- * - zIndex layering : hiérarchie=0, DIRECT=1, FONCTIONNEL=2
- */
+/** Paramètres de routing par type d'edge */
 export const EDGE_ROUTING = {
-    hierarchie: { offset: 6, borderRadius: 10 },
-    direct: { offset: 14, borderRadius: 10 },
-    fonctionnel: { offset: 24, borderRadius: 10 },
+    hierarchie: { offset: 0, borderRadius: 10 },
+    direct: { offset: 0, borderRadius: 10 },
+    fonctionnel: { offset: 0, borderRadius: 10 },
 } as const;
 
 /** Styles visuels unifiés */
 export const EDGE_STYLE = {
     strokeWidth: 2.5,
     strokeWidthHover: 3.5,
+    strokeWidthHierarchie: 3,
     opacity: 1.0,
-    markerSize: 15,
+    markerSize: 14,
     transition: 'stroke 0.2s ease, stroke-width 0.2s ease, opacity 0.2s ease',
 } as const;
 
-// ─── Hook useBaseEdge ────────────────────────────────────────────────
+// ─── Hook useBaseEdge (smoothStep axiale – hiérarchie) ──────────────
 
 interface UseBaseEdgeConfig {
     sourceX: number;
@@ -67,10 +66,6 @@ interface UseBaseEdgeResult {
     };
 }
 
-/**
- * Hook partagé : calcule le path smoothstep, gère l'état hover,
- * retourne les handlers pour le hit-testing.
- */
 export function useBaseEdge({
     sourceX,
     sourceY,
@@ -106,6 +101,108 @@ export function useBaseEdge({
     };
 }
 
+// ─── Hook useBezierEdge (courbes latérales – relations) ─────────────
+
+interface UseBezierEdgeConfig {
+    sourceX: number;
+    sourceY: number;
+    sourcePosition: Position;
+    targetX: number;
+    targetY: number;
+    targetPosition: Position;
+    side: 'left' | 'right';
+    direction: 'TB' | 'LR';
+    waypoints?: { x: number; y: number }[];
+    rowBounds?: { yMin: number; yMax: number; xMin: number; xMax: number } | null;
+}
+
+interface UseBezierEdgeResult {
+    edgePath: string;
+    labelX: number;
+    labelY: number;
+    isHovered: boolean;
+    handlers: {
+        onMouseEnter: () => void;
+        onMouseLeave: () => void;
+    };
+}
+
+export function useBezierEdge({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+    side,
+    direction,
+    waypoints,
+    rowBounds,
+}: UseBezierEdgeConfig): UseBezierEdgeResult {
+    const [isHovered, setIsHovered] = useState(false);
+
+    const { edgePath, labelX, labelY } = useBezierPath({
+        sourceX,
+        sourceY,
+        sourcePosition,
+        targetX,
+        targetY,
+        targetPosition,
+        side,
+        direction,
+        waypoints,
+        rowBounds,
+    });
+
+    const onMouseEnter = useCallback(() => setIsHovered(true), []);
+    const onMouseLeave = useCallback(() => setIsHovered(false), []);
+
+    return {
+        edgePath,
+        labelX,
+        labelY,
+        isHovered,
+        handlers: { onMouseEnter, onMouseLeave },
+    };
+}
+
+// ─── Utilitaires flèche ───────────────────────────────────────────
+
+/** Extrait l'angle (en degrés, SVG rotate) de la tangente à l'extrémité du path */
+function endTangentAngle(path: string): number {
+    const cmds = path.match(/[MLC][-\d.e,\s]+/g);
+    if (!cmds || cmds.length < 2) return -90;
+    const last = cmds[cmds.length - 1].trim();
+    const parts = last.split(/[\s,]+/).filter(s => s !== '' && s !== 'M' && s !== 'L' && s !== 'C');
+    const endX = parseFloat(parts[parts.length - 2]);
+    const endY = parseFloat(parts[parts.length - 1]);
+    let prevX: number, prevY: number;
+    if (last.startsWith('C')) {
+        prevX = parseFloat(parts[parts.length - 4]);
+        prevY = parseFloat(parts[parts.length - 3]);
+    } else {
+        const prev = cmds[cmds.length - 2].trim();
+        const prevParts = prev.split(/[\s,]+/).filter(s => s !== '' && s !== 'M' && s !== 'L' && s !== 'C');
+        prevX = parseFloat(prevParts[prevParts.length - 2]);
+        prevY = parseFloat(prevParts[prevParts.length - 1]);
+    }
+    return -Math.atan2(endY - prevY, endX - prevX) * (180 / Math.PI);
+}
+
+/** Rendu de la flèche à l'extrémité du path — remplace SVG <marker> */
+function EdgeArrow({ path, color }: { path: string; color: string }) {
+    const angle = endTangentAngle(path);
+    const size = 7;
+    const d = `M${-size},${-size * 0.6} L0,0 L${-size},${size * 0.6} Z`;
+    const cmds = path.match(/[MLC][-\d.e,\s]+/g);
+    if (!cmds) return null;
+    const last = cmds[cmds.length - 1].trim();
+    const parts = last.split(/[\s,]+/).filter(s => s !== '' && s !== 'M' && s !== 'L' && s !== 'C');
+    const x = parseFloat(parts[parts.length - 2]);
+    const y = parseFloat(parts[parts.length - 1]);
+    return <path d={d} fill={color} transform={`translate(${x},${y}) rotate(${angle})`} />;
+}
+
 // ─── EdgeShell ───────────────────────────────────────────────────────
 
 interface EdgeShellProps {
@@ -115,7 +212,8 @@ interface EdgeShellProps {
     strokeWidth: number;
     strokeDasharray?: string;
     opacity?: number;
-    markerEnd?: string;
+    /** Définit la couleur de la flèche à l'extrémité (flèche désactivée si omis) */
+    arrowColor?: string;
     onMouseEnter: () => void;
     onMouseLeave: () => void;
     onClick?: () => void;
@@ -125,7 +223,9 @@ interface EdgeShellProps {
 }
 
 /**
- * Composant de rendu partagé : hit-testing transparent + path visible.
+ * Composant de rendu partagé : hit-testing transparent + path visible + flèche terminale.
+ * La flèche est rendue manuellement (pas de SVG <marker>) pour garantir
+ * l'orientation et la couleur exactes.
  * Les enfants (badge, tooltip) sont rendus en dehors du <g> SVG.
  */
 export const EdgeShell = memo(function EdgeShell({
@@ -135,7 +235,7 @@ export const EdgeShell = memo(function EdgeShell({
     strokeWidth,
     strokeDasharray,
     opacity = EDGE_STYLE.opacity,
-    markerEnd,
+    arrowColor,
     onMouseEnter,
     onMouseLeave,
     onClick,
@@ -174,8 +274,9 @@ export const EdgeShell = memo(function EdgeShell({
                         transition: EDGE_STYLE.transition,
                         pointerEvents: 'none',
                     }}
-                    markerEnd={markerEnd}
                 />
+                {/* Flèche manuelle — pas de SVG <marker> */}
+                {arrowColor && <EdgeArrow path={edgePath} color={arrowColor} />}
             </g>
             {children}
         </>

@@ -2,11 +2,12 @@
  * ==================================
  * eLISAschool - Layout Engine pour Organigramme
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  *
  * Calcul des positions des noeuds via dagre (algorithme de layout hiérarchique).
  * Supporte les directions TB (top-bottom) et LR (left-right).
+ * v2.0.0 : espacement auto-adaptatif selon la densité des relations.
  */
 
 import dagre from 'dagre';
@@ -28,35 +29,49 @@ export interface LayoutEdge {
     target: string;
 }
 
-const NODE_WIDTH = 220;
+const NODE_WIDTH = 240;
 const NODE_HEIGHT_BASE = 120;
 const NODE_HEIGHT_PER_POSTE = 24;
 const MAX_POSTES_VISIBLE = 3;
 
-/**
- * Calcule la hauteur d'un noeud en fonction du nombre de postes affichés
- */
+const BASE_RANKSEP_TB = 100;
+const BASE_NODESEP_TB = 60;
+const BASE_RANKSEP_LR = 120;
+const BASE_NODESEP_LR = 80;
+
 function computeNodeHeight(node: OrganigrammeNode): number {
     const postesCount = Math.min(node.postes?.length || 0, MAX_POSTES_VISIBLE);
     return NODE_HEIGHT_BASE + (postesCount * NODE_HEIGHT_PER_POSTE);
 }
 
-/**
- * Construit le graphe dagre à partir de l'arbre d'unités
- */
+function computeSpacingFactor(relationCount: number, nodeCount: number): number {
+    if (relationCount === 0 || nodeCount === 0) return 1;
+    const density = relationCount / nodeCount;
+    if (density <= 0.3) return 1;
+    if (density <= 0.6) return 1.25;
+    if (density <= 1.0) return 1.4;
+    return Math.min(1.4 + (density - 1) * 0.15, 1.8);
+}
+
 export function computeLayout(
     arbre: OrganigrammeNode[],
     direction: LayoutDirection = 'TB',
     collapsedIds: Set<string> = new Set(),
+    relationCount: number = 0,
 ): { nodes: LayoutNode[]; edges: LayoutEdge[] } {
+    const totalNodes = arbre.length;
+    const factor = computeSpacingFactor(relationCount, totalNodes);
+
     const g = new dagre.graphlib.Graph();
     g.setDefaultEdgeLabel(() => ({}));
-    const spacing = direction === 'TB' ? LAYOUT_SPACING.TB : LAYOUT_SPACING.LR;
     g.setGraph({
         rankdir: direction,
-        nodesep: spacing.nodesep,
-        ranksep: spacing.ranksep,
-        edgesep: spacing.edgesep,
+        nodesep: direction === 'TB'
+            ? Math.round(BASE_NODESEP_TB * factor)
+            : Math.round(BASE_NODESEP_LR * factor),
+        ranksep: direction === 'TB'
+            ? Math.round(BASE_RANKSEP_TB * factor)
+            : Math.round(BASE_RANKSEP_LR * factor),
         marginx: 40,
         marginy: 40,
     });
@@ -64,7 +79,6 @@ export function computeLayout(
     const nodes: LayoutNode[] = [];
     const edges: LayoutEdge[] = [];
 
-    // Parcours récursif de l'arbre
     const parcourir = (unites: OrganigrammeNode[]) => {
         for (const unite of unites) {
             const height = computeNodeHeight(unite);
@@ -74,11 +88,10 @@ export function computeLayout(
                 id: unite.id,
                 width: NODE_WIDTH,
                 height,
-                position: { x: 0, y: 0 }, // sera calculé par dagre
+                position: { x: 0, y: 0 },
                 data: unite,
             });
 
-            // Arêtes vers les enfants (si non collapse)
             if (!collapsedIds.has(unite.id) && unite.enfants?.length) {
                 for (const enfant of unite.enfants) {
                     g.setEdge(unite.id, enfant.id);
@@ -94,11 +107,8 @@ export function computeLayout(
     };
 
     parcourir(arbre);
-
-    // Calcul du layout par dagre
     dagre.layout(g);
 
-    // Récupérer les positions calculées
     for (const node of nodes) {
         const dagreNode = g.node(node.id);
         if (dagreNode) {
@@ -112,9 +122,6 @@ export function computeLayout(
     return { nodes, edges };
 }
 
-/**
- * Collecte tous les IDs de descendants d'un noeud
- */
 export function collecterDescendants(
     arbre: OrganigrammeNode[],
     uniteId: string,
@@ -142,15 +149,11 @@ export function collecterDescendants(
     return result;
 }
 
-/**
- * Vérifie si un noeud est visible (tous ses ancêtres sont dépliés)
- */
 export function estNoeudVisible(
     arbre: OrganigrammeNode[],
     nodeId: string,
     collapsedIds: Set<string>,
 ): boolean {
-    // Trouver le chemin du noeud vers la racine
     const chemin: string[] = [];
     const trouverChemin = (unites: OrganigrammeNode[], cible: string, path: string[]): boolean => {
         for (const unite of unites) {
@@ -167,7 +170,6 @@ export function estNoeudVisible(
 
     trouverChemin(arbre, nodeId, []);
 
-    // Vérifier qu'aucun ancêtre n'est collapse
     for (const ancetreId of chemin) {
         if (collapsedIds.has(ancetreId)) return false;
     }
@@ -175,9 +177,3 @@ export function estNoeudVisible(
 }
 
 export { NODE_WIDTH, NODE_HEIGHT_BASE, MAX_POSTES_VISIBLE };
-
-/** Espacement dagre par direction — utilisé pour le calcul de routing des edges */
-export const LAYOUT_SPACING = {
-    TB: { nodesep: 80, ranksep: 120, edgesep: 20 },
-    LR: { nodesep: 100, ranksep: 140, edgesep: 20 },
-} as const;

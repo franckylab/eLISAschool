@@ -12,7 +12,7 @@ import { AppDataSource } from '@database/data-source';
 import { MembrePersonnel, StatutPersonnel, ContratPersonnel, StatutContrat, HeureCours, StatutEffectue } from '@modules/personnel/entities';
 import { ModeRemunerationEntity } from '@modules/organisation/entities';
 import { CreneauHoraire, JourSemaine, TypeCreneau, StatutCreneau } from '@modules/emploi-du-temps/entities';
-import { AffectationMatiere } from '@modules/matieres/entities';
+import { AffectationMatiere, StatutAffectationMatiere, StatutValidationAffectation } from '@modules/matieres/entities';
 import { Classe, ClasseAnnee } from '@modules/classes/entities';
 import { Matiere } from '@modules/matieres/entities';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
@@ -140,8 +140,8 @@ export async function seedHeuresCoursEtEdt(etablissementId: string): Promise<voi
             a.enseignantId = enseignant.id;
             a.etablissementId = etablissementId;
             a.obligatoire = true;
-            a.statutValidation = 'VALIDE' as any;
-            a.statut = 'ACTIVE' as any;
+            a.statutValidation = StatutValidationAffectation.VALIDE;
+            a.statut = StatutAffectationMatiere.ACTIVE;
             a.dateDebut = new Date();
             await affectationRepo.save(a);
             affectation = a;
@@ -175,14 +175,20 @@ export async function seedHeuresCoursEtEdt(etablissementId: string): Promise<voi
     logger.info(`✅ ${edtCount} créneaux EDT créés`);
 
     // 5. Créer des HeureCours pour la semaine courante
+    const jourToOffset: Record<string, number> = {
+        [JourSemaine.LUNDI]: 0,
+        [JourSemaine.MARDI]: 1,
+        [JourSemaine.MERCREDI]: 2,
+        [JourSemaine.JEUDI]: 3,
+        [JourSemaine.VENDREDI]: 4,
+        [JourSemaine.SAMEDI]: 5,
+    };
     let hcCount = 0;
     for (const slot of SLOTS_DEF) {
         const classeAnnee = classesAnnee[hcCount % classesAnnee.length];
         const matiere = matieres[hcCount % matieres.length];
         const date = new Date(semaine);
-        const dayIndex = [6, 0, 1, 2, 3, 4, 5].indexOf(
-            ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'].indexOf(slot.jour) + 1
-        );
+        const dayIndex = jourToOffset[slot.jour] ?? 0;
         date.setDate(semaine.getDate() + dayIndex);
         if (date > new Date()) continue;
 

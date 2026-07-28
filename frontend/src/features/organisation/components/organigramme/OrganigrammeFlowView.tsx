@@ -24,6 +24,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Maximize2, Minimize2, Link2, Download } from 'lucide-react';
+import { MarkerDefs } from '@/lib/routing';
 import { UniteNode } from './nodes/UniteNode';
 import { HierarchieEdge } from './edges/HierarchieEdge';
 import { RelationEdge, type RelationEdgeData } from './edges/RelationEdge';
@@ -258,6 +259,7 @@ function FlowViewInner({
                 zoomOnDoubleClick={false}
                 proOptions={{ hideAttribution: true }}
             >
+                <MarkerDefs />
                 <Background gap={20} size={1} color="var(--org-node-border)" />
                 {(isDesktop || forceMinimap) && (
                     <MiniMap
@@ -278,15 +280,17 @@ function FlowViewInner({
                         onClick={handleToggleFullscreen}
                         title={isFullscreen ? t('organigramme.quitterPleinEcran', 'Quitter le plein écran') : t('organigramme.pleinEcran', 'Plein écran')}
                     >
-                        {isFullscreen ? <Minimize2 style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} /> : <Maximize2 style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />}
+                        {isFullscreen ? <Minimize2 /> : <Maximize2 />}
                     </ControlButton>
                     {onToggleRelations && (
                         <ControlButton
                             onClick={onToggleRelations}
                             title={showRelations ? t('organigramme.masquerRelations', 'Masquer les relations') : t('organigramme.afficherRelations', 'Afficher les relations')}
-                            style={showRelations ? { backgroundColor: 'var(--color-dominant-600)', color: '#fff' } : undefined}
+                            style={showRelations
+                                ? { backgroundColor: 'var(--color-dominant-600)', color: '#fff' }
+                                : { color: 'inherit' }}
                         >
-                            <Link2 style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
+                            <Link2 />
                         </ControlButton>
                     )}
                     {onExport && (
@@ -294,7 +298,7 @@ function FlowViewInner({
                             onClick={onExport}
                             title={t('organigramme.exporter', 'Exporter')}
                         >
-                            <Download style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />
+                            <Download />
                         </ControlButton>
                     )}
                 </Controls>

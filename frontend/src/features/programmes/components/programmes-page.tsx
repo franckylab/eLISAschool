@@ -21,6 +21,7 @@ import {
 } from '../hooks/use-programmes';
 import { ProgrammeFormModal } from './programme-form-modal';
 import { BookOpen, Layers, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { formatVolumeMinutesToHours } from '@/lib/format-utils';
 
 export function ProgrammesPage() {
     const { t } = useTranslation('programmes');
@@ -66,7 +67,7 @@ export function ProgrammesPage() {
             key: 'code',
             header: t('code'),
             render: (p) => (
-                <code className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono">
+                <code className="px-2 py-1 bg-muted rounded text-xs font-mono">
                     {p.code}
                 </code>
             ),
@@ -89,12 +90,12 @@ export function ProgrammesPage() {
             ),
         },
         {
-            key: 'nbHeuresHebdo',
+            key: 'volumeHoraire',
             header: t('volumeHoraire'),
             render: (p) => (
                 <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3 text-[var(--color-texte-secondaire)]" />
-                    <span className="text-sm font-medium">{p.nbHeuresCalculees || p.nbHeuresHebdo || 0}h</span>
+                    <span className="text-sm font-medium">{formatVolumeMinutesToHours(p.volumeMinutesCalcule ?? 0)}</span>
                 </div>
             ),
         },
@@ -104,8 +105,8 @@ export function ProgrammesPage() {
             render: (p) => (
                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     p.actif
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                        ? 'bg-success/10 text-success'
+                        : 'bg-muted text-muted-foreground'
                 }`}>
                     {p.actif ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
                     {p.actif ? t('actif') : t('inactif')}
@@ -120,7 +121,7 @@ export function ProgrammesPage() {
                 {
                     key: 'voir',
                     icon: ArrowUpRight,
-                    label: 'Détails',
+                    label: t('voirDetails'),
                     onClick: () => navigate({ to: `/programmes/${p.id}` }),
                     variant: 'info' as const,
                 },
@@ -177,7 +178,7 @@ export function ProgrammesPage() {
                 <StatCard label={t('totalProgrammes', 'Total Programmes')} value={total} icon={BookOpen} tone="dominant" />
                 <StatCard label={t('actifs')} value={actifs} icon={CheckCircle} tone="success" />
                 <StatCard label={t('inactifs', 'Inactifs')} value={total - actifs} icon={XCircle} tone="muted" />
-                <StatCard label={t('volumeHoraire')} value={`${programmes.reduce((s, p) => s + (p.nbHeuresCalculees || p.nbHeuresHebdo || 0), 0)}h`} icon={Clock} tone="info" />
+                <StatCard label={t('volumeHoraire')} value={formatVolumeMinutesToHours(programmes.reduce((s, p) => s + (p.volumeMinutesCalcule ?? 0), 0))} icon={Clock} tone="info" />
             </CardGrid>
 
             <DataTable

@@ -26,7 +26,7 @@ import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, calculatePaginationMeta } from '@common/utils/pagination.util';
 import { AffectationMatiere, StatutAffectationMatiere } from '@modules/matieres/entities';
-import { MatiereNiveau } from '@modules/matieres/entities';
+import { coefficientResolverService } from '@modules/matieres/services/coefficient-resolver.service';
 import { salleAvailabilityService } from '@modules/salles/services/salle-availability.service';
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { CreneauHoraire, PreferenceEmploiDuTemps, JourSemaine, TypeCreneau, StatutCreneau } from '../entities';
@@ -311,27 +311,30 @@ export class EmploiDuTempsService {
             return { success: true, message: 'Aucune affectation trouvée. EDT vide.', nombreCreneaux: 0, conflits: [], avertissements: [] };
         }
 
-        const matiereNiveauRepo = AppDataSource.getRepository(MatiereNiveau);
         const requireValidation = await getParamBoolean('emploi-du-temps.require_validation', { defaultValue: false });
         const statutGenere = requireValidation ? StatutCreneau.PLANIFIE : StatutCreneau.VALIDE;
         const dureeCreneau = preferences.dureeCreneauStandard || 55;
         const jours = preferences.joursOuvrables || ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI'];
         const respecterContraintes = options?.respecterContraintes ?? true;
 
-        // Charger les volumes horaires et trier par volume décroissant (most constrained first)
-        type AffectationAvecVolume = { affectation: AffectationMatiere; volumeHeures: number; nombreCreneaux: number };
+        // Charger les volumes horaires (en minutes/semaine — source: MatiereNiveau.volumeHoraire)
+        // et trier par volume décroissant (most constrained first)
+        type AffectationAvecVolume = { affectation: AffectationMatiere; volumeMinutes: number; nombreCreneaux: number };
         const affectationsTriees: AffectationAvecVolume[] = [];
 
         for (const affectation of affectations) {
-            const matiereNiveau = await matiereNiveauRepo.findOne({
-                where: { matiereId: affectation.matiereId, niveauId: classeAnnee.classe?.niveauId ?? '' },
-            });
-            const volumeHeures = matiereNiveau?.volumeHoraire || 2;
-            const nombreCreneaux = Math.ceil((volumeHeures * 60) / dureeCreneau);
-            affectationsTriees.push({ affectation, volumeHeures, nombreCreneaux });
+            const matiereNiveau = await coefficientResolverService.resoudreMatiereNiveau(
+                affectation.matiereId,
+                classeAnnee.classe?.niveauId ?? '',
+                classeAnnee.classe?.filiereId,
+            );
+            // volumeHoraire est en minutes/semaine (défaut 120min = 2h si non défini)
+            const volumeMinutes = matiereNiveau?.volumeHoraire || 120;
+            const nombreCreneaux = Math.ceil(volumeMinutes / dureeCreneau);
+            affectationsTriees.push({ affectation, volumeMinutes, nombreCreneaux });
         }
 
-        affectationsTriees.sort((a, b) => b.volumeHeures - a.volumeHeures);
+        affectationsTriees.sort((a, b) => b.volumeMinutes - a.volumeMinutes);
 
         // Structures de suivi des contraintes
         const creneauxParClasseJour = new Map<string, number>();
@@ -434,7 +437,10 @@ export class EmploiDuTempsService {
 
     private estDansPause(heure: string, pauseDebut?: string, pauseFin?: string): boolean {
         if (!pauseDebut || !pauseFin) return false;
-        return heure >= pauseDebut && heure < pauseFin;
+        const h = this.normaliserHeure(heure);
+        const pd = this.normaliserHeure(pauseDebut);
+        const pf = this.normaliserHeure(pauseFin);
+        return h >= pd && h < pf;
     }
 
     private estImposable(heure: string, heureFin: string, jour: string, creneauxImposables?: Array<{ jour: string; heureDebut: string; heureFin: string }>): boolean {
@@ -474,8 +480,8 @@ export class EmploiDuTempsService {
     ): { jour: string; heureDebut: string; heureFin: string; salleId?: string } | null {
         const maxParJour = preferences.maxCreneauxParJour || 8;
         const maxMatiereParJour = preferences.maxCreneauxMatiereParJour || 2;
-        const heureDebutCours = preferences.heureDebutCours || '07:30';
-        const heureFinCours = preferences.heureFinCours || '17:00';
+        const heureDebutCours = this.normaliserHeure(preferences.heureDebutCours || '07:30');
+        const heureFinCours = this.normaliserHeure(preferences.heureFinCours || '17:00');
 
         // Calculer le nombre de jours où cette matière est déjà placée
         const joursAvecMatiere = new Set<string>();
@@ -559,8 +565,8 @@ export class EmploiDuTempsService {
         affectation: AffectationMatiere,
         classeAnneeId: string,
     ): { jour: string; heureDebut: string; heureFin: string; salleId?: string } | null {
-        const heureDebutCours = preferences.heureDebutCours || '07:30';
-        const heureFinCours = preferences.heureFinCours || '17:00';
+        const heureDebutCours = this.normaliserHeure(preferences.heureDebutCours || '07:30');
+        const heureFinCours = this.normaliserHeure(preferences.heureFinCours || '17:00');
 
         for (const jour of jours) {
             let heure = heureDebutCours;
@@ -582,15 +588,21 @@ export class EmploiDuTempsService {
         return null;
     }
 
+    /** Normalise "HH:mm:ss" (PostgreSQL time) → "HH:mm" (varchar(5)) */
+    private normaliserHeure(heure: string): string {
+        const parts = heure.split(':');
+        return `${parts[0]}:${parts[1]}`;
+    }
+
     private heureToMinutes(heure: string): number {
         const [h, m] = heure.split(':').map(Number);
         return h * 60 + m;
     }
 
     private getPauseFin(heure: string, preferences: PreferenceEmploiDuTemps): string | null {
-        if (this.estDansPause(heure, preferences.pauseMatineeDebut, preferences.pauseMatineeFin)) return preferences.pauseMatineeFin!;
-        if (this.estDansPause(heure, preferences.pauseDebut, preferences.pauseFin)) return preferences.pauseFin!;
-        if (this.estDansPause(heure, preferences.pauseApresMidiDebut, preferences.pauseApresMidiFin)) return preferences.pauseApresMidiFin!;
+        if (this.estDansPause(heure, preferences.pauseMatineeDebut, preferences.pauseMatineeFin)) return this.normaliserHeure(preferences.pauseMatineeFin!);
+        if (this.estDansPause(heure, preferences.pauseDebut, preferences.pauseFin)) return this.normaliserHeure(preferences.pauseFin!);
+        if (this.estDansPause(heure, preferences.pauseApresMidiDebut, preferences.pauseApresMidiFin)) return this.normaliserHeure(preferences.pauseApresMidiFin!);
         return null;
     }
 }

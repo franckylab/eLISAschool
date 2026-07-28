@@ -14,12 +14,13 @@ import {
     ArrowLeft, Users, BookOpen, MapPin,
     Edit, Trash2, UserPlus, TrendingUp, Award, Power,
     Calendar, CheckCircle, XCircle, AlertCircle,
-    Group, GraduationCap,
+    Group, GraduationCap, ArrowRightLeft,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { CardGrid } from '@/components/ui/CardGrid';
 import { StatCard } from '@/components/ui/StatCard';
-import { useClasse, useSupprimerClasse, useAffecterEleve, useElevesClasse, useToggleActifClasse } from '../hooks/use-classes';
+import { useClasse, useSupprimerClasse, useAffecterEleve, useElevesClasse, useToggleActifClasse, useTransfererEleve } from '../hooks/use-classes';
+import { useToutesClasses } from '../hooks/use-toutes-classes';
 import { useEleves } from '@/features/eleves/hooks/use-eleves';
 import { ClasseFormModal } from './classe-form-modal';
 import { ChangerSalleModal } from './changer-salle-modal';
@@ -62,6 +63,7 @@ export function ClasseDetailPage() {
     const [modalChangerSalleOpen, setModalChangerSalleOpen] = useState(false);
     const [classeToDelete, setClasseToDelete] = useState(false);
     const [classeToToggle, setClasseToToggle] = useState(false);
+    const [eleveATransferer, setEleveATransferer] = useState<Eleve | null>(null);
     const [pageEleves, setPageEleves] = useState(1);
     const [rechercheEleves, setRechercheEleves] = useState('');
 
@@ -129,6 +131,21 @@ export function ClasseDetailPage() {
                 }`}>
                     {e.statut === 'ACTIF' ? t('statut.actif') : t('statut.inactif')}
                 </span>
+            ),
+        },
+        {
+            key: 'actions',
+            header: t('colonnes.actions'),
+            render: (e) => (
+                <button
+                    type="button"
+                    title={t('transfert.transferer')}
+                    aria-label={t('transfert.transferer')}
+                    className="inline-flex items-center justify-center rounded-[var(--radius-md)] p-2 text-secondary hover:text-primary hover:bg-primary/10 transition-colors"
+                    onClick={() => setEleveATransferer(e)}
+                >
+                    <ArrowRightLeft className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
+                </button>
             ),
         },
     ];
@@ -702,6 +719,14 @@ export function ClasseDetailPage() {
                         onClose={() => setModalAffectationOpen(false)}
                     />
                 )}
+
+                {eleveATransferer && (
+                    <ModalTransfertEleve
+                        classeId={id}
+                        eleve={eleveATransferer}
+                        onClose={() => setEleveATransferer(null)}
+                    />
+                )}
             </motion.div>
         </div>
     );
@@ -820,6 +845,120 @@ function ModalAffectationEleve({ classeId, onClose }: ModalAffectationEleveProps
                         value={commentaire}
                         onChange={(e) => setCommentaire(e.target.value)}
                         placeholder={t('affectation.commentairePlaceholder')}
+                        rows={3}
+                        className="w-full px-3 py-2 rounded-lg border border-border bg-card text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none"
+                    />
+                </div>
+            </div>
+        </CustomModal>
+    );
+}
+
+interface ModalTransfertEleveProps {
+    classeId: string;
+    eleve: Eleve;
+    onClose: () => void;
+}
+
+function ModalTransfertEleve({ classeId, eleve, onClose }: ModalTransfertEleveProps) {
+    const { t } = useTranslation('classes');
+    const transferer = useTransfererEleve();
+    const [nouvelleClasseId, setNouvelleClasseId] = useState('');
+    const [dateTransfert, setDateTransfert] = useState(new Date().toISOString().split('T')[0]);
+    const [motif, setMotif] = useState('CHANGEMENT_CLASSE');
+    const [commentaire, setCommentaire] = useState('');
+
+    const { data: toutesClasses } = useToutesClasses();
+
+    const optionsClasses = (toutesClasses || [])
+        .filter((c) => c.id !== classeId && c.actif)
+        .map((c) => ({
+            value: c.id,
+            label: c.niveau?.nom ? `${c.nom} — ${c.niveau.nom}` : c.nom,
+        }));
+
+    const optionsMotifs = [
+        { value: 'CHANGEMENT_CLASSE', label: t('affectation.motifs.changementClasse') },
+        { value: 'PASSAGE_NIVEAU', label: t('affectation.motifs.passageNiveau') },
+        { value: 'TRANSFERE', label: t('affectation.motifs.transfere') },
+        { value: 'REDOUBLEMENT', label: t('affectation.motifs.redoublement') },
+    ];
+
+    const handleSubmit = async () => {
+        if (!nouvelleClasseId) return;
+        try {
+            await transferer.mutateAsync({
+                eleveId: eleve.id,
+                nouvelleClasseId,
+                motifChangement: motif || undefined,
+                commentaire: commentaire || undefined,
+                dateTransfert,
+            });
+            onClose();
+        } catch {
+            // Handled by the hook
+        }
+    };
+
+    return (
+        <CustomModal
+            open={true}
+            onOpenChange={(open) => { if (!open) onClose(); }}
+            title={t('transfert.titre')}
+            description={t('transfert.description', { nom: `${eleve.prenom} ${eleve.nom}` })}
+            size="xl"
+            footer={
+                <>
+                    <ElisaButton variant="outline" onClick={onClose}>
+                        {t('boutons.annuler')}
+                    </ElisaButton>
+                    <ElisaButton
+                        variant="primary"
+                        isLoading={transferer.isPending}
+                        onClick={handleSubmit}
+                        disabled={!nouvelleClasseId}
+                    >
+                        {t('transfert.transferer')}
+                    </ElisaButton>
+                </>
+            }
+        >
+            <div className="space-y-4">
+                <ElisaSelect
+                    label={t('transfert.nouvelleClasse')}
+                    value={nouvelleClasseId}
+                    onValueChange={setNouvelleClasseId}
+                    options={optionsClasses}
+                    placeholder={t('transfert.selectionnerClasse')}
+                    required
+                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-secondary mb-1">
+                            {t('transfert.date')}
+                        </label>
+                        <input
+                            type="date"
+                            value={dateTransfert}
+                            onChange={(e) => setDateTransfert(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-border bg-card text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                        />
+                    </div>
+                    <ElisaSelect
+                        label={t('transfert.motif')}
+                        value={motif}
+                        onValueChange={setMotif}
+                        options={optionsMotifs}
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-secondary mb-1">
+                        {t('transfert.commentaire')}
+                    </label>
+                    <textarea
+                        value={commentaire}
+                        onChange={(e) => setCommentaire(e.target.value)}
+                        placeholder={t('transfert.commentairePlaceholder')}
                         rows={3}
                         className="w-full px-3 py-2 rounded-lg border border-border bg-card text-sm text-foreground focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none"
                     />

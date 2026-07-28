@@ -1915,6 +1915,121 @@ import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
 ---
 
+## Workflow : Intégrer un Workflow de Validation
+
+### Composants partagés
+
+| Composant | Fichier | Usage |
+|-----------|---------|-------|
+| `StatutBadge` | `@/components/ui/StatutBadge` | Badge coloré par statut (EN_ATTENTE, ACTIF, REJETE, etc.) |
+| `ValidationTimeline` | `@/components/ui/ValidationTimeline` | Timeline visuelle des étapes de validation |
+| `ValidationActions` | `@/components/ui/ValidationActions` | Boutons Approuver/Rejeter/Annuler + modal commentaire |
+| `AuditTimeline` | `@/components/ui/AuditTimeline` | Timeline des logs d'audit pour une entité |
+
+### Hook `useValidationWorkflow`
+
+**Fichier** : `frontend/src/hooks/use-validation-workflow.ts`
+
+```typescript
+import {
+    useValidationWorkflow,    // GET workflow par entiteId + module
+    useTraiterValidation,     // POST valider (APPROUVE/REJETE)
+    useAnnulerValidation,     // POST annuler
+    useDashboardValidations,  // GET dashboard agrégé
+} from '@/hooks/use-validation-workflow';
+
+// Usage dans une page détail
+const { data: workflow } = useValidationWorkflow('notes', noteId);
+const traiter = useTraiterValidation();
+
+// Dans le JSX
+{workflow && <ValidationTimeline workflow={workflow} />}
+{workflow && <ValidationActions workflow={workflow} onTraiter={traiter.mutate} />}
+```
+
+### Hook `useAuditLogs` (via AuditTimeline)
+
+**Fichier** : `frontend/src/components/ui/AuditTimeline.tsx`
+
+```tsx
+// Composant autonome — fetch et affiche les logs d'audit
+<AuditTimeline cibleType="Note" cibleId={noteId} />
+
+// API sous-jacente : GET /api/audit/logs?cible=Note&cibleId={id}
+```
+
+### Pattern d'intégration dans une page détail
+
+```tsx
+// Dans un onglet "Validation" d'une page détail
+<TabsBar tabs={[
+    { id: 'infos', label: t('informations') },
+    { id: 'validation', label: t('validation'), badge: workflow?.niveauxEnAttente },
+    { id: 'historique', label: t('historique') },
+]} />
+
+<TabsContent value="validation">
+    {workflow ? (
+        <>
+            <ValidationTimeline workflow={workflow} />
+            <ValidationActions workflow={workflow} onTraiter={traiter} />
+        </>
+    ) : <EmptyState message={t('aucuneValidation')} />}
+</TabsContent>
+
+<TabsContent value="historique">
+    <AuditTimeline cibleType="Note" cibleId={noteId} />
+</TabsContent>
+```
+
+### Règles
+
+- **TOUJOURS** utiliser les composants partagés — jamais de timeline custom
+- **TOUJOURS** gater les actions de validation par permission (`validation:module:levelN`)
+- **JAMAIS** afficher d'UUID brut dans la timeline — utiliser les labels humains
+- **TOUJOURS** invalider les queries du module après traitement validation
+
+### Fichiers de référence
+
+- **Hook** : `frontend/src/hooks/use-validation-workflow.ts`
+- **StatutBadge** : `frontend/src/components/ui/StatutBadge.tsx`
+- **ValidationTimeline** : `frontend/src/components/ui/ValidationTimeline.tsx`
+- **ValidationActions** : `frontend/src/components/ui/ValidationActions.tsx`
+- **AuditTimeline** : `frontend/src/components/ui/AuditTimeline.tsx`
+
+---
+
+## Formatage des dates — Règle absolue
+
+### Utiliser `date-utils.ts` — JAMAIS `toLocaleDateString`
+
+**Fichier** : `frontend/src/lib/date-utils.ts`
+
+```typescript
+import { formatDate, formatDateTime, formatRelative, formatDateInput } from '@/lib/date-utils';
+
+// ✅ CORRECT
+formatDate('2025-01-15T10:30:00Z')              // → "15 janvier 2025"
+formatDate(date, 'dd/MM/yyyy')                   // → "15/01/2025"
+formatDateTime('2025-01-15T10:30:00Z')           // → "15 janv. 2025, 10:30"
+formatRelative('2025-01-15T10:30:00Z')           // → "il y a 5 minutes"
+formatDateInput('2025-01-15T10:30:00Z')          // → "2025-01-15"
+
+// ❌ INTERDIT — ne gère pas le locale i18n, hardcode le français
+new Date(date).toLocaleDateString('fr-FR')
+date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+```
+
+**Pourquoi** : `date-utils.ts` lit `localStorage.getItem('i18nextLng')` et utilise `date-fns/locale` (fr/enUS). `toLocaleDateString('fr-FR')` ignore la langue de l'application.
+
+### Anti-pattern
+
+- **NE PAS** utiliser `toLocaleDateString('fr-FR')` ou `toLocaleString('fr-FR')` — 37 occurrences legacy identifiées, à migrer progressivement
+- **NE PAS** créer de fonction de formatage locale — toujours importer depuis `@/lib/date-utils`
+- **NE PAS** formater les dates côté JSX avec des template literals — utiliser les fonctions dédiées
+
+---
+
 ## Checklist Finale avant Déploiement
 
 - [ ] Tous les fichiers ont la **bannière eLISAschool**

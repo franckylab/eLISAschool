@@ -17,7 +17,7 @@ export interface ProgrammePedagogique {
     cycle?: { id: string; nom: string };
     niveau?: { id: string; nom: string; code: string };
     matieres?: ProgrammeMatiere[];
-    nbHeuresCalculees?: number;
+    volumeMinutesCalcule?: number;
 }
 
 export interface ProgrammeMatiere {

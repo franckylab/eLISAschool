@@ -8,6 +8,7 @@ import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { formatDate } from '@/lib/date-utils';
 import { usePermissions } from '@/hooks';
 import type { Column } from '@/components/ui/DataTable';
 import type { ContratPersonnel, ContratFilters } from '../types/contrat.types';
@@ -72,14 +73,14 @@ export function ContratsPage() {
             key: 'dateDebut',
             header: t('colonne.dateDebut'),
             render: (c: ContratPersonnel) => (
-                <span className="text-sm">{new Date(c.dateDebut).toLocaleDateString('fr-FR')}</span>
+                <span className="text-sm">{formatDate(c.dateDebut, 'dd/MM/yyyy')}</span>
             ),
         },
         {
             key: 'dateFin',
             header: t('colonne.dateFin'),
             render: (c: ContratPersonnel) => (
-                <span className="text-sm">{c.dateFin ? new Date(c.dateFin).toLocaleDateString('fr-FR') : '-'}</span>
+                <span className="text-sm">{c.dateFin ? formatDate(c.dateFin, 'dd/MM/yyyy') : '-'}</span>
             ),
         },
         {

@@ -28,6 +28,14 @@
         "preferences": "Preferences",
         "templates": "Templates"
     },
+    "jours": {
+        "lundi": "Monday",
+        "mardi": "Tuesday",
+        "mercredi": "Wednesday",
+        "jeudi": "Thursday",
+        "vendredi": "Friday",
+        "samedi": "Saturday"
+    },
     "contexte": {
         "classe": "Class",
         "enseignant": "Teacher",
@@ -160,7 +168,6 @@
             "td": "Tutorial",
             "tp": "Lab",
             "recreation": "Break",
-            "pause": "Break",
             "permanence": "Study hall",
             "etude": "Study",
             "autre": "Other"
@@ -212,6 +219,7 @@
         }
     },
     "toasts": {
+        "genererOk": "Timetable generated successfully",
         "creneauCree": "Slot created successfully",
         "creneauModifie": "Slot updated successfully",
         "creneauSupprime": "Slot deleted",

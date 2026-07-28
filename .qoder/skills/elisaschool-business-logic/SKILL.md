@@ -286,6 +286,168 @@ Une seule table `hierarchie_personnel`, **deux types de relations mutuellement e
 
 ---
 
+## Domaine 13 : Emploi du Temps (v1.0 — 2026-07)
+
+### Source de vérité — Volume horaire
+
+- **`MatiereNiveau.volumeHoraire`** (int, minutes/semaine) est la **source unique et absolue** du volume horaire d'une matière pour un niveau donné.
+- `ProgrammeMatiere` ne porte **plus** de `volumeHoraire` (supprimé D1) — c'est un bridge pur entre programme et matière.
+- Le frontend ne propose pas de champ volume horaire lors de l'ajout d'une matière à un programme.
+- Le service ConflitDetection compare le volume planifié (somme des durées des créneaux) au `volumeHoraire` de MatiereNiveau pour détecter les dépassements.
+
+### Entité pivot — CreneauHoraire (table `creneaux_horaires`)
+
+Fusion de l'ancien `EmploiDuTemps` + `RepartitionHoraire` en une seule entité :
+
+```
+CreneauHoraire {
+    id: uuid
+    jourSemaine: int (1=lundi … 7=dimanche)
+    heureDebut: time (HH:mm)
+    heureFin: time (HH:mm)
+    affectationMatiereId: uuid (FK → AffectationMatiere)
+    salleId?: uuid (FK → Salle)
+    statut: StatutCreneau (PLANIFIE | VALIDE | ANNULE)
+    recurrence?: jsonb (pattern hebdomadaire, exceptions)
+    commentaire?: text
+    etablissementId: uuid (multi-tenant)
+    createdAt, updatedAt
+}
+```
+
+Relations clés :
+- `affectationMatiere` → porte l'enseignant, la matière, la classeAnnee
+- Via `affectationMatiere.classeAnnee` → on connaît la classe
+- Via `affectationMatiere.enseignantId` → on connaît l'enseignant
+- `salle` → optionnelle, vérifiée par le service conflit
+
+### Détection de conflits — ConflitDetectionService
+
+5 types de conflits détectés automatiquement :
+
+| Type | Sévérité | Condition |
+|------|----------|-----------|
+| `CLASSE_OCCUPEE` | BLOQUANT | Même classe, même créneau horaire |
+| `ENSEIGNANT_OCCUPE` | BLOQUANT | Même enseignant, même créneau horaire |
+| `SALLE_OCCUPEE` | BLOQUANT | Même salle, même créneau horaire |
+| `DEPASSEMENT_VOLUME` | AVERTISSEMENT | Somme créneaux > MatiereNiveau.volumeHoraire |
+| `CRENEAU_NON_IMPOSABLE` | AVERTISSEMENT | Créneau placé hors plages imposables des préférences |
+
+**Règles** :
+- Les conflits BLOQUANTS empêchent la sauvegarde (400) — le frontend affiche la liste.
+- Les conflits AVERTISSEMENT permettent la sauvegarde mais sont signalés à l'utilisateur.
+- La vérification exclut le créneau en cours d'édition (`excludeId`).
+- Le chevauchement temporel est strict : `(debutA < finB) AND (debutB < finA)`.
+- Endpoint : `POST /api/emploi-du-temps/verifier-conflits` (perm `emploi-du-temps:verifier-conflits`).
+
+### Algorithme de génération automatique
+
+**Stratégie** : most-constrained-first (matières avec le plus de contraintes placées en premier).
+
+```
+1. Charger toutes les AffectationMatiere actives de la classe
+2. Pour chaque matière, calculer le nombre de créneaux nécessaires :
+   nbCreneaux = ceil(MatiereNiveau.volumeHoraire / dureeCreneauParDefaut)
+3. Trier par contraintes décroissantes :
+   - Enseignant avec le moins de disponibilités
+   - Volume horaire le plus élevé
+   - Matière obligatoire avant optionnelle
+4. Pour chaque matière (triée), tenter de placer les créneaux :
+   a. Itérer les plages imposables (préférences)
+   b. Vérifier absence de conflit (3 types bloquants)
+   c. Respecter les pauses et durées max consécutives
+   d. Placer le créneau ou reporter au prochain slot libre
+5. Retourner les créneaux générés + conflits non résolus
+```
+
+### Workflow des créneaux
+
+```
+PLANIFIE → VALIDE → (ANNULE)
+```
+
+- **PLANIFIE** : créneau brouillon (généré automatiquement ou créé manuellement). Modifiable, déplaçable.
+- **VALIDE** : créneau confirmé. Visible dans l'emploi du temps officiel. Matérialise les `HeureCours`.
+- **ANNULE** : créneau annulé (pas de hard-delete). Caché par défaut mais consultable dans l'historique.
+
+### HeureCours — Matérialisation datée
+
+`HeureCours` = instance concrète d'un cours à une date précise. Ancré sur `classeAnneeId` (pas `classeId`).
+
+```
+HeureCours {
+    id: uuid
+    date: date
+    heureDebut, heureFin: time
+    creneauId: uuid (FK → CreneauHoraire)
+    classeAnneeId: uuid (FK → ClasseAnnee)
+    affectationMatiereId?: uuid
+    salleId?: uuid
+    enseignantId?: uuid (MembrePersonnel.id, nullable si remplacement)
+    remplacantId?: uuid
+    statut: StatutHeureCours (PLANIFIE | EFFECTUE | ANNULE | REPORTE)
+    commentaire?: text
+    etablissementId: uuid
+}
+```
+
+**Règles** :
+- Généré depuis `CreneauHoraire` validé, pour chaque occurrence hebdomadaire.
+- `remplacantId` = MembrePersonnel de remplacement (null = enseignant titulaire).
+- Un créneau ANNULE ne génère plus de HeureCours futurs.
+
+### Préférences (PreferenceEmploiDuTemps)
+
+Enrichi avec :
+- `pauses` : JSONB array (ex: `[{ debut: "10:00", fin: "10:15" }, { debut: "12:00", fin: "13:00" }]`)
+- `creneauxImposables` : JSONB (plages horaires autorisées par jour, ex: `{ "1": [{ debut: "07:30", fin: "12:00" }, { debut: "13:00", fin: "16:00" }] }`)
+- `dureeMaxConsecutive` : int (minutes, défaut 180)
+- `dureeCreneauDefaut` : int (minutes, défaut 55)
+
+### Permissions RBAC
+
+| Permission | Usage |
+|-----------|-------|
+| `emploi-du-temps:view` | Voir les créneaux |
+| `emploi-du-temps:create` | Créer un créneau |
+| `emploi-du-temps:edit` | Modifier un créneau |
+| `emploi-du-temps:delete` | Supprimer un créneau |
+| `emploi-du-temps:generer` | Générer automatiquement |
+| `emploi-du-temps:valider` | Passer PLANIFIE → VALIDE |
+| `emploi-du-temps:verifier-conflits` | Vérifier les conflits |
+| `programmes:historiser` | Créer une version de programme |
+
+### Entités supprimées (3)
+
+- ❌ `EmploiDuTemps` → fusionnée dans CreneauHoraire
+- ❌ `RepartitionHoraire` → fusionnée dans CreneauHoraire
+- ❌ `ConfigurationMatiereClasse` → champs absorbés par AffectationMatiere (`obligatoire`, `statutValidation`)
+
+### À ne pas faire
+
+- Ne **pas** stocker `volumeHoraire` sur ProgrammeMatiere (source unique = MatiereNiveau).
+- Ne **pas** référencer `classeId` dans HeureCours (toujours `classeAnneeId`).
+- Ne **pas** hard-deleter des créneaux — utiliser le statut ANNULE.
+- Ne **pas** ignorer les conflits BLOQUANTS lors de la sauvegarde.
+- Ne **pas** placer un créneau sans vérification des 3 types bloquants (classe + enseignant + salle).
+- Ne **pas** utiliser `EmploiDuTemps` ou `RepartitionHoraire` (supprimés).
+
+### Fichiers de référence
+
+| Rôle | Fichier |
+|------|---------|
+| Entité CreneauHoraire | `backend/src/modules/emploi-du-temps/entities/creneau-horaire.entity.ts` |
+| Entité HeureCours | `backend/src/modules/emploi-du-temps/entities/heure-cours.entity.ts` |
+| Service EDT | `backend/src/modules/emploi-du-temps/services/emploi-du-temps.service.ts` |
+| Conflits | `backend/src/modules/emploi-du-temps/services/conflit-detection.service.ts` |
+| Controller | `backend/src/modules/emploi-du-temps/controllers/emploi-du-temps.controller.ts` |
+| DTOs | `backend/src/modules/emploi-du-temps/dto/emploi-du-temps.dto.ts` |
+| Types frontend | `frontend/src/features/emploi-du-temps/types/edt.types.ts` |
+| Hooks frontend | `frontend/src/features/emploi-du-temps/hooks/use-emploi-du-temps.ts` |
+| Calendrier frontend | `frontend/src/features/emploi-du-temps/components/edt-calendar.tsx` |
+
+---
+
 ## Domaine 1 : Chaîne académique (calcul notes → bulletins)
 
 ### Flux de données complet
@@ -331,6 +493,12 @@ Bulletins = agrégation des notes VALIDÉE + PUBLIÉE d'un élève pour une pér
 - `DELETE /api/bulletins/:id` (perm `bulletins:delete`) refusé si publié (400)
 - `GET /api/bulletins/:id/export` (perm `bulletins:export`) → HTML A4 imprimable (`bulletin.pdf.service.ts`, sans dépendance)
 - `PATCH` avec `publie: true` exige `bulletins:publier`
+
+**Résolution coefficient/barème** (singleton `coefficientResolverService`) :
+- Import : `import { coefficientResolverService } from '@modules/matieres/services';`
+- Chaîne : `AffectationMatiere.coefficient/bareme` → `ProgrammeMatiere.coefficient/bareme` → `MatiereNiveau.coefficient/bareme` → défaut `{ coefficient: 1, bareme: 20 }`
+- Méthodes : `resoudreCoefficient(affectationMatiere)` / `resoudreBareme(affectationMatiere)`
+- La résolution est **toujours** utilisée au lieu d'accéder directement aux champs
 
 **Classes** :
 - Si `anneeScolaireId` non fourni → récupère l'année active automatiquement
@@ -1071,6 +1239,82 @@ ModeleDocument : 7 types (BULLETIN, CERTIFICAT, CARTE_SCOLAIRE, ATTESTATION, RAP
 | Impression file | EN_ATTENTE → EN_COURS → TERMINÉ/ÉCHEC/ANNULÉ | annulerImpression() |
 | Carte | ACTIVE/INACTIVE/PERDUE/EXPIRÉE/DÉSACTIVÉE | renouveler(), signalerPerte() |
 
+### Workflow de validation (système unifié)
+
+**Service central** : `ValidationWorkflowService` (`backend/src/modules/auth/services/validation-workflow.service.ts`)
+
+**Principe** : Tout module peut activer la validation multi-niveaux via 3 paramètres système :
+- `{module}.require_validation` (booléen) — active/désactive
+- `{module}.validation_levels` (nombre) — nombre de niveaux (1-5)
+- `{module}.validation_roles` (JSON) — rôles requis par niveau `{ "1": "ADMIN", "2": "SUPER_ADMIN" }`
+
+**Flux** :
+```
+create() → statut = EN_ATTENTE_VALIDATION (si requireValidation=true)
+  → validationWorkflowService.createWorkflow({ module, entiteId, entiteType, niveauxRequis, etablissementId })
+  → Niveaux créés avec statut EN_ATTENTE
+
+traiterValidation(workflowId, dto: { niveauId, decision, commentaire })
+  → decision: APPROUVE | REJETE
+  → Si tous niveaux approuvés → callback onSuccess applique le statut final (ACTIF)
+  → Si rejeté → statut REJETE, entité non activée
+```
+
+**API REST** (10 routes, `/api/validation-workflows`) :
+| Route | Usage |
+|-------|-------|
+| `GET /` | Lister workflows (filtré par module/entiteId/etablissementId) |
+| `GET /:id` | Détail d'un workflow avec ses niveaux |
+| `POST /` | Créer un workflow |
+| `PATCH /:id` | Modifier un workflow |
+| `POST /:id/valider` | Traiter une validation (APPROUVE/REJETE) |
+| `POST /:id/annuler` | Annuler un workflow en attente |
+| `GET /dashboard` | Dashboard agrégé (tous modules) |
+| `GET /statistiques` | Statistiques globales |
+| `GET /mes-validations` | Validations assignées à l'utilisateur courant |
+| `GET /:id/historique` | Historique complet des actions |
+
+**Entités concernées** (15 modules) : notes, bulletins, cantine, transport, requetes, classes, matieres, periodes, eleves, personnel, clubs, materiel, cartes, annees_scolaires, etablissement.
+
+**Intégration backend** :
+```typescript
+// 1. Entity — colonne statut varchar(30)
+@Column({ type: 'varchar', length: 30, default: StatutXxx.ACTIF })
+statut!: StatutXxx;
+
+// 2. Service — création conditionnelle
+async create(dto, createurId?, etablissementId?) {
+    const requireValidation = await getParamBoolean('xxx.require_validation', false);
+    const entity = repo.create({ ...dto, statut: requireValidation ? StatutXxx.EN_ATTENTE_VALIDATION : StatutXxx.ACTIF });
+    await repo.save(entity);
+    if (requireValidation && createurId) {
+        await validationWorkflowService.createWorkflow({ module: 'xxx', entiteId: entity.id, ... }, createurId);
+    }
+    return entity;
+}
+```
+
+**Règle d'or** : Le workflow dispatch réellement sur l'entité (statut appliqué). Jamais de workflow orphelin sans impact sur l'entité cible.
+
+### Audit Trail (traçabilité)
+
+**Service** : `AuditLogService` (`backend/src/modules/auth/services/audit-log.service.ts`)
+**Entité** : `AuditLog` (table `audit_logs`) — `module`, `action` (AuditAction enum), `cibleType`, `cibleId`, `utilisateurId`, `etablissementId`, `metadata` (JSONB), `adresseIp`
+
+**API** : `GET /api/audit/logs?cible=&cibleId=&module=&limit=&offset=`
+
+**Actions critiques à auditer** : CREATE, UPDATE, DELETE, VALIDER, REJETER, PUBLIER, DEPUBLIER, RESTAURER, EXPORTER.
+
+**Pattern d'intégration** :
+```typescript
+await auditLogService.log({
+    module: 'notes', action: AuditAction.NOTE_CREATE,
+    cibleType: 'Note', cibleId: note.id,
+    utilisateurId: req.utilisateur.id, etablissementId,
+    metadata: { eleveId: note.eleveId, matiere: note.matiereNom },
+});
+```
+
 ### Configuration-driven (piloté par config)
 
 - **12+ modules** lisent leurs paramètres depuis `config.helper`
@@ -1420,6 +1664,71 @@ NOTIFICATION_SMS_ACCOUNT_SID=ACxxx
 NOTIFICATION_SMS_AUTH_TOKEN=xxx
 NOTIFICATION_SMS_FROM=+1234567890
 ```
+
+---
+
+## Domaine 14 : Coefficient, Barème, Volume horaire, Affectations (v4.0)
+
+### Conventions fondamentales (grill-me 2026-07)
+
+| Concept | Convention | Source de vérité |
+|---------|-----------|-----------------|
+| **Coefficient** | Chaîne de résolution (AffectationMatiere → ProgrammeMatiere → MatiereNiveau → défaut 1) | `coefficientResolverService` |
+| **Barème** | Même chaîne que coefficient (défaut 20) | `coefficientResolverService` |
+| **Volume horaire** | **Minutes/semaine** partout (jamais heures) | `MatiereNiveau.volumeHoraire` |
+| **Crédits** | **SUPPRIMÉS** (système anglophone/LMD abandonné) | N/A |
+| **Programme pédagogique** | **Intemporel** (pas de dateDebut/dateFin/periodeId) | `ProgrammePedagogique` |
+
+### coefficientResolverService (singleton)
+
+**Fichier** : `backend/src/modules/matieres/services/coefficient-resolver.service.ts`
+
+```typescript
+// Import
+import { coefficientResolverService } from '@modules/matieres/services';
+
+// Usage
+const coeff = coefficientResolverService.resoudreCoefficient(affectationMatiere);
+const bareme = coefficientResolverService.resoudreBareme(affectationMatiere);
+```
+
+**Chaîne de résolution** :
+1. `AffectationMatiere.coefficient` / `AffectationMatiere.bareme` (override contextuel)
+2. `ProgrammeMatiere.coefficient` / `ProgrammeMatiere.bareme` (programme)
+3. `MatiereNiveau.coefficient` / `MatiereNiveau.bareme` (niveau)
+4. Défaut : `{ coefficient: 1, bareme: 20 }`
+
+**Règle** : JAMAIS accéder directement à `affectationMatiere.coefficient` sans passer par le resolver.
+
+### Volume horaire — Minutes partout
+
+- `MatiereNiveau.volumeHoraire` = **minutes par semaine** (source unique)
+- `ProgrammeMatiere` : PAS de `volumeHoraire` (supprimé)
+- `ConfigurationMatiereClasse` : **SUPPRIMÉE** (champs absorbés par AffectationMatiere)
+- Helper `duree-utils.ts` : `minutesVersHeures()`, `heuresVersMinutes()`, `formaterDuree()`
+- Frontend : toujours diviser par 60 pour l'affichage en heures
+
+### AffectationEleve — Modèle v4.0
+
+- **Transfert d'élève** : `transfererEleve(eleveId, nouvelleClasseAnneeId)` — désactive l'ancienne affectation + crée la nouvelle
+- **Unicité** : 1 élève actif = 1 seule `AffectationEleve.actif = true` par `anneeScolaireId`
+- **Multi-tenant** : `etablissementId` toujours filtré
+- **Migration 129** : `transfertEleve` + index unique partiel
+
+### Programme pédagogique — Intemporel (D4)
+
+- `ProgrammePedagogique` : plus de `dateDebut`, `dateFin`, `periodeId`, `anneeScolaireId`
+- Historisation via `ProgrammeVersion` (table `programmes_versions`)
+- `ProgrammeMatiere` : bridge sans volume horaire (D1)
+- `ClasseAnnee.programmeId` → `ProgrammePedagogique`
+
+### Anti-patterns
+
+- ❌ `affectationMatiere.coefficient` directement → ✅ `coefficientResolverService.resoudreCoefficient()`
+- ❌ `volumeHoraire` en heures → ✅ toujours en minutes
+- ❌ `ProgrammePedagogique.dateDebut` → ✅ n'existe plus (intemporel)
+- ❌ `ConfigurationMatiereClasse` → ✅ champs sur `AffectationMatiere`
+- ❌ Frontend barème hardcodé `20` dans bulletins → ✅ CORRECT (backend normalise sur 20 via SQL)
 
 ---
 

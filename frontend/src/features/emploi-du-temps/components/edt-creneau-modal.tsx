@@ -65,7 +65,7 @@ const FORM_INIT: FormData = {
     couleur: '',
 };
 
-export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatiereId, etablissementId, affectations = [], salles = [], onSuccess }: EDTCreneauModalProps) {
+export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatiereId, etablissementId: _etablissementId, affectations = [], salles = [], onSuccess }: EDTCreneauModalProps) {
     const { t } = useTranslation('emplois');
     const [step, setStep] = useState(1);
     const [form, setForm] = useState<FormData>(FORM_INIT);

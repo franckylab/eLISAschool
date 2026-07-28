@@ -2,13 +2,13 @@
  * ==================================
  * eLISAschool - Edge Hiérarchique pour React Flow
  * ==================================
- * Version: 5.0.0
+ * Version: 6.0.0
  * Auteur: franck arlos chendjou
  *
- * Edge orthogonal (smooth step) liant les unités organisationnelles
- * (parent→enfant). Utilise BaseEdge (useBaseEdge + EdgeShell + EdgeTooltip)
- * pour le routing, le hit-testing et le tooltip unifiés.
- * Couleur dominante (vert), trait plein, badge nbPostes au survol.
+ * Edge orthogonal (smooth step) liant les unités organisationnelles.
+ * Route axial (offset 0) — ne se superpose pas aux relations (Bézier latéral).
+ * Trait plus épais (3px) pour dominance hiérarchique.
+ * Basé sur BaseEdge (useBaseEdge + EdgeShell + EdgeTooltip).
  */
 
 import { memo } from 'react';
@@ -29,7 +29,6 @@ function HierarchieEdgeComponent({
     targetY,
     targetPosition,
     data,
-    markerEnd,
 }: EdgeProps<HierarchieEdgeData>) {
     const { t } = useTranslation('organisation');
 
@@ -47,7 +46,7 @@ function HierarchieEdgeComponent({
     const couleur = resolveColor(isHovered
         ? 'var(--color-dominant-600)'
         : 'var(--color-dominant-500)');
-    const strokeWidth = isHovered ? EDGE_STYLE.strokeWidthHover : EDGE_STYLE.strokeWidth;
+    const strokeWidth = isHovered ? EDGE_STYLE.strokeWidthHover : EDGE_STYLE.strokeWidthHierarchie;
 
     const showTooltip = isHovered && data?.sourceNom && data?.targetNom;
     const nbPostes = data?.nbPostes ?? 0;
@@ -61,7 +60,7 @@ function HierarchieEdgeComponent({
             edgePath={edgePath}
             stroke={couleur}
             strokeWidth={strokeWidth}
-            markerEnd={markerEnd}
+            arrowColor={couleur}
             onMouseEnter={handlers.onMouseEnter}
             onMouseLeave={handlers.onMouseLeave}
         >

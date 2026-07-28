@@ -63,7 +63,7 @@ export function EDTStandalonePage() {
         ? contexteType === 'classe' ? { classeAnneeId: classeFilter } : { limit: 100 }
         : { limit: 100 };
     const { data: paginated, isLoading, error, refetch } = useCreneaux(filters);
-    const creneaux = paginated?.data?.items ?? [];
+    const creneaux = paginated?.items ?? [];
 
     const handleCreneauClick = (creneau: CreneauHoraire) => {
         setSelectedCreneau(creneau);

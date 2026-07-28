@@ -117,3 +117,23 @@ export function getInitiales(prenom?: string, nom?: string): string {
     const n = nom?.trim()?.[0]?.toUpperCase() || '';
     return p + n || '?';
 }
+
+/**
+ * Formate un volume horaire hebdomadaire stocké en **minutes/semaine**
+ * (source unique : `MatiereNiveau.volumeHoraire`, refonte EDT v4.0).
+ *
+ * L'affichage utilise le format "Xh" ou "XhMM" ; les minutes ne s'affichent
+ * que si elles sont non nulles.
+ *
+ * @example formatVolumeMinutesToHours(240) → "4h"
+ * @example formatVolumeMinutesToHours(150) → "2h30"
+ * @example formatVolumeMinutesToHours(45)  → "45min"
+ * @example formatVolumeMinutesToHours(null) → "—"
+ */
+export function formatVolumeMinutesToHours(minutes: number | null | undefined): string {
+    if (minutes === undefined || minutes === null || Number.isNaN(minutes)) return '—';
+    if (minutes < 60) return `${Math.round(minutes)}min`;
+    const heures = Math.floor(minutes / 60);
+    const reste = Math.round(minutes % 60);
+    return reste === 0 ? `${heures}h` : `${heures}h${reste.toString().padStart(2, '0')}`;
+}

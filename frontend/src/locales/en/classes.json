@@ -123,6 +123,17 @@
             "redoublement": "Repeating year"
         }
     },
+    "transfert": {
+        "titre": "Transfer student",
+        "description": "Transfer {{nom}} to another class",
+        "nouvelleClasse": "New class",
+        "selectionnerClasse": "Select a class",
+        "date": "Transfer date",
+        "motif": "Reason",
+        "commentaire": "Comment",
+        "commentairePlaceholder": "Comment or note (optional)...",
+        "transferer": "Transfer"
+    },
     "boutons": {
         "nouveau": "New class",
         "creer": "Create",
@@ -234,6 +245,8 @@
         "erreurSuppression": "Error deleting class",
         "succesAffectation": "Student assigned successfully",
         "erreurAffectation": "Error assigning student",
+        "succesTransfert": "Student transferred successfully",
+        "erreurTransfert": "Error transferring student",
         "succesReconciliation": "Enrollment reconciled: {{ancien}} → {{nouveau}}",
         "effectifDejaCoherent": "Enrollment already consistent",
         "erreurReconciliation": "Error reconciling enrollment",

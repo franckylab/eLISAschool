@@ -10,6 +10,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BarChart3, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useCreneaux } from '../hooks/use-emploi-du-temps';
+import { useTousMatieresNiveaux } from '@/features/matieres/hooks/use-matieres';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 
 interface EDTSyntheseProps {
@@ -33,7 +34,22 @@ export function EDTSynthese({ classeAnneeId }: EDTSyntheseProps) {
     const { data: paginated, isLoading } = useCreneaux(
         classeAnneeId ? { classeAnneeId, limit: 500 } : { limit: 500 }
     );
-    const creneaux = paginated?.data?.items ?? [];
+    const creneaux = paginated?.items ?? [];
+
+    const { data: matieresNiveaux } = useTousMatieresNiveaux();
+
+    const volumeMap = useMemo(() => {
+        const byComposite = new Map<string, number>();
+        const byMatiere = new Map<string, number>();
+        for (const mn of matieresNiveaux ?? []) {
+            if (mn.volumeHoraire == null) continue;
+            byComposite.set(`${mn.matiereId}:${mn.niveauId}`, mn.volumeHoraire);
+            if (!byMatiere.has(mn.matiereId)) {
+                byMatiere.set(mn.matiereId, mn.volumeHoraire);
+            }
+        }
+        return { byComposite, byMatiere };
+    }, [matieresNiveaux]);
 
     const synthese = useMemo(() => {
         const parMatiere = new Map<string, LigneSynthese>();
@@ -52,6 +68,11 @@ export function EDTSynthese({ classeAnneeId }: EDTSyntheseProps) {
                 existing.heuresPlanifiees += heures;
                 existing.nombreCreneaux += 1;
             } else {
+                const niveauId = aff.classeAnnee?.classe?.niveau;
+                const requis = niveauId
+                    ? (volumeMap.byComposite.get(`${aff.matiereId}:${niveauId}`) ?? volumeMap.byMatiere.get(aff.matiereId) ?? null)
+                    : (volumeMap.byMatiere.get(aff.matiereId) ?? null);
+
                 parMatiere.set(key, {
                     matiereId: aff.matiereId,
                     matiereNom: aff.matiere.nom,
@@ -60,17 +81,28 @@ export function EDTSynthese({ classeAnneeId }: EDTSyntheseProps) {
                         ? `${aff.enseignant.prenom} ${aff.enseignant.nom}`
                         : '—',
                     heuresPlanifiees: heures,
-                    volumeRequis: null,
+                    volumeRequis: requis,
                     nombreCreneaux: 1,
                     respect: 'non-define',
                 });
             }
         }
 
-        return Array.from(parMatiere.values()).sort((a, b) =>
-            a.matiereNom.localeCompare(b.matiereNom)
-        );
-    }, [creneaux]);
+        const lignes = Array.from(parMatiere.values());
+        for (const l of lignes) {
+            if (l.volumeRequis == null) {
+                l.respect = 'non-define';
+            } else if (l.heuresPlanifiees > l.volumeRequis) {
+                l.respect = 'depassement';
+            } else if (l.heuresPlanifiees >= l.volumeRequis * 0.9) {
+                l.respect = 'ok';
+            } else {
+                l.respect = 'insuffisant';
+            }
+        }
+
+        return lignes.sort((a, b) => a.matiereNom.localeCompare(b.matiereNom));
+    }, [creneaux, volumeMap]);
 
     const totalHeures = synthese.reduce((s, l) => s + l.heuresPlanifiees, 0);
     const totalCreneaux = synthese.reduce((s, l) => s + l.nombreCreneaux, 0);
@@ -175,8 +207,6 @@ function RespectBarre({ respect, planifiees, requis }: {
     planifiees: number;
     requis: number | null;
 }) {
-    const { t } = useTranslation('emplois');
-
     if (respect === 'non-define' || requis === null) {
         return (
             <div className="flex items-center gap-1 text-xs text-[var(--color-text-muted)]">

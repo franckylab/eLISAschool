@@ -1,15 +1,18 @@
 /**
  * ==================================
- * eLISAschool - Edge Relation hiérarchique (overlay) pour React Flow
+ * eLISAschool - Edge Relation pour React Flow
  * ==================================
- * Version: 4.0.0
+ * Version: 5.0.0
  * Auteur: franck arlos chendjou
  *
- * Edge orthogonal (smooth step) pointillé représentant les relations
- * poste→poste agrégées entre deux unités. Couleur et pointillé selon
- * le type de relation, badge compteur cliquable, tooltip au survol,
- * clic → drawer de détail. Utilise BaseEdge (useBaseEdge + EdgeShell)
- * pour le routing et le hit-testing unifiés.
+ * Edge courbe de Bézier représentant les relations poste→poste entre
+ * deux unités. Ne se superpose PAS aux edges hiérarchiques (smoothStep
+ * axial) car utilise un routage latéral différencié :
+ * - DIRECT (ambre) : côté intelligent gauche/droite, pointillé large
+ * - FONCTIONNEL (bleu) : côté opposé, pointillé serré
+ * - Waypoints pour relations longue portée (≥3 niveaux)
+ *
+ * Basé sur BaseEdge (EdgeShell) pour le hit-testing et les transitions.
  */
 
 import { memo } from 'react';
@@ -17,7 +20,7 @@ import { EdgeLabelRenderer, type EdgeProps } from 'reactflow';
 import { useTranslation } from 'react-i18next';
 import { resolveColor } from '@/lib/export';
 import type { HierarchiePersonnel, TypeRelationHierarchique } from '../../../types/organisation.types';
-import { useBaseEdge, EdgeShell, EDGE_ROUTING, EDGE_STYLE } from './BaseEdge';
+import { useBezierEdge, EdgeShell, EDGE_STYLE } from './BaseEdge';
 
 export interface RelationEdgeData {
     typeRelation: TypeRelationHierarchique;
@@ -25,6 +28,10 @@ export interface RelationEdgeData {
     relations: HierarchiePersonnel[];
     sourceNom?: string;
     targetNom?: string;
+    side: 'left' | 'right';
+    waypoints?: { x: number; y: number }[];
+    direction: 'TB' | 'LR';
+    rowBounds?: { yMin: number; yMax: number; xMin: number; xMax: number } | null;
     onOpen?: (edgeId: string) => void;
 }
 
@@ -38,7 +45,6 @@ function RelationEdgeComponent({
     targetPosition,
     data,
     selected,
-    markerEnd,
 }: EdgeProps<RelationEdgeData>) {
     const { t } = useTranslation('organisation');
 
@@ -47,16 +53,17 @@ function RelationEdgeComponent({
     const dasharray = estFonctionnel ? '4 5' : '10 5';
     const count = data?.count ?? 1;
 
-    const routing = estFonctionnel ? EDGE_ROUTING.fonctionnel : EDGE_ROUTING.direct;
-    const { edgePath, labelX, labelY, isHovered, handlers } = useBaseEdge({
+    const { edgePath, labelX, labelY, isHovered, handlers } = useBezierEdge({
         sourceX,
         sourceY,
         sourcePosition,
         targetX,
         targetY,
         targetPosition,
-        offset: routing.offset,
-        borderRadius: routing.borderRadius,
+        side: data?.side ?? 'right',
+        direction: data?.direction ?? 'TB',
+        waypoints: data?.waypoints,
+        rowBounds: data?.rowBounds,
     });
 
     const actif = isHovered || selected;
@@ -75,7 +82,7 @@ function RelationEdgeComponent({
             stroke={couleur}
             strokeWidth={strokeWidth}
             strokeDasharray={dasharray}
-            markerEnd={markerEnd}
+            arrowColor={couleur}
             onMouseEnter={handlers.onMouseEnter}
             onMouseLeave={handlers.onMouseLeave}
             onClick={handleOpen}
@@ -108,9 +115,11 @@ function RelationEdgeComponent({
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            boxShadow: actif ? '0 2px 8px rgba(0,0,0,0.18)' : '0 1px 3px rgba(0,0,0,0.08)',
+                            boxShadow: actif
+                                ? '0 2px 8px rgba(0,0,0,0.18)'
+                                : '0 1px 3px rgba(0,0,0,0.08)',
                         }}
-                        aria-label={t('organigramme.relations.ouvrirDetail', 'Voir le détail des relations')}
+                        aria-label={t('organigramme.relations.ouvrirDetail', '')}
                     >
                         {count}
                     </button>

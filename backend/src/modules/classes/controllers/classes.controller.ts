@@ -7,7 +7,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { ClassesService } from '../services';
 import { classesAnneesService } from '../services/classes-annees.service';
-import { createClasseSchema, updateClasseSchema, affecterEleveSchema } from '../dto';
+import { createClasseSchema, updateClasseSchema, affecterEleveSchema, transfererEleveSchema } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
 import { AppError } from '@common/filters/error.filter';
@@ -126,6 +126,19 @@ router.post('/affectations', authMiddleware, requirePermission('classes:affecter
     try {
         const dto = validateDto(affecterEleveSchema, req.body);
         const affectation = await service.affecterEleve(dto, req.utilisateur?.id!, req.etablissementId);
+        res.status(201).json({ success: true, data: affectation });
+    } catch (error) { next(error); }
+});
+
+/**
+ * @route   POST /api/classes/affectations/transferer
+ * @desc    Transférer un élève vers une nouvelle classe (désactive l'ancienne affectation, ajuste les effectifs)
+ * @access  Authentifié avec permission classes:affecter
+ */
+router.post('/affectations/transferer', authMiddleware, requirePermission('classes:affecter'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validateDto(transfererEleveSchema, req.body);
+        const affectation = await service.transfererEleve(dto, req.utilisateur?.id!, req.etablissementId);
         res.status(201).json({ success: true, data: affectation });
     } catch (error) { next(error); }
 });

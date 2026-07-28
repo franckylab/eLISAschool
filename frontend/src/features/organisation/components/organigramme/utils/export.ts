@@ -309,6 +309,8 @@ export async function exporterOrganigramme(
     const libelles = libellesLegende ?? LIBELLES_LEGENDE_DEFAUT;
 
     onProgress?.('preparation');
+    // Yield pour laisser React peindre la barre de progression avant le travail lourd
+    await new Promise(resolve => setTimeout(resolve, 16));
 
     if (options.portee === 'etendu') {
         onProgress?.('depliage');

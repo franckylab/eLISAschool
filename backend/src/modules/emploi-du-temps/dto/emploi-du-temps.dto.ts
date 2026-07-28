@@ -30,7 +30,7 @@ function heureApresDebut(data: { heureDebut: string; heureFin: string }): boolea
 export const creerCreneauSchema = z.object({
     /** Source : affectation matière (enseignant + matière + classe-année) */
     affectationMatiereId: z.string().uuid('ID de l\'affectation invalide'),
-    salleId: z.string().uuid('ID de la salle invalide').optional(),
+    salleId: z.string().uuid('ID de la salle invalide').nullable().optional(),
     jour: z.enum(Object.values(JourSemaine) as [string, ...string[]]),
     heureDebut: time('Format heure invalide (HH:MM)'),
     heureFin: time('Format heure invalide (HH:MM)'),
@@ -145,7 +145,7 @@ export const verifierConflitsSchema = z.object({
     jour: z.enum(Object.values(JourSemaine) as [string, ...string[]]),
     heureDebut: time(),
     heureFin: time(),
-    salleId: z.string().uuid().optional(),
+    salleId: z.string().uuid().nullable().optional(),
     /** Exclure un créneau spécifique de la vérification (pour l'édition) */
     excludeCreneauId: z.string().uuid().optional(),
 }).refine(heureApresDebut, { message: 'L\'heure de fin doit être après l\'heure de début' });

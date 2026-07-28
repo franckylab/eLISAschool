@@ -93,7 +93,7 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
 
     const modifierRessource = (index: number, field: keyof RessourcePedagogique, value: string) => {
         const copy = [...ressources];
-        (copy[index] as any)[field] = value;
+        copy[index] = { ...copy[index], [field]: value };
         setRessources(copy);
     };
 
@@ -126,13 +126,13 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
         >
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium mb-1">{t('titre')} <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium mb-1">{t('titre')} <span className="text-destructive">*</span></label>
                     <input
                         type="text"
                         value={titre}
                         onChange={(e) => setTitre(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
-                        placeholder="Titre du chapitre"
+                        className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                        placeholder={t('placeholderTitreChapitre', 'Titre du chapitre')}
                         required
                     />
                 </div>
@@ -145,7 +145,7 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
                             min={0}
                             value={ordre}
                             onChange={(e) => setOrdre(Number(e.target.value))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
                         />
                     </div>
                     <div>
@@ -155,8 +155,8 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
                             min={0}
                             value={dureePrevueHeures}
                             onChange={(e) => setDureePrevueHeures(e.target.value ? Number(e.target.value) : '')}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
-                            placeholder="ex: 3"
+                            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                            placeholder={t('placeholderDuree', 'ex: 3')}
                         />
                     </div>
                 </div>
@@ -164,7 +164,7 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium mb-1">{t('statut')}</label>
-                        <select value={statut} onChange={(e) => setStatut(e.target.value as StatutChapitre)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent">
+                        <select value={statut} onChange={(e) => setStatut(e.target.value as StatutChapitre)} className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent">
                             <option value="ACTIF">{t('statutChapitre.ACTIF')}</option>
                             <option value="EN_ATTENTE_VALIDATION">{t('statutChapitre.EN_ATTENTE_VALIDATION')}</option>
                             <option value="INACTIF">{t('statutChapitre.INACTIF')}</option>
@@ -172,9 +172,9 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">{t('periode')}</label>
-                        <select value={periodeId} onChange={(e) => setPeriodeId(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent">
-                            <option value="">— Aucune période —</option>
-                            {(periodes || []).map((p: any) => (
+                        <select value={periodeId} onChange={(e) => setPeriodeId(e.target.value)} className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent">
+                            <option value="">{t('aucunePeriode', '— Aucune période —')}</option>
+                            {(periodes || []).map((p: { id: string; nom: string }) => (
                                 <option key={p.id} value={p.id}>{p.nom}</option>
                             ))}
                         </select>
@@ -188,8 +188,8 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
                             type="text"
                             value={prerequis}
                             onChange={(e) => setPrerequis(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
-                            placeholder="Ex: Chap1, Chap2"
+                            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                            placeholder={t('placeholderPrerequis', 'Ex: Chap1, Chap2')}
                         />
                     </div>
                     <div>
@@ -198,8 +198,8 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
                             type="text"
                             value={competencesAssociees}
                             onChange={(e) => setCompetencesAssociees(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
-                            placeholder="Ex: C1, C2, C3"
+                            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                            placeholder={t('placeholderCompetences', 'Ex: C1, C2, C3')}
                         />
                     </div>
                 </div>
@@ -209,9 +209,9 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
                     <textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                        className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
                         rows={2}
-                        placeholder="Description du chapitre"
+                        placeholder={t('placeholderDescriptionChapitre', 'Description du chapitre')}
                     />
                 </div>
 
@@ -220,9 +220,9 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
                     <textarea
                         value={objectifsPedagogiques}
                         onChange={(e) => setObjectifsPedagogiques(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
+                        className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent"
                         rows={2}
-                        placeholder="Objectifs pédagogiques"
+                        placeholder={t('placeholderObjectifsPedagogiques', 'Objectifs pédagogiques')}
                     />
                 </div>
 
@@ -230,39 +230,39 @@ export function ChapitreFormModal({ open, onClose, onSubmit, chapitre, isLoading
                 <div>
                     <div className="flex items-center justify-between mb-1">
                         <label className="block text-sm font-medium">{t('ressources')}</label>
-                        <button type="button" onClick={ajouterRessource} className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                            <Plus className="h-3 w-3" /> Ajouter
+                        <button type="button" onClick={ajouterRessource} className="text-xs text-primary hover:text-primary/80 flex items-center gap-1">
+                            <Plus className="h-3 w-3" /> {t('ajouter')}
                         </button>
                     </div>
                     {ressources.length === 0 ? (
-                        <p className="text-xs text-gray-400 italic">Aucune ressource</p>
+                        <p className="text-xs text-muted-foreground italic">{t('aucuneRessource', 'Aucune ressource')}</p>
                     ) : (
                         <div className="space-y-2">
                             {ressources.map((r, i) => (
-                                <div key={i} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
+                                <div key={i} className="flex items-start gap-2 p-2 bg-muted rounded-lg">
                                     <div className="flex-1 grid grid-cols-3 gap-2">
                                         <select
                                             value={r.type}
                                             onChange={(e) => modifierRessource(i, 'type', e.target.value)}
-                                            className="px-2 py-1.5 border border-gray-300 rounded text-xs"
+                                            className="px-2 py-1.5 border border-border rounded text-xs"
                                         >
                                             {TYPE_RESSOURCES.map((t) => <option key={t} value={t}>{t}</option>)}
                                         </select>
                                         <input
                                             value={r.titre}
                                             onChange={(e) => modifierRessource(i, 'titre', e.target.value)}
-                                            className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                            placeholder="Titre"
+                                            className="px-2 py-1.5 border border-border rounded text-xs"
+                                            placeholder={t('titre', 'Titre')}
                                         />
                                         <input
                                             value={r.url || ''}
                                             onChange={(e) => modifierRessource(i, 'url', e.target.value)}
-                                            className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                            placeholder="URL (optionnel)"
+                                            className="px-2 py-1.5 border border-border rounded text-xs"
+                                            placeholder={t('urlOptionnel', 'URL (optionnel)')}
                                         />
                                     </div>
-                                    <button type="button" onClick={() => supprimerRessource(i)} className="p-1 hover:bg-red-100 rounded mt-0.5">
-                                        <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                                    <button type="button" onClick={() => supprimerRessource(i)} className="p-1 hover:bg-destructive/10 rounded mt-0.5">
+                                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
                                     </button>
                                 </div>
                             ))}

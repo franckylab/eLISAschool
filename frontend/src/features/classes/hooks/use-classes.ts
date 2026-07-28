@@ -20,6 +20,7 @@ import type {
     ModifierClasseDto,
     ClasseFiltres,
     AffecterEleveDto,
+    TransfererEleveDto,
     ElevesClasseResult,
     ClassesStats,
 } from '../types/classe.types';
@@ -232,6 +233,31 @@ export function useAffecterEleve() {
         },
         onError: (error: unknown) => {
             handleError(error, t('hooks.erreurAffectation'));
+        },
+    });
+}
+
+export function useTransfererEleve() {
+    const queryClient = useQueryClient();
+    const { t } = useTranslation('classes');
+    const handleError = useHandleError();
+
+    return useMutation({
+        mutationFn: async (dto: TransfererEleveDto) => {
+            const response = await apiClient.post<Classe>('/api/classes/affectations/transferer', dto);
+            if (!response.data) {
+                throw new Error(t('hooks.erreurTransfert'));
+            }
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: CLASSES_KEYS.listes() });
+            queryClient.invalidateQueries({ queryKey: CLASSES_KEYS.details() });
+            queryClient.invalidateQueries({ queryKey: ['eleves'] });
+            toast.success(t('hooks.succesTransfert'));
+        },
+        onError: (error: unknown) => {
+            handleError(error, t('hooks.erreurTransfert'));
         },
     });
 }

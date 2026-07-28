@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors,
     type DragStartEvent, type DragEndEvent, type DragOverEvent,
@@ -10,6 +11,7 @@ import { useEnseignantAffectationsMatiere, useDeplacerAffectation } from '../../
 import { LoadingState } from '@/components/feedback';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Badge } from '@/components/ui/Badge';
+import { formatVolumeMinutesToHours } from '@/lib/format-utils';
 import type { AffectationEnseignant } from '../../types/enseignant.types';
 
 interface KanbanColumn {
@@ -20,6 +22,7 @@ interface KanbanColumn {
 }
 
 function SortableCard({ affectation, isDragging }: { affectation: AffectationEnseignant; isDragging?: boolean }) {
+    const { t } = useTranslation('personnel');
     const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortDragging } = useSortable({
         id: affectation.id,
     });
@@ -34,15 +37,15 @@ function SortableCard({ affectation, isDragging }: { affectation: AffectationEns
         <div
             ref={setNodeRef}
             style={style}
-            className={`group rounded-lg border bg-white p-3 shadow-sm transition-all hover:shadow-md dark:border-gray-700 dark:bg-gray-800 ${
+            className={`group rounded-lg border border-border bg-card p-3 shadow-sm transition-all hover:shadow-md ${
                 !affectation.actif ? 'opacity-60' : ''
-            } ${isDragging ? 'shadow-lg ring-2 ring-blue-400' : ''}`}
+            } ${isDragging ? 'shadow-lg ring-2 ring-primary/50' : ''}`}
         >
             <div className="flex items-start gap-2">
                 <button
                     {...attributes}
                     {...listeners}
-                    className="mt-0.5 shrink-0 cursor-grab touch-none rounded p-0.5 text-gray-300 hover:bg-gray-100 hover:text-gray-500 transition-colors active:cursor-grabbing dark:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-400"
+                    className="mt-0.5 shrink-0 cursor-grab touch-none rounded p-0.5 text-muted-foreground/50 hover:bg-muted hover:text-muted-foreground transition-colors active:cursor-grabbing"
                 >
                     <GripVertical className="h-4 w-4" />
                 </button>
@@ -52,27 +55,27 @@ function SortableCard({ affectation, isDragging }: { affectation: AffectationEns
                             className="h-2.5 w-2.5 shrink-0 rounded-full"
                             style={{ backgroundColor: affectation.matiere?.couleur || '#6b7280' }}
                         />
-                        <span className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <span className="truncate text-sm font-medium text-foreground">
                             {affectation.matiere?.nom || affectation.matiereId.slice(0, 8)}
                         </span>
                     </div>
                     {affectation.matiere?.code && (
-                        <span className="ml-5 font-mono text-xs text-gray-400 dark:text-gray-500">{affectation.matiere.code}</span>
+                        <span className="ml-5 font-mono text-xs text-muted-foreground">{affectation.matiere.code}</span>
                     )}
-                    <div className="ml-5 mt-1.5 flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="ml-5 mt-1.5 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                         <span className="inline-flex items-center gap-1">
-                            <Clock className="h-3 w-3" /> {affectation.volumeHoraireHebdo ?? '—'}h
+                            <Clock className="h-3 w-3" /> {affectation.volumeHoraireHebdo != null ? formatVolumeMinutesToHours(affectation.volumeHoraireHebdo) : '—'}
                         </span>
                         <span className="inline-flex items-center gap-1">
                             <Users className="h-3 w-3" /> {affectation.effectifActuel ?? '—'}
                         </span>
                         <span>
-                            Coeff. <strong>{affectation.coefficient ?? '—'}</strong>
+                            {t('affectations.colCoeff', 'Coeff.')} <strong>{affectation.coefficient ?? '—'}</strong>
                         </span>
                         {affectation.actif ? (
-                            <Badge variant="success" dot>Actif</Badge>
+                            <Badge variant="success" dot>{t('affectations.actif', 'Actif')}</Badge>
                         ) : (
-                            <Badge variant="secondary" dot>Inactif</Badge>
+                            <Badge variant="secondary" dot>{t('affectations.inactif', 'Inactif')}</Badge>
                         )}
                     </div>
                 </div>
@@ -82,24 +85,25 @@ function SortableCard({ affectation, isDragging }: { affectation: AffectationEns
 }
 
 function Column({ column }: { column: KanbanColumn }) {
+    const { t } = useTranslation('personnel');
     const items = column.items;
 
     return (
-        <div className="flex w-72 shrink-0 flex-col rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
-            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+        <div className="flex w-72 shrink-0 flex-col rounded-xl border border-border bg-muted/30">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <div className="flex items-center gap-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-100 text-xs font-bold text-blue-700">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-xs font-bold text-primary">
                         {items.length}
                     </div>
-                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{column.nom}</span>
+                    <span className="text-sm font-semibold text-foreground">{column.nom}</span>
                 </div>
             </div>
             <div className="flex flex-col gap-2 overflow-y-auto p-3" style={{ maxHeight: '500px' }}>
                 <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
                     {items.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white py-8 dark:border-gray-600 dark:bg-gray-800">
-                            <BookOpen className="mb-2 h-6 w-6 text-gray-300 dark:text-gray-600" />
-                            <p className="text-xs text-gray-400 dark:text-gray-500">Déposer ici</p>
+                        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card py-8">
+                            <BookOpen className="mb-2 h-6 w-6 text-muted-foreground/50" />
+                            <p className="text-xs text-muted-foreground">{t('affectations.deposerIci', 'Déposer ici')}</p>
                         </div>
                     ) : (
                         items.map(affectation => (
@@ -119,6 +123,7 @@ interface Props {
 }
 
 export function OngletMatieresKanban({ enseignantId, isActive, onRequestAdd }: Props) {
+    const { t } = useTranslation('personnel');
     const { data, isLoading } = useEnseignantAffectationsMatiere(enseignantId);
     const affectations = isActive ? (data ?? []) : [];
     const deplacerAffectation = useDeplacerAffectation();
@@ -128,7 +133,7 @@ export function OngletMatieresKanban({ enseignantId, isActive, onRequestAdd }: P
     const columns = useMemo<KanbanColumn[]>(() => {
         const map = new Map<string, KanbanColumn>();
         affectations.forEach(a => {
-            const nom = a.classeAnnee?.classe?.nom || 'Sans classe';
+            const nom = a.classeAnnee?.classe?.nom || t('affectations.sansClasse', 'Sans classe');
             const classeAnneeId = a.classeAnneeId;
             const key = `${nom}::${classeAnneeId}`;
             if (!map.has(key)) {
@@ -137,7 +142,7 @@ export function OngletMatieresKanban({ enseignantId, isActive, onRequestAdd }: P
             map.get(key)!.items.push(a);
         });
         return Array.from(map.values()).sort((a, b) => a.nom.localeCompare(b.nom));
-    }, [affectations]);
+    }, [affectations, t]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -180,7 +185,7 @@ export function OngletMatieresKanban({ enseignantId, isActive, onRequestAdd }: P
     if (isLoading && isActive) {
         return (
             <div className="space-y-4">
-                <LoadingState message="Chargement du Kanban..." />
+                <LoadingState message={t('affectations.chargementKanban', 'Chargement du Kanban...')} />
             </div>
         );
     }
@@ -188,20 +193,20 @@ export function OngletMatieresKanban({ enseignantId, isActive, onRequestAdd }: P
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {columns.length} classe{columns.length > 1 ? 's' : ''} · {affectations.length} affectation{affectations.length !== 1 ? 's' : ''}
-                    <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">(glissez-déposez entre les colonnes)</span>
+                <p className="text-sm text-muted-foreground">
+                    {columns.length} {columns.length > 1 ? t('affectations.classes', 'Classes') : t('affectations.classeUnique', 'classe')} · {affectations.length} {affectations.length !== 1 ? t('affectations.affectations', 'affectations') : t('affectations.affectationSing', 'affectation')}
+                    <span className="ml-2 text-xs text-muted-foreground">({t('affectations.glisserDeposer', 'glissez-déposez entre les colonnes')})</span>
                 </p>
                 <ElisaButton variant="primary" size="sm" onClick={onRequestAdd}>
-                    + Ajouter
+                    + {t('affectations.ajouter', 'Ajouter')}
                 </ElisaButton>
             </div>
 
             {columns.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white py-16 dark:border-gray-600 dark:bg-gray-800">
-                    <BookOpen className="mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
-                    <p className="font-medium text-gray-600 dark:text-gray-400">Aucune matière assignée</p>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-500">Glissez des matières depuis le tableau ou ajoutez-en une.</p>
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card py-16">
+                    <BookOpen className="mb-3 h-12 w-12 text-muted-foreground/50" />
+                    <p className="font-medium text-secondary">{t('affectations.aucuneMatiere', 'Aucune matière assignée')}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{t('affectations.kanbanVideDesc', 'Glissez des matières depuis le tableau ou ajoutez-en une.')}</p>
                 </div>
             ) : (
                 <DndContext
@@ -219,7 +224,7 @@ export function OngletMatieresKanban({ enseignantId, isActive, onRequestAdd }: P
 
                     <DragOverlay>
                         {activeAffectation ? (
-                            <div className="w-72 rounded-lg border border-blue-300 bg-white shadow-xl dark:border-blue-800 dark:bg-gray-800">
+                            <div className="w-72 rounded-lg border border-primary/30 bg-card shadow-xl">
                                 <SortableCard affectation={activeAffectation} isDragging />
                             </div>
                         ) : null}

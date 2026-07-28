@@ -31,7 +31,6 @@ export const createMatiereNiveauSchema = z.object({
   niveauId: z.string().uuid(),
   groupeId: z.string().uuid().optional(),
   coefficient: z.number().min(0).default(1),
-  credits: z.number().min(0).optional(),
   bareme: z.number().int().min(1).default(20),
   volumeHoraire: z.number().int().min(0).optional(),
   obligatoire: z.boolean().default(true),

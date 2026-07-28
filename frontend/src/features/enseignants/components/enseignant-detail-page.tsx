@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import {
     FileText, BookOpen, Calendar, Briefcase, Star, Ban, Route,
-    AlertCircle, ChevronLeft, ChevronRight,
+    AlertCircle, ChevronLeft, ChevronRight, type LucideIcon,
 } from 'lucide-react';
 import { useEnseignant, useEnseignantAffectationsMatiere, useEnseignantMoyenneEvaluations, useEnseignantHeures, useEnseignantAbsences } from '../hooks/use-enseignants';
 import { useSupprimerPersonnel } from '@/features/personnel/hooks/use-personnel';
@@ -26,29 +27,34 @@ type OngletId = 'informations' | 'matieres-classes' | 'edt' | 'contrat-salaire' 
 
 interface OngletConfig {
     id: OngletId;
-    label: string;
-    icon: any;
+    labelKey: string;
+    icon: LucideIcon;
 }
 
-const ONGLETS: OngletConfig[] = [
-    { id: 'informations', label: 'Informations', icon: FileText },
-    { id: 'matieres-classes', label: 'Matières & Classes', icon: BookOpen },
-    { id: 'edt', label: 'Emploi du temps', icon: Calendar },
-    { id: 'contrat-salaire', label: 'Contrat & Salaire', icon: Briefcase },
-    { id: 'evaluations', label: 'Évaluations', icon: Star },
-    { id: 'absences', label: 'Absences', icon: Ban },
-    { id: 'parcours', label: 'Parcours', icon: Route },
+const ONGLET_IDS: OngletConfig[] = [
+    { id: 'informations', labelKey: 'detail.ongletInformations', icon: FileText },
+    { id: 'matieres-classes', labelKey: 'detail.ongletMatieres', icon: BookOpen },
+    { id: 'edt', labelKey: 'detail.ongletEdt', icon: Calendar },
+    { id: 'contrat-salaire', labelKey: 'detail.ongletContratSalaire', icon: Briefcase },
+    { id: 'evaluations', labelKey: 'detail.ongletEvaluations', icon: Star },
+    { id: 'absences', labelKey: 'detail.ongletAbsences', icon: Ban },
+    { id: 'parcours', labelKey: 'detail.ongletParcours', icon: Route },
 ];
 
 export function EnseignantDetailPage() {
     const { id } = useParams({ from: '/_auth/enseignants/$id' });
     const navigate = useNavigate();
+    const { t } = useTranslation('personnel');
     const [ongletActif, setOngletActif] = useState<OngletId>('informations');
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const queryClient = useQueryClient();
     const supprimer = useSupprimerPersonnel();
     const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+    const ONGLETS = useMemo(() =>
+        ONGLET_IDS.map((o) => ({ ...o, label: t(o.labelKey) })),
+    [t]);
 
     const { data: enseignant, isLoading, isError } = useEnseignant(id);
 
@@ -105,7 +111,7 @@ export function EnseignantDetailPage() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center p-12">
-                <LoadingState message="Chargement de l'enseignant..." />
+                <LoadingState message={t('detail.chargementEnseignant')} />
             </div>
         );
     }
@@ -113,10 +119,10 @@ export function EnseignantDetailPage() {
     if (isError || !enseignant) {
         return (
             <div className="flex flex-col items-center justify-center p-12">
-                <AlertCircle className="mb-4 h-16 w-16 text-gray-400" />
-                <p className="text-lg text-gray-600">Enseignant non trouvé</p>
+                <AlertCircle className="mb-4 h-16 w-16 text-muted-foreground" />
+                <p className="text-lg text-secondary">{t('detail.enseignantNonTrouve')}</p>
                 <ElisaButton variant="primary" onClick={() => navigate({ to: '/enseignants' })} className="mt-4">
-                    Retour à la liste
+                    {t('detail.retourListe')}
                 </ElisaButton>
             </div>
         );
@@ -157,7 +163,7 @@ export function EnseignantDetailPage() {
                 onBack={() => navigate({ to: '/enseignants' })}
             />
 
-            <div className="border-b border-gray-200">
+            <div className="border-b border-border">
                 <nav className="-mb-px flex gap-1 overflow-x-auto scrollbar-hide" role="tablist" aria-label="Onglets enseignant">
                     {ONGLETS.map((o, idx) => {
                         const Icon = o.icon;
@@ -172,16 +178,16 @@ export function EnseignantDetailPage() {
                                 tabIndex={isActive ? 0 : -1}
                                 className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-sm font-medium whitespace-nowrap transition-all ${
                                     isActive
-                                        ? 'border-blue-500 text-blue-600'
-                                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                                        ? 'border-primary text-primary'
+                                        : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
                                 }`}
                             >
                                 <Icon className="h-4 w-4" />
                                 <span className="hidden sm:inline">{o.label}</span>
                                 <span className="sm:hidden">{o.label.split('&')[0].trim()}</span>
                                 {idx > 0 && idx < ONGLETS.length - 1 && (
-                                    <span className="hidden md:inline text-xs text-gray-400">
-                                        <kbd className="ml-1 px-1 py-0.5 bg-gray-100 rounded text-[10px]">
+                                    <span className="hidden md:inline text-xs text-muted-foreground">
+                                        <kbd className="ml-1 px-1 py-0.5 bg-muted rounded text-[10px]">
                                             {idx + 1}
                                         </kbd>
                                     </span>
@@ -196,16 +202,16 @@ export function EnseignantDetailPage() {
                 <button onClick={() => {
                     const idx = ONGLETS.findIndex((o) => o.id === ongletActif);
                     if (idx > 0) handleTabChange(ONGLETS[idx - 1].id);
-                }} className="p-2 text-gray-500 hover:text-gray-700">
+                }} className="p-2 text-muted-foreground hover:text-foreground">
                     <ChevronLeft className="h-5 w-5" />
                 </button>
-                <span className="text-sm font-medium text-gray-600">
+                <span className="text-sm font-medium text-secondary">
                     {ONGLETS.find((o) => o.id === ongletActif)?.label}
                 </span>
                 <button onClick={() => {
                     const idx = ONGLETS.findIndex((o) => o.id === ongletActif);
                     if (idx < ONGLETS.length - 1) handleTabChange(ONGLETS[idx + 1].id);
-                }} className="p-2 text-gray-500 hover:text-gray-700">
+                }} className="p-2 text-muted-foreground hover:text-foreground">
                     <ChevronRight className="h-5 w-5" />
                 </button>
             </div>
@@ -238,9 +244,11 @@ export function EnseignantDetailPage() {
                 open={showDeleteConfirm}
                 onOpenChange={(v) => { if (!v) setShowDeleteConfirm(false); }}
                 onConfirm={handleDelete}
-                title="Supprimer l'enseignant"
-                description={`Êtes-vous sûr de vouloir supprimer ${enseignant.utilisateur?.profil?.prenom ?? ''} ${enseignant.utilisateur?.profil?.nom ?? ''} ? Cette action est irréversible.`}
-                confirmText="Supprimer"
+                title={t('detail.confirmSuppressionTitre')}
+                description={t('detail.confirmSuppressionMessage', {
+                    nom: `${enseignant.utilisateur?.profil?.prenom ?? ''} ${enseignant.utilisateur?.profil?.nom ?? ''}`.trim(),
+                })}
+                confirmText={t('detail.supprimer')}
                 variant="danger"
                 isLoading={supprimer.isPending}
             />

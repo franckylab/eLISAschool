@@ -145,6 +145,18 @@ export class PersonnelService {
             }, createurId);
         }
 
+        if (createurId) {
+            await auditService.log({
+                utilisateurId: createurId,
+                action: AuditAction.PERSONNEL_CREATE,
+                cible: 'MembrePersonnel',
+                cibleId: membre.id,
+                description: `Membre personnel créé: ${dto.matricule}`,
+                nouvellesValeurs: { matricule: dto.matricule, nom: dto.nom, prenom: dto.prenom, statut: membre.statut },
+                module: 'personnel',
+            });
+        }
+
         logger.info(`Nouveau membre personnel: ${dto.matricule}`);
         return membre;
     }
@@ -269,19 +281,53 @@ export class PersonnelService {
         };
     }
 
-    async update(id: string, dto: UpdatePersonnelDto, etablissementId?: string): Promise<MembrePersonnel> {
+    async update(id: string, dto: UpdatePersonnelDto, utilisateurId?: string, etablissementId?: string): Promise<MembrePersonnel> {
         const membre = await this.findOne(id, etablissementId);
+
+        const snapshotAvant: Record<string, unknown> = {
+            nom: membre.nom,
+            prenom: membre.prenom,
+            statut: membre.statut,
+            dateEmbauche: membre.dateEmbauche,
+        };
 
         const { dateEmbauche, ...reste } = dto;
         Object.assign(membre, reste);
         if (dateEmbauche) membre.dateEmbauche = new Date(dateEmbauche);
         await this.personnelRepo.save(membre);
+
+        if (utilisateurId) {
+            await auditService.log({
+                utilisateurId,
+                action: AuditAction.PERSONNEL_UPDATE,
+                cible: 'MembrePersonnel',
+                cibleId: id,
+                description: 'Dossier personnel mis à jour',
+                anciennesValeurs: snapshotAvant,
+                nouvellesValeurs: dto as Record<string, unknown>,
+                module: 'personnel',
+            });
+        }
+
         return membre;
     }
 
-    async delete(id: string, etablissementId?: string): Promise<void> {
+    async delete(id: string, utilisateurId?: string, etablissementId?: string): Promise<void> {
         const membre = await this.findOne(id, etablissementId);
         await this.personnelRepo.softRemove(membre);
+
+        if (utilisateurId) {
+            await auditService.log({
+                utilisateurId,
+                action: AuditAction.PERSONNEL_DELETE,
+                cible: 'MembrePersonnel',
+                cibleId: id,
+                description: `Membre personnel supprimé (soft): ${membre.matricule}`,
+                anciennesValeurs: { matricule: membre.matricule, nom: membre.nom, prenom: membre.prenom },
+                module: 'personnel',
+            });
+        }
+
         logger.info(`Membre personnel supprimé (soft): ${id}`);
     }
 

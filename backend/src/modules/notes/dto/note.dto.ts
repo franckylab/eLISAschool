@@ -67,6 +67,7 @@ export const queryNotesSchema = paginationSchema
         classeAnneeId: z.string().uuid().optional(),
         periodeId: z.string().uuid().optional(),
         statut: z.nativeEnum(StatutNote).optional(),
+        statuts: z.array(z.nativeEnum(StatutNote)).optional(),
         typeEvaluation: z.nativeEnum(TypeEvaluation).optional(),
         recherche: z.string().max(255).optional(),
     });

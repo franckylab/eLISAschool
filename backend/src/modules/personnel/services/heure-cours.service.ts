@@ -15,8 +15,12 @@ import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
-import { CreneauHoraire, JourSemaine } from '@modules/emploi-du-temps/entities';
+import { CreneauHoraire, JourSemaine, StatutCreneau } from '@modules/emploi-du-temps/entities';
 import { ClasseAnnee } from '@modules/classes/entities';
+import { Matiere } from '@modules/matieres/entities';
+import { MembrePersonnel, StatutPersonnel } from '@modules/personnel/entities';
+import { personnelService } from './personnel.service';
+import { CategorieFonction } from '../../../shared/constants/personnel.constants';
 
 export class HeureCoursService {
     private repo: Repository<HeureCours>;
@@ -31,11 +35,15 @@ export class HeureCoursService {
         createurId?: string,
         req?: any
     ): Promise<HeureCours> {
-        await this.verifierConflitCreneau(dto);
+        await this.verifierEnseignant(dto.enseignantId, etablissementId);
+        await this.verifierClasseAnnee(dto.classeAnneeId, etablissementId);
+        await this.verifierMatiere(dto.matiereId, etablissementId);
+
+        await this.verifierConflitCreneau(dto, etablissementId);
 
         const heureCours = new HeureCours();
         Object.assign(heureCours, dto, {
-            statutEffectue: dto.statutEffectue as any,
+            statutEffectue: (dto.statutEffectue as StatutEffectue) || StatutEffectue.PLANIFIE,
             date: new Date(dto.date),
             etablissementId,
         });
@@ -58,10 +66,50 @@ export class HeureCoursService {
         return heureCours;
     }
 
-    private async verifierConflitCreneau(dto: CreateHeureCoursDto, excludeId?: string): Promise<void> {
+    private async verifierEnseignant(enseignantId: string, etablissementId: string): Promise<void> {
+        const membreRepo = AppDataSource.getRepository(MembrePersonnel);
+        const membre = await membreRepo.findOne({ where: { id: enseignantId, etablissementId } });
+        if (!membre) {
+            throw new AppError('Membre du personnel introuvable dans cet établissement', 400, 'ENSEIGNANT_NOT_FOUND');
+        }
+        if (membre.statut !== StatutPersonnel.ACTIF) {
+            throw new AppError('Ce membre du personnel n\'est pas actif', 400, 'ENSEIGNANT_INACTIF');
+        }
+        const contratRepo = AppDataSource.getRepository(ContratPersonnel);
+        const contratActif = await contratRepo.findOne({
+            where: { membrePersonnelId: enseignantId, etablissementId, statut: StatutContrat.ACTIF },
+        });
+        if (!contratActif) {
+            throw new AppError('Ce membre du personnel n\'a pas de contrat actif', 400, 'ENSEIGNANT_SANS_CONTRAT_ACTIF');
+        }
+        const categories = await personnelService.deriverCategories([enseignantId]);
+        const info = categories.get(enseignantId);
+        if (info?.categorie !== CategorieFonction.ENSEIGNANT) {
+            throw new AppError('Ce membre du personnel n\'est pas de catégorie enseignant', 400, 'MEMBRE_NON_ENSEIGNANT');
+        }
+    }
+
+    private async verifierClasseAnnee(classeAnneeId: string, etablissementId: string): Promise<void> {
+        const repo = AppDataSource.getRepository(ClasseAnnee);
+        const found = await repo.findOne({ where: { id: classeAnneeId, etablissementId } });
+        if (!found) {
+            throw new AppError('Classe (année) introuvable dans cet établissement', 400, 'CLASSE_ANNEE_NOT_IN_TENANT');
+        }
+    }
+
+    private async verifierMatiere(matiereId: string, etablissementId: string): Promise<void> {
+        const repo = AppDataSource.getRepository(Matiere);
+        const found = await repo.findOne({ where: { id: matiereId, etablissementId } });
+        if (!found) {
+            throw new AppError('Matière introuvable dans cet établissement', 400, 'MATIERE_NOT_IN_TENANT');
+        }
+    }
+
+    private async verifierConflitCreneau(dto: CreateHeureCoursDto, etablissementId: string, excludeId?: string): Promise<void> {
         const coursDuJour = await this.repo.find({
             where: {
                 enseignantId: dto.enseignantId,
+                etablissementId,
                 date: new Date(dto.date) as any,
                 statutEffectue: Not(StatutEffectue.ANNULE),
                 ...(excludeId ? { id: Not(excludeId) } : {}),
@@ -182,9 +230,9 @@ export class HeureCoursService {
                 date: (dto.date ? (dto.date as any as Date) : heureCours.date as Date).toISOString().split('T')[0],
                 heureDebut: dto.heureDebut || heureCours.heureDebut,
                 heureFin: dto.heureFin || heureCours.heureFin,
-                statutEffectue: (dto.statutEffectue as any) || heureCours.statutEffectue || 'PLANIFIE',
+                statutEffectue: (dto.statutEffectue as StatutEffectue) || heureCours.statutEffectue || StatutEffectue.PLANIFIE,
             };
-            await this.verifierConflitCreneau(conflitDto as CreateHeureCoursDto, id);
+            await this.verifierConflitCreneau(conflitDto, etablissementId, id);
         }
 
         await this.repo.save(heureCours);
@@ -389,7 +437,7 @@ export class HeureCoursService {
             .leftJoinAndSelect('am.matiere', 'm')
             .where('am.enseignantId = :enseignantId', { enseignantId })
             .andWhere('e.etablissementId = :etablissementId', { etablissementId })
-            .andWhere('e.statut = :statut', { statut: 'VALIDE' });
+            .andWhere('e.statut = :statut', { statut: StatutCreneau.VALIDE });
 
         if (classeAnneeId) {
             edtQuery.andWhere('am.classeAnneeId = :classeAnneeId', { classeAnneeId });
@@ -447,7 +495,7 @@ export class HeureCoursService {
                 }
 
                 const slotClasseAnneeId = slot.affectationMatiere?.classeAnneeId;
-                const slotMatiereId = slot.affectationMatiere?.matiereId || slot.matiereId;
+                const slotMatiereId = slot.affectationMatiere?.matiereId;
                 if (!slotClasseAnneeId || !slotMatiereId) {
                     skipped++;
                     continue;

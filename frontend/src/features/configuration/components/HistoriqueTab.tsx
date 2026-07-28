@@ -2,28 +2,57 @@
  * ==================================
  * eLISAschool - Tab Historique Configuration
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  */
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { History, RotateCcw, Filter, Calendar, User } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { cn } from '@/lib/cn';
+import { format } from 'date-fns';
+import { fr, enUS } from 'date-fns/locale';
 import {
     useHistoriqueConfiguration,
     useRestaurerHistorique,
 } from '../hooks/use-configuration';
 import type { HistoriqueConfiguration } from '../types/configuration.types';
 
-const ACTIONS_CONFIG: Record<string, { label: string; color: string }> = {
-    CREATE: { label: 'Création', color: 'green' },
-    UPDATE: { label: 'Modification', color: 'blue' },
-    DELETE: { label: 'Suppression', color: 'red' },
-    RESTORE: { label: 'Restauration', color: 'purple' },
+const ACTION_ICONS: Record<string, { bg: string; text: string; dot: string }> = {
+    CREATE: {
+        bg: 'bg-[var(--color-success)]/10',
+        text: 'text-[var(--color-success)]',
+        dot: 'bg-[var(--color-success)]',
+    },
+    UPDATE: {
+        bg: 'bg-[var(--color-dominante)]/10',
+        text: 'text-[var(--color-dominante)]',
+        dot: 'bg-[var(--color-dominante)]',
+    },
+    DELETE: {
+        bg: 'bg-[var(--color-danger)]/10',
+        text: 'text-[var(--color-danger)]',
+        dot: 'bg-[var(--color-danger)]',
+    },
+    RESTORE: {
+        bg: 'bg-[var(--color-accent)]/10',
+        text: 'text-[var(--color-accent)]',
+        dot: 'bg-[var(--color-accent)]',
+    },
+};
+
+const DEFAULT_ICON = {
+    bg: 'bg-[var(--color-texte-secondaire)]/10',
+    text: 'text-[var(--color-texte-secondaire)]',
+    dot: 'bg-[var(--color-texte-secondaire)]',
 };
 
 export function HistoriqueTab() {
+    const { t, i18n } = useTranslation('configuration');
+    const locale = i18n.language === 'en' ? enUS : fr;
+
     const [filtres, setFiltres] = useState({
         page: 1,
         limit: 20,
@@ -31,63 +60,67 @@ export function HistoriqueTab() {
         cible: '',
     });
 
+    const [confirmCible, setConfirmCible] = useState<HistoriqueConfiguration | null>(null);
+
     const { data: historiqueResponse, isLoading } = useHistoriqueConfiguration(filtres);
     const restaurer = useRestaurerHistorique();
 
     const historique = historiqueResponse?.data || [];
     const meta = historiqueResponse?.meta;
 
-    const handleRestaurer = async (entry: HistoriqueConfiguration) => {
-        if (!confirm(`Restaurer la configuration à cet état ?\n\nAction: ${entry.action}\nCible: ${entry.cible}`)) {
-            return;
-        }
-
+    const handleRestaurer = async () => {
+        if (!confirmCible) return;
         try {
-            await restaurer.mutateAsync(entry.id);
+            await restaurer.mutateAsync(confirmCible.id);
         } catch (error) {
             console.error('Erreur lors de la restauration:', error);
+        } finally {
+            setConfirmCible(null);
         }
     };
 
     const formatDate = (dateStr: string) => {
         const date = new Date(dateStr);
-        return date.toLocaleDateString('fr-FR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
+        return format(date, 'dd/MM/yyyy HH:mm', { locale });
+    };
+
+    const actionLabel = (action: string): string => {
+        const key = `sections.historique.${action === 'CREATE' ? 'creation' : action === 'UPDATE' ? 'modification' : action === 'DELETE' ? 'suppression' : 'restauration'}`;
+        return t(key);
     };
 
     if (isLoading) {
-        return <div className="py-8 text-center">Chargement de l'historique...</div>;
+        return (
+            <div className="py-8 text-center text-[var(--color-texte-secondaire)]">
+                {t('sections.historique.chargement')}
+            </div>
+        );
     }
 
     return (
         <div className="space-y-6">
             <div>
                 <h2 className="text-lg font-semibold text-[var(--color-texte)]">
-                    Historique des Modifications
+                    {t('sections.historique.titreModifications')}
                 </h2>
                 <p className="text-sm text-[var(--color-texte-secondaire)]">
-                    Consultez et restaurez les versions précédentes de la configuration
+                    {t('sections.historique.sousTitreModifications')}
                 </p>
             </div>
 
             {/* Filtres */}
-            <div className="flex flex-wrap gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+            <div className="flex flex-wrap gap-3 p-4 bg-[var(--color-surface-hover)] rounded-lg">
                 <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    <Filter className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-[var(--color-texte-secondaire)]" />
                     <select
                         value={filtres.action}
                         onChange={(e) => setFiltres((prev) => ({ ...prev, action: e.target.value, page: 1 }))}
-                        className="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-[var(--color-dominante)]"
+                        className="rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] px-3 py-1.5 text-sm focus:border-[var(--color-dominante)] focus:outline-none focus:ring-1 focus:ring-[var(--color-dominante)]"
                     >
-                        <option value="">Toutes les actions</option>
-                        {Object.entries(ACTIONS_CONFIG).map(([key, config]) => (
+                        <option value="">{t('sections.historique.toutesActions')}</option>
+                        {(['CREATE', 'UPDATE', 'DELETE', 'RESTORE'] as const).map((key) => (
                             <option key={key} value={key}>
-                                {config.label}
+                                {actionLabel(key)}
                             </option>
                         ))}
                     </select>
@@ -97,42 +130,40 @@ export function HistoriqueTab() {
             {/* Timeline */}
             <div className="space-y-4">
                 {historique.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                        <History className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                        <p>Aucune modification dans l'historique</p>
+                    <div className="py-12 text-center text-[var(--color-texte-secondaire)]">
+                        <History className="mx-auto mb-3 h-12 w-12 opacity-30" />
+                        <p>{t('sections.historique.aucuneModification')}</p>
                     </div>
                 ) : (
                     historique.map((entry) => {
-                        const actionConfig = ACTIONS_CONFIG[entry.action] || {
-                            label: entry.action,
-                            color: 'gray',
-                        };
+                        const colors = ACTION_ICONS[entry.action] ?? DEFAULT_ICON;
 
                         return (
                             <div
                                 key={entry.id}
-                                className="relative pl-8 pb-6 border-l-2 border-gray-200 dark:border-gray-700 last:border-l-0"
+                                className="relative border-l-2 border-[var(--color-bordure)] pl-8 pb-6 last:border-l-0"
                             >
                                 {/* Point sur la timeline */}
                                 <div
                                     className={cn(
-                                        'absolute left-0 top-0 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-white shadow',
-                                        `bg-${actionConfig.color}-500`
+                                        'absolute left-0 top-0 -translate-x-1/2 h-4 w-4 rounded-full border-2 border-[var(--color-surface)] shadow',
+                                        colors.dot,
                                     )}
                                 />
 
                                 {/* Contenu */}
-                                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-                                    <div className="flex items-start justify-between mb-2">
+                                <div className="rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] p-4 shadow-sm">
+                                    <div className="mb-2 flex items-start justify-between">
                                         <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-1">
+                                            <div className="mb-1 flex items-center gap-2">
                                                 <span
                                                     className={cn(
-                                                        'px-2 py-0.5 rounded text-xs font-medium',
-                                                        `bg-${actionConfig.color}-100 text-${actionConfig.color}-800`
+                                                        'rounded px-2 py-0.5 text-xs font-medium',
+                                                        colors.bg,
+                                                        colors.text,
                                                     )}
                                                 >
-                                                    {actionConfig.label}
+                                                    {actionLabel(entry.action)}
                                                 </span>
                                                 <span className="text-sm font-medium text-[var(--color-texte)]">
                                                     {entry.cible}
@@ -149,14 +180,14 @@ export function HistoriqueTab() {
                                             variant="outline"
                                             size="sm"
                                             icon={<RotateCcw className="h-3 w-3" />}
-                                            onClick={() => handleRestaurer(entry)}
+                                            onClick={() => setConfirmCible(entry)}
                                             isLoading={restaurer.isPending}
                                         >
-                                            Restaurer
+                                            {t('sections.historique.restaurer')}
                                         </ElisaButton>
                                     </div>
 
-                                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 mt-3">
+                                    <div className="mt-3 flex items-center gap-4 text-xs text-[var(--color-texte-secondaire)]">
                                         <div className="flex items-center gap-1">
                                             <Calendar className="h-3 w-3" />
                                             {formatDate(entry.creeAt)}
@@ -177,30 +208,49 @@ export function HistoriqueTab() {
 
             {/* Pagination */}
             {meta && meta.totalPages > 1 && (
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                        Page {meta.currentPage} sur {meta.totalPages} ({meta.totalItems} entrées)
+                <div className="flex items-center justify-between border-t border-[var(--color-bordure)] pt-4">
+                    <p className="text-sm text-[var(--color-texte-secondaire)]">
+                        {t('sections.historique.pageSur', {
+                            page: meta.currentPage,
+                            total: meta.totalPages,
+                            count: meta.totalItems,
+                        })}
                     </p>
                     <div className="flex gap-2">
                         <ElisaButton
                             variant="outline"
                             size="sm"
-                            disabled={!meta.hasPrev}
+                            disabled={meta.currentPage <= 1}
                             onClick={() => setFiltres((prev) => ({ ...prev, page: prev.page - 1 }))}
                         >
-                            Précédent
+                            {t('sections.historique.precedent')}
                         </ElisaButton>
                         <ElisaButton
                             variant="outline"
                             size="sm"
-                            disabled={!meta.hasNext}
+                            disabled={meta.currentPage >= meta.totalPages}
                             onClick={() => setFiltres((prev) => ({ ...prev, page: prev.page + 1 }))}
                         >
-                            Suivant
+                            {t('sections.historique.suivant')}
                         </ElisaButton>
                     </div>
                 </div>
             )}
+
+            {/* Confirmation restauration */}
+            <ConfirmationModal
+                isOpen={!!confirmCible}
+                title={t('sections.historique.confirmerRestauration')}
+                message={t('sections.historique.confirmerMessage', {
+                    action: confirmCible ? actionLabel(confirmCible.action) : '',
+                    cible: confirmCible?.cible ?? '',
+                })}
+                confirmLabel={t('sections.historique.restaurer')}
+                variant="warning"
+                onConfirm={handleRestaurer}
+                onCancel={() => setConfirmCible(null)}
+                isLoading={restaurer.isPending}
+            />
         </div>
     );
 }

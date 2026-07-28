@@ -49,7 +49,7 @@ export function EDTTemplatesPage() {
 
             {isLoading ? (
                 <PageSkeleton showHeader={false} showStats={false} showTable={false} />
-            ) : !templates?.data || templates.data.length === 0 ? (
+            ) : !templates || templates.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                     <FileText className="h-16 w-16 text-[var(--color-text-muted)] mb-4" />
                     <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-2">{t('templates.vide.titre')}</h3>
@@ -60,7 +60,7 @@ export function EDTTemplatesPage() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {templates.data.map((template: TemplateEDT, index: number) => (
+                    {templates.map((template: TemplateEDT, index: number) => (
                         <motion.div
                             key={template.id}
                             className="p-6 rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-sm hover:shadow-md transition-shadow"

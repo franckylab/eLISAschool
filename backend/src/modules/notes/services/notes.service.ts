@@ -12,7 +12,7 @@
 import { Repository, FindOptionsWhere, In } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Note, TypeEvaluation, StatutNote, NoteVersion } from '../entities';
-import { AffectationEleve } from '@modules/classes/entities';
+import { AffectationEleve, StatutAffectationEleve } from '@modules/classes/entities';
 import { CreateNoteDto, UpdateNoteDto, CreateBulkNotesDto, QueryNotesDto, QueryNotesStatistiquesDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -25,6 +25,7 @@ import { notificationTemplates } from '@modules/notifications/services';
 import { MembrePersonnel } from '@modules/personnel/entities';
 import { Eleve } from '@modules/eleves/entities';
 import { Matiere } from '@modules/matieres/entities';
+import { coefficientResolverService } from '@modules/matieres/services';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
 import { StatutWorkflow, DecisionValidation } from '@modules/validation-workflow/entities';
 import { gamificationService } from '@modules/gamification/services';
@@ -67,13 +68,13 @@ export class NotesService {
         this.versionRepository = AppDataSource.getRepository(NoteVersion);
     }
 
-    private async getNotesParams() {
+    private async getNotesParams(etablissementId?: string) {
         return {
-            baremeDefaut: await getParamNumber('notes.bareme_defaut', { defaultValue: 20 }),
-            showRanking: await getParamBoolean('notes.show_ranking', { defaultValue: true }),
-            requireValidation: await getParamBoolean('notes.require_validation', { defaultValue: true }),
-            allowBulkEntry: await getParamBoolean('notes.allow_bulk_entry', { defaultValue: true }),
-            validationLevels: await getParamNumber('notes.validation_levels', { defaultValue: 2 }),
+            baremeDefaut: await getParamNumber('notes.bareme_defaut', { etablissementId, defaultValue: 20 }),
+            showRanking: await getParamBoolean('notes.show_ranking', { etablissementId, defaultValue: true }),
+            requireValidation: await getParamBoolean('notes.require_validation', { etablissementId, defaultValue: true }),
+            allowBulkEntry: await getParamBoolean('notes.allow_bulk_entry', { etablissementId, defaultValue: true }),
+            validationLevels: await getParamNumber('notes.validation_levels', { etablissementId, defaultValue: 2 }),
         };
     }
 
@@ -97,7 +98,7 @@ export class NotesService {
     }
 
     async create(createDto: CreateNoteDto, utilisateurId: string, etablissementId?: string): Promise<Note> {
-        const params = await this.getNotesParams();
+        const params = await this.getNotesParams(etablissementId);
 
         // 1. Récupérer l'année scolaire via la période
         const periode = await periodesService.findOne(createDto.periodeId);
@@ -118,7 +119,8 @@ export class NotesService {
             where: {
                 eleveId: createDto.eleveId,
                 anneeScolaireId: anneeId,
-                actif: true
+                actif: true,
+                statut: StatutAffectationEleve.ACTIVE
             },
             relations: ['classe']
         });
@@ -134,69 +136,21 @@ export class NotesService {
         // 4. Résoudre l'enseignant (MembrePersonnel) depuis l'utilisateur connecté
         const enseignantId = await this.resolveEnseignantId(utilisateurId);
 
-        // 5. Résoudre coefficient/bareme depuis la hiérarchie matières si non fournis
+        // 5. Résoudre coefficient/bareme via le résolveur central si non fournis
         let coefficient = createDto.coefficient;
         let bareme = createDto.bareme;
 
-        if (coefficient === undefined || bareme === undefined) {
+        if ((coefficient === undefined || bareme === undefined) && etablissementId) {
             try {
-                const matiereNiveauRepo = AppDataSource.getRepository('MatiereNiveau') as any;
-                const affectationMatiereRepo = AppDataSource.getRepository('AffectationMatiere') as any;
-                const classeAnneeRepo = AppDataSource.getRepository('AffectationEleve') as any;
-
-                // Trouver le niveau de la classe et le programme associé
-                const affectationDetail = await classeAnneeRepo.findOne({
-                    where: { eleveId: createDto.eleveId, anneeScolaireId: anneeId, actif: true },
-                    relations: ['classe', 'classeAnnee'],
-                });
-
-                if (affectationDetail?.classe?.niveauId) {
-                    const niveauId = affectationDetail.classe.niveauId;
-
-                    // Chercher l'affectation matière (source prioritaire pour le coefficient)
-                    // NB: AffectationMatiere ne porte PAS de barème (champ inexistant)
-                    const affectMatiere = await affectationMatiereRepo.findOne({
-                        where: { matiereId: createDto.matiereId, classeAnneeId: createDto.classeAnneeId },
-                    });
-
-                    if (coefficient === undefined) {
-                        coefficient = affectMatiere?.coefficient;
-                    }
-
-                    // ProgrammeMatiere override (via programme de la ClasseAnnee)
-                    if (coefficient === undefined || bareme === undefined) {
-                        const programmeId = affectationDetail.classeAnnee?.programmeId;
-                        if (programmeId) {
-                            const mn = await matiereNiveauRepo.findOne({
-                                where: { matiereId: createDto.matiereId, niveauId },
-                                select: ['id'],
-                            });
-                            if (mn?.id) {
-                                const pm = await AppDataSource.getRepository('ProgrammeMatiere').findOne({
-                                    where: { programmeId, matiereNiveauId: mn.id },
-                                });
-                                if (coefficient === undefined) coefficient = pm?.coefficient;
-                                if (bareme === undefined) bareme = pm?.bareme;
-                            }
-                        }
-                    }
-
-                    // Fallback sur MatiereNiveau (grille matière-niveau)
-                    if (coefficient === undefined || bareme === undefined) {
-                        const mn = await matiereNiveauRepo.findOne({
-                            where: { matiereId: createDto.matiereId, niveauId },
-                        });
-
-                        if (coefficient === undefined) {
-                            coefficient = mn?.coefficient;
-                        }
-                        if (bareme === undefined) {
-                            bareme = mn?.bareme;
-                        }
-                    }
-                }
+                const resolu = await coefficientResolverService.resoudreCoefficient(
+                    createDto.classeAnneeId,
+                    createDto.matiereId,
+                    etablissementId
+                );
+                coefficient = coefficient ?? resolu.coefficient;
+                bareme = bareme ?? resolu.bareme;
             } catch (e) {
-                logger.warn('[Notes] Impossible de résoudre config matiere (non bloquant)', e);
+                logger.warn('[Notes] Impossible de résoudre coefficient/barème (non bloquant)', e);
             }
         }
 
@@ -313,7 +267,7 @@ export class NotesService {
     }
 
     async createBulk(createDto: CreateBulkNotesDto, utilisateurId: string, etablissementId?: string): Promise<number> {
-        const params = await this.getNotesParams();
+        const params = await this.getNotesParams(etablissementId);
 
         // 1. Vérifier que la saisie en masse est autorisée par la configuration
         if (!params.allowBulkEntry) {
@@ -344,6 +298,7 @@ export class NotesService {
                 eleveId: In(eleveIds),
                 anneeScolaireId: anneeId,
                 actif: true,
+                statut: StatutAffectationEleve.ACTIVE,
             },
             select: ['id', 'eleveId'],
         });
@@ -360,62 +315,21 @@ export class NotesService {
         // 4. Résoudre l'enseignant (MembrePersonnel) depuis l'utilisateur connecté
         const enseignantId = await this.resolveEnseignantId(utilisateurId);
 
-        // 5. Résoudre coefficient/bareme depuis la hiérarchie si non fournis
+        // 5. Résoudre coefficient/bareme via le résolveur central si non fournis
         let coefficient = createDto.coefficient;
         let bareme = createDto.bareme;
 
-        if (coefficient === undefined || bareme === undefined) {
+        if ((coefficient === undefined || bareme === undefined) && etablissementId) {
             try {
-                const matiereNiveauRepo = AppDataSource.getRepository('MatiereNiveau') as any;
-                const affectationMatiereRepo = AppDataSource.getRepository('AffectationMatiere') as any;
-
-                // NB: AffectationMatiere ne porte PAS de barème (champ inexistant)
-                const affectMatiere = await affectationMatiereRepo.findOne({
-                    where: { matiereId: createDto.matiereId, classeAnneeId: createDto.classeAnneeId },
-                });
-
-                if (coefficient === undefined) {
-                    coefficient = affectMatiere?.coefficient;
-                }
-
-                // ProgrammeMatiere override (via programme de la ClasseAnnee)
-                if (coefficient === undefined || bareme === undefined) {
-                    const classeAnnee = await AppDataSource.getRepository('ClasseAnnee').findOne({
-                        where: { id: createDto.classeAnneeId },
-                        relations: ['classe'],
-                    });
-
-                    if (classeAnnee?.classe?.niveauId) {
-                        const niveauId = classeAnnee.classe.niveauId;
-
-                        // ProgrammeMatiere lookup
-                        const programmeId = classeAnnee.programmeId;
-                        if (programmeId) {
-                            const mn = await matiereNiveauRepo.findOne({
-                                where: { matiereId: createDto.matiereId, niveauId },
-                                select: ['id'],
-                            });
-                            if (mn?.id) {
-                                const pm = await AppDataSource.getRepository('ProgrammeMatiere').findOne({
-                                    where: { programmeId, matiereNiveauId: mn.id },
-                                });
-                                if (coefficient === undefined) coefficient = pm?.coefficient;
-                                if (bareme === undefined) bareme = pm?.bareme;
-                            }
-                        }
-
-                        // Fallback MatiereNiveau
-                        if (coefficient === undefined || bareme === undefined) {
-                            const mnResult = await matiereNiveauRepo.findOne({
-                                where: { matiereId: createDto.matiereId, niveauId },
-                            });
-                            if (coefficient === undefined) coefficient = mnResult?.coefficient;
-                            if (bareme === undefined) bareme = mnResult?.bareme;
-                        }
-                    }
-                }
+                const resolu = await coefficientResolverService.resoudreCoefficient(
+                    createDto.classeAnneeId,
+                    createDto.matiereId,
+                    etablissementId
+                );
+                coefficient = coefficient ?? resolu.coefficient;
+                bareme = bareme ?? resolu.bareme;
             } catch (e) {
-                logger.warn('[Notes] Impossible de résoudre config matiere pour bulk (non bloquant)', e);
+                logger.warn('[Notes] Impossible de résoudre coefficient/barème pour bulk (non bloquant)', e);
             }
         }
 
@@ -465,7 +379,7 @@ export class NotesService {
     }
 
     async findAll(query: QueryNotesDto, etablissementId?: string): Promise<PaginatedResult<Note>> {
-        const { page, limit, eleveId, matiereId, classeAnneeId, periodeId, typeEvaluation, statut, recherche } = query;
+        const { page, limit, eleveId, matiereId, classeAnneeId, periodeId, typeEvaluation, statut, statuts, recherche } = query;
 
         const qb = this.noteRepository.createQueryBuilder('note')
             .leftJoinAndSelect('note.eleve', 'eleve')
@@ -482,6 +396,7 @@ export class NotesService {
         if (periodeId) qb.andWhere('note.periodeId = :periodeId', { periodeId });
         if (typeEvaluation) qb.andWhere('note.typeEvaluation = :typeEvaluation', { typeEvaluation });
         if (statut) qb.andWhere('note.statut = :statut', { statut });
+        else if (statuts?.length) qb.andWhere('note.statut IN (:...statuts)', { statuts });
         if (etablissementId) qb.andWhere('note.etablissementId = :etablissementId', { etablissementId });
 
         // Recherche serveur : nom/prénom élève + description de la note
@@ -585,6 +500,18 @@ export class NotesService {
         await this.creerVersion(note.id, snapshotAvant, utilisateurId, note.etablissementId, updateDto.commentaire);
 
         await this.noteRepository.save(note);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.NOTE_UPDATE,
+            cible: 'Note',
+            cibleId: note.id,
+            description: 'Note modifiée',
+            anciennesValeurs: snapshotAvant,
+            nouvellesValeurs: updateDto as Record<string, unknown>,
+            module: 'notes',
+        });
+
         return note;
     }
 

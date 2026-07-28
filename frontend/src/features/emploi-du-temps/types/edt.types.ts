@@ -8,8 +8,8 @@
 
 // ─── Enums ────────────────────────────────────────────
 
-export type JourSemaine = 'LUNDI' | 'MARDI' | 'MERCREDI' | 'JEUDI' | 'VENDREDI' | 'SAMEDI' | 'DIMANCHE';
-export type TypeCreneau = 'COURS' | 'TD' | 'TP' | 'RECREATION' | 'PAUSE' | 'PERMANENCE' | 'AUTRE';
+export type JourSemaine = 'LUNDI' | 'MARDI' | 'MERCREDI' | 'JEUDI' | 'VENDREDI' | 'SAMEDI';
+export type TypeCreneau = 'COURS' | 'TD' | 'TP' | 'RECREATION' | 'ETUDE' | 'PERMANENCE' | 'AUTRE';
 export type StatutCreneau = 'PLANIFIE' | 'VALIDE';
 
 // ─── Interfaces ───────────────────────────────────────

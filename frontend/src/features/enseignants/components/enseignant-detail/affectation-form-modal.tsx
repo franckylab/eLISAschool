@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Save, Search, BookOpen, Percent, Calendar } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -21,6 +22,7 @@ interface AffectationFormModalProps {
 export function AffectationFormModal({
     open, onOpenChange, enseignantId, affectation, onSave, isLoading,
 }: AffectationFormModalProps) {
+    const { t } = useTranslation('personnel');
     const [matiereId, setMatiereId] = useState('');
     const [classeAnneeId, setClasseAnneeId] = useState('');
     const [coefficient, setCoefficient] = useState('');
@@ -68,21 +70,21 @@ export function AffectationFormModal({
         onSave(payload);
     };
 
-    const titre = affectation ? "Modifier l'affectation" : 'Ajouter une matière';
+    const estEdition = !!affectation;
 
     return (
         <CustomModal
             open={open}
             onOpenChange={onOpenChange}
-            title={titre}
-            description={affectation
-                ? "Modifier les paramètres de l'affectation"
-                : 'Assigner une nouvelle matière et classe à cet enseignant'}
+            title={estEdition ? t('affectations.modifierAffectation') : t('affectations.ajouterMatiere')}
+            description={estEdition
+                ? t('affectations.descModifier')
+                : t('affectations.descAjouter')}
             size="2xl"
             footer={
                 <>
                     <ElisaButton variant="outline" onClick={() => onOpenChange(false)} type="button">
-                        Annuler
+                        {t('form.annuler')}
                     </ElisaButton>
                     <ElisaButton
                         variant="primary"
@@ -92,36 +94,36 @@ export function AffectationFormModal({
                         disabled={!matiereId || !classeAnneeId}
                         onClick={handleSubmit}
                     >
-                        {affectation ? 'Enregistrer' : 'Ajouter'}
+                        {estEdition ? t('form.enregistrer') : t('affectations.ajouter')}
                     </ElisaButton>
                 </>
             }
         >
             <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-foreground mb-1">
                         <span className="inline-flex items-center gap-1.5">
-                            <BookOpen className="h-4 w-4 text-blue-500" />
-                            Matière
+                            <BookOpen className="h-4 w-4 text-primary" />
+                            {t('affectations.colMatiere')}
                         </span>
                     </label>
                     <div className="relative mb-2">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <input
                             type="text"
-                            placeholder="Rechercher une matière..."
+                            placeholder={t('affectations.rechercherMatiere')}
                             value={rechercheMatiere}
                             onChange={(e) => setRechercheMatiere(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                            className="w-full pl-9 pr-3 py-2 border border-border rounded-lg text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none bg-card text-foreground"
                         />
                     </div>
                     {matieresLoading ? (
-                        <div className="py-2 text-sm text-gray-500">Chargement...</div>
+                        <div className="py-2 text-sm text-muted-foreground">{t('affectations.chargement')}</div>
                     ) : (
                         <ElisaSelect
                             value={matiereId}
                             onValueChange={setMatiereId}
-                            placeholder="Sélectionner une matière"
+                            placeholder={t('affectations.selectionnerMatiere')}
                             options={matieresList.map((m) => ({
                                 value: m.id,
                                 label: `${m.nom}${m.code ? ` (${m.code})` : ''}`,
@@ -131,10 +133,10 @@ export function AffectationFormModal({
                 </div>
 
                 <ElisaSelect
-                    label="Classe"
+                    label={t('affectations.colClasse')}
                     value={classeAnneeId}
                     onValueChange={setClasseAnneeId}
-                    placeholder="Sélectionner une classe"
+                    placeholder={t('affectations.selectionnerClasse')}
                     disabled={classesLoading}
                     options={classesList
                         .filter((c) => c.actif && c.classeAnneeId)
@@ -145,10 +147,10 @@ export function AffectationFormModal({
                 />
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-foreground mb-1">
                         <span className="inline-flex items-center gap-1.5">
-                            <Percent className="h-4 w-4 text-orange-500" />
-                            Coefficient <span className="text-xs font-normal text-gray-400">(optionnel, hérité du programme si vide)</span>
+                            <Percent className="h-4 w-4 text-warning" />
+                            {t('affectations.colCoeff')} <span className="text-xs font-normal text-muted-foreground">({t('affectations.coeffOptionnel')})</span>
                         </span>
                     </label>
                     <input
@@ -157,42 +159,42 @@ export function AffectationFormModal({
                         step="0.5"
                         value={coefficient}
                         onChange={(e) => setCoefficient(e.target.value)}
-                        placeholder="Laisser vide pour utiliser la valeur du programme"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                        placeholder={t('affectations.coeffPlaceholder')}
+                        className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none bg-card text-foreground"
                     />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-foreground mb-1">
                             <span className="inline-flex items-center gap-1.5">
-                                <Calendar className="h-4 w-4 text-green-500" />
-                                Date de début
+                                <Calendar className="h-4 w-4 text-success" />
+                                {t('affectations.dateDebut')}
                             </span>
                         </label>
                         <input
                             type="date"
                             value={dateDebut}
                             onChange={(e) => setDateDebut(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none bg-card text-foreground"
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Date de fin (optionnelle)</label>
+                        <label className="block text-sm font-medium text-foreground mb-1">{t('affectations.dateFinOptionnelle')}</label>
                         <input
                             type="date"
                             value={dateFin}
                             onChange={(e) => setDateFin(e.target.value)}
                             min={dateDebut}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none bg-card text-foreground"
                         />
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+                <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg text-sm text-primary">
                     <BookOpen className="h-4 w-4 shrink-0" />
-                    <span>La matière doit être déjà configurée au programme du niveau de la classe sélectionnée.</span>
+                    <span>{t('affectations.infoProgramme')}</span>
                 </div>
             </form>
         </CustomModal>

@@ -28,6 +28,14 @@
         "preferences": "Préférences",
         "templates": "Templates"
     },
+    "jours": {
+        "lundi": "Lundi",
+        "mardi": "Mardi",
+        "mercredi": "Mercredi",
+        "jeudi": "Jeudi",
+        "vendredi": "Vendredi",
+        "samedi": "Samedi"
+    },
     "contexte": {
         "classe": "Classe",
         "enseignant": "Enseignant",
@@ -160,7 +168,6 @@
             "td": "TD",
             "tp": "TP",
             "recreation": "Récréation",
-            "pause": "Pause",
             "permanence": "Permanence",
             "etude": "Étude",
             "autre": "Autre"
@@ -212,6 +219,7 @@
         }
     },
     "toasts": {
+        "genererOk": "Emploi du temps généré avec succès",
         "creneauCree": "Créneau créé avec succès",
         "creneauModifie": "Créneau modifié avec succès",
         "creneauSupprime": "Créneau supprimé",

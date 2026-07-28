@@ -71,7 +71,10 @@ export async function getParamNumber(
     options?: { etablissementId?: string; defaultValue?: number }
 ): Promise<number> {
     const value = await getParam<number>(cle, options);
-    return typeof value === 'number' ? value : parseFloat(String(value)) || options?.defaultValue || 0;
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    const parsed = parseFloat(String(value));
+    // Number.isFinite distingue un parse échoué d'une valeur 0 légitime
+    return Number.isFinite(parsed) ? parsed : (options?.defaultValue ?? 0);
 }
 
 /**

@@ -10,7 +10,6 @@
 import { Repository, ILike } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Matiere, GroupeMatiere, MatiereNiveau, AffectationMatiere, StatutAffectationMatiere, StatutMatiereNiveau, StatutValidationAffectation } from '../entities';
-import { ProgrammeMatiere } from '@modules/programmes/entities';
 import { MembrePersonnel, ContratPersonnel, StatutContrat } from '@modules/personnel/entities';
 import { personnelService } from '@modules/personnel/services/personnel.service';
 import { CategorieFonction } from '../../../shared/constants/personnel.constants';
@@ -19,6 +18,7 @@ import { anneesScolairesService } from '@modules/annees-scolaires/services';
 import { classesService } from '@modules/classes/services';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
+import { coefficientResolverService } from './coefficient-resolver.service';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithRepository, PaginatedResult } from '@common/utils/pagination.util';
@@ -28,14 +28,12 @@ export class MatieresService {
     private groupeRepo: Repository<GroupeMatiere>;
     private niveauRepo: Repository<MatiereNiveau>;
     private affectationRepo: Repository<AffectationMatiere>;
-    private programmeMatiereRepo: Repository<ProgrammeMatiere>;
 
     constructor() {
         this.matiereRepo = AppDataSource.getRepository(Matiere);
         this.groupeRepo = AppDataSource.getRepository(GroupeMatiere);
         this.niveauRepo = AppDataSource.getRepository(MatiereNiveau);
         this.affectationRepo = AppDataSource.getRepository(AffectationMatiere);
-        this.programmeMatiereRepo = AppDataSource.getRepository(ProgrammeMatiere);
     }
 
     // ==== MATIERES ====
@@ -129,7 +127,7 @@ export class MatieresService {
     }
 
     // ==== GRILLE MATIÈRE PAR NIVEAU (MatiereNiveau) ====
-    // Source de vérité pour coefficient, barème, volumeHoraire, credits, obligatoire
+    // Source de vérité pour coefficient, barème, volumeHoraire, obligatoire
 
     async addMatiereToNiveau(dto: CreateMatiereNiveauDto, createurId: string, etablissementId?: string): Promise<MatiereNiveau> {
         // La contrainte d'unicité (matiereId, niveauId) est levée pour permettre
@@ -181,6 +179,21 @@ export class MatieresService {
     async deleteMatiereNiveau(id: string, etablissementId: string): Promise<void> {
         const prog = await this.niveauRepo.findOne({ where: { id, matiere: { etablissementId } } });
         if (!prog) throw new AppError('Programme matière-niveau non trouvé', 404, 'NOT_FOUND');
+
+        const affectationRepo = AppDataSource.getRepository(AffectationMatiere);
+        const nbAffectations = await affectationRepo.createQueryBuilder('am')
+            .innerJoin('am.classeAnnee', 'ca')
+            .where('am.matiereId = :matiereId', { matiereId: prog.matiereId })
+            .andWhere('ca.niveauId = :niveauId', { niveauId: prog.niveauId })
+            .getCount();
+        if (nbAffectations > 0) {
+            throw new AppError(
+                `Impossible de supprimer : ${nbAffectations} affectation(s) utilisent ce programme`,
+                409,
+                'PROGRAMME_AFFECTE'
+            );
+        }
+
         await this.niveauRepo.remove(prog);
         logger.info(`Programme matière-niveau supprimé: ${id}`);
     }
@@ -334,7 +347,10 @@ export class MatieresService {
         const affectation = await this.affectationRepo.findOne({ where: { id, etablissementId } });
         if (!affectation) throw new AppError('Affectation non trouvée', 404, 'NOT_FOUND');
 
-        if (dto.enseignantId) affectation.enseignantId = dto.enseignantId;
+        if (dto.enseignantId && dto.enseignantId !== affectation.enseignantId) {
+            await this.verifierEnseignant(dto.enseignantId, etablissementId);
+            affectation.enseignantId = dto.enseignantId;
+        }
         if (dto.dateDebut) affectation.dateDebut = new Date(dto.dateDebut);
         if (dto.dateFin !== undefined) affectation.dateFin = new Date(dto.dateFin);
         if (dto.actif !== undefined) affectation.actif = dto.actif;
@@ -424,17 +440,29 @@ export class MatieresService {
             }
         }
 
-        // Collecter les programmeIds pour résolution ProgrammeMatiere
-        const programmeIds = [...new Set(affectations.map(a => (a.classeAnnee as any)?.programmeId).filter(Boolean))];
-        const programmeMatieres: Map<string, ProgrammeMatiere> = new Map();
-        if (programmeIds.length > 0 && matiereIds.length > 0 && niveauIds.length > 0) {
-            const allPMs = await this.programmeMatiereRepo.createQueryBuilder('pm')
-                .leftJoinAndSelect('pm.matiereNiveau', 'mn')
-                .where('pm.programmeId IN (:...programmeIds)', { programmeIds })
-                .andWhere('mn.matiereId IN (:...matiereIds)', { matiereIds })
-                .getMany();
-            for (const pm of allPMs) {
-                programmeMatieres.set(`${pm.matiereNiveau.matiereId}::${pm.matiereNiveau.niveauId}::${pm.programmeId}`, pm);
+        // Résolution centralisée des coefficients, groupée par classe-année (batch)
+        const matieresParClasseAnnee = new Map<string, Set<string>>();
+        for (const aff of affectations) {
+            if (!aff.classeAnneeId) continue;
+            const set = matieresParClasseAnnee.get(aff.classeAnneeId) ?? new Set<string>();
+            set.add(aff.matiereId);
+            matieresParClasseAnnee.set(aff.classeAnneeId, set);
+        }
+        const coefficientsParClasseAnnee = new Map<string, Map<string, number>>();
+        for (const [classeAnneeId, ids] of matieresParClasseAnnee) {
+            try {
+                const resolus = await coefficientResolverService.resoudreCoefficients(
+                    classeAnneeId,
+                    [...ids],
+                    etablissementId
+                );
+                const coefMap = new Map<string, number>();
+                for (const [matiereId, resolu] of resolus) {
+                    coefMap.set(matiereId, resolu.coefficient);
+                }
+                coefficientsParClasseAnnee.set(classeAnneeId, coefMap);
+            } catch (e) {
+                logger.warn(`[Matieres] Résolution coefficients impossible pour classe-année ${classeAnneeId} (non bloquant)`, e);
             }
         }
 
@@ -443,13 +471,10 @@ export class MatieresService {
             const key = niveauId ? `${aff.matiereId}::${niveauId}` : '';
             const matiereNiveau = key ? matiereNiveaux.get(key) : null;
 
-            // Résolution ProgrammeMatiere
-            const programmeId = (aff.classeAnnee as any)?.programmeId;
-            const pmKey = programmeId && niveauId ? `${aff.matiereId}::${niveauId}::${programmeId}` : '';
-            const pm = pmKey ? programmeMatieres.get(pmKey) : null;
-
-            // Chaîne : ProgrammeMatiere → MatiereNiveau → Affectation
-            const coefficient = pm?.coefficient ?? matiereNiveau?.coefficient ?? aff.coefficient ?? 1;
+            // Chaîne canonique (A1) : Affectation → ProgrammeMatiere → MatiereNiveau → défaut
+            const coefficient = coefficientsParClasseAnnee.get(aff.classeAnneeId)?.get(aff.matiereId)
+                ?? matiereNiveau?.coefficient
+                ?? 1;
             const volumeHoraireHebdo = matiereNiveau?.volumeHoraire ?? null;
 
             return {

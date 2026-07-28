@@ -43,7 +43,6 @@ export interface MatiereNiveau {
     groupeId: string | null;
     filiereId: string | null;
     coefficient: number;
-    credits: number | null;
     bareme: number;
     volumeHoraire: number | null;
     obligatoire: boolean;

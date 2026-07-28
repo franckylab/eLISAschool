@@ -83,7 +83,7 @@ export class ClassesAnneesService {
 
         // Workflow de validation si activé
         if (createurId && etablissementId) {
-            const requireValidation = await getParamBoolean('classes.require_validation', { defaultValue: false });
+            const requireValidation = await getParamBoolean('classes.require_validation', { etablissementId, defaultValue: false });
 
             if (requireValidation) {
                 await validationWorkflowService.createWorkflow(
@@ -145,11 +145,11 @@ export class ClassesAnneesService {
     }
 
     /**
-     * Trouver une classe-année par ID
+     * Trouver une classe-année par ID (scopé multi-tenant si etablissementId fourni)
      */
-    async findOne(id: string): Promise<ClasseAnnee> {
+    async findOne(id: string, etablissementId?: string): Promise<ClasseAnnee> {
         const classeAnnee = await this.classeAnneeRepo.findOne({
-            where: { id },
+            where: etablissementId ? { id, etablissementId } : { id },
             relations: ['classe', 'classe.niveau', 'anneeScolaire', 'professeurPrincipal'],
         });
 
@@ -180,10 +180,10 @@ export class ClassesAnneesService {
     }
 
     /**
-     * Mettre à jour une classe-année
+     * Mettre à jour une classe-année (scopée par établissement)
      */
-    async update(id: string, dto: UpdateClasseAnneeDto): Promise<ClasseAnnee> {
-        const classeAnnee = await this.findOne(id);
+    async update(id: string, dto: UpdateClasseAnneeDto, etablissementId?: string): Promise<ClasseAnnee> {
+        const classeAnnee = await this.findOne(id, etablissementId);
 
         if (dto.sallePrincipaleId !== undefined) {
             classeAnnee.sallePrincipaleId = dto.sallePrincipaleId || undefined;
@@ -223,10 +223,10 @@ export class ClassesAnneesService {
     }
 
     /**
-     * Supprimer une classe-année
+     * Supprimer une classe-année (scopée par établissement)
      */
-    async delete(id: string): Promise<void> {
-        const classeAnnee = await this.findOne(id);
+    async delete(id: string, etablissementId?: string): Promise<void> {
+        const classeAnnee = await this.findOne(id, etablissementId);
 
         // Vérifier qu'il n'y a pas d'élèves affectés
         const affectationRepo = AppDataSource.getRepository('AffectationEleve');

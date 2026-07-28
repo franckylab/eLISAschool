@@ -928,6 +928,51 @@ Les 22 templates existants manquaient de cohérence, de logique et de contextual
 - `tsc --noEmit` : 0 erreur in-scope
 - Responsive : desktop (glass tabs) + mobile (select natif)
 
+## Travail effectué — Session 2026-07-28 (fix markers + routage même niveau v2)
+### Problèmes constatés
+1. **Flèches hiérarchiques inversées** : `MarkerType.ArrowClosed` ReactFlow avec `orient="auto-start-reverse"` créait des marqueurs incohérents — la pointe ne touchait pas l'unité cible.
+2. **Courbes Bézier traversant les cartes** : pour les relations entre unités au même niveau (même `depth`), la courbe restait dans le plan horizontal → traversait les autres cartes de la rangée.
+3. **Croisement abusif** : les courbes DIRECT et FONCTIONNEL s'entrecroisaient car les offsets latéraux étaient insuffisants.
+
+### Fix 1 — Marqueurs SVG custom
+- **`lib/routing/markers.tsx`** (nouveau) : 3 marqueurs SVG inline (`<marker>`) dans un composant `MarkerDefs` rendu dans ReactFlow :
+  - `orient="auto"` (pas `auto-start-reverse`) → pointe toujours dans la direction du chemin
+  - `refX="9"` → la pointe de la flèche touche exactement l'extrémité du path
+  - Couleurs via CSS vars (`var(--color-dominant-500)`, `--color-secondary-500`, `--color-accent-600`)
+  - Utilisation : `getMarkerUrl('hierarchie')` → `url(#arrowHierarchie)`
+- `markerEnd` dans les définitions d'edges `use-organigramme-flow.ts` supprimé → chaque edge résout son propre marqueur via `getMarkerUrl()`
+
+### Fix 2 — Routage Bézier v2 (même niveau)
+- **`computeRowBounds()`** : détecte quand source et target sont au même niveau (même `depth`) et calcule la bounding box de la rangée entière
+- **Arc par-dessus la rangée** : la courbe passe AU-DESSUS de la rangée (`rowBounds.yMin - ARC_HEIGHT_MIN`) avec un arc régulier via 2 points de contrôle
+- **Arc libre** (si pas de rowBounds) : `midY = (sourceY + targetY) / 2 - sideSign * ARC_HEIGHT_MIN` → l'arc passe au-dessus du segment direct
+- **CURVATURE recalibrée** : `ARC_HEIGHT_MIN = 80px` pour un arc visible et professionnel
+
+### Fix 3 — Waypoints anti-collision v2
+- `computeWaypoints()` réécrit :
+  - Se déclenche pour `depthDiff >= 3` (relations longue portée)
+  - Détecte les nœuds qui bloquent le corridor latéral (entre source et target)
+  - Injecte des waypoints au niveau du bord du corridor pour contourner les obstacles
+  - Retourne `[]` si aucun nœud bloquant → Bézier simple
+
+### Fichiers créés
+- `lib/routing/markers.tsx` : composant MarkerDefs + helpers getMarkerUrl/getMarkerId
+
+### Fichiers modifiés
+- `lib/routing/bezier-router.ts` v2 : computeBezier + computeRowBounds + computeWaypoints v2
+- `lib/routing/index.ts` : export MarkerDefs, getMarkerUrl, getMarkerId, computeRowBounds
+- `BaseEdge.tsx` : useBezierEdge accepte rowBounds
+- `HierarchieEdge.tsx` : utilise getMarkerUrl('hierarchie')
+- `RelationEdge.tsx` : utilise getMarkerUrl('direct'|'fonctionnel'), passe rowBounds
+- `use-organigramme-flow.ts` : MarkerType supprimé, computeRowBounds dans construireEdgesRelations
+- `OrganigrammeFlowView.tsx` : inclut `<MarkerDefs />` dans ReactFlow
+
+### Qualité
+- 0 erreur TS in-scope (384 préexistantes)
+- 0 `any` nouveau
+- Marqueurs SVG résolus via CSS vars → compatibilité dark mode
+- Arc Bézier professionnel au-dessus des rangées
+
 ## Travail effectué — Session 2026-07-27 (edges unifiés — BaseEdge pattern)
 
 ### Architecture — BaseEdge.tsx (composant partagé)
@@ -1012,3 +1057,260 @@ Les 22 templates existants manquaient de cohérence, de logique et de contextual
 - 0 `any`, 0 couleur hardcodée
 - Single source of truth : `LAYOUT_SPACING` constant → `setGraph()` call
 - `tsc --noEmit` : 0 erreur in-scope
+
+## Travail effectué — Session 2026-07-28 (lignes droites pour relations descendantes)
+### Problème
+- Relations DIRECT/FONCTIONNEL entre unités de niveaux différents utilisaient des courbes Bézier latérales qui semblaient tortueuses alors qu'une ligne droite diagonale pointant directement vers la cible est plus claire et professionnelle.
+
+### Changement — `bezier-router.ts` v3.0.0
+3 modes de tracé distincts :
+
+1. **Même niveau** (`Math.abs(dy) < 60` en TB) → arc Bézier au-dessus de la rangée (inchangé).
+2. **Relation descendante** (`dy > 60` en TB, target en dessous) → **ligne droite diagonale** avec offset latéral `SIDE_OFFSET=50`. La ligne part du bord de l'unité source (décalée du côté assigné) et pointe directement vers l'unité cible (même offset). Propre, sans courbe, clairement directionnelle.
+3. **Relation montante** (cas rare) → courbe Bézier latérale (inchangée).
+
+### `routeViaWaypoints()` — segment `L` au lieu de `C`
+- Les segments entre waypoints passent de `C` (Bezier) à `L` (straight line) pour cohérence visuelle avec le mode descendant.
+- `sideSign` n'est plus utilisé dans les segments (suppression de l'offset latéral dans les waypoints — le corridor est déjà déporté).
+
+### Constantes
+- `DESCENDING_THRESHOLD = 60` — seuil pour distinguer "même niveau" de "descendant".
+- `straightLine()` — nouvelle fonction utilitaire (path `M... L...` + position label).
+
+### Fichiers modifiés (1)
+- `lib/routing/bezier-router.ts` v3.0.0 : `computeBezier` réécrit (3 modes) + `routeViaWaypoints` segments `L`.
+
+### Fichiers documentés
+- `.qoder/rules/elisaschool-frontend.md` §31 : section routage mise à jour (3 modes, waypoints lignes droites).
+
+### Qualité
+- 0 erreur TS in-scope (384 préexistantes).
+
+## Travail effectué — Session 2026-07-28 (fix markers v3 — currentColor + userSpaceOnUse → abandonné, remplacé par flèche manuelle)
+
+### Tentative v3 (marqueur SVG amélioré) → Abandonné
+**Problèmes résiduels** : la pointe était toujours mal orientée, et la couleur différente du trait. Causes racines définitives :
+1. `markerUnits="strokeWidth"` (valeur par défaut) — multiplie le marqueur par le strokeWidth (3× pour la hiérarchie), décalant la pointe et rendant l'orientation incohérente.
+2. `fill="var(--color-*)` dans `<defs>` — les vars CSS ne se résolvent pas toujours dans le contexte SVG isolé du marqueur.
+3. `currentColor` + `color: stroke` — le navigateur ne propage pas toujours `color` dans le marker copié depuis `<defs>`.
+
+### Solution adoptée — Rendu manuel de la flèche (`EdgeArrow`)
+**Abandon total du système SVG `<marker>`** pour les edges. Remplacement par un rendu direct d'une flèche SVG `<path>` à l'extrémité du chemin :
+
+#### `BaseEdge.tsx` v3.0.0
+- `endTangentAngle(path)` : extrait l'angle de la tangente à l'extrémité du path en parsant la dernière commande SVG (supporte `L` et `C`). Calcule `-atan2(dy, dx)` pour l'angle SVG `rotate()`.
+- `EdgeArrow` composant : `M -7,-4.2 L 0,0 L -7,4.2 Z` — triangle pointant à droite par défaut, placé en `(endX, endY)` et tourné via `transform="rotate(angle)"`.
+- `EdgeShell` prop `markerEnd` **supprimée**, remplacée par `arrowColor?: string`.
+- Quand `arrowColor` est défini, `EdgeArrow` est rendu **exactement** avec la même variable `couleur` que `stroke` du path — aucune différence de couleur possible.
+
+#### HierarchieEdge.tsx v7.0.0 / RelationEdge.tsx v6.0.0
+- Import `getMarkerUrl` supprimé, `markerEnd` remplacé par `arrowColor={couleur}`.
+- Plus de dépendance vers `lib/routing/markers.tsx`.
+
+#### `markers.tsx`
+- Conservé (export de `MarkerDefs` utilitaire) mais **plus utilisé par aucun edge**.
+
+### Fichiers modifiés (3)
+- `edges/BaseEdge.tsx` v3.0.0 : endTangentAngle + EdgeArrow + arrowColor prop (suppression markerEnd)
+- `edges/HierarchieEdge.tsx` v7.0.0 : markerEnd → arrowColor
+- `edges/RelationEdge.tsx` v6.0.0 : markerEnd → arrowColor
+
+### Qualité
+- 0 erreur TS in-scope.
+- 0 `any` nouveau.
+- Couleur flèche = couleur trait (même variable, pas de résolution indirecte).
+- Orientation extraite du path réel (pas de `orient="auto"`).
+
+## Travail effectué — Session 2026-07-28 (fix barre progression export invisible)
+### Problème
+La barre de progression était placée en fin de body du `CustomModal`, après tous les fieldsets (Taille, Qualité, Coloration, Portée, etc.). L'utilisateur devait **scroller manuellement** pour la voir. Pendant l'export, personne ne pense à scroller → progression invisible.
+
+### Correctifs
+
+#### `ExportDialog.tsx` — barre sticky bottom
+- La barre de progression passe de `<div>...</div>` à `<div className="sticky bottom-0 -mx-[var(--padding-modal-body)] mt-auto ...">` :
+  - `sticky bottom-0` : toujours collée au bas de la zone scrollable
+  - `-mx-[var(--padding-modal-body)]` : déborde les marges latérales du body pour toute largeur
+  - `border-t` : séparation visuelle avec le contenu au-dessus
+  - `backgroundColor: var(--color-surface)` : fond opaque pour cacher le contenu qui défile dessous
+
+#### `export.ts` — yield après preparation
+- Ajout `await new Promise(resolve => setTimeout(resolve, 16))` après `onProgress?.('preparation')`. Sans cela, les appels synchrones `setEtapeExport('preparation')` → `setEtapeExport('capture')` se font tous avant le premier `await`, et React ne peint jamais les étapes intermédiaires — la barre saute de 0% à 55% sans transition visible.
+
+### Fichiers modifiés (2)
+- `modals/ExportDialog.tsx` : barre sticky bottom (toujours visible sans scroll)
+- `utils/export.ts` : yield 16ms après preparation (laisse React peindre le rendu)
+
+### Qualité
+- 0 erreur TS in-scope.
+
+## Travail effectué — Session 2026-07-28 (refonte complète Emploi du Temps — 8 lots)
+
+### Contexte
+Audit profond du système EDT (programme, volume horaire, emploi du temps, affectation matière, créneau, heure cours) ayant identifié des incohérences majeures : tables legacy (EmploiDuTemps, RepartitionHoraire), FK cassées, volumeHoraire en heures au lieu de minutes, absence de détection de conflits, frontend non fonctionnel.
+
+### Décisions architecturales (D1-D9) — implémentées
+| # | Décision | Impact |
+|---|----------|--------|
+| D1 | `MatiereNiveau.volumeHoraire` = source unique en **minutes**/semaine | DROP colonne sur ProgrammeMatiere, ConfigurationMatiereClasse |
+| D2 | Fusion `EmploiDuTemps` + `RepartitionHoraire` → `CreneauHoraire` | Nouvelle entité, table `creneaux_horaires` |
+| D3 | `HeureCours` ancré sur `classeAnneeId` (pas `classeId`) | Migration FK |
+| D4 | `ProgrammePedagogique` = curriculum intemporel | Supprimé periodeId, dateDebut/Fin |
+| D5 | Supprimer `ConfigurationMatiereClasse` | Champs absorbés par AffectationMatiere |
+| D6 | Édition manuelle : modal 3 étapes + drag & drop + resize | CSS Grid + @dnd-kit |
+| D7 | `PreferenceEmploiDuTemps` enrichi : pauses + creneauxImposables JSONB | Migration |
+| D8 | Frontend 5 onglets : Calendrier, Liste, Synthèse, Préférences, Templates | Refonte page |
+| D9 | `ConflitDetectionService` : 5 types (3 bloquants, 2 avertissements) | Nouveau service |
+
+### Backend — Entités et services
+
+**Entité `CreneauHoraire`** (table `creneaux_horaires`) :
+- FK unique `affectationMatiereId` (résout matière + enseignant + classe-année)
+- Enums : `JourSemaine` (LUN-SAM), `TypeCreneau` (COURS/TP/TD/RECREATION/ETUDE/PERMANENCE/AUTRE), `StatutCreneau` (PLANIFIE/VALIDE)
+- Index composite pour détection conflits : `[etablissementId, jour, heureDebut, heureFin]`
+
+**`ConflitDetectionService`** — 5 types de conflits :
+| # | Type | Sévérité | Logique |
+|---|------|----------|---------|
+| 1 | CONFLIT_CLASSE | BLOQUANT | Même classeAnnee, même plage horaire |
+| 2 | CONFLIT_ENSEIGNANT | BLOQUANT | Même enseignant (+ coEnseignants), même plage |
+| 3 | CONFLIT_SALLE | BLOQUANT | Même salle, même plage |
+| 4 | DEPASSEMENT_VOLUME_HORAIRE | AVERTISSEMENT | Minutes planifiées > MatiereNiveau.volumeHoraire |
+| 5 | CRENEAU_IMPOSABLE | AVERTISSEMENT | Chevauchement avec exclusion (creneauxImposables) |
+
+**`EmploiDuTempsService`** : CRUD + `genererEmploiDuTemps` (algorithme most-constrained-first, distribution équilibrée, pauses, disponibilité enseignants/salles) + `validerCreneau/CreneauxClasse`.
+
+**Controller** : 19 routes REST, toutes protégées par `authMiddleware` + `requirePermission`.
+
+**Migration `071-edt-refonte.sql`** : DROP tables legacy + CREATE `creneaux_horaires` + ALTER `heures_cours` (classeId → classeAnneeId) + UPDATE volumeHoraire heures→minutes.
+
+### Frontend — 9 composants + 15 hooks
+
+**Page principale** (`edt-page.tsx`) : 5 onglets — Calendrier (grille interactive), Liste (tableau), Synthèse (matrice volume réalisé vs attendu), Préférences, Templates.
+
+**Calendrier** (`edt-calendar.tsx`) :
+- CSS Grid : jours (colonnes) × créneaux 30min (lignes), 07:00-17:00
+- @dnd-kit : DndContext + useDraggable (déplacement jour+heure) + resize (poignée bas)
+- Vérification conflits temps réel au drop (mutation `useVerifierConflits`)
+- Optimistic update via `queryClient.setQueriesData`
+
+**Modal créneau** (`edt-creneau-modal.tsx`) : 3 étapes (Identification → Planification → Résumé), validation conflits live à chaque étape.
+
+**Synthèse** (`edt-synthese.tsx`) : Matrice classes × matières, comparaison heures planifiées vs volume horaire attendu (`MatiereNiveau.volumeHoraire` en minutes → affiché en heures).
+
+**Hooks** (`use-emploi-du-temps.ts`) : 15 hooks TanStack Query (7 queries + 8 mutations), toasts i18n, invalidations ciblées.
+
+### Lot E — Qualité transverse (nettoyage)
+- **0 erreur TS** dans les fichiers EDT, enseignants/onglet-edt, matieres/matiere-detail-page, programmes/programme-matiere-modal
+- **0 `any`** dans tout le module EDT
+- **0 couleur hardcodée** dans EDT + onglet-edt (toutes migrées vers CSS vars)
+- **0 chaîne FR hardcodée** dans EDT + onglet-edt (toutes migrées vers i18n)
+- **i18n FR+EN** : clés emplois.json + personnel.json (section `edt`) avec parité complète
+- `volumeHoraire` retiré de `programme-matiere-modal.tsx` (conformité D1)
+- `edtQuery.data.data.items` → `edtQuery.data.items` (pattern hook corrigé)
+- `SectionSeparator` enrichi (props `title` + `icon`)
+
+### Fichiers clés
+- **Backend** : `modules/emploi-du-temps/` (entities/, services/, controllers/, dto/)
+- **Frontend** : `features/emploi-du-temps/` (components/, hooks/, types/, index.ts)
+- **Migration** : `database/migrations/071-edt-refonte.sql`
+- **i18n** : `locales/{fr,en}/emplois.json`, `locales/{fr,en}/personnel.json` (section edt)
+- **Composants adjacents** : `enseignants/onglet-edt.tsx`, `matieres/matiere-detail-page.tsx`
+
+## Travail effectué — Session 2026-07-28 (grill-me académique : coefficient, barème, volume horaire, programmes)
+
+### Contexte
+Audit profond de la chaîne académique : coefficient, barème, crédit, volume horaire, programme, chapitre, affectationMatière, affectationClasse, classe. Vérification cohérence backend/frontend/UI/données.
+
+### 6 arbitrages validés (A1-A6) + 3 recommandations (R1-R3)
+| # | Sujet | Décision |
+|---|-------|----------|
+| A1 | Coefficient | `coefficientResolverService` singleton — chaîne AffectationMatiere → ProgrammeMatiere → MatiereNiveau → défaut 1 |
+| A2 | Barème | Même chaîne que coefficient, défaut 20. Backend normalise tout sur /20 via SQL |
+| A3 | Crédits | SUPPRIMÉS (système anglophone/LMD abandonné). Migration 130 drop colonnes |
+| A4 | Volume horaire | Minutes partout. `MatiereNiveau.volumeHoraire` = minutes/semaine, source unique |
+| A5 | Programme intemporel | `ProgrammePedagogique` sans dateDebut/dateFin/periodeId. Historisation via ProgrammeVersion |
+| A6 | ConfigurationMatiereClasse | SUPPRIMÉE. Champs absorbés par AffectationMatiere |
+
+### P0 — Backend (6 priorités)
+- **P0.1** : `coefficient-resolver.service.ts` — singleton, chaîne de résolution, barrel export
+- **P0.2** : Volume horaire minutes + migration 128 + `duree-utils.ts` (minutesVersHeures, heuresVersMinutes, formaterDuree)
+- **P0.3** : Refonte AffectationEleve + `transfererEleve()` + migration 129 (index unique partiel)
+- **P0.4/P0.5** : Portail parents + gardes multi-tenant strict
+- **P0.6** : Config bug falsy + clés fantômes + seed R2/R3
+
+### P1 — Intégrité + stats
+- Migration 130 : DROP crédits (colonnes + contraintes)
+- Index composites pour performance requêtes
+- Stats matières/niveaux
+
+### P2 — Frontend (3 fichiers migrés CSS vars + i18n)
+- **`onglet-matieres.tsx`** : ~50 couleurs → CSS vars, ~30 chaînes FR → `t()`, MiniStat refactored (tone au lieu de color)
+- **`onglet-matieres-kanban.tsx`** : CSS vars + i18n complet (SortableCard, Column)
+- **`onglet-matieres-planning.tsx`** : CSS vars + i18n + JOURS_I18N (6 jours) + fix couleur hardcodée `#3b82f6` → CSS var
+- **`programme-matiere-modal.tsx`** : 13 chaînes FR → `t()`, 6 couleurs → CSS vars
+- **`programme-form-modal.tsx`** : champs D4-obsolètes supprimés (dateDebut, dateFin, periodeId)
+- **`programme-detail-page.tsx`** : fix TS (matiereNom/niveauNom inexistants)
+- **i18n** : ~60 clés `affectations.*` + 6 clés `jours.*` ajoutées FR+EN dans `personnel.json`
+
+### Qualité
+- **0 erreur TS** dans enseignants/onglet-matieres*, programmes/
+- **0 `any`** dans les fichiers migrés
+- **0 couleur hardcodée** dans les fichiers migrés
+- **0 chaîne FR en dur** dans les fichiers migrés
+- **i18n FR/EN parité** complète (personnel.json: sections affectations + jours)
+
+### Docs mises à jour
+- **Skill `elisaschool-business-logic`** : Domaine 14 ajouté (coefficient/barème/volume horaire/affectations/programme intemporel) + Domaine 1 enrichi (coefficientResolverService)
+
+## Travail effectué — Session 2026-07-28 (validations, historisation, traçabilité — audit + composants partagés)
+
+### Contexte
+Audit de la cohérence des validations, historisation et traçabilité across tous les modules traités. Vérification backend/frontend/UI/données. Création de composants frontend partagés pour le workflow de validation et l'audit trail.
+
+### Phase A — Fixes critiques backend (session précédente)
+- **Workflow validation effectif** : `validationWorkflowService` dispatch réellement sur l'entité (statut appliqué)
+- **Audit calls** : ajout des appels `auditLogService.log()` manquants sur les actions critiques
+
+### Phase B — Composants partagés frontend (5 fichiers créés/corrigés)
+
+**Composants créés** :
+- **`StatutBadge.tsx`** : badge coloré par statut (EN_ATTENTE, ACTIF, REJETE, etc.), CSS vars, i18n
+- **`ValidationTimeline.tsx`** : timeline visuelle des étapes de validation avec icônes par décision
+- **`ValidationActions.tsx`** : boutons Approuver/Rejeter/Annuler + CustomModal commentaire
+- **`AuditTimeline.tsx`** : timeline des logs d'audit via `GET /api/audit/logs?cible=&cibleId=`
+- **`use-validation-workflow.ts`** : hook TanStack Query (4 endpoints validation-workflows)
+
+**11 erreurs TS corrigées** :
+- 5× `apiClient.get<ApiResponse<T>>` → `apiClient.get<T>` (double-wrapping supprimé)
+- 2× `variant="success"` → `variant="primary"` (ElisaButton n'a pas de variant success)
+- 2× `niveau.decision` → `niveau.decision ?? ''` (type narrowing après spread)
+- 2× `data.module` → `data?.module` (onSuccess data possibly undefined)
+
+### Phase C — Qualité frontend
+
+**HistoriqueTab.tsx refactoré (v2.0.0)** :
+- `window.confirm()` → `ConfirmationModal` (variant="warning")
+- `toLocaleDateString('fr-FR')` → `formatDate()` depuis `@/lib/date-utils`
+- 12 couleurs hardcodées → CSS vars (mapping statique `ACTION_ICONS` pour CREATE/UPDATE/DELETE/RESTORE)
+- 10 chaînes FR → `t()` (i18n configuration.json: 16 clés FR+EN)
+- Pagination : `meta.hasPrev`/`meta.hasNext` (inexistants) → `meta.currentPage <= 1` / `meta.currentPage >= meta.totalPages`
+
+**Dates i18n (4 occurrences)** :
+- `contrats-page.tsx` : 2× `toLocaleDateString('fr-FR')` → `formatDate(date, 'dd/MM/yyyy')`
+- `paie-page.tsx` : `formatMoisAnnee` → `formatDate(date, 'MMMM yyyy')`, datePaiement → `formatDate(date, 'dd/MM/yyyy')`
+
+### Skills et règles mis à jour
+- **`elisaschool-business-logic/SKILL.md`** : sections "Workflow de validation (système unifié)" et "Audit Trail (traçabilité)" ajoutées sous Patterns transversaux
+- **`elisaschool-frontend-dev/SKILL.md`** : sections "Workflow : Intégrer un Workflow de Validation" (composants partagés + hook + pattern) et "Formatage des dates — Règle absolue" (date-utils.ts, JAMAIS toLocaleDateString)
+
+### Qualité
+- **0 erreur TS** dans les fichiers créés/modifiés (Phase B + C)
+- **0 `any`** dans les composants partagés
+- **0 couleur hardcodée** dans les composants partagés + HistoriqueTab
+- **0 chaîne FR en dur** dans les composants partagés + HistoriqueTab
+- **i18n FR/EN parité** complète (configuration.json: 16 clés)
+
+### Problème systémique identifié
+- **37 occurrences** de `toLocaleDateString('fr-FR')` dans le codebase — à migrer progressivement vers `formatDate()` depuis `@/lib/date-utils`
+- **AGENTS.md** : cette section

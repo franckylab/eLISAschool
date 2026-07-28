@@ -108,7 +108,7 @@ export class CorrelationProgrammeService {
 
         // 4. Calculer l'écart
         const ecart = Math.abs(progressionDeclaree - progressionReelle);
-        const seuilConforme = await getParamNumber('programme.ecart_acceptable_progression', 10);
+        const seuilConforme = await getParamNumber('programme.ecart_acceptable_progression', { etablissementId, defaultValue: 10 });
         const estConforme = ecart <= seuilConforme;
 
         // 5. Générer recommandations
@@ -199,7 +199,7 @@ export class CorrelationProgrammeService {
 
         // 4. Déterminer badge éligible
         let badgeEligible: string | null = null;
-        const gamificationActive = await getParamBoolean('programme.gamification_enseignants_actif', true);
+        const gamificationActive = await getParamBoolean('programme.gamification_enseignants_actif', { etablissementId, defaultValue: false });
 
         if (gamificationActive) {
             if (progressionMoyenne >= 100) {
@@ -228,7 +228,7 @@ export class CorrelationProgrammeService {
         etablissementId: string
     ): Promise<void> {
         try {
-            const gamificationActive = await getParamBoolean('programme.gamification_enseignants_actif', true);
+            const gamificationActive = await getParamBoolean('programme.gamification_enseignants_actif', { etablissementId, defaultValue: false });
             if (!gamificationActive) {
                 return;
             }

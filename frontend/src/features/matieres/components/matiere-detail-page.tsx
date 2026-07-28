@@ -111,17 +111,10 @@ export function MatiereDetailPage() {
     const affectationsQuery = useMatiereAffectations(id);
     const edtQuery = useCreneaux({ affectationMatiereId: id, limit: 100 });
 
-    const { niveauxSansAffectation, affectationsInactives } = useMemo(() => {
-        const programme = programmeQuery.data ?? [];
+    const affectationsInactives = useMemo(() => {
         const affectations = affectationsQuery.data ?? [];
-        const affectes = new Set(affectations.map((a) => a.classeAnneeId));
-        const sansAffectation = programme.filter((p) => !affectes.has(p.niveauId));
-        const inactives = affectations.filter((a) => !a.actif);
-        return {
-            niveauxSansAffectation: sansAffectation,
-            affectationsInactives: inactives,
-        };
-    }, [programmeQuery.data, affectationsQuery.data]);
+        return affectations.filter((a) => !a.actif);
+    }, [affectationsQuery.data]);
 
     const handleSave = async (data: CreerMatiereDto) => {
         await modifier.mutateAsync({ id, ...data });
@@ -173,7 +166,7 @@ export function MatiereDetailPage() {
         { id: 'niveaux', label: t('niveaux'), icon: Layers, count: programmeQuery.data?.length },
         { id: 'programme', label: t('ongletProgrammes'), icon: BookOpen, count: programmesPedagogiquesQuery.data?.length },
         { id: 'affectations', label: t('enseignants'), icon: Users, count: affectationsQuery.data?.length },
-        { id: 'emploi-du-temps', label: t('emploiDuTemps'), icon: Clock, count: edtQuery.data?.data?.items?.length },
+        { id: 'emploi-du-temps', label: t('emploiDuTemps'), icon: Clock, count: edtQuery.data?.items?.length },
     ];
 
     return (
@@ -223,12 +216,6 @@ export function MatiereDetailPage() {
                 <StatCard icon={Users} label={t('enseignantsCount')} value={affectationsQuery.data?.length ?? 0} tone="success" />
                 <StatCard icon={BookOpen} label={t('programmesCount')} value={programmesPedagogiquesQuery.data?.length ?? 0} tone="purple" />
             </div>
-
-            {niveauxSansAffectation.length > 0 && (
-                <ErrorMessage
-                    message={t('niveauxSansEnseignant', { count: niveauxSansAffectation.length })}
-                />
-            )}
 
             {affectationsInactives.length > 0 && (
                 <ErrorMessage
@@ -282,14 +269,14 @@ export function MatiereDetailPage() {
                     <div className="space-y-4">
                         {edtQuery.isLoading ? (
                             <div className="py-12"><LoadingState message={t('chargementEDT')} /></div>
-                        ) : !edtQuery.data?.data?.items?.length ? (
+                        ) : !edtQuery.data?.items?.length ? (
                         <div className="bg-card rounded-lg border border-border p-[clamp(1.5rem,5vw,3rem)] text-center">
                             <Clock className="h-[clamp(2rem,6vw,3rem)] w-[clamp(2rem,6vw,3rem)] text-muted-foreground mx-auto mb-[clamp(0.5rem,2vw,0.75rem)]" />
                             <p className="text-secondary font-medium mb-[clamp(0.125rem,0.5vw,0.25rem)] text-[clamp(0.875rem,1.5vw,1rem)]">{t('aucunCreneau')}</p>
                             <p className="text-[clamp(0.75rem,1.25vw,0.875rem)] text-muted-foreground">{t('aucunCreneauDescription')}</p>
                         </div>
                         ) : (
-                            <EDTCalendar creneaux={edtQuery.data.data.items} />
+                            <EDTCalendar creneaux={edtQuery.data.items} />
                         )}
                     </div>
                 )}

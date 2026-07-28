@@ -60,7 +60,22 @@
         },
         "historique": {
             "titre": "Historique",
-            "description": "Consultez l'historique des modifications de configuration"
+            "description": "Consultez l'historique des modifications de configuration",
+            "titreModifications": "Historique des Modifications",
+            "sousTitreModifications": "Consultez et restaurez les versions précédentes de la configuration",
+            "chargement": "Chargement de l'historique...",
+            "aucuneModification": "Aucune modification dans l'historique",
+            "toutesActions": "Toutes les actions",
+            "creation": "Création",
+            "modification": "Modification",
+            "suppression": "Suppression",
+            "restauration": "Restauration",
+            "restaurer": "Restaurer",
+            "confirmerRestauration": "Restaurer la configuration à cet état ?",
+            "confirmerMessage": "Action: {{action}} — Cible: {{cible}}",
+            "pageSur": "Page {{page}} sur {{total}} ({{count}} entrées)",
+            "precedent": "Précédent",
+            "suivant": "Suivant"
         }
     },
     "chargementErreur": "Erreur lors du chargement de la configuration"

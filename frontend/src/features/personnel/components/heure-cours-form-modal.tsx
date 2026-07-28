@@ -78,7 +78,7 @@ export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCa
     }, [matieresData]);
 
     const sallesOptions = useMemo(() => {
-        return (salles ?? []).map(s => ({ value: s.id, label: `${s.nom} (${s.code})` }));
+        return (salles?.data ?? []).map(s => ({ value: s.id, label: `${s.nom} (${s.code})` }));
     }, [salles]);
 
     const enseignantsOptions = useMemo(() => {

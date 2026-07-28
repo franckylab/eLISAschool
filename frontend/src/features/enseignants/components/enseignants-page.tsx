@@ -14,8 +14,28 @@ import { usePermissions } from '@/hooks';
 import type { Enseignant, EnseignantFiltres } from '../types/enseignant.types';
 import type { Column } from '@/components/ui/DataTable';
 
+const STATUT_CLASSES: Record<string, string> = {
+    ACTIF: 'bg-success/10 text-success',
+    actif: 'bg-success/10 text-success',
+    INACTIF: 'bg-muted text-muted-foreground',
+    inactif: 'bg-muted text-muted-foreground',
+    CONGE: 'bg-primary/10 text-primary',
+    en_conge: 'bg-primary/10 text-primary',
+    demission: 'bg-destructive/10 text-destructive',
+};
+
+const STATUT_LABELS: Record<string, string> = {
+    ACTIF: 'statuts.actif',
+    actif: 'statuts.actif',
+    INACTIF: 'statuts.inactif',
+    inactif: 'statuts.inactif',
+    CONGE: 'statuts.en_conge',
+    en_conge: 'statuts.en_conge',
+    demission: 'statuts.demission',
+};
+
 export function EnseignantsPage() {
-    const { t } = useTranslation();
+    const { t } = useTranslation(['personnel', 'common']);
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<EnseignantFiltres>({ page: 1, limit: 20 });
@@ -51,9 +71,9 @@ export function EnseignantsPage() {
     const colonnes: Column<Enseignant>[] = [
         {
             key: 'matricule',
-            header: 'Matricule',
+            header: t('liste.colMatricule'),
             sortable: true,
-            render: (p) => <span className="font-mono text-sm font-medium text-[var(--color-dominant-600)]">{p.matricule}</span>,
+            render: (p) => <span className="font-mono text-sm font-medium text-primary">{p.matricule}</span>,
         },
         {
             key: 'nomComplet',
@@ -70,10 +90,10 @@ export function EnseignantsPage() {
                         className="hover:underline cursor-pointer text-left"
                     >
                         <div className="flex items-center gap-2">
-                            <GraduationCap className="h-4 w-4 text-blue-500" />
+                            <GraduationCap className="h-4 w-4 text-primary" />
                             <div>
                                 <p className="font-medium">{prenom} {nom}</p>
-                                <p className="text-xs text-[var(--color-text-muted)]">{email || tel || '-'}</p>
+                                <p className="text-xs text-muted-foreground">{email || tel || '-'}</p>
                             </div>
                         </div>
                     </button>
@@ -82,16 +102,15 @@ export function EnseignantsPage() {
         },
         {
             key: 'specialite',
-            header: 'Spécialité',
+            header: t('liste.colSpecialite'),
             sortable: true,
             render: (p) => (
                 <span className="text-sm">{p.specialites?.[0] ?? '-'}</span>
             ),
         },
-
         {
             key: 'dateEntree',
-            header: 'Date entrée',
+            header: t('liste.colDateEntree'),
             sortable: true,
             render: (p) => {
                 const d = p.dateEmbauche;
@@ -104,17 +123,9 @@ export function EnseignantsPage() {
             sortable: true,
             className: 'text-center',
             render: (p) => {
-                const statuts: any = {
-                    ACTIF: { label: 'Actif', color: 'green' },
-                    INACTIF: { label: 'Inactif', color: 'gray' },
-                    CONGE: { label: 'En congé', color: 'blue' },
-                    actif: { label: 'Actif', color: 'green' },
-                    inactif: { label: 'Inactif', color: 'gray' },
-                    en_conge: { label: 'En congé', color: 'blue' },
-                    demission: { label: 'Démission', color: 'red' },
-                };
-                const s = statuts[p.statut] || statuts.ACTIF;
-                return <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium bg-${s.color}-100 text-${s.color}-800`}>{s.label}</span>;
+                const classes = STATUT_CLASSES[p.statut] ?? STATUT_CLASSES.ACTIF;
+                const labelKey = STATUT_LABELS[p.statut] ?? 'statuts.actif';
+                return <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${classes}`}>{t(labelKey)}</span>;
             },
         },
         {
@@ -144,7 +155,7 @@ export function EnseignantsPage() {
     if (isLoading && !data) {
         return (
             <div className="p-6">
-                <LoadingState message="Chargement des enseignants..." />
+                <LoadingState message={t('liste.chargement')} />
             </div>
         );
     }
@@ -153,26 +164,29 @@ export function EnseignantsPage() {
         return (
             <div className="p-6">
                 <ErrorState
-                    message={error.message || "Impossible de charger les enseignants"}
+                    message={error.message || t('liste.erreurChargement')}
                     onRetry={() => refetch()}
                 />
             </div>
         );
     }
 
+    const totalEnseignants = data?.meta?.totalItems || 0;
+
     return (
         <div className="flex flex-col gap-6 p-6">
             <motion.div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
                 <div>
-                    <h1 className="text-3xl font-bold">Enseignants</h1>
-                    <p className="text-sm text-[var(--color-text-secondary)]">{data?.meta?.totalItems || 0} enseignant(s)</p>
+                    <h1 className="text-3xl font-bold">{t('liste.titre')}</h1>
+                    <p className="text-sm text-secondary">{t('liste.enseignantCount', { count: totalEnseignants })}</p>
                 </div>
                 {hasPermission('personnel:create') && (
-                    <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={handleCreation}>Ajouter un enseignant</ElisaButton>
+                    <ElisaButton variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={handleCreation}>{t('liste.ajouter')}</ElisaButton>
                 )}
             </motion.div>
 
             <DataTable
+                tableId="enseignants"
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}
@@ -180,7 +194,7 @@ export function EnseignantsPage() {
                 enableReordering
                 enablePinning
                 enableColumnVisibility
-                searchPlaceholder="Rechercher un enseignant..."
+                searchPlaceholder={t('liste.rechercher')}
                 onSearchChange={(recherche) =>
                     setFiltres((prev) => ({ ...prev, recherche, page: 1 }))
                 }
@@ -209,9 +223,9 @@ export function EnseignantsPage() {
 
             <ConfirmationModal
                 isOpen={!!enseignantToDelete}
-                title="Supprimer cet enseignant"
-                message={`Êtes-vous sûr de vouloir supprimer ${enseignantToDelete?.utilisateur?.profil?.prenom || ''} ${enseignantToDelete?.utilisateur?.profil?.nom || ''} ?`}
-                details="Cette action est irréversible et supprimera toutes les données associées."
+                title={t('liste.titreSuppression')}
+                message={t('liste.confirmSuppression', { nom: `${enseignantToDelete?.utilisateur?.profil?.prenom || ''} ${enseignantToDelete?.utilisateur?.profil?.nom || ''}`.trim() })}
+                details={t('liste.confirmSuppressionDetails')}
                 variant="danger"
                 onConfirm={async () => {
                     if (enseignantToDelete) {

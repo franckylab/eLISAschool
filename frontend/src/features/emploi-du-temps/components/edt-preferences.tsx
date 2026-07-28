@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Settings, Clock, Calendar, BarChart3, Loader2, Check } from 'lucide-react';
+import { Clock, Calendar, BarChart3, Loader2, Check } from 'lucide-react';
 import { usePreferencesEDT, useUpdatePreferencesEDT } from '../hooks/use-emploi-du-temps';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { PageSkeleton } from '@/components/ui/Skeleton';
@@ -35,17 +35,17 @@ export function EDTPreferencesPage() {
     });
 
     useEffect(() => {
-        if (preferences?.data) {
+        if (preferences) {
             setFormData({
-                joursOuvrables: preferences.data.joursOuvrables || [],
-                heureDebutCours: preferences.data.heureDebutCours || '07:30',
-                heureFinCours: preferences.data.heureFinCours || '17:30',
-                dureeCreneauStandard: preferences.data.dureeCreneauStandard || 55,
-                dureeRecreation: preferences.data.dureeRecreation || 15,
-                maxCreneauxParJour: preferences.data.maxCreneauxParJour || 8,
-                maxCreneauxMatiereParJour: preferences.data.maxCreneauxMatiereParJour || 2,
-                maxCreneauxConsecutifs: preferences.data.maxCreneauxConsecutifs || 2,
-                repartitionEquilibree: preferences.data.repartitionEquilibree ?? true,
+                joursOuvrables: preferences.joursOuvrables || [],
+                heureDebutCours: preferences.heureDebutCours || '07:30',
+                heureFinCours: preferences.heureFinCours || '17:30',
+                dureeCreneauStandard: preferences.dureeCreneauStandard || 55,
+                dureeRecreation: preferences.dureeRecreation || 15,
+                maxCreneauxParJour: preferences.maxCreneauxParJour || 8,
+                maxCreneauxMatiereParJour: preferences.maxCreneauxMatiereParJour || 2,
+                maxCreneauxConsecutifs: preferences.maxCreneauxConsecutifs || 2,
+                repartitionEquilibree: preferences.repartitionEquilibree ?? true,
             });
         }
     }, [preferences]);
@@ -219,17 +219,17 @@ export function EDTPreferencesPage() {
 
                 <motion.div className="flex justify-end gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
                     <ElisaButton type="button" variant="outline" size="lg" onClick={() => {
-                        if (preferences?.data) {
+                        if (preferences) {
                             setFormData({
-                                joursOuvrables: preferences.data.joursOuvrables || [],
-                                heureDebutCours: preferences.data.heureDebutCours || '07:30',
-                                heureFinCours: preferences.data.heureFinCours || '17:30',
-                                dureeCreneauStandard: preferences.data.dureeCreneauStandard || 55,
-                                dureeRecreation: preferences.data.dureeRecreation || 15,
-                                maxCreneauxParJour: preferences.data.maxCreneauxParJour || 8,
-                                maxCreneauxMatiereParJour: preferences.data.maxCreneauxMatiereParJour || 2,
-                                maxCreneauxConsecutifs: preferences.data.maxCreneauxConsecutifs || 2,
-                                repartitionEquilibree: preferences.data.repartitionEquilibree ?? true,
+                                joursOuvrables: preferences.joursOuvrables || [],
+                                heureDebutCours: preferences.heureDebutCours || '07:30',
+                                heureFinCours: preferences.heureFinCours || '17:30',
+                                dureeCreneauStandard: preferences.dureeCreneauStandard || 55,
+                                dureeRecreation: preferences.dureeRecreation || 15,
+                                maxCreneauxParJour: preferences.maxCreneauxParJour || 8,
+                                maxCreneauxMatiereParJour: preferences.maxCreneauxMatiereParJour || 2,
+                                maxCreneauxConsecutifs: preferences.maxCreneauxConsecutifs || 2,
+                                repartitionEquilibree: preferences.repartitionEquilibree ?? true,
                             });
                         }
                     }}>

@@ -196,5 +196,50 @@
         "raccourciConfirmer": "Confirmer",
         "sessionExpiree": "Session expirée. Veuillez vous reconnecter.",
         "tempsFaible": "Temps restant"
+    },
+    "validation": {
+        "timelineLabel": "Chronologie de validation",
+        "niveau": "Niveau",
+        "approuve": "Approuvé",
+        "rejete": "Rejeté",
+        "enAttente": "En attente",
+        "roleRequis": "Rôle requis",
+        "nonConfigure": "Non configuré",
+        "approuver": "Approuver",
+        "rejeter": "Rejeter",
+        "annulerWorkflow": "Annuler",
+        "confirmerApprobation": "Confirmer l'approbation",
+        "confirmerRejet": "Confirmer le rejet",
+        "messageApprobation": "Cette action approuvera le niveau actuel du workflow.",
+        "messageRejet": "Cette action rejettera le workflow. L'entité ne pourra pas être validée.",
+        "commentaire": "Commentaire",
+        "commentairePlaceholder": "Précisez la raison de votre décision...",
+        "aucunNiveau": "Aucun niveau de validation configuré"
+    },
+    "audit": {
+        "timelineLabel": "Journal d'audit",
+        "aucunLog": "Aucune trace d'audit pour cette entité",
+        "echec": "Échec",
+        "actions": {
+            "NOTE_CREATE": "Note créée",
+            "NOTE_UPDATE": "Note modifiée",
+            "NOTE_DELETE": "Note supprimée",
+            "NOTE_VALIDATE": "Note validée",
+            "BULLETIN_GENERATE": "Bulletin généré",
+            "BULLETIN_UPDATE": "Bulletin modifié",
+            "BULLETIN_DELETE": "Bulletin supprimé",
+            "BULLETIN_PUBLIER": "Bulletin publié",
+            "BULLETIN_EXPORT": "Bulletin exporté",
+            "PERSONNEL_CREATE": "Membre créé",
+            "PERSONNEL_UPDATE": "Membre modifié",
+            "PERSONNEL_DELETE": "Membre supprimé",
+            "CONTRAT_PERSONNEL_CREATE": "Contrat créé",
+            "CONTRAT_PERSONNEL_UPDATE": "Contrat modifié",
+            "CONTRAT_PERSONNEL_DELETE": "Contrat supprimé",
+            "CRENEAU_CREATE": "Créneau créé",
+            "CRENEAU_UPDATE": "Créneau modifié",
+            "CRENEAU_DELETE": "Créneau supprimé",
+            "CRENEAU_VALIDER": "Créneau validé"
+        }
     }
 }

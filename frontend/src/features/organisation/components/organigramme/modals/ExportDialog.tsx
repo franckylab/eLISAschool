@@ -486,9 +486,14 @@ export function ExportDialog({
                     </div>
                 </fieldset>
 
-                {/* Progression export */}
+                {/* Progression export — sticky bottom pour visibilité sans scroll */}
                 {exporting && (
-                    <div className="flex flex-col rounded-lg border px-3 py-2" style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface-alt, var(--org-node-surface-alt))', gap: 'var(--gap-xs, 0.375rem)' }} role="status" aria-live="polite">
+                    <div
+                        className="sticky bottom-0 -mx-[var(--padding-modal-body)] mt-auto flex flex-col border-t px-[var(--padding-modal-body)] py-3"
+                        style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface, var(--org-node-bg))', gap: 'var(--gap-xs, 0.375rem)' }}
+                        role="status"
+                        aria-live="polite"
+                    >
                         <div className="flex items-center justify-between" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem)' }}>
                             <span style={{ color: 'var(--color-text-secondary)' }}>
                                 {etapeExport

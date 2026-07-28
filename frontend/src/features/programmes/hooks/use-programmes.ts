@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api-client';
 import { useAuthStore } from '@/stores/auth.store';
 import type { PaginatedResult } from '@shared/types/api.types';
@@ -10,6 +11,7 @@ import type {
     ProgrammeMatiere,
     AddMatiereDto,
     ProgrammeChapitre,
+    CreerChapitreDto,
 } from '../types/programme.types';
 import { toast } from 'sonner';
 
@@ -29,7 +31,7 @@ export function useProgrammes(filtres?: ProgrammeFiltres) {
     return useQuery({
         queryKey: PROGRAMMES_KEYS.list(filtres),
         queryFn: async () => {
-            const params: Record<string, any> = {
+            const params: Record<string, string | number | boolean | undefined> = {
                 page: filtres?.page || 1,
                 limit: filtres?.limit || 20,
                 sortBy: filtres?.sortBy || 'nom',
@@ -164,6 +166,7 @@ export function useRetirerMatiereProgramme() {
 
 export function useModifierMatiereProgramme() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('programmes');
 
     return useMutation({
         mutationFn: async ({ id, ...dto }: { id: string; coefficient?: number; volumeHoraire?: number; obligatoire?: boolean; ordre?: number }) => {
@@ -172,7 +175,7 @@ export function useModifierMatiereProgramme() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: PROGRAMMES_KEYS.all });
-            toast.success('Programme matière modifié');
+            toast.success(t('programmeMatiereModifie', 'Programme matière modifié'));
         },
     });
 }
@@ -204,7 +207,7 @@ export function useTousChapitres(filtres?: {
                 `/api/programmes/chapitres?${params.toString()}`
             );
             const items = response.data || [];
-            const pagination = (response as any).pagination;
+            const pagination = (response as { pagination?: { totalItems: number; totalPages: number; page: number; limit: number } }).pagination;
             return { data: items, pagination };
         },
         enabled: isAuthenticated,
@@ -257,7 +260,7 @@ export function useModifierChapitre() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ id, ...dto }: { id: string } & Record<string, any>) => {
+        mutationFn: async ({ id, ...dto }: { id: string } & Omit<Partial<CreerChapitreDto>, 'programmeMatiereId'>) => {
             const response = await apiClient.patch<ProgrammeChapitre>(`/api/programmes/chapitres/${id}`, dto);
             return response.data;
         },

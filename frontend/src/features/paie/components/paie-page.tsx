@@ -8,6 +8,7 @@ import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { formatDate } from '@/lib/date-utils';
 import { usePaiePermissions } from '../hooks/use-paie-permissions';
 import { useBulletins, useSupprimerBulletin } from '../hooks/use-paie';
 import { BulletinFormModal } from './bulletin-form-modal';
@@ -38,7 +39,7 @@ export function PaiePage() {
 
     const formatMoisAnnee = (mois: number, annee: number) => {
         const date = new Date(annee, mois - 1);
-        return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+        return formatDate(date, 'MMMM yyyy');
     };
 
     const statutBadge = (statut: string) => {
@@ -95,7 +96,7 @@ export function PaiePage() {
         {
             key: 'datePaiement',
             header: t('colonne.datePaiement'),
-            render: (b) => b.datePaiement ? new Date(b.datePaiement).toLocaleDateString('fr-FR') : '-',
+            render: (b) => b.datePaiement ? formatDate(b.datePaiement, 'dd/MM/yyyy') : '-',
         },
         {
             key: 'actions',

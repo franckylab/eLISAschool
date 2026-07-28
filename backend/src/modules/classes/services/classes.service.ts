@@ -1,7 +1,7 @@
-import { Repository } from 'typeorm';
+import { Repository, FindOptionsWhere } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Classe, AffectationEleve, StatutAffectationEleve, ClasseAnnee } from '../entities';
-import { CreateClasseDto, UpdateClasseDto, AffecterEleveDto, QueryClassesDto } from '../dto';
+import { CreateClasseDto, UpdateClasseDto, AffecterEleveDto, TransfererEleveDto, QueryClassesDto } from '../dto';
 import { anneesScolairesService } from '@modules/annees-scolaires/services';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
 import { salleService } from '@modules/salles/services/salle.service';
@@ -38,8 +38,8 @@ export class ClassesService {
 
         try {
             let anneeScolaireId = dto.anneeScolaireId;
-            if (!anneeScolaireId) {
-                const anneeActive = await anneesScolairesService.findActive();
+            if (!anneeScolaireId && etablissementId) {
+                const anneeActive = await anneesScolairesService.findActive(etablissementId);
                 anneeScolaireId = anneeActive?.id;
             }
 
@@ -314,7 +314,7 @@ export class ClassesService {
     }
 
     async compterElevesActifs(classeId: string, anneeScolaireId?: string): Promise<number> {
-        const where: any = { classeId, actif: true, statut: StatutAffectationEleve.ACTIVE };
+        const where: FindOptionsWhere<AffectationEleve> = { classeId, actif: true, statut: StatutAffectationEleve.ACTIVE };
         if (anneeScolaireId) where.anneeScolaireId = anneeScolaireId;
         return this.affectationRepo.count({ where });
     }
@@ -397,23 +397,32 @@ export class ClassesService {
                 throw new AppError('Élève déjà affecté à une classe pour cette année', 409, 'ALREADY_ASSIGNED');
             }
 
-            // Vérifier la capacité de la salle principale avant affectation
+            // Vérifier les capacités (pédagogique effectifMax + physique salle) avant affectation
             const classeAnneeId = (classe as any).classeAnneeId;
             if (classeAnneeId) {
                 const classeAnnee = await this.classeAnneeRepo.findOne({
                     where: { id: classeAnneeId },
                     relations: ['sallePrincipale'],
                 });
-                if (classeAnnee?.sallePrincipale && classeAnnee.effectifActuel >= classeAnnee.sallePrincipale.capacite) {
-                    throw new AppError(
-                        `Capacité de la salle atteinte (${classeAnnee.sallePrincipale.capacite} places)`,
-                        400,
-                        'SALLE_CAPACITY_EXCEEDED'
-                    );
+                if (classeAnnee) {
+                    if (classeAnnee.effectifMax > 0 && classeAnnee.effectifActuel >= classeAnnee.effectifMax) {
+                        throw new AppError(
+                            `Effectif pédagogique maximum atteint (${classeAnnee.effectifMax} places)`,
+                            400,
+                            'EFFECTIF_MAX_EXCEEDED'
+                        );
+                    }
+                    if (classeAnnee.sallePrincipale && classeAnnee.effectifActuel >= classeAnnee.sallePrincipale.capacite) {
+                        throw new AppError(
+                            `Capacité de la salle atteinte (${classeAnnee.sallePrincipale.capacite} places)`,
+                            400,
+                            'SALLE_CAPACITY_EXCEEDED'
+                        );
+                    }
                 }
             }
 
-            const requireValidation = await getParamBoolean('classes.require_validation', { defaultValue: false });
+            const requireValidation = await getParamBoolean('classes.require_validation', { etablissementId, defaultValue: false });
 
             const affectation = this.affectationRepo.create({
                 eleveId: dto.eleveId,
@@ -467,8 +476,11 @@ export class ClassesService {
         await queryRunner.startTransaction();
 
         try {
+            const whereDesaffectation: FindOptionsWhere<AffectationEleve> = { id: affectationId };
+            if (etablissementId) whereDesaffectation.etablissementId = etablissementId;
+
             const affectation = await this.affectationRepo.findOne({
-                where: { id: affectationId },
+                where: whereDesaffectation,
             });
 
             if (!affectation) {
@@ -499,6 +511,135 @@ export class ClassesService {
         } catch (error: any) {
             await queryRunner.rollbackTransaction();
             logger.error(`[${etablissementId}] Erreur désaffectation élève: ${error.message}`);
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
+    }
+
+    async transfererEleve(dto: TransfererEleveDto, createurId: string, etablissementId?: string): Promise<AffectationEleve> {
+        const queryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+            const nouvelleClasse = await this.findOne(dto.nouvelleClasseId, etablissementId);
+            const anneeScolaireId = (nouvelleClasse as any).anneeScolaireId;
+
+            if (!anneeScolaireId) {
+                throw new AppError('Aucune année scolaire active pour la classe cible', 400, 'NO_ACTIVE_YEAR');
+            }
+
+            const whereAncienne: FindOptionsWhere<AffectationEleve> = {
+                eleveId: dto.eleveId,
+                anneeScolaireId,
+                actif: true,
+            };
+            if (etablissementId) whereAncienne.etablissementId = etablissementId;
+
+            const ancienneAffectation = await this.affectationRepo.findOne({ where: whereAncienne });
+
+            if (!ancienneAffectation) {
+                throw new AppError('Aucune affectation active pour cet élève cette année', 404, 'NO_ACTIVE_ASSIGNMENT');
+            }
+
+            if (ancienneAffectation.classeId === dto.nouvelleClasseId) {
+                throw new AppError('L\'élève est déjà affecté à cette classe', 409, 'SAME_CLASS');
+            }
+
+            // Vérifier les capacités de la classe cible (pédagogique + physique)
+            const nouvelleClasseAnneeId = (nouvelleClasse as any).classeAnneeId;
+            if (nouvelleClasseAnneeId) {
+                const classeAnnee = await this.classeAnneeRepo.findOne({
+                    where: { id: nouvelleClasseAnneeId },
+                    relations: ['sallePrincipale'],
+                });
+                if (classeAnnee) {
+                    if (classeAnnee.effectifMax > 0 && classeAnnee.effectifActuel >= classeAnnee.effectifMax) {
+                        throw new AppError(
+                            `Effectif pédagogique maximum atteint (${classeAnnee.effectifMax} places)`,
+                            400,
+                            'EFFECTIF_MAX_EXCEEDED'
+                        );
+                    }
+                    if (classeAnnee.sallePrincipale && classeAnnee.effectifActuel >= classeAnnee.sallePrincipale.capacite) {
+                        throw new AppError(
+                            `Capacité de la salle atteinte (${classeAnnee.sallePrincipale.capacite} places)`,
+                            400,
+                            'SALLE_CAPACITY_EXCEEDED'
+                        );
+                    }
+                }
+            }
+
+            const dateTransfert = dto.dateTransfert ? new Date(dto.dateTransfert) : new Date();
+
+            // 1. Désactiver l'ancienne affectation
+            ancienneAffectation.actif = false;
+            ancienneAffectation.statut = StatutAffectationEleve.INACTIVE;
+            ancienneAffectation.dateSortie = dateTransfert;
+            ancienneAffectation.motifChangement = dto.motifChangement;
+            await queryRunner.manager.save(ancienneAffectation);
+
+            // 2. Décrémenter l'effectif de l'ancienne classe
+            if (ancienneAffectation.classeAnneeId) {
+                const ancienneClasseAnnee = await queryRunner.manager.findOne(ClasseAnnee, {
+                    where: { id: ancienneAffectation.classeAnneeId },
+                });
+                if (ancienneClasseAnnee && ancienneClasseAnnee.effectifActuel > 0) {
+                    await queryRunner.manager.decrement(
+                        ClasseAnnee,
+                        { id: ancienneAffectation.classeAnneeId },
+                        'effectifActuel',
+                        1
+                    );
+                }
+            }
+
+            // 3. Créer la nouvelle affectation
+            const requireValidation = await getParamBoolean('classes.require_validation', { etablissementId, defaultValue: false });
+
+            const nouvelleAffectation = this.affectationRepo.create({
+                eleveId: dto.eleveId,
+                classeId: dto.nouvelleClasseId,
+                classeAnneeId: nouvelleClasseAnneeId || undefined,
+                anneeScolaireId,
+                dateAffectation: dateTransfert,
+                motifChangement: dto.motifChangement,
+                commentaire: dto.commentaire,
+                etablissementId,
+                statut: requireValidation
+                    ? StatutAffectationEleve.EN_ATTENTE_VALIDATION
+                    : StatutAffectationEleve.ACTIVE,
+            });
+
+            await queryRunner.manager.save(nouvelleAffectation);
+
+            // 4. Incrémenter l'effectif de la nouvelle classe
+            if (!requireValidation && nouvelleClasseAnneeId) {
+                await queryRunner.manager.increment(ClasseAnnee, { id: nouvelleClasseAnneeId }, 'effectifActuel', 1);
+            }
+
+            await queryRunner.commitTransaction();
+
+            if (requireValidation) {
+                await validationWorkflowService.createWorkflow({
+                    module: 'classes',
+                    entiteId: nouvelleAffectation.id,
+                    entiteType: 'AffectationEleve',
+                    niveauxRequis: 2,
+                    etablissementId,
+                }, createurId);
+            }
+
+            logger.info(
+                `[${etablissementId}] Élève ${dto.eleveId} transféré: ${ancienneAffectation.classeId} → ${dto.nouvelleClasseId} (motif: ${dto.motifChangement})`
+            );
+
+            return nouvelleAffectation;
+        } catch (error: any) {
+            await queryRunner.rollbackTransaction();
+            logger.error(`[${etablissementId}] Erreur transfert élève: ${error.message}`);
             throw error;
         } finally {
             await queryRunner.release();

@@ -21,12 +21,11 @@ import { periodesService } from '@modules/periodes/services';
 import { StatutPeriode } from '@modules/periodes/entities';
 import { notesBatchLoaderService } from '@modules/notes/services/notes-batch-loader.service';
 import { StatutNote } from '@modules/notes/entities';
-import { matieresService } from '@modules/matieres/services';
+import { matieresService, coefficientResolverService } from '@modules/matieres/services';
 import { AffectationMatiere, StatutAffectationMatiere } from '@modules/matieres/entities';
 import { Eleve } from '@modules/eleves/entities';
 import { getParamBoolean, getParamNumber, getParam } from '@modules/configuration/utils/config.helper';
 import { notificationTemplates } from '@modules/notifications/services';
-import { validationWorkflowService } from '@modules/validation-workflow/services';
 import { auditService, AuditAction } from '@modules/auth';
 import { PaginatedResult, createPaginatedResult } from '@common/utils/pagination.util';
 
@@ -45,32 +44,33 @@ export class BulletinsService {
      * Lecture de bulletins.require_validation avec rétro-compatibilité
      * sur l'ancienne clé seedée bulletins.validation_workflow
      */
-    private async getRequireValidation(): Promise<boolean> {
+    private async getRequireValidation(etablissementId?: string): Promise<boolean> {
         const val = await getParam<boolean | string | undefined>('bulletins.require_validation', {
+            etablissementId,
             defaultValue: undefined,
         });
         if (val !== undefined && val !== null) {
             return typeof val === 'boolean' ? val : val === 'true' || val === '1';
         }
         // Fallback : ancienne clé (installations seedées avant le renommage)
-        return getParamBoolean('bulletins.validation_workflow', { defaultValue: false });
+        return getParamBoolean('bulletins.validation_workflow', { etablissementId, defaultValue: false });
     }
 
-    private async getBulletinsParams() {
+    private async getBulletinsParams(etablissementId?: string) {
         return {
-            includeRanking: await getParamBoolean('bulletins.include_ranking', { defaultValue: true }),
-            showAppreciations: await getParamBoolean('bulletins.show_appreciations', { defaultValue: true }),
-            validationThreshold: await getParamNumber('bulletins.validation_threshold', { defaultValue: 10 }),
-            calculationMethod: await getParam<string>('bulletins.calculation_method', { defaultValue: 'ponderee' }),
-            displayCoefficients: await getParamBoolean('bulletins.display_coefficients', { defaultValue: true }),
-            templateId: await getParam<string>('bulletins.template_id', { defaultValue: 'default' }),
-            requireValidation: await this.getRequireValidation(),
-            validationLevels: await getParamNumber('bulletins.validation_levels', { defaultValue: 2 }),
+            includeRanking: await getParamBoolean('bulletins.include_ranking', { etablissementId, defaultValue: true }),
+            showAppreciations: await getParamBoolean('bulletins.show_appreciations', { etablissementId, defaultValue: true }),
+            validationThreshold: await getParamNumber('bulletins.validation_threshold', { etablissementId, defaultValue: 10 }),
+            calculationMethod: await getParam<string>('bulletins.calculation_method', { etablissementId, defaultValue: 'ponderee' }),
+            displayCoefficients: await getParamBoolean('bulletins.display_coefficients', { etablissementId, defaultValue: true }),
+            templateId: await getParam<string>('bulletins.template_id', { etablissementId, defaultValue: 'default' }),
+            requireValidation: await this.getRequireValidation(etablissementId),
+            validationLevels: await getParamNumber('bulletins.validation_levels', { etablissementId, defaultValue: 2 }),
         };
     }
 
     async generate(dto: GenerateBulletinDto, etablissementId?: string, utilisateurId?: string): Promise<Bulletin[]> {
-        const params = await this.getBulletinsParams();
+        const params = await this.getBulletinsParams(etablissementId);
         const queryRunner = AppDataSource.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -126,20 +126,35 @@ export class BulletinsService {
 
             const bulletins: Bulletin[] = [];
 
-            const programme = await matieresService.getMatieresParNiveau(classeAnnee.classe.niveauId);
+            const programme = await matieresService.getMatieresParNiveau(
+                classeAnnee.classe.niveauId,
+                etablissementId ?? classeAnnee.classe.etablissementId
+            );
 
-            const affectationRepo = AppDataSource.getRepository(AffectationMatiere);
-            const affectationsClasse = await affectationRepo.find({
-                where: {
-                    classeAnneeId: dto.classeAnneeId,
-                    statut: StatutAffectationMatiere.ACTIVE
+            // Résolution centralisée des coefficients (Affectation → Programme → MatiereNiveau)
+            const coefficientsMap = new Map<string, number>();
+            if (etablissementId) {
+                const resolus = await coefficientResolverService.resoudreCoefficients(
+                    dto.classeAnneeId,
+                    programme.map(p => p.matiereId),
+                    etablissementId
+                );
+                for (const [matiereId, resolu] of resolus) {
+                    coefficientsMap.set(matiereId, resolu.coefficient);
                 }
-            });
-
-            const coeffAffectationMap = new Map<string, number>();
-            for (const aff of affectationsClasse) {
-                if (aff.coefficient !== null && aff.coefficient !== undefined) {
-                    coeffAffectationMap.set(aff.matiereId, aff.coefficient);
+            } else {
+                // Fallback sans tenant : affectations matières actives uniquement
+                const affectationRepo = AppDataSource.getRepository(AffectationMatiere);
+                const affectationsClasse = await affectationRepo.find({
+                    where: {
+                        classeAnneeId: dto.classeAnneeId,
+                        statut: StatutAffectationMatiere.ACTIVE
+                    }
+                });
+                for (const aff of affectationsClasse) {
+                    if (aff.coefficient !== null && aff.coefficient !== undefined) {
+                        coefficientsMap.set(aff.matiereId, aff.coefficient);
+                    }
                 }
             }
 
@@ -180,7 +195,7 @@ export class BulletinsService {
 
                     let coefficient = 1;
                     if (params.calculationMethod === 'ponderee') {
-                        coefficient = coeffAffectationMap.get(matiereNiveau.matiereId)
+                        coefficient = coefficientsMap.get(matiereNiveau.matiereId)
                             ?? matiereNiveau.coefficient
                             ?? 1;
                     }
@@ -195,7 +210,6 @@ export class BulletinsService {
                     where: { eleveId: eleve.id, classeAnneeId: dto.classeAnneeId, periodeId: periode.id }
                 });
 
-                const isNew = !bulletin;
                 if (!bulletin) {
                     bulletin = new Bulletin();
                     Object.assign(bulletin, {
@@ -225,7 +239,7 @@ export class BulletinsService {
                     const moyenneMatiere = eleveMoyennes.get(matiereNiveau.matiereId) || 0;
                     let coefficient = 1;
                     if (params.calculationMethod === 'ponderee') {
-                        coefficient = coeffAffectationMap.get(matiereNiveau.matiereId)
+                        coefficient = coefficientsMap.get(matiereNiveau.matiereId)
                             ?? matiereNiveau.coefficient
                             ?? 1;
                     }
@@ -244,21 +258,6 @@ export class BulletinsService {
                     });
 
                     await queryRunner.manager.save(bm);
-                }
-
-                // Créer le workflow de validation si requis
-                if (params.requireValidation && isNew) {
-                    try {
-                        await validationWorkflowService.createWorkflow({
-                            module: 'bulletins',
-                            entiteId: bulletin.id,
-                            entiteType: 'Bulletin',
-                            niveauxRequis: params.validationLevels,
-                            etablissementId,
-                        }, utilisateurId || 'system');
-                    } catch (error) {
-                        logger.warn(`[Bulletins] Échec création workflow pour bulletin ${bulletin.id} (non bloquant)`, error);
-                    }
                 }
 
                 bulletins.push(bulletin);
@@ -528,26 +527,53 @@ export class BulletinsService {
         return bulletin;
     }
 
-    async findByEleve(eleveId: string, etablissementId?: string): Promise<Bulletin[]> {
+    async findByEleve(
+        eleveId: string,
+        etablissementId?: string,
+        options?: { publie?: boolean }
+    ): Promise<Bulletin[]> {
         const where: FindOptionsWhere<Bulletin> = { eleveId };
         if (etablissementId) where.etablissementId = etablissementId;
+        if (options?.publie !== undefined) where.publie = options.publie;
 
         return this.repo.find({
             where,
             relations: ['periode', 'classeAnnee', 'classeAnnee.classe', 'bulletinMatieres', 'bulletinMatieres.matiere'],
-            order: { periode: { dateDebut: 'ASC' } }
+            // DESC : le premier élément est toujours le bulletin le plus récent
+            order: { periode: { dateDebut: 'DESC' } }
         });
     }
 
-    async update(id: string, dto: UpdateBulletinDto, etablissementId?: string): Promise<Bulletin> {
+    async update(id: string, dto: UpdateBulletinDto, utilisateurId?: string, etablissementId?: string): Promise<Bulletin> {
         const where: FindOptionsWhere<Bulletin> = { id };
         if (etablissementId) where.etablissementId = etablissementId;
 
         const bulletin = await this.repo.findOne({ where });
         if (!bulletin) throw new AppError('Bulletin non trouvé', 404, 'NOT_FOUND');
 
+        const snapshotAvant: Record<string, unknown> = {
+            appreciationConseil: bulletin.appreciationConseil,
+            sanctions: bulletin.sanctions,
+            encouragements: bulletin.encouragements,
+            publie: bulletin.publie,
+        };
+
         Object.assign(bulletin, dto);
         await this.repo.save(bulletin);
+
+        if (utilisateurId) {
+            await auditService.log({
+                utilisateurId,
+                action: AuditAction.BULLETIN_UPDATE,
+                cible: 'Bulletin',
+                cibleId: id,
+                description: 'Bulletin mis à jour',
+                anciennesValeurs: snapshotAvant,
+                nouvellesValeurs: dto as Record<string, unknown>,
+                module: 'bulletins',
+            });
+        }
+
         return bulletin;
     }
 

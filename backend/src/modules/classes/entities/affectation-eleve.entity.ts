@@ -37,7 +37,7 @@ export enum StatutAffectationEleve {
 @Index(['etablissementId'])
 @Index(['statut'])
 @Index(['eleveId', 'anneeScolaireId', 'statut'])
-@Index(['eleveId', 'anneeScolaireId'], { unique: true })
+@Index(['eleveId', 'anneeScolaireId'], { unique: true, where: '"actif" = true' })
 export class AffectationEleve {
     @PrimaryGeneratedColumn('uuid')
     id!: string;

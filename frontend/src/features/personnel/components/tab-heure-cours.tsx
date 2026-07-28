@@ -6,7 +6,6 @@ import {
     ChevronLeft, ChevronRight, RefreshCw, Plus
 } from 'lucide-react';
 import { useResumeMensuel, useGenererHeuresCoursFromEdt } from '../hooks/use-heure-cours';
-import type { HeureCours } from '../hooks/use-heure-cours';
 import { HeureCoursFormModal } from './heure-cours-form-modal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { CardGrid } from '@/components/ui/CardGrid';
@@ -22,12 +21,10 @@ export function TabHeureCours({ enseignantId }: Props) {
     const [annee, setAnnee] = useState(now.getFullYear());
     const { t, i18n } = useTranslation('personnel');
 
-    const [modalMode, setModalMode] = useState<'creation' | 'edition' | null>(null);
-    const [selectedCours, setSelectedCours] = useState<HeureCours | undefined>(undefined);
+    const [modalMode, setModalMode] = useState<'creation' | null>(null);
 
-    const openCreate = () => { setModalMode('creation'); setSelectedCours(undefined); };
-    const openEdit = (cours: HeureCours) => { setModalMode('edition'); setSelectedCours(cours); };
-    const closeModal = () => { setModalMode(null); setSelectedCours(undefined); };
+    const openCreate = () => { setModalMode('creation'); };
+    const closeModal = () => { setModalMode(null); };
 
     const { data: resume, isLoading } = useResumeMensuel(enseignantId, mois, annee);
 
@@ -48,7 +45,8 @@ export function TabHeureCours({ enseignantId }: Props) {
         generer.mutate(
             { enseignantId, dateDebut, dateFin },
             {
-                onSuccess: (result: { created: number; skipped: number }) => {
+                onSuccess: (result) => {
+                    if (!result) return;
                     if (result.created === 0 && result.skipped === 0) {
                         toast.info(t('heuresCours.aucunCreneauEdt'));
                     } else {
@@ -164,10 +162,9 @@ export function TabHeureCours({ enseignantId }: Props) {
 
             {modalMode && (
                 <HeureCoursFormModal
-                    mode={modalMode}
+                    mode="creation"
                     enseignantId={enseignantId}
-                    cours={selectedCours}
-                    onSuccess={() => { closeModal(); toast.success(modalMode === 'creation' ? t('heuresCours.coursAjoute') : t('heuresCours.coursMisAJour')); }}
+                    onSuccess={() => { closeModal(); toast.success(t('heuresCours.coursAjoute')); }}
                     onCancel={closeModal}
                 />
             )}

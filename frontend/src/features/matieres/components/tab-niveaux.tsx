@@ -6,6 +6,7 @@ import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { LoadingState } from '@/components/ui/ErrorMessage';
+import { formatVolumeMinutesToHours } from '@/lib/format-utils';
 import { usePermissions } from '@/hooks';
 import { useAjouterMatiereNiveau, useModifierMatiereNiveau, useSupprimerMatiereNiveau } from '../hooks/use-matieres';
 import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
@@ -35,7 +36,6 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
     const [addNiveauId, setAddNiveauId] = useState('');
     const [addCoeff, setAddCoeff] = useState<number | ''>(1);
     const [addBareme, setAddBareme] = useState<number | ''>(20);
-    const [addCredits, setAddCredits] = useState<number | ''>('');
     const [addVol, setAddVol] = useState<number | ''>('');
     const [addOblig, setAddOblig] = useState(true);
     const [addFiliereId, setAddFiliereId] = useState('');
@@ -43,7 +43,6 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
     const [editId, setEditId] = useState<string | null>(null);
     const [editCoeff, setEditCoeff] = useState<number | ''>('');
     const [editBareme, setEditBareme] = useState<number | ''>('');
-    const [editCredits, setEditCredits] = useState<number | ''>('');
     const [editVol, setEditVol] = useState<number | ''>('');
     const [editOblig, setEditOblig] = useState(true);
 
@@ -59,7 +58,6 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
             niveauId: addNiveauId,
             coefficient: addCoeff !== '' ? Number(addCoeff) : undefined,
             bareme: addBareme !== '' ? Number(addBareme) : undefined,
-            credits: addCredits !== '' ? Number(addCredits) : undefined,
             volumeHoraire: addVol !== '' ? Number(addVol) : undefined,
             obligatoire: addOblig,
             filiereId: addFiliereId || undefined,
@@ -68,7 +66,6 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
         setAddNiveauId('');
         setAddCoeff(1);
         setAddBareme(20);
-        setAddCredits('');
         setAddVol('');
         setAddOblig(true);
         setAddFiliereId('');
@@ -78,7 +75,6 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
         setEditId(mn.id);
         setEditCoeff(mn.coefficient ?? '');
         setEditBareme(mn.bareme ?? '');
-        setEditCredits(mn.credits ?? '');
         setEditVol(mn.volumeHoraire ?? '');
         setEditOblig(mn.obligatoire);
     };
@@ -90,7 +86,6 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
             matiereId,
             coefficient: editCoeff !== '' ? Number(editCoeff) : undefined,
             bareme: editBareme !== '' ? Number(editBareme) : undefined,
-            credits: editCredits !== '' ? Number(editCredits) : undefined,
             volumeHoraire: editVol !== '' ? Number(editVol) : undefined,
             obligatoire: editOblig,
         });
@@ -175,18 +170,10 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                                         className="w-full px-[clamp(0.5rem,1.5vw,0.625rem)] py-[clamp(0.375rem,1vw,0.5rem)] border border-border bg-[var(--color-surface)] rounded-lg text-[clamp(0.75rem,1.25vw,0.875rem)] focus:border-[var(--color-dominante)] focus:ring-2 focus:ring-[var(--color-dominante)]/20 outline-none"
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-[clamp(0.625rem,1.25vw,0.75rem)] font-medium text-text-secondary mb-[clamp(0.125rem,0.5vw,0.25rem)]">{t('credits')}</label>
-                                    <input type="number" min="0" step="1" value={addCredits}
-                                        onChange={e => setAddCredits(e.target.value ? Number(e.target.value) : '')}
-                                        placeholder="Optionnel"
-                                        className="w-full px-[clamp(0.5rem,1.5vw,0.625rem)] py-[clamp(0.375rem,1vw,0.5rem)] border border-border bg-[var(--color-surface)] rounded-lg text-[clamp(0.75rem,1.25vw,0.875rem)] focus:border-[var(--color-dominante)] focus:ring-2 focus:ring-[var(--color-dominante)]/20 outline-none"
-                                    />
-                                </div>
                             </div>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-[clamp(0.5rem,1.5vw,0.75rem)]">
                                 <div>
-                                    <label className="block text-[clamp(0.625rem,1.25vw,0.75rem)] font-medium text-text-secondary mb-[clamp(0.125rem,0.5vw,0.25rem)]">{t('volumeHoraire')} (h)</label>
+                                    <label className="block text-[clamp(0.625rem,1.25vw,0.75rem)] font-medium text-text-secondary mb-[clamp(0.125rem,0.5vw,0.25rem)]">{t('volumeHoraireMinutes')}</label>
                                     <input type="number" min="0" value={addVol}
                                         onChange={e => setAddVol(e.target.value ? Number(e.target.value) : '')}
                                         placeholder="Optionnel"
@@ -243,9 +230,8 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                                             <th className="text-left px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.375rem,1vw,0.5rem)] font-medium text-text-secondary">{t('niveau')}</th>
                                             <th className="text-center px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.375rem,1vw,0.5rem)] font-medium text-text-secondary">{t('coefficient')}</th>
                                             <th className="text-center px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.375rem,1vw,0.5rem)] font-medium text-text-secondary">{t('bareme')}</th>
-                                            <th className="text-center px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.375rem,1vw,0.5rem)] font-medium text-text-secondary">{t('credits')}</th>
                                             <th className="text-center px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.375rem,1vw,0.5rem)] font-medium text-text-secondary">{t('volumeHoraire')}</th>
-                                            <th className="text-center px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.375rem,1vw,0.5rem)] font-medium text-text-secondary">{t('oubligatoire')}</th>
+                                            <th className="text-center px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.375rem,1vw,0.5rem)] font-medium text-text-secondary">{t('obligatoire')}</th>
                                             <th className="text-center px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.375rem,1vw,0.5rem)] font-medium text-text-secondary">{t('statut')}</th>
                                             {canWrite && <th className="text-center px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.375rem,1vw,0.5rem)] font-medium text-text-secondary">{t('actions')}</th>}
                                         </tr>
@@ -275,13 +261,6 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                                                                 />
                                                             </td>
                                                             <td className="px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.375rem,1vw,0.5rem)] text-center">
-                                                                <input type="number" min="0" value={editCredits}
-                                                                    onChange={e => setEditCredits(e.target.value ? Number(e.target.value) : '')}
-                                                                    placeholder="—"
-                                                                    className="w-[clamp(4rem,8vw,5rem)] px-[clamp(0.25rem,0.75vw,0.375rem)] py-[clamp(0.125rem,0.5vw,0.25rem)] border border-border bg-[var(--color-surface)] rounded text-[clamp(0.75rem,1.25vw,0.875rem)] text-center focus:border-[var(--color-dominante)] focus:ring-2 focus:ring-[var(--color-dominante)]/20 outline-none"
-                                                                />
-                                                            </td>
-                                                            <td className="px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.375rem,1vw,0.5rem)] text-center">
                                                                 <input type="number" min="0" value={editVol}
                                                                     onChange={e => setEditVol(e.target.value ? Number(e.target.value) : '')}
                                                                     placeholder="—"
@@ -299,7 +278,6 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                                                         <>
                                                             <td className="px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.375rem,1vw,0.5rem)] text-center font-semibold">{mn.coefficient}</td>
                                                             <td className="px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.375rem,1vw,0.5rem)] text-center">/ {mn.bareme}</td>
-                                                            <td className="px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.375rem,1vw,0.5rem)] text-center font-semibold">{mn.credits ?? '-'}</td>
                                                             <td className="px-[clamp(0.5rem,1.5vw,0.75rem)] py-[clamp(0.375rem,1vw,0.5rem)] text-center">
                                                                 {mn.volumeHoraire ? (
                                                                     <div className="flex items-center gap-[clamp(0.25rem,0.75vw,0.375rem)] justify-center">
@@ -307,7 +285,7 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
                                                                             <div className="h-full bg-[var(--color-accent)] rounded-full transition-all"
                                                                                 style={{ width: `${maxVolume > 0 ? (mn.volumeHoraire / maxVolume) * 100 : 0}%` }} />
                                                                         </div>
-                                                                        <span className="text-[clamp(0.625rem,1.25vw,0.75rem)] font-medium text-text-secondary">{mn.volumeHoraire}h</span>
+                                                                        <span className="text-[clamp(0.625rem,1.25vw,0.75rem)] font-medium text-text-secondary">{formatVolumeMinutesToHours(mn.volumeHoraire)}</span>
                                                                     </div>
                                                                 ) : '-'}
                                                             </td>

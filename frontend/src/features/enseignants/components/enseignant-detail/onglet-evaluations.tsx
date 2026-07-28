@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Star, TrendingUp } from 'lucide-react';
 import { useEnseignantEvaluations, useEnseignantMoyenneEvaluations } from '../../hooks/use-enseignants';
 import { MiniBarChart } from '@/components/charts/MiniBarChart';
@@ -7,8 +8,8 @@ import { LoadingState } from '@/components/feedback';
 import type { EvaluationEnseignant } from '../../types/enseignant.types';
 
 const CATEGORIE_COLORS: Record<string, string> = {
-    Pédagogie: '#3B82F6', Discipline: '#10B981', 'Relationnel': '#F59E0B',
-    'Savoir-être': '#8B5CF6', Technique: '#EC4899',
+    Pédagogie: 'var(--color-primary)', Discipline: 'var(--color-success)', 'Relationnel': 'var(--color-warning)',
+    'Savoir-être': 'var(--color-accent)', Technique: 'var(--color-secondary)',
 };
 
 const MOIS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
@@ -18,6 +19,7 @@ function formatDate(d: string) {
 }
 
 export function OngletEvaluations({ enseignantId, isActive }: { enseignantId: string; isActive: boolean }) {
+    const { t } = useTranslation('personnel');
     const { data: evaluations, isLoading: evLoading } = useEnseignantEvaluations(enseignantId);
     const { data: moyenne, isLoading: moyLoading } = useEnseignantMoyenneEvaluations(enseignantId);
     const evals = isActive ? (evaluations ?? []) : [];
@@ -44,58 +46,56 @@ export function OngletEvaluations({ enseignantId, isActive }: { enseignantId: st
             grouped[cat] = (grouped[cat] || 0) + 1;
         });
         return Object.entries(grouped).map(([label, value]) => ({
-            label, value, color: CATEGORIE_COLORS[label] || '#6B7280',
+            label, value, color: CATEGORIE_COLORS[label] || 'var(--color-muted-foreground)',
         }));
     }, [evals]);
 
     if ((evLoading || moyLoading) && isActive) {
-        return <div className="py-12"><LoadingState message="Chargement des évaluations..." /></div>;
+        return <div className="py-12"><LoadingState message={t('evaluations.chargement')} /></div>;
     }
 
     return (
         <div className="space-y-5">
-            {/* Moyenne card */}
             {moy && moy.total > 0 && (
-                <div className="rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 p-5">
+                <div className="rounded-xl border border-accent/20 bg-gradient-to-br from-accent/5 to-accent/10 p-5">
                     <div className="flex items-center gap-4">
-                        <div className="rounded-full bg-purple-200 p-3">
-                            <Star className="h-8 w-8 text-purple-600" />
+                        <div className="rounded-full bg-accent/20 p-3">
+                            <Star className="h-8 w-8 text-accent" />
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-purple-700">Moyenne des évaluations</p>
-                            <p className="text-3xl font-bold text-purple-800">
+                            <p className="text-sm font-medium text-accent">{t('evaluations.moyenneEvaluations')}</p>
+                            <p className="text-3xl font-bold text-accent">
                                 {moy.moyenne.toFixed(1)} <span className="text-base font-normal">/ 20</span>
                             </p>
-                            <p className="text-xs text-purple-600">{moy.total} évaluation(s)</p>
+                            <p className="text-xs text-accent/80">{t('evaluations.evaluationCount', { count: moy.total })}</p>
                         </div>
                     </div>
                 </div>
             )}
 
             {evals.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white py-16 dark:border-gray-600 dark:bg-gray-800">
-                    <Star className="mb-3 h-12 w-12 text-gray-300 dark:text-gray-600" />
-                    <p className="font-medium text-gray-600 dark:text-gray-400">Aucune évaluation</p>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-500">Les évaluations pédagogiques apparaîtront ici une fois soumises.</p>
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card py-16">
+                    <Star className="mb-3 h-12 w-12 text-muted-foreground/40" />
+                    <p className="font-medium text-muted-foreground">{t('evaluations.aucuneEvaluation')}</p>
+                    <p className="mt-1 text-sm text-muted-foreground/80">{t('evaluations.aucuneEvaluationDesc')}</p>
                 </div>
             ) : (
                 <>
-                    {/* Charts row */}
                     <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                         {evolutionData.length > 1 && (
-                            <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
-                                <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
-                                    <TrendingUp className="h-4 w-4 text-blue-500" />
-                                    Évolution de la note moyenne
+                            <div className="rounded-xl border border-border bg-card p-5">
+                                <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+                                    <TrendingUp className="h-4 w-4 text-primary" />
+                                    {t('evaluations.evolutionNote')}
                                 </h4>
                                 <MiniBarChart data={evolutionData} height={180} />
                             </div>
                         )}
                         {categorieData.length > 0 && (
-                            <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
-                                <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
-                                    <Star className="h-4 w-4 text-purple-500" />
-                                    Répartition par catégorie
+                            <div className="rounded-xl border border-border bg-card p-5">
+                                <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+                                    <Star className="h-4 w-4 text-accent" />
+                                    {t('evaluations.repartitionCategorie')}
                                 </h4>
                                 <div className="flex justify-center">
                                     <MiniPieChart data={categorieData} size={160} showLegend />
@@ -104,37 +104,36 @@ export function OngletEvaluations({ enseignantId, isActive }: { enseignantId: st
                         )}
                     </div>
 
-                    {/* Table */}
-                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                    <div className="overflow-hidden rounded-xl border border-border bg-card">
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
-                                <thead className="bg-gray-50 dark:bg-gray-900">
+                                <thead className="bg-muted">
                                     <tr>
-                                        <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Date</th>
-                                        <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Catégorie</th>
-                                        <th className="px-4 py-3 text-center font-medium text-gray-600 dark:text-gray-400">Note</th>
-                                        <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Évaluateur</th>
-                                        <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-400">Commentaire</th>
+                                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('evaluations.colDate')}</th>
+                                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('evaluations.colCategorie')}</th>
+                                        <th className="px-4 py-3 text-center font-medium text-muted-foreground">{t('evaluations.colNote')}</th>
+                                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('evaluations.colEvaluateur')}</th>
+                                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('evaluations.colCommentaire')}</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                <tbody className="divide-y divide-border">
                                     {evals.map((e: EvaluationEnseignant) => (
-                                        <tr key={e.id} className="hover:bg-gray-50/80 dark:hover:bg-gray-700">
-                                            <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{formatDate(e.dateEvaluation)}</td>
+                                        <tr key={e.id} className="hover:bg-muted/80">
+                                            <td className="px-4 py-3 text-muted-foreground">{formatDate(e.dateEvaluation)}</td>
                                             <td className="px-4 py-3">
-                                                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                                                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                                                     {e.categorie}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 <span className={`text-lg font-semibold ${
-                                                    e.note >= 4 ? 'text-green-600' : e.note >= 3 ? 'text-yellow-600' : 'text-red-600'
+                                                    e.note >= 4 ? 'text-success' : e.note >= 3 ? 'text-warning' : 'text-destructive'
                                                 }`}>
                                                     {e.note.toFixed(1)}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">{e.evaluateur ? `${e.evaluateur.prenom} ${e.evaluateur.nom}` : '-'}</td>
-                                            <td className="max-w-xs truncate px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{e.commentaire || '-'}</td>
+                                            <td className="max-w-xs truncate px-4 py-3 text-sm text-muted-foreground">{e.commentaire || '-'}</td>
                                         </tr>
                                     ))}
                                 </tbody>

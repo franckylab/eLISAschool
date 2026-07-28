@@ -149,6 +149,17 @@ export interface AffecterEleveDto {
 }
 
 /**
+ * DTO pour le transfert d'un élève vers une autre classe
+ */
+export interface TransfererEleveDto {
+    eleveId: string;
+    nouvelleClasseId: string;
+    motifChangement?: string;
+    commentaire?: string;
+    dateTransfert?: string;
+}
+
+/**
  * Statistiques des élèves d'une classe
  */
 export interface ElevesClasseStats {

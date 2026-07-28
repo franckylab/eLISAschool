@@ -46,7 +46,7 @@ export function useCreneaux(filters: CreneauFilters = {}) {
             for (const [k, v] of Object.entries(filters)) {
                 if (v !== undefined && v !== '') params[k] = v as string | number | boolean;
             }
-            const response = await apiClient.get<{ data: PaginatedResponse<CreneauHoraire> }>('/api/emploi-du-temps', params);
+            const response = await apiClient.get<PaginatedResponse<CreneauHoraire>>('/api/emploi-du-temps', params);
             return response.data;
         },
         staleTime: 2 * 60 * 1000,
@@ -57,7 +57,7 @@ export function useCreneau(id: string) {
     return useQuery({
         queryKey: EDT_KEYS.detail(id),
         queryFn: async () => {
-            const response = await apiClient.get<{ data: CreneauHoraire }>(`/api/emploi-du-temps/${id}`);
+            const response = await apiClient.get<CreneauHoraire>(`/api/emploi-du-temps/${id}`);
             return response.data;
         },
         enabled: !!id,
@@ -71,7 +71,7 @@ export function useCreerCreneau() {
     const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: Partial<CreneauHoraire>) => {
-            const res = await apiClient.post<{ data: CreneauHoraire }>('/api/emploi-du-temps', dto);
+            const res = await apiClient.post<CreneauHoraire>('/api/emploi-du-temps', dto);
             return res.data;
         },
         onSuccess: () => {
@@ -90,7 +90,7 @@ export function useUpdateCreneau() {
     const handleError = useHandleError();
     return useMutation({
         mutationFn: async ({ id, ...dto }: Partial<CreneauHoraire> & { id: string }) => {
-            const res = await apiClient.patch<{ data: CreneauHoraire }>(`/api/emploi-du-temps/${id}`, dto);
+            const res = await apiClient.patch<CreneauHoraire>(`/api/emploi-du-temps/${id}`, dto);
             return res.data;
         },
         onSuccess: () => {
@@ -127,7 +127,7 @@ export function useValiderCreneau() {
     const handleError = useHandleError();
     return useMutation({
         mutationFn: async (id: string) => {
-            const res = await apiClient.post<{ data: CreneauHoraire }>(`/api/emploi-du-temps/${id}/valider`);
+            const res = await apiClient.post<CreneauHoraire>(`/api/emploi-du-temps/${id}/valider`);
             return res.data;
         },
         onSuccess: () => {
@@ -146,7 +146,7 @@ export function useValiderCreneauxClasse() {
     const handleError = useHandleError();
     return useMutation({
         mutationFn: async (classeAnneeId: string) => {
-            const res = await apiClient.post<{ data: ResultatValidationClasse }>(`/api/emploi-du-temps/valider-classe/${classeAnneeId}`);
+            const res = await apiClient.post<ResultatValidationClasse>(`/api/emploi-du-temps/valider-classe/${classeAnneeId}`);
             return res.data;
         },
         onSuccess: (data) => {
@@ -167,13 +167,13 @@ export function useGenererEDT() {
     const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: { classeAnneeId: string; options?: { regenerer?: boolean; respecterContraintes?: boolean } }) => {
-            const res = await apiClient.post<{ success: boolean; message: string; data: { nombreCreneaux: number; conflits: string[] } }>('/api/emploi-du-temps/generer', dto);
-            return res.data;
+            const res = await apiClient.post<{ nombreCreneaux: number; conflits: string[] }>('/api/emploi-du-temps/generer', dto);
+            return res;
         },
-        onSuccess: (data) => {
+        onSuccess: (res) => {
             qc.invalidateQueries({ queryKey: EDT_KEYS.all });
-            if (data?.success) toast.success(data.message);
-            else toast.warning(`${data?.message || ''} — ${data?.data?.conflits?.length || 0} ${t('conflits')}`);
+            if (res?.success) toast.success(res.message || t('toasts.genererOk'));
+            else toast.warning(`${res?.message || ''} — ${res?.data?.conflits?.length || 0} ${t('conflits')}`);
         },
         onError: (err: unknown) => {
             handleError(err, t('toasts.erreurGeneration'));
@@ -187,7 +187,7 @@ export function usePreferencesEDT() {
     return useQuery({
         queryKey: EDT_KEYS.preferences,
         queryFn: async () => {
-            const res = await apiClient.get<{ data: PreferenceEDT }>('/api/emploi-du-temps/preferences');
+            const res = await apiClient.get<PreferenceEDT>('/api/emploi-du-temps/preferences');
             return res.data;
         },
         staleTime: 5 * 60 * 1000,
@@ -200,7 +200,7 @@ export function useUpdatePreferencesEDT() {
     const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: Partial<PreferenceEDT>) => {
-            const res = await apiClient.put<{ data: PreferenceEDT }>('/api/emploi-du-temps/preferences', dto);
+            const res = await apiClient.put<PreferenceEDT>('/api/emploi-du-temps/preferences', dto);
             return res.data;
         },
         onSuccess: () => {
@@ -219,7 +219,7 @@ export function useTemplatesEDT() {
     return useQuery({
         queryKey: EDT_KEYS.templates.all,
         queryFn: async () => {
-            const res = await apiClient.get<{ data: TemplateEDT[] }>('/api/emploi-du-temps/templates');
+            const res = await apiClient.get<TemplateEDT[]>('/api/emploi-du-temps/templates');
             return res.data;
         },
         staleTime: 10 * 60 * 1000,
@@ -230,7 +230,7 @@ export function useTemplateEDT(id: string) {
     return useQuery({
         queryKey: EDT_KEYS.templates.detail(id),
         queryFn: async () => {
-            const res = await apiClient.get<{ data: TemplateEDT }>(`/api/emploi-du-temps/templates/${id}`);
+            const res = await apiClient.get<TemplateEDT>(`/api/emploi-du-temps/templates/${id}`);
             return res.data;
         },
         enabled: !!id,
@@ -243,7 +243,7 @@ export function useCreerTemplateEDT() {
     const handleError = useHandleError();
     return useMutation({
         mutationFn: async (dto: Partial<TemplateEDT>) => {
-            const res = await apiClient.post<{ data: TemplateEDT }>('/api/emploi-du-temps/templates', dto);
+            const res = await apiClient.post<TemplateEDT>('/api/emploi-du-temps/templates', dto);
             return res.data;
         },
         onSuccess: () => {
@@ -278,7 +278,7 @@ export function useDupliquerTemplateEDT() {
     const handleError = useHandleError();
     return useMutation({
         mutationFn: async ({ id, nom }: { id: string; nom?: string }) => {
-            const res = await apiClient.post<{ data: TemplateEDT }>(`/api/emploi-du-temps/templates/${id}/dupliquer`, { nom });
+            const res = await apiClient.post<TemplateEDT>(`/api/emploi-du-temps/templates/${id}/dupliquer`, { nom });
             return res.data;
         },
         onSuccess: () => {
@@ -296,7 +296,7 @@ export function useDupliquerTemplateEDT() {
 export function useVerifierConflits() {
     return useMutation({
         mutationFn: async (donnees: DonneesVerification) => {
-            const res = await apiClient.post<{ data: Conflit[] }>('/api/emploi-du-temps/verifier-conflits', donnees);
+            const res = await apiClient.post<Conflit[]>('/api/emploi-du-temps/verifier-conflits', donnees);
             return res.data;
         },
     });

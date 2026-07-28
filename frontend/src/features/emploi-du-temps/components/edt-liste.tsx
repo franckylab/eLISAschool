@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Calendar, FileDown, Plus, RefreshCw, Clock } from 'lucide-react';
+import { FileDown, Plus, RefreshCw, Clock } from 'lucide-react';
 import { useCreneaux } from '../hooks/use-emploi-du-temps';
 import { EDTCalendar } from '../components/edt-calendar';
 import { EDTGenerationModal } from '../components/edt-generation-modal';
@@ -21,7 +21,7 @@ export function EmploiDuTempsListe({ classeAnneeId, anneeScolaireId }: EmploiDuT
     const [generationModalOpen, setGenerationModalOpen] = useState(false);
 
     const { data: paginated, isLoading, error, refetch } = useCreneaux({ classeAnneeId, anneeScolaireId });
-    const creneaux = paginated?.data?.items;
+    const creneaux = paginated?.items;
 
     const handleExportHTML = () => {
         window.open(

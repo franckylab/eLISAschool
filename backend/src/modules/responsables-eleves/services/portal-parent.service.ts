@@ -13,7 +13,10 @@ import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { parentsService } from '@modules/responsables-eleves/services';
 import { notesService } from '@modules/notes/services';
+import { StatutNote } from '@modules/notes/entities';
 import { bulletinsService } from '@modules/bulletins/services';
+import { coefficientResolverService } from '@modules/matieres/services';
+import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 
@@ -91,6 +94,12 @@ export class PortalParentService {
             throw new AppError('Élève non trouvé', 404, 'ELEVE_NOT_FOUND');
         }
 
+        // R3 : les parents ne voient que les notes publiées (option config pour inclure les validées)
+        const inclureValidees = await getParamBoolean('notes.parent_voir_validees', {
+            etablissementId: eleve.etablissementId,
+            defaultValue: false,
+        });
+
         // Récupérer les notes
         const notes = await notesService.findAll({
             page: 1,
@@ -98,16 +107,46 @@ export class PortalParentService {
             eleveId: eleve.id,
             periodeId: filters?.periodeId,
             matiereId: filters?.matiereId,
+            statuts: inclureValidees ? [StatutNote.VALIDEE, StatutNote.PUBLIEE] : [StatutNote.PUBLIEE],
         }, eleve.etablissementId);
 
-        // Calculer les moyennes par matière
-        const moyennesParMatiere: Record<string, number> = {};
+        // Moyennes par matière pondérées par le coefficient de chaque note
+        const cumuls = new Map<string, { somme: number; poids: number }>();
         for (const note of notes.items) {
-            const matiereId = note.matiereId;
-            if (!moyennesParMatiere[matiereId]) {
-                moyennesParMatiere[matiereId] = 0;
+            const cumul = cumuls.get(note.matiereId) ?? { somme: 0, poids: 0 };
+            const coefficient = Number(note.coefficient) || 1;
+            cumul.somme += (note.noteSur20 ?? 0) * coefficient;
+            cumul.poids += coefficient;
+            cumuls.set(note.matiereId, cumul);
+        }
+
+        const moyennesParMatiere: Record<string, number> = {};
+        for (const [matiereId, cumul] of cumuls) {
+            if (cumul.poids > 0) {
+                moyennesParMatiere[matiereId] = Math.round((cumul.somme / cumul.poids) * 100) / 100;
             }
-            moyennesParMatiere[matiereId] += note.noteSur20 || 0;
+        }
+
+        // Moyenne générale pondérée par le coefficient de chaque matière
+        let moyenneGenerale: number | null = null;
+        const matiereIds = Object.keys(moyennesParMatiere);
+        const classeAnneeId = notes.items[0]?.classeAnneeId;
+        if (matiereIds.length > 0 && classeAnneeId) {
+            const coefficients = await coefficientResolverService.resoudreCoefficients(
+                classeAnneeId,
+                matiereIds,
+                eleve.etablissementId,
+            );
+            let somme = 0;
+            let poids = 0;
+            for (const matiereId of matiereIds) {
+                const coef = coefficients.get(matiereId)?.coefficient ?? 1;
+                somme += moyennesParMatiere[matiereId] * coef;
+                poids += coef;
+            }
+            if (poids > 0) {
+                moyenneGenerale = Math.round((somme / poids) * 100) / 100;
+            }
         }
 
         return {
@@ -118,6 +157,7 @@ export class PortalParentService {
             notes: notes.items,
             total: notes.meta.totalItems,
             moyennesParMatiere,
+            moyenneGenerale,
         };
     }
 
@@ -138,8 +178,8 @@ export class PortalParentService {
             throw new AppError('Élève non trouvé', 404, 'ELEVE_NOT_FOUND');
         }
 
-        // Récupérer les bulletins
-        const bulletins = await bulletinsService.findByEleve(eleve.id);
+        // Récupérer les bulletins (R3 : uniquement les bulletins publiés)
+        const bulletins = await bulletinsService.findByEleve(eleve.id, eleve.etablissementId, { publie: true });
 
         return {
             eleve: {

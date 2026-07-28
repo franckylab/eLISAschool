@@ -119,7 +119,7 @@ router.patch('/:id', authMiddleware, requirePermission('bulletins:edit'), async 
             }
         }
 
-        const bulletin = await service.update(req.params.id, dto, req.etablissementId);
+        const bulletin = await service.update(req.params.id, dto, req.utilisateur!.id, req.etablissementId);
 
         if (dto.publie !== undefined) {
             await auditService.log({

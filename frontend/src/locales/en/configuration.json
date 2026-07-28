@@ -60,7 +60,22 @@
         },
         "historique": {
             "titre": "History",
-            "description": "View configuration change history"
+            "description": "View configuration change history",
+            "titreModifications": "Modification History",
+            "sousTitreModifications": "View and restore previous configuration versions",
+            "chargement": "Loading history...",
+            "aucuneModification": "No modifications in history",
+            "toutesActions": "All actions",
+            "creation": "Creation",
+            "modification": "Modification",
+            "suppression": "Deletion",
+            "restauration": "Restoration",
+            "restaurer": "Restore",
+            "confirmerRestauration": "Restore configuration to this state?",
+            "confirmerMessage": "Action: {{action}} — Target: {{cible}}",
+            "pageSur": "Page {{page}} of {{total}} ({{count}} entries)",
+            "precedent": "Previous",
+            "suivant": "Next"
         }
     },
     "chargementErreur": "Error loading configuration"

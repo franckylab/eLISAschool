@@ -37,9 +37,18 @@ export const affecterEleveSchema = z.object({
     commentaire: z.string().optional(),
 });
 
+export const transfererEleveSchema = z.object({
+    eleveId: z.string().uuid(),
+    nouvelleClasseId: z.string().uuid(),
+    motifChangement: z.string().max(100).default('CHANGEMENT_CLASSE'),
+    commentaire: z.string().optional(),
+    dateTransfert: z.string().datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
+});
+
 export type CreateClasseDto = z.infer<typeof createClasseSchema>;
 export type UpdateClasseDto = z.infer<typeof updateClasseSchema>;
 export type AffecterEleveDto = z.infer<typeof affecterEleveSchema>;
+export type TransfererEleveDto = z.infer<typeof transfererEleveSchema>;
 
 /**
  * DTOs pour ClasseAnnee

@@ -15,7 +15,7 @@
 import { AppDataSource } from '@database/data-source';
 import { CreneauHoraire, JourSemaine } from '../entities';
 import { AffectationMatiere } from '@modules/matieres/entities';
-import { MatiereNiveau } from '@modules/matieres/entities';
+import { coefficientResolverService } from '@modules/matieres/services/coefficient-resolver.service';
 import { PreferenceEmploiDuTemps, CreneauImposable } from '../entities/preference-emploi-du-temps.entity';
 import { logger } from '@common/utils/logger.util';
 
@@ -56,14 +56,13 @@ export interface DonneesCreneau {
     jour: JourSemaine;
     heureDebut: string;
     heureFin: string;
-    salleId?: string;
+    salleId?: string | null;
     excludeCreneauId?: string;
 }
 
 export class ConflitDetectionService {
     private creneauRepo = AppDataSource.getRepository(CreneauHoraire);
     private affectationRepo = AppDataSource.getRepository(AffectationMatiere);
-    private matiereNiveauRepo = AppDataSource.getRepository(MatiereNiveau);
     private preferenceRepo = AppDataSource.getRepository(PreferenceEmploiDuTemps);
 
     /**
@@ -183,10 +182,10 @@ export class ConflitDetectionService {
         const creneauxExistants = await this.creneauRepo
             .createQueryBuilder('ch')
             .innerJoin('ch.affectationMatiere', 'am')
-            .where('(am.enseignantId = :enseignantId OR am."coEnseignantIds" LIKE :likeId)', {
-                enseignantId,
-                likeId: `%${enseignantId}%`,
-            })
+            .where(
+                '(am.enseignantId = :enseignantId OR :enseignantIdText = ANY(string_to_array(am."coEnseignantIds", \',\')))',
+                { enseignantId, enseignantIdText: enseignantId },
+            )
             .andWhere('ch.jour = :jour', { jour: donnees.jour })
             .andWhere('ch.etablissementId = :etablissementId', { etablissementId })
             .andWhere('ch.heureDebut < :heureFin', { heureFin: donnees.heureFin })
@@ -237,12 +236,11 @@ export class ConflitDetectionService {
     private async detecterDepassementVolume(
         donnees: DonneesCreneau, affectation: AffectationMatiere, etablissementId: string,
     ): Promise<Conflit | null> {
-        const matiereNiveau = await this.matiereNiveauRepo.findOne({
-            where: {
-                matiereId: affectation.matiereId,
-                niveauId: affectation.classeAnnee?.classe?.niveauId ?? '',
-            },
-        });
+        const matiereNiveau = await coefficientResolverService.resoudreMatiereNiveau(
+            affectation.matiereId,
+            affectation.classeAnnee?.classe?.niveauId ?? '',
+            affectation.classeAnnee?.classe?.filiereId,
+        );
 
         if (!matiereNiveau?.volumeHoraire) return null;
 
@@ -260,17 +258,20 @@ export class ConflitDetectionService {
 
         const totalMinutes = filtered.reduce((sum, c) => sum + c.dureeMinutes, 0);
         const nouvellesMinutes = this.calculerMinutes(donnees.heureDebut, donnees.heureFin);
-        const totalApresAjout = (totalMinutes + nouvellesMinutes) / 60;
+        // volumeHoraire est en minutes/semaine (source : MatiereNiveau) — comparaison en minutes
+        const totalApresAjoutMinutes = totalMinutes + nouvellesMinutes;
 
-        if (totalApresAjout > matiereNiveau.volumeHoraire) {
+        if (totalApresAjoutMinutes > matiereNiveau.volumeHoraire) {
+            const totalHeures = (totalApresAjoutMinutes / 60).toFixed(1);
+            const requisHeures = (matiereNiveau.volumeHoraire / 60).toFixed(1);
             return {
                 type: TypeConflit.DEPASSEMENT_VOLUME_HORAIRE,
                 severite: SeveriteConflit.AVERTISSEMENT,
-                message: `Volume horaire dépassé : ${totalApresAjout.toFixed(1)}h planifiées sur ${matiereNiveau.volumeHoraire}h requises pour cette matière`,
+                message: `Volume horaire dépassé : ${totalHeures}h planifiées sur ${requisHeures}h requises pour cette matière`,
                 details: {
-                    volumeHoraireRequis: matiereNiveau.volumeHoraire,
-                    totalPlanifie: totalApresAjout,
-                    depassement: totalApresAjout - matiereNiveau.volumeHoraire,
+                    volumeHoraireRequisMinutes: matiereNiveau.volumeHoraire,
+                    totalPlanifieMinutes: totalApresAjoutMinutes,
+                    depassementMinutes: totalApresAjoutMinutes - matiereNiveau.volumeHoraire,
                 },
             };
         }

@@ -17,6 +17,7 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { usePermissions } from '@/hooks';
 import { useTousMatieresNiveaux } from '@/features/matieres/hooks/use-matieres';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { formatVolumeMinutesToHours } from '@/lib/format-utils';
 import type { Tab } from '@/components/ui/Tabs';
 import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import {
@@ -32,7 +33,7 @@ import {
 } from '../hooks/use-programmes';
 import { ProgrammeFormModal } from './programme-form-modal';
 import { ChapitreFormModal } from './chapitre-form-modal';
-import type { AddMatiereDto, ProgrammeChapitre } from '../types/programme.types';
+import type { AddMatiereDto, ProgrammeChapitre, ProgrammeMatiere } from '../types/programme.types';
 
 export function ProgrammeDetailPage() {
     const { id: programmeId } = useParams({ from: '/_auth/programmes/$id' });
@@ -45,7 +46,6 @@ export function ProgrammeDetailPage() {
     const [showAddMatiere, setShowAddMatiere] = useState(false);
     const [newMatiereNiveauId, setNewMatiereNiveauId] = useState('');
     const [newCoefficient, setNewCoefficient] = useState<number>(1);
-    const [newVolumeHoraire, setNewVolumeHoraire] = useState<number>(0);
 
     const [showChapitreModal, setShowChapitreModal] = useState(false);
     const [chapitreEdit, setChapitreEdit] = useState<ProgrammeChapitre | null>(null);
@@ -68,10 +68,10 @@ export function ProgrammeDetailPage() {
     if (isError) return <ErrorMessage message={(error as Error)?.message} onRetry={refetch} />;
     if (!programme) return <PageSkeleton />;
 
-    const matieres = (programme.matieres || []) as any[];
+    const matieres = (programme.matieres || []) as ProgrammeMatiere[];
     const chapitres = chapitresData || [];
-    const chapitresParMatiere = chapitres.reduce((acc: Record<string, ProgrammeChapitre[]>, ch: any) => {
-        const matiereId = ch.programmeMatiereId || ch.programme_matiere_id || '';
+    const chapitresParMatiere = chapitres.reduce((acc: Record<string, ProgrammeChapitre[]>, ch: ProgrammeChapitre) => {
+        const matiereId = ch.programmeMatiereId || '';
         if (!acc[matiereId]) acc[matiereId] = [];
         acc[matiereId].push(ch);
         return acc;
@@ -86,8 +86,8 @@ export function ProgrammeDetailPage() {
         }
     };
 
-    const totalHeures = matieres.reduce((s: number, m: any) => s + (Number(m.volumeHoraireHebdo) || 0), 0);
-    const totalCoefficients = matieres.reduce((s: number, m: any) => s + (Number(m.coefficient) || 0), 0);
+    const totalMinutes = matieres.reduce((s: number, m: ProgrammeMatiere) => s + (Number(m.matiereNiveau?.volumeHoraire) || 0), 0);
+    const totalCoefficients = matieres.reduce((s: number, m: ProgrammeMatiere) => s + (Number(m.coefficient) || 0), 0);
 
     const onglets: Tab[] = [
         { id: 'informations', label: t('informations') },
@@ -164,7 +164,7 @@ export function ProgrammeDetailPage() {
                                 />
                                 <InfoField
                                     label={t('volumeHoraire')}
-                                    value={`${totalHeures}h`}
+                                    value={formatVolumeMinutesToHours(totalMinutes)}
                                 />
                                 <InfoField
                                     label={t('matieres')}
@@ -218,20 +218,20 @@ export function ProgrammeDetailPage() {
                                     <p className="text-sm text-[var(--color-texte-secondaire)] py-4 text-center">{t('aucuneMatiere', 'Aucune matière ajoutée')}</p>
                                 ) : (
                                     <div className="space-y-3">
-                                        {matieres.map((m: any) => {
-                                            const matiere = m.matiere || m.matiereNiveau?.matiere || {};
-                                            const niveau = m.matiereNiveau?.niveau || {};
+                                        {matieres.map((m: ProgrammeMatiere) => {
+                                            const matiere = m.matiereNiveau?.matiere;
+                                            const niveau = m.matiereNiveau?.niveau;
                                             const chapitreCount = chapitresParMatiere[m.id]?.length || 0;
                                             return (
                                                 <div key={m.id} className="flex items-center justify-between p-4 rounded-lg border border-[var(--color-bordure)] hover:bg-[var(--color-survol)] transition-colors">
                                                     <div className="flex items-center gap-3">
                                                         <BookOpen className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
                                                         <div>
-                                                            <p className="font-medium text-[var(--color-texte)]">{matiere.nom || matiere.matiereNom || '-'}</p>
+                                                            <p className="font-medium text-[var(--color-texte)]">{matiere?.nom || '-'}</p>
                                                             <div className="flex items-center gap-3 text-xs text-[var(--color-texte-secondaire)]">
                                                                 <span>{t('coefficient', 'Coeff')}: {m.coefficient || 1}</span>
-                                                                <span>{t('volumeHoraire')}: {m.volumeHoraire || m.volumeHoraireHebdo || 0}h/sem</span>
-                                                                {niveau.nom && <span>{t('niveau')}: {niveau.nom}</span>}
+                                                                <span>{t('volumeHoraire')}: {formatVolumeMinutesToHours(m.matiereNiveau?.volumeHoraire ?? 0)}</span>
+                                                                {niveau?.nom && <span>{t('niveau')}: {niveau.nom}</span>}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -241,7 +241,7 @@ export function ProgrammeDetailPage() {
                                                             <ElisaButton
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                onClick={() => retirerMatiere.mutate({ programmeId, pmId: m.matiereNiveauId || m.id } as any)}
+                                                                onClick={() => retirerMatiere.mutate({ programmeId, pmId: m.matiereNiveauId || m.id })}
                                                                 leftIcon={<X className="h-4 w-4" />}
                                                                 isLoading={retirerMatiere.isPending}
                                                             >
@@ -272,13 +272,11 @@ export function ProgrammeDetailPage() {
                                             const dto: AddMatiereDto = {
                                                 matiereNiveauId: newMatiereNiveauId,
                                                 coefficient: newCoefficient,
-                                                volumeHoraire: newVolumeHoraire || undefined,
                                             };
                                             await ajouterMatiere.mutateAsync({ programmeId, dto });
                                             setShowAddMatiere(false);
                                             setNewMatiereNiveauId('');
                                             setNewCoefficient(1);
-                                            setNewVolumeHoraire(0);
                                         }}
                                         isLoading={ajouterMatiere.isPending}
                                     >
@@ -296,37 +294,24 @@ export function ProgrammeDetailPage() {
                                         className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
                                     >
                                         <option value="">{t('selectionnerMatiere', 'Sélectionner une matière')}</option>
-                                        {(tousMatieresNiveaux || []).map((mn: any) => (
+                                        {(tousMatieresNiveaux || []).map((mn) => (
                                             <option key={mn.id} value={mn.id}>
-                                                {mn.matiere?.nom || mn.matiereNom} - {mn.niveau?.nom || mn.niveauNom}
+                                                {mn.matiere?.nom} - {mn.niveau?.nom}
                                             </option>
                                         ))}
                                     </select>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-sm font-medium text-[var(--color-texte)] mb-2 block">{t('coefficient', 'Coefficient')}</label>
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            max={10}
-                                            step={0.5}
-                                            value={newCoefficient}
-                                            onChange={(e) => setNewCoefficient(Number(e.target.value))}
-                                            className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-sm font-medium text-[var(--color-texte)] mb-2 block">{t('volumeHoraire')}</label>
-                                        <input
-                                            type="number"
-                                            min={0}
-                                            step={0.5}
-                                            value={newVolumeHoraire}
-                                            onChange={(e) => setNewVolumeHoraire(Number(e.target.value))}
-                                            className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                                        />
-                                    </div>
+                                <div>
+                                    <label className="text-sm font-medium text-[var(--color-texte)] mb-2 block">{t('coefficient', 'Coefficient')}</label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={10}
+                                        step={0.5}
+                                        value={newCoefficient}
+                                        onChange={(e) => setNewCoefficient(Number(e.target.value))}
+                                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
+                                    />
                                 </div>
                             </div>
                         </CustomModal>
@@ -335,9 +320,9 @@ export function ProgrammeDetailPage() {
 
                 {tabActif === 'chapitres' && (
                     <>
-                        {matieres.map((m: any) => {
+                        {matieres.map((m: ProgrammeMatiere) => {
                             const matiereId = m.id;
-                            const matiere = m.matiere || m.matiereNiveau?.matiere || {};
+                            const matiere = m.matiereNiveau?.matiere;
                             const chapitreList = chapitresParMatiere[matiereId] || [];
                             if (chapitreList.length === 0 && !hasPermission('programmes:config:write')) return null;
                             return (
@@ -346,7 +331,7 @@ export function ProgrammeDetailPage() {
                                         <div className="flex items-center justify-between">
                                             <CardTitle className="flex items-center gap-2">
                                                 <BookOpen className="h-5 w-5 text-[var(--color-dominante)]" />
-                                                {matiere.nom || matiere.matiereNom || '-'}
+                                                {matiere?.nom || '-'}
                                             </CardTitle>
                                             {hasPermission('programmes:config:write') && (
                                                 <ElisaButton
@@ -402,7 +387,7 @@ export function ProgrammeDetailPage() {
                                                                         variant="ghost"
                                                                         size="sm"
                                                                         onClick={() => setChapitreDeleteId(ch.id)}
-                                                                        leftIcon={<Trash2 className="h-4 w-4 text-red-500" />}
+                                                                        leftIcon={<Trash2 className="h-4 w-4 text-destructive" />}
                                                                     />
                                                                 )}
                                                             </div>

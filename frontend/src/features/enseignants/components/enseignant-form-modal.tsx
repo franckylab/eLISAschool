@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Save } from 'lucide-react';
 import { useCreerPersonnel, useModifierPersonnel } from '@/features/personnel/hooks/use-personnel';
 import { useEnseignant } from '../hooks/use-enseignants';
@@ -17,6 +18,13 @@ interface EnseignantFormModalProps {
     onCancel: () => void;
 }
 
+type EnseignantFormData = {
+    statut?: string;
+    specialitePrincipale?: string;
+    diplomes?: string;
+    dateEmbauche?: string;
+};
+
 const formNormalizer = {
     statut: (v?: string) => {
         if (!v) return 'actif';
@@ -28,7 +36,7 @@ const formNormalizer = {
     dateEmbauche: (e?: Enseignant) => e?.dateEmbauche?.split('T')[0] || new Date().toISOString().split('T')[0],
 };
 
-function buildFormData(e: Enseignant | undefined): Partial<CreerPersonnelDto> & Record<string, any> {
+function buildFormData(e: Enseignant | undefined): EnseignantFormData {
     return {
         dateEmbauche: formNormalizer.dateEmbauche(e),
         statut: formNormalizer.statut(e?.statut),
@@ -38,6 +46,7 @@ function buildFormData(e: Enseignant | undefined): Partial<CreerPersonnelDto> & 
 }
 
 export function EnseignantFormModal({ mode, enseignant, onSuccess, onCancel }: EnseignantFormModalProps) {
+    const { t } = useTranslation('personnel');
     const creerPersonnel = useCreerPersonnel();
     const modifierPersonnel = useModifierPersonnel();
     const isMutating = creerPersonnel.isPending || modifierPersonnel.isPending;
@@ -46,7 +55,7 @@ export function EnseignantFormModal({ mode, enseignant, onSuccess, onCancel }: E
     const { data: apiData, isLoading: isFetching } = useEnseignant(editId);
     const source = mode === 'edition' && apiData ? apiData : enseignant;
 
-    const [formData, setFormData] = useState<Record<string, any>>(buildFormData(source));
+    const [formData, setFormData] = useState<EnseignantFormData>(buildFormData(source));
 
     useEffect(() => {
         setFormData(buildFormData(source));
@@ -56,7 +65,7 @@ export function EnseignantFormModal({ mode, enseignant, onSuccess, onCancel }: E
 
     const valider = (): boolean => {
         const nouvellesErreurs: Record<string, string> = {};
-        if (!formData.dateEmbauche) nouvellesErreurs.dateEmbauche = "La date d'entrée est requise";
+        if (!formData.dateEmbauche) nouvellesErreurs.dateEmbauche = t('form.dateEntreeRequise');
         setErreurs(nouvellesErreurs);
         return Object.keys(nouvellesErreurs).length === 0;
     };
@@ -65,10 +74,20 @@ export function EnseignantFormModal({ mode, enseignant, onSuccess, onCancel }: E
         e.preventDefault();
         if (!valider()) return;
         try {
+            const STATUT_MAP: Record<string, 'ACTIF' | 'INACTIF' | 'CONGE'> = {
+                actif: 'ACTIF', inactif: 'INACTIF', en_conge: 'CONGE',
+                ACTIF: 'ACTIF', INACTIF: 'INACTIF', CONGE: 'CONGE',
+            };
+            const dto = {
+                dateEmbauche: formData.dateEmbauche,
+                statut: formData.statut ? STATUT_MAP[formData.statut] : undefined,
+                diplomes: formData.diplomes,
+                specialites: formData.specialitePrincipale ? [formData.specialitePrincipale] : undefined,
+            };
             if (mode === 'creation') {
-                await creerPersonnel.mutateAsync(formData as CreerPersonnelDto);
+                await creerPersonnel.mutateAsync(dto as CreerPersonnelDto);
             } else if (source) {
-                await modifierPersonnel.mutateAsync({ id: source.id, ...formData });
+                await modifierPersonnel.mutateAsync({ id: source.id, ...dto });
             }
             onSuccess();
         } catch (error) {
@@ -77,7 +96,7 @@ export function EnseignantFormModal({ mode, enseignant, onSuccess, onCancel }: E
     };
 
     const handleChange = (field: string, value: string) => {
-        setFormData(prev => ({ ...prev, [field]: value } as Partial<CreerPersonnelDto>));
+        setFormData(prev => ({ ...prev, [field]: value }));
         if (erreurs[field]) {
             setErreurs(prev => {
                 const next = { ...prev };
@@ -91,33 +110,33 @@ export function EnseignantFormModal({ mode, enseignant, onSuccess, onCancel }: E
         <CustomModal
             open={true}
             onOpenChange={(open) => { if (!open) onCancel(); }}
-            title={mode === 'creation' ? 'Ajouter un enseignant' : "Modifier l'enseignant"}
-            description="Renseignez les informations de l'enseignant"
+            title={mode === 'creation' ? t('form.titreCreationEnseignant') : t('form.titreEditionEnseignant')}
+            description={t('form.descriptionEnseignant')}
             size="3xl"
             footer={
                 <>
-                    <ElisaButton variant="outline" onClick={onCancel} type="button">Annuler</ElisaButton>
+                    <ElisaButton variant="outline" onClick={onCancel} type="button">{t('form.annuler')}</ElisaButton>
                     <ElisaButton variant="primary" type="submit" isLoading={isMutating} icon={<Save className="h-4 w-4" />}>
-                        {mode === 'creation' ? 'Ajouter' : 'Enregistrer'}
+                        {mode === 'creation' ? t('form.ajouter') : t('form.enregistrer')}
                     </ElisaButton>
                 </>
             }
         >
             {isFetching ? (
-                <div className="py-12"><LoadingState message="Chargement des données..." /></div>
+                <div className="py-12"><LoadingState message={t('form.chargement')} /></div>
             ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <ElisaSelect label="Statut" value={formData.statut || 'actif'} onValueChange={(value) => handleChange('statut', value)} options={[
-                            { value: 'actif', label: 'Actif' }, { value: 'inactif', label: 'Inactif' },
-                            { value: 'en_conge', label: 'En congé' }, { value: 'demission', label: 'Démission' },
+                        <ElisaSelect label={t('statut')} value={formData.statut || 'actif'} onValueChange={(value) => handleChange('statut', value)} options={[
+                            { value: 'actif', label: t('statuts.actif') }, { value: 'inactif', label: t('statuts.inactif') },
+                            { value: 'en_conge', label: t('statuts.en_conge') }, { value: 'demission', label: t('statuts.demission') },
                         ]} />
-                        <ElisaInput label="Date d'entrée" type="date" value={formData.dateEmbauche || ''} onChange={(e) => handleChange('dateEmbauche', e.target.value)} error={erreurs.dateEmbauche} required />
+                        <ElisaInput label={t('dateEntree')} type="date" value={formData.dateEmbauche || ''} onChange={(e) => handleChange('dateEmbauche', e.target.value)} error={erreurs.dateEmbauche} required />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        <ElisaInput label="Spécialité" value={formData.specialitePrincipale || ''} onChange={(e) => handleChange('specialitePrincipale', e.target.value)} placeholder="Ex: Mathématiques, Français..." />
-                        <ElisaInput label="Qualification" value={formData.diplomes || ''} onChange={(e) => handleChange('diplomes', e.target.value)} placeholder="Ex: Master, Licence..." />
+                        <ElisaInput label={t('form.specialite')} value={formData.specialitePrincipale || ''} onChange={(e) => handleChange('specialitePrincipale', e.target.value)} placeholder={t('form.placeholderSpecialite')} />
+                        <ElisaInput label={t('form.qualification')} value={formData.diplomes || ''} onChange={(e) => handleChange('diplomes', e.target.value)} placeholder={t('form.placeholderQualification')} />
                     </div>
                 </form>
             )}

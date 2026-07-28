@@ -102,17 +102,18 @@ export class ProgrammePedagogiqueService {
         });
         if (!programme) throw new AppError('Programme non trouvé', 404, 'NOT_FOUND');
 
-        // Calcul du volume horaire total depuis MatiereNiveau (source unique)
-        let nbHeures = 0;
+        // Volume horaire total en minutes/semaine depuis MatiereNiveau (source unique)
+        let volumeMinutes = 0;
         for (const m of programme.matieres ?? []) {
             const matiereNiveau = m.matiereNiveau;
             if (matiereNiveau?.volumeHoraire) {
-                nbHeures += matiereNiveau.volumeHoraire;
+                volumeMinutes += matiereNiveau.volumeHoraire;
             }
         }
-        (programme as any).nbHeuresCalculees = nbHeures;
+        const enrichi: ProgrammePedagogique & { volumeMinutesCalcule: number } =
+            Object.assign(programme, { volumeMinutesCalcule: volumeMinutes });
 
-        return programme;
+        return enrichi;
     }
 
     async update(id: string, dto: UpdateProgrammeDto, etablissementId: string, modifiePar?: string): Promise<ProgrammePedagogique> {

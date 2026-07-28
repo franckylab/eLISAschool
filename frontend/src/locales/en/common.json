@@ -196,5 +196,50 @@
         "raccourciConfirmer": "Confirm",
         "sessionExpiree": "Session expired. Please log in again.",
         "tempsFaible": "Time remaining"
+    },
+    "validation": {
+        "timelineLabel": "Validation timeline",
+        "niveau": "Level",
+        "approuve": "Approved",
+        "rejete": "Rejected",
+        "enAttente": "Pending",
+        "roleRequis": "Required role",
+        "nonConfigure": "Not configured",
+        "approuver": "Approve",
+        "rejeter": "Reject",
+        "annulerWorkflow": "Cancel",
+        "confirmerApprobation": "Confirm approval",
+        "confirmerRejet": "Confirm rejection",
+        "messageApprobation": "This will approve the current workflow level.",
+        "messageRejet": "This will reject the workflow. The entity cannot be validated.",
+        "commentaire": "Comment",
+        "commentairePlaceholder": "Explain the reason for your decision...",
+        "aucunNiveau": "No validation levels configured"
+    },
+    "audit": {
+        "timelineLabel": "Audit log",
+        "aucunLog": "No audit trail for this entity",
+        "echec": "Failed",
+        "actions": {
+            "NOTE_CREATE": "Note created",
+            "NOTE_UPDATE": "Note updated",
+            "NOTE_DELETE": "Note deleted",
+            "NOTE_VALIDATE": "Note validated",
+            "BULLETIN_GENERATE": "Report card generated",
+            "BULLETIN_UPDATE": "Report card updated",
+            "BULLETIN_DELETE": "Report card deleted",
+            "BULLETIN_PUBLIER": "Report card published",
+            "BULLETIN_EXPORT": "Report card exported",
+            "PERSONNEL_CREATE": "Staff member created",
+            "PERSONNEL_UPDATE": "Staff member updated",
+            "PERSONNEL_DELETE": "Staff member deleted",
+            "CONTRAT_PERSONNEL_CREATE": "Contract created",
+            "CONTRAT_PERSONNEL_UPDATE": "Contract updated",
+            "CONTRAT_PERSONNEL_DELETE": "Contract deleted",
+            "CRENEAU_CREATE": "Time slot created",
+            "CRENEAU_UPDATE": "Time slot updated",
+            "CRENEAU_DELETE": "Time slot deleted",
+            "CRENEAU_VALIDER": "Time slot validated"
+        }
     }
 }

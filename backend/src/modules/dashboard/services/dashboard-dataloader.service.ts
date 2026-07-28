@@ -121,13 +121,16 @@ export class DashboardDataLoaderService {
 
         // NB: colonnes camelCase quotées (pas de NamingStrategy dans le projet)
         // Statuts comptés unifiés : VALIDEE + PUBLIEE
+        // Moyenne pondérée par le coefficient de chaque note (cohérent avec calculerMoyenne)
         const query = `
             SELECT 
                 ae."classeId",
-                AVG(n.valeur / NULLIF(n.bareme, 0) * 20) as moyenne
+                SUM(n.valeur / NULLIF(n.bareme, 0) * 20 * COALESCE(n.coefficient, 1))
+                    / NULLIF(SUM(COALESCE(n.coefficient, 1)), 0) as moyenne
             FROM notes n
             INNER JOIN affectations_eleves ae ON n."eleveId" = ae."eleveId"
             WHERE ae."classeId" = ANY($1)
+            AND ae.actif = true
             AND ae.statut = 'ACTIVE'
             AND n.statut::text = ANY($2)
             ${periodeId ? 'AND n."periodeId" = $3' : ''}
@@ -145,7 +148,8 @@ export class DashboardDataLoaderService {
         }
 
         for (const row of results) {
-            moyennesMap.set(row.classeId, Math.round(parseFloat(row.moyenne) * 100) / 100);
+            const moyenne = row.moyenne !== null ? parseFloat(row.moyenne) : 0;
+            moyennesMap.set(row.classeId, Math.round(moyenne * 100) / 100);
         }
 
         this.batchCache.set(cacheKey, moyennesMap);
@@ -177,6 +181,7 @@ export class DashboardDataLoaderService {
             .addSelect('COUNT(ae.eleveId)', 'effectif')
             .where('ae.classeId IN (:...classeIds)', { classeIds })
             .andWhere('ae.statut = :statut', { statut: 'ACTIVE' })
+            .andWhere('ae.actif = :actif', { actif: true })
             .groupBy('ae.classeId')
             .getRawMany();
 
