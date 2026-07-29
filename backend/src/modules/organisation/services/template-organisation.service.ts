@@ -16,6 +16,7 @@ import {
 } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { assertNotSystem } from '@common/utils/system-guard.util';
+import { auditService, AuditAction } from '@modules/auth';
 
 class TemplateOrganisationService {
     private repo: Repository<TemplateOrganisation>;
@@ -24,9 +25,20 @@ class TemplateOrganisationService {
         this.repo = AppDataSource.getRepository(TemplateOrganisation);
     }
 
-    async create(dto: CreateTemplateOrganisationDto): Promise<TemplateOrganisation> {
+    async create(dto: CreateTemplateOrganisationDto, utilisateurId?: string): Promise<TemplateOrganisation> {
         const entity = this.repo.create(dto);
-        return this.repo.save(entity);
+        const saved = await this.repo.save(entity);
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.TEMPLATE_ORGANISATION_CREATE,
+            cible: 'TemplateOrganisation',
+            cibleId: saved.id,
+            description: `Création du template d'organisation ${saved.nom}`,
+            nouvellesValeurs: { nom: saved.nom },
+            module: 'organisation',
+            metadata: { entiteLabel: saved.nom },
+        });
+        return saved;
     }
 
     async findAll(etablissementId?: string): Promise<TemplateOrganisation[]> {
@@ -69,17 +81,46 @@ class TemplateOrganisationService {
         return entity;
     }
 
-    async update(id: string, dto: UpdateTemplateOrganisationDto, etablissementId?: string): Promise<TemplateOrganisation> {
+    async update(id: string, dto: UpdateTemplateOrganisationDto, etablissementId?: string, utilisateurId?: string): Promise<TemplateOrganisation> {
         const entity = await this.findById(id, etablissementId);
         assertNotSystem(entity, 'modifier');
+        const anciennesValeurs: Record<string, unknown> = {};
+        const nouvellesValeurs: Record<string, unknown> = {};
+        for (const key of Object.keys(dto)) {
+            anciennesValeurs[key] = (entity as unknown as Record<string, unknown>)[key];
+            nouvellesValeurs[key] = (dto as Record<string, unknown>)[key];
+        }
         Object.assign(entity, dto);
-        return this.repo.save(entity);
+        const updated = await this.repo.save(entity);
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.TEMPLATE_ORGANISATION_UPDATE,
+            cible: 'TemplateOrganisation',
+            cibleId: updated.id,
+            description: `Modification du template d'organisation ${updated.nom}`,
+            anciennesValeurs,
+            nouvellesValeurs,
+            module: 'organisation',
+            metadata: { entiteLabel: updated.nom },
+        });
+        return updated;
     }
 
-    async delete(id: string, etablissementId?: string): Promise<void> {
+    async delete(id: string, etablissementId?: string, utilisateurId?: string): Promise<void> {
         const entity = await this.findById(id, etablissementId);
         assertNotSystem(entity, 'supprimer');
+        const anciennesValeurs = { nom: entity.nom };
         await this.repo.remove(entity);
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.TEMPLATE_ORGANISATION_DELETE,
+            cible: 'TemplateOrganisation',
+            cibleId: id,
+            description: `Suppression du template d'organisation ${anciennesValeurs.nom}`,
+            anciennesValeurs,
+            module: 'organisation',
+            metadata: { entiteLabel: anciennesValeurs.nom },
+        });
     }
 
     /**
@@ -201,6 +242,7 @@ class TemplateOrganisationService {
     async clonerTemplate(
         id: string,
         dto: ClonerTemplateDto,
+        utilisateurId?: string,
     ): Promise<TemplateOrganisation> {
         const original = await this.findById(id);
 
@@ -223,7 +265,20 @@ class TemplateOrganisationService {
             metadata: original.metadata ? { ...original.metadata, clonedFrom: original.id } : { clonedFrom: original.id },
         });
 
-        return this.repo.save(clone);
+        const saved = await this.repo.save(clone);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.TEMPLATE_ORGANISATION_CLONE,
+            cible: 'TemplateOrganisation',
+            cibleId: saved.id,
+            description: `Clonage du template ${original.nom} vers ${saved.nom}`,
+            nouvellesValeurs: { nom: saved.nom, clonedFrom: original.id },
+            module: 'organisation',
+            metadata: { entiteLabel: saved.nom },
+        });
+
+        return saved;
     }
 }
 

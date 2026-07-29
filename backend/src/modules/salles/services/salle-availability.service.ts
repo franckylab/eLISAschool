@@ -63,7 +63,7 @@ export class SalleAvailabilityService {
         conflits.push(...conflitsEDT);
 
         if (options.date) {
-            const conflitsHC = await this.verifierConflitsHeureCours(salleId, options);
+            const conflitsHC = await this.verifierConflitsHeureCours(salleId, { ...options, date: options.date });
             conflits.push(...conflitsHC);
         }
 

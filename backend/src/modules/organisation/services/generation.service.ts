@@ -22,6 +22,7 @@ import {
 import { echelonStructurelService } from './echelon-structurel.service';
 import { niveauResponsabiliteService } from './niveau-responsabilite.service';
 import { organisationService } from './organisation.service';
+import { auditService, AuditAction } from '@modules/auth';
 
 interface GenerationContext {
     etablissementId: string;
@@ -61,9 +62,10 @@ function validerNoeud(noeud: NoeudTemplateOrganisation, chemin: string): void {
 
 export class GenerationService {
 
-    async generer(dto: GenererOrganisationDto, etablissementId: string): Promise<ResultatGeneration> {
+    async generer(dto: GenererOrganisationDto, etablissementId: string, utilisateurId?: string): Promise<ResultatGeneration> {
         // 1. Résoudre la structure
         let structure: NoeudTemplateOrganisation;
+        let templateNom: string | undefined;
         if (dto.templateId) {
             const repo = AppDataSource.getRepository(TemplateOrganisation);
             const template = await repo.findOne({
@@ -73,6 +75,7 @@ export class GenerationService {
                 ],
             });
             if (!template) throw new AppError('Template non trouvé', 404, 'TEMPLATE_NOT_FOUND');
+            templateNom = template.nom;
             structure = template.structure as NoeudTemplateOrganisation;
         } else if (dto.structure) {
             structure = dto.structure as NoeudTemplateOrganisation;
@@ -107,6 +110,23 @@ export class GenerationService {
             // 6. Construire arborescence retour (après commit : buildArborescence
             // utilise une connexion séparée qui ne voit pas la transaction en cours)
             context.result.arborescence = await organisationService.buildArborescence(context_etablissementId);
+
+            await auditService.log({
+                utilisateurId,
+                action: AuditAction.ORGANISATION_GENERATE,
+                cible: 'Etablissement',
+                cibleId: context_etablissementId,
+                description: `Génération organisation${templateNom ? ` depuis template "${templateNom}"` : ''} : ${context.result.unitesCrees} unités, ${context.result.postesCrees} postes, ${context.result.hierarchiesCrees} hiérarchies`,
+                module: 'organisation',
+                metadata: {
+                    entiteLabel: templateNom ?? 'Structure personnalisée',
+                    relations: {
+                        unitesCrees: context.result.unitesCrees,
+                        postesCrees: context.result.postesCrees,
+                        hierarchiesCrees: context.result.hierarchiesCrees,
+                    },
+                },
+            });
 
             return context.result;
         } catch (error) {

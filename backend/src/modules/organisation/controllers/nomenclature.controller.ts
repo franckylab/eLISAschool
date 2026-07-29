@@ -67,7 +67,7 @@ router.post('/echelons-structurels', authMiddleware, requirePermission('organisa
     try {
         const dto = validateDto(createEchelonStructurelSchema, req.body);
         dto.etablissementId = getEtablissementId(req);
-        const created = await echelonStructurelService.create(dto);
+        const created = await echelonStructurelService.create(dto, req.utilisateur?.id);
         res.status(201).json({ success: true, data: created });
     } catch (error) { next(error); }
 });
@@ -83,7 +83,7 @@ router.patch('/echelons-structurels/:id', authMiddleware, requirePermission('org
     try {
         const dto = validateDto(updateEchelonStructurelSchema, req.body);
         delete dto.etablissementId;
-        const updated = await echelonStructurelService.update(req.params.id, dto, getEtablissementId(req));
+        const updated = await echelonStructurelService.update(req.params.id, dto, getEtablissementId(req), req.utilisateur?.id);
         res.json({ success: true, data: updated });
     } catch (error) { next(error); }
 });

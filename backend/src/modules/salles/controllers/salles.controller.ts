@@ -113,7 +113,7 @@ router.get('/:id/classes', authMiddleware, async (req: Request, res: Response, n
 router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createSalleSchema, req.body);
-        const created = await salleService.create(dto, req.utilisateur?.etablissementId!);
+        const created = await salleService.create(dto, req.utilisateur?.etablissementId!, req.utilisateur?.id);
         res.status(201).json({ success: true, data: created });
     } catch (error) {
         next(error);
@@ -123,7 +123,7 @@ router.post('/', authMiddleware, requirePermission('config:edit'), async (req: R
 router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updateSalleSchema, req.body);
-        const updated = await salleService.update(req.params.id, dto, req.utilisateur?.etablissementId!);
+        const updated = await salleService.update(req.params.id, dto, req.utilisateur?.etablissementId!, req.utilisateur?.id);
         res.json({ success: true, data: updated });
     } catch (error) {
         next(error);
@@ -132,7 +132,7 @@ router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (re
 
 router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await salleService.delete(req.params.id, req.utilisateur?.etablissementId!);
+        await salleService.delete(req.params.id, req.utilisateur?.etablissementId!, req.utilisateur?.id);
         res.json({ success: true, message: 'Salle supprimée avec succès' });
     } catch (error) {
         next(error);

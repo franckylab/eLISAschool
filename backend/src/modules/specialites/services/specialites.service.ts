@@ -18,6 +18,7 @@ import { CreateSpecialiteDto, UpdateSpecialiteDto, QuerySpecialitesDto } from '.
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
+import { auditService, AuditAction } from '@modules/auth';
 
 export class SpecialitesService {
     private repo: Repository<Specialite>;
@@ -26,7 +27,7 @@ export class SpecialitesService {
         this.repo = AppDataSource.getRepository(Specialite);
     }
 
-    async create(dto: CreateSpecialiteDto, etablissementId: string): Promise<Specialite> {
+    async create(dto: CreateSpecialiteDto, etablissementId: string, utilisateurId?: string): Promise<Specialite> {
         // Vérifier unicité du code par filière ET établissement
         const existing = await this.repo.findOne({ 
             where: { code: dto.code, filiereId: dto.filiereId, etablissementId } 
@@ -41,6 +42,16 @@ export class SpecialitesService {
         });
         await this.repo.save(specialite);
         logger.info(`Spécialité créée: ${dto.nom} pour établissement ${etablissementId}`);
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.SPECIALITE_CREATE,
+            cible: 'Specialite',
+            cibleId: specialite.id,
+            description: `Création de la spécialité ${specialite.nom} (${specialite.code})`,
+            nouvellesValeurs: { ...dto },
+            module: 'specialites',
+            metadata: { entiteLabel: specialite.nom, entiteRef: specialite.code },
+        });
         return specialite;
     }
 
@@ -99,17 +110,44 @@ export class SpecialitesService {
         return specialite;
     }
 
-    async update(id: string, dto: UpdateSpecialiteDto, etablissementId: string): Promise<Specialite> {
+    async update(id: string, dto: UpdateSpecialiteDto, etablissementId: string, utilisateurId?: string): Promise<Specialite> {
         const specialite = await this.findOne(id, etablissementId);
+        const anciennesValeurs: Record<string, unknown> = {};
+        for (const key of Object.keys(dto)) {
+            anciennesValeurs[key] = (specialite as unknown as Record<string, unknown>)[key];
+        }
         Object.assign(specialite, dto);
         await this.repo.save(specialite);
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.SPECIALITE_UPDATE,
+            cible: 'Specialite',
+            cibleId: specialite.id,
+            description: `Modification de la spécialité ${specialite.nom} (${specialite.code})`,
+            anciennesValeurs,
+            nouvellesValeurs: { ...dto },
+            module: 'specialites',
+            metadata: { entiteLabel: specialite.nom, entiteRef: specialite.code },
+        });
         return specialite;
     }
 
-    async delete(id: string, etablissementId: string): Promise<void> {
+    async delete(id: string, etablissementId: string, utilisateurId?: string): Promise<void> {
         const specialite = await this.findOne(id, etablissementId);
+        const nom = specialite.nom;
+        const code = specialite.code;
         await this.repo.remove(specialite);
         logger.info(`Spécialité supprimée: ${id}`);
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.SPECIALITE_DELETE,
+            cible: 'Specialite',
+            cibleId: id,
+            description: `Suppression de la spécialité ${nom} (${code})`,
+            anciennesValeurs: { nom, code },
+            module: 'specialites',
+            metadata: { entiteLabel: nom, entiteRef: code },
+        });
     }
 }
 

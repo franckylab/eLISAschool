@@ -16,6 +16,7 @@ import { CreateInscriptionOptionDto, UpdateInscriptionOptionDto, QueryInscriptio
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithRepository, PaginatedResult } from '@common/utils/pagination.util';
+import { auditService, AuditAction } from '@modules/auth';
 
 export class InscriptionOptionService {
     private repo: Repository<InscriptionOption>;
@@ -27,7 +28,7 @@ export class InscriptionOptionService {
     /**
      * Créer une nouvelle inscription à une option
      */
-    async create(dto: CreateInscriptionOptionDto, etablissementId: string): Promise<InscriptionOption> {
+    async create(dto: CreateInscriptionOptionDto, etablissementId: string, utilisateurId?: string): Promise<InscriptionOption> {
         // Vérifier qu'une inscription active n'existe pas déjà
         const existing = await this.repo.findOne({
             where: {
@@ -56,6 +57,17 @@ export class InscriptionOptionService {
         await this.repo.save(inscription);
         logger.info(`Inscription option créée: élève ${dto.eleveId} → matière ${dto.matiereId}`);
 
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.INSCRIPTION_OPTION_CREATE,
+            cible: 'InscriptionOption',
+            cibleId: inscription.id,
+            description: `Inscription d'un élève à une matière optionnelle`,
+            nouvellesValeurs: { ...dto },
+            module: 'options',
+            metadata: { relations: { eleve: dto.eleveId, matiere: dto.matiereId } },
+        });
+
         return inscription;
     }
 
@@ -82,14 +94,15 @@ export class InscriptionOptionService {
         });
 
         return {
-            data,
-            pagination: {
-                page: dto.page,
-                limit: dto.limit,
-                total,
+            items: data,
+            meta: {
+                currentPage: dto.page,
+                itemsPerPage: dto.limit,
+                totalItems: total,
                 totalPages: Math.ceil(total / dto.limit),
-                hasNext: dto.page * dto.limit < total,
-                hasPrev: dto.page > 1,
+                itemCount: data.length,
+                hasNextPage: dto.page * dto.limit < total,
+                hasPreviousPage: dto.page > 1,
             },
         };
     }
@@ -132,7 +145,7 @@ export class InscriptionOptionService {
     /**
      * Mettre à jour une inscription
      */
-    async update(id: string, dto: UpdateInscriptionOptionDto, etablissementId: string): Promise<InscriptionOption> {
+    async update(id: string, dto: UpdateInscriptionOptionDto, etablissementId: string, utilisateurId?: string): Promise<InscriptionOption> {
         const inscription = await this.findOne(id, etablissementId);
 
         // Si abandon, définir la date
@@ -140,29 +153,65 @@ export class InscriptionOptionService {
             dto.dateAbandon = new Date().toISOString().split('T')[0];
         }
 
+        const anciennesValeurs: Record<string, unknown> = {};
+        for (const key of Object.keys(dto)) {
+            anciennesValeurs[key] = (inscription as unknown as Record<string, unknown>)[key];
+        }
+
         Object.assign(inscription, dto);
         await this.repo.save(inscription);
 
         logger.info(`Inscription option mise à jour: ${id} → statut ${dto.statut || inscription.statut}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.INSCRIPTION_OPTION_UPDATE,
+            cible: 'InscriptionOption',
+            cibleId: inscription.id,
+            description: `Mise à jour d'une inscription à une matière optionnelle`,
+            anciennesValeurs,
+            nouvellesValeurs: { ...dto },
+            module: 'options',
+            metadata: { relations: { eleve: inscription.eleveId, matiere: inscription.matiereId } },
+        });
+
         return inscription;
     }
 
     /**
      * Valider ou refuser une inscription
      */
-    async valider(id: string, estValidée: boolean, commentaire?: string, etablissementId?: string): Promise<InscriptionOption> {
+    async valider(id: string, estValidée: boolean, commentaire?: string, etablissementId?: string, utilisateurId?: string): Promise<InscriptionOption> {
         const inscription = await this.findOne(id, etablissementId!);
+
+        const anciennesValeurs = {
+            estValidée: inscription.estValidée,
+            statut: inscription.statut,
+            motifAbandon: inscription.motifAbandon,
+        };
 
         inscription.estValidée = estValidée;
         if (estValidée && inscription.statut === StatutOption.EN_ATTENTE) {
             inscription.statut = StatutOption.ACTIVE;
         }
         if (commentaire) {
-            inscription.commentaire = commentaire;
+            inscription.motifAbandon = commentaire;
         }
 
         await this.repo.save(inscription);
         logger.info(`Inscription option ${estValidée ? 'validée' : 'refusée'}: ${id}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.INSCRIPTION_OPTION_VALIDATE,
+            cible: 'InscriptionOption',
+            cibleId: inscription.id,
+            description: `Inscription à une matière optionnelle ${estValidée ? 'validée' : 'refusée'}`,
+            anciennesValeurs,
+            nouvellesValeurs: { estValidée, commentaire, statut: inscription.statut },
+            module: 'options',
+            metadata: { relations: { eleve: inscription.eleveId, matiere: inscription.matiereId } },
+        });
 
         return inscription;
     }
@@ -170,13 +219,31 @@ export class InscriptionOptionService {
     /**
      * Supprimer une inscription (soft delete via statut)
      */
-    async delete(id: string, etablissementId: string): Promise<void> {
+    async delete(id: string, etablissementId: string, utilisateurId?: string): Promise<void> {
         const inscription = await this.findOne(id, etablissementId);
+
+        const anciennesValeurs = {
+            statut: inscription.statut,
+            dateAbandon: inscription.dateAbandon,
+        };
+
         inscription.statut = StatutOption.ABANDONNEE;
         inscription.dateAbandon = new Date();
         await this.repo.save(inscription);
 
         logger.info(`Inscription option supprimée: ${id}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.INSCRIPTION_OPTION_DELETE,
+            cible: 'InscriptionOption',
+            cibleId: inscription.id,
+            description: `Abandon d'une inscription à une matière optionnelle (soft delete)`,
+            anciennesValeurs,
+            nouvellesValeurs: { statut: StatutOption.ABANDONNEE },
+            module: 'options',
+            metadata: { relations: { eleve: inscription.eleveId, matiere: inscription.matiereId } },
+        });
     }
 
     /**

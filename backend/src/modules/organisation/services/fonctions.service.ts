@@ -7,6 +7,7 @@ import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 import { assertNotSystem } from '@common/utils/system-guard.util';
+import { auditService, AuditAction } from '@modules/auth';
 
 export class FonctionsService {
     private repo: Repository<Fonction>;
@@ -29,7 +30,7 @@ export class FonctionsService {
         });
     }
 
-    async create(dto: CreateFonctionDto, etablissementId: string): Promise<Fonction> {
+    async create(dto: CreateFonctionDto, etablissementId: string, utilisateurId?: string): Promise<Fonction> {
         const existing = await this.repo.findOne({
             where: { code: dto.code, etablissementId },
         });
@@ -65,6 +66,18 @@ export class FonctionsService {
         await this.repo.save(fonction);
 
         logger.info(`Fonction créée: ${dto.nom} (${dto.code}) pour établissement ${etablissementId}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.FONCTION_CREATE,
+            cible: 'Fonction',
+            cibleId: fonction.id,
+            description: `Création de la fonction ${fonction.nom} (${fonction.code})`,
+            nouvellesValeurs: { nom: dto.nom, code: dto.code, parentId: dto.parentId, categorie: dto.categorie },
+            module: 'organisation',
+            metadata: { entiteLabel: fonction.nom, entiteRef: fonction.code },
+        });
+
         return fonction;
     }
 
@@ -147,7 +160,7 @@ export class FonctionsService {
         return fonction;
     }
 
-    async update(id: string, dto: UpdateFonctionDto, etablissementId: string): Promise<Fonction> {
+    async update(id: string, dto: UpdateFonctionDto, etablissementId: string, utilisateurId?: string): Promise<Fonction> {
         const fonction = await this.findOne(id, etablissementId);
 
         if (dto.code && dto.code !== fonction.code) {
@@ -157,6 +170,13 @@ export class FonctionsService {
             if (existing && existing.id !== id) {
                 throw new AppError('Une fonction avec ce code existe déjà', 409, 'FONCTION_EXISTS');
             }
+        }
+
+        const anciennesValeurs: Record<string, unknown> = {};
+        const nouvellesValeurs: Record<string, unknown> = {};
+        for (const key of Object.keys(dto)) {
+            anciennesValeurs[key] = (fonction as unknown as Record<string, unknown>)[key];
+            nouvellesValeurs[key] = (dto as Record<string, unknown>)[key];
         }
 
         if (dto.parentId !== undefined && dto.parentId !== fonction.parentId) {
@@ -185,6 +205,19 @@ export class FonctionsService {
 
         await this.repo.save(fonction);
         logger.info(`Fonction modifiée: ${fonction.nom}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.FONCTION_UPDATE,
+            cible: 'Fonction',
+            cibleId: fonction.id,
+            description: `Modification de la fonction ${fonction.nom} (${fonction.code})`,
+            anciennesValeurs,
+            nouvellesValeurs,
+            module: 'organisation',
+            metadata: { entiteLabel: fonction.nom, entiteRef: fonction.code },
+        });
+
         return fonction;
     }
 
@@ -212,7 +245,7 @@ export class FonctionsService {
         return (result[0]?.cnt || 0) > 0;
     }
 
-    async delete(id: string, etablissementId: string): Promise<void> {
+    async delete(id: string, etablissementId: string, utilisateurId?: string): Promise<void> {
         const fonction = await this.findOne(id, etablissementId);
         assertNotSystem(fonction, 'supprimer');
 
@@ -221,8 +254,21 @@ export class FonctionsService {
             throw new AppError('Impossible de supprimer: cette fonction a des sous-fonctions', 400, 'HAS_CHILDREN');
         }
 
+        const anciennesValeurs = { nom: fonction.nom, code: fonction.code, parentId: fonction.parentId };
+
         await this.repo.remove(fonction);
-        logger.info(`Fonction supprimée: ${fonction.nom}`);
+        logger.info(`Fonction supprimée: ${anciennesValeurs.nom}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.FONCTION_DELETE,
+            cible: 'Fonction',
+            cibleId: id,
+            description: `Suppression de la fonction ${anciennesValeurs.nom} (${anciennesValeurs.code})`,
+            anciennesValeurs,
+            module: 'organisation',
+            metadata: { entiteLabel: anciennesValeurs.nom, entiteRef: anciennesValeurs.code },
+        });
     }
 }
 

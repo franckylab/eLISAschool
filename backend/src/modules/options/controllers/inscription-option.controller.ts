@@ -55,7 +55,7 @@ router.get('/inscriptions/:id', authMiddleware, async (req: Request, res: Respon
 router.post('/inscriptions', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createInscriptionOptionSchema, req.body);
-        const created = await inscriptionOptionService.create(dto, req.utilisateur?.etablissementId);
+        const created = await inscriptionOptionService.create(dto, req.utilisateur?.etablissementId!, req.utilisateur?.id);
         res.status(201).json({ success: true, data: created });
     } catch (error) {
         next(error);
@@ -66,7 +66,7 @@ router.post('/inscriptions', authMiddleware, requirePermission('config:edit'), a
 router.patch('/inscriptions/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(updateInscriptionOptionSchema, req.body);
-        const updated = await inscriptionOptionService.update(req.params.id, dto, req.utilisateur?.etablissementId);
+        const updated = await inscriptionOptionService.update(req.params.id, dto, req.utilisateur?.etablissementId!, req.utilisateur?.id);
         res.json({ success: true, data: updated });
     } catch (error) {
         next(error);
@@ -76,7 +76,7 @@ router.patch('/inscriptions/:id', authMiddleware, requirePermission('config:edit
 // DELETE /api/options/inscriptions/:id - Supprimer (abandonner)
 router.delete('/inscriptions/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await inscriptionOptionService.delete(req.params.id, req.utilisateur?.etablissementId);
+        await inscriptionOptionService.delete(req.params.id, req.utilisateur?.etablissementId!, req.utilisateur?.id);
         res.json({ success: true, message: 'Option abandonnée' });
     } catch (error) {
         next(error);
@@ -116,7 +116,8 @@ router.post('/inscriptions/:id/valider', authMiddleware, requirePermission('conf
             req.params.id,
             dto.estValidée,
             dto.commentaire,
-            req.utilisateur?.etablissementId
+            req.utilisateur?.etablissementId,
+            req.utilisateur?.id
         );
         res.json({ success: true, data: updated });
     } catch (error) {

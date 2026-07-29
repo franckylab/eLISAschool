@@ -11,13 +11,15 @@
  * - Isolation totale des données entre établissements
  */
 
-import { Repository } from 'typeorm';
+import { Repository, FindOptionsWhere } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
+import { SousSysteme } from '@modules/etablissement/entities';
 import { Filiere } from '../entities';
 import { CreateFiliereDto, UpdateFiliereDto, QueryFilieresDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
+import { auditService, AuditAction } from '@modules/auth';
 
 export class FilieresService {
     private repo: Repository<Filiere>;
@@ -26,7 +28,7 @@ export class FilieresService {
         this.repo = AppDataSource.getRepository(Filiere);
     }
 
-    async create(dto: CreateFiliereDto, etablissementId: string): Promise<Filiere> {
+    async create(dto: CreateFiliereDto, etablissementId: string, utilisateurId?: string): Promise<Filiere> {
         // Vérifier unicité du code pour un cycle ET établissement donnés
         const existing = await this.repo.findOne({ 
             where: { code: dto.code, cycleId: dto.cycleId, etablissementId } 
@@ -37,10 +39,21 @@ export class FilieresService {
 
         const filiere = this.repo.create({
             ...dto,
+            sousSysteme: dto.sousSysteme as SousSysteme,
             etablissementId,
         });
         await this.repo.save(filiere);
         logger.info(`Filière créée: ${dto.nom} (${dto.code}) pour établissement ${etablissementId}`);
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.FILIERE_CREATE,
+            cible: 'Filiere',
+            cibleId: filiere.id,
+            description: `Création de la filière ${filiere.nom} (${filiere.code})`,
+            nouvellesValeurs: { ...dto },
+            module: 'filieres',
+            metadata: { entiteLabel: filiere.nom, entiteRef: filiere.code },
+        });
         return filiere;
     }
 
@@ -75,7 +88,7 @@ export class FilieresService {
     }
 
     async findAllSimple(cycleId: string | undefined, etablissementId: string): Promise<Filiere[]> {
-        const where: any = { etablissementId };
+        const where: FindOptionsWhere<Filiere> = { etablissementId };
         if (cycleId) {
             where.cycleId = cycleId;
         }
@@ -93,7 +106,7 @@ export class FilieresService {
         return filiere;
     }
 
-    async update(id: string, dto: UpdateFiliereDto, etablissementId: string): Promise<Filiere> {
+    async update(id: string, dto: UpdateFiliereDto, etablissementId: string, utilisateurId?: string): Promise<Filiere> {
         const filiere = await this.findOne(id, etablissementId);
 
         // Vérifier unicité du code si modifié
@@ -107,16 +120,43 @@ export class FilieresService {
             }
         }
 
+        const anciennesValeurs: Record<string, unknown> = {};
+        for (const key of Object.keys(dto)) {
+            anciennesValeurs[key] = (filiere as unknown as Record<string, unknown>)[key];
+        }
         Object.assign(filiere, dto);
         await this.repo.save(filiere);
         logger.info(`Filière modifiée: ${filiere.nom}`);
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.FILIERE_UPDATE,
+            cible: 'Filiere',
+            cibleId: filiere.id,
+            description: `Modification de la filière ${filiere.nom} (${filiere.code})`,
+            anciennesValeurs,
+            nouvellesValeurs: { ...dto },
+            module: 'filieres',
+            metadata: { entiteLabel: filiere.nom, entiteRef: filiere.code },
+        });
         return filiere;
     }
 
-    async delete(id: string, etablissementId: string): Promise<void> {
+    async delete(id: string, etablissementId: string, utilisateurId?: string): Promise<void> {
         const filiere = await this.findOne(id, etablissementId);
+        const nom = filiere.nom;
+        const code = filiere.code;
         await this.repo.remove(filiere);
-        logger.info(`Filière supprimée: ${filiere.nom}`);
+        logger.info(`Filière supprimée: ${nom}`);
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.FILIERE_DELETE,
+            cible: 'Filiere',
+            cibleId: id,
+            description: `Suppression de la filière ${nom} (${code})`,
+            anciennesValeurs: { nom, code },
+            module: 'filieres',
+            metadata: { entiteLabel: nom, entiteRef: code },
+        });
     }
 }
 

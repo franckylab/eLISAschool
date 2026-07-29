@@ -46,7 +46,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
 router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createNiveauSchema, req.body);
-        const niveau = await niveauxService.create(dto, req.etablissementId!);
+        const niveau = await niveauxService.create(dto, req.etablissementId!, req.utilisateur?.id);
         res.status(201).json({ success: true, data: niveau });
     } catch (error) { next(error); }
 });
@@ -54,14 +54,14 @@ router.post('/', authMiddleware, requirePermission('config:edit'), async (req: R
 router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateNiveauSchema, req.body);
-        const niveau = await niveauxService.update(req.params.id, dto, req.etablissementId!);
+        const niveau = await niveauxService.update(req.params.id, dto, req.etablissementId!, req.utilisateur?.id);
         res.json({ success: true, data: niveau });
     } catch (error) { next(error); }
 });
 
 router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await niveauxService.delete(req.params.id, req.etablissementId!);
+        await niveauxService.delete(req.params.id, req.etablissementId!, req.utilisateur?.id);
         res.json({ success: true, message: 'Niveau supprimé' });
     } catch (error) { next(error); }
 });

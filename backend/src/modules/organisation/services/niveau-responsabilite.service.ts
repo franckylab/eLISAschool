@@ -11,6 +11,7 @@ import { NiveauResponsabilite } from '../entities';
 import { CreateNiveauResponsabiliteDto, UpdateNiveauResponsabiliteDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { assertNotSystem } from '@common/utils/system-guard.util';
+import { auditService, AuditAction } from '@modules/auth';
 
 class NiveauResponsabiliteService {
     private repo: Repository<NiveauResponsabilite>;
@@ -19,11 +20,22 @@ class NiveauResponsabiliteService {
         this.repo = AppDataSource.getRepository(NiveauResponsabilite);
     }
 
-    async create(dto: CreateNiveauResponsabiliteDto): Promise<NiveauResponsabilite> {
+    async create(dto: CreateNiveauResponsabiliteDto, utilisateurId?: string): Promise<NiveauResponsabilite> {
         const existing = await this.repo.findOne({ where: { code: dto.code, etablissementId: dto.etablissementId ?? undefined } });
         if (existing) throw new AppError('Ce code de niveau existe déjà', 409, 'NIVEAU_RESP_CODE_EXISTS');
         const entity = this.repo.create(dto);
-        return this.repo.save(entity);
+        const saved = await this.repo.save(entity);
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.NIVEAU_RESPONSABILITE_CREATE,
+            cible: 'NiveauResponsabilite',
+            cibleId: saved.id,
+            description: `Création du niveau de responsabilité ${saved.label} (${saved.code})`,
+            nouvellesValeurs: { label: dto.label, code: dto.code, niveau: dto.niveau },
+            module: 'organisation',
+            metadata: { entiteLabel: saved.label, entiteRef: saved.code },
+        });
+        return saved;
     }
 
     async findAll(etablissementId?: string): Promise<NiveauResponsabilite[]> {
@@ -65,17 +77,46 @@ class NiveauResponsabiliteService {
         return entity;
     }
 
-    async update(id: string, dto: UpdateNiveauResponsabiliteDto, etablissementId?: string): Promise<NiveauResponsabilite> {
+    async update(id: string, dto: UpdateNiveauResponsabiliteDto, etablissementId?: string, utilisateurId?: string): Promise<NiveauResponsabilite> {
         const entity = await this.findById(id, etablissementId);
         assertNotSystem(entity, 'modifier');
+        const anciennesValeurs: Record<string, unknown> = {};
+        const nouvellesValeurs: Record<string, unknown> = {};
+        for (const key of Object.keys(dto)) {
+            anciennesValeurs[key] = (entity as unknown as Record<string, unknown>)[key];
+            nouvellesValeurs[key] = (dto as Record<string, unknown>)[key];
+        }
         Object.assign(entity, dto);
-        return this.repo.save(entity);
+        const saved = await this.repo.save(entity);
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.NIVEAU_RESPONSABILITE_UPDATE,
+            cible: 'NiveauResponsabilite',
+            cibleId: saved.id,
+            description: `Modification du niveau de responsabilité ${saved.label} (${saved.code})`,
+            anciennesValeurs,
+            nouvellesValeurs,
+            module: 'organisation',
+            metadata: { entiteLabel: saved.label, entiteRef: saved.code },
+        });
+        return saved;
     }
 
-    async delete(id: string, etablissementId?: string): Promise<void> {
+    async delete(id: string, etablissementId?: string, utilisateurId?: string): Promise<void> {
         const entity = await this.findById(id, etablissementId);
         assertNotSystem(entity, 'supprimer');
+        const anciennesValeurs = { label: entity.label, code: entity.code, niveau: entity.niveau };
         await this.repo.remove(entity);
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.NIVEAU_RESPONSABILITE_DELETE,
+            cible: 'NiveauResponsabilite',
+            cibleId: id,
+            description: `Suppression du niveau de responsabilité ${anciennesValeurs.label} (${anciennesValeurs.code})`,
+            anciennesValeurs,
+            module: 'organisation',
+            metadata: { entiteLabel: anciennesValeurs.label, entiteRef: anciennesValeurs.code },
+        });
     }
 }
 

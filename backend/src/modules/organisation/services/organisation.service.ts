@@ -37,6 +37,7 @@ import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { redisService } from '@common/services/redis.service';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
+import { auditService, AuditAction } from '@modules/auth';
 
 /**
  * Noeud d'arborescence organisationnelle (type récursif)
@@ -160,7 +161,7 @@ export class OrganisationService {
 
     // ==================== UNITÉS ORGANISATIONNELLES ====================
 
-    async createUnite(dto: CreateUniteOrganisationnelleDto): Promise<UniteOrganisationnelle> {
+    async createUnite(dto: CreateUniteOrganisationnelleDto, utilisateurId?: string): Promise<UniteOrganisationnelle> {
         // Vérifier l'unicité du code au sein de l'établissement
         const existing = await this.uniteRepo.findOne({
             where: {
@@ -202,6 +203,18 @@ export class OrganisationService {
 
         const saved = await this.uniteRepo.save(unite);
         logger.info(`Unité organisationnelle créée: ${saved.nom}`, { uniteId: saved.id });
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.UNITE_CREATE,
+            cible: 'UniteOrganisationnelle',
+            cibleId: saved.id,
+            description: `Création de l'unité organisationnelle ${saved.nom} (${saved.code})`,
+            nouvellesValeurs: { nom: saved.nom, code: saved.code, echelonStructurelId: saved.echelonStructurelId, parentId: saved.parentId },
+            module: 'organisation',
+            metadata: { entiteLabel: saved.nom, entiteRef: saved.code },
+        });
+
         return saved;
     }
 
@@ -292,7 +305,7 @@ export class OrganisationService {
         return unite;
     }
 
-    async updateUnite(id: string, dto: UpdateUniteOrganisationnelleDto, etablissementId?: string): Promise<UniteOrganisationnelle> {
+    async updateUnite(id: string, dto: UpdateUniteOrganisationnelleDto, etablissementId?: string, utilisateurId?: string): Promise<UniteOrganisationnelle> {
         const unite = await this.findUniteById(id, etablissementId);
         const ancienEtablissementId = unite.etablissementId;
 
@@ -336,10 +349,29 @@ export class OrganisationService {
             }
         }
         
+        const anciennesValeurs: Record<string, unknown> = {};
+        const nouvellesValeurs: Record<string, unknown> = {};
+        for (const key of Object.keys(dto)) {
+            anciennesValeurs[key] = (unite as unknown as Record<string, unknown>)[key];
+            nouvellesValeurs[key] = (dto as unknown as Record<string, unknown>)[key];
+        }
+
         Object.assign(unite, dto);
         const updated = await this.uniteRepo.save(unite);
         logger.info(`Unité modifiée: ${updated.nom}`, { uniteId: updated.id });
-        
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.UNITE_UPDATE,
+            cible: 'UniteOrganisationnelle',
+            cibleId: updated.id,
+            description: `Modification de l'unité organisationnelle ${updated.nom} (${updated.code})`,
+            anciennesValeurs,
+            nouvellesValeurs,
+            module: 'organisation',
+            metadata: { entiteLabel: updated.nom, entiteRef: updated.code },
+        });
+
         // Invalider le cache
         await this.invalidateArborescenceCache(ancienEtablissementId);
         
@@ -357,9 +389,10 @@ export class OrganisationService {
      * - unites_organisationnelles.parentId → ON DELETE SET NULL : les enfants ne sont PAS
      *   supprimés en cascade DB, d'où la suppression explicite de toute la descendance.
      */
-    async deleteUnite(id: string, etablissementId?: string): Promise<void> {
+    async deleteUnite(id: string, etablissementId?: string, utilisateurId?: string): Promise<void> {
         const unite = await this.findUniteById(id, etablissementId);
         const uniteEtablissementId = unite.etablissementId;
+        let unitesSupprimees = 0;
 
         const queryRunner = AppDataSource.createQueryRunner();
         await queryRunner.connect();
@@ -378,6 +411,7 @@ export class OrganisationService {
                 SELECT id FROM desc_tree
             `, [id]);
             const familleIds: string[] = familleRows.map((r: { id: string }) => r.id);
+            unitesSupprimees = familleIds.length;
 
             // 2. Supprimer toute la famille d'unités.
             //    Les postes sont supprimés en cascade (FK ON DELETE CASCADE) et
@@ -399,6 +433,17 @@ export class OrganisationService {
             await queryRunner.release();
         }
 
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.UNITE_DELETE,
+            cible: 'UniteOrganisationnelle',
+            cibleId: id,
+            description: `Suppression en cascade de l'unité organisationnelle ${unite.nom} (${unite.code})`,
+            anciennesValeurs: { nom: unite.nom, code: unite.code, parentId: unite.parentId },
+            module: 'organisation',
+            metadata: { entiteLabel: unite.nom, entiteRef: unite.code, unitesSupprimees },
+        });
+
         // Invalider le cache
         await this.invalidateArborescenceCache(uniteEtablissementId);
     }
@@ -413,7 +458,7 @@ export class OrganisationService {
      * Réordonne une unité après une autre dans la liste des siblings.
      * Met à jour les champs `ordre` de tous les siblings.
      */
-    async reordonnerUnite(uniteId: string, apresId: string | null, etablissementId?: string): Promise<void> {
+    async reordonnerUnite(uniteId: string, apresId: string | null, etablissementId?: string, utilisateurId?: string): Promise<void> {
         const where: FindOptionsWhere<UniteOrganisationnelle> = { id: uniteId };
         if (etablissementId) where.etablissementId = etablissementId;
         const unite = await this.uniteRepo.findOne({ where });
@@ -457,6 +502,18 @@ export class OrganisationService {
         );
 
         logger.info(`Unité réordonnée: ${uniteId} après ${apresId || 'null'}`, { uniteId, apresId });
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.UNITE_UPDATE,
+            cible: 'UniteOrganisationnelle',
+            cibleId: uniteId,
+            description: `Réordonnancement de l'unité organisationnelle ${unite.nom} (${unite.code})`,
+            nouvellesValeurs: { apresId },
+            module: 'organisation',
+            metadata: { entiteLabel: unite.nom, entiteRef: unite.code },
+        });
+
         await this.invalidateArborescenceCache(unite.etablissementId);
     }
 
@@ -583,7 +640,7 @@ export class OrganisationService {
 
     // ==================== HIERARCHIE PERSONNEL ====================
 
-    async createHierarchie(dto: CreateHierarchiePersonnelDto): Promise<HierarchiePersonnel> {
+    async createHierarchie(dto: CreateHierarchiePersonnelDto, utilisateurId?: string): Promise<HierarchiePersonnel> {
         // Vérifier qu'il n'y a pas de cycle hiérarchique (personne → personne)
         if (dto.personnelId && dto.superieurId) {
             await this.verifierPasDeCycle(dto.personnelId, dto.superieurId, dto.etablissementId || '');
@@ -614,6 +671,30 @@ export class OrganisationService {
             superieurId: saved.superieurId,
             posteId: saved.posteId,
             superieurPosteId: saved.superieurPosteId,
+        });
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.HIERARCHIE_CREATE,
+            cible: 'HierarchiePersonnel',
+            cibleId: saved.id,
+            description: `Création d'une relation hiérarchique ${saved.typeRelation} (${saved.posteId ? 'poste → poste' : 'personne → personne'})`,
+            nouvellesValeurs: {
+                personnelId: saved.personnelId,
+                superieurId: saved.superieurId,
+                posteId: saved.posteId,
+                superieurPosteId: saved.superieurPosteId,
+                typeRelation: saved.typeRelation,
+            },
+            module: 'organisation',
+            metadata: {
+                entiteLabel: `Relation ${saved.typeRelation}`,
+                relations: {
+                    personnelId: saved.personnelId,
+                    superieurId: saved.superieurId,
+                    posteId: saved.posteId,
+                    superieurPosteId: saved.superieurPosteId,
+                },
+            },
         });
         return saved;
     }
@@ -764,7 +845,7 @@ export class OrganisationService {
         });
     }
 
-    async updateHierarchie(id: string, dto: UpdateHierarchiePersonnelDto, etablissementId?: string): Promise<HierarchiePersonnel> {
+    async updateHierarchie(id: string, dto: UpdateHierarchiePersonnelDto, etablissementId?: string, utilisateurId?: string): Promise<HierarchiePersonnel> {
         const where: FindOptionsWhere<HierarchiePersonnel> = { id };
         if (etablissementId) where.etablissementId = etablissementId;
         const hierarchie = await this.hierarchieRepo.findOne({ where });
@@ -783,13 +864,33 @@ export class OrganisationService {
             }
         }
 
+        const anciennesValeurs: Record<string, unknown> = {};
+        const nouvellesValeurs: Record<string, unknown> = {};
+        for (const key of Object.keys(dto)) {
+            anciennesValeurs[key] = (hierarchie as unknown as Record<string, unknown>)[key];
+            nouvellesValeurs[key] = (dto as unknown as Record<string, unknown>)[key];
+        }
+
         Object.assign(hierarchie, dto);
         const updated = await this.hierarchieRepo.save(hierarchie);
         logger.info(`Relation hiérarchique modifiée`, { hierarchieId: updated.id });
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.HIERARCHIE_UPDATE,
+            cible: 'HierarchiePersonnel',
+            cibleId: updated.id,
+            description: `Modification de la relation hiérarchique ${updated.typeRelation}`,
+            anciennesValeurs,
+            nouvellesValeurs,
+            module: 'organisation',
+            metadata: { entiteLabel: `Relation ${updated.typeRelation}` },
+        });
+
         return updated;
     }
 
-    async deleteHierarchie(id: string, etablissementId?: string): Promise<void> {
+    async deleteHierarchie(id: string, etablissementId?: string, utilisateurId?: string): Promise<void> {
         const where: FindOptionsWhere<HierarchiePersonnel> = { id };
         if (etablissementId) where.etablissementId = etablissementId;
         const hierarchie = await this.hierarchieRepo.findOne({ where });
@@ -800,6 +901,23 @@ export class OrganisationService {
         hierarchie.actif = false;
         await this.hierarchieRepo.save(hierarchie);
         logger.info(`Relation hiérarchique supprimée`, { hierarchieId: id });
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.HIERARCHIE_DELETE,
+            cible: 'HierarchiePersonnel',
+            cibleId: id,
+            description: `Désactivation (soft delete) de la relation hiérarchique ${hierarchie.typeRelation}`,
+            anciennesValeurs: {
+                personnelId: hierarchie.personnelId,
+                superieurId: hierarchie.superieurId,
+                posteId: hierarchie.posteId,
+                superieurPosteId: hierarchie.superieurPosteId,
+                typeRelation: hierarchie.typeRelation,
+            },
+            module: 'organisation',
+            metadata: { entiteLabel: `Relation ${hierarchie.typeRelation}` },
+        });
     }
 
     // ==================== STATISTIQUES ET ANALYSES ====================
@@ -1174,7 +1292,8 @@ export class OrganisationService {
      */
     async creerUniteAvecPostes(
         dto: CreateUniteOrganisationnelleDto,
-        postes: Array<{ intitule: string; code?: string; fonctionId?: string; description?: string; estSuppleant?: boolean }>
+        postes: Array<{ intitule: string; code?: string; fonctionId?: string; description?: string; estSuppleant?: boolean }>,
+        utilisateurId?: string
     ): Promise<UniteOrganisationnelle> {
         const queryRunner = AppDataSource.createQueryRunner();
         await queryRunner.connect();

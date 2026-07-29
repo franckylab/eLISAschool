@@ -31,7 +31,7 @@ router.post('/hierarchie', authMiddleware, requirePermission('organisation:hiera
     try {
         const dto = validateDto(createHierarchiePersonnelSchema, req.body);
         dto.etablissementId = getEtablissementId(req);
-        const created = await organisationService.createHierarchie(dto);
+        const created = await organisationService.createHierarchie(dto, req.utilisateur?.id);
         res.status(201).json({ success: true, data: created });
     } catch (error) { next(error); }
 });
@@ -39,14 +39,14 @@ router.post('/hierarchie', authMiddleware, requirePermission('organisation:hiera
 router.patch('/hierarchie/:id', authMiddleware, requirePermission('organisation:hierarchie:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateHierarchiePersonnelSchema, req.body);
-        const updated = await organisationService.updateHierarchie(req.params.id, dto, getEtablissementId(req));
+        const updated = await organisationService.updateHierarchie(req.params.id, dto, getEtablissementId(req), req.utilisateur?.id);
         res.json({ success: true, data: updated });
     } catch (error) { next(error); }
 });
 
 router.delete('/hierarchie/:id', authMiddleware, requirePermission('organisation:hierarchie:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await organisationService.deleteHierarchie(req.params.id, getEtablissementId(req));
+        await organisationService.deleteHierarchie(req.params.id, getEtablissementId(req), req.utilisateur?.id);
         res.json({ success: true, message: 'Relation hiérarchique supprimée' });
     } catch (error) { next(error); }
 });

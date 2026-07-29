@@ -16,6 +16,7 @@ import { CreateCycleDto, UpdateCycleDto, QueryCyclesDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
+import { auditService, AuditAction } from '@modules/auth';
 
 export class CyclesService {
     private repo: Repository<Cycle>;
@@ -24,7 +25,7 @@ export class CyclesService {
         this.repo = AppDataSource.getRepository(Cycle);
     }
 
-    async create(dto: CreateCycleDto, etablissementId: string): Promise<Cycle> {
+    async create(dto: CreateCycleDto, etablissementId: string, utilisateurId?: string): Promise<Cycle> {
         const existing = await this.repo.findOne({ where: { code: dto.code, etablissementId } });
         if (existing) {
             throw new AppError('Un cycle avec ce code existe déjà pour cet établissement', 409, 'CYCLE_EXISTS');
@@ -33,6 +34,18 @@ export class CyclesService {
         const cycle = this.repo.create({ ...dto, etablissementId });
         await this.repo.save(cycle);
         logger.info(`Cycle créé: ${dto.nom} (${dto.code}) pour établissement ${etablissementId}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.CYCLE_CREATE,
+            cible: 'Cycle',
+            cibleId: cycle.id,
+            description: `Création du cycle ${cycle.nom} (${cycle.code})`,
+            nouvellesValeurs: { ...dto },
+            module: 'cycles',
+            metadata: { entiteLabel: cycle.nom, entiteRef: cycle.code },
+        });
+
         return cycle;
     }
 
@@ -73,17 +86,49 @@ export class CyclesService {
         return cycle;
     }
 
-    async update(id: string, dto: UpdateCycleDto, etablissementId: string): Promise<Cycle> {
+    async update(id: string, dto: UpdateCycleDto, etablissementId: string, utilisateurId?: string): Promise<Cycle> {
         const cycle = await this.findOne(id, etablissementId);
+
+        const anciennesValeurs: Record<string, unknown> = {};
+        for (const key of Object.keys(dto)) {
+            anciennesValeurs[key] = (cycle as unknown as Record<string, unknown>)[key];
+        }
+
         Object.assign(cycle, dto);
         await this.repo.save(cycle);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.CYCLE_UPDATE,
+            cible: 'Cycle',
+            cibleId: cycle.id,
+            description: `Modification du cycle ${cycle.nom} (${cycle.code})`,
+            anciennesValeurs,
+            nouvellesValeurs: { ...dto },
+            module: 'cycles',
+            metadata: { entiteLabel: cycle.nom, entiteRef: cycle.code },
+        });
+
         return cycle;
     }
 
-    async delete(id: string, etablissementId: string): Promise<void> {
+    async delete(id: string, etablissementId: string, utilisateurId?: string): Promise<void> {
         const cycle = await this.findOne(id, etablissementId);
+        const nom = cycle.nom;
+        const code = cycle.code;
         await this.repo.remove(cycle);
         logger.info(`Cycle supprimé: ${id} (établissement ${etablissementId})`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.CYCLE_DELETE,
+            cible: 'Cycle',
+            cibleId: id,
+            description: `Suppression du cycle ${nom} (${code})`,
+            anciennesValeurs: { nom, code },
+            module: 'cycles',
+            metadata: { entiteLabel: nom, entiteRef: code },
+        });
     }
 }
 

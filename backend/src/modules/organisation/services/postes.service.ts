@@ -4,6 +4,7 @@ import { Poste, StatutPoste } from '../entities';
 import { AffectationPoste } from '@modules/personnel/entities';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { auditService, AuditAction } from '@modules/auth';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 import type { CreatePosteDto, UpdatePosteDto, QueryPostesDto } from '../dto/poste.dto';
 
@@ -25,7 +26,7 @@ export class PostesService {
         this.affectationRepo = AppDataSource.getRepository(AffectationPoste);
     }
 
-    async create(dto: CreatePosteDto, etablissementId?: string): Promise<Poste> {
+    async create(dto: CreatePosteDto, etablissementId?: string, utilisateurId?: string): Promise<Poste> {
         // Vérifier que l'unité cible appartient à l'établissement
         if (etablissementId) {
             const unite = await AppDataSource.getRepository('UniteOrganisationnelle').findOne({
@@ -59,6 +60,18 @@ export class PostesService {
 
         const saved = await this.posteRepo.save(poste);
         logger.info(`Poste créé: ${saved.intitule}`, { posteId: saved.id });
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.POSTE_CREATE,
+            cible: 'Poste',
+            cibleId: saved.id,
+            description: `Création du poste ${saved.intitule}`,
+            nouvellesValeurs: { intitule: saved.intitule, code: saved.code, uniteOrganisationnelleId: saved.uniteOrganisationnelleId, fonctionId: saved.fonctionId },
+            module: 'organisation',
+            metadata: { entiteLabel: saved.intitule, entiteRef: saved.code },
+        });
+
         return saved;
     }
 
@@ -138,7 +151,7 @@ export class PostesService {
         return poste;
     }
 
-    async update(id: string, dto: UpdatePosteDto, etablissementId?: string): Promise<Poste> {
+    async update(id: string, dto: UpdatePosteDto, etablissementId?: string, utilisateurId?: string): Promise<Poste> {
         const poste = await this.findById(id, etablissementId);
 
         // Vérifier que la nouvelle unité cible appartient à l'établissement
@@ -151,17 +164,50 @@ export class PostesService {
             }
         }
 
+        const anciennesValeurs: Record<string, unknown> = {};
+        const nouvellesValeurs: Record<string, unknown> = {};
+        for (const key of Object.keys(dto)) {
+            anciennesValeurs[key] = (poste as unknown as Record<string, unknown>)[key];
+            nouvellesValeurs[key] = (dto as Record<string, unknown>)[key];
+        }
+
         Object.assign(poste, dto);
 
         const updated = await this.posteRepo.save(poste);
         logger.info(`Poste modifié: ${updated.intitule}`, { posteId: id });
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.POSTE_UPDATE,
+            cible: 'Poste',
+            cibleId: id,
+            description: `Modification du poste ${updated.intitule}`,
+            anciennesValeurs,
+            nouvellesValeurs,
+            module: 'organisation',
+            metadata: { entiteLabel: updated.intitule, entiteRef: updated.code },
+        });
         return updated;
     }
 
-    async delete(id: string, etablissementId?: string): Promise<void> {
+    async delete(id: string, etablissementId?: string, utilisateurId?: string): Promise<void> {
         const poste = await this.findById(id, etablissementId);
+        const anciennesValeurs = {
+            intitule: poste.intitule,
+            code: poste.code,
+            uniteOrganisationnelleId: poste.uniteOrganisationnelleId,
+        };
         await this.posteRepo.remove(poste);
         logger.info(`Poste supprimé: ${poste.intitule}`, { posteId: id });
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.POSTE_DELETE,
+            cible: 'Poste',
+            cibleId: id,
+            description: `Suppression du poste ${anciennesValeurs.intitule}`,
+            anciennesValeurs,
+            module: 'organisation',
+            metadata: { entiteLabel: anciennesValeurs.intitule, entiteRef: anciennesValeurs.code },
+        });
     }
 
     /**

@@ -67,7 +67,7 @@ router.get('/:id/occupants', authMiddleware, requirePermission('organisation:pos
 router.post('/', authMiddleware, requirePermission('organisation:postes:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createPosteSchema, req.body);
-        const created = await postesService.create(dto, getEtablissementId(req));
+        const created = await postesService.create(dto, getEtablissementId(req), req.utilisateur?.id);
         res.status(201).json({ success: true, data: created });
     } catch (error) { next(error); }
 });
@@ -75,14 +75,14 @@ router.post('/', authMiddleware, requirePermission('organisation:postes:write'),
 router.patch('/:id', authMiddleware, requirePermission('organisation:postes:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updatePosteSchema, req.body);
-        const updated = await postesService.update(req.params.id, dto, getEtablissementId(req));
+        const updated = await postesService.update(req.params.id, dto, getEtablissementId(req), req.utilisateur?.id);
         res.json({ success: true, data: updated });
     } catch (error) { next(error); }
 });
 
 router.delete('/:id', authMiddleware, requirePermission('organisation:postes:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await postesService.delete(req.params.id, getEtablissementId(req));
+        await postesService.delete(req.params.id, getEtablissementId(req), req.utilisateur?.id);
         res.json({ success: true, message: 'Poste supprimé' });
     } catch (error) { next(error); }
 });

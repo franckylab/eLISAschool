@@ -21,6 +21,7 @@ import { CreateSalleDto, UpdateSalleDto, QuerySallesDto } from '../dto';
 import { CreneauHoraire } from '@modules/emploi-du-temps/entities';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { auditService, AuditAction } from '@modules/auth';
 import { salleAvailabilityService } from './salle-availability.service';
 
 export class SalleService {
@@ -33,7 +34,7 @@ export class SalleService {
     /**
      * Crée une nouvelle salle
      */
-    async create(dto: CreateSalleDto, etablissementId: string): Promise<Salle> {
+    async create(dto: CreateSalleDto, etablissementId: string, utilisateurId?: string): Promise<Salle> {
         // Vérifier l'unicité du code
         const exists = await this.repo.findOne({
             where: { code: dto.code, etablissementId }
@@ -54,6 +55,18 @@ export class SalleService {
 
         const saved = await this.repo.save(salle);
         logger.info(`Salle créée: ${saved.nom} (${saved.code})`, { etablissementId, salleId: saved.id });
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.SALLE_CREATE,
+            cible: 'Salle',
+            cibleId: saved.id,
+            description: `Création de la salle ${saved.nom} (${saved.code})`,
+            nouvellesValeurs: { ...dto },
+            module: 'salles',
+            metadata: { entiteLabel: saved.nom, entiteRef: saved.code },
+        });
+
         return saved;
     }
 
@@ -111,36 +124,37 @@ export class SalleService {
     /**
      * Met à jour une salle
      */
-    async update(id: string, dto: UpdateSalleDto, etablissementId: string): Promise<Salle> {
+    async update(id: string, dto: UpdateSalleDto, etablissementId: string, utilisateurId?: string): Promise<Salle> {
         const salle = await this.findOne(id, etablissementId);
 
         // Si réduction de capacité, vérifier les classes impactées
         if (dto.capacite !== undefined && dto.capacite < salle.capacite) {
+            const nouvelleCapacite = dto.capacite;
             const classeAnneeRepo = AppDataSource.getRepository(ClasseAnnee);
             const classesLiees = await classeAnneeRepo.find({
                 where: { sallePrincipaleId: id, actif: true },
                 relations: ['classe'],
             });
 
-            const classesBloquees = classesLiees.filter(ca => ca.effectifActuel > dto.capacite);
+            const classesBloquees = classesLiees.filter(ca => ca.effectifActuel > nouvelleCapacite);
             if (classesBloquees.length > 0) {
                 const noms = classesBloquees.map(ca => ca.classe?.nom || ca.classeId).join(', ');
                 throw new AppError(
-                    `Impossible de réduire la capacité à ${dto.capacite} : ${classesBloquees.length} classe(s) ont déjà plus d'élèves (${noms})`,
+                    `Impossible de réduire la capacité à ${nouvelleCapacite} : ${classesBloquees.length} classe(s) ont déjà plus d'élèves (${noms})`,
                     400,
                     'SALLE_CAPACITE_REDUCTION_BLOCKED'
                 );
             }
 
             const classesAlertees = classesLiees.filter(
-                ca => ca.effectifMax > dto.capacite && ca.effectifActuel <= dto.capacite
+                ca => ca.effectifMax > nouvelleCapacite && ca.effectifActuel <= nouvelleCapacite
             );
             if (classesAlertees.length > 0) {
-                const noms = classesAlertees.map(ca => `${ca.classe?.nom || ca.classeId} (effectifMax: ${ca.effectifMax} → ${dto.capacite})`).join(', ');
+                const noms = classesAlertees.map(ca => `${ca.classe?.nom || ca.classeId} (effectifMax: ${ca.effectifMax} → ${nouvelleCapacite})`).join(', ');
                 logger.warn(`[${etablissementId}] Réduction capacité salle ${salle.nom}: effectifMax réduit pour ${classesAlertees.length} classe(s): ${noms}`);
 
                 for (const ca of classesAlertees) {
-                    ca.effectifMax = dto.capacite;
+                    ca.effectifMax = nouvelleCapacite;
                     await classeAnneeRepo.save(ca);
                 }
             }
@@ -153,19 +167,50 @@ export class SalleService {
             dto.disponible = true;
         }
 
+        const anciennesValeurs: Record<string, unknown> = {};
+        for (const key of Object.keys(dto)) {
+            anciennesValeurs[key] = (salle as unknown as Record<string, unknown>)[key];
+        }
+
         Object.assign(salle, dto);
         const updated = await this.repo.save(salle);
         logger.info(`Salle modifiée: ${updated.nom}`, { etablissementId, salleId: updated.id });
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.SALLE_UPDATE,
+            cible: 'Salle',
+            cibleId: updated.id,
+            description: `Modification de la salle ${updated.nom} (${updated.code})`,
+            anciennesValeurs,
+            nouvellesValeurs: { ...dto },
+            module: 'salles',
+            metadata: { entiteLabel: updated.nom, entiteRef: updated.code },
+        });
+
         return updated;
     }
 
     /**
      * Supprime une salle
      */
-    async delete(id: string, etablissementId: string): Promise<void> {
+    async delete(id: string, etablissementId: string, utilisateurId?: string): Promise<void> {
         const salle = await this.findOne(id, etablissementId);
+        const nom = salle.nom;
+        const code = salle.code;
         await this.repo.remove(salle);
-        logger.info(`Salle supprimée: ${salle.nom}`, { etablissementId, salleId: id });
+        logger.info(`Salle supprimée: ${nom}`, { etablissementId, salleId: id });
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.SALLE_DELETE,
+            cible: 'Salle',
+            cibleId: id,
+            description: `Suppression de la salle ${nom} (${code})`,
+            anciennesValeurs: { nom, code },
+            module: 'salles',
+            metadata: { entiteLabel: nom, entiteRef: code },
+        });
     }
 
     /**

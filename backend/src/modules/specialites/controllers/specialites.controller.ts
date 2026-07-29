@@ -77,7 +77,7 @@ router.post('/', authMiddleware, requirePermission('config:edit'), async (req: R
     try {
         const dto = validateDto(createSpecialiteSchema, req.body);
         const etablissementId = req.utilisateur!.etablissementId!;
-        const specialite = await specialitesService.create(dto, etablissementId);
+        const specialite = await specialitesService.create(dto, etablissementId, req.utilisateur?.id);
         res.status(201).json({ success: true, data: specialite });
     } catch (error) { next(error); }
 });
@@ -90,7 +90,7 @@ router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (re
     try {
         const dto = validateDto(updateSpecialiteSchema, req.body);
         const etablissementId = req.utilisateur!.etablissementId!;
-        const specialite = await specialitesService.update(req.params.id, dto, etablissementId);
+        const specialite = await specialitesService.update(req.params.id, dto, etablissementId, req.utilisateur?.id);
         res.json({ success: true, data: specialite });
     } catch (error) { next(error); }
 });
@@ -102,7 +102,7 @@ router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (re
 router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId!;
-        await specialitesService.delete(req.params.id, etablissementId);
+        await specialitesService.delete(req.params.id, etablissementId, req.utilisateur?.id);
         res.json({ success: true, message: 'Spécialité supprimée' });
     } catch (error) { next(error); }
 });

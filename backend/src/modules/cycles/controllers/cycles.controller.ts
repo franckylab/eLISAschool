@@ -52,7 +52,7 @@ router.get('/:id', authMiddleware, async (req: Request, res: Response, next: Nex
 router.post('/', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createCycleSchema, req.body);
-        const cycle = await cyclesService.create(dto, req.etablissementId!);
+        const cycle = await cyclesService.create(dto, req.etablissementId!, req.utilisateur?.id);
         res.status(201).json({ success: true, data: cycle });
     } catch (error) { next(error); }
 });
@@ -60,14 +60,14 @@ router.post('/', authMiddleware, requirePermission('config:edit'), async (req: R
 router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateCycleSchema, req.body);
-        const cycle = await cyclesService.update(req.params.id, dto, req.etablissementId!);
+        const cycle = await cyclesService.update(req.params.id, dto, req.etablissementId!, req.utilisateur?.id);
         res.json({ success: true, data: cycle });
     } catch (error) { next(error); }
 });
 
 router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await cyclesService.delete(req.params.id, req.etablissementId!);
+        await cyclesService.delete(req.params.id, req.etablissementId!, req.utilisateur?.id);
         res.json({ success: true, message: 'Cycle supprimé' });
     } catch (error) { next(error); }
 });

@@ -59,7 +59,7 @@ router.post('/', authMiddleware, requirePermission('organisation:fonctions:write
     try {
         const dto = validateDto(createFonctionSchema, req.body);
         const etablissementId = getEtablissementId(req);
-        const fonction = await fonctionsService.create(dto, etablissementId);
+        const fonction = await fonctionsService.create(dto, etablissementId, req.utilisateur?.id);
         res.status(201).json({ success: true, data: fonction });
     } catch (error) { next(error); }
 });
@@ -68,7 +68,7 @@ router.patch('/:id', authMiddleware, requirePermission('organisation:fonctions:w
     try {
         const dto = validateDto(updateFonctionSchema, req.body);
         const etablissementId = getEtablissementId(req);
-        const fonction = await fonctionsService.update(req.params.id, dto, etablissementId);
+        const fonction = await fonctionsService.update(req.params.id, dto, etablissementId, req.utilisateur?.id);
         res.json({ success: true, data: fonction });
     } catch (error) { next(error); }
 });
@@ -76,7 +76,7 @@ router.patch('/:id', authMiddleware, requirePermission('organisation:fonctions:w
 router.delete('/:id', authMiddleware, requirePermission('organisation:fonctions:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = getEtablissementId(req);
-        await fonctionsService.delete(req.params.id, etablissementId);
+        await fonctionsService.delete(req.params.id, etablissementId, req.utilisateur?.id);
         res.json({ success: true, message: 'Fonction supprimée' });
     } catch (error) { next(error); }
 });

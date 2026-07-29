@@ -17,6 +17,7 @@ import {
 } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { assertNotSystem } from '@common/utils/system-guard.util';
+import { auditService, AuditAction } from '@modules/auth';
 
 class EchelonStructurelService {
     private repo: Repository<EchelonStructurel>;
@@ -25,9 +26,20 @@ class EchelonStructurelService {
         this.repo = AppDataSource.getRepository(EchelonStructurel);
     }
 
-    async create(dto: CreateEchelonStructurelDto): Promise<EchelonStructurel> {
+    async create(dto: CreateEchelonStructurelDto, utilisateurId?: string): Promise<EchelonStructurel> {
         const entity = this.repo.create(dto);
-        return this.repo.save(entity);
+        const saved = await this.repo.save(entity);
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.ECHELON_STRUCTUREL_CREATE,
+            cible: 'EchelonStructurel',
+            cibleId: saved.id,
+            description: `Création de l'échelon structurel ${saved.label} (${saved.code})`,
+            nouvellesValeurs: { label: dto.label, code: dto.code, niveau: dto.niveau },
+            module: 'organisation',
+            metadata: { entiteLabel: saved.label, entiteRef: saved.code },
+        });
+        return saved;
     }
 
     async findAll(etablissementId?: string): Promise<EchelonStructurel[]> {
@@ -69,17 +81,46 @@ class EchelonStructurelService {
         return entity;
     }
 
-    async update(id: string, dto: UpdateEchelonStructurelDto, etablissementId?: string): Promise<EchelonStructurel> {
+    async update(id: string, dto: UpdateEchelonStructurelDto, etablissementId?: string, utilisateurId?: string): Promise<EchelonStructurel> {
         const entity = await this.findById(id, etablissementId);
         assertNotSystem(entity, 'modifier');
+        const anciennesValeurs: Record<string, unknown> = {};
+        const nouvellesValeurs: Record<string, unknown> = {};
+        for (const key of Object.keys(dto)) {
+            anciennesValeurs[key] = (entity as unknown as Record<string, unknown>)[key];
+            nouvellesValeurs[key] = (dto as Record<string, unknown>)[key];
+        }
         Object.assign(entity, dto);
-        return this.repo.save(entity);
+        const saved = await this.repo.save(entity);
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.ECHELON_STRUCTUREL_UPDATE,
+            cible: 'EchelonStructurel',
+            cibleId: saved.id,
+            description: `Modification de l'échelon structurel ${saved.label} (${saved.code})`,
+            anciennesValeurs,
+            nouvellesValeurs,
+            module: 'organisation',
+            metadata: { entiteLabel: saved.label, entiteRef: saved.code },
+        });
+        return saved;
     }
 
-    async delete(id: string, etablissementId?: string): Promise<void> {
+    async delete(id: string, etablissementId?: string, utilisateurId?: string): Promise<void> {
         const entity = await this.findById(id, etablissementId);
         assertNotSystem(entity, 'supprimer');
+        const anciennesValeurs = { label: entity.label, code: entity.code, niveau: entity.niveau };
         await this.repo.remove(entity);
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.ECHELON_STRUCTUREL_DELETE,
+            cible: 'EchelonStructurel',
+            cibleId: id,
+            description: `Suppression de l'échelon structurel ${anciennesValeurs.label} (${anciennesValeurs.code})`,
+            anciennesValeurs,
+            module: 'organisation',
+            metadata: { entiteLabel: anciennesValeurs.label, entiteRef: anciennesValeurs.code },
+        });
     }
 }
 

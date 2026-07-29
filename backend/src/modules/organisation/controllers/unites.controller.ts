@@ -38,7 +38,7 @@ router.post('/unites', authMiddleware, requirePermission('organisation:unites:wr
     try {
         const dto = validateDto(createUniteOrganisationnelleSchema, req.body);
         dto.etablissementId = getEtablissementId(req);
-        const created = await organisationService.createUnite(dto);
+        const created = await organisationService.createUnite(dto, req.utilisateur?.id);
         res.status(201).json({ success: true, data: created });
     } catch (error) { next(error); }
 });
@@ -49,7 +49,7 @@ router.post('/unites/avec-postes', authMiddleware, requirePermission('organisati
         const { postes, ...uniteDto } = req.body;
         const dto = validateDto(createUniteOrganisationnelleSchema, uniteDto);
         dto.etablissementId = getEtablissementId(req);
-        const created = await organisationService.creerUniteAvecPostes(dto, postes || []);
+        const created = await organisationService.creerUniteAvecPostes(dto, postes || [], req.utilisateur?.id);
         res.status(201).json({ success: true, data: created });
     } catch (error) { next(error); }
 });
@@ -78,7 +78,7 @@ router.get('/unites/:id/sous-unites', authMiddleware, requirePermission('organis
 router.patch('/unites/:id', authMiddleware, requirePermission('organisation:unites:write'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateUniteOrganisationnelleSchema, req.body);
-        const updated = await organisationService.updateUnite(req.params.id, dto, getEtablissementId(req));
+        const updated = await organisationService.updateUnite(req.params.id, dto, getEtablissementId(req), req.utilisateur?.id);
         res.json({ success: true, data: updated });
     } catch (error) { next(error); }
 });
@@ -89,14 +89,14 @@ router.patch('/unites/:id/reordonner', authMiddleware, requirePermission('organi
         if (apresId !== null && typeof apresId !== 'string') {
             throw new AppError('apresId doit être un string ou null', 400, 'VALIDATION_ERROR');
         }
-        await organisationService.reordonnerUnite(req.params.id, apresId ?? null, getEtablissementId(req));
+        await organisationService.reordonnerUnite(req.params.id, apresId ?? null, getEtablissementId(req), req.utilisateur?.id);
         res.json({ success: true, message: 'Unité réordonnée' });
     } catch (error) { next(error); }
 });
 
 router.delete('/unites/:id', authMiddleware, requirePermission('organisation:unites:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await organisationService.deleteUnite(req.params.id, getEtablissementId(req));
+        await organisationService.deleteUnite(req.params.id, getEtablissementId(req), req.utilisateur?.id);
         res.json({ success: true, message: 'Unité supprimée' });
     } catch (error) { next(error); }
 });

@@ -54,7 +54,7 @@ router.post('/', authMiddleware, requirePermission('config:edit'), async (req: R
     try {
         const dto = validateDto(createFiliereSchema, req.body);
         const etablissementId = req.utilisateur!.etablissementId!;
-        const filiere = await filieresService.create(dto, etablissementId);
+        const filiere = await filieresService.create(dto, etablissementId, req.utilisateur?.id);
         res.status(201).json({ success: true, data: filiere });
     } catch (error) { next(error); }
 });
@@ -64,7 +64,7 @@ router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (re
     try {
         const dto = validateDto(updateFiliereSchema, req.body);
         const etablissementId = req.utilisateur!.etablissementId!;
-        const filiere = await filieresService.update(req.params.id, dto, etablissementId);
+        const filiere = await filieresService.update(req.params.id, dto, etablissementId, req.utilisateur?.id);
         res.json({ success: true, data: filiere });
     } catch (error) { next(error); }
 });
@@ -73,7 +73,7 @@ router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (re
 router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId!;
-        await filieresService.delete(req.params.id, etablissementId);
+        await filieresService.delete(req.params.id, etablissementId, req.utilisateur?.id);
         res.json({ success: true, message: 'Filière supprimée' });
     } catch (error) { next(error); }
 });
