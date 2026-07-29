@@ -38,7 +38,7 @@ router.post('/', authMiddleware, requirePermission('config:edit'), async (req: R
     try {
         const dto = validateDto(createMatiereSchema, req.body);
         const etablissementId = req.utilisateur!.etablissementId!;
-        const matiere = await service.create(dto, etablissementId);
+        const matiere = await service.create(dto, etablissementId, req.utilisateur?.id, req);
         res.status(201).json({ success: true, data: matiere });
     } catch (error) { next(error); }
 });
@@ -47,7 +47,7 @@ router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (re
     try {
         const dto = validateDto(updateMatiereSchema, req.body);
         const etablissementId = req.utilisateur!.etablissementId!;
-        const matiere = await service.update(req.params.id, dto, etablissementId);
+        const matiere = await service.update(req.params.id, dto, etablissementId, req.utilisateur?.id, req);
         res.json({ success: true, data: matiere });
     } catch (error) { next(error); }
 });
@@ -55,7 +55,7 @@ router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (re
 router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur!.etablissementId!;
-        await service.delete(req.params.id, etablissementId);
+        await service.delete(req.params.id, etablissementId, req.utilisateur?.id, req);
         res.json({ success: true, message: 'Matière supprimée' });
     } catch (error) { next(error); }
 });

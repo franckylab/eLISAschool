@@ -327,6 +327,40 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 - **Backend** : 0 erreur dans personnel/organisation/paie/heures-cours/contrats/suivi-personnel (311 erreurs préexistantes dans d'autres modules)
 - **101 fichiers modifiés** au total (+3822/-4194 lignes)
 
+## Travail effectué — Session 2026-07-29 (grill-me RH — Groupe D backend + élimination `as any`)
+
+### Groupe D — Backend fixes (88 corrections)
+
+**D1 — Soft delete `@DeleteDateColumn()` (13 entités)** :
+- Personnel (6) : `absence-personnel`, `evaluation-enseignant`, `heure-cours`, `affectation-poste`, `progression-programme`, `indisponibilite-enseignant`
+- Paie (4) : `cotisation`, `type-prime`, `type-retenue`, `element-salaire`
+- Organisation (3) : `unite-organisationnelle`, `poste`, `hierarchie-personnel`
+- Exclusion : nomenclatures (EchelonStructurel, NiveauResponsabilite, ModeRemunerationEntity, Fonction, TemplateOrganisation, TypeContratPersonnalise) → hard delete + `estSysteme`
+
+**D2 — `req?: any` → `req?: Request` (60 replacements, 16 fichiers)** :
+- auth (3 fichiers), personnel (7 fichiers), programmes (1 fichier), paie (5 fichiers)
+
+**D3 — Date `as any` casts (13 fixes, 3 fichiers)** :
+- `heure-cours.service.ts` : 7 fixes (DTO mutation → `dateChanges` pattern, `Between()` sans cast)
+- `contrat.service.ts` : 4 fixes (DTO mutation → `dateChanges`, `LessThanOrEqual()` sans cast, `null as any` → `undefined`)
+- `affectation.service.ts` : 3 fixes (DTO mutation → `dateChanges`, `LessThanOrEqual()` sans cast)
+
+**D4 — `as any[]` casts (2 fixes, 1 fichier)** :
+- `calcul-paie.service.ts` : `[] as any[]` → `[] as DetailMatiereSimulation[]`
+
+### Élimination `as any` audit-related (7 occurrences, 2 fichiers)
+- `type-contrat.service.ts` : 5× `'TYPE_CONTRAT_*' as any` → `AuditAction.TYPE_CONTRAT_*`
+- `absence-personnel.service.ts` : `dto.type as any` → `dto.type as TypeAbsencePersonnel`, `dto as any` → `dto as Record<string, any>`
+
+### Documentation mise à jour
+- **`elisaschool-conventions.md`** : section 24 ajoutée (conventions typage : req Request, DTO date anti-pattern, AuditAction enum, soft delete, FindOperator)
+- **`elisaschool-business-logic/SKILL.md`** : Domaine 15 ajouté (soft delete convention + audit logging)
+
+### Qualité
+- **0 `as any`** dans personnel/services/, paie/services/, organisation/services/
+- **0 erreur TS** introduite (8 erreurs préexistantes hors périmètre)
+- **Migration DB requise** : ajouter `deletedAt` columns sur les 13 nouvelles entités avant déploiement
+
 ## Next Move
 Refonte v4.0 organisation : ✅ terminée. Hiérarchie v4.1 (superieurPosteId + réintégration page + overlay organigramme) : ✅ terminée.
 1. ~~Exécuter la migration 122~~ ✅ appliquée en local (2026-07-25) : étape 5 ajoutée (purge des 26 relations orphelines — superieurId nullé par l'ancienne FK). État final : 26 poste→poste + 1 personne→personne, 0 orphelin, serveur OK (health 200).
@@ -337,6 +371,7 @@ Refonte v4.0 organisation : ✅ terminée. Hiérarchie v4.1 (superieurPosteId + 
 6. ~~Data gap seeds~~ ✅ résolu (2026-07-25) : `seed-matieres-niveaux.ts` refondu — 7 profils de programme (MATERNELLE, PRIMAIRE_BAS/HAUT, COLLEGE_BAS/HAUT, LYCEE_BAS/HAUT) mappés sur les 31 niveaux FR+EN. Exécuté pour les 2 établissements : +176 associations, total 498, 0 niveau sans programme. Vérifié : génération bulletins Quatrième → moyennes pondérées correctes (2.52/1.91), rangs 1/2, 18 bulletins_matieres. Données de test nettoyées. Standalone du seed boucle désormais sur tous les établissements.
 7. **Migration 029 v3.0 (paie)** : ✅ appliquée en local (2026-07-27). À appliquer sur staging/prod avec 122/123/124/125/126/127.
 8. **Re-seed organisation** : exécuter `seed-organisation.ts` sur chaque environnement pour réaligner les `Fonction.chemin` legacy (`parentId/CODE` → `parentChemin.id`) — idempotent.
+9. **Migration soft delete** : créer migration ajoutant `deletedAt TIMESTAMP NULL` sur les 13 entités (personnel×6, paie×5, organisation×3). Requise avant déploiement staging/prod.
 
 ## Travail effectué — Session 2026-07-25 (grill-me organisation — UX, permissions, organigramme)
 ### Décisions validées
@@ -1470,3 +1505,152 @@ Les composants partagés `AuditTimeline`, `StatutBadge`, `ValidationTimeline`, `
 ### Note — Audit logging backend
 Les services backend de ces modules ne loggent pas encore via `auditLogService`. L'`AuditTimeline` affiche l'état vide tant que les appels `auditLogService.log()` ne sont pas ajoutés aux opérations CRUD. Le wiring frontend est prêt.
 - **AGENTS.md** : cette section
+
+## Travail effectué — Session 2026-07-29 (grill-me audit : fix « aucun historique affiché »)
+
+### Diagnostic — 2 causes racines
+1. **Récupération cassée** (`audit.controller.ts` + `audit.service.ts`) : pagination appliquée AVANT le filtrage cible/cibleId → pages vides et `total` faussé ; route `GET /logs/export` shadowée par `GET /logs/:id` ; typage CSV.
+2. **Création absente** : seuls `notes` appelaient `auditService.log()` — les tabs Historique de classes/matieres/periodes/annees-scolaires restaient vides faute d'entrées `cible`+`cibleId`.
+
+### Correctifs récupération (2 fichiers)
+- **`audit.controller.ts`** : ordre routes (`/logs/export` avant `/logs/:id`), filtres `cible`/`cibleId`/`module` passés au service.
+- **`audit.service.ts`** : filtrage AVANT pagination, `total` exact, `findById` corrigé.
+
+### Instrumentation création (8 fichiers — pattern notes)
+Pattern : `await auditService.log({ utilisateurId, action, cible, cibleId, description, anciennesValeurs?, nouvellesValeurs?, module })` juste après save/remove ; controllers passent `req.utilisateur?.id`.
+
+| Module | Service | Actions auditées | cible / module |
+|--------|---------|------------------|----------------|
+| classes | `classes.service.ts` | CREATE, UPDATE, DELETE | `Classe` / `classes` |
+| matieres | `matieres.service.ts` | CREATE, UPDATE, DELETE | `Matiere` / `matieres` |
+| periodes | `periodes.service.ts` | CREATE, UPDATE, DELETE | `Periode` / `periodes` |
+| annees-scolaires | `annees-scolaires.service.ts` | CREATE, UPDATE, DELETE, ACTIVATE | `AnneeScolaire` / `annees-scolaires` |
+
+- **UPDATE** : snapshot `anciennesValeurs` (clés du dto) + `nouvellesValeurs`.
+- **DELETE** : libellé capturé AVANT `repo.remove()` (TypeORM efface l'id) ; `cibleId` = paramètre `id`.
+- **`activer()`** : nouveau param `utilisateurId?` + `ANNEE_SCOLAIRE_ACTIVATE`.
+- `cloturer`/`reouvrir` hors périmètre (pas d'enum dédié).
+
+### Frontend — vérifié, AUCUN changement
+`AuditTimeline`, `use-permissions`, 7 pages détail, `DashboardAuditWidget`, migration 131 : tous corrects. Le problème était 100% backend.
+
+### Qualité
+- 0 `any` nouveau, 0 erreur tsc dans les 10 fichiers modifiés (TS2308 `CreneauHoraire` dans `modules/index.ts:82` = pré-existant, barrel EDT, non touché).
+- **Modules restants à instrumenter** (tabs encore vides) : bulletins, personnel — même pattern à appliquer.
+
+## Travail effectué — Session 2026-07-29 (système d'audit enrichi — full-stack)
+
+### Contexte
+Refonte complète du système d'audit pour passer d'un simple logger à un système de traçabilité avancé avec relations parent-enfant, auto-calcul des champs modifiés, rétention automatique, et interface d'administration.
+
+### Backend — Migration 132 + entité enrichie
+- **`132-audit-enrichi.sql`** : ajout colonnes `parentCible` (varchar 100), `parentCibleId` (uuid), `champsModifies` (simple-array), `etablissementId` (uuid). Index composite `(parentCible, parentCibleId, createdAt)` + `(etablissementId, createdAt)`.
+- **`audit-log.entity.ts`** : 4 nouveaux champs typés + index + relations.
+
+### Backend — AuditService enrichi + AuditRelationResolver
+- **`audit.service.ts`** : `getLogs()` supporte `scope: 'avec-liees'` — résout les entités enfants via `AuditRelationResolverService` puis construit un `OR` sur `(cible+cibleId) || (parentCible+parentCibleId)`.
+- **`calculerChampsModifies()`** : auto-calcul diff anciennes/nouvelles valeurs au moment du log.
+- **`audit-relation-resolver.service.ts`** (nouveau) : résout les entités enfants d'une cible (ex: Classe → notes, bulletins, affectations).
+- **`audit-filters.dto.ts`** : schema Zod enrichi — `scope: z.enum(['entite', 'avec-liees']).optional()`, `severity`, `search`.
+
+### Backend — Rétention + purge cron
+- **Archivage automatique** : logs > 30 jours déplacés vers `audit_logs_archive`, > 365 jours purgés.
+- **Cron job** : exécution quotidienne 02:00.
+
+### Backend — Instrumentation modules enrichie
+- **8 services** instrumentés avec le pattern enrichi (anciennesValeurs, nouvellesValeurs, parentCible, module, description).
+- Modules couverts : classes, matieres, periodes, annees-scolaires (+ notes déjà fait).
+
+### Frontend — AuditTimeline v2 (`components/ui/AuditTimeline.tsx`)
+- Diff extensible (expand/collapse par log), load-more pagination, groupement par jour.
+- Toggle portée directe / élargie (envoie `scope=avec-liees` au backend).
+- Badge source enfants (`GitBranch` icon), icônes contextuelles par type d'action.
+- Correction params : utilise `cible`+`cibleId`+`scope` au lieu de `parentCible`/`parentCibleId` séparés.
+
+### Frontend — Page admin audit globale (`/admin/audit`)
+- **Route** : `_auth.admin.audit.tsx`, guards `requireRole(['SUPER_ADMIN', 'ADMIN'])`.
+- **Page** : `features/admin/components/audit-page.tsx` — DataTable serveur, filtres module/sévérité/recherche, export CSV/JSON, modal détail avec diff.
+- **Sidebar** : entrée « Audit » ajoutée dans la section Administration (icône `ScrollText`).
+- **i18n** : 25+ clés FR/EN dans `common.json` (`audit.page.*`).
+
+### Fichiers modifiés/créés (résumé)
+| Type | Fichier | Action |
+|------|---------|--------|
+| Migration | `132-audit-enrichi.sql` | Créé |
+| Entity | `audit-log.entity.ts` | Enrichi (parentCible, champsModifies, etablissementId) |
+| Service | `audit.service.ts` | Enrichi (scope, champsModifies auto) |
+| Service | `audit-relation-resolver.service.ts` | Créé |
+| DTO | `audit-filters.dto.ts` | Enrichi (scope, severity, search) |
+| Controller | `audit.controller.ts` | Enrichi (contrôle accès granulaire) |
+| Frontend | `AuditTimeline.tsx` | Refondu v2 |
+| Frontend | `audit-page.tsx` | Créé |
+| Route | `_auth.admin.audit.tsx` | Créé |
+| Sidebar | `Sidebar.tsx` | Entrée audit ajoutée |
+| i18n | `fr/common.json`, `en/common.json` | Clés audit.page.* + audit.actions.* |
+| Skill | `elisaschool-business-logic/SKILL.md` | Section audit trail mise à jour |
+
+### Qualité
+- **0 erreur TS** dans les fichiers audit (audit-page, route, Sidebar)
+- **0 `any`** dans les nouveaux fichiers
+- **0 couleur hardcodée** — toutes via CSS vars
+- **0 chaîne FR en dur** — toutes via `t()`
+- **i18n FR/EN parité** complète
+
+## Travail effectué — Session 2026-07-29 (audit : metadata JSONB + résolution utilisateur + liens navigation)
+
+### Contexte
+Amélioration du système d'audit/traçabilité : les auteurs n'étaient pas affichés (profil non joint), aucun contexte entité (impossible de savoir QUEL élève/matière/période modifié), et aucun lien de navigation vers les enregistrements.
+
+### Phase 1 — Migration + Entity (`metadata` JSONB)
+- **`136-audit-metadata.sql`** : `ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS "metadata" jsonb;`
+- **`audit-log.entity.ts`** : `@Column({ type: 'jsonb', nullable: true }) metadata?: Record<string, unknown>;`
+
+### Phase 2 — Fix résolution utilisateur (join profil)
+- **`audit.service.ts`** : `getLogs()` et `findLogById()` joignent désormais `u.profil` pour récupérer `nom`/`prenom` depuis `ProfilUtilisateur`
+- **`audit.controller.ts`** : mapper `mapLog()` aplatit la réponse (`utilisateur.nom`, `utilisateur.prenom`, `utilisateur.email`)
+
+### Phase 3 — Enrichir les appels audit avec metadata
+| Module | Metadata | Actions |
+|--------|----------|---------|
+| classes | `{ entiteLabel: classe.nom, entiteRef: classe.code }` | CREATE, UPDATE, DELETE |
+| matieres | `{ entiteLabel: matiere.nom, entiteRef: matiere.code }` | CREATE, UPDATE, DELETE |
+| periodes | `{ entiteLabel: periode.nom }` | CREATE, UPDATE, DELETE |
+| annees-scolaires | `{ entiteLabel: annee.libelle }` | CREATE, UPDATE, DELETE, ACTIVATE |
+| notes | `{ entiteLabel: "${valeur}/${bareme}", relations: { eleve, matiere, periode } }` | CREATE, UPDATE, DELETE |
+| personnel | `{ entiteLabel: matricule, entiteRef: matricule }` | CREATE |
+| bulletin-paie | `{ entiteLabel: "Bulletin ${mois}/${annee}", relations: { personnel } }` | GENERATE |
+
+### Phase 4 — Frontend (type + navigation + composants)
+- **`frontend/src/lib/audit-navigation.ts`** (créé) : `resolveAuditNavLink()` + `resolveRelationNavLink()` — map 10 types d'entités vers routes TanStack Router avec permission requise
+- **`AuditTimeline.tsx`** : type `AuditLogEntry.metadata` + `email` ajoutés ; `LogItem` affiche `metadata.entiteLabel` avec lien navigable (permission-gated) ; relations en badges compacts avec liens ; fallback email si nom/prenom absents
+- **`audit-page.tsx`** : colonne "cible" cliquable ; section "Contexte" dans le modal détail avec liens ; même fallback email
+- **i18n** : `audit.relations.*` (10 clés) + `audit.page.contexte` ajoutés en FR et EN
+
+### Fichiers modifiés/créés
+| Fichier | Action |
+|---------|--------|
+| `backend/database/migrations/136-audit-metadata.sql` | Créé |
+| `backend/src/modules/auth/entities/audit-log.entity.ts` | Modifié (metadata JSONB) |
+| `backend/src/modules/auth/services/audit.service.ts` | Modifié (join profil + metadata AuditOptions) |
+| `backend/src/modules/audit/controllers/audit.controller.ts` | Modifié (mapLog response) |
+| `backend/src/modules/classes/services/classes.service.ts` | Modifié (metadata) |
+| `backend/src/modules/matieres/services/matieres.service.ts` | Modifié (metadata) |
+| `backend/src/modules/periodes/services/periodes.service.ts` | Modifié (metadata) |
+| `backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts` | Modifié (metadata) |
+| `backend/src/modules/notes/services/notes.service.ts` | Modifié (metadata + relations) |
+| `backend/src/modules/personnel/services/personnel.service.ts` | Modifié (metadata) |
+| `backend/src/modules/paie/services/bulletin-paie.service.ts` | Modifié (metadata + relations) |
+| `frontend/src/lib/audit-navigation.ts` | Créé |
+| `frontend/src/components/ui/AuditTimeline.tsx` | Modifié (type + liens + relations) |
+| `frontend/src/features/admin/components/audit-page.tsx` | Modifié (liens + contexte) |
+| `frontend/src/locales/fr/common.json` | Modifié (audit.relations + contexte) |
+| `frontend/src/locales/en/common.json` | Modifié (audit.relations + contexte) |
+
+### Qualité
+- **0 erreur TS** dans les fichiers modifiés (frontend + backend)
+- **0 `any`** nouveau
+- **0 couleur hardcodée** — CSS vars
+- **0 chaîne FR en dur** — `t()` partout
+- **i18n FR/EN parité** complète
+- **Navigation permission-gated** — liens visibles uniquement si la permission correspondante est accordée
+- **Fallback email** — pour les logs historiques sans nom/prenom

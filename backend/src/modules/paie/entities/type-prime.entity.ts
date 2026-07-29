@@ -14,6 +14,7 @@ import {
     JoinColumn,
     CreateDateColumn,
     UpdateDateColumn,
+    DeleteDateColumn,
     Index,
 } from 'typeorm';
 import { numericTransformer } from '@common/utils/numeric-transformer.util';
@@ -62,4 +63,7 @@ export class TypePrime {
 
     @UpdateDateColumn()
     updatedAt!: Date;
+
+    @DeleteDateColumn()
+    deletedAt?: Date;
 }

@@ -9,6 +9,7 @@
  */
 
 import { Repository, ILike } from 'typeorm';
+import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
 import { Utilisateur, ProfilUtilisateur, Role, StatutUtilisateur, UtilisateurEtablissement } from '../entities';
 import { TokenService } from './token.service';
@@ -132,7 +133,7 @@ export class AuthService {
         loginDto: LoginDto,
         adresseIp?: string,
         userAgent?: string,
-        req?: any
+        req?: Request
     ): Promise<LoginResponseDto> {
         const securityParams = await this.getSecurityParams();
 
@@ -547,7 +548,7 @@ export class AuthService {
     /**
      * Déconnexion - Révoque le refresh token
      */
-    async logout(refreshToken: string, utilisateurId?: string, req?: any): Promise<void> {
+    async logout(refreshToken: string, utilisateurId?: string, req?: Request): Promise<void> {
         await this.tokenService.revokeRefreshToken(refreshToken);
 
         if (utilisateurId) {
@@ -606,7 +607,7 @@ export class AuthService {
     /**
      * Réinitialisation du mot de passe
      */
-    async resetPassword(resetPasswordDto: ResetPasswordDto, req?: any): Promise<{ message: string }> {
+    async resetPassword(resetPasswordDto: ResetPasswordDto, req?: Request): Promise<{ message: string }> {
         const securityParams = await this.getSecurityParams();
 
         if (resetPasswordDto.nouveauMotDePasse.length < securityParams.passwordMinLength) {
@@ -649,7 +650,7 @@ export class AuthService {
     async changePassword(
         utilisateurId: string,
         changePasswordDto: ChangePasswordDto,
-        req?: any
+        req?: Request
     ): Promise<{ message: string }> {
         const securityParams = await this.getSecurityParams();
 

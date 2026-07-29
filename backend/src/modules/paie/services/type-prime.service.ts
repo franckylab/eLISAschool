@@ -5,6 +5,7 @@ import { CreateTypePrimeDto, UpdateTypePrimeDto } from '../dto/paie-etendue.dto'
 import { AppError } from '@common/filters/error.filter';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
+import { Request } from 'express';
 
 export class TypePrimeService {
     private repo: Repository<TypePrime>;
@@ -13,7 +14,7 @@ export class TypePrimeService {
         this.repo = AppDataSource.getRepository(TypePrime);
     }
 
-    async create(dto: CreateTypePrimeDto, etablissementId: string, userId?: string, req?: any): Promise<TypePrime> {
+    async create(dto: CreateTypePrimeDto, etablissementId: string, userId?: string, req?: Request): Promise<TypePrime> {
         const existing = await this.repo.findOne({ where: { code: dto.code, etablissementId } });
         if (existing) throw new AppError('Un type de prime avec ce code existe déjà', 409, 'PRIME_EXISTS');
 
@@ -22,7 +23,7 @@ export class TypePrimeService {
         await this.repo.save(entity);
 
         if (userId) {
-            await auditService.log({ utilisateurId: userId, action: AuditAction.PRIME_CREATE, cible: 'TypePrime', cibleId: entity.id, description: `Création type prime ${dto.code}`, nouvellesValeurs: dto, module: 'personnel' }, req);
+            await auditService.log({ utilisateurId: userId, action: AuditAction.PRIME_CREATE, cible: 'TypePrime', cibleId: entity.id, description: `Création type prime ${dto.code}`, nouvellesValeurs: dto, module: 'personnel', etablissementId }, req);
         }
         return entity;
     }
@@ -37,24 +38,24 @@ export class TypePrimeService {
         return entity;
     }
 
-    async update(id: string, dto: UpdateTypePrimeDto, etablissementId: string, userId?: string, req?: any): Promise<TypePrime> {
+    async update(id: string, dto: UpdateTypePrimeDto, etablissementId: string, userId?: string, req?: Request): Promise<TypePrime> {
         const entity = await this.findOne(id, etablissementId);
         const oldValues = { ...entity };
         Object.assign(entity, dto);
         await this.repo.save(entity);
 
         if (userId) {
-            await auditService.log({ utilisateurId: userId, action: AuditAction.PRIME_UPDATE, cible: 'TypePrime', cibleId: id, description: `Mise à jour type prime ${entity.code}`, anciennesValeurs: oldValues, nouvellesValeurs: dto, module: 'personnel' }, req);
+            await auditService.log({ utilisateurId: userId, action: AuditAction.PRIME_UPDATE, cible: 'TypePrime', cibleId: id, description: `Mise à jour type prime ${entity.code}`, anciennesValeurs: oldValues, nouvellesValeurs: dto, module: 'personnel', etablissementId }, req);
         }
         return entity;
     }
 
-    async delete(id: string, etablissementId: string, userId?: string, req?: any): Promise<void> {
+    async delete(id: string, etablissementId: string, userId?: string, req?: Request): Promise<void> {
         const entity = await this.findOne(id, etablissementId);
         await this.repo.remove(entity);
 
         if (userId) {
-            await auditService.log({ utilisateurId: userId, action: AuditAction.PRIME_DELETE, cible: 'TypePrime', cibleId: id, description: `Suppression type prime ${entity.code}`, module: 'personnel' }, req);
+            await auditService.log({ utilisateurId: userId, action: AuditAction.PRIME_DELETE, cible: 'TypePrime', cibleId: id, description: `Suppression type prime ${entity.code}`, module: 'personnel', etablissementId }, req);
         }
     }
 }

@@ -15,6 +15,7 @@ import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
+import { Request } from 'express';
 
 export class TypeContratService {
     private repo: Repository<TypeContratPersonnalise>;
@@ -33,7 +34,7 @@ export class TypeContratService {
         dto: CreateTypeContratDto,
         etablissementId: string,
         userId?: string,
-        req?: any
+        req?: Request
     ): Promise<TypeContratPersonnalise> {
         // Vérifier l'unicité du code pour cet établissement
         const existing = await this.repo.findOne({
@@ -56,12 +57,13 @@ export class TypeContratService {
         // Audit
         await auditService.log({
             utilisateurId: userId,
-            action: 'TYPE_CONTRAT_CREATE' as any,
+            action: AuditAction.TYPE_CONTRAT_CREATE,
             cible: 'TypeContratPersonnalise',
             cibleId: typeContrat.id,
             description: `Création type contrat ${dto.code} - ${dto.nom}`,
             nouvellesValeurs: dto,
             module: 'personnel',
+            etablissementId,
         }, req);
 
         logger.info(`Type contrat créé: ${typeContrat.id} (${dto.code})`);
@@ -169,7 +171,7 @@ export class TypeContratService {
         dto: UpdateTypeContratDto,
         userId: string,
         etablissementId: string,
-        req?: any
+        req?: Request
     ): Promise<TypeContratPersonnalise> {
         const typeContrat = await this.findOne(id, etablissementId);
 
@@ -201,13 +203,14 @@ export class TypeContratService {
         // Audit
         await auditService.log({
             utilisateurId: userId,
-            action: 'TYPE_CONTRAT_UPDATE' as any,
+            action: AuditAction.TYPE_CONTRAT_UPDATE,
             cible: 'TypeContratPersonnalise',
             cibleId: id,
             description: `Modification type contrat ${typeContrat.code}`,
             anciennesValeurs,
             nouvellesValeurs: dto,
             module: 'personnel',
+            etablissementId,
         }, req);
 
         logger.info(`Type contrat modifié: ${id}`);
@@ -217,7 +220,7 @@ export class TypeContratService {
     /**
      * Supprimer un type de contrat (soft delete)
      */
-    async delete(id: string, userId: string, etablissementId: string, req?: any): Promise<void> {
+    async delete(id: string, userId: string, etablissementId: string, req?: Request): Promise<void> {
         const typeContrat = await this.findOne(id, etablissementId);
 
         // Protection des types système
@@ -239,11 +242,12 @@ export class TypeContratService {
 
             await auditService.log({
                 utilisateurId: userId,
-                action: 'TYPE_CONTRAT_DELETE' as any,
+                action: AuditAction.TYPE_CONTRAT_DELETE,
                 cible: 'TypeContratPersonnalise',
                 cibleId: id,
                 description: `Désactivation type contrat ${typeContrat.code} (${contratsUtilisant} contrats existants)`,
                 module: 'personnel',
+                etablissementId,
             }, req);
 
             logger.info(`Type contrat désactivé: ${id} (${contratsUtilisant} contrats)`);
@@ -256,11 +260,12 @@ export class TypeContratService {
 
         await auditService.log({
             utilisateurId: userId,
-            action: 'TYPE_CONTRAT_DELETE' as any,
+            action: AuditAction.TYPE_CONTRAT_DELETE,
             cible: 'TypeContratPersonnalise',
             cibleId: id,
             description: `Suppression type contrat ${typeContrat.code}`,
             module: 'personnel',
+            etablissementId,
         }, req);
 
         logger.info(`Type contrat supprimé: ${id}`);
@@ -273,7 +278,7 @@ export class TypeContratService {
         id: string,
         userId: string,
         etablissementId: string,
-        req?: any
+        req?: Request
     ): Promise<TypeContratPersonnalise> {
         const typeContrat = await this.findOne(id, etablissementId);
 
@@ -283,11 +288,12 @@ export class TypeContratService {
 
         await auditService.log({
             utilisateurId: userId,
-            action: 'TYPE_CONTRAT_UPDATE' as any,
+            action: AuditAction.TYPE_CONTRAT_UPDATE,
             cible: 'TypeContratPersonnalise',
             cibleId: id,
             description: `${typeContrat.actif ? 'Activation' : 'Désactivation'} type contrat ${typeContrat.code}`,
             module: 'personnel',
+            etablissementId,
         }, req);
 
         logger.info(`Type contrat ${typeContrat.actif ? 'activé' : 'désactivé'}: ${id}`);

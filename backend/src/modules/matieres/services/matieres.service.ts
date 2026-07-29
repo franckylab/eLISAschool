@@ -22,6 +22,8 @@ import { coefficientResolverService } from './coefficient-resolver.service';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithRepository, PaginatedResult } from '@common/utils/pagination.util';
+import { auditService, AuditAction } from '@modules/auth';
+import { Request } from 'express';
 
 export class MatieresService {
     private matiereRepo: Repository<Matiere>;
@@ -46,7 +48,7 @@ export class MatieresService {
         return matiere;
     }
 
-    async create(dto: CreateMatiereDto, etablissementId: string): Promise<Matiere> {
+    async create(dto: CreateMatiereDto, etablissementId: string, utilisateurId?: string, req?: Request): Promise<Matiere> {
         const existing = await this.matiereRepo.findOne({ 
             where: { nom: dto.nom, etablissementId } 
         });
@@ -58,6 +60,19 @@ export class MatieresService {
         });
         await this.matiereRepo.save(matiere);
         logger.info(`Matière créée: ${dto.nom} pour établissement ${etablissementId}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.MATIERE_CREATE,
+            cible: 'Matiere',
+            cibleId: matiere.id,
+            description: `Matière créée: ${matiere.nom}`,
+            nouvellesValeurs: dto as Record<string, unknown>,
+            module: 'matieres',
+            etablissementId,
+            metadata: { entiteLabel: matiere.nom, entiteRef: matiere.code },
+        }, req);
+
         return matiere;
     }
 
@@ -91,23 +106,56 @@ export class MatieresService {
         });
     }
 
-    async update(id: string, dto: UpdateMatiereDto, etablissementId: string): Promise<Matiere> {
+    async update(id: string, dto: UpdateMatiereDto, etablissementId: string, utilisateurId?: string, req?: Request): Promise<Matiere> {
         const matiere = await this.matiereRepo.findOne({ 
             where: { id, etablissementId } 
         });
         if (!matiere) throw new AppError('Matière non trouvée', 404, 'NOT_FOUND');
+
+        const snapshotAvant: Record<string, unknown> = {};
+        for (const cle of Object.keys(dto)) {
+            snapshotAvant[cle] = (matiere as unknown as Record<string, unknown>)[cle];
+        }
+
         Object.assign(matiere, dto);
         await this.matiereRepo.save(matiere);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.MATIERE_UPDATE,
+            cible: 'Matiere',
+            cibleId: matiere.id,
+            description: `Matière modifiée: ${matiere.nom}`,
+            anciennesValeurs: snapshotAvant,
+            nouvellesValeurs: dto as Record<string, unknown>,
+            module: 'matieres',
+            etablissementId,
+            metadata: { entiteLabel: matiere.nom, entiteRef: matiere.code },
+        }, req);
+
         return matiere;
     }
 
-    async delete(id: string, etablissementId: string): Promise<void> {
+    async delete(id: string, etablissementId: string, utilisateurId?: string, req?: Request): Promise<void> {
         const matiere = await this.matiereRepo.findOne({ 
             where: { id, etablissementId } 
         });
         if (!matiere) throw new AppError('Matière non trouvée', 404, 'NOT_FOUND');
+
+        const nomMatiere = matiere.nom;
         await this.matiereRepo.remove(matiere);
         logger.info(`Matière supprimée: ${id} pour établissement ${etablissementId}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.MATIERE_DELETE,
+            cible: 'Matiere',
+            cibleId: id,
+            description: `Matière supprimée: ${nomMatiere}`,
+            module: 'matieres',
+            etablissementId,
+            metadata: { entiteLabel: nomMatiere },
+        }, req);
     }
 
     // ==== GROUPES ====

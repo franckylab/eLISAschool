@@ -51,6 +51,7 @@ import {
     Wallet,
     ClipboardList,
     ListPlus,
+    ScrollText,
     type LucideIcon,
 } from 'lucide-react';
 import { useSidebarStore } from '@/stores/sidebar.store';
@@ -296,6 +297,7 @@ const NAV_SECTIONS: NavSection[] = [
         items: [
             { label: 'Utilisateurs', path: '/utilisateurs', icon: UserCog, module: 'utilisateurs' },
             { label: 'Rôles & Permissions', path: '/admin/roles', icon: Shield, module: 'roles' },
+            { label: 'Audit', path: '/admin/audit', icon: ScrollText, module: 'audit' },
             { label: 'Finances', path: '/finances', icon: CreditCard, module: 'finances' },
             { label: 'Communication', path: '/communication', icon: MessageSquare, module: 'communication' },
             { label: 'Transport', path: '/transport', icon: Bus, module: 'transport' },

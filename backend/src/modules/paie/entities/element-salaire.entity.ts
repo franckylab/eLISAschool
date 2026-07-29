@@ -16,6 +16,7 @@ import {
     JoinColumn,
     CreateDateColumn,
     UpdateDateColumn,
+    DeleteDateColumn,
     Index,
 } from 'typeorm';
 import { numericTransformer } from '@common/utils/numeric-transformer.util';
@@ -86,4 +87,7 @@ export class ElementSalaire {
 
     @UpdateDateColumn()
     updatedAt!: Date;
+
+    @DeleteDateColumn()
+    deletedAt?: Date;
 }

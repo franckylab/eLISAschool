@@ -63,7 +63,7 @@ router.get('/:id', requirePermission('notes:view'), async (req: Request, res: Re
 router.post('/', requirePermission('notes:create'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createNoteSchema, req.body);
-        const note = await notesService.create(dto, req.utilisateur!.id, req.etablissementId);
+        const note = await notesService.create(dto, req.utilisateur!.id, req.etablissementId, req);
         res.status(201).json({ success: true, data: note });
     } catch (error) { next(error); }
 });
@@ -71,7 +71,7 @@ router.post('/', requirePermission('notes:create'), async (req: Request, res: Re
 router.post('/bulk', requirePermission('notes:bulk:create'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createBulkNotesSchema, req.body);
-        const count = await notesService.createBulk(dto, req.utilisateur!.id, req.etablissementId);
+        const count = await notesService.createBulk(dto, req.utilisateur!.id, req.etablissementId, req);
         res.status(201).json({ success: true, count, message: `${count} notes créées` });
     } catch (error) { next(error); }
 });
@@ -79,14 +79,14 @@ router.post('/bulk', requirePermission('notes:bulk:create'), async (req: Request
 router.patch('/:id', requirePermission('notes:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateNoteSchema, req.body);
-        const note = await notesService.update(req.params.id, dto, req.utilisateur!.id, req.etablissementId);
+        const note = await notesService.update(req.params.id, dto, req.utilisateur!.id, req.etablissementId, req);
         res.json({ success: true, data: note });
     } catch (error) { next(error); }
 });
 
 router.delete('/:id', requirePermission('notes:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await notesService.remove(req.params.id, req.utilisateur!.id, req.etablissementId);
+        await notesService.remove(req.params.id, req.utilisateur!.id, req.etablissementId, req);
         res.json({ success: true, message: 'Note supprimée' });
     } catch (error) { next(error); }
 });

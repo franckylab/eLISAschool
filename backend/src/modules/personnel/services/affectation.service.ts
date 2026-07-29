@@ -19,6 +19,7 @@ import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 import { Poste } from '@modules/organisation/entities';
 import { recalculerOccupantsEtStatut, verifierCapacitePoste } from './poste-occupation.helper';
+import { Request } from 'express';
 
 export class AffectationService {
     private repo: Repository<AffectationPoste>;
@@ -60,7 +61,7 @@ export class AffectationService {
             typeMutation?: TypeMutation;
             contratId?: string;
             createurId?: string;
-            req?: any;
+            req?: Request;
         },
     ): Promise<{ poste: any; affectation: AffectationPoste }> {
         const queryRunner = AppDataSource.createQueryRunner();
@@ -122,7 +123,7 @@ export class AffectationService {
         dto: CreateAffectationDto,
         etablissementId: string,
         createurId?: string,
-        req?: any
+        req?: Request
     ): Promise<AffectationPoste> {
         // Déterminer si validation requise AVANT transaction
         const requireValidation = await getParamBoolean('personnel.affectation_require_validation', { defaultValue: false });
@@ -206,6 +207,8 @@ export class AffectationService {
                     description: `Création affectation ${dto.typeMutation} poste ${dto.posteId}`,
                     nouvellesValeurs: dto,
                     module: 'personnel',
+                    etablissementId,
+                    parentCible: 'MembrePersonnel', parentCibleId: dto.membrePersonnelId,
                 }, req);
             }
 
@@ -330,7 +333,7 @@ export class AffectationService {
         id: string,
         userId: string,
         etablissementId: string,
-        req?: any
+        req?: Request
     ): Promise<AffectationPoste> {
         const affectation = await this.findOne(id, etablissementId);
 
@@ -360,6 +363,8 @@ export class AffectationService {
             anciennesValeurs,
             nouvellesValeurs: { statut: 'TERMINE', dateFin: affectation.dateFin },
             module: 'personnel',
+            etablissementId,
+            parentCible: 'MembrePersonnel', parentCibleId: affectation.membrePersonnelId,
         }, req);
 
         logger.info(`Affectation terminée: ${id}`);
@@ -390,7 +395,7 @@ export class AffectationService {
         dto: UpdateAffectationDto,
         userId: string,
         etablissementId: string,
-        req?: any
+        req?: Request
     ): Promise<AffectationPoste> {
         const affectation = await this.findOne(id, etablissementId);
 
@@ -400,10 +405,12 @@ export class AffectationService {
             commentaire: affectation.commentaire,
         };
 
-        if (dto.dateDebut) dto.dateDebut = new Date(dto.dateDebut) as any;
-        if (dto.dateFin) dto.dateFin = new Date(dto.dateFin) as any;
+        // Fusionner les changements de dates (conversion string -> Date) sans muter le DTO
+        const dateChanges: Partial<AffectationPoste> = {};
+        if (dto.dateDebut) dateChanges.dateDebut = new Date(dto.dateDebut);
+        if (dto.dateFin) dateChanges.dateFin = new Date(dto.dateFin);
 
-        Object.assign(affectation, dto);
+        Object.assign(affectation, dto, dateChanges);
         await this.repo.save(affectation);
 
         // Audit
@@ -416,6 +423,8 @@ export class AffectationService {
             anciennesValeurs,
             nouvellesValeurs: dto,
             module: 'personnel',
+            etablissementId,
+            parentCible: 'MembrePersonnel', parentCibleId: affectation.membrePersonnelId,
         }, req);
 
         logger.info(`Affectation modifiée: ${id}`);
@@ -436,7 +445,7 @@ export class AffectationService {
             where: {
                 etablissementId,
                 statut: StatutAffectation.ACTIF,
-                dateFin: LessThanOrEqual(dateLimite) as any,
+                dateFin: LessThanOrEqual(dateLimite),
             },
             relations: ['membrePersonnel', 'membrePersonnel.utilisateur', 'poste'],
             order: { dateFin: 'ASC' },

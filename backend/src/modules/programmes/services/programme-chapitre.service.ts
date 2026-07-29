@@ -7,6 +7,7 @@ import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder } from '@common/utils/pagination.util';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
+import { Request } from 'express';
 
 export class ProgrammeChapitreService {
     private repo: Repository<ProgrammeChapitre>;
@@ -19,7 +20,7 @@ export class ProgrammeChapitreService {
         dto: CreateProgrammeChapitreDto,
         etablissementId: string,
         createurId?: string,
-        req?: any
+        req?: Request
     ): Promise<ProgrammeChapitre> {
         const entity = this.repo.create({
             ...dto,
@@ -116,7 +117,7 @@ export class ProgrammeChapitreService {
         dto: UpdateProgrammeChapitreDto,
         userId: string,
         etablissementId: string,
-        req?: any
+        req?: Request
     ): Promise<ProgrammeChapitre> {
         const entity = await this.findOne(id, etablissementId);
 
@@ -136,7 +137,7 @@ export class ProgrammeChapitreService {
         return entity;
     }
 
-    async delete(id: string, userId: string, etablissementId: string, req?: any): Promise<{ success: boolean }> {
+    async delete(id: string, userId: string, etablissementId: string, req?: Request): Promise<{ success: boolean }> {
         const entity = await this.findOne(id, etablissementId);
 
         await this.repo.remove(entity);

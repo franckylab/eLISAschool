@@ -30,6 +30,7 @@ import { validationWorkflowService } from '@modules/validation-workflow/services
 import { StatutWorkflow, DecisionValidation } from '@modules/validation-workflow/entities';
 import { gamificationService } from '@modules/gamification/services';
 import { PaginatedResult, createPaginatedResult } from '@common/utils/pagination.util';
+import { Request } from 'express';
 
 /**
  * Tranches de distribution des notes (sur 20)
@@ -97,7 +98,7 @@ export class NotesService {
         }
     }
 
-    async create(createDto: CreateNoteDto, utilisateurId: string, etablissementId?: string): Promise<Note> {
+    async create(createDto: CreateNoteDto, utilisateurId: string, etablissementId?: string, req?: Request): Promise<Note> {
         const params = await this.getNotesParams(etablissementId);
 
         // 1. Récupérer l'année scolaire via la période
@@ -179,25 +180,41 @@ export class NotesService {
             }, utilisateurId);
         }
 
+        // Charger l'élève pour audit + notification
+        const eleveRepo = AppDataSource.getRepository(Eleve);
+        const eleve = await eleveRepo.findOne({
+            where: { id: createDto.eleveId },
+            relations: ['utilisateur'],
+        });
+
+        const eleveLabel = eleve
+            ? `${eleve.prenom} ${eleve.nom} (${eleve.matricule})`
+            : undefined;
+
         await auditService.log({
             utilisateurId,
             action: AuditAction.NOTE_CREATE,
             cible: 'Note',
             cibleId: note.id,
-            description: `Note créée pour élève ${createDto.eleveId}`,
+            description: `Note créée pour élève ${eleveLabel || createDto.eleveId}`,
             module: 'notes',
-        });
+            etablissementId,
+            parentCible: 'Eleve',
+            parentCibleId: createDto.eleveId,
+            metadata: {
+                entiteLabel: `${createDto.valeur}/${note.bareme}`,
+                relations: {
+                    eleve: { id: createDto.eleveId, label: eleveLabel },
+                    matiere: { id: createDto.matiereId },
+                    periode: { id: createDto.periodeId },
+                },
+            },
+        }, req);
 
         // NOTIFICATION : Envoyer une notification aux parents
         try {
-            const eleveRepo = AppDataSource.getRepository(Eleve);
             const matiereRepo = AppDataSource.getRepository(Matiere);
             const personnelRepo = AppDataSource.getRepository(MembrePersonnel);
-
-            const eleve = await eleveRepo.findOne({ 
-                where: { id: createDto.eleveId },
-                relations: ['utilisateur']
-            });
             
             if (eleve) {
                 const matiere = await matiereRepo.findOne({ where: { id: createDto.matiereId } });
@@ -242,31 +259,22 @@ export class NotesService {
 
         // GAMIFICATION : Attribution automatique de points pour bonne note
         try {
-            const eleveRepo = AppDataSource.getRepository(Eleve);
-            const eleve = await eleveRepo.findOne({ 
-                where: { id: createDto.eleveId },
-                select: ['utilisateurId']
-            });
-            
             if (eleve) {
-                // Attribution points si note ≥ 80% du barème (ou seuil configuré)
                 await gamificationService.attribuerPointsBonneNote(
                     eleve.utilisateurId,
                     createDto.valeur,
                     note.bareme
                 );
-                
                 logger.info(`[Notes] Points gamification attribués pour note ${createDto.valeur}/${note.bareme}`);
             }
         } catch (error) {
-            // Ne pas bloquer la création de note si la gamification échoue
             logger.warn('[Notes] Échec attribution points gamification (non bloquant)', error);
         }
 
         return note;
     }
 
-    async createBulk(createDto: CreateBulkNotesDto, utilisateurId: string, etablissementId?: string): Promise<number> {
+    async createBulk(createDto: CreateBulkNotesDto, utilisateurId: string, etablissementId?: string, req?: Request): Promise<number> {
         const params = await this.getNotesParams(etablissementId);
 
         // 1. Vérifier que la saisie en masse est autorisée par la configuration
@@ -371,9 +379,13 @@ export class NotesService {
         await auditService.log({
             utilisateurId,
             action: AuditAction.NOTE_CREATE,
+            cible: 'Note',
+            cibleId: notes[0]?.id,
             description: `Bulk: ${notes.length} notes créées`,
             module: 'notes',
-        });
+            etablissementId,
+            metadata: { entiteLabel: `${notes.length} notes (saisie en masse)` },
+        }, req);
 
         return notes.length;
     }
@@ -428,7 +440,7 @@ export class NotesService {
         return note;
     }
 
-    async update(id: string, updateDto: UpdateNoteDto, utilisateurId: string, etablissementId?: string): Promise<Note> {
+    async update(id: string, updateDto: UpdateNoteDto, utilisateurId: string, etablissementId?: string, req?: Request): Promise<Note> {
         const note = await this.findOne(id, etablissementId);
 
         // Vérifier le verrouillage de la période associée
@@ -510,12 +522,23 @@ export class NotesService {
             anciennesValeurs: snapshotAvant,
             nouvellesValeurs: updateDto as Record<string, unknown>,
             module: 'notes',
-        });
+            etablissementId: note.etablissementId,
+            parentCible: 'Eleve',
+            parentCibleId: note.eleveId,
+            metadata: {
+                entiteLabel: `${note.valeur}/${note.bareme}`,
+                relations: {
+                    eleve: { id: note.eleveId, label: note.eleve ? `${note.eleve.prenom} ${note.eleve.nom} (${note.eleve.matricule})` : undefined },
+                    matiere: { id: note.matiereId },
+                    periode: { id: note.periodeId },
+                },
+            },
+        }, req);
 
         return note;
     }
 
-    async remove(id: string, utilisateurId: string, etablissementId?: string): Promise<void> {
+    async remove(id: string, utilisateurId: string, etablissementId?: string, req?: Request): Promise<void> {
         const note = await this.findOne(id, etablissementId);
 
         // Guard de clôture — cohérent avec update()
@@ -550,9 +573,20 @@ export class NotesService {
             action: AuditAction.NOTE_DELETE,
             cible: 'Note',
             cibleId: id,
-            description: `Note supprimée (élève: ${note.eleveId}, matière: ${note.matiereId})`,
+            description: `Note supprimée (élève: ${note.eleve ? `${note.eleve.prenom} ${note.eleve.nom}` : note.eleveId}, matière: ${note.matiereId})`,
             module: 'notes',
-        });
+            etablissementId: note.etablissementId,
+            parentCible: 'Eleve',
+            parentCibleId: note.eleveId,
+            metadata: {
+                entiteLabel: `${note.valeur}/${note.bareme}`,
+                relations: {
+                    eleve: { id: note.eleveId, label: note.eleve ? `${note.eleve.prenom} ${note.eleve.nom} (${note.eleve.matricule})` : undefined },
+                    matiere: { id: note.matiereId },
+                    periode: { id: note.periodeId },
+                },
+            },
+        }, req);
 
         logger.info(`[Notes] Note ${id} supprimée par ${utilisateurId}`);
     }

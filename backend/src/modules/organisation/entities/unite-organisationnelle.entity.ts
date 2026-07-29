@@ -21,6 +21,7 @@ import {
     Column,
     CreateDateColumn,
     UpdateDateColumn,
+    DeleteDateColumn,
     ManyToOne,
     OneToMany,
     JoinColumn,
@@ -105,6 +106,9 @@ export class UniteOrganisationnelle {
 
     @UpdateDateColumn()
     updatedAt!: Date;
+
+    @DeleteDateColumn()
+    deletedAt?: Date;
 
     // Relations
     @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })

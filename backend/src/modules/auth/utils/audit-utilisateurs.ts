@@ -1,3 +1,4 @@
+import { Request } from 'express';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction, AuditSeverity } from '@modules/auth/entities/audit-log.entity';
 import { logger } from '@common/utils/logger.util';
@@ -7,7 +8,7 @@ export const auditUtilisateur = {
         utilisateurId: string,
         cibleId: string,
         email: string,
-        req?: any
+        req?: Request
     ): Promise<void> {
         try {
             await auditService.log({
@@ -28,7 +29,7 @@ export const auditUtilisateur = {
         cibleId: string,
         email: string,
         changements: Record<string, { ancien: any; nouveau: any }>,
-        req?: any
+        req?: Request
     ): Promise<void> {
         try {
             await auditService.log({
@@ -55,7 +56,7 @@ export const auditUtilisateur = {
         utilisateurId: string,
         cibleId: string,
         email: string,
-        req?: any
+        req?: Request
     ): Promise<void> {
         try {
             await auditService.log({
@@ -77,7 +78,7 @@ export const auditUtilisateur = {
         cibleId: string,
         email: string,
         nombreTokens: number,
-        req?: any
+        req?: Request
     ): Promise<void> {
         try {
             await auditService.log({
@@ -101,7 +102,7 @@ export const auditUtilisateur = {
         email: string,
         ancienStatut: string,
         nouveauStatut: string,
-        req?: any
+        req?: Request
     ): Promise<void> {
         try {
             const action = nouveauStatut === 'SUSPENDU'

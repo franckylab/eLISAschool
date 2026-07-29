@@ -11,6 +11,7 @@ import {
     PrimaryGeneratedColumn,
     Column,
     CreateDateColumn,
+    DeleteDateColumn,
     ManyToOne,
     JoinColumn,
     Index,
@@ -131,4 +132,7 @@ export class HeureCours {
 
     @CreateDateColumn()
     createdAt!: Date;
+
+    @DeleteDateColumn()
+    deletedAt?: Date;
 }

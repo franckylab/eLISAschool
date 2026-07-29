@@ -319,6 +319,8 @@ export enum AuditSeverity {
 @Index(['utilisateurId', 'createdAt'])
 @Index(['action', 'createdAt'])
 @Index(['cible', 'cibleId'])
+@Index(['etablissementId', 'createdAt'])
+@Index(['parentCible', 'parentCibleId', 'createdAt'])
 export class AuditLog {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -358,7 +360,31 @@ export class AuditLog {
     userAgent?: string;
 
     @Column({ type: 'varchar', length: 100, nullable: true })
+    navigateur?: string;
+
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    systemeExploitation?: string;
+
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    appareil?: string;
+
+    @Column({ type: 'varchar', length: 100, nullable: true })
     module?: string; // Module concerné
+
+    @Column({ type: 'uuid', nullable: true })
+    etablissementId?: string; // Isolation multi-tenant
+
+    @Column({ type: 'simple-array', nullable: true })
+    champsModifies?: string[]; // Champs modifiés calculés au moment du log
+
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    parentCible?: string; // Type de l'entité parente (agrégation entités liées)
+
+    @Column({ type: 'uuid', nullable: true })
+    parentCibleId?: string; // ID de l'entité parente
+
+    @Column({ type: 'jsonb', nullable: true })
+    metadata?: Record<string, unknown>;
 
     @Column({ type: 'boolean', default: false })
     estEchec!: boolean;

@@ -6,7 +6,7 @@
  * Auteur: franck arlos chendjou
  */
 
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, DeleteDateColumn, Index } from 'typeorm';
 import { MembrePersonnel } from './personnel.entity';
 import { Etablissement } from '@modules/etablissement/entities';
 
@@ -78,4 +78,7 @@ export class AbsencePersonnel {
 
     @CreateDateColumn()
     createdAt!: Date;
+
+    @DeleteDateColumn()
+    deletedAt?: Date;
 }

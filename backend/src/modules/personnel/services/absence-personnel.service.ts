@@ -10,8 +10,9 @@ import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder } from '@common/utils/pagination.util';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
-import { AbsencePersonnel } from '../entities/absence-personnel.entity';
+import { AbsencePersonnel, TypeAbsencePersonnel } from '../entities/absence-personnel.entity';
 import { CreateAbsenceDto, UpdateAbsenceDto, QueryAbsenceDto } from '../dto/absence-personnel.dto';
+import { Request } from 'express';
 
 export class AbsencePersonnelService {
     private repo: Repository<AbsencePersonnel>;
@@ -20,17 +21,27 @@ export class AbsencePersonnelService {
         this.repo = AppDataSource.getRepository(AbsencePersonnel);
     }
 
-    async create(dto: CreateAbsenceDto, etablissementId: string, createurId?: string, req?: any) {
+    async create(dto: CreateAbsenceDto, etablissementId: string, createurId?: string, req?: Request) {
         const entity = this.repo.create({
             ...dto,
-            type: dto.type as any,
+            type: dto.type as TypeAbsencePersonnel,
             date: new Date(dto.date),
             etablissementId,
         });
         await this.repo.save(entity);
 
         if (createurId) {
-            await auditService.logCRUD('CREATE', 'AbsencePersonnel', createurId, entity.id, undefined, dto as any, req);
+            await auditService.log({
+                utilisateurId: createurId,
+                action: AuditAction.ABSENCE_PERSONNEL_CREATE,
+                cible: 'AbsencePersonnel',
+                cibleId: entity.id,
+                description: `Création absence ${entity.id}`,
+                nouvellesValeurs: dto as Record<string, any>,
+                module: 'personnel',
+                etablissementId,
+                parentCible: 'MembrePersonnel', parentCibleId: dto.membrePersonnelId,
+            }, req);
         }
 
         logger.info(`Absence créée: ${entity.id}`);
@@ -80,7 +91,7 @@ export class AbsencePersonnelService {
         return entity;
     }
 
-    async update(id: string, dto: UpdateAbsenceDto, userId: string, etablissementId: string, req?: any) {
+    async update(id: string, dto: UpdateAbsenceDto, userId: string, etablissementId: string, req?: Request) {
         const entity = await this.findOne(id, etablissementId);
 
         Object.assign(entity, dto);
@@ -94,12 +105,14 @@ export class AbsencePersonnelService {
             description: `Modification absence ${id}`,
             nouvellesValeurs: dto,
             module: 'personnel',
+            etablissementId,
+            parentCible: 'MembrePersonnel', parentCibleId: entity.membrePersonnelId,
         }, req);
 
         return entity;
     }
 
-    async delete(id: string, userId: string, etablissementId: string, req?: any) {
+    async delete(id: string, userId: string, etablissementId: string, req?: Request) {
         const entity = await this.findOne(id, etablissementId);
 
         await this.repo.remove(entity);
@@ -111,12 +124,14 @@ export class AbsencePersonnelService {
             cibleId: id,
             description: `Suppression absence ${id}`,
             module: 'personnel',
+            etablissementId,
+            parentCible: 'MembrePersonnel', parentCibleId: entity.membrePersonnelId,
         }, req);
 
         return { success: true };
     }
 
-    async justifier(id: string, justification: string, userId: string, etablissementId: string, req?: any) {
+    async justifier(id: string, justification: string, userId: string, etablissementId: string, req?: Request) {
         const entity = await this.findOne(id, etablissementId);
 
         entity.justification = justification;
@@ -130,6 +145,8 @@ export class AbsencePersonnelService {
             description: `Justification absence ${id}`,
             nouvellesValeurs: { justification },
             module: 'personnel',
+            etablissementId,
+            parentCible: 'MembrePersonnel', parentCibleId: entity.membrePersonnelId,
         }, req);
 
         return entity;

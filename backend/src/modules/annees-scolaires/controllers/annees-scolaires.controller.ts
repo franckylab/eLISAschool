@@ -42,7 +42,7 @@ router.post('/', authMiddleware, requirePermission('config:edit'), async (req: R
     try {
         const etablissementId = getEtablissementId(req);
         const dto = validateDto(createAnneeScolaireSchema, req.body);
-        const annee = await service.create(dto, etablissementId, req.utilisateur?.id);
+        const annee = await service.create(dto, etablissementId, req.utilisateur?.id, req);
         res.status(201).json({ success: true, data: annee });
     } catch (error) { next(error); }
 });
@@ -51,7 +51,7 @@ router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (re
     try {
         const etablissementId = getEtablissementId(req);
         const dto = validateDto(updateAnneeScolaireSchema, req.body);
-        const annee = await service.update(req.params.id, dto, etablissementId, req.utilisateur?.id);
+        const annee = await service.update(req.params.id, dto, etablissementId, req.utilisateur?.id, req);
         res.json({ success: true, data: annee });
     } catch (error) { next(error); }
 });
@@ -59,7 +59,7 @@ router.patch('/:id', authMiddleware, requirePermission('config:edit'), async (re
 router.post('/:id/activer', authMiddleware, requirePermission('annees-scolaires:activer'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = getEtablissementId(req);
-        const annee = await service.activer(req.params.id, etablissementId);
+        const annee = await service.activer(req.params.id, etablissementId, req.utilisateur?.id, req);
         res.json({ success: true, data: annee });
     } catch (error) { next(error); }
 });
@@ -83,7 +83,7 @@ router.post('/:id/reouvrir', authMiddleware, requirePermission('annees-scolaires
 router.delete('/:id', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = getEtablissementId(req);
-        await service.delete(req.params.id, etablissementId);
+        await service.delete(req.params.id, etablissementId, req.utilisateur?.id, req);
         res.json({ success: true, message: 'Année scolaire supprimée' });
     } catch (error) { next(error); }
 });

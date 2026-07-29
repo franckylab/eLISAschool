@@ -25,6 +25,7 @@ import {
     Column,
     CreateDateColumn,
     UpdateDateColumn,
+    DeleteDateColumn,
     ManyToOne,
     JoinColumn,
     Index,
@@ -130,4 +131,7 @@ export class HierarchiePersonnel {
 
     @UpdateDateColumn()
     updatedAt!: Date;
+
+    @DeleteDateColumn()
+    deletedAt?: Date;
 }

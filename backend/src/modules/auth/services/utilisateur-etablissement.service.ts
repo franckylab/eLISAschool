@@ -9,6 +9,7 @@
  */
 
 import { Repository, DataSource } from 'typeorm';
+import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
 import { UtilisateurEtablissement, RoleLimitationEtablissement } from '../entities';
 import { Role } from '@modules/auth/entities';
@@ -479,7 +480,7 @@ export class UtilisateurEtablissementService {
         actif: boolean,
         motif: string,
         effectueParId: string,
-        req?: any
+        req?: Request
     ): Promise<UtilisateurEtablissement> {
         const queryRunner = AppDataSource.createQueryRunner();
         await queryRunner.connect();
@@ -565,6 +566,7 @@ export class UtilisateurEtablissementService {
                 anciennesValeurs: { actif: ancienStatut },
                 nouvellesValeurs: { actif, motif },
                 module: 'utilisateurs',
+                etablissementId,
             }, req);
 
             await queryRunner.commitTransaction();

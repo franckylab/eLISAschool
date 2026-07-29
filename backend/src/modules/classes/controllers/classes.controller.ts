@@ -102,7 +102,7 @@ router.get('/:id', authMiddleware, requirePermission('classes:view'), async (req
 router.post('/', authMiddleware, requirePermission('classes:create'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createClasseSchema, req.body);
-        const classe = await service.create(dto, req.etablissementId);
+        const classe = await service.create(dto, req.etablissementId, req.utilisateur?.id, req);
         res.status(201).json({ success: true, data: classe });
     } catch (error) { next(error); }
 });
@@ -110,14 +110,14 @@ router.post('/', authMiddleware, requirePermission('classes:create'), async (req
 router.patch('/:id', authMiddleware, requirePermission('classes:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateClasseSchema, req.body);
-        const classe = await service.update(req.params.id, dto, req.etablissementId);
+        const classe = await service.update(req.params.id, dto, req.etablissementId, req.utilisateur?.id, req);
         res.json({ success: true, data: classe });
     } catch (error) { next(error); }
 });
 
 router.delete('/:id', authMiddleware, requirePermission('classes:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await service.delete(req.params.id, req.etablissementId);
+        await service.delete(req.params.id, req.etablissementId, req.utilisateur?.id, req);
         res.json({ success: true, message: 'Classe supprimée' });
     } catch (error) { next(error); }
 });

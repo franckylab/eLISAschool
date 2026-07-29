@@ -10,6 +10,7 @@ import {
     ManyToOne,
     JoinColumn,
     CreateDateColumn,
+    DeleteDateColumn,
     Index,
 } from 'typeorm';
 import { Etablissement } from '@modules/etablissement/entities';
@@ -57,4 +58,7 @@ export class EvaluationEnseignant {
 
     @CreateDateColumn()
     createdAt!: Date;
+
+    @DeleteDateColumn()
+    deletedAt?: Date;
 }

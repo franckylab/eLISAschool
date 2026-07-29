@@ -101,7 +101,7 @@ router.get('/:id', authMiddleware, requirePermission(Permission.PERIODES_VIEW), 
 router.post('/', authMiddleware, requirePermission(Permission.PERIODES_CREATE), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createPeriodeSchema, req.body);
-        const periode = await service.create(dto, req.etablissementId!);
+        const periode = await service.create(dto, req.etablissementId!, req.utilisateur?.id, req);
         res.status(201).json({ success: true, data: periode });
     } catch (error) { next(error); }
 });
@@ -112,7 +112,7 @@ router.post('/', authMiddleware, requirePermission(Permission.PERIODES_CREATE), 
 router.patch('/:id', authMiddleware, requirePermission(Permission.PERIODES_EDIT), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updatePeriodeSchema, req.body);
-        const periode = await service.update(req.params.id, dto, req.etablissementId);
+        const periode = await service.update(req.params.id, dto, req.etablissementId, req.utilisateur?.id, req);
         res.json({ success: true, data: periode });
     } catch (error) { next(error); }
 });
@@ -122,7 +122,7 @@ router.patch('/:id', authMiddleware, requirePermission(Permission.PERIODES_EDIT)
  */
 router.delete('/:id', authMiddleware, requirePermission(Permission.PERIODES_DELETE), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await service.delete(req.params.id, req.etablissementId);
+        await service.delete(req.params.id, req.etablissementId, req.utilisateur?.id, req);
         res.json({ success: true, message: 'Période supprimée' });
     } catch (error) { next(error); }
 });

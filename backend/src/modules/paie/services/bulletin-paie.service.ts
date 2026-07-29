@@ -18,6 +18,7 @@ import { CreateElementSalaireDto, UpdateElementSalaireDto } from '../dto/paie-et
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
 import { calculPaieService } from './calcul-paie.service';
+import { Request } from 'express';
 
 export class BulletinPaieService {
     private repo: Repository<BulletinPaie>;
@@ -40,7 +41,7 @@ export class BulletinPaieService {
         });
     }
 
-    async addElement(bulletinId: string, dto: CreateElementSalaireDto, etablissementId: string, userId?: string, req?: any): Promise<ElementSalaire> {
+    async addElement(bulletinId: string, dto: CreateElementSalaireDto, etablissementId: string, userId?: string, req?: Request): Promise<ElementSalaire> {
         await this.findOne(bulletinId, etablissementId);
         const element = new ElementSalaire();
         Object.assign(element, dto, { bulletinPaieId: bulletinId, etablissementId });
@@ -55,12 +56,15 @@ export class BulletinPaieService {
                 description: `Ajout élément salaire ${dto.libelle} au bulletin ${bulletinId}`,
                 nouvellesValeurs: dto,
                 module: 'personnel',
+                etablissementId,
+                parentCible: 'BulletinPaie',
+                parentCibleId: bulletinId,
             }, req);
         }
         return element;
     }
 
-    async updateElement(bulletinId: string, elementId: string, dto: UpdateElementSalaireDto, etablissementId: string, userId?: string, req?: any): Promise<ElementSalaire> {
+    async updateElement(bulletinId: string, elementId: string, dto: UpdateElementSalaireDto, etablissementId: string, userId?: string, req?: Request): Promise<ElementSalaire> {
         const element = await this.elementRepo.findOne({ where: { id: elementId, bulletinPaieId: bulletinId } });
         if (!element) throw new AppError('Élément de salaire non trouvé', 404, 'NOT_FOUND');
 
@@ -78,12 +82,15 @@ export class BulletinPaieService {
                 anciennesValeurs: oldValues,
                 nouvellesValeurs: dto,
                 module: 'personnel',
+                etablissementId,
+                parentCible: 'BulletinPaie',
+                parentCibleId: bulletinId,
             }, req);
         }
         return element;
     }
 
-    async deleteElement(bulletinId: string, elementId: string, etablissementId: string, userId?: string, req?: any): Promise<void> {
+    async deleteElement(bulletinId: string, elementId: string, etablissementId: string, userId?: string, req?: Request): Promise<void> {
         const element = await this.elementRepo.findOne({ where: { id: elementId, bulletinPaieId: bulletinId } });
         if (!element) throw new AppError('Élément de salaire non trouvé', 404, 'NOT_FOUND');
         await this.elementRepo.remove(element);
@@ -96,11 +103,14 @@ export class BulletinPaieService {
                 cibleId: elementId,
                 description: `Suppression élément salaire ${element.libelle} du bulletin ${bulletinId}`,
                 module: 'personnel',
+                etablissementId,
+                parentCible: 'BulletinPaie',
+                parentCibleId: bulletinId,
             }, req);
         }
     }
 
-    async create(dto: CreateBulletinPaieDto, etablissementId: string, createurId?: string, req?: any) {
+    async create(dto: CreateBulletinPaieDto, etablissementId: string, createurId?: string, req?: Request) {
         // Vérifier si validation requise
         const requireValidation = await getParamBoolean('personnel.paie.require_validation', { defaultValue: true });
 
@@ -163,6 +173,9 @@ export class BulletinPaieService {
                 description: `Création bulletin paie ${entity.id} - Statut: ${entity.statut}`,
                 nouvellesValeurs: dto,
                 module: 'personnel',
+                etablissementId,
+                parentCible: 'MembrePersonnel',
+                parentCibleId: dto.membrePersonnelId,
             }, req);
         }
 
@@ -208,7 +221,7 @@ export class BulletinPaieService {
         return entity;
     }
 
-    async update(id: string, dto: UpdateBulletinPaieDto, userId: string, etablissementId: string, req?: any) {
+    async update(id: string, dto: UpdateBulletinPaieDto, userId: string, etablissementId: string, req?: Request) {
         const entity = await this.findOne(id, etablissementId);
 
         Object.assign(entity, dto);
@@ -231,12 +244,15 @@ export class BulletinPaieService {
             description: `Modification bulletin paie ${id}`,
             nouvellesValeurs: dto,
             module: 'personnel',
+            etablissementId,
+            parentCible: 'MembrePersonnel',
+            parentCibleId: entity.membrePersonnelId,
         }, req);
 
         return entity;
     }
 
-    async delete(id: string, userId: string, etablissementId: string, req?: any) {
+    async delete(id: string, userId: string, etablissementId: string, req?: Request) {
         const entity = await this.findOne(id, etablissementId);
 
         // Un bulletin validé ou payé ne peut pas être supprimé : on l'annule (traçabilité)
@@ -254,6 +270,9 @@ export class BulletinPaieService {
                 cibleId: id,
                 description: `Annulation bulletin paie ${id} (validé, suppression interdite)`,
                 module: 'personnel',
+                etablissementId,
+                parentCible: 'MembrePersonnel',
+                parentCibleId: entity.membrePersonnelId,
             }, req);
 
             return { success: true, annule: true };
@@ -268,6 +287,9 @@ export class BulletinPaieService {
             cibleId: id,
             description: `Suppression (soft) bulletin paie ${id}`,
             module: 'personnel',
+            etablissementId,
+            parentCible: 'MembrePersonnel',
+            parentCibleId: entity.membrePersonnelId,
         }, req);
 
         return { success: true };
@@ -279,7 +301,7 @@ export class BulletinPaieService {
         annee: number,
         etablissementId: string,
         userId: string,
-        req?: any
+        req?: Request
     ) {
         // Délègue le calcul à CalculPaieService (évite la duplication)
         const bulletin = await calculPaieService.calculerBulletin(
@@ -295,6 +317,13 @@ export class BulletinPaieService {
             description: `Génération bulletin paie ${bulletin.id} pour ${mois}/${annee}`,
             nouvellesValeurs: { mois, annee, membreId },
             module: 'personnel',
+            etablissementId,
+            parentCible: 'MembrePersonnel',
+            parentCibleId: membreId,
+            metadata: {
+                entiteLabel: `Bulletin ${mois}/${annee}`,
+                relations: { personnel: { id: membreId } },
+            },
         }, req);
 
         logger.info(`Bulletin généré: ${bulletin.id} pour ${membreId} - ${mois}/${annee}`);

@@ -12,6 +12,7 @@ import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 import { ProgressionProgramme } from '../entities/progression-programme.entity';
 import { CreateProgressionDto, UpdateProgressionDto, QueryProgressionDto } from '../dto/progression-programme.dto';
+import { Request } from 'express';
 
 export class ProgressionProgrammeService {
     private repo: Repository<ProgressionProgramme>;
@@ -20,7 +21,7 @@ export class ProgressionProgrammeService {
         this.repo = AppDataSource.getRepository(ProgressionProgramme);
     }
 
-    async create(dto: CreateProgressionDto, etablissementId: string, createurId?: string, req?: any) {
+    async create(dto: CreateProgressionDto, etablissementId: string, createurId?: string, req?: Request) {
         // Déterminer le mode de calcul
         const modeCalcul = dto.programmeChapitreId ? 'CHAPITRE' : (dto.modeCalcul || 'LEGACY');
 
@@ -40,6 +41,8 @@ export class ProgressionProgrammeService {
                 description: `Création progression ${entity.id} (mode: ${modeCalcul})`,
                 nouvellesValeurs: dto,
                 module: 'personnel',
+                etablissementId,
+                parentCible: 'MembrePersonnel', parentCibleId: dto.enseignantId,
             }, req);
         }
 
@@ -83,7 +86,7 @@ export class ProgressionProgrammeService {
         return entity;
     }
 
-    async update(id: string, dto: UpdateProgressionDto, userId: string, etablissementId: string, req?: any) {
+    async update(id: string, dto: UpdateProgressionDto, userId: string, etablissementId: string, req?: Request) {
         const entity = await this.findOne(id, etablissementId);
 
         Object.assign(entity, dto);
@@ -97,12 +100,14 @@ export class ProgressionProgrammeService {
             description: `Modification progression ${id}`,
             nouvellesValeurs: dto,
             module: 'personnel',
+            etablissementId,
+            parentCible: 'MembrePersonnel', parentCibleId: entity.enseignantId,
         }, req);
 
         return entity;
     }
 
-    async delete(id: string, userId: string, etablissementId: string, req?: any) {
+    async delete(id: string, userId: string, etablissementId: string, req?: Request) {
         const entity = await this.findOne(id, etablissementId);
 
         await this.repo.remove(entity);
@@ -114,6 +119,8 @@ export class ProgressionProgrammeService {
             cibleId: id,
             description: `Suppression progression ${id}`,
             module: 'personnel',
+            etablissementId,
+            parentCible: 'MembrePersonnel', parentCibleId: entity.enseignantId,
         }, req);
 
         return { success: true };

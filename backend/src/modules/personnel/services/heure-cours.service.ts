@@ -21,6 +21,7 @@ import { Matiere } from '@modules/matieres/entities';
 import { MembrePersonnel, StatutPersonnel } from '@modules/personnel/entities';
 import { personnelService } from './personnel.service';
 import { CategorieFonction } from '../../../shared/constants/personnel.constants';
+import { Request } from 'express';
 
 export class HeureCoursService {
     private repo: Repository<HeureCours>;
@@ -33,7 +34,7 @@ export class HeureCoursService {
         dto: CreateHeureCoursDto,
         etablissementId: string,
         createurId?: string,
-        req?: any
+        req?: Request
     ): Promise<HeureCours> {
         await this.verifierEnseignant(dto.enseignantId, etablissementId);
         await this.verifierClasseAnnee(dto.classeAnneeId, etablissementId);
@@ -110,7 +111,7 @@ export class HeureCoursService {
             where: {
                 enseignantId: dto.enseignantId,
                 etablissementId,
-                date: new Date(dto.date) as any,
+                date: new Date(dto.date),
                 statutEffectue: Not(StatutEffectue.ANNULE),
                 ...(excludeId ? { id: Not(excludeId) } : {}),
             },
@@ -207,7 +208,7 @@ export class HeureCoursService {
         dto: UpdateHeureCoursDto,
         userId: string,
         etablissementId: string,
-        req?: any
+        req?: Request
     ): Promise<HeureCours> {
         const heureCours = await this.findOne(id, etablissementId);
 
@@ -218,16 +219,16 @@ export class HeureCoursService {
             statutEffectue: heureCours.statutEffectue,
         };
 
-        if (dto.date) dto.date = new Date(dto.date) as any;
+        const dateChange = dto.date ? { date: new Date(dto.date) } : {};
 
-        Object.assign(heureCours, dto);
+        Object.assign(heureCours, dto, dateChange);
 
         if (dto.heureDebut || dto.heureFin || dto.date) {
             const conflitDto: CreateHeureCoursDto = {
                 enseignantId: heureCours.enseignantId,
                 classeAnneeId: heureCours.classeAnneeId,
                 matiereId: heureCours.matiereId,
-                date: (dto.date ? (dto.date as any as Date) : heureCours.date as Date).toISOString().split('T')[0],
+                date: (dto.date ? new Date(dto.date) : heureCours.date).toISOString().split('T')[0],
                 heureDebut: dto.heureDebut || heureCours.heureDebut,
                 heureFin: dto.heureFin || heureCours.heureFin,
                 statutEffectue: (dto.statutEffectue as StatutEffectue) || heureCours.statutEffectue || StatutEffectue.PLANIFIE,
@@ -252,7 +253,7 @@ export class HeureCoursService {
         return heureCours;
     }
 
-    async delete(id: string, userId: string, etablissementId: string, req?: any): Promise<void> {
+    async delete(id: string, userId: string, etablissementId: string, req?: Request): Promise<void> {
         const heureCours = await this.findOne(id, etablissementId);
         await this.repo.remove(heureCours);
 
@@ -279,7 +280,7 @@ export class HeureCoursService {
             where: {
                 enseignantId,
                 etablissementId,
-                date: Between(dateDebut, dateFin) as any,
+                date: Between(dateDebut, dateFin),
                 statutEffectue: StatutEffectue.EFFECTUE,
             },
         });
@@ -325,7 +326,7 @@ export class HeureCoursService {
             where: {
                 enseignantId,
                 etablissementId,
-                date: Between(dateDebut, dateFin) as any,
+                date: Between(dateDebut, dateFin),
             },
             relations: ['matiere'],
         });
@@ -398,7 +399,7 @@ export class HeureCoursService {
             where: {
                 enseignantId,
                 etablissementId,
-                date: Between(lundi, samedi) as any,
+                date: Between(lundi, samedi),
             },
             relations: ['matiere', 'classeAnnee', 'classeAnnee.classe', 'salle', 'remplacant', 'creneau'],
             order: { date: 'ASC', heureDebut: 'ASC' },
@@ -424,7 +425,7 @@ export class HeureCoursService {
         dto: GenererHeuresCoursFromEdtDto,
         etablissementId: string,
         createurId?: string,
-        req?: any
+        req?: Request
     ): Promise<{ created: number; skipped: number }> {
         const { enseignantId, classeAnneeId, dateDebut, dateFin, periodeId } = dto;
         const dateD = new Date(dateDebut);
@@ -483,7 +484,7 @@ export class HeureCoursService {
                 const existing = await this.repo.findOne({
                     where: {
                         enseignantId,
-                        date: courseDate as any,
+                        date: courseDate,
                         heureDebut: slot.heureDebut,
                         creneauId: slot.id,
                     },

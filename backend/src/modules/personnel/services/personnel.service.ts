@@ -152,8 +152,9 @@ export class PersonnelService {
                 cible: 'MembrePersonnel',
                 cibleId: membre.id,
                 description: `Membre personnel créé: ${dto.matricule}`,
-                nouvellesValeurs: { matricule: dto.matricule, nom: dto.nom, prenom: dto.prenom, statut: membre.statut },
+                nouvellesValeurs: { matricule: dto.matricule, statut: membre.statut },
                 module: 'personnel',
+                metadata: { entiteLabel: dto.matricule, entiteRef: dto.matricule },
             });
         }
 
@@ -285,8 +286,7 @@ export class PersonnelService {
         const membre = await this.findOne(id, etablissementId);
 
         const snapshotAvant: Record<string, unknown> = {
-            nom: membre.nom,
-            prenom: membre.prenom,
+            matricule: membre.matricule,
             statut: membre.statut,
             dateEmbauche: membre.dateEmbauche,
         };
@@ -323,7 +323,7 @@ export class PersonnelService {
                 cible: 'MembrePersonnel',
                 cibleId: id,
                 description: `Membre personnel supprimé (soft): ${membre.matricule}`,
-                anciennesValeurs: { matricule: membre.matricule, nom: membre.nom, prenom: membre.prenom },
+                anciennesValeurs: { matricule: membre.matricule },
                 module: 'personnel',
             });
         }

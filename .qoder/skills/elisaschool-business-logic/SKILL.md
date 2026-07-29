@@ -1298,22 +1298,28 @@ async create(dto, createurId?, etablissementId?) {
 
 ### Audit Trail (traçabilité)
 
-**Service** : `AuditLogService` (`backend/src/modules/auth/services/audit-log.service.ts`)
-**Entité** : `AuditLog` (table `audit_logs`) — `module`, `action` (AuditAction enum), `cibleType`, `cibleId`, `utilisateurId`, `etablissementId`, `metadata` (JSONB), `adresseIp`
+**Service** : `AuditService` (`backend/src/modules/auth/services/audit.service.ts`)
+**Entité** : `AuditLog` (table `audit_logs`) — `action` (AuditAction enum 150+), `severity` (INFO/WARNING/CRITICAL), `cible`, `cibleId`, `utilisateurId`, `etablissementId`, `module`, `description`, `anciennesValeurs` (JSON), `nouvellesValeurs` (JSON), `champsModifies` (simple-array, auto-calculé), `parentCible`, `parentCibleId`, `ipAddress`, `userAgent`, `estEchec`, `erreur`
 
-**API** : `GET /api/audit/logs?cible=&cibleId=&module=&limit=&offset=`
+**API** : `GET /api/audit/logs?cible=&cibleId=&module=&severity=&search=&scope=entite|avec-liees&limit=&offset=`
 
-**Actions critiques à auditer** : CREATE, UPDATE, DELETE, VALIDER, REJETER, PUBLIER, DEPUBLIER, RESTAURER, EXPORTER.
+**Scope `avec-liees`** : via `AuditRelationResolverService.resoudreEnfants(cible, cibleId)` → résout les entités enfants (ex: `Classe` → notes, bulletins, affectations). Le service construit un OR avec `(cible+cibleId) || (parentCible+parentCibleId)` pour inclure les logs liés.
+
+**Actions critiques à auditer** : CREATE, UPDATE, DELETE, VALIDER, REJETER, PUBLIER, DEPUBLIER, RESTAURER, EXPORTER, ACTIVATE.
 
 **Pattern d'intégration** :
 ```typescript
-await auditLogService.log({
-    module: 'notes', action: AuditAction.NOTE_CREATE,
-    cibleType: 'Note', cibleId: note.id,
-    utilisateurId: req.utilisateur.id, etablissementId,
-    metadata: { eleveId: note.eleveId, matiere: note.matiereNom },
-});
+await auditService.log({
+    utilisateurId, etablissementId, module: 'notes',
+    action: AuditAction.NOTE_CREATE,
+    cible: 'Note', cibleId: note.id,
+    description: `Note créée pour ${eleve.nom}`,
+    nouvellesValeurs: { valeur: dto.valeur, matiere: dto.matiereId },
+    parentCible: 'Classe', parentCibleId: classeId,
+}, req);
 ```
+
+**`champsModifies` auto-calculé** : `auditService.calculerChampsModifies(anciennesValeurs, nouvellesValeurs)` → diff des clés.
 
 **Permissions RBAC** (migration 131) :
 - `audit:view` — accès global (ADMIN, SUPER_ADMIN)
@@ -1321,8 +1327,9 @@ await auditLogService.log({
 - **Middleware dynamique** `requireAuditAccess` : `audit:view` (global) OU `audit:{module}:view` (scopé via query param `module`)
 
 **Composants frontend partagés** :
-- `AuditTimeline` (`@/components/ui/AuditTimeline`) : timeline entity-scoped (`cible` + `cibleId`), double vérification permission
+- `AuditTimeline` v2 (`@/components/ui/AuditTimeline`) : timeline entity-scoped, diff extensible, load-more pagination, groupement par jour, toggle portée (directe / élargie via `scope=avec-liees`), badge source enfants, icônes contextuelles par type d'action
 - `DashboardAuditWidget` (`features/dashboard/components/`) : widget global (10 derniers logs, `audit:view` requis)
+- **Page admin audit** (`/admin/audit`, route `_auth.admin.audit.tsx`) : DataTable serveur, filtres module/sévérité/recherche, export CSV/JSON, modal détail avec diff, guards `SUPER_ADMIN | ADMIN`
 
 **Wiring onglet Historique** (7 pages détail) :
 ```tsx
@@ -1759,6 +1766,54 @@ const bareme = coefficientResolverService.resoudreBareme(affectationMatiere);
 - ❌ `ProgrammePedagogique.dateDebut` → ✅ n'existe plus (intemporel)
 - ❌ `ConfigurationMatiereClasse` → ✅ champs sur `AffectationMatiere`
 - ❌ Frontend barème hardcodé `20` dans bulletins → ✅ CORRECT (backend normalise sur 20 via SQL)
+
+---
+
+## Domaine 15 — Soft Delete & Traçabilité Audit
+
+### Soft delete — Convention par type d'entité
+
+**Entités transactionnelles** (opérations métier, données vivantes) → `@DeleteDateColumn()` :
+- Personnel (8) : `MembrePersonnel`, `ContratPersonnel`, `AffectationPoste`, `HeureCours`, `AbsencePersonnel`, `EvaluationEnseignant`, `ProgressionProgramme`, `IndisponibiliteEnseignant`
+- Paie (5) : `BulletinPaie`, `Cotisation`, `TypePrime`, `TypeRetenue`, `ElementSalaire`
+- Organisation (3) : `UniteOrganisationnelle`, `Poste`, `HierarchiePersonnel`
+
+**Entités nomenclature** (référentiels, données de référence) → PAS de soft delete :
+- Hard delete + protection `estSysteme` (seed système non supprimable)
+- `EchelonStructurel`, `NiveauResponsabilite`, `ModeRemunerationEntity`, `Fonction`, `TemplateOrganisation`, `TypeContratPersonnalise`
+
+**Règle** : Le soft delete est appliqué automatiquement par TypeORM (`@DeleteDateColumn()`). Les requêtes `find()` filtrent nativement les enregistrements supprimés. Pour les inclure : `withDeleted: true`.
+
+### Audit logging — Conventions
+
+**Pattern standard** : `auditService.log()` appelé après chaque opération CRUD dans les services.
+
+```typescript
+await auditService.log({
+    utilisateurId: req.utilisateur?.id,
+    action: AuditAction.XXX_CREATE,        // ← TOUJOURS l'enum, JAMAIS string + as any
+    cible: 'NomEntite',
+    cibleId: entity.id,
+    description: `Libellé descriptif`,
+    anciennesValeurs,                       // ← snapshot avant update
+    nouvellesValeurs: dto,                  // ← valeurs appliquées
+    module: 'nom-module',
+}, req);
+```
+
+**Règles** :
+- TOUJOURS utiliser `AuditAction.XXX` (enum), JAMAIS `'XXX' as any`
+- TOUJOURS typer `req?: Request` (import `express`), JAMAIS `req?: any`
+- Pour UPDATE : capturer `anciennesValeurs` AVANT `Object.assign`
+- Pour DELETE : capturer le libellé AVANT `repo.remove()` (l'entité est effacée)
+- `logCRUD()` : méthode simplifiée pour les cas standards (CREATE/UPDATE/DELETE)
+
+### Anti-patterns
+
+- ❌ `'TYPE_CONTRAT_CREATE' as any` → ✅ `AuditAction.TYPE_CONTRAT_CREATE`
+- ❌ `req?: any` → ✅ `req?: Request` (import depuis `express`)
+- ❌ Soft delete sur nomenclatures → ✅ hard delete + `estSysteme`
+- ❌ Hard delete sur entités transactionnelles → ✅ `@DeleteDateColumn()`
 
 ---
 

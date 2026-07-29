@@ -28,8 +28,10 @@ import {
 } from '../dto';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
 import { getParamBoolean, getParam, getParamNumber } from '@modules/configuration/utils/config.helper';
+import { auditService, AuditAction } from '@modules/auth';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { Request } from 'express';
 
 /**
  * Résultat de la vérification des impacts avant clôture
@@ -82,7 +84,7 @@ export class PeriodesService {
      * Créer une période avec ses compositions optionnelles.
      * Vérifie anti-chevauchement avec les périodes de même niveau.
      */
-    async create(dto: CreatePeriodeDto, etablissementId: string): Promise<Periode> {
+    async create(dto: CreatePeriodeDto, etablissementId: string, utilisateurId?: string, req?: Request): Promise<Periode> {
         // Vérifier la cohérence multi-tenant
         const { anneesScolairesService } = await import('@modules/annees-scolaires/services');
         await anneesScolairesService.findOne(dto.anneeScolaireId, etablissementId);
@@ -122,6 +124,20 @@ export class PeriodesService {
                 await this.compositionRepo.save(composition);
             }
         }
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.PERIODE_CREATE,
+            cible: 'Periode',
+            cibleId: periode.id,
+            description: `Période créée: ${periode.nom}`,
+            nouvellesValeurs: dto as Record<string, unknown>,
+            module: 'periodes',
+            etablissementId,
+            parentCible: 'AnneeScolaire',
+            parentCibleId: periode.anneeScolaireId,
+            metadata: { entiteLabel: periode.nom },
+        }, req);
 
         logger.info(`[Periodes] Période créée: ${periode.nom} (niveau=${dto.niveauId}) — ${periode.id}`);
         return this.findOne(periode.id, etablissementId);
@@ -300,7 +316,7 @@ export class PeriodesService {
         return periode;
     }
 
-    async update(id: string, dto: UpdatePeriodeDto, etablissementId?: string): Promise<Periode> {
+    async update(id: string, dto: UpdatePeriodeDto, etablissementId?: string, utilisateurId?: string, req?: Request): Promise<Periode> {
         const periode = await this.findOne(id, etablissementId);
 
         if (periode.statut === StatutPeriode.CLOTUREE) {
@@ -329,12 +345,33 @@ export class PeriodesService {
             );
         }
 
+        const snapshotAvant: Record<string, unknown> = {};
+        for (const cle of Object.keys(dto)) {
+            snapshotAvant[cle] = (periode as unknown as Record<string, unknown>)[cle];
+        }
+
         Object.assign(periode, dto);
         await this.periodeRepo.save(periode);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.PERIODE_UPDATE,
+            cible: 'Periode',
+            cibleId: periode.id,
+            description: `Période modifiée: ${periode.nom}`,
+            anciennesValeurs: snapshotAvant,
+            nouvellesValeurs: dto as Record<string, unknown>,
+            module: 'periodes',
+            etablissementId,
+            parentCible: 'AnneeScolaire',
+            parentCibleId: periode.anneeScolaireId,
+            metadata: { entiteLabel: periode.nom },
+        }, req);
+
         return this.findOne(id, etablissementId);
     }
 
-    async delete(id: string, etablissementId?: string): Promise<void> {
+    async delete(id: string, etablissementId?: string, utilisateurId?: string, req?: Request): Promise<void> {
         const periode = await this.findOne(id, etablissementId);
 
         if (periode.statut === StatutPeriode.CLOTUREE) {
@@ -347,8 +384,22 @@ export class PeriodesService {
             throw new AppError('Impossible de supprimer une période parent. Supprimez d\'abord ses compositions.', 400, 'PERIODE_HAS_CHILDREN');
         }
 
+        const nomPeriode = periode.nom;
         await this.periodeRepo.remove(periode);
-        logger.info(`[Periodes] Période supprimée: ${periode.nom} (${id})`);
+        logger.info(`[Periodes] Période supprimée: ${nomPeriode} (${id})`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.PERIODE_DELETE,
+            cible: 'Periode',
+            cibleId: id,
+            description: `Période supprimée: ${nomPeriode}`,
+            module: 'periodes',
+            etablissementId,
+            parentCible: 'AnneeScolaire',
+            parentCibleId: periode.anneeScolaireId,
+            metadata: { entiteLabel: nomPeriode },
+        }, req);
     }
 
     // ================================================================

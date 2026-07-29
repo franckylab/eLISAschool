@@ -26,6 +26,7 @@ import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 import { getParamBoolean, getParamNumber } from '@modules/configuration/utils/config.helper';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { Request } from 'express';
 
 export interface DetailMatiereSimulation {
     matiereNom: string;
@@ -71,7 +72,7 @@ export class CalculPaieService {
         mois: number,
         annee: number,
         etablissementId: string,
-        options?: { userId?: string; req?: any; checkConflict?: 'THROW' | 'UPDATE' | 'AUTO' }
+        options?: { userId?: string; req?: Request; checkConflict?: 'THROW' | 'UPDATE' | 'AUTO' }
     ): Promise<BulletinPaie> {
         const existingBulletin = await this.bulletinRepo.findOne({
             where: { membrePersonnelId, mois, annee },
@@ -162,6 +163,9 @@ export class CalculPaieService {
                     : `Création bulletin paie ${bulletin.id} pour ${mois}/${annee}`,
                 nouvellesValeurs: { mois, annee, salaireBase: simulation.salaireBase, salaireNet: simulation.salaireNet },
                 module: 'personnel',
+                etablissementId,
+                parentCible: 'MembrePersonnel',
+                parentCibleId: membrePersonnelId,
             }, options.req);
         }
 
@@ -216,7 +220,7 @@ export class CalculPaieService {
                 const tarifHoraire = contrat.tarifHoraire || 0;
                 const resume = mois && annee
                     ? await heureCoursService.getResumeMensuel(membrePersonnelId, mois, annee, etablissementId)
-                    : { heuresEffectuees: 0, detailParMatiere: [] as any[] };
+                    : { heuresEffectuees: 0, detailParMatiere: [] as DetailMatiereSimulation[] };
                 heuresEffectuees = resume.heuresEffectuees || 0;
                 detailParMatiere = resume.detailParMatiere || [];
                 for (const d of detailParMatiere) {
@@ -240,7 +244,7 @@ export class CalculPaieService {
                 const seuil = contrat.heuresContractuellesMois || 0;
                 const resume = mois && annee
                     ? await heureCoursService.getResumeMensuel(membrePersonnelId, mois, annee, etablissementId)
-                    : { heuresEffectuees: 0, detailParMatiere: [] as any[] };
+                    : { heuresEffectuees: 0, detailParMatiere: [] as DetailMatiereSimulation[] };
                 heuresEffectuees = resume.heuresEffectuees || 0;
                 detailParMatiere = resume.detailParMatiere || [];
                 for (const d of detailParMatiere) {

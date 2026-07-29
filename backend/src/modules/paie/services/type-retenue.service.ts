@@ -5,6 +5,7 @@ import { CreateTypeRetenueDto, UpdateTypeRetenueDto } from '../dto/paie-etendue.
 import { AppError } from '@common/filters/error.filter';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
+import { Request } from 'express';
 
 export class TypeRetenueService {
     private repo: Repository<TypeRetenue>;
@@ -13,7 +14,7 @@ export class TypeRetenueService {
         this.repo = AppDataSource.getRepository(TypeRetenue);
     }
 
-    async create(dto: CreateTypeRetenueDto, etablissementId: string, userId?: string, req?: any): Promise<TypeRetenue> {
+    async create(dto: CreateTypeRetenueDto, etablissementId: string, userId?: string, req?: Request): Promise<TypeRetenue> {
         const existing = await this.repo.findOne({ where: { code: dto.code, etablissementId } });
         if (existing) throw new AppError('Un type de retenue avec ce code existe déjà', 409, 'RETENUE_EXISTS');
 
@@ -22,7 +23,7 @@ export class TypeRetenueService {
         await this.repo.save(entity);
 
         if (userId) {
-            await auditService.log({ utilisateurId: userId, action: AuditAction.RETENUE_CREATE, cible: 'TypeRetenue', cibleId: entity.id, description: `Création type retenue ${dto.code}`, nouvellesValeurs: dto, module: 'personnel' }, req);
+            await auditService.log({ utilisateurId: userId, action: AuditAction.RETENUE_CREATE, cible: 'TypeRetenue', cibleId: entity.id, description: `Création type retenue ${dto.code}`, nouvellesValeurs: dto, module: 'personnel', etablissementId }, req);
         }
         return entity;
     }
@@ -37,24 +38,24 @@ export class TypeRetenueService {
         return entity;
     }
 
-    async update(id: string, dto: UpdateTypeRetenueDto, etablissementId: string, userId?: string, req?: any): Promise<TypeRetenue> {
+    async update(id: string, dto: UpdateTypeRetenueDto, etablissementId: string, userId?: string, req?: Request): Promise<TypeRetenue> {
         const entity = await this.findOne(id, etablissementId);
         const oldValues = { ...entity };
         Object.assign(entity, dto);
         await this.repo.save(entity);
 
         if (userId) {
-            await auditService.log({ utilisateurId: userId, action: AuditAction.RETENUE_UPDATE, cible: 'TypeRetenue', cibleId: id, description: `Mise à jour type retenue ${entity.code}`, anciennesValeurs: oldValues, nouvellesValeurs: dto, module: 'personnel' }, req);
+            await auditService.log({ utilisateurId: userId, action: AuditAction.RETENUE_UPDATE, cible: 'TypeRetenue', cibleId: id, description: `Mise à jour type retenue ${entity.code}`, anciennesValeurs: oldValues, nouvellesValeurs: dto, module: 'personnel', etablissementId }, req);
         }
         return entity;
     }
 
-    async delete(id: string, etablissementId: string, userId?: string, req?: any): Promise<void> {
+    async delete(id: string, etablissementId: string, userId?: string, req?: Request): Promise<void> {
         const entity = await this.findOne(id, etablissementId);
         await this.repo.remove(entity);
 
         if (userId) {
-            await auditService.log({ utilisateurId: userId, action: AuditAction.RETENUE_DELETE, cible: 'TypeRetenue', cibleId: id, description: `Suppression type retenue ${entity.code}`, module: 'personnel' }, req);
+            await auditService.log({ utilisateurId: userId, action: AuditAction.RETENUE_DELETE, cible: 'TypeRetenue', cibleId: id, description: `Suppression type retenue ${entity.code}`, module: 'personnel', etablissementId }, req);
         }
     }
 }

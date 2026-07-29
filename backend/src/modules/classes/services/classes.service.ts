@@ -4,8 +4,10 @@ import { Classe, AffectationEleve, StatutAffectationEleve, ClasseAnnee } from '.
 import { CreateClasseDto, UpdateClasseDto, AffecterEleveDto, TransfererEleveDto, QueryClassesDto } from '../dto';
 import { anneesScolairesService } from '@modules/annees-scolaires/services';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { auditService, AuditAction } from '@modules/auth';
 import { salleService } from '@modules/salles/services/salle.service';
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
+import { Request } from 'express';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
@@ -21,7 +23,7 @@ export class ClassesService {
         this.affectationRepo = AppDataSource.getRepository(AffectationEleve);
     }
 
-    async create(dto: CreateClasseDto, etablissementId?: string): Promise<Classe> {
+    async create(dto: CreateClasseDto, etablissementId?: string, utilisateurId?: string, req?: Request): Promise<Classe> {
         const classe = this.classeRepo.create({
             nom: dto.nom,
             code: dto.code,
@@ -35,6 +37,18 @@ export class ClassesService {
         });
         await this.classeRepo.save(classe);
         logger.info(`Classe créée: ${dto.nom}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.CLASSE_CREATE,
+            cible: 'Classe',
+            cibleId: classe.id,
+            description: `Classe créée: ${classe.nom} (${classe.code})`,
+            nouvellesValeurs: dto as Record<string, unknown>,
+            module: 'classes',
+            etablissementId,
+            metadata: { entiteLabel: classe.nom, entiteRef: classe.code },
+        }, req);
 
         try {
             let anneeScolaireId = dto.anneeScolaireId;
@@ -187,16 +201,31 @@ export class ClassesService {
         });
     }
 
-    async update(id: string, dto: UpdateClasseDto, etablissementId?: string): Promise<Classe> {
+    async update(id: string, dto: UpdateClasseDto, etablissementId?: string, utilisateurId?: string, req?: Request): Promise<Classe> {
         const classe = await this.findOne(id, etablissementId);
         const champsValides = ['nom', 'code', 'niveauId', 'filiereId', 'typeClasse', 'creneauHoraire', 'description', 'actif'];
+        const snapshotAvant: Record<string, unknown> = {};
         for (const champ of champsValides) {
             if ((dto as any)[champ] !== undefined) {
+                snapshotAvant[champ] = (classe as any)[champ];
                 (classe as any)[champ] = (dto as any)[champ];
             }
         }
         await this.classeRepo.save(classe);
         logger.info(`[${etablissementId}] Classe modifiée: ${classe.nom}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.CLASSE_UPDATE,
+            cible: 'Classe',
+            cibleId: classe.id,
+            description: `Classe modifiée: ${classe.nom}`,
+            anciennesValeurs: snapshotAvant,
+            nouvellesValeurs: dto as Record<string, unknown>,
+            module: 'classes',
+            etablissementId,
+            metadata: { entiteLabel: classe.nom, entiteRef: classe.code },
+        }, req);
 
         if (dto.sallePrincipaleId !== undefined || dto.effectifMax !== undefined || dto.programmeId !== undefined) {
             const classeAnneeId = (classe as any).classeAnneeId;
@@ -224,13 +253,25 @@ export class ClassesService {
         return classe;
     }
 
-    async delete(id: string, etablissementId?: string): Promise<void> {
+    async delete(id: string, etablissementId?: string, utilisateurId?: string, req?: Request): Promise<void> {
         const classe = await this.findOne(id, etablissementId);
         const count = await this.affectationRepo.count({ where: { classeId: id, actif: true } });
         if (count > 0) throw new AppError('La classe contient des élèves actifs', 400, 'CLASS_NOT_EMPTY');
 
+        const nomClasse = classe.nom;
         await this.classeRepo.remove(classe);
         logger.info(`[${etablissementId}] Classe supprimée: ${id}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.CLASSE_DELETE,
+            cible: 'Classe',
+            cibleId: id,
+            description: `Classe supprimée: ${nomClasse}`,
+            module: 'classes',
+            etablissementId,
+            metadata: { entiteLabel: nomClasse },
+        }, req);
     }
 
     // ==== ÉLÈVES DE LA CLASSE ====

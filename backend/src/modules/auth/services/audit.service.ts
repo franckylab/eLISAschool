@@ -10,9 +10,11 @@
 
 import { Repository } from 'typeorm';
 import { Request } from 'express';
+import UAParser from 'ua-parser-js';
 import { AppDataSource } from '@database/data-source';
 import { AuditLog, AuditAction, AuditSeverity } from '../entities/audit-log.entity';
 import { logger } from '@common/utils/logger.util';
+import { auditRelationResolverService } from '@modules/audit/services/audit-relation-resolver.service';
 
 // Réexporter les enums pour utilisation dans les controllers
 export { AuditAction, AuditSeverity } from '../entities/audit-log.entity';
@@ -32,6 +34,12 @@ export interface AuditOptions {
     module?: string;
     estEchec?: boolean;
     erreur?: string;
+    etablissementId?: string;
+    parentCible?: string;
+    parentCibleId?: string;
+    ipAddress?: string;
+    userAgent?: string;
+    metadata?: Record<string, unknown>;
 }
 
 /**
@@ -48,13 +56,20 @@ export class AuditService {
      * Enregistre une action dans le log d'audit
      */
     async log(options: AuditOptions, req?: Request): Promise<AuditLog> {
+        const rawUserAgent = options.userAgent ?? req?.headers['user-agent'];
+        const parsed = this.parseUserAgent(rawUserAgent);
+
         const sanitizedOptions = {
             ...options,
             utilisateurId: this.isValidUUID(options.utilisateurId) ? options.utilisateurId : undefined,
             cibleId: this.isValidUUID(options.cibleId) ? options.cibleId : undefined,
             severity: options.severity || AuditSeverity.INFO,
-            ipAddress: req ? this.getClientIP(req) : undefined,
-            userAgent: req?.headers['user-agent'],
+            ipAddress: options.ipAddress ?? (req ? this.getClientIP(req) : undefined),
+            userAgent: rawUserAgent,
+            navigateur: parsed.navigateur,
+            systemeExploitation: parsed.systemeExploitation,
+            appareil: parsed.appareil,
+            champsModifies: this.calculerChampsModifies(options.anciennesValeurs, options.nouvellesValeurs),
         };
 
         const auditLog = this.auditRepo.create(sanitizedOptions);
@@ -143,6 +158,7 @@ export class AuditService {
             anciennesValeurs: { [cle]: ancienneValeur },
             nouvellesValeurs: { [cle]: nouvelleValeur },
             module: 'configuration',
+            etablissementId,
         }, req);
     }
 
@@ -225,6 +241,20 @@ export class AuditService {
     }
 
     /**
+     * Calcule la liste des champs modifiés entre deux snapshots
+     */
+    private calculerChampsModifies(
+        anciennes?: Record<string, any>,
+        nouvelles?: Record<string, any>
+    ): string[] | undefined {
+        if (!anciennes || !nouvelles) return undefined;
+        const champs = Object.keys(nouvelles).filter(
+            (cle) => JSON.stringify(nouvelles[cle]) !== JSON.stringify(anciennes[cle])
+        );
+        return champs.length > 0 ? champs : undefined;
+    }
+
+    /**
      * Extraire l'adresse IP du client
      */
     private getClientIP(req: Request): string {
@@ -233,6 +263,29 @@ export class AuditService {
             return forwarded.split(',')[0].trim();
         }
         return req.ip || req.socket?.remoteAddress || 'unknown';
+    }
+
+    private parseUserAgent(rawUA?: string): { navigateur?: string; systemeExploitation?: string; appareil?: string } {
+        if (!rawUA) return {};
+        const parser = new UAParser(rawUA);
+        const browser = parser.getBrowser();
+        const os = parser.getOS();
+        const device = parser.getDevice();
+
+        const navigateur = browser.name
+            ? `${browser.name}${browser.version ? ' ' + browser.version : ''}`
+            : undefined;
+
+        const systemeExploitation = os.name
+            ? `${os.name}${os.version ? ' ' + os.version : ''}`
+            : undefined;
+
+        const type = device.type || 'desktop';
+        const appareil = device.model
+            ? `${type} — ${device.vendor ? device.vendor + ' ' : ''}${device.model}`
+            : type;
+
+        return { navigateur, systemeExploitation, appareil };
     }
 
     /**
@@ -289,14 +342,23 @@ export class AuditService {
         utilisateurId?: string;
         action?: AuditAction;
         cible?: string;
+        cibleId?: string;
+        module?: string;
+        estEchec?: boolean;
+        search?: string;
         dateDebut?: Date;
         dateFin?: Date;
         severity?: AuditSeverity;
+        scope?: 'entite' | 'avec-liees';
+        etablissementId?: string;
         limit?: number;
         offset?: number;
     }): Promise<{ items: AuditLog[]; total: number }> {
         const qb = this.auditRepo.createQueryBuilder('a')
-            .leftJoinAndSelect('a.utilisateur', 'u')
+            .leftJoin('a.utilisateur', 'u')
+            .addSelect(['u.id', 'u.email', 'u.matricule'])
+            .leftJoin('u.profil', 'profil')
+            .addSelect(['profil.nom', 'profil.prenom'])
             .orderBy('a.createdAt', 'DESC');
 
         if (options.utilisateurId) {
@@ -305,8 +367,60 @@ export class AuditService {
         if (options.action) {
             qb.andWhere('a.action = :action', { action: options.action });
         }
-        if (options.cible) {
-            qb.andWhere('a.cible = :cible', { cible: options.cible });
+        if (options.scope === 'avec-liees' && options.cible && options.cibleId) {
+            const ciblesLiees = await auditRelationResolverService.resoudreEnfants(
+                options.cible,
+                options.cibleId,
+            );
+
+            if (ciblesLiees.length === 0) {
+                qb.andWhere(
+                    '((a.cible = :cible AND a.cibleId = :cibleId) OR (a.parentCible = :cible AND a.parentCibleId = :cibleId))',
+                    { cible: options.cible, cibleId: options.cibleId },
+                );
+            } else {
+                const orConditions: string[] = [
+                    '(a.cible = :cible AND a.cibleId = :cibleId)',
+                    '(a.parentCible = :cible AND a.parentCibleId = :cibleId)',
+                ];
+                const params: Record<string, any> = {
+                    cible: options.cible,
+                    cibleId: options.cibleId,
+                };
+
+                ciblesLiees.forEach((liee, idx) => {
+                    const paramName = `lieeIds_${idx}`;
+                    orConditions.push(
+                        `(a.cible = :lieeCible_${idx} AND a.cibleId IN (:...${paramName}))`,
+                    );
+                    params[`lieeCible_${idx}`] = liee.cible;
+                    params[paramName] = liee.ids;
+                });
+
+                qb.andWhere(`(${orConditions.join(' OR ')})`, params);
+            }
+        } else {
+            if (options.cible) {
+                qb.andWhere('a.cible = :cible', { cible: options.cible });
+            }
+            if (options.cibleId) {
+                qb.andWhere('a.cibleId = :cibleId', { cibleId: options.cibleId });
+            }
+        }
+        if (options.etablissementId) {
+            qb.andWhere('a.etablissementId = :etablissementId', { etablissementId: options.etablissementId });
+        }
+        if (options.module) {
+            qb.andWhere('a.module = :module', { module: options.module });
+        }
+        if (options.estEchec !== undefined) {
+            qb.andWhere('a.estEchec = :estEchec', { estEchec: options.estEchec });
+        }
+        if (options.search) {
+            qb.andWhere(
+                '(a.description ILIKE :search OR a.cible ILIKE :search OR a.action::text ILIKE :search)',
+                { search: `%${options.search}%` },
+            );
         }
         if (options.severity) {
             qb.andWhere('a.severity = :severity', { severity: options.severity });
@@ -324,6 +438,19 @@ export class AuditService {
             .getManyAndCount();
 
         return { items, total };
+    }
+
+    /**
+     * Récupère un log d'audit par son id
+     */
+    async findLogById(id: string): Promise<AuditLog | null> {
+        return this.auditRepo.createQueryBuilder('a')
+            .leftJoin('a.utilisateur', 'u')
+            .addSelect(['u.id', 'u.email', 'u.matricule'])
+            .leftJoin('u.profil', 'profil')
+            .addSelect(['profil.nom', 'profil.prenom'])
+            .where('a.id = :id', { id })
+            .getOne();
     }
 }
 

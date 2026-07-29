@@ -12,6 +12,8 @@ import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
+import { auditService, AuditAction } from '@modules/auth';
+import { Request } from 'express';
 
 export class AnneesScolairesService {
     private repo: Repository<AnneeScolaire>;
@@ -20,7 +22,7 @@ export class AnneesScolairesService {
         this.repo = AppDataSource.getRepository(AnneeScolaire);
     }
 
-    async create(dto: CreateAnneeScolaireDto, etablissementId: string, createurId?: string): Promise<AnneeScolaire> {
+    async create(dto: CreateAnneeScolaireDto, etablissementId: string, createurId?: string, req?: Request): Promise<AnneeScolaire> {
         if (!etablissementId) {
             throw new AppError('Établissement requis pour créer une année scolaire', 400, 'MISSING_ETABLISSEMENT');
         }
@@ -55,6 +57,18 @@ export class AnneesScolairesService {
             }, createurId);
         }
 
+        await auditService.log({
+            utilisateurId: createurId,
+            action: AuditAction.ANNEE_SCOLAIRE_CREATE,
+            cible: 'AnneeScolaire',
+            cibleId: annee.id,
+            description: `Année scolaire créée: ${annee.libelle}`,
+            nouvellesValeurs: dto as Record<string, unknown>,
+            module: 'annees-scolaires',
+            etablissementId,
+            metadata: { entiteLabel: annee.libelle },
+        }, req);
+
         logger.info(`Année scolaire créée: ${dto.libelle}`);
         return annee;
     }
@@ -85,11 +99,16 @@ export class AnneesScolairesService {
         return annee;
     }
 
-    async update(id: string, dto: UpdateAnneeScolaireDto, etablissementId: string, createurId?: string): Promise<AnneeScolaire> {
+    async update(id: string, dto: UpdateAnneeScolaireDto, etablissementId: string, createurId?: string, req?: Request): Promise<AnneeScolaire> {
         if (!etablissementId) {
             throw new AppError('Établissement requis pour modifier une année scolaire', 400, 'MISSING_ETABLISSEMENT');
         }
         const annee = await this.findOne(id, etablissementId);
+
+        const snapshotAvant: Record<string, unknown> = {};
+        for (const cle of Object.keys(dto)) {
+            snapshotAvant[cle] = (annee as unknown as Record<string, unknown>)[cle];
+        }
 
         // Si on active cette année (désactiver les autres dans le même établissement)
         if (dto.enCours && !annee.enCours) {
@@ -103,22 +122,49 @@ export class AnneesScolairesService {
         if (dto.enCours !== undefined) annee.enCours = dto.enCours;
 
         await this.repo.save(annee);
+
+        await auditService.log({
+            utilisateurId: createurId,
+            action: AuditAction.ANNEE_SCOLAIRE_UPDATE,
+            cible: 'AnneeScolaire',
+            cibleId: annee.id,
+            description: `Année scolaire modifiée: ${annee.libelle}`,
+            anciennesValeurs: snapshotAvant,
+            nouvellesValeurs: dto as Record<string, unknown>,
+            module: 'annees-scolaires',
+            etablissementId,
+            metadata: { entiteLabel: annee.libelle },
+        }, req);
+
         return annee;
     }
 
-    async delete(id: string, etablissementId: string): Promise<void> {
+    async delete(id: string, etablissementId: string, utilisateurId?: string, req?: Request): Promise<void> {
         const annee = await this.findOne(id, etablissementId);
         if (annee.enCours) {
             throw new AppError('Impossible de supprimer l\'année scolaire en cours', 400, 'CANNOT_DELETE_ACTIVE');
         }
+        const libelleAnnee = annee.libelle;
         await this.repo.remove(annee);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.ANNEE_SCOLAIRE_DELETE,
+            cible: 'AnneeScolaire',
+            cibleId: id,
+            description: `Année scolaire supprimée: ${libelleAnnee}`,
+            module: 'annees-scolaires',
+            etablissementId,
+            metadata: { entiteLabel: libelleAnnee },
+        }, req);
+
         logger.info(`Année scolaire supprimée: ${id}`);
     }
 
     /**
      * Activer une année scolaire (désactive les autres automatiquement)
      */
-    async activer(id: string, etablissementId: string): Promise<AnneeScolaire> {
+    async activer(id: string, etablissementId: string, utilisateurId?: string, req?: Request): Promise<AnneeScolaire> {
         const annee = await this.findOne(id, etablissementId);
         if (annee.statut === StatutAnneeScolaire.CLOTUREE) {
             throw new AppError('Impossible d\'activer une année scolaire clôturée', 400, 'CANNOT_ACTIVATE_CLOSED');
@@ -129,6 +175,18 @@ export class AnneesScolairesService {
         annee.enCours = true;
         annee.statut = StatutAnneeScolaire.EN_COURS;
         await this.repo.save(annee);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.ANNEE_SCOLAIRE_ACTIVATE,
+            cible: 'AnneeScolaire',
+            cibleId: annee.id,
+            description: `Année scolaire activée: ${annee.libelle}`,
+            module: 'annees-scolaires',
+            etablissementId,
+            metadata: { entiteLabel: annee.libelle },
+        }, req);
+
         logger.info(`Année scolaire activée: ${annee.libelle}`);
         return annee;
     }

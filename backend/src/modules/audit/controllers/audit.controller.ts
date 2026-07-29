@@ -10,10 +10,9 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { auditService } from '@modules/auth/services/audit.service';
-import { AuditAction, AuditSeverity } from '@modules/auth/entities/audit-log.entity';
+import { AuditLog } from '@modules/auth/entities/audit-log.entity';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { permissionResolverService } from '@modules/auth/services/permission-resolver.service';
-import { Role } from '@shared/enums/roles.enum';
 import { AppError } from '@common/filters/error.filter';
 import { validateDto } from '@common/utils/validate-dto.util';
 import { auditFiltersSchema, auditExportSchema } from '../dto/audit-filters.dto';
@@ -24,6 +23,18 @@ const MODULES_AUDIT_VALIDES = new Set([
     'notes', 'bulletins', 'personnel', 'contrats', 'paie',
     'eleves', 'classes', 'matieres', 'periodes', 'emploi-du-temps', 'organisation',
 ]);
+
+function mapLog(log: AuditLog) {
+    const utilisateur = log.utilisateur
+        ? {
+            id: log.utilisateur.id,
+            nom: (log.utilisateur as any).profil?.nom ?? null,
+            prenom: (log.utilisateur as any).profil?.prenom ?? null,
+            email: log.utilisateur.email,
+        }
+        : null;
+    return { ...log, utilisateur };
+}
 
 /**
  * Middleware dynamique : vérifie audit:{module}:view si module précisé,
@@ -76,73 +87,27 @@ router.get('/logs', authMiddleware, requireAuditAccess, async (req: Request, res
             utilisateurId: filters.utilisateurId,
             action: filters.action,
             cible: filters.cible,
+            cibleId: filters.cibleId,
+            module: filters.module,
+            estEchec: filters.estEchec,
+            search: filters.search,
             severity: filters.severity,
             dateDebut: filters.dateDebut ? new Date(filters.dateDebut) : undefined,
             dateFin: filters.dateFin ? new Date(filters.dateFin) : undefined,
+            scope: filters.scope,
+            etablissementId: req.utilisateur?.etablissementId,
             limit: filters.limit,
             offset: filters.offset,
         });
 
-        // Filtre côté client pour les champs non supportés par le service
-        let items = result.items;
-
-        if (filters.module) {
-            items = items.filter(log => log.module === filters.module);
-        }
-
-        if (filters.cibleId) {
-            items = items.filter(log => log.cibleId === filters.cibleId);
-        }
-
-        if (filters.estEchec !== undefined) {
-            items = items.filter(log => log.estEchec === filters.estEchec);
-        }
-
-        if (filters.search) {
-            const searchLower = filters.search.toLowerCase();
-            items = items.filter(log =>
-                log.description?.toLowerCase().includes(searchLower) ||
-                log.cible?.toLowerCase().includes(searchLower) ||
-                log.action.toLowerCase().includes(searchLower)
-            );
-        }
-
         res.json({
             success: true,
             data: {
-                items,
-                total: items.length,
+                items: result.items.map(mapLog),
+                total: result.total,
                 limit: filters.limit,
                 offset: filters.offset,
             },
-            timestamp: new Date().toISOString(),
-        });
-    } catch (error) {
-        next(error);
-    }
-});
-
-/**
- * GET /api/audit/logs/:id
- * Récupère le détail d'un log d'audit
- * Accès: ADMIN, SUPER_ADMIN
- */
-router.get('/logs/:id', authMiddleware, requirePermission('monitoring:view'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const logs = await auditService.getLogs({ limit: 1 });
-        const log = logs.items.find(l => l.id === req.params.id);
-
-        if (!log) {
-            return res.status(404).json({
-                success: false,
-                error: 'Log d\'audit non trouvé',
-                code: 'AUDIT_LOG_NOT_FOUND',
-            });
-        }
-
-        res.json({
-            success: true,
-            data: log,
             timestamp: new Date().toISOString(),
         });
     } catch (error) {
@@ -169,7 +134,7 @@ router.get('/logs/me', authMiddleware, async (req: Request, res: Response, next:
         res.json({
             success: true,
             data: {
-                items: result.items,
+                items: result.items.map(mapLog),
                 total: result.total,
                 limit,
                 offset,
@@ -190,7 +155,6 @@ router.get('/logs/export', authMiddleware, requireAuditAccess, async (req: Reque
     try {
         const exportParams = validateDto(auditExportSchema, req.query);
 
-        // Récupérer les logs (max 10000 pour l'export)
         const result = await auditService.getLogs({
             limit: 10000,
             offset: 0,
@@ -198,24 +162,82 @@ router.get('/logs/export', authMiddleware, requireAuditAccess, async (req: Reque
             dateFin: exportParams.dateFin ? new Date(exportParams.dateFin) : undefined,
             severity: exportParams.severity,
             utilisateurId: exportParams.utilisateurId,
+            module: exportParams.module,
+            etablissementId: req.utilisateur?.etablissementId,
         });
 
-        let items = result.items;
-        if (exportParams.module) {
-            items = items.filter(log => log.module === exportParams.module);
-        }
+        const mappedLogs = result.items.map(mapLog);
+        const now = new Date();
+        const dateStr = now.toISOString().slice(0, 10);
+        const filtresAppliques: string[] = [];
+        if (exportParams.module) filtresAppliques.push(`module=${exportParams.module}`);
+        if (exportParams.severity) filtresAppliques.push(`sévérité=${exportParams.severity}`);
+        if (exportParams.dateDebut) filtresAppliques.push(`depuis=${exportParams.dateDebut.slice(0, 10)}`);
+        if (exportParams.dateFin) filtresAppliques.push(`jusqu'à=${exportParams.dateFin.slice(0, 10)}`);
 
         if (exportParams.format === 'json') {
-            res.setHeader('Content-Type', 'application/json');
-            res.setHeader('Content-Disposition', 'attachment; filename="audit-logs.json"');
-            return res.json(items);
+            const jsonExport = {
+                rapport: {
+                    titre: 'Journal d\'audit — eLISAschool',
+                    dateExport: now.toISOString(),
+                    totalEnregistrements: mappedLogs.length,
+                    filtres: filtresAppliques.length > 0 ? filtresAppliques : ['aucun'],
+                    periodeCouverte: mappedLogs.length > 0
+                        ? { debut: mappedLogs[mappedLogs.length - 1].createdAt, fin: mappedLogs[0].createdAt }
+                        : null,
+                },
+                donnees: mappedLogs.map(log => {
+                    const meta = (log as any).metadata as Record<string, any> | undefined;
+                    const anciennes = log.anciennesValeurs as Record<string, any> | undefined;
+                    const nouvelles = log.nouvellesValeurs as Record<string, any> | undefined;
+
+                    const modifications = (log.champsModifies || []).map(champ => ({
+                        champ,
+                        avant: anciennes?.[champ] ?? null,
+                        apres: nouvelles?.[champ] ?? null,
+                    }));
+
+                    return {
+                        id: log.id,
+                        date: log.createdAt,
+                        utilisateur: log.utilisateur
+                            ? {
+                                nom: [log.utilisateur.prenom, log.utilisateur.nom].filter(Boolean).join(' ') || null,
+                                email: log.utilisateur.email,
+                            }
+                            : null,
+                        action: log.action,
+                        module: log.module || null,
+                        severite: log.severity,
+                        cible: log.cible || null,
+                        cibleId: log.cibleId || null,
+                        entiteLabel: meta?.entiteLabel || null,
+                        entiteRef: meta?.entiteRef || null,
+                        relations: meta?.relations || null,
+                        parentCible: log.parentCible || null,
+                        parentCibleId: log.parentCibleId || null,
+                        description: log.description || null,
+                        modifications: modifications.length > 0 ? modifications : null,
+                        anciennesValeurs: anciennes || null,
+                        nouvellesValeurs: nouvelles || null,
+                        statut: log.estEchec ? 'ÉCHEC' : 'SUCCÈS',
+                        erreur: log.erreur || null,
+                        ipAddress: log.ipAddress || null,
+                        navigateur: log.navigateur || null,
+                        systemeExploitation: log.systemeExploitation || null,
+                        appareil: log.appareil || null,
+                    };
+                }),
+            };
+            res.setHeader('Content-Type', 'application/json; charset=utf-8');
+            res.setHeader('Content-Disposition', `attachment; filename="audit-${dateStr}.json"`);
+            return res.send(JSON.stringify(jsonExport, null, 2));
         }
 
-        // Export CSV
-        const csv = convertToCSV(items);
+        const csv = convertToCSV(mappedLogs, filtresAppliques, now);
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-        res.setHeader('Content-Disposition', 'attachment; filename="audit-logs.csv"');
-        return res.send('\uFEFF' + csv); // BOM pour Excel
+        res.setHeader('Content-Disposition', `attachment; filename="audit-${dateStr}.csv"`);
+        return res.send('\uFEFF' + csv);
     } catch (error) {
         next(error);
     }
@@ -301,43 +323,134 @@ router.get('/logs/statistics', authMiddleware, requirePermission('monitoring:vie
 });
 
 /**
- * Convertit les logs en format CSV
+ * GET /api/audit/logs/:id
+ * Récupère le détail d'un log d'audit
+ * Accès: ADMIN, SUPER_ADMIN
  */
-function convertToCSV(logs: any[]): string {
-    const headers = [
+router.get('/logs/:id', authMiddleware, requireAuditAccess, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const log = await auditService.findLogById(req.params.id);
+        if (!log) {
+            return res.status(404).json({
+                success: false,
+                error: 'Log d\'audit non trouvé',
+                code: 'AUDIT_LOG_NOT_FOUND',
+            });
+        }
+        res.json({ success: true, data: mapLog(log), timestamp: new Date().toISOString() });
+    } catch (error) {
+        next(error);
+    }
+});
+
+function formatValue(val: unknown): string {
+    if (val === null || val === undefined) return '';
+    if (typeof val === 'object') return JSON.stringify(val);
+    return String(val);
+}
+
+function convertToCSV(logs: ReturnType<typeof mapLog>[], filtres: string[], dateExport: Date): string {
+    const SEP = ';';
+
+    const totalModifications = logs.reduce((acc, log) => acc + (log.champsModifies || []).length, 0);
+
+    const header = [
+        `# Journal d'audit — eLISAschool`,
+        `# Date d'export: ${dateExport.toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })}`,
+        `# Opérations: ${logs.length} | Modifications: ${totalModifications}`,
+        `# Filtres: ${filtres.length > 0 ? filtres.join(' | ') : 'aucun'}`,
+        `# Format dénormalisé: 1 ligne par champ modifié (filtrable par champ)`,
+        `#`,
+    ];
+
+    const columns = [
+        'ID log',
         'Date',
-        'Utilisateur ID',
+        'Heure',
+        'Utilisateur',
+        'Email',
         'Action',
         'Module',
         'Sévérité',
-        'Cible',
-        'Cible ID',
+        'Statut',
+        'Entité',
+        'Label entité',
+        'Ref entité',
+        'ID entité',
         'Description',
-        'IP',
-        'Échec',
-        'Erreur',
+        'Champ modifié',
+        'Valeur avant',
+        'Valeur après',
+        'Adresse IP',
+        'Navigateur',
+        'Système',
+        'Appareil',
     ];
 
-    const rows = logs.map(log => [
-        new Date(log.createdAt).toISOString(),
-        log.utilisateurId || '',
-        log.action,
-        log.module || '',
-        log.severity,
-        log.cible || '',
-        log.cibleId || '',
-        (log.description || '').replace(/"/g, '""'),
-        log.ipAddress || '',
-        log.estEchec ? 'Oui' : 'Non',
-        (log.erreur || '').replace(/"/g, '""'),
-    ]);
+    const rows: string[][] = [];
 
-    const csvRows = [
-        headers.join(','),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(',')),
-    ];
+    for (const log of logs) {
+        const d = new Date(log.createdAt);
+        const userName = log.utilisateur
+            ? [log.utilisateur.prenom, log.utilisateur.nom].filter(Boolean).join(' ') || ''
+            : '';
+        const meta = (log as any).metadata as Record<string, any> | undefined;
 
-    return csvRows.join('\n');
+        const baseRow = [
+            log.id,
+            d.toLocaleDateString('fr-FR'),
+            d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+            userName,
+            log.utilisateur?.email || '',
+            log.action,
+            log.module || '',
+            log.severity,
+            log.estEchec ? 'Échec' : 'Succès',
+            log.cible || '',
+            meta?.entiteLabel || '',
+            meta?.entiteRef || '',
+            log.cibleId || '',
+            (log.description || '').replace(/[\r\n]+/g, ' '),
+        ];
+
+        const suffixRow = [
+            log.ipAddress || '',
+            log.navigateur || '',
+            log.systemeExploitation || '',
+            log.appareil || '',
+        ];
+
+        const champs = log.champsModifies || [];
+        if (champs.length === 0) {
+            rows.push([...baseRow, '', '', '', ...suffixRow]);
+        } else {
+            const anciennes = log.anciennesValeurs as Record<string, any> | undefined;
+            const nouvelles = log.nouvellesValeurs as Record<string, any> | undefined;
+
+            for (const champ of champs) {
+                rows.push([
+                    ...baseRow,
+                    champ,
+                    formatValue(anciennes?.[champ]),
+                    formatValue(nouvelles?.[champ]),
+                    ...suffixRow,
+                ]);
+            }
+        }
+    }
+
+    const escape = (cell: string) => {
+        if (cell.includes(SEP) || cell.includes('"') || cell.includes('\n')) {
+            return `"${cell.replace(/"/g, '""')}"`;
+        }
+        return cell;
+    };
+
+    return [
+        ...header,
+        columns.map(escape).join(SEP),
+        ...rows.map(row => row.map(escape).join(SEP)),
+    ].join('\r\n');
 }
 
 export { router as auditController };

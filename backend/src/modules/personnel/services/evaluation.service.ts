@@ -12,6 +12,7 @@ import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 import { EvaluationEnseignant } from '../entities/evaluation-enseignant.entity';
 import { CreateEvaluationDto, UpdateEvaluationDto, QueryEvaluationDto } from '../dto/evaluation.dto';
+import { Request } from 'express';
 
 export class EvaluationService {
     private repo: Repository<EvaluationEnseignant>;
@@ -20,7 +21,7 @@ export class EvaluationService {
         this.repo = AppDataSource.getRepository(EvaluationEnseignant);
     }
 
-    async create(dto: CreateEvaluationDto, etablissementId: string, createurId?: string, req?: any) {
+    async create(dto: CreateEvaluationDto, etablissementId: string, createurId?: string, req?: Request) {
         const entity = this.repo.create({
             ...dto,
             etablissementId,
@@ -36,6 +37,8 @@ export class EvaluationService {
                 description: `Création évaluation ${entity.id}`,
                 nouvellesValeurs: dto,
                 module: 'personnel',
+                etablissementId,
+                parentCible: 'MembrePersonnel', parentCibleId: dto.enseignantId,
             }, req);
         }
 
@@ -82,7 +85,7 @@ export class EvaluationService {
         return entity;
     }
 
-    async update(id: string, dto: UpdateEvaluationDto, userId: string, etablissementId: string, req?: any) {
+    async update(id: string, dto: UpdateEvaluationDto, userId: string, etablissementId: string, req?: Request) {
         const entity = await this.findOne(id, etablissementId);
 
         Object.assign(entity, dto);
@@ -96,12 +99,14 @@ export class EvaluationService {
             description: `Modification évaluation ${id}`,
             nouvellesValeurs: dto,
             module: 'personnel',
+            etablissementId,
+            parentCible: 'MembrePersonnel', parentCibleId: entity.enseignantId,
         }, req);
 
         return entity;
     }
 
-    async delete(id: string, userId: string, etablissementId: string, req?: any) {
+    async delete(id: string, userId: string, etablissementId: string, req?: Request) {
         const entity = await this.findOne(id, etablissementId);
 
         await this.repo.remove(entity);
@@ -113,6 +118,8 @@ export class EvaluationService {
             cibleId: id,
             description: `Suppression évaluation ${id}`,
             module: 'personnel',
+            etablissementId,
+            parentCible: 'MembrePersonnel', parentCibleId: entity.enseignantId,
         }, req);
 
         return { success: true };

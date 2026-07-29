@@ -13,6 +13,7 @@ import { Poste, StatutPoste, Fonction } from '@modules/organisation/entities';
 import { HierarchiePersonnel, StatutRelation } from '@modules/organisation/entities';
 import { AffectationMatiere, StatutAffectationMatiere } from '@modules/matieres/entities';
 import { recalculerOccupantsEtStatut, verifierCapacitePoste } from './poste-occupation.helper';
+import { Request } from 'express';
 
 export class ContratService {
     private repo: Repository<ContratPersonnel>;
@@ -229,7 +230,7 @@ export class ContratService {
             }
             contrat.fonctionId = fonctionId;
         } else {
-            contrat.fonctionId = null as any;
+            contrat.fonctionId = undefined;
         }
 
         // 3. Fonctions secondaires : créer uniquement les manquantes, rétrograder si besoin
@@ -258,7 +259,7 @@ export class ContratService {
         dto: CreateContratDto,
         etablissementId: string,
         createurId?: string,
-        req?: any,
+        req?: Request,
     ): Promise<ContratPersonnel> {
         await this.syncTypeContrat(dto, etablissementId);
 
@@ -344,6 +345,8 @@ export class ContratService {
                 cible: 'ContratPersonnel', cibleId: contrat.id,
                 description: `Création contrat ${dto.typeContrat} pour membre ${dto.membrePersonnelId}`,
                 nouvellesValeurs: dto, module: 'personnel',
+                etablissementId,
+                parentCible: 'MembrePersonnel', parentCibleId: dto.membrePersonnelId,
             }, req);
         }
 
@@ -399,7 +402,7 @@ export class ContratService {
     }
 
     async update(
-        id: string, dto: UpdateContratDto, userId: string, etablissementId: string, req?: any,
+        id: string, dto: UpdateContratDto, userId: string, etablissementId: string, req?: Request,
     ): Promise<ContratPersonnel> {
         const contrat = await this.findOne(id, etablissementId);
         await this.syncTypeContrat(dto, etablissementId);
@@ -409,10 +412,12 @@ export class ContratService {
             salaireBase: contrat.salaireBase, posteId: contrat.posteId, fonctionId: contrat.fonctionId,
         };
 
-        if (dto.dateDebut) dto.dateDebut = new Date(dto.dateDebut) as any;
-        if (dto.dateFin) dto.dateFin = new Date(dto.dateFin) as any;
+        // Fusionner les changements de dates (conversion string -> Date) sans muter le DTO
+        const dateChanges: Partial<ContratPersonnel> = {};
+        if (dto.dateDebut) dateChanges.dateDebut = new Date(dto.dateDebut);
+        if (dto.dateFin) dateChanges.dateFin = new Date(dto.dateFin);
 
-        Object.assign(contrat, dto);
+        Object.assign(contrat, dto, dateChanges);
         await this.repo.save(contrat);
 
         // Sync poste if changed
@@ -437,12 +442,14 @@ export class ContratService {
             cible: 'ContratPersonnel', cibleId: id,
             description: `Modification contrat ${id}`,
             anciennesValeurs, nouvellesValeurs: dto, module: 'personnel',
+            etablissementId,
+            parentCible: 'MembrePersonnel', parentCibleId: contrat.membrePersonnelId,
         }, req);
 
         return this.findOne(id, etablissementId);
     }
 
-    async delete(id: string, userId: string, etablissementId: string, req?: any): Promise<void> {
+    async delete(id: string, userId: string, etablissementId: string, req?: Request): Promise<void> {
         const contrat = await this.findOne(id, etablissementId);
         contrat.statut = StatutContrat.ROMPU;
         await this.repo.save(contrat);
@@ -463,6 +470,8 @@ export class ContratService {
             utilisateurId: userId, action: AuditAction.CONTRAT_PERSONNEL_DELETE,
             cible: 'ContratPersonnel', cibleId: id,
             description: `Suppression contrat ${id}`, module: 'personnel',
+            etablissementId,
+            parentCible: 'MembrePersonnel', parentCibleId: contrat.membrePersonnelId,
         }, req);
     }
 
@@ -470,7 +479,7 @@ export class ContratService {
         const dateLimite = new Date();
         dateLimite.setDate(dateLimite.getDate() + jours);
         return this.repo.find({
-            where: { etablissementId, statut: StatutContrat.ACTIF, dateFin: LessThanOrEqual(dateLimite) as any },
+            where: { etablissementId, statut: StatutContrat.ACTIF, dateFin: LessThanOrEqual(dateLimite) },
             relations: ['membrePersonnel', 'poste'],
             order: { dateFin: 'ASC' },
         });
@@ -480,7 +489,7 @@ export class ContratService {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const expired = await this.repo.find({
-            where: { statut: StatutContrat.ACTIF, dateFin: LessThanOrEqual(today) as any },
+            where: { statut: StatutContrat.ACTIF, dateFin: LessThanOrEqual(today) },
         });
         for (const contrat of expired) {
             contrat.statut = StatutContrat.EXPIRE;

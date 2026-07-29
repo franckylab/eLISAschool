@@ -116,6 +116,7 @@ import { Route as AuthBulletinsIdRouteImport } from './routes/_auth.bulletins.$i
 import { Route as AuthAnneesScolairesIdRouteImport } from './routes/_auth.annees-scolaires.$id'
 import { Route as AuthAdminRolesRouteImport } from './routes/_auth.admin.roles'
 import { Route as AuthAdminPermissionsRouteImport } from './routes/_auth.admin.permissions'
+import { Route as AuthAdminAuditRouteImport } from './routes/_auth.admin.audit'
 import { Route as authenticatedParametresStructureAcademiqueRouteRouteImport } from './routes/(authenticated)/parametres/structure-academique/route'
 import { Route as AuthOrganisationUnitesIndexRouteImport } from './routes/_auth.organisation.unites.index'
 import { Route as AuthOrganisationPostesIndexRouteImport } from './routes/_auth.organisation.postes.index'
@@ -679,6 +680,11 @@ const AuthAdminPermissionsRoute = AuthAdminPermissionsRouteImport.update({
   path: '/admin/permissions',
   getParentRoute: () => AuthRoute,
 } as any)
+const AuthAdminAuditRoute = AuthAdminAuditRouteImport.update({
+  id: '/admin/audit',
+  path: '/admin/audit',
+  getParentRoute: () => AuthRoute,
+} as any)
 const authenticatedParametresStructureAcademiqueRouteRoute =
   authenticatedParametresStructureAcademiqueRouteRouteImport.update({
     id: '/(authenticated)/parametres/structure-academique',
@@ -830,6 +836,7 @@ export interface FileRoutesByFullPath {
   '/vie-scolaire': typeof AuthVieScolaireRoute
   '/vie-scolaire-avancee': typeof AuthVieScolaireAvanceeRoute
   '/parametres/structure-academique': typeof authenticatedParametresStructureAcademiqueRouteRouteWithChildren
+  '/admin/audit': typeof AuthAdminAuditRoute
   '/admin/permissions': typeof AuthAdminPermissionsRoute
   '/admin/roles': typeof AuthAdminRolesRouteWithChildren
   '/annees-scolaires/$id': typeof AuthAnneesScolairesIdRoute
@@ -932,6 +939,7 @@ export interface FileRoutesByTo {
   '/vie-scolaire': typeof AuthVieScolaireRoute
   '/vie-scolaire-avancee': typeof AuthVieScolaireAvanceeRoute
   '/parametres/structure-academique': typeof authenticatedParametresStructureAcademiqueRouteRouteWithChildren
+  '/admin/audit': typeof AuthAdminAuditRoute
   '/admin/permissions': typeof AuthAdminPermissionsRoute
   '/annees-scolaires/$id': typeof AuthAnneesScolairesIdRoute
   '/bulletins/$id': typeof AuthBulletinsIdRoute
@@ -1053,6 +1061,7 @@ export interface FileRoutesById {
   '/_auth/vie-scolaire': typeof AuthVieScolaireRoute
   '/_auth/vie-scolaire-avancee': typeof AuthVieScolaireAvanceeRoute
   '/(authenticated)/parametres/structure-academique': typeof authenticatedParametresStructureAcademiqueRouteRouteWithChildren
+  '/_auth/admin/audit': typeof AuthAdminAuditRoute
   '/_auth/admin/permissions': typeof AuthAdminPermissionsRoute
   '/_auth/admin/roles': typeof AuthAdminRolesRouteWithChildren
   '/_auth/annees-scolaires/$id': typeof AuthAnneesScolairesIdRoute
@@ -1180,6 +1189,7 @@ export interface FileRouteTypes {
     | '/vie-scolaire'
     | '/vie-scolaire-avancee'
     | '/parametres/structure-academique'
+    | '/admin/audit'
     | '/admin/permissions'
     | '/admin/roles'
     | '/annees-scolaires/$id'
@@ -1282,6 +1292,7 @@ export interface FileRouteTypes {
     | '/vie-scolaire'
     | '/vie-scolaire-avancee'
     | '/parametres/structure-academique'
+    | '/admin/audit'
     | '/admin/permissions'
     | '/annees-scolaires/$id'
     | '/bulletins/$id'
@@ -1402,6 +1413,7 @@ export interface FileRouteTypes {
     | '/_auth/vie-scolaire'
     | '/_auth/vie-scolaire-avancee'
     | '/(authenticated)/parametres/structure-academique'
+    | '/_auth/admin/audit'
     | '/_auth/admin/permissions'
     | '/_auth/admin/roles'
     | '/_auth/annees-scolaires/$id'
@@ -2238,6 +2250,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAdminPermissionsRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_auth/admin/audit': {
+      id: '/_auth/admin/audit'
+      path: '/admin/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AuthAdminAuditRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/(authenticated)/parametres/structure-academique': {
       id: '/(authenticated)/parametres/structure-academique'
       path: '/parametres/structure-academique'
@@ -2845,6 +2864,7 @@ interface AuthRouteChildren {
   AuthUtilisateursRoute: typeof AuthUtilisateursRouteWithChildren
   AuthVieScolaireRoute: typeof AuthVieScolaireRoute
   AuthVieScolaireAvanceeRoute: typeof AuthVieScolaireAvanceeRoute
+  AuthAdminAuditRoute: typeof AuthAdminAuditRoute
   AuthAdminPermissionsRoute: typeof AuthAdminPermissionsRoute
   AuthAdminRolesRoute: typeof AuthAdminRolesRouteWithChildren
 }
@@ -2894,6 +2914,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthUtilisateursRoute: AuthUtilisateursRouteWithChildren,
   AuthVieScolaireRoute: AuthVieScolaireRoute,
   AuthVieScolaireAvanceeRoute: AuthVieScolaireAvanceeRoute,
+  AuthAdminAuditRoute: AuthAdminAuditRoute,
   AuthAdminPermissionsRoute: AuthAdminPermissionsRoute,
   AuthAdminRolesRoute: AuthAdminRolesRouteWithChildren,
 }

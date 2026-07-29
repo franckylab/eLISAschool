@@ -1182,7 +1182,83 @@ grep -r "sujet" .qoder/rules/ .qoder/skills/ docs/
 
 ---
 
-## 21. Maintenance et skills disponibles
+## 24. Conventions de typage et patterns transversaux
+
+### 24.1 Parameter `req` dans les services — Toujours `Request` d'Express
+
+**Règle** : Quand un service accepte `req` pour l'audit, TOUJOURS typer `req?: Request` (import depuis `express`).
+
+```typescript
+import { Request } from 'express';
+
+// ✅ CORRECT
+async create(dto: CreateDto, userId: string, etablissementId: string, req?: Request): Promise<Entity> {
+    await auditService.log({ ... }, req);
+}
+
+// ❌ INTERDIT
+async create(dto: CreateDto, userId: string, req?: any): Promise<Entity> { ... }
+```
+
+### 24.2 Anti-pattern : Mutation de DTO pour les dates
+
+**Règle** : JAMAIS muter un DTO pour forcer un type `Date` dans un champ `string`. Construire un objet séparé.
+
+```typescript
+// ❌ INTERDIT — mute le DTO d'entrée
+dto.date = new Date(dto.date) as any;
+Object.assign(entity, dto);
+
+// ✅ CORRECT — objet séparé mergé
+const dateChanges = dto.date ? { date: new Date(dto.date) } : {};
+Object.assign(entity, dto, dateChanges);
+```
+
+### 24.3 AuditAction — Toujours utiliser l'enum
+
+**Règle** : JAMAIS utiliser une string literal avec `as any` pour les actions d'audit. Toujours référencer `AuditAction`.
+
+```typescript
+import { AuditAction } from '@modules/auth/entities/audit-log.entity';
+
+// ✅ CORRECT
+await auditService.log({
+    action: AuditAction.TYPE_CONTRAT_CREATE,
+    ...
+});
+
+// ❌ INTERDIT
+await auditService.log({
+    action: 'TYPE_CONTRAT_CREATE' as any,
+    ...
+});
+```
+
+### 24.4 Soft delete — Convention par type d'entité
+
+**Entités transactionnelles** (opérations métier) → `@DeleteDateColumn()` :
+- Personnel : `MembrePersonnel`, `ContratPersonnel`, `AffectationPoste`, `HeureCours`, `AbsencePersonnel`, `EvaluationEnseignant`, `ProgressionProgramme`, `IndisponibiliteEnseignant`
+- Paie : `BulletinPaie`, `Cotisation`, `TypePrime`, `TypeRetenue`, `ElementSalaire`
+- Organisation : `UniteOrganisationnelle`, `Poste`, `HierarchiePersonnel`
+
+**Entités nomenclature** (référentiels) → PAS de soft delete (hard delete + `estSysteme` protection) :
+- `EchelonStructurel`, `NiveauResponsabilite`, `ModeRemunerationEntity`, `Fonction`, `TemplateOrganisation`, `TypeContratPersonnalise`
+
+### 24.5 Casts FindOperator — Pas de `as any` nécessaire
+
+Quand les paramètres de `Between()`, `LessThanOrEqual()`, etc. sont déjà du type `Date`, le cast `as any` est inutile :
+
+```typescript
+// ❌ INTERDIT
+Between(dateDebut, dateFin) as any
+
+// ✅ CORRECT — les params sont déjà Date
+Between(dateDebut, dateFin)
+```
+
+---
+
+## 25. Maintenance et skills disponibles
 
 Cette règle et les skills associés sont conçus pour **évoluer avec le projet** :
 

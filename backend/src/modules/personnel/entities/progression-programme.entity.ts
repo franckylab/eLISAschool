@@ -11,6 +11,7 @@ import {
     JoinColumn,
     CreateDateColumn,
     UpdateDateColumn,
+    DeleteDateColumn,
     Index,
 } from 'typeorm';
 import { Etablissement } from '@modules/etablissement/entities';
@@ -76,4 +77,7 @@ export class ProgressionProgramme {
 
     @UpdateDateColumn()
     updatedAt!: Date;
+
+    @DeleteDateColumn()
+    deletedAt?: Date;
 }

@@ -18,6 +18,7 @@ import {
     Column,
     CreateDateColumn,
     UpdateDateColumn,
+    DeleteDateColumn,
     ManyToOne,
     JoinColumn,
     Index,
@@ -113,4 +114,7 @@ export class IndisponibiliteEnseignant {
 
     @UpdateDateColumn()
     updatedAt!: Date;
+
+    @DeleteDateColumn()
+    deletedAt?: Date;
 }
