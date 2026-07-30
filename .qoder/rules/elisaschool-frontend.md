@@ -2529,3 +2529,42 @@ const handleToggleFullscreen = useCallback(() => {
 - **`elisaschool-business-logic`** — Guide de la logique métier
 
 > **Pour demander une mise à jour** : *« mets à jour la règle frontend »* en précisant le changement.
+
+---
+
+## 33. Pattern Network Connection Indicator
+
+### Architecture
+- **Module** : `features/network/`
+- **Store** : `stores/connection.store.ts` — Zustand (état global `{ state, details }`, méthode `checkConnection()`)
+- **Hook** : `hooks/use-connection-status.ts` — polling 15s + listeners `online`/`offline`/`visibilitychange`
+- **Composants** :
+  - `ConnectionIndicator.tsx` — point + anneau SVG (Framer Motion), inséré dans `Header.tsx` avant `EtablissementSwitcher`
+  - `ConnectionPopover.tsx` — Radix Popover avec détails permission-gated (`network:details`)
+  - `ConnectionBanner.tsx` — bannière persistante après 30s d'état critique, placée dans `PageLayout.tsx` après `<Header />`
+
+### États et visuel
+| État | Anneau (réseau) | Point (serveur) | Pulse | Couleurs CSS var |
+|------|:---------------:|:----------------:|:-----:|------------------|
+| `connected` | Vert | Vert | — | `--color-dominant-500` |
+| `degraded` | Vert | Jaune | 1.5s | `--color-warning` (point) |
+| `server-down` | Vert | Rouge | 1s | `--color-danger` (point) |
+| `lan-only` | Orange | Gris | 3s | `--color-warning` (anneau), `--color-text-muted` (point) |
+| `offline` | Rouge | Gris | — | `--color-danger` (anneau), `--color-text-muted` (point) |
+
+### Détection
+- `navigator.onLine` + `GET /api/network/ping` (back-end : DB check + mémoire + internet probe)
+- Cache Redis 30s pour internet probe côté back-end
+- Fallback frontend : Cloudflare `1.1.1.1` en `no-cors` si serveur down
+
+### Backend
+- Module `backend/src/modules/network/` — `network.service.ts` + `network.controller.ts`
+- `GET /api/network/ping` — public, route montée dans `app.ts` juste après `/api/health`
+- Réponse : `{ status: 'ok'|'degraded'|'down', timestamp, details: { database, memory, internet }, latencyMs }`
+
+### Règles
+- **TOUJOURS** utiliser la connexion directe `fetch` (pas `apiClient`) pour le ping (indépendant du JWT)
+- **TOUJOURS** faire les sons internet via le back-end (cache Redis 30s) avec fallback frontend `no-cors`
+- **TOUJOURS** permissionner le popover détail (`network:details`) et la page monitoring (`network:admin`)
+- **TOUJOURS** traduire les clés dans `common.json` (`network.*`)
+- **NE JAMAIS** utiliser de sonde internet tierce sans fallback (CORS, adblockers, mauvaises pratiques)

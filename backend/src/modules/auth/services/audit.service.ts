@@ -340,7 +340,8 @@ export class AuditService {
      */
     async getLogs(options: {
         utilisateurId?: string;
-        action?: AuditAction;
+        utilisateurSearch?: string;
+        action?: AuditAction | AuditAction[];
         cible?: string;
         cibleId?: string;
         module?: string;
@@ -364,8 +365,15 @@ export class AuditService {
         if (options.utilisateurId) {
             qb.andWhere('a.utilisateurId = :utilisateurId', { utilisateurId: options.utilisateurId });
         }
+        if (options.utilisateurSearch) {
+            qb.andWhere(
+                "(profil.nom ILIKE :utilisateurSearch OR profil.prenom ILIKE :utilisateurSearch OR u.email ILIKE :utilisateurSearch OR CONCAT(COALESCE(profil.prenom, ''), ' ', COALESCE(profil.nom, '')) ILIKE :utilisateurSearch)",
+                { utilisateurSearch: `%${options.utilisateurSearch}%` },
+            );
+        }
         if (options.action) {
-            qb.andWhere('a.action = :action', { action: options.action });
+            const actions = Array.isArray(options.action) ? options.action : [options.action];
+            qb.andWhere('a.action IN (:...actions)', { actions });
         }
         if (options.scope === 'avec-liees' && options.cible && options.cibleId) {
             const ciblesLiees = await auditRelationResolverService.resoudreEnfants(
@@ -417,10 +425,56 @@ export class AuditService {
             qb.andWhere('a.estEchec = :estEchec', { estEchec: options.estEchec });
         }
         if (options.search) {
-            qb.andWhere(
-                '(a.description ILIKE :search OR a.cible ILIKE :search OR a.action::text ILIKE :search)',
-                { search: `%${options.search}%` },
-            );
+            // Détection automatique de date dans la recherche (DD/MM/YYYY ou YYYY-MM-DD)
+            const dateMatch = options.search.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            const isoDateMatch = options.search.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+            if (dateMatch) {
+                const [, jour, mois, annee] = dateMatch;
+                const dateStr = `${annee}-${mois.padStart(2, '0')}-${jour.padStart(2, '0')}`;
+                const dateDebut = new Date(`${dateStr}T00:00:00.000Z`);
+                const dateFin = new Date(`${dateStr}T23:59:59.999Z`);
+                if (!isNaN(dateDebut.getTime())) {
+                    qb.andWhere('a.createdAt >= :searchDateDebut AND a.createdAt <= :searchDateFin', {
+                        searchDateDebut: dateDebut,
+                        searchDateFin: dateFin,
+                    });
+                }
+            } else if (isoDateMatch) {
+                const [, annee, mois, jour] = isoDateMatch;
+                const dateStr = `${annee}-${mois}-${jour}`;
+                const dateDebut = new Date(`${dateStr}T00:00:00.000Z`);
+                const dateFin = new Date(`${dateStr}T23:59:59.999Z`);
+                if (!isNaN(dateDebut.getTime())) {
+                    qb.andWhere('a.createdAt >= :searchDateDebut AND a.createdAt <= :searchDateFin', {
+                        searchDateDebut: dateDebut,
+                        searchDateFin: dateFin,
+                    });
+                }
+            } else {
+                // Recherche hybride i18n : cherche dans tous les champs + labels d'actions FR/EN
+                qb.andWhere(
+                    `(a.description ILIKE :search
+                     OR a.cible ILIKE :search
+                     OR a.action::text ILIKE :search
+                     OR a.ipAddress ILIKE :search
+                     OR a.navigateur ILIKE :search
+                     OR a."systemeExploitation" ILIKE :search
+                     OR a.appareil ILIKE :search
+                     OR a.erreur ILIKE :search
+                     OR a.parentCible ILIKE :search
+                     OR a.id::text ILIKE :search
+                     OR profil.nom ILIKE :search
+                     OR profil.prenom ILIKE :search
+                     OR u.email ILIKE :search
+                     OR a.metadata->>'entiteLabel' ILIKE :search
+                     OR a.metadata->>'entiteRef' ILIKE :search
+                     OR "a"."anciennesValeurs"::text ILIKE :search
+                     OR "a"."nouvellesValeurs"::text ILIKE :search
+                     OR ${AuditService.getActionSearchExpr()} ILIKE :search)`,
+                    { search: `%${options.search}%` },
+                );
+            }
         }
         if (options.severity) {
             qb.andWhere('a.severity = :severity', { severity: options.severity });
@@ -438,6 +492,89 @@ export class AuditService {
             .getManyAndCount();
 
         return { items, total };
+    }
+
+    /**
+     * Expression SQL pour la recherche hybride i18n sur les actions.
+     * Concatène les labels FR et EN des actions courantes pour une recherche multi-locale.
+     */
+    private static getActionSearchExpr(): string {
+        return `CASE a.action
+            WHEN 'LOGIN' THEN 'connexion login'
+            WHEN 'LOGOUT' THEN 'déconnexion logout'
+            WHEN 'LOGIN_FAILED' THEN 'échec connexion login failed'
+            WHEN 'PASSWORD_CHANGE' THEN 'changement mot de passe password change'
+            WHEN 'PASSWORD_RESET' THEN 'réinitialisation mot de passe password reset'
+            WHEN 'USER_CREATE' THEN 'utilisateur créé user created'
+            WHEN 'USER_UPDATE' THEN 'utilisateur modifié user updated'
+            WHEN 'USER_DELETE' THEN 'utilisateur supprimé user deleted'
+            WHEN 'USER_SUSPEND' THEN 'utilisateur suspendu user suspended'
+            WHEN 'USER_ACTIVATE' THEN 'utilisateur activé user activated'
+            WHEN 'ELEVE_CREATE' THEN 'élève créé student created'
+            WHEN 'ELEVE_UPDATE' THEN 'élève modifié student updated'
+            WHEN 'ELEVE_DELETE' THEN 'élève supprimé student deleted'
+            WHEN 'ELEVE_INSCRIPTION' THEN 'élève inscription student enrollment'
+            WHEN 'NOTE_CREATE' THEN 'note créée grade created'
+            WHEN 'NOTE_UPDATE' THEN 'note modifiée grade updated'
+            WHEN 'NOTE_DELETE' THEN 'note supprimée grade deleted'
+            WHEN 'NOTE_VALIDATE' THEN 'note validée grade validated'
+            WHEN 'BULLETIN_GENERATE' THEN 'bulletin généré report card generated'
+            WHEN 'BULLETIN_UPDATE' THEN 'bulletin modifié report card updated'
+            WHEN 'BULLETIN_DELETE' THEN 'bulletin supprimé report card deleted'
+            WHEN 'BULLETIN_PUBLIER' THEN 'bulletin publié report card published'
+            WHEN 'BULLETIN_EXPORT' THEN 'bulletin exporté report card exported'
+            WHEN 'PERSONNEL_CREATE' THEN 'membre créé staff created'
+            WHEN 'PERSONNEL_UPDATE' THEN 'membre modifié staff updated'
+            WHEN 'PERSONNEL_DELETE' THEN 'membre supprimé staff deleted'
+            WHEN 'CONTRAT_PERSONNEL_CREATE' THEN 'contrat créé contract created'
+            WHEN 'CONTRAT_PERSONNEL_UPDATE' THEN 'contrat modifié contract updated'
+            WHEN 'CONTRAT_PERSONNEL_DELETE' THEN 'contrat supprimé contract deleted'
+            WHEN 'CLASSE_CREATE' THEN 'classe créée class created'
+            WHEN 'CLASSE_UPDATE' THEN 'classe modifiée class updated'
+            WHEN 'CLASSE_DELETE' THEN 'classe supprimée class deleted'
+            WHEN 'MATIERE_CREATE' THEN 'matière créée subject created'
+            WHEN 'MATIERE_UPDATE' THEN 'matière modifiée subject updated'
+            WHEN 'MATIERE_DELETE' THEN 'matière supprimée subject deleted'
+            WHEN 'PERIODE_CREATE' THEN 'période créée period created'
+            WHEN 'PERIODE_UPDATE' THEN 'période modifiée period updated'
+            WHEN 'PERIODE_DELETE' THEN 'période supprimée period deleted'
+            WHEN 'ANNEE_SCOLAIRE_CREATE' THEN 'année scolaire créée school year created'
+            WHEN 'ANNEE_SCOLAIRE_UPDATE' THEN 'année scolaire modifiée school year updated'
+            WHEN 'ANNEE_SCOLAIRE_DELETE' THEN 'année scolaire supprimée school year deleted'
+            WHEN 'ANNEE_SCOLAIRE_ACTIVATE' THEN 'année scolaire activée school year activated'
+            WHEN 'CONFIG_CHANGE' THEN 'configuration modifiée config changed'
+            WHEN 'MODULE_ACTIVATE' THEN 'module activé module activated'
+            WHEN 'MODULE_DEACTIVATE' THEN 'module désactivé module deactivated'
+            WHEN 'VALIDATION_APPROUVE' THEN 'validation approuvée validation approved'
+            WHEN 'VALIDATION_REJETE' THEN 'validation rejetée validation rejected'
+            WHEN 'UNITE_CREATE' THEN 'unité créée unit created'
+            WHEN 'UNITE_UPDATE' THEN 'unité modifiée unit updated'
+            WHEN 'UNITE_DELETE' THEN 'unité supprimée unit deleted'
+            WHEN 'POSTE_CREATE' THEN 'poste créé position created'
+            WHEN 'POSTE_UPDATE' THEN 'poste modifié position updated'
+            WHEN 'POSTE_DELETE' THEN 'poste supprimé position deleted'
+            WHEN 'FONCTION_CREATE' THEN 'fonction créée function created'
+            WHEN 'FONCTION_UPDATE' THEN 'fonction modifiée function updated'
+            WHEN 'FONCTION_DELETE' THEN 'fonction supprimée function deleted'
+            WHEN 'HIERARCHIE_CREATE' THEN 'hiérarchie créée hierarchy created'
+            WHEN 'HIERARCHIE_UPDATE' THEN 'hiérarchie modifiée hierarchy updated'
+            WHEN 'HIERARCHIE_DELETE' THEN 'hiérarchie supprimée hierarchy deleted'
+            WHEN 'ACCESS_DENIED' THEN 'accès refusé access denied'
+            WHEN 'ROLE_CREATE' THEN 'rôle créé role created'
+            WHEN 'ROLE_UPDATE' THEN 'rôle modifié role updated'
+            WHEN 'ROLE_DELETE' THEN 'rôle supprimé role deleted'
+            WHEN 'ROLE_ASSIGN' THEN 'rôle attribué role assigned'
+            WHEN 'ROLE_REVOKE' THEN 'rôle révoqué role revoked'
+            WHEN 'PAYMENT_RECEIVE' THEN 'paiement reçu payment received'
+            WHEN 'DEPENSE_CREATE' THEN 'dépense créée expense created'
+            WHEN 'DEPENSE_VALIDER' THEN 'dépense validée expense validated'
+            WHEN 'PAIEMENT_CREATE' THEN 'paiement créé payment created'
+            WHEN 'PAIEMENT_VALIDER' THEN 'paiement validé payment validated'
+            WHEN 'PAIEMENT_ANNULER' THEN 'paiement annulé payment cancelled'
+            WHEN 'DATA_EXPORT' THEN 'export données data export'
+            WHEN 'DATA_IMPORT' THEN 'import données data import'
+            ELSE lower(replace(a.action::text, '_', ' '))
+        END`;
     }
 
     /**

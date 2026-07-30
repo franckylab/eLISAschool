@@ -12,6 +12,7 @@ import { ChevronLeft } from 'lucide-react';
 import { useSidebarStore } from '@/stores/sidebar.store';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { ConnectionBanner } from '@/features/network';
 import { FondRotator } from './FondRotator';
 import { NidAlveoleBackground } from './NidAlveoleBackground';
 import { cn } from '@/lib/cn';
@@ -107,6 +108,7 @@ export function PageLayout({ children }: PageLayoutProps) {
             {/* Zone principale */}
             <div className="flex flex-1 flex-col overflow-hidden">
                 <Header />
+                <ConnectionBanner />
 
                 {/* Contenu */}
                 <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">

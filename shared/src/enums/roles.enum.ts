@@ -949,6 +949,11 @@ export enum Permission {
     AUDIT_SONDAGES_VIEW = 'audit:sondages:view',
     AUDIT_ORIENTATION_VIEW = 'audit:orientation:view',
     AUDIT_REQUETES_VIEW = 'audit:requetes:view',
+    // Network / Connectivity
+    NETWORK_VIEW = 'network:view',
+    NETWORK_DETAILS = 'network:details',
+    NETWORK_ADMIN = 'network:admin',
+
     AUDIT_GAMIFICATION_VIEW = 'audit:gamification:view',
     AUDIT_CARTES_VIEW = 'audit:cartes:view',
     AUDIT_CLUBS_VIEW = 'audit:clubs:view',
@@ -978,6 +983,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.CONFIG_BACKUP_CREATE, Permission.CONFIG_BACKUP_RESTORE,
         Permission.CONFIG_EXPORT, Permission.CONFIG_CACHE_INVALIDATE,
         Permission.MONITORING_VIEW,
+        Permission.NETWORK_VIEW, Permission.NETWORK_DETAILS, Permission.NETWORK_ADMIN,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
         Permission.NOTIFICATIONS_MANAGE,
         Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,

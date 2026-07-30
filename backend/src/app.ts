@@ -86,6 +86,7 @@ import { organisationController } from '@modules/organisation';
 import { recrutementController } from '@modules/recrutement';
 import { parkingController } from '@modules/parking';
 import { apparenceController } from '@modules/apparence';
+import { networkController } from '@modules/network';
 
 /**
  * Crée et configure l'application Express
@@ -271,6 +272,9 @@ export function createApp(): Application {
             timestamp: new Date().toISOString(),
         });
     });
+
+    // Route ping ultra-légère pour indicateur de connexion (public)
+    app.use('/api/network', networkController);
 
     // ==================================
     // Routes publiques de préinscription (AVANT tenantMiddleware)

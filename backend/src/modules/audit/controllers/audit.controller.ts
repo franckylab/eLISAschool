@@ -88,6 +88,7 @@ router.get('/logs', authMiddleware, requireAuditAccess, async (req: Request, res
 
         const result = await auditService.getLogs({
             utilisateurId: filters.utilisateurId,
+            utilisateurSearch: filters.utilisateurSearch,
             action: filters.action,
             cible: filters.cible,
             cibleId: filters.cibleId,
@@ -166,6 +167,9 @@ router.get('/logs/export', authMiddleware, requireAuditAccess, async (req: Reque
             severity: exportParams.severity,
             utilisateurId: exportParams.utilisateurId,
             module: exportParams.module,
+            action: exportParams.action,
+            estEchec: exportParams.estEchec,
+            search: exportParams.search,
             etablissementId: req.utilisateur?.etablissementId,
         });
 

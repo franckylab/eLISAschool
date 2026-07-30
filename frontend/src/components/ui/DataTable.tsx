@@ -165,16 +165,20 @@ interface DataTableProps<T> {
     searchable?: boolean;
     /** Placeholder de la barre de recherche (défaut: 'Rechercher...') */
     searchPlaceholder?: string;
-    /** Filtres rapides configurables par la page */
+    /** Filtres rapides configurables par la page (select, date, date-range, text, number) */
     filtres?: {
         /** Clé unique du filtre */
         key: string;
         /** Label affiché */
         label: string;
-        /** Options du select */
-        options: { value: string; label: string }[];
+        /** Type de filtre (défaut: 'select') */
+        type?: 'select' | 'date' | 'date-range' | 'text' | 'number';
+        /** Options du select (requis pour type='select') */
+        options?: { value: string; label: string }[];
         /** Option "tous" par défaut */
         allOptionLabel?: string;
+        /** Placeholder pour les filtres text/number */
+        placeholder?: string;
     }[];
     /** Callback quand la recherche change (filtrage serveur) */
     onSearchChange?: (recherche: string) => void;
@@ -980,8 +984,10 @@ interface BarreOutilsProps {
     filtres?: {
         key: string;
         label: string;
-        options: { value: string; label: string }[];
+        type?: 'select' | 'date' | 'date-range' | 'text' | 'number';
+        options?: { value: string; label: string }[];
         allOptionLabel?: string;
+        placeholder?: string;
     }[];
     /** Valeurs actuelles des filtres */
     valeurFiltres?: Record<string, string>;
@@ -1078,7 +1084,7 @@ function BarreOutils({
                     </div>
                 ) : (
                     <div className="flex flex-wrap items-center gap-[var(--gap-sm)]">
-                        {filtres.map((f) => (
+                        {filtres.filter(f => f.type === 'select' || !f.type || f.options).map((f) => (
                             <select
                                 key={f.key}
                                 value={valeurFiltres?.[f.key] ?? ''}
@@ -1087,7 +1093,7 @@ function BarreOutils({
                                 style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
                             >
                                 <option value="">{f.allOptionLabel ?? `Tous les ${f.label.toLowerCase()}`}</option>
-                                {f.options.map((opt) => (
+                                {f.options?.map((opt) => (
                                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                                 ))}
                             </select>

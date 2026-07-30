@@ -13,7 +13,11 @@ import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { Shield, Download, AlertCircle, AlertTriangle, Info, FileText, Eye, ExternalLink, Pencil, GitBranch, Copy, Check, Monitor } from 'lucide-react';
+import {
+    Shield, Download, AlertCircle, AlertTriangle, Info, FileText, Eye, ExternalLink,
+    Pencil, GitBranch, Copy, Check, Monitor, Clock, TrendingUp, Activity,
+    ShieldCheck,
+} from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -36,7 +40,11 @@ interface AuditFiltres {
     search?: string;
     module?: string;
     severity?: string;
-    estEchec?: boolean;
+    estEchec?: string;
+    dateDebut?: string;
+    dateFin?: string;
+    action?: string;
+    utilisateurSearch?: string;
 }
 
 const MODULES = [
@@ -46,6 +54,21 @@ const MODULES = [
 ] as const;
 
 const SEVERITES = ['INFO', 'WARNING', 'CRITICAL'] as const;
+
+/** Actions groupées par catégorie pour le filtre select */
+const ACTION_GROUPES = [
+    { groupe: 'Authentification', actions: ['LOGIN', 'LOGOUT', 'LOGIN_FAILED', 'PASSWORD_CHANGE', 'PASSWORD_RESET', 'ACCESS_DENIED'] },
+    { groupe: 'Utilisateurs', actions: ['USER_CREATE', 'USER_UPDATE', 'USER_DELETE', 'USER_SUSPEND', 'USER_ACTIVATE', 'ROLE_ASSIGN', 'ROLE_REVOKE'] },
+    { groupe: 'Notes', actions: ['NOTE_CREATE', 'NOTE_UPDATE', 'NOTE_DELETE', 'NOTE_VALIDATE'] },
+    { groupe: 'Bulletins', actions: ['BULLETIN_GENERATE', 'BULLETIN_UPDATE', 'BULLETIN_DELETE', 'BULLETIN_PUBLIER', 'BULLETIN_EXPORT'] },
+    { groupe: 'Personnel', actions: ['PERSONNEL_CREATE', 'PERSONNEL_UPDATE', 'PERSONNEL_DELETE'] },
+    { groupe: 'Contrats', actions: ['CONTRAT_PERSONNEL_CREATE', 'CONTRAT_PERSONNEL_UPDATE', 'CONTRAT_PERSONNEL_DELETE'] },
+    { groupe: 'Organisation', actions: ['UNITE_CREATE', 'UNITE_UPDATE', 'UNITE_DELETE', 'POSTE_CREATE', 'POSTE_UPDATE', 'POSTE_DELETE', 'FONCTION_CREATE', 'FONCTION_UPDATE', 'FONCTION_DELETE', 'HIERARCHIE_CREATE', 'HIERARCHIE_UPDATE', 'HIERARCHIE_DELETE'] },
+    { groupe: 'Pédagogie', actions: ['CLASSE_CREATE', 'CLASSE_UPDATE', 'CLASSE_DELETE', 'MATIERE_CREATE', 'MATIERE_UPDATE', 'MATIERE_DELETE', 'PERIODE_CREATE', 'PERIODE_UPDATE', 'PERIODE_DELETE', 'ANNEE_SCOLAIRE_CREATE', 'ANNEE_SCOLAIRE_UPDATE', 'ANNEE_SCOLAIRE_DELETE', 'ANNEE_SCOLAIRE_ACTIVATE'] },
+    { groupe: 'Validation', actions: ['VALIDATION_APPROUVE', 'VALIDATION_REJETE'] },
+    { groupe: 'Finance', actions: ['PAYMENT_RECEIVE', 'DEPENSE_CREATE', 'DEPENSE_VALIDER', 'PAIEMENT_CREATE', 'PAIEMENT_VALIDER', 'PAIEMENT_ANNULER'] },
+    { groupe: 'Système', actions: ['CONFIG_CHANGE', 'MODULE_ACTIVATE', 'MODULE_DEACTIVATE', 'DATA_EXPORT', 'DATA_IMPORT'] },
+] as const;
 
 // ─── Helpers ───
 
@@ -78,6 +101,25 @@ export function AuditPage() {
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<AuditFiltres>({ page: 1, limit: 30 });
     const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null);
+    const [modalSection, setModalSection] = useState('general');
+
+    // ── Statistiques rapides ──
+    const { data: stats } = useQuery({
+        queryKey: ['admin-audit-stats'],
+        queryFn: async () => {
+            const res = await apiClient.get<{
+                totalLogs: number;
+                last24h: number;
+                failureRate: string;
+                actionsCount: Record<string, number>;
+                modulesCount: Record<string, number>;
+                severityCount: Record<string, number>;
+            }>('/api/audit/logs/statistics');
+            return res.data;
+        },
+        staleTime: 60_000,
+        refetchInterval: 120_000,
+    });
 
     const queryParams = useMemo(() => {
         const p: Record<string, string> = {
@@ -87,7 +129,12 @@ export function AuditPage() {
         if (filtres.search) p.search = filtres.search;
         if (filtres.module) p.module = filtres.module;
         if (filtres.severity) p.severity = filtres.severity;
-        if (filtres.estEchec) p.estEchec = 'true';
+        if (filtres.estEchec === 'true') p.estEchec = 'true';
+        if (filtres.estEchec === 'false') p.estEchec = 'false';
+        if (filtres.dateDebut) p.dateDebut = new Date(filtres.dateDebut).toISOString();
+        if (filtres.dateFin) p.dateFin = new Date(filtres.dateFin + 'T23:59:59').toISOString();
+        if (filtres.action) p.action = filtres.action;
+        if (filtres.utilisateurSearch) p.utilisateurSearch = filtres.utilisateurSearch;
         return p;
     }, [filtres]);
 
@@ -107,12 +154,24 @@ export function AuditPage() {
     const total = data?.total ?? 0;
     const totalPages = Math.ceil(total / filtres.limit);
 
+    // ── Callback filtres ──
+    const setFiltre = useCallback((key: string, valeur: string) => {
+        setFiltres(prev => ({ ...prev, [key]: valeur || undefined, page: 1 }));
+    }, []);
+
+    const clearFiltres = useCallback(() => {
+        setFiltres({ page: 1, limit: filtres.limit });
+    }, [filtres.limit]);
+
+    // ── Export ──
     const handleExport = useCallback(async (format: 'csv' | 'json') => {
         const toastId = toast.loading(t('audit.page.exportEnCours'));
         try {
             const params = new URLSearchParams({ format });
             if (filtres.module) params.set('module', filtres.module);
             if (filtres.severity) params.set('severity', filtres.severity);
+            if (filtres.dateDebut) params.set('dateDebut', new Date(filtres.dateDebut).toISOString());
+            if (filtres.dateFin) params.set('dateFin', new Date(filtres.dateFin + 'T23:59:59').toISOString());
 
             const baseUrl = import.meta.env.VITE_API_URL ?? '';
             const token = localStorage.getItem('accessToken');
@@ -120,14 +179,10 @@ export function AuditPage() {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
             const content = await response.text();
-            const mimeType = format === 'csv'
-                ? 'text/csv;charset=utf-8;'
-                : 'application/json;charset=utf-8;';
+            const mimeType = format === 'csv' ? 'text/csv;charset=utf-8;' : 'application/json;charset=utf-8;';
             const blob = new Blob([content], { type: mimeType });
             const dateStr = new Date().toISOString().slice(0, 10);
             const filename = `audit-${dateStr}${filtres.module ? `-${filtres.module}` : ''}.${format}`;
@@ -148,7 +203,31 @@ export function AuditPage() {
         }
     }, [filtres, t]);
 
+    // ── Colonnes ──
     const colonnes = useMemo(() => [
+        {
+            key: 'id' as const,
+            header: 'ID',
+            hidden: true,
+            size: 300,
+            render: (log: AuditLogEntry) => (
+                <button
+                    type="button"
+                    onClick={() => {
+                        navigator.clipboard.writeText(log.id);
+                        toast.success(t('audit.page.idCopie'));
+                    }}
+                    className="group inline-flex items-center gap-1 cursor-pointer rounded-[var(--radius-sm)] px-1 py-0.5 transition-colors hover:bg-[var(--color-surface-hover)]"
+                    title={t('audit.page.copierId')}
+                >
+                    <span className="font-mono text-[var(--color-text-muted)] break-all"
+                        style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.1vw, 0.625rem)' }}>
+                        {log.id}
+                    </span>
+                    <Copy className="h-3 w-3 shrink-0 text-[var(--color-text-muted)] opacity-0 group-hover:opacity-60 transition-opacity" />
+                </button>
+            ),
+        },
         {
             key: 'createdAt' as const,
             header: t('audit.page.colonneDate'),
@@ -170,7 +249,7 @@ export function AuditPage() {
                         : log.utilisateur.email ?? '—')
                     : '—';
                 return (
-                    <span className="text-[var(--color-texte-secondaire)]"
+                    <span className="text-[var(--color-texte-secondaire)] truncate max-w-[140px] inline-block"
                         style={{ fontSize: 'clamp(0.6875rem, 0.65rem + 0.1vw, 0.75rem)' }}>
                         {display}
                     </span>
@@ -180,12 +259,20 @@ export function AuditPage() {
         {
             key: 'action' as const,
             header: t('audit.page.colonneAction'),
-            render: (log: AuditLogEntry) => (
-                <span className="font-medium text-[var(--color-texte)]"
-                    style={{ fontSize: 'clamp(0.6875rem, 0.65rem + 0.1vw, 0.75rem)' }}>
-                    {libelleAction(log.action, t)}
-                </span>
-            ),
+            render: (log: AuditLogEntry) => {
+                const isValidation = log.action.startsWith('VALIDATION_');
+                return (
+                    <span className="inline-flex items-center gap-1">
+                        {isValidation && (
+                            <ShieldCheck className="h-3 w-3 shrink-0 text-[var(--color-dominante)]" />
+                        )}
+                        <span className="font-medium text-[var(--color-texte)]"
+                            style={{ fontSize: 'clamp(0.6875rem, 0.65rem + 0.1vw, 0.75rem)' }}>
+                            {libelleAction(log.action, t)}
+                        </span>
+                    </span>
+                );
+            },
         },
         {
             key: 'module' as const,
@@ -256,16 +343,31 @@ export function AuditPage() {
                     key: 'detail',
                     icon: Eye,
                     label: t('audit.page.detail'),
-                    onClick: () => setSelectedLog(log),
+                    onClick: () => { setSelectedLog(log); setModalSection('general'); },
                 },
             ],
         },
     ], [t, locale]);
 
+    // ── Configuration des 6 filtres ──
+    const actionOptions = useMemo(() => {
+        const opts: { value: string; label: string }[] = [];
+        for (const groupe of ACTION_GROUPES) {
+            for (const action of groupe.actions) {
+                opts.push({
+                    value: action,
+                    label: `${libelleAction(action, t)}`,
+                });
+            }
+        }
+        return opts;
+    }, [t]);
+
     const filtresConfig = useMemo(() => [
         {
             key: 'module',
             label: t('audit.page.filtreModule'),
+            type: 'select' as const,
             allOptionLabel: t('audit.page.tousModules'),
             options: MODULES.map(m => ({
                 value: m,
@@ -275,18 +377,70 @@ export function AuditPage() {
         {
             key: 'severity',
             label: t('audit.page.filtreSeverite'),
+            type: 'select' as const,
             allOptionLabel: t('audit.page.toutesSeverites'),
             options: SEVERITES.map(s => ({ value: s, label: s })),
         },
-    ], [t]);
+        {
+            key: 'estEchec',
+            label: t('audit.page.filtreStatut'),
+            type: 'select' as const,
+            allOptionLabel: t('audit.page.tousStatuts'),
+            options: [
+                { value: 'true', label: t('audit.echec') },
+                { value: 'false', label: t('audit.page.succes') },
+            ],
+        },
+        {
+            key: 'dateDebut',
+            label: t('audit.page.filtreDateDebut'),
+            type: 'date' as const,
+        },
+        {
+            key: 'dateFin',
+            label: t('audit.page.filtreDateFin'),
+            type: 'date' as const,
+        },
+        {
+            key: 'action',
+            label: t('audit.page.filtreAction'),
+            type: 'select' as const,
+            allOptionLabel: t('audit.page.toutesActions'),
+            options: actionOptions,
+        },
+        {
+            key: 'utilisateurSearch',
+            label: t('audit.page.filtreUtilisateur'),
+            type: 'text' as const,
+            placeholder: t('audit.page.filtreUtilisateurPlaceholder'),
+        },
+    ], [t, actionOptions]);
+
+    // ── Compteur de filtres actifs ──
+    const filtresActifs = useMemo(() => {
+        let count = 0;
+        if (filtres.module) count++;
+        if (filtres.severity) count++;
+        if (filtres.estEchec) count++;
+        if (filtres.dateDebut || filtres.dateFin) count++;
+        if (filtres.action) count++;
+        if (filtres.utilisateurSearch) count++;
+        return count;
+    }, [filtres]);
+
+    // ── Stats display ──
+    const statsTotal = stats?.totalLogs ?? total;
+    const stats24h = stats?.last24h ?? 0;
+    const statsTauxEchec = stats?.failureRate ? parseFloat(stats.failureRate) : 0;
 
     return (
         <div className="flex flex-col gap-[var(--gap-lg)]">
             <PageHeader
                 title={t('audit.page.titre')}
-                subtitle={`${total} ${t('audit.page.sousTitre')}`}
+                subtitle={`${statsTotal} ${t('audit.page.sousTitre')}`}
                 icon={Shield}
                 variant="gradient"
+                breadcrumbLabel={t('audit.page.titre')}
                 actions={
                     <div className="flex items-center gap-[var(--gap-sm)]">
                         <ElisaButton
@@ -309,6 +463,34 @@ export function AuditPage() {
                 }
             />
 
+            {/* ── Statistiques rapides ── */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-[var(--gap-sm)]">
+                <StatCard
+                    icon={FileText}
+                    label={t('audit.page.statTotal')}
+                    value={statsTotal}
+                    color="dominant"
+                />
+                <StatCard
+                    icon={Clock}
+                    label={t('audit.page.stat24h')}
+                    value={stats24h}
+                    color="info"
+                />
+                <StatCard
+                    icon={TrendingUp}
+                    label={t('audit.page.statTauxEchec')}
+                    value={`${statsTauxEchec.toFixed(1)}%`}
+                    color={statsTauxEchec > 10 ? 'danger' : 'success'}
+                />
+                <StatCard
+                    icon={Activity}
+                    label={t('audit.page.statFiltresActifs')}
+                    value={filtresActifs}
+                    color={filtresActifs > 0 ? 'warning' : 'dominant'}
+                />
+            </div>
+
             <DataTable
                 tableId="admin-audit-logs"
                 data={items}
@@ -316,15 +498,13 @@ export function AuditPage() {
                 isLoading={isLoading}
                 isFetching={isFetching}
                 disableClientSearch
-                searchPlaceholder={t('audit.page.recherche')}
+                searchable
+                searchPlaceholder={t('audit.page.rechercheAvancee')}
                 onSearchChange={(search) => setFiltres(prev => ({ ...prev, search: search || undefined, page: 1 }))}
                 filtres={filtresConfig}
-                onFilterChange={(key, value) => setFiltres(prev => ({
-                    ...prev,
-                    [key]: value || undefined,
-                    page: 1,
-                }))}
-                onClearFilters={() => setFiltres({ page: 1, limit: filtres.limit })}
+                enableCollapsibleFilters
+                onFilterChange={setFiltre}
+                onClearFilters={clearFiltres}
                 pagination={{
                     page: filtres.page,
                     limit: filtres.limit,
@@ -336,6 +516,7 @@ export function AuditPage() {
                 onPageChange={(page) => setFiltres(prev => ({ ...prev, page }))}
                 onLimitChange={(limit) => setFiltres(prev => ({ ...prev, limit, page: 1 }))}
                 emptyMessage={t('audit.page.aucunResultat')}
+                enableRowHeight
             />
 
             {/* Detail Modal */}
@@ -343,13 +524,68 @@ export function AuditPage() {
                 open={!!selectedLog}
                 onOpenChange={(open) => { if (!open) setSelectedLog(null); }}
                 title={t('audit.page.detail')}
-                size="2xl"
+                size="3xl"
             >
-                {selectedLog && <LogDetailContent log={selectedLog} t={t} locale={locale} hasPermission={hasPermission} />}
+                {selectedLog && (
+                    <LogDetailContent
+                        log={selectedLog}
+                        t={t}
+                        locale={locale}
+                        hasPermission={hasPermission}
+                        activeSection={modalSection}
+                        onSectionChange={setModalSection}
+                    />
+                )}
             </CustomModal>
         </div>
     );
 }
+
+// ─── StatCard ───
+
+function StatCard({ icon: Icon, label, value, color }: {
+    icon: typeof Info;
+    label: string;
+    value: number | string;
+    color: 'dominant' | 'info' | 'success' | 'warning' | 'danger';
+}) {
+    const colorMap = {
+        dominant: 'text-[var(--color-dominante)] bg-[var(--color-dominante)]/10',
+        info: 'text-[var(--color-info)] bg-[var(--color-info)]/10',
+        success: 'text-[var(--color-success)] bg-[var(--color-success)]/10',
+        warning: 'text-[var(--color-warning)] bg-[var(--color-warning)]/10',
+        danger: 'text-[var(--color-danger)] bg-[var(--color-danger)]/10',
+    };
+    return (
+        <div className="flex items-center gap-[var(--gap-sm)] rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface)]"
+            style={{ padding: 'clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem)' }}>
+            <div className={cn('flex items-center justify-center shrink-0 rounded-[var(--radius-md)]', colorMap[color])}
+                style={{ width: 'clamp(1.75rem, 1.5rem + 0.5vw, 2.25rem)', height: 'clamp(1.75rem, 1.5rem + 0.5vw, 2.25rem)' }}>
+                <Icon className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
+            </div>
+            <div className="flex flex-col min-w-0">
+                <span className="text-[var(--color-texte)] font-semibold leading-tight"
+                    style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.25vw, 1.125rem)' }}>
+                    {value}
+                </span>
+                <span className="text-[var(--color-texte-secondaire)] truncate leading-tight"
+                    style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.1vw, 0.6875rem)' }}>
+                    {label}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+// ─── Sections du modal ───
+
+const MODAL_SECTIONS = [
+    { id: 'general', label: 'audit.page.sectionGeneral', icon: Info },
+    { id: 'auteur', label: 'audit.page.sectionAuteur', icon: Shield },
+    { id: 'cible', label: 'audit.page.colonneCible', icon: Eye },
+    { id: 'environnement', label: 'audit.page.sectionEnvironnement', icon: Monitor },
+    { id: 'modifications', label: 'audit.page.modifications', icon: Pencil },
+] as const;
 
 // ─── Detail Modal Content ───
 
@@ -406,7 +642,14 @@ function CopyableId({ id, t, label }: { id: string; t: (key: string) => string; 
     );
 }
 
-function LogDetailContent({ log, t, locale, hasPermission }: { log: AuditLogEntry; t: (key: string) => string; locale: typeof fr; hasPermission: (perm: string) => boolean }) {
+function LogDetailContent({ log, t, locale, hasPermission, activeSection, onSectionChange }: {
+    log: AuditLogEntry;
+    t: (key: string) => string;
+    locale: typeof fr;
+    hasPermission: (perm: string) => boolean;
+    activeSection: string;
+    onSectionChange: (section: string) => void;
+}) {
     const date = parseISO(log.createdAt);
     const fields = log.champsModifies ?? Object.keys(log.nouvellesValeurs ?? {});
     const navLink = resolveAuditNavLink(log);
@@ -414,6 +657,7 @@ function LogDetailContent({ log, t, locale, hasPermission }: { log: AuditLogEntr
         ? resolveAuditNavLink({ cible: log.parentCible, cibleId: log.parentCibleId })
         : null;
     const hasRelations = log.metadata?.relations && Object.keys(log.metadata.relations).length > 0;
+    const isValidation = log.action.startsWith('VALIDATION_');
 
     const userDisplay = log.utilisateur
         ? (log.utilisateur.nom && log.utilisateur.prenom
@@ -427,13 +671,24 @@ function LogDetailContent({ log, t, locale, hasPermission }: { log: AuditLogEntr
         ? (t(moduleKey) === moduleKey ? log.module : t(moduleKey))
         : '—';
 
+    const sectionsVisibles = useMemo(() => {
+        const visible: string[] = ['general', 'auteur'];
+        if (log.cible || log.metadata?.entiteLabel || hasRelations || log.parentCible) visible.push('cible');
+        if (log.ipAddress || log.navigateur || log.systemeExploitation || log.appareil) visible.push('environnement');
+        if (fields.length > 0) visible.push('modifications');
+        return visible;
+    }, [log, hasRelations, fields.length]);
+
     return (
         <div className="flex flex-col gap-[var(--gap-md)]">
-            {/* ── Section 1: Bandeau action + méta ── */}
+            {/* ── Bandeau action + méta (sticky summary) ── */}
             <div className="rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface-hover)]"
                 style={{ padding: 'clamp(0.75rem, 0.6rem + 0.4vw, 1rem)' }}>
                 <div className="flex flex-wrap items-center justify-between gap-[var(--gap-sm)]">
                     <div className="flex items-center gap-[var(--gap-sm)] flex-wrap">
+                        {isValidation && (
+                            <ShieldCheck className="h-4 w-4 text-[var(--color-dominante)]" />
+                        )}
                         <span className="font-semibold text-[var(--color-texte)]"
                             style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.25vw, 1rem)' }}>
                             {libelleAction(log.action, t)}
@@ -462,37 +717,65 @@ function LogDetailContent({ log, t, locale, hasPermission }: { log: AuditLogEntr
                     <span className="text-[var(--color-bordure)]">•</span>
                     <CopyableId id={log.id} t={t} label="ID" />
                 </div>
+
+                {/* ── Mini-onglets navigation sticky ── */}
+                {sectionsVisibles.length > 1 && (
+                    <div className="mt-3 flex items-center gap-1 overflow-x-auto border-t border-[var(--color-bordure)]/50 pt-2">
+                        {MODAL_SECTIONS.filter(s => sectionsVisibles.includes(s.id)).map((section) => {
+                            const SectionIcon = section.icon;
+                            const isActive = activeSection === section.id;
+                            return (
+                                <button
+                                    key={section.id}
+                                    type="button"
+                                    onClick={() => onSectionChange(section.id)}
+                                    className={cn(
+                                        'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all whitespace-nowrap',
+                                        isActive
+                                            ? 'bg-[var(--color-dominante)] text-white'
+                                            : 'bg-[var(--color-surface)] text-[var(--color-texte-secondaire)] hover:bg-[var(--color-surface-hover)]',
+                                    )}
+                                >
+                                    <SectionIcon className="h-3 w-3" />
+                                    {t(section.label)}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
-            {/* ── Section 2: Auteur de l'action ── */}
-            <div className="flex items-center gap-[var(--gap-sm)] rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)]"
-                style={{ padding: 'clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem)' }}>
-                <div className="flex items-center justify-center shrink-0 rounded-full bg-[var(--color-dominante)]/10"
-                    style={{ width: 'clamp(1.75rem, 1.5rem + 0.5vw, 2.25rem)', height: 'clamp(1.75rem, 1.5rem + 0.5vw, 2.25rem)' }}>
-                    <span className="font-semibold text-[var(--color-dominante)]"
-                        style={{ fontSize: 'clamp(0.625rem, 0.55rem + 0.2vw, 0.75rem)' }}>
-                        {userDisplay ? userDisplay.charAt(0).toUpperCase() : '?'}
-                    </span>
-                </div>
-                <div className="flex flex-col min-w-0">
-                    <span className="text-[var(--color-texte)] font-medium break-all"
-                        style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.15vw, 0.8125rem)' }}>
-                        {userDisplay || userEmail || '—'}
-                    </span>
-                    {userDisplay && userEmail && (
-                        <span className="text-[var(--color-texte-secondaire)] break-all"
-                            style={{ fontSize: 'clamp(0.5625rem, 0.55rem + 0.08vw, 0.625rem)' }}>
-                            {userEmail}
+            {/* ── Section Auteur ── */}
+            {(activeSection === 'general' || activeSection === 'auteur') && (
+                <div className="flex items-center gap-[var(--gap-sm)] rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)]"
+                    style={{ padding: 'clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem)' }}>
+                    <div className="flex items-center justify-center shrink-0 rounded-full bg-[var(--color-dominante)]/10"
+                        style={{ width: 'clamp(1.75rem, 1.5rem + 0.5vw, 2.25rem)', height: 'clamp(1.75rem, 1.5rem + 0.5vw, 2.25rem)' }}>
+                        <span className="font-semibold text-[var(--color-dominante)]"
+                            style={{ fontSize: 'clamp(0.625rem, 0.55rem + 0.2vw, 0.75rem)' }}>
+                            {userDisplay ? userDisplay.charAt(0).toUpperCase() : '?'}
                         </span>
-                    )}
-                    {log.utilisateurId && (
-                        <CopyableId id={log.utilisateurId} t={t} />
-                    )}
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-[var(--color-texte)] font-medium break-all"
+                            style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.15vw, 0.8125rem)' }}>
+                            {userDisplay || userEmail || '—'}
+                        </span>
+                        {userDisplay && userEmail && (
+                            <span className="text-[var(--color-texte-secondaire)] break-all"
+                                style={{ fontSize: 'clamp(0.5625rem, 0.55rem + 0.08vw, 0.625rem)' }}>
+                                {userEmail}
+                            </span>
+                        )}
+                        {log.utilisateurId && (
+                            <CopyableId id={log.utilisateurId} t={t} />
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
-            {/* ── Section 3: Entité cible ── */}
-            {(log.cible || log.metadata?.entiteLabel) && (
+            {/* ── Section Entité cible ── */}
+            {(activeSection === 'general' || activeSection === 'cible') && (log.cible || log.metadata?.entiteLabel) && (
                 <DetailSection title={t('audit.page.colonneCible')} icon={Eye}>
                     <div className="rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)]"
                         style={{ padding: 'clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem)' }}>
@@ -531,8 +814,8 @@ function LogDetailContent({ log, t, locale, hasPermission }: { log: AuditLogEntr
                 </DetailSection>
             )}
 
-            {/* ── Section 4: Relations contextuelles (entités liées) ── */}
-            {hasRelations && (
+            {/* ── Section Relations contextuelles ── */}
+            {(activeSection === 'general' || activeSection === 'cible') && hasRelations && (
                 <DetailSection title={t('audit.page.contexte')} icon={GitBranch}>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-[var(--gap-sm)]">
                         {Object.entries(log.metadata!.relations!).map(([key, rel]) => {
@@ -585,8 +868,8 @@ function LogDetailContent({ log, t, locale, hasPermission }: { log: AuditLogEntr
                 </DetailSection>
             )}
 
-            {/* ── Section 5: Entité parente (contexte hiérarchique) ── */}
-            {log.parentCible && (
+            {/* ── Section Entité parente ── */}
+            {(activeSection === 'general' || activeSection === 'cible') && log.parentCible && (
                 <DetailSection title={t('audit.page.parentCible')} icon={GitBranch}>
                     <div className="rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)]"
                         style={{ padding: 'clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem)' }}>
@@ -615,8 +898,8 @@ function LogDetailContent({ log, t, locale, hasPermission }: { log: AuditLogEntr
                 </DetailSection>
             )}
 
-            {/* ── Section 6: Description ── */}
-            {log.description && (
+            {/* ── Section Description ── */}
+            {(activeSection === 'general') && log.description && (
                 <div className="rounded-[var(--radius-md)] border-l-[3px] border-l-[var(--color-dominante)]/40 bg-[var(--color-surface-hover)] pl-[var(--space-md)] pr-[var(--space-sm)] py-[var(--space-sm)]">
                     <p className="text-[var(--color-texte)] italic"
                         style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.15vw, 0.8125rem)' }}>
@@ -625,8 +908,8 @@ function LogDetailContent({ log, t, locale, hasPermission }: { log: AuditLogEntr
                 </div>
             )}
 
-            {/* ── Section 6b: Environnement technique (IP, navigateur, OS, appareil) ── */}
-            {(log.ipAddress || log.navigateur || log.systemeExploitation || log.appareil) && (
+            {/* ── Section Environnement technique ── */}
+            {(activeSection === 'general' || activeSection === 'environnement') && (log.ipAddress || log.navigateur || log.systemeExploitation || log.appareil) && (
                 <DetailSection title={t('audit.environnementTechnique')} icon={Monitor}>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-[var(--gap-sm)]">
                         {log.ipAddress && (
@@ -685,8 +968,8 @@ function LogDetailContent({ log, t, locale, hasPermission }: { log: AuditLogEntr
                 </DetailSection>
             )}
 
-            {/* ── Section 7: Diff (champs modifiés) ── */}
-            {fields.length > 0 && (
+            {/* ── Section Diff (champs modifiés) ── */}
+            {(activeSection === 'general' || activeSection === 'modifications') && fields.length > 0 && (
                 <DetailSection title={`${t('audit.page.modifications')} (${fields.length})`} icon={Pencil}>
                     <div className="rounded-[var(--radius-md)] border border-[var(--color-bordure)] overflow-hidden">
                         <table className="w-full" style={{ fontSize: 'clamp(0.6875rem, 0.65rem + 0.1vw, 0.75rem)' }}>

@@ -12,16 +12,36 @@ import { z } from 'zod';
 import { AuditAction, AuditSeverity } from '@modules/auth/entities/audit-log.entity';
 
 /**
+ * Coercition booléenne stricte depuis query string ('true'/'false')
+ */
+const booleanQuery = z.preprocess((val) => {
+    if (val === 'true' || val === true) return true;
+    if (val === 'false' || val === false) return false;
+    return val;
+}, z.boolean().optional());
+
+/**
+ * Action(s) : accepte une action unique, un tableau, ou une liste CSV en query string
+ */
+const actionsQuery = z.preprocess((val) => {
+    if (typeof val === 'string' && val.includes(',')) {
+        return val.split(',').map((v) => v.trim()).filter(Boolean);
+    }
+    return val;
+}, z.union([z.nativeEnum(AuditAction), z.array(z.nativeEnum(AuditAction)).max(50)]).optional());
+
+/**
  * Schéma de validation pour les filtres d'audit
  */
 export const auditFiltersSchema = z.object({
     utilisateurId: z.string().uuid().optional(),
-    action: z.nativeEnum(AuditAction).optional(),
+    utilisateurSearch: z.string().max(255).optional(),
+    action: actionsQuery,
     module: z.string().max(100).optional(),
     cible: z.string().max(100).optional(),
     cibleId: z.string().uuid().optional(),
     severity: z.nativeEnum(AuditSeverity).optional(),
-    estEchec: z.boolean().optional(),
+    estEchec: booleanQuery,
     dateDebut: z.string().datetime().optional(),
     dateFin: z.string().datetime().optional(),
     search: z.string().max(255).optional(),
@@ -42,6 +62,9 @@ export const auditExportSchema = z.object({
     module: z.string().max(100).optional(),
     severity: z.nativeEnum(AuditSeverity).optional(),
     utilisateurId: z.string().uuid().optional(),
+    action: actionsQuery,
+    estEchec: booleanQuery,
+    search: z.string().max(255).optional(),
 });
 
 export type AuditExportDto = z.infer<typeof auditExportSchema>;

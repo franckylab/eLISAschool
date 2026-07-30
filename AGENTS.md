@@ -362,9 +362,10 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 - **Migration DB requise** : ajouter `deletedAt` columns sur les 13 nouvelles entités avant déploiement
 
 ## Next Move
+Indicateur de connexion réseau : ✅ implémenté (juillet 2026).
 Workflow de validation multi-niveaux (Option B) : ✅ intégré dans 6 pages détail (juillet 2026).
-1. **Tests** : phase dédiée après stabilisation (validation workflow + audit)
-2. **Migrations 122–131** : à appliquer sur staging/prod
+1. **Tests** : phase dédiée après stabilisation (validation workflow + audit + indicateur réseau)
+2. **Migrations 122–131** + **142** : à appliquer sur staging/prod
 3. **Migration soft delete** : créer migration ajoutant `deletedAt TIMESTAMP NULL` sur les 13 entités (personnel×6, paie×5, organisation×3). Requise avant déploiement staging/prod.
 4. **Restaurer l'audit logging** dans `bulletins.service.ts` (génération + clôture bulletins) — actuellement non journalisé.
 5. **Instrumentation restante** : ajouter `auditService.log()` dans les services absence-personnel, évaluation-enseignant, indisponibilité-enseignant.
@@ -1672,3 +1673,47 @@ Validation tab ajouté dans bulletin-, matière-, période-, classe-, année sco
 - Nouveau hook `useWorkflowByEntite()` + endpoint backend + barrel hooks
 - i18n : 20 clés ajoutées (validation, aucunWorkflow) dans FR+EN pour les 5 modules
 - 0 erreur TS backend + frontend (préexistantes intactes)
+
+## Travail effectué — Session 2026-07-30 (indicateur de connexion réseau — grill-me + implémentation)
+
+### Contexte
+Demande d'un indicateur de connexion dans le header eLISAschool, avec détection multi-états : réseau, internet, serveur. Décisions prises via grill-me (20 questions).
+
+### Décisions validées (grill-me)
+- **5 états** : connected / degraded / server-down / lan-only / offline
+- **Détection** : navigateur `navigator.onLine` + `/api/network/ping` backend enrichi (DB + mémoire + internet probe) + fallback frontend Cloudflare `no-cors` si serveur down
+- **Visuel** : point + anneau concentrique — anneau = réseau (vert/orange/rouge), point = serveur (vert/jaune/rouge/gris)
+- **Animations** : pulsation pour états non-nominaux (degraded 1.5s, server-down 1s, lan-only 3s) + transitions Framer Motion entre états
+- **Polling** : 15s + événements navigateur (online/offline/visibilitychange)
+- **Comportement au clic** : Radix Popover avec détails (latence, DB, mémoire, internet)
+- **Bannière** : persistante après 30s d'état critique, désactivable par l'utilisateur
+- **Permissions** : 3 niveaux — `network:view` (tous), `network:details` (popover), `network:admin` (page monitoring)
+- **Architecture** : `features/network/` avec store Zustand + hook + composants UI
+- **Cache** : Redis 30s pour sonde internet côté backend
+
+### Backend — Module network/
+- **`network.service.ts`** : ping avec DB check (SELECT 1), mémoire, sonde internet (HEAD 1.1.1.1), cache Redis 30s + fallback mémoire
+- **`network.controller.ts`** : `GET /api/network/ping` public, retourne `{ status, timestamp, details: { database, memory, internet }, latencyMs }`
+- **`app.ts`** : monté public juste après `/api/health`
+- **`roles.enum.ts`** : 3 permissions ajoutées à `Permission` enum + `DEFAULT_ROLE_PERMISSIONS[ADMIN]`
+- **`142-network-permissions.sql`** : migration idempotente (INSERT permissions + role_permissions pour tous les rôles)
+
+### Frontend — Indicateur de connexion (8 fichiers)
+- **`types/network.types.ts`** : 5 états, `ConnectionDetails`, `PingResponse`
+- **`stores/connection.store.ts`** : Zustand store — état global `{ state, details }`, méthode `checkConnection()` (ping serveur + probe Cloudflare fallback)
+- **`hooks/use-connection-status.ts`** : polling 15s, listeners online/offline/visibilitychange
+- **`components/ConnectionIndicator.tsx`** : point + anneau SVG, animation Framer Motion, badge critique (!)
+- **`components/ConnectionPopover.tsx`** : Radix Popover avec détails permission-gated, boutons rafraîchir/monitoring
+- **`components/ConnectionBanner.tsx`** : bannière avec délai 30s, désactivable, icône selon état
+- **`features/network/index.ts`** : barrel exports
+- **`Header.tsx`** : intégré avant `EtablissementSwitcher`
+- **`PageLayout.tsx`** : intégré après `<Header />`
+- **i18n FR/EN** : 16 clés dans `common.json` (`network.*`)
+
+### Qualité
+- 0 `as any` dans les 10 fichiers créés
+- 0 couleur hardcodée — toutes via CSS vars
+- 0 chaîne FR en dur — toutes via `t()`
+- i18n FR/EN parité complète
+- Permissions 3 niveaux attribuées à tous les rôles (view) ou ADMIN (details/admin)
+- Cache Redis 30s + fallback mémoire pour sonde internet

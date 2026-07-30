@@ -26,6 +26,7 @@ import { LanguageSwitcher } from '@/components/navigation/LanguageSwitcher';
 import { ThemeSwitcher } from '@/components/navigation/ThemeSwitcher';
 import { EtablissementSwitcher } from '@/components/auth/EtablissementSwitcher';
 import { ElisaLogo } from '@/components/branding';
+import { ConnectionIndicator } from '@/features/network';
 
 export function Header() {
     const { t } = useTranslation('common');
@@ -113,7 +114,10 @@ export function Header() {
             {/* Droite : Actions */}
             <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2">
 
-                {/* NOUVEAU v3.0 : Sélecteur d'établissement (déplacé avant langue) */}
+                {/* Indicateur de connexion réseau */}
+                <ConnectionIndicator />
+
+                {/* Sélecteur d'établissement */}
                 <EtablissementSwitcher />
 
                 <LanguageSwitcher />
