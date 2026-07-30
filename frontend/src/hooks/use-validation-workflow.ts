@@ -80,6 +80,23 @@ export function useCheckValidation(module: string, entiteId: string) {
 }
 
 /**
+ * Récupère le workflow complet pour une entité (ou null si aucun).
+ */
+export function useWorkflowByEntite(module: string, entiteId: string) {
+    return useQuery({
+        queryKey: ['validation-workflow', 'by-entite', module, entiteId],
+        queryFn: async () => {
+            const res = await apiClient.get<WorkflowValidation | null>(
+                `/api/validation-workflows/by-entite/${module}/${entiteId}`,
+            );
+            return res.data;
+        },
+        enabled: !!module && !!entiteId,
+        staleTime: 15_000,
+    });
+}
+
+/**
  * Récupère le détail d'un workflow (historique complet).
  */
 export function useWorkflowDetail(workflowId: string | undefined) {

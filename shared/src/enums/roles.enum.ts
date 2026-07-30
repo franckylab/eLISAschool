@@ -939,6 +939,21 @@ export enum Permission {
     AUDIT_PERIODES_VIEW = 'audit:periodes:view',
     AUDIT_EMPLOI_DU_TEMPS_VIEW = 'audit:emploi-du-temps:view',
     AUDIT_ORGANISATION_VIEW = 'audit:organisation:view',
+    AUDIT_COMPETENCES_VIEW = 'audit:competences:view',
+    AUDIT_DIPLOMES_ELEVES_VIEW = 'audit:diplomes-eleves:view',
+    AUDIT_EXAMENS_NATIONAUX_VIEW = 'audit:examens-nationaux:view',
+    AUDIT_GROUPES_ETABLISSEMENTS_VIEW = 'audit:groupes-etablissements:view',
+    AUDIT_APPARENCE_VIEW = 'audit:apparence:view',
+    AUDIT_FINANCES_VIEW = 'audit:finances:view',
+    AUDIT_MESSAGERIE_VIEW = 'audit:messagerie:view',
+    AUDIT_SONDAGES_VIEW = 'audit:sondages:view',
+    AUDIT_ORIENTATION_VIEW = 'audit:orientation:view',
+    AUDIT_REQUETES_VIEW = 'audit:requetes:view',
+    AUDIT_GAMIFICATION_VIEW = 'audit:gamification:view',
+    AUDIT_CARTES_VIEW = 'audit:cartes:view',
+    AUDIT_CLUBS_VIEW = 'audit:clubs:view',
+    AUDIT_MATERIEL_VIEW = 'audit:materiel:view',
+    AUDIT_CONFIGURATION_VIEW = 'audit:configuration:view',
 }
 
 /**
@@ -1079,6 +1094,22 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.PAIE_EXPORT,
         Permission.PAIE_CONFIG_VIEW, Permission.PAIE_CONFIG_CREATE,
         Permission.PAIE_CONFIG_EDIT, Permission.PAIE_CONFIG_DELETE,
+        // Audit — tous les modules
+        Permission.AUDIT_VIEW,
+        Permission.AUDIT_NOTES_VIEW, Permission.AUDIT_BULLETINS_VIEW,
+        Permission.AUDIT_PERSONNEL_VIEW, Permission.AUDIT_CONTRATS_VIEW,
+        Permission.AUDIT_PAIE_VIEW, Permission.AUDIT_ELEVES_VIEW,
+        Permission.AUDIT_CLASSES_VIEW, Permission.AUDIT_MATIERES_VIEW,
+        Permission.AUDIT_PERIODES_VIEW, Permission.AUDIT_EMPLOI_DU_TEMPS_VIEW,
+        Permission.AUDIT_ORGANISATION_VIEW,
+        Permission.AUDIT_COMPETENCES_VIEW, Permission.AUDIT_DIPLOMES_ELEVES_VIEW,
+        Permission.AUDIT_EXAMENS_NATIONAUX_VIEW, Permission.AUDIT_GROUPES_ETABLISSEMENTS_VIEW,
+        Permission.AUDIT_APPARENCE_VIEW, Permission.AUDIT_FINANCES_VIEW,
+        Permission.AUDIT_MESSAGERIE_VIEW, Permission.AUDIT_SONDAGES_VIEW,
+        Permission.AUDIT_ORIENTATION_VIEW, Permission.AUDIT_REQUETES_VIEW,
+        Permission.AUDIT_GAMIFICATION_VIEW, Permission.AUDIT_CARTES_VIEW,
+        Permission.AUDIT_CLUBS_VIEW, Permission.AUDIT_MATERIEL_VIEW,
+        Permission.AUDIT_CONFIGURATION_VIEW,
     ],
 
     [Role.COMPTABLE]: [
@@ -1141,6 +1172,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.AUDIT_CLASSES_VIEW, Permission.AUDIT_MATIERES_VIEW,
         Permission.AUDIT_PERIODES_VIEW, Permission.AUDIT_EMPLOI_DU_TEMPS_VIEW,
         Permission.AUDIT_ORGANISATION_VIEW,
+        Permission.AUDIT_FINANCES_VIEW,
     ],
 
     [Role.CHEF_ETABLISSEMENT]: [
@@ -1257,10 +1289,17 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.PAIE_EXPORT,
         Permission.PAIE_CONFIG_VIEW, Permission.PAIE_CONFIG_CREATE,
         Permission.PAIE_CONFIG_EDIT, Permission.PAIE_CONFIG_DELETE,
-        // Audit — 6 modules clés
+        // Audit — 13 modules clés
         Permission.AUDIT_NOTES_VIEW, Permission.AUDIT_BULLETINS_VIEW,
         Permission.AUDIT_PERSONNEL_VIEW, Permission.AUDIT_ELEVES_VIEW,
         Permission.AUDIT_CLASSES_VIEW, Permission.AUDIT_ORGANISATION_VIEW,
+        Permission.AUDIT_COMPETENCES_VIEW, Permission.AUDIT_EXAMENS_NATIONAUX_VIEW,
+        Permission.AUDIT_DIPLOMES_ELEVES_VIEW, Permission.AUDIT_GROUPES_ETABLISSEMENTS_VIEW,
+        Permission.AUDIT_APPARENCE_VIEW, Permission.AUDIT_FINANCES_VIEW,
+        Permission.AUDIT_ORIENTATION_VIEW, Permission.AUDIT_REQUETES_VIEW,
+        Permission.AUDIT_MATERIEL_VIEW, Permission.AUDIT_CARTES_VIEW,
+        Permission.AUDIT_CLUBS_VIEW, Permission.AUDIT_SONDAGES_VIEW,
+        Permission.AUDIT_GAMIFICATION_VIEW, Permission.AUDIT_CONFIGURATION_VIEW,
     ],
 
     [Role.ENSEIGNANT]: [

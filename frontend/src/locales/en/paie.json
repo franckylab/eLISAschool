@@ -8,6 +8,7 @@
     "modifierBulletin": "Edit payslip",
     "detailBulletin": "Payslip details",
     "informationsBulletin": "Payslip information",
+    "historique": "History",
     "supprimer": "Delete payslip",
     "supprimerMessage": "Are you sure you want to delete this payslip?",
     "confirmerSupprimerTitre": "Confirm deletion",

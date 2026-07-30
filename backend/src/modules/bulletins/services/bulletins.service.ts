@@ -25,6 +25,7 @@ import { matieresService, coefficientResolverService } from '@modules/matieres/s
 import { AffectationMatiere, StatutAffectationMatiere } from '@modules/matieres/entities';
 import { Eleve } from '@modules/eleves/entities';
 import { getParamBoolean, getParamNumber, getParam } from '@modules/configuration/utils/config.helper';
+import { validationWorkflowService } from '@modules/validation-workflow/services';
 import { notificationTemplates } from '@modules/notifications/services';
 import { auditService, AuditAction } from '@modules/auth';
 import { PaginatedResult, createPaginatedResult } from '@common/utils/pagination.util';
@@ -288,6 +289,24 @@ export class BulletinsService {
 
             await queryRunner.commitTransaction();
             logger.info(`[${etablissementId}] ${bulletins.length} bulletins générés pour la classe ${classeAnnee.classe?.nom || dto.classeAnneeId}`);
+
+            // Audit
+            if (utilisateurId) {
+                await auditService.log({
+                    utilisateurId,
+                    action: AuditAction.BULLETIN_GENERATE,
+                    cible: 'Bulletin',
+                    description: `${bulletins.length} bulletin(s) généré(s) pour ${classeAnnee.classe?.nom || dto.classeAnneeId}`,
+                    cibleId: dto.classeAnneeId,
+                    module: 'bulletins',
+                    etablissementId,
+                    metadata: {
+                        entiteLabel: `${bulletins.length} bulletins - ${classeAnnee.classe?.nom || dto.classeAnneeId}`,
+                        classeAnneeId: dto.classeAnneeId,
+                        periodeId: dto.periodeId,
+                    },
+                });
+            }
 
             // Invalider le cache batch loader après génération
             notesBatchLoaderService.clearCache();
@@ -557,6 +576,24 @@ export class BulletinsService {
             encouragements: bulletin.encouragements,
             publie: bulletin.publie,
         };
+
+        // Si demande de publication et workflow requis, créer le workflow
+        if (dto.publie === true && !bulletin.publie) {
+            const requireValidation = await getParamBoolean('bulletins.require_validation', { defaultValue: true, etablissementId });
+            if (requireValidation) {
+                await validationWorkflowService.createWorkflow({
+                    module: 'bulletins',
+                    entiteId: bulletin.id,
+                    entiteType: 'Bulletin',
+                    niveauxRequis: 2,
+                    etablissementId,
+                    commentaire: 'Demande de publication du bulletin',
+                }, utilisateurId ?? '');
+
+                logger.info(`[Bulletins] Publication en attente de validation: ${id}`);
+                return bulletin;
+            }
+        }
 
         Object.assign(bulletin, dto);
         await this.repo.save(bulletin);

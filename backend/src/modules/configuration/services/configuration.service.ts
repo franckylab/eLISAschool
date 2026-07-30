@@ -33,7 +33,8 @@ import { logger } from '@common/utils/logger.util';
 import { MODULE_REGISTRY, ModuleConfig } from '@shared/config/config.registry';
 import { ModuleName } from '@shared/enums/modules.enum';
 import { configurationListener, ConfigChangeEvent } from './configuration-listener';
-import { ConfigurationHistoryService, configurationHistoryService } from './configuration-history.service';
+import { auditService } from '@modules/auth/services/audit.service';
+import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 
 /**
  * Cache en mémoire pour les configurations
@@ -58,7 +59,6 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 export class ConfigurationService {
     private configModuleRepository: Repository<ConfigurationModule>;
     private parametreRepository: Repository<ParametreSysteme>;
-    private historyService: ConfigurationHistoryService;
 
     private cache: ConfigCache = {
         modules: new Map(),
@@ -70,7 +70,6 @@ export class ConfigurationService {
     constructor() {
         this.configModuleRepository = AppDataSource.getRepository(ConfigurationModule);
         this.parametreRepository = AppDataSource.getRepository(ParametreSysteme);
-        this.historyService = configurationHistoryService;
     }
 
     // ============================================
@@ -147,15 +146,16 @@ export class ConfigurationService {
         await this.configModuleRepository.save(config);
         this.invalidateCache('modules');
 
-        await this.historyService.logAction({
+        await auditService.log({
             utilisateurId,
-            action: ActionConfiguration.UPDATE,
-            cible: CibleConfiguration.MODULE,
-            cibleNom: moduleNom,
-            ancienneValeur,
-            nouvelleValeur: config,
-            restaurable: true,
-            req,
+            action: AuditAction.CONFIG_CHANGE,
+            cible: 'ConfigurationModule',
+            cibleId: config.id,
+            description: `Module ${moduleNom} mis à jour`,
+            module: 'configuration',
+            etablissementId,
+            anciennesValeurs: ancienneValeur as unknown as Record<string, unknown>,
+            nouvellesValeurs: config as unknown as Record<string, unknown>,
         });
 
         this.emitChange(ActionConfiguration.UPDATE, CibleConfiguration.MODULE, config.id, moduleNom, ancienneValeur, config, utilisateurId);
@@ -201,17 +201,17 @@ export class ConfigurationService {
         await this.toggleModuleParametre(moduleNom, actif, etablissementId);
 
         // 4. Historique
-        await this.historyService.logAction({
+        await auditService.log({
             utilisateurId,
-            action: ActionConfiguration.UPDATE,
-            cible: CibleConfiguration.MODULE,
-            cibleNom: moduleNom,
+            action: actif ? AuditAction.MODULE_ACTIVATE : AuditAction.MODULE_DEACTIVATE,
+            cible: 'ConfigurationModule',
+            cibleId: moduleNom,
             description: `Module ${moduleNom} ${actif ? 'activé' : 'désactivé'}`,
-            ancienneValeur: { actif: ancienEtat },
-            nouvelleValeur: { actif },
-            req,
+            module: 'configuration',
+            etablissementId,
+            anciennesValeurs: { actif: ancienEtat },
+            nouvellesValeurs: { actif },
         });
-
         // 6. Invalidation granulaire du cache
         this.invalidateModuleCache(moduleNom, etablissementId);
         modulesAutoActivés.forEach(dep => this.invalidateModuleCache(dep, etablissementId));
@@ -495,14 +495,15 @@ export class ConfigurationService {
         await this.parametreRepository.save(param);
         this.invalidateCache('parametres');
 
-        await this.historyService.logAction({
+        await auditService.log({
             utilisateurId,
-            action: ActionConfiguration.CREATE,
-            cible: CibleConfiguration.PARAMETRE,
+            action: AuditAction.CONFIG_CHANGE,
+            cible: 'ParametreSysteme',
             cibleId: param.id,
-            cibleNom: dto.cle,
-            nouvelleValeur: dto.valeur,
-            req,
+            description: `Paramètre créé: ${dto.cle}`,
+            module: 'configuration',
+            etablissementId: dto.etablissementId,
+            nouvellesValeurs: { valeur: dto.valeur },
         });
 
         this.emitChange(ActionConfiguration.CREATE, CibleConfiguration.PARAMETRE, param.id, dto.cle, undefined, dto.valeur, utilisateurId);
@@ -584,16 +585,16 @@ export class ConfigurationService {
         await this.parametreRepository.save(param);
         this.invalidateCache('parametres');
 
-        await this.historyService.logAction({
+        await auditService.log({
             utilisateurId,
-            action: ActionConfiguration.UPDATE,
-            cible: CibleConfiguration.PARAMETRE,
+            action: AuditAction.CONFIG_CHANGE,
+            cible: 'ParametreSysteme',
             cibleId: param.id,
-            cibleNom: cle,
-            ancienneValeur,
-            nouvelleValeur: param.valeur,
-            restaurable: true,
-            req,
+            description: `Paramètre mis à jour: ${cle}`,
+            module: 'configuration',
+            etablissementId: param.etablissementId || undefined,
+            anciennesValeurs: { valeur: ancienneValeur },
+            nouvellesValeurs: { valeur: param.valeur },
         });
 
         this.emitChange(ActionConfiguration.UPDATE, CibleConfiguration.PARAMETRE, param.id, cle, ancienneValeur, param.valeur, utilisateurId);
@@ -718,16 +719,16 @@ export class ConfigurationService {
         await this.parametreRepository.save(param);
         this.invalidateCache('parametres');
 
-        await this.historyService.logAction({
+        await auditService.log({
             utilisateurId,
-            action: ancienneValeur ? ActionConfiguration.UPDATE : ActionConfiguration.CREATE,
-            cible: CibleConfiguration.PARAMETRE,
+            action: AuditAction.CONFIG_CHANGE,
+            cible: 'ParametreSysteme',
             cibleId: param.id,
-            cibleNom: etablissementId ? `${cle} [${etablissementId}]` : cle,
-            ancienneValeur,
-            nouvelleValeur: valeur,
-            restaurable: true,
-            req,
+            description: `Paramètre défini: ${cle}${etablissementId ? ` [${etablissementId}]` : ''}`,
+            module: 'configuration',
+            etablissementId,
+            anciennesValeurs: ancienneValeur ? { valeur: ancienneValeur } : undefined,
+            nouvellesValeurs: { valeur },
         });
 
         this.emitChange(
@@ -773,13 +774,14 @@ export class ConfigurationService {
             await this.parametreRepository.remove(paramOverride);
             this.invalidateCache('parametres');
 
-            await this.historyService.logAction({
+            await auditService.log({
                 utilisateurId,
-                action: ActionConfiguration.DELETE,
-                cible: CibleConfiguration.PARAMETRE,
-                cibleNom: `${cle} [${etablissementId}] (override)` ,
-                ancienneValeur,
-                req,
+                action: AuditAction.CONFIG_CHANGE,
+                cible: 'ParametreSysteme',
+                description: `Override supprimé pour ${cle} [${etablissementId}] - retour au global`,
+                module: 'configuration',
+                etablissementId,
+                anciennesValeurs: { valeur: ancienneValeur },
             });
 
             logger.info(`Override supprimé pour ${cle} [${etablissementId}] - retour au global`);
@@ -806,16 +808,16 @@ export class ConfigurationService {
             await this.parametreRepository.save(param);
             this.invalidateCache('parametres');
 
-            await this.historyService.logAction({
+            await auditService.log({
                 utilisateurId,
-                action: ActionConfiguration.UPDATE,
-                cible: CibleConfiguration.PARAMETRE,
+                action: AuditAction.CONFIG_CHANGE,
+                cible: 'ParametreSysteme',
                 cibleId: param.id,
-                cibleNom: cle,
-                ancienneValeur,
-                nouvelleValeur: param.valeur,
-                restaurable: true,
-                req,
+                description: `Paramètre réinitialisé vers valeur par défaut: ${cle}`,
+                module: 'configuration',
+                etablissementId,
+                anciennesValeurs: { valeur: ancienneValeur },
+                nouvellesValeurs: { valeur: param.valeur },
             });
 
             logger.info(`Paramètre réinitialisé vers valeur par défaut: ${cle}`);
@@ -849,13 +851,13 @@ export class ConfigurationService {
                 await this.parametreRepository.remove(overrides);
                 resetCount = overrides.length;
 
-                await this.historyService.logAction({
+                await auditService.log({
                     utilisateurId,
-                    action: ActionConfiguration.RESET,
-                    cible: CibleConfiguration.PARAMETRE,
-                    cibleNom: `Tous les overrides [${etablissementId}]`,
-                    description: `${resetCount} paramètres réinitialisés (overrides supprimés)`,
-                    req,
+                    action: AuditAction.CONFIG_CHANGE,
+                    cible: 'ParametreSysteme',
+                    description: `${resetCount} overrides supprimés pour établissement ${etablissementId}`,
+                    module: 'configuration',
+                    etablissementId,
                 });
 
                 logger.info(`${resetCount} overrides supprimés pour établissement ${etablissementId}`);
@@ -888,13 +890,12 @@ export class ConfigurationService {
             }
 
             if (resetCount > 0) {
-                await this.historyService.logAction({
+                await auditService.log({
                     utilisateurId,
-                    action: ActionConfiguration.RESET,
-                    cible: CibleConfiguration.PARAMETRE,
-                    cibleNom: 'Tous les paramètres globaux',
-                    description: `${resetCount} paramètres réinitialisés vers leurs valeurs par défaut`,
-                    req,
+                    action: AuditAction.CONFIG_CHANGE,
+                    cible: 'ParametreSysteme',
+                    description: `${resetCount} paramètres globaux réinitialisés vers leurs valeurs par défaut`,
+                    module: 'configuration',
                 });
 
                 this.invalidateCache('parametres');
@@ -932,13 +933,14 @@ export class ConfigurationService {
         await this.parametreRepository.remove(param);
         this.invalidateCache('parametres');
 
-        await this.historyService.logAction({
+        await auditService.log({
             utilisateurId,
-            action: ActionConfiguration.DELETE,
-            cible: CibleConfiguration.PARAMETRE,
-            cibleNom: cle,
-            ancienneValeur,
-            req,
+            action: AuditAction.CONFIG_CHANGE,
+            cible: 'ParametreSysteme',
+            description: `Paramètre supprimé: ${cle}`,
+            module: 'configuration',
+            etablissementId: param.etablissementId || undefined,
+            anciennesValeurs: { valeur: ancienneValeur },
         });
 
         this.emitChange(ActionConfiguration.DELETE, CibleConfiguration.PARAMETRE, undefined, cle, ancienneValeur, undefined, utilisateurId);

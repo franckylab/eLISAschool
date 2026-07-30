@@ -16,6 +16,7 @@ import {
     Edit, Trash2, TrendingUp,
     Layers, CheckCircle, XCircle,
     Globe, UserCheck, UserPlus, History,
+    ShieldCheck,
 } from 'lucide-react';
 import { useMatiere, useSupprimerMatiere, useModifierMatiere, useMatiereProgramme, useMatiereProgrammesPedagogiques, useMatiereAffectations, useCreerAffectation, useModifierAffectation, useSupprimerAffectation } from '../hooks/use-matieres';
 import { MatiereFormModal } from './matiere-form-modal';
@@ -41,8 +42,10 @@ import type { AffectationMatiere, Matiere, CreerMatiereDto } from '../types/mati
 import type { AffectationPayload } from '../hooks/use-matieres';
 import { format } from 'date-fns';
 import { fr as frLocale, enUS } from 'date-fns/locale';
+import { ValidationTimeline, ValidationActions } from '@/components/ui';
+import { useWorkflowByEntite } from '@/hooks/use-validation-workflow';
 
-type OngletActif = 'informations' | 'niveaux' | 'programme' | 'affectations' | 'emploi-du-temps' | 'historique';
+type OngletActif = 'informations' | 'niveaux' | 'programme' | 'affectations' | 'emploi-du-temps' | 'validation' | 'historique';
 
 const SOUS_SYSTEME_STYLES: Record<string, { bg: string; text: string }> = {
     FRANCOPHONE: { bg: 'bg-info/10', text: 'text-info' },
@@ -101,6 +104,9 @@ export function MatiereDetailPage() {
     const affectationsQuery = useMatiereAffectations(id);
     const edtQuery = useCreneaux({ affectationMatiereId: id, limit: 100 });
 
+    const peutValider = hasPermission('matieres:validate');
+    const workflowQuery = useWorkflowByEntite('matieres', id);
+
     const affectationsInactives = useMemo(() => {
         const affectations = affectationsQuery.data ?? [];
         return affectations.filter((a) => !a.actif);
@@ -157,6 +163,7 @@ export function MatiereDetailPage() {
         { id: 'programme', label: t('ongletProgrammes'), icon: BookOpen, count: programmesPedagogiquesQuery.data?.length },
         { id: 'affectations', label: t('enseignants'), icon: Users, count: affectationsQuery.data?.length },
         { id: 'emploi-du-temps', label: t('emploiDuTemps'), icon: Clock, count: edtQuery.data?.items?.length },
+        ...(peutValider ? [{ id: 'validation' as const, label: t('validation'), icon: ShieldCheck }] : []),
         ...(hasPermission('audit:matieres:view') || hasPermission('audit:view')
             ? [{ id: 'historique' as const, label: t('historique'), icon: History }]
             : []),
@@ -272,6 +279,43 @@ export function MatiereDetailPage() {
                             <EDTCalendar creneaux={edtQuery.data.items} />
                         )}
                     </div>
+                )}
+
+                {ongletActif === 'validation' && peutValider && (
+                    <motion.div key="validation" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                        <Card>
+                            <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+                                <h3 className="flex items-center gap-[var(--gap-xs)] text-base font-semibold text-foreground mb-4">
+                                    <ShieldCheck className="w-5 h-5 text-primary" />
+                                    {t('validation')}
+                                </h3>
+                                <div className="border-b border-border mb-6" />
+                                {workflowQuery.isLoading ? (
+                                    <LoadingState />
+                                ) : workflowQuery.data ? (
+                                    <>
+                                        <ValidationTimeline
+                                            historique={workflowQuery.data.historique}
+                                            niveauxRequis={workflowQuery.data.niveauxRequis}
+                                            niveauActuel={workflowQuery.data.niveauActuel}
+                                            statut={workflowQuery.data.statut}
+                                            className="mb-6"
+                                        />
+                                        <ValidationActions
+                                            workflowId={workflowQuery.data.id}
+                                            statut={workflowQuery.data.statut}
+                                            niveauActuel={workflowQuery.data.niveauActuel}
+                                            niveauxRequis={workflowQuery.data.niveauxRequis}
+                                            module="matieres"
+                                            onValidated={() => workflowQuery.refetch()}
+                                        />
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">{t('validation.aucunWorkflow')}</p>
+                                )}
+                            </div>
+                        </Card>
+                    </motion.div>
                 )}
 
                 {ongletActif === 'historique' && (

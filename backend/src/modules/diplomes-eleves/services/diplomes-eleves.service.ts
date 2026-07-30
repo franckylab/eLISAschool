@@ -13,6 +13,7 @@ import { CreateDiplomeEleveDto, UpdateDiplomeEleveDto, QueryDiplomesElevesDto } 
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
+import { auditService, AuditAction } from '@modules/auth';
 
 export class DiplomesElevesService {
     private repo: Repository<DiplomeEleve>;
@@ -21,7 +22,7 @@ export class DiplomesElevesService {
         this.repo = AppDataSource.getRepository(DiplomeEleve);
     }
 
-    async create(dto: CreateDiplomeEleveDto): Promise<DiplomeEleve> {
+    async create(dto: CreateDiplomeEleveDto, utilisateurId?: string, etablissementId?: string): Promise<DiplomeEleve> {
         // Vérifier si l'élève a déjà ce diplôme
         const existing = await this.repo.findOne({ 
             where: { 
@@ -39,6 +40,18 @@ export class DiplomesElevesService {
         });
         await this.repo.save(diplome);
         logger.info(`Diplôme enregistré pour élève ${dto.eleveId}: ${dto.examenNationalId}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.DIPLOME_CREATE,
+            cible: 'DiplomeEleve',
+            cibleId: diplome.id,
+            description: `Diplôme enregistré pour élève ${dto.eleveId}`,
+            module: 'diplomes-eleves',
+            etablissementId,
+            metadata: { entiteLabel: `Élève ${dto.eleveId}` },
+        });
+
         return diplome;
     }
 
@@ -96,7 +109,7 @@ export class DiplomesElevesService {
         return diplome;
     }
 
-    async update(id: string, dto: UpdateDiplomeEleveDto): Promise<DiplomeEleve> {
+    async update(id: string, dto: UpdateDiplomeEleveDto, utilisateurId?: string, etablissementId?: string): Promise<DiplomeEleve> {
         const diplome = await this.findOne(id);
 
         Object.assign(diplome, {
@@ -105,13 +118,36 @@ export class DiplomesElevesService {
         });
         await this.repo.save(diplome);
         logger.info(`Diplôme modifié: ${diplome.id}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.DIPLOME_UPDATE,
+            cible: 'DiplomeEleve',
+            cibleId: diplome.id,
+            description: `Diplôme modifié: ${diplome.id}`,
+            module: 'diplomes-eleves',
+            etablissementId,
+            metadata: { entiteLabel: `Diplôme ${diplome.id}` },
+        });
+
         return diplome;
     }
 
-    async delete(id: string): Promise<void> {
+    async delete(id: string, utilisateurId?: string, etablissementId?: string): Promise<void> {
         const diplome = await this.findOne(id);
         await this.repo.remove(diplome);
         logger.info(`Diplôme supprimé: ${diplome.id}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.DIPLOME_DELETE,
+            cible: 'DiplomeEleve',
+            cibleId: id,
+            description: `Diplôme supprimé: ${diplome.id}`,
+            module: 'diplomes-eleves',
+            etablissementId,
+            metadata: { entiteLabel: `Diplôme ${diplome.id}` },
+        });
     }
 }
 

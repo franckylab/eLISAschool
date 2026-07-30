@@ -90,7 +90,7 @@ router.patch('/echelons-structurels/:id', authMiddleware, requirePermission('org
 
 router.delete('/echelons-structurels/:id', authMiddleware, requirePermission('organisation:nomenclatures:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await echelonStructurelService.delete(req.params.id, getEtablissementId(req));
+        await echelonStructurelService.delete(req.params.id, getEtablissementId(req), req.utilisateur?.id);
         res.json({ success: true, message: 'Échelon structurel supprimé' });
     } catch (error) { next(error); }
 });
@@ -122,7 +122,7 @@ router.post('/niveaux-responsabilite', authMiddleware, requirePermission('organi
     try {
         const dto = validateDto(createNiveauResponsabiliteSchema, req.body);
         dto.etablissementId = getEtablissementId(req);
-        const created = await niveauResponsabiliteService.create(dto);
+        const created = await niveauResponsabiliteService.create(dto, req.utilisateur?.id);
         res.status(201).json({ success: true, data: created });
     } catch (error) { next(error); }
 });
@@ -138,14 +138,14 @@ router.patch('/niveaux-responsabilite/:id', authMiddleware, requirePermission('o
     try {
         const dto = validateDto(updateNiveauResponsabiliteSchema, req.body);
         delete dto.etablissementId;
-        const updated = await niveauResponsabiliteService.update(req.params.id, dto, getEtablissementId(req));
+        const updated = await niveauResponsabiliteService.update(req.params.id, dto, getEtablissementId(req), req.utilisateur?.id);
         res.json({ success: true, data: updated });
     } catch (error) { next(error); }
 });
 
 router.delete('/niveaux-responsabilite/:id', authMiddleware, requirePermission('organisation:nomenclatures:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await niveauResponsabiliteService.delete(req.params.id, getEtablissementId(req));
+        await niveauResponsabiliteService.delete(req.params.id, getEtablissementId(req), req.utilisateur?.id);
         res.json({ success: true, message: 'Niveau de responsabilité supprimé' });
     } catch (error) { next(error); }
 });
@@ -201,7 +201,7 @@ router.post('/templates', authMiddleware, requirePermission('organisation:templa
     try {
         const dto = validateDto(createTemplateOrganisationSchema, req.body);
         dto.etablissementId = getEtablissementId(req);
-        const created = await templateOrganisationService.create(dto);
+        const created = await templateOrganisationService.create(dto, req.utilisateur?.id);
         res.status(201).json({ success: true, data: created });
     } catch (error) { next(error); }
 });
@@ -221,7 +221,7 @@ router.post('/templates/:id/cloner', authMiddleware, requirePermission('organisa
     try {
         const dto = validateDto(clonerTemplateSchema, req.body);
         dto.etablissementId = getEtablissementId(req);
-        const cloned = await templateOrganisationService.clonerTemplate(req.params.id, dto);
+        const cloned = await templateOrganisationService.clonerTemplate(req.params.id, dto, req.utilisateur?.id);
         res.status(201).json({ success: true, data: cloned });
     } catch (error) { next(error); }
 });
@@ -230,14 +230,14 @@ router.patch('/templates/:id', authMiddleware, requirePermission('organisation:t
     try {
         const dto = validateDto(updateTemplateOrganisationSchema, req.body);
         delete dto.etablissementId;
-        const updated = await templateOrganisationService.update(req.params.id, dto, getEtablissementId(req));
+        const updated = await templateOrganisationService.update(req.params.id, dto, getEtablissementId(req), req.utilisateur?.id);
         res.json({ success: true, data: updated });
     } catch (error) { next(error); }
 });
 
 router.delete('/templates/:id', authMiddleware, requirePermission('organisation:templates:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await templateOrganisationService.delete(req.params.id, getEtablissementId(req));
+        await templateOrganisationService.delete(req.params.id, getEtablissementId(req), req.utilisateur?.id);
         res.json({ success: true, message: 'Template d\'organisation supprimé' });
     } catch (error) { next(error); }
 });
@@ -268,7 +268,7 @@ router.post('/modes-remuneration', authMiddleware, requirePermission('organisati
     try {
         const dto = validateDto(createModeRemunerationSchema, req.body);
         dto.etablissementId = getEtablissementId(req);
-        const created = await modeRemunerationService.create(dto);
+        const created = await modeRemunerationService.create(dto, req.utilisateur?.id);
         res.status(201).json({ success: true, data: created });
     } catch (error) { next(error); }
 });
@@ -284,14 +284,14 @@ router.patch('/modes-remuneration/:id', authMiddleware, requirePermission('organ
     try {
         const dto = validateDto(updateModeRemunerationSchema, req.body);
         delete dto.etablissementId;
-        const updated = await modeRemunerationService.update(req.params.id, dto, getEtablissementId(req));
+        const updated = await modeRemunerationService.update(req.params.id, dto, getEtablissementId(req), req.utilisateur?.id);
         res.json({ success: true, data: updated });
     } catch (error) { next(error); }
 });
 
 router.delete('/modes-remuneration/:id', authMiddleware, requirePermission('organisation:nomenclatures:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await modeRemunerationService.delete(req.params.id, getEtablissementId(req));
+        await modeRemunerationService.delete(req.params.id, getEtablissementId(req), req.utilisateur?.id);
         res.json({ success: true, message: 'Mode de rémunération supprimé' });
     } catch (error) { next(error); }
 });
@@ -307,7 +307,7 @@ router.delete('/modes-remuneration/:id', authMiddleware, requirePermission('orga
 router.post('/generer', authMiddleware, requirePermission('organisation:generation:execute'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(genererOrganisationSchema, req.body);
-        const result = await generationService.generer(dto, getEtablissementId(req));
+        const result = await generationService.generer(dto, getEtablissementId(req), req.utilisateur?.id);
         res.status(201).json({ success: true, data: result });
     } catch (error) { next(error); }
 });

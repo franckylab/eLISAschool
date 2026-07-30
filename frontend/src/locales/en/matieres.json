@@ -151,5 +151,7 @@
     "succesModificationProgramme": "Subject program updated",
     "ongletInformations": "Information",
     "ongletProgrammes": "Curricula",
-    "dateInconnue": "Unknown date"
+    "dateInconnue": "Unknown date",
+    "validation": "Validation",
+    "aucunWorkflow": "No active validation workflow"
 }

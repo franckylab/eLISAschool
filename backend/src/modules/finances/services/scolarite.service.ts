@@ -73,19 +73,21 @@ export class ScolariteService {
         logger.info(`[${etablissementId}] Frais de scolarité configurés pour niveau ${dto.niveauId}`);
 
         // Audit
-        await auditService.logCRUD(
-            'CREATE',
-            'FraisScolarite',
-            'SYSTEM',
-            frais.id,
-            undefined,
-            {
+        await auditService.log({
+            utilisateurId: 'SYSTEM',
+            action: AuditAction.FRAIS_SCOLARITE_CREATE,
+            cible: 'FraisScolarite',
+            cibleId: frais.id,
+            description: `Frais de scolarité configurés pour niveau ${dto.niveauId}: ${dto.fraisScolariteAnnuel}€`,
+            module: 'finances',
+            etablissementId,
+            metadata: {
+                entiteLabel: `${dto.fraisScolariteAnnuel}€`,
                 niveauId: dto.niveauId,
                 anneeScolaireId: dto.anneeScolaireId,
-                fraisScolariteAnnuel: dto.fraisScolariteAnnuel,
                 nombreTranches: dto.nombreTranches,
-            }
-        );
+            },
+        });
 
         return frais;
     }
@@ -430,22 +432,24 @@ export class ScolariteService {
             logger.info(`[${etablissementId}] Paiement enregistré: ${montantTotal} FCFA - Reçu ${numeroRecu}`);
 
             // Audit - Opération financière critique
-            await auditService.logCRUD(
-                'CREATE',
-                'Paiement',
-                userId,
-                paiement.id,
-                undefined,
-                {
+            await auditService.log({
+                utilisateurId: userId,
+                action: AuditAction.PAIEMENT_CREATE,
+                cible: 'Paiement',
+                cibleId: paiement.id,
+                description: `Paiement enregistré: ${montantTotal} FCFA - Reçu ${numeroRecu}`,
+                module: 'finances',
+                etablissementId,
+                metadata: {
+                    entiteLabel: `${montantTotal} FCFA`,
                     eleveId: dto.eleveId,
                     montant: dto.montant,
-                    montantTotal,
                     montantPenalite: penalite,
                     methodePaiement: dto.methodePaiement,
                     numeroRecu,
                     echeancierId: dto.echeancierId,
-                }
-            );
+                },
+            });
 
             // Envoyer notification de confirmation de paiement
             try {
@@ -558,20 +562,23 @@ export class ScolariteService {
         logger.info(`[${etablissementId}] Remise ${dto.typeRemise} attribuée à élève ${dto.eleveId}`);
 
         // Audit
-        await auditService.logCRUD(
-            'CREATE',
-            'Remise',
-            userId,
-            remise.id,
-            undefined,
-            {
+        await auditService.log({
+            utilisateurId: userId,
+            action: AuditAction.REMISE_CREATE,
+            cible: 'Remise',
+            cibleId: remise.id,
+            description: `Remise ${dto.typeRemise} attribuée à élève ${dto.eleveId}: ${dto.pourcentage}% (${dto.montant} FCFA)`,
+            module: 'finances',
+            etablissementId,
+            metadata: {
+                entiteLabel: `${dto.pourcentage}%`,
                 eleveId: dto.eleveId,
                 typeRemise: dto.typeRemise,
                 pourcentage: dto.pourcentage,
                 montant: dto.montant,
                 motif: dto.motif,
-            }
-        );
+            },
+        });
 
         return remise;
     }
@@ -805,21 +812,24 @@ export class ScolariteService {
         logger.info(`[Finances] Remise FRATRIE créée pour élève ${eleveId}: ${pourcentage}% (${montantRemise} FCFA)`);
 
         // Audit
-        await auditService.logCRUD(
-            'CREATE',
-            'Remise',
-            userId,
-            remise.id,
-            undefined,
-            {
+        await auditService.log({
+            utilisateurId: userId,
+            action: AuditAction.REMISE_CREATE,
+            cible: 'Remise',
+            cibleId: remise.id,
+            description: `Remise FRATRIE créée pour élève ${eleveId}: ${pourcentage}% (${montantRemise} FCFA) - ${fratrie.length + 1} enfants`,
+            module: 'finances',
+            etablissementId,
+            metadata: {
+                entiteLabel: `${pourcentage}%`,
                 eleveId,
                 typeRemise: TypeRemise.FRATRIE,
                 pourcentage,
                 montant: montantRemise,
                 motif: remise.motif,
                 fratrieCount: fratrie.length + 1,
-            }
-        );
+            },
+        });
 
         return remise;
     }
@@ -1067,18 +1077,21 @@ export class ScolariteService {
         logger.info(`[${etablissementId}] Frais d'inscription créés: ${frais.fraisInscription} FCFA`);
 
         // Audit
-        await auditService.logCRUD(
-            'CREATE',
-            'FraisInscription',
-            userId,
-            frais.id,
-            undefined,
-            {
+        await auditService.log({
+            utilisateurId: userId,
+            action: AuditAction.FRAIS_SCOLARITE_CREATE,
+            cible: 'FraisScolarite',
+            cibleId: frais.id,
+            description: `Frais d'inscription créés: ${frais.fraisInscription} FCFA`,
+            module: 'finances',
+            etablissementId,
+            metadata: {
+                entiteLabel: `${frais.fraisInscription} FCFA`,
                 eleveId,
                 anneeScolaireId,
                 fraisInscription: frais.fraisInscription,
-            }
-        );
+            },
+        });
 
         return frais;
     }

@@ -14,7 +14,7 @@ import {
     ArrowLeft, Users, BookOpen, MapPin,
     Edit, Trash2, UserPlus, TrendingUp, Award, Power,
     Calendar, CheckCircle, XCircle, AlertCircle,
-    Group, GraduationCap, ArrowRightLeft, History,
+    Group, GraduationCap, ArrowRightLeft, History, ShieldCheck,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { CardGrid } from '@/components/ui/CardGrid';
@@ -32,10 +32,12 @@ import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { usePermissions } from '@/hooks';
 import { AuditTimeline } from '@/components/ui/AuditTimeline';
+import { ValidationTimeline, ValidationActions } from '@/components/ui';
+import { useWorkflowByEntite } from '@/hooks/use-validation-workflow';
 import { Card } from '@/components/ui/Card';
 import type { Eleve } from '@/features/eleves/types/eleve.types';
 
-type OngletActif = 'informations' | 'eleves' | 'statistiques' | 'historique';
+type OngletActif = 'informations' | 'eleves' | 'statistiques' | 'validation' | 'historique';
 
 const creneauKey: Record<string, string> = {
     MATIN: 'matin',
@@ -74,6 +76,9 @@ export function ClasseDetailPage() {
     const { data: classe, isLoading: loadingClasse, error: erreurClasse } = useClasse(id);
     const supprimer = useSupprimerClasse();
     const toggleActif = useToggleActifClasse();
+
+    const peutValider = hasPermission('classes:validate');
+    const workflowQuery = useWorkflowByEntite('classes', id);
 
     const { data: elevesClasseData, isLoading: loadingEleves } = useElevesClasse(id, pageEleves, 20, rechercheEleves || undefined);
     const eleves = (elevesClasseData?.eleves?.items || []) as Eleve[];
@@ -158,6 +163,7 @@ export function ClasseDetailPage() {
         { id: 'informations' as const, label: t('onglets.informations'), icon: BookOpen },
         { id: 'eleves' as const, label: `${t('onglets.eleves')} (${statsEleves?.total ?? 0})`, icon: Users },
         { id: 'statistiques' as const, label: t('onglets.statistiques'), icon: TrendingUp },
+        ...(peutValider ? [{ id: 'validation' as const, label: t('onglets.validation'), icon: ShieldCheck }] : []),
         ...(hasPermission('audit:classes:view') || hasPermission('audit:view')
             ? [{ id: 'historique' as const, label: t('onglets.historique'), icon: History }]
             : []),
@@ -679,6 +685,48 @@ export function ClasseDetailPage() {
                         </div>
                     )}
                 </motion.div>
+
+                {ongletActif === 'validation' && peutValider && (
+                    <motion.div
+                        key="validation"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <Card>
+                            <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+                                <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
+                                    <ShieldCheck className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-primary inline mr-2" />
+                                    {t('onglets.validation')}
+                                </h3>
+                                <div className="border-b border-border mb-6" />
+                                {workflowQuery.isLoading ? (
+                                    <p className="text-sm text-muted-foreground">{t('chargement')}</p>
+                                ) : workflowQuery.data ? (
+                                    <>
+                                        <ValidationTimeline
+                                            historique={workflowQuery.data.historique}
+                                            niveauxRequis={workflowQuery.data.niveauxRequis}
+                                            niveauActuel={workflowQuery.data.niveauActuel}
+                                            statut={workflowQuery.data.statut}
+                                            className="mb-6"
+                                        />
+                                        <ValidationActions
+                                            workflowId={workflowQuery.data.id}
+                                            statut={workflowQuery.data.statut}
+                                            niveauActuel={workflowQuery.data.niveauActuel}
+                                            niveauxRequis={workflowQuery.data.niveauxRequis}
+                                            module="classes"
+                                            onValidated={() => workflowQuery.refetch()}
+                                        />
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">{t('validation.aucunWorkflow')}</p>
+                                )}
+                            </div>
+                        </Card>
+                    </motion.div>
+                )}
 
                 {ongletActif === 'historique' && (
                     <motion.div

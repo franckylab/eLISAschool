@@ -89,5 +89,7 @@
         "confirmerActiverMessage": "Are you sure you want to activate the year \"{{libelle}}\" ? Other years will be deactivated.",
         "confirmerActiverDetail": "The year will become the active year. Other years will be automatically deactivated.",
         "historique": "History"
-    }
+    },
+    "validation": "Validation",
+    "aucunWorkflow": "No active validation workflow"
 }

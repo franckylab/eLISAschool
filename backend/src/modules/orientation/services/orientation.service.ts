@@ -13,6 +13,7 @@ import { CreateProfilOrientationDto, UpdateProfilOrientationDto, CreateFicheMeti
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
+import { auditService, AuditAction } from '@modules/auth';
 
 /**
  * Service d'orientation avec configuration centralisée
@@ -30,7 +31,7 @@ export class OrientationService {
 
     // ============ PROFILS ============
 
-    async createProfil(dto: CreateProfilOrientationDto): Promise<ProfilOrientation> {
+    async createProfil(dto: CreateProfilOrientationDto, createurId?: string): Promise<ProfilOrientation> {
         const existing = await this.profilRepo.findOne({ where: { eleveId: dto.eleveId } });
         if (existing) {
             throw new AppError('Un profil existe déjà pour cet élève', 409, 'PROFILE_EXISTS');
@@ -39,6 +40,19 @@ export class OrientationService {
         const profil = this.profilRepo.create(dto);
         await this.profilRepo.save(profil);
         logger.info(`Profil orientation créé pour élève ${dto.eleveId}`);
+
+        if (createurId) {
+            await auditService.log({
+                utilisateurId: createurId,
+                action: AuditAction.ORIENTATION_CREATE,
+                cible: 'ProfilOrientation',
+                cibleId: profil.id,
+                description: `Profil d'orientation créé pour l'élève ${dto.eleveId}`,
+                module: 'orientation',
+                metadata: { entiteLabel: `Profil élève ${dto.eleveId}` },
+            });
+        }
+
         return profil;
     }
 
@@ -46,7 +60,7 @@ export class OrientationService {
         return this.profilRepo.findOne({ where: { eleveId } });
     }
 
-    async updateProfil(eleveId: string, dto: UpdateProfilOrientationDto): Promise<ProfilOrientation> {
+    async updateProfil(eleveId: string, dto: UpdateProfilOrientationDto, utilisateurId?: string): Promise<ProfilOrientation> {
         let profil = await this.profilRepo.findOne({ where: { eleveId } });
         if (!profil) {
             profil = this.profilRepo.create({ eleveId, ...dto });
@@ -54,6 +68,19 @@ export class OrientationService {
             Object.assign(profil, dto);
         }
         await this.profilRepo.save(profil);
+
+        if (utilisateurId) {
+            await auditService.log({
+                utilisateurId,
+                action: AuditAction.ORIENTATION_UPDATE,
+                cible: 'ProfilOrientation',
+                cibleId: profil.id,
+                description: `Mise à jour du profil d'orientation de l'élève ${eleveId}`,
+                module: 'orientation',
+                metadata: { entiteLabel: `Profil élève ${eleveId}` },
+            });
+        }
+
         return profil;
     }
 
@@ -96,10 +123,23 @@ export class OrientationService {
 
     // ============ FICHES MÉTIERS ============
 
-    async createFiche(dto: CreateFicheMetierDto): Promise<FicheMetier> {
+    async createFiche(dto: CreateFicheMetierDto, createurId?: string): Promise<FicheMetier> {
         const fiche = this.ficheRepo.create(dto);
         await this.ficheRepo.save(fiche);
         logger.info(`Fiche métier créée: ${dto.nom}`);
+
+        if (createurId) {
+            await auditService.log({
+                utilisateurId: createurId,
+                action: AuditAction.ORIENTATION_CREATE,
+                cible: 'FicheMetier',
+                cibleId: fiche.id,
+                description: `Fiche métier créée: "${dto.nom}"`,
+                module: 'orientation',
+                metadata: { entiteLabel: dto.nom || fiche.id },
+            });
+        }
+
         return fiche;
     }
 
@@ -124,13 +164,26 @@ export class OrientationService {
 
     // ============ RENDEZ-VOUS ============
 
-    async createRdv(dto: CreateRdvDto): Promise<RdvOrientation> {
+    async createRdv(dto: CreateRdvDto, createurId?: string): Promise<RdvOrientation> {
         const rdv = this.rdvRepo.create({
             ...dto,
             date: new Date(dto.date),
         });
         await this.rdvRepo.save(rdv);
         logger.info(`RDV orientation créé pour élève ${dto.eleveId}`);
+
+        if (createurId) {
+            await auditService.log({
+                utilisateurId: createurId,
+                action: AuditAction.ORIENTATION_CREATE,
+                cible: 'RdvOrientation',
+                cibleId: rdv.id,
+                description: `RDV d'orientation créé pour l'élève ${dto.eleveId}`,
+                module: 'orientation',
+                metadata: { entiteLabel: `RDV élève ${dto.eleveId}` },
+            });
+        }
+
         return rdv;
     }
 
@@ -162,8 +215,22 @@ export class OrientationService {
         return rdv;
     }
 
-    async annulerRdv(id: string): Promise<RdvOrientation> {
-        return this.updateRdv(id, { statut: 'ANNULE' });
+    async annulerRdv(id: string, utilisateurId?: string): Promise<RdvOrientation> {
+        const rdv = await this.updateRdv(id, { statut: 'ANNULE' });
+
+        if (utilisateurId) {
+            await auditService.log({
+                utilisateurId,
+                action: AuditAction.ORIENTATION_UPDATE,
+                cible: 'RdvOrientation',
+                cibleId: rdv.id,
+                description: `RDV d'orientation ${id} annulé`,
+                module: 'orientation',
+                metadata: { entiteLabel: `RDV ${id}` },
+            });
+        }
+
+        return rdv;
     }
 }
 

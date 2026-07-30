@@ -22,6 +22,9 @@ export function initAuditCronJobs(): void {
         } catch (error) {
             logger.error('[CRON AUDIT] Erreur purge rétention:', error);
         }
+    }, {
+        scheduled: true,
+        timezone: 'Africa/Douala',
     });
 
     logger.info('[CRON AUDIT] Tâche de purge rétention planifiée (02:00 quotidien).');

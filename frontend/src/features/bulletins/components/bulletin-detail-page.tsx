@@ -15,7 +15,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import {
     FileText, Trash2, Download, Award, Edit,
-    Send, Undo2, BookOpen, LayoutDashboard, TrendingUp, Users, Star, History,
+    Send, Undo2, BookOpen, LayoutDashboard, TrendingUp, Users, Star, History, ShieldCheck,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/ui/Skeleton';
@@ -27,9 +27,10 @@ import { StatCard } from '@/components/ui/StatCard';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { AuditTimeline } from '@/components/ui/AuditTimeline';
+import { ValidationTimeline, ValidationActions } from '@/components/ui';
 import { TabsBar, TabsContent } from '@/components/ui';
 import type { Tab } from '@/components/ui';
-import { useTabState, usePermissions } from '@/hooks';
+import { useTabState, usePermissions, useWorkflowByEntite } from '@/hooks';
 import { useBulletin, useSupprimerBulletin, useExporterBulletin, useModifierBulletin } from '../hooks/use-bulletins';
 import { getMentionKey } from '../utils/bulletin-mention';
 import { getNoteBadgeClass, formatNote } from '@/features/notes/utils/note-couleur';
@@ -39,7 +40,7 @@ interface BulletinDetailPageProps {
     bulletinId: string;
 }
 
-type OngletActif = 'synthese' | 'matieres' | 'historique';
+type OngletActif = 'synthese' | 'matieres' | 'validation' | 'historique';
 
 function MatiereRow({ m }: { m: BulletinMatiere }) {
     const { t } = useTranslation('bulletins');
@@ -83,10 +84,14 @@ export function BulletinDetailPage({ bulletinId }: BulletinDetailPageProps) {
     const { t, i18n } = useTranslation('bulletins');
     const { hasPermission } = usePermissions();
 
+    const peutValider = hasPermission('bulletins:validate');
+
     const { data: bulletin, isLoading, error, refetch } = useBulletin(bulletinId);
     const supprimer = useSupprimerBulletin();
     const exporter = useExporterBulletin();
     const modifier = useModifierBulletin();
+
+    const workflowQuery = useWorkflowByEntite('bulletins', bulletinId);
 
     const [ongletActif, setOngletActif] = useTabState<OngletActif>('synthese');
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -135,6 +140,7 @@ export function BulletinDetailPage({ bulletinId }: BulletinDetailPageProps) {
     const onglets: Tab[] = [
         { id: 'synthese', label: t('synthese'), icon: LayoutDashboard },
         { id: 'matieres', label: t('matieres'), icon: BookOpen },
+        ...(peutValider ? [{ id: 'validation' as const, label: t('validation'), icon: ShieldCheck }] : []),
         ...(hasPermission('audit:bulletins:view') || hasPermission('audit:view')
             ? [{ id: 'historique' as const, label: t('historique'), icon: History }]
             : []),
@@ -305,6 +311,42 @@ export function BulletinDetailPage({ bulletinId }: BulletinDetailPageProps) {
                                 </div>
                             ) : (
                                 <p className="text-sm text-muted-foreground">{t('aucuneMatiere')}</p>
+                            )}
+                        </div>
+                    </Card>
+                )}
+
+                {ongletActif === 'validation' && peutValider && (
+                    <Card>
+                        <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+                            <h3 className="flex items-center gap-[var(--gap-xs)] text-base font-semibold text-foreground mb-4">
+                                <ShieldCheck className="w-5 h-5 text-primary" />
+                                {t('validation')}
+                            </h3>
+                            <div className="border-b border-border mb-6" />
+                            {workflowQuery.isLoading ? (
+                                <p className="text-sm text-muted-foreground">{t('chargement')}</p>
+                            ) : workflowQuery.data ? (
+                                <>
+                                    <ValidationTimeline
+                                        historique={workflowQuery.data.historique}
+                                        niveauxRequis={workflowQuery.data.niveauxRequis}
+                                        niveauActuel={workflowQuery.data.niveauActuel}
+                                        statut={workflowQuery.data.statut}
+                                    />
+                                    <div className="mt-6">
+                                        <ValidationActions
+                                            workflowId={workflowQuery.data.id}
+                                            statut={workflowQuery.data.statut}
+                                            niveauActuel={workflowQuery.data.niveauActuel}
+                                            niveauxRequis={workflowQuery.data.niveauxRequis}
+                                            module="bulletins"
+                                            onValidated={() => workflowQuery.refetch()}
+                                        />
+                                    </div>
+                                </>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">{t('validation.aucunWorkflow')}</p>
                             )}
                         </div>
                     </Card>

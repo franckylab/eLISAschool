@@ -362,16 +362,12 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 - **Migration DB requise** : ajouter `deletedAt` columns sur les 13 nouvelles entités avant déploiement
 
 ## Next Move
-Refonte v4.0 organisation : ✅ terminée. Hiérarchie v4.1 (superieurPosteId + réintégration page + overlay organigramme) : ✅ terminée.
-1. ~~Exécuter la migration 122~~ ✅ appliquée en local (2026-07-25) : étape 5 ajoutée (purge des 26 relations orphelines — superieurId nullé par l'ancienne FK). État final : 26 poste→poste + 1 personne→personne, 0 orphelin, serveur OK (health 200).
-2. ~~Migration DB Notes/Bulletins~~ ✅ `123-refonte-notes-bulletins.sql` appliquée en local (2026-07-25) : enseignantId nullable=YES, index unique bulletins présent, 0 remap nécessaire (UPDATE 0/DELETE 0). Reste à appliquer sur staging/prod.
-3. ~~Migration 124~~ ✅ `124-fix-hierarchie-orphelins.sql` créée + appliquée en local (2026-07-25) : NULL-out idempotent des références orphelines (superieurId/superieurPosteId/personnelId/posteId) + purge des lignes sans sémantique. 0 changement (DB déjà assainie), 27 relations valides. À appliquer sur staging/prod.
-4. **Tests** : phase dédiée après stabilisation (organisation + hiérarchie + notes/bulletins)
-5. **Migrations 125 + 126** : ✅ appliquées en local (2026-07-25, session grill-me organisation). À appliquer sur staging/prod (avec 122/123/124).
-6. ~~Data gap seeds~~ ✅ résolu (2026-07-25) : `seed-matieres-niveaux.ts` refondu — 7 profils de programme (MATERNELLE, PRIMAIRE_BAS/HAUT, COLLEGE_BAS/HAUT, LYCEE_BAS/HAUT) mappés sur les 31 niveaux FR+EN. Exécuté pour les 2 établissements : +176 associations, total 498, 0 niveau sans programme. Vérifié : génération bulletins Quatrième → moyennes pondérées correctes (2.52/1.91), rangs 1/2, 18 bulletins_matieres. Données de test nettoyées. Standalone du seed boucle désormais sur tous les établissements.
-7. **Migration 029 v3.0 (paie)** : ✅ appliquée en local (2026-07-27). À appliquer sur staging/prod avec 122/123/124/125/126/127.
-8. **Re-seed organisation** : exécuter `seed-organisation.ts` sur chaque environnement pour réaligner les `Fonction.chemin` legacy (`parentId/CODE` → `parentChemin.id`) — idempotent.
-9. **Migration soft delete** : créer migration ajoutant `deletedAt TIMESTAMP NULL` sur les 13 entités (personnel×6, paie×5, organisation×3). Requise avant déploiement staging/prod.
+Workflow de validation multi-niveaux (Option B) : ✅ intégré dans 6 pages détail (juillet 2026).
+1. **Tests** : phase dédiée après stabilisation (validation workflow + audit)
+2. **Migrations 122–131** : à appliquer sur staging/prod
+3. **Migration soft delete** : créer migration ajoutant `deletedAt TIMESTAMP NULL` sur les 13 entités (personnel×6, paie×5, organisation×3). Requise avant déploiement staging/prod.
+4. **Restaurer l'audit logging** dans `bulletins.service.ts` (génération + clôture bulletins) — actuellement non journalisé.
+5. **Instrumentation restante** : ajouter `auditService.log()` dans les services absence-personnel, évaluation-enseignant, indisponibilité-enseignant.
 
 ## Travail effectué — Session 2026-07-25 (grill-me organisation — UX, permissions, organigramme)
 ### Décisions validées
@@ -1654,3 +1650,25 @@ Amélioration du système d'audit/traçabilité : les auteurs n'étaient pas aff
 - **i18n FR/EN parité** complète
 - **Navigation permission-gated** — liens visibles uniquement si la permission correspondante est accordée
 - **Fallback email** — pour les logs historiques sans nom/prenom
+
+## Travail effectué — Session 2026-07-29 (wiring validation workflow multi-niveaux — Option B)
+
+### Corrections backend
+- **AuditAction enum** : ajout `VALIDATION_APPROUVE`, `VALIDATION_REJETE`
+- **Migration 139** : ajout ALTER TYPE pour audit_action_enum (2 noms PG possibles)
+- **`validation-workflow.service.ts`** : ajout des cas `Periode`, `AnneeScolaire`, `Bulletin` dans `appliquerEffetEntite()` ; fix `setParam()` arité
+- **`bulletins.service.ts`** : création auto de workflow quand `publie=true` et `require_validation`
+- **`personnel.service.ts`** : `updateStatut()` avance le workflow via `traiterValidation()` si workflow EN_COURS
+- **`validation-workflow.controller.ts`** : ajout route `GET /by-entite/:module/:entiteId` + guard sur `/annuler`
+- **`notes.service.ts`** : fix double-save (re-fetch après `traiterValidation`)
+
+### Frontend — Validation tab (6 pages)
+Validation tab ajouté dans bulletin-, matière-, période-, classe-, année scolaire- et personnel-detail-page :
+- `ValidationTimeline` + `ValidationActions` + `useWorkflowByEntite`
+- Gated par permission `{module}:validate`
+- **Fix permission bug** : `audit:periodes:view` → `audit:annees-scolaires:view` dans l'année scolaire
+
+### Infrastructure
+- Nouveau hook `useWorkflowByEntite()` + endpoint backend + barrel hooks
+- i18n : 20 clés ajoutées (validation, aucunWorkflow) dans FR+EN pour les 5 modules
+- 0 erreur TS backend + frontend (préexistantes intactes)

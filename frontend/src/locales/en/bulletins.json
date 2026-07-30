@@ -78,5 +78,7 @@
     "erreurModification": "Error while updating the report card",
     "erreurSuppression": "Error while deleting the report card",
     "erreurExport": "Error while exporting the report card",
-    "erreurPopupBloquee": "The print window was blocked by the browser"
+    "erreurPopupBloquee": "The print window was blocked by the browser",
+    "validation": "Validation",
+    "aucunWorkflow": "No active validation workflow"
 }

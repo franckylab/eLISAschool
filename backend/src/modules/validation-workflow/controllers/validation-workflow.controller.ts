@@ -34,7 +34,7 @@ router.get('/', requirePermission('config:edit'), async (req: Request, res: Resp
 
 /**
  * GET /api/validation-workflows/:id
- * Détails d'un workflow
+ * Détails d'un workflow (accessible avec auth uniquement — le service vérifie les permissions pour les mutations)
  */
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -69,6 +69,7 @@ router.post('/', requirePermission('config:edit'), async (req: Request, res: Res
 /**
  * POST /api/validation-workflows/:id/valider
  * Traite une validation (niveau suivant)
+ * Note: le service effectue une vérification de permission interne via validation:{module}:level{N}
  */
 router.post('/:id/valider', async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -89,7 +90,7 @@ router.post('/:id/valider', async (req: Request, res: Response, next: NextFuncti
  * POST /api/validation-workflows/:id/annuler
  * Annule un workflow
  */
-router.post('/:id/annuler', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:id/annuler', requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const workflow = await workflowService.annuler(req.params.id, req.utilisateur!.id);
         res.json({ success: true, data: workflow, message: 'Workflow annulé' });
@@ -120,6 +121,21 @@ router.get('/check/:module/:entiteId', async (req: Request, res: Response, next:
             req.etablissementId
         );
         res.json({ success: true, data: { isValide } });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /api/validation-workflows/by-entite/:module/:entiteId
+ * Récupère le workflow complet pour une entité (ou null si aucun)
+ */
+router.get('/by-entite/:module/:entiteId', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const workflow = await workflowService.findByModuleAndEntite(
+            req.params.module,
+            req.params.entiteId,
+            req.etablissementId
+        );
+        res.json({ success: true, data: workflow });
     } catch (error) { next(error); }
 });
 

@@ -18,6 +18,7 @@ import { notificationsService } from '@modules/notifications/services/notificati
 import { financeWorkflowService } from './finance-workflow.service';
 import { TypeNotification, PrioriteNotification } from '@modules/notifications/entities';
 import { auditService } from '@modules/auth/services/audit.service';
+import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 
 export class DepensesService {
     private categorieRepo: Repository<CategorieDepense>;
@@ -133,22 +134,24 @@ export class DepensesService {
             logger.info(`[${etablissementId}] Dépense créée: ${numeroPiece} - ${montantTTC} FCFA`);
 
             // Audit - Création dépense
-            await auditService.logCRUD(
-                'CREATE',
-                'Depense',
-                userId,
-                depense.id,
-                undefined,
-                {
+            await auditService.log({
+                utilisateurId: userId,
+                action: AuditAction.DEPENSE_CREATE,
+                cible: 'Depense',
+                cibleId: depense.id,
+                description: `Dépense créée: ${numeroPiece} - ${montantTTC} FCFA`,
+                module: 'finances',
+                etablissementId,
+                metadata: {
+                    entiteLabel: `${montantTTC} FCFA`,
                     numeroPiece,
                     libelle: dto.libelle,
                     montantHT: dto.montantHT,
-                    montantTTC: montantTTC,
+                    montantTTC,
                     categorieDepenseId: dto.categorieDepenseId,
                     fournisseur: dto.fournisseur,
-                    dateFacture: dto.dateFacture,
-                }
-            );
+                },
+            });
 
             return await this.depenseRepo.findOne({
                 where: { id: depense.id },
@@ -206,21 +209,20 @@ export class DepensesService {
         logger.info(`[${etablissementId}] Dépense validée niveau ${workflowResult.niveauActuel}: ${depense.numeroPiece}`);
 
         // Audit - Validation dépense avec workflow
-        await auditService.log(
-            {
-                utilisateurId: userId,
-                action: 'UPDATE' as any,
-                cible: 'Depense',
-                cibleId: depenseId,
-                description: `Dépense validée niveau ${workflowResult.niveauActuel}/${workflowResult.niveauRequis} - Statut: ${workflowResult.statut}`,
-                nouvellesValeurs: {
-                    statut: depense.statut,
-                    niveauValidation: workflowResult.niveauActuel,
-                    montantTTC: depense.montantTTC,
-                },
-                module: 'finances',
-            }
-        );
+        await auditService.log({
+            utilisateurId: userId,
+            action: AuditAction.DEPENSE_VALIDER,
+            cible: 'Depense',
+            cibleId: depenseId,
+            description: `Dépense validée niveau ${workflowResult.niveauActuel}/${workflowResult.niveauRequis} - Statut: ${workflowResult.statut}`,
+            nouvellesValeurs: {
+                statut: depense.statut,
+                niveauValidation: workflowResult.niveauActuel,
+                montantTTC: depense.montantTTC,
+            },
+            module: 'finances',
+            etablissementId,
+        });
 
         // Notifications
         try {
@@ -300,22 +302,22 @@ export class DepensesService {
             logger.info(`[${etablissementId}] Paiement dépense: ${depense.numeroPiece} - ${dto.montantPaye} FCFA`);
 
             // Audit - Paiement dépense
-            await auditService.logCRUD(
-                'UPDATE',
-                'Depense',
-                userId,
-                depenseId,
-                {
-                    statut: depense.statut,
-                    montantPaye: Number(depense.montantPaye) - dto.montantPaye,
-                },
-                {
+            await auditService.log({
+                utilisateurId: userId,
+                action: AuditAction.DEPENSE_PAYER,
+                cible: 'Depense',
+                cibleId: depenseId,
+                description: `Paiement dépense: ${depense.numeroPiece} - ${dto.montantPaye} FCFA`,
+                module: 'finances',
+                etablissementId,
+                metadata: {
+                    entiteLabel: `${dto.montantPaye} FCFA`,
                     statut: depense.statut,
                     montantPaye: depense.montantPaye,
                     methodePaiement: dto.methodePaiement,
                     referenceTransaction: dto.referenceTransaction,
-                }
-            );
+                },
+            });
 
             // Notification de confirmation de paiement
             try {

@@ -13,6 +13,7 @@ import { CreateExamenNationalDto, UpdateExamenNationalDto, QueryExamensNationaux
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
+import { auditService, AuditAction } from '@modules/auth';
 
 export class ExamensNationauxService {
     private repo: Repository<ExamenNational>;
@@ -21,7 +22,7 @@ export class ExamensNationauxService {
         this.repo = AppDataSource.getRepository(ExamenNational);
     }
 
-    async create(dto: CreateExamenNationalDto): Promise<ExamenNational> {
+    async create(dto: CreateExamenNationalDto, utilisateurId?: string, etablissementId?: string): Promise<ExamenNational> {
         // Vérifier unicité du code
         const existing = await this.repo.findOne({ where: { code: dto.code } });
         if (existing) {
@@ -34,6 +35,18 @@ export class ExamensNationauxService {
         });
         await this.repo.save(examen);
         logger.info(`Examen national créé: ${dto.nom} (${dto.code})`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.EXAMEN_CREATE,
+            cible: 'ExamenNational',
+            cibleId: examen.id,
+            description: `Examen national créé: ${dto.nom} (${dto.code})`,
+            module: 'examens-nationaux',
+            etablissementId,
+            metadata: { entiteLabel: dto.nom },
+        });
+
         return examen;
     }
 
@@ -86,7 +99,7 @@ export class ExamensNationauxService {
         return examen;
     }
 
-    async update(id: string, dto: UpdateExamenNationalDto): Promise<ExamenNational> {
+    async update(id: string, dto: UpdateExamenNationalDto, utilisateurId?: string, etablissementId?: string): Promise<ExamenNational> {
         const examen = await this.findOne(id);
 
         // Vérifier unicité du code si modifié
@@ -103,13 +116,36 @@ export class ExamensNationauxService {
         });
         await this.repo.save(examen);
         logger.info(`Examen national modifié: ${examen.nom}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.EXAMEN_UPDATE,
+            cible: 'ExamenNational',
+            cibleId: examen.id,
+            description: `Examen national modifié: ${examen.nom}`,
+            module: 'examens-nationaux',
+            etablissementId,
+            metadata: { entiteLabel: examen.nom },
+        });
+
         return examen;
     }
 
-    async delete(id: string): Promise<void> {
+    async delete(id: string, utilisateurId?: string, etablissementId?: string): Promise<void> {
         const examen = await this.findOne(id);
         await this.repo.remove(examen);
         logger.info(`Examen national supprimé: ${examen.nom}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.EXAMEN_DELETE,
+            cible: 'ExamenNational',
+            cibleId: id,
+            description: `Examen national supprimé: ${examen.nom}`,
+            module: 'examens-nationaux',
+            etablissementId,
+            metadata: { entiteLabel: examen.nom },
+        });
     }
 }
 

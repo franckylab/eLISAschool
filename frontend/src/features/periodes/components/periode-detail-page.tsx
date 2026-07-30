@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     CalendarRange, Clock, Trash2,
     AlertCircle, Lock, Unlock, FileText,
-    BarChart3, CheckCircle2, Timer, Edit, Network, History,
+    BarChart3, CheckCircle2, Timer, Edit, Network, History, ShieldCheck,
 } from 'lucide-react';
 import {
     usePeriode, useSupprimerPeriode,
@@ -29,10 +29,12 @@ import { usePermissions } from '@/hooks';
 import { StatutBadge } from '@/components/ui/StatutBadge';
 import { RowActions } from '@/components/ui/RowActions';
 import { AuditTimeline } from '@/components/ui/AuditTimeline';
+import { ValidationTimeline, ValidationActions } from '@/components/ui';
+import { useWorkflowByEntite } from '@/hooks/use-validation-workflow';
 
 const EMPTY_COMPOSITIONS: PeriodeComposition[] = [];
 
-type OngletActif = 'informations' | 'structure' | 'donnees' | 'historique';
+type OngletActif = 'informations' | 'structure' | 'donnees' | 'validation' | 'historique';
 
 function formatDateFr(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString('fr-FR', {
@@ -70,6 +72,9 @@ export function PeriodeDetailPage() {
     const cloturer = useCloturerPeriode();
     const reouvrir = useReouvrirPeriode();
 
+    const peutValider = hasPermission('periodes:validate');
+    const workflowQuery = useWorkflowByEntite('periodes', id);
+
     const estCloturee = periode?.statut === StatutPeriode.CLOTUREE;
     const estOuverte = periode?.statut === StatutPeriode.OUVERTE;
 
@@ -95,6 +100,7 @@ export function PeriodeDetailPage() {
         { id: 'informations' as const, label: t('detail.informations'), icon: FileText },
         { id: 'structure' as const, label: t('detail.structure'), icon: Network },
         { id: 'donnees' as const, label: t('detail.donneesLiees'), icon: BarChart3 },
+        ...(peutValider ? [{ id: 'validation' as const, label: t('detail.validation'), icon: ShieldCheck }] : []),
         ...(hasPermission('audit:periodes:view') || hasPermission('audit:view')
             ? [{ id: 'historique' as const, label: t('detail.historique'), icon: History }]
             : []),
@@ -634,6 +640,48 @@ export function PeriodeDetailPage() {
                         </div>
                     )}
                 </motion.div>
+
+                {ongletActif === 'validation' && peutValider && (
+                    <motion.div
+                        key="validation"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <Card>
+                            <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+                                <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
+                                    <ShieldCheck className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-primary inline mr-2" />
+                                    {t('detail.validation')}
+                                </h3>
+                                <div className="border-b border-border mb-6" />
+                                {workflowQuery.isLoading ? (
+                                    <p className="text-sm text-muted-foreground">{t('chargement')}</p>
+                                ) : workflowQuery.data ? (
+                                    <>
+                                        <ValidationTimeline
+                                            historique={workflowQuery.data.historique}
+                                            niveauxRequis={workflowQuery.data.niveauxRequis}
+                                            niveauActuel={workflowQuery.data.niveauActuel}
+                                            statut={workflowQuery.data.statut}
+                                            className="mb-6"
+                                        />
+                                        <ValidationActions
+                                            workflowId={workflowQuery.data.id}
+                                            statut={workflowQuery.data.statut}
+                                            niveauActuel={workflowQuery.data.niveauActuel}
+                                            niveauxRequis={workflowQuery.data.niveauxRequis}
+                                            module="periodes"
+                                            onValidated={() => workflowQuery.refetch()}
+                                        />
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">{t('validation.aucunWorkflow')}</p>
+                                )}
+                            </div>
+                        </Card>
+                    </motion.div>
+                )}
 
                 {ongletActif === 'historique' && (
                     <motion.div

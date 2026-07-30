@@ -148,7 +148,8 @@
         "donneesLieesDescription": "Data linked to this period",
         "verrouillageActif": "Lock active — no modifications possible",
         "descriptionCloturee": "This period is closed. All entries (grades, report cards) are locked. Existing data remains viewable.",
-        "descriptionNonCloturee": "Grades and report cards linked to this period will appear here. Closing will lock all modifications."
+        "descriptionNonCloturee": "Grades and report cards linked to this period will appear here. Closing will lock all modifications.",
+        "validation": "Validation"
     },
     "colonne": {
         "nom": "Name",
@@ -191,5 +192,6 @@
         "creer": "Create",
         "enregistrer": "Save",
         "confirmer": "Confirm"
-    }
+    },
+    "aucunWorkflow": "No active validation workflow"
 }

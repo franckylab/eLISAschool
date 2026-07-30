@@ -151,5 +151,7 @@
     "succesModificationProgramme": "Programme matière modifié",
     "ongletInformations": "Informations",
     "ongletProgrammes": "Programmes",
-    "dateInconnue": "Date inconnue"
+    "dateInconnue": "Date inconnue",
+    "validation": "Validation",
+    "aucunWorkflow": "Aucun workflow de validation actif"
 }

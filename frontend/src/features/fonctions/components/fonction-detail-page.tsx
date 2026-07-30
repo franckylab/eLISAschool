@@ -11,7 +11,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Edit, CheckCircle, XCircle, Info, Workflow, Users, UserRound } from 'lucide-react';
+import { Edit, CheckCircle, XCircle, Info, Workflow, Users, UserRound, History } from 'lucide-react';
 import { useFonction, useModifierFonction, useFonctionMembres, useSupprimerFonction } from '../hooks/use-fonctions';
 import type { Fonction as FonctionType, ModifierFonctionDto } from '../types/fonction.types';
 import { FonctionFormModal } from './fonction-form-modal';
@@ -23,6 +23,7 @@ import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { TabsBar, TabsContent, type Tab } from '@/components/ui';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
+import { AuditTimeline } from '@/components/ui/AuditTimeline';
 import { usePermissions } from '@/hooks';
 
 /** Shape des membres retournés par l'API /fonctions/:id/membres */
@@ -82,6 +83,9 @@ export function FonctionDetailPage() {
         { id: 'infos', label: t('detailInfos'), icon: Info },
         { id: 'sous-fonctions', label: t('sousFonctions'), icon: Workflow },
         { id: 'membres', label: t('membres'), icon: Users },
+        ...((hasPermission('audit:organisation:view') || hasPermission('audit:view'))
+            ? [{ id: 'historique', label: t('historique'), icon: History }]
+            : []),
     ];
 
     return (
@@ -173,6 +177,16 @@ export function FonctionDetailPage() {
                                 ))}
                             </ul>
                         )}
+                    </Card>
+                )}
+                {tab === 'historique' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('historique')}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <AuditTimeline cible="Fonction" cibleId={id} module="organisation" />
+                        </CardContent>
                     </Card>
                 )}
             </TabsContent>

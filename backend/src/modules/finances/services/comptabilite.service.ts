@@ -22,6 +22,8 @@ import {
 } from '../entities';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { auditService } from '@modules/auth/services/audit.service';
+import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 
 export interface CreateEcritureDto {
     dateEcriture: Date;
@@ -129,7 +131,7 @@ export class ComptabiliteService {
     /**
      * Créer une écriture manuelle
      */
-    async creerEcritureManuelle(dto: CreateEcritureDto, etablissementId: string): Promise<EcritureComptable> {
+    async creerEcritureManuelle(dto: CreateEcritureDto, etablissementId: string, utilisateurId?: string): Promise<EcritureComptable> {
         const numeroPiece = await this.genererNumeroPiece(etablissementId);
 
         // Vérifier équilibre débit/crédit
@@ -150,13 +152,33 @@ export class ComptabiliteService {
 
         const saved = await this.ecritureRepo.save(ecriture);
         logger.info(`[Comptabilité] Écriture manuelle créée: ${numeroPiece}`);
+
+        await auditService.log({
+            utilisateurId: utilisateurId || 'SYSTEM',
+            action: AuditAction.ECRITURE_CREATE,
+            cible: 'EcritureComptable',
+            cibleId: saved.id,
+            description: `Écriture comptable créée: ${numeroPiece} - ${dto.libelle}`,
+            module: 'finances',
+            etablissementId,
+            metadata: {
+                entiteLabel: `${dto.montantDebit} FCFA`,
+                libelle: dto.libelle,
+                compteDebit: dto.compteDebit,
+                compteCredit: dto.compteCredit,
+                montantDebit: dto.montantDebit,
+                montantCredit: dto.montantCredit,
+                type: dto.type,
+            },
+        });
+
         return saved;
     }
 
     /**
      * Valider une écriture
      */
-    async validerEcriture(id: string, etablissementId: string): Promise<EcritureComptable> {
+    async validerEcriture(id: string, etablissementId: string, utilisateurId?: string): Promise<EcritureComptable> {
         const ecriture = await this.ecritureRepo.findOne({
             where: { id, etablissementId }
         });
@@ -174,13 +196,31 @@ export class ComptabiliteService {
         }
 
         ecriture.statut = StatutEcriture.VALIDE;
-        return this.ecritureRepo.save(ecriture);
+        const saved = await this.ecritureRepo.save(ecriture);
+
+        await auditService.log({
+            utilisateurId: utilisateurId || 'SYSTEM',
+            action: AuditAction.ECRITURE_VALIDER,
+            cible: 'EcritureComptable',
+            cibleId: id,
+            description: `Écriture comptable validée: ${ecriture.numeroPiece}`,
+            module: 'finances',
+            etablissementId,
+            metadata: {
+                entiteLabel: `${ecriture.numeroPiece}`,
+                numeroPiece: ecriture.numeroPiece,
+                libelle: ecriture.libelle,
+                montant: ecriture.montantDebit,
+            },
+        });
+
+        return saved;
     }
 
     /**
      * Annuler une écriture
      */
-    async annulerEcriture(id: string, etablissementId: string): Promise<EcritureComptable> {
+    async annulerEcriture(id: string, etablissementId: string, utilisateurId?: string): Promise<EcritureComptable> {
         const ecriture = await this.ecritureRepo.findOne({
             where: { id, etablissementId }
         });
@@ -190,7 +230,24 @@ export class ComptabiliteService {
         }
 
         ecriture.statut = StatutEcriture.ANNULE;
-        return this.ecritureRepo.save(ecriture);
+        const saved = await this.ecritureRepo.save(ecriture);
+
+        await auditService.log({
+            utilisateurId: utilisateurId || 'SYSTEM',
+            action: AuditAction.ECRITURE_ANNULER,
+            cible: 'EcritureComptable',
+            cibleId: id,
+            description: `Écriture comptable annulée: ${ecriture.numeroPiece}`,
+            module: 'finances',
+            etablissementId,
+            metadata: {
+                entiteLabel: `${ecriture.numeroPiece}`,
+                numeroPiece: ecriture.numeroPiece,
+                libelle: ecriture.libelle,
+            },
+        });
+
+        return saved;
     }
 
     /**

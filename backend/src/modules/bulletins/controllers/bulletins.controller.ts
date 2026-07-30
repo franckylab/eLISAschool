@@ -46,13 +46,6 @@ router.post('/generate', authMiddleware, requirePermission('bulletins:generate')
     try {
         const dto = validateDto(generateBulletinSchema, req.body);
         const bulletins = await service.generate(dto, req.etablissementId, req.utilisateur!.id);
-        await auditService.log({
-            utilisateurId: req.utilisateur!.id,
-            action: AuditAction.BULLETIN_GENERATE,
-            cible: 'Bulletin',
-            description: `${bulletins.length} bulletin(s) généré(s)`,
-            module: 'bulletins',
-        });
         res.json({ success: true, count: bulletins.length, data: bulletins });
     } catch (error) { next(error); }
 });

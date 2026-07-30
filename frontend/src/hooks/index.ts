@@ -69,6 +69,7 @@ export {
     useWorkflowDetail,
     useTraiterValidation,
     useAnnulerWorkflow,
+    useWorkflowByEntite,
 } from './use-validation-workflow';
 export type {
     StatutWorkflow,

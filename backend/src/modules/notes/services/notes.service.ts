@@ -481,18 +481,16 @@ export class NotesService {
                     ? DecisionValidation.APPROUVE
                     : DecisionValidation.REJETE;
 
-                const updatedWorkflow = await validationWorkflowService.traiterValidation(
+                await validationWorkflowService.traiterValidation(
                     workflow.id,
                     { decision, commentaire: updateDto.commentaire },
                     utilisateurId
                 );
 
-                if (updatedWorkflow.statut === StatutWorkflow.COMPLETEE) {
-                    note.statut = StatutNote.PUBLIEE;
-                } else if (updatedWorkflow.statut === StatutWorkflow.REJETEE) {
-                    note.statut = StatutNote.BROUILLON;
-                } else {
-                    note.statut = StatutNote.VALIDEE;
+                // Re-fetch note after traiterValidation (appliquerEffetEntite may have saved it)
+                const noteActualisee = await this.noteRepository.findOne({ where: { id } });
+                if (noteActualisee) {
+                    note = noteActualisee;
                 }
 
                 note.validateurId = utilisateurId;

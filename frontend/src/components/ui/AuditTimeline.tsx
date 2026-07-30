@@ -376,7 +376,7 @@ export function AuditTimeline({
         return false;
     }, [hasPermission, module]);
 
-    const { data, isLoading, isFetching } = useQuery({
+    const { data, isLoading, isFetching, isError, error } = useQuery({
         queryKey: ['audit-logs', cible, cibleId, module, includeChildren, offset],
         queryFn: async () => {
             const params: Record<string, string> = {
@@ -425,6 +425,18 @@ export function AuditTimeline({
                 {[1, 2, 3].map((i) => (
                     <div key={i} className="h-16 animate-pulse rounded-[var(--radius-md)] bg-[var(--color-surface-hover)]" />
                 ))}
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className={cn('flex flex-col items-center justify-center py-8 text-center', className)}>
+                <AlertCircle className="h-8 w-8 text-[var(--color-danger)] mb-2" />
+                <p className="text-sm font-medium text-[var(--color-danger)]">{t('audit.erreurChargement')}</p>
+                {error instanceof Error && (
+                    <p className="mt-1 text-xs text-[var(--color-texte-secondaire)]">{error.message}</p>
+                )}
             </div>
         );
     }

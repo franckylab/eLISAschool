@@ -16,6 +16,8 @@ import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { getParamNumber, getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { auditService } from '@modules/auth/services/audit.service';
+import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 
 /**
  * Service Matériel avec configuration centralisée
@@ -63,6 +65,19 @@ export class MaterielService {
                 etablissementId,
                 commentaire: `Acquisition matériel: ${dto.nom}`,
             }, createurId);
+        }
+
+        if (createurId) {
+            await auditService.log({
+                utilisateurId: createurId,
+                action: AuditAction.MATERIEL_CREATE,
+                cible: 'Materiel',
+                cibleId: materiel.id,
+                description: `Création du matériel ${dto.nom}`,
+                module: 'materiel',
+                etablissementId,
+                metadata: { entiteLabel: dto.nom, categorie: dto.categorie },
+            });
         }
 
         logger.info(`[${etablissementId}] Matériel créé: ${dto.nom}`);
@@ -140,11 +155,24 @@ export class MaterielService {
             }, createurId);
         }
 
+        if (createurId) {
+            await auditService.log({
+                utilisateurId: createurId,
+                action: AuditAction.MATERIEL_ASSIGN,
+                cible: 'PretMateriel',
+                cibleId: pret.id,
+                description: `Prêt du matériel ${materiel.nom} à ${dto.emprunteurId}`,
+                module: 'materiel',
+                etablissementId,
+                metadata: { materielNom: materiel.nom, emprunteurId: dto.emprunteurId, quantite: dto.quantite },
+            });
+        }
+
         logger.info(`[${etablissementId}] Prêt matériel: ${materiel.nom} à ${dto.emprunteurId}`);
         return pret;
     }
 
-    async retourner(pretId: string, dto: RetourMaterielDto, etablissementId?: string): Promise<PretMateriel> {
+    async retourner(pretId: string, dto: RetourMaterielDto, etablissementId?: string, effectuePar?: string): Promise<PretMateriel> {
         const where: any = { id: pretId };
         if (etablissementId) where.etablissementId = etablissementId;
         const pret = await this.pretRepo.findOne({ where, relations: ['materiel'] });
@@ -160,6 +188,19 @@ export class MaterielService {
         materiel.quantite += pret.quantite;
         materiel.disponible = true;
         await this.materielRepo.save(materiel);
+
+        if (effectuePar) {
+            await auditService.log({
+                utilisateurId: effectuePar,
+                action: AuditAction.MATERIEL_RETURN,
+                cible: 'PretMateriel',
+                cibleId: pret.id,
+                description: `Retour du matériel ${materiel.nom}`,
+                module: 'materiel',
+                etablissementId,
+                metadata: { materielNom: materiel.nom, quantite: pret.quantite },
+            });
+        }
 
         logger.info(`[${etablissementId}] Retour matériel: ${materiel.nom}`);
         return pret;

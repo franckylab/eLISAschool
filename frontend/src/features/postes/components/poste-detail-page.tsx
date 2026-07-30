@@ -10,7 +10,7 @@
 
 import { useState } from 'react';
 import { useParams, useNavigate, useSearch } from '@tanstack/react-router';
-import { Edit, Trash2, Briefcase, Building2, Target, ListChecks, ChevronRight, UserRound, Info, Users, Network } from 'lucide-react';
+import { Edit, Trash2, Briefcase, Building2, Target, ListChecks, ChevronRight, UserRound, Info, Users, Network, History } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Badge } from '@/components/ui/Badge';
@@ -24,6 +24,7 @@ import { usePermissions } from '@/hooks';
 import { usePoste, usePosteOccupants, useSupprimerPoste } from '../hooks/use-postes';
 import type { AffectationPoste } from '@/features/personnel/types/affectation.types';
 import { PosteFormModal } from './poste-form-modal';
+import { AuditTimeline } from '@/components/ui/AuditTimeline';
 import { PosteCapaciteIndicator } from './PosteCapaciteIndicator';
 import { STATUT_POSTE_OPTIONS } from '../types/poste.zod';
 
@@ -61,6 +62,9 @@ export function PosteDetailPage() {
         { id: 'infos', label: t('detailInfos'), icon: Info },
         { id: 'occupants', label: t('occupants'), icon: Users },
         { id: 'position', label: t('positionHierarchique'), icon: Network },
+        ...((hasPermission('audit:organisation:view') || hasPermission('audit:view'))
+            ? [{ id: 'historique', label: t('historique'), icon: History }]
+            : []),
     ];
 
     return (
@@ -179,6 +183,16 @@ export function PosteDetailPage() {
                         <div className="flex items-center gap-2"><Building2 className="h-5 w-5 text-muted-foreground" /><span className="text-sm text-muted-foreground">{t('unites')} :</span><span className="font-medium text-foreground">{poste.uniteOrganisationnelle?.nom || '—'}</span></div>
                         <div className="flex items-center gap-2"><Briefcase className="h-5 w-5 text-muted-foreground" /><span className="text-sm text-muted-foreground">{t('fonction')} :</span><span className="font-medium text-foreground">{poste.fonction?.nom || '—'}</span></div>
                         <div className="flex items-center gap-2"><Users className="h-5 w-5 text-muted-foreground" /><span className="text-sm text-muted-foreground">{t('capacite')} :</span><PosteCapaciteIndicator occupantsCount={poste.occupantsCount} nombrePostes={poste.nombrePostes} size="sm" /></div>
+                    </Card>
+                )}
+                {tab === 'historique' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('historique')}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <AuditTimeline cible="Poste" cibleId={id} module="organisation" />
+                        </CardContent>
                     </Card>
                 )}
             </TabsContent>

@@ -13,6 +13,7 @@ import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
+import { StatutWorkflow, DecisionValidation } from '@modules/validation-workflow/entities';
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
@@ -336,6 +337,27 @@ export class PersonnelService {
     async updateStatut(id: string, statut: StatutPersonnel, userId?: string, etablissementId?: string): Promise<MembrePersonnel> {
         const membre = await this.findOne(id, etablissementId);
         const ancienStatut = membre.statut;
+
+        // Si un workflow est actif, l'avancer via traiterValidation
+        if (ancienStatut === StatutPersonnel.EN_ATTENTE_VALIDATION && (statut === StatutPersonnel.ACTIF || statut === StatutPersonnel.INACTIF)) {
+            const workflow = await validationWorkflowService.findByModuleAndEntite('personnel', id);
+            if (workflow && workflow.statut === StatutWorkflow.EN_COURS) {
+                const decision = statut === StatutPersonnel.ACTIF
+                    ? DecisionValidation.APPROUVE
+                    : DecisionValidation.REJETE;
+
+                await validationWorkflowService.traiterValidation(
+                    workflow.id,
+                    { decision, commentaire: 'Mise à jour de statut' },
+                    userId ?? ''
+                );
+
+                // Re-fetch after traiterValidation (appliquerEffetEntite may have saved)
+                const membreActualise = await this.findOne(id, etablissementId);
+                if (membreActualise) return membreActualise;
+            }
+        }
+
         membre.statut = statut;
         await this.personnelRepo.save(membre);
 

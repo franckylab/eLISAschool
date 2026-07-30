@@ -10,12 +10,14 @@ import { useState } from 'react';
 import { useParams, useNavigate, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Edit, Download, Mail, Phone, MapPin, Calendar, User, AlertCircle, Award, ClipboardList, FileText } from 'lucide-react';
+import { ArrowLeft, Edit, Download, Mail, Phone, MapPin, Calendar, User, AlertCircle, Award, ClipboardList, FileText, History } from 'lucide-react';
 import { useEleve, useEleveDocuments } from '..';
 import { EleveFormModal } from './eleve-form-modal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { usePermissions } from '@/hooks';
+import { AuditTimeline } from '@/components/ui/AuditTimeline';
 import type { StatutEleve } from '../types/eleve.types';
 
 const ONGLETS = ['informations', 'scolarite', 'finances', 'documents', 'historique'] as const;
@@ -34,7 +36,8 @@ export function EleveDetailPage() {
     const { t } = useTranslation('eleves');
     const { hasPermission } = usePermissions();
     const search = useSearch({ from: '/_auth/eleves/$id' }) as { tab?: string };
-    const ongletActif = (ONGLETS.includes(search.tab as OngletType) ? search.tab : 'informations') as OngletType;
+    const ongletsAutorises = ONGLETS.filter(o => o !== 'historique' || hasPermission('audit:eleves:view') || hasPermission('audit:view'));
+    const ongletActif = (ongletsAutorises.includes(search.tab as OngletType) ? search.tab : 'informations') as OngletType;
     const [modalEditionOpen, setModalEditionOpen] = useState(false);
 
     const { data: eleve, isLoading } = useEleve(id);
@@ -180,7 +183,7 @@ export function EleveDetailPage() {
                 transition={{ delay: 0.1 }}
             >
                 <div className="flex gap-1">
-                    {ONGLETS.map((onglet) => (
+                    {ongletsAutorises.map((onglet) => (
                         <button
                             key={onglet}
                             onClick={() => setOngletActif(onglet)}
@@ -437,26 +440,14 @@ export function EleveDetailPage() {
                 )}
 
                 {ongletActif === 'historique' && (
-                    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-                        <h3 className="mb-4 text-lg font-semibold">{t('onglets.historique')}</h3>
-                        <div className="space-y-4">
-                            <div className="flex items-start gap-4">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-dominant-100)]">
-                                    <Calendar className="h-4 w-4 text-[var(--color-dominant-600)]" />
-                                </div>
-                                <div>
-                                    <p className="font-medium">{t('detail.eleveCreeLe')}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {new Date(eleve.createdAt).toLocaleDateString('fr-FR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                        })}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('onglets.historique')}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <AuditTimeline cible="Eleve" cibleId={id} module="eleves" />
+                        </CardContent>
+                    </Card>
                 )}
             </motion.div>
 

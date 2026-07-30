@@ -23,6 +23,7 @@ import { logger } from '@common/utils/logger.util';
 import { Utilisateur } from '@modules/utilisateurs/entities';
 import { notificationsService } from '@modules/notifications/services';
 import { sondageWebSocketService } from './sondage.websocket';
+import { auditService, AuditAction } from '@modules/auth';
 
 export class SondageService {
     private sondageRepo: Repository<Sondage>;
@@ -60,6 +61,18 @@ export class SondageService {
 
         const saved = await this.templateRepo.save(template);
         logger.info(`Template sondage créé: ${saved.nom}`, { templateId: saved.id, createurId });
+
+        await auditService.log({
+            utilisateurId: createurId,
+            action: AuditAction.SONDAGE_CREATE,
+            cible: 'TemplateSondage',
+            cibleId: saved.id,
+            description: `Template de sondage créé: "${saved.nom}"`,
+            module: 'sondages',
+            etablissementId,
+            metadata: { entiteLabel: saved.nom || saved.id },
+        });
+
         return saved;
     }
 
@@ -98,7 +111,20 @@ export class SondageService {
             tags: dto.tags?.join(','),
         });
 
-        return this.templateRepo.save(template);
+        const saved = await this.templateRepo.save(template);
+
+        await auditService.log({
+            utilisateurId: createurId,
+            action: AuditAction.SONDAGE_EDIT,
+            cible: 'TemplateSondage',
+            cibleId: saved.id,
+            description: `Template de sondage modifié: "${saved.nom}"`,
+            module: 'sondages',
+            etablissementId: saved.etablissementId,
+            metadata: { entiteLabel: saved.nom || saved.id },
+        });
+
+        return saved;
     }
 
     async deleteTemplate(templateId: string, createurId: string): Promise<void> {
@@ -116,6 +142,17 @@ export class SondageService {
 
         await this.templateRepo.remove(template);
         logger.info(`Template sondage supprimé: ${templateId}`, { createurId });
+
+        await auditService.log({
+            utilisateurId: createurId,
+            action: AuditAction.SONDAGE_DELETE,
+            cible: 'TemplateSondage',
+            cibleId: templateId,
+            description: `Template de sondage supprimé: "${template.nom}"`,
+            module: 'sondages',
+            etablissementId: template.etablissementId,
+            metadata: { entiteLabel: template.nom || templateId },
+        });
     }
 
     async incrementTemplateUsage(templateId: string): Promise<void> {
@@ -183,6 +220,17 @@ export class SondageService {
                 auteurId,
                 nombreDestinataires: sondage.nombreDestinataires,
                 statut: sondage.statut,
+            });
+
+            await auditService.log({
+                utilisateurId: auteurId,
+                action: AuditAction.SONDAGE_CREATE,
+                cible: 'Sondage',
+                cibleId: sondage.id,
+                description: `Sondage créé: "${sondage.question}" (${sondage.statut})`,
+                module: 'sondages',
+                etablissementId,
+                metadata: { entiteLabel: sondage.question || sondage.id },
             });
 
             // Envoyer des notifications aux destinataires (non bloquant)
@@ -337,7 +385,20 @@ export class SondageService {
         }
 
         Object.assign(sondage, dto);
-        return this.sondageRepo.save(sondage);
+        const saved = await this.sondageRepo.save(sondage);
+
+        await auditService.log({
+            utilisateurId: auteurId,
+            action: AuditAction.SONDAGE_EDIT,
+            cible: 'Sondage',
+            cibleId: saved.id,
+            description: `Sondage modifié: "${saved.question}"`,
+            module: 'sondages',
+            etablissementId,
+            metadata: { entiteLabel: saved.question || saved.id },
+        });
+
+        return saved;
     }
 
     async fermerSondage(sondageId: string, auteurId: string, etablissementId: string): Promise<Sondage> {
@@ -350,7 +411,20 @@ export class SondageService {
         sondage.statut = StatutSondage.FERME;
         sondage.dateFermeture = new Date();
 
-        return this.sondageRepo.save(sondage);
+        const saved = await this.sondageRepo.save(sondage);
+
+        await auditService.log({
+            utilisateurId: auteurId,
+            action: AuditAction.SONDAGE_ACTIVATION,
+            cible: 'Sondage',
+            cibleId: saved.id,
+            description: `Sondage fermé: "${saved.question}"`,
+            module: 'sondages',
+            etablissementId,
+            metadata: { entiteLabel: saved.question || saved.id },
+        });
+
+        return saved;
     }
 
     async getSondagesProgrammes(etablissementId: string): Promise<Sondage[]> {

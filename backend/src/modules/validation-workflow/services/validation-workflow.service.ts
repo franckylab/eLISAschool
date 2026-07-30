@@ -19,6 +19,7 @@ import { Utilisateur } from '@modules/utilisateurs/entities';
 import { getParamNumber, getParam } from '@modules/configuration/utils/config.helper';
 import { notificationTemplates } from '@modules/notifications/services';
 import { permissionResolverService } from '@modules/auth/services/permission-resolver.service';
+import { auditService, AuditAction } from '@modules/auth';
 
 export class ValidationWorkflowService {
     private workflowRepo: Repository<WorkflowValidation>;
@@ -246,6 +247,30 @@ export class ValidationWorkflowService {
             `[${workflow.module}] Validation ${dto.decision} au niveau ${niveauSuivant}/${workflow.niveauxRequis} par ${validateurId}`
         );
 
+        // Audit logging
+        try {
+            await auditService.log({
+                utilisateurId: validateurId,
+                action: dto.decision === DecisionValidation.APPROUVE
+                    ? AuditAction.VALIDATION_APPROUVE
+                    : AuditAction.VALIDATION_REJETE,
+                cible: 'WorkflowValidation',
+                cibleId: workflow.id,
+                description: `${dto.decision === DecisionValidation.APPROUVE ? 'Approbation' : 'Rejet'} niveau ${niveauSuivant}/${workflow.niveauxRequis} pour ${workflow.entiteType} ${workflow.entiteId}`,
+                module: workflow.module,
+                etablissementId: workflow.etablissementId,
+                metadata: {
+                    entiteLabel: `${workflow.module}:${workflow.entiteType}`,
+                    entiteRef: workflow.entiteId,
+                    niveau: niveauSuivant,
+                    niveauxRequis: workflow.niveauxRequis,
+                    workflowStatut: workflow.statut,
+                },
+            });
+        } catch (auditError) {
+            logger.warn('[ValidationWorkflow] Échec audit logging (non bloquant)', auditError);
+        }
+
         // Envoyer une notification selon la décision
         try {
             if (dto.decision === DecisionValidation.APPROUVE) {
@@ -455,6 +480,39 @@ export class ValidationWorkflowService {
                     logger.info(`[ValidationWorkflow] Note ${workflow.entiteId} → ${approuve ? 'VALIDEE' : 'rejétée (brouillon)'}`);
                     break;
                 }
+                case 'Periode': {
+                    const { Periode, StatutPeriode } = await import('@modules/periodes/entities/periode.entity');
+                    const repo = AppDataSource.getRepository(Periode);
+                    const ent = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!ent || ent.statut !== StatutPeriode.EN_ATTENTE_CLOTURE) return;
+                    ent.statut = approuve ? StatutPeriode.CLOTUREE : StatutPeriode.OUVERTE;
+                    await repo.save(ent);
+                    logger.info(`[ValidationWorkflow] Periode ${workflow.entiteId} → ${ent.statut}`);
+                    break;
+                }
+                case 'AnneeScolaire': {
+                    const { AnneeScolaire, StatutAnneeScolaire } = await import('@modules/annees-scolaires/entities/annee-scolaire.entity');
+                    const repo = AppDataSource.getRepository(AnneeScolaire);
+                    const ent = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!ent || ent.statut !== StatutAnneeScolaire.EN_ATTENTE_CLOTURE) return;
+                    ent.statut = approuve ? StatutAnneeScolaire.CLOTUREE : StatutAnneeScolaire.OUVERTE;
+                    ent.enCours = approuve ? false : ent.enCours;
+                    await repo.save(ent);
+                    logger.info(`[ValidationWorkflow] AnneeScolaire ${workflow.entiteId} → ${ent.statut}`);
+                    break;
+                }
+                case 'Bulletin': {
+                    const { Bulletin } = await import('@modules/bulletins/entities/bulletin.entity');
+                    const repo = AppDataSource.getRepository(Bulletin);
+                    const bulletin = await repo.findOne({ where: { id: workflow.entiteId } });
+                    if (!bulletin) return;
+                    if (approuve) {
+                        bulletin.publie = true;
+                        await repo.save(bulletin);
+                    }
+                    logger.info(`[ValidationWorkflow] Bulletin ${workflow.entiteId} → ${approuve ? 'publié' : 'rejeté (non publié)'}`);
+                    break;
+                }
                 case 'SanctionEleve': {
                     const { SanctionEleve, StatutSanction } = await import('@modules/suivi-eleves/entities/sanction-eleve.entity');
                     const repo = AppDataSource.getRepository(SanctionEleve);
@@ -562,9 +620,14 @@ export class ValidationWorkflowService {
         const configKey = `${dto.module}.validation_roles`;
         const configValue = JSON.stringify(dto.configRoles);
 
-        // Utiliser le service de configuration pour mettre à jour
-        // Note: Ceci nécessite un import du configurationService
-        logger.info(`[${dto.module}] Configuration des rôles mise à jour: ${configValue}`);
+        try {
+            const { setParam } = await import('@modules/configuration/utils/config.helper');
+            await setParam(configKey, configValue);
+            logger.info(`[${dto.module}] Configuration des rôles persistée: ${configValue}`);
+        } catch (error) {
+            logger.error(`[${dto.module}] Échec persistance config rôles:`, error);
+            throw new AppError('Impossible de mettre à jour la configuration des rôles', 500, 'CONFIG_UPDATE_FAILED');
+        }
     }
 
     /**

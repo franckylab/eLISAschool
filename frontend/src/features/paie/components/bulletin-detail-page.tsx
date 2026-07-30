@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Wallet, Edit, Trash2, FileDown } from 'lucide-react';
+import { Wallet, Edit, Trash2, FileDown, History } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { usePaiePermissions } from '../hooks/use-paie-permissions';
 import { useSupprimerBulletin } from '../hooks/use-paie';
 import { BulletinFormModal } from './bulletin-form-modal';
+import { AuditTimeline } from '@/components/ui/AuditTimeline';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { usePermissions } from '@/hooks';
 
 interface BulletinDetailPageProps {
     bulletinId: string;
@@ -17,6 +20,7 @@ export function BulletinDetailPage({ bulletinId }: BulletinDetailPageProps) {
     const navigate = useNavigate();
     const { t } = useTranslation('paie');
     const perms = usePaiePermissions();
+    const { hasPermission } = usePermissions();
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const supprimer = useSupprimerBulletin();
@@ -54,6 +58,17 @@ export function BulletinDetailPage({ bulletinId }: BulletinDetailPageProps) {
                     </div>
                 }
             />
+
+            {(hasPermission('audit:paie:view') || hasPermission('audit:view')) && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{t('historique')}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <AuditTimeline cible="BulletinPaie" cibleId={bulletinId} module="paie" />
+                    </CardContent>
+                </Card>
+            )}
 
             <BulletinFormModal
                 open={showEditModal}

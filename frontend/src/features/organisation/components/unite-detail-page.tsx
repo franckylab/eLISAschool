@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Building2, FolderTree, Briefcase, MapPin, User, Info, Edit, Trash2 } from 'lucide-react';
+import { Building2, FolderTree, Briefcase, MapPin, User, Info, Edit, Trash2, History } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { TabsBar, TabsContent, type Tab } from '@/components/ui';
 import { Card } from '@/components/ui/Card';
@@ -11,6 +11,7 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { useUnite, useSupprimerUnite } from '../hooks/use-unites';
 import { usePermissions } from '@/hooks/use-permissions';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { AuditTimeline } from '@/components/ui/AuditTimeline';
 import { UniteFormModal } from './organigramme/modals/UniteFormModal';
 import type { UniteOrganisationnelle } from '../types/organisation.types';
 import type { Poste } from '@/features/postes/types/poste.types';
@@ -63,6 +64,9 @@ export function UniteDetailPage() {
         { id: 'infos', label: t('detailInfos'), icon: Info },
         { id: 'sous-unites', label: t('sousUnites'), icon: FolderTree },
         { id: 'postes', label: t('postesRattaches'), icon: Briefcase },
+        ...((hasPermission('audit:organisation:view') || hasPermission('audit:view'))
+            ? [{ id: 'historique', label: t('historique'), icon: History }]
+            : []),
     ];
 
     return (
@@ -157,6 +161,16 @@ export function UniteDetailPage() {
                                 ))}
                             </ul>
                         )}
+                    </Card>
+                )}
+                {tab === 'historique' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('historique')}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <AuditTimeline cible="UniteOrganisationnelle" cibleId={id} module="organisation" />
+                        </CardContent>
                     </Card>
                 )}
             </TabsContent>

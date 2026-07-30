@@ -68,7 +68,7 @@ export function DashboardAuditWidget() {
 
     const hasAccess = hasPermission('audit:view');
 
-    const { data, isLoading } = useQuery({
+    const { data, isLoading, isError, error } = useQuery({
         queryKey: ['dashboard-audit-recent'],
         queryFn: async () => {
             const res = await apiClient.get<{ items: AuditLogEntry[]; total: number }>(
@@ -108,7 +108,17 @@ export function DashboardAuditWidget() {
 
             {/* Content */}
             <div className="p-[clamp(0.75rem,1.2vw,1.25rem)]">
-                {isLoading ? (
+                {isError ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                        <AlertCircle className="h-8 w-8 text-destructive mb-2" />
+                        <p className="text-sm font-medium text-destructive">
+                            {t('audit.erreurChargement')}
+                        </p>
+                        {error instanceof Error && (
+                            <p className="mt-1 text-xs text-[var(--color-texte-secondaire)]">{error.message}</p>
+                        )}
+                    </div>
+                ) : isLoading ? (
                     <div className="space-y-3">
                         {[1, 2, 3, 4, 5].map((i) => (
                             <div key={i} className="h-12 animate-pulse rounded-lg bg-[var(--color-surface-hover)]" />

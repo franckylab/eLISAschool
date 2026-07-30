@@ -24,6 +24,7 @@ import {
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { ParametreSysteme } from '@modules/configuration/entities/parametre-systeme.entity';
+import { auditService, AuditAction } from '@modules/auth';
 
 /**
  * Service Apparence
@@ -128,7 +129,8 @@ export class ApparenceService {
      */
     async ajouterFondEtablissement(
         etablissementId: string,
-        dto: AjouterFondDto
+        dto: AjouterFondDto,
+        utilisateurId?: string
     ): Promise<FondEtablissement> {
         // Vérifier que le fond existe
         const fond = await this.getFondById(dto.fondId);
@@ -172,6 +174,17 @@ export class ApparenceService {
 
         await this.fondEtabRepo.save(fondEtab);
         logger.info(`[Apparence] Fond ${fond.nom} ajouté à l'établissement ${etablissementId}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.FOND_AJOUTER,
+            cible: 'FondEtablissement',
+            cibleId: fondEtab.id,
+            description: `Fond "${fond.nom}" ajouté à l'établissement`,
+            module: 'apparence',
+            etablissementId,
+            metadata: { entiteLabel: fond.nom },
+        });
 
         return this.fondEtabRepo.findOne({
             where: { id: fondEtab.id },
@@ -234,7 +247,8 @@ export class ApparenceService {
      */
     async retirerFondEtablissement(
         etablissementId: string,
-        fondEtabId: string
+        fondEtabId: string,
+        utilisateurId?: string
     ): Promise<void> {
         // Ignorer silencieusement les fonds système virtuels (ID commence par "systeme-")
         if (fondEtabId.startsWith('systeme-')) {
@@ -258,6 +272,17 @@ export class ApparenceService {
 
         await this.fondEtabRepo.remove(fondEtab);
         logger.info(`[Apparence] Fond ${fondEtab.fond.nom} retiré de l'établissement ${etablissementId}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.FOND_RETIRER,
+            cible: 'FondEtablissement',
+            cibleId: fondEtab.id,
+            description: `Fond "${fondEtab.fond.nom}" retiré de l'établissement`,
+            module: 'apparence',
+            etablissementId,
+            metadata: { entiteLabel: fondEtab.fond.nom },
+        });
     }
 
     // ============================================
@@ -307,6 +332,17 @@ export class ApparenceService {
         logger.info(
             `[Apparence] Configuration rotation mise à jour pour l'établissement ${etablissementId} (actif: ${actif}, délai: ${delaiRotation}s)`
         );
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.FOND_ROTATION_CONFIG,
+            cible: 'ParametreSysteme',
+            cibleId: `fonds.${etablissementId}`,
+            description: `Configuration rotation mise à jour (actif: ${actif}, délai: ${delaiRotation}s)`,
+            module: 'apparence',
+            etablissementId,
+            metadata: { entiteLabel: 'Configuration rotation' },
+        });
     }
 
     // ============================================
@@ -346,6 +382,17 @@ export class ApparenceService {
         await this.fondRepo.save(fond);
         logger.info(`[Apparence] Fond personnalisé uploadé: ${dto.nom} par ${utilisateurId}`);
 
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.FOND_UPLOAD,
+            cible: 'Fond',
+            cibleId: fond.id,
+            description: `Fond personnalisé uploadé: ${dto.nom}`,
+            module: 'apparence',
+            etablissementId,
+            metadata: { entiteLabel: dto.nom },
+        });
+
         return fond;
     }
 
@@ -375,6 +422,17 @@ export class ApparenceService {
         // Supprimer le fond
         await this.fondRepo.remove(fond);
         logger.info(`[Apparence] Fond supprimé: ${fond.nom} par ${utilisateurId}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.FOND_DELETE,
+            cible: 'Fond',
+            cibleId: fond.id,
+            description: `Fond supprimé: ${fond.nom}`,
+            module: 'apparence',
+            etablissementId: undefined,
+            metadata: { entiteLabel: fond.nom },
+        });
     }
 
     // ============================================

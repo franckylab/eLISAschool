@@ -14,6 +14,8 @@ import { Badge, PointsUtilisateur, HistoriquePoints, BadgeUtilisateur } from '..
 import { CreateBadgeDto, AttribuerPointsDto, AttribuerBadgeDto } from '../dto';
 import { logger } from '@common/utils/logger.util';
 import { getParamNumber, getParamBoolean } from '@modules/configuration/utils/config.helper';
+import { auditService } from '@modules/auth/services/audit.service';
+import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 
 /**
  * Service Gamification avec configuration centralisée
@@ -42,9 +44,22 @@ export class GamificationService {
         };
     }
 
-    async createBadge(dto: CreateBadgeDto): Promise<Badge> {
+    async createBadge(dto: CreateBadgeDto, createurId?: string): Promise<Badge> {
         const badge = this.badgeRepo.create(dto);
         await this.badgeRepo.save(badge);
+
+        if (createurId) {
+            await auditService.log({
+                utilisateurId: createurId,
+                action: AuditAction.BADGE_AWARD,
+                cible: 'Badge',
+                cibleId: badge.id,
+                description: `Création du badge ${dto.nom}`,
+                module: 'gamification',
+                metadata: { entiteLabel: dto.nom },
+            });
+        }
+
         return badge;
     }
 
@@ -55,7 +70,7 @@ export class GamificationService {
     /**
      * Attribuer des points (utilise les valeurs configurées)
      */
-    async attribuerPoints(dto: AttribuerPointsDto): Promise<PointsUtilisateur> {
+    async attribuerPoints(dto: AttribuerPointsDto, attribuePar?: string): Promise<PointsUtilisateur> {
         const params = await this.getGamificationParams();
 
         let points = await this.pointsRepo.findOne({ where: { utilisateurId: dto.utilisateurId } });
@@ -79,6 +94,17 @@ export class GamificationService {
 
         const historique = this.historiqueRepo.create({ ...dto, points: pointsToAdd });
         await this.historiqueRepo.save(historique);
+
+        const acteur = attribuePar ?? dto.utilisateurId;
+        await auditService.log({
+            utilisateurId: acteur,
+            action: AuditAction.GAMIFICATION_POINTS,
+            cible: 'PointsUtilisateur',
+            cibleId: points.id,
+            description: `${pointsToAdd} points attribués à ${dto.utilisateurId} pour ${dto.action}`,
+            module: 'gamification',
+            metadata: { points: pointsToAdd, action: dto.action },
+        });
 
         logger.info(`Points attribués: ${pointsToAdd} à ${dto.utilisateurId} pour ${dto.action}`);
         return points;
@@ -126,7 +152,7 @@ export class GamificationService {
         });
     }
 
-    async attribuerBadge(dto: AttribuerBadgeDto): Promise<BadgeUtilisateur> {
+    async attribuerBadge(dto: AttribuerBadgeDto, attribuePar?: string): Promise<BadgeUtilisateur> {
         const existing = await this.badgeUserRepo.findOne({
             where: { utilisateurId: dto.utilisateurId, badgeId: dto.badgeId },
         });
@@ -134,6 +160,19 @@ export class GamificationService {
 
         const badgeUser = this.badgeUserRepo.create(dto);
         await this.badgeUserRepo.save(badgeUser);
+
+        const badge = await this.badgeRepo.findOne({ where: { id: dto.badgeId } });
+        const acteur = attribuePar ?? dto.utilisateurId;
+        await auditService.log({
+            utilisateurId: acteur,
+            action: AuditAction.GAMIFICATION_BADGE,
+            cible: 'BadgeUtilisateur',
+            cibleId: badgeUser.id,
+            description: `Badge ${badge?.nom ?? dto.badgeId} attribué à ${dto.utilisateurId}`,
+            module: 'gamification',
+            metadata: { badgeNom: badge?.nom, badgeId: dto.badgeId },
+        });
+
         return badgeUser;
     }
 

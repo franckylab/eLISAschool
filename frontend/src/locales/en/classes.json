@@ -53,7 +53,8 @@
         "informations": "Information",
         "eleves": "Students",
         "statistiques": "Statistics",
-        "historique": "History"
+        "historique": "History",
+        "validation": "Validation"
     },
     "info": {
         "titreGeneral": "General information",
@@ -258,5 +259,6 @@
         "classeNonTrouvee": "Class not found",
         "statsNonDisponibles": "Statistics unavailable",
         "aucuneClasse": "No classes available"
-    }
+    },
+    "aucunWorkflow": "No active validation workflow"
 }

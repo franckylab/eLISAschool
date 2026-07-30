@@ -219,6 +219,7 @@
     "audit": {
         "timelineLabel": "Journal d'audit",
         "aucunLog": "Aucune trace d'audit pour cette entité",
+        "erreurChargement": "Erreur lors du chargement des traces d'audit",
         "echec": "Échec",
         "champ": "Champ",
         "avant": "Avant",

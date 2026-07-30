@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
     Calendar, ClockArrowUp, Clock, Trash2,
     Play, Lock, Unlock, FileText,
-    CalendarDays, CheckCircle2, XCircle, Timer, Info, History,
+    CalendarDays, CheckCircle2, XCircle, Timer, Info, History, ShieldCheck,
 } from 'lucide-react';
 import {
     useAnneeScolaire, useSupprimerAnneeScolaire,
@@ -22,6 +22,8 @@ import { StatCard, TabsBar, TabsContent, CardSection, InfoField } from '@/compon
 import type { Tab } from '@/components/ui';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { AuditTimeline } from '@/components/ui/AuditTimeline';
+import { ValidationTimeline, ValidationActions } from '@/components/ui';
+import { useWorkflowByEntite } from '@/hooks/use-validation-workflow';
 import { usePermissions } from '@/hooks';
 
 const COULEURS_STATUT: Record<string, string> = {
@@ -71,6 +73,9 @@ export function AnneeScolaireDetailPage() {
     const activer = useActiverAnneeScolaire();
     const cloturer = useCloturerAnneeScolaire();
     const reouvrir = useReouvrirAnneeScolaire();
+
+    const peutValider = hasPermission('annees-scolaires:validate');
+    const workflowQuery = useWorkflowByEntite('annees_scolaires', id);
 
     const estCloturee = annee?.statut === 'archivee';
 
@@ -140,7 +145,8 @@ export function AnneeScolaireDetailPage() {
     const onglets: Tab[] = [
         { id: 'informations', label: t('detail.informations'), description: t('detail.tabInformationsDesc'), icon: FileText },
         { id: 'periodes', label: t('detail.periodes'), description: t('detail.tabPeriodesDesc'), icon: CalendarDays, count: totalPeriodes },
-        ...(hasPermission('audit:periodes:view') || hasPermission('audit:view')
+        ...(peutValider ? [{ id: 'validation', label: t('validation'), icon: ShieldCheck }] : []),
+        ...(hasPermission('audit:annees-scolaires:view') || hasPermission('audit:view')
             ? [{ id: 'historique', label: t('detail.historique'), icon: History }]
             : []),
     ];
@@ -438,6 +444,41 @@ export function AnneeScolaireDetailPage() {
                             </>
                         )}
                     </div>
+                )}
+
+                {ongletActif === 'validation' && peutValider && (
+                    <Card>
+                        <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+                            <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
+                                <ShieldCheck className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-primary inline mr-2" />
+                                {t('validation')}
+                            </h3>
+                            <div className="border-b border-border mb-6" />
+                            {workflowQuery.isLoading ? (
+                                <p className="text-sm text-muted-foreground">{t('chargement')}</p>
+                            ) : workflowQuery.data ? (
+                                <>
+                                    <ValidationTimeline
+                                        historique={workflowQuery.data.historique}
+                                        niveauxRequis={workflowQuery.data.niveauxRequis}
+                                        niveauActuel={workflowQuery.data.niveauActuel}
+                                        statut={workflowQuery.data.statut}
+                                        className="mb-6"
+                                    />
+                                    <ValidationActions
+                                        workflowId={workflowQuery.data.id}
+                                        statut={workflowQuery.data.statut}
+                                        niveauActuel={workflowQuery.data.niveauActuel}
+                                        niveauxRequis={workflowQuery.data.niveauxRequis}
+                                        module="annees_scolaires"
+                                        onValidated={() => workflowQuery.refetch()}
+                                    />
+                                </>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">{t('validation.aucunWorkflow')}</p>
+                            )}
+                        </div>
+                    </Card>
                 )}
 
                 {ongletActif === 'historique' && (

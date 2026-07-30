@@ -49,7 +49,8 @@
         "statut": "Status",
         "clauses": "Clauses",
         "creeLe": "Created on",
-        "modifieLe": "Updated on"
+        "modifieLe": "Updated on",
+        "historique": "History"
     },
     "statut": {
         "EN_ATTENTE_VALIDATION": "Pending validation",

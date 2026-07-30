@@ -39,6 +39,7 @@ import { redisService } from '@common/services/redis.service';
 import { notificationTemplates } from '@modules/notifications/services/notification-templates.service';
 import { messagerieSSEService } from './messagerie-sse.service';
 import { messageMentionService } from './message-mention.service';
+import { auditService, AuditAction } from '@modules/auth';
 
 export class MessagerieService {
     private conversationRepo: Repository<Conversation>;
@@ -115,6 +116,18 @@ export class MessagerieService {
         }
 
         logger.info(`Conversation créée: ${conversation.id} par ${createurId}`);
+
+        await auditService.log({
+            utilisateurId: createurId,
+            action: AuditAction.CONVERSATION_CREATE,
+            cible: 'Conversation',
+            cibleId: conversation.id,
+            description: `Création de la conversation "${conversation.titre}" (${conversation.type})`,
+            module: 'messagerie',
+            etablissementId,
+            metadata: { entiteLabel: conversation.titre || conversation.id },
+        });
+
         return conversation;
     }
 
@@ -453,6 +466,22 @@ export class MessagerieService {
         }
 
         logger.info(`Message envoyé: ${message.id} dans conversation ${conversationId}`);
+
+        await auditService.log({
+            utilisateurId: expediteurId,
+            action: AuditAction.MESSAGE_SEND,
+            cible: 'Message',
+            cibleId: message.id,
+            description: `Envoi d'un message dans la conversation ${conversationId}`,
+            module: 'messagerie',
+            etablissementId,
+            metadata: {
+                entiteLabel: `Message dans ${conversationId}`,
+                parentCible: 'Conversation',
+                parentCibleId: conversationId,
+            },
+        });
+
         return message;
     }
 
@@ -597,6 +626,17 @@ export class MessagerieService {
             modifie: true,
         });
 
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.MESSAGE_EDIT,
+            cible: 'Message',
+            cibleId: message.id,
+            description: `Modification du message ${message.id}`,
+            module: 'messagerie',
+            etablissementId: message.etablissementId,
+            metadata: { entiteLabel: `Message ${message.id}` },
+        });
+
         return message;
     }
 
@@ -631,6 +671,17 @@ export class MessagerieService {
         });
 
         logger.info(`Message supprimé: ${messageId}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.MESSAGE_DELETE,
+            cible: 'Message',
+            cibleId: message.id,
+            description: `Suppression du message ${message.id}`,
+            module: 'messagerie',
+            etablissementId: message.etablissementId,
+            metadata: { entiteLabel: `Message ${message.id}` },
+        });
     }
 
     /**
@@ -897,6 +948,17 @@ export class MessagerieService {
         await messagerieSSEService.broadcastToConversation(id, 'conversation:updated', {
             conversationId: id,
             titre: conversation.titre,
+        });
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.CONVERSATION_UPDATE,
+            cible: 'Conversation',
+            cibleId: conversation.id,
+            description: `Mise à jour de la conversation "${conversation.titre}"`,
+            module: 'messagerie',
+            etablissementId: conversation.etablissementId,
+            metadata: { entiteLabel: conversation.titre || conversation.id },
         });
 
         return conversation;

@@ -148,7 +148,8 @@
         "donneesLieesDescription": "Données liées à cette période",
         "verrouillageActif": "Verrouillage actif — aucune modification possible",
         "descriptionCloturee": "Cette période est clôturée. Toutes les saisies (notes, bulletins) sont verrouillées. Les données existantes restent consultables.",
-        "descriptionNonCloturee": "Les notes et bulletins liés à cette période seront affichés ici. La clôture verrouillera toutes les modifications."
+        "descriptionNonCloturee": "Les notes et bulletins liés à cette période seront affichés ici. La clôture verrouillera toutes les modifications.",
+        "validation": "Validation"
     },
     "colonne": {
         "nom": "Nom",
@@ -191,5 +192,6 @@
         "creer": "Créer",
         "enregistrer": "Enregistrer",
         "confirmer": "Confirmer"
-    }
+    },
+    "aucunWorkflow": "Aucun workflow de validation actif"
 }

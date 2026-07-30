@@ -20,6 +20,8 @@ import { AppError } from '@common/filters/error.filter';
 import { Etablissement } from '@modules/etablissement/entities';
 import { dashboardCacheService } from '@modules/dashboard/services/dashboard-cache.service';
 import { logger } from '@common/utils/logger.util';
+import { auditService } from '@modules/auth/services/audit.service';
+import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 
 export class GroupesService {
     private groupeRepo: Repository<GroupeEtablissement>;
@@ -80,6 +82,17 @@ export class GroupesService {
             await queryRunner.manager.save(admin);
 
             await queryRunner.commitTransaction();
+
+            await auditService.log({
+                utilisateurId,
+                action: AuditAction.GROUPE_CREATE,
+                cible: 'GroupeEtablissement',
+                cibleId: groupe.id,
+                description: `Création du groupe ${groupe.nom} (${groupe.code})`,
+                module: 'groupes-etablissements',
+                metadata: { entiteLabel: groupe.nom, entiteRef: groupe.code },
+            });
+
             logger.info(`Groupe créé: ${groupe.nom} (${groupe.id}) par ${utilisateurId}`);
             return groupe;
         } catch (error) {
@@ -185,7 +198,7 @@ export class GroupesService {
     /**
      * Met à jour un groupe
      */
-    async updateGroupe(groupeId: string, dto: UpdateGroupeDto): Promise<GroupeEtablissement> {
+    async updateGroupe(groupeId: string, dto: UpdateGroupeDto, utilisateurId?: string): Promise<GroupeEtablissement> {
         const groupe = await this.groupeRepo.findOne({ where: { id: groupeId } });
         if (!groupe) {
             throw new AppError('Groupe non trouvé', 404, 'NOT_FOUND');
@@ -203,6 +216,19 @@ export class GroupesService {
         }
 
         const updated = await this.groupeRepo.save(groupe);
+
+        if (utilisateurId) {
+            await auditService.log({
+                utilisateurId,
+                action: AuditAction.GROUPE_UPDATE,
+                cible: 'GroupeEtablissement',
+                cibleId: groupe.id,
+                description: `Modification du groupe ${groupe.nom}`,
+                module: 'groupes-etablissements',
+                metadata: { entiteLabel: groupe.nom },
+            });
+        }
+
         logger.info(`Groupe modifié: ${groupeId}`);
         return updated;
     }
@@ -256,6 +282,16 @@ export class GroupesService {
             // 4. Invalider le cache (après commit)
             await this.invalidateGroupeCache(groupeId);
 
+            await auditService.log({
+                utilisateurId,
+                action: AuditAction.GROUPE_DELETE,
+                cible: 'GroupeEtablissement',
+                cibleId: groupe.id,
+                description: `Suppression du groupe ${groupe.nom} (${groupe.code})`,
+                module: 'groupes-etablissements',
+                metadata: { entiteLabel: groupe.nom, entiteRef: groupe.code },
+            });
+
             logger.info(`Groupe supprimé (soft): ${groupeId} par ${utilisateurId}`);
         } catch (error) {
             await queryRunner.rollbackTransaction();
@@ -302,6 +338,16 @@ export class GroupesService {
 
         // Invalider cache consolidé
         await this.invalidateGroupeCache(groupeId);
+
+        await auditService.log({
+            utilisateurId: ajoutePar,
+            action: AuditAction.GROUPE_ETAB_AJOUTER,
+            cible: 'GroupeEtablissement',
+            cibleId: groupeId,
+            description: `${etablissementIds.length} établissement(s) ajouté(s) au groupe ${groupe.nom}`,
+            module: 'groupes-etablissements',
+            metadata: { entiteLabel: groupe.nom, nombre: etablissementIds.length },
+        });
 
         logger.info(`${etablissementIds.length} établissement(s) ajouté(s) au groupe ${groupeId}`);
     }
@@ -366,7 +412,8 @@ export class GroupesService {
     /**
      * Retire un établissement d'un groupe
      */
-    async removeEtablissement(groupeId: string, etablissementId: string): Promise<void> {
+    async removeEtablissement(groupeId: string, etablissementId: string, utilisateurId?: string): Promise<void> {
+        const groupe = await this.groupeRepo.findOne({ where: { id: groupeId } });
         const result = await this.lienRepo.delete({ groupeId, etablissementId });
         if (result.affected === 0) {
             throw new AppError('Lien non trouvé', 404, 'NOT_FOUND');
@@ -374,6 +421,18 @@ export class GroupesService {
 
         // Invalider cache consolidé
         await this.invalidateGroupeCache(groupeId);
+
+        if (groupe && utilisateurId) {
+            await auditService.log({
+                utilisateurId,
+                action: AuditAction.GROUPE_ETAB_RETIRER,
+                cible: 'GroupeEtablissement',
+                cibleId: groupeId,
+                description: `Établissement ${etablissementId} retiré du groupe ${groupe.nom}`,
+                module: 'groupes-etablissements',
+                metadata: { entiteLabel: groupe.nom },
+            });
+        }
 
         logger.info(`Établissement ${etablissementId} retiré du groupe ${groupeId}`);
     }
@@ -413,16 +472,41 @@ export class GroupesService {
         });
         await this.adminRepo.save(admin);
 
+        const groupe = await this.groupeRepo.findOne({ where: { id: groupeId } });
+
+        await auditService.log({
+            utilisateurId: assignePar,
+            action: AuditAction.GROUPE_ADMIN_AJOUTER,
+            cible: 'GroupeEtablissement',
+            cibleId: groupeId,
+            description: `Admin ${utilisateurId} ajouté au groupe ${groupe?.nom ?? groupeId}`,
+            module: 'groupes-etablissements',
+            metadata: { entiteLabel: groupe?.nom ?? groupeId },
+        });
+
         logger.info(`Admin ${utilisateurId} ajouté au groupe ${groupeId}`);
     }
 
     /**
      * Retire un administrateur du groupe
      */
-    async removeAdmin(groupeId: string, utilisateurId: string): Promise<void> {
+    async removeAdmin(groupeId: string, utilisateurId: string, retirePar?: string): Promise<void> {
+        const groupe = await this.groupeRepo.findOne({ where: { id: groupeId } });
         const result = await this.adminRepo.delete({ groupeId, utilisateurId });
         if (result.affected === 0) {
             throw new AppError('Admin non trouvé', 404, 'NOT_FOUND');
+        }
+
+        if (groupe && retirePar) {
+            await auditService.log({
+                utilisateurId: retirePar,
+                action: AuditAction.GROUPE_ADMIN_RETIRER,
+                cible: 'GroupeEtablissement',
+                cibleId: groupeId,
+                description: `Admin ${utilisateurId} retiré du groupe ${groupe.nom}`,
+                module: 'groupes-etablissements',
+                metadata: { entiteLabel: groupe.nom },
+            });
         }
 
         logger.info(`Admin ${utilisateurId} retiré du groupe ${groupeId}`);

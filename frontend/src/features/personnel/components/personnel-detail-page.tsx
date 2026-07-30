@@ -14,7 +14,7 @@ import {
     Mail, Phone, MapPin, Calendar, Briefcase, Users,
     Edit, Trash2, FileText, Award, Clock, Building2,
     UserCheck, AlertCircle, CheckCircle, XCircle, Building, FileDown,
-    BookOpen, CalendarDays, Star, UserRound, Footprints, GraduationCap, History,
+    BookOpen, CalendarDays, Star, UserRound, Footprints, GraduationCap, History, ShieldCheck,
 } from 'lucide-react';
 import { useMembrePersonnel, useSupprimerPersonnel, usePersonnelContrats, usePersonnelBulletins } from '../hooks/use-personnel';
 import { useDocumentTitle } from '@/hooks';
@@ -35,6 +35,9 @@ import { OngletEvaluations } from './onglets/onglet-evaluations';
 import { OngletAbsences } from './onglets/onglet-absences';
 import { OngletParcours } from './onglets/onglet-parcours';
 import { AuditTimeline } from '@/components/ui/AuditTimeline';
+import { ValidationTimeline } from '@/components/ui/ValidationTimeline';
+import { ValidationActions } from '@/components/ui/ValidationActions';
+import { useWorkflowByEntite } from '@/hooks/use-validation-workflow';
 import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
@@ -47,7 +50,7 @@ import { useModifierStatut, useModifierDateEntree, useModifierCompetences } from
 import type { ContratPersonnel, BulletinPaie } from '../types/personnel.types';
 import type { AffectationPoste } from '../types/affectation.types';
 
-type OngletActif = 'informations' | 'affectations' | 'matieres' | 'edt' | 'contrat-salaire' | 'heures-cours' | 'evaluations' | 'absences' | 'parcours' | 'fonctions' | 'historique';
+type OngletActif = 'informations' | 'affectations' | 'matieres' | 'edt' | 'contrat-salaire' | 'heures-cours' | 'evaluations' | 'absences' | 'parcours' | 'fonctions' | 'historique' | 'validation';
 
 const STATUT_KEY: Record<string, string> = {
     ACTIF: 'ACTIF',
@@ -104,6 +107,9 @@ export function PersonnelDetailPage() {
     const canEditIdentity = hasPermission('personnel:edit:identity');
     const canEditCompetences = hasPermission('personnel:edit:competences');
 
+    const peutValider = hasPermission('personnel:validate');
+    const workflowQuery = useWorkflowByEntite('personnel', id);
+
     const [editing, setEditing] = useState<string | null>(null); // field name being edited
     const [editValue, setEditValue] = useState<string>('');
 
@@ -133,6 +139,9 @@ export function PersonnelDetailPage() {
         const historiqueTab: Tab[] = canAudit
             ? [{ id: 'historique', label: t('detail.ongletHistorique'), icon: History }]
             : [];
+        const validationTab: Tab[] = peutValider
+            ? [{ id: 'validation', label: t('detail.ongletValidation'), icon: ShieldCheck }]
+            : [];
 
         if (estEnseignant) {
             return [
@@ -140,6 +149,7 @@ export function PersonnelDetailPage() {
                 { id: 'matieres', label: t('detail.ongletMatieres'), icon: BookOpen },
                 { id: 'edt', label: t('detail.ongletEdt'), icon: CalendarDays },
                 ...communs.slice(2, 3),
+                ...validationTab,
                 { id: 'heures-cours', label: t('detail.ongletHeuresCours'), icon: Clock },
                 { id: 'evaluations', label: t('detail.ongletEvaluations'), icon: Star },
                 { id: 'absences', label: t('detail.ongletAbsences'), icon: UserRound },
@@ -151,11 +161,12 @@ export function PersonnelDetailPage() {
 
         return [
             ...communs.slice(0, 3),
+            ...validationTab,
             { id: 'heures-cours', label: t('detail.ongletHeuresCours'), icon: Clock },
             ...communs.slice(3),
             ...historiqueTab,
         ];
-    }, [estEnseignant, t, hasPermission]);
+    }, [estEnseignant, t, hasPermission, peutValider]);
 
     if (isLoading) {
         return <div className="p-6"><LoadingState message={t('detail.chargement')} /></div>;
@@ -810,6 +821,41 @@ export function PersonnelDetailPage() {
                             </h3>
                             <div className="border-b border-border mb-4" />
                             <AuditTimeline cible="MembrePersonnel" cibleId={id} module="personnel" />
+                        </div>
+                    </Card>
+                )}
+
+                {ongletActif === 'validation' && peutValider && (
+                    <Card>
+                        <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
+                            <h3 className="flex items-center gap-[var(--gap-xs)] text-base font-semibold text-foreground mb-4">
+                                <ShieldCheck className="w-5 h-5 text-primary" />
+                                {t('detail.validation')}
+                            </h3>
+                            <div className="border-b border-border mb-6" />
+                            {workflowQuery.isLoading ? (
+                                <p className="text-sm text-muted-foreground">{t('detail.chargement')}</p>
+                            ) : workflowQuery.data ? (
+                                <>
+                                    <ValidationTimeline
+                                        historique={workflowQuery.data.historique}
+                                        niveauxRequis={workflowQuery.data.niveauxRequis}
+                                        niveauActuel={workflowQuery.data.niveauActuel}
+                                        statut={workflowQuery.data.statut}
+                                        className="mb-6"
+                                    />
+                                    <ValidationActions
+                                        workflowId={workflowQuery.data.id}
+                                        statut={workflowQuery.data.statut}
+                                        niveauActuel={workflowQuery.data.niveauActuel}
+                                        niveauxRequis={workflowQuery.data.niveauxRequis}
+                                        module="personnel"
+                                        onValidated={() => workflowQuery.refetch()}
+                                    />
+                                </>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">{t('validation.aucunWorkflow')}</p>
+                            )}
                         </div>
                     </Card>
                 )}

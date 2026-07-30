@@ -18,6 +18,7 @@ import { CreateCompetenceDto, UpdateCompetenceDto, QueryCompetencesDto } from '.
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
+import { auditService, AuditAction } from '@modules/auth';
 
 export class CompetencesService {
     private repo: Repository<Competence>;
@@ -26,7 +27,7 @@ export class CompetencesService {
         this.repo = AppDataSource.getRepository(Competence);
     }
 
-    async create(dto: CreateCompetenceDto, etablissementId: string): Promise<Competence> {
+    async create(dto: CreateCompetenceDto, etablissementId: string, utilisateurId?: string): Promise<Competence> {
         // Vérifier unicité du code PAR établissement
         const existing = await this.repo.findOne({ 
             where: { code: dto.code, etablissementId } 
@@ -41,6 +42,18 @@ export class CompetencesService {
         });
         await this.repo.save(competence);
         logger.info(`Compétence créée: ${dto.libelle} pour établissement ${etablissementId}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.COMPETENCE_CREATE,
+            cible: 'Competence',
+            cibleId: competence.id,
+            description: `Compétence créée: ${dto.libelle}`,
+            module: 'competences',
+            etablissementId,
+            metadata: { entiteLabel: dto.libelle },
+        });
+
         return competence;
     }
 
@@ -118,17 +131,40 @@ export class CompetencesService {
         return competence;
     }
 
-    async update(id: string, dto: UpdateCompetenceDto, etablissementId: string): Promise<Competence> {
+    async update(id: string, dto: UpdateCompetenceDto, etablissementId: string, utilisateurId?: string): Promise<Competence> {
         const competence = await this.findOne(id, etablissementId);
         Object.assign(competence, dto);
         await this.repo.save(competence);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.COMPETENCE_UPDATE,
+            cible: 'Competence',
+            cibleId: competence.id,
+            description: `Compétence modifiée: ${competence.libelle}`,
+            module: 'competences',
+            etablissementId,
+            metadata: { entiteLabel: competence.libelle },
+        });
+
         return competence;
     }
 
-    async delete(id: string, etablissementId: string): Promise<void> {
+    async delete(id: string, etablissementId: string, utilisateurId?: string): Promise<void> {
         const competence = await this.findOne(id, etablissementId);
         await this.repo.remove(competence);
         logger.info(`Compétence supprimée: ${id}`);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.COMPETENCE_DELETE,
+            cible: 'Competence',
+            cibleId: id,
+            description: `Compétence supprimée: ${competence.libelle}`,
+            module: 'competences',
+            etablissementId,
+            metadata: { entiteLabel: competence.libelle },
+        });
     }
 }
 

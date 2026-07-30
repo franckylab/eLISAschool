@@ -78,5 +78,7 @@
     "erreurModification": "Erreur lors de la modification du bulletin",
     "erreurSuppression": "Erreur lors de la suppression du bulletin",
     "erreurExport": "Erreur lors de l'export du bulletin",
-    "erreurPopupBloquee": "La fenêtre d'impression a été bloquée par le navigateur"
+    "erreurPopupBloquee": "La fenêtre d'impression a été bloquée par le navigateur",
+    "validation": "Validation",
+    "aucunWorkflow": "Aucun workflow de validation actif"
 }

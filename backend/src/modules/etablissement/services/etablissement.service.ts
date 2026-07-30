@@ -15,6 +15,7 @@ import { validationWorkflowService } from '@modules/validation-workflow/services
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { StatutPersonnel } from '@modules/personnel/entities';
 import { redimensionnerLogo } from '@common/utils/image-processor.util';
+import { auditService, AuditAction } from '@modules/auth';
 
 export interface EtablissementStats {
     totalEtablissements: number;
@@ -90,6 +91,19 @@ export class EtablissementService {
                 }, createurId);
             }
 
+            await auditService.log({
+                utilisateurId: createurId,
+                action: AuditAction.ETABLISSEMENT_CREATE,
+                cible: 'Etablissement',
+                cibleId: etablissement.id,
+                description: requireValidation
+                    ? `Création établissement en attente de validation: ${dto.nom}`
+                    : `Création établissement: ${dto.nom}`,
+                nouvellesValeurs: dto as unknown as Record<string, unknown>,
+                module: 'etablissement',
+                metadata: { entiteLabel: etablissement.nom, entiteRef: etablissement.code },
+            });
+
             logger.info(`Établissement créé: ${dto.nom} (${etablissement.id})`);
             return etablissement;
         } catch (error: any) {
@@ -145,10 +159,29 @@ export class EtablissementService {
     /**
      * Met à jour un établissement
      */
-    async update(id: string, dto: UpdateEtablissementDto): Promise<Etablissement> {
+    async update(id: string, dto: UpdateEtablissementDto, createurId?: string): Promise<Etablissement> {
         const etablissement = await this.findOne(id);
+        const anciennesValeurs = {
+            nom: etablissement.nom,
+            code: etablissement.code,
+            actif: etablissement.actif,
+            statut: etablissement.statut,
+        };
         Object.assign(etablissement, dto);
         await this.etablissementRepo.save(etablissement);
+
+        await auditService.log({
+            utilisateurId: createurId,
+            action: AuditAction.ETABLISSEMENT_UPDATE,
+            cible: 'Etablissement',
+            cibleId: etablissement.id,
+            description: `Mise à jour établissement: ${etablissement.nom}`,
+            anciennesValeurs,
+            nouvellesValeurs: dto as unknown as Record<string, unknown>,
+            module: 'etablissement',
+            metadata: { entiteLabel: etablissement.nom, entiteRef: etablissement.code },
+        });
+
         logger.info(`Établissement mis à jour: ${etablissement.nom} (${id})`);
         return etablissement;
     }

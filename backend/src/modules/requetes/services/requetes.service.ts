@@ -15,6 +15,7 @@ import { CreateRequeteDto, TraiterRequeteDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { getParamNumber, getParamBoolean } from '@modules/configuration/utils/config.helper';
+import { auditService, AuditAction } from '@modules/auth';
 
 /**
  * Service Requêtes avec configuration centralisée
@@ -65,6 +66,18 @@ export class RequetesService {
         }
 
         logger.info(`[${etablissementId}] Requête créée: ${numero}`);
+
+        await auditService.log({
+            utilisateurId: demandeurId,
+            action: AuditAction.REQUETE_CREATE,
+            cible: 'Requete',
+            cibleId: requete.id,
+            description: `Création de la requête ${numero} (${requete.type})`,
+            module: 'requetes',
+            etablissementId,
+            metadata: { entiteLabel: numero },
+        });
+
         return requete;
     }
 
@@ -161,6 +174,22 @@ export class RequetesService {
         }
 
         logger.info(`Requête ${requete.numero} traitée: ${dto.decision}`);
+
+        await auditService.log({
+            utilisateurId: approbateurId,
+            action: AuditAction.REQUETE_EXECUTE,
+            cible: 'Requete',
+            cibleId: requete.id,
+            description: `Requête ${requete.numero} traitée: ${dto.decision} (niveau ${requete.niveauActuel})`,
+            module: 'requetes',
+            etablissementId: requete.etablissementId,
+            metadata: {
+                entiteLabel: requete.numero,
+                decision: dto.decision,
+                niveauActuel: requete.niveauActuel,
+            },
+        });
+
         return requete;
     }
 
@@ -182,6 +211,18 @@ export class RequetesService {
         await this.requeteRepo.save(requete);
 
         logger.info(`Requête ${requete.numero} annulée`);
+
+        await auditService.log({
+            utilisateurId: demandeurId,
+            action: AuditAction.REQUETE_DELETE,
+            cible: 'Requete',
+            cibleId: requete.id,
+            description: `Requête ${requete.numero} annulée par le demandeur`,
+            module: 'requetes',
+            etablissementId: requete.etablissementId,
+            metadata: { entiteLabel: requete.numero },
+        });
+
         return requete;
     }
 

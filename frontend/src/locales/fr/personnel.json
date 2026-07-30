@@ -103,6 +103,7 @@
         "ongletEvaluations": "Évaluations",
         "ongletAbsences": "Absences",
         "ongletHistorique": "Historique",
+        "ongletValidation": "Validation",
         "ongletParcours": "Parcours",
         "ongletDocuments": "Documents",
         "infosPersonnelles": "Informations personnelles",
@@ -187,7 +188,11 @@
         "documentsCertifications": "Documents et certifications",
         "ajouterDocument": "Ajouter un document",
         "aucunDocument": "Aucun document uploadé",
-        "aucunDocumentDesc": "CV, diplômes, certificats seront visibles ici"
+        "aucunDocumentDesc": "CV, diplômes, certificats seront visibles ici",
+        "validation": "Validation du dossier"
+    },
+    "validation": {
+        "aucunWorkflow": "Aucun workflow de validation trouvé"
     },
     "fonctions": {
         "titre": "Fonctions assignées",

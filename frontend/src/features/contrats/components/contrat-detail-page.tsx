@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, FileSignature, CheckCircle, XCircle, Calendar, Wallet, Clock, User, Briefcase } from 'lucide-react';
+import { Edit, Trash2, FileSignature, CheckCircle, XCircle, Calendar, Wallet, Clock, User, Briefcase, History } from 'lucide-react';
 import { useContrats, useSupprimerContrat } from '../hooks/use-contrats';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/ui/Skeleton';
@@ -14,6 +14,7 @@ import { usePermissions } from '@/hooks';
 import { formatDate } from '@/lib/date-utils';
 import { formatMontant } from '@/lib/format-utils';
 import { ContratWizardModal } from './contrat-wizard-modal';
+import { AuditTimeline } from '@/components/ui/AuditTimeline';
 
 const STATUT_CLASSES: Record<string, string> = {
     EN_ATTENTE_VALIDATION: 'bg-warning/10 text-warning',
@@ -123,6 +124,17 @@ export function ContratDetailPage({ contratId }: { contratId: string }) {
                     </Card>
                 </div>
             </div>
+
+            {(hasPermission('audit:contrats:view') || hasPermission('audit:view')) && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{t('historique')}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <AuditTimeline cible="ContratPersonnel" cibleId={contratId} module="contrats" />
+                    </CardContent>
+                </Card>
+            )}
 
             <ContratWizardModal
                 open={editOpen}

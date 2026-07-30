@@ -219,6 +219,7 @@
     "audit": {
         "timelineLabel": "Audit log",
         "aucunLog": "No audit trail for this entity",
+        "erreurChargement": "Error loading audit trail",
         "echec": "Failed",
         "champ": "Field",
         "avant": "Before",
