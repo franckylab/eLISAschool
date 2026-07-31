@@ -21,7 +21,6 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { usePermissions, useDocumentTitle } from '@/hooks';
 import { useAuthStore } from '@/stores/auth.store';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { OrganigrammeFlowView } from './OrganigrammeFlowView';
@@ -325,6 +324,13 @@ export function OrganigrammePage() {
             className="flex flex-col h-full"
             style={{ gap: 'var(--gap-md)', padding: 'var(--space-lg)' }}
         >
+            {/* Breadcrumbs via PageHeader */}
+            <PageHeader
+                showBreadcrumbs
+                breadcrumbLabel={nomEtablissement || t('organigramme.titre', 'Organigramme')}
+                className="mb-0"
+            />
+
             {/* Header avec onglets intégrés */}
             <div
                 className="relative overflow-hidden rounded-2xl"
@@ -337,9 +343,6 @@ export function OrganigrammePage() {
                 <div className="absolute -right-6 -top-6 pointer-events-none select-none" aria-hidden>
                     <Network className="text-white/[0.07]" style={{ width: 'clamp(8rem, 15vw, 14rem)', height: 'clamp(8rem, 15vw, 14rem)' }} />
                 </div>
-
-                {/* Breadcrumbs */}
-                <Breadcrumbs currentLabel={nomEtablissement || t('organigramme.titre', 'Organigramme')} inverted />
 
                 {/* Contenu : titre + onglets */}
                 <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

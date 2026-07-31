@@ -49,6 +49,14 @@ export function ContratDetailPage({ contratId }: { contratId: string }) {
         ? `${contrat.membrePersonnel.utilisateur.profil.prenom} ${contrat.membrePersonnel.utilisateur.profil.nom}`
         : contrat.membrePersonnel?.matricule || '-';
 
+    const statutVariant: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
+        EN_ATTENTE_VALIDATION: 'warning',
+        ACTIF: 'success',
+        EXPIRE: 'info',
+        ROMPU: 'danger',
+        RENEGOCIE: 'info',
+    };
+
     return (
         <div className="flex flex-col gap-[var(--gap-lg)]" style={{ padding: 'clamp(0.5rem, 0.4rem + 0.5vw, 1.5rem)' }}>
             <PageHeader
@@ -57,6 +65,7 @@ export function ContratDetailPage({ contratId }: { contratId: string }) {
                 subtitle={contrat.typeContrat}
                 icon={FileSignature}
                 onBack={() => navigate({ to: '/contrats' })}
+                status={{ label: t(`statut.${contrat.statut}`), variant: statutVariant[contrat.statut] || 'info' }}
                 actions={
                     <div className="flex gap-2">
                         {hasPermission('contrats:edit') && (

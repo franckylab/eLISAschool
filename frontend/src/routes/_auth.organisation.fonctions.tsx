@@ -1,26 +1,8 @@
-import { createFileRoute, Outlet, useLocation } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { requirePermission } from '@/app/permission-guards';
-import { motion } from 'framer-motion';
-import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
+import { ModuleLayout } from '@/components/layout/ModuleLayout';
 
 export const Route = createFileRoute('/_auth/organisation/fonctions')({
     beforeLoad: () => requirePermission('organisation:fonctions:read'),
-    component: FonctionsLayout,
+    component: () => <ModuleLayout />,
 });
-
-function FonctionsLayout() {
-    const { pathname } = useLocation();
-
-    return (
-        <motion.div
-            key={pathname}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-        >
-            <ErrorBoundary>
-                <Outlet />
-            </ErrorBoundary>
-        </motion.div>
-    );
-}

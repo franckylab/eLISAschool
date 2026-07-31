@@ -86,6 +86,7 @@ export function ArchivesPage() {
                 enablePinning
                 enableColumnVisibility
                 searchPlaceholder={t('rechercher')}
+                enableCollapsibleFilters
                 filtres={[
                     {
                         key: 'categorie',

@@ -1717,3 +1717,30 @@ Demande d'un indicateur de connexion dans le header eLISAschool, avec détection
 - i18n FR/EN parité complète
 - Permissions 3 niveaux attribuées à tous les rôles (view) ou ADMIN (details/admin)
 - Cache Redis 30s + fallback mémoire pour sonde internet
+
+## Consolidation StatCard + UX unifiée — Session 2025
+
+### Phase 1 — StatCard partagé enrichi
+- **`components/ui/StatCard.tsx`** : ajout `orientation` (horizontal/vertical), `compact`, effets hover `scale(1.02)` + `shadow-md`, extraction `TrendBadge`
+- **`audit-page.tsx`** : suppression StatCard local (36 lignes), import StatCard partagé avec `compact` + `tone`
+
+### Phase 2 — Breadcrumb standardisé
+- **`PageHeader.tsx`** : `showBreadcrumbs: true` par défaut
+- Suppression `<Breadcrumbs />` directs dans 4 fichiers : `eleve-detail-page.tsx`, `hero-header.tsx`, `SalleDetailPage.tsx`, `OrganigrammePage.tsx`
+
+### Phase 3 — Filtres DataTable
+- Ajout `enableCollapsibleFilters` sur 10 pages : evenements, courriers, bibliotheque, sante, archives, documents, sondages, inventaire, examens, eleves, discipline
+
+### Phase 4 — StepperModal (modals multi-étapes)
+- **`components/modals/StepperModal.tsx`** : NOUVEAU composant générique — indicateur progression (barre + dots), navigation prev/next, validation par étape, animations Framer Motion
+- **`classe-form-modal.tsx`** : conversion CustomModal+stepper manuel → StepperModal (3 étapes création, 2 étapes édition)
+- **`etablissement-form-modal.tsx`** : conversion → StepperModal (3 étapes : Identité, Contact & Communication, Configuration)
+- **`utilisateur-form-modal.tsx`** : conversion → StepperModal (3 étapes : Identité & Contact, Rôle & Accès, Profil)
+
+### Phase 5 — Badge workflow PageHeader
+- **`contrat-detail-page.tsx`** : ajout `status` prop (EN_ATTENTE_VALIDATION→warning, ACTIF→success, EXPIRE→info, ROMPU→danger)
+- **`bulletin-detail-page.tsx`** : ajout `status` prop (publié→success, non publié→warning)
+
+### Phase 6 — Backend : tendances stats
+- **`audit.controller.ts`** : ajout `trends` dans `/api/audit/logs/statistics` — comparaison 24h vs 24-48h
+- **`notes.service.ts`** : ajout `trends` dans `getStatistiques` — comparaison 30j vs 30-60j (nombreNotes + moyenne)

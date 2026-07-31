@@ -162,6 +162,7 @@ export function SantePage() {
                 enablePinning
                 enableColumnVisibility
                 searchPlaceholder={t('rechercher')}
+                enableCollapsibleFilters
                 filtres={[
                     {
                         key: 'orientation',

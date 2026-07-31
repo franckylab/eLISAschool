@@ -243,6 +243,7 @@ export function SondagesPage() {
                 searchPlaceholder={t('rechercher')}
                 onSearchChange={(valeur) => setRecherche(valeur)}
                 disableClientSearch
+                enableCollapsibleFilters
                 filtres={[
                     {
                         key: 'categorie',

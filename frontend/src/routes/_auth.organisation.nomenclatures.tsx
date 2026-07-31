@@ -1,18 +1,8 @@
-import { createFileRoute, Outlet, useLocation } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { requirePermission } from '@/app/permission-guards';
-import { motion } from 'framer-motion';
-import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
+import { ModuleLayout } from '@/components/layout/ModuleLayout';
 
 export const Route = createFileRoute('/_auth/organisation/nomenclatures')({
     beforeLoad: () => requirePermission('organisation:nomenclatures:read'),
-    component: NomenclaturesLayout,
+    component: () => <ModuleLayout />,
 });
-
-function NomenclaturesLayout() {
-    const { pathname } = useLocation();
-    return (
-        <motion.div key={pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-            <ErrorBoundary><Outlet /></ErrorBoundary>
-        </motion.div>
-    );
-}

@@ -14,7 +14,7 @@ import { ArrowLeft, Edit, Download, Mail, Phone, MapPin, Calendar, User, AlertCi
 import { useEleve, useEleveDocuments } from '..';
 import { EleveFormModal } from './eleve-form-modal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { usePermissions } from '@/hooks';
 import { AuditTimeline } from '@/components/ui/AuditTimeline';
@@ -90,7 +90,7 @@ export function EleveDetailPage() {
 
     return (
         <div className="flex flex-col gap-6 p-6">
-            <Breadcrumbs />
+            <PageHeader showBreadcrumbs />
 
             {/* En-tête */}
             <motion.div

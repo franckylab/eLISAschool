@@ -20,7 +20,7 @@
 
 import { useState, useEffect, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Save, ChevronRight, ChevronLeft, CheckCircle2 } from 'lucide-react';
+import { FileText, Settings, CheckCircle2 } from 'lucide-react';
 import { useCreerClasse, useModifierClasse } from '../hooks/use-classes';
 import { useProgrammes } from '@/features/programmes/hooks/use-programmes';
 import { useToutesAnneesScolaires } from '@/features/annees-scolaires/hooks/use-toutes-annees-scolaires';
@@ -28,8 +28,7 @@ import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
 import { useToutesFilieres } from '@/features/filieres/hooks/use-filieres';
 import { SalleSelect } from '@/features/salles/components/SalleSelect';
 import type { Salle } from '@/features/salles/types/salle.types';
-import { CustomModal } from '@/components/modals/CustomModal';
-import { ElisaButton } from '@/components/ui/ElisaButton';
+import { StepperModal, type StepperStep } from '@/components/modals/StepperModal';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -49,8 +48,6 @@ interface ClasseFormModalProps {
     onSuccess: () => void;
     onCancel: () => void;
 }
-
-type EtapeFormulaire = 1 | 2 | 3;
 
 interface ErreursFormulaire {
     nom?: string;
@@ -77,7 +74,6 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
     }));
 
     // État du formulaire
-    const [etape, setEtape] = useState<EtapeFormulaire>(1);
     const [erreurs, setErreurs] = useState<ErreursFormulaire>({});
 
     // Données étape 1 : Modèle de classe
@@ -194,30 +190,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
         return Object.keys(nouvellesErreurs).length === 0;
     };
 
-    // Navigation entre étapes
-    const allerEtape2 = () => {
-        if (validerEtape1()) {
-            setEtape(2);
-        }
-    };
-
-    const allerEtape3 = () => {
-        if (validerEtape2()) {
-            setEtape(3);
-        }
-    };
-
-    const retournerEtape1 = () => {
-        setErreurs({});
-        setEtape(1);
-    };
-
-    const retournerEtape2 = () => {
-        setErreurs({});
-        setEtape(2);
-    };
-
-    // Soumission finale (depuis l'étape 3)
+    // Soumission finale (depuis la dernière étape)
     const handleSubmit = async () => {
         try {
             if (mode === 'creation') {
@@ -285,409 +258,354 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
         : t('formulaire.modifierTitre');
 
     const description = mode === 'creation'
-        ? t('formulaire.creerDescription', { etape, total: 3 })
-        : `${t('formulaire.modifierDescription')} — ${t('formulaire.etape')} ${etape}/3`;
+        ? t('formulaire.creerDescription', { etape: 1, total: 3 })
+        : t('formulaire.modifierDescription');
 
-    // Footer dynamique selon l'étape
-    const footer = (() => {
-        if (etape === 1) {
-            return (
-                <>
-                    <ElisaButton variant="outline" onClick={onCancel}>
-                        {t('boutons.annuler')}
-                    </ElisaButton>
-                    <ElisaButton
-                        variant="primary"
-                        onClick={allerEtape2}
-                        icon={<ChevronRight className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                    >
-                        {t('boutons.suivant')}
-                    </ElisaButton>
-                </>
-            );
-        }
-        if (etape === 2) {
-            return (
-                <>
-                    <ElisaButton variant="outline" onClick={onCancel}>
-                        {t('boutons.annuler')}
-                    </ElisaButton>
-                    <ElisaButton
-                        variant="outline"
-                        onClick={retournerEtape1}
-                        icon={<ChevronLeft className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                    >
-                        {t('boutons.precedent')}
-                    </ElisaButton>
-                    <ElisaButton
-                        variant="primary"
-                        onClick={allerEtape3}
-                        icon={<ChevronRight className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                    >
-                        {t('boutons.suivant')}
-                    </ElisaButton>
-                </>
-            );
-        }
+    // Définition des étapes pour StepperModal
+    const steps: StepperStep[] = mode === 'edition'
+        ? [
+            {
+                id: 'modele',
+                label: t('formulaire.titreModele'),
+                icon: FileText,
+                content: renderEtapeModele(),
+                validate: validerEtape1,
+                validateError: erreurs.nom || erreurs.niveauId,
+            },
+            {
+                id: 'resume',
+                label: t('formulaire.resume'),
+                icon: CheckCircle2,
+                content: renderEtapeResume(),
+            },
+        ]
+        : [
+            {
+                id: 'modele',
+                label: t('formulaire.titreModele'),
+                icon: FileText,
+                content: renderEtapeModele(),
+                validate: validerEtape1,
+                validateError: erreurs.nom || erreurs.niveauId,
+            },
+            {
+                id: 'instance',
+                label: t('formulaire.titreInstance'),
+                icon: Settings,
+                content: renderEtapeInstance(),
+                validate: validerEtape2,
+                validateError: erreurs.anneeScolaireId,
+            },
+            {
+                id: 'resume',
+                label: t('formulaire.resume'),
+                icon: CheckCircle2,
+                content: renderEtapeResume(),
+            },
+        ];
+
+    // Rendu Étape 1 : Modèle de classe
+    function renderEtapeModele() {
         return (
-            <>
-                <ElisaButton variant="outline" onClick={onCancel}>
-                    {t('boutons.annuler')}
-                </ElisaButton>
-                <ElisaButton
-                    variant="outline"
-                    onClick={retournerEtape2}
-                    icon={<ChevronLeft className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                >
-                    {t('boutons.precedent')}
-                </ElisaButton>
-                <ElisaButton
-                    variant="primary"
-                    isLoading={isLoading}
-                    icon={<CheckCircle2 className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
-                    onClick={handleSubmit}
-                >
-                    {mode === 'creation' ? t('boutons.confirmer') : t('boutons.enregistrer')}
-                </ElisaButton>
-            </>
+            <div className="space-y-[var(--space-md)]">
+                {/* Nom et Code */}
+                <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-md)]`}>
+                    <ElisaInput
+                        label={t('champs.nom')}
+                        value={modeleData.nom || ''}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => handleChangeModele('nom', e.target.value)}
+                        error={erreurs.nom}
+                        placeholder={t('champs.nomPlaceholder')}
+                        required
+                    />
+                    <ElisaInput
+                        label={t('champs.code')}
+                        value={modeleData.code || ''}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => handleChangeModele('code', e.target.value)}
+                        error={erreurs.code}
+                        placeholder={t('champs.codePlaceholder')}
+                    />
+                </div>
+
+                {/* Niveau et Filière */}
+                <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-md)]`}>
+                    <ElisaSelect
+                        label={t('champs.niveau')}
+                        value={modeleData.niveauId || ''}
+                        onValueChange={(value) => handleChangeModele('niveauId', value)}
+                        error={erreurs.niveauId}
+                        options={optionsNiveaux}
+                        placeholder={t('champs.selectionnerNiveau')}
+                        required
+                    />
+                    {estSecondCycle && (
+                        <ElisaSelect
+                            label={t('champs.filiere')}
+                            value={modeleData.filiereId || ''}
+                            onValueChange={(value) => handleChangeModele('filiereId', value || null)}
+                            options={optionsFilieres}
+                            placeholder={t('champs.selectionnerFiliere')}
+                        />
+                    )}
+                </div>
+
+                {/* Type de classe et Créneau horaire */}
+                <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-md)]`}>
+                    <ElisaSelect
+                        label={t('champs.typeClasse')}
+                        value={modeleData.typeClasse || TypeClasseEnum.NORMALE}
+                        onValueChange={(value) => handleChangeModele('typeClasse', value as TypeClasse)}
+                        options={optionsTypesClasse}
+                    />
+                    <ElisaSelect
+                        label={t('champs.creneauHoraire')}
+                        value={modeleData.creneauHoraire || CreneauHoraireEnum.MATIN}
+                        onValueChange={(value) => handleChangeModele('creneauHoraire', value as CreneauHoraire)}
+                        options={optionsCreneaux}
+                    />
+                </div>
+
+                {/* Description */}
+                <div>
+                    <label
+                        className="block text-sm font-medium text-[var(--color-text-primary)] mb-1"
+                        style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
+                    >
+                        {t('champs.description')}
+                    </label>
+                    <textarea
+                        value={modeleData.description || ''}
+                        onChange={(e) => handleChangeModele('description', e.target.value)}
+                        placeholder={t('champs.descriptionPlaceholder')}
+                        rows={3}
+                        className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] resize-none focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent"
+                        style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}
+                    />
+                </div>
+
+                {/* Statut actif/inactif (mode édition uniquement) */}
+                {mode === 'edition' && (
+                    <div className="flex items-center gap-[var(--gap-md)]">
+                        <label
+                            className="flex items-center gap-[var(--gap-sm)] cursor-pointer"
+                            style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={modeleData.actif ?? true}
+                                onChange={(e) => {
+                                    const nouveauActif = e.target.checked;
+                                    setModeleData(prev => ({ ...prev, actif: nouveauActif }));
+                                }}
+                                className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-dominant-600)] focus:ring-[var(--color-dominant-500)]"
+                            />
+                            <span className="font-medium text-[var(--color-text-primary)]">
+                                {t('champs.actif')}
+                            </span>
+                            <span className={`ml-2 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                                modeleData.actif
+                                    ? 'bg-success/10 text-success'
+                                    : 'bg-muted text-muted-foreground'
+                            }`}>
+                                {modeleData.actif ? t('statut.actif') : t('statut.inactif')}
+                            </span>
+                        </label>
+                    </div>
+                )}
+            </div>
         );
-    })();
+    }
+
+    // Rendu Étape 2 : Instance annuelle
+    function renderEtapeInstance() {
+        return (
+            <div className="space-y-[var(--space-md)]">
+                {/* Année scolaire et Salle */}
+                <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-md)]`}>
+                    {mode === 'creation' ? (
+                        <ElisaSelect
+                            label={t('champs.anneeScolaire')}
+                            value={instanceData.anneeScolaireId || ''}
+                            onValueChange={(value) => handleChangeInstance('anneeScolaireId', value)}
+                            error={erreurs.anneeScolaireId}
+                            options={optionsAnneesScolaires}
+                            placeholder={t('champs.selectionnerAnnee')}
+                            required
+                        />
+                    ) : (
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-secondary">{t('champs.anneeScolaire')}</label>
+                            <div className="px-3 py-2 rounded-lg border border-border bg-muted text-sm text-secondary">
+                                {classe?.anneeScolaire?.libelle || '-'}
+                            </div>
+                        </div>
+                    )}
+                    <SalleSelect
+                        value={instanceData.sallePrincipaleId || ''}
+                        onChange={handleSalleChange}
+                        label={t('champs.sallePrincipale')}
+                    />
+                </div>
+
+                {/* Effectif max */}
+                <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-md)]`}>
+                    <div className="space-y-1">
+                        {selectedCapacite && (
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="inline-flex items-center rounded-full bg-info/10 px-2.5 py-0.5 text-xs font-medium text-info">
+                                    {t('champs.capaciteSalle', { count: selectedCapacite })}
+                                </span>
+                            </div>
+                        )}
+                        <ElisaInput
+                            label={t('champs.effectifMax')}
+                            type="number"
+                            value={instanceData.effectifMax?.toString() || '50'}
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => handleChangeInstance('effectifMax', parseInt(e.target.value) || 50)}
+                            min="1"
+                            max={selectedCapacite || 200}
+                            hint={selectedCapacite ? t('champs.limiteeParSalle', { max: selectedCapacite }) : t('champs.effectifMaxHint')}
+                        />
+                    </div>
+                </div>
+
+                {/* Programme pédagogique */}
+                <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-md)]`}>
+                    <ElisaSelect
+                        label={t('champs.programme')}
+                        value={instanceData.programmeId || ''}
+                        onValueChange={(value) => handleChangeInstance('programmeId', value || null)}
+                        options={optionsProgrammes}
+                        placeholder={t('champs.selectionnerProgramme')}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    // Rendu Étape 3 : Résumé
+    function renderEtapeResume() {
+        return (
+            <div className="space-y-[var(--space-md)]">
+                {/* Message de confirmation */}
+                <div className="flex items-center gap-[var(--gap-sm)] rounded-[var(--radius-md)] border border-[var(--color-dominant-600)]/30 bg-[var(--color-dominant-600)]/5 p-[var(--space-md)]">
+                    <CheckCircle2 className="w-5 h-5 text-[var(--color-dominant-600)] shrink-0" />
+                    <p
+                        className="text-[var(--color-text-primary)]"
+                        style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
+                    >
+                        {mode === 'creation' ? t('formulaire.confirmMessage') : t('formulaire.verifierModifications')}
+                    </p>
+                </div>
+
+                {/* Section Modèle de classe */}
+                <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-secondary)] p-[var(--space-md)]">
+                    <h4
+                        className="font-semibold text-[var(--color-text-primary)] mb-3"
+                        style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
+                    >
+                        {t('formulaire.resumeModele')}
+                    </h4>
+                    <dl className="grid grid-cols-2 gap-x-[var(--gap-md)] gap-y-2" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
+                        <div className="flex flex-col">
+                            <dt className="text-[var(--color-text-secondary)]">{t('champs.nom')}</dt>
+                            <dd className="font-medium text-[var(--color-text-primary)]">{modeleData.nom || '-'}</dd>
+                        </div>
+                        <div className="flex flex-col">
+                            <dt className="text-[var(--color-text-secondary)]">{t('champs.code')}</dt>
+                            <dd className="font-medium text-[var(--color-text-primary)]">{modeleData.code || '-'}</dd>
+                        </div>
+                        <div className="flex flex-col">
+                            <dt className="text-[var(--color-text-secondary)]">{t('champs.niveau')}</dt>
+                            <dd className="font-medium text-[var(--color-text-primary)]">
+                                {niveaux.find((n: { id: string; nom: string }) => n.id === modeleData.niveauId)?.nom || '-'}
+                            </dd>
+                        </div>
+                        {estSecondCycle && modeleData.filiereId && (
+                            <div className="flex flex-col">
+                                <dt className="text-[var(--color-text-secondary)]">{t('champs.filiere')}</dt>
+                                <dd className="font-medium text-[var(--color-text-primary)]">
+                                    {filieres.find((f: { id: string; nom: string }) => f.id === modeleData.filiereId)?.nom || '-'}
+                                </dd>
+                            </div>
+                        )}
+                        <div className="flex flex-col">
+                            <dt className="text-[var(--color-text-secondary)]">{t('champs.typeClasse')}</dt>
+                            <dd className="font-medium text-[var(--color-text-primary)]">
+                                {optionsTypesClasse.find(o => o.value === modeleData.typeClasse)?.label || '-'}
+                            </dd>
+                        </div>
+                        <div className="flex flex-col">
+                            <dt className="text-[var(--color-text-secondary)]">{t('champs.creneauHoraire')}</dt>
+                            <dd className="font-medium text-[var(--color-text-primary)]">
+                                {optionsCreneaux.find(o => o.value === modeleData.creneauHoraire)?.label || '-'}
+                            </dd>
+                        </div>
+                        {modeleData.description && (
+                            <div className="flex flex-col col-span-2">
+                                <dt className="text-[var(--color-text-secondary)]">{t('champs.description')}</dt>
+                                <dd className="font-medium text-[var(--color-text-primary)]">{modeleData.description}</dd>
+                            </div>
+                        )}
+                    </dl>
+                </div>
+
+                {/* Section Configuration annuelle */}
+                <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-secondary)] p-[var(--space-md)]">
+                    <h4
+                        className="font-semibold text-[var(--color-text-primary)] mb-3"
+                        style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
+                    >
+                        {t('formulaire.resumeInstance')}
+                    </h4>
+                    <dl className="grid grid-cols-2 gap-x-[var(--gap-md)] gap-y-2" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
+                        <div className="flex flex-col">
+                            <dt className="text-[var(--color-text-secondary)]">{t('champs.anneeScolaire')}</dt>
+                            <dd className="font-medium text-[var(--color-text-primary)]">
+                                {mode === 'creation'
+                                    ? anneesScolaires.find((a: { id: string; libelle: string }) => a.id === instanceData.anneeScolaireId)?.libelle || '-'
+                                    : classe?.anneeScolaire?.libelle || '-'
+                                }
+                            </dd>
+                        </div>
+                        <div className="flex flex-col">
+                            <dt className="text-[var(--color-text-secondary)]">{t('champs.sallePrincipale')}</dt>
+                            <dd className="font-medium text-[var(--color-text-primary)]">
+                                {selectedSalleNom || '-'}
+                                {selectedCapacite && ` (${selectedCapacite} places)`}
+                            </dd>
+                        </div>
+                        <div className="flex flex-col">
+                            <dt className="text-[var(--color-text-secondary)]">{t('champs.effectifMax')}</dt>
+                            <dd className="font-medium text-[var(--color-text-primary)]">{instanceData.effectifMax || '-'}</dd>
+                        </div>
+                        <div className="flex flex-col">
+                            <dt className="text-[var(--color-text-secondary)]">{t('champs.programme')}</dt>
+                            <dd className="font-medium text-[var(--color-text-primary)]">
+                                {optionsProgrammes.find(o => o.value === instanceData.programmeId)?.label || '-'}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <CustomModal
+        <StepperModal
             open={true}
             onOpenChange={(open) => { if (!open) onCancel(); }}
             title={titre}
             description={description}
+            steps={steps}
+            onSubmit={handleSubmit}
+            onCancel={onCancel}
+            cancelLabel={t('boutons.annuler')}
+            nextLabel={t('boutons.suivant')}
+            prevLabel={t('boutons.precedent')}
+            submitLabel={mode === 'creation' ? t('boutons.confirmer') : t('boutons.enregistrer')}
             size="2xl"
-            footer={footer}
-        >
-            <div className="space-y-[var(--space-md)]">
-                <div className="flex items-center gap-[var(--gap-sm)] mb-[var(--space-md)]">
-                        {/* Étape 1 */}
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-colors ${
-                            etape >= 1
-                                ? 'bg-[var(--color-dominant-600)] text-white'
-                                : 'bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)]'
-                        }`}>
-                            1
-                        </div>
-                        <div className={`flex-1 h-1 rounded transition-colors ${etape >= 2 ? 'bg-[var(--color-dominant-600)]' : 'bg-[var(--color-surface-secondary)]'}`} />
-                        {/* Étape 2 */}
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-colors ${
-                            etape >= 2
-                                ? 'bg-[var(--color-dominant-600)] text-white'
-                                : 'bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)]'
-                        }`}>
-                            2
-                        </div>
-                        <div className={`flex-1 h-1 rounded transition-colors ${etape >= 3 ? 'bg-[var(--color-dominant-600)]' : 'bg-[var(--color-surface-secondary)]'}`} />
-                        {/* Étape 3 */}
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold transition-colors ${
-                            etape >= 3
-                                ? 'bg-[var(--color-dominant-600)] text-white'
-                                : 'bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)]'
-                        }`}>
-                            <CheckCircle2 className="w-4 h-4" />
-                        </div>
-                    </div>
-
-                {/* Étape 1 : Modèle de classe */}
-                {(mode === 'edition' || etape === 1) && (
-                    <div className="space-y-[var(--space-md)]">
-                        <h3
-                            className="font-semibold text-[var(--color-text-primary)]"
-                            style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1.0625rem)' }}
-                        >
-                            {t('formulaire.titreModele')}
-                        </h3>
-
-                        {/* Nom et Code */}
-                        <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-md)]`}>
-                            <ElisaInput
-                                label={t('champs.nom')}
-                                value={modeleData.nom || ''}
-                                onChange={(e: ChangeEvent<HTMLInputElement>) => handleChangeModele('nom', e.target.value)}
-                                error={erreurs.nom}
-                                placeholder={t('champs.nomPlaceholder')}
-                                required
-                            />
-                            <ElisaInput
-                                label={t('champs.code')}
-                                value={modeleData.code || ''}
-                                onChange={(e: ChangeEvent<HTMLInputElement>) => handleChangeModele('code', e.target.value)}
-                                error={erreurs.code}
-                                placeholder={t('champs.codePlaceholder')}
-                            />
-                        </div>
-
-                        {/* Niveau et Filière */}
-                        <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-md)]`}>
-                            <ElisaSelect
-                                label={t('champs.niveau')}
-                                value={modeleData.niveauId || ''}
-                                onValueChange={(value) => handleChangeModele('niveauId', value)}
-                                error={erreurs.niveauId}
-                                options={optionsNiveaux}
-                                placeholder={t('champs.selectionnerNiveau')}
-                                required
-                            />
-                            {estSecondCycle && (
-                                <ElisaSelect
-                                    label={t('champs.filiere')}
-                                    value={modeleData.filiereId || ''}
-                                    onValueChange={(value) => handleChangeModele('filiereId', value || null)}
-                                    options={optionsFilieres}
-                                    placeholder={t('champs.selectionnerFiliere')}
-                                />
-                            )}
-                        </div>
-
-                        {/* Type de classe et Créneau horaire */}
-                        <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-md)]`}>
-                            <ElisaSelect
-                                label={t('champs.typeClasse')}
-                                value={modeleData.typeClasse || TypeClasseEnum.NORMALE}
-                                onValueChange={(value) => handleChangeModele('typeClasse', value as TypeClasse)}
-                                options={optionsTypesClasse}
-                            />
-                            <ElisaSelect
-                                label={t('champs.creneauHoraire')}
-                                value={modeleData.creneauHoraire || CreneauHoraireEnum.MATIN}
-                                onValueChange={(value) => handleChangeModele('creneauHoraire', value as CreneauHoraire)}
-                                options={optionsCreneaux}
-                            />
-                        </div>
-
-                        {/* Description */}
-                        <div>
-                            <label
-                                className="block text-sm font-medium text-[var(--color-text-primary)] mb-1"
-                                style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
-                            >
-                                {t('champs.description')}
-                            </label>
-                            <textarea
-                                value={modeleData.description || ''}
-                                onChange={(e) => handleChangeModele('description', e.target.value)}
-                                placeholder={t('champs.descriptionPlaceholder')}
-                                rows={3}
-                                className="w-full px-3 py-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-primary)] resize-none focus:ring-2 focus:ring-[var(--color-dominant-500)] focus:border-transparent"
-                                style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}
-                            />
-                        </div>
-
-                        {/* Statut actif/inactif (mode édition uniquement) */}
-                        {mode === 'edition' && (
-                            <div className="flex items-center gap-[var(--gap-md)]">
-                                <label
-                                    className="flex items-center gap-[var(--gap-sm)] cursor-pointer"
-                                    style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={modeleData.actif ?? true}
-                                        onChange={(e) => {
-                                            const nouveauActif = e.target.checked;
-                                            setModeleData(prev => ({ ...prev, actif: nouveauActif }));
-                                        }}
-                                        className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-dominant-600)] focus:ring-[var(--color-dominant-500)]"
-                                    />
-                                    <span className="font-medium text-[var(--color-text-primary)]">
-                                        {t('champs.actif')}
-                                    </span>
-                                    <span className={`ml-2 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                                        modeleData.actif
-                                            ? 'bg-success/10 text-success'
-                                            : 'bg-muted text-muted-foreground'
-                                    }`}>
-                                        {modeleData.actif ? t('statut.actif') : t('statut.inactif')}
-                                    </span>
-                                </label>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Étape 2 : Instance annuelle */}
-                {etape === 2 && (
-                    <div className="space-y-[var(--space-md)]">
-                        <h3
-                            className="font-semibold text-[var(--color-text-primary)]"
-                            style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1.0625rem)' }}
-                        >
-                            {t('formulaire.titreInstance')}
-                        </h3>
-
-                        {/* Année scolaire et Salle */}
-                        <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-md)]`}>
-                            {mode === 'creation' ? (
-                                <ElisaSelect
-                                    label={t('champs.anneeScolaire')}
-                                    value={instanceData.anneeScolaireId || ''}
-                                    onValueChange={(value) => handleChangeInstance('anneeScolaireId', value)}
-                                    error={erreurs.anneeScolaireId}
-                                    options={optionsAnneesScolaires}
-                                    placeholder={t('champs.selectionnerAnnee')}
-                                    required
-                                />
-                            ) : (
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-secondary">{t('champs.anneeScolaire')}</label>
-                                    <div className="px-3 py-2 rounded-lg border border-border bg-muted text-sm text-secondary">
-                                        {classe?.anneeScolaire?.libelle || '-'}
-                                    </div>
-                                </div>
-                            )}
-                            <SalleSelect
-                                value={instanceData.sallePrincipaleId || ''}
-                                onChange={handleSalleChange}
-                                label={t('champs.sallePrincipale')}
-                            />
-                        </div>
-
-                        {/* Effectif max */}
-                        <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-md)]`}>
-                            <div className="space-y-1">
-                                {selectedCapacite && (
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="inline-flex items-center rounded-full bg-info/10 px-2.5 py-0.5 text-xs font-medium text-info">
-                                            {t('champs.capaciteSalle', { count: selectedCapacite })}
-                                        </span>
-                                    </div>
-                                )}
-                                <ElisaInput
-                                    label={t('champs.effectifMax')}
-                                    type="number"
-                                    value={instanceData.effectifMax?.toString() || '50'}
-                                    onChange={(e: ChangeEvent<HTMLInputElement>) => handleChangeInstance('effectifMax', parseInt(e.target.value) || 50)}
-                                    min="1"
-                                    max={selectedCapacite || 200}
-                                    hint={selectedCapacite ? t('champs.limiteeParSalle', { max: selectedCapacite }) : t('champs.effectifMaxHint')}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Programme pédagogique */}
-                        <div className={`grid ${estMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-[var(--gap-md)]`}>
-                            <ElisaSelect
-                                label={t('champs.programme')}
-                                value={instanceData.programmeId || ''}
-                                onValueChange={(value) => handleChangeInstance('programmeId', value || null)}
-                                options={optionsProgrammes}
-                                placeholder={t('champs.selectionnerProgramme')}
-                            />
-                        </div>
-
-                    </div>
-                )}
-
-                {/* Étape 3 : Résumé complet + Confirmation */}
-                {etape === 3 && (
-                    <div className="space-y-[var(--space-md)]">
-                        {/* Message de confirmation */}
-                        <div className="flex items-center gap-[var(--gap-sm)] rounded-[var(--radius-md)] border border-[var(--color-dominant-600)]/30 bg-[var(--color-dominant-600)]/5 p-[var(--space-md)]">
-                            <CheckCircle2 className="w-5 h-5 text-[var(--color-dominant-600)] shrink-0" />
-                            <p
-                                className="text-[var(--color-text-primary)]"
-                                style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
-                            >
-                                {mode === 'creation' ? t('formulaire.confirmMessage') : t('formulaire.verifierModifications')}
-                            </p>
-                        </div>
-
-                        {/* Section Modèle de classe */}
-                        <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-secondary)] p-[var(--space-md)]">
-                            <h4
-                                className="font-semibold text-[var(--color-text-primary)] mb-3"
-                                style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
-                            >
-                                {t('formulaire.resumeModele')}
-                            </h4>
-                            <dl className="grid grid-cols-2 gap-x-[var(--gap-md)] gap-y-2" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                <div className="flex flex-col">
-                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.nom')}</dt>
-                                    <dd className="font-medium text-[var(--color-text-primary)]">{modeleData.nom || '-'}</dd>
-                                </div>
-                                <div className="flex flex-col">
-                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.code')}</dt>
-                                    <dd className="font-medium text-[var(--color-text-primary)]">{modeleData.code || '-'}</dd>
-                                </div>
-                                <div className="flex flex-col">
-                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.niveau')}</dt>
-                                    <dd className="font-medium text-[var(--color-text-primary)]">
-                                        {niveaux.find((n: { id: string; nom: string }) => n.id === modeleData.niveauId)?.nom || '-'}
-                                    </dd>
-                                </div>
-                                {estSecondCycle && modeleData.filiereId && (
-                                    <div className="flex flex-col">
-                                        <dt className="text-[var(--color-text-secondary)]">{t('champs.filiere')}</dt>
-                                        <dd className="font-medium text-[var(--color-text-primary)]">
-                                            {filieres.find((f: { id: string; nom: string }) => f.id === modeleData.filiereId)?.nom || '-'}
-                                        </dd>
-                                    </div>
-                                )}
-                                <div className="flex flex-col">
-                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.typeClasse')}</dt>
-                                    <dd className="font-medium text-[var(--color-text-primary)]">
-                                        {optionsTypesClasse.find(o => o.value === modeleData.typeClasse)?.label || '-'}
-                                    </dd>
-                                </div>
-                                <div className="flex flex-col">
-                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.creneauHoraire')}</dt>
-                                    <dd className="font-medium text-[var(--color-text-primary)]">
-                                        {optionsCreneaux.find(o => o.value === modeleData.creneauHoraire)?.label || '-'}
-                                    </dd>
-                                </div>
-                                {modeleData.description && (
-                                    <div className="flex flex-col col-span-2">
-                                        <dt className="text-[var(--color-text-secondary)]">{t('champs.description')}</dt>
-                                        <dd className="font-medium text-[var(--color-text-primary)]">{modeleData.description}</dd>
-                                    </div>
-                                )}
-                            </dl>
-                        </div>
-
-                        {/* Section Configuration annuelle */}
-                        <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-secondary)] p-[var(--space-md)]">
-                            <h4
-                                className="font-semibold text-[var(--color-text-primary)] mb-3"
-                                style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
-                            >
-                                {t('formulaire.resumeInstance')}
-                            </h4>
-                            <dl className="grid grid-cols-2 gap-x-[var(--gap-md)] gap-y-2" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                                <div className="flex flex-col">
-                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.anneeScolaire')}</dt>
-                                    <dd className="font-medium text-[var(--color-text-primary)]">
-                                        {mode === 'creation'
-                                            ? anneesScolaires.find((a: { id: string; libelle: string }) => a.id === instanceData.anneeScolaireId)?.libelle || '-'
-                                            : classe?.anneeScolaire?.libelle || '-'
-                                        }
-                                    </dd>
-                                </div>
-                                <div className="flex flex-col">
-                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.sallePrincipale')}</dt>
-                                    <dd className="font-medium text-[var(--color-text-primary)]">
-                                        {selectedSalleNom || '-'}
-                                        {selectedCapacite && ` (${selectedCapacite} places)`}
-                                    </dd>
-                                </div>
-                                <div className="flex flex-col">
-                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.effectifMax')}</dt>
-                                    <dd className="font-medium text-[var(--color-text-primary)]">{instanceData.effectifMax || '-'}</dd>
-                                </div>
-                                <div className="flex flex-col">
-                                    <dt className="text-[var(--color-text-secondary)]">{t('champs.programme')}</dt>
-                                    <dd className="font-medium text-[var(--color-text-primary)]">
-                                        {optionsProgrammes.find(o => o.value === instanceData.programmeId)?.label || '-'}
-                                    </dd>
-                                </div>
-                            </dl>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </CustomModal>
+            isSubmitting={isLoading}
+        />
     );
 }

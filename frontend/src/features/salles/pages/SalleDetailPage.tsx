@@ -17,7 +17,7 @@ import { TypeSalle, StatutSalle } from '../types/salle.types';
 import type { CreneauEmploiDuTemps } from '../types/salle.types';
 import { SalleFormModal } from '../components/SalleFormModal';
 import { AssignerClasseModal } from '../components/AssignerClasseModal';
-import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Badge } from '@/components/ui/Badge';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -223,7 +223,7 @@ export function SalleDetailPage() {
     return (
         <div className="flex flex-col gap-6 p-6">
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-                <Breadcrumbs currentLabel={salle.nom} />
+                <PageHeader showBreadcrumbs breadcrumbLabel={salle.nom} />
                 <ElisaButton
                     variant="ghost"
                     onClick={() => navigate({ to: '/salles' })}

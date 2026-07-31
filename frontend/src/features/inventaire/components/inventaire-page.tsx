@@ -84,6 +84,7 @@ export function InventairePage() {
                 enablePinning
                 enableColumnVisibility
                 searchPlaceholder={t('rechercher')}
+                enableCollapsibleFilters
                 filtres={[
                     {
                         key: 'categorie',

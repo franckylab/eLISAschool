@@ -202,6 +202,7 @@ export function DocumentsPage() {
                 enableColumnVisibility
                 onSearchChange={(valeur) => setRecherche(valeur)}
                 disableClientSearch
+                enableCollapsibleFilters
                 filtres={[
                     {
                         key: 'categorie',

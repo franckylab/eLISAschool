@@ -303,6 +303,7 @@ export function ElevesPage() {
                     searchPlaceholder={t('filtres.recherche')}
                     enableReordering
                     enablePinning
+                    enableCollapsibleFilters
                     filtres={[
                         {
                             key: 'classeId',

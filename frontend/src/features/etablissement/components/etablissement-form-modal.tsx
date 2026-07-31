@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Save, Building2, Image as ImageIcon, Upload, X, Phone, Palette, Globe, Clock, Users, FileText } from 'lucide-react';
-import { CustomModal } from '@/components/modals/CustomModal';
+import { Building2, Image as ImageIcon, Upload, X, Phone, Palette, Globe, Clock, Users, FileText } from 'lucide-react';
+import { StepperModal, type StepperStep } from '@/components/modals/StepperModal';
 import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
-import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ColorPicker } from '@/components/ui/ColorPicker';
 import { useCreerEtablissement } from '../hooks/use-etablissements';
 import { SousSysteme, TypeEtablissement } from '../types/etablissement.types';
@@ -114,30 +113,34 @@ export function EtablissementFormModal({ open, onOpenChange }: EtablissementForm
         onOpenChange(false);
     };
 
-    return (
-        <CustomModal
-            open={open}
-            onOpenChange={onOpenChange}
-            title={t('form.titreCreer')}
-            description={t('form.titreCreerDesc')}
-            size="3xl"
-            footer={
-                <>
-                    <ElisaButton variant="outline" onClick={() => onOpenChange(false)}>
-                        {t('annuler')}
-                    </ElisaButton>
-                    <ElisaButton
-                        variant="primary"
-                        onClick={handleSubmit}
-                        icon={<Save className="h-4 w-4" />}
-                        isLoading={creer.isPending}
-                    >
-                        {t('enregistrer')}
-                    </ElisaButton>
-                </>
-            }
-        >
-            <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+    // Définition des étapes pour StepperModal
+    const steps: StepperStep[] = [
+        {
+            id: 'identite',
+            label: t('form.etapeIdentite', { defaultValue: 'Identité' }),
+            icon: Building2,
+            content: renderEtapeIdentite(),
+            validate,
+            validateError: errors.nom,
+        },
+        {
+            id: 'contact',
+            label: t('form.etapeContact', { defaultValue: 'Contact & Communication' }),
+            icon: Phone,
+            content: renderEtapeContact(),
+        },
+        {
+            id: 'configuration',
+            label: t('form.etapeConfiguration', { defaultValue: 'Configuration' }),
+            icon: Palette,
+            content: renderEtapeConfiguration(),
+        },
+    ];
+
+    // Rendu Étape 1 : Identité (Logo + Infos de base + Identification légale)
+    function renderEtapeIdentite() {
+        return (
+            <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
                 {/* Logo */}
                 <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
@@ -258,7 +261,14 @@ export function EtablissementFormModal({ open, onOpenChange }: EtablissementForm
                         />
                     </div>
                 </div>
+            </div>
+        );
+    }
 
+    // Rendu Étape 2 : Contact & Communication
+    function renderEtapeContact() {
+        return (
+            <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
                 {/* Contact */}
                 <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
@@ -287,29 +297,6 @@ export function EtablissementFormModal({ open, onOpenChange }: EtablissementForm
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('adresse', e.target.value)}
                         placeholder="Quartier, Ville"
                     />
-                </div>
-
-                {/* Couleurs */}
-                <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
-                        <Palette className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
-                        {t('themePersonnalisation')}
-                    </h3>
-                    <SectionSeparator />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <ColorPicker
-                            label={t('couleurPrimaireLabel')}
-                            value={formData.couleurPrimaire || '#28a745'}
-                            onChange={(v) => handleChange('couleurPrimaire', v)}
-                            hint={t('couleurPrimaireHint')}
-                        />
-                        <ColorPicker
-                            label={t('couleurSecondaireLabel')}
-                            value={formData.couleurSecondaire || '#ffc107'}
-                            onChange={(v) => handleChange('couleurSecondaire', v)}
-                            hint={t('couleurSecondaireHint')}
-                        />
-                    </div>
                 </div>
 
                 {/* Réseaux sociaux */}
@@ -370,6 +357,36 @@ export function EtablissementFormModal({ open, onOpenChange }: EtablissementForm
                         />
                     </div>
                 </div>
+            </div>
+        );
+    }
+
+    // Rendu Étape 3 : Configuration (Couleurs + Direction)
+    function renderEtapeConfiguration() {
+        return (
+            <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+                {/* Couleurs */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
+                        <Palette className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
+                        {t('themePersonnalisation')}
+                    </h3>
+                    <SectionSeparator />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ColorPicker
+                            label={t('couleurPrimaireLabel')}
+                            value={formData.couleurPrimaire || '#28a745'}
+                            onChange={(v) => handleChange('couleurPrimaire', v)}
+                            hint={t('couleurPrimaireHint')}
+                        />
+                        <ColorPicker
+                            label={t('couleurSecondaireLabel')}
+                            value={formData.couleurSecondaire || '#ffc107'}
+                            onChange={(v) => handleChange('couleurSecondaire', v)}
+                            hint={t('couleurSecondaireHint')}
+                        />
+                    </div>
+                </div>
 
                 {/* Direction */}
                 <div className="space-y-4">
@@ -411,6 +428,19 @@ export function EtablissementFormModal({ open, onOpenChange }: EtablissementForm
                     </div>
                 </div>
             </div>
-        </CustomModal>
+        );
+    }
+
+    return (
+        <StepperModal
+            open={open}
+            onOpenChange={onOpenChange}
+            title={t('form.titreCreer')}
+            description={t('form.titreCreerDesc')}
+            steps={steps}
+            onSubmit={handleSubmit}
+            size="3xl"
+            isSubmitting={creer.isPending}
+        />
     );
 }

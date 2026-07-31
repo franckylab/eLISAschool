@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { CardGrid } from '@/components/ui/CardGrid';
 import { StatCard } from '@/components/ui/StatCard';
 import type { MembrePersonnel } from '../../types/personnel.types';
@@ -79,7 +79,7 @@ export function HeroHeader({
 
     return (
         <div className="flex flex-col gap-6">
-            <Breadcrumbs currentLabel={nomComplet} />
+            <PageHeader showBreadcrumbs breadcrumbLabel={nomComplet} />
 
             <motion.div
                 initial={{ opacity: 0, y: -20 }}

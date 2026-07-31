@@ -58,6 +58,10 @@ export interface NotesStatistiquesResult {
     distribution: Array<{ tranche: string; count: number }>;
     parType: Array<{ typeEvaluation: TypeEvaluation; count: number; moyenne: number }>;
     parStatut: Array<{ statut: StatutNote; count: number }>;
+    trends?: {
+        nombreNotes: { current: number; previous: number; variation: number };
+        moyenne: { current: number; previous: number; variation: number };
+    };
 }
 
 export class NotesService {
@@ -660,6 +664,10 @@ export class NotesService {
                 distribution: TRANCHES_DISTRIBUTION.map((t) => ({ tranche: t.tranche, count: 0 })),
                 parType: [],
                 parStatut,
+                trends: {
+                    nombreNotes: { current: 0, previous: 0, variation: 0 },
+                    moyenne: { current: 0, previous: 0, variation: 0 },
+                },
             };
         }
 
@@ -698,6 +706,47 @@ export class NotesService {
             moyenne: arrondi(agg.somme / agg.count),
         }));
 
+        // Tendances : comparer notes récentes (30j) vs période précédente (30-60j)
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+        const allNotesWithDates = await this.noteRepository.find({
+            where,
+            select: ['id', 'valeur', 'bareme', 'coefficient', 'statut', 'createdAt'],
+        });
+
+        const recentComptees = allNotesWithDates.filter(n =>
+            (n.statut === StatutNote.VALIDEE || n.statut === StatutNote.PUBLIEE) &&
+            new Date(n.createdAt) >= thirtyDaysAgo
+        );
+        const previousComptees = allNotesWithDates.filter(n =>
+            (n.statut === StatutNote.VALIDEE || n.statut === StatutNote.PUBLIEE) &&
+            new Date(n.createdAt) < thirtyDaysAgo &&
+            new Date(n.createdAt) >= sixtyDaysAgo
+        );
+
+        const previousMoyenne = previousComptees.length > 0
+            ? previousComptees.reduce((acc, n) => acc + n.noteSur20, 0) / previousComptees.length
+            : 0;
+
+        const trends = {
+            nombreNotes: {
+                current: nombreNotes,
+                previous: recentComptees.length,
+                variation: recentComptees.length > 0
+                    ? Math.round(((nombreNotes - recentComptees.length) / recentComptees.length) * 1000) / 10
+                    : 0,
+            },
+            moyenne: {
+                current: arrondi(moyenne),
+                previous: arrondi(previousMoyenne),
+                variation: previousMoyenne > 0
+                    ? Math.round(((arrondi(moyenne) - arrondi(previousMoyenne)) / arrondi(previousMoyenne)) * 1000) / 10
+                    : 0,
+            },
+        };
+
         return {
             nombreNotes,
             moyenne: arrondi(moyenne),
@@ -708,6 +757,7 @@ export class NotesService {
             distribution,
             parType,
             parStatut,
+            trends,
         };
     }
 

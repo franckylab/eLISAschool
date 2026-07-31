@@ -154,6 +154,10 @@ export function BulletinDetailPage({ bulletinId }: BulletinDetailPageProps) {
                 title={`${bulletin.eleve?.prenom ?? ''} ${bulletin.eleve?.nom ?? ''}`.trim() || t('titre')}
                 subtitle={`${bulletin.classeAnnee?.classe?.nom ?? '—'} · ${bulletin.periode?.nom ?? '—'}`}
                 onBack={() => navigate({ to: '/bulletins' })}
+                status={{
+                    label: bulletin.publie ? t('publie') : t('nonPublie'),
+                    variant: bulletin.publie ? 'success' : 'warning',
+                }}
                 actions={
                     <div className="flex flex-wrap gap-2">
                         {hasPermission('bulletins:publier') && (

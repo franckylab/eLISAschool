@@ -26,6 +26,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { DataTable } from '@/components/ui/DataTable';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { StatCard } from '@/components/ui/StatCard';
 import { cn } from '@/lib/cn';
 import { apiClient } from '@/lib/api-client';
 import { resolveAuditNavLink, resolveRelationNavLink } from '@/lib/audit-navigation';
@@ -469,25 +470,29 @@ export function AuditPage() {
                     icon={FileText}
                     label={t('audit.page.statTotal')}
                     value={statsTotal}
-                    color="dominant"
+                    tone="dominant"
+                    compact
                 />
                 <StatCard
                     icon={Clock}
                     label={t('audit.page.stat24h')}
                     value={stats24h}
-                    color="info"
+                    tone="info"
+                    compact
                 />
                 <StatCard
                     icon={TrendingUp}
                     label={t('audit.page.statTauxEchec')}
                     value={`${statsTauxEchec.toFixed(1)}%`}
-                    color={statsTauxEchec > 10 ? 'danger' : 'success'}
+                    tone={statsTauxEchec > 10 ? 'danger' : 'success'}
+                    compact
                 />
                 <StatCard
                     icon={Activity}
                     label={t('audit.page.statFiltresActifs')}
                     value={filtresActifs}
-                    color={filtresActifs > 0 ? 'warning' : 'dominant'}
+                    tone={filtresActifs > 0 ? 'warning' : 'dominant'}
+                    compact
                 />
             </div>
 
@@ -537,42 +542,6 @@ export function AuditPage() {
                     />
                 )}
             </CustomModal>
-        </div>
-    );
-}
-
-// ─── StatCard ───
-
-function StatCard({ icon: Icon, label, value, color }: {
-    icon: typeof Info;
-    label: string;
-    value: number | string;
-    color: 'dominant' | 'info' | 'success' | 'warning' | 'danger';
-}) {
-    const colorMap = {
-        dominant: 'text-[var(--color-dominante)] bg-[var(--color-dominante)]/10',
-        info: 'text-[var(--color-info)] bg-[var(--color-info)]/10',
-        success: 'text-[var(--color-success)] bg-[var(--color-success)]/10',
-        warning: 'text-[var(--color-warning)] bg-[var(--color-warning)]/10',
-        danger: 'text-[var(--color-danger)] bg-[var(--color-danger)]/10',
-    };
-    return (
-        <div className="flex items-center gap-[var(--gap-sm)] rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface)]"
-            style={{ padding: 'clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem)' }}>
-            <div className={cn('flex items-center justify-center shrink-0 rounded-[var(--radius-md)]', colorMap[color])}
-                style={{ width: 'clamp(1.75rem, 1.5rem + 0.5vw, 2.25rem)', height: 'clamp(1.75rem, 1.5rem + 0.5vw, 2.25rem)' }}>
-                <Icon className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
-            </div>
-            <div className="flex flex-col min-w-0">
-                <span className="text-[var(--color-texte)] font-semibold leading-tight"
-                    style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.25vw, 1.125rem)' }}>
-                    {value}
-                </span>
-                <span className="text-[var(--color-texte-secondaire)] truncate leading-tight"
-                    style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.1vw, 0.6875rem)' }}>
-                    {label}
-                </span>
-            </div>
         </div>
     );
 }

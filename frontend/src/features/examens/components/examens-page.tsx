@@ -179,6 +179,7 @@ export function ExamensPage() {
                 enablePinning
                 enableColumnVisibility
                 searchPlaceholder={t('rechercher')}
+                enableCollapsibleFilters
                 filtres={[
                     {
                         key: 'type',

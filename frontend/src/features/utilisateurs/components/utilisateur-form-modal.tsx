@@ -9,25 +9,15 @@
  * Sections séparées visuellement par border-b, i18n, dark mode
  */
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { User, Mail, Phone, Shield, Calendar, MapPin, KeyRound } from 'lucide-react';
 import { useCreerUtilisateur, useModifierUtilisateur } from '../hooks/use-utilisateurs';
 import { useTousRoles } from '../hooks/use-roles-permissions';
-import { CustomModal } from '@/components/modals/CustomModal';
+import { StepperModal, type StepperStep } from '@/components/modals/StepperModal';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
-import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput, ElisaSelect, SectionSeparator } from '@/components/ui';
 import type { Utilisateur, CreerUtilisateurDto } from '../types/utilisateur.types';
-
-const FIELD_SECTION: Record<string, string> = {
-    prenom: 'identite',
-    nom: 'identite',
-    email: 'contact',
-    telephone: 'contact',
-    role: 'securite',
-    motDePasse: 'securite',
-};
 
 const FORM_INIT: CreerUtilisateurDto = {
     email: '',
@@ -70,21 +60,11 @@ export function UtilisateurFormModal({
 
     const [erreurs, setErreurs] = useState<Record<string, string>>({});
     const [showConfirm, setShowConfirm] = useState(false);
-    const formRef = useRef<HTMLFormElement>(null);
 
     const hasUnsavedChanges = useMemo(
         () => JSON.stringify(formData) !== JSON.stringify(FORM_INIT),
         [formData],
     );
-
-    useEffect(() => {
-        const firstErrorKey = Object.keys(erreurs)[0];
-        if (!firstErrorKey || !formRef.current) return;
-        const section = FIELD_SECTION[firstErrorKey];
-        if (!section) return;
-        const el = formRef.current.querySelector(`[data-section="${section}"]`);
-        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, [erreurs]);
 
     const handleReset = () => {
         setFormData(FORM_INIT);
@@ -136,9 +116,7 @@ export function UtilisateurFormModal({
         return Object.keys(nouvellesErreurs).length === 0;
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
+    const handleSubmit = async () => {
         if (!validerFormulaire()) return;
 
         try {
@@ -190,49 +168,41 @@ export function UtilisateurFormModal({
         }
     };
 
-    return (
-        <>
-            <CustomModal
-                open={open}
-                onOpenChange={(nextOpen) => {
-                    if (!nextOpen && hasUnsavedChanges) {
-                        setShowConfirm(true);
-                        return;
-                    }
-                    onOpenChange(nextOpen);
-                }}
-                title={titre}
-                description={description}
-                size="2xl"
-                footer={
-                    <>
-                        <ElisaButton
-                            type="button"
-                            variant="outline"
-                            onClick={handleClose}
-                            disabled={isLoading}
-                        >
-                            {t('form.annuler')}
-                        </ElisaButton>
-                        <ElisaButton
-                            type="submit"
-                            variant="primary"
-                            isLoading={isLoading}
-                            onClick={handleSubmit}
-                        >
-                            {mode === 'creation' ? t('form.creer') : t('form.enregistrer')}
-                        </ElisaButton>
-                    </>
-                }
-        >
-            <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+    // Définition des étapes pour StepperModal
+    const steps: StepperStep[] = [
+        {
+            id: 'identite-contact',
+            label: t('form.etapeIdentite', { defaultValue: 'Identité & Contact' }),
+            icon: User,
+            content: renderEtapeIdentiteContact(),
+        },
+        {
+            id: 'role-acces',
+            label: t('form.etapeRole', { defaultValue: 'Rôle & Accès' }),
+            icon: Shield,
+            content: renderEtapeRoleAcces(),
+            validate: validerFormulaire,
+            validateError: erreurs.role || erreurs.email || erreurs.motDePasse,
+        },
+        {
+            id: 'profil',
+            label: t('form.etapeProfil', { defaultValue: 'Profil' }),
+            icon: MapPin,
+            content: renderEtapeProfil(),
+        },
+    ];
+
+    // Rendu Étape 1 : Identité & Contact
+    function renderEtapeIdentiteContact() {
+        return (
+            <div className="space-y-6">
                 {apiError && (
                     <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-300" role="alert">
                         {apiError instanceof Error ? apiError.message : t('form.erreurSauvegarde')}
                     </div>
                 )}
-                {/* Section Informations personnelles */}
-                <div data-section="identite" className="space-y-4">
+                {/* Identité */}
+                <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
                         <User className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
                         {t('form.informationsPersonnelles')}
@@ -259,8 +229,8 @@ export function UtilisateurFormModal({
                     </div>
                 </div>
 
-                {/* Section Contact */}
-                <div data-section="contact" className="space-y-4">
+                {/* Contact */}
+                <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
                         <Mail className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
                         {t('form.contact')}
@@ -287,9 +257,15 @@ export function UtilisateurFormModal({
                         />
                     </div>
                 </div>
+            </div>
+        );
+    }
 
-                {/* Section Sécurité et rôle */}
-                <div data-section="securite" className="space-y-4">
+    // Rendu Étape 2 : Rôle & Accès
+    function renderEtapeRoleAcces() {
+        return (
+            <div className="space-y-6">
+                <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
                         <Shield className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
                         {t('form.securiteRole')}
@@ -320,9 +296,15 @@ export function UtilisateurFormModal({
                         )}
                     </div>
                 </div>
+            </div>
+        );
+    }
 
-                {/* Section Profil */}
-                <div data-section="profil" className="space-y-4">
+    // Rendu Étape 3 : Profil
+    function renderEtapeProfil() {
+        return (
+            <div className="space-y-6">
+                <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-[var(--color-texte)] flex items-center gap-2">
                         <MapPin className="h-5 w-5 text-[var(--color-texte-secondaire)]" />
                         {t('form.profilOptionnel')}
@@ -356,22 +338,43 @@ export function UtilisateurFormModal({
                         </div>
                     </div>
                 </div>
-            </form>
-        </CustomModal>
+            </div>
+        );
+    }
 
-        <ConfirmDialog
-            open={showConfirm}
-            onOpenChange={setShowConfirm}
-            variant="warning"
-            title={t('form.confirmAnnulerTitre')}
-            description={t('form.confirmAnnulerDescription')}
-            confirmText={t('form.confirmAnnulerConfirmer')}
-            cancelText={t('form.confirmAnnulerRetour')}
-            onConfirm={() => {
-                setShowConfirm(false);
-                onOpenChange(false);
-            }}
-        />
+    return (
+        <>
+            <StepperModal
+                open={open}
+                onOpenChange={(nextOpen) => {
+                    if (!nextOpen && hasUnsavedChanges) {
+                        setShowConfirm(true);
+                        return;
+                    }
+                    onOpenChange(nextOpen);
+                }}
+                title={titre}
+                description={description}
+                steps={steps}
+                onSubmit={handleSubmit}
+                onCancel={handleClose}
+                size="2xl"
+                isSubmitting={isLoading}
+            />
+
+            <ConfirmDialog
+                open={showConfirm}
+                onOpenChange={setShowConfirm}
+                variant="warning"
+                title={t('form.confirmAnnulerTitre')}
+                description={t('form.confirmAnnulerDescription')}
+                confirmText={t('form.confirmAnnulerConfirmer')}
+                cancelText={t('form.confirmAnnulerRetour')}
+                onConfirm={() => {
+                    setShowConfirm(false);
+                    onOpenChange(false);
+                }}
+            />
         </>
     );
 }

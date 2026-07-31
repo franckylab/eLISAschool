@@ -206,6 +206,7 @@ export function EvenementsPage() {
                 searchPlaceholder={t('rechercher')}
                 onSearchChange={(valeur) => setRecherche(valeur)}
                 disableClientSearch
+                enableCollapsibleFilters
                 filtres={[
                     {
                         key: 'type',
