@@ -89,12 +89,14 @@ export default defineConfig({
     server: {
         port: 7001,
         host: '0.0.0.0',
-        // Configuration HMR pour Docker
+        // Autoriser les noms de services Docker et IPs d'accès
+        // Vite bloque les hosts non reconnus (protection DNS rebinding)
+        allowedHosts: ['frontend_app', 'backend_api', 'localhost', '10.0.0.1'],
+        // Configuration HMR pour Docker + nginx
+        // Chemin personnalisé pour que nginx puisse router les WebSocket HMR
         hmr: {
             protocol: 'ws',
-            host: 'localhost',
-            port: 7001,
-            clientPort: 7001,
+            path: '/__vite_hmr',
         },
         watch: {
             // Utiliser le polling pour Docker (compatible avec les volumes bind mount)
@@ -104,8 +106,7 @@ export default defineConfig({
             // Ignorer node_modules et .git
             ignored: ['**/node_modules/**', '**/.git/**'],
         },
-        // Proxy Vite DÉSACTIVÉ - bug http-proxy-middleware dans Docker
-        // Le frontend utilise VITE_API_URL pour appeler directement le backend
+        // Proxy Vite DÉSACTIVÉ - nginx gère le proxy /api vers le backend
         // proxy: { ... } ← SUPPRIMÉ
     },
     build: {
@@ -122,6 +123,6 @@ export default defineConfig({
         },
     },
     optimizeDeps: {
-        include: ['react', 'react-dom', '@tanstack/react-query', 'zustand', 'i18next'],
+        include: ['react', 'react-dom', '@tanstack/react-query', 'zustand', 'i18next', 'html-to-image'],
     },
 });

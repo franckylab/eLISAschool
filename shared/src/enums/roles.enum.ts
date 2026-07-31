@@ -705,12 +705,6 @@ export enum Permission {
     CONFIG_IMPORT = 'config:import',
     CONFIG_CACHE_INVALIDATE = 'config:cache:invalidate',
 
-    // ==================================
-    // APPARENCE (Fonds d'écran, Thème, Logo)
-    // ==================================
-    APPARENCE_FONDS_VIEW = 'apparence:fonds:view',
-    APPARENCE_FONDS_MANAGE = 'apparence:fonds:manage',
-
     // Santé
     SANTE_VIEW = 'sante:view',
     SANTE_CONSULTATIONS = 'sante:consultations',
@@ -943,7 +937,6 @@ export enum Permission {
     AUDIT_DIPLOMES_ELEVES_VIEW = 'audit:diplomes-eleves:view',
     AUDIT_EXAMENS_NATIONAUX_VIEW = 'audit:examens-nationaux:view',
     AUDIT_GROUPES_ETABLISSEMENTS_VIEW = 'audit:groupes-etablissements:view',
-    AUDIT_APPARENCE_VIEW = 'audit:apparence:view',
     AUDIT_FINANCES_VIEW = 'audit:finances:view',
     AUDIT_MESSAGERIE_VIEW = 'audit:messagerie:view',
     AUDIT_SONDAGES_VIEW = 'audit:sondages:view',
@@ -1086,9 +1079,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.ORGANISATION_TEMPLATES_DELETE,
         Permission.ORGANISATION_GENERATION_EXECUTE,
         Permission.ORGANISATION_ORGANIGRAMME_READ,
-        // Apparence
-        Permission.APPARENCE_FONDS_VIEW,
-        Permission.APPARENCE_FONDS_MANAGE,
         // Contrats (module autonome)
         Permission.CONTRATS_VIEW, Permission.CONTRATS_CREATE, Permission.CONTRATS_EDIT,
         Permission.CONTRATS_DELETE, Permission.CONTRATS_EXPORT,
@@ -1109,8 +1099,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.AUDIT_PERIODES_VIEW, Permission.AUDIT_EMPLOI_DU_TEMPS_VIEW,
         Permission.AUDIT_ORGANISATION_VIEW,
         Permission.AUDIT_COMPETENCES_VIEW, Permission.AUDIT_DIPLOMES_ELEVES_VIEW,
-        Permission.AUDIT_EXAMENS_NATIONAUX_VIEW, Permission.AUDIT_GROUPES_ETABLISSEMENTS_VIEW,
-        Permission.AUDIT_APPARENCE_VIEW, Permission.AUDIT_FINANCES_VIEW,
+        Permission.AUDIT_EXAMENS_NATIONAUX_VIEW,         Permission.AUDIT_GROUPES_ETABLISSEMENTS_VIEW,
+        Permission.AUDIT_FINANCES_VIEW,
         Permission.AUDIT_MESSAGERIE_VIEW, Permission.AUDIT_SONDAGES_VIEW,
         Permission.AUDIT_ORIENTATION_VIEW, Permission.AUDIT_REQUETES_VIEW,
         Permission.AUDIT_GAMIFICATION_VIEW, Permission.AUDIT_CARTES_VIEW,
@@ -1281,9 +1271,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.EMPLOI_DU_TEMPS_TEMPLATES_MANAGE,
         Permission.EMPLOI_DU_TEMPS_VERIFIER_CONFLITS,
         Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
-        // Apparence
-        Permission.APPARENCE_FONDS_VIEW,
-        Permission.APPARENCE_FONDS_MANAGE,
         // Contrats (module autonome)
         Permission.CONTRATS_VIEW, Permission.CONTRATS_CREATE, Permission.CONTRATS_EDIT,
         Permission.CONTRATS_DELETE, Permission.CONTRATS_EXPORT,
@@ -1300,8 +1287,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.AUDIT_PERSONNEL_VIEW, Permission.AUDIT_ELEVES_VIEW,
         Permission.AUDIT_CLASSES_VIEW, Permission.AUDIT_ORGANISATION_VIEW,
         Permission.AUDIT_COMPETENCES_VIEW, Permission.AUDIT_EXAMENS_NATIONAUX_VIEW,
-        Permission.AUDIT_DIPLOMES_ELEVES_VIEW, Permission.AUDIT_GROUPES_ETABLISSEMENTS_VIEW,
-        Permission.AUDIT_APPARENCE_VIEW, Permission.AUDIT_FINANCES_VIEW,
+        Permission.AUDIT_DIPLOMES_ELEVES_VIEW,         Permission.AUDIT_GROUPES_ETABLISSEMENTS_VIEW,
+        Permission.AUDIT_FINANCES_VIEW,
         Permission.AUDIT_ORIENTATION_VIEW, Permission.AUDIT_REQUETES_VIEW,
         Permission.AUDIT_MATERIEL_VIEW, Permission.AUDIT_CARTES_VIEW,
         Permission.AUDIT_CLUBS_VIEW, Permission.AUDIT_SONDAGES_VIEW,
@@ -2109,7 +2096,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
         Permission.MESSAGERIE_VIEW,
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE,
-        Permission.APPARENCE_FONDS_VIEW,
         Permission.SONDAGES_CREATE, Permission.SONDAGES_VOTE, Permission.SONDAGES_ANALYZE,
         Permission.REQUETES_VIEW,
     ],

@@ -27,7 +27,6 @@ import { seedModeleRecu } from './system/seed-modele-recu';
 import { seedCotisations } from './system/seed-cotisations';
 import { seedTypesPrimes } from './system/seed-types-primes';
 import { seedTypesRetenues } from './system/seed-types-retenues';
-import { seedFondsCatalogue } from './system/seed-fonds-catalogue';
 import { logger } from '@common/utils/logger.util';
 
 export async function runSystemSeeds(): Promise<{
@@ -111,9 +110,6 @@ export async function runSystemSeeds(): Promise<{
     // 18. Types de retenues
     await seedTypesRetenues(etablissementPrincipalId);
     await seedTypesRetenues(etablissementSecondaireId);
-
-    // 19. Catalogue de fonds SVG (global — pas lié à un établissement)
-    await seedFondsCatalogue();
 
     logger.info('✅ Seeds système exécutés avec succès');
 

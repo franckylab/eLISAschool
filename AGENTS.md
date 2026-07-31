@@ -58,15 +58,13 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 ### Tests
 - Phase dédiée après stabilisation du refactoring.
 
-## Fond alvéole principal (nid d'abeille)
-- **SVG statique généré** : `public/fonds-catalogue/nid-alveole-dark.svg` + `nid-alveole-light.svg` — 570 hexagones chacun, 1920×1080, `preserveAspectRatio="xMidYMid slice"`
-- **Damier `e`/`S`** : alternance stricte `(row + col) % 2`, `e` en `#5a8a6a`/`#8a9a84`, `S` en `#6a9a7a`/`#7a8a74` (dark/light), opacité 0.45
-- **Gradient global dark** : `#1a3a3a` → `#0d2b2b` (teal foncé)
-- **Gradient global light** : `#f0f2ee` → `#e6eae2` (gris clair)
-- **Gradient par cellule** : 12 directions (30° incréments), assignation pseudo-aléatoire via `seedRand`. Dark : `#1e4040` → `#2d5a4a`. Light : `#e8ece4` → `#dce2da`. Opacité 0.55, contour 0.5px.
-- **Composant** `NidAlveoleBackground.tsx` : `fixed inset-0 -z-20`, `background-size: cover`, détecte `data-theme` via MutationObserver pour servir le SVG correspondant
-- **Z-ordering** dans `PageLayout` : `-z-20` (base) → `FondRotator` `-z-10` (SVGs catalogue par-dessus, transparent si aucun fond)
-- **Générateur** : `/tmp/opencode/gen-honeycomb.js` (Node, usage unique, génère les deux variantes)
+## Fond principal unique
+- **Modèle** : UN SEUL fond d'écran pour le layout authentifié (plus de rotator, plus de catalogue, plus de personnalisation par établissement).
+- **SVG statique** : `public/fonds-principal/fond-principal-dark.svg` + `fond-principal-light.svg` — variantes selon le thème. Design remplaçable en modifiant ces 2 fichiers (aucun autre changement requis).
+- **Composant** `FondPrincipalBackground.tsx` : `fixed inset-0 -z-20`, `background-size: cover`, détecte `data-theme` via MutationObserver pour servir le SVG correspondant.
+- **Service** : bloc statique `/fonds-principal` dans `app.ts` (headers CORS SVG). Symlink `frontend/public/fonds-principal` via `scripts/setup-symlinks.sh`.
+- **Nginx** : `location ^~ /fonds-principal` → backend (`docker/nginx.conf`). `^~` OBLIGATOIRE : la regex `~* \.(...svg...)$` (assets statiques) primerait sur un simple `location /fonds-principal` → fallback SPA (index.html). Le symlink ne se résout PAS dans le conteneur frontend (mount `../frontend:/app`, cible `../../public` hors conteneur) — c'est le backend qui sert les SVG, pas Vite.
+- **Système supprimé** : module backend `apparence/` (fonds, fonds_etablissement, rotation, upload), page `/apparence`, `FondRotator`, `NidAlveoleBackground`, `FondImage`, `use-rotation-controle`, catalogue 36 SVG, permissions `apparence:fonds:*`/`audit:apparence:view`, actions audit `FOND_*`. Login et page d'accueil intouchés.
 
 ### Blocked
 — (none)
@@ -543,17 +541,6 @@ Workflow de validation multi-niveaux (Option B) : ✅ intégré dans 6 pages dé
 - **Anti-pattern hooks** : JAMAIS appeler un hook dans le JSX. Toujours extraire un composant dédié avec hooks au niveau supérieur (voir `FormWrapper` dans les pages nomenclatures).
 - **Contraintes multi-tenant** : `unique: true` sur `@Column` interdit pour les nomenclatures multi-tenant. Utiliser `@Index(['code', 'etablissementId'], { unique: true, where: '"etablissementId" IS NOT NULL' })`.
 - **10 échelons structurels système** : ETABLISSEMENT(0), DIRECTION(1), DEPARTEMENT_PEDA(2), SERVICE(2), COMMISSION(3), EQUIPE(3), BUREAU(3), ATELIER(3), LABORATOIRE(3), CDI(3).
-
-## Fonds SVG catalogue (dark mode)
-- Tous les SVGs du catalogue utilisent `stroke="currentColor"` et `fill="currentColor"` → `currentColor` se résout en `#000000` dans une image autonome.
-- **Correction dark mode** : CSS variables `--fond-filter` et `--fond-opacity` dans `globals.css` :
-  - Light : `--fond-filter: none; --fond-opacity: 0.3`
-  - Dark  : `--fond-filter: invert(0.85) brightness(1.4); --fond-opacity: 0.7`
-- **Composant `FondImage`** (`components/ui/FondImage.tsx`) réutilisable pour toute vignette/aperçu de fond. Modes `background` (FondRotator) et `img` (grille catalogue).
-  - Applique `filter: var(--fond-filter)` et `opacity: var(--fond-opacity)` automatiquement.
-  - Cache-bust via `?v=${Date.parse(fond.updatedAt)}` intégré.
-- **FondRotator** : wrapper div avec les CSS variables, `willChange: opacity, filter`. Rendu transparent (null) en cas d'erreur/chargement/absence de fonds. Prop `fallbackColor` supprimée.
-- **ApparencePage** : preview `<img>` avec `filter: var(--fond-filter)`. Grille catalogue miniatures SVG via `FondImage`.
 
 
 ## Travail effectué — Session 2026-07-23 (grill-me organisation v4.0)

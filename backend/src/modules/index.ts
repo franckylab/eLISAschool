@@ -50,7 +50,6 @@ export * from './validation-workflow';
 export * from './groupes-etablissements';
 export * from './types-enum';
 export * from './organisation';
-export * from './apparence';
 
 // Modules complémentaires
 export * from './orientation';

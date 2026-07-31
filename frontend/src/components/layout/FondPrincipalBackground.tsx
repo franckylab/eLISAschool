@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:7000';
-const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
+const BASE_URL = import.meta.env.VITE_API_URL || '';
 
 function getTheme(): 'dark' | 'light' {
     if (typeof document === 'undefined') return 'dark';
     return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
 }
 
-export function NidAlveoleBackground() {
+/**
+ * Fond principal unique du layout authentifié.
+ * Variantes dark/light servies depuis public/fonds-principal/.
+ * Le design est remplaçable en modifiant les 2 SVG (fond-principal-{dark,light}.svg).
+ */
+export function FondPrincipalBackground() {
     const [theme, setTheme] = useState<'dark' | 'light'>(getTheme);
 
     useEffect(() => {
@@ -27,9 +31,9 @@ export function NidAlveoleBackground() {
         return () => observer.disconnect();
     }, []);
 
-    const svgName = theme === 'dark' ? 'nid-alveole-dark.svg' : 'nid-alveole-light.svg';
+    const svgName = theme === 'dark' ? 'fond-principal-dark.svg' : 'fond-principal-light.svg';
     const cacheBust = process.env.NODE_ENV === 'development' ? `?t=${Date.now()}` : '';
-    const svgUrl = `${BACKEND_ORIGIN}/fonds-catalogue/${svgName}${cacheBust}`;
+    const svgUrl = `${BASE_URL}/fonds-principal/${svgName}${cacheBust}`;
 
     return (
         <div
@@ -39,7 +43,7 @@ export function NidAlveoleBackground() {
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
-                willChange: 'opacity, filter',
+                willChange: 'opacity',
             }}
         />
     );

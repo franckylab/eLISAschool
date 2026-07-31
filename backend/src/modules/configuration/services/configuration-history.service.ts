@@ -15,6 +15,7 @@ import { HistoriqueConfiguration, ActionConfiguration, CibleConfiguration } from
 import { ConfigurationApp } from '../entities/configuration-app.entity';
 import { ParametreSysteme } from '../entities/parametre-systeme.entity';
 import { logger } from '@common/utils/logger.util';
+import { getClientIP } from '@common/utils/client-ip.util';
 import { AppError } from '@common/filters/error.filter';
 
 /**
@@ -61,7 +62,7 @@ export class ConfigurationHistoryService {
             ancienneValeur: options.ancienneValeur,
             nouvelleValeur: options.nouvelleValeur,
             restaurable: options.restaurable ?? (options.action === ActionConfiguration.UPDATE),
-            ipAddress: options.req ? this.getClientIP(options.req) : undefined,
+            ipAddress: options.req ? getClientIP(options.req) : undefined,
         });
 
         await this.historiqueRepo.save(entry);
@@ -250,16 +251,6 @@ export class ConfigurationHistoryService {
         });
     }
 
-    /**
-     * Extrait l'IP du client
-     */
-    private getClientIP(req: Request): string {
-        const forwarded = req.headers['x-forwarded-for'];
-        if (typeof forwarded === 'string') {
-            return forwarded.split(',')[0].trim();
-        }
-        return req.ip || req.socket?.remoteAddress || 'unknown';
-    }
 }
 
 export const configurationHistoryService = new ConfigurationHistoryService();

@@ -10,14 +10,14 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 echo "🔗 Création des liens symboliques..."
 
-# Lien symbolique pour les fonds d'écran SVG
-if [ \! -L "$ROOT_DIR/frontend/public/fonds-catalogue" ]; then
-    echo "  📁 fonds-catalogue → public/fonds-catalogue"
+# Lien symbolique pour le fond principal (variantes dark/light)
+if [ \! -L "$ROOT_DIR/frontend/public/fonds-principal" ]; then
+    echo "  📁 fonds-principal → public/fonds-principal"
     cd "$ROOT_DIR/frontend/public"
-    ln -sf ../../public/fonds-catalogue fonds-catalogue
+    ln -sf ../../public/fonds-principal fonds-principal
     echo "  ✅ Lien créé"
 else
-    echo "  ✅ fonds-catalogue déjà configuré"
+    echo "  ✅ fonds-principal déjà configuré"
 fi
 
 echo "✨ Setup des liens symboliques terminé"

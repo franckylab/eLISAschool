@@ -28,6 +28,7 @@ import { switchEtablissementSchema } from '../dto/utilisateur-etablissement.dto'
 import { AppError } from '@common/filters/error.filter';
 import { validateDto } from '@common/utils';
 import { logger } from '@common/utils/logger.util';
+import { getClientIP } from '@common/utils/client-ip.util';
 import { authMiddleware, UtilisateurAuth } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -43,7 +44,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
 
         const result = await authService.login(
             loginDto,
-            req.ip,
+            getClientIP(req),
             req.get('User-Agent')
         );
 
@@ -89,7 +90,7 @@ router.post('/refresh', async (req: Request, res: Response, next: NextFunction) 
 
         const result = await authService.refreshTokens(
             refreshToken,
-            req.ip,
+            getClientIP(req),
             req.get('User-Agent')
         );
 
@@ -238,7 +239,7 @@ router.post('/verify-email', async (req: Request, res: Response, next: NextFunct
 router.get('/blocage-status/:identifiant', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { identifiant } = req.params;
-        const adresseIp = req.ip || req.socket.remoteAddress || 'unknown';
+        const adresseIp = getClientIP(req);
         const userAgent = req.headers['user-agent'];
         
         const result = await authService.getBlocageStatus(identifiant, adresseIp, userAgent);
@@ -373,7 +374,7 @@ router.post('/pre-login', authMiddleware, async (req: Request, res: Response, ne
         
         const result = await etablissementSelectionService.preLogin(
             utilisateurId,
-            req.ip,
+            getClientIP(req),
             req.get('User-Agent')
         );
 
@@ -409,7 +410,7 @@ router.post('/complete-login', authMiddleware, async (req: Request, res: Respons
         const result = await etablissementSelectionService.completeLogin(
             utilisateurId,
             etablissementId,
-            req.ip,
+            getClientIP(req),
             req.get('User-Agent')
         );
 

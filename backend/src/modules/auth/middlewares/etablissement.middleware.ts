@@ -19,6 +19,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { getClientIP } from '@common/utils/client-ip.util';
 import { Role } from '@shared/enums/roles.enum';
 
 /**
@@ -114,7 +115,7 @@ export function filterByEtablissement(options: FilterOptions = {}) {
             if (!user.etablissementId) {
                 if (logViolations) {
                     logger.warn(
-                        `[MultiTenant] Tentative d'accès sans établissement - User: ${user.email}, Role: ${user.role}, IP: ${req.ip}`
+                        `[MultiTenant] Tentative d'accès sans établissement - User: ${user.email}, Role: ${user.role}, IP: ${getClientIP(req)}`
                     );
                 }
                 
@@ -137,7 +138,7 @@ export function filterByEtablissement(options: FilterOptions = {}) {
                     if (logViolations) {
                         logger.error(
                             `[MultiTenant] ⚠️ TENTATIVE CROSS-TENANT BLOQUÉE - User: ${user.email} (${user.role}), ` +
-                            `Établissement légitime: ${user.etablissementId}, Tentative: ${queryEtabId}, IP: ${req.ip}, ` +
+                            `Établissement légitime: ${user.etablissementId}, Tentative: ${queryEtabId}, IP: ${getClientIP(req)}, ` +
                             `Endpoint: ${req.method} ${req.path}`
                         );
                     }

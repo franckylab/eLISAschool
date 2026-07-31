@@ -2,8 +2,29 @@
 # eLISAschool - Docker Compose
 # ==================================
 # Commandes: docker compose up -d | docker compose down
+# Architecture: nginx (port 7001) → backend (7000) / frontend (7001)
+# Les ports backend/frontend sont internes — seul nginx est exposé.
 
 services:
+  # ==================================
+  # Nginx — Reverse Proxy (point d'entrée unique)
+  # ==================================
+  # Injecte X-Forwarded-For / X-Real-IP pour l'audit IP client.
+  # Proxy WebSocket HMR Vite pour le hot-reload.
+  nginx:
+    image: nginx:alpine
+    container_name: elisaschool_nginx
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-7001}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - elisaschool_network
+
   # Base de données PostgreSQL
   postgres:
     image: postgres:16-alpine
@@ -70,8 +91,8 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-elisaschool_password}
       JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-12345678901234567890123456789012}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:7001}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:7001}
+      FRONTEND_URL: ${FRONTEND_URL:-http://10.0.0.1}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost,http://127.0.0.1,http://0.0.0.0,http://10.0.0.1,http://localhost:7001,http://10.0.0.1:7001}
       
       # Email (SMTP)
       SMTP_HOST: ${SMTP_HOST:-}
@@ -89,8 +110,8 @@ services:
       FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
       FIREBASE_SERVER_KEY: ${FIREBASE_SERVER_KEY:-}
       FIREBASE_VAPID_KEY: ${FIREBASE_VAPID_KEY:-}
-    ports:
-      - "${APP_PORT:-7000}:7000"
+    expose:
+      - "7000"
     volumes:
       - ../backend:/app/backend
       - ../shared:/app/shared
@@ -117,10 +138,10 @@ services:
     restart: unless-stopped
     working_dir: /app
     environment:
-      VITE_API_URL: http://localhost:${APP_PORT:-7000}
+      VITE_API_URL: ""
       WATCHPACK_POLLING: "true"
-    ports:
-      - "${FRONTEND_PORT:-7001}:7001"
+    expose:
+      - "7001"
     volumes:
       - ../frontend:/app
       - /app/node_modules

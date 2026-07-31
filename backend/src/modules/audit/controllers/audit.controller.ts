@@ -23,7 +23,7 @@ const MODULES_AUDIT_VALIDES = new Set([
     'notes', 'bulletins', 'personnel', 'contrats', 'paie',
     'eleves', 'classes', 'matieres', 'periodes', 'emploi-du-temps', 'organisation',
     'competences', 'diplomes-eleves', 'examens-nationaux', 'groupes-etablissements',
-    'apparence', 'finances', 'messagerie', 'sondages', 'orientation',
+    'finances', 'messagerie', 'sondages', 'orientation',
     'requetes', 'gamification', 'cartes', 'clubs', 'materiel', 'configuration',
 ]);
 

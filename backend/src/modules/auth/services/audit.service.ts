@@ -14,6 +14,7 @@ import UAParser from 'ua-parser-js';
 import { AppDataSource } from '@database/data-source';
 import { AuditLog, AuditAction, AuditSeverity } from '../entities/audit-log.entity';
 import { logger } from '@common/utils/logger.util';
+import { getClientIP } from '@common/utils/client-ip.util';
 import { auditRelationResolverService } from '@modules/audit/services/audit-relation-resolver.service';
 
 // Réexporter les enums pour utilisation dans les controllers
@@ -64,7 +65,7 @@ export class AuditService {
             utilisateurId: this.isValidUUID(options.utilisateurId) ? options.utilisateurId : undefined,
             cibleId: this.isValidUUID(options.cibleId) ? options.cibleId : undefined,
             severity: options.severity || AuditSeverity.INFO,
-            ipAddress: options.ipAddress ?? (req ? this.getClientIP(req) : undefined),
+            ipAddress: options.ipAddress ?? (req ? getClientIP(req) : undefined),
             userAgent: rawUserAgent,
             navigateur: parsed.navigateur,
             systemeExploitation: parsed.systemeExploitation,
@@ -252,17 +253,6 @@ export class AuditService {
             (cle) => JSON.stringify(nouvelles[cle]) !== JSON.stringify(anciennes[cle])
         );
         return champs.length > 0 ? champs : undefined;
-    }
-
-    /**
-     * Extraire l'adresse IP du client
-     */
-    private getClientIP(req: Request): string {
-        const forwarded = req.headers['x-forwarded-for'];
-        if (typeof forwarded === 'string') {
-            return forwarded.split(',')[0].trim();
-        }
-        return req.ip || req.socket?.remoteAddress || 'unknown';
     }
 
     private parseUserAgent(rawUA?: string): { navigateur?: string; systemeExploitation?: string; appareil?: string } {

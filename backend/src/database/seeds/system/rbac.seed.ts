@@ -398,7 +398,6 @@ export class RBACSeedService {
             emploi_du_temps: 'l\'emploi du temps',
             programmes: 'les programmes',
             groupes_etablissements: 'les groupes d\'établissements',
-            apparence: 'l\'apparence',
             permissions: 'les permissions',
             auth: 'l\'authentification',
             etablissements: 'les établissements',

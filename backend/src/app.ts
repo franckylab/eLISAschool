@@ -17,6 +17,7 @@ import path from 'path';
 
 import { envConfig } from '@config/env.config';
 import { logger } from '@common/utils/logger.util';
+import { getClientIP } from '@common/utils/client-ip.util';
 import { errorHandler } from '@common/filters/error.filter';
 import { notFoundHandler } from '@common/filters/not-found.filter';
 import { requestLogger } from '@common/interceptors/request-logger.interceptor';
@@ -85,7 +86,6 @@ import { organisationController } from '@modules/organisation';
 
 import { recrutementController } from '@modules/recrutement';
 import { parkingController } from '@modules/parking';
-import { apparenceController } from '@modules/apparence';
 import { networkController } from '@modules/network';
 
 /**
@@ -93,6 +93,16 @@ import { networkController } from '@modules/network';
  */
 export function createApp(): Application {
     const app = express();
+
+    // ==================================
+    // Trust Proxy (nginx, Docker bridge, load balancers)
+    // ==================================
+    // Permet à Express de lire les headers X-Forwarded-For / X-Real-IP
+    // injectés par les reverse proxies pour obtenir l'IP réelle du client.
+    // Sans ça, req.ip retourne l'IP du proxy (ex: gateway Docker 172.x.x.x).
+    // Note: () => 1 au lieu de true pour satisfaire express-rate-limit
+    // (1 proxy de confiance = nginx).
+    app.set('trust proxy', () => 1);
 
     // ==================================
     // Middlewares de sécurité
@@ -187,8 +197,8 @@ export function createApp(): Application {
         standardHeaders: true,
         legacyHeaders: false,
         keyGenerator: (req) => {
-            // Limiter par IP + identifiant (si disponible)
-            const ip = req.ip || req.socket.remoteAddress || 'unknown';
+            // Limiter par IP réelle du client + identifiant (si disponible)
+            const ip = getClientIP(req);
             const bodyIdentifiant = req.body?.identifiant || req.body?.email || '';
             return bodyIdentifiant ? `${ip}:${bodyIdentifiant}` : ip;
         },
@@ -218,7 +228,7 @@ export function createApp(): Application {
     // Fichiers statiques (uploads)
     // ==================================
 
-    // Servir les fichiers uploadés (fonds d'écran, logos, documents, etc.)
+    // Servir les fichiers uploadés (logos, documents, etc.)
     const uploadsDir = path.join(process.cwd(), 'uploads');
     app.use('/uploads', express.static(uploadsDir, {
         maxAge: '1h', // Cache court pour permettre aux mises à jour de se propager
@@ -233,9 +243,9 @@ export function createApp(): Application {
         },
     }));
 
-    // Servir les fonds d'écran du catalogue (fichiers système)
-    const fondsCatalogueDir = path.join(process.cwd(), '..', 'public', 'fonds-catalogue');
-    app.use('/fonds-catalogue', express.static(fondsCatalogueDir, {
+    // Servir le fond principal (variantes dark/light)
+    const fondsPrincipalDir = path.join(process.cwd(), '..', 'public', 'fonds-principal');
+    app.use('/fonds-principal', express.static(fondsPrincipalDir, {
         maxAge: '1h', // Cache court pour permettre aux mises à jour de se propager
         setHeaders: (res, filePath) => {
             if (filePath.endsWith('.svg')) {
@@ -413,7 +423,6 @@ export function createApp(): Application {
     app.use('/api/monitoring', authMiddleware, requireModuleActive('monitoring'), monitoringController); // Monitoring peut être global
     app.use('/api/dashboard', authMiddleware, requireModuleActive('dashboard'), filterByEtablissement(), dashboardController);
     app.use('/api/validation-workflows', authMiddleware, filterByEtablissement(), validationWorkflowController);
-    app.use('/api/apparence/fonds', authMiddleware, filterByEtablissement(), apparenceController);
     app.use('/api/groupes-etablissements', authMiddleware, filterByEtablissement(), groupesController);
     app.use('/api/types-enum', typesEnumController); // Types enum sont globaux
     

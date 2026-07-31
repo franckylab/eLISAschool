@@ -8,6 +8,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '@common/utils/logger.util';
+import { getClientIP } from '@common/utils/client-ip.util';
 
 /**
  * Middleware de journalisation des requêtes HTTP
@@ -18,7 +19,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 
     // Log de la requête entrante
     logger.info(`➡️  ${req.method} ${req.path}`, {
-        ip: req.ip,
+        ip: getClientIP(req),
         userAgent: req.get('User-Agent')?.substring(0, 50),
     });
 

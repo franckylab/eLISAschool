@@ -57,7 +57,6 @@ import { Route as AuthClassesRouteImport } from './routes/_auth.classes'
 import { Route as AuthChangePasswordRouteImport } from './routes/_auth/change-password'
 import { Route as AuthBulletinsRouteImport } from './routes/_auth.bulletins'
 import { Route as AuthBibliothequeRouteImport } from './routes/_auth.bibliotheque'
-import { Route as AuthApparenceRouteImport } from './routes/_auth.apparence'
 import { Route as AuthAnneesScolairesRouteImport } from './routes/_auth.annees-scolaires'
 import { Route as AuthUtilisateursIndexRouteImport } from './routes/_auth.utilisateurs.index'
 import { Route as AuthSpecialitesIndexRouteImport } from './routes/_auth.specialites.index'
@@ -377,11 +376,6 @@ const AuthBulletinsRoute = AuthBulletinsRouteImport.update({
 const AuthBibliothequeRoute = AuthBibliothequeRouteImport.update({
   id: '/bibliotheque',
   path: '/bibliotheque',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthApparenceRoute = AuthApparenceRouteImport.update({
-  id: '/apparence',
-  path: '/apparence',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthAnneesScolairesRoute = AuthAnneesScolairesRouteImport.update({
@@ -792,7 +786,6 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
   '/annees-scolaires': typeof AuthAnneesScolairesRouteWithChildren
-  '/apparence': typeof AuthApparenceRoute
   '/bibliotheque': typeof AuthBibliothequeRoute
   '/bulletins': typeof AuthBulletinsRouteWithChildren
   '/change-password': typeof AuthChangePasswordRoute
@@ -917,7 +910,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/apparence': typeof AuthApparenceRoute
   '/bibliotheque': typeof AuthBibliothequeRoute
   '/change-password': typeof AuthChangePasswordRoute
   '/configuration': typeof AuthConfigurationRoute
@@ -1017,7 +1009,6 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
   '/_auth/annees-scolaires': typeof AuthAnneesScolairesRouteWithChildren
-  '/_auth/apparence': typeof AuthApparenceRoute
   '/_auth/bibliotheque': typeof AuthBibliothequeRoute
   '/_auth/bulletins': typeof AuthBulletinsRouteWithChildren
   '/_auth/change-password': typeof AuthChangePasswordRoute
@@ -1145,7 +1136,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/verify-email'
     | '/annees-scolaires'
-    | '/apparence'
     | '/bibliotheque'
     | '/bulletins'
     | '/change-password'
@@ -1270,7 +1260,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/verify-email'
-    | '/apparence'
     | '/bibliotheque'
     | '/change-password'
     | '/configuration'
@@ -1369,7 +1358,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/verify-email'
     | '/_auth/annees-scolaires'
-    | '/_auth/apparence'
     | '/_auth/bibliotheque'
     | '/_auth/bulletins'
     | '/_auth/change-password'
@@ -1835,13 +1823,6 @@ declare module '@tanstack/react-router' {
       path: '/bibliotheque'
       fullPath: '/bibliotheque'
       preLoaderRoute: typeof AuthBibliothequeRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/apparence': {
-      id: '/_auth/apparence'
-      path: '/apparence'
-      fullPath: '/apparence'
-      preLoaderRoute: typeof AuthApparenceRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/annees-scolaires': {
@@ -2821,7 +2802,6 @@ const AuthAdminRolesRouteWithChildren = AuthAdminRolesRoute._addFileChildren(
 
 interface AuthRouteChildren {
   AuthAnneesScolairesRoute: typeof AuthAnneesScolairesRouteWithChildren
-  AuthApparenceRoute: typeof AuthApparenceRoute
   AuthBibliothequeRoute: typeof AuthBibliothequeRoute
   AuthBulletinsRoute: typeof AuthBulletinsRouteWithChildren
   AuthChangePasswordRoute: typeof AuthChangePasswordRoute
@@ -2871,7 +2851,6 @@ interface AuthRouteChildren {
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthAnneesScolairesRoute: AuthAnneesScolairesRouteWithChildren,
-  AuthApparenceRoute: AuthApparenceRoute,
   AuthBibliothequeRoute: AuthBibliothequeRoute,
   AuthBulletinsRoute: AuthBulletinsRouteWithChildren,
   AuthChangePasswordRoute: AuthChangePasswordRoute,

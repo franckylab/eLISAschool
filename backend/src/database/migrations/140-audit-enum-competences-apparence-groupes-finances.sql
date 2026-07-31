@@ -1,5 +1,5 @@
 -- ============================================
--- Migration 140: Audit enum — compétences, apparence, groupes, finances, diplômes, examens
+-- Migration 140: Audit enum — compétences, groupes, finances, diplômes, examens
 -- ============================================
 -- Ajoute les nouvelles valeurs AuditAction pour les modules non instrumentés.
 -- Ajoute les permissions audit:{module}:view correspondantes.
@@ -25,31 +25,6 @@ END $$;
 
 DO $$ BEGIN
     ALTER TYPE "audit_logs_action_enum" ADD VALUE IF NOT EXISTS 'COMPETENCE_DELETE';
-EXCEPTION WHEN undefined_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
-    ALTER TYPE "audit_logs_action_enum" ADD VALUE IF NOT EXISTS 'FOND_UPLOAD';
-EXCEPTION WHEN undefined_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
-    ALTER TYPE "audit_logs_action_enum" ADD VALUE IF NOT EXISTS 'FOND_DELETE';
-EXCEPTION WHEN undefined_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
-    ALTER TYPE "audit_logs_action_enum" ADD VALUE IF NOT EXISTS 'FOND_AJOUTER';
-EXCEPTION WHEN undefined_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
-    ALTER TYPE "audit_logs_action_enum" ADD VALUE IF NOT EXISTS 'FOND_RETIRER';
-EXCEPTION WHEN undefined_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
-    ALTER TYPE "audit_logs_action_enum" ADD VALUE IF NOT EXISTS 'FOND_ROTATION_CONFIG';
 EXCEPTION WHEN undefined_object THEN NULL;
 END $$;
 
@@ -215,31 +190,6 @@ EXCEPTION WHEN undefined_object THEN NULL;
 END $$;
 
 DO $$ BEGIN
-    ALTER TYPE audit_action_enum ADD VALUE IF NOT EXISTS 'FOND_UPLOAD';
-EXCEPTION WHEN undefined_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
-    ALTER TYPE audit_action_enum ADD VALUE IF NOT EXISTS 'FOND_DELETE';
-EXCEPTION WHEN undefined_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
-    ALTER TYPE audit_action_enum ADD VALUE IF NOT EXISTS 'FOND_AJOUTER';
-EXCEPTION WHEN undefined_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
-    ALTER TYPE audit_action_enum ADD VALUE IF NOT EXISTS 'FOND_RETIRER';
-EXCEPTION WHEN undefined_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
-    ALTER TYPE audit_action_enum ADD VALUE IF NOT EXISTS 'FOND_ROTATION_CONFIG';
-EXCEPTION WHEN undefined_object THEN NULL;
-END $$;
-
-DO $$ BEGIN
     ALTER TYPE audit_action_enum ADD VALUE IF NOT EXISTS 'MESSAGE_EDIT';
 EXCEPTION WHEN undefined_object THEN NULL;
 END $$;
@@ -395,7 +345,6 @@ FROM (VALUES
     ('audit:diplomes-eleves:view', 'Voir l historien des diplomes élèves', 'diplomes-eleves'),
     ('audit:examens-nationaux:view', 'Voir l historien des examens nationaux', 'examens-nationaux'),
     ('audit:groupes-etablissements:view', 'Voir l historien des groupes d établissements', 'groupes-etablissements'),
-    ('audit:apparence:view', 'Voir l historien des fonds d écran', 'apparence'),
     ('audit:finances:view', 'Voir l historien des finances', 'finances'),
     ('audit:messagerie:view', 'Voir l historien de la messagerie', 'messagerie'),
     ('audit:sondages:view', 'Voir l historien des sondages', 'sondages'),

@@ -370,7 +370,7 @@ export function LoginPage() {
         const pollBlocage = async () => {
             try {
                 // Utiliser le nouvel endpoint dédié pour vérifier le statut de blocage
-                const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:7000'}/api/auth/blocage-status/__check__`, {
+                const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/blocage-status/__check__`, {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' }
                 });

@@ -13,8 +13,7 @@ import { useSidebarStore } from '@/stores/sidebar.store';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { ConnectionBanner } from '@/features/network';
-import { FondRotator } from './FondRotator';
-import { NidAlveoleBackground } from './NidAlveoleBackground';
+import { FondPrincipalBackground } from './FondPrincipalBackground';
 import { cn } from '@/lib/cn';
 
 interface PageLayoutProps {
@@ -39,11 +38,8 @@ export function PageLayout({ children }: PageLayoutProps) {
 
     return (
         <div className="relative flex h-screen overflow-hidden">
-            {/* Fond alvéole fixe (base) */}
-            <NidAlveoleBackground />
-
-            {/* Fond d'écran rotatif catalogue (par-dessus) */}
-            <FondRotator />
+            {/* Fond principal unique (variantes dark/light) */}
+            <FondPrincipalBackground />
 
             {/* Overlay mobile */}
             {isMobileOpen && (

@@ -8,6 +8,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '@common/utils/logger.util';
+import { getClientIP } from '@common/utils/client-ip.util';
 
 /**
  * Classe d'erreur personnalisée pour l'application
@@ -100,7 +101,7 @@ export function errorHandler(
         logger.error(`[${code}] ${message}`, {
             path: req.path,
             method: req.method,
-            ip: req.ip,
+            ip: getClientIP(req),
             stack: error.stack,
         });
     } else {

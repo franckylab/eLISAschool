@@ -48,9 +48,6 @@ export { useDebounce } from './use-debounce';
 export { useDataTablePreferences } from './use-datatable-preferences';
 export type { DataTablePreferences, DataTablePreferencesPartial } from '@/types/datatable-preferences.types';
 
-// Contrôle rotation des fonds d'écran
-export { useRotationControle } from './use-rotation-controle';
-
 // Document title
 export { useDocumentTitle } from './use-document-title';
 
