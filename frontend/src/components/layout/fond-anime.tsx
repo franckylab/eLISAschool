@@ -55,7 +55,7 @@ export const FOND_DEGRADE_DARK =
 export const FOND_GRILLE_CELLULE = 23; // px — taille du carreau
 export const FOND_GRILLE_MAJEURE_ECHELLE = 1; // ligne majeure tous les N carreaux
 export const FOND_GRILLE_OPACITE = 0.9; // opacité de la couche quadrillage
-export const FOND_GRILLE_RELIEF_RATIO = 0.1; // rayon du point relief (× cellule)
+export const FOND_GRILLE_RELIEF_RATIO = 0.04; // rayon du point relief (× cellule)
 
 export interface GrilleCouleurs {
     mineure: string; // ligne mineure (rgba)
@@ -66,7 +66,7 @@ export interface GrilleCouleurs {
 }
 
 export const FOND_GRILLE_LIGHT: GrilleCouleurs = {
-    mineure: 'rgba(147, 197, 253, 0.25)', // #93c5fd
+    mineure: 'rgba(147, 197, 253, 0.25)', // #22c55e 
     majeure: 'rgba(147, 197, 253, 0.35)',
     reliefClair: 'rgba(255, 255, 255, 0.9)',
     reliefCoeur: 'rgba(147, 197, 253, 0.5)',
@@ -93,7 +93,7 @@ function construireQuadrillage(
     majeureEchelle: number,
 ): { image: string; size: string } {
     const majeur = cellule * majeureEchelle;
-    const r = Math.max(2, Math.round(cellule * FOND_GRILLE_RELIEF_RATIO));
+    const r = Math.max(1, Math.round(cellule * FOND_GRILLE_RELIEF_RATIO));
     const tuile = cellule * 1;
 
     const images: string[] = [
@@ -115,7 +115,7 @@ function construireQuadrillage(
     ] as const) {
         // 1. Ombre externe (bas-droite, floue) — profondeur
         images.push(
-            `radial-gradient(circle at ${dx + 2}px ${dy + 2}px, ${cfg.reliefOmbre} 0, ${cfg.reliefOmbre} ${r}px, transparent ${r + 2}px)`,
+            `radial-gradient(circle at ${dx + 2}px ${dy + 2}px, ${cfg.reliefOmbre} 0, ${cfg.reliefOmbre} ${r * 0.75}px, transparent ${r + 0.75}px)`,
         );
         tailles.push(`${tuile}px ${tuile}px`);
         // 2. Corps du point (biseau clair haut-gauche → cœur dégradé)
@@ -125,7 +125,7 @@ function construireQuadrillage(
         tailles.push(`${tuile}px ${tuile}px`);
         // 3. Ombre interne (anneau sombre sur le bord du point)
         images.push(
-            `radial-gradient(circle at ${dx + 0.05}px ${dy + 0.05}px, transparent 0 ${r * 0.8}px, ${cfg.reliefOmbre} ${r + 0.5}px, transparent ${r + 1.2}px)`,
+            `radial-gradient(circle at ${dx + 0.05}px ${dy + 0.05}px, transparent 0 ${r * 0.6}px, ${cfg.reliefOmbre} ${r + 0.4}px, transparent ${r + 0.75}px)`,
         );
         tailles.push(`${tuile}px ${tuile}px`);
     }
