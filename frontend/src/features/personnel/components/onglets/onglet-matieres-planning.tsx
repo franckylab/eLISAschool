@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 import { useEnseignantEdt } from '../../hooks/use-personnel-detail';
-import { LoadingState } from '@/components/feedback';
+import { InlineSpinner } from '@/components/feedback';
 import { formatDate } from '@/lib/date-utils';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import type { EdtCreneau } from '../../types/personnel.types';
@@ -40,7 +40,7 @@ export function OngletMatieresPlanning({ enseignantId, isActive }: Props) {
     const totalCreneaux = Object.values(data?.jours ?? {}).flat().length;
 
     if (isLoading && isActive) {
-        return <div className="py-12"><LoadingState message={t('affectations.chargementPlanning', 'Chargement du planning...')} /></div>;
+        return <div className="py-12 flex justify-center"><InlineSpinner label={t('affectations.chargementPlanning', 'Chargement du planning...')} /></div>;
     }
 
     return (

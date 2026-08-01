@@ -1,0 +1,199 @@
+/**
+ * ==================================
+ * eLISAschool - Animations CSS globales
+ * ==================================
+ * Version: 1.0.0
+ * Auteur: franck arlos chendjou
+ *
+ * Keyframes et classes utilitaires pour les animations
+ * qui ne dépendent pas de Framer Motion.
+ * Complementaire aux variants Framer Motion (pathLength, opacity, etc.)
+ */
+
+/* ─── Shimmer (skeleton wave) ─────────────────────── */
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* ─── Progress bar indéterminée ───────────────────── */
+@keyframes progress-indeterminate {
+    0% {
+        left: -35%;
+        right: 100%;
+    }
+    60% {
+        left: 100%;
+        right: -90%;
+    }
+    100% {
+        left: 100%;
+        right: -90%;
+    }
+}
+
+/* ─── Progress bar — shimmer sur la barre de remplissage ─ */
+@keyframes progress-shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* ─── Fade in up (entrée douce) ───────────────────── */
+@keyframes fade-in-up {
+    0% {
+        opacity: 0;
+        transform: translateY(clamp(4px, 0.5vw, 8px));
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ─── Fade in (simple) ────────────────────────────── */
+@keyframes fade-in {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+/* ─── Pulse doux (respiration) ────────────────────── */
+@keyframes pulse-soft {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+}
+
+/* ─── Pulse ring (cercles concentriques splash) ───── */
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.6);
+        opacity: 0;
+    }
+    30% {
+        opacity: 0.3;
+    }
+    100% {
+        transform: scale(1.6);
+        opacity: 0;
+    }
+}
+
+/* ─── Drawing stroke (crayon qui écrit) ───────────── */
+@keyframes draw-stroke {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+/* ─── Bounce léger (succès, notification) ─────────── */
+@keyframes bounce-soft {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(clamp(-3px, -0.3vw, -6px)); }
+}
+
+/* ─── Rotation spinner ────────────────────────────── */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ─── Gradient shift (fond splash) ────────────────── */
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* ═══ Classes utilitaires ═══════════════════════════ */
+
+.animate-shimmer {
+    animation: shimmer 1.8s ease-in-out infinite;
+}
+
+.animate-fade-in-up {
+    animation: fade-in-up 0.5s ease-out both;
+}
+
+.animate-fade-in {
+    animation: fade-in 0.4s ease-out both;
+}
+
+.animate-pulse-soft {
+    animation: pulse-soft 2.5s ease-in-out infinite;
+}
+
+.animate-pulse-ring {
+    animation: pulse-ring 2.5s ease-out infinite;
+}
+
+.animate-bounce-soft {
+    animation: bounce-soft 1.5s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+    animation: spin 1.2s linear infinite;
+}
+
+/* ─── Skeleton wave overlay ───────────────────────── */
+.skeleton-wave {
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton-wave::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--color-surface-hover) 50%, transparent) 50%,
+        transparent 100%
+    );
+    animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* ─── Progress bar indéterminée ───────────────────── */
+.progress-indeterminate::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    animation: progress-indeterminate 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+/* ─── Progress bar shimmer overlay ────────────────── */
+.progress-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-shimmer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.25) 50%,
+        transparent 100%
+    );
+    animation: progress-shimmer 1.5s ease-in-out infinite;
+}
+
+/* ─── Respect prefers-reduced-motion ──────────────── */
+@media (prefers-reduced-motion: reduce) {
+    .animate-shimmer,
+    .animate-pulse-soft,
+    .animate-pulse-ring,
+    .animate-bounce-soft,
+    .animate-spin-slow,
+    .skeleton-wave::after,
+    .progress-indeterminate::after,
+    .progress-shimmer::after {
+        animation: none;
+    }
+
+    .animate-fade-in-up,
+    .animate-fade-in {
+        animation-duration: 0.01ms;
+    }
+}

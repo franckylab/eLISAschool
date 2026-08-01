@@ -21,9 +21,9 @@
  *     atténué → bleu → noir subtil. Dark : quasi-nul (blanc 4% →
  *     transparent → noir 5%). Léger « flou » par bords progressifs.
  *   - Fond : light = BLEU pâle → bleu clair → vert pâle (coloré).
- *     dark = neutre profond thématé (dominant-950 8%, lueur 2%,
- *     assombrissement). Les cartes (#1a2744) ressortent par leur
- *     surface + bordure (#475569) sur fond #111827.
+ *     dark = plus sombre en haut (profondeur) → plus clair en bas
+ *     (lueur 3%) + dominant-950 6% (teinte thème). Les cartes
+ *     (#1a2744) ressortent par surface + bordure (#475569).
  *   - Mesh gradient (couche 3) : aurora subtile via 3 radial-gradient
  *     positionnés aux coins, couleur thème (var). Light : 4-6% opacité,
  *     dark : 3-5% opacité. Zéro repaint, 100% CSS.
@@ -68,15 +68,14 @@ export const FOND_CANON = {
 // Couche 1 — dégradé général (variant par thème)
 // Light : BLEU pâle (accent-50) → BLEU eLISAschool clair (accent-100) →
 //         vert eLISAschool pâle (dominant-100) → BLEU pâle (accent-50)
-// Dark : fond neutre profond thématé — dominant-950 à 8% pour une
-//        teinte subtile de la couleur de l'établissement, lueur 2%,
-//        assombrissement en bas. Les cartes (#1a2744) ressortent
-//        naturellement par leur surface + bordure (#475569).
+// Dark : plus sombre en haut (profondeur) → plus clair en bas et aux
+//        coins (lueur résiduelle). dominant-950 à 6% pour teinte thème.
+//        Les cartes (#1a2744) ressortent par surface + bordure (#475569).
 // ==========================================
 export const FOND_DEGRADE_LIGHT =
     `linear-gradient(135deg, var(--color-accent-50, #eff6ff) 0%, var(--color-accent-100, #dbeafe) 45%, var(--color-dominant-100, #dcfce7) 78%, var(--color-accent-50, #eff6ff) 100%)`;
 export const FOND_DEGRADE_DARK =
-    `linear-gradient(135deg, color-mix(in srgb, ${FOND_CANON.blanc} 2%, transparent) 0%, var(--color-background, #111827) 25%, color-mix(in srgb, var(--color-dominant-950, #052e16) 8%, var(--color-background, #111827)) 60%, color-mix(in srgb, ${FOND_CANON.noir} 10%, transparent) 100%)`;
+    `linear-gradient(180deg, color-mix(in srgb, ${FOND_CANON.noir} 12%, transparent) 0%, var(--color-background, #111827) 40%, color-mix(in srgb, var(--color-dominant-950, #052e16) 6%, transparent) 70%, color-mix(in srgb, ${FOND_CANON.blanc} 3%, transparent) 100%)`;
 
 // ==========================================
 // Couche 2 — quadrillage cahier (variant par thème)
@@ -96,8 +95,8 @@ export const FOND_GRILLE_DARK: GrilleCouleurs = {
     // Opacité minimale : le fond dark ne doit JAMAIS competir avec les cartes
     mineure: `color-mix(in srgb, ${FOND_CANON.bleuLigneFonce} 6%, transparent)`,
     majeure: `color-mix(in srgb, ${FOND_CANON.bleuLigneFonce} 10%, transparent)`,
-    // Teinte verticale dark : quasi-nulle — léger éclaircissement en haut
-    teinte: `linear-gradient(180deg, color-mix(in srgb, ${FOND_CANON.blanc} 4%, transparent) 0%, transparent 50%, color-mix(in srgb, ${FOND_CANON.noir} 5%, transparent) 100%)`,
+    // Teinte verticale dark : sombre en haut → clair en bas (cohérent avec le dégradé)
+    teinte: `linear-gradient(180deg, color-mix(in srgb, ${FOND_CANON.noir} 8%, transparent) 0%, transparent 45%, color-mix(in srgb, ${FOND_CANON.blanc} 3%, transparent) 100%)`,
 };
 
 // ==========================================

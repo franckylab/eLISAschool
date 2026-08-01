@@ -22,7 +22,7 @@ import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
-import { LoadingState } from '@/components/feedback';
+import { InlineSpinner } from '@/components/feedback';
 import type { MembrePersonnel, ModifierPersonnelDto } from '../types/personnel.types';
 import { fromFormToCreateDto } from '../types/personnel.types';
 import type { Utilisateur } from '@/features/utilisateurs/types/utilisateur.types';
@@ -141,7 +141,7 @@ export function PersonnelFormModal({ mode, membre, onSuccess, onCancel }: Person
             }
         >
             {isFetching ? (
-                <div className="py-12"><LoadingState message={t('form.chargement')} /></div>
+                <div className="py-12 flex justify-center"><InlineSpinner label={t('form.chargement')} /></div>
             ) : (
             <form id="personnel-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 {/* Utilisateur lié */}

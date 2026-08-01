@@ -27,7 +27,8 @@ import { EDTCalendar } from '@/features/emploi-du-temps';
 import { AffectationFormModal } from './affectation-form-modal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { PageSkeleton } from '@/components/ui/Skeleton';
-import { ErrorMessage, LoadingState } from '@/components/ui/ErrorMessage';
+import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { InlineSpinner } from '@/components/feedback';
 import { usePermissions, useTabState } from '@/hooks';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { TabsBar } from '@/components/ui';
@@ -268,7 +269,7 @@ export function MatiereDetailPage() {
                 {ongletActif === 'emploi-du-temps' && (
                     <div className="space-y-4">
                         {edtQuery.isLoading ? (
-                            <div className="py-12"><LoadingState message={t('chargementEDT')} /></div>
+                            <div className="py-12 flex justify-center"><InlineSpinner label={t('chargementEDT')} /></div>
                         ) : !edtQuery.data?.items?.length ? (
                         <div className="bg-card rounded-lg border border-border p-[clamp(1.5rem,5vw,3rem)] text-center">
                             <Clock className="h-[clamp(2rem,6vw,3rem)] w-[clamp(2rem,6vw,3rem)] text-muted-foreground mx-auto mb-[clamp(0.5rem,2vw,0.75rem)]" />
@@ -291,7 +292,7 @@ export function MatiereDetailPage() {
                                 </h3>
                                 <div className="border-b border-border mb-6" />
                                 {workflowQuery.isLoading ? (
-                                    <LoadingState />
+                                    <InlineSpinner />
                                 ) : workflowQuery.data ? (
                                     <>
                                         <ValidationTimeline
@@ -437,7 +438,7 @@ function AffectationsTab({ data, isLoading, onEdit, onDelete, onCreate, hasPermi
     const { t } = useTranslation('matieres');
     const navigate = useNavigate();
 
-    if (isLoading) return <div className="py-12 text-center text-muted-foreground"><LoadingState message={t('chargementAffectations')} /></div>;
+    if (isLoading) return <div className="py-12 flex justify-center"><InlineSpinner label={t('chargementAffectations')} /></div>;
 
     return (
         <div className="space-y-4">

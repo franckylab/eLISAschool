@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar, List, Grid3X3, MapPin } from 'lucide-react';
 import { useCreneaux } from '@/features/emploi-du-temps';
-import { LoadingState } from '@/components/feedback';
+import { InlineSpinner } from '@/components/feedback';
 import type { CreneauHoraire } from '@/features/emploi-du-temps';
 
 const JOURS = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM'];
@@ -44,7 +44,7 @@ export function OngletEdt({ enseignantId, isActive }: { enseignantId: string; is
     }, [grouped]);
 
     if (isLoading && isActive) {
-        return <div className="py-12"><LoadingState message={t('edt.chargement')} /></div>;
+        return <div className="py-12 flex justify-center"><InlineSpinner label={t('edt.chargement')} /></div>;
     }
 
     return (

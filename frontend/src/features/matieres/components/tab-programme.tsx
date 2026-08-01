@@ -4,7 +4,7 @@ import { BookMarked, Plus, Edit, Trash2, CheckCircle, XCircle } from 'lucide-rea
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { LoadingState } from '@/components/ui/ErrorMessage';
+import { InlineSpinner } from '@/components/feedback';
 import { usePermissions } from '@/hooks';
 import { useRetirerMatiereProgramme, useModifierMatiereProgramme } from '../hooks/use-matieres';
 import { ProgrammeMatiereModal } from '@/features/programmes/components/programme-matiere-modal';
@@ -94,7 +94,7 @@ export function TabProgramme({
                     </p>
 
                     {isLoadingPP ? (
-                        <LoadingState message={t('chargement')} />
+                        <InlineSpinner label={t('chargement')} />
                     ) : !programmesPedagogiques || programmesPedagogiques.length === 0 ? (
                         <div className="bg-[var(--color-card)] rounded-lg border border-border p-[clamp(1.5rem,5vw,3rem)] text-center">
                             <BookMarked className="h-[clamp(2rem,6vw,3rem)] w-[clamp(2rem,6vw,3rem)] text-text-muted mx-auto mb-[clamp(0.5rem,2vw,0.75rem)]" />

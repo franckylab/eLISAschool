@@ -79,6 +79,7 @@ export interface PaiementFiltres {
     moyenPaiement?: string;
     dateDebut?: string;
     dateFin?: string;
+    recherche?: string;
     page?: number;
     limit?: number;
     sortBy?: string;
@@ -86,10 +87,8 @@ export interface PaiementFiltres {
 }
 
 export interface StatistiquesFinancieres {
-    totalAttendu: number;
-    totalRecu: number;
-    totalRestant: number;
-    nombrePaiements: number;
-    tauxRecouvrement: number;
-    parType: Record<string, { attendu: number; recu: number; restant: number }>;
+    totalEncaisse: number;
+    montantEnAttente: number;
+    totalPaiements: number;
+    tauxCollecte: number;
 }

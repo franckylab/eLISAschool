@@ -69,6 +69,16 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 - **Nettoyage staging/prod** : `scripts/deploy-fonds-principal.sh` (idempotent — DROP tables fonds + DELETE params + permissions).
 - **Clé Originkit** : `ORIGINKIT_API_KEY` (shell uniquement, jamais committer). `.originkit/` gitignoré (brief agent). Quota 10 fetches/jour. Réinstall : `npx originkit@latest add text-wave --custom-style`.
 
+## Système d'animations et loading
+- **SplashScreen v2** (`frontend/src/components/feedback/SplashScreen.tsx`) : écran de démarrage avec logo SVG qui se dessine trait par trait (pathLength Framer Motion), texte « elisaschool° » en reveal lettre par lettre, barre de progression style règle/graduation, version affichée, thème auto (light/dark via MutationObserver). Durée minimum 5s (gérée par `App.tsx`). Ultra-responsive (clamp()).
+- **Intégration bootstrap** (`frontend/src/app/App.tsx`) : hook `useSplashScreen()` — affiche le splash jusqu'à `min(5s, auth._initialized)` + transition de sortie AnimatePresence (opacity 0.4s).
+- **Animations CSS** (`frontend/src/styles/animations.css`) : keyframes globaux (shimmer, progress-indeterminate, fade-in-up, pulse-soft, pulse-ring, draw-stroke, bounce-soft, gradient-shift) + classes utilitaires (.animate-shimmer, .skeleton-wave, .progress-indeterminate, .progress-shimmer) + `prefers-reduced-motion` respecté. Importé dans `main.tsx` après `globals.css`.
+- **Skeleton theme-aware** (`frontend/src/components/ui/Skeleton.tsx` v2.0) : `bg-gray-200` hardcodé → `bg-[var(--color-surface-hover)]`. Variants : text, circular, rectangular, card. Animations : pulse (Framer Motion), wave (CSS shimmer overlay), none. Tous les dimensions en `clamp()`. Composants : `Skeleton`, `TableSkeleton` (avec showCheckbox), `StatsCardSkeleton`, `PageSkeleton`, `FormSkeleton`.
+- **ProgressBar** (`frontend/src/components/feedback/ProgressBar.tsx`) : modes `determinate` (valeur 0-100 animée) et `indeterminate` (barre glissante). Variantes : default, success, danger, accent. Tailles : sm/md/lg (clamp()). Shimmer overlay. Accessible (role=progressbar, aria-value*).
+- **InlineSpinner** (`frontend/src/components/feedback/InlineSpinner.tsx`) : spinner SVG thématique (couleur dominante), tailles sm/md/lg, label optionnel. Remplace `LoadingState` pour les chargements inline/onglets.
+- **Composants supprimés** : `LoadingState` (feedback + ErrorMessage), `ListLoading` — remplacés par `InlineSpinner` (17 fichiers migrés) et `Skeleton` (PageSkeleton/TableSkeleton).
+- **Hiérarchie loading** : SplashScreen (app startup) → PageSkeleton (page loading) → TableSkeleton (DataTable) → StatsCardSkeleton (cards) → InlineSpinner (inline/tabs) → ProgressBar (opérations longues).
+
 ### Blocked
 — (none)
 

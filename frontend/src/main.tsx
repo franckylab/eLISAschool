@@ -12,6 +12,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from '@/app/App';
 import { Providers } from '@/app/providers';
 import '@/styles/globals.css';
+import '@/styles/animations.css';
 import { useAuthStore } from '@/stores/auth.store';
 
 // Root-level error recovery for React crash (error 409 = unmounted root)

@@ -8,12 +8,13 @@
  * Auteur: franck arlos chendjou
  */
 
+import { useEffect, useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import { cn } from '@/lib/cn';
 
 // ─── Types ───────────────────────────────────────────
 export type LogoVariant = 'full' | 'horizontal' | 'icon' | 'mini' | 'wordmark';
-export type LogoTheme = 'default' | 'white' | 'mono' | 'dark';
+export type LogoTheme = 'default' | 'white' | 'mono' | 'dark' | 'auto';
 export type LogoSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 interface ElisaLogoProps {
@@ -63,6 +64,25 @@ const COLORS = {
         text: '#e2e8f0',
         textSecondary: '#86efac',
         tagline: '#94a3b8',
+    },
+    // auto : adapté au fond surface (light = default, dark = palette contrastée)
+    autoLight: {
+        primary: '#1a3a5c',
+        secondary: '#5a8a5c',
+        accent: '#2e6b8a',
+        book: '#1a3a5c',
+        text: '#1a3a5c',
+        textSecondary: '#5a8a5c',
+        tagline: '#6b7280',
+    },
+    autoDark: {
+        primary: '#f1f5f9',     // slate-100 — contraste ~13:1 sur #1a2744
+        secondary: '#4ade80',   // green-400 — vibrant, lisible sur fond sombre
+        accent: '#cbd5e1',      // slate-300 — intermédiaire lisible
+        book: '#f1f5f9',
+        text: '#f1f5f9',
+        textSecondary: '#4ade80',
+        tagline: '#94a3b8',     // slate-400 — tagline discret mais lisible
     },
 };
 
@@ -310,6 +330,29 @@ function LogoWordmark({
     );
 }
 
+// ─── Hook : détection thème (light/dark) ─────────────
+function useLogoTheme(theme: LogoTheme): typeof COLORS.default {
+    const [isDark, setIsDark] = useState(
+        () => document.documentElement.dataset.theme === 'dark',
+    );
+
+    useEffect(() => {
+        const observer = new MutationObserver(() => {
+            setIsDark(document.documentElement.dataset.theme === 'dark');
+        });
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-theme'],
+        });
+        return () => observer.disconnect();
+    }, []);
+
+    if (theme === 'auto') {
+        return isDark ? COLORS.autoDark : COLORS.autoLight;
+    }
+    return COLORS[theme];
+}
+
 // ─── Composant principal ─────────────────────────────
 export function ElisaLogo({
     variant = 'full',
@@ -320,7 +363,7 @@ export function ElisaLogo({
     className,
     onClick,
 }: ElisaLogoProps) {
-    const colors = COLORS[theme];
+    const colors = useLogoTheme(theme);
     const dimensions = SIZES[size];
     const Container = animated ? motion.div : 'div';
 

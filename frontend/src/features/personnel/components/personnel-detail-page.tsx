@@ -41,7 +41,7 @@ import { useWorkflowByEntite } from '@/hooks/use-validation-workflow';
 import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
-import { LoadingState } from '@/components/ui/ErrorMessage';
+import { InlineSpinner } from '@/components/feedback';
 import { getCategorieColors } from '@/lib/categorie-fonction';
 import { formatDate } from '@/lib/date-utils';
 import { formatMontant } from '@/lib/format-utils';
@@ -169,7 +169,7 @@ export function PersonnelDetailPage() {
     }, [estEnseignant, t, hasPermission, peutValider]);
 
     if (isLoading) {
-        return <div className="p-6"><LoadingState message={t('detail.chargement')} /></div>;
+        return <div className="p-6 flex justify-center"><InlineSpinner label={t('detail.chargement')} /></div>;
     }
 
     if (!membre) {

@@ -62,7 +62,7 @@ export function Header() {
                 {/* Logo eLISAschool - visible sur desktop */}
                 <div className="hidden lg:flex items-center justify-center flex-shrink-0">
                     <Link to="/dashboard" className="block transition-transform hover:scale-[1.02] active:scale-[0.98]">
-                        <ElisaLogo variant="horizontal" size="sm" />
+                        <ElisaLogo variant="horizontal" size="sm" theme="auto" />
                     </Link>
                 </div>
 

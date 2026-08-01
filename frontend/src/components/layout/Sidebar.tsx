@@ -456,7 +456,7 @@ export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } =
                             transition={{ duration: 0.25, ease: 'easeOut' }}
                         >
                             <Link to="/dashboard" className="block transition-transform hover:scale-[1.02] active:scale-[0.98]">
-                                <ElisaLogo variant="horizontal" size="sm" />
+                                <ElisaLogo variant="horizontal" size="sm" theme="auto" />
                             </Link>
                         </motion.div>
                     ) : (
@@ -468,7 +468,7 @@ export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } =
                             transition={{ duration: 0.2, ease: 'easeOut' }}
                         >
                             <Link to="/dashboard" className="block transition-transform hover:scale-110 active:scale-95">
-                                <ElisaLogo variant="mini" size="sm" />
+                                <ElisaLogo variant="mini" size="sm" theme="auto" />
                             </Link>
                         </motion.div>
                     )}
@@ -589,7 +589,7 @@ export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } =
                             />
                         ) : (
                             <div className="w-full flex justify-center">
-                                <ElisaLogo variant="horizontal" size="sm" />
+                                <ElisaLogo variant="horizontal" size="sm" theme="auto" />
                             </div>
                         )}
                         {etablissement?.slogan && (

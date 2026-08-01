@@ -2,18 +2,23 @@
  * ==================================
  * eLISAschool - Application principale
  * ==================================
- * Composant racine avec Router et ErrorBoundary
+ * Composant racine avec Router, ErrorBoundary et SplashScreen
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
+import { SplashScreen } from '@/components/feedback/SplashScreen';
 import { useThemeStore } from '@/stores/theme.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { routeTree } from '@/routeTree.gen';
 import { DebugPermissions } from '@/components/debug/DebugPermissions';
 import { AlertTriangle, Home } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
+
+// Durée minimum d'affichage du splash (ms)
+const SPLASH_MIN_DURATION = 5000;
 
 // Composant Not Found global avec design soigné
 function GlobalNotFound() {
@@ -73,21 +78,58 @@ declare module '@tanstack/react-router' {
     }
 }
 
+// ─── Hook : gestion du splash screen ────────────────
+function useSplashScreen() {
+    const [splashVisible, setSplashVisible] = useState(true);
+    const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+    const initialize = useAuthStore((state) => state.initialize);
+    const _initialized = useAuthStore((state) => state._initialized);
+
+    useEffect(() => {
+        // Initialiser l'auth (sync tokens depuis localStorage)
+        initialize();
+
+        // Timer minimum 5s pour le branding
+        const timer = setTimeout(() => setMinTimeElapsed(true), SPLASH_MIN_DURATION);
+        return () => clearTimeout(timer);
+    }, [initialize]);
+
+    useEffect(() => {
+        // Disparition du splash : les deux conditions sont remplies
+        if (minTimeElapsed && _initialized) {
+            // Petit délai pour la transition de sortie
+            const fadeTimer = setTimeout(() => setSplashVisible(false), 300);
+            return () => clearTimeout(fadeTimer);
+        }
+    }, [minTimeElapsed, _initialized]);
+
+    return splashVisible;
+}
+
 export function App() {
     const appliquerTheme = useThemeStore((state) => state.appliquerTheme);
-    const initialize = useAuthStore((state) => state.initialize);
+    const splashVisible = useSplashScreen();
 
     useEffect(() => {
         appliquerTheme();
-        // Call async initialize
-        const init = async () => {
-            await initialize();
-        };
-        init();
-    }, [appliquerTheme, initialize]);
+    }, [appliquerTheme]);
 
     return (
         <ErrorBoundary>
+            {/* Splash screen avec transition de sortie */}
+            <AnimatePresence>
+                {splashVisible && (
+                    <motion.div
+                        key="splash"
+                        initial={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.4, ease: 'easeInOut' }}
+                    >
+                        <SplashScreen statusMessage="Initialisation" />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <RouterProvider router={router} />
             {/* Debug Panel - uniquement en développement */}
             {import.meta.env.DEV && <DebugPermissions />}

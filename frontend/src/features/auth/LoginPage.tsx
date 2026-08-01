@@ -28,6 +28,7 @@ import { CustomModal } from '@/components/modals';
 import { ElisaLogo } from '@/components/branding';
 import { EtablissementSelectionModal } from '@/components/auth/EtablissementSelectionModal';
 import { LoginSlideshow } from './LoginSlideshow';
+import { FondAnime } from '@/components/layout/fond-anime';
 
 interface LoginForm {
     identifiant: string;
@@ -600,6 +601,8 @@ export function LoginPage() {
 
     return (
         <div className="flex min-h-screen">
+            {/* Fond principal — visible uniquement derrière le panneau droit */}
+            <FondAnime />
             {/* ─── Panneau gauche : Illustration avec rotation ─── */}
             <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] relative overflow-hidden">
                 {/* Illustration scolaire avec rotation d'images, logo, slogan et diaporama */}
@@ -619,7 +622,7 @@ export function LoginPage() {
                 <div className="flex items-center justify-between" style={{ padding: 'clamp(0.5rem, 1vh, 1rem) clamp(1rem, 2vw, 2rem)' }}>
                     {/* Logo mobile */}
                     <Link to="/" className="block lg:hidden">
-                        <ElisaLogo variant="horizontal" size="xs" />
+                        <ElisaLogo variant="horizontal" size="xs" theme="auto" />
                     </Link>
                     <div className="ml-auto">
                         <LanguageSwitcher />
@@ -652,7 +655,7 @@ export function LoginPage() {
                             ) : (
                                 <div className="flex items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--color-dominante)]/10 to-[var(--color-dominante)]/5"
                                      style={{ height: 'clamp(48px, 6vh, 64px)', width: 'clamp(48px, 6vh, 64px)' }}>
-                                    <ElisaLogo variant="icon" size="lg" />
+                                    <ElisaLogo variant="icon" size="lg" theme="auto" />
                                 </div>
                             )}
                         </motion.div>

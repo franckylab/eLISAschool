@@ -207,33 +207,3 @@ export function EmptyState({
         </div>
     );
 }
-
-/**
- * Composant pour état de chargement avec message
- */
-interface LoadingStateProps {
-    message?: string;
-    size?: 'sm' | 'md' | 'lg';
-    className?: string;
-}
-
-export function LoadingState({
-    message = 'Chargement en cours...',
-    size = 'md',
-    className = '',
-}: LoadingStateProps) {
-    const sizes = {
-        sm: { spinner: 'h-6 w-6', text: 'text-sm' },
-        md: { spinner: 'h-10 w-10', text: 'text-base' },
-        lg: { spinner: 'h-14 w-14', text: 'text-lg' },
-    };
-
-    const sizeConfig = sizes[size];
-
-    return (
-        <div className={`flex flex-col items-center justify-center py-12 ${className}`}>
-            <div className={`animate-spin rounded-full border-b-2 border-blue-600 dark:border-blue-400 ${sizeConfig.spinner}`} />
-            <p className={`mt-4 text-gray-600 dark:text-gray-300 ${sizeConfig.text}`}>{message}</p>
-        </div>
-    );
-}

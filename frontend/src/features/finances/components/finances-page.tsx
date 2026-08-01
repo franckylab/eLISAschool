@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { DollarSign, Plus, Download, Eye, CreditCard, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { LoadingState, ErrorState } from '@/components/feedback';
+import { InlineSpinner, ErrorState } from '@/components/feedback';
 import { CardGrid } from '@/components/ui/CardGrid';
 import { StatCard } from '@/components/ui/StatCard';
 import { usePaiements, useStatistiquesFinancieres } from '../hooks/use-finances';
@@ -20,24 +20,18 @@ export function FinancesPage() {
     const { t } = useTranslation('finances');
     const [page, setPage] = useState(1);
     const limit = 20;
-    const [recherche, setRecherche] = useState('');
 
     const { data, isLoading, isFetching, error } = usePaiements({
         page,
         limit,
-        recherche: recherche || undefined,
     });
 
     const { data: stats } = useStatistiquesFinancieres();
 
-    const refetchPaiements = () => {
-        // Le refetch sera géré par react-query automatiquement
-    };
-
     if (isLoading && !data) {
         return (
             <div className="p-6">
-                <LoadingState message="Chargement des données financières..." />
+                <InlineSpinner label="Chargement des données financières..." />
             </div>
         );
     }
@@ -203,6 +197,7 @@ export function FinancesPage() {
             )}
 
             <DataTable
+                tableId="finances-paiements"
                 columns={colonnes}
                 data={data?.items || []}
                 isLoading={isLoading}

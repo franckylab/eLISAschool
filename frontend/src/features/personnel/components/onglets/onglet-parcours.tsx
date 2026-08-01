@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { LucideIcon } from 'lucide-react';
 import { Route, Briefcase, BookOpen, Star, Ban, TrendingUp, FileText, Calendar } from 'lucide-react';
 import { useEnseignantParcours } from '../../hooks/use-personnel-detail';
-import { LoadingState } from '@/components/feedback';
+import { InlineSpinner } from '@/components/feedback';
 import { formatDate } from '@/lib/date-utils';
 import { formatMontant } from '@/lib/format-utils';
 
@@ -62,7 +62,7 @@ export function OngletParcours({ enseignantId, isActive }: { enseignantId: strin
     }, [parcours, t]);
 
     if (isLoading && isActive) {
-        return <div className="py-12"><LoadingState message={t('parcours.chargement')} /></div>;
+        return <div className="py-12 flex justify-center"><InlineSpinner label={t('parcours.chargement')} /></div>;
     }
 
     if (!parcours) {

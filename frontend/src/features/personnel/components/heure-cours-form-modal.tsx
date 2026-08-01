@@ -11,7 +11,7 @@ import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
-import { LoadingState } from '@/components/feedback';
+import { InlineSpinner } from '@/components/feedback';
 import type { HeureCours } from '../hooks/use-heure-cours';
 
 interface HeureCoursFormModalProps {
@@ -176,7 +176,7 @@ export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCa
             }
         >
             <div className="space-y-4">
-                {isPending && <LoadingState />}
+                {isPending && <InlineSpinner />}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <ElisaInput label={t('heuresCours.date')} type="date" value={form.date} onChange={set('date')} required />

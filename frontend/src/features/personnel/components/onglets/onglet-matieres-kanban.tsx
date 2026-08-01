@@ -8,7 +8,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, BookOpen, Users, Clock } from 'lucide-react';
 import { useEnseignantAffectationsMatiere, useDeplacerAffectation } from '../../hooks/use-personnel-detail';
-import { LoadingState } from '@/components/feedback';
+import { InlineSpinner } from '@/components/feedback';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Badge } from '@/components/ui/Badge';
 import { formatVolumeMinutesToHours } from '@/lib/format-utils';
@@ -185,7 +185,7 @@ export function OngletMatieresKanban({ enseignantId, isActive, onRequestAdd }: P
     if (isLoading && isActive) {
         return (
             <div className="space-y-4">
-                <LoadingState message={t('affectations.chargementKanban', 'Chargement du Kanban...')} />
+                <InlineSpinner label={t('affectations.chargementKanban', 'Chargement du Kanban...')} />
             </div>
         );
     }

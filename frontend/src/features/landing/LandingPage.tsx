@@ -72,7 +72,7 @@ export function LandingPage() {
             <nav className="sticky top-0 z-50 border-b border-[var(--color-bordure)] bg-[var(--color-surface)]/95 backdrop-blur-sm">
                 <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                     <Link to="/"  className="transition-transform hover:scale-105">
-                        <ElisaLogo variant="horizontal" size="sm" />
+                        <ElisaLogo variant="horizontal" size="sm" theme="auto" />
                     </Link>
                     <div className="flex items-center gap-4">
                         <LanguageSwitcher />
@@ -241,7 +241,7 @@ export function LandingPage() {
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
                         <div>
-                            <ElisaLogo variant="horizontal" size="xs" showTagline />
+                            <ElisaLogo variant="horizontal" size="xs" showTagline theme="auto" />
                             <p className="mt-3 text-sm text-[var(--color-texte-secondaire)]">
                                 La plateforme de gestion scolaire nouvelle génération.
                             </p>

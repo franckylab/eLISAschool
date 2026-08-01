@@ -4,7 +4,7 @@ import { CheckCircle, XCircle, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useEnseignantAbsences, useEnseignantAssiduite } from '../../hooks/use-personnel-detail';
 import { MiniBarChart } from '@/components/charts/MiniBarChart';
 import { MiniPieChart } from '@/components/charts/MiniPieChart';
-import { LoadingState } from '@/components/feedback';
+import { InlineSpinner } from '@/components/feedback';
 import type { AbsenceEnseignant } from '../../types/personnel.types';
 
 import { formatDate } from '@/lib/date-utils';
@@ -39,7 +39,7 @@ export function OngletAbsences({ enseignantId, isActive }: { enseignantId: strin
     ];
 
     if ((absences.isLoading || assiduite.isLoading) && isActive) {
-        return <div className="py-12"><LoadingState message={t('absences.chargement')} /></div>;
+        return <div className="py-12 flex justify-center"><InlineSpinner label={t('absences.chargement')} /></div>;
     }
 
     return (
