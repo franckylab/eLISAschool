@@ -165,3 +165,90 @@ export interface ResultatValidationClasse {
     valide: number;
     total: number;
 }
+
+// ─── Statistiques ───────────────────────────────────
+
+export interface StatistiquesEDT {
+    totalCreneaux: number;
+    totalHeures: number;
+    totalMatieres: number;
+    totalClasses: number;
+    totalEnseignants: number;
+    totalSallesOccupees: number;
+    repartitionParJour: Array<{
+        jour: string;
+        nombreCreneaux: number;
+        totalHeures: number;
+    }>;
+    repartitionParMatiere: Array<{
+        matiereId: string;
+        matiereNom: string;
+        couleur: string | null;
+        nombreCreneaux: number;
+        totalHeures: number;
+        volumeRequis: number | null;
+    }>;
+    tauxOccupationSalle: number;
+    conflitsPotentiels: number;
+}
+
+export interface StatistiquesFilters {
+    classeAnneeId?: string;
+    enseignantId?: string;
+    periodeId?: string;
+}
+
+// ─── Preview Génération ───────────────────────────
+
+export interface CreneauPreview {
+    affectationMatiereId: string;
+    matiereNom: string;
+    matiereCouleur: string | null;
+    enseignantNom: string;
+    jour: string;
+    heureDebut: string;
+    heureFin: string;
+    salleId: string | null;
+    salleNom: string | null;
+    volumeMinutes: number;
+    numeroSeance: number;
+    totalSeances: number;
+}
+
+export interface ConflitPreview {
+    type: string;
+    matiereNom: string;
+    seance: string;
+    message: string;
+}
+
+export interface ResumePreview {
+    totalCreneaux: number;
+    totalHeures: number;
+    totalConflits: number;
+    matieres: number;
+    joursOccupes: string[];
+}
+
+export interface ResultatPreviewEDT {
+    creneaux: CreneauPreview[];
+    conflits: ConflitPreview[];
+    resume: ResumePreview;
+}
+
+// ─── Audit Conflits ─────────────────────────────────
+
+export interface AuditConflitDetail {
+    type: TypeConflit;
+    severite: SeveriteConflit;
+    message: string;
+    creneauxIds: string[];
+    details: Record<string, unknown>;
+}
+
+export interface AuditConflitsResult {
+    totalConflits: number;
+    conflitsBloquants: number;
+    avertissements: number;
+    conflits: AuditConflitDetail[];
+}

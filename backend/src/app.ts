@@ -129,7 +129,7 @@ export function createApp(): Application {
     const origins = [envConfig.app.frontendUrl, ...allowedOrigins].filter(Boolean);
 
     // Fonction de validation CORS dynamique
-    // Accepte les origines explicites + sous-réseau local 10.0.0.0/24
+    // Accepte les origines explicites + tous les sous-réseaux privés (RFC 1918) en développement
     const isOriginAllowed = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
         // 1. Pas d'origine (requêtes server-to-server, curl, etc.) → autoriser
         if (!origin) {
@@ -143,17 +143,24 @@ export function createApp(): Application {
             return;
         }
 
-        // 3. Développement : accepter tout le sous-réseau 10.0.0.0/24
+        // 3. Développement : accepter tous les sous-réseaux privés courants
         if (envConfig.app.isDevelopment) {
-            const localSubnetRegex = /^https?:\/\/10\.0\.0\.\d{1,3}(:\d+)?$/;
-            if (localSubnetRegex.test(origin)) {
+            // Sous-réseaux privés RFC 1918 (10.x, 172.16-31.x, 192.168.x)
+            const privateSubnetRegex = /^https?:\/\/(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})(:\d+)?$/;
+            if (privateSubnetRegex.test(origin)) {
                 callback(null, true);
                 return;
             }
 
-            // 4. localhost et 127.0.0.1 avec n'importe quel port
+            // localhost, 127.0.0.1 et 0.0.0.0 avec n'importe quel port
             const localhostRegex = /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/;
             if (localhostRegex.test(origin)) {
+                callback(null, true);
+                return;
+            }
+
+            // Noms de domaine .local (mDNS / Avahi)
+            if (/^https?:\/\/[\w-]+\.local(:\d+)?$/.test(origin)) {
                 callback(null, true);
                 return;
             }

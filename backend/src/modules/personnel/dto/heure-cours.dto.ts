@@ -2,8 +2,8 @@
  * ==================================
  * eLISAschool - DTOs Heure de Cours
  * ==================================
- * Version: 1.1.0
- * Migration classeId → classeAnneeId (v4.0)
+ * Version: 1.2.0
+ * Ajout typeCreneau (v1.2 — cohérence Template/Instance)
  */
 
 import { z } from 'zod';
@@ -19,6 +19,7 @@ export const createHeureCoursSchema = z.object({
     heureDebut: z.string().regex(/^\d{2}:\d{2}$/),
     heureFin: z.string().regex(/^\d{2}:\d{2}$/),
     statutEffectue: z.enum(['PLANIFIE', 'EFFECTUE', 'ANNULE', 'REMPLACE']).default('PLANIFIE'),
+    typeCreneau: z.enum(['COURS', 'TP', 'TD', 'RECREATION', 'ETUDE', 'PERMANENCE', 'AUTRE']).default('COURS'),
     salle: z.string().optional(),
     salleId: z.string().uuid().optional(),
     remplacantId: z.string().uuid().optional(),

@@ -7,6 +7,7 @@
 import { FileText, Download, Archive, Plus, FileSpreadsheet, File } from 'lucide-react';
 import { useRapports, useStatistiquesRapports } from '../hooks/use-rapports';
 import { DataTable } from '@/components/ui/DataTable';
+import { SchoolLoading } from '@/components/feedback';
 import { CardGrid } from '@/components/ui/CardGrid';
 import { StatCard } from '@/components/ui/StatCard';
 
@@ -50,7 +51,7 @@ export function RapportsPage() {
         },
     ];
 
-    if (isLoading && !rapportsData) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
+    if (isLoading && !rapportsData) return <SchoolLoading message="Chargement des rapports..." />;
 
     return (
         <div className="space-y-6">

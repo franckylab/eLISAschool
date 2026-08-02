@@ -22,7 +22,7 @@ services:
       POSTGRES_USER: ${DB_USER:-elisaschool_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-elisaschool_password}
     ports:
-      - "${DB_PORT:-7002}:7002"
+      - "127.0.0.1:${DB_PORT:-7002}:7002"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -52,7 +52,7 @@ services:
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     ports:
-      - "${REDIS_PORT:-7003}:7003"
+      - "127.0.0.1:${REDIS_PORT:-7003}:7003"
     volumes:
       - redis_data:/data
     networks:
@@ -68,7 +68,7 @@ services:
   # ==================================
   backend:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.backend.dev
     container_name: elisaschool_backend
     restart: unless-stopped
@@ -134,13 +134,13 @@ services:
     container_name: elisaschool_frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: http://${DOMAIN_NAME:-localhost}
+      VITE_API_URL: ""
     expose:
       - "7001"
     volumes:
-      - ./frontend:/app
+      - ../frontend:/app
       - /app/node_modules
-      - ./shared:/shared
+      - ../shared:/shared
     networks:
       - elisaschool_network
     depends_on:
@@ -152,8 +152,8 @@ services:
           echo '📦 Installation dépendances...' && npm install --frozen-lockfile;
         fi &&
         echo '🌐 Génération .env.local...' &&
-        printf 'VITE_API_URL=http://${DOMAIN_NAME:-localhost}\n' > .env.local &&
-        echo '✅ VITE_API_URL=http://${DOMAIN_NAME:-localhost}' &&
+        printf 'VITE_API_URL=\n' > .env.local &&
+        echo '✅ VITE_API_URL= (requetes relatives via nginx)' &&
         echo '🗑️  Nettoyage cache Vite...' &&
         rm -rf node_modules/.vite &&
         echo '🚀 Démarrage Vite HMR...' &&

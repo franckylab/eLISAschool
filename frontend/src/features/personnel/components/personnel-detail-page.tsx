@@ -41,7 +41,7 @@ import { useWorkflowByEntite } from '@/hooks/use-validation-workflow';
 import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ErrorBoundary } from '@/components/feedback/ErrorBoundary';
-import { InlineSpinner } from '@/components/feedback';
+import { SchoolLoading } from '@/components/feedback';
 import { getCategorieColors } from '@/lib/categorie-fonction';
 import { formatDate } from '@/lib/date-utils';
 import { formatMontant } from '@/lib/format-utils';
@@ -169,7 +169,7 @@ export function PersonnelDetailPage() {
     }, [estEnseignant, t, hasPermission, peutValider]);
 
     if (isLoading) {
-        return <div className="p-6 flex justify-center"><InlineSpinner label={t('detail.chargement')} /></div>;
+        return <SchoolLoading message={t('detail.chargement')} />;
     }
 
     if (!membre) {
@@ -571,7 +571,7 @@ export function PersonnelDetailPage() {
                         <div className="bg-card rounded-lg border border-border p-6">
                             <h3 className="text-lg font-semibold mb-4">{t('detail.contrats')}</h3>
                             {loadingContrats ? (
-                                <div className="flex items-center justify-center h-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-dominant-600)]" /></div>
+                                <SchoolLoading variant="compact" message={t('detail.chargementContrats')} />
                             ) : contrats && contrats.length > 0 ? (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-sm">
@@ -635,7 +635,7 @@ export function PersonnelDetailPage() {
                         <div className="bg-card rounded-lg border border-border p-6">
                             <h3 className="text-lg font-semibold mb-4">{t('detail.bulletinsPaie')}</h3>
                             {loadingBulletins ? (
-                                <div className="flex items-center justify-center h-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-dominant-600)]" /></div>
+                                <SchoolLoading variant="compact" message={t('detail.chargementBulletins', 'Chargement des bulletins...')} />
                             ) : bulletins && bulletins.length > 0 ? (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-sm">
@@ -689,9 +689,7 @@ export function PersonnelDetailPage() {
                         </div>
 
                         {loadingAffectations ? (
-                            <div className="flex items-center justify-center h-32">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-dominant-600)]" />
-                            </div>
+                            <SchoolLoading variant="compact" message={t('detail.chargementAffectations', 'Chargement des affectations...')} />
                         ) : affectations && affectations.length > 0 ? (
                             <div className="space-y-3">
                                 {affectations.map((affectation: AffectationPoste) => (

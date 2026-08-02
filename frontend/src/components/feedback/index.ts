@@ -12,3 +12,4 @@ export { SmartEmptyState } from './SmartEmptyState';
 export { ErrorState } from './ErrorState';
 export { InlineSpinner } from './InlineSpinner';
 export { ProgressBar } from './ProgressBar';
+export { SchoolLoading } from './SchoolLoading';

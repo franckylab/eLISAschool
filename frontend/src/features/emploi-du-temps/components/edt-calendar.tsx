@@ -7,7 +7,7 @@
  * Auteur: franck arlos chendjou
  */
 
-import { Fragment, useMemo, useState, useCallback, useRef } from 'react';
+import { Fragment, useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -29,15 +29,37 @@ import type { CreneauHoraire, JourSemaine, DonneesVerification, Conflit } from '
 interface EDTCalendarProps {
     creneaux: CreneauHoraire[];
     onCreneauClick?: (creneau: CreneauHoraire) => void;
+    onCellClick?: (jour: JourSemaine, heure: string) => void;
     heureDebut?: string;
     heureFin?: string;
     pasMinutes?: number;
+    /** Lundi de la semaine affichée (pour afficher les dates dans les en-têtes) */
+    semaineDebut?: Date;
 }
 
 const JOURS_SEMAINE: JourSemaine[] = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
 
 const HAUTEUR_SLOT = 48;
 const MIN_DUREE_MINUTES = 30;
+
+/**
+ * Calcule la hauteur de slot responsive
+ */
+function useHauteurSlot() {
+    const [hauteur, setHauteur] = useState(HAUTEUR_SLOT);
+    useEffect(() => {
+        const update = () => {
+            const w = window.innerWidth;
+            if (w < 480) setHauteur(36);
+            else if (w < 768) setHauteur(40);
+            else setHauteur(HAUTEUR_SLOT);
+        };
+        update();
+        window.addEventListener('resize', update);
+        return () => window.removeEventListener('resize', update);
+    }, []);
+    return hauteur;
+}
 
 function minutesDepuisMinuit(heure: string): number {
     const [h, m] = heure.split(':').map(Number);
@@ -53,18 +75,36 @@ function minutesVersHeure(minutes: number): string {
 export function EDTCalendar({
     creneaux,
     onCreneauClick,
+    onCellClick,
     heureDebut = '07:00',
     heureFin = '17:00',
     pasMinutes = 30,
+    semaineDebut,
 }: EDTCalendarProps) {
     const { t } = useTranslation('emplois');
     const queryClient = useQueryClient();
     const updateMutation = useUpdateCreneau();
     const verifierConflits = useVerifierConflits();
+    const hauteurSlot = useHauteurSlot();
 
     const [activeDragId, setActiveDragId] = useState<string | null>(null);
     const [conflitsPreview, setConflitsPreview] = useState<Conflit[]>([]);
     const resizeRef = useRef<{ creneauId: string; startY: number; startMinutes: number } | null>(null);
+
+    // ─── Indicateur temps réel ────────────────────────
+    const [nowMinutes, setNowMinutes] = useState<number>(() => {
+        const d = new Date();
+        return d.getHours() * 60 + d.getMinutes();
+    });
+
+    useEffect(() => {
+        const tick = () => {
+            const d = new Date();
+            setNowMinutes(d.getHours() * 60 + d.getMinutes());
+        };
+        const id = setInterval(tick, 60_000);
+        return () => clearInterval(id);
+    }, []);
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -72,6 +112,11 @@ export function EDTCalendar({
 
     const startMin = minutesDepuisMinuit(heureDebut);
     const endMin = minutesDepuisMinuit(heureFin);
+
+    const showTimeIndicator = nowMinutes >= startMin && nowMinutes <= endMin;
+    const timeIndicatorTop = showTimeIndicator
+        ? ((nowMinutes - startMin) / pasMinutes) * hauteurSlot
+        : null;
 
     const slots = useMemo(() => {
         const result: string[] = [];
@@ -241,32 +286,74 @@ export function EDTCalendar({
         >
             <div className="overflow-x-auto rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-sm">
                 <div
-                    className="relative grid min-w-[700px]"
+                    className="relative grid"
                     style={{
-                        gridTemplateColumns: `60px repeat(${joursActifs.length}, 1fr)`,
-                        gridTemplateRows: `auto repeat(${slots.length}, ${HAUTEUR_SLOT}px)`,
+                        gridTemplateColumns: `clamp(40px, 8vw, 60px) repeat(${joursActifs.length}, 1fr)`,
+                        gridTemplateRows: `auto repeat(${slots.length}, ${hauteurSlot}px)`,
+                        minWidth: 'min(100%, 500px)',
                     }}
                 >
                     {/* Header row */}
-                    <div className="sticky top-0 z-10 bg-[var(--color-dominant-600)] text-white flex items-center justify-center px-2 py-3 text-xs font-semibold border-b border-[var(--color-dominant-700)]">
+                    <div
+                        className="sticky top-0 z-10 bg-[var(--color-dominant-600)] text-white flex items-center justify-center px-[var(--space-xxs)] py-[var(--space-xs)] font-semibold border-b border-[var(--color-dominant-700)]"
+                        style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.25vw, 0.75rem)' }}
+                    >
                         {t('calendrier.heure')}
                     </div>
-                    {joursActifs.map(jour => (
-                        <div
-                            key={`header-${jour}`}
-                            className="sticky top-0 z-10 bg-[var(--color-dominant-600)] text-white flex items-center justify-center px-2 py-3 text-xs font-semibold border-b border-l border-[var(--color-dominant-700)]"
-                        >
-                            {t(`jours.${jour.toLowerCase()}`)}
-                        </div>
-                    ))}
+                    {joursActifs.map((jour) => {
+                        // Calcul de la date réelle pour ce jour
+                        let dateReelle: Date | null = null;
+                        if (semaineDebut) {
+                            const offsets: Record<string, number> = {
+                                LUNDI: 0, MARDI: 1, MERCREDI: 2, JEUDI: 3,
+                                VENDREDI: 4, SAMEDI: 5, DIMANCHE: 6,
+                            };
+                            dateReelle = new Date(semaineDebut);
+                            dateReelle.setDate(dateReelle.getDate() + (offsets[jour] ?? 0));
+                        }
+                        const estAujourdhui = dateReelle
+                            ? dateReelle.toDateString() === new Date().toDateString()
+                            : false;
+                        const jourLabel = t(`jours.${jour.toLowerCase()}`);
+                        const dateLabel = dateReelle
+                            ? dateReelle.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+                            : '';
+
+                        return (
+                            <div
+                                key={`header-${jour}`}
+                                className={`sticky top-0 z-10 flex flex-col items-center justify-center px-[var(--space-xxs)] py-[var(--space-xs)] font-semibold border-b border-l border-[var(--color-dominant-700)] ${
+                                    estAujourdhui
+                                        ? 'bg-[var(--color-accent-600)] text-white'
+                                        : 'bg-[var(--color-dominant-600)] text-white'
+                                }`}
+                                style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.25vw, 0.75rem)' }}
+                            >
+                                <span className="hidden sm:inline">{jourLabel}</span>
+                                <span className="sm:hidden">{jourLabel.slice(0, 3)}</span>
+                                {dateReelle && (
+                                    <span
+                                        className={`mt-0.5 font-normal ${estAujourdhui ? 'text-white/80' : 'text-white/60'}`}
+                                        style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.625rem)' }}
+                                    >
+                                        {dateLabel}
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    })}
 
                     {/* Grid body */}
                     {slots.map((heure, rowIdx) => (
                         <Fragment key={heure}>
                             {/* Time label */}
                             <div
-                                className="flex items-start justify-center pt-1 text-[10px] font-mono text-[var(--color-text-muted)] border-t border-[var(--color-bordure)] bg-[var(--color-surface-alt)]"
-                                style={{ gridRow: rowIdx + 2, gridColumn: 1 }}
+                                className="flex items-start justify-center pt-0.5 font-mono text-[var(--color-text-muted)] border-t border-[var(--color-bordure)] bg-[var(--color-surface-alt)]"
+                                style={{
+                                    gridRow: rowIdx + 2,
+                                    gridColumn: 1,
+                                    fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.625rem)',
+                                }}
                             >
                                 {heure}
                             </div>
@@ -278,10 +365,24 @@ export function EDTCalendar({
                                     id={`${jour}::${heure}`}
                                     row={rowIdx + 2}
                                     col={colIdx + 2}
+                                    onClick={onCellClick ? () => onCellClick(jour, heure) : undefined}
                                 />
                             ))}
                         </Fragment>
                     ))}
+
+                    {/* Indicateur temps réel */}
+                    {showTimeIndicator && timeIndicatorTop !== null && (
+                        <div
+                            className="absolute left-0 right-0 z-20 pointer-events-none"
+                            style={{ top: `calc(${timeIndicatorTop}px + ${hauteurSlot}px)` }}
+                        >
+                            <div className="relative flex items-center">
+                                <div className="h-3 w-3 rounded-full bg-[var(--color-destructive)] -ml-1.5 shrink-0" />
+                                <div className="flex-1 h-[2px] bg-[var(--color-destructive)]" />
+                            </div>
+                        </div>
+                    )}
 
                     {/* Creneaux positioned via grid */}
                     {creneaux.map(creneau => {
@@ -333,15 +434,16 @@ export function EDTCalendar({
 
 // ─── Drop cell ────────────────────────────────────────
 
-function DropCell({ id, row, col }: { id: string; row: number; col: number }) {
+function DropCell({ id, row, col, onClick }: { id: string; row: number; col: number; onClick?: () => void }) {
     const { setNodeRef, isOver } = useDroppable({ id });
 
     return (
         <div
             ref={setNodeRef}
+            onClick={onClick}
             className={`border-t border-l border-[var(--color-bordure)] transition-colors ${
-                isOver ? 'bg-[var(--color-dominant-100)]' : ''
-            }`}
+                isOver ? 'bg-[var(--color-dominant-100)]' : 'hover:bg-[var(--color-surface-hover)]/50'
+            } ${onClick ? 'cursor-pointer' : ''}`}
             style={{ gridRow: row, gridColumn: col }}
         />
     );
@@ -374,8 +476,11 @@ function CreneauCard({
             onClick={onClick}
         >
             <div
-                className="relative h-full rounded-md border-l-[3px] bg-[var(--color-surface)] shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                style={{ borderLeftColor: couleur }}
+                className="relative h-full rounded-md border-l-[3px] overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                style={{
+                    borderLeftColor: couleur,
+                    backgroundColor: `color-mix(in srgb, ${couleur} 8%, var(--color-surface))`,
+                }}
             >
                 {/* Drag handle */}
                 <div
@@ -387,13 +492,19 @@ function CreneauCard({
                     <GripVertical className="h-3 w-3 text-[var(--color-text-muted)]" />
                 </div>
 
-                <div className="px-2 py-1 h-full flex flex-col justify-between overflow-hidden">
+                <div className="px-[var(--space-xxs)] py-[var(--space-xxs)] h-full flex flex-col justify-between overflow-hidden">
                     <div>
-                        <div className="text-[11px] font-semibold text-[var(--color-text-primary)] truncate leading-tight">
+                        <div
+                            className="font-semibold text-[var(--color-text-primary)] truncate leading-tight"
+                            style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.25vw, 0.6875rem)' }}
+                        >
                             {creneau.affectationMatiere?.matiere?.nom || '—'}
                         </div>
                         {creneau.affectationMatiere?.enseignant && (
-                            <div className="flex items-center gap-0.5 text-[9px] text-[var(--color-text-secondary)] mt-0.5">
+                            <div
+                                className="flex items-center gap-0.5 text-[var(--color-text-secondary)] mt-0.5"
+                                style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.5625rem)' }}
+                            >
                                 <User className="h-2.5 w-2.5 shrink-0" />
                                 <span className="truncate">
                                     {creneau.affectationMatiere.enseignant.prenom} {creneau.affectationMatiere.enseignant.nom}
@@ -401,7 +512,10 @@ function CreneauCard({
                             </div>
                         )}
                     </div>
-                    <div className="flex items-center justify-between text-[9px] text-[var(--color-text-muted)]">
+                    <div
+                        className="flex items-center justify-between text-[var(--color-text-muted)]"
+                        style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.5625rem)' }}
+                    >
                         <span>{creneau.heureDebut}–{creneau.heureFin}</span>
                         {creneau.salle && (
                             <span className="flex items-center gap-0.5">

@@ -149,11 +149,39 @@ async function bootstrap(): Promise<void> {
         }
 
         // Démarrage du serveur HTTP
-        app.listen(port, () => {
+        // Express écoute par défaut sur 0.0.0.0 (toutes les interfaces)
+        // Ce qui permet l'accès depuis le réseau local
+        app.listen(port, '0.0.0.0', () => {
+            const os = require('os');
+            const interfaces = os.networkInterfaces();
+            const addresses: string[] = [];
+            
+            // Collecter toutes les adresses IP accessibles
+            for (const name of Object.keys(interfaces)) {
+                for (const iface of interfaces[name] || []) {
+                    if (iface.family === 'IPv4' && !iface.internal) {
+                        addresses.push(iface.address);
+                    }
+                }
+            }
+            
             logger.info(`🚀 Serveur eLISAschool démarré sur le port ${port}`);
             logger.info(`📚 Documentation API: http://localhost:${port}/api/docs`);
             logger.info(`🏥 Health check: http://localhost:${port}/api/health`);
             logger.info(`🌍 Environnement: ${envConfig.app.nodeEnv}`);
+            logger.info(`🌐 Écoute sur: 0.0.0.0:${port} (toutes les interfaces)`);
+            
+            if (addresses.length > 0) {
+                logger.info(`📡 Accès réseau local :`);
+                addresses.forEach(addr => {
+                    logger.info(`   → http://${addr}:${port}/api/health`);
+                });
+            }
+            
+            // Log CORS info en développement
+            if (envConfig.app.isDevelopment) {
+                logger.info(`🔓 CORS: Tous sous-réseaux privés (10.x, 172.16-31.x, 192.168.x) + localhost`);
+            }
         });
 
         // Gestion de l'arrêt gracieux

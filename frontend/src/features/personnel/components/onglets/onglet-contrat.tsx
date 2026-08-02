@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Briefcase, FileText, TrendingUp } from 'lucide-react';
 import { useEnseignantContrats, useEnseignantBulletins } from '../../hooks/use-personnel-detail';
 import { MiniLineChart } from '@/components/charts/MiniLineChart';
-import { InlineSpinner } from '@/components/feedback';
+import { SchoolLoading } from '@/components/feedback';
 import { formatDate } from '@/lib/date-utils';
 import { formatMontant } from '@/lib/format-utils';
 import type { ContratPersonnel, BulletinPaie } from '../../types/personnel.types';
@@ -57,7 +57,7 @@ export function OngletContrat({ enseignantId, isActive }: { enseignantId: string
     }, [bulletinsData, t]);
 
     if ((contrats.isLoading || bulletins.isLoading) && isActive) {
-        return <div className="py-12 flex justify-center"><InlineSpinner label={t('detail.chargementContrats')} /></div>;
+        return <SchoolLoading variant="compact" message={t('detail.chargementContrats')} />;
     }
 
     return (

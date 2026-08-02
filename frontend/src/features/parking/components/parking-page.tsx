@@ -7,6 +7,7 @@
 import { Car, CheckCircle, DollarSign, TrendingUp } from 'lucide-react';
 import { usePlaces, useStatistiquesParking } from '../hooks/use-parking';
 import { DataTable } from '@/components/ui/DataTable';
+import { SchoolLoading } from '@/components/feedback';
 import { CardGrid, StatCard } from '@/components/ui';
 
 const types: any = {
@@ -36,7 +37,7 @@ export function ParkingPage() {
         { key: 'tarif', header: 'Tarif horaire', className: 'w-28', render: (p: any) => <span className="text-sm">{p.tarifHoraire ? `${p.tarifHoraire.toLocaleString('fr-FR')} FCFA` : '-'}</span> },
     ];
 
-    if (isLoading && !places) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
+    if (isLoading && !places) return <SchoolLoading message="Chargement des places..." />;
 
     return (
         <div className="space-y-6">

@@ -76,7 +76,30 @@
         },
         "annuler": "Cancel",
         "generer": "Generate",
-        "enCours": "Generating…"
+        "enCours": "Generating…",
+        "previsualiser": "Preview",
+        "previewEnCours": "Previewing…",
+        "confirmerGeneration": "Confirm and generate",
+        "genererMalgreConflits": "Generate despite conflicts",
+        "fermer": "Close",
+        "voirEDT": "View timetable",
+        "preview": {
+            "creneaux": "Slots",
+            "heures": "Hours",
+            "matieres": "Subjects",
+            "conflits": "Conflicts",
+            "creneauxTitre": "Simulated slots",
+            "conflitsTitre": "Conflicts",
+            "tousJours": "All",
+            "aucunCreneau": "No simulated slots",
+            "aucunConflit": "No conflicts detected",
+            "aucunConflitDesc": "The algorithm successfully placed all sessions without conflicts."
+        },
+        "succes": {
+            "titre": "Timetable generated!",
+            "description": "{{creneaux}} slots, {{heures}}h scheduled.",
+            "conflitsRestants": "{{count}} unresolved conflict(s)"
+        }
     },
     "preferences": {
         "titre": "Preferences",
@@ -129,7 +152,12 @@
         "mercredi": "Wednesday",
         "jeudi": "Thursday",
         "vendredi": "Friday",
-        "samedi": "Saturday"
+        "samedi": "Saturday",
+        "semaine": "Week",
+        "jour": "Day",
+        "precedent": "Previous",
+        "suivant": "Next",
+        "aujourdhui": "Today"
     },
     "salle": "Room",
     "matiereDefaut": "Subject",
@@ -235,6 +263,7 @@
         "erreurSuppression": "Error deleting",
         "erreurValidation": "Error validating",
         "erreurGeneration": "Error generating",
-        "erreurPreferences": "Error updating preferences"
+        "erreurPreferences": "Error updating preferences",
+        "erreurPreview": "Error previewing"
     }
 }

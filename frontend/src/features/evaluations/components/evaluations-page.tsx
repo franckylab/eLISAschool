@@ -7,6 +7,7 @@
 import { Star, TrendingUp, Award, AlertCircle, Plus, Eye } from 'lucide-react';
 import { useEvaluations, useStatistiquesEvaluations } from '../hooks/use-evaluations';
 import { DataTable } from '@/components/ui/DataTable';
+import { SchoolLoading } from '@/components/feedback';
 import { CardGrid } from '@/components/ui/CardGrid';
 import { StatCard } from '@/components/ui/StatCard';
 
@@ -36,7 +37,7 @@ export function EvaluationsPage() {
         },
     ];
 
-    if (isLoading && !evaluationsData) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
+    if (isLoading && !evaluationsData) return <SchoolLoading message="Chargement des évaluations..." />;
 
     return (
         <div className="space-y-6">

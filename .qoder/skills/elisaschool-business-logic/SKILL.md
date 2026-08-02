@@ -355,10 +355,35 @@ Relations clés :
 4. Pour chaque matière (triée), tenter de placer les créneaux :
    a. Itérer les plages imposables (préférences)
    b. Vérifier absence de conflit (3 types bloquants)
-   c. Respecter les pauses et durées max consécutives
+   c. Respecter les pauses et durées max consécutives (maxCreneauxConsecutifs)
    d. Placer le créneau ou reporter au prochain slot libre
 5. Retourner les créneaux générés + conflits non résolus
 ```
+
+**Contrainte maxCreneauxConsecutifs** (v1.1 — 2026-08) :
+- Vérifie qu'une matière n'a pas déjà N créneaux consécutifs à l'heure donnée.
+- Valeur par défaut : 2 (configurable dans `PreferenceEmploiDuTemps.maxCreneauxConsecutifs`).
+- Méthode `verifierMaxConsecutifs(matiereId, jour, heure, dureeCreneau, maxConsecutifs, creneauxGenerees)`.
+
+### Statistiques agrégées (v1.1 — 2026-08)
+
+**Endpoint** : `GET /api/emploi-du-temps/statistiques` (perm `emploi-du-temps:view`)
+
+**KPIs retournés** :
+- `totalCreneaux`, `totalHeures`, `totalMatieres`, `totalClasses`, `totalEnseignants`
+- `totalSallesOccupees`, `tauxOccupationSalle` (%)
+- `repartitionParJour` : array `{ jour, nombreCreneaux, totalHeures }`
+- `repartitionParMatiere` : array `{ matiereId, matiereNom, couleur, nombreCreneaux, totalHeures, volumeRequis }`
+- `conflitsPotentiels` : nombre de conflits détectés
+
+**Filtres optionnels** : `classeAnneeId`, `enseignantId`, `periodeId`.
+
+**Frontend** : hook `useStatistiquesEDT(filters)` → dashboard avec 6 KPI Cards + 2 graphiques CSS bar chart + tableau croisé volume horaire.
+
+### Performance requêtes (v1.1 — 2026-08)
+
+- `findByClasseAnnee`, `findByEnseignant`, `findBySalle` : remplacé `find()` + filter en mémoire par `createQueryBuilder` avec JOIN et WHERE en base.
+- Réduction charge mémoire : ne charge plus tous les créneaux de l'établissement pour filtrer ensuite.
 
 ### Workflow des créneaux
 

@@ -76,11 +76,113 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 - **Skeleton theme-aware** (`frontend/src/components/ui/Skeleton.tsx` v2.0) : `bg-gray-200` hardcodé → `bg-[var(--color-surface-hover)]`. Variants : text, circular, rectangular, card. Animations : pulse (Framer Motion), wave (CSS shimmer overlay), none. Tous les dimensions en `clamp()`. Composants : `Skeleton`, `TableSkeleton` (avec showCheckbox), `StatsCardSkeleton`, `PageSkeleton`, `FormSkeleton`.
 - **ProgressBar** (`frontend/src/components/feedback/ProgressBar.tsx`) : modes `determinate` (valeur 0-100 animée) et `indeterminate` (barre glissante). Variantes : default, success, danger, accent. Tailles : sm/md/lg (clamp()). Shimmer overlay. Accessible (role=progressbar, aria-value*).
 - **InlineSpinner** (`frontend/src/components/feedback/InlineSpinner.tsx`) : spinner SVG thématique (couleur dominante), tailles sm/md/lg, label optionnel. Remplace `LoadingState` pour les chargements inline/onglets.
+- **SchoolLoading v2** (`frontend/src/components/feedback/SchoolLoading.tsx`) : composant thématique scolaire avec **4 thèmes animés** : `book` (livre ouvert + crayon), `pencil` (crayon écrivant sur papier), `notebook` (cahier à spirale + page qui tourne), `globe` (globe terrestre + méridiens en rotation). Props : `theme`, `variant` (full/compact), `message`. Thème auto (light/dark). Ultra-responsive (clamp). Intégré dans 18 fichiers (pages, onglets, modals, détails).
 - **Composants supprimés** : `LoadingState` (feedback + ErrorMessage), `ListLoading` — remplacés par `InlineSpinner` (17 fichiers migrés) et `Skeleton` (PageSkeleton/TableSkeleton).
-- **Hiérarchie loading** : SplashScreen (app startup) → PageSkeleton (page loading) → TableSkeleton (DataTable) → StatsCardSkeleton (cards) → InlineSpinner (inline/tabs) → ProgressBar (opérations longues).
+- **Hiérarchie loading** : SplashScreen (app startup) → SchoolLoading (page loading thématique) → PageSkeleton (page loading structure) → TableSkeleton (DataTable) → StatsCardSkeleton (cards) → InlineSpinner (inline/tabs) → ProgressBar (opérations longues).
 
 ### Blocked
 — (none)
+
+## Travail effectué — Session 2026-08-02 (EDT P2–P5 : preview, pointage, timeline, export)
+### P2 : Génération progressive avec preview + résolution conflits
+- **Backend** : route `POST /api/emploi-du-temps/previsualiser` ajoutée au controller (dry-run, permission `emploi-du-temps:generer`). Service `previsualiserGeneration()` déjà existant.
+- **Frontend types** : `CreneauPreview`, `ConflitPreview`, `ResumePreview`, `ResultatPreviewEDT` ajoutés à `edt.types.ts`.
+- **Frontend hook** : `usePrevisualiserEDT()` ajouté à `use-emploi-du-temps.ts`.
+- **Modal multi-étapes** : `edt-generation-modal.tsx` réécrit (3 étapes : Options → Preview → Succès). Stepper animé (Framer Motion), 4 resume cards (créneaux/heures/matières/conflits), liste créneaux filtrée par jour, onglet conflits, bouton "Générer malgré les conflits" si conflits détectés.
+- **i18n** : 18 nouvelles clés FR+EN dans `emplois.json` (generation.preview.*, generation.succes.*, toasts.erreurPreview).
+
+### P3 : Page dédiée HeureCours (suivi effectif, pointage)
+- **Backend** : déjà complet (CRUD, génération depuis EDT, volume horaire, résumé mensuel, conflits).
+- **Frontend** : `tab-heure-cours.tsx` réécrit (v2) — toggle Résumé/Liste détaillée, filtre par statut (TOUS/PLANIFIE/EFFECTUE/ANNULE/REMPLACE), liste groupée par date avec pointage rapide inline (boutons ✓/✗ pour marquer effectué/annulé), hover reveal actions, badge statut coloré.
+- **i18n** : 11 nouvelles clés FR+EN dans `personnel.json` (vueResume, vueListe, marquerEffectue, marquerAnnule, statutChange.*).
+
+### P4 : Timeline verticale Google Calendar
+- **Indicateur temps réel** : ligne rouge horizontale avec point showing current time, mise à jour toutes les minutes (setInterval 60s), visible uniquement dans la plage horaire.
+- **Clic cellule vide** : prop `onCellClick` ajoutée à `EDTCalendar`, hover background sur les cellules, cursor-pointer.
+- **Cartes améliorées** : fond coloré subtil via `color-mix(in srgb, couleur 8%, surface)` au lieu de surface uni.
+
+### P5 : Navigation semaine + export PDF
+- **Navigation semaine** : barre de navigation avec boutons prev/next (ChevronLeft/ChevronRight) + bouton "Aujourd'hui" (highlighted si semaine courante). Calcul du lundi de la semaine via `semaineOffset`, numéro de semaine ISO, label "28 juil. — 3 août".
+- **Dates dans les colonnes** : `edt-calendar.tsx` accepte `semaineDebut?: Date` — affiche la date réelle sous le nom du jour (ex: "Lundi\n4 août"). Le jour courant est highlighté en couleur accent (`bg-[var(--color-accent-600)]`).
+- **Clic → créer créneau** : `handleCellClick` wired dans `edt-page.tsx`, ouvre le modal créneau.
+- **Export PDF** : bouton Download ajouté dans la toolbar de la page EDT (visible quand une classe est sélectionnée).
+- **i18n EN** : clés `calendrier.semaine`, `precedent`, `suivant`, `aujourdhui`, `jour` ajoutées dans `en/emplois.json`.
+
+### Fichiers modifiés (13)
+- `backend/src/modules/emploi-du-temps/controllers/emploi-du-temps.controller.ts` (route /previsualiser)
+- `frontend/src/features/emploi-du-temps/types/edt.types.ts` (types preview)
+- `frontend/src/features/emploi-du-temps/hooks/use-emploi-du-temps.ts` (hook preview)
+- `frontend/src/features/emploi-du-temps/components/edt-generation-modal.tsx` (réécrit v2, 418 lignes)
+- `frontend/src/features/emploi-du-temps/components/edt-calendar.tsx` (indicateur temps réel, onCellClick, cartes colorées, dates colonnes, semaineDebut)
+- `frontend/src/features/emploi-du-temps/components/edt-page.tsx` (onCellClick, export PDF, navigation semaine)
+- `frontend/src/features/personnel/components/tab-heure-cours.tsx` (réécrit v2, 324 lignes)
+- `frontend/src/locales/fr/emplois.json` + `en/emplois.json` (clés preview + navigation)
+- `frontend/src/locales/fr/personnel.json` + `en/personnel.json` (clés pointage)
+- `AGENTS.md` (cette section)
+
+## Travail effectué — Session 2026-08-02 (audit EDT — recommandations grill-me)
+### Recommandations implémentées (9/9)
+
+**P0 — Backend critiques** :
+- **P0-1** : `genererHeuresCoursFromEdt` vérifie maintenant les conflits enseignant (chevauchement horaire) avant création — retourne liste des conflits dans le résultat.
+- **P0-2** : Nouvel endpoint `GET /api/emploi-du-temps/audit-conflits` — scan global de tous les conflits EDT (par groupe classe/jour, enseignant/jour, salle/jour) avec sévérité (bloquant/avertissement).
+- **P0-3** : `getStatistiques()` calcule désormais `conflitsPotentiels` via `conflitDetectionService.auditConflitsGlobaux()`.
+
+**P1 — Frontend pilotage** :
+- **P1-1** : Nouvel onglet « Audit » dans `edt-page.tsx` (6ème onglet, icône Shield). Composant `edt-audit.tsx` (273 lignes) : KPIs (total/bloquants/avertissements), filtres par sévérité, liste groupée par type de conflit avec icônes, état vide (CheckCircle2 si 0 conflit).
+- **P1-2** : Widget `ChargeEnseignant` ajouté dans `edt-synthese.tsx` — bar chart horizontal de la charge hebdomadaire par enseignant, seuil d'alerte 20h (rouge si dépassé), badge "N en alerte".
+- **P1-3** : Modal `edt-heures-cours-modal.tsx` (230 lignes) — sélection plage dates (lundi→samedi par défaut), appel `POST /api/personnel/heures-cours/generer-from-edt`, affichage résultat (créées/ignorées/erreurs/total). Bouton dans la toolbar de `edt-page.tsx`.
+
+**P2 — Structurel** :
+- **P2-1** : Templates intégrés dans la génération automatique. Backend : `templateId` optionnel dans `genererEmploiDuTempsSchema`, méthode `appliquerTemplate()` override les préférences (joursTravaillés, heureDebut/Fin, duréeCréneau). Frontend : sélecteur de template dans `edt-generation-modal.tsx`.
+- **P2-2** : Permissions granulaires `heures-cours:*` (5 permissions : view/create/edit/delete/generate). Controller `heure-cours.controller.ts` migré de `personnel:manage`/`personnel:view` vers les permissions fines. Attribution par rôle : ADMIN/CHEF_ETABLISSEMENT/PROVISEUR/PRINCIPAL (toutes), DIRECTEUR/CENSEUR/SECRETAIRE_DIRECTION (sans generate), ENSEIGNANT/SURVEILLANT (view seule). Migration 138.
+- **P2-3** : Soft delete sur `CreneauHoraire` — `@DeleteDateColumn()` ajouté à l'entité, `softRemove()` au lieu de `remove()` dans le service.
+
+### Fichiers modifiés/créés (16)
+- `backend/src/modules/personnel/controllers/heure-cours.controller.ts` (permissions granulaires)
+- `backend/src/modules/emploi-du-temps/services/emploi-du-temps.service.ts` (templateId + appliquerTemplate)
+- `backend/src/modules/emploi-du-temps/dto/emploi-du-temps.dto.ts` (templateId dans schéma)
+- `backend/database/migrations/138-permissions-heures-cours.sql` (créé, 79 lignes)
+- `shared/src/enums/roles.enum.ts` (5 nouvelles permissions HEURES_COURS + attribution rôles)
+- `frontend/src/features/emploi-du-temps/components/edt-audit.tsx` (créé, 273 lignes)
+- `frontend/src/features/emploi-du-temps/components/edt-heures-cours-modal.tsx` (créé, 230 lignes)
+- `frontend/src/features/emploi-du-temps/components/edt-page.tsx` (onglet audit + bouton heures-cours)
+- `frontend/src/features/emploi-du-temps/components/edt-synthese.tsx` (widget ChargeEnseignant)
+- `frontend/src/features/emploi-du-temps/components/edt-generation-modal.tsx` (sélecteur template)
+- `frontend/src/features/emploi-du-temps/hooks/use-emploi-du-temps.ts` (hooks useAuditConflits, useGenererHeuresCoursFromEdt, templateId)
+- `frontend/src/features/emploi-du-temps/types/edt.types.ts` (types AuditConflitsResult)
+- `frontend/src/locales/fr/emplois.json` (60+ clés i18n : audit, synthese.chargeEnseignant, generationHeuresCours)
+- `AGENTS.md` (cette section)
+
+## Travail effectué — Session 2026-08-01 (animations loading — centrage + SchoolLoading v2)
+### Améliorations apportées
+- **Centrage InlineSpinner** : 3 pages non centrées corrigées (personnel-page, eleves-page, finances-page) — ajout `flex justify-center min-h-[200px] items-center`.
+- **SchoolLoading v2** (`frontend/src/components/feedback/SchoolLoading.tsx`) : composant thématique scolaire avec **4 thèmes animés** :
+  - `book` (défaut) : livre qui s'ouvre (pages gauche/droite en rotateY), lignes qui apparaissent séquentiellement, crayon animé qui écrit
+  - `pencil` : crayon qui écrit seul sur du papier avec lignes qui apparaissent
+  - `notebook` : cahier à spirale avec page qui tourne (rotateY -160°)
+  - `globe` : globe terrestre avec méridiens en rotation, continents stylisés, point lumineux orbital
+- **Variantes** : `full` (page, 80-120px) / `compact` (onglet/section, 48-72px)
+- **Thème auto** : light/dark via MutationObserver. Ultra-responsive (clamp). Accessible (role=status, aria-label). Message personnalisable.
+- **Intégration étendue** :
+  - Pages : personnel-page, eleves-page, finances-page, evaluations-page, rapports-page, statistiques-page, analytics-page, securite-page, laboratoire-page, stage-page, parking-page, etablissement-edit-page (variant="full")
+  - Onglets (8) : onglet-absences, onglet-contrat, onglet-edt, onglet-evaluations, onglet-parcours, onglet-matieres, onglet-matieres-planning, onglet-matieres-kanban (variant="compact")
+  - Sections : tab-fonctions, fonction-arbre, tab-niveaux, tab-programme, matiere-detail-page (EDT + affectations), personnel-detail-page (contrats + bulletins + affectations) (variant="compact")
+  - Modals : personnel-form-modal, suppression-utilisateur-modal (variant="compact")
+- **Spinners manuels éliminés** : 12 `animate-spin border-b-2 border-blue-600` hardcodés supprimés et remplacés par SchoolLoading (thème auto, plus de couleur hardcodée).
+- **Loader2 section-level migrés** : tab-fonctions, fonction-arbre → SchoolLoading compact.
+- **InlineSpinner conservé** pour les indicateurs inline uniquement — 2 occurrences restantes (workflow matiere-detail, soumission heure-cours-form-modal).
+- **Hiérarchie loading** : SplashScreen → SchoolLoading → PageSkeleton → TableSkeleton → StatsCardSkeleton → InlineSpinner → ProgressBar.
+- **Barrel export** : `SchoolLoading` ajouté à `components/feedback/index.ts`.
+
+### Fichiers modifiés (32)
+- `frontend/src/components/feedback/SchoolLoading.tsx` (réécrit v2, 368 lignes, 4 thèmes)
+- `frontend/src/components/feedback/index.ts` (export ajouté)
+- Pages (12) : personnel, eleves, finances, evaluations, rapports, statistiques, analytics, securite, laboratoire, stage, parking, etablissement-edit
+- Onglets (8) : onglet-absences, onglet-contrat, onglet-edt, onglet-evaluations, onglet-parcours, onglet-matieres, onglet-matieres-planning, onglet-matieres-kanban
+- Sections (8) : tab-fonctions, fonction-arbre, tab-niveaux, tab-programme, matiere-detail-page, personnel-detail-page, ModulesTab, SecuriteTab
+- Modals (2) : personnel-form-modal, suppression-utilisateur-modal
+- `AGENTS.md` (section animations + résumé session)
 
 ## Travail effectué — Session 2026-07-24 (fix FK crash seeds + serveur)
 ### Problème critique
@@ -1744,3 +1846,46 @@ Demande d'un indicateur de connexion dans le header eLISAschool, avec détection
 ### Phase 6 — Backend : tendances stats
 - **`audit.controller.ts`** : ajout `trends` dans `/api/audit/logs/statistics` — comparaison 24h vs 24-48h
 - **`notes.service.ts`** : ajout `trends` dans `getStatistiques` — comparaison 30j vs 30-60j (nombreNotes + moyenne)
+
+## Système Emploi du Temps — Audit + Améliorations Phase 1 (Session 2026-08-02)
+
+### Architecture consolidée
+- **Modèle 3 couches** : `AffectationMatiere` (source unique de vérité) → `CreneauHoraire` (slot hebdomadaire récurrent) → `HeureCours` (instance datée concrète)
+- **AffectationMatiere** : lie enseignant + matière + classe-année (unique source pour l'attribution des heures)
+- **CreneauHoraire** : slot hebdomadaire (jour + heureDebut/heureFin + typeCreneau + statut), lié à `affectationMatiereId` et optionnellement `salleId`
+- **HeureCours** : instance datée concrète d'un créneau (date + statutEffectif + remplacement), liée à `classeAnneeId` + `creneauId`
+- **Détection conflits** : 5 types (3 BLOQUANT : classe/enseignant/salle ; 2 AVERTISSEMENT : depassementVolume/creneauImposable)
+- **Génération** : algo glouton most-constrained-first avec contraintes (pauses, imposables, dispo enseignant, salles, max consécutifs)
+
+### Backend — Améliorations Phase 1
+- **Fix performance** : `findByClasseAnnee`, `findByEnseignant`, `findBySalle` — `find()` + filter en mémoire → `createQueryBuilder` avec JOIN et WHERE en base
+- **Nouvel endpoint** : `GET /api/emploi-du-temps/statistiques` — KPIs agrégés (totalCreneaux, totalHeures, totalMatieres, totalClasses, totalEnseignants, totalSallesOccupees, repartitionParJour, repartitionParMatiere, tauxOccupationSalle, conflitsPotentiels)
+- **Contrainte maxCreneauxConsecutifs** : intégrée dans l'algo de génération (méthode `verifierMaxConsecutifs()`)
+- **Fichiers modifiés** : `emploi-du-temps.service.ts`, `emploi-du-temps.controller.ts`
+
+### Frontend — Améliorations Phase 1
+- **Types** : `StatistiquesEDT` + `StatistiquesFilters` ajoutés dans `edt.types.ts`
+- **Hook** : `useStatistiquesEDT()` dans `use-emploi-du-temps.ts` (query key `['emploi-du-temps', 'statistiques', filters]`)
+- **i18n** : clés calendrier (semaine, jour, précédent, suivant, aujourd'hui) + synthèse (KPIs, graphiques, respect) ajoutées dans `emplois.json`
+- **Refonte edt-synthese.tsx** : dashboard complet — 6 KPI Cards + 2 graphiques CSS bar chart horizontal (répartition par jour, par matière) + tableau croisé volume horaire responsive (desktop table + mobile cards)
+- **Refonte edt-calendar.tsx** : hook `useHauteurSlot()` responsive (36/40/48px), `clamp()` sur grille/headers/labels/cards, jours abrégés sur mobile
+- **Refonte onglet-edt.tsx** : classes Tailwind hardcodées → variables CSS eLISAschool (`--color-dominant-*`, `--color-text-*`, `--gap-*`, `--space-*`, `--icon-*`), mobile cards < 640px
+- **Refonte edt-page.tsx** : bannière ajoutée, `space-y-4`/`gap-6`/`p-6` → variables CSS, sélecteur contexte responsive, select avec `clamp()`, bouton "Ajouter" label masqué sur mobile
+- **Refonte edt-liste.tsx** : variables CSS eLISAschool appliquées
+
+### Ultra-responsivité appliquée
+- Tous les `font-size` en `clamp()` (pas de valeurs fixes)
+- Tous les espacements via `var(--gap-*)`, `var(--space-*)`, `var(--padding-*)`
+- Icônes via `var(--icon-xs)` / `var(--icon-sm)` / `var(--icon-lg)`
+- Transformation tableau → cartes sur mobile (< 480px ou < 640px selon composant)
+- Jours abrégés automatiquement sur petits écrans (3 lettres)
+
+### Fichiers modifiés (12)
+**Backend** : `emploi-du-temps.service.ts`, `emploi-du-temps.controller.ts`
+**Frontend** : `edt.types.ts`, `use-emploi-du-temps.ts`, `emplois.json` (FR), `edt-synthese.tsx`, `edt-calendar.tsx`, `onglet-edt.tsx`, `edt-page.tsx`, `edt-liste.tsx`
+
+### Prochaines phases (à venir)
+- **Phase 2** : Génération progressive avec preview + résolution interactive des conflits
+- **Phase 3** : Page dédiée HeureCours (suivi effectif, pointage présence, remplacements)
+- **Phase 4** : Timeline verticale Google Calendar (axe Y=heures, axe X=jours)
+- **Phase 5** : Navigation semaine dans le calendrier + export PDF amélioré

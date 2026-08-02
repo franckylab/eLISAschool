@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { Calendar, CheckCircle, Briefcase, Loader2 } from 'lucide-react';
+import { Calendar, CheckCircle, Briefcase } from 'lucide-react';
+import { SchoolLoading } from '@/components/feedback';
 import { useTranslation } from 'react-i18next';
 import { formatDate } from '@/lib/date-utils';
 import { useMembreFonctions } from '../hooks/use-membre-fonctions';
@@ -24,9 +25,7 @@ export function TabFonctions({ membreId }: TabFonctionsProps) {
             <h3 className="text-lg font-semibold text-foreground">{t('fonctions.titre')}</h3>
 
             {isLoading ? (
-                <div className="flex justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
+                <SchoolLoading variant="compact" message={t('fonctions.chargement', 'Chargement des fonctions...')} />
             ) : !fonctionsMembre || fonctionsMembre.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                     <Briefcase className="h-12 w-12 mx-auto mb-3 opacity-40" />

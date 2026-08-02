@@ -21,7 +21,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCard } from '@/components/ui/StatCard';
 import { CardGrid } from '@/components/ui/CardGrid';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
-import { InlineSpinner, ErrorState } from '@/components/feedback';
+import { SchoolLoading, ErrorState } from '@/components/feedback';
 import { usePermissions, useKeyboardShortcuts } from '@/hooks';
 import { useToutesClasses } from '@/features/classes/hooks/use-toutes-classes';
 import { useToutesAnneesScolaires } from '@/features/annees-scolaires/hooks/use-toutes-annees-scolaires';
@@ -219,7 +219,7 @@ export function ElevesPage() {
     if (isLoading && !data) {
         return (
             <div className="p-6">
-                <InlineSpinner label={t('chargement')} />
+                <SchoolLoading message={t('chargement')} />
             </div>
         );
     }

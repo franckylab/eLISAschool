@@ -26,7 +26,8 @@
         "liste": "Liste",
         "synthese": "Synthèse",
         "preferences": "Préférences",
-        "templates": "Templates"
+        "templates": "Templates",
+        "audit": "Audit"
     },
     "jours": {
         "lundi": "Lundi",
@@ -76,7 +77,30 @@
         },
         "annuler": "Annuler",
         "generer": "Générer",
-        "enCours": "Génération en cours…"
+        "enCours": "Génération en cours…",
+        "previsualiser": "Prévisualiser",
+        "previewEnCours": "Prévisualisation…",
+        "confirmerGeneration": "Confirmer et générer",
+        "genererMalgreConflits": "Générer malgré les conflits",
+        "fermer": "Fermer",
+        "voirEDT": "Voir l'emploi du temps",
+        "preview": {
+            "creneaux": "Créneaux",
+            "heures": "Heures",
+            "matieres": "Matières",
+            "conflits": "Conflits",
+            "creneauxTitre": "Créneaux simulés",
+            "conflitsTitre": "Conflits",
+            "tousJours": "Tous",
+            "aucunCreneau": "Aucun créneau simulé",
+            "aucunConflit": "Aucun conflit détecté",
+            "aucunConflitDesc": "L'algorithme a pu placer toutes les séances sans conflit."
+        },
+        "succes": {
+            "titre": "Emploi du temps généré !",
+            "description": "{{creneaux}} créneaux, {{heures}}h planifiés.",
+            "conflitsRestants": "{{count}} conflit(s) non résolu(s)"
+        }
     },
     "preferences": {
         "titre": "Préférences",
@@ -129,7 +153,12 @@
         "mercredi": "Mercredi",
         "jeudi": "Jeudi",
         "vendredi": "Vendredi",
-        "samedi": "Samedi"
+        "samedi": "Samedi",
+        "semaine": "Semaine",
+        "jour": "Jour",
+        "precedent": "Précédent",
+        "suivant": "Suivant",
+        "aujourdhui": "Aujourd'hui"
     },
     "salle": "Salle",
     "matiereDefaut": "Matière",
@@ -146,7 +175,7 @@
         "conflitsDetectes": "{{count}} conflit(s) détecté(s)"
     },
     "synthese": {
-        "titre": "Synthèse",
+        "titre": "Synthèse & Statistiques",
         "volumeHoraire": "Volume horaire",
         "heuresPlanifiees": "Heures planifiées",
         "volumeRequis": "Volume requis",
@@ -159,7 +188,30 @@
         "creneaux": "Créneaux",
         "respect": "Respect",
         "aucuneDonnee": "Aucune donnée",
-        "genererPourVoirSynthese": "Générez l'emploi du temps pour voir la synthèse des volumes horaires."
+        "genererPourVoirSynthese": "Générez l'emploi du temps pour voir la synthèse des volumes horaires.",
+        "repartitionJour": "Répartition par jour",
+        "repartitionMatiere": "Répartition par matière",
+        "heures": "heures",
+        "creneauxLabel": "créneaux",
+        "tauxSalle": "Taux d'occupation des salles",
+        "classes": "Classes",
+        "enseignants": "Enseignants",
+        "sallesOccupees": "Salles occupées",
+        "kpiHeures": "Heures planifiées",
+        "kpiCreneaux": "Créneaux créés",
+        "kpiMatieres": "Matières couvertes",
+        "kpiSalles": "Salles utilisées",
+        "volumeRespecte": "Volume respecté",
+        "depassement": "Dépassement",
+        "insuffisant": "Insuffisant",
+        "ok": "Conforme",
+        "chargeEnseignant": "Charge des enseignants",
+        "chargeEnseignantDesc": "Volume horaire hebdomadaire par enseignant",
+        "heures": "heures",
+        "creneaux": "créneaux",
+        "seuilAlerte": "Seuil d'alerte : {{max}}h/semaine",
+        "dansAlerte": "En alerte",
+        "acceptable": "Acceptable"
     },
     "creneau": {
         "ajouter": "Ajouter un créneau",
@@ -235,6 +287,58 @@
         "erreurSuppression": "Erreur lors de la suppression",
         "erreurValidation": "Erreur lors de la validation",
         "erreurGeneration": "Erreur lors de la génération",
-        "erreurPreferences": "Erreur lors de la mise à jour des préférences"
+        "erreurPreferences": "Erreur lors de la mise à jour des préférences",
+        "erreurPreview": "Erreur lors de la prévisualisation",
+        "heuresCoursGenerees": "{{count}} heure(s) de cours générée(s)"
+    },
+    "audit": {
+        "titre": "Audit des conflits",
+        "description": "Scan global de tous les conflits existants dans les emplois du temps",
+        "actualiser": "Actualiser",
+        "aucunConflit": "Aucun conflit détecté",
+        "aucunConflitDesc": "Tous les créneaux sont cohérents. Aucun chevauchement de classe, enseignant ou salle.",
+        "resume": "Résumé",
+        "totalConflits": "Total conflits",
+        "bloquants": "Bloquants",
+        "avertissements": "Avertissements",
+        "listeConflits": "Liste des conflits",
+        "type": "Type",
+        "severite": "Sévérité",
+        "details": "Détails",
+        "jour": "Jour",
+        "horaire": "Horaire",
+        "types": {
+            "CONFLIT_CLASSE": "Conflit classe",
+            "CONFLIT_ENSEIGNANT": "Conflit enseignant",
+            "CONFLIT_SALLE": "Conflit salle",
+            "DEPASSEMENT_VOLUME_HORAIRE": "Dépassement volume",
+            "CRENEAU_IMPOSABLE": "Créneau imposable"
+        },
+        "severites": {
+            "BLOQUANT": "Bloquant",
+            "AVERTISSEMENT": "Avertissement"
+        },
+        "filtres": {
+            "tous": "Tous",
+            "bloquants": "Bloquants",
+            "avertissements": "Avertissements"
+        },
+        "chargement": "Analyse des conflits en cours…"
+    },
+    "generationHeuresCours": {
+        "titre": "Générer les heures de cours",
+        "description": "Convertit les créneaux récurrents en heures datées",
+        "dateDebut": "Date de début",
+        "dateFin": "Date de fin",
+        "enseignantRequis": "Un enseignant doit être sélectionné",
+        "lancer": "Générer",
+        "enCours": "Génération en cours…",
+        "resultat": "Résultat",
+        "creees": "Créées",
+        "ignorees": "Ignorées (conflits)",
+        "erreurs": "Erreurs",
+        "totalTraite": "Total traité",
+        "fermer": "Fermer",
+        "info": "Les créneaux de l'emploi du temps seront convertis en heures de cours réelles pour la plage sélectionnée. Les conflits d'enseignants seront automatiquement évités."
     }
 }

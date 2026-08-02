@@ -18,6 +18,7 @@ import { AffectationMatiere } from '@modules/matieres/entities';
 import { coefficientResolverService } from '@modules/matieres/services/coefficient-resolver.service';
 import { PreferenceEmploiDuTemps, CreneauImposable } from '../entities/preference-emploi-du-temps.entity';
 import { logger } from '@common/utils/logger.util';
+import { verifierOverlapHoraire, calculerDureeMinutes } from './conflit-commun.service';
 
 /**
  * Types de conflits détectés
@@ -215,7 +216,7 @@ export class ConflitDetectionService {
         });
 
         const enConflit = creneauxExistants.filter(c =>
-            c.heureDebut < donnees.heureFin && c.heureFin > donnees.heureDebut
+            verifierOverlapHoraire(c.heureDebut, c.heureFin, donnees.heureDebut, donnees.heureFin)
         );
 
         const filtered = donnees.excludeCreneauId
@@ -257,7 +258,7 @@ export class ConflitDetectionService {
             : creneauxMatiere;
 
         const totalMinutes = filtered.reduce((sum, c) => sum + c.dureeMinutes, 0);
-        const nouvellesMinutes = this.calculerMinutes(donnees.heureDebut, donnees.heureFin);
+        const nouvellesMinutes = calculerDureeMinutes(donnees.heureDebut, donnees.heureFin);
         // volumeHoraire est en minutes/semaine (source : MatiereNiveau) — comparaison en minutes
         const totalApresAjoutMinutes = totalMinutes + nouvellesMinutes;
 
@@ -305,11 +306,149 @@ export class ConflitDetectionService {
         return null;
     }
 
-    private calculerMinutes(heureDebut: string, heureFin: string): number {
-        const [h1, m1] = heureDebut.split(':').map(Number);
-        const [h2, m2] = heureFin.split(':').map(Number);
-        return (h2 * 60 + m2) - (h1 * 60 + m1);
+    /**
+     * Audit global : scan tous les créneaux de l'établissement et détecte les conflits existants.
+     * Retourne la liste complète des conflits avec les créneaux impliqués.
+     */
+    async auditConflitsGlobaux(
+        etablissementId: string,
+        options?: { periodeId?: string; anneeScolaireId?: string },
+    ): Promise<{
+        totalConflits: number;
+        conflitsBloquants: number;
+        avertissements: number;
+        conflits: Array<{
+            type: TypeConflit;
+            severite: SeveriteConflit;
+            message: string;
+            creneauxIds: string[];
+            details: Record<string, unknown>;
+        }>;
+    }> {
+        const qb = this.creneauRepo
+            .createQueryBuilder('ch')
+            .leftJoinAndSelect('ch.affectationMatiere', 'am')
+            .leftJoinAndSelect('am.matiere', 'matiere')
+            .leftJoinAndSelect('am.enseignant', 'enseignant')
+            .leftJoinAndSelect('am.classeAnnee', 'classeAnnee')
+            .leftJoinAndSelect('classeAnnee.classe', 'classe')
+            .leftJoinAndSelect('ch.salle', 'salle')
+            .where('ch.etablissementId = :etablissementId', { etablissementId });
+
+        if (options?.periodeId) {
+            qb.andWhere('ch.periodeId = :periodeId', { periodeId: options.periodeId });
+        }
+        if (options?.anneeScolaireId) {
+            qb.andWhere('ch.anneeScolaireId = :anneeScolaireId', { anneeScolaireId: options.anneeScolaireId });
+        }
+
+        qb.orderBy('ch.jour', 'ASC').addOrderBy('ch.heureDebut', 'ASC');
+        const creneaux = await qb.getMany();
+
+        const conflits: Array<{
+            type: TypeConflit;
+            severite: SeveriteConflit;
+            message: string;
+            creneauxIds: string[];
+            details: Record<string, unknown>;
+        }> = [];
+
+        // 1. Conflits de classe (même classe, même jour, heures qui se chevauchent)
+        const parClasseJour = new Map<string, typeof creneaux>();
+        for (const c of creneaux) {
+            const classeId = c.affectationMatiere?.classeAnneeId;
+            if (!classeId) continue;
+            const key = `${classeId}:${c.jour}`;
+            if (!parClasseJour.has(key)) parClasseJour.set(key, []);
+            parClasseJour.get(key)!.push(c);
+        }
+        for (const [, groupe] of parClasseJour) {
+            for (let i = 0; i < groupe.length; i++) {
+                for (let j = i + 1; j < groupe.length; j++) {
+                    if (groupe[i].heureDebut < groupe[j].heureFin && groupe[i].heureFin > groupe[j].heureDebut) {
+                        conflits.push({
+                            type: TypeConflit.CONFLIT_CLASSE,
+                            severite: SeveriteConflit.BLOQUANT,
+                            message: `Conflit classe: ${groupe[i].id.substring(0, 8)} et ${groupe[j].id.substring(0, 8)} le ${groupe[i].jour} ${groupe[i].heureDebut}-${groupe[i].heureFin}`,
+                            creneauxIds: [groupe[i].id, groupe[j].id],
+                            details: {
+                                classeAnneeId: groupe[i].affectationMatiere?.classeAnneeId,
+                                jour: groupe[i].jour,
+                            },
+                        });
+                    }
+                }
+            }
+        }
+
+        // 2. Conflits enseignant (même enseignant, même jour, heures qui se chevauchent)
+        const parEnseignantJour = new Map<string, typeof creneaux>();
+        for (const c of creneaux) {
+            const ensId = c.affectationMatiere?.enseignantId;
+            if (!ensId) continue;
+            const key = `${ensId}:${c.jour}`;
+            if (!parEnseignantJour.has(key)) parEnseignantJour.set(key, []);
+            parEnseignantJour.get(key)!.push(c);
+        }
+        for (const [, groupe] of parEnseignantJour) {
+            for (let i = 0; i < groupe.length; i++) {
+                for (let j = i + 1; j < groupe.length; j++) {
+                    if (groupe[i].heureDebut < groupe[j].heureFin && groupe[i].heureFin > groupe[j].heureDebut) {
+                        conflits.push({
+                            type: TypeConflit.CONFLIT_ENSEIGNANT,
+                            severite: SeveriteConflit.BLOQUANT,
+                            message: `Conflit enseignant: ${groupe[i].id.substring(0, 8)} et ${groupe[j].id.substring(0, 8)} le ${groupe[i].jour} ${groupe[i].heureDebut}-${groupe[i].heureFin}`,
+                            creneauxIds: [groupe[i].id, groupe[j].id],
+                            details: {
+                                enseignantId: groupe[i].affectationMatiere?.enseignantId,
+                                jour: groupe[i].jour,
+                            },
+                        });
+                    }
+                }
+            }
+        }
+
+        // 3. Conflits de salle (même salle, même jour, heures qui se chevauchent)
+        const parSalleJour = new Map<string, typeof creneaux>();
+        for (const c of creneaux) {
+            if (!c.salleId) continue;
+            const key = `${c.salleId}:${c.jour}`;
+            if (!parSalleJour.has(key)) parSalleJour.set(key, []);
+            parSalleJour.get(key)!.push(c);
+        }
+        for (const [, groupe] of parSalleJour) {
+            for (let i = 0; i < groupe.length; i++) {
+                for (let j = i + 1; j < groupe.length; j++) {
+                    if (groupe[i].heureDebut < groupe[j].heureFin && groupe[i].heureFin > groupe[j].heureDebut) {
+                        conflits.push({
+                            type: TypeConflit.CONFLIT_SALLE,
+                            severite: SeveriteConflit.BLOQUANT,
+                            message: `Conflit salle: ${groupe[i].id.substring(0, 8)} et ${groupe[j].id.substring(0, 8)} le ${groupe[i].jour} ${groupe[i].heureDebut}-${groupe[i].heureFin}`,
+                            creneauxIds: [groupe[i].id, groupe[j].id],
+                            details: {
+                                salleId: groupe[i].salleId,
+                                jour: groupe[i].jour,
+                            },
+                        });
+                    }
+                }
+            }
+        }
+
+        const conflitsBloquants = conflits.filter(c => c.severite === SeveriteConflit.BLOQUANT).length;
+        const avertissements = conflits.filter(c => c.severite === SeveriteConflit.AVERTISSEMENT).length;
+
+        logger.info(`[Audit EDT] ${conflits.length} conflit(s) détectés pour établissement ${etablissementId}`);
+
+        return {
+            totalConflits: conflits.length,
+            conflitsBloquants,
+            avertissements,
+            conflits,
+        };
     }
+
 }
 
 export const conflitDetectionService = new ConflitDetectionService();

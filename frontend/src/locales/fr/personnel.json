@@ -244,7 +244,19 @@
         "erreurGeneration": "Erreur lors de la génération depuis l'EDT",
         "coursAjoute": "Cours ajouté",
         "coursMisAJour": "Cours mis à jour",
-        "genererDepuisEdt": "Générer depuis EDT"
+        "genererDepuisEdt": "Générer depuis EDT",
+        "vueResume": "Résumé",
+        "vueListe": "Liste détaillée",
+        "tous": "Tous",
+        "marquerEffectue": "Marquer comme effectué",
+        "marquerAnnule": "Marquer comme annulé",
+        "reinitialiserStatut": "Réinitialiser le statut",
+        "aucunCoursPeriode": "Aucun cours sur cette période",
+        "aucunCoursPeriodeDesc": "Ajoutez un cours manuellement ou générez depuis l'EDT",
+        "statutChange": {
+            "effectue": "Cours marqué comme effectué",
+            "annule": "Cours marqué comme annulé"
+        }
     },
     "edt": {
         "chargement": "Chargement de l'emploi du temps...",

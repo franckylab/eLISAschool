@@ -11,6 +11,7 @@ import { DataSource } from 'typeorm';
 import { databaseConfig } from '@config/database.config';
 import { envConfig } from '@config/env.config';
 import { cleanOrphanHeuresCours } from './pre-sync-cleanup';
+import { applyPartialIndexes } from './post-sync-indexes';
 import { logger } from '@common/utils/logger.util';
 
 export const AppDataSource = new DataSource(databaseConfig);
@@ -28,6 +29,9 @@ export async function initializeDatabase(): Promise<DataSource> {
             });
         }
         await AppDataSource.initialize();
+
+        // Re-créer les index partiels que synchronize ne gère pas
+        await applyPartialIndexes(AppDataSource);
     }
     return AppDataSource;
 }

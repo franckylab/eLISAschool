@@ -2,8 +2,8 @@
  * ==================================
  * eLISAschool - Service Heure de Cours
  * ==================================
- * Version: 1.1.0
- * Migration complète classeId → classeAnneeId (v4.0)
+ * Version: 1.2.0
+ * Ajout typeCreneau (v1.2 — cohérence Template/Instance)
  */
 
 import { Repository, Between, In, Not } from 'typeorm';
@@ -21,6 +21,7 @@ import { Matiere } from '@modules/matieres/entities';
 import { MembrePersonnel, StatutPersonnel } from '@modules/personnel/entities';
 import { personnelService } from './personnel.service';
 import { CategorieFonction } from '../../../shared/constants/personnel.constants';
+import { verifierOverlapHoraire } from '@modules/emploi-du-temps/services/conflit-commun.service';
 import { Request } from 'express';
 
 export class HeureCoursService {
@@ -118,7 +119,7 @@ export class HeureCoursService {
         });
 
         for (const cours of coursDuJour) {
-            const overlap = this.verifierOverlapHoraire(
+            const overlap = verifierOverlapHoraire(
                 cours.heureDebut,
                 cours.heureFin,
                 dto.heureDebut,
@@ -133,14 +134,6 @@ export class HeureCoursService {
                 );
             }
         }
-    }
-
-    private verifierOverlapHoraire(debut1: string, fin1: string, debut2: string, fin2: string): boolean {
-        const toMinutes = (time: string): number => {
-            const [h, m] = time.split(':').map(Number);
-            return h * 60 + m;
-        };
-        return toMinutes(debut1) < toMinutes(fin2) && toMinutes(debut2) < toMinutes(fin1);
     }
 
     async findAll(query: QueryHeureCoursDto, etablissementId?: string): Promise<PaginatedResult<HeureCours>> {
@@ -495,6 +488,24 @@ export class HeureCoursService {
                     continue;
                 }
 
+                // Vérifier que l'enseignant n'est pas déjà occupé à cette date et heure
+                const conflitEnseignant = await this.repo
+                    .createQueryBuilder('hc')
+                    .where('hc.enseignantId = :enseignantId', { enseignantId })
+                    .andWhere('hc.date = :date', { date: courseDate.toISOString().split('T')[0] })
+                    .andWhere('hc.heureDebut < :heureFin', { heureFin: slot.heureFin })
+                    .andWhere('hc.heureFin > :heureDebut', { heureDebut: slot.heureDebut })
+                    .andWhere('hc.statutEffectue != :annule', { annule: StatutEffectue.ANNULE })
+                    .getCount();
+
+                if (conflitEnseignant > 0) {
+                    logger.warn(
+                        `[HeureCours] Conflit enseignant détecté à la génération: ${enseignantId} le ${courseDate.toISOString().split('T')[0]} ${slot.heureDebut}-${slot.heureFin} — créneau ignoré`,
+                    );
+                    skipped++;
+                    continue;
+                }
+
                 const slotClasseAnneeId = slot.affectationMatiere?.classeAnneeId;
                 const slotMatiereId = slot.affectationMatiere?.matiereId;
                 if (!slotClasseAnneeId || !slotMatiereId) {
@@ -509,6 +520,7 @@ export class HeureCoursService {
                     periodeId: periodeId || slot.periodeId,
                     creneauId: slot.id,
                     salleId: slot.salleId,
+                    typeCreneau: slot.typeCreneau,
                     date: courseDate,
                     heureDebut: slot.heureDebut,
                     heureFin: slot.heureFin,

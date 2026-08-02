@@ -23,7 +23,7 @@ import { Periode } from '@modules/periodes/entities';
 import { Salle } from '@modules/salles/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 import { AffectationMatiere } from '@modules/matieres/entities';
-import { CreneauHoraire } from '@modules/emploi-du-temps/entities';
+import { CreneauHoraire, TypeCreneau } from '@modules/emploi-du-temps/entities';
 
 /**
  * Statut d'exécution du cours
@@ -93,8 +93,15 @@ export class HeureCours {
     @Column({ type: 'time' })
     heureFin!: string;
 
-    @Column({ type: 'varchar', length: 30, default: StatutEffectue.PLANIFIE })
+    @Column({ type: 'varchar', length: 20, default: StatutEffectue.PLANIFIE })
     statutEffectue!: StatutEffectue;
+
+    /**
+     * Type de créneau (COURS, TP, TD, etc.) — copié depuis le CreneauHoraire
+     * lors de la génération. Permet de distinguer la nature du cours concret.
+     */
+    @Column({ type: 'varchar', length: 20, default: TypeCreneau.COURS })
+    typeCreneau!: TypeCreneau;
 
     @Column({ type: 'text', nullable: true })
     commentaire?: string; // Observations, remplacement, annulation

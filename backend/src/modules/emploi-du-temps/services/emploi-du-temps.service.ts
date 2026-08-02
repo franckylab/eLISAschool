@@ -30,6 +30,7 @@ import { coefficientResolverService } from '@modules/matieres/services/coefficie
 import { salleAvailabilityService } from '@modules/salles/services/salle-availability.service';
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { CreneauHoraire, PreferenceEmploiDuTemps, JourSemaine, TypeCreneau, StatutCreneau } from '../entities';
+import { TemplateEmploiDuTemps } from '../entities/template-emploi-du-temps.entity';
 import { conflitDetectionService } from './conflit-detection.service';
 
 export class EmploiDuTempsService {
@@ -179,8 +180,8 @@ export class EmploiDuTempsService {
 
     async supprimerCreneau(id: string, etablissementId: string): Promise<void> {
         const creneau = await this.findOne(id, etablissementId);
-        await this.creneauRepo.remove(creneau);
-        logger.info(`[CreneauHoraire] Créneau supprimé: ${id}`);
+        await this.creneauRepo.softRemove(creneau);
+        logger.info(`[CreneauHoraire] Créneau supprimé (soft): ${id}`);
     }
 
     // ─── Workflow validation ────────────────────────────────────
@@ -234,44 +235,263 @@ export class EmploiDuTempsService {
     // ─── Requêtes par contexte ─────────────────────────────────
 
     async findByClasseAnnee(classeAnneeId: string, etablissementId: string): Promise<CreneauHoraire[]> {
-        return this.creneauRepo.find({
-            where: { etablissementId },
-            relations: [
-                'affectationMatiere', 'affectationMatiere.matiere',
-                'affectationMatiere.enseignant', 'affectationMatiere.classeAnnee',
-                'salle',
-            ],
-            order: { jour: 'ASC', heureDebut: 'ASC' },
-        }).then(creneaux =>
-            creneaux.filter(c => c.affectationMatiere?.classeAnneeId === classeAnneeId)
-        );
+        return this.creneauRepo.createQueryBuilder('ch')
+            .leftJoinAndSelect('ch.affectationMatiere', 'am')
+            .leftJoinAndSelect('am.matiere', 'matiere')
+            .leftJoinAndSelect('am.enseignant', 'enseignant')
+            .leftJoinAndSelect('am.classeAnnee', 'classeAnnee')
+            .leftJoinAndSelect('ch.salle', 'salle')
+            .where('ch.etablissementId = :etablissementId', { etablissementId })
+            .andWhere('am.classeAnneeId = :classeAnneeId', { classeAnneeId })
+            .orderBy('ch.jour', 'ASC')
+            .addOrderBy('ch.heureDebut', 'ASC')
+            .getMany();
     }
 
     async findByEnseignant(enseignantId: string, etablissementId: string): Promise<CreneauHoraire[]> {
-        return this.creneauRepo.find({
-            where: { etablissementId },
-            relations: [
-                'affectationMatiere', 'affectationMatiere.matiere',
-                'affectationMatiere.classeAnnee', 'salle',
-            ],
-            order: { jour: 'ASC', heureDebut: 'ASC' },
-        }).then(creneaux =>
-            creneaux.filter(c => c.affectationMatiere?.enseignantId === enseignantId)
-        );
+        return this.creneauRepo.createQueryBuilder('ch')
+            .leftJoinAndSelect('ch.affectationMatiere', 'am')
+            .leftJoinAndSelect('am.matiere', 'matiere')
+            .leftJoinAndSelect('am.enseignant', 'enseignant')
+            .leftJoinAndSelect('am.classeAnnee', 'classeAnnee')
+            .leftJoinAndSelect('classeAnnee.classe', 'classe')
+            .leftJoinAndSelect('ch.salle', 'salle')
+            .where('ch.etablissementId = :etablissementId', { etablissementId })
+            .andWhere('am.enseignantId = :enseignantId', { enseignantId })
+            .orderBy('ch.jour', 'ASC')
+            .addOrderBy('ch.heureDebut', 'ASC')
+            .getMany();
     }
 
     async findBySalle(salleId: string, etablissementId: string): Promise<CreneauHoraire[]> {
-        return this.creneauRepo.find({
-            where: { salleId, etablissementId },
-            relations: [
-                'affectationMatiere', 'affectationMatiere.matiere',
-                'affectationMatiere.enseignant', 'affectationMatiere.classeAnnee',
-            ],
-            order: { jour: 'ASC', heureDebut: 'ASC' },
-        });
+        return this.creneauRepo.createQueryBuilder('ch')
+            .leftJoinAndSelect('ch.affectationMatiere', 'am')
+            .leftJoinAndSelect('am.matiere', 'matiere')
+            .leftJoinAndSelect('am.enseignant', 'enseignant')
+            .leftJoinAndSelect('am.classeAnnee', 'classeAnnee')
+            .leftJoinAndSelect('classeAnnee.classe', 'classe')
+            .where('ch.etablissementId = :etablissementId', { etablissementId })
+            .andWhere('ch.salleId = :salleId', { salleId })
+            .orderBy('ch.jour', 'ASC')
+            .addOrderBy('ch.heureDebut', 'ASC')
+            .getMany();
     }
 
     // ─── Génération automatique ────────────────────────────────
+
+    /**
+     * Prévisualisation (dry-run) de la génération d'emploi du temps.
+     * Exécute l'algorithme sans sauvegarder les créneaux en base.
+     * Retourne les créneaux simulés + conflits détectés pour résolution interactive.
+     */
+    async previsualiserGeneration(
+        dto: GenererEmploiDuTempsDto,
+        etablissementId: string,
+    ): Promise<{
+        creneaux: Array<{
+            affectationMatiereId: string;
+            matiereNom: string;
+            matiereCouleur: string | null;
+            enseignantNom: string;
+            jour: string;
+            heureDebut: string;
+            heureFin: string;
+            salleId: string | null;
+            salleNom: string | null;
+            volumeMinutes: number;
+            numeroSeance: number;
+            totalSeances: number;
+        }>;
+        conflits: Array<{
+            type: string;
+            matiereNom: string;
+            seance: string;
+            message: string;
+        }>;
+        resume: {
+            totalCreneaux: number;
+            totalHeures: number;
+            totalConflits: number;
+            matieres: number;
+            joursOccupes: string[];
+        };
+    }> {
+        const { classeAnneeId, options } = dto;
+        let preferences = await this.getPreferences(etablissementId);
+
+        // Appliquer le template si fourni
+        if (dto.templateId) {
+            preferences = await this.appliquerTemplate(dto.templateId, preferences, etablissementId);
+        }
+
+        const classeAnneeRepo = AppDataSource.getRepository(ClasseAnnee);
+        const classeAnnee = await classeAnneeRepo.findOne({
+            where: { id: classeAnneeId, etablissementId },
+            relations: ['classe'],
+        });
+        if (!classeAnnee) {
+            throw new AppError('Classe/Année non trouvée', 404, 'CLASSE_ANNEE_NOT_FOUND');
+        }
+
+        const affectationsRepo = AppDataSource.getRepository(AffectationMatiere);
+        const affectations = await affectationsRepo.find({
+            where: { classeAnneeId, etablissementId, statut: StatutAffectationMatiere.ACTIVE },
+            relations: ['matiere', 'enseignant'],
+        });
+
+        if (affectations.length === 0) {
+            return {
+                creneaux: [],
+                conflits: [],
+                resume: { totalCreneaux: 0, totalHeures: 0, totalConflits: 0, matieres: 0, joursOccupes: [] },
+            };
+        }
+
+        const dureeCreneau = preferences.dureeCreneauStandard || 55;
+        const jours = preferences.joursOuvrables || ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI'];
+        const respecterContraintes = options?.respecterContraintes ?? true;
+
+        // Charger les volumes horaires et trier par volume décroissant
+        type AffectationAvecVolume = { affectation: AffectationMatiere; volumeMinutes: number; nombreCreneaux: number };
+        const affectationsTriees: AffectationAvecVolume[] = [];
+
+        for (const affectation of affectations) {
+            const matiereNiveau = await coefficientResolverService.resoudreMatiereNiveau(
+                affectation.matiereId,
+                classeAnnee.classe?.niveauId ?? '',
+                classeAnnee.classe?.filiereId,
+            );
+            const volumeMinutes = matiereNiveau?.volumeHoraire || 120;
+            const nombreCreneaux = Math.ceil(volumeMinutes / dureeCreneau);
+            affectationsTriees.push({ affectation, volumeMinutes, nombreCreneaux });
+        }
+
+        affectationsTriees.sort((a, b) => b.volumeMinutes - a.volumeMinutes);
+
+        // Structures de suivi des contraintes (même logique que genererEmploiDuTemps)
+        const creneauxParClasseJour = new Map<string, number>();
+        const matiereParJour = new Map<string, number>();
+        const enseignantOccupations: Array<{ enseignantIds: string[]; jour: string; heureDebut: string; heureFin: string }> = [];
+        const creneauxSimules: CreneauHoraire[] = [];
+
+        // Résultats pour le frontend
+        const creneauxPreview: Array<{
+            affectationMatiereId: string;
+            matiereNom: string;
+            matiereCouleur: string | null;
+            enseignantNom: string;
+            jour: string;
+            heureDebut: string;
+            heureFin: string;
+            salleId: string | null;
+            salleNom: string | null;
+            volumeMinutes: number;
+            numeroSeance: number;
+            totalSeances: number;
+        }> = [];
+        const conflitsPreview: Array<{
+            type: string;
+            matiereNom: string;
+            seance: string;
+            message: string;
+        }> = [];
+
+        for (const { affectation, volumeMinutes, nombreCreneaux } of affectationsTriees) {
+            const matiereId = affectation.matiereId;
+
+            for (let i = 0; i < nombreCreneaux; i++) {
+                const placement = respecterContraintes
+                    ? await this.trouverMeilleurCreneau(
+                        preferences, affectation, jours, dureeCreneau,
+                        creneauxParClasseJour, matiereParJour, enseignantOccupations,
+                        creneauxSimules, classeAnneeId, matiereId,
+                    )
+                    : this.trouverCreneauLibre(
+                        preferences, jours, dureeCreneau,
+                        creneauxParClasseJour, enseignantOccupations,
+                        affectation, classeAnneeId,
+                    );
+
+                if (placement) {
+                    // Créer un créneau simulé (non persisté)
+                    const creneauSimule = this.creneauRepo.create({
+                        affectationMatiereId: affectation.id,
+                        salleId: placement.salleId,
+                        jour: placement.jour as JourSemaine,
+                        heureDebut: placement.heureDebut,
+                        heureFin: placement.heureFin,
+                        typeCreneau: TypeCreneau.COURS,
+                        statut: StatutCreneau.PLANIFIE,
+                        anneeScolaireId: classeAnnee.anneeScolaireId,
+                        etablissementId,
+                        genereAutomatiquement: true,
+                    });
+                    creneauSimule.affectationMatiere = affectation;
+                    creneauxSimules.push(creneauSimule);
+
+                    // Ajouter au preview
+                    creneauxPreview.push({
+                        affectationMatiereId: affectation.id,
+                        matiereNom: affectation.matiere?.nom || 'Matière',
+                        matiereCouleur: affectation.matiere?.couleur || null,
+                        enseignantNom: affectation.enseignant
+                            ? `${affectation.enseignant.prenom} ${affectation.enseignant.nom}`
+                            : '—',
+                        jour: placement.jour,
+                        heureDebut: placement.heureDebut,
+                        heureFin: placement.heureFin,
+                        salleId: placement.salleId || null,
+                        salleNom: placement.salleNom || null,
+                        volumeMinutes,
+                        numeroSeance: i + 1,
+                        totalSeances: nombreCreneaux,
+                    });
+
+                    // Mettre à jour les compteurs
+                    const keyCJ = `${classeAnneeId}:${placement.jour}`;
+                    creneauxParClasseJour.set(keyCJ, (creneauxParClasseJour.get(keyCJ) || 0) + 1);
+
+                    const keyMJ = `${matiereId}:${placement.jour}`;
+                    matiereParJour.set(keyMJ, (matiereParJour.get(keyMJ) || 0) + 1);
+
+                    const enseignantIds = [affectation.enseignantId, ...(affectation.coEnseignantIds || [])].filter(Boolean);
+                    enseignantOccupations.push({
+                        enseignantIds,
+                        jour: placement.jour,
+                        heureDebut: placement.heureDebut,
+                        heureFin: placement.heureFin,
+                    });
+                } else {
+                    conflitsPreview.push({
+                        type: 'PLACEMENT_IMPOSSIBLE',
+                        matiereNom: affectation.matiere?.nom || 'Matière',
+                        seance: `Séance ${i + 1}/${nombreCreneaux}`,
+                        message: `Impossible de placer ${affectation.matiere?.nom || 'Matière'} (séance ${i + 1}/${nombreCreneaux})`,
+                    });
+                }
+            }
+        }
+
+        const totalMinutes = creneauxPreview.reduce((sum, c) => {
+            const [h1, m1] = c.heureDebut.split(':').map(Number);
+            const [h2, m2] = c.heureFin.split(':').map(Number);
+            return sum + ((h2 * 60 + m2) - (h1 * 60 + m1));
+        }, 0);
+
+        const joursOccupes = Array.from(new Set(creneauxPreview.map(c => c.jour))).sort();
+
+        return {
+            creneaux: creneauxPreview,
+            conflits: conflitsPreview,
+            resume: {
+                totalCreneaux: creneauxPreview.length,
+                totalHeures: totalMinutes / 60,
+                totalConflits: conflitsPreview.length,
+                matieres: affectationsTriees.length,
+                joursOccupes,
+            },
+        };
+    }
 
     async genererEmploiDuTemps(dto: GenererEmploiDuTempsDto, etablissementId: string): Promise<{
         success: boolean;
@@ -281,7 +501,12 @@ export class EmploiDuTempsService {
         avertissements: string[];
     }> {
         const { classeAnneeId, options } = dto;
-        const preferences = await this.getPreferences(etablissementId);
+        let preferences = await this.getPreferences(etablissementId);
+
+        // Appliquer le template si fourni
+        if (dto.templateId) {
+            preferences = await this.appliquerTemplate(dto.templateId, preferences, etablissementId);
+        }
 
         if (options?.regenerer) {
             await this.creneauRepo
@@ -414,6 +639,157 @@ export class EmploiDuTempsService {
         };
     }
 
+    // ─── Statistiques agrégées ──────────────────────────────────
+
+    async getStatistiques(
+        etablissementId: string,
+        options?: { classeAnneeId?: string; enseignantId?: string; periodeId?: string },
+    ): Promise<{
+        totalCreneaux: number;
+        totalHeures: number;
+        totalMatieres: number;
+        totalClasses: number;
+        totalEnseignants: number;
+        totalSallesOccupees: number;
+        repartitionParJour: Array<{ jour: string; nombreCreneaux: number; totalHeures: number }>;
+        repartitionParMatiere: Array<{ matiereId: string; matiereNom: string; couleur: string | null; nombreCreneaux: number; totalHeures: number; volumeRequis: number | null }>;
+        tauxOccupationSalle: number;
+        conflitsPotentiels: number;
+    }> {
+        const qb = this.creneauRepo.createQueryBuilder('ch')
+            .leftJoinAndSelect('ch.affectationMatiere', 'am')
+            .leftJoinAndSelect('am.matiere', 'matiere')
+            .leftJoinAndSelect('am.enseignant', 'enseignant')
+            .leftJoinAndSelect('am.classeAnnee', 'classeAnnee')
+            .leftJoinAndSelect('classeAnnee.classe', 'classe')
+            .leftJoinAndSelect('ch.salle', 'salle')
+            .where('ch.etablissementId = :etablissementId', { etablissementId });
+
+        if (options?.classeAnneeId) {
+            qb.andWhere('am.classeAnneeId = :classeAnneeId', { classeAnneeId: options.classeAnneeId });
+        }
+        if (options?.enseignantId) {
+            qb.andWhere('am.enseignantId = :enseignantId', { enseignantId: options.enseignantId });
+        }
+        if (options?.periodeId) {
+            qb.andWhere('ch.periodeId = :periodeId', { periodeId: options.periodeId });
+        }
+
+        const creneaux = await qb.getMany();
+
+        const totalCreneaux = creneaux.length;
+        const totalMinutes = creneaux.reduce((sum, c) => sum + c.dureeMinutes, 0);
+        const totalHeures = totalMinutes / 60;
+
+        const matieresSet = new Set<string>();
+        const classesSet = new Set<string>();
+        const enseignantsSet = new Set<string>();
+        const sallesSet = new Set<string>();
+
+        const parJour = new Map<string, { nombreCreneaux: number; totalMinutes: number }>();
+        const parMatiere = new Map<string, { matiereNom: string; couleur: string | null; nombreCreneaux: number; totalMinutes: number; volumeRequis: number | null }>();
+
+        for (const c of creneaux) {
+            const aff = c.affectationMatiere;
+            if (aff) {
+                matieresSet.add(aff.matiereId);
+                classesSet.add(aff.classeAnneeId);
+                enseignantsSet.add(aff.enseignantId);
+            }
+            if (c.salleId) sallesSet.add(c.salleId);
+
+            // Par jour
+            const jourData = parJour.get(c.jour) || { nombreCreneaux: 0, totalMinutes: 0 };
+            jourData.nombreCreneaux++;
+            jourData.totalMinutes += c.dureeMinutes;
+            parJour.set(c.jour, jourData);
+
+            // Par matière
+            if (aff?.matiere) {
+                const matKey = `${aff.matiereId}:${aff.classeAnneeId}`;
+                const matData = parMatiere.get(matKey) || {
+                    matiereNom: aff.matiere.nom,
+                    couleur: aff.matiere.couleur,
+                    nombreCreneaux: 0,
+                    totalMinutes: 0,
+                    volumeRequis: null,
+                };
+                matData.nombreCreneaux++;
+                matData.totalMinutes += c.dureeMinutes;
+                parMatiere.set(matKey, matData);
+            }
+        }
+
+        // Résoudre les volumes requis
+        for (const [key, data] of parMatiere.entries()) {
+            const [matiereId, classeAnneeId] = key.split(':');
+            try {
+                const classeAnneeRepo = AppDataSource.getRepository(ClasseAnnee);
+                const classeAnnee = await classeAnneeRepo.findOne({
+                    where: { id: classeAnneeId },
+                    relations: ['classe'],
+                });
+                const matiereNiveau = await coefficientResolverService.resoudreMatiereNiveau(
+                    matiereId,
+                    classeAnnee?.classe?.niveauId ?? '',
+                    classeAnnee?.classe?.filiereId,
+                );
+                data.volumeRequis = matiereNiveau?.volumeHoraire ?? null;
+            } catch { /* ignore */ }
+        }
+
+        // Taux d'occupation des salles (ratio salles occupées / total salles)
+        let tauxOccupationSalle = 0;
+        try {
+            const totalSalles = await AppDataSource.getRepository('Salle').count({ where: { etablissementId } });
+            if (totalSalles > 0) {
+                tauxOccupationSalle = Math.round((sallesSet.size / totalSalles) * 100);
+            }
+        } catch { /* ignore */ }
+
+        const JOURS_ORDRE = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE'];
+        const repartitionParJour = Array.from(parJour.entries())
+            .map(([jour, data]) => ({
+                jour,
+                nombreCreneaux: data.nombreCreneaux,
+                totalHeures: data.totalMinutes / 60,
+            }))
+            .sort((a, b) => JOURS_ORDRE.indexOf(a.jour) - JOURS_ORDRE.indexOf(b.jour));
+
+        const repartitionParMatiere = Array.from(parMatiere.entries())
+            .map(([key, data]) => ({
+                matiereId: key.split(':')[0],
+                matiereNom: data.matiereNom,
+                couleur: data.couleur,
+                nombreCreneaux: data.nombreCreneaux,
+                totalHeures: data.totalMinutes / 60,
+                volumeRequis: data.volumeRequis,
+            }))
+            .sort((a, b) => b.totalHeures - a.totalHeures);
+
+        // Calculer les conflits potentiels réels
+        let conflitsPotentiels = 0;
+        try {
+            const auditResult = await conflitDetectionService.auditConflitsGlobaux(etablissementId, {
+                periodeId: options?.periodeId,
+            });
+            conflitsPotentiels = auditResult.totalConflits;
+        } catch { /* ignore — retourne 0 */ }
+
+        return {
+            totalCreneaux,
+            totalHeures: Math.round(totalHeures * 10) / 10,
+            totalMatieres: matieresSet.size,
+            totalClasses: classesSet.size,
+            totalEnseignants: enseignantsSet.size,
+            totalSallesOccupees: sallesSet.size,
+            repartitionParJour,
+            repartitionParMatiere,
+            tauxOccupationSalle,
+            conflitsPotentiels,
+        };
+    }
+
     // ─── Préférences ───────────────────────────────────────────
 
     async getPreferences(etablissementId: string): Promise<PreferenceEmploiDuTemps> {
@@ -480,6 +856,7 @@ export class EmploiDuTempsService {
     ): { jour: string; heureDebut: string; heureFin: string; salleId?: string } | null {
         const maxParJour = preferences.maxCreneauxParJour || 8;
         const maxMatiereParJour = preferences.maxCreneauxMatiereParJour || 2;
+        const maxConsecutifs = preferences.maxCreneauxConsecutifs || 2;
         const heureDebutCours = this.normaliserHeure(preferences.heureDebutCours || '07:30');
         const heureFinCours = this.normaliserHeure(preferences.heureFinCours || '17:00');
 
@@ -536,6 +913,12 @@ export class EmploiDuTempsService {
 
                 // Vérifier disponibilité enseignant
                 if (!this.enseignantLibre(affectation, jour, heure, heureFin, enseignantOccupations)) {
+                    heure = heureFin;
+                    continue;
+                }
+
+                // Vérifier max créneaux consécutifs pour cette matière
+                if (!this.verifierMaxConsecutifs(matiereId, jour, heure, dureeCreneau, maxConsecutifs, creneauxGenerees)) {
                     heure = heureFin;
                     continue;
                 }
@@ -604,6 +987,88 @@ export class EmploiDuTempsService {
         if (this.estDansPause(heure, preferences.pauseDebut, preferences.pauseFin)) return this.normaliserHeure(preferences.pauseFin!);
         if (this.estDansPause(heure, preferences.pauseApresMidiDebut, preferences.pauseApresMidiFin)) return this.normaliserHeure(preferences.pauseApresMidiFin!);
         return null;
+    }
+
+    /**
+     * Vérifie qu'une matière n'a pas déjà N créneaux consécutifs à l'heure donnée
+     */
+    private verifierMaxConsecutifs(
+        matiereId: string,
+        jour: string,
+        heureDebut: string,
+        dureeCreneau: number,
+        maxConsecutifs: number,
+        creneauxGenerees: CreneauHoraire[],
+    ): boolean {
+        // Trouver les créneaux de cette matière le même jour, triés par heure
+        const creneauxMatiereJour = creneauxGenerees
+            .filter(c => {
+                const affMatiereId = (c.affectationMatiere as AffectationMatiere)?.matiereId;
+                return affMatiereId === matiereId && c.jour === jour;
+            })
+            .sort((a, b) => a.heureDebut.localeCompare(b.heureDebut));
+
+        if (creneauxMatiereJour.length < maxConsecutifs) return true;
+
+        // Vérifier si les N derniers créneaux sont consécutifs avec le nouveau
+        const derniers = creneauxMatiereJour.slice(-maxConsecutifs);
+        let estConsecutif = true;
+        for (let i = 1; i < derniers.length; i++) {
+            const finPrec = this.heureToMinutes(derniers[i - 1].heureFin);
+            const debutCourant = this.heureToMinutes(derniers[i].heureDebut);
+            if (debutCourant !== finPrec) {
+                estConsecutif = false;
+                break;
+            }
+        }
+
+        if (!estConsecutif) return true;
+
+        // Vérifier si le nouveau créneau serait aussi consécutif au dernier
+        const dernierFin = this.heureToMinutes(derniers[derniers.length - 1].heureFin);
+        const nouveauDebut = this.heureToMinutes(heureDebut);
+        return nouveauDebut !== dernierFin;
+    }
+
+    /**
+     * Applique la configuration d'un template en override des préférences
+     */
+    private async appliquerTemplate(
+        templateId: string,
+        preferences: PreferenceEmploiDuTemps,
+        etablissementId: string,
+    ): Promise<PreferenceEmploiDuTemps> {
+        const templateRepo = AppDataSource.getRepository(TemplateEmploiDuTemps);
+        const template = await templateRepo.findOne({
+            where: [
+                { id: templateId, etablissementId },
+                { id: templateId, estPartage: true },
+            ],
+        });
+
+        if (!template || !template.actif) {
+            logger.warn(`[EDT] Template ${templateId} non trouvé ou inactif — ignoré`);
+            return preferences;
+        }
+
+        const config = template.configuration;
+        const overridden = { ...preferences };
+
+        if (config.joursTravailles?.length) {
+            overridden.joursOuvrables = config.joursTravailles as JourSemaine[];
+        }
+        if (config.heureDebutCours) {
+            overridden.heureDebutCours = config.heureDebutCours;
+        }
+        if (config.heureFinCours) {
+            overridden.heureFinCours = config.heureFinCours;
+        }
+        if (config.dureeCreneauDefaut) {
+            overridden.dureeCreneauStandard = config.dureeCreneauDefaut;
+        }
+
+        logger.info(`[EDT] Template "${template.nom}" appliqué — jours: ${overridden.joursOuvrables?.join(',')}, durée: ${overridden.dureeCreneauStandard}min`);
+        return overridden;
     }
 }
 

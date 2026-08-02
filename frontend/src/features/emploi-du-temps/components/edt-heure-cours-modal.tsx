@@ -8,7 +8,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CalendarCheck, User, MessageSquare, MapPin } from 'lucide-react';
+import { CalendarCheck, User, MessageSquare, MapPin, Tag } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { SectionSeparator } from '@/components/ui/SectionSeparator';
@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { useHandleError } from '@/hooks/use-handle-error';
 
 export type StatutEffectue = 'PLANIFIE' | 'EFFECTUE' | 'ANNULE' | 'REMPLACE';
+export type TypeCreneau = 'COURS' | 'TP' | 'TD' | 'RECREATION' | 'ETUDE' | 'PERMANENCE' | 'AUTRE';
 
 interface HeureCours {
     id: string;
@@ -28,6 +29,7 @@ interface HeureCours {
     matiereId: string;
     salleId?: string;
     statutEffectue: StatutEffectue;
+    typeCreneau: TypeCreneau;
     remplacantId?: string;
     commentaire?: string;
     creneauId?: string;
@@ -51,8 +53,19 @@ const STATUTS: { value: StatutEffectue; labelKey: string; color: string }[] = [
     { value: 'REMPLACE', labelKey: 'heureCours.modal.statuts.remplace', color: 'bg-warning/20 text-warning' },
 ];
 
+const TYPES_CRENEAU: { value: TypeCreneau; label: string }[] = [
+    { value: 'COURS', label: 'Cours' },
+    { value: 'TP', label: 'Travaux Pratiques' },
+    { value: 'TD', label: 'Travaux Dirigés' },
+    { value: 'RECREATION', label: 'Récréation' },
+    { value: 'ETUDE', label: 'Étude' },
+    { value: 'PERMANENCE', label: 'Permanence' },
+    { value: 'AUTRE', label: 'Autre' },
+];
+
 const FORM_INIT = {
     statutEffectue: 'PLANIFIE' as StatutEffectue,
+    typeCreneau: 'COURS' as TypeCreneau,
     remplacantId: '',
     commentaire: '',
     salleId: '',
@@ -84,6 +97,7 @@ export function EDTHeureCoursModal({ open, onOpenChange, heureCours, onSuccess }
         if (open && heureCours) {
             setForm({
                 statutEffectue: heureCours.statutEffectue,
+                typeCreneau: heureCours.typeCreneau ?? 'COURS',
                 remplacantId: heureCours.remplacantId ?? '',
                 commentaire: heureCours.commentaire ?? '',
                 salleId: heureCours.salleId ?? '',
@@ -98,6 +112,7 @@ export function EDTHeureCoursModal({ open, onOpenChange, heureCours, onSuccess }
         updateMutation.mutate({
             id: heureCours.id,
             statutEffectue: form.statutEffectue,
+            typeCreneau: form.typeCreneau,
             remplacantId: form.remplacantId || undefined,
             commentaire: form.commentaire || undefined,
             salleId: form.salleId || undefined,
@@ -151,6 +166,23 @@ export function EDTHeureCoursModal({ open, onOpenChange, heureCours, onSuccess }
                         />
                     </div>
                 )}
+
+                {/* Type de créneau */}
+                <div>
+                    <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
+                        <Tag className="inline h-3.5 w-3.5 mr-1" />
+                        Type de créneau
+                    </label>
+                    <select
+                        value={form.typeCreneau}
+                        onChange={e => update({ typeCreneau: e.target.value as TypeCreneau })}
+                        className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm bg-[var(--color-surface)] text-[var(--color-text-primary)]"
+                    >
+                        {TYPES_CRENEAU.map(tc => (
+                            <option key={tc.value} value={tc.value}>{tc.label}</option>
+                        ))}
+                    </select>
+                </div>
 
                 {/* Salle override */}
                 <div>

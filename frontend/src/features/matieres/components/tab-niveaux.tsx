@@ -5,7 +5,7 @@ import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { InlineSpinner } from '@/components/feedback';
+import { SchoolLoading } from '@/components/feedback';
 import { formatVolumeMinutesToHours } from '@/lib/format-utils';
 import { usePermissions } from '@/hooks';
 import { useAjouterMatiereNiveau, useModifierMatiereNiveau, useSupprimerMatiereNiveau } from '../hooks/use-matieres';
@@ -102,7 +102,7 @@ export function TabNiveaux({ matiereNiveaux, isLoading, matiereId, matiereNom }:
         ? Math.max(...matiereNiveaux.map(p => p.volumeHoraire || 0)) : 0;
 
     if (isLoading) {
-        return <div className="py-12 flex justify-center"><InlineSpinner label={t('chargement')} /></div>;
+        return <SchoolLoading variant="compact" message={t('chargement')} />;
     }
 
     return (

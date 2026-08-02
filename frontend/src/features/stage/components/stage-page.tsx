@@ -7,6 +7,7 @@
 import { Briefcase, Building, CheckCircle, Award } from 'lucide-react';
 import { useStages, useStatistiquesStages } from '../hooks/use-stage';
 import { DataTable } from '@/components/ui/DataTable';
+import { SchoolLoading } from '@/components/feedback';
 import { CardGrid, StatCard } from '@/components/ui';
 
 const statuts: any = {
@@ -33,7 +34,7 @@ export function StagePage() {
         { key: 'evaluation', header: 'Note', className: 'w-20', render: (s: any) => <span className="text-sm font-bold">{s.evaluation?.note ? `${s.evaluation.note}/20` : '-'}</span> },
     ];
 
-    if (isLoading && !stagesData) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
+    if (isLoading && !stagesData) return <SchoolLoading message="Chargement des stages..." />;
 
     return (
         <div className="space-y-6">

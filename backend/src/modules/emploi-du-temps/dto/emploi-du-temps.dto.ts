@@ -81,6 +81,7 @@ export const queryCreneauxSchema = z.object({
 
 export const genererEmploiDuTempsSchema = z.object({
     classeAnneeId: z.string().uuid('ID de la classe/année invalide'),
+    templateId: z.string().uuid('ID du template invalide').optional(),
     options: z.object({
         regenerer: z.boolean().default(false),
         respecterContraintes: z.boolean().default(true),

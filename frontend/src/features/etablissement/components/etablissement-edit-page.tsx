@@ -13,6 +13,7 @@ import { Building2, Save, Lock, Unlock, Edit, ChevronRight, Upload, X, Image as 
 import { useEtablissement, useModifierEtablissement, useUploadLogo, useSupprimerLogo, useGetLogo } from '../hooks/use-etablissements';
 import { useAuthStore } from '@/stores/auth.store';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { SchoolLoading } from '@/components/feedback';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { ColorPicker } from '@/components/ui/ColorPicker';
@@ -249,11 +250,7 @@ export function EtablissementEditPage() {
     }, [id, supprimerLogo]);
 
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-dominant-600)]"></div>
-            </div>
-        );
+        return <SchoolLoading message="Chargement de l'établissement..." />;
     }
 
     if (!etablissement) {

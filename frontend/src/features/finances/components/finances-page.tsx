@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { DollarSign, Plus, Download, Eye, CreditCard, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { InlineSpinner, ErrorState } from '@/components/feedback';
+import { SchoolLoading, ErrorState } from '@/components/feedback';
 import { CardGrid } from '@/components/ui/CardGrid';
 import { StatCard } from '@/components/ui/StatCard';
 import { usePaiements, useStatistiquesFinancieres } from '../hooks/use-finances';
@@ -31,7 +31,7 @@ export function FinancesPage() {
     if (isLoading && !data) {
         return (
             <div className="p-6">
-                <InlineSpinner label="Chargement des données financières..." />
+                <SchoolLoading message="Chargement des données financières..." />
             </div>
         );
     }

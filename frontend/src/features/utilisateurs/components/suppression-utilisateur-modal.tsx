@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, ChevronDown, ChevronUp, Trash2, Shield, UserX } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
+import { SchoolLoading } from '@/components/feedback';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { useVerifierSuppressionUtilisateur, useSupprimerUtilisateur } from '../hooks/use-utilisateurs';
@@ -133,14 +134,7 @@ export function SuppressionUtilisateurModal({
                 description="Analyse des données liées à cet utilisateur..."
                 size="2xl"
             >
-                <div className="flex items-center justify-center py-12">
-                    <div className="text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Vérification des impacts en cours...
-                        </p>
-                    </div>
-                </div>
+                <SchoolLoading variant="compact" message="Vérification des impacts en cours..." />
             </CustomModal>
         );
     }

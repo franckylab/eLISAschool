@@ -1,8 +1,17 @@
+/**
+ * ==================================
+ * eLISAschool - Onglet Emploi du Temps (Page Personnel)
+ * ==================================
+ * Vue grille/liste des créneaux d'un enseignant
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
+ */
+
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar, List, Grid3X3, MapPin } from 'lucide-react';
 import { useCreneaux } from '@/features/emploi-du-temps';
-import { InlineSpinner } from '@/components/feedback';
+import { SchoolLoading } from '@/components/feedback';
 import type { CreneauHoraire } from '@/features/emploi-du-temps';
 
 const JOURS = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM'];
@@ -44,59 +53,104 @@ export function OngletEdt({ enseignantId, isActive }: { enseignantId: string; is
     }, [grouped]);
 
     if (isLoading && isActive) {
-        return <div className="py-12 flex justify-center"><InlineSpinner label={t('edt.chargement')} /></div>;
+        return <SchoolLoading variant="compact" message={t('edt.chargement')} />;
     }
 
     return (
-        <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4">
-                <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm font-medium text-foreground">{t('edt.titre')}</span>
-                    <span className="text-xs text-muted-foreground">({t('edt.creneauxCount', { count: creneaux.length })})</span>
+        <div className="flex flex-col gap-[var(--gap-md)]">
+            {/* Toolbar */}
+            <div
+                className="flex flex-wrap items-center justify-between gap-[var(--gap-sm)] rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] p-[var(--space-md)]"
+            >
+                <div className="flex items-center gap-[var(--gap-xs)]">
+                    <Calendar className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-[var(--color-text-secondary)]" />
+                    <span
+                        className="font-medium text-[var(--color-text-primary)]"
+                        style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
+                    >
+                        {t('edt.titre')}
+                    </span>
+                    <span
+                        className="text-[var(--color-text-muted)]"
+                        style={{ fontSize: 'clamp(0.6875rem, 0.63rem + 0.2vw, 0.75rem)' }}
+                    >
+                        ({t('edt.creneauxCount', { count: creneaux.length })})
+                    </span>
                 </div>
-                <div className="flex rounded-lg border border-border">
-                    <button onClick={() => setVue('grille')}
-                        className={`rounded-l-lg p-2 ${vue === 'grille' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'}`}>
-                        <Grid3X3 className="h-4 w-4" />
+                <div className="flex rounded-lg border border-[var(--color-bordure)] overflow-hidden">
+                    <button
+                        onClick={() => setVue('grille')}
+                        className={`p-[var(--space-xs)] transition-colors ${
+                            vue === 'grille'
+                                ? 'bg-[var(--color-dominant-100)] text-[var(--color-dominant-600)]'
+                                : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]'
+                        }`}
+                    >
+                        <Grid3X3 className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
                     </button>
-                    <button onClick={() => setVue('liste')}
-                        className={`rounded-r-lg p-2 ${vue === 'liste' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted'}`}>
-                        <List className="h-4 w-4" />
+                    <button
+                        onClick={() => setVue('liste')}
+                        className={`p-[var(--space-xs)] transition-colors ${
+                            vue === 'liste'
+                                ? 'bg-[var(--color-dominant-100)] text-[var(--color-dominant-600)]'
+                                : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-alt)]'
+                        }`}
+                    >
+                        <List className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
                     </button>
                 </div>
             </div>
 
+            {/* Empty state */}
             {Object.keys(grouped).length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card py-16">
-                    <Calendar className="mb-3 h-12 w-12 text-muted-foreground" />
-                    <p className="font-medium text-secondary">{t('edt.aucunCours')}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{t('edt.aucunCreneauDesc')}</p>
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--color-bordure)] bg-[var(--color-surface)] py-[var(--space-xl)]">
+                    <Calendar className="mb-[var(--space-sm)] h-[var(--icon-lg)] w-[var(--icon-lg)] text-[var(--color-text-muted)]" />
+                    <p className="font-medium text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1rem)' }}>
+                        {t('edt.aucunCours')}
+                    </p>
+                    <p className="mt-1 text-[var(--color-text-muted)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
+                        {t('edt.aucunCreneauDesc')}
+                    </p>
                 </div>
             ) : (
                 <>
                     {vue === 'grille' ? (
-                        <div className="overflow-hidden rounded-xl border border-border bg-card">
-                            <div className="grid grid-cols-7 border-b border-border">
+                        /* ─── Vue grille ──────────────────────── */
+                        <div className="overflow-hidden rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)]">
+                            <div className="grid grid-cols-7 border-b border-[var(--color-bordure)]">
                                 {JOURS.map((j) => (
-                                    <div key={j} className="border-r border-border bg-muted p-2 text-center text-xs font-semibold text-muted-foreground last:border-r-0">
-                                        {j}
+                                    <div
+                                        key={j}
+                                        className="border-r border-[var(--color-bordure)] bg-[var(--color-surface-alt)] p-[var(--space-xxs)] text-center font-semibold text-[var(--color-text-secondary)] last:border-r-0"
+                                        style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.25vw, 0.75rem)' }}
+                                    >
+                                        <span className="hidden sm:inline">{j}</span>
+                                        <span className="sm:hidden">{j.slice(0, 2)}</span>
                                     </div>
                                 ))}
                                 {JOURS.map((j) => {
                                     const jourKey = Object.keys(JOURS_MAP).find(k => JOURS_MAP[k] === j) || j;
                                     const creneauxJour = grouped[jourKey] ?? [];
                                     return (
-                                        <div key={`c-${j}`} className="min-h-[200px] border-r border-border p-1.5 last:border-r-0">
+                                        <div
+                                            key={`c-${j}`}
+                                            className="min-h-[clamp(120px,20vw,200px)] border-r border-[var(--color-bordure)] p-[var(--space-xxs)] last:border-r-0"
+                                        >
                                             {creneauxJour.length === 0 ? (
-                                                <p className="mt-8 text-center text-xs text-muted-foreground">—</p>
+                                                <p className="mt-8 text-center text-[var(--color-text-muted)]" style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.2vw, 0.6875rem)' }}>—</p>
                                             ) : (
                                                 creneauxJour.map((c) => (
-                                                    <div key={c.id}
-                                                        className="mb-1.5 rounded-lg border-l-4 border-[var(--color-dominant-400)] bg-[var(--color-dominant-50)] p-2 text-xs"
+                                                    <div
+                                                        key={c.id}
+                                                        className="mb-[var(--space-xxs)] rounded-lg border-l-[3px] border-[var(--color-dominant-400)] bg-[var(--color-dominant-50)] p-[var(--space-xxs)]"
+                                                        style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.2vw, 0.6875rem)' }}
                                                     >
-                                                        <p className="font-medium text-[var(--color-dominant-800)]">{c.affectationMatiere?.matiere?.nom || c.matiereId || '—'}</p>
-                                                        <p className="text-[var(--color-dominant-600)]">{c.affectationMatiere?.classeAnnee?.classe?.nom || '-'}</p>
+                                                        <p className="font-medium text-[var(--color-dominant-800)] truncate">
+                                                            {c.affectationMatiere?.matiere?.nom || c.matiereId || '—'}
+                                                        </p>
+                                                        <p className="text-[var(--color-dominant-600)] truncate">
+                                                            {c.affectationMatiere?.classeAnnee?.classe?.nom || '-'}
+                                                        </p>
                                                         <p className="mt-0.5 text-[var(--color-dominant-500)]">
                                                             {c.heureDebut?.slice(0, 5)} - {c.heureFin?.slice(0, 5)}
                                                         </p>
@@ -114,33 +168,69 @@ export function OngletEdt({ enseignantId, isActive }: { enseignantId: string; is
                             </div>
                         </div>
                     ) : (
-                        <div className="overflow-hidden rounded-xl border border-border bg-card">
-                            <table className="w-full text-sm">
-                                <thead className="bg-muted">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('edt.colJour')}</th>
-                                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('edt.colMatiere')}</th>
-                                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t('edt.colClasse')}</th>
-                                        <th className="px-4 py-3 text-center font-medium text-muted-foreground">{t('edt.colHoraire')}</th>
-                                        <th className="px-4 py-3 text-center font-medium text-muted-foreground">{t('edt.colSalle')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-border">
-                                    {creneauxTrie.map((c) => (
-                                        <tr key={c.id} className="hover:bg-muted">
-                                            <td className="px-4 py-3 font-medium text-foreground">{c._jour}</td>
-                                            <td className="px-4 py-3">
-                                                <span className="font-medium">{c.affectationMatiere?.matiere?.nom || c.matiereId || '—'}</span>
-                                            </td>
-                                            <td className="px-4 py-3 text-muted-foreground">{c.affectationMatiere?.classeAnnee?.classe?.nom || '-'}</td>
-                                            <td className="px-4 py-3 text-center text-foreground">
-                                                {c.heureDebut?.slice(0, 5)} - {c.heureFin?.slice(0, 5)}
-                                            </td>
-                                            <td className="px-4 py-3 text-center text-muted-foreground">{c.salle?.nom || '-'}</td>
+                        /* ─── Vue liste ───────────────────────── */
+                        <div className="overflow-hidden rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)]">
+                            {/* Desktop table */}
+                            <div className="hidden sm:block overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-[var(--color-surface-alt)]">
+                                        <tr>
+                                            <th className="px-[var(--padding-table-cell)] py-[var(--space-sm)] text-left font-medium text-[var(--color-text-secondary)]">{t('edt.colJour')}</th>
+                                            <th className="px-[var(--padding-table-cell)] py-[var(--space-sm)] text-left font-medium text-[var(--color-text-secondary)]">{t('edt.colMatiere')}</th>
+                                            <th className="px-[var(--padding-table-cell)] py-[var(--space-sm)] text-left font-medium text-[var(--color-text-secondary)]">{t('edt.colClasse')}</th>
+                                            <th className="px-[var(--padding-table-cell)] py-[var(--space-sm)] text-center font-medium text-[var(--color-text-secondary)]">{t('edt.colHoraire')}</th>
+                                            <th className="px-[var(--padding-table-cell)] py-[var(--space-sm)] text-center font-medium text-[var(--color-text-secondary)]">{t('edt.colSalle')}</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-[var(--color-bordure)]">
+                                        {creneauxTrie.map((c) => (
+                                            <tr key={c.id} className="hover:bg-[var(--color-surface-alt)]">
+                                                <td className="px-[var(--padding-table-cell)] py-[var(--space-sm)] font-medium text-[var(--color-text-primary)]">{c._jour}</td>
+                                                <td className="px-[var(--padding-table-cell)] py-[var(--space-sm)] text-[var(--color-text-primary)]">
+                                                    <span className="font-medium">{c.affectationMatiere?.matiere?.nom || c.matiereId || '—'}</span>
+                                                </td>
+                                                <td className="px-[var(--padding-table-cell)] py-[var(--space-sm)] text-[var(--color-text-secondary)]">{c.affectationMatiere?.classeAnnee?.classe?.nom || '-'}</td>
+                                                <td className="px-[var(--padding-table-cell)] py-[var(--space-sm)] text-center text-[var(--color-text-primary)]">
+                                                    {c.heureDebut?.slice(0, 5)} - {c.heureFin?.slice(0, 5)}
+                                                </td>
+                                                <td className="px-[var(--padding-table-cell)] py-[var(--space-sm)] text-center text-[var(--color-text-secondary)]">{c.salle?.nom || '-'}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Mobile cards */}
+                            <div className="sm:hidden flex flex-col gap-[var(--gap-sm)] p-[var(--space-md)]">
+                                {creneauxTrie.map((c) => (
+                                    <div key={c.id} className="rounded-[var(--radius-lg)] border border-[var(--color-bordure)] p-[var(--space-md)]">
+                                        <div className="flex items-center justify-between mb-[var(--gap-xs)]">
+                                            <span className="font-semibold text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}>
+                                                {c.affectationMatiere?.matiere?.nom || c.matiereId || '—'}
+                                            </span>
+                                            <span className="text-[var(--color-text-muted)]" style={{ fontSize: 'clamp(0.6875rem, 0.63rem + 0.2vw, 0.75rem)' }}>
+                                                {c._jour}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-[var(--gap-xs)] text-center">
+                                            <div>
+                                                <div className="text-[var(--color-text-muted)]" style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.2vw, 0.6875rem)' }}>{t('edt.colClasse')}</div>
+                                                <div className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.6875rem, 0.63rem + 0.2vw, 0.8125rem)' }}>{c.affectationMatiere?.classeAnnee?.classe?.nom || '-'}</div>
+                                            </div>
+                                            <div>
+                                                <div className="text-[var(--color-text-muted)]" style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.2vw, 0.6875rem)' }}>{t('edt.colHoraire')}</div>
+                                                <div className="font-mono text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.6875rem, 0.63rem + 0.2vw, 0.8125rem)' }}>
+                                                    {c.heureDebut?.slice(0, 5)}-{c.heureFin?.slice(0, 5)}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="text-[var(--color-text-muted)]" style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.2vw, 0.6875rem)' }}>{t('edt.colSalle')}</div>
+                                                <div className="text-[var(--color-text-secondary)]" style={{ fontSize: 'clamp(0.6875rem, 0.63rem + 0.2vw, 0.8125rem)' }}>{c.salle?.nom || '-'}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </>

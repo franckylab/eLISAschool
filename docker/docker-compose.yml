@@ -16,7 +16,7 @@ services:
     container_name: elisaschool_nginx
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-7001}:80"
+      - "${FRONTEND_PORT:-7001}:7001"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
@@ -36,7 +36,7 @@ services:
       POSTGRES_USER: ${DB_USER:-elisaschool_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-elisaschool_password}
     ports:
-      - "${DB_PORT:-7002}:7002"
+      - "127.0.0.1:${DB_PORT:-7002}:7002"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
@@ -61,7 +61,7 @@ services:
       --maxmemory 256mb
       --maxmemory-policy allkeys-lru
     ports:
-      - "${REDIS_PORT:-7003}:7003"
+      - "127.0.0.1:${REDIS_PORT:-7003}:7003"
     volumes:
       - redis_data:/data
     networks:
@@ -91,8 +91,8 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-elisaschool_password}
       JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_production}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-12345678901234567890123456789012}
-      FRONTEND_URL: ${FRONTEND_URL:-http://10.0.0.1}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost,http://127.0.0.1,http://0.0.0.0,http://10.0.0.1,http://localhost:7001,http://10.0.0.1:7001}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost,http://127.0.0.1,http://localhost:7001}
       
       # Email (SMTP)
       SMTP_HOST: ${SMTP_HOST:-}
@@ -110,8 +110,8 @@ services:
       FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-}
       FIREBASE_SERVER_KEY: ${FIREBASE_SERVER_KEY:-}
       FIREBASE_VAPID_KEY: ${FIREBASE_VAPID_KEY:-}
-    expose:
-      - "7000"
+    ports:
+      - "${BACKEND_PORT:-7000}:7000"
     volumes:
       - ../backend:/app/backend
       - ../shared:/app/shared
@@ -163,7 +163,7 @@ services:
       PGADMIN_LISTEN_PORT: 7004
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:
-      - "${PGADMIN_PORT:-7004}:7004"
+      - "127.0.0.1:${PGADMIN_PORT:-7004}:7004"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
       - ./pgadmin-servers.json:/pgadmin4/servers.json

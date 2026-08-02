@@ -42,6 +42,14 @@ router.post('/', authMiddleware, requirePermission('emploi-du-temps:create'), as
     } catch (error) { next(error); }
 });
 
+router.post('/previsualiser', authMiddleware, requirePermission('emploi-du-temps:generer'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validateDto(genererEmploiDuTempsSchema, req.body);
+        const result = await emploiDuTempsService.previsualiserGeneration(dto, req.etablissementId!);
+        return res.json({ success: true, data: result });
+    } catch (error) { next(error); }
+});
+
 router.post('/generer', authMiddleware, requirePermission('emploi-du-temps:generer'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(genererEmploiDuTempsSchema, req.body);
@@ -113,6 +121,22 @@ router.post('/verifier-conflits', authMiddleware, requirePermission('emploi-du-t
         const dto = validateDto(verifierConflitsSchema, req.body);
         const conflits = await conflitDetectionService.detecterConflits(dto, req.etablissementId!);
         return res.json({ success: true, data: conflits });
+    } catch (error) { next(error); }
+});
+
+router.get('/audit-conflits', authMiddleware, requirePermission('emploi-du-temps:verifier-conflits'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { periodeId, anneeScolaireId } = req.query as Record<string, string | undefined>;
+        const audit = await conflitDetectionService.auditConflitsGlobaux(req.etablissementId!, { periodeId, anneeScolaireId });
+        return res.json({ success: true, data: audit });
+    } catch (error) { next(error); }
+});
+
+router.get('/statistiques', authMiddleware, requirePermission('emploi-du-temps:view'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { classeAnneeId, enseignantId, periodeId } = req.query as Record<string, string | undefined>;
+        const stats = await emploiDuTempsService.getStatistiques(req.etablissementId!, { classeAnneeId, enseignantId, periodeId });
+        return res.json({ success: true, data: stats });
     } catch (error) { next(error); }
 });
 

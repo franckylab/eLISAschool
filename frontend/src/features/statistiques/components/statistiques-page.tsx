@@ -8,13 +8,14 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { BarChart3, TrendingUp, Users, DollarSign, AlertCircle, Download } from 'lucide-react';
 import { useStatistiquesGlobales, useExporterStatistiques } from '../hooks/use-statistiques';
+import { SchoolLoading } from '@/components/feedback';
 
 export function StatistiquesPage() {
     const { data: stats, isLoading } = useStatistiquesGlobales();
     const exportMutation = useExporterStatistiques();
     const [periode, setPeriode] = useState('mois');
 
-    if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
+    if (isLoading) return <SchoolLoading message="Chargement des statistiques..." />;
 
     return (
         <div className="space-y-6">

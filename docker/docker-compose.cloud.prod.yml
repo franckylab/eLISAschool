@@ -113,7 +113,7 @@ services:
   # ==================================
   backend:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.backend
     container_name: elisaschool_backend
     restart: unless-stopped
@@ -173,21 +173,26 @@ services:
   # ==================================
   frontend:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.frontend
       args:
-        VITE_API_URL: https://${DOMAIN_NAME}
     container_name: elisaschool_frontend
     restart: unless-stopped
     environment:
       VIRTUAL_HOST: ${DOMAIN_NAME}
       LETSENCRYPT_HOST: ${DOMAIN_NAME}
     expose:
-      - "80"
+      - "7001"
     networks:
       - elisaschool_network
     depends_on:
       - backend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:7001/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     deploy:
       resources:
         limits:

@@ -14,7 +14,7 @@ import { CATEGORIES_FONCTION, getCategorieColors, type CategorieFonction } from 
 import { PersonnelFormModal } from './personnel-form-modal';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { InlineSpinner, ErrorState } from '@/components/feedback';
+import { SchoolLoading, ErrorState } from '@/components/feedback';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { usePermissions } from '@/hooks';
 import type { MembrePersonnel, PersonnelFiltres } from '../types/personnel.types';
@@ -165,7 +165,7 @@ export function PersonnelPage() {
     if (isLoading && !data) {
         return (
             <div className="p-6">
-                <InlineSpinner label={t('personnel:chargementListe')} />
+                <SchoolLoading message={t('personnel:chargementListe')} />
             </div>
         );
     }

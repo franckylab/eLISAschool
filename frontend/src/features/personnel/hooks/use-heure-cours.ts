@@ -12,6 +12,7 @@ export interface HeureCours {
     heureDebut: string;
     heureFin: string;
     statutEffectue: 'PLANIFIE' | 'EFFECTUE' | 'ANNULE' | 'REMPLACE';
+    typeCreneau: 'COURS' | 'TP' | 'TD' | 'RECREATION' | 'ETUDE' | 'PERMANENCE' | 'AUTRE';
     commentaire?: string;
     remplacantId?: string;
     classeAnnee?: { id: string; classe?: { id: string; nom: string }; anneeScolaire?: { id: string; nom: string } };

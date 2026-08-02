@@ -24,7 +24,7 @@ const service = new HeureCoursService();
 router.post(
     '/generer-from-edt',
     authMiddleware,
-    requirePermission('personnel:manage'),
+    requirePermission('heures-cours:generate'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(genererHeuresCoursFromEdtSchema, req.body);
@@ -43,7 +43,7 @@ router.post(
 router.post(
     '/',
     authMiddleware,
-    requirePermission('personnel:manage'),
+    requirePermission('heures-cours:create'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(createHeureCoursSchema, req.body);
@@ -62,7 +62,7 @@ router.post(
 router.get(
     '/',
     authMiddleware,
-    requirePermission('personnel:view'),
+    requirePermission('heures-cours:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const query = validateDto(queryHeureCoursSchema, req.query);
@@ -82,7 +82,7 @@ router.get(
 router.get(
     '/enseignants/:id/edt',
     authMiddleware,
-    requirePermission('personnel:view'),
+    requirePermission('heures-cours:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const semaine = req.query.semaine as string || new Date().toISOString().split('T')[0];
@@ -107,7 +107,7 @@ router.get(
 router.get(
     '/enseignants/:id/volume-horaire',
     authMiddleware,
-    requirePermission('personnel:view'),
+    requirePermission('heures-cours:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { dateDebut, dateFin } = req.query;
@@ -141,7 +141,7 @@ router.get(
 router.get(
     '/enseignants/:id/resume-mensuel/:annee/:mois',
     authMiddleware,
-    requirePermission('personnel:view'),
+    requirePermission('heures-cours:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const annee = parseInt(req.params.annee);
@@ -175,7 +175,7 @@ router.get(
 router.get(
     '/:id',
     authMiddleware,
-    requirePermission('personnel:view'),
+    requirePermission('heures-cours:view'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const heureCours = await service.findOne(req.params.id, req.etablissementId!);
@@ -193,7 +193,7 @@ router.get(
 router.patch(
     '/:id',
     authMiddleware,
-    requirePermission('personnel:manage'),
+    requirePermission('heures-cours:edit'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(updateHeureCoursSchema, req.body);
@@ -218,7 +218,7 @@ router.patch(
 router.delete(
     '/:id',
     authMiddleware,
-    requirePermission('personnel:manage'),
+    requirePermission('heures-cours:delete'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             await service.delete(req.params.id, req.utilisateur?.id!, req.etablissementId!, req);

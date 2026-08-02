@@ -7,6 +7,7 @@
 import { Shield, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { useIncidents, useStatistiquesSecurite } from '../hooks/use-securite';
 import { DataTable } from '@/components/ui/DataTable';
+import { SchoolLoading } from '@/components/feedback';
 import { CardGrid } from '@/components/ui/CardGrid';
 import { StatCard } from '@/components/ui/StatCard';
 
@@ -39,7 +40,7 @@ export function SecuritePage() {
         { key: 'statut', header: 'Statut', className: 'w-28', render: (i: any) => { const s = statuts[i.statut] || { label: i.statut, color: 'gray' }; return <span className={`px-2 py-1 rounded-full text-xs font-medium bg-${s.color}-100 text-${s.color}-700`}>{s.label}</span>; } },
     ];
 
-    if (isLoading && !incidentsData) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
+    if (isLoading && !incidentsData) return <SchoolLoading message="Chargement des incidents..." />;
 
     return (
         <div className="space-y-6">

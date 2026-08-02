@@ -45,7 +45,7 @@ services:
       POSTGRES_USER: ${DB_USER:-elisaschool_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-elisaschool_password}
     ports:
-      - "${DB_PORT:-7002}:7002"
+      - "127.0.0.1:${DB_PORT:-7002}:7002"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -75,7 +75,7 @@ services:
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     ports:
-      - "${REDIS_PORT:-7003}:7003"
+      - "127.0.0.1:${REDIS_PORT:-7003}:7003"
     volumes:
       - redis_data:/data
     networks:
@@ -98,7 +98,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
       PGADMIN_LISTEN_PORT: 7004
     ports:
-      - "${PGADMIN_PORT:-7004}:7004"
+      - "127.0.0.1:${PGADMIN_PORT:-7004}:7004"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     networks:
@@ -118,8 +118,8 @@ services:
     environment:
       NODE_ENV: development
       ENABLE_CRON_JOBS: ${ENABLE_CRON_JOBS:-true}
-      HOST_IP: 10.0.0.1
-      APP_URL: http://10.0.0.1:7000
+      HOST_IP: ${HOST_IP:-localhost}
+      APP_URL: http://${HOST_IP:-localhost}:7000
       DB_HOST: postgres
       DB_PORT: 7002
       DB_NAME: ${DB_NAME:-elisaschool}
@@ -132,8 +132,8 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-12345678901234567890123456789012}
-      FRONTEND_URL: http://10.0.0.1
-      ALLOWED_ORIGINS: http://localhost,http://127.0.0.1,http://0.0.0.0,http://10.0.0.1,http://localhost:7001,http://10.0.0.1:7001
+      FRONTEND_URL: http://${HOST_IP:-localhost}:7001
+      ALLOWED_ORIGINS: http://localhost,http://127.0.0.1,http://localhost:7001,http://${HOST_IP:-localhost}:7001
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
@@ -146,8 +146,8 @@ services:
       FIREBASE_SERVER_KEY: ${FIREBASE_SERVER_KEY:-}
       FIREBASE_VAPID_KEY: ${FIREBASE_VAPID_KEY:-}
       LOG_LEVEL: ${LOG_LEVEL:-debug}
-    expose:
-      - "7000"
+    ports:
+      - "${BACKEND_PORT:-7000}:7000"
     volumes:
       - ../backend:/app/backend
       - ../shared:/app/shared
@@ -181,7 +181,7 @@ services:
     restart: unless-stopped
     environment:
       VITE_API_URL: ""
-      HOST_IP: 10.0.0.1
+      HOST_IP: ${HOST_IP:-localhost}
     expose:
       - "7001"
     volumes:

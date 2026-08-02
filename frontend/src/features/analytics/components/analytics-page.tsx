@@ -7,6 +7,7 @@
 import { motion } from 'framer-motion';
 import { AlertTriangle, CheckCircle, Plus, Activity } from 'lucide-react';
 import { useDashboardAnalytics, useStatistiquesAnalytics } from '../hooks/use-analytics';
+import { SchoolLoading } from '@/components/feedback';
 import { CardGrid } from '@/components/ui/CardGrid';
 import { StatCard } from '@/components/ui/StatCard';
 
@@ -29,7 +30,7 @@ export function AnalyticsPage() {
     const kpis = dashboard?.kpis || [];
     const alertes = dashboard?.alertes || [];
 
-    if (isLoading) return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
+    if (isLoading) return <SchoolLoading message="Chargement des analyses..." />;
 
     return (
         <div className="space-y-6">

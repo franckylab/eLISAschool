@@ -4,7 +4,7 @@ import { Star, TrendingUp } from 'lucide-react';
 import { useEnseignantEvaluations, useEnseignantMoyenneEvaluations } from '../../hooks/use-personnel-detail';
 import { MiniBarChart } from '@/components/charts/MiniBarChart';
 import { MiniPieChart } from '@/components/charts/MiniPieChart';
-import { InlineSpinner } from '@/components/feedback';
+import { SchoolLoading } from '@/components/feedback';
 import { formatDate } from '@/lib/date-utils';
 import type { EvaluationEnseignant } from '../../types/personnel.types';
 
@@ -48,7 +48,7 @@ export function OngletEvaluations({ enseignantId, isActive }: { enseignantId: st
     }, [evals]);
 
     if ((evLoading || moyLoading) && isActive) {
-        return <div className="py-12 flex justify-center"><InlineSpinner label={t('evaluations.chargement')} /></div>;
+        return <SchoolLoading variant="compact" message={t('evaluations.chargement')} />;
     }
 
     return (

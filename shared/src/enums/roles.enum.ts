@@ -359,6 +359,13 @@ export enum Permission {
     PERSONNEL_TYPES_CREATE = 'personnel:types:create',
     PERSONNEL_MANAGE = 'personnel:manage',
 
+    // Heures de cours (granulaires — sous-module de personnel)
+    HEURES_COURS_VIEW = 'heures-cours:view',
+    HEURES_COURS_CREATE = 'heures-cours:create',
+    HEURES_COURS_EDIT = 'heures-cours:edit',
+    HEURES_COURS_DELETE = 'heures-cours:delete',
+    HEURES_COURS_GENERATE = 'heures-cours:generate',
+
     // ==================================
     // CONTRATS (module autonome)
     // ==================================
@@ -1053,6 +1060,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.EMPLOI_DU_TEMPS_TEMPLATES_MANAGE,
         Permission.EMPLOI_DU_TEMPS_VERIFIER_CONFLITS,
         Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
+        // Heures de cours (granulaires)
+        Permission.HEURES_COURS_VIEW, Permission.HEURES_COURS_CREATE,
+        Permission.HEURES_COURS_EDIT, Permission.HEURES_COURS_DELETE,
+        Permission.HEURES_COURS_GENERATE,
         // Organisation
         Permission.ORGANISATION_VIEW,
         Permission.ORGANISATION_CREATE,
@@ -1271,6 +1282,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.EMPLOI_DU_TEMPS_TEMPLATES_MANAGE,
         Permission.EMPLOI_DU_TEMPS_VERIFIER_CONFLITS,
         Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
+        // Heures de cours (granulaires)
+        Permission.HEURES_COURS_VIEW, Permission.HEURES_COURS_CREATE,
+        Permission.HEURES_COURS_EDIT, Permission.HEURES_COURS_DELETE,
+        Permission.HEURES_COURS_GENERATE,
         // Contrats (module autonome)
         Permission.CONTRATS_VIEW, Permission.CONTRATS_CREATE, Permission.CONTRATS_EDIT,
         Permission.CONTRATS_DELETE, Permission.CONTRATS_EXPORT,
@@ -1318,6 +1333,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         // Emploi du Temps (son propre EDT + déclaration réalisation)
         Permission.EMPLOI_DU_TEMPS_VIEW,
         Permission.EMPLOI_DU_TEMPS_REALISATION_CREATE,
+        // Heures de cours (lecture seule pour l'enseignant)
+        Permission.HEURES_COURS_VIEW,
     ],
 
     [Role.PERSONNEL]: [
@@ -1422,6 +1439,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.EMPLOI_DU_TEMPS_TEMPLATES_MANAGE,
         Permission.EMPLOI_DU_TEMPS_VERIFIER_CONFLITS,
         Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
+        // Heures de cours (granulaires)
+        Permission.HEURES_COURS_VIEW, Permission.HEURES_COURS_CREATE,
+        Permission.HEURES_COURS_EDIT, Permission.HEURES_COURS_DELETE,
+        Permission.HEURES_COURS_GENERATE,
     ],
 
     [Role.PRINCIPAL]: [
@@ -1460,6 +1481,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.EMPLOI_DU_TEMPS_REALISATION_VALIDATE,
         Permission.EMPLOI_DU_TEMPS_VERIFIER_CONFLITS,
         Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
+        // Heures de cours (granulaires)
+        Permission.HEURES_COURS_VIEW, Permission.HEURES_COURS_CREATE,
+        Permission.HEURES_COURS_EDIT, Permission.HEURES_COURS_DELETE,
+        Permission.HEURES_COURS_GENERATE,
     ],
 
     [Role.DIRECTEUR]: [
@@ -1501,6 +1526,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.EMPLOI_DU_TEMPS_REALISATION_CREATE,
         Permission.EMPLOI_DU_TEMPS_REALISATION_VALIDATE,
         Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
+        // Heures de cours (granulaires — pas de génération)
+        Permission.HEURES_COURS_VIEW, Permission.HEURES_COURS_CREATE,
+        Permission.HEURES_COURS_EDIT, Permission.HEURES_COURS_DELETE,
     ],
 
     [Role.CENSEUR]: [
@@ -1529,6 +1557,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.EMPLOI_DU_TEMPS_REALISATION_VALIDATE,
         Permission.EMPLOI_DU_TEMPS_VERIFIER_CONFLITS,
         Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
+        // Heures de cours (granulaires — pas de génération)
+        Permission.HEURES_COURS_VIEW, Permission.HEURES_COURS_CREATE,
+        Permission.HEURES_COURS_EDIT, Permission.HEURES_COURS_DELETE,
         // Organisation — lecture (rôle intermédiaire « discipline & organisation »)
         Permission.ORGANISATION_VIEW,
         Permission.ORGANISATION_UNITES_READ,
@@ -1797,6 +1828,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.EMPLOI_DU_TEMPS_EXPORT,
         Permission.EMPLOI_DU_TEMPS_REALISATION_CREATE,
         Permission.EMPLOI_DU_TEMPS_ALL_VIEW,
+        // Heures de cours (granulaires — pas de génération)
+        Permission.HEURES_COURS_VIEW, Permission.HEURES_COURS_CREATE,
+        Permission.HEURES_COURS_EDIT, Permission.HEURES_COURS_DELETE,
     ],
 
     [Role.GESTIONNAIRE]: [
@@ -1911,6 +1945,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.CANTINE_VIEW,
         Permission.TRANSPORT_VIEW,
         Permission.EMPLOI_DU_TEMPS_VIEW,
+        // Heures de cours (lecture seule)
+        Permission.HEURES_COURS_VIEW,
     ],
 
     // ==================================

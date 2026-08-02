@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
+import { SchoolLoading } from '@/components/feedback';
 import {
     Blocks,
     Search,
@@ -587,14 +588,7 @@ export function ModulesTab() {
     }, [states, toggleModule]);
 
     if (isLoadingRegistry) {
-        return (
-            <div className="flex items-center justify-center py-16">
-                <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="h-8 w-8 animate-spin text-[var(--color-dominante)]" />
-                    <p className="text-sm text-[var(--color-texte-secondaire)]">Chargement des modules...</p>
-                </div>
-            </div>
-        );
+        return <SchoolLoading variant="compact" message="Chargement des modules..." />;
     }
 
     if (!states || states.length === 0) {

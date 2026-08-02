@@ -1,5 +1,8 @@
 #!/bin/bash
 # ==================================
+# ⚠️ DEPRECIE — Utiliser docker/deploy.sh a la place.
+# Ce script est conserve pour compatibilite (dev natif sans Docker).
+# Pour Docker: cd docker && ./deploy.sh local-dev up
 # eLISAschool - Configuration Accès Réseau Local
 # ==================================
 # Version: 2.0.0

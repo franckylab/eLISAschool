@@ -244,7 +244,19 @@
         "erreurGeneration": "Error generating from timetable",
         "coursAjoute": "Lesson added",
         "coursMisAJour": "Lesson updated",
-        "genererDepuisEdt": "Generate from timetable"
+        "genererDepuisEdt": "Generate from timetable",
+        "vueResume": "Summary",
+        "vueListe": "Detailed list",
+        "tous": "All",
+        "marquerEffectue": "Mark as completed",
+        "marquerAnnule": "Mark as cancelled",
+        "reinitialiserStatut": "Reset status",
+        "aucunCoursPeriode": "No lessons in this period",
+        "aucunCoursPeriodeDesc": "Add a lesson manually or generate from the timetable",
+        "statutChange": {
+            "effectue": "Lesson marked as completed",
+            "annule": "Lesson marked as cancelled"
+        }
     },
     "edt": {
         "chargement": "Loading timetable...",

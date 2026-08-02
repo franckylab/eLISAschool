@@ -8,7 +8,7 @@ import { useEnseignantAffectationsMatiere, useCreerAffectationEnseignant, useMod
 import { AffectationFormModal } from './affectation-form-modal';
 import { OngletMatieresKanban } from './onglet-matieres-kanban';
 import { OngletMatieresPlanning } from './onglet-matieres-planning';
-import { InlineSpinner } from '@/components/feedback';
+import { SchoolLoading } from '@/components/feedback';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { Badge } from '@/components/ui/Badge';
@@ -93,7 +93,7 @@ export function OngletMatieres({ enseignantId, isActive }: { enseignantId: strin
     const isPending = creerAffectation.isPending || modifierAffectation.isPending || supprimerAffectation.isPending || toggleActif.isPending;
 
     if (isLoading && isActive) {
-        return <div className="py-12 flex justify-center"><InlineSpinner label={t('affectations.chargementMatières', 'Chargement des matières...')} /></div>;
+        return <SchoolLoading variant="compact" message={t('affectations.chargementMatières', 'Chargement des matières...')} />;
     }
 
     return (

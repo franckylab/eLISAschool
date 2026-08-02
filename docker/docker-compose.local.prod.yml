@@ -22,7 +22,7 @@ services:
       POSTGRES_USER: ${DB_USER:-elisaschool_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-elisaschool_password}
     ports:
-      - "${DB_PORT:-7002}:7002"
+      - "127.0.0.1:${DB_PORT:-7002}:7002"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -59,7 +59,7 @@ services:
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     ports:
-      - "${REDIS_PORT:-7003}:7003"
+      - "127.0.0.1:${REDIS_PORT:-7003}:7003"
     volumes:
       - redis_data:/data
     networks:
@@ -87,7 +87,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
       PGADMIN_LISTEN_PORT: 7004
     ports:
-      - "${PGADMIN_PORT:-7004}:7004"
+      - "127.0.0.1:${PGADMIN_PORT:-7004}:7004"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     networks:
@@ -105,7 +105,7 @@ services:
   # ==================================
   backend:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.backend
     container_name: elisaschool_backend
     restart: unless-stopped
@@ -162,18 +162,23 @@ services:
   # ==================================
   frontend:
     build:
-      context: .
+      context: ..
       dockerfile: docker/Dockerfile.frontend
       args:
-        VITE_API_URL: http://${HOST_IP:-localhost}:7000
     container_name: elisaschool_frontend
     restart: unless-stopped
     ports:
-      - "0.0.0.0:${FRONTEND_PORT:-7001}:80"
+      - "0.0.0.0:${FRONTEND_PORT:-7001}:7001"
     networks:
       - elisaschool_network
     depends_on:
       - backend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:7001/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     deploy:
       resources:
         limits:

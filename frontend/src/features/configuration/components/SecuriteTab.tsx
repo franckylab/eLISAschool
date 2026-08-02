@@ -20,6 +20,7 @@ import {
     RotateCcw,
 } from 'lucide-react';
 import { useSecuriteConfig } from '../hooks/useSecuriteConfig';
+import { SchoolLoading } from '@/components/feedback';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { ElisaToggle } from '@/components/ui/ElisaToggle';
@@ -43,11 +44,7 @@ export function SecuriteTab() {
     } = useSecuriteConfig();
 
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center py-12">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-dominante)] border-t-transparent" />
-            </div>
-        );
+        return <SchoolLoading variant="compact" message="Chargement de la configuration..." />;
     }
 
     return (

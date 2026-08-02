@@ -15,6 +15,8 @@ import type {
     CreneauHoraire, PaginatedResponse, CreneauFilters,
     PreferenceEDT, Conflit, DonneesVerification,
     TemplateEDT, ResultatValidationClasse,
+    StatistiquesEDT, StatistiquesFilters,
+    ResultatPreviewEDT, AuditConflitsResult,
 } from '../types/edt.types';
 
 export type {
@@ -23,6 +25,9 @@ export type {
     PreferenceEDT, CreneauImposable,
     TypeConflit, SeveriteConflit, Conflit, DonneesVerification,
     TemplateEDT, ResultatValidationClasse,
+    StatistiquesEDT, StatistiquesFilters,
+    CreneauPreview, ConflitPreview, ResumePreview, ResultatPreviewEDT,
+    AuditConflitDetail, AuditConflitsResult,
 } from '../types/edt.types';
 
 const EDT_KEYS = {
@@ -30,6 +35,9 @@ const EDT_KEYS = {
     list: (filters: Record<string, string | number | boolean | undefined>) => ['emploi-du-temps', 'list', filters] as const,
     detail: (id: string) => ['emploi-du-temps', id] as const,
     preferences: ['emploi-du-temps', 'preferences'] as const,
+    statistiques: (filters: StatistiquesFilters) => ['emploi-du-temps', 'statistiques', filters] as const,
+    preview: ['emploi-du-temps', 'preview'] as const,
+    audit: ['emploi-du-temps', 'audit'] as const,
     templates: {
         all: ['emploi-du-temps', 'templates'] as const,
         detail: (id: string) => ['emploi-du-temps', 'templates', id] as const,
@@ -161,12 +169,26 @@ export function useValiderCreneauxClasse() {
 
 // ─── Génération ─────────────────────────────────────
 
+export function usePrevisualiserEDT() {
+    const { t } = useTranslation('emplois');
+    const handleError = useHandleError();
+    return useMutation({
+        mutationFn: async (dto: { classeAnneeId: string; templateId?: string; options?: { regenerer?: boolean; respecterContraintes?: boolean } }) => {
+            const res = await apiClient.post<ResultatPreviewEDT>('/api/emploi-du-temps/previsualiser', dto);
+            return res.data;
+        },
+        onError: (err: unknown) => {
+            handleError(err, t('toasts.erreurPreview'));
+        },
+    });
+}
+
 export function useGenererEDT() {
     const qc = useQueryClient();
     const { t } = useTranslation('emplois');
     const handleError = useHandleError();
     return useMutation({
-        mutationFn: async (dto: { classeAnneeId: string; options?: { regenerer?: boolean; respecterContraintes?: boolean } }) => {
+        mutationFn: async (dto: { classeAnneeId: string; templateId?: string; options?: { regenerer?: boolean; respecterContraintes?: boolean } }) => {
             const res = await apiClient.post<{ nombreCreneaux: number; conflits: string[] }>('/api/emploi-du-temps/generer', dto);
             return res;
         },
@@ -298,6 +320,75 @@ export function useVerifierConflits() {
         mutationFn: async (donnees: DonneesVerification) => {
             const res = await apiClient.post<Conflit[]>('/api/emploi-du-temps/verifier-conflits', donnees);
             return res.data;
+        },
+    });
+}
+
+// ─── Statistiques ──────────────────────────────────
+
+export function useStatistiquesEDT(filters: StatistiquesFilters = {}) {
+    return useQuery({
+        queryKey: EDT_KEYS.statistiques(filters),
+        queryFn: async () => {
+            const params: Record<string, string> = {};
+            for (const [k, v] of Object.entries(filters)) {
+                if (v) params[k] = v;
+            }
+            const res = await apiClient.get<StatistiquesEDT>('/api/emploi-du-temps/statistiques', params);
+            return res.data;
+        },
+        staleTime: 2 * 60 * 1000,
+    });
+}
+
+// ─── Audit Conflits ────────────────────────────────
+
+export function useAuditConflits(options?: { periodeId?: string; anneeScolaireId?: string }) {
+    return useQuery({
+        queryKey: [...EDT_KEYS.audit, options] as const,
+        queryFn: async () => {
+            const params: Record<string, string> = {};
+            if (options?.periodeId) params.periodeId = options.periodeId;
+            if (options?.anneeScolaireId) params.anneeScolaireId = options.anneeScolaireId;
+            const res = await apiClient.get<AuditConflitsResult>('/api/emploi-du-temps/audit-conflits', params);
+            return res.data;
+        },
+        staleTime: 1 * 60 * 1000,
+    });
+}
+
+// ─── Génération Heures de Cours depuis EDT ─────────
+
+export interface GenererHeuresCoursResult {
+    created: number;
+    skipped: number;
+    errors: number;
+    total: number;
+}
+
+export function useGenererHeuresCoursFromEdt() {
+    const qc = useQueryClient();
+    const { t } = useTranslation('emplois');
+    const handleError = useHandleError();
+    return useMutation({
+        mutationFn: async (dto: {
+            enseignantId: string;
+            classeAnneeId?: string;
+            dateDebut: string;
+            dateFin: string;
+            periodeId?: string;
+        }) => {
+            const res = await apiClient.post<GenererHeuresCoursResult>(
+                '/api/personnel/heures-cours/generer-from-edt', dto,
+            );
+            return res.data;
+        },
+        onSuccess: (data) => {
+            qc.invalidateQueries({ queryKey: EDT_KEYS.all });
+            toast.success(t('toasts.heuresCoursGenerees', { count: data?.created ?? 0 }));
+        },
+        onError: (err: unknown) => {
+            handleError(err, t('toasts.erreurGeneration'));
         },
     });
 }

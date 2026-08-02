@@ -60,10 +60,10 @@ export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCa
     const deleteMutation = useDeleteHeureCours();
     const isPending = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
-    const { data: classesData } = useClasses({ limit: 200, actif: true });
-    const { data: matieresData } = useMatieres({ limit: 200, actif: true });
+    const { data: classesData } = useClasses({ limit: 100, actif: true });
+    const { data: matieresData } = useMatieres({ limit: 100, actif: true });
     const { data: salles } = useSalles();
-    const { data: enseignantsData } = usePersonnel({ categorie: 'ENSEIGNANT' as CategorieFonction, limit: 200, actif: true });
+    const { data: enseignantsData } = usePersonnel({ categorie: 'ENSEIGNANT' as CategorieFonction, limit: 100, actif: true });
 
     const classesOptions = useMemo(() => {
         const items = classesData?.items ?? [];
