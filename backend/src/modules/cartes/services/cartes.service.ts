@@ -32,9 +32,9 @@ export class CartesService {
      */
     private async getCartesParams() {
         return {
-            enableQRCode: await getParamBoolean('cartes.enable_qrcode', true),
-            validityMonths: await getParamNumber('cartes.validity_months', 12),
-            includePhoto: await getParamBoolean('cartes.include_photo', true),
+            enableQRCode: await getParamBoolean('cartes.enable_qrcode', { defaultValue: true }),
+            validityMonths: await getParamNumber('cartes.validity_months', { defaultValue: 12 }),
+            includePhoto: await getParamBoolean('cartes.include_photo', { defaultValue: true }),
         };
     }
 
@@ -60,7 +60,7 @@ export class CartesService {
         const numeroCarte = this.generateNumeroCarte(dto.type as TypeCarte);
 
         // Vérifier si le workflow de validation est requis
-        const requireValidation = await getParamBoolean('cartes.require_validation', false);
+        const requireValidation = await getParamBoolean('cartes.require_validation', { defaultValue: false });
 
         const carte: CarteScolaire = this.carteRepo.create({
             ...dto,
@@ -139,7 +139,7 @@ export class CartesService {
         const oldCarte = await this.findOne(id);
 
         // Vérifier si le workflow de validation est requis pour le renouvellement
-        const requireValidation = await getParamBoolean('cartes.renouvellement_require_validation', false);
+        const requireValidation = await getParamBoolean('cartes.renouvellement_require_validation', { defaultValue: false });
 
         if (requireValidation && createurId) {
             // Ne PAS désactiver l'ancienne carte, créer un workflow

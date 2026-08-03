@@ -15,14 +15,40 @@ import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
-import { CreneauHoraire, JourSemaine, StatutCreneau } from '@modules/emploi-du-temps/entities';
+import { CreneauHoraire, JourSemaine, StatutCreneau, TypeCreneau } from '@modules/emploi-du-temps/entities';
 import { ClasseAnnee } from '@modules/classes/entities';
 import { Matiere } from '@modules/matieres/entities';
 import { MembrePersonnel, StatutPersonnel } from '@modules/personnel/entities';
 import { personnelService } from './personnel.service';
 import { CategorieFonction } from '../../../shared/constants/personnel.constants';
 import { verifierOverlapHoraire } from '@modules/emploi-du-temps/services/conflit-commun.service';
+import { conflitDetectionService } from '@modules/emploi-du-temps/services/conflit-detection.service';
+import { AnneeScolaire, StatutAnneeScolaire } from '@modules/annees-scolaires/entities';
 import { Request } from 'express';
+
+// ─── Synchronisation créneau → instances (grill-me 2026-08-03) ───
+
+export type TypeConflitInstance = 'ENSEIGNANT' | 'CLASSE' | 'SALLE';
+
+export interface ConflitPropagation {
+    date: string;
+    type: TypeConflitInstance;
+    message: string;
+}
+
+export interface RapportPropagation {
+    instancesQuiSuivent: number;
+    instancesInchangees: number;
+    conflits: ConflitPropagation[];
+}
+
+export interface ChangementsPropagation {
+    jour?: JourSemaine;
+    heureDebut?: string;
+    heureFin?: string;
+    salleId?: string | null;
+    typeCreneau?: TypeCreneau;
+}
 
 export class HeureCoursService {
     private repo: Repository<HeureCours>;
@@ -41,7 +67,26 @@ export class HeureCoursService {
         await this.verifierClasseAnnee(dto.classeAnneeId, etablissementId);
         await this.verifierMatiere(dto.matiereId, etablissementId);
 
-        await this.verifierConflitCreneau(dto, etablissementId);
+        const conflits = await this.verifierConflitsInstance(
+            {
+                enseignantId: dto.enseignantId,
+                classeAnneeId: dto.classeAnneeId,
+                salleId: dto.salleId,
+                date: dto.date,
+                heureDebut: dto.heureDebut,
+                heureFin: dto.heureFin,
+                etablissementId,
+            },
+        );
+        if (conflits.length > 0) {
+            throw new AppError(
+                conflits.map(c => c.message).join('; '),
+                409,
+                'CRENEAU_CONFLIT',
+                true,
+                { conflits },
+            );
+        }
 
         const heureCours = new HeureCours();
         Object.assign(heureCours, dto, {
@@ -107,33 +152,390 @@ export class HeureCoursService {
         }
     }
 
-    private async verifierConflitCreneau(dto: CreateHeureCoursDto, etablissementId: string, excludeId?: string): Promise<void> {
-        const coursDuJour = await this.repo.find({
-            where: {
-                enseignantId: dto.enseignantId,
-                etablissementId,
-                date: new Date(dto.date),
-                statutEffectue: Not(StatutEffectue.ANNULE),
-                ...(excludeId ? { id: Not(excludeId) } : {}),
-            },
-        });
+    /**
+     * Vérifie les conflits d'une instance de cours sur une date précise.
+     * Axes : enseignant (+ co-enseignants), classe, salle — contre les autres HeureCours
+     * (hors ANNULE, hors exclusions). Vérification complète utilisée par la création,
+     * la modification et la propagation créneau → instances.
+     */
+    private async verifierConflitsInstance(
+        params: {
+            enseignantId: string;
+            classeAnneeId: string;
+            salleId?: string | null;
+            date: string;
+            heureDebut: string;
+            heureFin: string;
+            etablissementId: string;
+        },
+        excludeIds: string[] = [],
+    ): Promise<ConflitPropagation[]> {
+        const { enseignantId, classeAnneeId, salleId, date, heureDebut, heureFin, etablissementId } = params;
+
+        const qb = this.repo
+            .createQueryBuilder('hc')
+            .leftJoinAndSelect('hc.affectationMatiere', 'am')
+            .where('hc.etablissementId = :etablissementId', { etablissementId })
+            .andWhere('hc.date = :date', { date })
+            .andWhere('hc.statutEffectue != :annule', { annule: StatutEffectue.ANNULE });
+
+        if (excludeIds.length > 0) {
+            qb.andWhere('hc.id NOT IN (:...excludeIds)', { excludeIds });
+        }
+
+        const coursDuJour = await qb.getMany();
+        const conflits: ConflitPropagation[] = [];
 
         for (const cours of coursDuJour) {
             const overlap = verifierOverlapHoraire(
                 cours.heureDebut,
                 cours.heureFin,
-                dto.heureDebut,
-                dto.heureFin
+                heureDebut,
+                heureFin,
             );
+            if (!overlap) continue;
 
-            if (overlap) {
-                throw new AppError(
-                    `Conflit de créneau: l'enseignant a déjà un cours de ${cours.heureDebut} à ${cours.heureFin} ce jour-là`,
-                    409,
-                    'CRENEAU_CONFLIT'
-                );
+            const coEnseignants = cours.affectationMatiere?.coEnseignantIds ?? [];
+            const conflitEnseignant =
+                cours.enseignantId === enseignantId ||
+                (cours.enseignantId !== enseignantId && coEnseignants.includes(enseignantId));
+
+            if (conflitEnseignant) {
+                conflits.push({
+                    date,
+                    type: 'ENSEIGNANT',
+                    message: `L'enseignant a déjà un cours de ${cours.heureDebut} à ${cours.heureFin} ce jour-là`,
+                });
+            }
+            if (cours.classeAnneeId === classeAnneeId) {
+                conflits.push({
+                    date,
+                    type: 'CLASSE',
+                    message: `La classe a déjà un cours de ${cours.heureDebut} à ${cours.heureFin} ce jour-là`,
+                });
+            }
+            if (salleId && cours.salleId === salleId) {
+                conflits.push({
+                    date,
+                    type: 'SALLE',
+                    message: `La salle est déjà occupée de ${cours.heureDebut} à ${cours.heureFin} ce jour-là`,
+                });
             }
         }
+
+        return conflits;
+    }
+
+    /**
+     * Propage une modification de créneau aux instances futures PLANIFIE (frontière temporelle).
+     *
+     * Règles (grill-me 2026-08-03) :
+     *  - Seules les instances PLANIFIE avec date >= aujourd'hui suivent (Q4).
+     *  - Les instances pointées (EFFECTUE/ANNULE/REMPLACE) et passées sont figées.
+     *  - Chaque instance est re-vérifiée en conflit sur SA date précise (Q5).
+     *  - Mode strict (force=false) : conflit → 409 CONFLITS_PROPAGATION avec rapport, AUCUNE écriture.
+     *  - Mode force : les instances en conflit sont exclues et comptées dans instancesInchangees.
+     *  - dryRun : calcule sans écrire (pré-validation par l'appelant).
+     */
+    async propagerModificationCreneau(
+        creneau: CreneauHoraire,
+        changements: ChangementsPropagation,
+        etablissementId: string,
+        options?: {
+            force?: boolean;
+            dryRun?: boolean;
+            createurId?: string;
+            req?: Request;
+            excludeInstanceIds?: string[];
+        },
+    ): Promise<RapportPropagation> {
+        const aujourdhui = new Date();
+        const aujourdhuiStr = this.dateToString(aujourdhui);
+        const rapport: RapportPropagation = { instancesQuiSuivent: 0, instancesInchangees: 0, conflits: [] };
+
+        const instances = await this.repo.find({
+            where: {
+                creneauId: creneau.id,
+                etablissementId,
+                statutEffectue: StatutEffectue.PLANIFIE,
+            },
+            order: { date: 'ASC' },
+        });
+
+        const excludes = new Set(options?.excludeInstanceIds ?? []);
+        const cibles: HeureCours[] = [];
+
+        // Passe 1 : calcul des cibles + vérification des conflits (aucune écriture)
+        for (const instance of instances) {
+            if (excludes.has(instance.id)) {
+                rapport.instancesInchangees++;
+                continue;
+            }
+
+            const dateStr = this.dateToString(instance.date);
+            if (dateStr < aujourdhuiStr) {
+                rapport.instancesInchangees++;
+                continue;
+            }
+
+            let nouvelleDate = instance.date;
+            if (changements.jour) {
+                const monday = this.lundiDeSemaine(instance.date);
+                nouvelleDate = new Date(monday);
+                nouvelleDate.setDate(monday.getDate() + (this.jourVersIndex(changements.jour) - 1));
+            }
+
+            const nouvelleHeureDebut = changements.heureDebut ?? instance.heureDebut;
+            const nouvelleHeureFin = changements.heureFin ?? instance.heureFin;
+            const nouvelleSalleId = changements.salleId !== undefined ? changements.salleId : instance.salleId;
+            const nouveauType = changements.typeCreneau ?? instance.typeCreneau;
+
+            const rienNeChange =
+                this.dateToString(nouvelleDate) === dateStr &&
+                nouvelleHeureDebut === instance.heureDebut &&
+                nouvelleHeureFin === instance.heureFin &&
+                nouvelleSalleId === (instance.salleId ?? null) &&
+                nouveauType === instance.typeCreneau;
+
+            if (rienNeChange) {
+                rapport.instancesInchangees++;
+                continue;
+            }
+
+            const conflits = await this.verifierConflitsInstance(
+                {
+                    enseignantId: instance.enseignantId,
+                    classeAnneeId: instance.classeAnneeId,
+                    salleId: nouvelleSalleId,
+                    date: this.dateToString(nouvelleDate),
+                    heureDebut: nouvelleHeureDebut,
+                    heureFin: nouvelleHeureFin,
+                    etablissementId,
+                },
+                [instance.id],
+            );
+
+            if (conflits.length > 0) {
+                rapport.conflits.push(...conflits);
+                rapport.instancesInchangees++;
+                continue;
+            }
+
+            if (options?.dryRun) {
+                rapport.instancesQuiSuivent++;
+                continue;
+            }
+
+            instance.date = nouvelleDate;
+            instance.heureDebut = nouvelleHeureDebut;
+            instance.heureFin = nouvelleHeureFin;
+            if (changements.salleId !== undefined) {
+                (instance as { salleId?: string | null }).salleId = nouvelleSalleId;
+            }
+            if (changements.typeCreneau !== undefined) {
+                instance.typeCreneau = nouveauType;
+            }
+            cibles.push(instance);
+        }
+
+        if (rapport.conflits.length > 0 && !options?.force) {
+            throw new AppError(
+                `${rapport.conflits.length} instance(s) future(s) en conflit après propagation du créneau — utilisez le mode force pour exclure`,
+                409,
+                'CONFLITS_PROPAGATION',
+                true,
+                { rapport },
+            );
+        }
+
+        // Passe 2 : application
+        if (!options?.dryRun && cibles.length > 0) {
+            await this.repo.save(cibles);
+            rapport.instancesQuiSuivent = cibles.length;
+        }
+
+        if (rapport.instancesQuiSuivent > 0 && options?.createurId && !options?.dryRun) {
+            await auditService.log({
+                utilisateurId: options.createurId,
+                action: AuditAction.HEURE_COURS_UPDATE,
+                cible: 'HeureCours',
+                cibleId: creneau.id,
+                description: `Propagation créneau ${creneau.id}: ${rapport.instancesQuiSuivent} instance(s) mise(s) à jour, ${rapport.instancesInchangees} inchangée(s), ${rapport.conflits.length} en conflit`,
+                nouvellesValeurs: changements,
+                module: 'personnel',
+                metadata: { creneauId: creneau.id, rapport },
+            }, options.req);
+        }
+
+        return rapport;
+    }
+
+    /**
+     * Annule les instances futures PLANIFIE liées à des créneaux (suppression de créneau,
+     * régénération du plan). Les instances passées ou pointées restent intactes (Q2/Q4).
+     */
+    async annulerInstancesCreneaux(
+        creneauIds: string[],
+        etablissementId: string,
+        options?: { motif?: string; createurId?: string; req?: Request },
+    ): Promise<number> {
+        if (creneauIds.length === 0) return 0;
+
+        const aujourdhuiStr = this.dateToString(new Date());
+        const instances = await this.repo.find({
+            where: {
+                creneauId: In(creneauIds),
+                etablissementId,
+                statutEffectue: StatutEffectue.PLANIFIE,
+            },
+        });
+
+        let count = 0;
+        for (const instance of instances) {
+            if (this.dateToString(instance.date) < aujourdhuiStr) continue;
+            instance.statutEffectue = StatutEffectue.ANNULE;
+            if (options?.motif) {
+                instance.commentaire = instance.commentaire
+                    ? `${instance.commentaire} — ${options.motif}`
+                    : options.motif;
+            }
+            await this.repo.save(instance);
+            count++;
+        }
+
+        if (count > 0 && options?.createurId) {
+            await auditService.log({
+                utilisateurId: options.createurId,
+                action: AuditAction.HEURE_COURS_UPDATE,
+                cible: 'HeureCours',
+                cibleId: creneauIds.length === 1 ? creneauIds[0] : undefined,
+                description: `${count} instance(s) annulée(s) suite à suppression de créneau(x)`,
+                module: 'personnel',
+                metadata: { creneauIds, instancesAnnulees: count },
+            }, options.req);
+        }
+
+        return count;
+    }
+
+    /**
+     * Q6-C : met à jour le créneau hebdo depuis une instance (case « aussi le créneau »),
+     * puis propage aux autres instances futures. L'instance courante est exclue de la
+     * propagation (elle a déjà été alignée par le PATCH lui-même).
+     */
+    private async appliquerModificationAuCreneau(
+        heureCours: HeureCours,
+        champs: UpdateHeureCoursDto,
+        userId: string,
+        etablissementId: string,
+        req?: Request,
+    ): Promise<RapportPropagation> {
+        if (!heureCours.creneauId) {
+            return { instancesQuiSuivent: 0, instancesInchangees: 0, conflits: [] };
+        }
+
+        const creneauRepo = AppDataSource.getRepository(CreneauHoraire);
+        const creneau = await creneauRepo.findOne({
+            where: { id: heureCours.creneauId, etablissementId },
+            relations: ['affectationMatiere'],
+        });
+        if (!creneau) {
+            throw new AppError('Créneau source introuvable', 404, 'CRENEAU_NOT_FOUND');
+        }
+
+        const date = champs.date ? new Date(champs.date) : heureCours.date;
+        const jour = this.jourDepuisDate(date);
+        if (!jour) {
+            throw new AppError('La date cible ne correspond à aucun jour de la semaine (dimanche exclu)', 400, 'JOUR_INVALIDE');
+        }
+
+        const heureDebut = champs.heureDebut || heureCours.heureDebut;
+        const heureFin = champs.heureFin || heureCours.heureFin;
+        const salleId: string | null = champs.salleId !== undefined
+            ? (champs.salleId ?? null)
+            : (heureCours.salleId ?? null);
+
+        // Vérification hebdo du créneau (contre les autres créneaux) — AVANT toute écriture
+        const conflits = await conflitDetectionService.detecterConflits(
+            {
+                affectationMatiereId: creneau.affectationMatiereId,
+                jour,
+                heureDebut,
+                heureFin,
+                salleId: salleId || undefined,
+                excludeCreneauId: creneau.id,
+            },
+            etablissementId,
+        );
+        const bloquants = conflits.filter(c => c.severite === 'BLOQUANT');
+        if (bloquants.length > 0) {
+            throw new AppError(
+                bloquants.map(c => c.message).join('; '),
+                409,
+                'CONFLITS_CRENEAU',
+            );
+        }
+
+        const typeCreneau = (champs.typeCreneau as TypeCreneau | undefined) || creneau.typeCreneau;
+        Object.assign(creneau, {
+            jour,
+            heureDebut,
+            heureFin,
+            salleId: salleId || null,
+            typeCreneau,
+        });
+        await creneauRepo.save(creneau);
+
+        return this.propagerModificationCreneau(
+            creneau,
+            { jour, heureDebut, heureFin, salleId: salleId || null, typeCreneau },
+            etablissementId,
+            { force: true, createurId: userId, req, excludeInstanceIds: [heureCours.id] },
+        );
+    }
+
+    private dateToString(d: Date | string): string {
+        if (typeof d === 'string') return d.slice(0, 10);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    private toDate(d: Date | string): Date {
+        if (typeof d === 'string') return new Date(`${d.slice(0, 10)}T00:00:00`);
+        return new Date(d);
+    }
+
+    private lundiDeSemaine(date: Date | string): Date {
+        const d = this.toDate(date);
+        d.setHours(0, 0, 0, 0);
+        const dayOfWeek = d.getDay();
+        const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        d.setDate(d.getDate() + diffToMonday);
+        return d;
+    }
+
+    private jourVersIndex(jour: JourSemaine): number {
+        const index: Record<JourSemaine, number> = {
+            [JourSemaine.LUNDI]: 1,
+            [JourSemaine.MARDI]: 2,
+            [JourSemaine.MERCREDI]: 3,
+            [JourSemaine.JEUDI]: 4,
+            [JourSemaine.VENDREDI]: 5,
+            [JourSemaine.SAMEDI]: 6,
+        };
+        return index[jour] ?? 1;
+    }
+
+    private jourDepuisDate(date: Date | string): JourSemaine | undefined {
+        const d = this.toDate(date);
+        const index: Record<number, JourSemaine> = {
+            1: JourSemaine.LUNDI,
+            2: JourSemaine.MARDI,
+            3: JourSemaine.MERCREDI,
+            4: JourSemaine.JEUDI,
+            5: JourSemaine.VENDREDI,
+            6: JourSemaine.SAMEDI,
+        };
+        return index[d.getDay()];
     }
 
     async findAll(query: QueryHeureCoursDto, etablissementId?: string): Promise<PaginatedResult<HeureCours>> {
@@ -202,8 +604,10 @@ export class HeureCoursService {
         userId: string,
         etablissementId: string,
         req?: Request
-    ): Promise<HeureCours> {
+    ): Promise<{ heureCours: HeureCours; rapport?: RapportPropagation }> {
         const heureCours = await this.findOne(id, etablissementId);
+
+        const { mettreAJourCreneau, ...champs } = dto;
 
         const anciennesValeurs = {
             date: heureCours.date,
@@ -214,19 +618,57 @@ export class HeureCoursService {
 
         const dateChange = dto.date ? { date: new Date(dto.date) } : {};
 
-        Object.assign(heureCours, dto, dateChange);
+        Object.assign(heureCours, champs, dateChange);
 
-        if (dto.heureDebut || dto.heureFin || dto.date) {
-            const conflitDto: CreateHeureCoursDto = {
-                enseignantId: heureCours.enseignantId,
-                classeAnneeId: heureCours.classeAnneeId,
-                matiereId: heureCours.matiereId,
-                date: (dto.date ? new Date(dto.date) : heureCours.date).toISOString().split('T')[0],
-                heureDebut: dto.heureDebut || heureCours.heureDebut,
-                heureFin: dto.heureFin || heureCours.heureFin,
-                statutEffectue: (dto.statutEffectue as StatutEffectue) || heureCours.statutEffectue || StatutEffectue.PLANIFIE,
-            };
-            await this.verifierConflitCreneau(conflitDto, etablissementId, id);
+        // Garde REMPLACE : un cours remplacé doit désigner un remplaçant actif
+        if ((champs.statutEffectue as StatutEffectue | undefined) === StatutEffectue.REMPLACE) {
+            const remplacantId = champs.remplacantId ?? heureCours.remplacantId;
+            if (!remplacantId) {
+                throw new AppError('Un cours remplacé doit désigner un remplaçant (remplacantId)', 400, 'REMPLACANT_REQUIS');
+            }
+            const remplacant = await AppDataSource.getRepository(MembrePersonnel).findOne({
+                where: { id: remplacantId, etablissementId },
+            });
+            if (!remplacant || remplacant.statut !== StatutPersonnel.ACTIF) {
+                throw new AppError('Le remplaçant doit être un membre actif de l\'établissement', 400, 'REMPLACANT_INVALIDE');
+            }
+        }
+
+        // Vérification des conflits au niveau instance (enseignant + classe + salle, par date)
+        if (champs.heureDebut || champs.heureFin || champs.date) {
+            const conflits = await this.verifierConflitsInstance(
+                {
+                    enseignantId: heureCours.enseignantId,
+                    classeAnneeId: heureCours.classeAnneeId,
+                    salleId: heureCours.salleId,
+                    date: dto.date ? this.dateToString(dto.date) : this.dateToString(heureCours.date),
+                    heureDebut: champs.heureDebut || heureCours.heureDebut,
+                    heureFin: champs.heureFin || heureCours.heureFin,
+                    etablissementId,
+                },
+                [id],
+            );
+            if (conflits.length > 0) {
+                throw new AppError(
+                    conflits.map(c => c.message).join('; '),
+                    409,
+                    'CRENEAU_CONFLIT',
+                    true,
+                    { conflits },
+                );
+            }
+        }
+
+        // Sens inverse (Q6-C) : mise à jour du créneau hebdo + propagation aux autres instances
+        let rapport: RapportPropagation | undefined;
+        if (mettreAJourCreneau && heureCours.creneauId) {
+            rapport = await this.appliquerModificationAuCreneau(
+                heureCours,
+                champs,
+                userId,
+                etablissementId,
+                req,
+            );
         }
 
         await this.repo.save(heureCours);
@@ -243,7 +685,7 @@ export class HeureCoursService {
         }, req);
 
         logger.info(`Créneau cours modifié: ${id}`);
-        return heureCours;
+        return { heureCours, rapport };
     }
 
     async delete(id: string, userId: string, etablissementId: string, req?: Request): Promise<void> {
@@ -414,13 +856,92 @@ export class HeureCoursService {
         return { semaine: lundi.toISOString().split('T')[0], jours };
     }
 
-    async genererHeuresCoursFromEdt(
-        dto: GenererHeuresCoursFromEdtDto,
-        etablissementId: string,
-        createurId?: string,
-        req?: Request
-    ): Promise<{ created: number; skipped: number }> {
-        const { enseignantId, classeAnneeId, dateDebut, dateFin, periodeId } = dto;
+    /**
+     * Q7 — Matérialisation de la semaine courante à la semaine suivante
+     * [lundi S, dimanche S+1], clampée aux bornes de l'année scolaire EN_COURS.
+     * Utilisée par le Canal A (validation créneau) et le Canal B (cron).
+     * Respecte toujours le flag genereAutomatiquement.
+     */
+    async materialiserSemainesCourantes(options: {
+        etablissementId: string;
+        creneauIds?: string[];
+        classeAnneeId?: string;
+        enseignantId?: string;
+        createurId?: string;
+        req?: Request;
+    }): Promise<{ created: number; skipped: number }> {
+        const { etablissementId, creneauIds, classeAnneeId, enseignantId, createurId, req } = options;
+
+        const anneeRepo = AppDataSource.getRepository(AnneeScolaire);
+        const annee = await anneeRepo.findOne({
+            where: [
+                { etablissementId, enCours: true },
+                { etablissementId, statut: StatutAnneeScolaire.EN_COURS },
+            ],
+            order: { dateDebut: 'DESC' },
+        });
+
+        const lundi = this.lundiDeSemaine(new Date());
+        const dimancheS1 = new Date(lundi);
+        dimancheS1.setDate(lundi.getDate() + 13);
+
+        if (annee) {
+            const debut = this.toDate(annee.dateDebut);
+            const fin = this.toDate(annee.dateFin);
+            if (dimancheS1 < debut || lundi > fin) {
+                logger.info(`[HeureCours] Matérialisation auto ignorée: hors année scolaire ${this.dateToString(annee.dateDebut)} → ${this.dateToString(annee.dateFin)}`);
+                return { created: 0, skipped: 0 };
+            }
+            if (lundi < debut) lundi.setTime(debut.getTime());
+            if (dimancheS1 > fin) dimancheS1.setTime(fin.getTime());
+        }
+
+        return this.materialiserInstances({
+            etablissementId,
+            creneauIds,
+            classeAnneeId,
+            enseignantId,
+            dateDebut: lundi,
+            dateFin: dimancheS1,
+            periodeId: undefined,
+            respecterFlagAuto: true,
+            createurId,
+            req,
+        });
+    }
+
+    /**
+     * Q7 — Coeur de matérialisation réutilisable.
+     * Canal A (validation créneau) et Canal B (cron) l'appellent avec
+     * `respecterFlagAuto: true` (seuls les créneaux genereAutomatiquement sont
+     * matérialisés). La génération manuelle (genererHeuresCoursFromEdt) passe
+     * `false` : elle matérialise tous les créneaux VALIDE, flag ou non.
+     */
+    async materialiserInstances(options: {
+        etablissementId: string;
+        enseignantId?: string;
+        classeAnneeId?: string;
+        creneauIds?: string[];
+        dateDebut: Date | string;
+        dateFin: Date | string;
+        periodeId?: string;
+        respecterFlagAuto?: boolean;
+        createurId?: string;
+        req?: Request;
+    }): Promise<{ created: number; skipped: number }> {
+        const {
+            etablissementId,
+            enseignantId,
+            classeAnneeId,
+            creneauIds,
+            dateDebut,
+            dateFin,
+            periodeId,
+            respecterFlagAuto = false,
+            createurId,
+            req,
+        } = options;
+
         const dateD = new Date(dateDebut);
         const dateF = new Date(dateFin);
 
@@ -429,18 +950,26 @@ export class HeureCoursService {
             .createQueryBuilder('e')
             .leftJoinAndSelect('e.affectationMatiere', 'am')
             .leftJoinAndSelect('am.matiere', 'm')
-            .where('am.enseignantId = :enseignantId', { enseignantId })
-            .andWhere('e.etablissementId = :etablissementId', { etablissementId })
+            .where('e.etablissementId = :etablissementId', { etablissementId })
             .andWhere('e.statut = :statut', { statut: StatutCreneau.VALIDE });
 
+        if (enseignantId) {
+            edtQuery.andWhere('am.enseignantId = :enseignantId', { enseignantId });
+        }
         if (classeAnneeId) {
             edtQuery.andWhere('am.classeAnneeId = :classeAnneeId', { classeAnneeId });
+        }
+        if (creneauIds && creneauIds.length > 0) {
+            edtQuery.andWhere('e.id IN (:...creneauIds)', { creneauIds });
+        }
+        if (respecterFlagAuto) {
+            edtQuery.andWhere('e.genereAutomatiquement = true');
         }
 
         const edtSlots = await edtQuery.getMany();
 
         if (edtSlots.length === 0) {
-            logger.info(`Aucun créneau EDT trouvé pour l'enseignant ${enseignantId}`);
+            logger.info(`[HeureCours] Aucun créneau EDT matérialisable (enseignant=${enseignantId || '-'}, classe=${classeAnneeId || '-'}, creneaux=${creneauIds?.length || 0})`);
             return { created: 0, skipped: 0 };
         }
 
@@ -476,7 +1005,7 @@ export class HeureCoursService {
 
                 const existing = await this.repo.findOne({
                     where: {
-                        enseignantId,
+                        enseignantId: slot.affectationMatiere?.enseignantId,
                         date: courseDate,
                         heureDebut: slot.heureDebut,
                         creneauId: slot.id,
@@ -491,7 +1020,7 @@ export class HeureCoursService {
                 // Vérifier que l'enseignant n'est pas déjà occupé à cette date et heure
                 const conflitEnseignant = await this.repo
                     .createQueryBuilder('hc')
-                    .where('hc.enseignantId = :enseignantId', { enseignantId })
+                    .where('hc.enseignantId = :enseignantId', { enseignantId: slot.affectationMatiere?.enseignantId })
                     .andWhere('hc.date = :date', { date: courseDate.toISOString().split('T')[0] })
                     .andWhere('hc.heureDebut < :heureFin', { heureFin: slot.heureFin })
                     .andWhere('hc.heureFin > :heureDebut', { heureDebut: slot.heureDebut })
@@ -500,7 +1029,7 @@ export class HeureCoursService {
 
                 if (conflitEnseignant > 0) {
                     logger.warn(
-                        `[HeureCours] Conflit enseignant détecté à la génération: ${enseignantId} le ${courseDate.toISOString().split('T')[0]} ${slot.heureDebut}-${slot.heureFin} — créneau ignoré`,
+                        `[HeureCours] Conflit enseignant détecté à la matérialisation: ${slot.affectationMatiere?.enseignantId} le ${courseDate.toISOString().split('T')[0]} ${slot.heureDebut}-${slot.heureFin} — créneau ignoré`,
                     );
                     skipped++;
                     continue;
@@ -508,13 +1037,14 @@ export class HeureCoursService {
 
                 const slotClasseAnneeId = slot.affectationMatiere?.classeAnneeId;
                 const slotMatiereId = slot.affectationMatiere?.matiereId;
-                if (!slotClasseAnneeId || !slotMatiereId) {
+                const slotEnseignantId = slot.affectationMatiere?.enseignantId;
+                if (!slotClasseAnneeId || !slotMatiereId || !slotEnseignantId) {
                     skipped++;
                     continue;
                 }
 
                 const hc = this.repo.create({
-                    enseignantId,
+                    enseignantId: slotEnseignantId,
                     classeAnneeId: slotClasseAnneeId,
                     matiereId: slotMatiereId,
                     periodeId: periodeId || slot.periodeId,
@@ -535,20 +1065,40 @@ export class HeureCoursService {
             current.setDate(current.getDate() + 7);
         }
 
-        logger.info(`HeureCours générés depuis EDT: ${created} créés, ${skipped} ignorés pour enseignant ${enseignantId}`);
+        logger.info(`[HeureCours] Matérialisation: ${created} créées, ${skipped} ignorées (enseignant=${enseignantId || '-'}, classe=${classeAnneeId || '-'}, creneaux=${creneauIds?.length || 0})`);
 
         if (createurId) {
             await auditService.log({
                 utilisateurId: createurId,
                 action: AuditAction.HEURE_COURS_CREATE,
                 cible: 'HeureCours',
-                description: `Génération HeureCours depuis EDT: ${created} créés, ${skipped} ignorés`,
-                nouvellesValeurs: dto,
+                description: `Matérialisation HeureCours depuis EDT: ${created} créées, ${skipped} ignorées`,
+                nouvellesValeurs: options,
                 module: 'personnel',
             }, req);
         }
 
         return { created, skipped };
+    }
+
+    async genererHeuresCoursFromEdt(
+        dto: GenererHeuresCoursFromEdtDto,
+        etablissementId: string,
+        createurId?: string,
+        req?: Request
+    ): Promise<{ created: number; skipped: number }> {
+        const { enseignantId, classeAnneeId, dateDebut, dateFin, periodeId } = dto;
+        return this.materialiserInstances({
+            etablissementId,
+            enseignantId,
+            classeAnneeId,
+            dateDebut,
+            dateFin,
+            periodeId,
+            respecterFlagAuto: false,
+            createurId,
+            req,
+        });
     }
 }
 

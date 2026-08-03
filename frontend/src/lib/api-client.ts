@@ -310,28 +310,11 @@ class ApiClient {
         };
 
         // Ajouter le Bearer token
-        console.log('[API Client] Tentative requête:', {
-            endpoint,
-            hasAccessToken: !!this.accessToken,
-            accessTokenPreview: this.accessToken ? this.accessToken.substring(0, 30) + '...' : 'NULL',
-            isAuthRoute: authRoutes.some(route => endpoint.startsWith(route)),
-        });
-        
         if (this.accessToken) {
             config.headers = {
                 ...config.headers,
                 Authorization: `Bearer ${this.accessToken}`,
             };
-            
-            // Log de débogage pour les requêtes API
-            if (endpoint.includes('/niveaux')) {
-                console.log('[API Client] Requête avec token:', {
-                    endpoint,
-                    hasToken: !!this.accessToken,
-                    tokenPrefix: this.accessToken.substring(0, 20) + '...',
-                    hasEtablissementId: this.decodeJWT(this.accessToken)?.etablissementId,
-                });
-            }
         }
 
         // Appliquer les intercepteurs de requête

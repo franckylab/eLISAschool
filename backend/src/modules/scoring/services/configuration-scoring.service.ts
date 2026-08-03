@@ -39,7 +39,10 @@ export class ConfigurationScoringService {
             }
         }
 
-        const config = this.repo.create(dto);
+        const config = this.repo.create({
+            ...dto,
+            anneeScolaireId: dto.anneeScolaireId ?? undefined,
+        });
         await this.repo.save(config);
         
         logger.info(`ConfigurationScoring créée: ${config.id}`);

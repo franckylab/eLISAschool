@@ -11,7 +11,7 @@
 import { Repository, DataSource } from 'typeorm';
 import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
-import { UtilisateurEtablissement, RoleLimitationEtablissement } from '../entities';
+import { UtilisateurEtablissement, RoleLimitationEtablissement, RoleEntity } from '../entities';
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -31,10 +31,20 @@ export interface AffecterUtilisateurDto {
 export class UtilisateurEtablissementService {
     private repo: Repository<UtilisateurEtablissement>;
     private limitationRepo: Repository<RoleLimitationEtablissement>;
+    private roleRepo: Repository<RoleEntity>;
 
     constructor() {
         this.repo = AppDataSource.getRepository(UtilisateurEtablissement);
         this.limitationRepo = AppDataSource.getRepository(RoleLimitationEtablissement);
+        this.roleRepo = AppDataSource.getRepository(RoleEntity);
+    }
+
+    /**
+     * Résout l'id de la table `roles` à partir du code du rôle (enum).
+     */
+    private async resolveRoleId(code: Role): Promise<string | null> {
+        const role = await this.roleRepo.findOne({ where: { code } });
+        return role?.id ?? null;
     }
 
     /**
@@ -91,7 +101,7 @@ export class UtilisateurEtablissementService {
             }
             // Réactiver l'affectation existante
             existing.actif = true;
-            existing.role = dto.role;
+            existing.roleId = (await this.resolveRoleId(dto.role)) ?? existing.roleId;
             existing.dateDebut = dto.dateDebut ? new Date(dto.dateDebut) : existing.dateDebut;
             existing.dateFin = dto.dateFin ? new Date(dto.dateFin) : undefined;
             existing.motif = dto.motif || existing.motif;
@@ -143,10 +153,14 @@ export class UtilisateurEtablissementService {
         }
 
         // Créer la nouvelle affectation
+        const roleId = await this.resolveRoleId(dto.role);
+        if (!roleId) {
+            throw new AppError('Rôle inconnu', 400, 'ROLE_INCONNU');
+        }
         const affectation = this.repo.create({
             utilisateurId: dto.utilisateurId,
             etablissementId: dto.etablissementId,
-            role: dto.role,
+            roleId,
             etablissementPrincipal: dto.etablissementPrincipal || false,
             actif: true,
             dateDebut: dto.dateDebut ? new Date(dto.dateDebut) : new Date(),
@@ -336,12 +350,13 @@ export class UtilisateurEtablissementService {
             where: { utilisateurId, etablissementId, actif: true }
         });
 
-        if (affectation?.role === Role.CHEF_ETABLISSEMENT) {
+        const chefRoleId = await this.resolveRoleId(Role.CHEF_ETABLISSEMENT);
+        if (affectation?.roleId === chefRoleId) {
             // Vérifier s'il y a un autre chef
             const autreChef = await queryRunner.manager.count(UtilisateurEtablissement, {
                 where: {
                     etablissementId,
-                    role: Role.CHEF_ETABLISSEMENT,
+                    roleId: chefRoleId ?? undefined,
                     actif: true,
                     utilisateurId: queryRunner.manager.createQueryBuilder().raw('!= ?', [utilisateurId])
                 }
@@ -603,12 +618,13 @@ export class UtilisateurEtablissementService {
         });
 
         let estDernierChef = false;
-        if (affectation?.role === Role.CHEF_ETABLISSEMENT) {
+        const chefRoleId = await this.resolveRoleId(Role.CHEF_ETABLISSEMENT);
+        if (affectation?.roleId === chefRoleId) {
             // Compter les autres chefs (exclure l'utilisateur actuel)
             const tousLesChefs = await this.repo.find({
                 where: {
                     etablissementId,
-                    role: Role.CHEF_ETABLISSEMENT,
+                    roleId: chefRoleId ?? undefined,
                     actif: true
                 }
             });
@@ -742,7 +758,7 @@ export class UtilisateurEtablissementService {
             throw new AppError('Affectation non trouvée', 404, 'NOT_FOUND');
         }
 
-        affectation.role = newRole;
+        affectation.roleId = (await this.resolveRoleId(newRole)) ?? affectation.roleId;
         return await this.repo.save(affectation);
     }
 }

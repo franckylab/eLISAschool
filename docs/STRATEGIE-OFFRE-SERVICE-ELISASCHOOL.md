@@ -1,637 +1,639 @@
-# Stratégie d'Offre de Service eLISAschool — v2
+# Stratégie Commerciale eLISAschool v3
 
-> **Document stratégique** — Structure binaire Local/Cloud × Licence/Abonnement × Tranches × Options
-> **Date** : 28 juillet 2026
-> **Version** : 2.0 (remplace la v1)
-> **Statut** : Proposition stratégique
+> **Version** : 3.0 — Août 2026
+> **Statut** : Validée (grill-me complet)
+> **Auteur** : franck arlos chendjou
+> **Simulateur interactif** : [SIMULATEUR-STRATEGIE-TARIFAIRE.html](SIMULATEUR-STRATEGIE-TARIFAIRE.html)
 
 ---
 
-## 1. Architecture de l'Offre — Vue d'Ensemble
+## 1. Modèle Commercial — Vue d'ensemble
 
-### 1.1 Structure en Arbre
+eLISAschool n'est **pas un SaaS**. Chaque déploiement est **manuel et dédié** :
+
+| Mode | Description | Infrastructure |
+|------|-------------|----------------|
+| **Serveur local** | Installé sur le serveur de l'établissement | Client gère le matériel |
+| **Serveur hébergé** | Installé sur un VPS/cloud (Ovh, Hetzner, etc.) | eLISAschool gère l'infrastructure |
+
+### 1.1 Deux modes de facturation
+
+| Mode | Principe | Engagement |
+|------|----------|------------|
+| **Abonnement mensuel** | Paiement récurrent chaque mois | Résiliable à tout moment (préavis 1 mois) |
+| **Licence perpétuelle** | Achat définitif du droit d'utilisation | Paiement comptant ou échelonné |
+
+### 1.2 Structure de prix
+
+Chaque offre se décompose en **3 couches** :
 
 ```
-eLISAschool
-│
-├── PLAN LOCAL (serveur du client)
-│   │
-│   ├── A. LICENCE PERPÉTUELLE (achat unique)
-│   │   ├── T1 — Micro (≤100 élèves)
-│   │   ├── T2 — Petit (101-500 élèves)
-│   │   ├── T3 — Moyen (501-1500 élèves)
-│   │   ├── T4 — Grand (1501-5000 élèves)
-│   │   └── T5 — Très grand (5000+ élèves)
-│   │
-│   └── B. ABONNEMENT LOCAL (location mensuelle/annuelle)
-│       ├── T1 — Micro (≤100 élèves)
-│       ├── T2 — Petit (101-500 élèves)
-│       ├── T3 — Moyen (501-1500 élèves)
-│       ├── T4 — Grand (1501-5000 élèves)
-│       └── T5 — Très grand (5000+ élèves)
-│
-└── PLAN CLOUD (VPS/hébergé en ligne)
-    │
-    ├── C. LICENCE CLOUD (engagement annuel, infrastructure dédiée)
-    │   ├── T1 — Micro (≤100 élèves)
-    │   ├── T2 — Petit (101-500 élèves)
-    │   ├── T3 — Moyen (501-1500 élèves)
-    │   ├── T4 — Grand (1501-5000 élèves)
-    │   └── T5 — Très grand (5000+ élèves)
-    │
-    └── D. ABONNEMENT SAAS (mensuel/annuel, multi-tenant)
-        ├── T1 — Micro (≤100 élèves)
-        ├── T2 — Petit (101-500 élèves)
-        ├── T3 — Moyen (501-1500 élèves)
-        ├── T4 — Grand (1501-5000 élèves)
-        └── T5 — Très grand (5000+ élèves)
+┌─────────────────────────────────────────────┐
+│  FRAIS DE PLATEFORME (socle + infrastructure)│  ← Couvre les 12 modules de base
+├─────────────────────────────────────────────┤
+│  PACKS MODULES (optionnels, cumulables)      │  ← 6 packs disponibles
+├─────────────────────────────────────────────┤
+│  SERVICES ADDITIONNELS (à la consommation)   │  ← SMS + Stockage
+└─────────────────────────────────────────────┘
 ```
 
-### 1.2 Logique Commerciale
+---
 
-| Dimension | Signification | Impact prix |
-|-----------|---------------|-------------|
-| **Plan** (Local/Cloud) | Où tourne le logiciel | Cloud = infrastructure incluse |
-| **Catégorie** (Licence/Abonnement) | Comment on paie | Licence = upfront, Abonnement = récurrent |
-| **Tranche** (T1-T5) | Taille de l'établissement | Plus d'élèves = plus cher |
-| **Options** | Modules additionnels | À la carte, cumulables |
+## 2. Tranches de Tarification
 
-### 1.3 Modules — Classification Offres
+8 tranches basées sur l'**effectif total de l'établissement** (nombre d'élèves inscrits) :
 
-#### Modules SOCLE (inclus dans TOUTES les offres de base)
+| Tranche | Effectif | Profil type |
+|---------|----------|-------------|
+| **T1** | 1 – 100 | École rurale, petite structure |
+| **T2** | 101 – 200 | École primaire standard |
+| **T3** | 201 – 500 | École moyenne, collège |
+| **T4** | 501 – 1 000 | Grand collège, petit lycée |
+| **T5** | 1 001 – 2 000 | Lycée, complexe scolaire |
+| **T6** | 2 001 – 3 000 | Grand complexe, réseau local |
+| **T7** | 3 001 – 5 000 | Réseau régional |
+| **T8** | 5 001+ | Réseau national, entreprise |
 
-| Module | Description |
-|--------|-------------|
-| Auth + Utilisateurs | Connexion, rôles, permissions RBAC |
-| Configuration | Paramètres établissement |
-| Élèves | Inscriptions, dossiers, matricules |
-| Responsables élèves | Liens parents-élèves, portail parent |
-| Notes | Saisie, consultation, validation |
-| Périodes | Trimestres, semestres, séquences |
-| Classes | Gestion des classes et niveaux |
-| Matières | Programme, coefficients |
-| Dashboard | Tableau de bord standard |
-| Notifications | Alertes in-app |
-| Cartes scolaires | Génération avec QR code |
-| Années scolaires | Gestion des années |
-
-#### Modules PREMIUM (options payantes)
-
-| Option | Code | Description | Valeur |
-|--------|------|-------------|--------|
-| **Bulletins avancés** | OPT-BUL | Génération PDF personnalisable, export | Gain de temps énorme |
-| **Emploi du temps** | OPT-EDT | Planification, détection conflits, drag & drop | Complexité technique |
-| **Programmes pédagogiques** | OPT-PROG | Curriculum, progression, conformité | Pilotage pédagogique |
-| **Organisation** | OPT-ORG | Organigramme ReactFlow, unités, hiérarchie | Visualisation pro |
-| **Communication** | OPT-COM | Messagerie, annonces, sondages, requêtes | Collaboration |
-| **Cantine** | OPT-CANT | Menus, paiements, gestion repas | Logistique |
-| **Transport** | OPT-TRAN | Lignes, arrêts, suivi bus | Logistique |
-| **Finances** | OPT-FIN | Scolarités, paiements, comptabilité | Critique gestion |
-| **Personnel + Contrats** | OPT-PERS | RH, contrats, absences, évaluations | Administration |
-| **Paie** | OPT-PAIE | Bulletins salaire, cotisations, primes | Conformité légale |
-| **Gamification** | OPT-GAM | Points, badges, classements | Engagement élèves |
-| **Scoring** | OPT-SCO | Évaluation performance globale | Pilotage |
-| **Orientation** | OPT-ORI | Conseil d'orientation scolaire | Aide décision |
-| **Santé** | OPT-SAN | Infirmerie, suivi médical | Conformité |
-| **Recrutement** | OPT-REC | Candidatures, entretiens, onboarding | RH avancé |
-| **Examens nationaux** | OPT-EXAM | Préparation concours, statistiques | Valeur ajoutée |
-| **Discipline** | OPT-DISC | Sanctions, points comportement | Vie scolaire |
-| **Bibliothèque** | OPT-BIB | Gestion prêts, catalogue | Culture |
-| **Inventaire** | OPT-INV | Matériel, équipements | Patrimoine |
+> **Note** : Les tranches T7 et T8 constituent le **segment entreprise**. Les prix des packs y sont plafonnés au niveau T6 ; seule la plateforme progresse.
 
 ---
 
-## 2. PLAN LOCAL — A. Licence Perpétuelle
+## 3. Grille Tarifaire Complète
 
-### 2.1 Principe
+### 3.1 Frais de plateforme (abonnement mensuel, FCFA)
 
-**Achat unique** du logiciel. Installation sur le serveur du client. Le client possède la licence à vie. Maintenance et mises à jour optionnelles.
+Couvre les **12 modules du socle** + l'infrastructure de base.
 
-### 2.2 Grille Tarifaire — Offres de Base
+| Tranche | Abonnement mensuel | Licence perpétuelle (×36) |
+|---------|-------------------|--------------------------|
+| T1 (≤100) | 15 000 | 540 000 |
+| T2 (101–200) | 22 000 | 792 000 |
+| T3 (201–500) | 30 000 | 1 080 000 |
+| T4 (501–1000) | 42 000 | 1 512 000 |
+| T5 (1001–2000) | 55 000 | 1 980 000 |
+| T6 (2001–3000) | 70 000 | 2 520 000 |
+| T7 (3001–5000) | 85 000 | 3 060 000 |
+| T8 (5000+) | 100 000 | 3 600 000 |
 
-| Tranche | Élèves | Prix Licence | Maintenance/an | Support inclus |
-|---------|--------|--------------|----------------|----------------|
-| **T1** | ≤100 | **250 000 FCFA** | 50 000 FCFA | Email 6 mois |
-| **T2** | 101-500 | **500 000 FCFA** | 100 000 FCFA | Email 6 mois |
-| **T3** | 501-1500 | **1 200 000 FCFA** | 250 000 FCFA | Email + Tél 1 an |
-| **T4** | 1501-5000 | **2 500 000 FCFA** | 500 000 FCFA | Email + Tél 1 an |
-| **T5** | 5000+ | **Sur devis** (min 4M) | 15% du prix | Dédié 2 ans |
+### 3.2 Packs Modules (abonnement mensuel, FCFA)
 
-### 2.3 Contenu de l'Offre de Base (par tranche)
+| Pack | T1 | T2 | T3 | T4 | T5 | T6 | T7 | T8 |
+|------|----|----|----|----|----|----|----|-----|
+| **Communication** | 2 000 | 3 000 | 4 500 | 6 000 | 8 000 | 10 000 | 10 000 | 10 000 |
+| **Logistique** | 1 500 | 2 500 | 3 500 | 5 000 | 6 500 | 8 000 | 8 000 | 8 000 |
+| **Performance** | 2 500 | 4 000 | 5 500 | 8 000 | 10 000 | 13 000 | 13 000 | 13 000 |
+| **Vie Scolaire** | 1 500 | 2 500 | 3 500 | 5 000 | 6 500 | 8 000 | 8 000 | 8 000 |
+| **Finances** | 3 000 | 4 500 | 6 500 | 9 000 | 12 000 | 15 000 | 15 000 | 15 000 |
+| **Inventaire** | 1 500 | 2 500 | 3 500 | 5 000 | 6 500 | 8 000 | 8 000 | 8 000 |
 
-**Tous les modules SOCLE +** :
+### 3.3 Services additionnels
 
-| Inclus | T1 | T2 | T3 | T4 | T5 |
-|--------|----|----|----|----|-----|
-| Modules socle (12) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Utilisateurs admin | 2 | 5 | 10 | 20 | Illimité |
-| Stockage documents | 2 Go | 5 Go | 15 Go | 50 Go | Illimité |
-| Installation | Guide | Guide | Assistée | Sur site | Sur site |
-| Formation | Doc en ligne | 2h visio | 4h visio | 8h sur site | 16h sur site |
-| Mises à jour | 6 mois | 1 an | 1 an | 2 ans | À vie |
-| API accès | Non | Lecture | Lecture/Écriture | Complet | Complet |
-| Multi-établissements | Non | Non | 2 sites | 5 sites | Illimité |
+| Service | Tarif | Condition |
+|---------|-------|-----------|
+| **SMS** (recharge crédits) | Voir §3.4 | Disponible pour tous |
+| **Stockage supplémentaire** | 1 000 F/Go/mois | Hébergement en ligne uniquement |
 
-### 2.4 Options à la Carte — Plan Local Licence
+#### SMS — Recharges par lots
 
-| Option | Prix unique | Description |
-|--------|-------------|-------------|
-| **Pack Académique** | 150 000 FCFA | Bulletins + EDT + Programmes + Examens |
-| **Pack Communication** | 80 000 FCFA | Messagerie + Annonces + Sondages + Requêtes |
-| **Pack Logistique** | 120 000 FCFA | Cantine + Transport + Parking |
-| **Pack RH** | 200 000 FCFA | Personnel + Contrats + Paie + Recrutement |
-| **Pack Performance** | 100 000 FCFA | Gamification + Scoring + Orientation |
-| **Pack Organisation** | 100 000 FCFA | Organigramme + Hiérarchie + Postes |
-| **Pack Vie scolaire** | 60 000 FCFA | Discipline + Santé + Clubs + Bibliothèque |
-| **Pack Finances** | 180 000 FCFA | Finances complètes + Comptabilité |
-| **Pack Inventaire** | 50 000 FCFA | Inventaire matériel + Suivi équipements |
-| **Module unitaire** | 30 000 FCFA/chacun | Any module non inclus |
-| **Source code** | 3 000 000 FCFA | Accès code source complet |
-| **White-label** | 200 000 FCFA | Logo + nom personnalisé |
+| Lot | Crédits | Tarif (FCFA) | Prix unitaire |
+|-----|---------|-------------|---------------|
+| Starter | 1 000 | 5 000 | 5,0 F/crédit |
+| Business | 5 000 | 20 000 | 4,0 F/crédit |
+| Enterprise | 10 000 | 35 000 | 3,5 F/crédit |
 
----
+> Crédits **valables jusqu'à consommation** (pas d'expiration).
 
-## 3. PLAN LOCAL — B. Abonnement Local
+#### Stockage supplémentaire
 
-### 3.1 Principe
-
-**Location mensuelle ou annuelle** du logiciel. Installation sur le serveur du client. Maintenance et mises à jour incluses. Le client ne possède pas le logiciel.
-
-### 3.2 Grille Tarifaire — Offres de Base
-
-| Tranche | Élèves | Prix/mois | Prix/an (×10) | Engagement |
-|---------|--------|-----------|---------------|------------|
-| **T1** | ≤100 | **25 000 FCFA** | 250 000 FCFA | 1 an |
-| **T2** | 101-500 | **50 000 FCFA** | 500 000 FCFA | 1 an |
-| **T3** | 501-1500 | **120 000 FCFA** | 1 200 000 FCFA | 1 an |
-| **T4** | 1501-5000 | **250 000 FCFA** | 2 500 000 FCFA | 1 an |
-| **T5** | 5000+ | **Sur devis** | — | 1 an |
-
-> **Remise annuelle** : 10 mois payés = 12 mois (2 mois offerts)
-
-### 3.3 Contenu de l'Offre de Base (par tranche)
-
-| Inclus | T1 | T2 | T3 | T4 | T5 |
-|--------|----|----|----|----|-----|
-| Modules socle (12) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Utilisateurs admin | 3 | 5 | 10 | 20 | Illimité |
-| Stockage documents | 5 Go | 10 Go | 25 Go | 75 Go | Illimité |
-| Installation | Assistée remote | Assistée remote | Sur site | Sur site | Sur site |
-| Formation | 2h visio | 4h visio | 8h visio | 12h sur site | 20h sur site |
-| Mises à jour | ✅ incluses | ✅ incluses | ✅ incluses | ✅ incluses | ✅ incluses |
-| Support | Email (48h) | Email (24h) | Email+Tél (24h) | Dédié (4h) | Dédié (2h) |
-| API accès | Lecture | Lecture | Lecture/Écriture | Complet | Complet |
-| Multi-établissements | Non | Non | 2 sites | 5 sites | Illimité |
-| Sauvegarde | Manuel | Auto hebdo | Auto quotidien | Auto quotidien | Temps réel |
-
-### 3.4 Options à la Carte — Plan Local Abonnement
-
-| Option | Prix/mois | Prix/an | Description |
-|--------|-----------|---------|-------------|
-| **Pack Académique** | 15 000 FCFA | 150 000 FCFA | Bulletins + EDT + Programmes + Examens |
-| **Pack Communication** | 8 000 FCFA | 80 000 FCFA | Messagerie + Annonces + Sondages |
-| **Pack Logistique** | 12 000 FCFA | 120 000 FCFA | Cantine + Transport |
-| **Pack RH complet** | 20 000 FCFA | 200 000 FCFA | Personnel + Contrats + Paie + Recrutement |
-| **Pack Performance** | 10 000 FCFA | 100 000 FCFA | Gamification + Scoring + Orientation |
-| **Pack Organisation** | 10 000 FCFA | 100 000 FCFA | Organigramme + Hiérarchie |
-| **Pack Vie scolaire** | 6 000 FCFA | 60 000 FCFA | Discipline + Santé + Clubs |
-| **Pack Finances** | 18 000 FCFA | 180 000 FCFA | Finances + Comptabilité |
-| **Pack Inventaire** | 5 000 FCFA | 50 000 FCFA | Matériel + Équipements |
-| **Module unitaire** | 3 000 FCFA | 30 000 FCFA | Any module seul |
-| **SMS en masse** | 15 FCFA/SMS | — | Crédits SMS (Cameroun) |
-| **Support premium** | 15 000 FCFA | 150 000 FCFA | Support 24/7, réponse 1h |
-| **Formation continue** | 10 000 FCFA | 100 000 FCFA | 2h/mois accompagnement |
+- **5 Go inclus** pour les déploiements en ligne
+- Au-delà : **1 000 F/Go/mois** (ajustable à la hausse ou la baisse)
+- Non applicable pour les déploiements sur serveur local
 
 ---
 
-## 4. PLAN CLOUD — C. Licence Cloud (Infrastructure Dédiée)
+## 4. Licence Perpétuelle — Modalités
 
-### 4.1 Principe
+### 4.1 Calcul
 
-**Engagement annuel** avec infrastructure VPS dédiée au client. Le client bénéficie d'un serveur isolé, géré par eLISAschool. Mises à jour et maintenance incluses. Données souveraines.
-
-### 4.2 Grille Tarifaire — Offres de Base
-
-| Tranche | Élèves | Prix/an | Infrastructure | Support |
-|---------|--------|---------|----------------|---------|
-| **T1** | ≤100 | **350 000 FCFA** | VPS 2 vCPU, 4 Go RAM, 50 Go SSD | Email (24h) |
-| **T2** | 101-500 | **700 000 FCFA** | VPS 4 vCPU, 8 Go RAM, 100 Go SSD | Email+Tél (24h) |
-| **T3** | 501-1500 | **1 500 000 FCFA** | VPS 8 vCPU, 16 Go RAM, 250 Go SSD | Dédié (4h) |
-| **T4** | 1501-5000 | **3 000 000 FCFA** | Serveur dédié 16 vCPU, 32 Go, 500 Go | Dédié (2h) |
-| **T5** | 5000+ | **Sur devis** (min 5M) | Infrastructure sur mesure | 24/7 |
-
-### 4.3 Contenu de l'Offre de Base (par tranche)
-
-| Inclus | T1 | T2 | T3 | T4 | T5 |
-|--------|----|----|----|----|-----|
-| Modules socle (12) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Infrastructure VPS | ✅ | ✅ | ✅ | ✅ dédié | ✅ sur mesure |
-| Utilisateurs admin | 3 | 5 | 10 | 20 | Illimité |
-| Stockage | 50 Go | 100 Go | 250 Go | 500 Go | Illimité |
-| Sauvegardes | Quotidien | Quotidien | Quotidien + offsite | Temps réel | Temps réel |
-| SSL/HTTPS | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Nom de domaine | 1 inclus | 1 inclus | 1 inclus | 1 inclus | 1 inclus |
-| Formation | 4h visio | 8h visio | 12h sur site | 16h sur site | 24h sur site |
-| Support | Email (24h) | Email+Tél (24h) | Dédié (4h) | Dédié (2h) | 24/7 (1h) |
-| SLA | 99% | 99.5% | 99.5% | 99.9% | 99.9% |
-| API accès | Lecture | Lecture/Écriture | Complet | Complet | Complet |
-| Multi-établissements | Non | 2 sites | 3 sites | 10 sites | Illimité |
-| Monitoring | Basique | Avancé | Avancé + alertes | Temps réel | Temps réel |
-
-### 4.4 Options à la Carte — Plan Cloud Licence
-
-| Option | Prix/an | Description |
-|--------|---------|-------------|
-| **Pack Académique** | 200 000 FCFA | Bulletins + EDT + Programmes + Examens |
-| **Pack Communication** | 100 000 FCFA | Messagerie + Annonces + Sondages |
-| **Pack Logistique** | 150 000 FCFA | Cantine + Transport |
-| **Pack RH complet** | 250 000 FCFA | Personnel + Contrats + Paie + Recrutement |
-| **Pack Performance** | 120 000 FCFA | Gamification + Scoring + Orientation |
-| **Pack Organisation** | 120 000 FCFA | Organigramme + Hiérarchie |
-| **Pack Vie scolaire** | 80 000 FCFA | Discipline + Santé + Clubs |
-| **Pack Finances** | 220 000 FCFA | Finances + Comptabilité |
-| **Pack Inventaire** | 60 000 FCFA | Matériel + Équipements |
-| **Module unitaire** | 40 000 FCFA | Any module seul |
-| **SMS en masse** | 15 FCFA/SMS | Crédits SMS |
-| **Mobile Money** | 1.5% transaction | Orange Money, MTN, Wave |
-| **Paiement en ligne** | 1% transaction | Carte bancaire |
-| **Stockage extra** | 20 000 FCFA/100 Go/an | Extension SSD |
-| **White-label** | 100 000 FCFA/an | Domaine + branding complet |
-| **IP dédiée** | 50 000 FCFA/an | Adresse IP fixe |
-| **Backup offsite** | 80 000 FCFA/an | Sauvegarde géo-redondée |
-
----
-
-## 5. PLAN CLOUD — D. Abonnement SaaS (Multi-Tenant)
-
-### 5.1 Principe
-
-**Abonnement mensuel ou annuel** au service eLISAschool. Infrastructure partagée (multi-tenant), gérée entièrement par eLISAschool. Zéro contrainte technique pour le client.
-
-### 5.2 Grille Tarifaire — Offres de Base
-
-| Tranche | Élèves | Prix/mois | Prix/an (×10) | Engagement |
-|---------|--------|-----------|---------------|------------|
-| **T1** | ≤100 | **30 000 FCFA** | 300 000 FCFA | Aucun |
-| **T2** | 101-500 | **65 000 FCFA** | 650 000 FCFA | Aucun |
-| **T3** | 501-1500 | **140 000 FCFA** | 1 400 000 FCFA | Aucun |
-| **T4** | 1501-5000 | **300 000 FCFA** | 3 000 000 FCFA | Aucun |
-| **T5** | 5000+ | **Sur devis** | — | Annuel |
-
-> **Remise annuelle** : 10 mois payés = 12 mois (2 mois offerts)
-
-### 5.3 Contenu de l'Offre de Base (par tranche)
-
-| Inclus | T1 | T2 | T3 | T4 | T5 |
-|--------|----|----|----|----|-----|
-| Modules socle (12) | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Infrastructure cloud | Partagé | Partagé | Partagé prioritaire | Dédié | Dédié |
-| Utilisateurs admin | 3 | 5 | 10 | 20 | Illimité |
-| Stockage | 5 Go | 15 Go | 30 Go | 100 Go | Illimité |
-| Sauvegardes | Quotidien | Quotidien | Quotidien | Quotidien + offsite | Temps réel |
-| SSL/HTTPS | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Sous-domaine | ecole.elisaschool.com | ecole.elisaschool.com | ecole.elisaschool.com | Domaine custom | Domaine custom |
-| Formation | Doc + 2h visio | 4h visio | 8h visio | 12h visio | 20h sur site |
-| Support | Email (48h) | Email (24h) | Email+Chat (24h) | Dédié (4h) | 24/7 (1h) |
-| SLA | 99% | 99.5% | 99.5% | 99.9% | 99.9% |
-| API accès | Non | Lecture | Lecture/Écriture | Complet | Complet |
-| Multi-établissements | Non | Non | 2 sites | 5 sites | Illimité |
-| PWA offline | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Mises à jour | Auto | Auto | Auto | Auto | Auto |
-
-### 5.4 Options à la Carte — Plan Cloud SaaS
-
-| Option | Prix/mois | Prix/an | Description |
-|--------|-----------|---------|-------------|
-| **Pack Académique** | 15 000 FCFA | 150 000 FCFA | Bulletins + EDT + Programmes + Examens |
-| **Pack Communication** | 8 000 FCFA | 80 000 FCFA | Messagerie + Annonces + Sondages |
-| **Pack Logistique** | 12 000 FCFA | 120 000 FCFA | Cantine + Transport |
-| **Pack RH complet** | 20 000 FCFA | 200 000 FCFA | Personnel + Contrats + Paie + Recrutement |
-| **Pack Performance** | 10 000 FCFA | 100 000 FCFA | Gamification + Scoring + Orientation |
-| **Pack Organisation** | 10 000 FCFA | 100 000 FCFA | Organigramme + Hiérarchie |
-| **Pack Vie scolaire** | 6 000 FCFA | 60 000 FCFA | Discipline + Santé + Clubs |
-| **Pack Finances** | 18 000 FCFA | 180 000 FCFA | Finances + Comptabilité |
-| **Pack Inventaire** | 5 000 FCFA | 50 000 FCFA | Matériel + Équipements |
-| **Module unitaire** | 3 000 FCFA | 30 000 FCFA | Any module seul |
-| **SMS en masse** | 15 FCFA/SMS | — | Crédits SMS |
-| **Mobile Money** | 2% transaction | — | Orange Money, MTN, Wave |
-| **Paiement en ligne** | 1.5% transaction | — | Carte bancaire |
-| **Domaine personnalisé** | 5 000 FCFA | 50 000 FCFA | ecole.votredomaine.com |
-| **White-label complet** | 15 000 FCFA | 150 000 FCFA | Branding total, favicon, emails |
-| **Stockage extra** | 2 000 FCFA/10 Go/mois | 20 000 FCFA/100 Go/an | Extension |
-| **Support premium** | 15 000 FCFA | 150 000 FCFA | 24/7, réponse 1h |
-| **Élèves supplémentaires** | 100 FCFA/élève/mois | — | Au-delà plafond tranche |
-| **Établissement extra** | 15 000 FCFA/mois | 150 000 FCFA/an | Site additionnel |
-
----
-
-## 6. Tableau Comparatif Global
-
-### 6.1 Synthèse des Prix (T2 — 101-500 élèves, offre de base)
-
-| | Licence Local | Abonnement Local | Licence Cloud | SaaS Cloud |
-|---|---|---|---|---|
-| **Coût 1ère année** | 500 000 FCFA | 500 000 FCFA | 700 000 FCFA | 650 000 FCFA |
-| **Coût année 2** | 100 000 FCFA (maint.) | 500 000 FCFA | 700 000 FCFA | 650 000 FCFA |
-| **Coût 3 ans** | 700 000 FCFA | 1 500 000 FCFA | 2 100 000 FCFA | 1 950 000 FCFA |
-| **Infrastructure** | Client | Client | eLISAschool | eLISAschool |
-| **Maintenance** | Client (optionnel) | Incluse | Incluse | Incluse |
-| **Mises à jour** | Optionnelles | Incluses | Incluses | Auto |
-| **Contrôle données** | Total | Total | Partagé | Partagé |
-| **Internet requis** | Non | Non | Oui | Oui |
-| **Montée en charge** | Manuel | Manuel | Auto | Auto |
-
-### 6.2 Recommandation par Profil Client
-
-| Profil | Plan recommandé | Raison |
-|--------|-----------------|--------|
-| **École rurale, pas d'IT** | SaaS Cloud T1/T2 | Zéro contrainte technique |
-| **École urbaine, admin IT** | Abonnement Local T2/T3 | Contrôle + support |
-| **Groupe scolaire privé** | Licence Cloud T3/T4 | Infra dédiée + modules |
-| **Établissement public** | Licence Local T3/T4 | Souveraineté données |
-| **Université / Grande école** | Licence Local T5 ou Cloud T5 | Sur mesure |
-| **Réseau confessionnel** | SaaS Cloud T4 + multi-sites | Centralisation + simplicité |
-| **École maternelle/primaire** | SaaS Cloud T1 | Petit budget, simple |
-| **Lycée technique** | Abonnement Local T3 + packs | EDT + Programmes critiques |
-
----
-
-## 7. Règles de Pricing
-
-### 7.1 Cohérence Interne
-
-| Règle | Justification |
-|-------|---------------|
-| Licence Local < Licence Cloud | Le client assume l'infrastructure |
-| Abonnement Local = Licence Local / an | Neutralité achat vs location |
-| SaaS Cloud > Abonnement Local | Infrastructure + maintenance incluses |
-| Packs < Somme des modules | Incitation aux bundles |
-| Remise annuelle 17% (2 mois offerts) | Incitation engagement long |
-| Prix/élève décroissant par tranche | Économie d'échelle |
-
-### 7.2 Règle du "100 FCFA par élève"
-
-**Objectif marketing** : Communiquer "moins de 100 FCFA par élève et par mois" pour les tranches T2+.
-
-| Tranche | SaaS/mois | Prix/élève/mois | Message |
-|---------|-----------|-----------------|---------|
-| T1 (100) | 30 000 | 300 FCFA | "À partir de 300 F/élève" |
-| T2 (500) | 65 000 | 130 FCFA | "Seulement 130 F/élève" |
-| T3 (1500) | 140 000 | 93 FCFA | **"Moins de 100 F/élève !"** |
-| T4 (5000) | 300 000 | 60 FCFA | **"60 F/élève seulement"** |
-
-### 7.3 Marge Cible
-
-| Plan | Marge brute cible | Coût infrastructure | Coût support |
-|------|-------------------|---------------------|--------------|
-| Licence Local | 90%+ | 0 | Faible |
-| Abonnement Local | 70% | 0 | Moyen |
-| Licence Cloud | 60% | 25% | Moyen |
-| SaaS Cloud | 65% | 20% | Moyen |
-
----
-
-## 8. Options — Détail des Packs
-
-### 8.1 Pack Académique (OPT-ACAD)
-
-| Module | Contenu |
-|--------|---------|
-| Bulletins avancés | Génération PDF, templates personnalisés, moyennes, rangs |
-| Emploi du temps | Planification, détection conflits, drag & drop, export |
-| Programmes | Curriculum par niveau, progression, conformité |
-| Examens nationaux | Préparation BEPC, BAC, statistiques résultats |
-
-**Valeur perçue** : Gain de 5-10h/semaine pour l'administration.
-
-### 8.2 Pack Communication (OPT-COM)
-
-| Module | Contenu |
-|--------|---------|
-| Messagerie | Chat interne, groupes, pièces jointes |
-| Annonces | Bandeau défilant, ciblage par classe/rôle |
-| Sondages | Templates, votes, analyses en temps réel |
-| Requêtes | Demandes administratives, workflow validation |
-
-**Valeur perçue** : Réduction de 80% des communications papier.
-
-### 8.3 Pack Logistique (OPT-LOG)
-
-| Module | Contenu |
-|--------|---------|
-| Cantine | Menus hebdomadaires, paiements, allergies |
-| Transport | Lignes, arrêts, suivi GPS, QR check-in |
-| Parking | Places, abonnements, véhicules |
-
-**Valeur perçue** : Contrôle total des services annexes.
-
-### 8.4 Pack RH Complet (OPT-RH)
-
-| Module | Contenu |
-|--------|---------|
-| Personnel | Dossiers, contrats, absences, évaluations |
-| Contrats | Types, renouvellements, workflow validation |
-| Paie | Bulletins salaire, cotisations, primes, retenues |
-| Recrutement | Offres, candidatures, entretiens, onboarding |
-
-**Valeur perçue** : Digitalisation complète de la fonction RH.
-
-### 8.5 Pack Performance (OPT-PERF)
-
-| Module | Contenu |
-|--------|---------|
-| Gamification | Points, badges, classements, récompenses |
-| Scoring | Évaluation globale performance élèves/enseignants |
-| Orientation | Conseil d'orientation basé sur les résultats |
-
-**Valeur perçue** : Motivation et pilotage de la performance.
-
-### 8.6 Pack Organisation (OPT-ORG)
-
-| Module | Contenu |
-|--------|---------|
-| Organisation | Unités organisationnelles, échelons structurels |
-| Hiérarchie | Relations personne→personne et poste→poste |
-| Organigramme | ReactFlow interactif, export PNG/PDF HD |
-| Postes | Gestion des postes, capacités, affectations |
-
-**Valeur perçue** : Visualisation professionnelle de la structure.
-
-### 8.7 Pack Vie Scolaire (OPT-VIE)
-
-| Module | Contenu |
-|--------|---------|
-| Discipline | Sanctions, points comportement, notifications parents |
-| Santé | Infirmerie, visites, traitements, allergies |
-| Clubs | Activités extrascolaires, inscriptions, planning |
-| Bibliothèque | Catalogue, prêts, retards, réservations |
-
-**Valeur perçue** : Suivi complet de la vie de l'élève.
-
-### 8.8 Pack Finances (OPT-FIN)
-
-| Module | Contenu |
-|--------|---------|
-| Finances | Scolarités, échéances, paiements, relances |
-| Comptabilité | Journal, grand livre, bilan, comptes |
-| Mobile Money | Intégration Orange Money, MTN MoMo, Wave |
-| Paiement en ligne | Carte bancaire, virement |
-
-**Valeur perçue** : Zéro impayé, recouvrement automatisé.
-
----
-
-## 9. Exemples de Configurations Client
-
-### 9.1 Exemple 1 — Petit collège privé (350 élèves)
-
-**Profil** : Établissement urbain, 1 site, pas d'admin IT
-
-**Plan choisi** : SaaS Cloud T2 (abonnement)
-
-| Élément | Prix/mois |
-|---------|-----------|
-| Abonnement base T2 | 65 000 FCFA |
-| Pack Académique | 15 000 FCFA |
-| Pack Communication | 8 000 FCFA |
-| SMS (200/mois) | 3 000 FCFA |
-| **TOTAL** | **91 000 FCFA/mois** |
-| **Par élève/mois** | **260 FCFA** |
-
-### 9.2 Exemple 2 — Grand lycée public (2000 élèves)
-
-**Profil** : Établissement public, souveraineté données, admin IT
-
-**Plan choisi** : Licence Locale T4 (achat unique)
-
-| Élément | Prix unique |
-|---------|-------------|
-| Licence T4 | 2 500 000 FCFA |
-| Pack Académique | 150 000 FCFA |
-| Pack RH | 200 000 FCFA |
-| Pack Finances | 180 000 FCFA |
-| Installation sur site | 150 000 FCFA |
-| Formation 8h | 200 000 FCFA |
-| **TOTAL 1ère année** | **3 380 000 FCFA** |
-| **Année suivante** | **500 000 FCFA** (maintenance) |
-| **Par élève/an** | **1 690 FCFA** (1ère année) |
-
-### 9.3 Exemple 3 — Réseau confessionnel (3 sites, 4000 élèves)
-
-**Profil** : 3 établissements, centralisation, budget moyen
-
-**Plan choisi** : Licence Cloud T4 + multi-sites
-
-| Élément | Prix/an |
+| Élément | Formule |
 |---------|---------|
-| Licence Cloud T4 | 3 000 000 FCFA |
-| Pack Académique | 200 000 FCFA |
-| Pack Communication | 100 000 FCFA |
-| Pack RH | 250 000 FCFA |
-| Pack Finances | 220 000 FCFA |
-| 2 établissements extra | 300 000 FCFA |
-| White-label | 100 000 FCFA |
-| **TOTAL annuel** | **4 170 000 FCFA** |
-| **Par élève/an** | **1 043 FCFA** |
-| **Par élève/mois** | **87 FCFA** |
+| **Prix de base** | Mensuel × 36 mois |
+| **Remise paiement comptant** | -20% |
+| **Acompte à la commande** | 60% du montant |
+| **Solde restant** | 40% du montant |
+| **Échéancier** | 4 mensualités égales (2 mois d'intervalle) |
+
+### 4.2 Exemple — T3, 3 packs
+
+| Poste | Calcul | Montant |
+|-------|--------|---------|
+| Plateforme | 30 000 × 36 | 1 080 000 |
+| Pack Communication | 4 500 × 36 | 162 000 |
+| Pack Performance | 5 500 × 36 | 198 000 |
+| Pack Finances | 6 500 × 36 | 234 000 |
+| **Total licence** | | **1 674 000** |
+| Remise comptant (-20%) | 1 674 000 × 0,8 | **1 339 200** |
+| Acompte 60% | | 803 520 |
+| 4 × mensualités | 535 680 / 4 | 133 920 × 4 |
+
+### 4.3 Ce qui est inclus
+
+- Droit d'utilisation **illimité dans le temps**
+- Mises à jour logicielles pendant **12 mois** (incluses)
+- Au-delà : option de maintenance annuelle (30% du prix licence)
 
 ---
 
-## 10. Stratégie Commerciale
+## 5. Services Inclus et Payants
 
-### 10.1 Argumentaire de Vente
+### 5.1 Services gratuits (inclus dans l'offre de base)
 
-**Pitch principal** :
-> "eLISAschool digitalise entièrement votre établissement à partir de 87 FCFA par élève et par mois. Choisissez votre mode de déploiement — sur votre serveur ou dans le cloud — et composez votre offre à la carte selon vos besoins."
+| Service | Conditions |
+|---------|------------|
+| **Support technique** | Gratuit pendant **12 mois** après déploiement. Au-delà : contrat de support (voir §5.3) |
+| **Formation initiale** | **1 session gratuite** (administrateurs + enseignants, 2 jours). Au-delà : formation complémentaire (voir §5.3) |
+| **Installation / Déploiement** | **Incluse** dans le prix de la licence ou du premier mois d'abonnement |
+| **Mises à jour correctives** | Corrections de bugs et patches de sécurité pendant la période de couverture |
+| **Stockage de base** (en ligne) | 5 Go inclus pour les déploiements hébergés |
 
-**Arguments par plan** :
+### 5.2 Services payants
 
-| Plan | Argument clé |
-|------|--------------|
-| **Local Licence** | "Investissez une fois, utilisez à vie. Vos données restent chez vous." |
-| **Local Abonnement** | "Profitez du logiciel sans investissement initial. Maintenance incluse." |
-| **Cloud Licence** | "Infrastructure dédiée, données souveraines, zéro contrainte technique." |
-| **Cloud SaaS** | "Démarrez en 24h. Zéro installation, zéro maintenance." |
+| Service | Modèle | Détail |
+|---------|--------|--------|
+| **SMS** | Recharge par lots | 5 000 F / 20 000 F / 35 000 F (voir §3.3) |
+| **Stockage supplémentaire** | Mensuel par Go | 1 000 F/Go/mois (hébergement en ligne uniquement) |
+| **Support étendu** | Annuel | Après la 1ère année gratuite (voir §5.3) |
+| **Formation complémentaire** | Par session | Après la session initiale gratuite (voir §5.3) |
 
-### 10.2 Stratégie d'Acquisition
+### 5.3 Tarifs support et formation (post-période gratuite)
 
-| Canal | Cible | Action |
-|-------|-------|--------|
-| **Essai gratuit 30j** | Tous | SaaS T1/T2, pas de CB requise |
-| **Demo sur site** | Local | 2h gratuites, présentation + POC |
-| **Webinaires mensuels** | Tous | Thèmes métier (bulletins, EDT, finances) |
-| **Parrainage** | Existant | 1 mois offert par filleul |
-| **Salons éducatifs** | Décideurs | Stand + demo live |
-| **Partenariats** | Réseaux | Convention cadre avec réseaux scolaires |
-
-### 10.3 Cycle de Vente
-
-| Plan | Cycle | Décideur |
-|------|-------|----------|
-| SaaS T1/T2 | 1-2 semaines | Directeur d'école |
-| SaaS T3/T4 | 2-4 semaines | DG + Conseil d'administration |
-| Local Licence | 1-3 mois | DG + Service informatique + CA |
-| Cloud Licence | 2-4 mois | DG + IT + Ministère (si public) |
+| Service | Tarif | Fréquence |
+|---------|-------|-----------|
+| **Support technique** (après 1 an) | 15 000 F/mois (T1-T3) ou 25 000 F/mois (T4+) | Mensuel |
+| **Formation complémentaire** | 50 000 F/session (1 jour) ou 80 000 F/session (2 jours) | À la demande |
+| **Assistance à distance** | Incluse dans le support | Email + téléphone |
+| **Assistance sur site** | 25 000 F/jour + frais de déplacement | Sur demande |
 
 ---
 
-## 11. Projections Révisées
+## 6. Modules — Classification Complète
 
-### 11.1 Répartition Attendue
+### 6.1 Socle gratuit (12 modules)
 
-| Plan | Part clients | Revenue moyen |
-|------|-------------|---------------|
-| SaaS Cloud | 50% | 80 000 FCFA/mois |
-| Abonnement Local | 20% | 70 000 FCFA/mois |
-| Licence Cloud | 15% | 200 000 FCFA/mois (équivalent) |
-| Licence Locale | 15% | 800 000 FCFA (one-shot) |
+Toujours inclus, sans surcoût, dans chaque déploiement :
 
-### 11.2 Scénario Année 1
+| # | Module | Description |
+|---|--------|-------------|
+| 1 | **Authentification** | Login, JWT, rôles, permissions |
+| 2 | **Utilisateurs** | Gestion des comptes, profils |
+| 3 | **Configuration** | Paramètres établissement, années scolaires |
+| 4 | **Organisation** | Unités, postes, fonctions, organigramme |
+| 5 | **Élèves** | Inscriptions, fiches, affectations |
+| 6 | **Responsables** | Parents, tuteurs, liens de parenté |
+| 7 | **Notes** | Saisie, validation, statistiques |
+| 8 | **Périodes** | Trimestres, semestres, bulletins |
+| 9 | **Classes** | Niveaux, sections, capacités |
+| 10 | **Matières** | Curriculum, programmes, coefficients |
+| 11 | **Dashboard** | Tableau de bord, indicateurs |
+| 12 | **Notifications** | Alertes système, rappels |
 
-| Plan | Clients | Revenue annuel |
-|------|---------|----------------|
-| SaaS T1-T2 | 40 | 38 400 000 FCFA |
-| SaaS T3-T4 | 10 | 20 160 000 FCFA |
-| Abonnement Local T1-T3 | 15 | 12 600 000 FCFA |
-| Licence Cloud T1-T3 | 8 | 8 960 000 FCFA |
-| Licence Locale T1-T3 | 10 | 8 700 000 FCFA |
-| Options (tous plans) | — | 25 000 000 FCFA |
-| Services (formation, install) | — | 15 000 000 FCFA |
-| **TOTAL** | **83** | **~128 000 000 FCFA** |
+### 6.2 Packs payants (6 packs)
+
+#### Pack Communication
+
+| Module | Fonctionnalités clés |
+|--------|---------------------|
+| Messagerie | Messages internes, conversations de groupe |
+| Requêtes | Demandes formelles, circuit de validation |
+| Sondages | Questionnaires, votes, analyses |
+| Annonces | Diffusion ciblée, priorités, accusés |
+
+#### Pack Logistique
+
+| Module | Fonctionnalités clés |
+|--------|---------------------|
+| Cantine | Menus, commandes, paiements, régimes |
+| Transport | Lignes, arrêts, suivi, tarifs |
+| Parking | Places, attributions, contrôle d'accès |
+
+#### Pack Performance
+
+| Module | Fonctionnalités clés |
+|--------|---------------------|
+| Emploi du temps | Génération auto, détection conflits, export |
+| Suivi élève | Progression, alertes, parcours |
+| Suivi personnel | Évaluations, absences, contrats |
+| Orientation | Conseils, voeux, affectations |
+| Gamification | Points, classements, récompenses |
+
+#### Pack Vie Scolaire
+
+| Module | Fonctionnalités clés |
+|--------|---------------------|
+| Clubs & Associations | Inscriptions, activités, budgets |
+| Cartes d'identité | Génération QR, impressions |
+| Documents scolaires | Certificats, attestations |
+| Impressions | Bulletins, listes, rapports |
+| Santé | Infirmerie, visites, traitements |
+
+#### Pack Finances
+
+| Module | Fonctionnalités clés |
+|--------|---------------------|
+| Finances | Recettes, dépenses, budgets, rapports |
+| Contrats | Types, clauses, renouvellements |
+| Paie | Bulletins, cotisations, primes, retenues |
+
+#### Pack Inventaire
+
+| Module | Fonctionnalités clés |
+|--------|---------------------|
+| Matériel | Catalogue, catégories, affectations |
+| Inventaire | État des lieux, mouvements, valorisation |
 
 ---
 
-## 12. Résumé Décisionnel
+## 7. Scénarios de Référence
 
-```
-QUESTION 1 : Où le logiciel tourne-t-il ?
-├── Chez le client (serveur local) → PLAN LOCAL
-│   │
-│   QUESTION 2 : Achat ou location ?
-│   ├── Achat unique → LICENCE PERPÉTUELLE
-│   │   → T1 à T5 selon nombre d'élèves
-│   │   → Offre de base + options à la carte
-│   │
-│   └── Location mensuelle → ABONNEMENT LOCAL
-│       → T1 à T5 selon nombre d'élèves
-│       → Offre de base + options à la carte
-│
-└── Chez eLISAschool (VPS/Cloud) → PLAN CLOUD
-    │
-    QUESTION 2 : Infrastructure dédiée ou partagée ?
-    ├── Dédiée (VPS privé) → LICENCE CLOUD
-    │   → T1 à T5 selon nombre d'élèves
-    │   → Offre de base + options à la carte
-    │
-    └── Partagée (SaaS) → ABONNEMENT SAAS
-        → T1 à T5 selon nombre d'élèves
-        → Offre de base + options à la carte
-```
+### Scénario 1 — École rurale (80 élèves, T1)
 
-**Chaque aboutissant = offre de base (modules socle) + options à la carte (19 modules + 8 packs).**
+| Poste | Détail |
+|-------|--------|
+| Effectif | 80 élèves |
+| Tranche | T1 (≤100) |
+| Déploiement | Serveur local |
+| Paiement | Abonnement mensuel |
+| Packs | Communication + Vie Scolaire |
+
+| Poste | Montant |
+|-------|---------|
+| Plateforme | 15 000 |
+| Pack Communication | 2 000 |
+| Pack Vie Scolaire | 1 500 |
+| **Total mensuel** | **18 500 F** |
+| Coût par élève | 231 F/élève/mois |
+
+> **Alerte** : sous le seuil de 30 000 F. Ce profil bénéficie d'un tarif social.
 
 ---
 
-**Document rédigé par** : admin project
-**Date** : 28 juillet 2026
-**Version** : 2.0
+### Scénario 2 — École primaire standard (150 élèves, T2)
+
+| Poste | Détail |
+|-------|--------|
+| Effectif | 150 élèves |
+| Tranche | T2 (101–200) |
+| Déploiement | Serveur local |
+| Paiement | Abonnement mensuel |
+| Packs | Communication + Performance + Vie Scolaire |
+
+| Poste | Montant |
+|-------|---------|
+| Plateforme | 22 000 |
+| Pack Communication | 3 000 |
+| Pack Performance | 4 000 |
+| Pack Vie Scolaire | 2 500 |
+| **Total mensuel** | **31 500 F** |
+| Coût par élève | 210 F/élève/mois |
+
+---
+
+### Scénario 3 — Collège moyen (350 élèves, T3)
+
+| Poste | Détail |
+|-------|--------|
+| Effectif | 350 élèves |
+| Tranche | T3 (201–500) |
+| Déploiement | Hébergé en ligne |
+| Paiement | Abonnement mensuel |
+| Packs | Communication + Performance + Vie Scolaire + Finances |
+| Services | SMS (lot Business) + 10 Go stockage |
+
+| Poste | Montant |
+|-------|---------|
+| Plateforme | 30 000 |
+| Pack Communication | 4 500 |
+| Pack Performance | 5 500 |
+| Pack Vie Scolaire | 3 500 |
+| Pack Finances | 6 500 |
+| SMS (5 000 crédits) | 20 000 |
+| Stockage (+5 Go) | 5 000 |
+| **Total mensuel** | **75 000 F** |
+| Coût par élève | 214 F/élève/mois |
+
+---
+
+### Scénario 4 — Grand collège (750 élèves, T4)
+
+| Poste | Détail |
+|-------|--------|
+| Effectif | 750 élèves |
+| Tranche | T4 (501–1000) |
+| Déploiement | Hébergé en ligne |
+| Paiement | Abonnement mensuel |
+| Packs | Communication + Logistique + Performance + Vie Scolaire + Finances |
+| Services | SMS (lot Enterprise) + 15 Go stockage |
+
+| Poste | Montant |
+|-------|---------|
+| Plateforme | 42 000 |
+| Pack Communication | 6 000 |
+| Pack Logistique | 5 000 |
+| Pack Performance | 8 000 |
+| Pack Vie Scolaire | 5 000 |
+| Pack Finances | 9 000 |
+| SMS (10 000 crédits) | 35 000 |
+| Stockage (+10 Go) | 10 000 |
+| **Total mensuel** | **120 000 F** |
+| Coût par élève | 160 F/élève/mois |
+
+---
+
+### Scénario 5 — Lycée (1 500 élèves, T5)
+
+| Poste | Détail |
+|-------|--------|
+| Effectif | 1 500 élèves |
+| Tranche | T5 (1001–2000) |
+| Déploiement | Hébergé en ligne |
+| Paiement | Abonnement mensuel |
+| Packs | 6 packs (tous) |
+| Services | SMS (lot Enterprise ×2) + 25 Go stockage |
+
+| Poste | Montant |
+|-------|---------|
+| Plateforme | 55 000 |
+| Pack Communication | 8 000 |
+| Pack Logistique | 6 500 |
+| Pack Performance | 10 000 |
+| Pack Vie Scolaire | 6 500 |
+| Pack Finances | 12 000 |
+| Pack Inventaire | 6 500 |
+| SMS (20 000 crédits) | 70 000 |
+| Stockage (+20 Go) | 20 000 |
+| **Total mensuel** | **194 500 F** |
+| Coût par élève | 130 F/élève/mois |
+
+---
+
+### Scénario 6 — Grand complexe (2 500 élèves, T6)
+
+| Poste | Détail |
+|-------|--------|
+| Effectif | 2 500 élèves |
+| Tranche | T6 (2001–3000) |
+| Déploiement | Hébergé en ligne |
+| Paiement | Abonnement mensuel |
+| Packs | 6 packs (tous) |
+| Services | SMS (lot Enterprise ×3) + 40 Go stockage |
+
+| Poste | Montant |
+|-------|---------|
+| Plateforme | 70 000 |
+| 6 packs (total) | 62 000 |
+| SMS (30 000 crédits) | 105 000 |
+| Stockage (+35 Go) | 35 000 |
+| **Total mensuel** | **272 000 F** |
+| Coût par élève | 109 F/élève/mois |
+
+---
+
+### Scénario 7 — Réseau régional (4 000 élèves, T7)
+
+| Poste | Détail |
+|-------|--------|
+| Effectif | 4 000 élèves |
+| Tranche | T7 (3001–5000) |
+| Déploiement | Hébergé en ligne (multi-sites) |
+| Paiement | Licence perpétuelle (comptant -20%) |
+| Packs | 6 packs (tous) |
+| Services | SMS (lot Enterprise ×5) + 80 Go stockage |
+
+| Poste | Mensuel éq. |
+|-------|-------------|
+| Plateforme | 85 000 |
+| 6 packs (total) | 62 000 |
+| SMS (50 000 crédits) | 175 000 |
+| Stockage (+75 Go) | 75 000 |
+| **Total mensuel éq.** | **397 000 F** |
+| Licence (×36, -20%) | 11 473 200 F (comptant) |
+| Coût par élève | 99 F/élève/mois |
+
+---
+
+### Scénario 8 — Réseau national (5 500 élèves, T8)
+
+| Poste | Détail |
+|-------|--------|
+| Effectif | 5 500 élèves |
+| Tranche | T8 (5000+) |
+| Déploiement | Hébergé en ligne (multi-régions) |
+| Paiement | Licence perpétuelle (échéancier) |
+| Packs | 6 packs (tous) |
+| Services | SMS (lot Enterprise ×10) + 150 Go stockage |
+
+| Poste | Mensuel éq. |
+|-------|-------------|
+| Plateforme | 100 000 |
+| 6 packs (total) | 62 000 |
+| SMS (100 000 crédits) | 350 000 |
+| Stockage (+145 Go) | 145 000 |
+| **Total mensuel éq.** | **657 000 F** |
+| Licence (×36) | 23 652 000 F |
+| Acompte 60% | 14 191 200 F |
+| 4 × mensualités | 2 365 200 F |
+| Coût par élève | 119 F/élève/mois |
+
+---
+
+## 8. Analyse de Rentabilité
+
+### 8.1 Bande cible : 30 000 – 100 000 F/mois
+
+| Tranche | Plateforme seule | +1 pack | +3 packs | +6 packs |
+|---------|-----------------|---------|----------|----------|
+| T1 | 15 000 | 17 000–18 000 | 21 500–23 500 | 30 000 |
+| T2 | 22 000 | 25 000–26 000 | 31 500–34 000 | 41 000 |
+| T3 | 30 000 | 33 500–36 000 | 43 500–48 000 | 55 000 |
+| T4 | 42 000 | 47 000–51 000 | 59 000–67 000 | 80 000 |
+| T5 | 55 000 | 61 500–67 000 | 77 500–87 000 | 104 500 |
+| T6 | 70 000 | 78 000–85 000 | 98 000–110 000 | 132 000 |
+| T7 | 85 000 | 93 000–100 000 | 113 000–125 000 | 147 000 |
+| T8 | 100 000 | 108 000–115 000 | 128 000–140 000 | 162 000 |
+
+> **Lecture** : pour rester dans la bande 30K–100K, un établissement T1 doit souscrire au moins 3 packs (≈22 000 F de packs), tandis qu'un T4 avec 3 packs est déjà à 67 000 F.
+
+### 8.2 Seuil de rentabilité par élève
+
+| Tranche | Min (pack seul) | Max (6 packs) |
+|---------|----------------|---------------|
+| T1 | 375 F/élève | 300 F/élève |
+| T2 | 167 F/élève | 205 F/élève |
+| T3 | 110 F/élève | 110 F/élève |
+| T4 | 84 F/élève | 80 F/élève |
+| T5 | 55 F/élève | 52 F/élève |
+| T6 | 39 F/élève | 44 F/élève |
+| T7 | 29 F/élève | 30 F/élève |
+| T8 | 20 F/élève | 24 F/élève |
+
+> **Objectif** : le coût par élève reste **toujours inférieur à 400 F/mois**, même pour les petites structures.
+
+---
+
+## 9. Positionnement Concurrentiel
+
+### 9.1 Comparaison avec les solutions existantes
+
+| Solution | Modèle | Prix | Couverture |
+|----------|--------|------|------------|
+| **AppAcademia** | SaaS | 5 000–20 000 F/élève/an | Notes + bulletins |
+| **EdukaSoftware** | Freemium | 34–55 €/mois | Limité |
+| **Logesco** | Freemium | Variable | Partiel |
+| **GesSchool** | Sur devis | Non publié | Complet |
+| **Zaame** | Freemium | Variable | Basique |
+| **ProsoftAfrica** | Sur devis | Non publié | Complet |
+| **eLISAschool** | Dédié | 18 500–657 000 F/mois | **55+ modules** |
+
+### 9.2 Avantages compétitifs eLISAschool
+
+| Avantage | Détail |
+|----------|--------|
+| **Couverture complète** | 55+ modules répartis en 6 packs — aucune solution concurrente n'offre ce périmètre |
+| **Déploiement dédié** | Pas de mutualisation — données isolées, performance garantie |
+| **Flexibilité** | Choix du mode (local/hébergé) et du paiement (mensuel/licence) |
+| **Socle gratuit généreux** | 12 modules inclus sans surcoût (notes, bulletins, élèves, organisation) |
+| **Pas de coût par élève obligatoire** | Le prix est forfaitaire par tranche, pas multiplié par l'effectif |
+| **Ultra-responsif** | Interface adaptée de 100px à 2560px (montres → écrans 4K) |
+| **Multi-langue** | Français + Anglais natif |
+| **Données souveraines** | Serveur local = contrôle total ; hébergé = infrastructure identifiée |
+
+---
+
+## 10. Conditions Générales
+
+### 10.1 Abonnement mensuel
+
+- Engagement minimum : **1 mois**
+- Résiliation : préavis de **30 jours** avant la fin de la période en cours
+- Paiement : d'avance, le 1er de chaque mois
+- Suspension : si impayé > 15 jours, accès suspendu (données conservées 90 jours)
+
+### 10.2 Licence perpétuelle
+
+- Droit d'utilisation **à vie** pour l'établissement signataire
+- Transfert interdit sans accord écrit
+- Mises à jour incluses pendant **12 mois**
+- Option maintenance annuelle : **30% du prix licence** (couvre mises à jour + support)
+- Acompte non remboursable après signature
+
+### 10.3 Support et maintenance
+
+- **Période gratuite** : 12 mois après déploiement (support + mises à jour correctives)
+- **Période payante** : contrat annuel renouvelable (voir §5.3)
+- SLA : réponse sous 48h (email), 24h (téléphone), 72h (sur site)
+
+### 10.4 Formation
+
+- **Session initiale** : 2 jours (administrateurs + enseignants), gratuite
+- **Formation complémentaire** : 1 ou 2 jours, à la demande (voir §5.3)
+- Documentation utilisateur et vidéos tutoriels accessibles en permanence
+
+---
+
+## 11. Hypothèses et Simulations
+
+### 11.1 Hypothèses de pénétration
+
+| Hypothèse | Valeur | Justification |
+|-----------|--------|---------------|
+| Parc adressable Cameroun | ~15 000 établissements | MINESEC + MINEDUB |
+| Taux de conversion Year 1 | 0,5% | 75 clients |
+| Taux de conversion Year 2 | 1,5% | 225 clients |
+| Taux de conversion Year 3 | 3,0% | 450 clients |
+| Répartition tranches | 40% T1-T2, 30% T3-T4, 20% T5-T6, 10% T7-T8 | Majorité de petites structures |
+| Taux de renouvellement | 85%/an | Satisfaction client |
+| Panier moyen (abonnement) | 45 000 F/mois | Pondéré par tranche |
+| Taux d'attachement packs | 2,5 packs/client en moyenne | Socle + modules métier |
+
+### 11.2 Projection de revenus (3 ans)
+
+| Indicateur | Année 1 | Année 2 | Année 3 |
+|------------|---------|---------|---------|
+| Clients actifs | 75 | 225 | 450 |
+| Dont abonnement | 60 | 180 | 360 |
+| Dont licence | 15 | 45 | 90 |
+| Revenu abonnement (F) | 32 400 000 | 97 200 000 | 194 400 000 |
+| Revenu licences (F) | 12 150 000 | 36 450 000 | 72 900 000 |
+| Revenu SMS (F) | 3 750 000 | 11 250 000 | 22 500 000 |
+| Revenu stockage (F) | 2 700 000 | 8 100 000 | 16 200 000 |
+| Revenu support (F) | 0 | 2 700 000 | 8 100 000 |
+| **Revenu total (F)** | **51 000 000** | **155 700 000** | **414 100 000** |
+| **Revenu total (EUR)** | **~77 750 €** | **~237 360 €** | **~631 350 €** |
+
+### 11.3 Structure de coûts estimée
+
+| Poste | % du revenu | Year 1 (F) |
+|-------|-------------|------------|
+| Infrastructure (hébergement, serveurs) | 15% | 7 650 000 |
+| Personnel (dev, support, commercial) | 45% | 22 950 000 |
+| SMS (coût fournisseur) | 8% | 4 080 000 |
+| Marketing et acquisition | 10% | 5 100 000 |
+| Frais généraux | 7% | 3 570 000 |
+| **Marge brute** | **15%** | **7 650 000** |
+
+---
+
+## 12. Recommandations Stratégiques
+
+### 12.1 Court terme (0–6 mois)
+
+1. **Finaliser le socle** : les 12 modules gratuits doivent être irréprochables (stabilité, UX, documentation)
+2. **Pack Communication en priorité** : c'est le pack d'entrée le plus demandé (messagerie, annonces)
+3. **Offre de lancement** : 3 mois gratuits pour les 50 premiers clients (T1–T3)
+4. **Partenariats SMS** : négocier les tarifs avec les opérateurs locaux (MTN, Orange, Camtel)
+
+### 12.2 Moyen terme (6–18 mois)
+
+1. **Programme ambassadeurs** : former des référents dans chaque région
+2. **Marketplace d'extensions** : permettre à des tiers de développer des modules
+3. **API ouverte** : intégration avec les systèmes existants (comptabilité, RH)
+4. **Certification** : label de qualité pour les établissements partenaires
+
+### 12.3 Long terme (18–36 mois)
+
+1. **Expansion sous-régionale** : Gabon, Congo, Côte d'Ivoire, Sénégal
+2. **Module IA** : analyse prédictive (décrochage scolaire, orientation)
+3. **Application mobile native** : parents + enseignants
+4. **Portail inter-établissements** : réseau d'échanges entre écoles partenaires
+
+---
+
+## 13. Glossaire
+
+| Terme | Définition |
+|-------|------------|
+| **Tranche** | Catégorie de tarification basée sur l'effectif total de l'établissement |
+| **Frais de plateforme** | Coût mensuel couvrant le socle de 12 modules + l'infrastructure |
+| **Pack module** | Ensemble de modules fonctionnels optionnels, facturé séparément |
+| **Licence perpétuelle** | Droit d'utilisation illimité dans le temps, acquis en un ou plusieurs paiements |
+| **Abonnement mensuel** | Paiement récurrent mensuel, résiliable à tout moment |
+| **Déploiement local** | Installation sur le serveur physique de l'établissement |
+| **Déploiement hébergé** | Installation sur un serveur cloud/VPS géré par eLISAschool |
+| **Crédit SMS** | Unité de consommation pour l'envoi de SMS (1 crédit = 1 SMS) |
+| **Stockage additionnel** | Espace disque supplémentaire au-delà des 5 Go inclus (hébergement uniquement) |
+| **FCFA** | Franc CFA (XAF), devise de la zone CEMAC |
+
+---
+
+## 14. Historique des Versions
+
+| Version | Date | Modifications |
+|---------|------|---------------|
+| v1.0 | 2025 | Modèle initial 4 branches (SaaS/Premium/Standard/Gratuit) |
+| v2.0 | 2026-07 | 9 packs, modèle hybride, première itération grill-me |
+| **v3.0** | **2026-08** | **Refonte complète : 2 déploiements × 2 paiements × 8 tranches × 6 packs. Simulateur interactif. Scénarios de référence.** |
+
+---
+
+*Document vivant — mis à jour à chaque évolution du modèle commercial.*
+*Simulateur interactif : [SIMULATEUR-STRATEGIE-TARIFAIRE.html](SIMULATEUR-STRATEGIE-TARIFAIRE.html)*

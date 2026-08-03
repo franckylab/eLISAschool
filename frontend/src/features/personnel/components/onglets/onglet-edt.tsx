@@ -26,7 +26,7 @@ export function OngletEdt({ enseignantId, isActive }: { enseignantId: string; is
     const [vue, setVue] = useState<'grille' | 'liste'>('grille');
 
     const { data: paginated, isLoading } = useCreneaux(
-        isActive ? { enseignantId, limit: 100, inclureHeuresCours: true } : { limit: 0, enseignantId }
+        isActive ? { enseignantId, limit: 100 } : { limit: 0, enseignantId }
     );
     const creneaux = paginated?.items ?? [];
 

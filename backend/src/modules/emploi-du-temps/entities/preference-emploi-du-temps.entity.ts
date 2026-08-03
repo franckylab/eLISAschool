@@ -29,6 +29,21 @@ export interface CreneauImposable {
     motif?: string;
 }
 
+/**
+ * Q7 — Config de matérialisation automatique des instances HeureCours.
+ * Chaque horaire déclenche la matérialisation [lundi S, dimanche S+1]
+ * clampée aux bornes de l'année scolaire EN_COURS.
+ */
+export interface HoraireMaterialisation {
+    jour: string;   // JourSemaine: LUNDI..SAMEDI
+    heure: string;  // "HH:MM"
+}
+
+export interface MaterialisationAutoConfig {
+    actif: boolean;
+    horaires: HoraireMaterialisation[];
+}
+
 @Entity('preferences_emploi_du_temps')
 @Index(['etablissementId'])
 export class PreferenceEmploiDuTemps {
@@ -145,6 +160,13 @@ export class PreferenceEmploiDuTemps {
      */
     @Column({ type: 'boolean', default: true })
     repartitionEquilibree!: boolean;
+
+    /**
+     * Q7 — Config matérialisation automatique (cron) : jours/heures multiples.
+     * Défaut (absente) : actif, samedi 21:00 + mercredi 21:00.
+     */
+    @Column({ type: 'jsonb', nullable: true })
+    materialisationAuto?: MaterialisationAutoConfig;
 
     @CreateDateColumn()
     createdAt!: Date;

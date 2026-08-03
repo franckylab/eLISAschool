@@ -51,10 +51,10 @@ export class CantineService {
         }
 
         const params = {
-            menuPlanningDays: await getParamNumber('cantine.menu_planning_days', 7),
-            allowPreorder: await getParamBoolean('cantine.allow_preorder', true),
-            maxDebt: await getParamNumber('cantine.max_debt', 10000),
-            currency: await getParam<string>('regional.currency', 'XOF'),
+            menuPlanningDays: await getParamNumber('cantine.menu_planning_days', { defaultValue: 7 }),
+            allowPreorder: await getParamBoolean('cantine.allow_preorder', { defaultValue: true }),
+            maxDebt: await getParamNumber('cantine.max_debt', { defaultValue: 10000 }),
+            currency: await getParam<string>('regional.currency', { defaultValue: 'XOF' }),
         };
 
         this.paramsCache.set(cacheKey, { value: params, timestamp: Date.now() });
@@ -154,7 +154,7 @@ export class CantineService {
         }
 
         // Vérifier si la validation est requise
-        const requireValidation = await getParamBoolean('cantine.require_validation', false);
+        const requireValidation = await getParamBoolean('cantine.require_validation', { defaultValue: false });
 
         const inscription: InscriptionCantine = this.inscriptionRepo.create({
             ...dto,

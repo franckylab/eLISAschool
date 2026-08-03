@@ -135,7 +135,7 @@ export function useEnseignantMoyenneEvaluations(enseignantId: string) {
                 `/api/personnel/evaluations/enseignants/${enseignantId}/moyenne-evaluations?dateDebut=${dateDebut}&dateFin=${dateFin}`
             );
             return {
-                moyenne: parseFloat(response.data?.moyenne) || 0,
+                moyenne: parseFloat(response.data?.moyenne ?? '0') || 0,
                 total: response.data?.nombreEvaluations || 0,
             };
         },
@@ -176,10 +176,10 @@ export function useEnseignantAssiduite(enseignantId: string) {
             );
             const d = response.data;
             return {
-                totalAbsences: d.totalAbsences ?? 0,
-                justifiees: d.absencesJustifiees ?? 0,
-                nonJustifiees: d.absencesNonJustifiees ?? 0,
-                tauxAbsenteisme: d.tauxPresence != null ? (100 - d.tauxPresence) / 100 : 0,
+                totalAbsences: d?.totalAbsences ?? 0,
+                justifiees: d?.absencesJustifiees ?? 0,
+                nonJustifiees: d?.absencesNonJustifiees ?? 0,
+                tauxAbsenteisme: d?.tauxPresence != null ? (100 - d.tauxPresence) / 100 : 0,
                 periode: { dateDebut, dateFin },
             } satisfies AssiduiteStats;
         },

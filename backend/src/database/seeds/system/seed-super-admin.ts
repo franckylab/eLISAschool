@@ -1,5 +1,5 @@
 import { AppDataSource } from '../../data-source';
-import { Utilisateur, ProfilUtilisateur, StatutUtilisateur, UtilisateurEtablissement, Role as RoleEntity } from '@modules/auth/entities';
+import { Utilisateur, ProfilUtilisateur, StatutUtilisateur, UtilisateurEtablissement, RoleEntity } from '@modules/auth/entities';
 import { Role } from '@shared/enums/roles.enum';
 import { logger } from '@common/utils/logger.util';
 

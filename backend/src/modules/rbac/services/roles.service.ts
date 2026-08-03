@@ -10,7 +10,7 @@
 
 import { Repository, In } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Role } from '@modules/auth/entities';
+import { RoleEntity as Role } from '@modules/auth/entities';
 import { Permission } from '@modules/auth/entities';
 import { UtilisateurEtablissement } from '@modules/auth/entities';
 import { Utilisateur } from '@modules/auth/entities';

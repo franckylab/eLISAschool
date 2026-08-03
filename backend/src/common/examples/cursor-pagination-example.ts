@@ -95,7 +95,8 @@ export class NotificationsInfiniteScrollController {
 
             res.status(200).json(response);
         } catch (error) {
-            res.status(400).json({ success: false, error: error.message });
+            const message = error instanceof Error ? error.message : 'Erreur inconnue';
+            res.status(400).json({ success: false, error: message });
         }
     }
 }
@@ -161,7 +162,8 @@ export class ChatController {
                 },
             });
         } catch (error) {
-            res.status(400).json({ success: false, error: error.message });
+            const message = error instanceof Error ? error.message : 'Erreur inconnue';
+            res.status(400).json({ success: false, error: message });
         }
     }
 }

@@ -44,6 +44,7 @@ import { initSondageCronJobs } from '@modules/sondages/cron-jobs';
 import { initAuthCronJobs } from '@modules/auth/cron-jobs';
 import { initClassesCronJobs } from '@modules/classes/cron-jobs';
 import { initAuditCronJobs } from '@modules/audit/cron-jobs';
+import { initEmploiDuTempsCronJobs } from '@modules/emploi-du-temps/cron-jobs';
 import { permissionResolverService } from '@modules/auth/services';
 
 // Chargement des variables d'environnement (déjà fait en haut du fichier)
@@ -129,7 +130,8 @@ async function bootstrap(): Promise<void> {
             initAuthCronJobs();
             initClassesCronJobs();
             initAuditCronJobs();
-            logger.info('✅ Cron jobs activés (notifications + finances + gamification + scoring personnel + sondages + auth + classes + audit)');
+            initEmploiDuTempsCronJobs();
+            logger.info('✅ Cron jobs activés (notifications + finances + gamification + scoring personnel + sondages + auth + classes + audit + emploi-du-temps)');
         } else {
             logger.info('ℹ️  Cron jobs désactivés (mode développement)');
             logger.info('💡 Pour activer: ENABLE_CRON_JOBS=true ou NODE_ENV=production');

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Save, Trash2 } from 'lucide-react';
+import { Save, Trash2, RefreshCw } from 'lucide-react';
 import { useCreateHeureCours, useUpdateHeureCours, useDeleteHeureCours } from '../hooks/use-heure-cours';
 import { useClasses } from '@/features/classes/hooks/use-classes';
 import { useMatieres } from '@/features/matieres/hooks/use-matieres';
@@ -39,6 +39,7 @@ interface FormData {
     salle: string;
     remplacantId: string;
     commentaire: string;
+    mettreAJourCreneau: boolean;
 }
 
 const emptyForm: FormData = {
@@ -51,6 +52,7 @@ const emptyForm: FormData = {
     salle: '',
     remplacantId: '',
     commentaire: '',
+    mettreAJourCreneau: false,
 };
 
 export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCancel }: HeureCoursFormModalProps) {
@@ -107,6 +109,7 @@ export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCa
                 salle: cours.salleId || '',
                 remplacantId: cours.remplacantId || '',
                 commentaire: cours.commentaire || '',
+                mettreAJourCreneau: false,
             });
         } else {
             setForm(emptyForm);
@@ -118,7 +121,7 @@ export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCa
     };
 
     const handleSubmit = async () => {
-        const payload: Partial<HeureCours> = {
+        const payload: Partial<HeureCours> & { mettreAJourCreneau?: boolean } = {
             date: form.date,
             heureDebut: form.heureDebut,
             heureFin: form.heureFin,
@@ -129,6 +132,12 @@ export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCa
             remplacantId: form.remplacantId || undefined,
             commentaire: form.commentaire || undefined,
         };
+
+        // Q6-C : case « mettre à jour aussi le créneau hebdo » — uniquement si l'instance
+        // est liée à un créneau (jamais automatique).
+        if (mode === 'edition' && cours?.creneauId && form.mettreAJourCreneau) {
+            payload.mettreAJourCreneau = true;
+        }
 
         if (mode === 'creation') {
             payload.enseignantId = enseignantId;
@@ -168,7 +177,7 @@ export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCa
                         <ElisaButton variant="outline" size="sm" onClick={onCancel} disabled={isPending}>
                             {t('form.annuler')}
                         </ElisaButton>
-                        <ElisaButton size="sm" icon={<Save className="h-4 w-4" />} onClick={handleSubmit} disabled={isPending} isLoading={isPending}>
+                        <ElisaButton size="sm" icon={<Save className="h-4 w-4" />} onClick={handleSubmit} disabled={isPending || (form.statutEffectue === 'REMPLACE' && !form.remplacantId)} isLoading={isPending}>
                             {mode === 'creation' ? t('heuresCours.creer') : t('form.enregistrer')}
                         </ElisaButton>
                     </div>
@@ -198,6 +207,32 @@ export function HeureCoursFormModal({ mode, enseignantId, cours, onSuccess, onCa
                         placeholder={t('heuresCours.placeholderCommentaire')}
                     />
                 </div>
+
+                {mode === 'edition' && cours?.creneauId && (
+                    <label className="flex items-start gap-2.5 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-3 cursor-pointer hover:bg-[var(--color-surface-hover)]/50 transition-colors">
+                        <input
+                            type="checkbox"
+                            checked={form.mettreAJourCreneau}
+                            onChange={e => setForm(prev => ({ ...prev, mettreAJourCreneau: e.target.checked }))}
+                            className="mt-0.5 h-4 w-4 accent-[var(--color-dominant-600)]"
+                        />
+                        <span className="text-sm">
+                            <span className="flex items-center gap-1.5 font-medium text-[var(--color-text-primary)]">
+                                <RefreshCw className="h-3.5 w-3.5" />
+                                {t('heuresCours.mettreAJourCreneau')}
+                            </span>
+                            <span className="text-xs text-[var(--color-text-muted)] mt-0.5 block">
+                                {t('heuresCours.mettreAJourCreneauAide')}
+                            </span>
+                        </span>
+                    </label>
+                )}
+
+                {form.statutEffectue === 'REMPLACE' && !form.remplacantId && (
+                    <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+                        {t('heuresCours.remplacantRequis')}
+                    </div>
+                )}
             </div>
         </CustomModal>
     );

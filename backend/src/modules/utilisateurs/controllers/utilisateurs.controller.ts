@@ -20,7 +20,7 @@ import {
     supprimerUtilisateurSchema,
 } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
-import { Role as RoleEntity, StatutUtilisateur } from '@modules/auth/entities';
+import { RoleEntity, StatutUtilisateur } from '@modules/auth/entities';
 import { Role } from '@shared/enums/roles.enum';
 import { AppError } from '@common/filters/error.filter';
 import { validateDto } from '@common/utils';

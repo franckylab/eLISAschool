@@ -1,5 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
+import { useHandleError } from '@/hooks/use-handle-error';
 
 export interface HeureCours {
     id: string;
@@ -7,6 +10,8 @@ export interface HeureCours {
     classeAnneeId: string;
     matiereId: string;
     periodeId?: string;
+    creneauId?: string;
+    affectationMatiereId?: string;
     salleId?: string;
     date: string;
     heureDebut: string;
@@ -15,6 +20,7 @@ export interface HeureCours {
     typeCreneau: 'COURS' | 'TP' | 'TD' | 'RECREATION' | 'ETUDE' | 'PERMANENCE' | 'AUTRE';
     commentaire?: string;
     remplacantId?: string;
+    updatedAt?: string;
     classeAnnee?: { id: string; classe?: { id: string; nom: string }; anneeScolaire?: { id: string; nom: string } };
     matiere?: { id: string; nom: string };
     periode?: { id: string; nom: string };
@@ -135,8 +141,17 @@ export function useDeleteHeureCours() {
     });
 }
 
+export interface GenererHeuresCoursResult {
+    created: number;
+    skipped: number;
+    errors: number;
+    total: number;
+}
+
 export function useGenererHeuresCoursFromEdt() {
     const queryClient = useQueryClient();
+    const { t } = useTranslation('personnel');
+    const handleError = useHandleError();
     return useMutation({
         mutationFn: async (payload: {
             enseignantId: string;
@@ -145,12 +160,16 @@ export function useGenererHeuresCoursFromEdt() {
             dateFin: string;
             periodeId?: string;
         }) => {
-            const response = await apiClient.post<{ created: number; skipped: number }>('/api/personnel/heures-cours/generer-from-edt', payload);
+            const response = await apiClient.post<GenererHeuresCoursResult>('/api/personnel/heures-cours/generer-from-edt', payload);
             return response.data;
         },
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['personnel', 'heures-cours', 'resume', variables.enseignantId] });
-            queryClient.invalidateQueries({ queryKey: ['personnel', 'heures-cours', 'edt', variables.enseignantId] });
+        onSuccess: (result) => {
+            queryClient.invalidateQueries({ queryKey: ['personnel', 'heures-cours'] });
+            queryClient.invalidateQueries({ queryKey: ['emploi-du-temps'] });
+            toast.success(t('heuresCours.generationReussie', { created: result?.created ?? 0, skipped: result?.skipped ?? 0 }));
+        },
+        onError: (err: unknown) => {
+            handleError(err, t('heuresCours.erreurGeneration'));
         },
     });
 }

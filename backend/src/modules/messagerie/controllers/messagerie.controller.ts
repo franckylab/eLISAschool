@@ -46,6 +46,7 @@ import { validateDto } from '@common/utils';
 import { Role } from '@modules/auth/entities';
 import { EmojiReaction, CategorieTemplate, TypeConversation } from '../entities';
 import { AppError } from '@common/filters/error.filter';
+import { logger } from '@common/utils/logger.util';
 
 const router = Router();
 
@@ -322,7 +323,7 @@ router.post('/templates', async (req: Request, res: Response, next: NextFunction
             dto.code,
             dto.titre,
             dto.contenu,
-            dto.categorie,
+            dto.categorie as CategorieTemplate,
             req.utilisateur!.etablissementId!
         );
         res.status(201).json({ success: true, data: template, timestamp: new Date().toISOString() });

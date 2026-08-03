@@ -111,6 +111,25 @@ export function EDTStandalonePage() {
     const { data: paginated, isLoading, error, refetch } = useCreneaux(filters);
     const creneaux = paginated?.items ?? [];
 
+    /** Affectations et salles déduites des créneaux chargés (pour le modal) */
+    const { affectationsDisponibles, sallesDisponibles } = useMemo(() => {
+        const affectationMap = new Map<string, { id: string; matiere?: { nom: string; code?: string }; enseignant?: { nom: string; prenom: string } }>();
+        const salleMap = new Map<string, { id: string; nom: string; code?: string }>();
+        for (const c of creneaux) {
+            if (c.affectationMatiereId && c.affectationMatiere && !affectationMap.has(c.affectationMatiereId)) {
+                affectationMap.set(c.affectationMatiereId, {
+                    id: c.affectationMatiere.id,
+                    matiere: c.affectationMatiere.matiere,
+                    enseignant: c.affectationMatiere.enseignant,
+                });
+            }
+            if (c.salleId && c.salle && !salleMap.has(c.salleId)) {
+                salleMap.set(c.salleId, { id: c.salle.id, nom: c.salle.nom, code: c.salle.code });
+            }
+        }
+        return { affectationsDisponibles: Array.from(affectationMap.values()), sallesDisponibles: Array.from(salleMap.values()) };
+    }, [creneaux]);
+
     const handleCreneauClick = (creneau: CreneauHoraire) => {
         setSelectedCreneau(creneau);
         setCreneauModalOpen(true);
@@ -388,6 +407,8 @@ export function EDTStandalonePage() {
                 onOpenChange={setCreneauModalOpen}
                 creneau={selectedCreneau}
                 etablissementId=""
+                affectations={affectationsDisponibles}
+                salles={sallesDisponibles}
                 onSuccess={() => refetch()}
             />
         </div>

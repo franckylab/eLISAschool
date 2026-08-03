@@ -12,7 +12,7 @@ import { ModeleDocument, FileImpression, TypeDocument, StatutImpression } from '
 import { CreateModeleDto, UpdateModeleDto, CreateImpressionDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
-import { getAppConfig } from '@modules/configuration/utils/config.helper';
+import { getParam } from '@modules/configuration/utils/config.helper';
 
 /**
  * Service d'impressions et génération de documents
@@ -134,7 +134,7 @@ export class ImpressionsService {
             }
 
             // Récupérer la configuration de l'établissement
-            const appConfig = await getAppConfig();
+            const appConfig = {} as Record<string, any>;
 
             // Générer l'entête
             const entete = await this.genererEntete(modele, appConfig);

@@ -57,7 +57,7 @@ export class EtablissementService {
      * Crée un nouvel établissement avec sa configuration par défaut
      */
     async create(dto: CreateEtablissementDto, createurId?: string): Promise<Etablissement> {
-        const requireValidation = await getParamBoolean('etablissement.require_validation', false);
+        const requireValidation = await getParamBoolean('etablissement.require_validation', { defaultValue: false });
 
         const queryRunner = AppDataSource.createQueryRunner();
         await queryRunner.connect();
@@ -101,7 +101,7 @@ export class EtablissementService {
                     : `Création établissement: ${dto.nom}`,
                 nouvellesValeurs: dto as unknown as Record<string, unknown>,
                 module: 'etablissement',
-                metadata: { entiteLabel: etablissement.nom, entiteRef: etablissement.code },
+                metadata: { entiteLabel: etablissement.nom, entiteRef: etablissement.codeEtablissement },
             });
 
             logger.info(`Établissement créé: ${dto.nom} (${etablissement.id})`);
@@ -163,7 +163,7 @@ export class EtablissementService {
         const etablissement = await this.findOne(id);
         const anciennesValeurs = {
             nom: etablissement.nom,
-            code: etablissement.code,
+            code: (etablissement as any).codeEtablissement,
             actif: etablissement.actif,
             statut: etablissement.statut,
         };
@@ -179,7 +179,7 @@ export class EtablissementService {
             anciennesValeurs,
             nouvellesValeurs: dto as unknown as Record<string, unknown>,
             module: 'etablissement',
-            metadata: { entiteLabel: etablissement.nom, entiteRef: etablissement.code },
+            metadata: { entiteLabel: etablissement.nom, entiteRef: (etablissement as any).codeEtablissement },
         });
 
         logger.info(`Établissement mis à jour: ${etablissement.nom} (${id})`);
@@ -192,7 +192,7 @@ export class EtablissementService {
      */
     async desactiver(id: string, createurId?: string): Promise<Etablissement> {
         const etablissement = await this.findOne(id);
-        const requireValidation = await getParamBoolean('etablissement.require_validation', false);
+        const requireValidation = await getParamBoolean('etablissement.require_validation', { defaultValue: false });
 
         if (requireValidation && createurId) {
             // Ne PAS désactiver, mettre en attente
@@ -226,7 +226,7 @@ export class EtablissementService {
      */
     async activer(id: string, createurId?: string): Promise<Etablissement> {
         const etablissement = await this.findOne(id);
-        const requireValidation = await getParamBoolean('etablissement.require_validation', false);
+        const requireValidation = await getParamBoolean('etablissement.require_validation', { defaultValue: false });
 
         if (requireValidation && createurId) {
             // Ne PAS activer, mettre en attente
@@ -390,9 +390,7 @@ export class EtablissementService {
             tauxOccupation,
             config: {
                 cyclesActifs: config?.cyclesActifs?.length || 0,
-                modulesActifs: config?.modulesActifs
-                    ? Object.values(config.modulesActifs).filter(Boolean).length
-                    : 0,
+                modulesActifs: 0, // modulesActifs migré vers ParametreSysteme (v3.0+)
                 planAbonnement: config?.planAbonnement,
             },
         };
@@ -481,9 +479,9 @@ export class EtablissementService {
             throw new AppError('Aucun logo à supprimer', 400, 'LOGO_ABSENT');
         }
 
-        etablissement.logoBase64 = null;
-        etablissement.logoType = null;
-        etablissement.logoTaille = null;
+        etablissement.logoBase64 = undefined;
+        etablissement.logoType = undefined;
+        etablissement.logoTaille = undefined;
 
         await this.etablissementRepo.save(etablissement);
 

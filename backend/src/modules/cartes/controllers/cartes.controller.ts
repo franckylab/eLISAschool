@@ -76,7 +76,7 @@ router.post('/:id/perte', async (req, res, next) => {
 router.get('/modeles', async (req, res, next) => {
     try {
         const type = req.query.type as string;
-        const modeles = await modeleCarteService.findAll(req.etablissementId, type);
+        const modeles = await modeleCarteService.findAll(req.etablissementId!, type);
         res.json({ success: true, data: modeles, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
 });
@@ -84,14 +84,14 @@ router.get('/modeles', async (req, res, next) => {
 router.post('/modeles', async (req, res, next) => {
     try {
         const dto = validateDto(createModeleCarteSchema, req.body);
-        const modele = await modeleCarteService.create(dto, req.etablissementId);
+        const modele = await modeleCarteService.create(dto, req.etablissementId!);
         res.status(201).json({ success: true, data: modele, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
 });
 
 router.get('/modeles/:id', async (req, res, next) => {
     try {
-        const modele = await modeleCarteService.findOne(req.params.id, req.etablissementId);
+        const modele = await modeleCarteService.findOne(req.params.id, req.etablissementId!);
         res.json({ success: true, data: modele, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
 });
@@ -99,14 +99,14 @@ router.get('/modeles/:id', async (req, res, next) => {
 router.patch('/modeles/:id', async (req, res, next) => {
     try {
         const dto = validateDto(updateModeleCarteSchema, req.body);
-        const modele = await modeleCarteService.update(req.params.id, dto, req.etablissementId);
+        const modele = await modeleCarteService.update(req.params.id, dto, req.etablissementId!);
         res.json({ success: true, data: modele, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
 });
 
 router.delete('/modeles/:id', async (req, res, next) => {
     try {
-        await modeleCarteService.delete(req.params.id, req.etablissementId);
+        await modeleCarteService.delete(req.params.id, req.etablissementId!);
         res.json({ success: true, message: 'Modèle supprimé', timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
 });
@@ -124,7 +124,7 @@ router.post('/batch/classe/:classeId', async (req, res, next) => {
         const result = await generationBatchService.genererCartesClasse(
             req.params.classeId,
             type,
-            req.etablissementId,
+            req.etablissementId!,
             modeleId,
             req.utilisateur?.id
         );
@@ -140,7 +140,7 @@ router.post('/batch/personnel', async (req, res, next) => {
         }
         const result = await generationBatchService.genererCartesPersonnel(
             type,
-            req.etablissementId,
+            req.etablissementId!,
             modeleId
         );
         res.json({ success: true, data: result, timestamp: new Date().toISOString() });

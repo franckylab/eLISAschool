@@ -40,6 +40,8 @@ export const creerCreneauSchema = z.object({
     notes: z.string().max(1000).optional(),
     periodeId: z.string().uuid().optional(),
     anneeScolaireId: z.string().uuid().optional(),
+    /** Q7 : autorise la matérialisation automatique des instances HeureCours (défaut true) */
+    genereAutomatiquement: z.boolean().optional(),
 }).refine(heureApresDebut, { message: 'L\'heure de fin doit être après l\'heure de début' });
 
 export const modifierCreneauSchema = z.object({
@@ -52,6 +54,9 @@ export const modifierCreneauSchema = z.object({
     statut: z.enum(Object.values(StatutCreneau) as [string, ...string[]]).optional(),
     couleur: z.string().length(7).nullable().optional(),
     notes: z.string().max(1000).optional(),
+    // Q5 : force la propagation même si des instances futures entrent en conflit
+    // (les instances en conflit sont exclues, rapport fourni au frontend).
+    propagerForce: z.boolean().optional(),
 }).refine(data => {
     if (data.heureDebut && data.heureFin) return heureApresDebut(data as { heureDebut: string; heureFin: string });
     return true;
@@ -101,6 +106,18 @@ export const creneauImposableSchema = z.object({
     motif: z.string().max(200).optional(),
 });
 
+/** Q7 — Horaire de matérialisation automatique (jour hebdo + heure) */
+export const horaireMaterialisationSchema = z.object({
+    jour: z.string().min(3).max(12),
+    heure: time('Format heure invalide (HH:MM)'),
+});
+
+/** Q7 — Config de matérialisation automatique (cron configurable) */
+export const materialisationAutoSchema = z.object({
+    actif: z.boolean(),
+    horaires: z.array(horaireMaterialisationSchema).min(1).max(14),
+});
+
 export const preferenceEmploiDuTempsSchema = z.object({
     heureDebutCours: optionalTime(),
     heureFinCours: optionalTime(),
@@ -126,6 +143,8 @@ export const preferenceEmploiDuTempsSchema = z.object({
     /** Créneaux imposables (exclusions fines) */
     creneauxImposables: z.array(creneauImposableSchema).optional(),
     repartitionEquilibree: z.boolean().optional(),
+    /** Q7 — Matérialisation automatique des instances HeureCours (cron) */
+    materialisationAuto: materialisationAutoSchema.optional(),
 }).transform((data) => {
     const normalized = { ...data } as Record<string, unknown>;
     if (data.dureeCreneauDefaut !== undefined && data.dureeCreneauStandard === undefined) {

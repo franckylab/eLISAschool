@@ -83,6 +83,117 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 ### Blocked
 — (none)
 
+## Travail effectué — Session 2026-08-03 (Lot 2 — Q7 matérialisation auto HeureCours + Q8 nettoyage)
+
+### Contexte
+Suite du grill Q1–Q8 : matérialisation automatique des instances HeureCours à partir des créneaux hebdomadaires. **Q8 (code mort)** terminé, **Q7 (matérialisation auto)** complet backend + frontend, vérifié par walkthrough API réel (8/8 verts).
+
+### Sémantique Q7 (décisions actées)
+- **`genereAutomatiquement`** = flag d'autorisation sur CreneauHoraire, **défaut `true`** (défaut DB `false` mais le service force `?? true` à la création ; le générateur EDT force `true`).
+- **Canal A** : à la validation (PLANIFIE→VALIDE), matérialisation des instances de la semaine courante → S+1, uniquement pour les créneaux flag-auto.
+- **Canal B** : cron **configurable par établissement** — `materialisationAuto` JSONB sur PreferenceEmploiDuTemps : `{actif, horaires: [{jour, heure}]}` (1..14 horaires, 7 jours, validation zod). **Défaut** : samedi 21:00 + mercredi 21:00. Garde journalière (1 run/jour/établissement).
+- **Plage** : `[lundi de la semaine courante, dimanche S+1]`, **clampée aux bornes de l'année scolaire EN_COURS** (`enCours=true` OU `statut=EN_COURS`, **tri `dateDebut DESC`** si plusieurs — doublon de données découvert au walkthrough). Hors bornes → ignoré proprement.
+- **Fuseau** : cron node-cron `timezone: 'Africa/Douala'` + calcul jour/heure/date via `Intl.DateTimeFormat` (fix bug : `new Date()` serveur = UTC → décalage 1h).
+
+### Backend (6 fichiers)
+- **`heure-cours.service.ts`** : coeur réutilisable `materialiserInstances({etablissementId, enseignantId?, classeAnneeId?, creneauIds?, dateDebut, dateFin, periodeId?, respecterFlagAuto?, createurId?, req?})` (anti-doublon + conflit enseignant conservés) ; `genererHeuresCoursFromEdt` délègue avec `respecterFlagAuto: false` ; nouvelle `materialiserSemainesCourantes()` (plage + clamp année + `respecterFlagAuto: true`).
+- **`emploi-du-temps.service.ts`** : `creerCreneau` → `genereAutomatiquement: dto.genereAutomatiquement ?? true` ; Canal A dans `validerCreneau` (creneauIds: [id]) et `validerCreneauxClasse` (creneauIds: idsAuto).
+- **`emploi-du-temps.dto.ts`** : `genereAutomatiquement: z.boolean().optional()` (création) ; `horaireMaterialisationSchema` + `materialisationAutoSchema` (horaires 1..14) dans `preferenceEmploiDuTempsSchema`.
+- **`preference-emploi-du-temps.entity.ts`** : interfaces `HoraireMaterialisation`/`MaterialisationAutoConfig` + colonne `materialisationAuto jsonb` (sauvegarde via Object.assign, inchangé).
+- **`cron-jobs.ts`** (nouveau) : `DEFAULT_MATERIALISATION_AUTO`, `materialiserSiNecessaire()` (garde journalière Map), `initEmploiDuTempsCronJobs()` (cron `'* * * * *'`, timezone Africa/Douala, try/catch par établissement).
+- **`index.ts`** : `initEmploiDuTempsCronJobs()` câblé. **Migration `140-materialisation-auto.sql`** (colonne jsonb, idempotente).
+- ⚠️ Index unique anti-doublon : **déjà existant** via migration 139 (`idx_heures_cours_no_dup` partiel `deletedAt IS NULL` + `idx_heures_cours_no_dup_manuel`) — rien à créer.
+
+### Q8 — Code mort supprimé (frontend)
+- `edt-heure-cours-modal.tsx` supprimé (+ export barrel) ; hooks `useValiderCreneau`/`useValiderCreneauxClasse` + type `ResultatValidationClasse` supprimés (**routes backend `POST /:id/valider` et `/valider-classe/:classeAnneeId` conservées**) ; clés i18n mortes (`creneauValide`, `classeValide`, `erreurValidation`) supprimées FR/EN.
+- **Filtres fantômes** `inclureHeuresCours`/`typeSource` supprimés de `CreneauFilters` + `onglet-edt.tsx` (le backend ne les a jamais traités — seule mention dans la migration 071).
+
+### Frontend Q7
+- **`edt-preferences.tsx`** : carte « Matérialisation automatique » — checkbox actif, lignes jour+heure (selects + time inputs), ajout/suppression d'horaires (max 14, min 1), bouton Réinitialiser mis à jour, `DEFAULT_MATERIALISATION_AUTO` local, i18n FR/EN (`preferences.materialisationAuto*`).
+- **`edt-creneau-modal.tsx`** : checkbox `genereAutomatiquement` (étape Identification, défaut true, payload création uniquement) + clé i18n `creneau.modal.genereAutomatiquement` FR/EN.
+- **`edt.types.ts`** : `PreferenceEDT.materialisationAuto?` typé.
+
+### Walkthrough API réel (SUPER_ADMIN, CM1) — 8/8 verts
+1. Validation créneau flag=true → **2 instances** (MARDI 4 + 11 août) ✅
+2. Créneau flag=false → validation → **0 instance** ✅
+3. `validerCreneauxClasse` → matérialise seulement les flag-auto (0 ici : les 2 validés étaient flag=false) ✅
+4. **Idempotence** : re-run → `2 ignorées`, aucun doublon ✅
+5. Garde année scolaire : hors bornes → « Matérialisation auto ignorée » ✅
+6. Config préférences PUT/GET + validation zod (15 horaires → 400 VALIDATION_ERROR) ✅
+7. Cron : config LUNDI 03:01 → déclenchement → **10 créées / 2 ignorées** ✅
+8. Garde journalière : re-déclenchement même jour → rien ✅
+- **Bug découvert/fixé** : fuseau cron (heure serveur UTC vs Africa/Douala) → `maintenantFuseau()` via Intl.
+- **Bug découvert (données)** : 2 années scolaires EN_COURS sur des établissements différents — comportement correct après tri DESC.
+- Données de test nettoyées : heures_cours restaurées à 13, créneaux de test supprimés, année scolaire et préférence restaurées.
+
+### Qualité
+- tsc backend : 0 nouvelle erreur (297 préexistantes hors périmètre, dont cron-jobs audit/auth `scheduled: true` TS2353). tsc frontend : 0 erreur in-scope. JSON i18n valides FR/EN.
+
+## Travail effectué — Session 2026-08-03 (suite — migration 141 soft delete + vérif instrumentation)
+
+### Migration `141-soft-delete-rh-organisation.sql` (créée + appliquée en local)
+- **19 tables** avec `deletedAt TIMESTAMP NULL` (ADD COLUMN IF NOT EXISTS, DO $$ idempotent) : les 13 entités D1 (personnel×6 : absences_personnel, evaluations_enseignants, heures_cours, affectations_postes, progressions_programme, indisponibilites_enseignants ; paie×4 : cotisations, types_primes, types_retenues, elements_salaire ; organisation×3 : unites_organisationnelles, postes, hierarchie_personnel) + tables RH/EDT déjà en soft delete créées via synchronize uniquement (membres_personnel, contrats_personnel, bulletins_paie, creneaux_horaires, annonces, backup_records).
+- **⚠️ Ordre staging/prod** : la migration 139 (index unique heures_cours, `WHERE "deletedAt" IS NULL`) exige la colonne sur heures_cours → appliquer la **141 AVANT la 139** (documenté en en-tête de la migration + Next Move).
+- Les migrations SQL ne sont PAS branchées sur TypeORM (`data-source.ts` sans glob migrations) → application manuelle via psql/docker (comme les 122–131).
+
+### Vérification instrumentation (Next Move items 4–5) — tout déjà présent
+- `bulletin-paie.service.ts` : 8 appels `auditService.log` (CREATE/UPDATE/DELETE/GENERATE/PUBLIE) ✅
+- `absence-personnel.service.ts` : 4 actions (CREATE/UPDATE/DELETE/JUSTIFIER) ✅
+- `evaluation.service.ts` (nom réel — pas evaluation-enseignant.service.ts) : 3 actions ✅
+- `progression-programme.service.ts` : 3 actions ✅
+- `indisponibilite-enseignant` : **entité sans service** (inerte, aucun CRUD exposé) → rien à instrumenter.
+
+### Qualité
+- Migration appliquée en local : 19 NOTICE « already exists, skipping » (colonnes créées par synchronize), exit 0, 20 tables avec deletedAt au total.
+
+## Travail effectué — Session 2026-08-03 (synchronisation CreneauHoraire ↔ HeureCours — Lot 1 complet)
+
+### Contexte
+Grill Q1–Q8 : synchronisation bidirectionnelle entre les créneaux hebdomadaires de l'EDT et les instances de cours datées. **Lot 1 (backend + frontend)** terminé et vérifié par walkthrough API réel. Lot 2 (matérialisation auto, nettoyage) à venir.
+
+### Sémantique retenue (Q1–Q6)
+- **Hybride à frontière temporelle (Q4)** : une instance suit le créneau si `statutEffectue = PLANIFIE` ET `date >= aujourd'hui` ; sinon figée (passée/effectuée/annulée).
+- **Propagation (Q2)** : modification jour/heure/salle/type du créneau → instances futures PLANIFIE alignées. **Suppression créneau** → instances futures PLANIFIE passent à `ANNULE` (+ motif en commentaire). **Régénération EDT** = soft delete des créneaux + ANNULE des instances liées.
+- **Conflits (Q5)** : dry-run AVANT toute écriture dans `updateCreneau` ; 409 `CONFLITS_PROPAGATION` avec `details.{ rapport }` ; mode `propagerForce` = exclure les instances en conflit.
+- **Q6-C** : case explicite `mettreAJourCreneau` (défaut OFF) — le PATCH d'une instance peut aussi mettre à jour le créneau hebdo + propager aux autres instances (instance courante exclue via `excludeInstanceIds`).
+
+### Backend (5 fichiers)
+- **`heure-cours.service.ts`** : types `ConflitPropagation`/`RapportPropagation{instancesQuiSuivent,instancesInchangees,conflits}`/`ChangementsPropagation` ; `propagerModificationCreneau` (2 passes : calcul+conflits sans écriture, puis `save(cibles)`) ; `annulerInstancesCreneaux` ; `appliquerModificationAuCreneau` (Q6-C, check hebdo `conflitDetectionService.detecterConflits` filtre BLOQUANT → 409 `CONFLITS_CRENEAU`) ; helpers `dateToString`/`toDate`/`lundiDeSemaine`/`jourVersIndex`/`jourDepuisDate` **tolérants `Date | string`** (le driver pg retourne les colonnes `date` en string — bug découvert au walkthrough).
+- **`heure-cours.dto.ts`** : `mettreAJourCreneau: z.boolean().optional()`.
+- **`heure-cours.controller.ts`** : PATCH → `{ data: heureCours, rapport }`.
+- **`emploi-du-temps.service.ts`** : `updateCreneau(id, dto, etablissementId, userId?, req?)` → `{ creneau, rapport }` — dry-run AVANT save **avec `force: propagerForce`** (sinon le service de propagation jetait avant le contrôle du 409 — fix walkthrough) ; `supprimerCreneau` → `{ instancesAnnulees }` ; `genererEmploiDuTemps` : ids → `softDelete().whereInIds()` + `annulerInstancesCreneaux` (motif régénération) si `options.regenerer`.
+- **`emploi-du-temps.dto.ts`** : `propagerForce: z.boolean().optional()`.
+
+### Frontend (8 fichiers)
+- **`edt.types.ts`** : `ConflitPropagation`, `RapportPropagation`, `ResultatUpdateCreneau{success,data,rapport?}`, `ChangementsCreneau`.
+- **`use-emploi-du-temps.ts`** : `useUpdateCreneau` accepte `propagerForce`, 409 silencieux (le composant gère le force), toasts `creneauModifiePropage`/`creneauSupprimeAvecInstances` ; `useSupprimerCreneau` → `{ instancesAnnulees }`. **Doublon `useGenererHeuresCoursFromEdt` supprimé** (ré-import depuis `personnel/hooks/use-heure-cours`, source unique).
+- **`edt-calendar.tsx`** : `soumettreModification` (mutateAsync + capture 409 → `forceRequest` + invalidation serveur) et `forcerPropagation` **déclarés AVANT `handleDragStart`** (TS2448/2454 — hoist) ; bannière force : `propagation.{conflitsTitre,conflitsMessage,forcer,annuler}` ; drag/resize passent par la soumission.
+- **`edt-creneau-modal.tsx`** : bouton Supprimer (danger, si édition) + `ConfirmationModal` (`propagation.supprimer*`) → DELETE + close ; onError PATCH 409 → toast message backend.
+- **`heure-cours-form-modal.tsx`** : checkbox `mettreAJourCreneau` (si `cours.creneauId`, payload conditionnel) + garde UI REMPLACE (avertissement + bouton disabled si pas de remplaçant).
+- **`use-heure-cours.ts`** : `HeureCours` + `creneauId?/affectationMatiereId?/updatedAt?` ; `useGenererHeuresCoursFromEdt` enrichi (type complet, toasts `heuresCours.generationReussie/erreurGeneration`, invalidation croisée `['personnel','heures-cours']` + `['emploi-du-temps']`).
+- **i18n** : `emplois.json` — bloc `propagation.*` (7 clés), toasts propagation ; `personnel.json` — `heuresCours.{mettreAJourCreneau,mettreAJourCreneauAide,remplacantRequis}`. Clé morte `toasts.heuresCoursGenerees` supprimée.
+
+### Bugs découverts au walkthrough réel (tous corrigés)
+1. **Colonnes `date` pg = strings** : `dateToString`/`lundiDeSemaine`/`jourDepuisDate` + l.643 `update()` (`.toISOString()` sur string) → tolérance `Date | string` + helper `toDate()`.
+2. **Dry-run sans force** : `propagerModificationCreneau` jetait 409 lui-même → le contrôle `propagerForce` du service EDT était mort ; `force: propagerForce` passé au dry-run.
+3. **Doublon `useGenererHeuresCoursFromEdt`** (personnel + emploi-du-temps) → unifié côté personnel.
+4. **TS2448/2454** : `soumettreModification` utilisé avant déclaration (drag/resize) → hoist + `return (` dupliqué nettoyé.
+
+### Walkthrough API réel (SUPER_ADMIN, CM1, 17 créneaux, 13 instances) — tout vert
+- PATCH créneau heureDebut/Fin → `rapport {1,0,[]}`, instance DB alignée ✅
+- Changement jour → 409 `CONFLITS_PROPAGATION` (1 suit / 1 conflit enseignant+classe exclue) ✅
+- `propagerForce:true` → créneau appliqué, conflit exclu, rapport complet ✅
+- DELETE créneau → `{ instancesAnnulees: 2 }`, instances `ANNULE` + motif « Créneau supprimé » ✅
+- PATCH instance `mettreAJourCreneau:true` → créneau + autres instances alignées (08:00-08:55) ✅
+- Gardes REMPLACE : `REMPLACANT_REQUIS` (sans id) / `REMPLACANT_INVALIDE` (id inexistant) ✅
+- PATCH instance en conflit → 409 `CRENEAU_CONFLIT` avec liste ✅
+- POST /generer `{options:{regenerer:true}}` → 3 créneaux recréés, anciens soft-deletés, instances ANNULE (motif régénération) ✅
+- Données de test nettoyées (7 lignes), heures_cours restaurées à 13.
+
+### Qualité
+- tsc frontend : 0 erreur in-scope (fichiers Lot 1). Backend : 0 nouvelle erreur (297 préexistantes hors périmètre — controller DonneesCreneau, PDF nom/prenom, salleNom, TS1064, PreferenceEmploiDuTemps).
+- 0 `any` nouveau, 0 couleur hardcodée, i18n FR/EN parité.
+
 ## Travail effectué — Session 2026-08-02 (EDT P2–P5 : preview, pointage, timeline, export)
 ### P2 : Génération progressive avec preview + résolution conflits
 - **Backend** : route `POST /api/emploi-du-temps/previsualiser` ajoutée au controller (dry-run, permission `emploi-du-temps:generer`). Service `previsualiserGeneration()` déjà existant.
@@ -477,11 +588,61 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 ## Next Move
 Indicateur de connexion réseau : ✅ implémenté (juillet 2026).
 Workflow de validation multi-niveaux (Option B) : ✅ intégré dans 6 pages détail (juillet 2026).
-1. **Tests** : phase dédiée après stabilisation (validation workflow + audit + indicateur réseau)
-2. **Migrations 122–131** + **142** : à appliquer sur staging/prod
-3. **Migration soft delete** : créer migration ajoutant `deletedAt TIMESTAMP NULL` sur les 13 entités (personnel×6, paie×5, organisation×3). Requise avant déploiement staging/prod.
-4. **Restaurer l'audit logging** dans `bulletins.service.ts` (génération + clôture bulletins) — actuellement non journalisé.
-5. **Instrumentation restante** : ajouter `auditService.log()` dans les services absence-personnel, évaluation-enseignant, indisponibilité-enseignant.
+1. **Tests** : ✅ phase complète le 2026-08-03 — **130/130 verts** (14 suites : matérialisation Q7, Canal A, Q6-C, `updateCreneau`, cron EDT, 3 suites réparées).
+2. **Migrations 122–145** : ✅ script `backend/scripts/apply-migrations-122-145.sh` prêt et vérifié (24/24 verts, idempotent, 2 passages OK en local le 2026-08-03). ⚠️ Ordre : la 139 (index unique heures_cours) référence `deletedAt` → appliquer la 141 (soft delete) AVANT la 139 (géré par le script). Garde 128 : skip automatique si volume horaire déjà en minutes (max > 48). Usage : `DB_HOST=... DB_PORT=... DB_USER=... DB_NAME=... DB_PASSWORD=... ./scripts/apply-migrations-122-145.sh` (le port 7002 est exposé sur l'hôte). **Corrections apportées au passage** (les migrations n'avaient jamais été exécutées en base — bugs détectés par le test local) : 138 + 142 → colonnes `action`/`libelle` NOT NULL ajoutées (convention rbac.seed : module=1er segment, action=reste), `role_id`→`"roleId"`/`"permissionId"` (camelCase), 142 sans `createdAt` (colonne inexistante) ; 144 → FK/CHECK idempotents (DROP IF EXISTS) + `parametres_systeme` corrigé (typeValeur/categorie/modifiableRuntime/visible/ordre, type inexistant supprimé) ; 145 → INSERT sans `"categorie"` (colonne inexistante) + garde WHERE NOT EXISTS ajoutée (doublon supprimé). Normalisation 2026-08-03 : `142-network-permissions.sql` + `143-heure-cours-updated-at.sql` déplacées de `src/database/migrations/` → `database/migrations/` ; legacy `139-workflows-validation` → **144-workflows-validation.sql**, `140-audit-enum-*` → **145-audit-enum-competences-apparence-groupes-finances.sql** (collision levée, déjà appliquées en base) ; doublons superseded supprimés (`141-soft-delete-columns`, `111`–`115` legacy refonte v2 — la 112/115 référençaient TypePersonnel supprimé).
+3. ✅ **Migration soft delete créée** : `141-soft-delete-rh-organisation.sql` (19 tables, idempotente, appliquée en local le 2026-08-03).
+4. ✅ **Audit logging bulletins** : déjà présent (`bulletin-paie.service.ts`, 8 appels CREATE/UPDATE/DELETE/GENERATE/PUBLIE).
+5. ✅ **Instrumentation** : absence-personnel (4 actions), evaluation.service (3 actions), progression-programme.service (3 actions) — toutes présentes. `indisponibilite-enseignant` = entité sans service (inerte).
+6. **Lancement tests** : `JWT_SECRET=<32+ chars> ENCRYPTION_KEY=<32 chars> npx jest` depuis `backend/` (le `.env` local a `JWT_SECRET=""` → parse zod échoue → fallback `dev_password`). Suite complète ~60s en parallèle.
+
+## Travail effectué — Session 2026-08-03 (phase Tests — 108/108 verts)
+
+### Contexte
+Phase Tests après stabilisation Q7/Q8 : 2 suites unitaires nouvelles (matérialisation + Canal A), 3 suites préexistantes réparées (refactoring v5.0 + API modifiées), config jest ajustée.
+
+### Nouveaux tests (2 fichiers, 17 tests)
+- **`test/unit/heure-cours-materialisation.spec.ts`** (12 tests) : `materialiserInstances` — filtre `genereAutomatiquement = true` + `statut = VALIDE` (assertions sur `andWhere`) ; 1 occurrence/semaine dans la plage (2 semaines → 2 instances, champs `create` vérifiés dont date du MARDI) ; bornage de plage (occurrence S+2 ignorée) ; anti-doublon `findOne` → skip ; conflit enseignant `getCount > 0` → skip ; affectation incomplète → skip ; aucun créneau → 0/0 ; 2 créneaux → 4 instances. `materialiserSemainesCourantes` — hors année (spy non appelé) ; délégation avec `respecterFlagAuto:true` + plage S→S+1 ; clamp fin de plage à `dateFin` de l'année ; `findOne` with where-array EN_COURS + `order dateDebut DESC`.
+- **`test/unit/emploi-du-temps-canal-a.spec.ts`** (5 tests) : `validerCreneau` — flag=true → save VALIDE + `materialiserSemainesCourantes({creneauIds:[id]})` ; flag=false → PAS de matérialisation ; statut≠PLANIFIE → 400 `STATUT_INVALIDE`. `validerCreneauxClasse` — `idsAuto` seulement (flag false exclu, autre classe exclue), `whereInIds` + update ; aucune classe → 0/0 sans requête.
+
+### Pattern mock (documenté)
+- **Mock partagé** : `const mockRepo = {...}` (variable préfixée `mock*` autorisée par le hoisting jest) + `getRepository: jest.fn(() => mockRepo)` → `this.repo` ET `edtRepo` sont le même objet → configuration unique des `findOne`/`createQueryBuilder`.
+- **QB unique** : `qbMock({getMany, getCount})` + `repo.createQueryBuilder.mockReturnValue(qb)` — un seul QB porte les deux méthodes (`mockReturnValueOnce` en séquence = fragile, éviter).
+- **Dates en TZ locale** : `lundiDeSemaine()` → minuit LOCAL (WAT UTC+1) → `toISOString()` décale d'un jour. Helper `isoLocal(d)` (getFullYear/getMonth/getDate) — jamais `toISOString()` pour les dates calculées localement.
+- **AppError** : champs `statusCode`/`code` (pas `status`).
+- **Aliases** : `jest.mock('@modules/...')` toujours (les chemins relatifs se résolvent depuis le fichier de TEST).
+
+### Suites préexistantes réparées (3 fichiers)
+- **`test/unit/fonctions.service.spec.ts`** : chemin `@modules/fonctions/...` → `@modules/organisation/services/fonctions.service` (refactoring v5.0) + mock `@modules/auth` (auditService). 4/4.
+- **`test/multi-tenant-isolation.test.ts`** : `beforeAll` idempotent (nettoyage competences→specialites→filieres→établissements TEST-001/002 — `delete({})` interdit en TypeORM → `createQueryBuilder().delete().execute()` ; l'`afterAll` d'origine a TOUJOURS échoué, cause cachée de la non-idempotence) ; `result.data.filter` → `result.items.filter` (PaginatedResult) ; beforeEach Spécialité nettoie spécialités+filieres (FK) ; test CASCADE adapté : la FK `filieres.etablissementId` est RESTRICT (pas ON DELETE CASCADE) → le test vérifie le BLOCAGE + l'intégrité (pas de changement de modèle). 13/13.
+- **`test/integration/configuration-multi-tenant.spec.ts`** : faux UUID `test-etablissement-uuid-123` → UUID réel (colonne `uuid`) ; `etablissementId` `undefined` → `toBeFalsy()` (le service retourne null) ; reset override : global créé avec valeur distincte avant l'override (fallback vérifiable) ; reset global : `valeurDefaut` posée via le repo avant reset (le service exige `NO_DEFAULT_VALUE` sinon). 16/16.
+
+### Config jest (`jest.config.ts`)
+- `testTimeout: 30000` (avantAll integration DB > 5s par défaut → timeouts).
+- `testPathIgnorePatterns: ['<rootDir>/tests/integration/']` : `corrections-academique.test.ts` est un script autonome (runTests + process.exit, zéro describe/it) — lancé via tsx, pas jest.
+
+### Environnement (important)
+- Le `.env` local a `JWT_SECRET=""` → parse zod échoue → fallback dev (`DB_PASSWORD=dev_password` → échec auth DB). Lancer les tests avec : `JWT_SECRET=... ENCRYPTION_KEY=... npx jest`.
+- `delete({})` est refusé par TypeORM — `createQueryBuilder().delete().execute()` à la place.
+- Résultat final : `npx jest` complet = **108 passés / 108** (11 suites), exit 0.
+
+## Travail effectué — Session 2026-08-03 (suite — tests Q6-C + cron : 130/130 verts)
+
+### Contexte
+Complément de la phase Tests : couverture unitaire Q6-C (propagation instance→créneau), `updateCreneau` (dry-run/409/force) et cron-jobs EDT (logique pure). Suite complète = **130/130 verts** (14 suites, ~60s parallèle).
+
+### Nouveaux tests (3 fichiers, 22 tests)
+- **`test/unit/heure-cours-q6c.spec.ts`** (9 tests) : `HeureCoursService.update` — sans `mettreAJourCreneau` → ni créneau ni propagation ; `mettreAJourCreneau:true` → creneauRepo.findOne (where `{id, etablissementId}` + relations) + spy `propagerModificationCreneau` appelé avec `{force:true, createurId, excludeInstanceIds:[hc.id]}` et changements `{jour:'LUNDI', heureDebut, heureFin}` ; sans créneauId → rapport absent, findOne 1 seul appel (garde dans `update()`, le retour vide d'`appliquerModificationAuCreneau` est défensif) ; 404 `CRENEAU_NOT_FOUND` ; 400 `JOUR_INVALIDE` (dimanche 2026-08-02) ; 409 `CONFLITS_CRENEAU` (severite BLOQUANT) sans écriture ; gardes REMPLACE `REMPLACANT_REQUIS` / `REMPLACANT_INVALIDE` ; 409 `CRENEAU_CONFLIT` au niveau instance (QB `getMany` overlap même enseignant/classe/salle).
+- **`test/unit/emploi-du-temps-update-creneau.spec.ts`** (5 tests) : `updateCreneau` — notes seules → save sans propagation ; 409 `CONFLITS_CRENEAU` bloquant sans écriture ; dry-run : `propagerModificationCreneau` appelé 1× avec `{dryRun:true, force:undefined}` puis 409 `CONFLITS_PROPAGATION` avec `details.rapport` ; `propagerForce:true` → save + 2 appels (dry-run force:true puis réel `{force:true, createurId}`) ; sans conflits → dry-run puis propagation réelle, rapport retourné, changements `{jour, heureDebut, heureFin, salleId, typeCreneau}` vérifiés. Mock `@modules/personnel/services` (heureCoursService) + `@modules/matieres/services/coefficient-resolver.service` + `@modules/salles/services/salle-availability.service` + `config.helper`.
+- **`test/unit/emploi-du-temps-cron.spec.ts`** (8 tests) : `materialiserSiNecessaire` — préférence créée par défaut (SAMEDI 21:00) + `materialiserSemainesCourantes({etablissementId})` ; config inactive → rien ; horaire non correspondant → rien ; garde journalière (Map module-level — **ids d'établissement uniques par test**, la Map persiste entre les tests) ; garde par établissement ; `DEFAULT_MATERIALISATION_AUTO` ; `initEmploiDuTempsCronJobs` — `cron.schedule('* * * * *', fn, {timezone:'Africa/Douala'})` capturé puis handler exécuté : try/catch par établissement (etab qui rejette ne bloque pas le suivant). Fake timers : `jest.useFakeTimers().setSystemTime(new Date('2026-08-08T21:00:00'))` — machine en WAT = Africa/Douala, pas de décalage.
+
+### Pièges rencontrés
+- **Cycle d'import** : `cron-jobs.ts` importe `./entities` → cascade creneau-horaire → affectation-matiere → classes → personnel → heure-cours → `TypeCreneau` undefined (barrel en cours d'évaluation) → crash `default: TypeCreneau.COURS`. Fix : `jest.mock('@modules/emploi-du-temps/entities', ...)` avec `JourSemaine` mocké (seul usage runtime) — la chaîne d'entités réelles n'est plus importée.
+- **Spy sur méthode privée** : `jest.spyOn(service as any, 'propagerModificationCreneau')` (prototype method) au lieu d'imports fantômes.
+- **Garde journalière** : Map module-level jamais réinitialisée → `jest.clearAllMocks()` ne la vide pas → ids d'établissement uniques par test.
+
+### Qualité
+- `npx tsc --noEmit` backend : 297 erreurs préexistantes inchangées (hors périmètre), **0 nouvelle** (dont cron-jobs EDT exporté `materialiserSiNecessaire`).
+- Résultat final : `npx jest` complet = **130 passés / 130** (14 suites), exit 0.
 
 ## Travail effectué — Session 2026-07-25 (grill-me organisation — UX, permissions, organigramme)
 ### Décisions validées
@@ -1758,7 +1919,7 @@ Amélioration du système d'audit/traçabilité : les auteurs n'étaient pas aff
 
 ### Corrections backend
 - **AuditAction enum** : ajout `VALIDATION_APPROUVE`, `VALIDATION_REJETE`
-- **Migration 139** : ajout ALTER TYPE pour audit_action_enum (2 noms PG possibles)
+- **Migration 144** (ex-139 legacy, renumerotée) : ajout ALTER TYPE pour audit_action_enum (2 noms PG possibles)
 - **`validation-workflow.service.ts`** : ajout des cas `Periode`, `AnneeScolaire`, `Bulletin` dans `appliquerEffetEntite()` ; fix `setParam()` arité
 - **`bulletins.service.ts`** : création auto de workflow quand `publie=true` et `require_validation`
 - **`personnel.service.ts`** : `updateStatut()` avance le workflow via `traiterValidation()` si workflow EN_COURS

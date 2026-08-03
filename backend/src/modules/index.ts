@@ -78,4 +78,7 @@ export * from './eleves';
 export * from './bulletins';
 export * from './responsables-eleves';
 export * from './diplomes-eleves';
+// Export explicite pour lever l'ambiguïté avec l'enum `CreneauHoraire` (classe.entity,
+// créneau MATIN/APRES_MIDI/JOURNEE_COMPLETE) : l'entité EDT prime via modules/index.
+export { CreneauHoraire } from './emploi-du-temps/entities/creneau-horaire.entity';
 export * from './emploi-du-temps';

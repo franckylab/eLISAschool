@@ -96,7 +96,7 @@ async function analyzePermissions(): Promise<PermissionAnalysis> {
     }
     
     // 5. Trouver les incohérences
-    const missingInEnum = Array.from(inDatabase).filter(p => !definedInEnum.has(p));
+    const missingInEnum = Array.from(inDatabase).filter(p => !definedInEnum.has(p as PermissionEnum));
     const missingInDatabase = Array.from(definedInEnum).filter(p => !inDatabase.has(p));
     const unusedInRoles = Array.from(definedInEnum).filter(p => !usedInRoles.has(p));
     

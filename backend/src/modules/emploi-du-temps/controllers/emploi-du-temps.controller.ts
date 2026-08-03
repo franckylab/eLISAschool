@@ -53,7 +53,7 @@ router.post('/previsualiser', authMiddleware, requirePermission('emploi-du-temps
 router.post('/generer', authMiddleware, requirePermission('emploi-du-temps:generer'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(genererEmploiDuTempsSchema, req.body);
-        const result = await emploiDuTempsService.genererEmploiDuTemps(dto, req.etablissementId!);
+        const result = await emploiDuTempsService.genererEmploiDuTemps(dto, req.etablissementId!, req.utilisateur?.id, req);
         return res.status(result.success ? 201 : 200).json({ success: result.success, message: result.message, data: { nombreCreneaux: result.nombreCreneaux, conflits: result.conflits } });
     } catch (error) { next(error); }
 });
@@ -215,31 +215,33 @@ router.get('/:id', authMiddleware, requirePermission('emploi-du-temps:view'), as
 router.patch('/:id', authMiddleware, requirePermission('emploi-du-temps:edit'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(modifierCreneauSchema, req.body);
-        const creneau = await emploiDuTempsService.updateCreneau(req.params.id, dto, req.etablissementId!);
+        const { creneau, rapport } = await emploiDuTempsService.updateCreneau(req.params.id, dto, req.etablissementId!, req.utilisateur?.id, req);
         await auditService.log({
             utilisateurId: req.utilisateur!.id,
             action: AuditAction.CRENEAU_UPDATE,
             cible: 'CreneauHoraire',
             cibleId: req.params.id,
-            description: 'Créneau modifié',
+            description: rapport
+                ? `Créneau modifié (propagation: ${rapport.instancesQuiSuivent} instance(s), ${rapport.instancesInchangees} inchangée(s), ${rapport.conflits.length} en conflit)`
+                : 'Créneau modifié',
             module: 'emploi-du-temps',
         });
-        return res.json({ success: true, data: creneau });
+        return res.json({ success: true, data: creneau, rapport });
     } catch (error) { next(error); }
 });
 
 router.delete('/:id', authMiddleware, requirePermission('emploi-du-temps:delete'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await emploiDuTempsService.supprimerCreneau(req.params.id, req.etablissementId!);
+        const { instancesAnnulees } = await emploiDuTempsService.supprimerCreneau(req.params.id, req.etablissementId!, req.utilisateur?.id, req);
         await auditService.log({
             utilisateurId: req.utilisateur!.id,
             action: AuditAction.CRENEAU_DELETE,
             cible: 'CreneauHoraire',
             cibleId: req.params.id,
-            description: 'Créneau supprimé',
+            description: `Créneau supprimé (${instancesAnnulees} instance(s) future(s) annulée(s))`,
             module: 'emploi-du-temps',
         });
-        return res.json({ success: true, message: 'Créneau supprimé' });
+        return res.json({ success: true, message: 'Créneau supprimé', data: { instancesAnnulees } });
     } catch (error) { next(error); }
 });
 

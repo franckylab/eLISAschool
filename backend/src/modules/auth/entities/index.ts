@@ -14,7 +14,8 @@ export { RefreshToken } from './refresh-token.entity';
 export { AuditLog, AuditAction, AuditSeverity } from './audit-log.entity';
 
 // RBAC v3.0 (Multi-tenant strict)
-export { Role } from './role.entity';  // Entité Role (TypeORM)
+export { Role } from '@shared/enums/roles.enum';  // Enum Role (source de vérité, remplace l'ancien export entité)
+export { Role as RoleEntity } from './role.entity';  // Entité TypeORM
 export { Permission } from './permission.entity';
 // DEPRECATED: UtilisateurRole supprimé - rôles gérés exclusivement via UtilisateurEtablissement
 export { UtilisateurPermission, TypePermission } from './utilisateur-permission.entity';

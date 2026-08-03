@@ -10,13 +10,14 @@
 -- ==================================
 
 -- 1. Insérer les 5 nouvelles permissions (idempotent)
-INSERT INTO permissions (code, libelle, module, description)
+-- Convention rbac.seed : module = premier segment du code, action = reste.
+INSERT INTO permissions (code, libelle, description, module, action, actif)
 VALUES
-    ('heures-cours:view', 'Consulter les heures de cours', 'personnel', 'Voir les créneaux, EDT enseignant, volume horaire'),
-    ('heures-cours:create', 'Créer une heure de cours', 'personnel', 'Créer un nouveau créneau de cours'),
-    ('heures-cours:edit', 'Modifier une heure de cours', 'personnel', 'Modifier un créneau existant'),
-    ('heures-cours:delete', 'Supprimer une heure de cours', 'personnel', 'Supprimer un créneau de cours'),
-    ('heures-cours:generate', 'Générer heures de cours depuis EDT', 'personnel', 'Générer en masse depuis les créneaux EDT')
+    ('heures-cours:view', 'Consulter les heures de cours', 'Voir les créneaux, EDT enseignant, volume horaire', 'heures-cours', 'view', true),
+    ('heures-cours:create', 'Créer une heure de cours', 'Créer un nouveau créneau de cours', 'heures-cours', 'create', true),
+    ('heures-cours:edit', 'Modifier une heure de cours', 'Modifier un créneau existant', 'heures-cours', 'edit', true),
+    ('heures-cours:delete', 'Supprimer une heure de cours', 'Supprimer un créneau de cours', 'heures-cours', 'delete', true),
+    ('heures-cours:generate', 'Générer heures de cours depuis EDT', 'Générer en masse depuis les créneaux EDT', 'heures-cours', 'generate', true)
 ON CONFLICT (code) DO NOTHING;
 
 -- 2. Attribuer les permissions aux rôles appropriés
@@ -40,7 +41,7 @@ BEGIN
             FOREACH p IN ARRAY perms_complet LOOP
                 SELECT id INTO perm_id FROM permissions WHERE code = p;
                 IF perm_id IS NOT NULL THEN
-                    INSERT INTO role_permissions (role_id, permission_id)
+                    INSERT INTO role_permissions ("roleId", "permissionId")
                     VALUES (role_id, perm_id)
                     ON CONFLICT DO NOTHING;
                 END IF;
@@ -55,7 +56,7 @@ BEGIN
             FOREACH p IN ARRAY perms_sans_generate LOOP
                 SELECT id INTO perm_id FROM permissions WHERE code = p;
                 IF perm_id IS NOT NULL THEN
-                    INSERT INTO role_permissions (role_id, permission_id)
+                    INSERT INTO role_permissions ("roleId", "permissionId")
                     VALUES (role_id, perm_id)
                     ON CONFLICT DO NOTHING;
                 END IF;
@@ -69,7 +70,7 @@ BEGIN
         IF role_id IS NOT NULL THEN
             SELECT id INTO perm_id FROM permissions WHERE code = 'heures-cours:view';
             IF perm_id IS NOT NULL THEN
-                INSERT INTO role_permissions (role_id, permission_id)
+                INSERT INTO role_permissions ("roleId", "permissionId")
                 VALUES (role_id, perm_id)
                 ON CONFLICT DO NOTHING;
             END IF;

@@ -55,10 +55,10 @@ export class NotificationsService {
 
         // Cache miss → DB
         const params = {
-            enablePush: await getParamBoolean('notifications.enable_push', true),
-            enableEmail: await getParamBoolean('notifications.enable_email', true),
-            enableSms: await getParamBoolean('notifications.enable_sms', false),
-            defaultChannel: await getParam<string>('notifications.default_channel', 'IN_APP'),
+            enablePush: await getParamBoolean('notifications.enable_push', { defaultValue: true }),
+            enableEmail: await getParamBoolean('notifications.enable_email', { defaultValue: true }),
+            enableSms: await getParamBoolean('notifications.enable_sms', { defaultValue: false }),
+            defaultChannel: await getParam<string>('notifications.default_channel', { defaultValue: 'IN_APP' }),
         };
 
         // Mettre en cache

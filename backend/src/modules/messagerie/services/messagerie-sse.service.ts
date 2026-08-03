@@ -271,7 +271,7 @@ export class MessagerieSSEService {
         // Redis pour TTL avec auto-cleanup
         if (isTyping) {
             const { getParamNumber } = await import('@modules/configuration/utils/config.helper');
-            const ttl = await getParamNumber('messagerie.typing_indicator_ttl', 5);
+            const ttl = await getParamNumber('messagerie.typing_indicator_ttl', { defaultValue: 5 });
             
             const redis = await redisService.getClient();
             const key = `messagerie:typing:${conversationId}:${userId}`;

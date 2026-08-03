@@ -14,7 +14,7 @@ import { ParametreSysteme, CategorieParametre, TypeValeurParametre } from '@modu
 
 describe('Configuration Multi-Tenant', () => {
     let dataSource: any;
-    let testEtablissementId = 'test-etablissement-uuid-123';
+    let testEtablissementId = '00000000-0000-4000-8000-000000000001';
 
     beforeAll(async () => {
         dataSource = await AppDataSource.initialize();
@@ -126,7 +126,7 @@ describe('Configuration Multi-Tenant', () => {
             );
             
             expect(param.cle).toBe('test.new_global');
-            expect(param.etablissementId).toBeUndefined();
+            expect(param.etablissementId).toBeFalsy();
         });
 
         it('doit créer un override établissement si etablissementId fourni', async () => {
@@ -156,6 +156,12 @@ describe('Configuration Multi-Tenant', () => {
 
     describe('resetParametre - Réinitialisation', () => {
         it('doit supprimer l\'override établissement', async () => {
+            // Créer un global (valeur distincte de l'override pour distinguer le fallback)
+            await configurationService.setParametre(
+                'test.reset_override',
+                'valeur_globale'
+            );
+
             // Créer un override
             await configurationService.setParametre(
                 'test.reset_override',
@@ -166,18 +172,26 @@ describe('Configuration Multi-Tenant', () => {
             // Réinitialiser
             await configurationService.resetParametre('test.reset_override', testEtablissementId);
             
-            // L'override doit être supprimé
+            // L'override doit être supprimé → fallback vers le global
             const value = await configurationService.getParametre(
                 'test.reset_override',
                 testEtablissementId
             );
-            // Doit fallback vers global ou null
-            expect(value).not.toBe('valeur_etablissement');
+            expect(value).toBe('valeur_globale');
         });
 
         it('doit réinitialiser le paramètre global vers valeurDefaut', async () => {
             // Créer avec valeurDefaut
             await configurationService.setParametre('test.reset_global', 'valeur_initiale');
+            
+            // Poser la valeur par défaut (stockée sur le paramètre)
+            const repo = AppDataSource.getRepository(ParametreSysteme);
+            const paramGlobal = await repo.findOne({ where: { cle: 'test.reset_global', etablissementId: null } });
+            expect(paramGlobal).toBeDefined();
+            if (paramGlobal) {
+                paramGlobal.valeurDefaut = JSON.stringify('valeur_initiale');
+                await repo.save(paramGlobal);
+            }
             
             // Modifier
             await configurationService.updateParametre('test.reset_global', {

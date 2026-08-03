@@ -32,6 +32,12 @@ import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { CreneauHoraire, PreferenceEmploiDuTemps, JourSemaine, TypeCreneau, StatutCreneau } from '../entities';
 import { TemplateEmploiDuTemps } from '../entities/template-emploi-du-temps.entity';
 import { conflitDetectionService } from './conflit-detection.service';
+import {
+    heureCoursService,
+    ChangementsPropagation,
+    RapportPropagation,
+} from '@modules/personnel/services';
+import { Request } from 'express';
 
 export class EmploiDuTempsService {
     private creneauRepo: Repository<CreneauHoraire>;
@@ -133,7 +139,7 @@ export class EmploiDuTempsService {
             periodeId: dto.periodeId,
             anneeScolaireId: dto.anneeScolaireId,
             etablissementId,
-            genereAutomatiquement: false,
+            genereAutomatiquement: dto.genereAutomatiquement ?? true,
         });
 
         await this.creneauRepo.save(creneau);
@@ -141,15 +147,24 @@ export class EmploiDuTempsService {
         return this.findOne(creneau.id, etablissementId);
     }
 
-    async updateCreneau(id: string, dto: ModifierCreneauDto, etablissementId: string): Promise<CreneauHoraire> {
+    async updateCreneau(
+        id: string,
+        dto: ModifierCreneauDto,
+        etablissementId: string,
+        userId?: string,
+        req?: Request,
+    ): Promise<{ creneau: CreneauHoraire; rapport?: RapportPropagation }> {
         const creneau = await this.findOne(id, etablissementId);
 
+        // Le flag de propagation ne doit pas être écrit sur l'entité
+        const { propagerForce, ...champs } = dto;
+
         // Vérifier les conflits si les champs critiques changent
-        const nouveauJour = (dto.jour || creneau.jour) as JourSemaine;
-        const nouveauDebut = dto.heureDebut || creneau.heureDebut;
-        const nouveauFin = dto.heureFin || creneau.heureFin;
-        const nouvelleSalle = dto.salleId !== undefined ? dto.salleId : creneau.salleId;
-        const nouvelleAffectation = dto.affectationMatiereId || creneau.affectationMatiereId;
+        const nouveauJour = (champs.jour || creneau.jour) as JourSemaine;
+        const nouveauDebut = champs.heureDebut || creneau.heureDebut;
+        const nouveauFin = champs.heureFin || creneau.heureFin;
+        const nouvelleSalle = champs.salleId !== undefined ? champs.salleId : creneau.salleId;
+        const nouvelleAffectation = champs.affectationMatiereId || creneau.affectationMatiereId;
 
         const conflits = await conflitDetectionService.detecterConflits(
             {
@@ -172,16 +187,67 @@ export class EmploiDuTempsService {
             );
         }
 
-        Object.assign(creneau, dto);
+        // Changements à propager aux instances futures PLANIFIE (Q2)
+        const changements: ChangementsPropagation = {};
+        if (champs.jour) changements.jour = champs.jour as JourSemaine;
+        if (champs.heureDebut) changements.heureDebut = champs.heureDebut;
+        if (champs.heureFin) changements.heureFin = champs.heureFin;
+        if (champs.salleId !== undefined) changements.salleId = champs.salleId;
+        if (champs.typeCreneau) changements.typeCreneau = champs.typeCreneau as TypeCreneau;
+
+        let rapport: RapportPropagation | undefined;
+        const aPropager = Object.keys(changements).length > 0;
+
+        if (aPropager) {
+            // Q5 : pré-validation (dry-run) AVANT toute écriture — atomique
+            // force est passé au dry-run pour que propagerModificationCreneau ne
+            // jette pas lui-même : le contrôle ci-dessous décide du 409.
+            rapport = await heureCoursService.propagerModificationCreneau(
+                creneau,
+                changements,
+                etablissementId,
+                { dryRun: true, force: propagerForce },
+            );
+            if (rapport.conflits.length > 0 && !propagerForce) {
+                throw new AppError(
+                    `${rapport.conflits.length} instance(s) future(s) en conflit après propagation — utilisez propagerForce pour les exclure`,
+                    409,
+                    'CONFLITS_PROPAGATION',
+                    true,
+                    { rapport },
+                );
+            }
+        }
+
+        Object.assign(creneau, champs);
         await this.creneauRepo.save(creneau);
+
+        if (aPropager) {
+            rapport = await heureCoursService.propagerModificationCreneau(
+                creneau,
+                changements,
+                etablissementId,
+                { force: propagerForce, createurId: userId, req },
+            );
+        }
+
         logger.info(`[CreneauHoraire] Créneau modifié: ${id}`);
-        return this.findOne(id, etablissementId);
+        return { creneau: await this.findOne(id, etablissementId), rapport };
     }
 
-    async supprimerCreneau(id: string, etablissementId: string): Promise<void> {
+    async supprimerCreneau(id: string, etablissementId: string, userId?: string, req?: Request): Promise<{ instancesAnnulees: number }> {
         const creneau = await this.findOne(id, etablissementId);
         await this.creneauRepo.softRemove(creneau);
+
+        // Q2 : les instances futures PLANIFIE du créneau passent à ANNULE
+        const instancesAnnulees = await heureCoursService.annulerInstancesCreneaux(
+            [id],
+            etablissementId,
+            { motif: 'Créneau supprimé', createurId: userId, req },
+        );
+
         logger.info(`[CreneauHoraire] Créneau supprimé (soft): ${id}`);
+        return { instancesAnnulees };
     }
 
     // ─── Workflow validation ────────────────────────────────────
@@ -199,6 +265,18 @@ export class EmploiDuTempsService {
 
         creneau.statut = StatutCreneau.VALIDE;
         await this.creneauRepo.save(creneau);
+
+        // Q7 Canal A : matérialisation auto des instances semaine courante → S+1
+        if (creneau.genereAutomatiquement) {
+            const resultat = await heureCoursService.materialiserSemainesCourantes({
+                etablissementId,
+                creneauIds: [creneau.id],
+            });
+            if (resultat.created > 0) {
+                logger.info(`[CreneauHoraire] Matérialisation auto après validation ${id}: ${resultat.created} instance(s)`);
+            }
+        }
+
         logger.info(`[CreneauHoraire] Créneau validé: ${id}`);
         return this.findOne(id, etablissementId);
     }
@@ -227,6 +305,21 @@ export class EmploiDuTempsService {
             .set({ statut: StatutCreneau.VALIDE })
             .whereInIds(ids)
             .execute();
+
+        // Q7 Canal A : matérialisation auto des créneaux à flag genereAutomatiquement
+        const idsAuto = creneauxClasse
+            .filter(c => c.genereAutomatiquement)
+            .map(c => c.id);
+        if (idsAuto.length > 0) {
+            const resultat = await heureCoursService.materialiserSemainesCourantes({
+                etablissementId,
+                creneauIds: idsAuto,
+                classeAnneeId,
+            });
+            if (resultat.created > 0) {
+                logger.info(`[EDT] Matérialisation auto après validation classe ${classeAnneeId}: ${resultat.created} instance(s)`);
+            }
+        }
 
         logger.info(`[EDT] ${creneauxClasse.length} créneau(x) validé(s) pour classeAnnee ${classeAnneeId}`);
         return { valide: creneauxClasse.length, total: creneauxClasse.length };
@@ -493,7 +586,12 @@ export class EmploiDuTempsService {
         };
     }
 
-    async genererEmploiDuTemps(dto: GenererEmploiDuTempsDto, etablissementId: string): Promise<{
+    async genererEmploiDuTemps(
+        dto: GenererEmploiDuTempsDto,
+        etablissementId: string,
+        userId?: string,
+        req?: Request,
+    ): Promise<{
         success: boolean;
         message: string;
         nombreCreneaux: number;
@@ -509,12 +607,28 @@ export class EmploiDuTempsService {
         }
 
         if (options?.regenerer) {
-            await this.creneauRepo
-                .createQueryBuilder()
-                .delete()
-                .where('affectationMatiereId IN (SELECT id FROM affectations_matieres WHERE "classeAnneeId" = :classeAnneeId)', { classeAnneeId })
-                .andWhere('etablissementId = :etablissementId', { etablissementId })
-                .execute();
+            // Récupérer les ids AVANT suppression (soft) pour annuler les instances liées
+            const idsASupprimer: Array<{ id: string }> = await this.creneauRepo
+                .createQueryBuilder('ch')
+                .select('ch.id', 'id')
+                .where('ch.affectationMatiereId IN (SELECT id FROM affectations_matieres WHERE "classeAnneeId" = :classeAnneeId)', { classeAnneeId })
+                .andWhere('ch.etablissementId = :etablissementId', { etablissementId })
+                .getRawMany();
+
+            const ids = idsASupprimer.map(r => r.id);
+            if (ids.length > 0) {
+                await this.creneauRepo
+                    .createQueryBuilder()
+                    .softDelete()
+                    .whereInIds(ids)
+                    .execute();
+                // Q2 : les instances futures PLANIFIE des créneaux régénérés passent à ANNULE
+                await heureCoursService.annulerInstancesCreneaux(
+                    ids,
+                    etablissementId,
+                    { motif: 'Régénération de l\'emploi du temps', createurId: userId, req },
+                );
+            }
         }
 
         const classeAnneeRepo = AppDataSource.getRepository(ClasseAnnee);

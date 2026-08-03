@@ -14,7 +14,7 @@ import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
 import { createRoleSchema, assignPermissionsToRoleSchema, batchRolePermissionsSchema } from '../dto/create-role.dto';
 import { successResponse } from '@common/utils/api-response.util';
-import { Role as RoleEntity } from '@modules/auth/entities';
+import { RoleEntity } from '@modules/auth/entities';
 
 const router = Router();
 

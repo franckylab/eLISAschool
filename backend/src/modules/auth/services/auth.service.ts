@@ -792,7 +792,7 @@ export class AuthService {
                 nom: profil.nom,
                 prenom: profil.prenom,
                 telephone: profil.telephone,
-                photo: profil.photo,
+                photo: profil.photoUrl ?? null,
             } : null,
         };
     }

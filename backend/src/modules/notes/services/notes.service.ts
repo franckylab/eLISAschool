@@ -445,7 +445,7 @@ export class NotesService {
     }
 
     async update(id: string, updateDto: UpdateNoteDto, utilisateurId: string, etablissementId?: string, req?: Request): Promise<Note> {
-        const note = await this.findOne(id, etablissementId);
+        let note = await this.findOne(id, etablissementId);
 
         // Vérifier le verrouillage de la période associée
         if (note.periodeId) {

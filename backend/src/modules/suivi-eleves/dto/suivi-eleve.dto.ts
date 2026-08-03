@@ -64,3 +64,9 @@ export const createFelicitationEleveSchema = z.object({
     visibleBulletin: z.boolean().default(true),
     visibleParent: z.boolean().default(true),
 });
+
+// Types inférés
+export type CreateIncidentEleveDto = z.infer<typeof createIncidentEleveSchema>;
+export type CreateObservationEleveDto = z.infer<typeof createObservationEleveSchema>;
+export type CreateSanctionEleveDto = z.infer<typeof createSanctionEleveSchema>;
+export type CreateFelicitationEleveDto = z.infer<typeof createFelicitationEleveSchema>;

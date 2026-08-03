@@ -1,6 +1,10 @@
 -- ============================================
--- Migration 139: Création table workflows_validation
+-- Migration 144: Création table workflows_validation
 -- ============================================
+-- ⚠️ Renumérotée depuis src/database/migrations/139-workflows-validation.sql
+-- (collision avec 139-index-unique-heures-cours.sql du dossier principal).
+-- Déplacée le 2026-08-03. Déjà appliquée en base.
+--
 -- Crée la table de workflow de validation multi-niveaux
 -- et ajoute les permissions manquantes pour les modules cibles.
 
@@ -58,6 +62,7 @@ CREATE INDEX IF NOT EXISTS idx_workflows_etablissement ON workflows_validation (
 CREATE INDEX IF NOT EXISTS idx_workflows_created_at ON workflows_validation ("createdAt");
 
 -- Contrainte FK établissement
+ALTER TABLE workflows_validation DROP CONSTRAINT IF EXISTS fk_workflows_etablissement;
 ALTER TABLE workflows_validation
     ADD CONSTRAINT fk_workflows_etablissement
     FOREIGN KEY ("etablissementId")
@@ -65,6 +70,7 @@ ALTER TABLE workflows_validation
     ON DELETE CASCADE;
 
 -- Contrainte FK dernierValidateur
+ALTER TABLE workflows_validation DROP CONSTRAINT IF EXISTS fk_workflows_dernier_validateur;
 ALTER TABLE workflows_validation
     ADD CONSTRAINT fk_workflows_dernier_validateur
     FOREIGN KEY ("dernierValidateurId")
@@ -72,6 +78,7 @@ ALTER TABLE workflows_validation
     ON DELETE SET NULL;
 
 -- Contrainte CHECK sur statut
+ALTER TABLE workflows_validation DROP CONSTRAINT IF EXISTS ck_workflows_statut;
 ALTER TABLE workflows_validation
     ADD CONSTRAINT ck_workflows_statut
     CHECK (statut IN ('EN_COURS', 'COMPLETEE', 'REJETEE', 'ANNULEE'));
@@ -80,8 +87,13 @@ ALTER TABLE workflows_validation
 -- PARTIE 2 : Permissions validation par module
 -- ============================================
 
-INSERT INTO permissions (code, description, module, "categorie")
-SELECT code, description, 'validation', categorie
+INSERT INTO permissions (code, libelle, description, module, action, actif)
+SELECT v.code,
+       v.code || ' la validation',
+       v.description,
+       'validation',
+       substr(v.code, 12), -- 'validation:' → action = reste du code
+       true
 FROM (VALUES
     ('validation:bulletins:level1', 'Valider les bulletins (niveau 1)', 'bulletins'),
     ('validation:bulletins:level2', 'Valider les bulletins (niveau 2)', 'bulletins'),
@@ -105,14 +117,14 @@ WHERE NOT EXISTS (SELECT 1 FROM permissions p WHERE p.code = v.code);
 -- PARTIE 3 : Config système require_validation
 -- ============================================
 
-INSERT INTO parametres_systeme (cle, valeur, type, description, "module")
-SELECT cle, valeur, 'boolean', description, 'validation'
+INSERT INTO parametres_systeme (cle, valeur, "typeValeur", categorie, description, module, "modifiableRuntime", visible, ordre)
+SELECT cle, valeur, 'BOOLEAN', 'MODULE', description, 'validation', true, true, ordre
 FROM (VALUES
-    ('bulletins.require_validation', 'true', 'Activer la validation des bulletins'),
-    ('personnel.require_validation', 'true', 'Activer la validation du personnel'),
-    ('matieres.require_validation', 'true', 'Activer la validation des matières'),
-    ('annees_scolaires.require_validation', 'true', 'Activer la validation des années scolaires'),
-    ('periodes.require_validation', 'true', 'Activer la validation des périodes'),
-    ('classes.require_validation', 'true', 'Activer la validation des classes')
-) AS v(cle, valeur, description)
+    ('bulletins.require_validation', 'true', 'Activer la validation des bulletins', 1),
+    ('personnel.require_validation', 'true', 'Activer la validation du personnel', 2),
+    ('matieres.require_validation', 'true', 'Activer la validation des matières', 3),
+    ('annees_scolaires.require_validation', 'true', 'Activer la validation des années scolaires', 4),
+    ('periodes.require_validation', 'true', 'Activer la validation des périodes', 5),
+    ('classes.require_validation', 'true', 'Activer la validation des classes', 6)
+) AS v(cle, valeur, description, ordre)
 WHERE NOT EXISTS (SELECT 1 FROM parametres_systeme p WHERE p.cle = v.cle);

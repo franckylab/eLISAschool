@@ -125,12 +125,14 @@ export class MessageReadService {
         const messageIds = conversationMessages.map(m => m.id);
 
         // Compter combien de ces messages sont marqués comme lus
-        const readInConversation = await this.readStatusRepo.count({
-            where: { 
-                utilisateurId,
-                messageId: messageIds.length > 0 ? messageIds : undefined,
-            },
-        });
+        const readInConversation = messageIds.length > 0
+            ? await this.readStatusRepo.count({
+                where: { 
+                    utilisateurId,
+                    messageId: messageIds as any,
+                },
+            })
+            : 0;
 
         return totalMessages - readInConversation;
     }

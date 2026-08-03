@@ -32,8 +32,8 @@ export class RequetesService {
      */
     private async getRequetesParams() {
         return {
-            approvalLevels: await getParamNumber('requetes.approval_levels', 1),
-            autoNotify: await getParamBoolean('requetes.auto_notify', true),
+            approvalLevels: await getParamNumber('requetes.approval_levels', { defaultValue: 1 }),
+            autoNotify: await getParamBoolean('requetes.auto_notify', { defaultValue: true }),
         };
     }
 

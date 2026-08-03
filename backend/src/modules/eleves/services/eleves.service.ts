@@ -40,7 +40,7 @@ export class ElevesService {
         if (userUsed) throw new AppError('Cet utilisateur est déjà lié à un dossier élève', 409, 'USER_ALREADY_LINKED');
 
         // Vérifier si le workflow de validation est requis
-        const requireValidation = await getParamBoolean('eleves.require_validation', false);
+        const requireValidation = await getParamBoolean('eleves.require_validation', { defaultValue: false });
 
         const eleve = this.repo.create({
             ...dto,

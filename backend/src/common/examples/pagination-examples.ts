@@ -93,7 +93,7 @@ interface Eleve {
 }
 
 export class EleveServiceExample {
-    private eleveRepository: Repository<Eleve>;
+    private eleveRepository!: Repository<Eleve>;
 
     /**
      * Méthode ANCienne (à ne plus utiliser)
@@ -152,7 +152,7 @@ export class NoteServiceExample {
      * Recherche complexe avec JOINs multiples
      * Utilise le COUNT optimisé pour de meilleures performances
      */
-    async findWithFilters(query: z.infer<typeof queryWithSortSchema> & {
+    async findWithFilters(query: z.infer<typeof paginationWithSortSchema> & {
         eleveId?: string;
         matiereId?: string;
         periodeId?: string;
@@ -198,7 +198,7 @@ export class UtilisateurControllerExample {
     async getUsers(req: Request, res: Response) {
         try {
             // 1. Valider les paramètres de requête
-            const query = queryWithSortSchema.parse(req.query);
+            const query = paginationWithSortSchema.parse(req.query);
 
             // 2. Appeler le service
             const service = new EleveServiceExample();
@@ -211,7 +211,8 @@ export class UtilisateurControllerExample {
             // const baseUrl = `${req.protocol}://${req.get('host')}${req.path}`;
             // sendPaginatedWithLinks(res, result, baseUrl, req.query);
         } catch (error) {
-            res.status(400).json({ success: false, error: error.message });
+            const message = error instanceof Error ? error.message : 'Erreur inconnue';
+            res.status(400).json({ success: false, error: message });
         }
     }
 }
@@ -279,7 +280,8 @@ export class ManualValidationExample {
             // Suite du traitement...
             res.json({ success: true, data: { page, limit } });
         } catch (error) {
-            res.status(400).json({ success: false, error: error.message });
+            const message = error instanceof Error ? error.message : 'Erreur inconnue';
+            res.status(400).json({ success: false, error: message });
         }
     }
 }

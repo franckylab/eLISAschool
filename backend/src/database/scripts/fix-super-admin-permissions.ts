@@ -12,7 +12,7 @@
  */
 
 import { AppDataSource } from '../data-source';
-import { Role, Permission } from '@modules/auth/entities';
+import { RoleEntity as Role, Permission } from '@modules/auth/entities';
 import { Permission as PermissionEnum } from '@shared/enums/roles.enum';
 import { logger } from '@common/utils/logger.util';
 

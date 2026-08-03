@@ -30,7 +30,6 @@ export function initAuthCronJobs(): void {
             logger.error('[Auth Cron] Erreur lors du nettoyage des tentatives', error);
         }
     }, {
-        scheduled: true,
         timezone: 'Africa/Douala'
     });
 

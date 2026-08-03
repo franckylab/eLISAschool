@@ -16,7 +16,7 @@ import { AppDataSource } from '../data-source';
 import {
     Utilisateur,
     UtilisateurEtablissement,
-    Role as RoleEntity,
+    RoleEntity,
     ProfilUtilisateur
 } from '@modules/auth/entities';
 import { Role } from '@shared/enums/roles.enum';
@@ -147,7 +147,7 @@ export async function corrigerIncoherencesSeeds(): Promise<CorrectionResult> {
                 });
                 
                 await profilRepo.save(newProfil);
-                result.statistiques.profilesCrees++;
+                result.statistiques.profilsCrees++;
                 
                 logger.debug(`✅ Profil créé pour ${u.email}`);
             }
@@ -282,7 +282,7 @@ export async function corrigerIncoherencesSeeds(): Promise<CorrectionResult> {
     logger.info('');
     logger.info('📈 Statistiques:');
     logger.info(`   Chefs supprimés:      ${result.statistiques.chefsSupprimes}`);
-    logger.info(`   Profils créés:        ${result.statistiques.profilesCrees}`);
+    logger.info(`   Profils créés:        ${result.statistiques.profilsCrees}`);
     logger.info(`   Paramètres scopés:    ${result.statistiques.parametresScopes}`);
     logger.info(`   Liaisons corrigées:   ${result.statistiques.liaisonsCorrigees}`);
     logger.info('');

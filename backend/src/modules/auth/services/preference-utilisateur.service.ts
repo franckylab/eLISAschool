@@ -321,7 +321,7 @@ export class PreferenceUtilisateurService {
         if (!pref && etablissementId) {
             // Si pas trouvé avec etablissementId, chercher sans (préférence globale)
             pref = await this.preferenceRepo.findOne({
-                where: { utilisateurId, cle, etablissementId: null },
+                where: { utilisateurId, cle, etablissementId: undefined as any },
             });
         }
 

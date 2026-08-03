@@ -23,7 +23,12 @@ jest.mock('@database/data-source', () => ({
   },
 }));
 
-import { FonctionsService } from '../../src/modules/fonctions/services/fonctions.service';
+jest.mock('@modules/auth', () => ({
+  auditService: { log: jest.fn() },
+  AuditAction: {},
+}));
+
+import { FonctionsService } from '../../src/modules/organisation/services/fonctions.service';
 
 describe('FonctionsService — détection de cycles arborescence', () => {
   let service: FonctionsService;

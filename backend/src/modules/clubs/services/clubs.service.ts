@@ -36,14 +36,14 @@ export class ClubsService {
      */
     private async getClubsParams() {
         return {
-            maxPerStudent: await getParamNumber('clubs.max_per_student', 3),
-            requireApproval: await getParamBoolean('clubs.require_approval', true),
+            maxPerStudent: await getParamNumber('clubs.max_per_student', { defaultValue: 3 }),
+            requireApproval: await getParamBoolean('clubs.require_approval', { defaultValue: true }),
         };
     }
 
     async createClub(dto: CreateClubDto, etablissementId?: string, createurId?: string): Promise<Club> {
         // Vérifier si le workflow de validation est requis
-        const requireValidation = await getParamBoolean('clubs.require_validation', false);
+        const requireValidation = await getParamBoolean('clubs.require_validation', { defaultValue: false });
 
         const club = this.clubRepo.create({
             ...dto,
@@ -113,7 +113,7 @@ export class ClubsService {
         if (existing) throw new AppError('Déjà inscrit', 409, 'ALREADY_ENROLLED');
 
         // Vérifier si le workflow de validation est requis pour les inscriptions
-        const requireValidation = await getParamBoolean('clubs.inscription_require_validation', false);
+        const requireValidation = await getParamBoolean('clubs.inscription_require_validation', { defaultValue: false });
 
         // Créer l'inscription avec approbation si requise
         const inscription = this.inscriptionRepo.create({

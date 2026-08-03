@@ -41,9 +41,9 @@ export class MessagerieCacheService {
      */
     async get<T>(key: string): Promise<T | null> {
         try {
-            const cached = await redisService.getJSON(key);
+            const cached = await redisService.getJSON<T>(key);
             if (cached) {
-                return cached.data as T;
+                return cached;
             }
             return null;
         } catch {
@@ -67,10 +67,9 @@ export class MessagerieCacheService {
      */
     async invalidateConversation(conversationId: string): Promise<void> {
         try {
-            // Pattern matching pour supprimer toutes les clés liées
             const keys = await redisService.keys(`messagerie:*:${conversationId}:*`);
-            if (keys.length > 0) {
-                await redisService.delMultiple(keys);
+            for (const key of keys) {
+                await redisService.del(key);
             }
         } catch (error) {
             logger.warn(`[Messagerie Cache] Échec invalidation conversation ${conversationId}`, error);
@@ -83,8 +82,8 @@ export class MessagerieCacheService {
     async invalidateUser(userId: string): Promise<void> {
         try {
             const keys = await redisService.keys(`messagerie:*:${userId}:*`);
-            if (keys.length > 0) {
-                await redisService.delMultiple(keys);
+            for (const key of keys) {
+                await redisService.del(key);
             }
         } catch (error) {
             logger.warn(`[Messagerie Cache] Échec invalidation user ${userId}`, error);
@@ -198,10 +197,10 @@ export class MessagerieCacheService {
     async clearAll(): Promise<void> {
         try {
             const keys = await redisService.keys('messagerie:*');
-            if (keys.length > 0) {
-                await redisService.delMultiple(keys);
-                logger.info(`[Messagerie Cache] ${keys.length} clés supprimées`);
+            for (const key of keys) {
+                await redisService.del(key);
             }
+            logger.info(`[Messagerie Cache] ${keys.length} clés supprimées`);
         } catch (error) {
             logger.warn('[Messagerie Cache] Échec clear all', error);
         }

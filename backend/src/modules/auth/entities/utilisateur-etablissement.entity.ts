@@ -86,7 +86,7 @@ export class UtilisateurEtablissement {
      * Date de fin d'affectation (null = indéterminée)
      */
     @Column({ type: 'timestamp', nullable: true })
-    dateFin?: Date;
+    dateFin?: Date | null;
 
     /**
      * Motif de l'affectation (optionnel)

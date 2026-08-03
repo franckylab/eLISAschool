@@ -16,8 +16,8 @@ import {
     Info, ChevronLeft,
 } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { useGenererHeuresCoursFromEdt } from '../hooks/use-emploi-du-temps';
-import type { GenererHeuresCoursResult } from '../hooks/use-emploi-du-temps';
+import { useGenererHeuresCoursFromEdt } from '@/features/personnel/hooks/use-heure-cours';
+import type { GenererHeuresCoursResult } from '@/features/personnel/hooks/use-heure-cours';
 
 interface EDTHeuresCoursModalProps {
     enseignantId: string;

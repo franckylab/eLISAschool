@@ -52,9 +52,9 @@ async function main(): Promise<void> {
         const seedService = new ConfigurationSeedService();
         logger.info('🌱 Exécution du seed de configuration (FORCE)...');
         
-        const result = await seedService.runAllSeeds(true); // force=true
+        const result = await seedService.runAllSeeds(undefined, true); // force=true
         
-        logger.info(`✅ Seed terminé: App=${result.app}, Modules=${result.modules}, Params=${result.parametres}`);
+        logger.info(`✅ Seed terminé: Modules=${result.modules}, Params=${result.parametres}`);
 
         await SeedDataSource.destroy();
         logger.info('🔌 Connexion fermée');

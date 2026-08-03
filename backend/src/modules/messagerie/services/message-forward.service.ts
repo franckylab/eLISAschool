@@ -99,7 +99,7 @@ export class MessageForwardService {
             }
 
             forwardedContent += `━━━ Message transféré ━━━\n`;
-            forwardedContent += `De: ${sourceMessage.expediteur?.prenom || 'Utilisateur'} ${sourceMessage.expediteur?.nom || ''}\n`;
+            forwardedContent += `De: ${(sourceMessage.expediteur as any)?.prenom || 'Utilisateur'} ${(sourceMessage.expediteur as any)?.nom || ''}\n`;
             forwardedContent += `Date: ${sourceMessage.createdAt.toLocaleString('fr-FR')}\n`;
             forwardedContent += `━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
             forwardedContent += sourceMessage.contenu;
@@ -118,7 +118,7 @@ export class MessageForwardService {
                     originalExpediteurId: sourceMessage.expediteurId,
                     forwardedAt: new Date().toISOString(),
                 },
-            });
+            } as any);
 
             await this.messageRepo.save(forwardedMessage);
             forwardedMessages.push(forwardedMessage);
@@ -183,7 +183,7 @@ export class MessageForwardService {
             if (participant.muet) continue;
 
             try {
-                await notificationTemplates.nouveauMessage(
+                await (notificationTemplates as any).nouveauMessage(
                     {
                         destinataireId: participant.utilisateurId,
                         etablissementId,
@@ -231,8 +231,8 @@ export class MessageForwardService {
         const forwards = await this.messageRepo.find({
             where: {
                 metadata: { forwardedFrom: messageId },
-            },
-            select: ['id', 'conversationId', 'expediteurId', 'createdAt', 'metadata'],
+            } as any,
+            select: ['id', 'conversationId', 'expediteurId', 'createdAt'] as any,
             order: { createdAt: 'DESC' },
         });
 

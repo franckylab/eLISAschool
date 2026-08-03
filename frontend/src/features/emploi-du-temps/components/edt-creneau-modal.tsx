@@ -10,12 +10,14 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BookOpen, Calendar, Clock, MapPin, CheckCircle2, AlertTriangle, ChevronRight, ChevronLeft } from 'lucide-react';
+import { BookOpen, Calendar, Clock, MapPin, CheckCircle2, AlertTriangle, ChevronRight, ChevronLeft, Trash2 } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { SectionSeparator } from '@/components/ui/SectionSeparator';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { toast } from 'sonner';
 import type { CreneauHoraire, JourSemaine, TypeCreneau, DonneesVerification } from '../types/edt.types';
-import { useVerifierConflits, useCreerCreneau, useUpdateCreneau } from '../hooks/use-emploi-du-temps';
+import { useVerifierConflits, useCreerCreneau, useUpdateCreneau, useSupprimerCreneau } from '../hooks/use-emploi-du-temps';
 
 interface AffectationOption {
     id: string;
@@ -52,6 +54,7 @@ interface FormData {
     salleId: string;
     notes: string;
     couleur: string;
+    genereAutomatiquement: boolean;
 }
 
 const FORM_INIT: FormData = {
@@ -63,16 +66,19 @@ const FORM_INIT: FormData = {
     salleId: '',
     notes: '',
     couleur: '',
+    genereAutomatiquement: true,
 };
 
 export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatiereId, etablissementId: _etablissementId, affectations = [], salles = [], onSuccess }: EDTCreneauModalProps) {
     const { t } = useTranslation('emplois');
     const [step, setStep] = useState(1);
     const [form, setForm] = useState<FormData>(FORM_INIT);
+    const [confirmSuppression, setConfirmSuppression] = useState(false);
 
     const verifierConflits = useVerifierConflits();
     const creerCreneau = useCreerCreneau();
     const updateCreneau = useUpdateCreneau();
+    const supprimerCreneau = useSupprimerCreneau();
 
     const isEdit = !!creneau;
 
@@ -89,6 +95,7 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
                     salleId: creneau.salleId ?? '',
                     notes: creneau.notes ?? '',
                     couleur: creneau.couleur ?? '',
+                    genereAutomatiquement: creneau.genereAutomatiquement ?? true,
                 });
             } else {
                 setForm({ ...FORM_INIT, affectationMatiereId: affectationMatiereId ?? '' });
@@ -119,6 +126,11 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
     }, [step, form.affectationMatiereId, form.jour, form.heureDebut, form.heureFin, form.salleId, creneau?.id]);
 
     const handleSubmit = () => {
+        if (!form.affectationMatiereId) {
+            toast.error(t('creneau.modal.erreurAffectationRequise'));
+            setStep(1);
+            return;
+        }
         const dto = {
             affectationMatiereId: form.affectationMatiereId,
             jour: form.jour,
@@ -128,12 +140,21 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
             salleId: form.salleId || undefined,
             notes: form.notes || undefined,
             couleur: form.couleur || undefined,
+            ...(isEdit ? {} : { genereAutomatiquement: form.genereAutomatiquement }),
         };
 
         if (isEdit && creneau) {
             updateCreneau.mutate(
                 { id: creneau.id, ...dto },
-                { onSuccess: () => { onOpenChange(false); onSuccess?.(); } }
+                {
+                    onSuccess: () => { onOpenChange(false); onSuccess?.(); },
+                    onError: (err: unknown) => {
+                        const e = err as { code?: string; message?: string };
+                        if (e?.code === 'CONFLITS_PROPAGATION' && e.message) {
+                            toast.error(e.message);
+                        }
+                    },
+                }
             );
         } else {
             creerCreneau.mutate(dto, {
@@ -143,6 +164,23 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
     };
 
     const update = (partial: Partial<FormData>) => setForm(prev => ({ ...prev, ...partial }));
+
+    /** Validation par étape — empêche navigation et soumission si champs requis absents */
+    const etapeValidee = (etape: number): boolean => {
+        if (etape === 1) return !!form.affectationMatiereId;
+        if (etape === 2) return !!form.heureDebut && !!form.heureFin;
+        return true;
+    };
+
+    const avancer = () => {
+        if (!etapeValidee(step)) {
+            if (step === 1 && !form.affectationMatiereId) {
+                toast.error(t('creneau.modal.erreurAffectationRequise'));
+            }
+            return;
+        }
+        setStep(s => Math.min(3, s + 1));
+    };
 
     return (
         <CustomModal
@@ -158,12 +196,14 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
                     {[1, 2, 3].map(s => (
                         <button
                             key={s}
-                            onClick={() => setStep(s)}
+                            onClick={() => { if (s <= step || etapeValidee(step)) setStep(s); }}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                                 s === step
                                     ? 'bg-[var(--color-dominant-600)] text-white'
                                     : s < step
                                     ? 'bg-success/20 text-success'
+                                    : !etapeValidee(step) && s > step
+                                    ? 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] cursor-not-allowed opacity-50'
                                     : 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)]'
                             }`}
                         >
@@ -224,6 +264,19 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
                                 onChange={e => update({ couleur: e.target.value })}
                                 className="h-10 w-20 rounded-lg border border-[var(--color-border)] cursor-pointer"
                             />
+                        </div>
+
+                        <div className="md:col-span-2 flex items-center gap-3">
+                            <input
+                                type="checkbox"
+                                id="genere-automatiquement"
+                                checked={form.genereAutomatiquement}
+                                onChange={e => update({ genereAutomatiquement: e.target.checked })}
+                                className="w-5 h-5 rounded border-[var(--color-border)] text-[var(--color-dominante)] focus:ring-[var(--color-dominante)]"
+                            />
+                            <label htmlFor="genere-automatiquement" className="text-sm text-[var(--color-text-primary)] cursor-pointer">
+                                {t('creneau.modal.genereAutomatiquement')}
+                            </label>
                         </div>
                     </div>
                 )}
@@ -371,16 +424,27 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
 
                 {/* Navigation */}
                 <div className="flex items-center justify-between pt-4 border-t border-[var(--color-border)]">
-                    <ElisaButton
-                        variant="ghost"
-                        onClick={() => setStep(s => Math.max(1, s - 1))}
-                        disabled={step === 1}
-                    >
-                        <ChevronLeft className="h-4 w-4 mr-1" /> {t('precedent')}
-                    </ElisaButton>
+                    <div className="flex items-center gap-2">
+                        {isEdit && (
+                            <ElisaButton
+                                variant="danger"
+                                onClick={() => setConfirmSuppression(true)}
+                                disabled={supprimerCreneau.isPending}
+                            >
+                                <Trash2 className="h-4 w-4 mr-1" /> {t('supprimer')}
+                            </ElisaButton>
+                        )}
+                        <ElisaButton
+                            variant="ghost"
+                            onClick={() => setStep(s => Math.max(1, s - 1))}
+                            disabled={step === 1}
+                        >
+                            <ChevronLeft className="h-4 w-4 mr-1" /> {t('precedent')}
+                        </ElisaButton>
+                    </div>
 
                     {step < 3 ? (
-                        <ElisaButton variant="primary" onClick={() => setStep(s => Math.min(3, s + 1))}>
+                        <ElisaButton variant="primary" onClick={avancer}>
                             {t('suivant')} <ChevronRight className="h-4 w-4 ml-1" />
                         </ElisaButton>
                     ) : (
@@ -394,6 +458,26 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
                     )}
                 </div>
             </div>
+
+            {/* Q2 : confirmation suppression — avertissement instances futures annulées */}
+            <ConfirmationModal
+                isOpen={confirmSuppression}
+                title={t('propagation.supprimerTitre')}
+                message={t('propagation.supprimerMessage')}
+                details={t('propagation.supprimerDetails')}
+                variant="danger"
+                confirmLabel={t('supprimer')}
+                cancelLabel={t('annuler')}
+                isLoading={supprimerCreneau.isPending}
+                onConfirm={async () => {
+                    if (!creneau) return;
+                    await supprimerCreneau.mutateAsync(creneau.id);
+                    setConfirmSuppression(false);
+                    onOpenChange(false);
+                    onSuccess?.();
+                }}
+                onCancel={() => setConfirmSuppression(false)}
+            />
         </CustomModal>
     );
 }

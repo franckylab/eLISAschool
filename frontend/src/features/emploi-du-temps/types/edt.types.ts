@@ -80,8 +80,6 @@ export interface CreneauFilters {
     anneeScolaireId?: string;
     periodeId?: string;
     genereAutomatiquement?: boolean;
-    inclureHeuresCours?: boolean;
-    typeSource?: 'creneau' | 'heure_cours';
     page?: number;
     limit?: number;
     orderBy?: string;
@@ -107,6 +105,11 @@ export interface PreferenceEDT {
     pauseApresMidiFin?: string | null;
     creneauxImposables?: CreneauImposable[];
     repartitionEquilibree: boolean;
+    /** Q7 — Matérialisation automatique des instances HeureCours (cron) */
+    materialisationAuto?: {
+        actif: boolean;
+        horaires: { jour: string; heure: string }[];
+    };
     createdAt?: string;
     updatedAt?: string;
 }
@@ -157,13 +160,6 @@ export interface TemplateEDT {
     actif: boolean;
     estPartage: boolean;
     createdAt: string;
-}
-
-// ─── Validation ─────────────────────────────────────
-
-export interface ResultatValidationClasse {
-    valide: number;
-    total: number;
 }
 
 // ─── Statistiques ───────────────────────────────────
@@ -251,4 +247,37 @@ export interface AuditConflitsResult {
     conflitsBloquants: number;
     avertissements: number;
     conflits: AuditConflitDetail[];
+}
+
+// ─── Propagation créneau → instances (grill-me 2026-08-03) ───
+
+export type TypeConflitInstance = 'ENSEIGNANT' | 'CLASSE' | 'SALLE';
+
+export interface ConflitPropagation {
+    date: string;
+    type: TypeConflitInstance;
+    message: string;
+}
+
+export interface RapportPropagation {
+    instancesQuiSuivent: number;
+    instancesInchangees: number;
+    conflits: ConflitPropagation[];
+}
+
+export interface ResultatUpdateCreneau {
+    success: boolean;
+    data: CreneauHoraire;
+    rapport?: RapportPropagation;
+}
+
+export interface ChangementsCreneau {
+    jour?: JourSemaine;
+    heureDebut?: string;
+    heureFin?: string;
+    salleId?: string | null;
+    typeCreneau?: TypeCreneau;
+    couleur?: string | null;
+    notes?: string;
+    propagerForce?: boolean;
 }

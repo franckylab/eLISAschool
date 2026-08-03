@@ -19,7 +19,7 @@ export class MessagerieOnlineStatusService {
      */
     async setOnline(userId: string): Promise<void> {
         try {
-            const ttl = await getParamNumber('messagerie.online_status_ttl', 60);
+            const ttl = await getParamNumber('messagerie.online_status_ttl', { defaultValue: 60 });
             await redisService.set(`messagerie:online:${userId}`, '1', ttl);
             
             // Notifier via SSE

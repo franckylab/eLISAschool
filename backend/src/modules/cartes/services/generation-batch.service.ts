@@ -185,8 +185,8 @@ export class GenerationBatchService {
 
     private async getCartesParams() {
         return {
-            enableQRCode: await getParamBoolean('cartes.enable_qrcode', true),
-            validityMonths: await getParamNumber('cartes.validity_months', 12),
+            enableQRCode: await getParamBoolean('cartes.enable_qrcode', { defaultValue: true }),
+            validityMonths: await getParamNumber('cartes.validity_months', { defaultValue: 12 }),
         };
     }
 

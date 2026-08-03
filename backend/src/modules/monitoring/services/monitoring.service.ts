@@ -99,7 +99,7 @@ export class MonitoringService {
             },
             database: await this.getDatabaseStatus(),
             application: {
-                version: await getParam('app.version', '1.0.0'),
+                version: await getParam('app.version', { defaultValue: '1.0.0' }),
                 nodeVersion: process.version,
                 environment: process.env.NODE_ENV || 'development',
                 pid: process.pid,
@@ -310,7 +310,7 @@ export class MonitoringService {
      * Mode maintenance
      */
     async isMaintenanceMode(): Promise<boolean> {
-        return getParamBoolean('system.maintenance_mode', false);
+        return getParamBoolean('system.maintenance_mode', { defaultValue: false });
     }
 
     async setMaintenanceMode(enabled: boolean): Promise<void> {

@@ -59,4 +59,4 @@ export function registerModuleRoutes(app: Application, routes: ModuleRoute[]): v
   }
 }
 
-export default { registerModuleRoutes, ModuleRoute };
+export default { registerModuleRoutes };

@@ -31,7 +31,7 @@ export function initGamificationCronJobs(): void {
     // ========================================
     cron.schedule('0 23 * * *', async () => {
         try {
-            const enabled = await getParamBoolean('gamification.auto_attendance', true);
+            const enabled = await getParamBoolean('gamification.auto_attendance', { defaultValue: true });
             if (!enabled) {
                 logger.info('🎮 [Cron] Attribution assiduité désactivée, skip...');
                 return;
@@ -43,7 +43,7 @@ export function initGamificationCronJobs(): void {
             const eleveRepo = AppDataSource.getRepository(Eleve);
             const eleves = await eleveRepo.find({
                 select: ['utilisateurId', 'id', 'nom', 'prenom'],
-                where: { actif: true },
+                where: {} as any,
             });
 
             let successCount = 0;

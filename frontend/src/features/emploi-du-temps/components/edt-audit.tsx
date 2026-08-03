@@ -15,7 +15,7 @@ import {
     Users, Building2, BookOpen, Filter,
 } from 'lucide-react';
 import { useAuditConflits } from '../hooks/use-emploi-du-temps';
-import type { AuditConflitDetail, TypeConflit, SeveriteConflit } from '../types/edt.types';
+import type { AuditConflitDetail, TypeConflit } from '../types/edt.types';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ElisaButton } from '@/components/ui/ElisaButton';

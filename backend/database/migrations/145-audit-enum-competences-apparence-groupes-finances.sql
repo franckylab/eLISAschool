@@ -1,6 +1,10 @@
 -- ============================================
--- Migration 140: Audit enum — compétences, groupes, finances, diplômes, examens
+-- Migration 145: Audit enum — compétences, groupes, finances, diplômes, examens
 -- ============================================
+-- ⚠️ Renumérotée depuis src/database/migrations/140-audit-enum-*.sql
+-- (collision avec 140-materialisation-auto.sql du dossier principal).
+-- Déplacée le 2026-08-03. Déjà appliquée en base.
+--
 -- Ajoute les nouvelles valeurs AuditAction pour les modules non instrumentés.
 -- Ajoute les permissions audit:{module}:view correspondantes.
 
@@ -338,8 +342,13 @@ END $$;
 -- PARTIE 2 : Permissions audit:{module}:view
 -- ============================================
 
-INSERT INTO permissions (code, description, module, "categorie")
-SELECT code, description, 'audit', categorie
+INSERT INTO permissions (code, libelle, description, module, action, actif)
+SELECT v.code,
+       v.description,
+       v.description,
+       'audit',
+       substr(v.code, 7), -- 'audit:' → action = reste du code
+       true
 FROM (VALUES
     ('audit:competences:view', 'Voir l historien des competences', 'competences'),
     ('audit:diplomes-eleves:view', 'Voir l historien des diplomes élèves', 'diplomes-eleves'),

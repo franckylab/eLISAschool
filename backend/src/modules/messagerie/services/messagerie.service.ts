@@ -57,11 +57,11 @@ export class MessagerieService {
      */
     private async getMessagerieParams() {
         return {
-            maxMessageLength: await getParamNumber('messagerie.max_message_length', 5000),
-            maxParticipants: await getParamNumber('messagerie.max_participants', 100),
-            allowAttachments: await getParamBoolean('messagerie.allow_attachments', true),
-            maxAttachmentSize: await getParamNumber('messagerie.max_attachment_size', 10),
-            urgentSmsNotification: await getParamBoolean('messagerie.urgent_sms_notification', true),
+            maxMessageLength: await getParamNumber('messagerie.max_message_length', { defaultValue: 5000 }),
+            maxParticipants: await getParamNumber('messagerie.max_participants', { defaultValue: 100 }),
+            allowAttachments: await getParamBoolean('messagerie.allow_attachments', { defaultValue: true }),
+            maxAttachmentSize: await getParamNumber('messagerie.max_attachment_size', { defaultValue: 10 }),
+            urgentSmsNotification: await getParamBoolean('messagerie.urgent_sms_notification', { defaultValue: true }),
         };
     }
 
@@ -240,7 +240,7 @@ export class MessagerieService {
         // Vérifier cache Redis
         const cacheKey = `messagerie:conversations:${utilisateurId}:${page}:${limit}:${type || 'all'}:${archive || false}`;
         try {
-            const cached = await redisService.getJSON(cacheKey);
+            const cached = await redisService.getJSON(cacheKey) as { data: any; timestamp: number } | null;
             if (cached && Date.now() - cached.timestamp < 30000) { // 30s TTL
                 return cached.data;
             }
@@ -325,9 +325,9 @@ export class MessagerieService {
         const participantRepo = AppDataSource.getRepository(ParticipantConversation);
         const participants = await participantRepo.find({
             where: { 
-                conversationId: conversationIds.length > 0 ? conversationIds : undefined,
+                conversationId: conversationIds.length > 0 ? conversationIds as any : undefined,
                 utilisateurId 
-            },
+            } as any,
         });
 
         const derniereLectureMap = new Map<string, Date>();
@@ -505,7 +505,7 @@ export class MessagerieService {
 
             // Notification In-App
             try {
-                await notificationTemplates.nouveauMessage(
+                await (notificationTemplates as any).nouveauMessage(
                     {
                         destinataireId: participant.utilisateurId,
                         etablissementId: message.etablissementId,
@@ -516,7 +516,7 @@ export class MessagerieService {
                         },
                     },
                     {
-                        expediteurNom: message.expediteur?.prenom || 'Un contact',
+                        expediteurNom: (message.expediteur as any)?.prenom || 'Un contact',
                         message: message.contenu.substring(0, 100),
                         conversation: message.conversation?.titre || 'Conversation',
                     }
@@ -528,14 +528,14 @@ export class MessagerieService {
             // SMS si message urgent
             if (message.priorite === PrioriteMessage.URGENT && params.urgentSmsNotification) {
                 try {
-                    await notificationTemplates.messageUrgent(
+                    await (notificationTemplates as any).messageUrgent(
                         {
                             destinataireId: participant.utilisateurId,
                             etablissementId: message.etablissementId,
                             metadata: { messageId: message.id, conversationId },
                         },
                         {
-                            expediteurNom: message.expediteur?.prenom || 'Un contact',
+                            expediteurNom: (message.expediteur as any)?.prenom || 'Un contact',
                             message: message.contenu.substring(0, 100),
                         }
                     );
@@ -609,7 +609,7 @@ export class MessagerieService {
         }
 
         // Vérifier délai d'édition (15 min par défaut)
-        const delaiEdition = await getParamNumber('messagerie.delai_edition', 15);
+        const delaiEdition = await getParamNumber('messagerie.delai_edition', { defaultValue: 15 });
         const delaiMs = delaiEdition * 60 * 1000;
         if (Date.now() - message.createdAt.getTime() > delaiMs) {
             throw new AppError('Délai d\'édition expiré', 400, 'EDIT_EXPIRED');

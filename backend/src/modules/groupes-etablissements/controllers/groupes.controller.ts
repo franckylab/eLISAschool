@@ -17,7 +17,7 @@ import {
     addEtablissementSchema,
     addAdminSchema,
 } from '../dto';
-import { authMiddleware, requirePermission, requirePermission } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { requireGroupeAccess } from '../guards/groupe-access.guard';
 import { Role } from '@shared/enums/roles.enum';
 import { validateDto } from '@common/utils';

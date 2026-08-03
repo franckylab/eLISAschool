@@ -58,7 +58,7 @@ export class PreferenceUtilisateur {
 
     /** Établissement associé (NULL = préférence globale utilisateur) */
     @Column({ type: 'uuid', nullable: true })
-    etablissementId?: string;
+    etablissementId?: string | null;
 
     /** Clé de la préférence (ex: 'theme', 'langue', 'notifications.email') */
     @Column({ type: 'varchar', length: 100 })

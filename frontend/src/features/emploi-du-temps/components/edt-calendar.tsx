@@ -21,10 +21,10 @@ import {
     type DragStartEvent,
     type DragEndEvent,
 } from '@dnd-kit/core';
-import { User, MapPin, GripVertical, AlertTriangle } from 'lucide-react';
+import { User, MapPin, GripVertical, AlertTriangle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUpdateCreneau, useVerifierConflits } from '../hooks/use-emploi-du-temps';
-import type { CreneauHoraire, JourSemaine, DonneesVerification, Conflit } from '../types/edt.types';
+import type { CreneauHoraire, JourSemaine, DonneesVerification, Conflit, RapportPropagation } from '../types/edt.types';
 
 interface EDTCalendarProps {
     creneaux: CreneauHoraire[];
@@ -89,6 +89,7 @@ export function EDTCalendar({
 
     const [activeDragId, setActiveDragId] = useState<string | null>(null);
     const [conflitsPreview, setConflitsPreview] = useState<Conflit[]>([]);
+    const [forceRequest, setForceRequest] = useState<{ id: string; dto: Record<string, unknown>; rapport: RapportPropagation } | null>(null);
     const resizeRef = useRef<{ creneauId: string; startY: number; startMinutes: number } | null>(null);
 
     // ─── Indicateur temps réel ────────────────────────
@@ -140,6 +141,30 @@ export function EDTCalendar({
         setActiveDragId(event.active.id as string);
         setConflitsPreview([]);
     }, []);
+
+    /**
+     * Soumet une modification de créneau. Q5 : si le backend renvoie 409
+     * CONFLITS_PROPAGATION (instances futures en conflit), on garde la demande
+     * et on propose à l'utilisateur de forcer (exclure les instances en conflit).
+     */
+    const soumettreModification = useCallback(async (creneauId: string, dto: Record<string, unknown>) => {
+        try {
+            await updateMutation.mutateAsync({ id: creneauId, ...dto });
+        } catch (err: unknown) {
+            const e = err as { code?: string; details?: { rapport?: RapportPropagation } };
+            if (e?.code === 'CONFLITS_PROPAGATION' && e.details?.rapport) {
+                setForceRequest({ id: creneauId, dto, rapport: e.details.rapport });
+            }
+            // Échec : restaure les données serveur (l'optimistic update reste affiché sinon)
+            queryClient.invalidateQueries({ queryKey: ['emploi-du-temps'] });
+        }
+    }, [queryClient, updateMutation]);
+
+    const forcerPropagation = useCallback(() => {
+        if (!forceRequest) return;
+        updateMutation.mutate({ id: forceRequest.id, ...forceRequest.dto, propagerForce: true });
+        setForceRequest(null);
+    }, [forceRequest, updateMutation]);
 
     const handleDragEnd = useCallback(async (event: DragEndEvent) => {
         setActiveDragId(null);
@@ -207,13 +232,12 @@ export function EDTCalendar({
             }
         );
 
-        updateMutation.mutate({
-            id: creneauId,
+        soumettreModification(creneauId, {
             jour: targetJour as JourSemaine,
             heureDebut: targetHeure,
             heureFin: newHeureFin,
         });
-    }, [creneaux, endMin, queryClient, t, updateMutation, verifierConflits]);
+    }, [creneaux, endMin, queryClient, t, verifierConflits, soumettreModification]);
 
     const handleResizeStart = useCallback((creneauId: string, e: React.PointerEvent) => {
         e.stopPropagation();
@@ -270,13 +294,13 @@ export function EDTCalendar({
                 return;
             }
 
-            updateMutation.mutate({ id: creneauId, heureFin: finalHeureFin });
+            soumettreModification(creneauId, { heureFin: finalHeureFin });
             resizeRef.current = null;
         };
 
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onUp);
-    }, [creneaux, endMin, pasMinutes, queryClient, updateMutation]);
+    }, [creneaux, endMin, pasMinutes, queryClient, soumettreModification]);
 
     return (
         <DndContext
@@ -426,6 +450,42 @@ export function EDTCalendar({
                 <div className="mt-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center gap-2 text-sm text-destructive">
                     <AlertTriangle className="h-4 w-4 shrink-0" />
                     {t('conflitDetection.conflitsDetectes', { count: conflitsPreview.length })}
+                </div>
+            )}
+
+            {/* Q5 : proposition de forcer la propagation en excluant les instances en conflit */}
+            {forceRequest && (
+                <div className="mt-3 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
+                    <div className="flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-warning" />
+                        <div className="flex-1">
+                            <p className="font-semibold text-foreground">
+                                {t('propagation.conflitsTitre')}
+                            </p>
+                            <p className="text-secondary mt-0.5">
+                                {t('propagation.conflitsMessage', {
+                                    count: forceRequest.rapport.conflits.length,
+                                })}
+                            </p>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                                <button
+                                    type="button"
+                                    onClick={forcerPropagation}
+                                    className="inline-flex items-center gap-1.5 rounded-lg bg-warning px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+                                >
+                                    <RefreshCw className="h-3.5 w-3.5" />
+                                    {t('propagation.forcer')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setForceRequest(null)}
+                                    className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-secondary hover:bg-surface-hover transition-colors"
+                                >
+                                    {t('propagation.annuler')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
         </DndContext>

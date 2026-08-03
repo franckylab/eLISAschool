@@ -67,8 +67,12 @@ router.delete('/:id', authMiddleware, async (req: Request, res: Response, next: 
 router.get('/active', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const anneeScolaireId = req.query.anneeScolaireId as string;
+        const etablissementId = req.utilisateur!.etablissementId;
+        if (!etablissementId) {
+            throw new AppError('Établissement non défini', 400, 'ETABLISSEMENT_REQUIRED');
+        }
         const data = await configurationScoringService.getActiveConfig(
-            req.utilisateur!.etablissementId,
+            etablissementId,
             anneeScolaireId
         );
         res.json({ success: true, data });

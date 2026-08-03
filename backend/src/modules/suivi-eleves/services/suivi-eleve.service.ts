@@ -12,6 +12,7 @@ import {
     SanctionEleve,
     FelicitationEleve,
     StatutSanction,
+    StatutIncident,
 } from '../entities';
 import {
     CreateIncidentEleveDto,
@@ -65,7 +66,7 @@ export class SuiviEleveService {
             declarantId,
             etablissementId,
             dateIncident: new Date(),
-        });
+        }) as IncidentEleve;
         await this.incidentRepo.save(incident);
         
         // Audit trail
@@ -116,7 +117,7 @@ export class SuiviEleveService {
             ...dto,
             observateurId,
             etablissementId,
-        });
+        }) as ObservationEleve;
         await this.observationRepo.save(observation);
         
         // Attribution points gamification si pointsImpact != 0
@@ -198,7 +199,7 @@ export class SuiviEleveService {
             statut: (requireValidation && sanctionGrave) 
                 ? StatutSanction.EN_ATTENTE_VALIDATION 
                 : StatutSanction.PRONONCEE,
-        });
+        }) as SanctionEleve;
         
         await this.sanctionRepo.save(sanction);
         
@@ -223,7 +224,7 @@ export class SuiviEleveService {
         
         // Mettre à jour l'incident associé
         await this.incidentRepo.update(dto.incidentId, {
-            statut: 'SANCTIONNE',
+            statut: StatutIncident.SANCTIONNE,
             sanctionId: sanction.id,
         });
 
@@ -250,7 +251,7 @@ export class SuiviEleveService {
             ...dto,
             attribueParId,
             etablissementId,
-        });
+        }) as FelicitationEleve;
         await this.felicitationRepo.save(felicitation);
         
         // Attribution points gamification
@@ -259,7 +260,7 @@ export class SuiviEleveService {
             const utilisateurId = await this.getUtilisateurIdFromEleveId(dto.eleveId);
             
             // Récupérer les points configurés ou utiliser ceux du DTO
-            const pointsConfig = await getParamNumber('suivi-eleves.gamification.points_felicitations', dto.pointsBonus || 10);
+            const pointsConfig = await getParamNumber('suivi-eleves.gamification.points_felicitations', { defaultValue: dto.pointsBonus || 10 });
             const points = dto.pointsBonus || pointsConfig;
             
             await gamificationService.attribuerPoints({

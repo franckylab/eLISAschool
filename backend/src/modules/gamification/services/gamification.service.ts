@@ -38,9 +38,9 @@ export class GamificationService {
      */
     private async getGamificationParams() {
         return {
-            pointsAttendance: await getParamNumber('gamification.points_attendance', 5),
-            pointsGoodGrade: await getParamNumber('gamification.points_good_grade', 10),
-            enableLeaderboard: await getParamBoolean('gamification.enable_leaderboard', true),
+            pointsAttendance: await getParamNumber('gamification.points_attendance', { defaultValue: 5 }),
+            pointsGoodGrade: await getParamNumber('gamification.points_good_grade', { defaultValue: 10 }),
+            enableLeaderboard: await getParamBoolean('gamification.enable_leaderboard', { defaultValue: true }),
         };
     }
 

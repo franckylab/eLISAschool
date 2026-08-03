@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Clock, Calendar, BarChart3, Loader2, Check } from 'lucide-react';
+import { Clock, Calendar, BarChart3, Loader2, Check, RefreshCw, Plus, Trash2 } from 'lucide-react';
 import { usePreferencesEDT, useUpdatePreferencesEDT } from '../hooks/use-emploi-du-temps';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { PageSkeleton } from '@/components/ui/Skeleton';
@@ -16,6 +16,15 @@ const JOURS_SEMAINE = [
     { value: 'VENDREDI', labelKey: 'calendrier.vendredi' },
     { value: 'SAMEDI', labelKey: 'calendrier.samedi' },
 ] as const;
+
+/** Q7 — Défaut backend : samedi 21:00 + mercredi 21:00 */
+const DEFAULT_MATERIALISATION_AUTO = {
+    actif: true,
+    horaires: [
+        { jour: 'SAMEDI', heure: '21:00' },
+        { jour: 'MERCREDI', heure: '21:00' },
+    ],
+};
 
 export function EDTPreferencesPage() {
     const { t } = useTranslation('emplois');
@@ -32,6 +41,7 @@ export function EDTPreferencesPage() {
         maxCreneauxMatiereParJour: 2,
         maxCreneauxConsecutifs: 2,
         repartitionEquilibree: true,
+        materialisationAuto: DEFAULT_MATERIALISATION_AUTO,
     });
 
     useEffect(() => {
@@ -46,6 +56,7 @@ export function EDTPreferencesPage() {
                 maxCreneauxMatiereParJour: preferences.maxCreneauxMatiereParJour || 2,
                 maxCreneauxConsecutifs: preferences.maxCreneauxConsecutifs || 2,
                 repartitionEquilibree: preferences.repartitionEquilibree ?? true,
+                materialisationAuto: preferences.materialisationAuto ?? DEFAULT_MATERIALISATION_AUTO,
             });
         }
     }, [preferences]);
@@ -77,7 +88,40 @@ export function EDTPreferencesPage() {
             maxCreneauxMatiereParJour: formData.maxCreneauxMatiereParJour,
             maxCreneauxConsecutifs: formData.maxCreneauxConsecutifs,
             repartitionEquilibree: formData.repartitionEquilibree,
+            materialisationAuto: formData.materialisationAuto,
         });
+    };
+
+    const majHoraire = (index: number, champ: 'jour' | 'heure', valeur: string) => {
+        setFormData(prev => ({
+            ...prev,
+            materialisationAuto: {
+                ...prev.materialisationAuto,
+                horaires: prev.materialisationAuto.horaires.map((h, i) =>
+                    i === index ? { ...h, [champ]: valeur } : h,
+                ),
+            },
+        }));
+    };
+
+    const ajouterHoraire = () => {
+        setFormData(prev => ({
+            ...prev,
+            materialisationAuto: {
+                ...prev.materialisationAuto,
+                horaires: [...prev.materialisationAuto.horaires, { jour: 'SAMEDI', heure: '21:00' }],
+            },
+        }));
+    };
+
+    const supprimerHoraire = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            materialisationAuto: {
+                ...prev.materialisationAuto,
+                horaires: prev.materialisationAuto.horaires.filter((_, i) => i !== index),
+            },
+        }));
     };
 
     if (error) {
@@ -217,6 +261,71 @@ export function EDTPreferencesPage() {
                     </div>
                 </motion.div>
 
+                <motion.div
+                    className="p-6 rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-sm"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.28 }}
+                >
+                    <div className="flex items-center gap-3 mb-4">
+                        <RefreshCw className="h-5 w-5 text-[var(--color-dominant-600)]" />
+                        <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">{t('preferences.materialisationAuto')}</h2>
+                    </div>
+                    <p className="text-sm text-[var(--color-text-secondary)] mb-4">
+                        {t('preferences.materialisationAutoAide')}
+                    </p>
+
+                    <div className="flex items-center gap-3 mb-4">
+                        <input type="checkbox" checked={formData.materialisationAuto.actif}
+                            onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                materialisationAuto: { ...prev.materialisationAuto, actif: e.target.checked },
+                            }))}
+                            className="w-5 h-5 rounded border-[var(--color-bordure)] text-[var(--color-dominante)] focus:ring-[var(--color-dominante)]"
+                        />
+                        <span className="text-sm font-medium text-[var(--color-text-primary)]">{t('preferences.materialisationActive')}</span>
+                    </div>
+
+                    <div className="space-y-3">
+                        {formData.materialisationAuto.horaires.map((horaire, index) => (
+                            <div key={index} className="flex items-center gap-3">
+                                <select
+                                    value={horaire.jour}
+                                    onChange={(e) => majHoraire(index, 'jour', e.target.value)}
+                                    className={`${inputClass} flex-1`}
+                                    disabled={!formData.materialisationAuto.actif}
+                                >
+                                    {JOURS_SEMAINE.map(j => (
+                                        <option key={j.value} value={j.value}>{t(j.labelKey)}</option>
+                                    ))}
+                                </select>
+                                <input type="time" value={horaire.heure}
+                                    onChange={(e) => majHoraire(index, 'heure', e.target.value)}
+                                    className={`${inputClass} flex-1`} required
+                                    disabled={!formData.materialisationAuto.actif}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => supprimerHoraire(index)}
+                                    disabled={!formData.materialisationAuto.actif || formData.materialisationAuto.horaires.length <= 1}
+                                    className="p-2 rounded-lg text-[var(--color-text-secondary)] hover:text-[var(--color-destructive)] hover:bg-[var(--color-destructive)]/10 transition-colors disabled:opacity-40"
+                                    aria-label={t('preferences.supprimerHoraire')}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+
+                    <ElisaButton type="button" variant="outline" size="sm" onClick={ajouterHoraire}
+                        icon={<Plus className="h-4 w-4" />}
+                        disabled={!formData.materialisationAuto.actif || formData.materialisationAuto.horaires.length >= 14}
+                        className="mt-4"
+                    >
+                        {t('preferences.ajouterHoraire')}
+                    </ElisaButton>
+                </motion.div>
+
                 <motion.div className="flex justify-end gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
                     <ElisaButton type="button" variant="outline" size="lg" onClick={() => {
                         if (preferences) {
@@ -230,6 +339,7 @@ export function EDTPreferencesPage() {
                                 maxCreneauxMatiereParJour: preferences.maxCreneauxMatiereParJour || 2,
                                 maxCreneauxConsecutifs: preferences.maxCreneauxConsecutifs || 2,
                                 repartitionEquilibree: preferences.repartitionEquilibree ?? true,
+                                materialisationAuto: preferences.materialisationAuto ?? DEFAULT_MATERIALISATION_AUTO,
                             });
                         }
                     }}>

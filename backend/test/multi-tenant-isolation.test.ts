@@ -35,6 +35,14 @@ describe('Isolation Multi-Tenant - Structure Académique', () => {
         const cycleRepo = AppDataSource.getRepository(Cycle);
         const niveauRepo = AppDataSource.getRepository(Niveau);
 
+        // Idempotence : nettoyer les résidus d'un run précédent interrompu
+        // (même ordre que afterAll pour respecter les FK)
+        await AppDataSource.getRepository(Competence).createQueryBuilder().delete().execute();
+        await AppDataSource.getRepository(Specialite).createQueryBuilder().delete().execute();
+        await AppDataSource.getRepository(Filiere).createQueryBuilder().delete().execute();
+        await etablissementRepo.delete({ codeEtablissement: 'TEST-001' });
+        await etablissementRepo.delete({ codeEtablissement: 'TEST-002' });
+
         // Établissement 1
         etablissement1 = etablissementRepo.create({
             nom: 'Lycée Test 1',
@@ -85,9 +93,9 @@ describe('Isolation Multi-Tenant - Structure Académique', () => {
 
     afterAll(async () => {
         // Nettoyage
-        await AppDataSource.getRepository(Competence).delete({});
-        await AppDataSource.getRepository(Specialite).delete({});
-        await AppDataSource.getRepository(Filiere).delete({});
+        await AppDataSource.getRepository(Competence).createQueryBuilder().delete().execute();
+        await AppDataSource.getRepository(Specialite).createQueryBuilder().delete().execute();
+        await AppDataSource.getRepository(Filiere).createQueryBuilder().delete().execute();
         await AppDataSource.getRepository(Etablissement).delete({ codeEtablissement: 'TEST-001' });
         await AppDataSource.getRepository(Etablissement).delete({ codeEtablissement: 'TEST-002' });
         
@@ -122,7 +130,7 @@ describe('Isolation Multi-Tenant - Structure Académique', () => {
         it('ne devrait PAS voir les filières de l\'établissement 2 depuis l\'établissement 1', async () => {
             const result = await filieresService.findAll({}, etablissement1.id);
             
-            const filieresEtab2 = result.data.filter(f => f.etablissementId === etablissement2.id);
+            const filieresEtab2 = result.items.filter(f => f.etablissementId === etablissement2.id);
             expect(filieresEtab2).toHaveLength(0);
         });
 
@@ -160,6 +168,14 @@ describe('Isolation Multi-Tenant - Structure Académique', () => {
         let filiereE2: Filiere;
 
         beforeEach(async () => {
+            // Idempotence : nettoyer les spécialités puis les filières de test d'un test précédent
+            await AppDataSource.getRepository(Specialite).delete({ code: 'MA_TEST' });
+            await AppDataSource.getRepository(Specialite).delete({ code: 'MA_E2' });
+            await AppDataSource.getRepository(Specialite).delete({ code: 'SPEC_E1' });
+            await AppDataSource.getRepository(Specialite).delete({ code: 'SPEC_E2' });
+            await AppDataSource.getRepository(Filiere).delete({ code: 'F1_E1' });
+            await AppDataSource.getRepository(Filiere).delete({ code: 'F1_E2' });
+
             // Créer des filières pour les tests
             filiereE1 = await filieresService.create({
                 nom: 'Filière F1 E1',
@@ -197,7 +213,7 @@ describe('Isolation Multi-Tenant - Structure Académique', () => {
             }, etablissement2.id);
 
             const result = await specialitesService.findAll({}, etablissement1.id);
-            const specialitesE2 = result.data.filter(s => s.etablissementId === etablissement2.id);
+            const specialitesE2 = result.items.filter(s => s.etablissementId === etablissement2.id);
             
             expect(specialitesE2).toHaveLength(0);
         });
@@ -278,7 +294,7 @@ describe('Isolation Multi-Tenant - Structure Académique', () => {
             }, etablissement2.id);
 
             const result = await competencesService.findAll({}, etablissement1.id);
-            const competencesE2 = result.data.filter(c => c.etablissementId === etablissement2.id);
+            const competencesE2 = result.items.filter(c => c.etablissementId === etablissement2.id);
             
             expect(competencesE2).toHaveLength(0);
         });
@@ -299,21 +315,24 @@ describe('Isolation Multi-Tenant - Structure Académique', () => {
     });
 
     describe('Suppression CASCADE - Multi-Tenant', () => {
-        it('devrait supprimer les filières quand l\'établissement est supprimé', async () => {
+        it('devrait bloquer la suppression d\'un établissement qui a des filières (intégrité référentielle)', async () => {
             const filiereCountBefore = await AppDataSource.getRepository(Filiere).count({
                 where: { etablissementId: etablissement1.id }
             });
 
             expect(filiereCountBefore).toBeGreaterThan(0);
 
-            // Supprimer l'établissement (CASCADE devrait supprimer les filières)
-            await AppDataSource.getRepository(Etablissement).delete(etablissement1.id);
+            // La FK filieres.etablissementId → etablissements.id est RESTRICT :
+            // supprimer l'établissement doit échouer tant que des filières existent
+            await expect(
+                AppDataSource.getRepository(Etablissement).delete(etablissement1.id)
+            ).rejects.toThrow();
 
+            // Les filières sont toujours là
             const filiereCountAfter = await AppDataSource.getRepository(Filiere).count({
                 where: { etablissementId: etablissement1.id }
             });
-
-            expect(filiereCountAfter).toBe(0);
+            expect(filiereCountAfter).toBe(filiereCountBefore);
         });
     });
 });

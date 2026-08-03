@@ -16,7 +16,7 @@ import { AppDataSource } from '../data-source';
 import {
     Utilisateur,
     UtilisateurEtablissement,
-    Role as RoleEntity,
+    RoleEntity,
     Permission as PermissionEntity,
     ProfilUtilisateur
 } from '@modules/auth/entities';

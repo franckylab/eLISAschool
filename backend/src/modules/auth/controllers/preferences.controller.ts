@@ -9,7 +9,8 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { preferenceUtilisateurService, DEFAULT_PREFERENCES, CategoriePreference } from '../services/preference-utilisateur.service';
+import { preferenceUtilisateurService, DEFAULT_PREFERENCES } from '../services/preference-utilisateur.service';
+import { CategoriePreference } from '../entities/preference-utilisateur.entity';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@shared/enums/roles.enum';
 import { z } from 'zod';
@@ -35,7 +36,7 @@ const resetCategorySchema = z.object({
 function validateDto<T>(schema: z.ZodSchema<T>, data: unknown): T {
     const result = schema.safeParse(data);
     if (!result.success) {
-        throw new AppError('Données invalides', 400, 'VALIDATION_ERROR', result.error.errors);
+        throw new AppError('Données invalides', 400, 'VALIDATION_ERROR', true, result.error.errors as unknown as Record<string, unknown>);
     }
     return result.data;
 }
@@ -133,7 +134,7 @@ router.post('/reset-category', authMiddleware, async (req: Request, res: Respons
         
         const count = await preferenceUtilisateurService.resetCategoryPreferences(
             userId,
-            dto.categorie
+            dto.categorie as CategoriePreference
         );
         
         res.json({ 

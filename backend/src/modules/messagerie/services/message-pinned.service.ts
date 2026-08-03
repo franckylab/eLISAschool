@@ -83,6 +83,7 @@ export class PinnedMessageService {
             conversationId: message.conversationId,
             userId,
             pinnedAt: new Date().toISOString(),
+            pinnedBy: userId,
             ttl: this.PINNED_TTL,
         };
 

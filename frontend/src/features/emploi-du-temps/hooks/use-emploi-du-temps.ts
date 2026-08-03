@@ -14,9 +14,10 @@ import { useHandleError } from '@/hooks/use-handle-error';
 import type {
     CreneauHoraire, PaginatedResponse, CreneauFilters,
     PreferenceEDT, Conflit, DonneesVerification,
-    TemplateEDT, ResultatValidationClasse,
+    TemplateEDT,
     StatistiquesEDT, StatistiquesFilters,
     ResultatPreviewEDT, AuditConflitsResult,
+    ResultatUpdateCreneau,
 } from '../types/edt.types';
 
 export type {
@@ -24,10 +25,11 @@ export type {
     CreneauHoraire, PaginatedResponse, CreneauFilters,
     PreferenceEDT, CreneauImposable,
     TypeConflit, SeveriteConflit, Conflit, DonneesVerification,
-    TemplateEDT, ResultatValidationClasse,
+    TemplateEDT,
     StatistiquesEDT, StatistiquesFilters,
     CreneauPreview, ConflitPreview, ResumePreview, ResultatPreviewEDT,
     AuditConflitDetail, AuditConflitsResult,
+    ResultatUpdateCreneau,
 } from '../types/edt.types';
 
 const EDT_KEYS = {
@@ -97,15 +99,27 @@ export function useUpdateCreneau() {
     const { t } = useTranslation('emplois');
     const handleError = useHandleError();
     return useMutation({
-        mutationFn: async ({ id, ...dto }: Partial<CreneauHoraire> & { id: string }) => {
-            const res = await apiClient.patch<CreneauHoraire>(`/api/emploi-du-temps/${id}`, dto);
+        mutationFn: async ({ id, ...dto }: { id: string } & Partial<CreneauHoraire> & { propagerForce?: boolean }) => {
+            const res = await apiClient.patch<ResultatUpdateCreneau>(`/api/emploi-du-temps/${id}`, dto);
             return res.data;
         },
-        onSuccess: () => {
+        onSuccess: (data) => {
             qc.invalidateQueries({ queryKey: EDT_KEYS.all });
-            toast.success(t('toasts.creneauModifie'));
+            const rapport = data?.rapport;
+            if (rapport && rapport.instancesQuiSuivent > 0) {
+                toast.success(t('toasts.creneauModifiePropage', {
+                    count: rapport.instancesQuiSuivent,
+                    ignorees: rapport.instancesInchangees,
+                }));
+            } else {
+                toast.success(t('toasts.creneauModifie'));
+            }
         },
         onError: (err: unknown) => {
+            // Q5 : le 409 CONFLITS_PROPAGATION est géré par le composant (proposition de forcer)
+            if (typeof err === 'object' && err !== null && (err as { code?: string }).code === 'CONFLITS_PROPAGATION') {
+                return;
+            }
             handleError(err, t('toasts.erreurModification'));
         },
     });
@@ -116,53 +130,21 @@ export function useSupprimerCreneau() {
     const { t } = useTranslation('emplois');
     const handleError = useHandleError();
     return useMutation({
-        mutationFn: async (id: string) => { await apiClient.delete(`/api/emploi-du-temps/${id}`); },
-        onSuccess: () => {
-            qc.invalidateQueries({ queryKey: EDT_KEYS.all });
-            toast.success(t('toasts.creneauSupprime'));
-        },
-        onError: (err: unknown) => {
-            handleError(err, t('toasts.erreurSuppression'));
-        },
-    });
-}
-
-// ─── Validation workflow ────────────────────────────
-
-export function useValiderCreneau() {
-    const qc = useQueryClient();
-    const { t } = useTranslation('emplois');
-    const handleError = useHandleError();
-    return useMutation({
         mutationFn: async (id: string) => {
-            const res = await apiClient.post<CreneauHoraire>(`/api/emploi-du-temps/${id}/valider`);
-            return res.data;
-        },
-        onSuccess: () => {
-            qc.invalidateQueries({ queryKey: EDT_KEYS.all });
-            toast.success(t('toasts.creneauValide'));
-        },
-        onError: (err: unknown) => {
-            handleError(err, t('toasts.erreurValidation'));
-        },
-    });
-}
-
-export function useValiderCreneauxClasse() {
-    const qc = useQueryClient();
-    const { t } = useTranslation('emplois');
-    const handleError = useHandleError();
-    return useMutation({
-        mutationFn: async (classeAnneeId: string) => {
-            const res = await apiClient.post<ResultatValidationClasse>(`/api/emploi-du-temps/valider-classe/${classeAnneeId}`);
+            const res = await apiClient.delete<{ instancesAnnulees: number }>(`/api/emploi-du-temps/${id}`);
             return res.data;
         },
         onSuccess: (data) => {
             qc.invalidateQueries({ queryKey: EDT_KEYS.all });
-            toast.success(t('toasts.classeValide', { count: data?.valide ?? 0 }));
+            const annulees = data?.instancesAnnulees ?? 0;
+            toast.success(
+                annulees > 0
+                    ? t('toasts.creneauSupprimeAvecInstances', { count: annulees })
+                    : t('toasts.creneauSupprime'),
+            );
         },
         onError: (err: unknown) => {
-            handleError(err, t('toasts.erreurValidation'));
+            handleError(err, t('toasts.erreurSuppression'));
         },
     });
 }
@@ -354,41 +336,5 @@ export function useAuditConflits(options?: { periodeId?: string; anneeScolaireId
             return res.data;
         },
         staleTime: 1 * 60 * 1000,
-    });
-}
-
-// ─── Génération Heures de Cours depuis EDT ─────────
-
-export interface GenererHeuresCoursResult {
-    created: number;
-    skipped: number;
-    errors: number;
-    total: number;
-}
-
-export function useGenererHeuresCoursFromEdt() {
-    const qc = useQueryClient();
-    const { t } = useTranslation('emplois');
-    const handleError = useHandleError();
-    return useMutation({
-        mutationFn: async (dto: {
-            enseignantId: string;
-            classeAnneeId?: string;
-            dateDebut: string;
-            dateFin: string;
-            periodeId?: string;
-        }) => {
-            const res = await apiClient.post<GenererHeuresCoursResult>(
-                '/api/personnel/heures-cours/generer-from-edt', dto,
-            );
-            return res.data;
-        },
-        onSuccess: (data) => {
-            qc.invalidateQueries({ queryKey: EDT_KEYS.all });
-            toast.success(t('toasts.heuresCoursGenerees', { count: data?.created ?? 0 }));
-        },
-        onError: (err: unknown) => {
-            handleError(err, t('toasts.erreurGeneration'));
-        },
     });
 }

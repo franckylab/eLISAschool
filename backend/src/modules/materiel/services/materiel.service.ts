@@ -33,8 +33,8 @@ export class MaterielService {
 
     private async getMaterielParams() {
         return {
-            maxLoanDays: await getParamNumber('materiel.max_loan_days', 30),
-            enableBarcode: await getParamBoolean('materiel.enable_barcode', true),
+            maxLoanDays: await getParamNumber('materiel.max_loan_days', { defaultValue: 30 }),
+            enableBarcode: await getParamBoolean('materiel.enable_barcode', { defaultValue: true }),
         };
     }
 
@@ -42,7 +42,7 @@ export class MaterielService {
         const params = await this.getMaterielParams();
 
         // Vérifier si le workflow de validation est requis
-        const requireValidation = await getParamBoolean('materiel.require_validation', false);
+        const requireValidation = await getParamBoolean('materiel.require_validation', { defaultValue: false });
 
         const materiel: Materiel = this.materielRepo.create({
             ...dto,
@@ -125,7 +125,7 @@ export class MaterielService {
         }
 
         // Vérifier si le workflow de validation est requis pour les prêts
-        const requireValidation = await getParamBoolean('materiel.pret_require_validation', false);
+        const requireValidation = await getParamBoolean('materiel.pret_require_validation', { defaultValue: false });
 
         // Si validation requise, ne pas décrémenter le stock
         if (!requireValidation) {

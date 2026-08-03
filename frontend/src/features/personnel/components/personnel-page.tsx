@@ -30,7 +30,7 @@ const STATUT_CLASSES: Record<string, string> = {
 };
 
 export function PersonnelPage() {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
     const [filtres, setFiltres] = useState<PersonnelFiltres>({ page: 1, limit: 20 });

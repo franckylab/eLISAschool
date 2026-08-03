@@ -49,10 +49,10 @@ export class ScoringService {
 
         // Pondération configurable via paramètres
         const poids = {
-            academique: await getParamNumber('scoring.weight_academic', 40),
-            comportement: await getParamNumber('scoring.weight_behavior', 25),
-            assiduite: await getParamNumber('scoring.weight_attendance', 25),
-            participation: await getParamNumber('scoring.weight_participation', 10),
+            academique: await getParamNumber('scoring.weight_academic', { defaultValue: 40 }),
+            comportement: await getParamNumber('scoring.weight_behavior', { defaultValue: 25 }),
+            assiduite: await getParamNumber('scoring.weight_attendance', { defaultValue: 25 }),
+            participation: await getParamNumber('scoring.weight_participation', { defaultValue: 10 }),
         };
 
         const total = poids.academique + poids.comportement + poids.assiduite + poids.participation;

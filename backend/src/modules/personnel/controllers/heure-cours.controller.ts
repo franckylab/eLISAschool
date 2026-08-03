@@ -197,14 +197,14 @@ router.patch(
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const dto = validateDto(updateHeureCoursSchema, req.body);
-            const heureCours = await service.update(
+            const { heureCours, rapport } = await service.update(
                 req.params.id,
                 dto,
                 req.utilisateur?.id!,
                 req.etablissementId!,
                 req
             );
-            res.json({ success: true, data: heureCours });
+            res.json({ success: true, data: heureCours, rapport });
         } catch (error) {
             next(error);
         }

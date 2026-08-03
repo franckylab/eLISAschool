@@ -4,6 +4,7 @@ const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>'],
+  testTimeout: 30000, // intégration DB : initialize + synchronize peuvent dépasser 5s
   moduleNameMapper: {
     '^@modules/(.*)$': '<rootDir>/src/modules/$1',
     '^@common/(.*)$': '<rootDir>/src/common/$1',
@@ -18,6 +19,7 @@ const config: Config = {
     '**/tests/**/*.test.ts',
   ],
   modulePathIgnorePatterns: ['<rootDir>/dist/'],
+  testPathIgnorePatterns: ['<rootDir>/tests/integration/'], // scripts d'intégration autonomes (runTests+process.exit), lancés via tsx
   transform: {
     '^.+\\.tsx?$': ['ts-jest', { diagnostics: false }],
   },

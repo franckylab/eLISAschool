@@ -10,7 +10,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { permissionsService } from '../services/permissions.service';
-import { authMiddleware, requirePermission, requirePermission } from '@modules/auth/middlewares';
+import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
 import { successResponse } from '@common/utils/api-response.util';
 import { z } from 'zod';

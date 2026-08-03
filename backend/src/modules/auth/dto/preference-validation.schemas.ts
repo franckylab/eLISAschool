@@ -38,11 +38,7 @@ export const preferenceUtilisateurSchema = z.object({
 /**
  * Schéma pour créer une préférence utilisateur
  */
-export const createPreferenceUtilisateurSchema = preferenceUtilisateurSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-});
+export const createPreferenceUtilisateurSchema = preferenceUtilisateurSchema;
 
 /**
  * Schéma pour mettre à jour une préférence utilisateur
@@ -102,7 +98,7 @@ export const resetCategorieSchema = z.object({
 export const importPreferencesSchema = z.object({
     jsonData: z.string({
         required_error: 'Les données JSON sont requises',
-    }).refine((val, ctx) => {
+    }).superRefine((val, ctx) => {
         try {
             const parsed = JSON.parse(val);
             if (!parsed.preferences || !Array.isArray(parsed.preferences)) {
@@ -110,15 +106,12 @@ export const importPreferencesSchema = z.object({
                     code: z.ZodIssueCode.custom,
                     message: 'Le JSON doit contenir un tableau "preferences"',
                 });
-                return false;
             }
-            return true;
         } catch {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 message: 'JSON invalide',
             });
-            return false;
         }
     }),
 

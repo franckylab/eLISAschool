@@ -16,7 +16,7 @@
 
 import { Repository, In } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Annonce, AnnonceCiblage } from '../entities';
+import { Annonce, AnnonceCiblage, AnnonceTypeContenu, AnnonceStatut, AnnonceValidation, CiblageType } from '../entities';
 import { CreateAnnonceDto, UpdateAnnonceDto, AnnonceConfigurationDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -356,7 +356,7 @@ export class AnnoncesService {
     const annonce = this.annonceRepo.create({
       titre: dto.titre,
       contenu: contenuSecure,
-      typeContenu: dto.typeContenu,
+      typeContenu: dto.typeContenu as AnnonceTypeContenu,
       dateDebut,
       dateFin,
       statut: statut as any,
@@ -380,11 +380,11 @@ export class AnnoncesService {
     // Audit
     try {
       await auditService.log({
-        action: AuditAction.CREATE,
+        action: AuditAction.ANNONCE_CREATE,
         module: 'annonces',
         cibleId: annonce.id,
-        cibleType: 'Annonce',
-        valeursApres: {
+        cible: 'Annonce',
+        nouvellesValeurs: {
           titre: annonce.titre,
           statut: annonce.statut,
           cibleGlobale: annonce.cibleGlobale,
@@ -426,9 +426,9 @@ export class AnnoncesService {
     if (dto.contenu) {
       updateData.contenu = sanitizeContenu(dto.contenu, dto.typeContenu || annonce.typeContenu);
     }
-    if (dto.typeContenu) updateData.typeContenu = dto.typeContenu;
+    if (dto.typeContenu) updateData.typeContenu = dto.typeContenu as AnnonceTypeContenu;
     if (dto.priorite !== undefined) updateData.priorite = dto.priorite;
-    if (dto.statut) updateData.statut = dto.statut;
+    if (dto.statut) updateData.statut = dto.statut as AnnonceStatut;
     if (dto.cibleGlobale !== undefined) updateData.cibleGlobale = dto.cibleGlobale;
     if (dto.ordreAffichage !== undefined) updateData.ordreAffichage = dto.ordreAffichage;
 
@@ -462,11 +462,11 @@ export class AnnoncesService {
     // Audit
     try {
       await auditService.log({
-        action: AuditAction.UPDATE,
+        action: AuditAction.ANNONCE_EDIT,
         module: 'annonces',
         cibleId: id,
-        cibleType: 'Annonce',
-        valeursApres: updateData,
+        cible: 'Annonce',
+        nouvellesValeurs: updateData,
         utilisateurId,
         etablissementId,
       });
@@ -511,7 +511,7 @@ export class AnnoncesService {
       throw new AppError("L'annonce est déjà validée", 400, 'VALIDATION_ERROR');
     }
 
-    annonce.validation = 'en_attente_validation';
+    annonce.validation = AnnonceValidation.EN_ATTENTE_VALIDATION;
     annonce.updatedBy = utilisateurId;
     await this.annonceRepo.save(annonce);
 
@@ -552,10 +552,10 @@ export class AnnoncesService {
     const deuxSemaines = new Date(maintenant);
     deuxSemaines.setDate(deuxSemaines.getDate() + 14);
 
-    annonce.validation = 'valide';
+    annonce.validation = AnnonceValidation.VALIDE;
     annonce.dateValidation = maintenant;
     annonce.validePar = validateurId;
-    annonce.statut = 'actif';
+    annonce.statut = AnnonceStatut.ACTIF;
     annonce.dateDebut = maintenant;
     annonce.dateFin = deuxSemaines;
     annonce.updatedBy = validateurId;
@@ -591,7 +591,7 @@ export class AnnoncesService {
       );
     }
 
-    annonce.validation = 'rejete';
+    annonce.validation = AnnonceValidation.REJETE;
     annonce.motifRejet = motifRejet;
     annonce.updatedBy = validateurId;
 
@@ -623,7 +623,7 @@ export class AnnoncesService {
       );
     }
 
-    annonce.statut = avecProgrammation ? 'programmé' : 'actif';
+    annonce.statut = avecProgrammation ? AnnonceStatut.PROGRAMME : AnnonceStatut.ACTIF;
     annonce.updatedBy = utilisateurId;
 
     await this.annonceRepo.save(annonce);
@@ -657,7 +657,7 @@ export class AnnoncesService {
       );
     }
 
-    annonce.statut = 'brouillon';
+    annonce.statut = AnnonceStatut.BROUILLON;
     annonce.updatedBy = utilisateurId;
 
     await this.annonceRepo.save(annonce);
@@ -681,7 +681,7 @@ export class AnnoncesService {
       throw new AppError("L'annonce est déjà archivée", 400, 'VALIDATION_ERROR');
     }
 
-    annonce.statut = 'archive';
+    annonce.statut = AnnonceStatut.ARCHIVE;
     annonce.updatedBy = utilisateurId;
 
     await this.annonceRepo.save(annonce);
@@ -701,7 +701,7 @@ export class AnnoncesService {
     const resultActif = await this.annonceRepo
       .createQueryBuilder()
       .update(Annonce)
-      .set({ statut: 'actif', updatedAt: new Date() })
+      .set({ statut: AnnonceStatut.ACTIF as any, updatedAt: new Date() })
       .where('statut = :statut', { statut: 'programmé' })
       .andWhere('dateDebut <= :maintenant', { maintenant })
       .andWhere('dateFin > :maintenant', { maintenant })
@@ -711,7 +711,7 @@ export class AnnoncesService {
     const resultArchive = await this.annonceRepo
       .createQueryBuilder()
       .update(Annonce)
-      .set({ statut: 'archive', updatedAt: new Date() })
+      .set({ statut: AnnonceStatut.ARCHIVE as any, updatedAt: new Date() })
       .where('statut = :statut', { statut: 'actif' })
       .andWhere('dateFin <= :maintenant', { maintenant })
       .execute();
@@ -744,13 +744,13 @@ export class AnnoncesService {
       // Préparer les données pour insertion batch
       const ciblagesData = ciblages.map((ciblage) => ({
         annonceId,
-        typeCible: ciblage.typeCible,
+        typeCible: ciblage.typeCible as CiblageType,
         cibleId: ciblage.cibleId,
         cibleValeur: ciblage.cibleValeur || null,
       }));
 
       // Insertion batch (beaucoup plus rapide que save() en boucle)
-      await this.ciblageRepo.insert(ciblagesData);
+      await this.ciblageRepo.insert(ciblagesData as any);
     }
   }
 
@@ -906,7 +906,7 @@ export class AnnoncesService {
   async getConfiguration(etablissementId: string): Promise<any> {
     const cacheKey = `annonces:config:${etablissementId}`;
     const cached = this.cache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+    if (cached && Date.now() - cached.timestamp < cached.ttl) {
       return cached.value;
     }
 
@@ -962,7 +962,7 @@ export class AnnoncesService {
       logger.warn('[Annonces] Erreur chargement configuration, utilisation des valeurs par défaut', error);
     }
 
-    this.cache.set(cacheKey, { value: config, timestamp: Date.now() });
+    this.cache.set(cacheKey, { value: config, timestamp: Date.now(), ttl: this.CACHE_TTL_CONFIG.config });
     return config;
   }
 
@@ -1001,15 +1001,7 @@ export class AnnoncesService {
 
         // Sauvegarder le paramètre
         try {
-          await configurationService.upsertParametre({
-            cle,
-            valeur: valeurStr,
-            typeValeur: typeValeur as any,
-            categorie: 'MODULE',
-            module: 'annonces',
-            etablissementId,
-            modifiableRuntime: true,
-          }, utilisateurId);
+          await configurationService.setParametre(cle, valeurStr, etablissementId, utilisateurId);
         } catch (error) {
           logger.error(`[Annonces] Erreur sauvegarde paramètre ${cle}`, error);
         }
@@ -1022,11 +1014,11 @@ export class AnnoncesService {
     // Audit
     try {
       await auditService.log({
-        action: AuditAction.CONFIG_UPDATE,
+        action: AuditAction.CONFIG_CHANGE,
         module: 'annonces',
         cibleId: etablissementId,
-        cibleType: 'Configuration',
-        valeursApres: dto,
+        cible: 'Configuration',
+        nouvellesValeurs: dto,
         utilisateurId,
       });
     } catch (error) {
@@ -1081,11 +1073,11 @@ export class AnnoncesService {
       // Audit
       try {
         await auditService.log({
-          action: AuditAction.CONFIG_RESET,
+          action: AuditAction.CONFIG_CHANGE,
           module: 'annonces',
           cibleId: etablissementId,
-          cibleType: 'Configuration',
-          valeursApres: { scope, cible, resetCount },
+          cible: 'Configuration',
+          nouvellesValeurs: { scope, cible, resetCount },
           utilisateurId,
         });
       } catch (error) {
@@ -1150,7 +1142,7 @@ export class AnnoncesService {
           valeurStr = JSON.stringify(value);
         }
 
-        await configurationService.upsertParametre({
+        await configurationService.setParametre({
           cle,
           valeur: valeurStr,
           typeValeur: typeValeur as any,
@@ -1167,11 +1159,11 @@ export class AnnoncesService {
     // Audit
     try {
       await auditService.log({
-        action: AuditAction.CONFIG_IMPORT,
+        action: AuditAction.CONFIG_CHANGE,
         module: 'annonces',
         cibleId: etablissementId,
-        cibleType: 'Configuration',
-        valeursApres: { importedAt: new Date().toISOString() },
+        cible: 'Configuration',
+        nouvellesValeurs: { importedAt: new Date().toISOString() },
         utilisateurId,
       });
     } catch (error) {
@@ -1181,13 +1173,6 @@ export class AnnoncesService {
     logger.info(`[Annonces] Configuration importée par ${utilisateurId}`);
 
     return this.getConfiguration(etablissementId);
-  }
-
-  /**
-   * Invalide le cache de configuration
-   */
-  private invalidateCache(): void {
-    this.cache.clear();
   }
 
   // ==================== NOTIFICATIONS ====================
@@ -1223,9 +1208,8 @@ export class AnnoncesService {
             try {
               await notificationsService.create({
                 titre: 'Nouvelle annonce',
-                message,
                 contenu,
-                type: 'in_app',
+                type: 'IN_APP',
                 destinataireId: ciblage.cibleId,
                 module: 'annonces',
                 action: 'annonce:create',
@@ -1264,9 +1248,8 @@ export class AnnoncesService {
             try {
               await notificationsService.create({
                 titre: 'Annonce modifiée',
-                message,
                 contenu,
-                type: 'in_app',
+                type: 'IN_APP',
                 destinataireId: ciblage.cibleId,
                 module: 'annonces',
                 action: 'annonce:update',
@@ -1306,11 +1289,11 @@ export class AnnoncesService {
       // Audit de la demande de validation
       try {
         await auditService.log({
-          action: AuditAction.SUBMIT_FOR_APPROVAL,
+          action: AuditAction.ANNONCE_EDIT,
           module: 'annonces',
           cibleId: annonce.id,
-          cibleType: 'Annonce',
-          valeursApres: {
+          cible: 'Annonce',
+          nouvellesValeurs: {
             validation: 'en_attente_validation',
             titre: annonce.titre,
           },

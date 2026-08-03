@@ -12,7 +12,17 @@
  *             reflète correctement X-Forwarded-For quand un proxy est présent.
  */
 
-import type { Request } from 'express';
+import type { IncomingHttpHeaders } from 'node:http';
+
+/**
+ * Interface structurelle minimale — compatible avec Request d'Express 4 et 5
+ * (évite les collisions entre @types/express hoistés dans un monorepo npm workspaces).
+ */
+interface RequestLike {
+    headers: IncomingHttpHeaders;
+    ip?: string;
+    socket?: { remoteAddress?: string };
+}
 
 /**
  * Extrait l'adresse IP réelle du client depuis une requête Express.
@@ -27,7 +37,7 @@ import type { Request } from 'express';
  * Pour `X-Forwarded-For`, la première IP de la liste est retenue
  * (c'est l'IP du client original, les suivantes sont les proxies intermédiaires).
  */
-export function getClientIP(req: Request): string {
+export function getClientIP(req: RequestLike): string {
     // 1. X-Forwarded-For (standard de facto, injecté par nginx/proxies)
     const forwarded = req.headers['x-forwarded-for'];
     if (typeof forwarded === 'string' && forwarded.length > 0) {

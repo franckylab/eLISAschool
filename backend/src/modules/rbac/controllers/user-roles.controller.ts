@@ -242,7 +242,7 @@ router.put('/users/:userId/roles/replace', requirePermission('roles:manage'), as
 router.get('/monitoring/stats', requirePermission('roles:manage'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { AppDataSource } = await import('@database/data-source');
-        const { UtilisateurEtablissement, Role, Permission } = await import('@modules/auth/entities');
+        const { UtilisateurEtablissement, RoleEntity: Role, Permission } = await import('@modules/auth/entities');
         
         const ueRepo = AppDataSource.getRepository(UtilisateurEtablissement);
         const roleRepo = AppDataSource.getRepository(Role);

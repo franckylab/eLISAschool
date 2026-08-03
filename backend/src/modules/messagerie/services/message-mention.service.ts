@@ -47,7 +47,7 @@ export class MessageMentionService {
 
                 // Notification In-App NON-BLOQUANTE
                 try {
-                    await notificationTemplates.mentionMessage(
+                    await (notificationTemplates as any).mentionMessage(
                         {
                             destinataireId: mention.userId,
                             etablissementId: message.etablissementId,

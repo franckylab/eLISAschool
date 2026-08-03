@@ -2,8 +2,8 @@
  * ==================================
  * eLISAschool - DTOs Heure de Cours
  * ==================================
- * Version: 1.2.0
- * Ajout typeCreneau (v1.2 — cohérence Template/Instance)
+ * Version: 1.3.0
+ * Ajout mettreAJourCreneau (v1.3 — propagation inverse instance → créneau, grill-me 2026-08-03)
  */
 
 import { z } from 'zod';
@@ -25,6 +25,8 @@ export const createHeureCoursSchema = z.object({
     remplacantId: z.string().uuid().optional(),
     commentaire: z.string().optional(),
     affectationMatiereId: z.string().uuid().optional(),
+    // Q6 : « Mettre à jour aussi le créneau hebdo » — jamais automatique, défaut OFF.
+    mettreAJourCreneau: z.boolean().optional(),
 });
 
 export const updateHeureCoursSchema = createHeureCoursSchema.partial();

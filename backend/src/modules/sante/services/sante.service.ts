@@ -16,6 +16,10 @@ import { Request } from 'express';
 import { notificationsService } from '@modules/notifications/services';
 import { TypeNotification, PrioriteNotification } from '@modules/notifications/entities';
 
+type CreateDossierMedicalDto = z.infer<typeof createDossierMedicalSchema>;
+type CreateConsultationMedicaleDto = z.infer<typeof createConsultationMedicaleSchema>;
+type CreateIncidentSanteDto = z.infer<typeof createIncidentSanteSchema>;
+
 export class SanteService {
     private dossierRepo: Repository<DossierMedical>;
     private consultationRepo: Repository<ConsultationMedicale>;
@@ -38,7 +42,7 @@ export class SanteService {
     }
 
     // ==================== DOSSIERS MÉDICAUX ====================
-    async createOrUpdateDossier(dto: CreateDossierMedicalSchema, etablissementId: string, req?: Request): Promise<DossierMedical> {
+    async createOrUpdateDossier(dto: CreateDossierMedicalDto, etablissementId: string, req?: Request): Promise<DossierMedical> {
         // Déterminer quelle colonne utiliser selon le type de patient
         const whereClause = dto.typePatient === TypePatient.ELEVE
             ? { eleveId: dto.patientId, etablissementId }
@@ -58,10 +62,10 @@ export class SanteService {
             // Mettre à jour la colonne appropriée selon le type
             if (dto.typePatient === TypePatient.ELEVE) {
                 dossier.eleveId = dto.patientId;
-                dossier.personnelId = null;
+                dossier.personnelId = undefined;
             } else {
                 dossier.personnelId = dto.patientId;
-                dossier.eleveId = null;
+                dossier.eleveId = undefined;
             }
             
             await this.dossierRepo.save(dossier);
@@ -85,14 +89,13 @@ export class SanteService {
             logger.info(`[Santé] Dossier médical mis à jour: ${dto.patientId}`);
         } else {
             // Création
-            dossier = this.dossierRepo.create({
+            const nouveauDossier = this.dossierRepo.create({
                 ...dto,
                 etablissementId,
-                // Définir la colonne appropriée selon le type
-                eleveId: dto.typePatient === TypePatient.ELEVE ? dto.patientId : null,
-                personnelId: dto.typePatient === TypePatient.PERSONNEL ? dto.patientId : null,
+                eleveId: dto.typePatient === TypePatient.ELEVE ? dto.patientId : undefined,
+                personnelId: dto.typePatient === TypePatient.PERSONNEL ? dto.patientId : undefined,
             });
-            await this.dossierRepo.save(dossier);
+            await this.dossierRepo.save(nouveauDossier);
             
             // Audit trail
             if (req?.utilisateur?.id) {
@@ -100,7 +103,7 @@ export class SanteService {
                     utilisateurId: req.utilisateur.id,
                     action: AuditAction.DOSSIER_MEDICAL_CREATE,
                     cible: 'DossierMedical',
-                    cibleId: dossier.id,
+                    cibleId: nouveauDossier.id,
                     description: `Dossier médical créé: ${dto.patientId}`,
                     nouvellesValeurs: dto,
                     module: 'sante',
@@ -108,9 +111,8 @@ export class SanteService {
             }
             
             logger.info(`[Santé] Dossier médical créé: ${dto.patientId}`);
+            return nouveauDossier;
         }
-
-        return dossier;
     }
 
     async getDossierByPatient(patientId: string, etablissementId: string, typePatient?: TypePatient): Promise<DossierMedical | null> {
@@ -153,7 +155,7 @@ export class SanteService {
     }
 
     // ==================== CONSULTATIONS ====================
-    async createConsultation(dto: CreateConsultationMedicaleSchema, consultantId: string, etablissementId: string, req?: Request): Promise<ConsultationMedicale> {
+    async createConsultation(dto: CreateConsultationMedicaleDto, consultantId: string, etablissementId: string, req?: Request): Promise<ConsultationMedicale> {
         // Vérifier que le dossier appartient à l'établissement
         const dossier = await this.dossierRepo.findOne({
             where: { id: dto.dossierMedicalId, etablissementId },
@@ -217,7 +219,7 @@ export class SanteService {
     }
 
     // ==================== INCIDENTS SANTÉ ====================
-    async createIncidentSante(dto: CreateIncidentSanteSchema, declareParId: string, etablissementId: string, req?: Request): Promise<IncidentSante> {
+    async createIncidentSante(dto: CreateIncidentSanteDto, declareParId: string, etablissementId: string, req?: Request): Promise<IncidentSante> {
         const dossier = await this.dossierRepo.findOne({
             where: { id: dto.dossierMedicalId, etablissementId },
         });
@@ -291,8 +293,7 @@ export class SanteService {
 
     async getIncidentsByPatient(
         patientId: string, 
-        etablissementId: string,
-        anneeScolaireId: string // ← NOUVEAU
+        etablissementId: string
     ): Promise<IncidentSante[]> {
         const dossier = await this.getDossierByPatient(patientId, etablissementId);
         if (!dossier) return [];
@@ -300,9 +301,7 @@ export class SanteService {
         return this.incidentRepo.find({
             where: { 
                 dossierMedicalId: dossier.id,
-                anneeScolaireId // ← FILTRE ANNÉE
             },
-            relations: ['anneeScolaire'],
             order: { dateIncident: 'DESC' },
         });
     }
@@ -314,8 +313,13 @@ export class SanteService {
             throw new AppError('Aucun dossier médical trouvé', 404, 'NOT_FOUND');
         }
 
+        // Récupérer toutes les consultations et incidents (sans filtre année)
         const [consultations, incidents] = await Promise.all([
-            this.getConsultationsByPatient(patientId, etablissementId),
+            this.consultationRepo.find({
+                where: { dossierMedicalId: dossier.id },
+                relations: ['consultant'],
+                order: { dateConsultation: 'DESC' },
+            }),
             this.getIncidentsByPatient(patientId, etablissementId),
         ]);
 

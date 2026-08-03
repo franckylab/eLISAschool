@@ -9,7 +9,7 @@
 import { Repository, Like, FindOptionsWhere } from 'typeorm';
 import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
-import { Utilisateur, ProfilUtilisateur, StatutUtilisateur, UtilisateurPermission, TypePermission, Permission as PermissionEntity, Role as RoleEntity, UtilisateurEtablissement, AuditSeverity } from '@modules/auth/entities';
+import { Utilisateur, ProfilUtilisateur, StatutUtilisateur, UtilisateurPermission, TypePermission, Permission as PermissionEntity, RoleEntity, UtilisateurEtablissement, AuditSeverity } from '@modules/auth/entities';
 import { MembrePersonnel } from '@modules/personnel/entities';
 import { Role } from '@shared/enums/roles.enum';
 import {
