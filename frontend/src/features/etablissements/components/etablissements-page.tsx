@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Edit, Trash2, Eye, AlertTriangle, Building2, MapPin, Phone, Mail } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, AlertTriangle, Building2, MapPin, Phone } from 'lucide-react';
 import { useEtablissements, useSupprimerEtablissement, useCreerEtablissement, useModifierEtablissement } from '../hooks/use-etablissements';
 import { DataTable } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -23,7 +23,6 @@ export function EtablissementsPage() {
 
     const { data, isLoading } = useEtablissements(filtres);
     const supprimer = useSupprimerEtablissement();
-    const modifier = useModifierEtablissement();
 
     const getTypeLabel = (type?: string) => {
         const labels: Record<string, string> = {
@@ -170,7 +169,8 @@ export function EtablissementsPage() {
             </motion.div>
 
             <DataTable
-                data={data?.items || []}
+                tableId="etablissements"
+                data={data?.data || []}
                 columns={colonnes}
                 isLoading={isLoading}
                 enableReordering
@@ -380,7 +380,7 @@ function EtablissementFormModal({ etablissement, onClose }: { etablissement: Eta
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type d'établissement</label>
                             <select
                                 value={typeEtablissement}
-                                onChange={(e) => setTypeEtablissement(e.target.value)}
+                                onChange={(e) => setTypeEtablissement(e.target.value as typeof typeEtablissement)}
                                 className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
                             >
                                 <option value="LAIC">Laïc</option>
@@ -395,7 +395,7 @@ function EtablissementFormModal({ etablissement, onClose }: { etablissement: Eta
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sous-système</label>
                             <select
                                 value={sousSysteme}
-                                onChange={(e) => setSousSysteme(e.target.value)}
+                                onChange={(e) => setSousSysteme(e.target.value as typeof sousSysteme)}
                                 className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]"
                             >
                                 <option value="FRANCOPHONE">Francophone</option>

@@ -83,6 +83,27 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 ### Blocked
 — (none)
 
+## Travail effectué — Session 2026-08-03 (Phase 1 — traçabilité, performance, architecture EDT)
+
+### Corrections appliquées (4 modifications, 2 fichiers)
+
+1. **Motif de propagation** (`heure-cours.service.ts` l.343-351) : traçabilité des changements propagés dans `commentaire` — format `Propagé(xxxxxxxx): jour→MARDI, début→08:00, salle→uuid`. Concaténé avec commentaire existant via `filter(Boolean).join(' | ')`.
+
+2. **Save par lots — propagation** (`heure-cours.service.ts` l.366-373) : remplacement du `mgr.save(cibles)` monolithique par des chunks de 50. Réduit la charge DB pour les propagations de masse (30 créneaux × 16 semaines = 480 instances).
+
+3. **Commentaire architecture** (`heure-cours.entity.ts` l.39-61) : bloc JSDoc documentant que toutes les écritures HeureCours doivent passer par `HeureCoursService`. Décrit les 4 flux (propagation, matérialisation, annulation, remontée).
+
+4. **Bulk insert — matérialisation** (`heure-cours.service.ts` l.1015-1016, 1096-1111) : remplacement des `this.repo.save(hc)` individuels (N requêtes) par accumulation dans `batch[]` + flush par chunks de 50 en fin de semaine. Réduction : 480 requêtes → ~10 requêtes.
+
+### Fichiers modifiés (2)
+- `backend/src/modules/personnel/services/heure-cours.service.ts` (+33 lignes, -4 lignes)
+- `backend/src/modules/personnel/entities/heure-cours.entity.ts` (+23 lignes)
+
+### Cohérence vérifiée
+- `mgr` utilisé dans propagation (transactionnel) vs `this.repo` dans matérialisation (pas de transaction externe)
+- Motif annulation (`annulerInstancesCreneaux` SQL COALESCE) inchangé
+- Audit trail existant conservé (l.375-385 propagation, l.1118-1127 matérialisation)
+
 ## Travail effectué — Session 2026-08-03 (Lot 2 — Q7 matérialisation auto HeureCours + Q8 nettoyage)
 
 ### Contexte

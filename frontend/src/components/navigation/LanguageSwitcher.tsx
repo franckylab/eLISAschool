@@ -14,7 +14,6 @@ export function LanguageSwitcher() {
     const { changerLangue, isFR } = useLanguage();
 
     const langueActive = isFR ? 'Fr' : 'En';
-    const langueInactive = isFR ? 'En' : 'Fr';
 
     return (
         <motion.button

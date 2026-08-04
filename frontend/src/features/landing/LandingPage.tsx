@@ -21,9 +21,7 @@ import {
     BarChart3,
     Shield,
     Globe,
-    Smartphone,
     ChevronRight,
-    Star,
     CheckCircle2,
 } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';

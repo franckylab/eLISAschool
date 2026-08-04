@@ -6,7 +6,7 @@
  * Ajout typeCreneau (v1.2 — cohérence Template/Instance)
  */
 
-import { Repository, Between, In, Not } from 'typeorm';
+import { Repository, Between, In, Not, EntityManager } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { HeureCours, StatutEffectue, ContratPersonnel, StatutContrat } from '../entities';
 import { CreateHeureCoursDto, UpdateHeureCoursDto, QueryHeureCoursDto, GenererHeuresCoursFromEdtDto } from '../dto';
@@ -157,8 +157,9 @@ export class HeureCoursService {
      * Axes : enseignant (+ co-enseignants), classe, salle — contre les autres HeureCours
      * (hors ANNULE, hors exclusions). Vérification complète utilisée par la création,
      * la modification et la propagation créneau → instances.
+     * Public : utilisée aussi par materialiserInstances (P0-3).
      */
-    private async verifierConflitsInstance(
+    async verifierConflitsInstance(
         params: {
             enseignantId: string;
             classeAnneeId: string;
@@ -247,13 +248,16 @@ export class HeureCoursService {
             createurId?: string;
             req?: Request;
             excludeInstanceIds?: string[];
+            /** P0-2 : manager transactionnel pour atomicité */
+            manager?: EntityManager;
         },
     ): Promise<RapportPropagation> {
+        const mgr = options?.manager ?? this.repo.manager;
         const aujourdhui = new Date();
         const aujourdhuiStr = this.dateToString(aujourdhui);
         const rapport: RapportPropagation = { instancesQuiSuivent: 0, instancesInchangees: 0, conflits: [] };
 
-        const instances = await this.repo.find({
+        const instances = await mgr.find(HeureCours, {
             where: {
                 creneauId: creneau.id,
                 etablissementId,
@@ -335,6 +339,17 @@ export class HeureCoursService {
             if (changements.typeCreneau !== undefined) {
                 instance.typeCreneau = nouveauType;
             }
+
+            // Traçabilité : motif de propagation dans commentaire
+            const motifParts: string[] = [];
+            if (changements.jour) motifParts.push(`jour→${changements.jour}`);
+            if (changements.heureDebut) motifParts.push(`début→${changements.heureDebut}`);
+            if (changements.heureFin) motifParts.push(`fin→${changements.heureFin}`);
+            if (changements.salleId !== undefined) motifParts.push(`salle→${changements.salleId || '∅'}`);
+            if (changements.typeCreneau) motifParts.push(`type→${changements.typeCreneau}`);
+            const motif = `Propagé(${creneau.id.substring(0, 8)}): ${motifParts.join(', ')}`;
+            instance.commentaire = [instance.commentaire, motif].filter(Boolean).join(' | ');
+
             cibles.push(instance);
         }
 
@@ -348,9 +363,12 @@ export class HeureCoursService {
             );
         }
 
-        // Passe 2 : application
+        // Passe 2 : application par lots (chunks de 50)
         if (!options?.dryRun && cibles.length > 0) {
-            await this.repo.save(cibles);
+            const CHUNK_SIZE = 50;
+            for (let i = 0; i < cibles.length; i += CHUNK_SIZE) {
+                await mgr.save(cibles.slice(i, i + CHUNK_SIZE));
+            }
             rapport.instancesQuiSuivent = cibles.length;
         }
 
@@ -377,12 +395,15 @@ export class HeureCoursService {
     async annulerInstancesCreneaux(
         creneauIds: string[],
         etablissementId: string,
-        options?: { motif?: string; createurId?: string; req?: Request },
+        options?: { motif?: string; createurId?: string; req?: Request; manager?: EntityManager },
     ): Promise<number> {
         if (creneauIds.length === 0) return 0;
 
+        const mgr = options?.manager ?? this.repo.manager;
         const aujourdhuiStr = this.dateToString(new Date());
-        const instances = await this.repo.find({
+
+        // P1 (BUG 2) : chargement en une seule requête, puis UPDATE bulk
+        const instances = await mgr.find(HeureCours, {
             where: {
                 creneauId: In(creneauIds),
                 etablissementId,
@@ -390,18 +411,25 @@ export class HeureCoursService {
             },
         });
 
-        let count = 0;
-        for (const instance of instances) {
-            if (this.dateToString(instance.date) < aujourdhuiStr) continue;
-            instance.statutEffectue = StatutEffectue.ANNULE;
-            if (options?.motif) {
-                instance.commentaire = instance.commentaire
-                    ? `${instance.commentaire} — ${options.motif}`
-                    : options.motif;
-            }
-            await this.repo.save(instance);
-            count++;
+        const idsAFiltrer = instances
+            .filter(i => this.dateToString(i.date) >= aujourdhuiStr)
+            .map(i => i.id);
+
+        if (idsAFiltrer.length === 0) return 0;
+
+        // UPDATE bulk (1 seule requête au lieu de N)
+        const updateData: Record<string, unknown> = { statutEffectue: StatutEffectue.ANNULE };
+        if (options?.motif) {
+            updateData.commentaire = () => `COALESCE("heures_cours"."commentaire", '') || ' — ${options.motif!.replace(/'/g, "''")}'`;
         }
+
+        await mgr.createQueryBuilder()
+            .update(HeureCours)
+            .set(updateData)
+            .whereInIds(idsAFiltrer)
+            .execute();
+
+        const count = idsAFiltrer.length;
 
         if (count > 0 && options?.createurId) {
             await auditService.log({
@@ -984,6 +1012,8 @@ export class HeureCoursService {
 
         let created = 0;
         let skipped = 0;
+        const batch: HeureCours[] = [];
+        const CHUNK_SIZE = 50;
 
         const current = new Date(dateD);
         const dayOfWeek = current.getDay();
@@ -1017,28 +1047,33 @@ export class HeureCoursService {
                     continue;
                 }
 
-                // Vérifier que l'enseignant n'est pas déjà occupé à cette date et heure
-                const conflitEnseignant = await this.repo
-                    .createQueryBuilder('hc')
-                    .where('hc.enseignantId = :enseignantId', { enseignantId: slot.affectationMatiere?.enseignantId })
-                    .andWhere('hc.date = :date', { date: courseDate.toISOString().split('T')[0] })
-                    .andWhere('hc.heureDebut < :heureFin', { heureFin: slot.heureFin })
-                    .andWhere('hc.heureFin > :heureDebut', { heureDebut: slot.heureDebut })
-                    .andWhere('hc.statutEffectue != :annule', { annule: StatutEffectue.ANNULE })
-                    .getCount();
-
-                if (conflitEnseignant > 0) {
-                    logger.warn(
-                        `[HeureCours] Conflit enseignant détecté à la matérialisation: ${slot.affectationMatiere?.enseignantId} le ${courseDate.toISOString().split('T')[0]} ${slot.heureDebut}-${slot.heureFin} — créneau ignoré`,
-                    );
-                    skipped++;
-                    continue;
-                }
-
+                // P0-3 : Vérification complète des conflits (enseignant + classe + salle)
+                // au lieu du seul conflit enseignant (ancien code partiel)
                 const slotClasseAnneeId = slot.affectationMatiere?.classeAnneeId;
                 const slotMatiereId = slot.affectationMatiere?.matiereId;
                 const slotEnseignantId = slot.affectationMatiere?.enseignantId;
                 if (!slotClasseAnneeId || !slotMatiereId || !slotEnseignantId) {
+                    skipped++;
+                    continue;
+                }
+
+                const dateStr = courseDate.toISOString().split('T')[0];
+                const conflitsInstance = await this.verifierConflitsInstance(
+                    {
+                        enseignantId: slotEnseignantId,
+                        classeAnneeId: slotClasseAnneeId,
+                        salleId: slot.salleId,
+                        date: dateStr,
+                        heureDebut: slot.heureDebut,
+                        heureFin: slot.heureFin,
+                        etablissementId,
+                    },
+                );
+
+                if (conflitsInstance.length > 0) {
+                    logger.warn(
+                        `[HeureCours] Conflit détecté à la matérialisation: ${slotEnseignantId} le ${dateStr} ${slot.heureDebut}-${slot.heureFin} — ${conflitsInstance.map(c => c.type).join(', ')} — créneau ignoré`,
+                    );
                     skipped++;
                     continue;
                 }
@@ -1058,8 +1093,21 @@ export class HeureCoursService {
                     etablissementId,
                 });
 
-                await this.repo.save(hc);
-                created++;
+                batch.push(hc);
+
+                // Flush du batch par chunks pour éviter les requêtes individuelles
+                if (batch.length >= CHUNK_SIZE) {
+                    await this.repo.save(batch);
+                    created += batch.length;
+                    batch.length = 0;
+                }
+            }
+
+            // Flush du batch restant en fin de semaine
+            if (batch.length > 0) {
+                await this.repo.save(batch);
+                created += batch.length;
+                batch.length = 0;
             }
 
             current.setDate(current.getDate() + 7);

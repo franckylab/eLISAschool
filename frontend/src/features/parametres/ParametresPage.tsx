@@ -7,7 +7,6 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { Card, CardContent } from '@/components/ui/Card';
 import { ConfirmDialog } from '@/components/modals/ConfirmDialog';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { ElisaInput } from '@/components/ui/ElisaInput';
 import { cn } from '@/lib/cn';
 import {
     useParametres,

@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { useParams, useNavigate, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Edit, Download, Mail, Phone, MapPin, Calendar, User, AlertCircle, Award, ClipboardList, FileText, History } from 'lucide-react';
+import { ArrowLeft, Edit, Download, Mail, Phone, MapPin, Calendar, User, AlertCircle, Award, ClipboardList, FileText } from 'lucide-react';
 import { useEleve, useEleveDocuments } from '..';
 import { EleveFormModal } from './eleve-form-modal';
 import { ElisaButton } from '@/components/ui/ElisaButton';

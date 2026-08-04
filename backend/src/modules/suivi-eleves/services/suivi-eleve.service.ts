@@ -66,7 +66,7 @@ export class SuiviEleveService {
             declarantId,
             etablissementId,
             dateIncident: new Date(),
-        }) as IncidentEleve;
+        } as any) as unknown as IncidentEleve;
         await this.incidentRepo.save(incident);
         
         // Audit trail
@@ -117,7 +117,7 @@ export class SuiviEleveService {
             ...dto,
             observateurId,
             etablissementId,
-        }) as ObservationEleve;
+        } as any) as unknown as ObservationEleve;
         await this.observationRepo.save(observation);
         
         // Attribution points gamification si pointsImpact != 0
@@ -190,7 +190,7 @@ export class SuiviEleveService {
     async createSanction(dto: CreateSanctionEleveDto, decideParId: string, etablissementId: string, req?: Request): Promise<SanctionEleve> {
         // Vérifier si validation requise pour sanctions graves
         const requireValidation = await getParamBoolean('suivi-eleves.sanction.require_validation', { defaultValue: false });
-        const sanctionGrave = dto.gravite === 'GRAVE' || dto.gravite === 'TRES_GRAVE';
+        const sanctionGrave = (dto as any).gravite === 'GRAVE' || (dto as any).gravite === 'TRES_GRAVE';
         
         const sanction = this.sanctionRepo.create({
             ...dto,

@@ -10,14 +10,14 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BookOpen, Calendar, Clock, MapPin, CheckCircle2, AlertTriangle, ChevronRight, ChevronLeft, Trash2 } from 'lucide-react';
+import { BookOpen, Calendar, Clock, MapPin, CheckCircle2, AlertTriangle, ChevronRight, ChevronLeft, Trash2, ShieldCheck } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { toast } from 'sonner';
 import type { CreneauHoraire, JourSemaine, TypeCreneau, DonneesVerification } from '../types/edt.types';
-import { useVerifierConflits, useCreerCreneau, useUpdateCreneau, useSupprimerCreneau } from '../hooks/use-emploi-du-temps';
+import { useVerifierConflits, useCreerCreneau, useUpdateCreneau, useSupprimerCreneau, useValiderCreneau } from '../hooks/use-emploi-du-temps';
 
 interface AffectationOption {
     id: string;
@@ -79,8 +79,10 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
     const creerCreneau = useCreerCreneau();
     const updateCreneau = useUpdateCreneau();
     const supprimerCreneau = useSupprimerCreneau();
+    const validerCreneau = useValiderCreneau();
 
     const isEdit = !!creneau;
+    const estPlanifie = creneau?.statut === 'PLANIFIE';
 
     // Initialiser le formulaire
     useEffect(() => {
@@ -425,6 +427,19 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
                 {/* Navigation */}
                 <div className="flex items-center justify-between pt-4 border-t border-[var(--color-border)]">
                     <div className="flex items-center gap-2">
+                        {isEdit && estPlanifie && (
+                            <ElisaButton
+                                variant="secondary"
+                                onClick={async () => {
+                                    if (!creneau) return;
+                                    await validerCreneau.mutateAsync(creneau.id);
+                                    onSuccess?.();
+                                }}
+                                disabled={validerCreneau.isPending}
+                            >
+                                <ShieldCheck className="h-4 w-4 mr-1" /> {t('valider')}
+                            </ElisaButton>
+                        )}
                         {isEdit && (
                             <ElisaButton
                                 variant="danger"

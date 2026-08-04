@@ -14,6 +14,8 @@ import type {
     HistoriqueFiltres,
     BackupRecord,
     CreateBackupDto,
+    CreateParametreDto,
+    UpdateParametreDto,
 } from '../types/configuration.types';
 
 const CONFIG_KEYS = {
@@ -87,7 +89,7 @@ export function useModuleImpact(moduleNom: string, actif: boolean) {
         queryFn: async () => {
             const response = await apiClient.get<ModuleImpact>(
                 `/api/configuration/modules/registry/impact`,
-                { params: { moduleNom, actif: String(actif) } }
+                { moduleNom, actif: String(actif) }
             );
             return response.data;
         },

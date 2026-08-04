@@ -24,7 +24,7 @@ export class ModeleCarteService {
         // Si parDefaut = true, désactiver les autres modèles par défaut
         if (dto.parDefaut) {
             await this.repo.update(
-                { etablissementId, type: dto.type, parDefaut: true },
+                { etablissementId, type: dto.type, parDefaut: true } as any,
                 { parDefaut: false }
             );
         }
@@ -32,7 +32,7 @@ export class ModeleCarteService {
         const modele = this.repo.create({
             ...dto,
             etablissementId,
-        });
+        } as any) as unknown as ModeleCarte;
 
         await this.repo.save(modele);
         logger.info(`[Cartes] Modèle créé: ${modele.nom} pour établissement ${etablissementId}`);
@@ -82,7 +82,7 @@ export class ModeleCarteService {
 
     async getDefaultModele(type: string, etablissementId: string): Promise<ModeleCarte | null> {
         return this.repo.findOne({
-            where: { etablissementId, type, parDefaut: true, actif: true },
+            where: { etablissementId, type, parDefaut: true, actif: true } as any,
         });
     }
 }

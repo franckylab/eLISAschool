@@ -123,7 +123,7 @@ export function UnauthorizedPage() {
                                 <ElisaButton
                                     variant="outline"
                                     icon={<Mail className="w-4 h-4" />}
-                                    onClick={() => navigate({ to: '/communication' })}
+                                    onClick={() => navigate({ to: '/login' as string })}
                                 >
                                     {t('actions.contactAdmin', 'Contacter un administrateur')}
                                 </ElisaButton>

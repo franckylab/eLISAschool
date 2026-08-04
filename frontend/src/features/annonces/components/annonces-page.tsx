@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { Megaphone, Plus, Eye, Edit, Trash2, Calendar, Clock } from 'lucide-react';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { useAnnonces, useSupprimerAnnonce, useCreerAnnonce } from '../hooks/use-annonces';
+import { useAnnonces, useSupprimerAnnonce } from '../hooks/use-annonces';
 import type { Annonce } from '../types/annonce.types';
 
 export function AnnoncesPage() {
@@ -148,6 +148,7 @@ export function AnnoncesPage() {
             </motion.div>
 
             <DataTable
+                tableId="annonces"
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}

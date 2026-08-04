@@ -21,7 +21,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebarStore } from '@/stores/sidebar.store';
 import { useAuthStore } from '@/stores/auth.store';
-import { useEtablissement } from '@/features/etablissement';
+
 import { LanguageSwitcher } from '@/components/navigation/LanguageSwitcher';
 import { ThemeSwitcher } from '@/components/navigation/ThemeSwitcher';
 import { EtablissementSwitcher } from '@/components/auth/EtablissementSwitcher';
@@ -32,13 +32,9 @@ export function Header() {
     const { t } = useTranslation('common');
     const router = useRouter();
     const { toggleMobile } = useSidebarStore();
-    const { utilisateur, etablissementId } = useAuthStore();
+    const { utilisateur } = useAuthStore();
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-
-    // Charger le logo de l'établissement
-    const { data: etablissement } = useEtablissement(etablissementId || '');
-    const logoEtablissement = etablissement?.logoUrl;
 
     const handleLogout = async () => {
         // Utiliser le service de déconnexion sécurisée

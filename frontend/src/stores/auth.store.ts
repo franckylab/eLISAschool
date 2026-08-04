@@ -49,14 +49,6 @@ export interface EtablissementDisponible {
     logoUrl?: string;
 }
 
-interface EtablissementStore {
-    id: string;
-    nom?: string;
-    role: string;
-    etablissementPrincipal: boolean;
-    actif: boolean;
-}
-
 interface AuthState {
     accessToken: string | null;
     refreshToken: string | null;

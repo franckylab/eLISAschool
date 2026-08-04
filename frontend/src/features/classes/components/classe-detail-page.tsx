@@ -81,7 +81,7 @@ export function ClasseDetailPage() {
     const workflowQuery = useWorkflowByEntite('classes', id);
 
     const { data: elevesClasseData, isLoading: loadingEleves } = useElevesClasse(id, pageEleves, 20, rechercheEleves || undefined);
-    const eleves = (elevesClasseData?.eleves?.items || []) as Eleve[];
+    const eleves = (elevesClasseData?.eleves?.items || []) as unknown as Eleve[];
     const statsEleves = elevesClasseData?.stats;
     const paginationEleves = elevesClasseData?.eleves?.meta;
 
@@ -824,7 +824,7 @@ function ModalAffectationEleve({ classeId, onClose }: ModalAffectationEleveProps
     const { data: elevesAffectesData } = useElevesClasse(classeId, 1, 500);
 
     const elevesDejaAffectes = new Set(
-        (elevesAffectesData?.eleves?.items || []).map((e: Eleve) => e.id)
+        (elevesAffectesData?.eleves?.items || []).map((e) => e.id)
     );
     const elevesDisponibles = (tousElevesData?.items || []).filter(
         (e: Eleve) => !elevesDejaAffectes.has(e.id)

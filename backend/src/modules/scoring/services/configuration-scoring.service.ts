@@ -42,7 +42,7 @@ export class ConfigurationScoringService {
         const config = this.repo.create({
             ...dto,
             anneeScolaireId: dto.anneeScolaireId ?? undefined,
-        });
+        } as any) as unknown as ConfigurationScoring;
         await this.repo.save(config);
         
         logger.info(`ConfigurationScoring créée: ${config.id}`);

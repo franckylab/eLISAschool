@@ -175,6 +175,7 @@ export function CourriersPage() {
 
 
             <DataTable
+                tableId="courriers"
                 columns={colonnes}
                 data={data || []}
                 isLoading={isLoading}

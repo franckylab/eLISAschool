@@ -118,7 +118,7 @@ export class MessageForwardService {
                     originalExpediteurId: sourceMessage.expediteurId,
                     forwardedAt: new Date().toISOString(),
                 },
-            } as any);
+            } as any) as unknown as Message;
 
             await this.messageRepo.save(forwardedMessage);
             forwardedMessages.push(forwardedMessage);

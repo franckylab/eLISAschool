@@ -202,9 +202,9 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
                 await modifierClasse.mutateAsync({
                     id: classe.id,
                     ...modeleData,
-                    sallePrincipaleId: instanceData.sallePrincipaleId || null,
+                    sallePrincipaleId: instanceData.sallePrincipaleId ?? undefined,
                     effectifMax: instanceData.effectifMax,
-                    programmeId: instanceData.programmeId || null,
+                    programmeId: instanceData.programmeId ?? undefined,
                 });
             }
             onSuccess();

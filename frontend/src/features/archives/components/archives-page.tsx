@@ -17,7 +17,9 @@ export function ArchivesPage() {
     const [recherche, setRecherche] = useState('');
     const [filtreCategorie, setFiltreCategorie] = useState('');
 
-    const { data, isLoading, error, meta } = useArchives({ recherche: recherche || undefined, categorie: filtreCategorie || undefined });
+    const { data: queryResult, isLoading, error } = useArchives({ recherche: recherche || undefined, categorie: filtreCategorie || undefined });
+    const data = queryResult?.data;
+    const meta = queryResult?.meta;
     const { data: stats } = useStatistiquesArchives();
     const telecharger = useTelechargerArchive();
     const supprimer = useSupprimerArchive();
@@ -78,8 +80,9 @@ export function ArchivesPage() {
             )}
 
             <DataTable
-                colonnes={colonnes}
-                donnees={data || []}
+                tableId="archives"
+                columns={colonnes}
+                data={data || []}
                 isLoading={isLoading}
                 enableReordering
                 enableRowHeight

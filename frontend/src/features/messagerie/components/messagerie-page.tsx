@@ -103,6 +103,7 @@ export function MessageriePage() {
             />
 
             <DataTable
+                tableId="messagerie"
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}

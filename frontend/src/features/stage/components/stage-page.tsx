@@ -54,6 +54,7 @@ export function StagePage() {
             </CardGrid>
 
             <DataTable
+                tableId="stages"
                 data={stages}
                 columns={colonnes}
                 enableReordering

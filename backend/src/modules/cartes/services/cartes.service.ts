@@ -10,7 +10,7 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { CarteScolaire, StatutCarte, TypeCarte } from '../entities';
+import { Carte, StatutCarte, TypeCarte } from '../entities';
 import { CreateCarteDto, UpdateCarteDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -21,10 +21,10 @@ import { validationWorkflowService } from '@modules/validation-workflow/services
  * Service Cartes avec configuration centralisée
  */
 export class CartesService {
-    private carteRepo: Repository<CarteScolaire>;
+    private carteRepo: Repository<Carte>;
 
     constructor() {
-        this.carteRepo = AppDataSource.getRepository(CarteScolaire);
+        this.carteRepo = AppDataSource.getRepository(Carte);
     }
 
     /**
@@ -41,7 +41,7 @@ export class CartesService {
     /**
      * Crée une nouvelle carte avec paramètres de configuration
      */
-    async create(dto: CreateCarteDto, etablissementId?: string, createurId?: string): Promise<CarteScolaire> {
+    async create(dto: CreateCarteDto, etablissementId?: string, createurId?: string): Promise<Carte> {
         const params = await this.getCartesParams();
         
         // Récupérer le nom de l'établissement
@@ -62,7 +62,7 @@ export class CartesService {
         // Vérifier si le workflow de validation est requis
         const requireValidation = await getParamBoolean('cartes.require_validation', { defaultValue: false });
 
-        const carte: CarteScolaire = this.carteRepo.create({
+        const carte: Carte = this.carteRepo.create({
             ...dto,
             etablissementId,
             type: dto.type as TypeCarte,
@@ -80,7 +80,7 @@ export class CartesService {
             await validationWorkflowService.createWorkflow({
                 module: 'cartes',
                 entiteId: carte.id,
-                entiteType: 'CarteScolaire',
+                entiteType: 'Carte',
                 niveauxRequis: 2,
                 etablissementId,
                 commentaire: `Demande de carte: ${numeroCarte}`,
@@ -91,7 +91,7 @@ export class CartesService {
         return carte;
     }
 
-    async findAll(type?: TypeCarte, statut?: StatutCarte, etablissementId?: string, page: number = 1, limit: number = 20): Promise<{ data: CarteScolaire[]; total: number; page: number; limit: number }> {
+    async findAll(type?: TypeCarte, statut?: StatutCarte, etablissementId?: string, page: number = 1, limit: number = 20): Promise<{ data: Carte[]; total: number; page: number; limit: number }> {
         const where: any = {};
         if (type) where.type = type;
         if (statut) where.statut = statut;
@@ -100,7 +100,7 @@ export class CartesService {
         return { data, total, page, limit };
     }
 
-    async findOne(id: string, etablissementId?: string): Promise<CarteScolaire> {
+    async findOne(id: string, etablissementId?: string): Promise<Carte> {
         const where: any = { id };
         if (etablissementId) where.etablissementId = etablissementId;
         const carte = await this.carteRepo.findOne({ where, relations: ['utilisateur'] });
@@ -108,11 +108,11 @@ export class CartesService {
         return carte;
     }
 
-    async findByUtilisateur(utilisateurId: string): Promise<CarteScolaire[]> {
+    async findByUtilisateur(utilisateurId: string): Promise<Carte[]> {
         return this.carteRepo.find({ where: { utilisateurId }, order: { createdAt: 'DESC' } });
     }
 
-    async update(id: string, dto: UpdateCarteDto): Promise<CarteScolaire> {
+    async update(id: string, dto: UpdateCarteDto): Promise<Carte> {
         const carte = await this.findOne(id);
         Object.assign(carte, dto);
         await this.carteRepo.save(carte);
@@ -122,7 +122,7 @@ export class CartesService {
     /**
      * Désactive une carte
      */
-    async desactiver(id: string, raison?: string): Promise<CarteScolaire> {
+    async desactiver(id: string, raison?: string): Promise<Carte> {
         const carte = await this.findOne(id);
         carte.statut = StatutCarte.DESACTIVEE;
         carte.raisonDesactivation = raison;
@@ -134,7 +134,7 @@ export class CartesService {
     /**
      * Renouvelle une carte avec les paramètres configurés
      */
-    async renouveler(id: string, createurId?: string, etablissementId?: string): Promise<CarteScolaire> {
+    async renouveler(id: string, createurId?: string, etablissementId?: string): Promise<Carte> {
         const params = await this.getCartesParams();
         const oldCarte = await this.findOne(id);
 
@@ -146,7 +146,7 @@ export class CartesService {
             const workflow = await validationWorkflowService.createWorkflow({
                 module: 'cartes',
                 entiteId: oldCarte.id,
-                entiteType: 'CarteScolaire',
+                entiteType: 'Carte',
                 niveauxRequis: 2,
                 etablissementId: etablissementId || oldCarte.etablissementId,
                 commentaire: `Renouvellement carte: ${oldCarte.numeroCarte}`,
@@ -185,7 +185,7 @@ export class CartesService {
     /**
      * Vérifie si une carte est valide (scanning)
      */
-    async verifier(numeroCarte: string): Promise<{ valide: boolean; carte?: CarteScolaire; raison?: string }> {
+    async verifier(numeroCarte: string): Promise<{ valide: boolean; carte?: Carte; raison?: string }> {
         const carte = await this.carteRepo.findOne({
             where: { numeroCarte },
             relations: ['utilisateur'],
@@ -227,7 +227,7 @@ export class CartesService {
     /**
      * Cartes expirant bientôt (dans X jours)
      */
-    async getCartesExpirantBientot(jours: number = 30): Promise<CarteScolaire[]> {
+    async getCartesExpirantBientot(jours: number = 30): Promise<Carte[]> {
         const dateLimite = new Date();
         dateLimite.setDate(dateLimite.getDate() + jours);
 
@@ -242,7 +242,7 @@ export class CartesService {
     /**
      * Signale la perte d'une carte
      */
-    async signalerPerte(id: string): Promise<CarteScolaire> {
+    async signalerPerte(id: string): Promise<Carte> {
         const carte = await this.findOne(id);
         carte.statut = StatutCarte.PERDUE;
         carte.raisonDesactivation = 'Perte signalée';
@@ -254,7 +254,7 @@ export class CartesService {
     /**
      * Recherche par numéro de carte
      */
-    async findByNumero(numeroCarte: string): Promise<CarteScolaire> {
+    async findByNumero(numeroCarte: string): Promise<Carte> {
         const carte = await this.carteRepo.findOne({ where: { numeroCarte }, relations: ['utilisateur'] });
         if (!carte) throw new AppError('Carte non trouvée', 404, 'NOT_FOUND');
         return carte;
@@ -263,7 +263,7 @@ export class CartesService {
     /**
      * Alias pour findByUtilisateur
      */
-    async findByUser(utilisateurId: string): Promise<CarteScolaire[]> {
+    async findByUser(utilisateurId: string): Promise<Carte[]> {
         return this.findByUtilisateur(utilisateurId);
     }
 }

@@ -55,12 +55,12 @@ export function ChangerSalleModal({ classe, onClose }: ChangerSalleModalProps) {
     const handleConfirm = async () => {
         await modifierClasse.mutateAsync({
             id: classe.id,
-            sallePrincipaleId: selectedSalleId || null,
+            sallePrincipaleId: selectedSalleId || undefined,
         });
         onClose();
     };
 
-    const currentSalle = classe.salle;
+    const currentSalle = classe.salle as (Salle & { typeSalle?: string }) | undefined;
     const hasChanged = selectedSalleId !== (classe.sallePrincipaleId || '');
 
     const labelTypeSalle = (type: string) =>

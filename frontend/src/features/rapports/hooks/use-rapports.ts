@@ -23,8 +23,8 @@ export function useRapports(filtres?: FiltresRapports) {
         queryKey: RAPPORTS_KEYS.listes(filtres),
         queryFn: async () => {
             const params: Record<string, any> = {
-                page: filtres?.page || 1,
-                limit: filtres?.limit || 20,
+                page: (filtres as any)?.page || 1,
+                limit: (filtres as any)?.limit || 20,
             };
 
             if (filtres?.type) params.type = filtres.type;

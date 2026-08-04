@@ -13,7 +13,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Plus, Edit, Trash2, GripVertical, Save, X, AlertCircle,
+    Plus, Edit, Trash2, GripVertical, Save, X,
     Layers, Tag, Shield,
 } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
@@ -502,7 +502,7 @@ function SectionUsages() {
                                         <p className="truncate text-xs text-[var(--color-text-tertiary)]">{usage.description}</p>
                                     )}
                                 </div>
-                                <Shield className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-text-tertiary)]" title="Usage système" />
+                                <span title="Usage système"><Shield className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-text-tertiary)]" /></span>
                             </div>
                         ))}
                     </div>

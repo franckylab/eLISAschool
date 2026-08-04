@@ -89,11 +89,14 @@ export class ProgrammeChapitreService {
                 });
             }
 
-            result.items = result.items.map(chapitre => ({
-                ...chapitre,
-                programmeId: programmeMap.get(chapitre.programmeMatiereId)?.programmeId || null,
-                programmeNom: programmeMap.get(chapitre.programmeMatiereId)?.programmeNom || null,
-            })) as any;
+            result.items = result.items.map(chapitre => {
+                const entry = programmeMap.get(chapitre.programmeMatiereId || '');
+                return {
+                    ...chapitre,
+                    programmeId: entry?.programmeId ?? '',
+                    programmeNom: entry?.programmeNom ?? '',
+                };
+            }) as any;
         }
 
         return result;

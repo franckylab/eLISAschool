@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, TrendingUp, Users, DollarSign, AlertCircle, Download } from 'lucide-react';
+import { BarChart3, Users, DollarSign, AlertCircle, Download } from 'lucide-react';
 import { useStatistiquesGlobales, useExporterStatistiques } from '../hooks/use-statistiques';
 import { SchoolLoading } from '@/components/feedback';
 

@@ -26,7 +26,7 @@ export function GroupeEtablissementDetailModal({
     groupe,
 }: GroupeEtablissementDetailModalProps) {
     const { t } = useTranslation('groupes-etablissements');
-    const { data: groupeDetail, isLoading: detailLoading } = useGroupeEtablissementDetail(groupe.id);
+    const { data: groupeDetail } = useGroupeEtablissementDetail(groupe.id);
     const { data: admins, isLoading: adminsLoading } = useListerAdmins(groupe.id);
 
     return (
@@ -70,9 +70,9 @@ export function GroupeEtablissementDetailModal({
                         </p>
                         
                         {/* Liste des établissements */}
-                        {groupeDetail?.etablissements && groupeDetail.etablissements.length > 0 ? (
+                        {(groupeDetail as any)?.etablissements && (groupeDetail as any).etablissements.length > 0 ? (
                             <div className="space-y-2 max-h-40 overflow-y-auto">
-                                {groupeDetail.etablissements.map((etab: any) => (
+                                {(groupeDetail as any).etablissements.map((etab: any) => (
                                     <div
                                         key={etab.id}
                                         className="flex items-center gap-2 p-2 rounded-md bg-[var(--color-surface)] dark:bg-[var(--color-surface-300)] border border-[var(--color-bordure)]"

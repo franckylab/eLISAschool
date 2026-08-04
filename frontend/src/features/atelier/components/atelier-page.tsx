@@ -54,6 +54,7 @@ export function AtelierPage() {
             </CardGrid>
 
             <DataTable
+                tableId="ateliers"
                 data={ateliersList}
                 columns={colonnes}
                 enableReordering

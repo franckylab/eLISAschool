@@ -1,0 +1,173 @@
+{
+  "summary": {
+    "projectName": "eLISAschool",
+    "locale": "en",
+    "modelId": "agent-work-loop-v4",
+    "reportContractVersion": 25,
+    "overview": "The project has rich documentation (4 rules, 4 skills, 920 memories) and a clear decisional AGENTS.md, but skills are monoliths without progressive disclosure, no post-change verification (type-check, tests) is observed after edits, and 920 memories contain title collisions to deduplicate.",
+    "aiAgentPractice": {
+      "inspectedSurfaces": [
+        "Rules",
+        "Skills",
+        "Memories"
+      ],
+      "coverageRows": [
+        {
+          "surface": "Rules",
+          "scopes": [
+            "Project"
+          ],
+          "count": 4,
+          "paths": [
+            ".qoder/rules/elisaschool-conventions.md",
+            ".qoder/rules/elisaschool-docs-management.md",
+            ".qoder/rules/elisaschool-frontend.md",
+            "AGENTS.md"
+          ]
+        },
+        {
+          "surface": "Skills",
+          "scopes": [
+            "Project"
+          ],
+          "count": 4,
+          "paths": [
+            ".qoder/skills/elisaschool-business-logic/SKILL.md",
+            ".qoder/skills/elisaschool-dev/SKILL.md",
+            ".qoder/skills/elisaschool-frontend-dev/SKILL.md",
+            ".qoder/skills/elisaschool-frontend-refactor/SKILL.md"
+          ]
+        },
+        {
+          "surface": "Memories",
+          "scopes": [
+            "Project"
+          ],
+          "count": 920
+        },
+        {
+          "surface": "Custom Agents",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        }
+      ]
+    },
+    "assignmentSummaries": [],
+    "dimensions": [
+      {
+        "id": "task-understanding",
+        "label": "Task Understanding",
+        "score": 78,
+        "summary": "AGENTS.md provides rich decisional context (architecture, semantics, seeds, walkthroughs). The 4 rules cover backend, frontend conventions, and documentation management.",
+        "findingRefs": [
+          "skills-monolithic-no-progressive-disclosure"
+        ]
+      },
+      {
+        "id": "controlled-execution",
+        "label": "Controlled Execution",
+        "score": 52,
+        "summary": "Supported commands are visible in scripts/, but no Hooks are configured to automate verifications (post-edit type-check, lint, tests). Execution relies entirely on manual rule following.",
+        "findingRefs": [
+          "skills-monolithic-no-progressive-disclosure",
+          "no-post-change-verification-observed",
+          "no-hooks-commands-or-agents-configured"
+        ]
+      },
+      {
+        "id": "change-validation",
+        "label": "Change Validation",
+        "score": 35,
+        "summary": "0 out of 68 sessions show structured verification after changes (withChecks: 0). Sessions produce edits without type-check, tests, or lint validation. Manual API walkthroughs are positive but not reproducible.",
+        "findingRefs": [
+          "no-post-change-verification-observed"
+        ]
+      },
+      {
+        "id": "reliable-delivery",
+        "label": "Reliable Delivery",
+        "score": 45,
+        "summary": "Sessions produce observed changes but without structured acceptance evidence. Closure is mostly 'no-change-observed' or 'changed-without-check'. No systematic result verification.",
+        "findingRefs": [
+          "no-hooks-commands-or-agents-configured"
+        ]
+      },
+      {
+        "id": "learning-capture",
+        "label": "Learning Capture",
+        "score": 55,
+        "summary": "920 project memories cover all domain aspects. However, no outcome review has validated that retrieved memories actually improve results. 5 exact collisions and 12 similar pairs signal a governance need.",
+        "findingRefs": [
+          "memory-title-collisions-need-governance"
+        ]
+      }
+    ]
+  },
+  "findings": [
+    {
+      "id": "skills-monolithic-no-progressive-disclosure",
+      "title": "All 4 project skills are monoliths without progressive disclosure",
+      "severity": "Medium",
+      "reason": "Each skill ranges from 1195 to 2220 lines with no reference files to decompose content. The agent-assets lint reports 4 warnings (skill-length-hard-cap) and 4 advisories (skill-long-without-progressive-references). Each invocation consumes the full context, reducing space for target code and evidence. The owner is the project team (skill author).",
+      "expectedOutput": [
+        "Extract detail sections (conventions, patterns, examples) into Markdown files under references/ of each skill",
+        "SKILL.md keeps only the progressive index: summary, triggers, and links to references"
+      ],
+      "expectedArtifact": "references/ files in each skill",
+      "aiFixPrompt": "/better-harness fix this issue\n\nAll 4 project skills are monoliths (1195-2220 lines) without progressive disclosure.\n\n## Evidence\n\n- elisaschool-business-logic: 1860 lines, 0 references\n- elisaschool-dev: 2083 lines, 0 references\n- elisaschool-frontend-dev: 2220 lines, 0 references\n- elisaschool-frontend-refactor: 1195 lines, 0 references\n\n## Action\n\nFor each skill:\n1. Identify detail sections (patterns, examples, conventions)\n2. Extract them to <skill>/references/<section>.md\n3. Replace in SKILL.md with a progressive link\n4. Validate with asset-baseline lint\n\n## Validation\n\nnode scripts/better-harness.mjs coding-agent-practices asset-baseline qoder --workspace . --language fr --json\nConfirm 0 skill-length findings.",
+      "dimensionRefs": [
+        "controlled-execution",
+        "task-understanding"
+      ]
+    },
+    {
+      "id": "memory-title-collisions-need-governance",
+      "title": "5 exact collisions and 12 similar pairs in memory titles",
+      "severity": "Low",
+      "reason": "The integrity review identifies 5 exact collision groups (same normalized titles) and 12 pairs at 91-99% similarity. These are metadata governance leads — no proof of duplicated body content or current impact. The owner is the project team via SearchMemory + update_memory for merge or deletion. The disposition remains metadata-lead as bodies were not inspected.",
+      "expectedOutput": [
+        "Review the 5 exact collisions and decide merge or deletion after content verification",
+        "Review the 12 similar pairs and merge confirmed duplicates"
+      ],
+      "expectedArtifact": "Merged or deleted memories",
+      "aiFixPrompt": "/better-harness fix this issue\n\n5 exact collisions and 12 similar pairs in project memory titles.\n\n## Evidence\n\nThe integrity review reports:\n- 5 exact collision groups (identical normalized titles)\n- 12 pairs at 91-99% similarity\n\n## Action\n\n1. For each exact collision: SearchMemory to locate entries, compare content, merge or delete duplicate via update_memory\n2. For similar pairs: assess whether merge is relevant\n3. Do NOT edit memory files directly — use only SearchMemory + update_memory API\n\n## Validation\n\nRerun: node scripts/better-harness.mjs coding-agent-practices asset-baseline qoder --workspace . --json\nConfirm reduced integrity findings.",
+      "dimensionRefs": [
+        "learning-capture"
+      ]
+    },
+    {
+      "id": "no-post-change-verification-observed",
+      "title": "No structured verification observed after code changes",
+      "severity": "Medium",
+      "reason": "Out of 68 analyzed sessions (7 days), withChecks = 0. Sessions produce file edits (E3: 2 edits, 1 file) without running type-check, lint, or tests afterwards. The friction count is high (E1: 16, E2: 27 execution failures) but no friction consequence is documented. The owner is the project team — verification scripts exist (tsc, eslint) but are not automated via Hooks.",
+      "expectedOutput": [
+        "Configure a Qoder Hook that runs tsc --noEmit after each TypeScript file edit",
+        "Or add a systematic verification step in session workflows"
+      ],
+      "expectedArtifact": "PostToolUse Hook or post-edit verification script",
+      "aiFixPrompt": "/better-harness fix this issue\n\nNo structured verification after code changes (withChecks=0 across 68 sessions).\n\n## Evidence\n\n- 68 sessions analyzed, 0 with checks\n- 12 sessions with execution friction (16-27 failures)\n- Scripts exist: tsc in backend/ and frontend/, eslint in backend/\n- 0 Hooks configured in the project\n\n## Action\n\nConfigure a Qoder PostToolUse Hook that runs:\n- backend: npx tsc --noEmit (modified .ts files in backend/)\n- frontend: npx tsc --noEmit (modified .ts/.tsx files in frontend/)\n\n## Validation\n\nAfter activation, rerun session-analysis facts and confirm withChecks > 0.",
+      "dimensionRefs": [
+        "change-validation",
+        "controlled-execution"
+      ]
+    },
+    {
+      "id": "no-hooks-commands-or-agents-configured",
+      "title": "No Hooks, Commands, or Agents configured in the project",
+      "severity": "Low",
+      "reason": "The asset baseline inventory returns 0 Hooks, 0 Commands, 0 Agents for this Qoder project. Hooks would automate post-edit verifications (type-check, lint). Commands would enable repeatable workflows. Agents would delegate specialized tasks. The project has 4 Rules and 4 Skills defining conventions but no execution automation. This is a capability lead, not a defect — rules and skills work in manual mode.",
+      "expectedOutput": [
+        "At minimum one PostToolUse Hook for TypeScript type-check after edits",
+        "Evaluate Commands for repeatable scripts (deploy, migrate, seed)"
+      ],
+      "expectedArtifact": "Hook configuration for automatic verifications",
+      "aiFixPrompt": "/better-harness fix this issue\n\n0 Hooks, 0 Commands, 0 Agents configured.\n\n## Evidence\n\n- asset-baseline: hooks=0, commands=0, agents=0\n- 4 Rules + 4 Skills define conventions but no automation\n- withChecks=0 across 68 sessions\n\n## Action\n\n1. Create a PostToolUse Hook for TypeScript type-check\n2. Evaluate Commands for recurring scripts (deploy, migrate)\n\n## Validation\n\nRerun asset-baseline and confirm hooks.count > 0.",
+      "dimensionRefs": [
+        "controlled-execution",
+        "reliable-delivery"
+      ]
+    }
+  ]
+}

@@ -22,7 +22,12 @@ import { ElisaButton } from '@/components/ui/ElisaButton';
 
 type FiltreAudit = 'tous' | 'bloquants' | 'avertissements';
 
-export function EDTAudit() {
+interface EDTAuditProps {
+    /** Mode embarqué : pas de skeleton propre, utilise les données du parent */
+    embedded?: boolean;
+}
+
+export function EDTAudit({ embedded = false }: EDTAuditProps) {
     const { t } = useTranslation('emplois');
     const [filtre, setFiltre] = useState<FiltreAudit>('tous');
 
@@ -61,6 +66,14 @@ export function EDTAudit() {
 
     return (
         <div className="flex flex-col gap-[var(--gap-lg)]">
+            {embedded && (
+                <h2
+                    className="font-semibold text-[var(--color-text-primary)]"
+                    style={{ fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.25rem)' }}
+                >
+                    {t('audit.titre')}
+                </h2>
+            )}
             {/* ─── KPIs Résumé ─────────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-[var(--gap-md)]">
                 <AuditKpi

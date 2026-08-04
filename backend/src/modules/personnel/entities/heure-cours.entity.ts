@@ -36,6 +36,29 @@ export enum StatutEffectue {
     REMPLACE = 'REMPLACE',
 }
 
+/**
+ * ══════════════════════════════════════════════════════════════
+ * ARCHITECTURE — Point d'écriture unique
+ * ══════════════════════════════════════════════════════════════
+ *
+ * TOUTES les écritures (create/update/delete/propagation/annulation/matérialisation)
+ * DOIVENT passer par `HeureCoursService` (heure-cours.service.ts).
+ *
+ * Ce service assure :
+ * - La synchronisation créneau → instances (propagation, annulation)
+ * - La vérification des conflits 3 axes (enseignant, classe, salle)
+ * - La traçabilité des motifs dans `commentaire`
+ * - Le bulk save par lots (chunks de 50)
+ * - L'audit trail (auditService.log)
+ *
+ * JAMAIS d'écriture directe via repository en dehors de ce service.
+ *
+ * Flux :
+ *   CreneauHoraire (template hebdo) ──propagation──→ HeureCours (instance datée)
+ *   CreneauHoraire (validation)     ──matérialisation──→ HeureCours (N instances)
+ *   CreneauHoraire (suppression)    ──annulation──→ HeureCours.statutEffectue = ANNULE
+ *   HeureCours (modification)       ──remontée──→ CreneauHoraire (appliquerModificationAuCreneau)
+ */
 @Entity('heures_cours')
 @Index(['enseignantId'])
 @Index(['classeAnneeId'])

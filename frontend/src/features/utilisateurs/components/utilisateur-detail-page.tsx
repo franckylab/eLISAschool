@@ -68,7 +68,7 @@ export function UtilisateurDetailPage() {
             message: `Forcer la réinitialisation du mot de passe pour ${utilisateur?.prenom} ${utilisateur?.nom} ?`,
             details: 'Les sessions actives seront révoquées. L\'utilisateur devra créer un nouveau mot de passe.',
             variant: 'warning',
-            onConfirm: () => forceReset.mutateAsync(id),
+            onConfirm: async () => { await forceReset.mutateAsync(id); },
         });
     }, [id, utilisateur, confirm, forceReset]);
 
@@ -89,7 +89,7 @@ export function UtilisateurDetailPage() {
                 ? 'L\'utilisateur ne pourra plus se connecter jusqu\'à la réactivation.'
                 : 'L\'utilisateur pourra à nouveau se connecter.',
             variant: estActif ? 'danger' : 'info',
-            onConfirm: () => toggleSuspension.mutateAsync({ id, statut: nouveauStatut }),
+            onConfirm: async () => { await toggleSuspension.mutateAsync({ id, statut: nouveauStatut }); },
         });
     }, [id, utilisateur, confirm, toggleSuspension]);
 
@@ -99,7 +99,7 @@ export function UtilisateurDetailPage() {
             message: `Déconnecter toutes les sessions actives de ${utilisateur?.prenom} ${utilisateur?.nom} ?`,
             details: 'L\'utilisateur sera déconnecté de tous ses appareils et devra se reconnecter.',
             variant: 'warning',
-            onConfirm: () => revokeSessions.mutateAsync(id),
+            onConfirm: async () => { await revokeSessions.mutateAsync(id); },
         });
     }, [id, utilisateur, confirm, revokeSessions]);
 

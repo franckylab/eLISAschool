@@ -10,7 +10,7 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { Badge, PointsUtilisateur, HistoriquePoints, BadgeUtilisateur } from '../entities';
+import { Badge, PointsUtilisateur, HistoriquePoints, BadgeUtilisateur, TypeActionPoints } from '../entities';
 import { CreateBadgeDto, AttribuerPointsDto, AttribuerBadgeDto } from '../dto';
 import { logger } from '@common/utils/logger.util';
 import { getParamNumber, getParamBoolean } from '@modules/configuration/utils/config.helper';
@@ -118,7 +118,7 @@ export class GamificationService {
         return this.attribuerPoints({
             utilisateurId,
             points: params.pointsAttendance,
-            action: 'assiduite',
+            action: TypeActionPoints.ASSIDUITE,
             description: 'Point de présence journalière',
         });
     }
@@ -133,7 +133,7 @@ export class GamificationService {
             return this.attribuerPoints({
                 utilisateurId,
                 points: params.pointsGoodGrade,
-                action: 'bonne_note',
+                action: TypeActionPoints.BONNE_NOTE,
                 description: `Bonne note: ${note}/${bareme}`,
             });
         }

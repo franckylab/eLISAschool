@@ -22,7 +22,7 @@ const EVENEMENTS_KEYS = {
 
 export function useEvenements(filtres: EvenementFiltres = {}) {
     const { isAuthenticated } = useAuthStore();
-    return useQuery({
+    const query = useQuery({
         queryKey: EVENEMENTS_KEYS.liste(filtres),
         queryFn: async () => {
             const response = await apiClient.getPaginated<Evenement>('/api/evenements', {
@@ -35,6 +35,7 @@ export function useEvenements(filtres: EvenementFiltres = {}) {
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
     });
+    return { ...query, data: query.data?.data?.items, meta: query.data?.data?.meta };
 }
 
 export function useEvenement(id: string) {

@@ -22,11 +22,56 @@
   "aucuneClasseSelectionnee": "No class selected",
   "selectionnerClassePourVoirListe": "Select a class from the filter above to view its slot list.",
   "onglets": {
+    "planning": "Planning",
+    "configuration": "Settings",
     "calendrier": "Calendar",
     "liste": "List",
     "synthese": "Summary",
     "preferences": "Preferences",
-    "templates": "Templates"
+    "templates": "Templates",
+    "audit": "Audit"
+  },
+  "vues": {
+    "semaine": "Week",
+    "mois": "Month",
+    "jour": "Day",
+    "liste": "List",
+    "analytique": "Analytics"
+  },
+  "navigation": {
+    "precedent": "Previous",
+    "suivant": "Next",
+    "aujourdhui": "Today",
+    "ceMois": "This month",
+    "ceJour": "Today"
+  },
+  "filtres": {
+    "titre": "Filters",
+    "avances": "Advanced filters",
+    "matiere": "Subject",
+    "periode": "Period",
+    "jour": "Day",
+    "salle": "Room",
+    "tous": "All",
+    "toutesMatieres": "All subjects",
+    "toutesPeriodes": "All periods",
+    "toutesClasses": "All classes",
+    "tousEnseignants": "All teachers",
+    "toutesSalles": "All rooms",
+    "tousJours": "All days",
+    "reset": "Reset"
+  },
+  "mois": {
+    "vide": "No slots this month",
+    "precedent": "Previous month",
+    "suivant": "Next month"
+  },
+  "jour": {
+    "vide": "No slots this day",
+    "precedent": "Previous day",
+    "suivant": "Next day",
+    "creneaux_one": "{{count}} slot",
+    "creneaux_other": "{{count}} slots"
   },
   "jours": {
     "lundi": "Monday",
@@ -58,7 +103,8 @@
       "titre": "No timetable",
       "description": "This timetable is empty. Generate it automatically or add slots manually.",
       "action": "Generate timetable"
-    }
+    },
+    "pagination": "Page {{page}} / {{totalPages}} — {{total}} slots"
   },
   "generation": {
     "titre": "Generate timetable",
@@ -179,6 +225,7 @@
   },
   "synthese": {
     "titre": "Summary",
+    "titreComplet": "Summary & Statistics",
     "volumeHoraire": "Hourly volume",
     "heuresPlanifiees": "Planned hours",
     "volumeRequis": "Required volume",
@@ -271,9 +318,15 @@
     "erreurPreferences": "Error updating preferences",
     "erreurPreview": "Error previewing",
     "creneauModifiePropage": "Slot updated — {{count}} future instance(s) updated, {{ignorees}} unchanged",
-    "creneauSupprimeAvecInstances": "Slot deleted — {{count}} future instance(s) cancelled"
+    "creneauSupprimeAvecInstances": "Slot deleted — {{count}} future instance(s) cancelled",
+    "creneauValide": "Slot validated",
+    "creneauValideAvecInstances": "Slot validated — {{count}} instance(s) generated",
+    "creneauxClasseValides": "All class slots validated",
+    "creneauxClasseValidesAvecInstances": "Class slots validated — {{count}} instance(s) generated",
+    "erreurValidation": "Error during validation"
   },
   "supprimer": "Delete",
+  "valider": "Validate",
   "propagation": {
     "conflitsTitre": "Conflicting future instances",
     "conflitsMessage": "{{count}} future instance(s) would conflict after this change. Apply while excluding them?",

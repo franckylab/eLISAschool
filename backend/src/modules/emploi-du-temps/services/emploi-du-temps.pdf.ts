@@ -80,7 +80,7 @@ export class EmploiDuTempsPdfService {
             matiereNom: c.affectationMatiere?.matiere?.nom,
             matiereId: c.affectationMatiere?.matiere?.id,
             enseignantNom: c.affectationMatiere?.enseignant
-                ? `${c.affectationMatiere.enseignant.nom} ${c.affectationMatiere.enseignant.prenom}`
+                ? `${(c.affectationMatiere.enseignant as any).nom} ${(c.affectationMatiere.enseignant as any).prenom}`
                 : undefined,
             classeNom: c.affectationMatiere?.classeAnnee?.classe?.nom,
         }));

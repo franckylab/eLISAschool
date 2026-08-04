@@ -81,13 +81,13 @@ export function useSecuriteConfig() {
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Query: Charger tous les paramètres de sécurité
-    const { data: parametresData, isLoading } = useQuery<any[]>({
+    const { data: parametresData, isLoading } = useQuery({
         queryKey: SECURITE_KEYS.parametres(),
         queryFn: async () => {
-            const response = await apiClient.get('/api/configuration/parametres', {
+            const response = await apiClient.get<any[]>('/api/configuration/parametres', {
                 params: { categorie: 'SECURITE' } as any
             });
-            return response.data;
+            return response.data as any[];
         },
         retry: 1,
     });

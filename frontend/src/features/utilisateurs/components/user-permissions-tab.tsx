@@ -4,7 +4,7 @@ import {
     Shield, CheckCircle, Filter, Search, Edit3,
     X, ListRestart, SlidersHorizontal,
     RotateCcw, AlertTriangle, ChevronDown, ChevronUp,
-    PlusCircle, Ban, ArrowRight,
+    Ban, ArrowRight,
 } from 'lucide-react';
 import { CardGrid } from '@/components/ui/CardGrid';
 import { StatCard } from '@/components/ui/StatCard';

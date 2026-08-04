@@ -40,7 +40,7 @@ export function RapportsPage() {
         { key: 'taille', header: 'Taille', className: 'w-20', render: (r: any) => <span className="text-sm text-gray-600">{r.taille ? `${(r.taille / 1024).toFixed(1)} Ko` : '-'}</span> },
         { key: 'actions',
             header: 'Actions', className: 'w-32',
-            renderActions: (r: any) => [
+            renderActions: (_r: any) => [
                 {
                     key: 'telecharger',
                     icon: Download,
@@ -71,6 +71,7 @@ export function RapportsPage() {
             </CardGrid>
 
             <DataTable
+                tableId="rapports"
                 data={rapports}
                 columns={colonnes}
                 enableReordering

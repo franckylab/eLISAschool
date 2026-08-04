@@ -149,6 +149,58 @@ export function useSupprimerCreneau() {
     });
 }
 
+// ─── Workflow validation ─────────────────────────────────────
+
+export function useValiderCreneau() {
+    const qc = useQueryClient();
+    const { t } = useTranslation('emplois');
+    const handleError = useHandleError();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const res = await apiClient.post<{ instancesGenerees: number }>(`/api/emploi-du-temps/${id}/valider`);
+            return res.data;
+        },
+        onSuccess: (data) => {
+            qc.invalidateQueries({ queryKey: EDT_KEYS.all });
+            const generees = data?.instancesGenerees ?? 0;
+            toast.success(
+                generees > 0
+                    ? t('toasts.creneauValideAvecInstances', { count: generees })
+                    : t('toasts.creneauValide'),
+            );
+        },
+        onError: (err: unknown) => {
+            handleError(err, t('toasts.erreurValidation'));
+        },
+    });
+}
+
+export function useValiderCreneauxClasse() {
+    const qc = useQueryClient();
+    const { t } = useTranslation('emplois');
+    const handleError = useHandleError();
+    return useMutation({
+        mutationFn: async (classeAnneeId: string) => {
+            const res = await apiClient.post<{ nbValides: number; instancesGenerees: number }>(
+                `/api/emploi-du-temps/valider-classe/${classeAnneeId}`,
+            );
+            return res.data;
+        },
+        onSuccess: (data) => {
+            qc.invalidateQueries({ queryKey: EDT_KEYS.all });
+            const generees = data?.instancesGenerees ?? 0;
+            toast.success(
+                generees > 0
+                    ? t('toasts.creneauxClasseValidesAvecInstances', { count: generees })
+                    : t('toasts.creneauxClasseValides'),
+            );
+        },
+        onError: (err: unknown) => {
+            handleError(err, t('toasts.erreurValidation'));
+        },
+    });
+}
+
 // ─── Génération ─────────────────────────────────────
 
 export function usePrevisualiserEDT() {

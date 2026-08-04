@@ -77,8 +77,9 @@ export function InventairePage() {
             )}
 
             <DataTable
-                colonnes={colonnes}
-                donnees={data || []}
+                tableId="inventaire"
+                columns={colonnes}
+                data={data || []}
                 isLoading={isLoading}
                 enableReordering
                 enablePinning

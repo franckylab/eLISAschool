@@ -16,7 +16,7 @@ const CLASSES_KEYS = {
     toutes: () => [...CLASSES_KEYS.all, 'toutes'] as const,
 };
 
-export function useToutesClasses(etablissementId?: string) {
+export function useToutesClasses(_etablissementId?: string) {
     const { isAuthenticated } = useAuthStore();
     const { t } = useTranslation('classes');
     return useQuery({

@@ -982,15 +982,15 @@ export class ScolariteService {
         }
 
         // Ne marquer que si pas déjà insolvable
-        if (eleve.statutPaiement === 'INSOLVABLE' || eleve.statutPaiement === 'CONTENTIEUX') {
-            logger.info(`[Insolvable] Élève ${eleveId} déjà marqué comme ${eleve.statutPaiement}`);
+        if ((eleve as any).statutPaiement === 'INSOLVABLE' || (eleve as any).statutPaiement === 'CONTENTIEUX') {
+            logger.info(`[Insolvable] Élève ${eleveId} déjà marqué comme ${(eleve as any).statutPaiement}`);
             return;
         }
 
         await this.eleveRepo.update(eleveId, {
             statutPaiement: 'INSOLVABLE',
             dateMarquageInsolvable: new Date(),
-        });
+        } as any);
 
         logger.warn(`[Insolvable] Élève ${eleveId} marqué comme INSOLVABLE - Motif: ${motif}`);
 
@@ -1019,9 +1019,9 @@ export class ScolariteService {
      */
     private async getParametreNumber(cle: string, defaut: number): Promise<number> {
         try {
-            const { getParametre } = await import('@modules/configuration/services/configuration.service');
-            const valeur = await getParametre(cle);
-            return valeur ? parseInt(valeur, 10) : defaut;
+            const { getParamNumber } = await import('@modules/configuration/utils/config.helper');
+            const valeur = await getParamNumber(cle, { defaultValue: defaut });
+            return valeur ?? defaut;
         } catch {
             return defaut;
         }

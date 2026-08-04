@@ -28,6 +28,7 @@ import {
 import { CategorieParametre } from '../entities/parametre-systeme.entity';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
+import { logger } from '@common/utils/logger.util';
 import { AppError } from '@common/filters/error.filter';
 import { validateDto } from '@common/utils';
 import { MODULE_REGISTRY } from '@shared/config/config.registry';
@@ -186,7 +187,7 @@ router.get('/modules/registry/impact', authMiddleware, canViewConfigModule, asyn
         if (!moduleNom || typeof actif === 'undefined') {
             throw new AppError('moduleNom et actif requis', 400, 'MISSING_PARAMS');
         }
-        const isActivating = actif === 'true' || actif === true;
+        const isActivating = actif === 'true';
         const etablissementId = req.utilisateur?.etablissementId;
         const impact = await configurationService.calculerImpactActivation(
             moduleNom as string,
@@ -611,14 +612,14 @@ router.post('/sauvegardes/:id/restore', authMiddleware, canRestoreBackup, async 
 
 router.post('/seed', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await seedService.runAllSeeds(false); // force = false par défaut
+        const result = await seedService.runAllSeeds(undefined, false); // force = false par défaut
         res.json({ success: true, data: result, message: 'Seeds exécutés' });
     } catch (error) { next(error); }
 });
 
 router.post('/seed/force', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const result = await seedService.runAllSeeds(true); // force = true
+        const result = await seedService.runAllSeeds(undefined, true); // force = true
         res.json({ 
             success: true, 
             data: result, 

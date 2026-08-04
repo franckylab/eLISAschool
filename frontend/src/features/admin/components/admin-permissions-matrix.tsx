@@ -10,7 +10,6 @@
  */
 
 import { useState, useMemo } from 'react';
-import { usePermissions } from '@/hooks/use-permissions';
 import { RequireRole } from '@/components/permissions';
 import { Check, X, Search, Download, Shield, LayoutGrid, Users, Target } from 'lucide-react';
 import { CardGrid } from '@/components/ui/CardGrid';
@@ -62,8 +61,6 @@ const MODULES_LIST = [
 // ==================================
 
 export function AdminPermissionsMatrixPage() {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { permissions: userPermissions, isSuperAdmin } = usePermissions();
     const [selectedRole, setSelectedRole] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedModule, setSelectedModule] = useState<string>('all');

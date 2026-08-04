@@ -136,7 +136,7 @@ export function RowActions({
                                 <DropdownMenu.Item
                                     key={action.key}
                                     disabled={action.disabled}
-                                    onSelect={(event) => {
+                                    onSelect={(_event) => {
                                         // Laisser le dropdown se fermer naturellement (ne pas preventDefault)
                                         // Retarder l'exécution d'une frame pour éviter tout conflit
                                         // d'événements pointer entre le dropdown et le modal

@@ -74,7 +74,7 @@ export function useDataTablePreferences(
     initialPreferences?: Partial<DataTablePreferences>
 ): UseDataTablePreferencesReturn {
     const { utilisateur } = useAuthStore();
-    const etablissementId = utilisateur?.etablissementId;
+    const etablissementId = (utilisateur as any)?.etablissementId;
     const preferenceKey = getPreferenceKey(tableId);
     const localStorageKey = `datatable.${preferenceKey}`;
     const pendingKey = `${LOCAL_STORAGE_PREFIX}${preferenceKey}`;
@@ -103,8 +103,8 @@ export function useDataTablePreferences(
     const [hasPendingChanges, setHasPendingChanges] = useState(false);
 
     // Refs pour timers et état pending
-    const debounceTimerRef = useRef<ReturnType<typeof setTimeout>>();
-    const autoSaveTimerRef = useRef<ReturnType<typeof setInterval>>();
+    const debounceTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const autoSaveTimerRef = useRef<ReturnType<typeof setInterval>>(undefined);
     const pendingChangesRef = useRef<DataTablePreferencesPartial>({});
     const preferencesRef = useRef(preferences);
 

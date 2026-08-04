@@ -364,7 +364,7 @@ function ModuleCard({
 
 function ActivateConfirmDialog({
     open,
-    moduleName,
+    moduleName: _moduleName,
     moduleLabel,
     actif,
     impact,
@@ -489,7 +489,6 @@ export function ModulesTab() {
     const userRole = useAuthStore((s) => s.utilisateur?.role);
 
     const canToggle = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN';
-    const isSuperAdmin = userRole === 'SUPER_ADMIN';
 
     const [searchQuery, setSearchQuery] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
@@ -550,7 +549,7 @@ export function ModulesTab() {
                 actif: pendingToggle.actif,
             });
             setPendingToggle(null);
-            toast.success(result.message || `Module ${pendingToggle.actif ? 'activé' : 'désactivé'}`, {
+            toast.success(result?.message || `Module ${pendingToggle.actif ? 'activé' : 'désactivé'}`, {
                 duration: 3000,
             });
         } catch (error: any) {

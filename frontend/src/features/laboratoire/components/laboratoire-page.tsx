@@ -52,6 +52,7 @@ export function LaboratoirePage() {
             </CardGrid>
 
             <DataTable
+                tableId="laboratoire-reservations"
                 data={reservations}
                 columns={colonnes}
                 enableReordering

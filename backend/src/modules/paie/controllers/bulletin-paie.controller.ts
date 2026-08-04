@@ -117,7 +117,7 @@ router.post(
                 mois,
                 annee,
                 req.etablissementId!,
-                req.utilisateur?.id,
+                req.utilisateur?.id!,
                 req
             );
             res.status(201).json({ success: true, data: bulletin });
@@ -157,7 +157,7 @@ router.patch(
             // Garde supplémentaire : valider ou payer un bulletin exige paie:valider
             if (dto.statut === 'VALIDE' || dto.statut === 'PAYE') {
                 const utilisateur = req.utilisateur;
-                const roles: string[] = utilisateur?.roles?.length ? utilisateur.roles : [utilisateur?.role];
+                const roles: string[] = (utilisateur?.roles?.length ? utilisateur.roles : [utilisateur?.role]).filter(Boolean) as string[];
                 if (!roles.includes('SUPER_ADMIN')) {
                     const peutValider = await checkPermission(utilisateur!.id, 'paie:valider', req.etablissementId!);
                     if (!peutValider) {

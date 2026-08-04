@@ -155,8 +155,9 @@ export function SantePage() {
             )}
 
             <DataTable
-                colonnes={colonnes}
-                donnees={data || []}
+                tableId="sante"
+                columns={colonnes}
+                data={data || []}
                 isLoading={isLoading}
                 enableReordering
                 enablePinning
@@ -184,7 +185,7 @@ export function SantePage() {
                 pagination={{
                     page,
                     limit,
-                    total: meta?.total || 0,
+                    total: meta?.totalItems || 0,
                     onPageChange: setPage,
                 }}
             />

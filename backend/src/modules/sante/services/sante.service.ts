@@ -87,6 +87,7 @@ export class SanteService {
             }
             
             logger.info(`[Santé] Dossier médical mis à jour: ${dto.patientId}`);
+            return dossier;
         } else {
             // Création
             const nouveauDossier = this.dossierRepo.create({
@@ -94,7 +95,7 @@ export class SanteService {
                 etablissementId,
                 eleveId: dto.typePatient === TypePatient.ELEVE ? dto.patientId : undefined,
                 personnelId: dto.typePatient === TypePatient.PERSONNEL ? dto.patientId : undefined,
-            });
+            } as any) as unknown as DossierMedical;
             await this.dossierRepo.save(nouveauDossier);
             
             // Audit trail
@@ -170,7 +171,7 @@ export class SanteService {
             consultantId,
             etablissementId,
             dateConsultation: new Date(),
-        });
+        } as any) as unknown as ConsultationMedicale;
 
         await this.consultationRepo.save(consultation);
         
@@ -233,7 +234,7 @@ export class SanteService {
             declareParId,
             etablissementId,
             dateIncident: new Date(),
-        });
+        } as any) as unknown as IncidentSante;
 
         await this.incidentRepo.save(incident);
         

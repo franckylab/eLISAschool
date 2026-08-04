@@ -38,7 +38,7 @@ export async function requireGroupeAccess(req: Request, _res: Response, next: Ne
 
         // Si l'utilisateur a la permission 'super_admin:all', il a accès à TOUS les groupes
         if (userPermissions.has('super_admin:all')) {
-            req.groupeAccessBypassed = true; // Flag pour traçage
+            (req as any).groupeAccessBypassed = true; // Flag pour traçage
             return next();
         }
 

@@ -336,7 +336,7 @@ router.patch('/templates/:id', async (req: Request, res: Response, next: NextFun
         const dto = validateDto(updateTemplateSchema, req.body);
         const template = await templateMessageService.updateTemplate(
             req.params.id,
-            dto,
+            dto as any,
             req.utilisateur!.etablissementId!
         );
         res.json({ success: true, data: template, timestamp: new Date().toISOString() });
@@ -362,7 +362,7 @@ router.post('/templates/:id/render', async (req: Request, res: Response, next: N
         if (!template) {
             throw new AppError('Template non trouvé', 404, 'NOT_FOUND');
         }
-        const contenu = templateMessageService.renderTemplate(template, dto.variables);
+        const contenu = templateMessageService.renderTemplate(template as any, dto.variables);
         res.json({ success: true, data: { contenu }, timestamp: new Date().toISOString() });
     } catch (error) { next(error); }
 });

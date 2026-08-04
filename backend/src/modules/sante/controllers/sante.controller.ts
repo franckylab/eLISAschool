@@ -10,6 +10,7 @@ import { santeService } from '../services';
 import { createDossierMedicalSchema, createConsultationMedicaleSchema, createIncidentSanteSchema } from '../dto';
 import { requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
+import { TypePatient } from '../entities';
 
 const router = Router();
 
@@ -38,7 +39,7 @@ router.post('/dossiers', requirePermission('sante:dossier:write'), async (req: R
 
 router.get('/dossiers/:patientId', requirePermission('sante:dossier:read'), async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const typePatient = req.query.typePatient as 'ELEVE' | 'PERSONNEL' | undefined;
+        const typePatient = req.query.typePatient as TypePatient | undefined;
         const dossier = await santeService.getDossierByPatient(
             req.params.patientId,
             req.utilisateur!.etablissementId!,
@@ -119,8 +120,7 @@ router.get('/patients/:patientId/incidents', requirePermission('sante:incident:r
         
         const incidents = await santeService.getIncidentsByPatient(
             req.params.patientId,
-            req.utilisateur!.etablissementId!,
-            anneeScolaireId // ← NOUVEAU
+            req.utilisateur!.etablissementId!
         );
         res.json({ 
             success: true, 

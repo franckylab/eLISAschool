@@ -57,6 +57,7 @@ export function EvaluationsPage() {
             </CardGrid>
 
             <DataTable
+                tableId="evaluations"
                 data={evaluations}
                 columns={colonnes}
                 enableReordering

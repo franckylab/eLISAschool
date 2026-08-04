@@ -57,6 +57,7 @@ export function ParkingPage() {
             </CardGrid>
 
             <DataTable
+                tableId="parking"
                 data={placesList}
                 columns={colonnes}
                 enableReordering

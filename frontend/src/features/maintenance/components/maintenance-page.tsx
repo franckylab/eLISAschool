@@ -65,6 +65,7 @@ export function MaintenancePage() {
             </CardGrid>
 
             <DataTable
+                tableId="maintenance-interventions"
                 data={interventions}
                 columns={colonnes}
                 enableReordering

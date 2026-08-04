@@ -360,7 +360,7 @@ export function TransfertList<T extends TransfertItem>({
                                     key={item.id}
                                     item={item}
                                     context="selection"
-                                    renderContent={render}
+                                    renderContent={(item) => render(item, 'selection')}
                                     onRemove={retirer}
                                     renderPoids={renderPoids}
                                 />

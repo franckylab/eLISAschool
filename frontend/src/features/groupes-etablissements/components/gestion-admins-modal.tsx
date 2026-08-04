@@ -9,7 +9,6 @@
  */
 
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { UserPlus, UserMinus, Search, Check, Mail } from 'lucide-react';
@@ -51,7 +50,6 @@ export function GestionAdminsModal({
     adminsActuels,
     onRefresh,
 }: GestionAdminsProps) {
-    const { t } = useTranslation('groupes-etablissements');
     const [search, setSearch] = useState('');
 
     const ajouterMutation = useAjouterAdmin();
@@ -152,7 +150,7 @@ export function GestionAdminsModal({
                                         </div>
                                         <ElisaButton
                                             variant="primary"
-                                            taille="xs"
+                                            size="xs"
                                             onClick={() => handleAjouter(user.id)}
                                             isLoading={ajouterMutation.isPending}
                                             icon={<UserPlus className="h-3 w-3" />}
@@ -198,7 +196,7 @@ export function GestionAdminsModal({
                                         </div>
                                         <ElisaButton
                                             variant="outline"
-                                            taille="xs"
+                                            size="xs"
                                             onClick={() => handleRetirer(admin.utilisateurId)}
                                             isLoading={retirerMutation.isPending}
                                             icon={<UserMinus className="h-3 w-3" />}

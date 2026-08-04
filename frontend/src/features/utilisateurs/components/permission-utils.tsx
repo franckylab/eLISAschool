@@ -283,7 +283,7 @@ interface ModuleTreeProps {
     t: (key: string) => string;
 }
 
-export function ModuleTree({ groupe, isExpanded, onToggleModule, detailMap, moduleCounts, t }: ModuleTreeProps) {
+export function ModuleTree({ groupe, isExpanded, onToggleModule, detailMap, moduleCounts }: ModuleTreeProps) {
     const assigned = moduleCounts?.get(groupe.module) ?? 0;
     const total = groupe.permissions.length;
     return (

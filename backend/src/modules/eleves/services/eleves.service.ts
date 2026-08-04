@@ -740,11 +740,11 @@ export class ElevesService {
             e.lieuNaissance || '',
             e.sexe === 'M' ? 'Masculin' : 'Féminin',
             e.nationalite || 'Camerounaise',
-            e.classe?.nom || '',
+            (e as any).classe?.nom || '',
             e.statut || 'ACTIF',
-            e.utilisateur?.telephone || '',
+            (e.utilisateur as any)?.telephone || '',
             e.utilisateur?.email || '',
-            e.utilisateur?.adresse || '',
+            (e.utilisateur as any)?.adresse || '',
         ]);
 
         // Construction CSV
@@ -820,11 +820,11 @@ export class ElevesService {
                     lieuNaissance: lieuNaissance || '',
                     sexe: sexe.toLowerCase().startsWith('m') ? 'M' : 'F',
                     nationalite: 'Camerounaise',
-                    classeId,
+                    classeAnneeId: classeAnneeId,
                     anneeScolaireId,
                     etablissementId,
                     statut: 'ACTIF',
-                });
+                } as any);
 
                 await this.repo.save(eleve);
                 importe++;

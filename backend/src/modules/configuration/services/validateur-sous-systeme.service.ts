@@ -12,8 +12,14 @@
 
 import { AppDataSource } from '@database/data-source';
 import { AppError } from '@common/filters/error.filter';
-import { SousSysteme } from '@shared/enums';
 import { logger } from '@common/utils/logger.util';
+
+/** Sous-système éducatif (enum local — non exporté dans @shared/enums) */
+enum SousSysteme {
+    FRANCOPHONE = 'FRANCOPHONE',
+    ANGLOPHONE = 'ANGLOPHONE',
+    BICULTUREL = 'BICULTUREL',
+}
 
 export interface ValidationSousSystemeResult {
     valide: boolean;

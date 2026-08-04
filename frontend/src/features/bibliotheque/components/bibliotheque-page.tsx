@@ -24,13 +24,12 @@ export function BibliothequePage() {
     const [filtreCategorie, setFiltreCategorie] = useState('');
     const [filtreDispo, setFiltreDispo] = useState('tous');
 
-    const { data: result, isLoading, isError, error, refetch } = useOuvrages({
+    const { data: result, isLoading, isError, error, refetch, meta } = useOuvrages({
         recherche: recherche || undefined,
         categorie: filtreCategorie || undefined,
         disponibilite: filtreDispo as any,
     });
-    const data = result?.data;
-    const meta = result?.data?.meta;
+    const data = result;
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     usePrets(); // prets non utilisé
@@ -174,7 +173,7 @@ export function BibliothequePage() {
             <DataTable
                 tableId="bibliotheque"
                 columns={colonnes}
-                data={data?.data || []}
+                data={data || []}
                 isLoading={isLoading}
                 enableReordering
                 enableRowHeight

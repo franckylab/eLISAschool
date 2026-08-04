@@ -238,7 +238,7 @@ export function ClassesPage() {
         },
     ];
 
-    if (isLoading && !data?.items?.length) {
+    if (isLoading && !(data as any)?.items?.length) {
         return (
             <div className="container mx-auto px-4 py-8 max-w-7xl">
                 <Skeleton className="h-10 w-56 mb-8" />

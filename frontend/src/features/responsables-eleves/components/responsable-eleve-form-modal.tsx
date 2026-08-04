@@ -153,7 +153,7 @@ export function ResponsableEleveFormModal({
                     </label>
                     <select
                         value={lienParente}
-                        onChange={(e) => setLienParente(e.target.value)}
+                        onChange={(e) => setLienParente(e.target.value as typeof lienParente)}
                         className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--color-dominante)] focus:border-transparent ${
                             errors.lienParente ? 'border-red-500' : 'border-gray-300'
                         }`}

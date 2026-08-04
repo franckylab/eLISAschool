@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Building2, FolderTree, Briefcase, MapPin, User, Info, Edit, Trash2, History } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { TabsBar, TabsContent, type Tab } from '@/components/ui';
-import { Card } from '@/components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';

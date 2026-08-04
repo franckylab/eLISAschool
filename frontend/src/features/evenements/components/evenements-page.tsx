@@ -196,6 +196,7 @@ export function EvenementsPage() {
             )}
 
             <DataTable
+                tableId="evenements"
                 columns={colonnes}
                 data={data || []}
                 isLoading={isLoading}
@@ -241,7 +242,7 @@ export function EvenementsPage() {
                 pagination={{
                     page,
                     limit,
-                    total: meta?.total || 0,
+                    total: meta?.totalItems || 0,
                     onPageChange: setPage,
                 }}
             />

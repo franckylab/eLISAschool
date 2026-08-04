@@ -109,6 +109,7 @@ export function TransportPage() {
             />
 
             <DataTable
+                tableId="transport"
                 data={data?.items || []}
                 columns={colonnes}
                 isLoading={isLoading}

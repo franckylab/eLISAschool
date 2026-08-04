@@ -40,7 +40,7 @@ export function useClasses(filtres: ClasseFiltres = {}) {
     const { isAuthenticated } = useAuthStore();
     const { t } = useTranslation('classes');
 
-    return useQuery({
+    return useQuery<PaginatedResult<Classe>>({
         queryKey: CLASSES_KEYS.liste(filtres),
         queryFn: async () => {
             const params: Record<string, string | number> = {
@@ -53,7 +53,7 @@ export function useClasses(filtres: ClasseFiltres = {}) {
             if (filtres.recherche) params.search = filtres.recherche;
             if (filtres.niveauId) params.niveauId = filtres.niveauId;
             if (filtres.anneeScolaireId) params.anneeId = filtres.anneeScolaireId;
-            if (filtres.actif !== undefined) params.actif = filtres.actif;
+            if (filtres.actif !== undefined) params.actif = String(filtres.actif);
 
             const response = await apiClient.get<PaginatedResult<Classe>>('/api/classes', params);
 

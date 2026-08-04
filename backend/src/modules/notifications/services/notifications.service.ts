@@ -419,7 +419,7 @@ export class NotificationsService {
                         cible: 'Notification',
                         cibleId: notification.id,
                         description: `Envoi réussi notification ${notification.type}`,
-                        nouvellesValeurs: { provider: result.provider, timestamp: new Date().toISOString() },
+                        nouvellesValeurs: { provider: (result as any).provider, timestamp: new Date().toISOString() },
                         module: 'notifications',
                     });
                 } catch (error) {

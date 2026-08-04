@@ -34,7 +34,7 @@ export function ResponsablesElevesPage() {
     const { data, isLoading } = useResponsablesEleves({
         page,
         limit,
-        recherche: recherche || undefined,
+        recherche: undefined,
     });
 
     const creer = useCreerResponsableEleve();
@@ -237,6 +237,7 @@ export function ResponsablesElevesPage() {
                 transition={{ duration: 0.4, delay: 0.3 }}
             >
                 <DataTable
+                    tableId="responsables-eleves"
                     columns={colonnes}
                     data={responsables}
                     isLoading={isLoading}

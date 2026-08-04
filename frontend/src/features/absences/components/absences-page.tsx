@@ -21,7 +21,7 @@ export function AbsencesPage() {
     const [page, setPage] = useState(1);
     const limit = 20;
 
-    const { data, isLoading, isError, error, refetch } = useAbsences({
+    const { data, isLoading, isError, error, refetch, meta } = useAbsences({
         page,
         limit,
     });
@@ -183,6 +183,7 @@ export function AbsencesPage() {
             )}
 
             <DataTable
+                tableId="absences"
                 columns={colonnes}
                 data={data || []}
                 isLoading={isLoading}
@@ -190,7 +191,7 @@ export function AbsencesPage() {
                 pagination={{
                     page,
                     limit,
-                    total: data?.meta?.totalItems || 0,
+                    total: meta?.totalItems || 0,
                     onPageChange: setPage,
                 }}
             />

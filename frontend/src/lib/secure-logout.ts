@@ -27,7 +27,8 @@ export async function secureLogout(options: {
     redirect?: boolean;
     preserveLanguage?: boolean;
 } = {}): Promise<void> {
-    const { redirect = true, preserveLanguage = false } = options;
+    const { redirect = true, preserveLanguage: _preserveLanguage = false } = options;
+    void _preserveLanguage;
 
     try {
         // ÉTAPE 1: Invalider le refresh token côté serveur
@@ -45,11 +46,6 @@ export async function secureLogout(options: {
         // Utilisation de set() avec replace pour forcer la persistance immédiate
         const authStore = useAuthStore.getState();
         
-        // Préserver la langue si demandé
-        const currentLang = preserveLanguage 
-            ? authStore.utilisateur?.langue 
-            : undefined;
-
         // Reset complet avec initialState
         authStore.reset();
 

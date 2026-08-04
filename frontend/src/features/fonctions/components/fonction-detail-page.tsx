@@ -17,7 +17,7 @@ import type { Fonction as FonctionType, ModifierFonctionDto } from '../types/fon
 import { FonctionFormModal } from './fonction-form-modal';
 import { FonctionArbre } from './fonction-arbre';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { Card } from '@/components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';

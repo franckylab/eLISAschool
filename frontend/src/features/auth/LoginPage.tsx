@@ -322,7 +322,6 @@ export function LoginPage() {
     // Charger le logo de l'établissement (si disponible via config publique)
     const { data: etablissement } = useEtablissement(
         useAuthStore.getState().etablissementId || '',
-        { enabled: false } // Désactivé par défaut sur login (pas d'ID encore)
     );
     const logoEtablissement = etablissement?.logoUrl;
 

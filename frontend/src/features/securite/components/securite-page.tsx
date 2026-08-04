@@ -60,6 +60,7 @@ export function SecuritePage() {
             </CardGrid>
 
             <DataTable
+                tableId="securite-incidents"
                 data={incidents}
                 columns={colonnes}
                 enableReordering

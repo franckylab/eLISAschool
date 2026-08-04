@@ -223,6 +223,8 @@ export function useToutesPermissions(options?: { enabled?: boolean }) {
                     module: p.module,
                     description: p.description,
                     action: p.action,
+                    categorie: (p as any).categorie || 'general',
+                    estSysteme: (p as any).estSysteme || false,
                 })),
             }));
             
@@ -235,7 +237,7 @@ export function useToutesPermissions(options?: { enabled?: boolean }) {
 
 // ==================== HOOKS PERMISSIONS UTILISATEUR (RBAC) ====================
 
-interface UtilisateurPermissionResponse {
+export interface UtilisateurPermissionResponse {
     id: string;
     utilisateurId: string;
     permissionId: string;

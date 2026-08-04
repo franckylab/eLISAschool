@@ -119,7 +119,7 @@ router.post('/templates/:id/dupliquer', authMiddleware, requirePermission('emplo
 router.post('/verifier-conflits', authMiddleware, requirePermission('emploi-du-temps:verifier-conflits'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(verifierConflitsSchema, req.body);
-        const conflits = await conflitDetectionService.detecterConflits(dto, req.etablissementId!);
+        const conflits = await conflitDetectionService.detecterConflits(dto as any, req.etablissementId!);
         return res.json({ success: true, data: conflits });
     } catch (error) { next(error); }
 });
@@ -143,7 +143,7 @@ router.get('/statistiques', authMiddleware, requirePermission('emploi-du-temps:v
 router.get('/export/html/:classeAnneeId', authMiddleware, requirePermission('emploi-du-temps:export'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const anneeScolaireId = req.query.anneeScolaireId as string || '';
-        const html = await emploiDuTempsPdfService.generateHTML(req.params.classeAnneeId, anneeScolaireId, { format: 'html', colorBy: (req.query.colorBy as string) || 'matiere' });
+        const html = await emploiDuTempsPdfService.generateHTML(req.params.classeAnneeId, anneeScolaireId, { format: 'html', colorBy: (req.query.colorBy as 'matiere' | 'enseignant' | 'type') || 'matiere' });
         await auditService.log({
             utilisateurId: req.utilisateur!.id,
             action: AuditAction.EDT_EXPORT,
@@ -160,7 +160,7 @@ router.get('/export/html/:classeAnneeId', authMiddleware, requirePermission('emp
 router.get('/export/pdf/:classeAnneeId', authMiddleware, requirePermission('emploi-du-temps:export'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const anneeScolaireId = req.query.anneeScolaireId as string || '';
-        const pdf = await emploiDuTempsPdfService.generatePDF(req.params.classeAnneeId, anneeScolaireId, { format: 'pdf', colorBy: (req.query.colorBy as string) || 'matiere' });
+        const pdf = await emploiDuTempsPdfService.generatePDF(req.params.classeAnneeId, anneeScolaireId, { format: 'pdf', colorBy: (req.query.colorBy as 'matiere' | 'enseignant' | 'type') || 'matiere' });
         await auditService.log({
             utilisateurId: req.utilisateur!.id,
             action: AuditAction.EDT_EXPORT,

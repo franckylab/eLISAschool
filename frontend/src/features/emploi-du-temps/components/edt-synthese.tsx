@@ -21,9 +21,11 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 interface EDTSyntheseProps {
     classeAnneeId?: string;
     enseignantId?: string;
+    /** Mode embarqué : affiche un titre de section au lieu d'un rendu standalone */
+    embedded?: boolean;
 }
 
-export function EDTSynthese({ classeAnneeId, enseignantId }: EDTSyntheseProps) {
+export function EDTSynthese({ classeAnneeId, enseignantId, embedded = false }: EDTSyntheseProps) {
     const { t } = useTranslation('emplois');
 
     const { data: stats, isLoading, error, refetch } = useStatistiquesEDT({
@@ -82,6 +84,14 @@ export function EDTSynthese({ classeAnneeId, enseignantId }: EDTSyntheseProps) {
 
     return (
         <div className="flex flex-col gap-[var(--gap-lg)]">
+            {embedded && (
+                <h2
+                    className="font-semibold text-[var(--color-text-primary)]"
+                    style={{ fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.25rem)' }}
+                >
+                    {t('synthese.titreComplet')}
+                </h2>
+            )}
             {/* ─── KPIs ─────────────────────────────────── */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-[var(--gap-md)]">
                 <KpiCard

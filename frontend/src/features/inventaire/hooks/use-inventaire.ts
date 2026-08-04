@@ -19,7 +19,7 @@ const INVENTAIRE_KEYS = {
 
 export function useMateriels(filtres?: InventaireFiltres) {
     const { isAuthenticated } = useAuthStore();
-    return useQuery({
+    const query = useQuery({
         queryKey: INVENTAIRE_KEYS.materiels(filtres),
         queryFn: async () => {
             const params: Record<string, any> = {
@@ -38,6 +38,7 @@ export function useMateriels(filtres?: InventaireFiltres) {
         staleTime: 5 * 60 * 1000,
         placeholderData: (previousData) => previousData,
     });
+    return { ...query, data: query.data?.data, meta: query.data?.meta };
 }
 
 export function useMateriel(id: string) {

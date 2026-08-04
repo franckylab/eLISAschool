@@ -302,7 +302,7 @@ interface PermissionRowProps {
 function PermissionRow({ permission, state, effective, onChange, readonly }: PermissionRowProps) {
     return (
         <div className={`flex items-center gap-3 px-3 py-2 text-sm transition-colors
-            ${!permission.actif ? 'opacity-50' : ''}
+            ${!(permission as any).actif ? 'opacity-50' : ''}
             ${readonly ? '' : 'hover:bg-gray-50 dark:hover:bg-gray-800/40'}
         `}>
             {readonly ? (
@@ -324,7 +324,7 @@ function PermissionRow({ permission, state, effective, onChange, readonly }: Per
                 {permission.libelle}
             </span>
             <div className="flex items-center gap-1 flex-shrink-0">
-                {!permission.actif && (
+                {(permission as any).actif === false && (
                     <span title="Permission inactive"><AlertTriangle className="h-3 w-3 text-amber-500" /></span>
                 )}
                 {state === 'GRANTED' && (

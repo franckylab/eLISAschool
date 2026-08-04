@@ -192,8 +192,9 @@ export function DocumentsPage() {
             )}
 
             <DataTable
-                colonnes={colonnes}
-                donnees={data || []}
+                tableId="documents"
+                columns={colonnes}
+                data={data || []}
                 isLoading={isLoading}
                 searchPlaceholder={t('rechercher')}
                 enableRowHeight
@@ -223,7 +224,7 @@ export function DocumentsPage() {
                 pagination={{
                     page,
                     limit,
-                    total: meta?.total || 0,
+                    total: meta?.totalItems || 0,
                     onPageChange: setPage,
                 }}
             />

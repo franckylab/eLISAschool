@@ -172,8 +172,9 @@ export function ExamensPage() {
             )}
 
             <DataTable
-                colonnes={colonnes}
-                donnees={data || []}
+                tableId="examens"
+                columns={colonnes}
+                data={data || []}
                 isLoading={isLoading}
                 enableReordering
                 enablePinning

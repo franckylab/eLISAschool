@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api';
-import type { Atelier, InscriptionAtelier, SeanceAtelier, StatistiquesAtelier, FiltresAtelier, CreerAtelierDto } from '../types/atelier.types';
+import type { Atelier, InscriptionAtelier, StatistiquesAtelier, FiltresAtelier, CreerAtelierDto } from '../types/atelier.types';
 
 const ATELIER_KEYS = {
     ateliers: (filtres?: FiltresAtelier) => ['atelier', 'liste', filtres] as const,
@@ -36,7 +36,7 @@ export function useInscriptions(filtres?: FiltresAtelier) {
     return useQuery({
         queryKey: ATELIER_KEYS.inscriptions(filtres),
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: InscriptionAtelier[]; meta: any }>('/api/ateliers/inscriptions', { params: { ...filtresInscription } as any });
+            const response = await apiClient.get<{ success: boolean; data: InscriptionAtelier[]; meta: any }>('/api/ateliers/inscriptions', { params: { ...filtres } as any });
             return { data: response.data?.data, meta: response.data?.meta };
         },
         enabled: isAuthenticated,

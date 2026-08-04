@@ -21,7 +21,7 @@ const DOCUMENTS_KEYS = {
 
 export function useDocuments(filtres: DocumentFiltres = {}) {
     const { isAuthenticated } = useAuthStore();
-    return useQuery({
+    const query = useQuery({
         queryKey: DOCUMENTS_KEYS.liste(filtres),
         queryFn: async () => {
             const response = await apiClient.getPaginated<Document>('/api/documents', {
@@ -34,6 +34,7 @@ export function useDocuments(filtres: DocumentFiltres = {}) {
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
     });
+    return { ...query, data: query.data?.data?.items, meta: query.data?.data?.meta };
 }
 
 export function useDocument(id: string) {

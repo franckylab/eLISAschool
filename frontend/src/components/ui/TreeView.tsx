@@ -315,4 +315,4 @@ function TreeView<T>({
     return content;
 }
 
-export { TreeView, type TreeViewProps, type TreeNode };
+export { TreeView, type TreeViewProps };

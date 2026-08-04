@@ -45,7 +45,7 @@ export class ProgrammePedagogiqueService {
         return this.findOne(programme.id, etablissementId);
     }
 
-    async findAll(query: QueryProgrammesDto = {}, etablissementId: string): Promise<PaginatedResult<ProgrammePedagogique>> {
+    async findAll(query: QueryProgrammesDto = { limit: 20, page: 1 } as QueryProgrammesDto, etablissementId: string): Promise<PaginatedResult<ProgrammePedagogique>> {
         const { page = 1, limit = 20, search, cycleId, niveauId, type, actif, sortBy = 'nom', sortOrder = 'ASC' } = query;
 
         const qb = this.repo.createQueryBuilder('p')
@@ -204,8 +204,8 @@ export class ProgrammePedagogiqueService {
             programmeId,
             snapshot,
             modifiePar: modifiePar || 'system',
-            commentaire: commentaire || null,
-        });
+            commentaire: commentaire || undefined,
+        } as any) as unknown as ProgrammeVersion;
         await this.versionRepo.save(version);
         logger.info(`[Programme] Version créée pour programme ${programmeId}: ${commentaire || 'snapshot'}`);
         return version;

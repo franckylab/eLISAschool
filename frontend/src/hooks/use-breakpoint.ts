@@ -126,7 +126,7 @@ export function useBreakpoint(): BreakpointResult {
  * avec mise à jour en temps réel et throttling
  */
 function useViewportWidth(): number {
-    const [width, setWidth] = useMediaQueryWidth();
+    const [width] = useMediaQueryWidth();
     return width;
 }
 
@@ -142,14 +142,14 @@ function useMediaQueryWidth(): [number, (w: number) => void] {
     React.useEffect(() => {
         if (typeof window === 'undefined') return;
 
-        let timeoutId: NodeJS.Timeout;
+        let timeoutId: ReturnType<typeof setTimeout>;
         
         const handleResize = () => {
             // Throttling 100ms pour performance
             if (timeoutId) return;
             timeoutId = setTimeout(() => {
                 setWidth(window.innerWidth);
-                timeoutId = 0;
+                timeoutId = undefined as unknown as ReturnType<typeof setTimeout>;
             }, 100);
         };
 

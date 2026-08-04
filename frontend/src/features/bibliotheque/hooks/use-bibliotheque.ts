@@ -19,7 +19,7 @@ const BIBLIOTHEQUE_KEYS = {
 
 export function useOuvrages(filtres?: BibliothequeFiltres) {
     const { isAuthenticated } = useAuthStore();
-    return useQuery({
+    const query = useQuery({
         queryKey: BIBLIOTHEQUE_KEYS.ouvrages(filtres),
         queryFn: async () => {
             const params: Record<string, any> = {
@@ -38,6 +38,7 @@ export function useOuvrages(filtres?: BibliothequeFiltres) {
         staleTime: 5 * 60 * 1000,
         placeholderData: (previousData) => previousData,
     });
+    return { ...query, data: query.data?.data, meta: query.data?.meta };
 }
 
 export function useOuvrage(id: string) {

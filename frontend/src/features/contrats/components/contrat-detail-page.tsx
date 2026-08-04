@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, FileSignature, CheckCircle, XCircle, Calendar, Wallet, Clock, User, Briefcase, History } from 'lucide-react';
+import { Edit, Trash2, FileSignature, CheckCircle, XCircle, Calendar, Wallet, Clock, User, Briefcase } from 'lucide-react';
 import { useContrats, useSupprimerContrat } from '../hooks/use-contrats';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/ui/Skeleton';

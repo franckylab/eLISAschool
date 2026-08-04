@@ -22,12 +22,56 @@
   "aucuneClasseSelectionnee": "Aucune classe sélectionnée",
   "selectionnerClassePourVoirListe": "Sélectionnez une classe dans le filtre ci-dessus pour voir sa liste de créneaux.",
   "onglets": {
+    "planning": "Planning",
+    "configuration": "Configuration",
     "calendrier": "Calendrier",
     "liste": "Liste",
     "synthese": "Synthèse",
     "preferences": "Préférences",
     "templates": "Templates",
     "audit": "Audit"
+  },
+  "vues": {
+    "semaine": "Semaine",
+    "mois": "Mois",
+    "jour": "Jour",
+    "liste": "Liste",
+    "analytique": "Analytique"
+  },
+  "navigation": {
+    "precedent": "Précédent",
+    "suivant": "Suivant",
+    "aujourdhui": "Aujourd'hui",
+    "ceMois": "Ce mois",
+    "ceJour": "Aujourd'hui"
+  },
+  "filtres": {
+    "titre": "Filtres",
+    "avances": "Filtres avancés",
+    "matiere": "Matière",
+    "periode": "Période",
+    "jour": "Jour",
+    "salle": "Salle",
+    "tous": "Tous",
+    "toutesMatieres": "Toutes les matières",
+    "toutesPeriodes": "Toutes les périodes",
+    "toutesClasses": "Toutes les classes",
+    "tousEnseignants": "Tous les enseignants",
+    "toutesSalles": "Toutes les salles",
+    "tousJours": "Tous les jours",
+    "reset": "Réinitialiser"
+  },
+  "mois": {
+    "vide": "Aucun créneau ce mois",
+    "precedent": "Mois précédent",
+    "suivant": "Mois suivant"
+  },
+  "jour": {
+    "vide": "Aucun créneau ce jour",
+    "precedent": "Jour précédent",
+    "suivant": "Jour suivant",
+    "creneaux_one": "{{count}} créneau",
+    "creneaux_other": "{{count}} créneaux"
   },
   "jours": {
     "lundi": "Lundi",
@@ -59,7 +103,8 @@
       "titre": "Aucun emploi du temps",
       "description": "Cet emploi du temps est vide. Générez-le automatiquement ou ajoutez des créneaux manuellement.",
       "action": "Générer l'emploi du temps"
-    }
+    },
+    "pagination": "Page {{page}} / {{totalPages}} — {{total}} créneaux"
   },
   "generation": {
     "titre": "Générer l'emploi du temps",
@@ -179,7 +224,8 @@
     "conflitsDetectes": "{{count}} conflit(s) détecté(s)"
   },
   "synthese": {
-    "titre": "Synthèse & Statistiques",
+    "titre": "Synthèse",
+    "titreComplet": "Synthèse & Statistiques",
     "volumeHoraire": "Volume horaire",
     "heuresPlanifiees": "Heures planifiées",
     "volumeRequis": "Volume requis",
@@ -293,7 +339,12 @@
     "erreurPreferences": "Erreur lors de la mise à jour des préférences",
     "erreurPreview": "Erreur lors de la prévisualisation",
     "creneauModifiePropage": "Créneau modifié — {{count}} instance(s) future(s) mises à jour, {{ignorees}} inchangée(s)",
-    "creneauSupprimeAvecInstances": "Créneau supprimé — {{count}} instance(s) future(s) annulée(s)"
+    "creneauSupprimeAvecInstances": "Créneau supprimé — {{count}} instance(s) future(s) annulée(s)",
+    "creneauValide": "Créneau validé",
+    "creneauValideAvecInstances": "Créneau validé — {{count}} instance(s) générée(s)",
+    "creneauxClasseValides": "Tous les créneaux de la classe validés",
+    "creneauxClasseValidesAvecInstances": "Créneaux de la classe validés — {{count}} instance(s) générée(s)",
+    "erreurValidation": "Erreur lors de la validation"
   },
   "audit": {
     "titre": "Audit des conflits",
@@ -346,6 +397,7 @@
     "info": "Les créneaux de l'emploi du temps seront convertis en heures de cours réelles pour la plage sélectionnée. Les conflits d'enseignants seront automatiquement évités."
   },
   "supprimer": "Supprimer",
+  "valider": "Valider",
   "propagation": {
     "conflitsTitre": "Instances futures en conflit",
     "conflitsMessage": "{{count}} instance(s) future(s) entreraient en conflit après cette modification. Appliquer en excluant ces instances ?",

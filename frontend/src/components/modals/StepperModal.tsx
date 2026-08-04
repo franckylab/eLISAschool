@@ -91,7 +91,6 @@ export function StepperModal({
     submitLabel,
     size = '2xl',
     disableNextOnInvalid = true,
-    className,
     isSubmitting = false,
 }: StepperModalProps) {
     const { t } = useTranslation();
@@ -175,7 +174,6 @@ export function StepperModal({
             title={title}
             description={description}
             size={size}
-            className={className}
             footer={
                 <div className="flex items-center justify-between gap-[var(--gap-sm)] w-full">
                     {/* Bouton Annuler (à gauche) */}

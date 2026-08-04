@@ -1142,15 +1142,12 @@ export class AnnoncesService {
           valeurStr = JSON.stringify(value);
         }
 
-        await configurationService.setParametre({
+        await configurationService.setParametre(
           cle,
-          valeur: valeurStr,
-          typeValeur: typeValeur as any,
-          categorie: 'MODULE',
-          module: 'annonces',
+          valeurStr,
           etablissementId,
-          modifiableRuntime: true,
-        }, utilisateurId);
+          utilisateurId,
+        );
       }
     }
 
@@ -1211,8 +1208,8 @@ export class AnnoncesService {
                 contenu,
                 type: 'IN_APP',
                 destinataireId: ciblage.cibleId,
-                module: 'annonces',
-                action: 'annonce:create',
+                categorie: 'annonces',
+                priorite: 'NORMALE' as const,
                 metadata: {
                   annonceId: annonce.id,
                   annonceTitre: annonce.titre,
@@ -1251,8 +1248,8 @@ export class AnnoncesService {
                 contenu,
                 type: 'IN_APP',
                 destinataireId: ciblage.cibleId,
-                module: 'annonces',
-                action: 'annonce:update',
+                categorie: 'annonces',
+                priorite: 'NORMALE' as const,
                 metadata: {
                   annonceId: annonce.id,
                   annonceTitre: annonce.titre,

@@ -57,10 +57,8 @@ export class GenerationBatchService {
             const eleves = await eleveRepo.find({
                 where: {
                     etablissementId,
-                    // Note: il faudrait une relation classeId dans Eleve
-                    // Pour l'instant, on récupère tous les élèves actifs
                     statut: 'ACTIF',
-                },
+                } as any,
                 relations: ['utilisateur'],
             });
 
@@ -127,7 +125,7 @@ export class GenerationBatchService {
                     result.succes++;
 
                     // Synchroniser qrCodeId avec Utilisateur
-                    if (params.enableQRCode && carte.qrCodeId) {
+                    if (params.enableQRCode && carte.qrCode) {
                         const { Utilisateur } = await import('@modules/auth/entities');
                         const userRepo = AppDataSource.getRepository(Utilisateur);
                         await userRepo.update(
@@ -136,7 +134,7 @@ export class GenerationBatchService {
                         );
                     }
                 } catch (error) {
-                    result.erreurs.push(`Erreur pour élève ${eleve.utilisateurId}: ${error.message}`);
+                    result.erreurs.push(`Erreur pour élève ${eleve.utilisateurId}: ${(error as Error).message}`);
                     result.echecs++;
                 }
             }
@@ -169,7 +167,7 @@ export class GenerationBatchService {
             const personnelRepo = AppDataSource.getRepository(MembrePersonnel);
 
             const membres = await personnelRepo.find({
-                where: { etablissementId, statut: 'ACTIF' },
+                where: { etablissementId, statut: 'ACTIF' } as any,
                 relations: ['utilisateur'],
             });
 

@@ -19,7 +19,7 @@ const EXAMENS_KEYS = {
 
 export function useExamens(filtres?: ExamenFiltres) {
     const { isAuthenticated } = useAuthStore();
-    return useQuery({
+    const query = useQuery({
         queryKey: EXAMENS_KEYS.listes(filtres),
         queryFn: async () => {
             const params: Record<string, any> = {
@@ -38,6 +38,7 @@ export function useExamens(filtres?: ExamenFiltres) {
         staleTime: 5 * 60 * 1000,
         placeholderData: (previousData) => previousData,
     });
+    return { ...query, data: query.data?.data, meta: query.data?.meta };
 }
 
 export function useExamen(id: string) {

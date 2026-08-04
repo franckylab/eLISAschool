@@ -14,8 +14,8 @@ export * from './types/utilisateur.types';
 // Hooks Utilisateurs
 export * from './hooks/use-utilisateurs';
 
-// Hooks Rôles et Permissions
-export * from './hooks/use-roles-permissions';
+// Hooks Rôles et Permissions (exclure useRoles pour éviter le conflit avec use-utilisateurs)
+export { usePermissions, usePermissionsByModule, useToutesPermissions, usePermissionsDirectes, useAssignerPermissionUtilisateur, useRetirerPermissionUtilisateur, useAttribuerPermissions, useEffectivePermissionsDetail, useBatchPermissionsUtilisateur, useRole, useTousRoles, useCreerRole, useModifierRole, useSupprimerRole, type UtilisateurPermissionResponse } from './hooks/use-roles-permissions';
 
 // Pages
 export { UtilisateursPage } from './components/utilisateurs-page';

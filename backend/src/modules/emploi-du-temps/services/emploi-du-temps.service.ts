@@ -154,100 +154,147 @@ export class EmploiDuTempsService {
         userId?: string,
         req?: Request,
     ): Promise<{ creneau: CreneauHoraire; rapport?: RapportPropagation }> {
-        const creneau = await this.findOne(id, etablissementId);
+        // P0-2 : transaction unique pour créneau + propagation → atomicité garantie
+        const queryRunner = this.creneauRepo.manager.connection.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
 
-        // Le flag de propagation ne doit pas être écrit sur l'entité
-        const { propagerForce, ...champs } = dto;
+        try {
+            const mgr = queryRunner.manager;
 
-        // Vérifier les conflits si les champs critiques changent
-        const nouveauJour = (champs.jour || creneau.jour) as JourSemaine;
-        const nouveauDebut = champs.heureDebut || creneau.heureDebut;
-        const nouveauFin = champs.heureFin || creneau.heureFin;
-        const nouvelleSalle = champs.salleId !== undefined ? champs.salleId : creneau.salleId;
-        const nouvelleAffectation = champs.affectationMatiereId || creneau.affectationMatiereId;
+            // Chargement transactionnel avec toutes les relations nécessaires
+            const creneau = await mgr.findOne(CreneauHoraire, {
+                where: { id, etablissementId },
+                relations: [
+                    'affectationMatiere',
+                    'affectationMatiere.matiere',
+                    'affectationMatiere.enseignant',
+                    'affectationMatiere.classeAnnee',
+                    'affectationMatiere.classeAnnee.classe',
+                    'affectationMatiere.classeAnnee.anneeScolaire',
+                    'salle',
+                ],
+            });
+            if (!creneau) throw new AppError('Créneau non trouvé', 404, 'NOT_FOUND');
 
-        const conflits = await conflitDetectionService.detecterConflits(
-            {
-                affectationMatiereId: nouvelleAffectation,
-                jour: nouveauJour,
-                heureDebut: nouveauDebut,
-                heureFin: nouveauFin,
-                salleId: nouvelleSalle || undefined,
-                excludeCreneauId: id,
-            },
-            etablissementId,
-        );
+            // Le flag de propagation ne doit pas être écrit sur l'entité
+            const { propagerForce, ...champs } = dto;
 
-        const conflitsBloquants = conflits.filter(c => c.severite === 'BLOQUANT');
-        if (conflitsBloquants.length > 0) {
-            throw new AppError(
-                conflitsBloquants.map(c => c.message).join('; '),
-                409,
-                'CONFLITS_CRENEAU',
-            );
-        }
+            // Vérifier les conflits si les champs critiques changent
+            const nouveauJour = (champs.jour || creneau.jour) as JourSemaine;
+            const nouveauDebut = champs.heureDebut || creneau.heureDebut;
+            const nouveauFin = champs.heureFin || creneau.heureFin;
+            const nouvelleSalle = champs.salleId !== undefined ? champs.salleId : creneau.salleId;
+            const nouvelleAffectation = champs.affectationMatiereId || creneau.affectationMatiereId;
 
-        // Changements à propager aux instances futures PLANIFIE (Q2)
-        const changements: ChangementsPropagation = {};
-        if (champs.jour) changements.jour = champs.jour as JourSemaine;
-        if (champs.heureDebut) changements.heureDebut = champs.heureDebut;
-        if (champs.heureFin) changements.heureFin = champs.heureFin;
-        if (champs.salleId !== undefined) changements.salleId = champs.salleId;
-        if (champs.typeCreneau) changements.typeCreneau = champs.typeCreneau as TypeCreneau;
-
-        let rapport: RapportPropagation | undefined;
-        const aPropager = Object.keys(changements).length > 0;
-
-        if (aPropager) {
-            // Q5 : pré-validation (dry-run) AVANT toute écriture — atomique
-            // force est passé au dry-run pour que propagerModificationCreneau ne
-            // jette pas lui-même : le contrôle ci-dessous décide du 409.
-            rapport = await heureCoursService.propagerModificationCreneau(
-                creneau,
-                changements,
+            const conflits = await conflitDetectionService.detecterConflits(
+                {
+                    affectationMatiereId: nouvelleAffectation,
+                    jour: nouveauJour,
+                    heureDebut: nouveauDebut,
+                    heureFin: nouveauFin,
+                    salleId: nouvelleSalle || undefined,
+                    excludeCreneauId: id,
+                },
                 etablissementId,
-                { dryRun: true, force: propagerForce },
             );
-            if (rapport.conflits.length > 0 && !propagerForce) {
+
+            const conflitsBloquants = conflits.filter(c => c.severite === 'BLOQUANT');
+            if (conflitsBloquants.length > 0) {
                 throw new AppError(
-                    `${rapport.conflits.length} instance(s) future(s) en conflit après propagation — utilisez propagerForce pour les exclure`,
+                    conflitsBloquants.map(c => c.message).join('; '),
                     409,
-                    'CONFLITS_PROPAGATION',
-                    true,
-                    { rapport },
+                    'CONFLITS_CRENEAU',
                 );
             }
+
+            // Changements à propager aux instances futures PLANIFIE (Q2)
+            const changements: ChangementsPropagation = {};
+            if (champs.jour) changements.jour = champs.jour as JourSemaine;
+            if (champs.heureDebut) changements.heureDebut = champs.heureDebut;
+            if (champs.heureFin) changements.heureFin = champs.heureFin;
+            if (champs.salleId !== undefined) changements.salleId = champs.salleId;
+            if (champs.typeCreneau) changements.typeCreneau = champs.typeCreneau as TypeCreneau;
+
+            let rapport: RapportPropagation | undefined;
+            const aPropager = Object.keys(changements).length > 0;
+
+            if (aPropager) {
+                // Q5 : pré-validation (dry-run) AVANT toute écriture — dans la transaction
+                rapport = await heureCoursService.propagerModificationCreneau(
+                    creneau,
+                    changements,
+                    etablissementId,
+                    { dryRun: true, force: propagerForce, manager: mgr },
+                );
+                if (rapport.conflits.length > 0 && !propagerForce) {
+                    throw new AppError(
+                        `${rapport.conflits.length} instance(s) future(s) en conflit après propagation — utilisez propagerForce pour les exclure`,
+                        409,
+                        'CONFLITS_PROPAGATION',
+                        true,
+                        { rapport },
+                    );
+                }
+            }
+
+            Object.assign(creneau, champs);
+            await mgr.save(creneau);
+
+            if (aPropager) {
+                rapport = await heureCoursService.propagerModificationCreneau(
+                    creneau,
+                    changements,
+                    etablissementId,
+                    { force: propagerForce, createurId: userId, req, manager: mgr },
+                );
+            }
+
+            await queryRunner.commitTransaction();
+
+            logger.info(`[CreneauHoraire] Créneau modifié: ${id}`);
+            // Recharger hors transaction pour retourner les données à jour
+            return { creneau: await this.findOne(id, etablissementId), rapport };
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
         }
-
-        Object.assign(creneau, champs);
-        await this.creneauRepo.save(creneau);
-
-        if (aPropager) {
-            rapport = await heureCoursService.propagerModificationCreneau(
-                creneau,
-                changements,
-                etablissementId,
-                { force: propagerForce, createurId: userId, req },
-            );
-        }
-
-        logger.info(`[CreneauHoraire] Créneau modifié: ${id}`);
-        return { creneau: await this.findOne(id, etablissementId), rapport };
     }
 
     async supprimerCreneau(id: string, etablissementId: string, userId?: string, req?: Request): Promise<{ instancesAnnulees: number }> {
-        const creneau = await this.findOne(id, etablissementId);
-        await this.creneauRepo.softRemove(creneau);
+        // P0-2 : transaction pour soft remove + annulation instances → atomicité
+        const queryRunner = this.creneauRepo.manager.connection.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
 
-        // Q2 : les instances futures PLANIFIE du créneau passent à ANNULE
-        const instancesAnnulees = await heureCoursService.annulerInstancesCreneaux(
-            [id],
-            etablissementId,
-            { motif: 'Créneau supprimé', createurId: userId, req },
-        );
+        try {
+            const mgr = queryRunner.manager;
+            const creneau = await mgr.findOne(CreneauHoraire, {
+                where: { id, etablissementId },
+                relations: ['affectationMatiere', 'salle'],
+            });
+            if (!creneau) throw new AppError('Créneau non trouvé', 404, 'NOT_FOUND');
 
-        logger.info(`[CreneauHoraire] Créneau supprimé (soft): ${id}`);
-        return { instancesAnnulees };
+            await mgr.softRemove(creneau);
+
+            // Q2 : les instances futures PLANIFIE du créneau passent à ANNULE
+            const instancesAnnulees = await heureCoursService.annulerInstancesCreneaux(
+                [id],
+                etablissementId,
+                { motif: 'Créneau supprimé', createurId: userId, req, manager: mgr },
+            );
+
+            await queryRunner.commitTransaction();
+            logger.info(`[CreneauHoraire] Créneau supprimé (soft): ${id}`);
+            return { instancesAnnulees };
+        } catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        } finally {
+            await queryRunner.release();
+        }
     }
 
     // ─── Workflow validation ────────────────────────────────────
@@ -528,13 +575,13 @@ export class EmploiDuTempsService {
                         matiereNom: affectation.matiere?.nom || 'Matière',
                         matiereCouleur: affectation.matiere?.couleur || null,
                         enseignantNom: affectation.enseignant
-                            ? `${affectation.enseignant.prenom} ${affectation.enseignant.nom}`
+                            ? `${(affectation.enseignant as any).prenom} ${(affectation.enseignant as any).nom}`
                             : '—',
                         jour: placement.jour,
                         heureDebut: placement.heureDebut,
                         heureFin: placement.heureFin,
                         salleId: placement.salleId || null,
-                        salleNom: placement.salleNom || null,
+                        salleNom: (placement as any).salleNom || null,
                         volumeMinutes,
                         numeroSeance: i + 1,
                         totalSeances: nombreCreneaux,
@@ -967,7 +1014,7 @@ export class EmploiDuTempsService {
         creneauxGenerees: CreneauHoraire[],
         classeAnneeId: string,
         matiereId: string,
-    ): { jour: string; heureDebut: string; heureFin: string; salleId?: string } | null {
+    ): Promise<{ jour: string; heureDebut: string; heureFin: string; salleId?: string } | null> {
         const maxParJour = preferences.maxCreneauxParJour || 8;
         const maxMatiereParJour = preferences.maxCreneauxMatiereParJour || 2;
         const maxConsecutifs = preferences.maxCreneauxConsecutifs || 2;
@@ -1166,7 +1213,7 @@ export class EmploiDuTempsService {
         }
 
         const config = template.configuration;
-        const overridden = { ...preferences };
+        const overridden: any = { ...preferences };
 
         if (config.joursTravailles?.length) {
             overridden.joursOuvrables = config.joursTravailles as JourSemaine[];

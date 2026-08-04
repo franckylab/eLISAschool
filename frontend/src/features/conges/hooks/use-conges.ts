@@ -62,7 +62,7 @@ export function useValiderConge() {
 
     return useMutation({
         mutationFn: async (data: { id: string; action: 'accepter' | 'refuser'; motifRefus?: string }) => {
-            const response = await apiClient.patch<{ success: boolean; data: Conge }>(`/api/conges/${id}/valider`, {
+            const response = await apiClient.patch<{ success: boolean; data: Conge }>(`/api/conges/${data.id}/valider`, {
                 action: data.action,
                 motifRefus: data.motifRefus,
             });

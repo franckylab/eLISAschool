@@ -9,7 +9,6 @@
  */
 
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Building2, Plus, X, Search, Check } from 'lucide-react';
@@ -37,7 +36,6 @@ export function GestionEtablissementsModal({
     etablissementsAssignes,
     onRefresh,
 }: GestionEtablissementsProps) {
-    const { t } = useTranslation('groupes-etablissements');
     const [search, setSearch] = useState('');
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 

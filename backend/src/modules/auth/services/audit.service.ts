@@ -257,8 +257,7 @@ export class AuditService {
 
     private parseUserAgent(rawUA?: string): { navigateur?: string; systemeExploitation?: string; appareil?: string } {
         if (!rawUA) return {};
-        const parser = UAParser();
-        parser.setUA(rawUA);
+        const parser = new (UAParser as any)(rawUA);
         const browser = parser.getBrowser();
         const os = parser.getOS();
         const device = parser.getDevice();

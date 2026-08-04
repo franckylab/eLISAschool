@@ -192,7 +192,7 @@ export function DisciplinePage() {
 
             {stats && (
                 <CardGrid columns={{ default: 1, md: 4 }}>
-                    <StatCard icon={AlertTriangle} label="Total sanctions" value={stats.totalItemsSanctions} tone="danger" />
+                    <StatCard icon={AlertTriangle} label="Total sanctions" value={stats.totalSanctions} tone="danger" />
                     <StatCard icon={AlertCircle} label="Graves" value={stats.parGravite?.find(g => g.gravite === 'grave' || g.gravite === 'tres_grave')?.nombre || 0} tone="orange" />
                     <StatCard icon={Shield} label="Amnistiées" value={stats.parStatut?.find(s => s.statut === 'amnistiee')?.nombre || 0} tone="success" />
                     <StatCard icon={AlertTriangle} label="Types" value={stats.parType?.length || 0} tone="accent" />
@@ -245,7 +245,7 @@ export function DisciplinePage() {
                 pagination={data ? {
                     page,
                     limit,
-                    total: data.meta.total,
+                    total: data.meta.totalItems,
                     totalPages: data.meta.totalPages,
                 } : undefined}
             />

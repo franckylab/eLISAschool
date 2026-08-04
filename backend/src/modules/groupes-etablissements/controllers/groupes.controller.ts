@@ -107,7 +107,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
         );
 
         // Transformer les groupes vers le format DTO
-        const groupesTransformes = groupes.map(transformGroupeToDto);
+        const groupesTransformes = groupes.map((g: any) => transformGroupeToDto(g));
 
         res.json({
             success: true,
@@ -170,7 +170,7 @@ router.get('/:id/etablissements', requireGroupeAccess, async (req: Request, res:
             .map(lien => ({
                 id: lien.etablissement.id,
                 nom: lien.etablissement.nom,
-                code: lien.etablissement.code,
+                code: (lien.etablissement as any).codeEtablissement,
             }));
 
         res.json({ success: true, data: etablissements });
@@ -256,8 +256,8 @@ router.get('/:id/admins', requireGroupeAccess, async (req: Request, res: Respons
                 dateAssignation: admin.dateAssignation?.toISOString(),
                 utilisateur: {
                     id: admin.utilisateur.id,
-                    nom: admin.utilisateur.nom,
-                    prenom: admin.utilisateur.prenom,
+                    nom: (admin.utilisateur as any).nom || (admin.utilisateur as any).pseudonyme || '',
+                    prenom: (admin.utilisateur as any).prenom || '',
                     email: admin.utilisateur.email,
                     role: admin.utilisateur.role,
                 },
@@ -392,7 +392,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
         );
 
         // Transformer les groupes vers le format DTO
-        const groupesTransformes = groupes.map(transformGroupeToDto);
+        const groupesTransformes = groupes.map((g: any) => transformGroupeToDto(g));
 
         res.json({
             success: true,

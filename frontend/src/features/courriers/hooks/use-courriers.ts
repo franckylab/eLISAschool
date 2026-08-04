@@ -18,7 +18,7 @@ const COURRIERS_KEYS = {
 
 export function useCourriers(filtres?: CourrierFiltres) {
     const { isAuthenticated } = useAuthStore();
-    return useQuery({
+    const query = useQuery({
         queryKey: COURRIERS_KEYS.listes(filtres),
         queryFn: async () => {
             const response = await apiClient.get<{ success: boolean; data: Courrier[]; meta: any }>('/api/courriers', { params: filtres as any });
@@ -27,6 +27,7 @@ export function useCourriers(filtres?: CourrierFiltres) {
         enabled: isAuthenticated,
         staleTime: 3 * 60 * 1000,
     });
+    return { ...query, data: query.data?.data, meta: query.data?.meta };
 }
 
 export function useCourrier(id: string) {

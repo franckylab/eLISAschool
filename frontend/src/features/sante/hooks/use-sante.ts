@@ -25,7 +25,7 @@ const SANTE_KEYS = {
 
 export function useVisitesInfirmerie(filtres: VisitesFiltres = {}) {
     const { isAuthenticated } = useAuthStore();
-    return useQuery({
+    const query = useQuery({
         queryKey: SANTE_KEYS.visites.liste(filtres),
         queryFn: async () => {
             const response = await apiClient.getPaginated<VisiteInfirmerie>('/api/sante/visites', {
@@ -38,6 +38,7 @@ export function useVisitesInfirmerie(filtres: VisitesFiltres = {}) {
         enabled: isAuthenticated,
         staleTime: 5 * 60 * 1000,
     });
+    return { ...query, data: query.data?.data?.items, meta: query.data?.data?.meta };
 }
 
 export function useVisiteInfirmerie(id: string) {

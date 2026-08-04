@@ -21,7 +21,7 @@ const SONDAGES_KEYS = {
 
 export function useSondages(filtres: SondageFiltres = {}) {
     const { isAuthenticated } = useAuthStore();
-    return useQuery({
+    const query = useQuery({
         queryKey: SONDAGES_KEYS.liste(filtres),
         queryFn: async () => {
             const params: Record<string, any> = {
@@ -39,6 +39,7 @@ export function useSondages(filtres: SondageFiltres = {}) {
         staleTime: 5 * 60 * 1000,
         placeholderData: (previousData) => previousData,
     });
+    return { ...query, data: query.data?.data?.items, meta: query.data?.data?.meta };
 }
 
 export function useSondage(id: string) {
