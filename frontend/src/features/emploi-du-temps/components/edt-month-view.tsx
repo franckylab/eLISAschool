@@ -11,7 +11,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar } from 'lucide-react';
-import type { CreneauHoraire } from '../types/edt.types';
+import type { CreneauHoraire, JourSemaine } from '../types/edt.types';
 
 interface EDTMonthViewProps {
     creneaux: CreneauHoraire[];
@@ -21,6 +21,15 @@ interface EDTMonthViewProps {
 }
 
 const JOURS_SEMAINE = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM'];
+
+const JOURS_INDEX: Record<JourSemaine, number> = {
+    LUNDI: 0,
+    MARDI: 1,
+    MERCREDI: 2,
+    JEUDI: 3,
+    VENDREDI: 4,
+    SAMEDI: 5,
+};
 
 export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick }: EDTMonthViewProps) {
     const { t } = useTranslation('emplois');
@@ -53,15 +62,14 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick }: ED
         return jours;
     }, [mois]);
 
-    /** Créneaux groupés par jour ISO */
+    /** Créneaux groupés par jour de semaine (créneaux hebdomadaires récurrents) */
     const creneauxParJour = useMemo(() => {
-        const map = new Map<string, CreneauHoraire[]>();
+        const map = new Map<number, CreneauHoraire[]>();
         for (const c of creneaux) {
-            if (!c.date) continue;
-            const key = new Date(c.date).toISOString().slice(0, 10);
-            const arr = map.get(key) ?? [];
+            const indexJour = JOURS_INDEX[c.jour];
+            const arr = map.get(indexJour) ?? [];
             arr.push(c);
-            map.set(key, arr);
+            map.set(indexJour, arr);
         }
         return map;
     }, [creneaux]);
@@ -100,8 +108,8 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick }: ED
             {/* Grille des jours */}
             <div className="grid grid-cols-6 gap-0">
                 {joursGrille.map((jour, idx) => {
-                    const key = jour.toISOString().slice(0, 10);
-                    const creneauxJour = creneauxParJour.get(key) ?? [];
+                    const colIndex = idx % 6;
+                    const creneauxJour = creneauxParJour.get(colIndex) ?? [];
                     const estMoisCourant = jour.getMonth() === moisCourant;
 
                     return (

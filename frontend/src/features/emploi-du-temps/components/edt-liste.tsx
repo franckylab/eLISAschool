@@ -81,15 +81,11 @@ export function EDTListeView({ creneaux, onCreneauClick }: EDTListeViewProps) {
 
     // Reset page 1 quand les données ou le tri changent
     const totalPages = Math.max(1, Math.ceil(creneauxTries.length / ITEMS_PER_PAGE));
+    const pageEffectif = Math.min(page, totalPages);
     const creneauxPagines = useMemo(() => {
-        const start = (page - 1) * ITEMS_PER_PAGE;
+        const start = (pageEffectif - 1) * ITEMS_PER_PAGE;
         return creneauxTries.slice(start, start + ITEMS_PER_PAGE);
-    }, [creneauxTries, page]);
-
-    // Reset page si hors limites
-    if (page > totalPages && totalPages > 0) {
-        setPage(totalPages);
-    }
+    }, [creneauxTries, pageEffectif]);
 
     const TriIcon = ({ col }: { col: ColonneTri }) => {
         if (colonneTri !== col) return <ArrowUpDown className="h-3 w-3 text-[var(--color-text-muted)]" />;
@@ -128,10 +124,10 @@ export function EDTListeView({ creneaux, onCreneauClick }: EDTListeViewProps) {
                                 <span className="flex items-center gap-1">{t('salle')} <TriIcon col="salle" /></span>
                             </th>
                             <th className={thClass} style={thStyle} onClick={() => toggleTri('type')}>
-                                <span className="flex items-center gap-1">Type <TriIcon col="type" /></span>
+                                <span className="flex items-center gap-1">{t('type')} <TriIcon col="type" /></span>
                             </th>
                             <th className={thClass} style={thStyle} onClick={() => toggleTri('statut')}>
-                                <span className="flex items-center gap-1">Statut <TriIcon col="statut" /></span>
+                                <span className="flex items-center gap-1">{t('statut')} <TriIcon col="statut" /></span>
                             </th>
                         </tr>
                     </thead>
@@ -179,8 +175,8 @@ export function EDTListeView({ creneaux, onCreneauClick }: EDTListeViewProps) {
                                 <td className="px-[var(--padding-table-cell)] py-[var(--space-sm)]">
                                     <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
                                         c.statut === 'VALIDE'
-                                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                            ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]'
+                                            : 'bg-[var(--color-info)]/10 text-[var(--color-info)]'
                                     }`}>
                                         {c.statut === 'VALIDE' ? t('heureCours.modal.statuts.effectue') : t('heureCours.modal.statuts.planifie')}
                                     </span>
@@ -241,12 +237,12 @@ export function EDTListeView({ creneaux, onCreneauClick }: EDTListeViewProps) {
                         className="text-[var(--color-text-muted)]"
                         style={{ fontSize: 'clamp(0.6875rem, 0.63rem + 0.2vw, 0.8125rem)' }}
                     >
-                        {t('liste.pagination', { page, totalPages, total: creneauxTries.length })}
+                        {t('liste.pagination', { page: pageEffectif, totalPages, total: creneauxTries.length })}
                     </span>
                     <div className="flex items-center gap-[var(--gap-xs)]">
                         <button
                             onClick={() => setPage(p => Math.max(1, p - 1))}
-                            disabled={page <= 1}
+                            disabled={pageEffectif <= 1}
                             className="rounded-lg border border-[var(--color-bordure)] p-[var(--space-xxs)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                             aria-label={t('navigation.precedent')}
                         >
@@ -258,19 +254,19 @@ export function EDTListeView({ creneaux, onCreneauClick }: EDTListeViewProps) {
                                 let pageNum: number;
                                 if (totalPages <= 5) {
                                     pageNum = i + 1;
-                                } else if (page <= 3) {
+                                } else if (pageEffectif <= 3) {
                                     pageNum = i + 1;
-                                } else if (page >= totalPages - 2) {
+                                } else if (pageEffectif >= totalPages - 2) {
                                     pageNum = totalPages - 4 + i;
                                 } else {
-                                    pageNum = page - 2 + i;
+                                    pageNum = pageEffectif - 2 + i;
                                 }
                                 return (
                                     <button
                                         key={pageNum}
                                         onClick={() => setPage(pageNum)}
                                         className={`min-w-[clamp(1.5rem,1.25rem+1vw,2rem)] h-[clamp(1.5rem,1.25rem+1vw,2rem)] rounded-lg text-xs font-medium transition-colors ${
-                                            pageNum === page
+                                            pageNum === pageEffectif
                                                 ? 'bg-[var(--color-dominant-100)] text-[var(--color-dominant-700)]'
                                                 : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
                                         }`}
@@ -282,7 +278,7 @@ export function EDTListeView({ creneaux, onCreneauClick }: EDTListeViewProps) {
                         </div>
                         <button
                             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                            disabled={page >= totalPages}
+                            disabled={pageEffectif >= totalPages}
                             className="rounded-lg border border-[var(--color-bordure)] p-[var(--space-xxs)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                             aria-label={t('navigation.suivant')}
                         >

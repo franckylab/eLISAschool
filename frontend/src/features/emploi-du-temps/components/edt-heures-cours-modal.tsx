@@ -16,8 +16,7 @@ import {
     Info, ChevronLeft,
 } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { useGenererHeuresCoursFromEdt } from '@/features/personnel/hooks/use-heure-cours';
-import type { GenererHeuresCoursResult } from '@/features/personnel/hooks/use-heure-cours';
+import { useGenererHeuresCoursFromEdt, type GenererHeuresCoursResult } from '@/features/personnel';
 
 interface EDTHeuresCoursModalProps {
     enseignantId: string;
@@ -131,9 +130,9 @@ export function EDTHeuresCoursModal({ enseignantId, classeAnneeId, onClose }: ED
 
                         {/* Validation */}
                         {!enseignantId && (
-                            <div className="flex items-center gap-2 p-3 rounded-lg border border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-700">
-                                <AlertTriangle className="h-4 w-4 text-yellow-600 shrink-0" />
-                                <span className="text-xs text-yellow-700 dark:text-yellow-400">
+                            <div className="flex items-center gap-2 p-3 rounded-lg border border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10">
+                                <AlertTriangle className="h-4 w-4 text-[var(--color-warning)] shrink-0" />
+                                <span className="text-xs text-[var(--color-warning)]">
                                     {t('generationHeuresCours.enseignantRequis')}
                                 </span>
                             </div>
@@ -168,8 +167,8 @@ export function EDTHeuresCoursModal({ enseignantId, classeAnneeId, onClose }: ED
                     >
                         {/* Résumé */}
                         <div className="flex flex-col items-center py-4">
-                            <div className="h-14 w-14 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center mb-3">
-                                <CheckCircle2 className="h-7 w-7 text-green-600" />
+                            <div className="h-14 w-14 rounded-full bg-[var(--color-success)]/10 flex items-center justify-center mb-3">
+                                <CheckCircle2 className="h-7 w-7 text-[var(--color-success)]" />
                             </div>
                             <h3
                                 className="font-semibold text-[var(--color-text-primary)] mb-1"
@@ -214,9 +213,9 @@ function ResultatCard({ label, value, color }: {
     color: 'success' | 'warning' | 'danger' | 'dominant';
 }) {
     const colorMap = {
-        success: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800',
-        warning: 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
-        danger: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800',
+        success: 'bg-[var(--color-success)]/10 text-[var(--color-success)] border-[var(--color-success)]/30',
+        warning: 'bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/30',
+        danger: 'bg-[var(--color-danger)]/10 text-[var(--color-danger)] border-[var(--color-danger)]/30',
         dominant: 'bg-[var(--color-dominant-50)] text-[var(--color-dominant-700)] border-[var(--color-dominant-200)]',
     };
 

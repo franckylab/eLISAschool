@@ -447,7 +447,7 @@ export function EDTCalendar({
 
             {/* Conflits preview */}
             {conflitsPreview.length > 0 && (
-                <div className="mt-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center gap-2 text-sm text-destructive">
+                <div className="mt-2 p-3 rounded-lg bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/20 flex items-center gap-2 text-sm text-[var(--color-danger)]">
                     <AlertTriangle className="h-4 w-4 shrink-0" />
                     {t('conflitDetection.conflitsDetectes', { count: conflitsPreview.length })}
                 </div>

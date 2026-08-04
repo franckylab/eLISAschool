@@ -83,6 +83,61 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 ### Blocked
 — (none)
 
+## Travail effectué — Session 2026-08-04 (audit deep-dive EDT + corrections frontend)
+
+### Contexte
+Audit de conformité du module EDT vs conventions eLISAschool (rapport livré en conversation, décisions Q1–Q6 validées : rapport d'abord, axe équilibré P0/P1/P2, rapport en conversation, granularité par composant + blocs transverses, backend niveau service, workflow validation générique NON recommandé). Corrections à faible risque implémentées ; chantiers lourds documentés (refonte DataTable, barrels) en attente de validation séparée.
+
+### Verdicts rapport
+- **Backend** : ✅ services sains (conflit-commun, heure-cours v1.2.0, cron-jobs, controller permissionné). ⚠️ P1 `conflit-detection.service.ts` l.187 : `coEnseignantIds` SQL brut `ANY(string_to_array(...))` non indexable + `auditConflitsGlobaux` 3 scans. ⚠️ P1 : audit loggé dans le controller EDT (15 appels l.33-238) vs dans le service pour heure-cours (13) — pattern à uniformiser (déplacer dans le service). P2 documenté : table jonction co-enseignants, `creneauId` NOT NULL, triggers DB, dé-normalisation `typeCreneau`/`salleId`.
+- **Frontend** : ✅ conforme edt-page/calendar/month-view/preferences (+ templates mineur). 🔴 edt-liste (table artisanale). ⚠️ edt-generation-modal (stepper maison), edt-synthese, edt-audit, edt-heures-cours-modal, edt-filter-bar (emojis). Bonus : tab-heure-cours sans ErrorBoundary, 3 hooks morts `use-heure-cours`.
+
+### Corrections implémentées (10 fichiers)
+1. **Règle 34 ajoutée** `.qoder/rules/elisaschool-frontend.md` : pattern module EDT (DataTable partagée, jamais setState pendant rendu, StepperModal/StatCard partagés, icônes lucide partout, CSS vars, JOUR_MAP canonique, ErrorBoundary onglets personnel, imports via barrels, parité i18n, audit dans services).
+2. **`edt-liste.tsx` (P0 setState pendant rendu)** : `setPage(Math.min(page, …))` → dérivation pure `pageEffectif = Math.min(page, totalPages)` ; badges green/blue hardcodés → `var(--color-success)`/`var(--color-info)` /10 (pattern AuditTimeline/Badge) ; colonnes « Type »/« Statut » → `t('type')`/`t('statut')`.
+3. **i18n EN** : 61 clés manquantes ajoutées (`synthese.*`, `audit.*`, `generationHeuresCours.*`) + `type`/`statut` FR+EN → parité 343/343 (vérifiée par script Python).
+4. **`personnel-detail-page.tsx`** l.785-789 : `<TabHeureCours>` enveloppé `<ErrorBoundary key="heures-cours">` (aligné autres onglets).
+5. **`edt-day-view.tsx`** : bug `JOUR_MAP :{0:'SAMEDI'}` corrigé → `{1:'LUNDI'…6:'SAMEDI'}` + fallback `t('jour.vide')` ; `dateStr` via `formatDate(date, 'EEEE d MMMM')` (@/lib/date-utils) ; **code mort supprimé** `statut === 'ANNULE'` (inexistant sur StatutCreneau → erreur TS2367) ; rouge → `var(--color-danger)`.
+6. **`edt-month-view.tsx`** : vue mois TOUJOURS vide (bug logique) — groupement par `c.date` (champ inexistant) → groupement par `c.jour` (hebdomadaire récurrent) + lookup cellule par index colonne (`JOURS_INDEX`). Erreurs TS2339 résolues.
+7. **Couleurs → CSS vars** : edt-synthese (3), edt-audit (18), edt-heures-cours-modal (15) ; grep final : seul `#3b82f6` (input type=color) légitime.
+8. **`edt-creneau-modal.tsx` réécrit** (~450 l. → 460 l.) sur `StepperModal` partagé (3 étapes, validate étape 1 affectation + étape 3 conflits bloquants, footerActions Valider/Supprimer, ConfirmationModal propagation). Imports CustomModal/ChevronRight/ant retirés. **⚠️ piège dominant** : classes `text-destructive`/`border-destructive/30` **aucun CSS généré** (`--color-destructive` absent de `@theme` — seule `--color-danger` existe) — remplacées par `var(--color-danger)`. Emojis 🔴/🟠 → lucide AlertTriangle/AlertCircle.
+9. **`edt-filter-bar.tsx`** : emojis 🏫👨🏫🚪 → lucide (Users/GraduationCap/DoorOpen).
+10. **`StepperModal.tsx` étendu** (rétro-compatible) : props `footerActions?: ReactNode` + `onStepChange?: (index)` ; footer = `{footerActions}<ElisaButton ghost Annuler>` ; handlePrev/handleStepClick/handleClose/handleNext notifient onStepChange.
+
+### Qualité
+- `npx tsc --noEmit` **0 erreur full frontend** (exit 0). Parité i18n FR/EN 0 manquante. 0 emoji dans le module EDT. 0 classe destructive ; convention = `var(--color-danger)`.
+
+### Chantiers documentés (non implémentés — validation séparée)
+- **T2** : refonte edt-liste sur DataTable partagée (P1).
+- **T6** : barrels personnel (`features/personnel/index.ts` n'exporte ni use-heure-cours ni TabHeureCours/HeureCoursFormModal/OngletEdt) ; edt-synthese + edt-heures-cours-modal importent par chemins directs.
+- **Backend P1** : co-enseignants indexable + audit déplacé dans les services EDT.
+- 3 hooks morts `use-heure-cours` (P2 nettoyage).
+
+### Corrections complémentaires (session suite — 2026-08-04)
+- **edt-generation-modal migré sur StepperModal** (T3 complet) — modal autonome (contrat `open`/`onOpenChange` retiré de edt-page), 3 étapes Options/Préview/Succès. **Piège `isStepValid`** : le StepperModal appelle `validate` à chaque rendu pour le `disabled` — un `validate` async avec effets (preview/génération) déclencherait des requêtes en double → `disableNextOnInvalid={false}` (le `validate` reste click-only dans `handleNext`). Stephés : step 1 `validate: async runPreview`, step 2 `validate: async runGeneration`, step 3 footer caché (`hideFooterOnLastStep`) + boutons Fermer/VoirEDT dans le contenu. Labels primaires par étape via `nextLabels` (Prévisualiser→Prévisualisation…→Générer→En cours…→Générer malgré les conflits). Reset d'état à la fermeture (useEffect). Clé i18n `generation.previewErreur` ajoutée FR+EN.
+- **StepperModal étendu** : props `nextLabels?: string[]` (label du bouton principal par étape) + `hideFooterOnLastStep?: boolean` (footer masqué à la dernière étape). Rétro-compatibles.
+- **T6 barrels** : `features/personnel/index.ts` exporte désormais `use-heure-cours`, `TabHeureCours`, `HeureCoursFormModal`, `OngletEdt` ; edt-heures-cours-modal importe via `@/features/personnel`. Plus aucun import cross-feature direct dans personnel.
+- **3 hooks morts supprimés** de `use-heure-cours.ts` : `useEdtEnseignant`, `useVolumeHoraire`, `useHeureCoursById` (aucun import).
+
+### Corrections appliquées (4 modifications, 2 fichiers)
+
+1. **Motif de propagation** (`heure-cours.service.ts` l.343-351) : traçabilité des changements propagés dans `commentaire` — format `Propagé(xxxxxxxx): jour→MARDI, début→08:00, salle→uuid`. Concaténé avec commentaire existant via `filter(Boolean).join(' | ')`.
+
+2. **Save par lots — propagation** (`heure-cours.service.ts` l.366-373) : remplacement du `mgr.save(cibles)` monolithique par des chunks de 50. Réduit la charge DB pour les propagations de masse (30 créneaux × 16 semaines = 480 instances).
+
+3. **Commentaire architecture** (`heure-cours.entity.ts` l.39-61) : bloc JSDoc documentant que toutes les écritures HeureCours doivent passer par `HeureCoursService`. Décrit les 4 flux (propagation, matérialisation, annulation, remontée).
+
+4. **Bulk insert — matérialisation** (`heure-cours.service.ts` l.1015-1016, 1096-1111) : remplacement des `this.repo.save(hc)` individuels (N requêtes) par accumulation dans `batch[]` + flush par chunks de 50 en fin de semaine. Réduction : 480 requêtes → ~10 requêtes.
+
+### Fichiers modifiés (2)
+- `backend/src/modules/personnel/services/heure-cours.service.ts` (+33 lignes, -4 lignes)
+- `backend/src/modules/personnel/entities/heure-cours.entity.ts` (+23 lignes)
+
+### Cohérence vérifiée
+- `mgr` utilisé dans propagation (transactionnel) vs `this.repo` dans matérialisation (pas de transaction externe)
+- Motif annulation (`annulerInstancesCreneaux` SQL COALESCE) inchangé
+- Audit trail existant conservé (l.375-385 propagation, l.1118-1127 matérialisation)
+
 ## Travail effectué — Session 2026-08-03 (Phase 1 — traçabilité, performance, architecture EDT)
 
 ### Corrections appliquées (4 modifications, 2 fichiers)

@@ -10,7 +10,8 @@
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Clock, MapPin, User, BookOpen, AlertCircle, FileText } from 'lucide-react';
+import { Clock, MapPin, User, BookOpen, FileText } from 'lucide-react';
+import { formatDate } from '@/lib/date-utils';
 import type { CreneauHoraire, JourSemaine } from '../types/edt.types';
 
 interface EDTDayViewProps {
@@ -22,7 +23,7 @@ interface EDTDayViewProps {
 }
 
 const JOUR_MAP: Record<number, JourSemaine> = {
-    0: 'SAMEDI', 1: 'LUNDI', 2: 'MARDI', 3: 'MERCREDI',
+    1: 'LUNDI', 2: 'MARDI', 3: 'MERCREDI',
     4: 'JEUDI', 5: 'VENDREDI', 6: 'SAMEDI',
 };
 
@@ -90,8 +91,8 @@ export function EDTDayView({
         ? ((minutesActuelles - debutMin) / dureeTotal) * 100
         : -1;
 
-    const nomJour = t(`jours.${jourSemaine.toLowerCase()}`);
-    const dateStr = date.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+    const nomJour = jourSemaine ? t(`jours.${jourSemaine.toLowerCase()}`) : t('jour.vide');
+    const dateStr = formatDate(date, 'EEEE d MMMM');
 
     return (
         <div className="flex flex-col gap-[var(--gap-sm)]">
@@ -148,8 +149,8 @@ export function EDTDayView({
                                 className="absolute left-0 right-0 z-10 flex items-center"
                                 style={{ top: `${positionActuelle}%` }}
                             >
-                                <div className="h-2.5 w-2.5 rounded-full bg-red-500 ml-[clamp(2.5rem,8vw,4rem)]" />
-                                <div className="flex-1 h-[2px] bg-red-400" />
+                                <div className="h-2.5 w-2.5 rounded-full bg-[var(--color-danger)] ml-[clamp(2.5rem,8vw,4rem)]" />
+                                <div className="flex-1 h-[2px] bg-[var(--color-danger)]/60" />
                             </div>
                         )}
 
@@ -221,9 +222,6 @@ export function EDTDayView({
                                                 >
                                                     {t(`creneau.types.${c.typeCreneau.toLowerCase()}`)}
                                                 </span>
-                                            )}
-                                            {c.statut === 'ANNULE' && (
-                                                <AlertCircle className="h-3 w-3 text-red-500 shrink-0" />
                                             )}
                                         </div>
                                         {/* Notes */}

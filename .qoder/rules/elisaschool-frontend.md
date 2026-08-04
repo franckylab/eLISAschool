@@ -2568,3 +2568,25 @@ const handleToggleFullscreen = useCallback(() => {
 - **TOUJOURS** permissionner le popover détail (`network:details`) et la page monitoring (`network:admin`)
 - **TOUJOURS** traduire les clés dans `common.json` (`network.*`)
 - **NE JAMAIS** utiliser de sonde internet tierce sans fallback (CORS, adblockers, mauvaises pratiques)
+
+---
+
+## 34. Pattern Module Emploi du Temps (EDT)
+
+### Architecture
+- **Module** : `features/emploi-du-temps/` (page standalone `/_auth/emploi-du-temps` → `EDTStandalonePage`, guard `requireModulePermission('emploi-du-temps')`)
+- **Vues** : `edt-page.tsx` (onglets Planning/Configuration), `edt-calendar` (grille semaine dnd-kit), `edt-month-view` / `edt-day-view` (vue mensuelle/journalière), `edt-liste` (liste), `edt-synthese` (KPIs), `edt-audit` (conflits), `edt-preferences`, `edt-templates`, `edt-filter-bar` (barre de contexte classe/enseignant/salle), modals `edt-creneau-modal` / `edt-generation-modal` / `edt-heures-cours-modal`
+- **Heures de cours** : `features/personnel/` (`tab-heure-cours.tsx`, `heure-cours-form-modal.tsx`, `onglets/onglet-edt.tsx`, `hooks/use-heure-cours.ts`) — consommés par `personnel-detail-page.tsx` ET `edt-heures-cours-modal.tsx`
+
+### Règles
+- **TOUJOURS** utiliser la `DataTable` partagée pour les listes de créneaux (`edt-liste`) — tri/pagination/recherche via ses props ; **NE JAMAIS** réinventer une table artisanale
+- **NE JAMAIS** appeler `setState` pendant le rendu (anti-pattern : clamps de pagination hors limites → `useEffect`)
+- **TOUJOURS** utiliser le `StepperModal` partagé pour les modals multi-étapes (créneau, génération) ; **NE JAMAIS** implémenter de stepper maison
+- **TOUJOURS** utiliser `StatCard` partagé pour les KPIs (`edt-synthese`) ; **NE JAMAIS** de KPI Card locale
+- **TOUJOURS** des icônes lucide partout, y compris dans `edt-filter-bar` (jamais d'emoji)
+- **TOUJOURS** CSS vars pour les couleurs (badges statut créneau : `bg-success/*`/`bg-info/*`, jamais `bg-green-*/bg-blue-*`)
+- **Ordre canon des jours** : `LUNDI..SAMEDI` (index `0=LUNDI`) — ne jamais mapper `getDay()` (0=dimanche) directement sur la semaine EDT sans décalage
+- **TOUJOURS** wrapper les onglets de `personnel-detail-page.tsx` dans un `ErrorBoundary` (y compris `TabHeureCours`)
+- **TOUJOURS** importer les hooks EDT/heures-cours via les barrels (`@/features/personnel`, `@/features/emploi-du-temps`), jamais par chemin direct cross-feature
+- **TOUJOURS** parité i18n FR/EN (`emplois.json`, `personnel.json`) ; les clés `synthese.*`, `audit.*`, `generationHeuresCours.*` doivent exister dans les deux langues
+- **Backend** : audit des créneaux/heures-cours dans les **services** (pas les controllers) — pattern uniforme avec `heure-cours.service.ts`

@@ -56,6 +56,10 @@ export interface StepperModalProps {
     onSubmit: () => void | Promise<void>;
     /** Callback appelé à l'annulation */
     onCancel?: () => void;
+    /** Actions supplémentaires affichées à gauche du footer (ex: Supprimer, Valider) */
+    footerActions?: ReactNode;
+    /** Callback notifié à chaque changement d'étape (index 0-based) */
+    onStepChange?: (index: number) => void;
     /** Label du bouton Annuler (défaut: i18n) */
     cancelLabel?: string;
     /** Label du bouton Suivant (défaut: i18n) */
@@ -64,6 +68,10 @@ export interface StepperModalProps {
     prevLabel?: string;
     /** Label du bouton Enregistrer (défaut: i18n) */
     submitLabel?: string;
+    /** Labels du bouton principal par étape (index 0-based) — remplace Suivant/Valider pour chaque étape */
+    nextLabels?: string[];
+    /** Masquer entièrement le footer de navigation à la dernière étape (le contenu gère ses propres actions) */
+    hideFooterOnLastStep?: boolean;
     /** Taille du modal (défaut: '2xl') */
     size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
     /** Désactiver le bouton Suivant si l'étape est invalide */
@@ -85,10 +93,14 @@ export function StepperModal({
     initialStep = 0,
     onSubmit,
     onCancel,
+    footerActions,
+    onStepChange,
     cancelLabel,
     nextLabel,
     prevLabel,
     submitLabel,
+    nextLabels,
+    hideFooterOnLastStep = false,
     size = '2xl',
     disableNextOnInvalid = true,
     isSubmitting = false,
@@ -111,6 +123,9 @@ export function StepperModal({
         submit: submitLabel || t('common:boutons.enregistrer', 'Enregistrer'),
     };
 
+    // Label du bouton principal (par étape si fourni)
+    const primaryLabel = nextLabels?.[currentStep] ?? (isLastStep ? labels.submit : labels.next);
+
     // Navigation vers l'étape suivante
     const handleNext = useCallback(async () => {
         const step = steps[currentStep];
@@ -130,17 +145,21 @@ export function StepperModal({
         if (isLastStep) {
             await onSubmit();
         } else {
-            setCurrentStep(prev => prev + 1);
+            const suivant = currentStep + 1;
+            setCurrentStep(suivant);
+            onStepChange?.(suivant);
         }
-    }, [currentStep, isLastStep, steps, onSubmit, t]);
+    }, [currentStep, isLastStep, steps, onSubmit, onStepChange, t]);
 
     // Navigation vers l'étape précédente
     const handlePrev = useCallback(() => {
         if (!isFirstStep) {
             setValidationError(null);
-            setCurrentStep(prev => prev - 1);
+            const precedent = currentStep - 1;
+            setCurrentStep(precedent);
+            onStepChange?.(precedent);
         }
-    }, [isFirstStep]);
+    }, [isFirstStep, currentStep, onStepChange]);
 
     // Navigation vers une étape spécifique (via l'indicateur)
     const handleStepClick = useCallback((index: number) => {
@@ -148,8 +167,9 @@ export function StepperModal({
         if (index <= currentStep || completedSteps.has(index - 1)) {
             setValidationError(null);
             setCurrentStep(index);
+            onStepChange?.(index);
         }
-    }, [currentStep, completedSteps]);
+    }, [currentStep, completedSteps, onStepChange]);
 
     // Fermeture du modal
     const handleClose = useCallback(() => {
@@ -157,8 +177,9 @@ export function StepperModal({
         setCompletedSteps(new Set());
         setValidationError(null);
         onCancel?.();
+        onStepChange?.(initialStep);
         onOpenChange(false);
-    }, [initialStep, onCancel, onOpenChange]);
+    }, [initialStep, onCancel, onOpenChange, onStepChange]);
 
     // Animation des étapes
     const stepVariants = {
@@ -174,16 +195,19 @@ export function StepperModal({
             title={title}
             description={description}
             size={size}
-            footer={
+            footer={hideFooterOnLastStep && isLastStep ? undefined : (
                 <div className="flex items-center justify-between gap-[var(--gap-sm)] w-full">
-                    {/* Bouton Annuler (à gauche) */}
-                    <ElisaButton
-                        variant="ghost"
-                        onClick={handleClose}
-                        disabled={isSubmitting}
-                    >
-                        {labels.cancel}
-                    </ElisaButton>
+                    {/* Actions supplémentaires + Annuler (à gauche) */}
+                    <div className="flex items-center gap-[var(--gap-sm)]">
+                        {footerActions}
+                        <ElisaButton
+                            variant="ghost"
+                            onClick={handleClose}
+                            disabled={isSubmitting}
+                        >
+                            {labels.cancel}
+                        </ElisaButton>
+                    </div>
 
                     {/* Navigation (à droite) */}
                     <div className="flex items-center gap-[var(--gap-sm)]">
@@ -204,11 +228,11 @@ export function StepperModal({
                             loading={isSubmitting}
                             disabled={disableNextOnInvalid && !isStepValid(steps[currentStep])}
                         >
-                            {isLastStep ? labels.submit : labels.next}
+                            {primaryLabel}
                         </ElisaButton>
                     </div>
                 </div>
-            }
+            )}
         >
             <div className="flex flex-col gap-[var(--gap-md)]">
                 {/* ─── Indicateur de progression ─── */}

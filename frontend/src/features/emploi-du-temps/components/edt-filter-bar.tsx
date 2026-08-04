@@ -9,7 +9,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Filter, X, ChevronDown } from 'lucide-react';
+import { Filter, X, ChevronDown, Users, GraduationCap, DoorOpen } from 'lucide-react';
 import type { JourSemaine } from '../types/edt.types';
 
 export type ContexteType = 'classe' | 'enseignant' | 'salle';
@@ -38,10 +38,10 @@ export interface EDTFilterBarProps {
 
 const JOURS: JourSemaine[] = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
 
-const CONTEXTE_ICONS: Record<ContexteType, string> = {
-    classe: '🏫',
-    enseignant: '👨‍🏫',
-    salle: '🚪',
+const CONTEXTE_ICONS: Record<ContexteType, React.ReactNode> = {
+    classe: <Users className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />,
+    enseignant: <GraduationCap className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />,
+    salle: <DoorOpen className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />,
 };
 
 export function EDTFilterBar({
@@ -85,7 +85,7 @@ export function EDTFilterBar({
                             }`}
                             aria-pressed={contexteType === type}
                         >
-                            <span>{CONTEXTE_ICONS[type]}</span>
+                            <span className="flex items-center">{CONTEXTE_ICONS[type]}</span>
                             <span className="hidden sm:inline">{t(`contexte.${type}`)}</span>
                         </button>
                     ))}

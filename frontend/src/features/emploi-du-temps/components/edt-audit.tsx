@@ -197,8 +197,8 @@ function ConflitRow({ conflit }: { conflit: AuditConflitDetail }) {
             {/* Sévérité */}
             <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
                 estBloquant
-                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                    : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                    ? 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]'
+                    : 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]'
             }`}>
                 {estBloquant ? (
                     <AlertTriangle className="h-3 w-3" />
@@ -235,14 +235,14 @@ function AuditKpi({ icon, label, value, color }: {
     color: 'danger' | 'warning' | 'success';
 }) {
     const bgMap = {
-        danger: 'bg-red-50 dark:bg-red-900/20',
-        warning: 'bg-yellow-50 dark:bg-yellow-900/20',
-        success: 'bg-green-50 dark:bg-green-900/20',
+        danger: 'bg-[var(--color-danger)]/10',
+        warning: 'bg-[var(--color-warning)]/10',
+        success: 'bg-[var(--color-success)]/10',
     };
     const iconColorMap = {
-        danger: 'text-red-600',
-        warning: 'text-yellow-600',
-        success: 'text-green-600',
+        danger: 'text-[var(--color-danger)]',
+        warning: 'text-[var(--color-warning)]',
+        success: 'text-[var(--color-success)]',
     };
 
     return (
@@ -274,11 +274,11 @@ function iconeType(type: TypeConflit): React.ReactNode {
     const cls = 'h-[var(--icon-xs)] w-[var(--icon-xs)]';
     switch (type) {
         case 'CONFLIT_CLASSE':
-            return <Users className={`${cls} text-red-500`} />;
+            return <Users className={`${cls} text-[var(--color-danger)]`} />;
         case 'CONFLIT_ENSEIGNANT':
-            return <Users className={`${cls} text-orange-500`} />;
+            return <Users className={`${cls} text-[var(--color-warning)]`} />;
         case 'CONFLIT_SALLE':
-            return <Building2 className={`${cls} text-blue-500`} />;
+            return <Building2 className={`${cls} text-[var(--color-accent-600)]`} />;
         default:
             return <Shield className={`${cls} text-[var(--color-text-muted)]`} />;
     }

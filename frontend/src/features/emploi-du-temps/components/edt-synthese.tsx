@@ -539,7 +539,7 @@ function ChargeEnseignant({ creneaux }: {
                 </div>
                 <div className="flex items-center gap-[var(--gap-sm)]">
                     {nbEnAlerte > 0 && (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                        <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--color-danger)]/10 text-[var(--color-danger)]">
                             <AlertTriangle className="h-3 w-3" />
                             {nbEnAlerte} {t('synthese.dansAlerte')}
                         </span>
@@ -567,14 +567,14 @@ function ChargeEnseignant({ creneaux }: {
                             <div className="flex-1 h-[clamp(20px,3vw,28px)] rounded-[var(--radius-sm)] bg-[var(--color-surface-alt)] overflow-hidden relative">
                                 <div
                                     className={`h-full rounded-[var(--radius-sm)] transition-all duration-500 ${
-                                        estEnAlerte ? 'bg-red-500' : 'bg-[var(--color-accent-500)]'
+                                        estEnAlerte ? 'bg-[var(--color-danger)]' : 'bg-[var(--color-accent-500)]'
                                     }`}
                                     style={{ width: `${pct}%` }}
                                 />
                                 <span className="absolute inset-0 flex items-center justify-between px-2 text-[10px] font-medium text-[var(--color-text-primary)]">
                                     <span>{ens.totalHeures.toFixed(1)}h · {ens.nombreCreneaux} {t('synthese.creneaux')}</span>
                                     {estEnAlerte && (
-                                        <AlertTriangle className="h-3 w-3 text-red-600" />
+                                        <AlertTriangle className="h-3 w-3 text-[var(--color-danger)]" />
                                     )}
                                 </span>
                             </div>
@@ -611,7 +611,7 @@ function RespectBarre({ respect, planifiees, requis }: {
     const isOk = pct >= 90 && pct <= 100;
     const isDepassement = planifiees > requis;
 
-    const colorClass = isOk ? 'bg-success' : isDepassement ? 'bg-destructive' : 'bg-warning';
+    const colorClass = isOk ? 'bg-[var(--color-success)]' : isDepassement ? 'bg-[var(--color-danger)]' : 'bg-[var(--color-warning)]';
     const label = isOk ? t('synthese.ok') : isDepassement ? t('synthese.depassement') : t('synthese.insuffisant');
 
     return (
@@ -624,11 +624,11 @@ function RespectBarre({ respect, planifiees, requis }: {
             </div>
             <span className="text-[10px] font-medium shrink-0 flex items-center gap-0.5">
                 {isDepassement ? (
-                    <AlertTriangle className="h-3 w-3 text-destructive" />
+                    <AlertTriangle className="h-3 w-3 text-[var(--color-danger)]" />
                 ) : isOk ? (
-                    <CheckCircle2 className="h-3 w-3 text-success" />
+                    <CheckCircle2 className="h-3 w-3 text-[var(--color-success)]" />
                 ) : (
-                    <span className="text-warning">{pct.toFixed(0)}%</span>
+                    <span className="text-[var(--color-warning)]">{pct.toFixed(0)}%</span>
                 )}
                 <span className="hidden lg:inline text-[var(--color-text-secondary)]">{label}</span>
             </span>

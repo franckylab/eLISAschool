@@ -49,32 +49,6 @@ export function useResumeMensuel(enseignantId: string, mois: number, annee: numb
     });
 }
 
-export function useEdtEnseignant(enseignantId: string, semaine?: string) {
-    return useQuery({
-        queryKey: ['personnel', 'heures-cours', 'edt', enseignantId, semaine],
-        queryFn: async () => {
-            const response = await apiClient.get<HeureCours[]>(`/api/personnel/heures-cours/enseignants/${enseignantId}/edt?semaine=${semaine}`);
-            return response.data;
-        },
-        enabled: !!enseignantId && !!semaine,
-        placeholderData: (previousData) => previousData,
-    });
-}
-
-export function useVolumeHoraire(enseignantId: string, dateDebut: string, dateFin: string) {
-    return useQuery({
-        queryKey: ['personnel', 'heures-cours', 'volume', enseignantId, dateDebut, dateFin],
-        queryFn: async () => {
-            const response = await apiClient.get<{ heuresPrevues: number; heuresRealisees: number; tauxRealisation: number }>(
-                `/api/personnel/heures-cours/enseignants/${enseignantId}/volume-horaire?dateDebut=${dateDebut}&dateFin=${dateFin}`
-            );
-            return response.data;
-        },
-        enabled: !!enseignantId && !!dateDebut && !!dateFin,
-        placeholderData: (previousData) => previousData,
-    });
-}
-
 export function useHeureCoursList(query?: Record<string, string | number | boolean>) {
     return useQuery({
         queryKey: ['personnel', 'heures-cours', 'list', query],
@@ -89,17 +63,6 @@ export function useHeureCoursList(query?: Record<string, string | number | boole
             return response.data;
         },
         enabled: true,
-    });
-}
-
-export function useHeureCoursById(id?: string) {
-    return useQuery({
-        queryKey: ['personnel', 'heures-cours', id],
-        queryFn: async () => {
-            const response = await apiClient.get<HeureCours>(`/api/personnel/heures-cours/${id}`);
-            return response.data;
-        },
-        enabled: !!id,
     });
 }
 

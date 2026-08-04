@@ -783,7 +783,9 @@ export function PersonnelDetailPage() {
                 )}
 
                 {ongletActif === 'heures-cours' && (
-                    <TabHeureCours enseignantId={id} />
+                    <ErrorBoundary key="heures-cours">
+                        <TabHeureCours enseignantId={id} />
+                    </ErrorBoundary>
                 )}
 
                 {ongletActif === 'evaluations' && (

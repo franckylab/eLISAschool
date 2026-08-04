@@ -2,7 +2,13 @@
   "titre": "Emplois du Temps",
   "description": "Gérer les créneaux horaires, salles et enseignants",
   "chargement": "Chargement des emplois du temps…",
-  "jour": "Jour",
+  "jour": {
+    "vide": "Aucun créneau ce jour",
+    "precedent": "Jour précédent",
+    "suivant": "Jour suivant",
+    "creneaux_one": "{{count}} créneau",
+    "creneaux_other": "{{count}} créneaux"
+  },
   "horaire": "Horaire",
   "matiere": "Matière",
   "enseignant": "Enseignant",
@@ -65,13 +71,6 @@
     "vide": "Aucun créneau ce mois",
     "precedent": "Mois précédent",
     "suivant": "Mois suivant"
-  },
-  "jour": {
-    "vide": "Aucun créneau ce jour",
-    "precedent": "Jour précédent",
-    "suivant": "Jour suivant",
-    "creneaux_one": "{{count}} créneau",
-    "creneaux_other": "{{count}} créneaux"
   },
   "jours": {
     "lundi": "Lundi",
@@ -145,7 +144,8 @@
       "titre": "Emploi du temps généré !",
       "description": "{{creneaux}} créneaux, {{heures}}h planifiés.",
       "conflitsRestants": "{{count}} conflit(s) non résolu(s)"
-    }
+    },
+    "previewErreur": "Impossible de prévisualiser l'emploi du temps"
   },
   "preferences": {
     "titre": "Préférences",
@@ -406,5 +406,7 @@
     "supprimerTitre": "Supprimer le créneau",
     "supprimerMessage": "Êtes-vous sûr de vouloir supprimer ce créneau ? Les instances de cours futures (PLANIFIÉES) seront annulées.",
     "supprimerDetails": "Les cours déjà effectués ou passés ne sont pas modifiés."
-  }
+  },
+  "type": "Type",
+  "statut": "Statut"
 }

@@ -2,7 +2,13 @@
   "titre": "Timetables",
   "description": "Manage time slots, rooms, and teachers",
   "chargement": "Loading timetables…",
-  "jour": "Day",
+  "jour": {
+    "vide": "No slots this day",
+    "precedent": "Previous day",
+    "suivant": "Next day",
+    "creneaux_one": "{{count}} slot",
+    "creneaux_other": "{{count}} slots"
+  },
   "horaire": "Schedule",
   "matiere": "Subject",
   "enseignant": "Teacher",
@@ -65,13 +71,6 @@
     "vide": "No slots this month",
     "precedent": "Previous month",
     "suivant": "Next month"
-  },
-  "jour": {
-    "vide": "No slots this day",
-    "precedent": "Previous day",
-    "suivant": "Next day",
-    "creneaux_one": "{{count}} slot",
-    "creneaux_other": "{{count}} slots"
   },
   "jours": {
     "lundi": "Monday",
@@ -145,7 +144,8 @@
       "titre": "Timetable generated!",
       "description": "{{creneaux}} slots, {{heures}}h scheduled.",
       "conflitsRestants": "{{count}} unresolved conflict(s)"
-    }
+    },
+    "previewErreur": "Could not preview the timetable"
   },
   "preferences": {
     "titre": "Preferences",
@@ -238,7 +238,28 @@
     "creneaux": "Slots",
     "respect": "Compliance",
     "aucuneDonnee": "No data",
-    "genererPourVoirSynthese": "Generate the timetable to view hourly volume summary."
+    "genererPourVoirSynthese": "Generate the timetable to view hourly volume summary.",
+    "repartitionJour": "Distribution by day",
+    "repartitionMatiere": "Distribution by subject",
+    "heures": "hours",
+    "creneauxLabel": "slots",
+    "tauxSalle": "Room occupancy rate",
+    "classes": "Classes",
+    "enseignants": "Teachers",
+    "sallesOccupees": "Rooms used",
+    "kpiHeures": "Planned hours",
+    "kpiCreneaux": "Slots created",
+    "kpiMatieres": "Subjects covered",
+    "kpiSalles": "Rooms used",
+    "volumeRespecte": "Volume respected",
+    "depassement": "Exceeded",
+    "insuffisant": "Insufficient",
+    "ok": "Compliant",
+    "chargeEnseignant": "Teacher workload",
+    "chargeEnseignantDesc": "Weekly hourly volume per teacher",
+    "seuilAlerte": "Alert threshold: {{max}}h/week",
+    "dansAlerte": "In alert",
+    "acceptable": "Acceptable"
   },
   "creneau": {
     "ajouter": "Add a slot",
@@ -335,5 +356,57 @@
     "supprimerTitre": "Delete slot",
     "supprimerMessage": "Are you sure you want to delete this slot? Future scheduled course sessions will be cancelled.",
     "supprimerDetails": "Past or completed sessions are not modified."
-  }
+  },
+  "audit": {
+    "titre": "Conflict audit",
+    "description": "Global scan of all existing timetable conflicts",
+    "actualiser": "Refresh",
+    "aucunConflit": "No conflict detected",
+    "aucunConflitDesc": "All slots are consistent. No class, teacher or room overlap.",
+    "resume": "Summary",
+    "totalConflits": "Total conflicts",
+    "bloquants": "Blocking",
+    "avertissements": "Warnings",
+    "listeConflits": "Conflict list",
+    "type": "Type",
+    "severite": "Severity",
+    "details": "Details",
+    "jour": "Day",
+    "horaire": "Time",
+    "types": {
+      "CONFLIT_CLASSE": "Class conflict",
+      "CONFLIT_ENSEIGNANT": "Teacher conflict",
+      "CONFLIT_SALLE": "Room conflict",
+      "DEPASSEMENT_VOLUME_HORAIRE": "Volume overload",
+      "CRENEAU_IMPOSABLE": "Unavailable slot"
+    },
+    "severites": {
+      "BLOQUANT": "Blocking",
+      "AVERTISSEMENT": "Warning"
+    },
+    "filtres": {
+      "tous": "All",
+      "bloquants": "Blocking",
+      "avertissements": "Warnings"
+    },
+    "chargement": "Analyzing conflicts..."
+  },
+  "generationHeuresCours": {
+    "titre": "Generate class hours",
+    "description": "Converts recurring slots into dated hours",
+    "dateDebut": "Start date",
+    "dateFin": "End date",
+    "enseignantRequis": "A teacher must be selected",
+    "lancer": "Generate",
+    "enCours": "Generating...",
+    "resultat": "Result",
+    "creees": "Created",
+    "ignorees": "Skipped (conflicts)",
+    "erreurs": "Errors",
+    "totalTraite": "Total processed",
+    "fermer": "Close",
+    "info": "Timetable slots will be converted into real class hours for the selected range. Teacher conflicts are automatically avoided."
+  },
+  "type": "Type",
+  "statut": "Status"
 }

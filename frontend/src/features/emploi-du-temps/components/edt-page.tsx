@@ -534,21 +534,14 @@ export function EDTStandalonePage() {
             </motion.div>
 
             {/* ─── Modal Génération ─────────────────── */}
-            <CustomModal
-                open={genModalOpen}
-                onOpenChange={setGenModalOpen}
-                title={t('genererEmploiDuTemps')}
-                description={t('configurerGeneration')}
-                size="2xl"
-            >
-                {classeFilter && (
-                    <EDTGenerationModal
-                        classeAnneeId={classeFilter}
-                        onSuccess={() => { setGenModalOpen(false); }}
-                        onClose={() => setGenModalOpen(false)}
-                    />
-                )}
-            </CustomModal>
+            {classeFilter && (
+                <EDTGenerationModal
+                    open={genModalOpen}
+                    onOpenChange={setGenModalOpen}
+                    classeAnneeId={classeFilter}
+                    onSuccess={() => { setGenModalOpen(false); }}
+                />
+            )}
 
             {/* ─── Modal Génération Heures de Cours ──── */}
             <CustomModal
