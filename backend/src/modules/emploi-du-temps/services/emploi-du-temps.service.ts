@@ -38,6 +38,8 @@ import {
     RapportPropagation,
 } from '@modules/personnel/services';
 import { Request } from 'express';
+import { auditService } from '@modules/auth/services/audit.service';
+import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 
 export class EmploiDuTempsService {
     private creneauRepo: Repository<CreneauHoraire>;
@@ -99,7 +101,7 @@ export class EmploiDuTempsService {
         return creneau;
     }
 
-    async creerCreneau(dto: CreerCreneauDto, etablissementId: string): Promise<CreneauHoraire> {
+    async creerCreneau(dto: CreerCreneauDto, etablissementId: string, createurId?: string, req?: Request): Promise<CreneauHoraire> {
         // Vérifier les conflits bloquants
         const conflits = await conflitDetectionService.detecterConflits(
             {
@@ -144,6 +146,18 @@ export class EmploiDuTempsService {
 
         await this.creneauRepo.save(creneau);
         logger.info(`[CreneauHoraire] Créneau créé: ${dto.jour} ${dto.heureDebut}-${dto.heureFin}`);
+
+        if (createurId) {
+            await auditService.log({
+                utilisateurId: createurId,
+                action: AuditAction.CRENEAU_CREATE,
+                cible: 'CreneauHoraire',
+                cibleId: creneau.id,
+                description: `Créneau créé: ${dto.jour} ${dto.heureDebut}-${dto.heureFin}`,
+                module: 'emploi-du-temps',
+            }, req);
+        }
+
         return this.findOne(creneau.id, etablissementId);
     }
 
@@ -158,6 +172,8 @@ export class EmploiDuTempsService {
         const queryRunner = this.creneauRepo.manager.connection.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
+
+        let resultat: { creneau: CreneauHoraire; rapport?: RapportPropagation } | undefined;
 
         try {
             const mgr = queryRunner.manager;
@@ -254,13 +270,27 @@ export class EmploiDuTempsService {
 
             logger.info(`[CreneauHoraire] Créneau modifié: ${id}`);
             // Recharger hors transaction pour retourner les données à jour
-            return { creneau: await this.findOne(id, etablissementId), rapport };
+            resultat = { creneau: await this.findOne(id, etablissementId), rapport };
         } catch (error) {
             await queryRunner.rollbackTransaction();
             throw error;
         } finally {
             await queryRunner.release();
         }
+
+        if (userId && resultat) {
+            await auditService.log({
+                utilisateurId: userId,
+                action: AuditAction.CRENEAU_UPDATE,
+                cible: 'CreneauHoraire',
+                cibleId: id,
+                description: resultat.rapport
+                    ? `Créneau modifié (propagation: ${resultat.rapport.instancesQuiSuivent} instance(s), ${resultat.rapport.instancesInchangees} inchangée(s), ${resultat.rapport.conflits.length} en conflit)`
+                    : 'Créneau modifié',
+                module: 'emploi-du-temps',
+            }, req);
+        }
+        return resultat!;
     }
 
     async supprimerCreneau(id: string, etablissementId: string, userId?: string, req?: Request): Promise<{ instancesAnnulees: number }> {
@@ -268,6 +298,8 @@ export class EmploiDuTempsService {
         const queryRunner = this.creneauRepo.manager.connection.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
+
+        let resultat: { instancesAnnulees: number } | undefined;
 
         try {
             const mgr = queryRunner.manager;
@@ -288,18 +320,30 @@ export class EmploiDuTempsService {
 
             await queryRunner.commitTransaction();
             logger.info(`[CreneauHoraire] Créneau supprimé (soft): ${id}`);
-            return { instancesAnnulees };
+            resultat = { instancesAnnulees };
         } catch (error) {
             await queryRunner.rollbackTransaction();
             throw error;
         } finally {
             await queryRunner.release();
         }
+
+        if (userId && resultat) {
+            await auditService.log({
+                utilisateurId: userId,
+                action: AuditAction.CRENEAU_DELETE,
+                cible: 'CreneauHoraire',
+                cibleId: id,
+                description: `Créneau supprimé (${resultat.instancesAnnulees} instance(s) future(s) annulée(s))`,
+                module: 'emploi-du-temps',
+            }, req);
+        }
+        return resultat!;
     }
 
     // ─── Workflow validation ────────────────────────────────────
 
-    async validerCreneau(id: string, etablissementId: string): Promise<CreneauHoraire> {
+    async validerCreneau(id: string, etablissementId: string, createurId?: string, req?: Request): Promise<CreneauHoraire> {
         const creneau = await this.findOne(id, etablissementId);
 
         if (creneau.statut !== StatutCreneau.PLANIFIE) {
@@ -325,12 +369,26 @@ export class EmploiDuTempsService {
         }
 
         logger.info(`[CreneauHoraire] Créneau validé: ${id}`);
+
+        if (createurId) {
+            await auditService.log({
+                utilisateurId: createurId,
+                action: AuditAction.CRENEAU_VALIDER,
+                cible: 'CreneauHoraire',
+                cibleId: id,
+                description: 'Créneau validé',
+                module: 'emploi-du-temps',
+            }, req);
+        }
+
         return this.findOne(id, etablissementId);
     }
 
     async validerCreneauxClasse(
         classeAnneeId: string,
         etablissementId: string,
+        createurId?: string,
+        req?: Request,
     ): Promise<{ valide: number; total: number }> {
         const creneaux = await this.creneauRepo.find({
             where: { etablissementId, statut: StatutCreneau.PLANIFIE },
@@ -369,6 +427,18 @@ export class EmploiDuTempsService {
         }
 
         logger.info(`[EDT] ${creneauxClasse.length} créneau(x) validé(s) pour classeAnnee ${classeAnneeId}`);
+
+        if (createurId) {
+            await auditService.log({
+                utilisateurId: createurId,
+                action: AuditAction.EDT_VALIDER,
+                cible: 'EmploiDuTemps',
+                cibleId: classeAnneeId,
+                description: `Validation en lot: ${creneauxClasse.length} créneau(x)`,
+                module: 'emploi-du-temps',
+            }, req);
+        }
+
         return { valide: creneauxClasse.length, total: creneauxClasse.length };
     }
 

@@ -10,6 +10,22 @@
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
+const mockPropager = jest.fn();
+const mockAnnuler = jest.fn();
+
+const mockQueryRunner = {
+    connect: jest.fn(),
+    startTransaction: jest.fn(),
+    commitTransaction: jest.fn(),
+    rollbackTransaction: jest.fn(),
+    release: jest.fn(),
+    manager: {
+        findOne: jest.fn(),
+        save: jest.fn(),
+        softRemove: jest.fn(),
+    },
+};
+
 const mockRepo = {
     findOne: jest.fn(),
     find: jest.fn(),
@@ -19,10 +35,12 @@ const mockRepo = {
     softRemove: jest.fn(),
     update: jest.fn(),
     count: jest.fn(),
+    manager: {
+        connection: {
+            createQueryRunner: jest.fn(() => mockQueryRunner),
+        },
+    },
 };
-
-const mockPropager = jest.fn();
-const mockAnnuler = jest.fn();
 
 jest.mock('@database/data-source', () => ({
     AppDataSource: {
@@ -76,7 +94,10 @@ describe('EmploiDuTempsService.updateCreneau (Q5/Q2)', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         service = new EmploiDuTempsService();
-        mockRepo.findOne.mockResolvedValue(creneau());
+        const base = creneau();
+        mockRepo.findOne.mockResolvedValue(base);
+        mockQueryRunner.manager.findOne.mockResolvedValue(base);
+        mockQueryRunner.manager.save.mockImplementation((data: any) => ({ ...data }));
         mockRepo.save.mockImplementation((data: any) => ({ ...data }));
         mockPropager.mockResolvedValue({ instancesQuiSuivent: 0, instancesInchangees: 0, conflits: [] });
         (conflitDetectionService.detecterConflits as jest.Mock).mockResolvedValue([]);

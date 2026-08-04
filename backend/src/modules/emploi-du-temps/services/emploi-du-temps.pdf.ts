@@ -12,11 +12,14 @@
  */
 
 import { Repository } from 'typeorm';
+import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
 import { CreneauHoraire } from '../entities';
 import { AffectationMatiere } from '@modules/matieres/entities';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { auditService } from '@modules/auth/services/audit.service';
+import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 
 interface ExportOptions {
     format: 'html' | 'pdf';
@@ -45,7 +48,9 @@ export class EmploiDuTempsPdfService {
     async generateHTML(
         classeAnneeId: string,
         anneeScolaireId: string,
-        options: ExportOptions = { format: 'html' }
+        options: ExportOptions = { format: 'html' },
+        createurId?: string,
+        req?: Request,
     ): Promise<string> {
         const affectations = await this.affectationRepo.find({
             where: { classeAnneeId },
@@ -87,6 +92,18 @@ export class EmploiDuTempsPdfService {
 
         const plan = this.organiserParJour(enrichis);
         const classeNom = enrichis[0]?.classeNom;
+        const format = options.format ?? 'html';
+
+        if (createurId) {
+            await auditService.log({
+                utilisateurId: createurId,
+                action: AuditAction.EDT_EXPORT,
+                cible: 'EmploiDuTemps',
+                cibleId: classeAnneeId,
+                description: format === 'pdf' ? 'Export PDF emploi du temps' : 'Export HTML emploi du temps',
+                module: 'emploi-du-temps',
+            }, req);
+        }
 
         return this.creerHTML(plan, classeNom, anneeScolaireId, options);
     }
@@ -292,9 +309,11 @@ export class EmploiDuTempsPdfService {
     async generatePDF(
         classeAnneeId: string,
         anneeScolaireId: string,
-        options: ExportOptions = { format: 'pdf' }
+        options: ExportOptions = { format: 'pdf' },
+        createurId?: string,
+        req?: Request,
     ): Promise<Buffer> {
-        const html = await this.generateHTML(classeAnneeId, anneeScolaireId, { ...options, format: 'html' });
+        const html = await this.generateHTML(classeAnneeId, anneeScolaireId, { ...options, format: 'html' }, createurId, req);
         logger.info('[EmploiDuTempsPDF] Export HTML généré (impression PDF via navigateur)');
         return Buffer.from(html, 'utf-8');
     }
