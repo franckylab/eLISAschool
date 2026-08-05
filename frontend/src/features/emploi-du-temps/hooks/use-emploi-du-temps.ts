@@ -402,7 +402,7 @@ export interface OptionSimple {
  * Charge les enseignants (membres du personnel avec catégorie ENSEIGNANT).
  * Utilisé par la FilterBar EDT quand contexteType = 'enseignant'.
  */
-export function useEnseignantOptions() {
+export function useEnseignantOptions(enabled = true) {
     return useQuery({
         queryKey: ['emploi-du-temps', 'options', 'enseignants'],
         queryFn: async () => {
@@ -419,6 +419,7 @@ export function useEnseignantOptions() {
             })).sort((a, b) => a.label.localeCompare(b.label));
         },
         staleTime: 3 * 60 * 1000,
+        enabled,
     });
 }
 
@@ -426,7 +427,7 @@ export function useEnseignantOptions() {
  * Charge les salles pour les dropdowns EDT.
  * Utilisé par la FilterBar EDT quand contexteType = 'salle'.
  */
-export function useSalleOptions() {
+export function useSalleOptions(enabled = true) {
     return useQuery({
         queryKey: ['emploi-du-temps', 'options', 'salles'],
         queryFn: async () => {
@@ -442,13 +443,14 @@ export function useSalleOptions() {
             })).sort((a, b) => a.label.localeCompare(b.label));
         },
         staleTime: 3 * 60 * 1000,
+        enabled,
     });
 }
 
 /**
  * Charge les matières pour les filtres EDT.
  */
-export function useMatiereOptions() {
+export function useMatiereOptions(enabled = true) {
     return useQuery({
         queryKey: ['emploi-du-temps', 'options', 'matieres'],
         queryFn: async () => {
@@ -465,6 +467,7 @@ export function useMatiereOptions() {
             })).sort((a, b) => a.label.localeCompare(b.label));
         },
         staleTime: 5 * 60 * 1000,
+        enabled,
     });
 }
 

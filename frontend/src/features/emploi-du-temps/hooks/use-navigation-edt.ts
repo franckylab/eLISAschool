@@ -17,7 +17,8 @@ export type PlanningView = 'semaine' | 'mois' | 'jour' | 'liste';
  * calcul des bornes (semaine/mois), label dynamique.
  */
 export function useNavigationEDT() {
-    const { t } = useTranslation('emplois');
+    const { t, i18n } = useTranslation('emplois');
+    const locale = i18n.language || 'fr';
     const [planningView, setPlanningView] = useState<PlanningView>('semaine');
     const [navigationDate, setNavigationDate] = useState(new Date());
 
@@ -45,17 +46,17 @@ export function useNavigationEDT() {
             case 'semaine': {
                 const fin = new Date(semaineDebut);
                 fin.setDate(fin.getDate() + 5);
-                const fmt = (d: Date) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+                const fmt = (d: Date) => d.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
                 return `S${numeroSemaineISO(semaineDebut)} — ${fmt(semaineDebut)} — ${fmt(fin)}`;
             }
             case 'mois':
-                return navigationDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+                return navigationDate.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
             case 'jour':
-                return navigationDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                return navigationDate.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
             case 'liste':
                 return '';
         }
-    }, [planningView, navigationDate, semaineDebut]);
+    }, [planningView, navigationDate, semaineDebut, locale]);
 
     /** Indique si la date affichée correspond à la période courante */
     const estCourant = useMemo(() => {

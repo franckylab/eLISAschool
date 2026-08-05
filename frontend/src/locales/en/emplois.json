@@ -49,7 +49,15 @@
     "suivant": "Next",
     "aujourdhui": "Today",
     "ceMois": "This month",
-    "ceJour": "Today"
+    "ceJour": "Today",
+    "titreDatepicker": "Navigate to a date",
+    "descriptionDatepicker": "Select a month, year and day to navigate",
+    "semaineCourante": "Current week",
+    "moisPrecedent": "Previous month",
+    "moisSuivant": "Next month",
+    "selectionnerMois": "Select a month",
+    "selectionnerAnnee": "Select a year",
+    "allerAujourdhui": "Back to today"
   },
   "filtres": {
     "titre": "Filters",
@@ -67,7 +75,8 @@
     "tousJours": "All days",
     "tousStatuts": "All statuses",
     "rechercherCreneau": "Search a slot...",
-    "reset": "Reset"
+    "reset": "Reset",
+    "contexteLabel": "Filter by context"
   },
   "mois": {
     "vide": "No slots this month",
@@ -80,7 +89,8 @@
     "mercredi": "Wednesday",
     "jeudi": "Thursday",
     "vendredi": "Friday",
-    "samedi": "Saturday"
+    "samedi": "Saturday",
+    "dimanche": "Sunday"
   },
   "contexte": {
     "classe": "Class",
@@ -412,6 +422,7 @@
   "type": "Type",
   "statut": "Status",
   "voir": "View",
+  "exporterPdf": "PDF Export",
   "fermer": "Close",
   "actions": "Actions",
   "detail": {

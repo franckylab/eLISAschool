@@ -49,7 +49,15 @@
     "suivant": "Suivant",
     "aujourdhui": "Aujourd'hui",
     "ceMois": "Ce mois",
-    "ceJour": "Aujourd'hui"
+    "ceJour": "Aujourd'hui",
+    "titreDatepicker": "Naviguer vers une date",
+    "descriptionDatepicker": "Sélectionnez un mois, une année et un jour pour naviguer",
+    "semaineCourante": "Semaine courante",
+    "moisPrecedent": "Mois précédent",
+    "moisSuivant": "Mois suivant",
+    "selectionnerMois": "Sélectionner un mois",
+    "selectionnerAnnee": "Sélectionner une année",
+    "allerAujourdhui": "Retour à aujourd'hui"
   },
   "filtres": {
     "titre": "Filtres",
@@ -67,7 +75,8 @@
     "tousJours": "Tous les jours",
     "tousStatuts": "Tous les statuts",
     "rechercherCreneau": "Rechercher un créneau...",
-    "reset": "Réinitialiser"
+    "reset": "Réinitialiser",
+    "contexteLabel": "Filtrer par contexte"
   },
   "mois": {
     "vide": "Aucun créneau ce mois",
@@ -80,7 +89,8 @@
     "mercredi": "Mercredi",
     "jeudi": "Jeudi",
     "vendredi": "Vendredi",
-    "samedi": "Samedi"
+    "samedi": "Samedi",
+    "dimanche": "Dimanche"
   },
   "contexte": {
     "classe": "Classe",
@@ -412,6 +422,7 @@
   "type": "Type",
   "statut": "Statut",
   "voir": "Voir",
+  "exporterPdf": "Export PDF",
   "fermer": "Fermer",
   "actions": "Actions",
   "detail": {

@@ -17,9 +17,10 @@ interface EDTListeViewProps {
     creneaux: CreneauHoraire[];
     onVoir?: (creneau: CreneauHoraire) => void;
     onModifier?: (creneau: CreneauHoraire) => void;
+    matiereOptions?: { value: string; label: string }[];
 }
 
-export function EDTListeView({ creneaux, onVoir, onModifier }: EDTListeViewProps) {
+export function EDTListeView({ creneaux, onVoir, onModifier, matiereOptions }: EDTListeViewProps) {
     const { t } = useTranslation('emplois');
 
     const colonnes: Column<CreneauHoraire>[] = useMemo(() => [
@@ -187,6 +188,13 @@ export function EDTListeView({ creneaux, onVoir, onModifier }: EDTListeViewProps
                     ],
                     allOptionLabel: t('filtres.tousJours'),
                 },
+                ...(matiereOptions && matiereOptions.length > 0 ? [{
+                    key: 'affectationMatiereId',
+                    label: t('matiere'),
+                    type: 'select' as const,
+                    options: matiereOptions,
+                    allOptionLabel: t('filtres.toutesMatieres'),
+                }] : []),
                 {
                     key: 'statut',
                     label: t('statut'),

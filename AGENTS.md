@@ -83,6 +83,88 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 ### Blocked
 — (none)
 
+## Travail effectué — Session 2026-08-02 (continuation — i18n, dark mode, responsive EDT)
+
+### Audit i18n complet (4 problèmes corrigés)
+1. **`CONTEXTE_LABELS` hardcodé supprimé** (`edt-page.tsx`) : objet statique hors composant avec labels FR en dur → remplacé par `t(\`contexte.${type}\`)` directement dans le JSX aria-label.
+2. **Clé `filtres.contexteLabel` ajoutée** FR+EN (`emplois.json`) : `t('filtres.contexteLabel')` sans defaultValue.
+3. **"PDF" hardcodé traduit** (`edt-page.tsx`) : bouton `PDF` → `{t('exporterPdf')}` + clé FR/EN.
+4. **Locale `'fr-FR'` hardcodée → dynamique** (3 fichiers) : `use-navigation-edt.ts`, `edt-calendar.tsx`, `edt-month-view.tsx` — `i18n.language || 'fr'` pour `toLocaleDateString()`.
+5. **Abréviations jours traduites** (`edt-month-view.tsx`) : `['LUN', 'MAR', ...]` hardcodé → `t('jours.${key}')` avec abrégé responsive (`hidden sm:inline` / `sm:hidden`).
+
+### Dark mode — classes CSS non-résolues (3 occurrences)
+- **`edt-calendar.tsx`** : `text-foreground` → `text-[var(--color-text-primary)]`, `text-secondary` → `text-[var(--color-text-secondary)]`, `border-border` → `border-[var(--color-bordure)]`, `bg-surface-hover` → `bg-[var(--color-surface-hover)]`.
+- `text-success` dans `edt-audit.tsx` : vérifié sain (`--color-success` existe dans globals.css).
+
+### Vérifications
+- **DataTable/FilterPanel** : `edt-liste.tsx` intègre déjà correctement le FilterPanel via DataTable (`enableCollapsibleFilters`).
+- **Breadcrumbs** : pas de doublon — `PageHeader` (variant="gradient") affiche le fil d'Ariane auto, pas de breadcrumb séparé dans les sous-composants.
+- **Compilation** : 0 erreur TypeScript (LSP).
+
+### Fichiers modifiés (7)
+- `frontend/src/locales/fr/emplois.json` (+2 clés)
+- `frontend/src/locales/en/emplois.json` (+2 clés)
+- `frontend/src/features/emploi-du-temps/components/edt-page.tsx` (CONTEXTE_LABELS supprimé, PDF traduit)
+- `frontend/src/features/emploi-du-temps/components/edt-calendar.tsx` (locale dynamique, 3 classes CSS)
+- `frontend/src/features/emploi-du-temps/components/edt-month-view.tsx` (jours traduits)
+- `frontend/src/features/emploi-du-temps/hooks/use-navigation-edt.ts` (locale dynamique)
+
+## Travail effectué — Session 2026-08-02 (optimisation performance EDT — lazy loading)
+
+### Chargement lazy des options (performance)
+**Problème** : 4 requêtes API déclenchées simultanément au chargement de la page, même si seulement 1 nécessaire selon le contexte.
+
+**Correction** : hooks modifiés pour accepter `enabled` (TanStack Query) + conditions dans `edt-page.tsx` :
+- `useToutesClasses()` — toujours chargé (contexte par défaut = 'classe')
+- `useEnseignantOptions(contexteType === 'enseignant')` — chargé uniquement quand l'utilisateur passe au contexte enseignant
+- `useSalleOptions(contexteType === 'salle')` — chargé uniquement quand l'utilisateur passe au contexte salle
+- `useMatiereOptions(planningView === 'liste')` — chargé uniquement en vue liste
+
+**Rétro-compatible** : paramètre `enabled = true` par défaut. Seul consommateur = `edt-page.tsx`.
+**Cache** : `staleTime: 3-5 min` — une fois chargé, le switch de contexte est instantané.
+
+### Audit log — vérification pattern
+- **Controller EDT** : 0 appel `auditService.log()` — tout délégué aux services ✅
+- **Service `emploi-du-temps.service.ts`** : 5 appels `auditService.log()` (create, update, delete, valider, valider-classe) — pattern correct ✅
+- **Service `heure-cours.service.ts`** : audit dans le service — cohérent ✅
+- **Conclusion** : le pattern signalé dans l'audit précédent ("audit dans controller") est déjà résolu.
+
+### Fichiers modifiés (2)
+- `frontend/src/features/emploi-du-temps/hooks/use-emploi-du-temps.ts` (3 hooks : param `enabled` ajouté)
+- `frontend/src/features/emploi-du-temps/components/edt-page.tsx` (conditions lazy aux 3 hooks)
+
+## Travail effectué — Session 2026-08-02 (refactor toolbar EDT + code mort supprimé)
+
+### Problèmes identifiés (audit HTML rendu)
+- **`edt-filter-bar.tsx` = code mort** : composant standalone exporté dans le barrel mais **jamais importé** par aucun consommateur. Le même code (context switcher Classe/Enseignant/Salle) était dupliqué inline dans `edt-page.tsx`.
+- **Redondance** : `CONTEXTE_ICONS` défini 2 fois (filter-bar + page).
+- **Toolbar trop fragmentée** : 4 lignes séparées (navigation, vues, contexte, actions) → encombrement visuel.
+- **Dark mode** : segmented buttons actifs (`bg-[var(--color-dominant-100)]`) sans variante dark explicite.
+- **Accessibilité** : pas de `aria-label` sur les boutons du segmented context switcher.
+
+### Corrections appliquées
+1. **`edt-filter-bar.tsx` supprimé** : composant standalone mort, 196 lignes de code dupliqué éliminées.
+2. **Barrel `index.ts` nettoyé** : export `EDTFilterBar` + `ContexteType` retirés.
+3. **`edt-page.tsx` v4.0.0 — toolbar consolidée** :
+   - **Row 1** (toolbar principale) : Navigation + Contexte + Actions — tout en une ligne compacte avec séparateurs verticaux.
+   - **Row 2** (toolbar secondaire) : Vues (semaine/mois/jour/liste) en segmented button + Analytique.
+   - **Suppression** du select dropdown de vue (redondant avec les toggles). `ChevronDown` import retiré.
+   - **Dark mode** : variantes `dark:bg-[var(--color-dominant-900)]/30 dark:text-[var(--color-dominant-300)]` sur tous les segmented buttons.
+   - **Accessibilité** : `aria-label` ajoutés sur les boutons de contexte et les toggles de vue.
+   - **Responsive** : labels masqués sur mobile (`hidden sm:inline`), `hidden lg:inline` pour “Heures de cours”. Navigation label passé en `hidden md:inline`.
+4. **Imports nettoyés** : `ChevronDown`, `X`, `JourSemaine`, `FilterPanel`, `FilterDef` retirés (non utilisés).
+
+### Backend — confirmé sain
+- `queryCreneauxSchema` (DTO) supporte déjà `matiereId` (l.71) + `affectationMatiereId` (l.67).
+- `findAll` service applique `am.matiereId = :matiereId` (l.88).
+- Pas de modification backend nécessaire.
+
+### Qualité
+- `tsc --noEmit` : 0 erreur sur le module EDT.
+- 4 rows → 2 rows (réduction 50% de l'encombrement vertical toolbar).
+- 196 lignes de code mort supprimées (`edt-filter-bar.tsx`).
+- 0 `any`, 0 couleur hardcodée, 0 chaîne FR en dur.
+
 ## Travail effectué — Session 2026-08-02 (fix i18n EDT — collision clé `jour`)
 
 ### Bug critique corrigé
@@ -2137,3 +2219,37 @@ Demande d'un indicateur de connexion dans le header eLISAschool, avec détection
 - **Phase 3** : Page dédiée HeureCours (suivi effectif, pointage présence, remplacements)
 - **Phase 4** : Timeline verticale Google Calendar (axe Y=heures, axe X=jours)
 - **Phase 5** : Navigation semaine dans le calendrier + export PDF amélioré
+
+## Travail effectué — Session 2026-08-02 (redesign navigation EDT — pill compact + datepicker modal)
+### Contexte
+Session grill-me : améliorer la sélection des jours du calendrier EDT et son affichage de manière moderne, interactive, professionnelle et épurée.
+
+### Spécification retenue (co-construction itérative)
+- **Périmètre** : uniquement le bloc de navigation (◀ ▶ label)
+- **Style** : hybride compact `[◀ Août 2026 ▶ ⌖]` — pill avec bordure arrondie, chevrons encadrent le label, bouton « Aujourd'hui » absorbé en icône crosshair (⌖) discret
+- **Interactions** : clic sur le label → ouvre un modal datepicker ; chevrons → prev/next ; ⌖ → retour aujourd'hui (visible au hover si `estCourant`, permanent sinon)
+- **Modal datepicker** : CustomModal size="md", dropdowns mois + année en header, grille calendrier 7×6, footer « Aujourd'hui » + « Semaine courante »
+- **Responsive** : mobile = label abrégé (mois court) ; desktop = label complet
+
+### Fichiers créés (1)
+- **`edt-datepicker-modal.tsx`** (291 lignes) : composant modal avec calendrier mensuel interactif
+  - Dropdowns mois (12 mois traduits) + année (±5 ans autour de l'année courante)
+  - Grille 7×6 avec jours du mois précédent/suivant en opacité réduite
+  - Jour sélectionné = fond dominant-600, aujourd'hui = ring + dot indicateur
+  - Navigation interne ◀▶ mois dans le modal
+  - Ultra-responsive (clamp), variables CSS, i18n FR/EN complet
+
+### Fichiers modifiés (3)
+- **`edt-page.tsx`** : bloc navigation refactorisé en pill compact (border + bg surface + group hover), label cliquable avec `setDatePickerOpen(true)`, bouton ⌖ crosshair avec `opacity-0 group-hover:opacity-100` si `estCourant`, modal `EDTDatePickerModal` ajouté en bas du JSX
+- **`emplois.json` (FR)** : +9 clés navigation (`titreDatepicker`, `descriptionDatepicker`, `semaineCourante`, `moisPrecedent`, `moisSuivant`, `selectionnerMois`, `selectionnerAnnee`, `allerAujourdhui`) + `jours.dimanche`
+- **`emplois.json` (EN)** : parité FR/EN complète (+9 clés navigation + `jours.dimanche`)
+
+### Barrel export
+- **`index.ts`** : `EDTDatePickerModal` ajouté aux exports
+
+### Conventions respectées
+- 0 `any`, 0 couleur hardcodée, 0 chaîne FR en dur
+- Variables CSS uniquement (`var(--color-*)`, `var(--space-*)`, `var(--radius-*)`, `var(--icon-*)`)
+- `clamp()` sur toutes les dimensions (ultra-responsivité 100px-2560px)
+- `CustomModal` (pas d'overlay custom)
+- i18n 100% (react-i18next, namespaces `emplois`)

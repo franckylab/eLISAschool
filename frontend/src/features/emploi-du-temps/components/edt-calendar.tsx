@@ -81,7 +81,8 @@ export function EDTCalendar({
     pasMinutes = 30,
     semaineDebut,
 }: EDTCalendarProps) {
-    const { t } = useTranslation('emplois');
+    const { t, i18n } = useTranslation('emplois');
+    const locale = i18n.language || 'fr';
     const queryClient = useQueryClient();
     const updateMutation = useUpdateCreneau();
     const verifierConflits = useVerifierConflits();
@@ -340,7 +341,7 @@ export function EDTCalendar({
                             : false;
                         const jourLabel = t(`jours.${jour.toLowerCase()}`);
                         const dateLabel = dateReelle
-                            ? dateReelle.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+                            ? dateReelle.toLocaleDateString(locale, { day: 'numeric', month: 'short' })
                             : '';
 
                         return (
@@ -459,10 +460,10 @@ export function EDTCalendar({
                     <div className="flex items-start gap-2">
                         <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-warning" />
                         <div className="flex-1">
-                            <p className="font-semibold text-foreground">
+                            <p className="font-semibold text-[var(--color-text-primary)]">
                                 {t('propagation.conflitsTitre')}
                             </p>
-                            <p className="text-secondary mt-0.5">
+                            <p className="text-[var(--color-text-secondary)] mt-0.5">
                                 {t('propagation.conflitsMessage', {
                                     count: forceRequest.rapport.conflits.length,
                                 })}
@@ -479,7 +480,7 @@ export function EDTCalendar({
                                 <button
                                     type="button"
                                     onClick={() => setForceRequest(null)}
-                                    className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-secondary hover:bg-surface-hover transition-colors"
+                                    className="rounded-lg border border-[var(--color-bordure)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] transition-colors"
                                 >
                                     {t('propagation.annuler')}
                                 </button>

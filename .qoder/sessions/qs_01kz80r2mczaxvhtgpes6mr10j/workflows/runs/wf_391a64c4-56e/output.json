@@ -1,0 +1,384 @@
+{
+  "runId": "wf_391a64c4-56e",
+  "taskId": "wf-8922fb37-c0e",
+  "workflowName": "deep-research",
+  "status": "completed",
+  "result": {
+    "question": "Programme pédagogique complet du système éducatif camerounais : structure (maternel, primaire, secondaire général, lycée technique), toutes les matières par niveau et par classe, filières et options (séries A, C, D, G, etc.), volumes horaires hebdomadaires en minutes ou heures par matière et par classe, objectifs pédagogiques par matière, programmes officiels du MINEDUB et MINESEC, réformes récentes (2019-2025), approche par compétences (APC), examens officiels (CEP, BEPC, BACC), enseignement technique et professionnel (BTS, BT, CAP), langues d'enseignement (français/anglais), heures annuelles et hebdomadaires. Couvrir aussi bien le sous-système francophone qu'anglophone.",
+    "caveats": "- 13 claims could not be verified due to infrastructure errors (verifier agents all failed), including: detailed coefficients per BAC series, exact matieres par niveau/classe, volumes horaires hebdomadaires par matiere, objectifs pedagogiques par matiere, programmes officiels MINEDUB/MINESEC detailles, reforme curriculaire primaire 2018 specifics, and evaluation BTS modalites. These remain unverified — neither confirmed nor refuted.\n- Volumes horaires detailles (heures/minutes par matiere par classe) n'ont pas ete trouves dans les sources disponibles. Seuls les volumes BTS sont documentes (120 credits = 1800h total).\n- Programmes officiels par matiere et par niveau (contenus pedagogiques detailles) ne sont pas accessibles en ligne — les sites MINEDUB/MINESEC referencent des documents PDF non indexables.\n- Reformes 2019-2025 : seule la reforme 2018 des series ESG est documentee avec certitude. La strategie sectorielle 2023-2030 et l'APC (Approche Par Competences) sont mentionnees dans des sources secondaires mais non verifiees par les agents.\n- Sous-systeme anglophone : les filieres A1-A5 et S1-S5 mentionnees dans une source ont ete refutes (vote 0-3) — la structure anglophone reelle au GCE A-Level differe (combinaisons de matieres, pas de series numerotees identiques au francophone).\n- Donnees temporelles : la reforme ESG de 2018 est la derniere restructuration majeure confirmee. Aucun changement structurel ulterieur identifie.",
+    "findings": [
+      {
+        "claim": "Le systeme educatif camerounais comprend deux sous-systemes paralleles : francophone (primaire 6 ans + 1er cycle secondaire 4 ans [6eme a 3eme] + 2eme cycle 3 ans [Seconde a Terminale]) et anglophone (primaire 6 ans + 1er cycle 5 ans [Form 1 a Form 5] + 2eme cycle 2 ans [Lower Sixth et Upper Sixth]). Les examens de fin de premier cycle sont le BEPC (francophone) et le GCE O-Level (anglophone). Les examens de fin de second cycle sont le Baccalaureat (francophone) et le GCE A-Level (anglophone). L'enseignement primaire se termine par le CEP (francophone) ou le FSLC (anglophone).",
+        "confidence": "high",
+        "evidence": "Loi 98/004 (source primaire via African Child Forum) : 'The initial cycle spans four years (Francophone) or five (Anglophone). The final cycle spans three years (Francophone) or two (Anglophone).' Corrobore par Wikipedia Systeme educatif au Cameroun et le guide IQAS du gouvernement albertain (2025) confirmant les memes durees et examens.",
+        "sources": [
+          "https://clr.africanchildforum.org/Legislation%20Per%20Country/cameroon/cameroon_education_1998_fr.pdf",
+          "https://www.alberta.ca/fr/iqas-education-guide-cameroon"
+        ],
+        "vote": "3-0"
+      },
+      {
+        "claim": "La reforme MINESEC de aout 2018 (Arrete N-227-18) a restructure le second cycle de l'Enseignement Secondaire General (ESG) en 4 branches principales : Litteraires (A1, A2, A3, A4, A5, ABI), Scientifiques et Technologiques (C, D, TI), Sciences Humaines (SH, nouvelle), et Arts et Cinematographiques (AC, nouvelle), couvrant 27 matieres distinctes reparties dans 6 domaines d'apprentissage. La mise en oeuvre progressive s'est etalee de 2018 (classe de Seconde) a 2021 (classe de Terminale). Des suppressions specifiques ont ete appliquees : SVT et Physique-Chimie supprimees en A4, Histoire supprimee en D, Histoire et Geographie supprimees en C (en Premiere et Terminale respectivement).",
+        "confidence": "high",
+        "evidence": "Source primaire : camexamen.com PDF Redefinition-Series-ESG-23082018.pdf (Arrete MINESEC). Corrobore independamment par mediaterre.org (27 matieres, 6 domaines), actucameroun.com (2018-08-29, confirmant les suppressions par serie), et 237actu.com. Le calendrier 2018-2021 est coherent (Seconde 2018-2019, Premiere 2019-2020, Terminale 2020-2021).",
+        "sources": [
+          "http://www.camexamen.com/wp-content/uploads/2018/10/Redefinition-Series-ESG-23082018.pdf",
+          "https://www.mediaterre.org/articles/cameroun-le-gouvernement-reforme-les-programmes-scolaires-du-second-cycle-de-l-enseignement-secondaire-general-pour-une-.html"
+        ],
+        "vote": "3-0 (structure), 3-0 (calendrier), 3-0 (suppressions)"
+      },
+      {
+        "claim": "L'enseignement technique et professionnel camerounais comprend : (1) Sciences Techniques et Tertiaires (STT) avec des filieres de baccalaureat ACA (Action et communication administratives), CG (Comptabilite et gestion), ACC, FIG, SES ; (2) Techniques industrielles avec des series AF1-AF3 (artistique) et F1-F8 (industriel) ; (3) Brevets de Technicien (BT) couvrant la production animale (TAG/PM), la topographie (GT), la maintenance automobile (CMA/MVT), l'hotellerie (HO-HE, HO-RB, HO-CU), et d'autres specialites. Le CAP est obtenu apres 4 ans d'enseignement technique (sous-systeme francophone), le BT et le Baccalaureat technique apres les 3 annees du second cycle technique (total 7 ans = 4+3). L'enseignement superieur technique (1-3 ans) delivre le BTS ou le DUT.",
+        "confidence": "high",
+        "evidence": "Source primaire : officedubac.cm/nomenclature-des-examens/ (Office du Baccalaureat du Cameroun) confirmant toutes les filieres STT, industrielles et BT. Loi 98/004 confirmant la duree 7 ans (4+3), CAP apres 4 ans, BT/Bac technique apres 3 ans, BTS/DUT en superieur. Corrobore par Alberta IQAS guide et camerdiplome.com (2024).",
+        "sources": [
+          "https://officedubac.cm/nomenclature-des-examens/",
+          "https://clr.africanchildforum.org/Legislation%20Per%20Country/cameroon/cameroon_education_1998_fr.pdf"
+        ],
+        "vote": "3-0 (STT/BT), 2-1 (series industrielles), 3-0 (durees CAP/BT/BTS)"
+      },
+      {
+        "claim": "Le BTS camerounais est un diplome d'Etat de 2 ans (4 semestres, 120 credits, 1800 heures total) ouvert aux titulaires du Baccalaureat, du GCE Advanced Level ou diplome equivalent. Il est organise en Unites d'Enseignement reparties en : UE Fondamentales 30% (2 UE, 9 credits/135h par semestre), UE Professionnelles 60% (4 UE, 18 credits/270h par semestre), et UE Transversales 10% (1 UE, 3 credits/45h par semestre), soit 7 UE par semestre et 28 UE au total sur le cycle.",
+        "confidence": "high",
+        "evidence": "Source primaire : ARRETE MINSUP PROGRAMME BTS 2017 (minesup.gov.cm) avec citations textuelles exactes des pourcentages, credits et heures. Corrobore par maths-bts.cm confirmant 120 credits, 1800 heures, 28 UE, 30 credits par semestre avec la meme repartition 30/60/10. Aucun changement structurel identifie depuis 2017.",
+        "sources": [
+          "https://www.minesup.gov.cm/DAUQ/ARRETE%20MINSUP%20PROGRAMME%20BTS%202017.pdf"
+        ],
+        "vote": "3-0"
+      }
+    ],
+    "openQuestions": [
+      "Quels sont les volumes horaires hebdomadaires detailles (en heures/minutes) par matiere et par classe pour chaque serie du second cycle ESG (A1-A5, C, D, TI, SH, AC) ? Les grilles horaires officielles MINESEC n'ont pas ete trouvees en ligne.",
+      "Quels sont les contenus de programmes officiels par matiere et par niveau (objectifs pedagogiques, chapitres, competences visees) pour le primaire (MINEDUB) et le secondaire (MINESEC) ? Les documents PDF semblent heberges sur les sites ministeriels mais non indexables.",
+      "Quel est l'etat actuel de l'Approche Par Competences (APC) dans les programmes camerounais (2019-2025) ? La reforme curriculaire primaire de 2018 et la strategie sectorielle 2023-2030 sont mentionnees mais non verifiees par les agents de validation.",
+      "Quelles sont les combinaisons de matieres exactes au GCE A-Level (sous-systeme anglophone) pour le second cycle ? Les anciennes filieres A1-A5/S1-S5 ont ete refutes — la structure actuelle n'est pas documentee dans les sources disponibles."
+    ],
+    "summary": "Le systeme educatif camerounais fonctionne avec deux sous-systemes paralleles (francophone et anglophone), chacun avec un primaire de 6 ans et des structures secondaires differentes (4+3 ans vs 5+2 ans). La reforme MINESEC de 2018 a restructure le second cycle general en 4 branches (Litteraires A1-A5/ABI, Scientifiques C/D/TI, Sciences Humaines SH, Arts AC) couvrant 27 matieres, mise en oeuvre progressivement de 2018 a 2021. L'enseignement technique offre des parcours diversifies (STT, industriel F1-F8, BT) debouchant sur CAP (4 ans), BT/Baccalaureat technique (7 ans total), et BTS superieur (2 ans, 120 credits, structure UE 30/60/10%). Les volumes horaires detailles par matiere et les programmes officiels complets par niveau n'ont pas pu etre verifies faute de sources accessibles.",
+    "refuted": [
+      {
+        "claim": "Le système d'examens du Cameroun francophone comprend des séries littéraires (A1 pour Lettres, Latin et Grec ; SH pour sciences humaines), artistiques (SH pour Art et cinématographie), et scientifiques (C pour Mathématiques, physique-chimie ; TI pour Technologie de l'information) dans l'enseignement secondaire général.",
+        "source": "https://officedubac.cm/nomenclature-des-examens/",
+        "vote": "1-2"
+      },
+      {
+        "claim": "Dans le second cycle du lycée francophone, les séries sont : A (Lettres-philosophie), B (Sciences économiques et sociales), C (Mathématiques et sciences physiques), D (Mathématiques et sciences de la vie et de la Terre), E (Mathématiques et technologie), et TI (Technologies de l'information). La série A comporte 5 options : A1 (Latin et grec), A2 (Latin et 2ème langue moderne), A3 (Latin et mathématiques), A4 (2ème langue moderne et mathématiques), A5 (2ème et 3ème langue moderne). Dans le second cycle anglophone, les filières sont Arts (A) avec 5 combinaisons (A1-A5) et Sciences (S) avec 5 combinaisons (S1-S5).",
+        "source": "https://clr.africanchildforum.org/Legislation%20Per%20Country/cameroon/cameroon_education_1998_fr.pdf",
+        "vote": "0-3"
+      },
+      {
+        "claim": "La Loi 98/004 garantit le bilinguisme à tous les niveaux du système éducatif. L'anglais et le français sont les deux langues officielles d'enseignement. Le système est explicitement divisé en deux sous-systèmes : l'un anglophone, l'autre francophone. Certaines écoles offrent un enseignement bilingue mixte de la 6ème à la 3ème, permettant aux élèves de préparer simultanément le BEPC et le GCE O-Level. L'année scolaire comporte 36 semaines de cours effectifs.",
+        "source": "https://clr.africanchildforum.org/Legislation%20Per%20Country/cameroon/cameroon_education_1998_fr.pdf",
+        "vote": "1-2"
+      },
+      {
+        "claim": "Les programmes BTS sont organisés en 7 grands domaines : (1) Agropastoral, (2) Eau et Environnement, (3) Industrie et Technologie, (4) Commerce, Gestion, Droit, (5) Tourisme, Hôtellerie, Sports et Sciences Sociales, (6) Santé, (7) Technologies de l'Information et de la Communication. Le Volume 1 (2023) couvre les domaines Agropastoral et Eau et Environnement avec 393+ pages de programmes détaillés.",
+        "source": "https://www.minesup.gov.cm/DAUQ/ARRETE%20MINSUP%20PROGRAMME%20BTS%202017.pdf",
+        "vote": "1-2"
+      }
+    ],
+    "unverified": [
+      {
+        "claim": "L'évaluation du BTS combine contrôle continu (30%) et examen écrit (70%) par module, avec des sessions régulières et de rattrapage chaque semestre. La note de passage est 50/100 par module. Un stage professionnel obligatoire est évalué via performance en entreprise et soutenance de rapport. Le cycle se termine par un Examen national unique en fin de cycle.",
+        "source": "https://www.minesup.gov.cm/DAUQ/ARRETE%20MINSUP%20PROGRAMME%20BTS%202017.pdf",
+        "validVotes": 0,
+        "erroredVotes": 3
+      },
+      {
+        "claim": "Le second cycle de l'Enseignement Secondaire Général (ESG) au Cameroun est organisé en 4 grandes branches comprenant 11 séries : Littéraires (A1, A2, A3, A4, A5 et ABI), Scientifiques et Technologiques (C, D et TI), Sciences Humaines (SH), et Arts et Cinématographiques (AC).",
+        "source": "https://www.minesec.gov.cm/web/index.php/fr/decisions-fr/item/1273-arretes-portant-definition-des-series-et-de-la-nature-de-la-duree-et-coeficients-du-second-cycle-esg",
+        "validVotes": 1,
+        "erroredVotes": 2
+      },
+      {
+        "claim": "Le cadre éducatif du second cycle ESG couvre 6 domaines d'apprentissage et un total de 27 matières distinctes, selon la réforme de 2018.",
+        "source": "https://www.minesec.gov.cm/web/index.php/fr/decisions-fr/item/1273-arretes-portant-definition-des-series-et-de-la-nature-de-la-duree-et-coeficients-du-second-cycle-esg",
+        "validVotes": 0,
+        "erroredVotes": 3
+      },
+      {
+        "claim": "Les coefficients du Baccalauréat A1 sont : Philosophie=4, Anglais=3, Littérature=2, Langue Française=2, Education à la Citoyenneté=2, Histoire/Géographie=2, Latin=2, Grec=2. Le BAC A2 remplace le Grec par Langue Vivante II (Allemand/Espagnol/Arabe) coef 2. Le BAC A3 ajoute Mathématiques coef 2. Le BAC A4 combine Langue Vivante II et Mathématiques (coef 2 chacun). Le BAC A5 donne Anglais=4, Langue vivante II=3, Philosophie=2, Langue vivante III (Italien ou Russe)=2.",
+        "source": "https://www.minesec.gov.cm/web/index.php/fr/decisions-fr/item/1273-arretes-portant-definition-des-series-et-de-la-nature-de-la-duree-et-coeficients-du-second-cycle-esg",
+        "validVotes": 0,
+        "erroredVotes": 3
+      },
+      {
+        "claim": "Le système éducatif camerounais a initié une réforme du curriculum de l'enseignement primaire en septembre 2018, dans le but d'améliorer la qualité de l'éducation.",
+        "source": "https://savoirs.cames.online/jspui/bitstream/20.500.12177/12905/1/FSE_MEM_BC_25_%200031.PDF",
+        "validVotes": 0,
+        "erroredVotes": 3
+      },
+      {
+        "claim": "La réforme curriculaire de 2018 au Cameroun comporte trois éléments clés : (1) l'établissement d'un cadre d'orientation curriculaire, (2) la clarification de la logique d'organisation des apprentissages, et (3) la définition d'opérateurs transversaux — ces derniers étant essentiels pour que les enseignants adoptent les changements.",
+        "source": "https://savoirs.cames.online/jspui/bitstream/20.500.12177/12905/1/FSE_MEM_BC_25_%200031.PDF",
+        "validVotes": 0,
+        "erroredVotes": 3
+      },
+      {
+        "claim": "The Cameroonian general secondary education system (francophone sub-system) was restructured by a 2018 ministerial decree into four main tracks: Literary series (A1, A2, A3, A4, A5, ABI), Scientific and Technological series (C, D, TI), Human Sciences (SH), and Arts and Cinematographic (AC), with a new series E (Mathematiques et techniques) also created. The curriculum covers 6 domaines d'apprentissage containing 27 disciplines.",
+        "source": "https://www.minesec.gov.cm/web/index.php/fr/systeme-educatif/progammes-officiels",
+        "validVotes": 0,
+        "erroredVotes": 3
+      },
+      {
+        "claim": "The Cameroonian education system operates a dual-language model with two parallel sub-systems: francophone (French) and anglophone (English). The francophone secondary first cycle spans 4 grades (6e to 3e) ending with the BEPC or CAP, while the anglophone first cycle spans 5 years ending with the GCE Ordinary Level. The francophone second cycle is 3 years ending with the Baccalaureat, while the anglophone second cycle is 2 years ending with the GCE Advanced Level.",
+        "source": "https://www.minesec.gov.cm/web/index.php/fr/systeme-educatif/progammes-officiels",
+        "validVotes": 0,
+        "erroredVotes": 3
+      },
+      {
+        "claim": "The 2018 MINESEC reform reorganized the second cycle of general secondary education into four tracks: Littéraires, Scientifiques et Technologiques, Sciences Humaines, and Arts et Cinématographiques.",
+        "source": "https://www.mediaterre.org/articles/cameroun-le-gouvernement-reforme-les-programmes-scolaires-du-second-cycle-de-l-enseignement-secondaire-general-pour-une-.html",
+        "validVotes": 0,
+        "erroredVotes": 3
+      },
+      {
+        "claim": "The reform removed earth and physical sciences from the A4 (Littéraire) track, history from the D (Scientifique) track, and geography from the final year (Terminale) of the C track.",
+        "source": "https://www.mediaterre.org/articles/cameroun-le-gouvernement-reforme-les-programmes-scolaires-du-second-cycle-de-l-enseignement-secondaire-general-pour-une-.html",
+        "validVotes": 0,
+        "erroredVotes": 3
+      },
+      {
+        "claim": "Le Cameroun administre deux sous-systèmes éducatifs distincts : un système anglophone fondé sur le modèle britannique et un système francophone fondé sur le modèle français, avec l'anglais et le français comme langues d'instruction selon les régions géographiques.",
+        "source": "https://www.alberta.ca/fr/iqas-education-guide-cameroon",
+        "validVotes": 0,
+        "erroredVotes": 3
+      },
+      {
+        "claim": "L'enseignement primaire est obligatoire et dure six ans dans les deux sous-systèmes (francophone et anglophone), couvrant les enfants de six à douze ans.",
+        "source": "https://www.alberta.ca/fr/iqas-education-guide-cameroon",
+        "validVotes": 0,
+        "erroredVotes": 3
+      },
+      {
+        "claim": "Dans le sous-système francophone, les élèves du lycée se spécialisent dans l'une des six filières (séries) suivantes, dont A1 (Latin et grec), et tous les étudiants étudient l'anglais en plus de leur spécialisation.",
+        "source": "https://www.alberta.ca/fr/iqas-education-guide-cameroon",
+        "validVotes": 0,
+        "erroredVotes": 3
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.minesec.gov.cm/web/index.php/fr/systeme-educatif/progammes-officiels",
+        "quality": "secondary",
+        "angle": "Programmes officiels MINEDUB/MINESEC",
+        "claimCount": 5
+      },
+      {
+        "url": "http://www.camexamen.com/wp-content/uploads/2018/10/Redefinition-Series-ESG-23082018.pdf",
+        "quality": "primary",
+        "angle": "Programmes officiels MINEDUB/MINESEC",
+        "claimCount": 5
+      },
+      {
+        "url": "https://www.mediaterre.org/articles/cameroun-le-gouvernement-reforme-les-programmes-scolaires-du-second-cycle-de-l-enseignement-secondaire-general-pour-une-.html",
+        "quality": "secondary",
+        "angle": "Programmes officiels MINEDUB/MINESEC",
+        "claimCount": 4
+      },
+      {
+        "url": "https://www.alberta.ca/fr/iqas-education-guide-cameroon",
+        "quality": "secondary",
+        "angle": "Structure et organisation du système",
+        "claimCount": 5
+      },
+      {
+        "url": "https://officedubac.cm/nomenclature-des-examens/",
+        "quality": "primary",
+        "angle": "Structure et organisation du système",
+        "claimCount": 5
+      },
+      {
+        "url": "https://dres-ce.jimdofree.com/organisation/systeme-educatif/",
+        "quality": "secondary",
+        "angle": "Structure et organisation du système",
+        "claimCount": 5
+      },
+      {
+        "url": "https://www.orientation.cm/fr/enseignement-secondaire/",
+        "quality": "secondary",
+        "angle": "Structure et organisation du système",
+        "claimCount": 5
+      },
+      {
+        "url": "https://clr.africanchildforum.org/Legislation%20Per%20Country/cameroon/cameroon_education_1998_fr.pdf",
+        "quality": "primary",
+        "angle": "Structure et organisation du système",
+        "claimCount": 5
+      },
+      {
+        "url": "https://www.minesup.gov.cm/DAUQ/ARRETE%20MINSUP%20PROGRAMME%20BTS%202017.pdf",
+        "quality": "primary",
+        "angle": "Structure et organisation du système",
+        "claimCount": 5
+      },
+      {
+        "url": "https://www.minesec.gov.cm/web/index.php/fr/decisions-fr/item/1273-arretes-portant-definition-des-series-et-de-la-nature-de-la-duree-et-coeficients-du-second-cycle-esg",
+        "quality": "primary",
+        "angle": "Volumes horaires et matières par classe",
+        "claimCount": 5
+      },
+      {
+        "url": "https://s1924f18bd7effd78.jimcontent.com/download/version/1693408151/module/11919326294/name/Arr%C3%AAt%C3%A9%20num%20239-23%20du%2014%20juin%202023%20portant%20d%C3%A9finition%20nature%2C%20dur%C3%A9e%20et%20coef%20mati%C3%A8res%201er%20cycle%20ESg%20sous%20syst%20franco%20et%20anglo.pdf",
+        "quality": "unreliable",
+        "angle": "Volumes horaires et matières par classe",
+        "claimCount": 0
+      },
+      {
+        "url": "https://www.scribd.com/document/758230086/Nouveaux-Quotas-Horaires-Et-Coefficients-Du-Second-Cycle-de-l-e",
+        "quality": "unreliable",
+        "angle": "Volumes horaires et matières par classe",
+        "claimCount": 0
+      },
+      {
+        "url": "https://www.globalpartnership.org/fr/node/document/download?file=document/file/2024-10-pacte-de-partenariat-cameroun.pdf",
+        "quality": "unreliable",
+        "angle": "Réformes récentes et Approche Par Compétences",
+        "claimCount": 0
+      },
+      {
+        "url": "https://raiffet.org/reussite-scolaire-reforme-educative-selon-lapproche-competences-apc-afrique-subsaharienne-resultats-dune-etude-comparative-bruno-dzounesse-tayim-gustave-tagne-c/",
+        "quality": "secondary",
+        "angle": "Réformes récentes et Approche Par Compétences",
+        "claimCount": 4
+      },
+      {
+        "url": "https://www.academia.edu/61860059/%C3%89tude_sur_les_r%C3%A9formes_curriculaires_par_lapproche_par_comp%C3%A9tences_en_Afrique",
+        "quality": "secondary",
+        "angle": "Réformes récentes et Approche Par Compétences",
+        "claimCount": 4
+      },
+      {
+        "url": "https://savoirs.cames.online/jspui/bitstream/20.500.12177/12905/1/FSE_MEM_BC_25_%200031.PDF",
+        "quality": "primary",
+        "angle": "Réformes récentes et Approche Par Compétences",
+        "claimCount": 4
+      },
+      {
+        "url": "https://normandie-univ.hal.science/hal-04368795v1/document",
+        "quality": "primary",
+        "angle": "Réformes récentes et Approche Par Compétences",
+        "claimCount": 3
+      },
+      {
+        "url": "https://www.researchgate.net/publication/343513923_L'approche_par_competences_en_classe_de_francais_au_Cameroun_analyse_des_pratiques_et_representations_a_partir_de_l'experience_d'un_lycee_de_Ngaoundere",
+        "quality": "secondary",
+        "angle": "Réformes récentes et Approche Par Compétences",
+        "claimCount": 5
+      },
+      {
+        "url": "https://www.alberta.ca/iqas-education-guide-cameroon",
+        "quality": "secondary",
+        "angle": "Enseignement technique, professionnel et examens",
+        "claimCount": 5
+      },
+      {
+        "url": "https://fr.wikiversity.org/wiki/Scolarit%C3%A9_au_Cameroun",
+        "quality": "secondary",
+        "angle": "Enseignement technique, professionnel et examens",
+        "claimCount": 5
+      }
+    ],
+    "stats": {
+      "angles": 5,
+      "sourcesFetched": 20,
+      "claimsExtracted": 79,
+      "claimsVerified": 25,
+      "confirmed": 8,
+      "killed": 4,
+      "unverified": 13,
+      "afterSynthesis": 4,
+      "urlDupes": 6,
+      "budgetDropped": 4,
+      "agentCalls": 102
+    }
+  },
+  "logs": [
+    "Question: Programme pédagogique complet du système éducatif camerounais : structure (mater…",
+    "Decomposed into 5 angles: Programmes officiels MINEDUB/MINESEC, Structure et organisation du système, Volumes horaires et matières par classe, Réformes récentes et Approche Par Compétences, Enseignement technique, professionnel et examens",
+    "Structure et organisation du système: 6 search results",
+    "Réformes récentes et Approche Par Compétences: 6 search results",
+    "Programmes officiels MINEDUB/MINESEC: 6 search results",
+    "Programmes officiels MINEDUB/MINESEC: 3 novel (3 filtered)",
+    "Enseignement technique, professionnel et examens: 6 search results",
+    "Enseignement technique, professionnel et examens: 2 novel (4 filtered)",
+    "Volumes horaires et matières par classe: 6 search results",
+    "Volumes horaires et matières par classe: 3 novel (3 filtered)",
+    "Fetched 20 sources -> 79 claims -> verifying top 25",
+    "confirmed: The ESG series redefinition was phased in gradually starting September",
+    "confirmed: The 2018 MINESEC reform restructured the Cameroonian general secondary",
+    "confirmed: Specific subject removals were implemented per series: the A4 track re",
+    "confirmed: L'enseignement technique et professionnel au Cameroun comprend des fil",
+    "confirmed: Les techniques industrielles au Cameroun comportent des séries de bacc",
+    "refuted: Le système d'examens du Cameroun francophone comprend des séries litté",
+    "confirmed: Le système éducatif camerounais est structuré en deux sous-systèmes pa",
+    "refuted: Dans le second cycle du lycée francophone, les séries sont : A (Lettre",
+    "refuted: La Loi 98/004 garantit le bilinguisme à tous les niveaux du système éd",
+    "confirmed: L'enseignement technique secondaire dure 7 ans (4+3). Dans le sous-sys",
+    "confirmed: Le BTS camerounais est un diplôme d'État de 2 ans (4 semestres, 120 cr",
+    "refuted: Les programmes BTS sont organisés en 7 grands domaines : (1) Agropasto",
+    "unverified: Le cadre éducatif du second cycle ESG couvre 6 domaines d'apprentissag (3 verifier errors)",
+    "unverified: Les coefficients du Baccalauréat A1 sont : Philosophie=4, Anglais=3, L (3 verifier errors)",
+    "unverified: L'évaluation du BTS combine contrôle continu (30%) et examen écrit (70 (3 verifier errors)",
+    "unverified: Le système éducatif camerounais a initié une réforme du curriculum de  (3 verifier errors)",
+    "unverified: La réforme curriculaire de 2018 au Cameroun comporte trois éléments cl (3 verifier errors)",
+    "unverified: The Cameroonian general secondary education system (francophone sub-sy (3 verifier errors)",
+    "unverified: The Cameroonian education system operates a dual-language model with t (3 verifier errors)",
+    "unverified: The 2018 MINESEC reform reorganized the second cycle of general second (3 verifier errors)",
+    "unverified: The reform removed earth and physical sciences from the A4 (Littéraire (3 verifier errors)",
+    "unverified: Le Cameroun administre deux sous-systèmes éducatifs distincts : un sys (3 verifier errors)",
+    "unverified: L'enseignement primaire est obligatoire et dure six ans dans les deux  (3 verifier errors)",
+    "unverified: Dans le sous-système francophone, les élèves du lycée se spécialisent  (3 verifier errors)",
+    "unverified: Le second cycle de l'Enseignement Secondaire Général (ESG) au Cameroun (2 verifier errors)",
+    "Verified 25 claims; confirmed 8, refuted 4, unverified 13"
+  ],
+  "failures": [
+    "agent[64] v1:L'évaluation du BTS combine contrôle con failed: other side closed",
+    "agent[67] v1:Le second cycle de l'Enseignement Second failed: Network attempt failed at unknown",
+    "agent[66] v0:Le second cycle de l'Enseignement Second failed: Network attempt failed at unknown",
+    "agent[65] v2:L'évaluation du BTS combine contrôle con failed: Network attempt failed at unknown",
+    "agent[69] v0:Le cadre éducatif du second cycle ESG co failed: Network attempt failed at unknown",
+    "agent[71] v2:Le cadre éducatif du second cycle ESG co failed: Network attempt failed at unknown",
+    "agent[74] v2:Les coefficients du Baccalauréat A1 sont failed: Network attempt failed at unknown",
+    "agent[70] v1:Le cadre éducatif du second cycle ESG co failed: Network attempt failed at unknown",
+    "agent[73] v1:Les coefficients du Baccalauréat A1 sont failed: Network attempt failed at unknown",
+    "agent[72] v0:Les coefficients du Baccalauréat A1 sont failed: Network attempt failed at unknown",
+    "agent[76] v1:Le système éducatif camerounais a initié failed: Network attempt failed at unknown",
+    "agent[78] v0:La réforme curriculaire de 2018 au Camer failed: Network attempt failed at unknown",
+    "agent[77] v2:Le système éducatif camerounais a initié failed: Network attempt failed at unknown",
+    "agent[63] v0:L'évaluation du BTS combine contrôle con failed: Network attempt failed at unknown",
+    "agent[75] v0:Le système éducatif camerounais a initié failed: Network attempt failed at unknown",
+    "agent[79] v1:La réforme curriculaire de 2018 au Camer failed: Network attempt failed at unknown",
+    "agent[84] v0:The Cameroonian education system operate failed: Network attempt failed at unknown",
+    "agent[82] v1:The Cameroonian general secondary educat failed: Network attempt failed at unknown",
+    "agent[83] v2:The Cameroonian general secondary educat failed: Network attempt failed at unknown",
+    "agent[81] v0:The Cameroonian general secondary educat failed: Network attempt failed at unknown",
+    "agent[80] v2:La réforme curriculaire de 2018 au Camer failed: Network attempt failed at unknown",
+    "agent[86] v2:The Cameroonian education system operate failed: Network attempt failed at unknown",
+    "agent[90] v0:The reform removed earth and physical sc failed: Network attempt failed at unknown",
+    "agent[85] v1:The Cameroonian education system operate failed: Network attempt failed at unknown",
+    "agent[89] v2:The 2018 MINESEC reform reorganized the  failed: Network attempt failed at unknown",
+    "agent[87] v0:The 2018 MINESEC reform reorganized the  failed: Network attempt failed at unknown",
+    "agent[88] v1:The 2018 MINESEC reform reorganized the  failed: Network attempt failed at unknown",
+    "agent[92] v2:The reform removed earth and physical sc failed: Network attempt failed at unknown",
+    "agent[93] v0:Le Cameroun administre deux sous-système failed: Network attempt failed at unknown",
+    "agent[96] v0:L'enseignement primaire est obligatoire  failed: Network attempt failed at unknown",
+    "agent[91] v1:The reform removed earth and physical sc failed: Network attempt failed at unknown",
+    "agent[94] v1:Le Cameroun administre deux sous-système failed: Network attempt failed at unknown",
+    "agent[95] v2:Le Cameroun administre deux sous-système failed: Network attempt failed at unknown",
+    "agent[97] v1:L'enseignement primaire est obligatoire  failed: Network attempt failed at unknown",
+    "agent[99] v0:Dans le sous-système francophone, les él failed: Network attempt failed at unknown",
+    "agent[101] v2:Dans le sous-système francophone, les él failed: Network attempt failed at unknown",
+    "agent[98] v2:L'enseignement primaire est obligatoire  failed: Network attempt failed at unknown",
+    "agent[100] v1:Dans le sous-système francophone, les él failed: Network attempt failed at unknown"
+  ],
+  "agentCount": 102,
+  "totalToolCalls": 779,
+  "durationMs": 3949267,
+  "usage": {
+    "agents": 102,
+    "toolCalls": 779,
+    "durationMs": 3949267
+  },
+  "transcriptDir": "/mnt/DONNEES/projets/eLISAschool/.qoder/sessions/qs_01kz80r2mczaxvhtgpes6mr10j/workflows/runs/wf_391a64c4-56e",
+  "scriptPath": "/mnt/DONNEES/projets/eLISAschool/.qoder/sessions/qs_01kz80r2mczaxvhtgpes6mr10j/workflows/scripts/deep-research-wf_391a64c4-56e.js"
+}

@@ -4,7 +4,7 @@
  * ==================================
  * Page principale de gestion des emplois du temps
  * 2 onglets : Planning (semaine/mois/jour/liste + analytique) | Configuration
- * Version: 3.0.0 — Phase 1 Restructuration
+ * Version: 4.0.0 — Toolbar consolidée + code mort supprimé
  */
 
 import { useState, useMemo, useCallback } from 'react';
@@ -13,8 +13,9 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import {
     Calendar, Settings, Plus, Download, ChevronLeft, ChevronRight,
-    ShieldCheck, CalendarCheck, ChevronDown,
+    ShieldCheck, CalendarCheck, Crosshair,
     CalendarDays, CalendarRange, List as ListIcon, BarChart3,
+    Users, GraduationCap, DoorOpen,
 } from 'lucide-react';
 import {
     useCreneaux, useValiderCreneauxClasse,
@@ -23,7 +24,6 @@ import {
 } from '../hooks/use-emploi-du-temps';
 import { useNavigationEDT, type PlanningView } from '../hooks/use-navigation-edt';
 import { EDTCalendar } from './edt-calendar';
-import { EDTFilterBar, type ContexteType } from './edt-filter-bar';
 import type { OptionSimple } from '../hooks/use-emploi-du-temps';
 import { EDTMonthView } from './edt-month-view';
 import { EDTDayView } from './edt-day-view';
@@ -36,7 +36,8 @@ import { EDTHeuresCoursModal } from './edt-heures-cours-modal';
 import { EDTCreneauModal } from './edt-creneau-modal';
 import { EDTCreneauDetailModal } from './edt-creneau-detail-modal';
 import { EDTGenerationModal } from './edt-generation-modal';
-import type { CreneauHoraire, JourSemaine } from '../types/edt.types';
+import { EDTDatePickerModal } from './edt-datepicker-modal';
+import type { CreneauHoraire } from '../types/edt.types';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/ui/Skeleton';
@@ -63,8 +64,16 @@ function normaliseTab(raw: unknown): EDTTab {
     return 'planning';
 }
 
+type ContexteType = 'classe' | 'enseignant' | 'salle';
+
+const CONTEXTE_ICONS: Record<ContexteType, React.ReactNode> = {
+    classe: <Users className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />,
+    enseignant: <GraduationCap className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />,
+    salle: <DoorOpen className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />,
+};
+
 export function EDTStandalonePage() {
-    const { t } = useTranslation('emplois');
+    const { t, i18n } = useTranslation('emplois');
     const navigate = useNavigate();
     const search = useSearch({ strict: false }) as { tab?: string };
     const tab: EDTTab = normaliseTab(search.tab);
@@ -74,9 +83,6 @@ export function EDTStandalonePage() {
     const [contexteType, setContexteType] = useState<ContexteType>('classe');
     const [contexteFilter, setContexteFilter] = useState('');
     const [showAnalytique, setShowAnalytique] = useState(false);
-    // Filtres avancés (client-side)
-    const [filtreMatiere, setFiltreMatiere] = useState('');
-    const [filtreJour, setFiltreJour] = useState<JourSemaine | undefined>(undefined);
 
     // ─── Navigation calendrier (hook extrait) ─────────
     const {
@@ -95,6 +101,8 @@ export function EDTStandalonePage() {
     // Modal détail (lecture seule)
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [detailCreneau, setDetailCreneau] = useState<CreneauHoraire | null>(null);
+    // Modal datepicker (navigation rapide par date)
+    const [datePickerOpen, setDatePickerOpen] = useState(false);
 
     // ─── Tabs ───────────────────────────────────────
 
@@ -103,22 +111,27 @@ export function EDTStandalonePage() {
         { id: 'configuration', label: t('onglets.configuration'), icon: Settings },
     ];
 
-    // ─── Données de contexte (chargées selon le type) ─────────
+    // ─── Données de contexte (chargement lazy selon le type) ─────────
     const { data: classes } = useToutesClasses();
-    const { data: enseignantOptions = [] } = useEnseignantOptions();
-    const { data: salleOptions = [] } = useSalleOptions();
-    const { data: matiereOptions = [] } = useMatiereOptions();
+    const { data: enseignantOptions = [] } = useEnseignantOptions(contexteType === 'enseignant');
+    const { data: salleOptions = [] } = useSalleOptions(contexteType === 'salle');
+    const { data: matiereOptions = [] } = useMatiereOptions(planningView === 'liste');
 
-    /** Options de classes pour le contexte 'classe' */
-    const classeOptions: OptionSimple[] = useMemo(() =>
-        (classes ?? [])
+    /** Options de classes pour le contexte 'classe' (dédupliquées par classeAnneeId) */
+    const classeOptions: OptionSimple[] = useMemo(() => {
+        const seen = new Set<string>();
+        return (classes ?? [])
             .filter(c => c.classeAnneeId && c.actif)
+            .filter(c => {
+                if (seen.has(c.classeAnneeId!)) return false;
+                seen.add(c.classeAnneeId!);
+                return true;
+            })
             .map(c => ({
                 value: c.classeAnneeId!,
                 label: `${c.nom}${c.anneeScolaire?.libelle ? ` — ${c.anneeScolaire.libelle}` : ''}`,
-            })),
-        [classes]
-    );
+            }));
+    }, [classes]);
 
     /** Options contextuelles selon le type de contexte sélectionné */
     const contexteOptions: OptionSimple[] = useMemo(() => {
@@ -146,25 +159,22 @@ export function EDTStandalonePage() {
     }, [contexteType, contexteFilter]);
 
     const { data: paginated, isLoading, error, refetch } = useCreneaux(serverFilters);
-    const creneaux = paginated?.items ?? [];
+    // Déduplication défensive par ID (le backend peut retourner des doublons)
+    const creneaux = useMemo(() => {
+        const items = paginated?.items ?? [];
+        const seen = new Set<string>();
+        return items.filter(c => {
+            if (seen.has(c.id)) return false;
+            seen.add(c.id);
+            return true;
+        });
+    }, [paginated?.items]);
     const validerCreneauxClasse = useValiderCreneauxClasse();
 
     // ─── Options pour le modal créneau (affectations + salles) ───
     const classeAnneeIdForModal = contexteType === 'classe' ? contexteFilter || undefined : undefined;
     const { data: affectationsDisponibles = [] } = useAffectationsOptions(classeAnneeIdForModal);
     const { data: sallesDisponibles = [] } = useSallesFromCreneaux();
-
-    /** Créneaux filtrés côté client (matière + jour) */
-    const filteredCreneaux = useMemo(() => {
-        let result = creneaux;
-        if (filtreMatiere) {
-            result = result.filter(c => c.affectationMatiereId === filtreMatiere);
-        }
-        if (filtreJour) {
-            result = result.filter(c => c.jour === filtreJour);
-        }
-        return result;
-    }, [creneaux, filtreMatiere, filtreJour]);
 
     // ─── Handlers ───────────────────────────────────
 
@@ -224,21 +234,21 @@ export function EDTStandalonePage() {
         switch (planningView) {
             case 'semaine':
                 if (isLoading) return <PageSkeleton showHeader={false} showStats={false} showTable />;
-                if (filteredCreneaux.length === 0) return renderEmpty();
+                if (creneaux.length === 0) return renderEmpty();
                 return (
                     <EDTCalendar
-                        creneaux={filteredCreneaux}
+                        creneaux={creneaux}
                         onCreneauClick={handleCreneauClick}
                         onCellClick={handleCellClick}
                         semaineDebut={semaineDebut}
                     />
                 );
             case 'mois':
-                return <EDTMonthView creneaux={filteredCreneaux} mois={moisDebut} onCreneauClick={handleCreneauClick} onDateClick={handleDateClick} />;
+                return <EDTMonthView creneaux={creneaux} mois={moisDebut} onCreneauClick={handleCreneauClick} onDateClick={handleDateClick} />;
             case 'jour':
-                return <EDTDayView creneaux={filteredCreneaux} date={navigationDate} onCreneauClick={handleCreneauClick} />;
+                return <EDTDayView creneaux={creneaux} date={navigationDate} onCreneauClick={handleCreneauClick} />;
             case 'liste':
-                return <EDTListeView creneaux={filteredCreneaux} onVoir={handleVoir} onModifier={handleModifier} />;
+                return <EDTListeView creneaux={creneaux} onVoir={handleVoir} onModifier={handleModifier} matiereOptions={matiereOptions} />;
             default:
                 return null;
         }
@@ -318,9 +328,10 @@ export function EDTStandalonePage() {
             >
                 {tab === 'planning' && (
                     <>
-                        {/* ─── Navigation calendrier unifiée ─── */}
-                        <div className="flex flex-wrap items-center justify-between gap-[var(--gap-sm)]">
-                            <div className="flex items-center gap-[var(--gap-xs)]">
+                        {/* ─── Toolbar principale : Navigation + Contexte + Actions ─── */}
+                        <div className="flex flex-wrap items-center gap-[var(--gap-sm)]">
+                            {/* Navigation calendrier — pill compact */}
+                            <div className="group flex items-center gap-[var(--gap-xs)] rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface)] px-[var(--space-xxs)] py-[var(--space-xxs)] transition-colors hover:border-[var(--color-dominant-300)]">
                                 <ElisaButton
                                     variant="ghost"
                                     size="xs"
@@ -328,17 +339,32 @@ export function EDTStandalonePage() {
                                     onClick={naviguerPrecedent}
                                     aria-label={t('navigation.precedent')}
                                 />
-                                <button
-                                    onClick={naviguerAujourdhui}
-                                    className={`rounded-lg px-[var(--space-sm)] py-[var(--space-xs)] font-medium transition-colors ${
-                                        estCourant
-                                            ? 'bg-[var(--color-dominant-100)] text-[var(--color-dominant-700)]'
-                                            : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
-                                    }`}
-                                    style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
-                                >
-                                    {t('navigation.aujourdhui')}
-                                </button>
+
+                                {/* Label cliquable → ouvre le datepicker modal */}
+                                {navigationLabel && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setDatePickerOpen(true)}
+                                        className="flex items-center gap-[var(--gap-xs)] px-[var(--space-xs)] py-[var(--space-xxs)] rounded-[var(--radius-md)] transition-colors hover:bg-[var(--color-surface-hover)] cursor-pointer min-w-0"
+                                        aria-label={t('navigation.titreDatepicker')}
+                                        style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
+                                    >
+                                        <span
+                                            className="font-semibold text-[var(--color-text-primary)] truncate hidden md:inline"
+                                            style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.25vw, 1rem)' }}
+                                        >
+                                            {navigationLabel}
+                                        </span>
+                                        <span
+                                            className="font-semibold text-[var(--color-text-primary)] truncate md:hidden"
+                                            style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
+                                        >
+                                            {/* Label abrégé pour mobile : mois court */}
+                                            {navigationDate.toLocaleDateString(i18n.language || 'fr', { month: 'short', year: '2-digit' })}
+                                        </span>
+                                    </button>
+                                )}
+
                                 <ElisaButton
                                     variant="ghost"
                                     size="xs"
@@ -346,137 +372,163 @@ export function EDTStandalonePage() {
                                     onClick={naviguerSuivant}
                                     aria-label={t('navigation.suivant')}
                                 />
+
+                                {/* Bouton Aujourd'hui — discret, visible au hover ou si pas courant */}
+                                <button
+                                    type="button"
+                                    onClick={naviguerAujourdhui}
+                                    className={`flex items-center justify-center rounded-[var(--radius-md)] transition-all duration-200
+                                        h-[clamp(1.5rem,1.25rem+0.5vw,1.75rem)]
+                                        w-[clamp(1.5rem,1.25rem+0.5vw,1.75rem)]
+                                        ${estCourant
+                                            ? 'opacity-0 group-hover:opacity-100 text-[var(--color-text-muted)] hover:text-[var(--color-dominant-600)] hover:bg-[var(--color-surface-hover)]'
+                                            : 'opacity-100 text-[var(--color-dominant-500)] hover:bg-[var(--color-dominant-50)]'
+                                        }
+                                    `}
+                                    aria-label={t('navigation.allerAujourdhui')}
+                                    title={t('navigation.aujourdhui')}
+                                >
+                                    <Crosshair className="h-[var(--icon-xxs)] w-[var(--icon-xxs)]" />
+                                </button>
                             </div>
 
-                            {/* Sélecteur de mode de vue */}
-                            <div className="flex items-center gap-[var(--gap-sm)]">
-                                <div className="relative">
-                                    <select
-                                        value={planningView}
-                                        onChange={(e) => setPlanningView(e.target.value as PlanningView)}
-                                        className="appearance-none rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] pl-[var(--space-sm)] pr-[var(--space-lg)] py-[var(--space-xs)] font-medium text-[var(--color-text-primary)] cursor-pointer transition-colors hover:bg-[var(--color-surface-hover)]"
-                                        style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
-                                    >
-                                        <option value="semaine">{t('vues.semaine')}</option>
-                                        <option value="mois">{t('vues.mois')}</option>
-                                        <option value="jour">{t('vues.jour')}</option>
-                                        <option value="liste">{t('vues.liste')}</option>
-                                    </select>
-                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[var(--color-text-muted)] pointer-events-none" />
-                                </div>
+                            {/* Séparateur */}
+                            <div className="hidden sm:block w-px h-6 bg-[var(--color-bordure)]" />
 
-                                {/* Label navigation */}
-                                {navigationLabel && (
-                                    <span
-                                        className="font-semibold text-[var(--color-text-primary)] hidden sm:inline"
-                                        style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.25vw, 1rem)' }}
-                                    >
-                                        {navigationLabel}
-                                    </span>
+                            {/* Contexte (classe/enseignant/salle) */}
+                            <div className="flex items-center gap-[var(--gap-xs)]">
+                                <div className="flex rounded-lg border border-[var(--color-bordure)] overflow-hidden">
+                                    {(['classe', 'enseignant', 'salle'] as ContexteType[]).map((type) => (
+                                        <button
+                                            key={type}
+                                            onClick={() => handleContexteTypeChange(type)}
+                                            className={`flex items-center gap-1 px-[var(--space-sm)] py-[var(--space-xs)] text-xs font-medium transition-colors ${
+                                                contexteType === type
+                                                    ? 'bg-[var(--color-dominant-100)] text-[var(--color-dominant-700)] dark:bg-[var(--color-dominant-900)]/30 dark:text-[var(--color-dominant-300)]'
+                                                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
+                                            }`}
+                                            aria-pressed={contexteType === type}
+                                            aria-label={t(`contexte.${type}`)}
+                                        >
+                                            {CONTEXTE_ICONS[type]}
+                                            <span className="hidden sm:inline">{t(`contexte.${type}`)}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                                <select
+                                    value={contexteFilter}
+                                    onChange={(e) => setContexteFilter(e.target.value)}
+                                    className="h-[clamp(1.75rem,1.5rem+0.5vw,2.25rem)] rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] px-[var(--space-sm)] text-[var(--color-text-primary)] text-sm transition-colors hover:border-[var(--color-dominant-400)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-300)]"
+                                    style={{ minWidth: 'clamp(120px, 25vw, 240px)' }}
+                                    aria-label={t('filtres.contexteLabel')}
+                                >
+                                    <option value="">
+                                        {contexteType === 'classe'
+                                            ? t('filtres.toutesClasses')
+                                            : contexteType === 'enseignant'
+                                                ? t('filtres.tousEnseignants')
+                                                : t('filtres.toutesSalles')}
+                                    </option>
+                                    {contexteOptions.map((opt) => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Séparateur */}
+                            <div className="hidden sm:block w-px h-6 bg-[var(--color-bordure)]" />
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-[var(--gap-xs)]">
+                                <ElisaButton
+                                    variant="primary"
+                                    size="xs"
+                                    icon={<Calendar className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
+                                    onClick={() => setGenModalOpen(true)}
+                                >
+                                    <span className="hidden sm:inline">{t('generer')}</span>
+                                </ElisaButton>
+                                <ElisaButton
+                                    variant="secondary"
+                                    size="xs"
+                                    onClick={handleCreneauCreate}
+                                    icon={<Plus className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
+                                >
+                                    <span className="hidden sm:inline">{t('creneau.ajouter')}</span>
+                                </ElisaButton>
+                                {contexteFilter && contexteType === 'classe' && (
+                                    <>
+                                        <ElisaButton
+                                            variant="secondary"
+                                            size="xs"
+                                            icon={<ShieldCheck className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
+                                            onClick={() => validerCreneauxClasse.mutate(contexteFilter)}
+                                            disabled={validerCreneauxClasse.isPending}
+                                        >
+                                            <span className="hidden sm:inline">{t('valider')}</span>
+                                        </ElisaButton>
+                                        <ElisaButton
+                                            variant="outline"
+                                            size="xs"
+                                            icon={<Download className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
+                                            onClick={handleExportPDF}
+                                        >
+                                            <span className="hidden sm:inline">{t('exporterPdf')}</span>
+                                        </ElisaButton>
+                                    </>
                                 )}
+                                <ElisaButton
+                                    variant="secondary"
+                                    size="xs"
+                                    icon={<CalendarCheck className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
+                                    onClick={() => setHeuresCoursModalOpen(true)}
+                                >
+                                    <span className="hidden lg:inline">{t('generationHeuresCours.titre')}</span>
+                                </ElisaButton>
                             </div>
                         </div>
 
-                        {/* ─── Toggle sous-vues + analytique ─── */}
+                        {/* ─── Toolbar secondaire : Vues + Analytique ─── */}
                         <div className="flex flex-wrap items-center gap-[var(--gap-xs)]">
-                            {([
-                                { id: 'semaine' as PlanningView, icon: CalendarDays },
-                                { id: 'mois' as PlanningView, icon: CalendarRange },
-                                { id: 'jour' as PlanningView, icon: Calendar },
-                                { id: 'liste' as PlanningView, icon: ListIcon },
-                            ]).map(({ id, icon: Icon }) => (
-                                <button
-                                    key={id}
-                                    onClick={() => { setPlanningView(id); setShowAnalytique(false); }}
-                                    className={`flex items-center gap-1 px-[var(--space-sm)] py-[var(--space-xs)] rounded-lg font-medium transition-colors ${
-                                        planningView === id && !showAnalytique
-                                            ? 'bg-[var(--color-dominant-600)] text-white'
-                                            : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
-                                    }`}
-                                    style={{ fontSize: 'clamp(0.6875rem, 0.63rem + 0.2vw, 0.8125rem)' }}
-                                >
-                                    <Icon className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
-                                    <span className="hidden sm:inline">{t(`vues.${id}`)}</span>
-                                </button>
-                            ))}
+                            <div className="flex rounded-lg border border-[var(--color-bordure)] overflow-hidden">
+                                {([
+                                    { id: 'semaine' as PlanningView, icon: CalendarDays },
+                                    { id: 'mois' as PlanningView, icon: CalendarRange },
+                                    { id: 'jour' as PlanningView, icon: Calendar },
+                                    { id: 'liste' as PlanningView, icon: ListIcon },
+                                ]).map(({ id, icon: Icon }) => (
+                                    <button
+                                        key={id}
+                                        onClick={() => { setPlanningView(id); setShowAnalytique(false); }}
+                                        className={`flex items-center gap-1 px-[var(--space-sm)] py-[var(--space-xs)] text-xs font-medium transition-colors ${
+                                            planningView === id && !showAnalytique
+                                                ? 'bg-[var(--color-dominant-600)] text-white dark:bg-[var(--color-dominant-700)]'
+                                                : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
+                                        }`}
+                                        aria-pressed={planningView === id && !showAnalytique}
+                                        aria-label={t(`vues.${id}`)}
+                                    >
+                                        <Icon className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
+                                        <span className="hidden sm:inline">{t(`vues.${id}`)}</span>
+                                    </button>
+                                ))}
+                            </div>
 
-                            <div className="w-px h-5 bg-[var(--color-bordure)] mx-[var(--gap-xs)]" />
+                            <div className="w-px h-5 bg-[var(--color-bordure)]" />
 
                             <button
                                 onClick={() => setShowAnalytique(v => !v)}
-                                className={`flex items-center gap-1 px-[var(--space-sm)] py-[var(--space-xs)] rounded-lg font-medium transition-colors ${
+                                className={`flex items-center gap-1 px-[var(--space-sm)] py-[var(--space-xs)] rounded-lg text-xs font-medium transition-colors ${
                                     showAnalytique
-                                        ? 'bg-[var(--color-accent-600)] text-white'
+                                        ? 'bg-[var(--color-accent-600)] text-white dark:bg-[var(--color-accent-700)]'
                                         : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
                                 }`}
-                                style={{ fontSize: 'clamp(0.6875rem, 0.63rem + 0.2vw, 0.8125rem)' }}
+                                aria-pressed={showAnalytique}
+                                aria-label={t('vues.analytique')}
                             >
                                 <BarChart3 className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
                                 <span className="hidden sm:inline">{t('vues.analytique')}</span>
                             </button>
-                        </div>
-
-                        {/* ─── FilterBar ─────────────────────── */}
-                        <EDTFilterBar
-                            contexteType={contexteType}
-                            onContexteTypeChange={handleContexteTypeChange}
-                            contexteFilter={contexteFilter}
-                            onContexteFilterChange={setContexteFilter}
-                            contexteOptions={contexteOptions}
-                            filtreMatiere={filtreMatiere}
-                            onFiltreMatiereChange={setFiltreMatiere}
-                            matiereOptions={matiereOptions}
-                            filtreJour={filtreJour}
-                            onFiltreJourChange={(j) => setFiltreJour(j || undefined)}
-                        />
-
-                        {/* ─── Actions ───────────────────────── */}
-                        <div className="flex flex-wrap items-center gap-[var(--gap-sm)]">
-                            <ElisaButton
-                                variant="secondary"
-                                size="xs"
-                                onClick={handleCreneauCreate}
-                                icon={<Plus className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
-                            >
-                                <span className="hidden sm:inline">{t('creneau.ajouter')}</span>
-                            </ElisaButton>
-                            <ElisaButton
-                                variant="primary"
-                                size="xs"
-                                icon={<Calendar className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
-                                onClick={() => setGenModalOpen(true)}
-                            >
-                                {t('generer')}
-                            </ElisaButton>
-                            {contexteFilter && contexteType === 'classe' && (
-                                <ElisaButton
-                                    variant="secondary"
-                                    size="xs"
-                                    icon={<ShieldCheck className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
-                                    onClick={() => validerCreneauxClasse.mutate(contexteFilter)}
-                                    disabled={validerCreneauxClasse.isPending}
-                                >
-                                    <span className="hidden sm:inline">{t('valider')}</span>
-                                </ElisaButton>
-                            )}
-                            <ElisaButton
-                                variant="secondary"
-                                size="xs"
-                                icon={<CalendarCheck className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
-                                onClick={() => setHeuresCoursModalOpen(true)}
-                            >
-                                <span className="hidden sm:inline">{t('generationHeuresCours.titre')}</span>
-                            </ElisaButton>
-                            {contexteFilter && contexteType === 'classe' && (
-                                <ElisaButton
-                                    variant="outline"
-                                    size="xs"
-                                    icon={<Download className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
-                                    onClick={handleExportPDF}
-                                >
-                                    <span className="hidden sm:inline">PDF</span>
-                                </ElisaButton>
-                            )}
                         </div>
                     </>
                 )}
@@ -527,6 +579,19 @@ export function EDTStandalonePage() {
                 affectations={affectationsDisponibles}
                 salles={sallesDisponibles}
                 onSuccess={() => refetch()}
+            />
+
+            {/* ─── Modal Datepicker (navigation rapide par date) ── */}
+            <EDTDatePickerModal
+                open={datePickerOpen}
+                onOpenChange={setDatePickerOpen}
+                currentDate={navigationDate}
+                onDateSelect={(date) => setNavigationDate(date)}
+                onToday={naviguerAujourdhui}
+                onCurrentWeek={() => {
+                    setNavigationDate(new Date());
+                    setPlanningView('semaine');
+                }}
             />
         </div>
     );

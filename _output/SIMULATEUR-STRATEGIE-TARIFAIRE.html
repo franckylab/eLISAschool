@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulateur Tarifaire — eLISAschool v3</title>
+<style>
+:root {
+  --bg: #f8f9fc;
+  --surface: #ffffff;
+  --surface2: #f3f4f8;
+  --surface3: #e8ebf2;
+  --border: #e2e5ed;
+  --text: #1a1d2e;
+  --text2: #4a5068;
+  --text3: #6b7494;
+  --accent: #28a745;
+  --accent2: #20913c;
+  --accent-glow: rgba(40, 167, 69, 0.10);
+  --blue: #3b82f6;
+  --blue2: #2563eb;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --purple: #8b5cf6;
+  --cyan: #06b6d4;
+  --pink: #ec4899;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.06);
+  --transition: 0.2s ease;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, #ffffff 0%, #f3f4f8 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 24px 32px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+}
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.header-logo {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.header .subtitle {
+  color: var(--text2);
+  font-size: 0.875rem;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--accent-glow);
+  color: var(--accent);
+  border: 1px solid rgba(40,167,69,0.25);
+}
+
+/* Layout */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px;
+}
+.grid-main {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 32px;
+}
+@media (max-width: 1024px) {
+  .grid-main { grid-template-columns: 1fr; }
+}
+
+/* Sections */
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title .icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+}
+
+/* Toggle Groups */
+.toggle-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.toggle-btn {
+  flex: 1;
+  min-width: 140px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: center;
+}
+.toggle-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(40,167,69,0.08);
+}
+.toggle-btn.active {
+  background: var(--accent-glow);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.toggle-btn .label { display: block; font-size: 0.75rem; color: var(--text3); margin-top: 2px; }
+.toggle-btn.active .label { color: var(--accent); opacity: 0.8; }
+
+/* Slider */
+.slider-container {
+  padding: 8px 0;
+}
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.slider-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.tranche-badge {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--blue);
+  color: white;
+}
+input[type="range"] {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface3);
+  outline: none;
+  -webkit-appearance: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(40,167,69,0.35);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+}
+.slider-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 0.7rem;
+  color: var(--text3);
+}
+
+/* Packs Grid */
+.packs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.pack-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  background: var(--surface);
+}
+.pack-card:hover {
+  border-color: var(--text3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+.pack-card.selected {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  box-shadow: 0 4px 16px rgba(40,167,69,0.12);
+}
+.pack-card .pack-icon {
+  font-size: 1.25rem;
+  margin-bottom: 8px;
+}
+.pack-card .pack-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.pack-card .pack-modules {
+  font-size: 0.7rem;
+  color: var(--text3);
+  line-height: 1.4;
+}
+.pack-card .pack-price {
+  margin-top: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.pack-card .pack-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  opacity: 0;
+  transition: var(--transition);
+}
+.pack-card.selected .pack-check { opacity: 1; }
+
+/* Services */
+.services-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.service-item {
+  flex: 1;
+  min-width: 200px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  background: var(--surface2);
+}
+.service-item label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+.service-item input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+}
+.service-item select, .service-item input[type="number"] {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+/* Sidebar — Résumé */
+.sidebar {
+  position: sticky;
+  top: 100px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+.resume-card {
+  background: linear-gradient(135deg, #ffffff, #f3f4f8);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.resume-card .total-label {
+  font-size: 0.75rem;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.resume-card .total-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1.2;
+}
+.resume-card .total-unit {
+  font-size: 0.875rem;
+  color: var(--text2);
+  margin-bottom: 16px;
+}
+.resume-card .per-student {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+.resume-card .per-student .val { font-weight: 600; color: var(--text); }
+
+.detail-lines {
+  margin-top: 16px;
+}
+.detail-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 0.8rem;
+  color: var(--text2);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.detail-line .val { color: var(--text); font-weight: 500; }
+.detail-line.total {
+  border-top: 1px solid var(--border);
+  border-bottom: none;
+  padding-top: 12px;
+  margin-top: 8px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Licence breakdown */
+.licence-breakdown {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.licence-breakdown h4 {
+  font-size: 0.8rem;
+  color: var(--text2);
+  margin-bottom: 8px;
+}
+.licence-option {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 0.75rem;
+  color: var(--text2);
+}
+.licence-option .val { color: var(--accent); font-weight: 600; }
+
+/* Scenarios */
+.scenarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.scenario-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.scenario-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(40,167,69,0.10);
+}
+.scenario-card.active {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+}
+.scenario-card .sc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.scenario-card .sc-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.scenario-card .sc-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  background: var(--blue);
+  color: white;
+}
+.scenario-card .sc-details {
+  font-size: 0.75rem;
+  color: var(--text2);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.scenario-card .sc-price {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.scenario-card .sc-per-student {
+  font-size: 0.7rem;
+  color: var(--text3);
+}
+
+/* Comparison table */
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin-top: 16px;
+}
+.comparison-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--surface2);
+  color: var(--text2);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+.comparison-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  color: var(--text);
+}
+.comparison-table tr:hover td {
+  background: var(--surface2);
+}
+.comparison-table .highlight td {
+  background: var(--accent-glow);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px;
+  box-shadow: var(--shadow);
+}
+.tab-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text2);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.tab-btn:hover { color: var(--text); background: var(--surface2); }
+.tab-btn.active {
+  background: var(--accent-glow);
+  color: var(--accent);
+  font-weight: 600;
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Alerts */
+.alert {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  margin-top: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.alert-warning {
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.25);
+  color: #b45309;
+}
+.alert-info {
+  background: rgba(59,130,246,0.08);
+  border: 1px solid rgba(59,130,246,0.25);
+  color: var(--blue2);
+}
+.alert-success {
+  background: var(--accent-glow);
+  border: 1px solid rgba(40,167,69,0.25);
+  color: var(--accent2);
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 32px;
+  color: var(--text3);
+  font-size: 0.75rem;
+  border-top: 1px solid var(--border);
+  margin-top: 48px;
+}
+
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.section { animation: fadeIn 0.3s ease; }
+.pack-card.selected { animation: fadeIn 0.2s ease; }
+
+/* Print */
+@media print {
+  .header { position: static; box-shadow: none; }
+  .sidebar { position: static; max-height: none; }
+  .section { box-shadow: none; break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-brand">
+      <svg class="header-logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="48" fill="#28a745" opacity="0.10" stroke="#28a745" stroke-width="2"/>
+        <circle cx="50" cy="50" r="38" fill="#ffffff" stroke="#28a745" stroke-width="1.5"/>
+        <path d="M30 58 C30 42, 50 35, 50 35 C50 35, 70 42, 70 58" stroke="#28a745" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M35 55 C35 44, 50 38, 50 38 C50 38, 65 44, 65 55" stroke="#3b82f6" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <line x1="50" y1="35" x2="50" y2="62" stroke="#28a745" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M50 22 L52.5 27.5 L58 28 L54 31.5 L55 37 L50 34 L45 37 L46 31.5 L42 28 L47.5 27.5 Z" fill="#f59e0b" stroke="#f59e0b" stroke-width="0.5"/>
+        <text x="50" y="78" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="#1a1d2e">elisa<tspan fill="#3b82f6">°</tspan>school</text>
+      </svg>
+      <div>
+        <h1>eLISAschool — Simulateur Tarifaire v3</h1>
+        <div class="subtitle">Stratégie commerciale — Déploiement local & hébergé</div>
+      </div>
+    </div>
+    <div class="badge">● Modèle v3.0 — 8 tranches</div>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('simulateur')">Simulateur</button>
+    <button class="tab-btn" onclick="switchTab('scenarios')">8 Scénarios</button>
+    <button class="tab-btn" onclick="switchTab('grille')">Grille tarifaire</button>
+    <button class="tab-btn" onclick="switchTab('socle')">Modules inclus</button>
+  </div>
+
+  <!-- TAB: Simulateur -->
+  <div id="tab-simulateur" class="tab-content active">
+    <div class="grid-main">
+      <div class="config-panel">
+
+        <!-- Mode de déploiement -->
+        <div class="section">
+          <div class="section-title">
+            <span class="icon" style="background:rgba(59,130,246,0.10);color:var(--blue);">☁</span>
+            Mode de déploiement
+          </div>
+          <div class="toggle-group">
+            <button class="toggle-btn active" onclick="setDeploy('local', this)">
+              🖥 Serveur local
+              <span class="label">Installation sur site</span>
+            </button>
+            <button class="toggle-btn" onclick="setDeploy('en-ligne', this)">
+              ☁ Serveur hébergé
+              <span class="label">Cloud / VPS en ligne</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mode de paiement -->
+        <div class="section">
+          <div class="section-title">
+            <span class="icon" style="background:rgba(40,167,69,0.10);color:var(--accent);">💳</span>
+            Mode de paiement
+          </div>
+          <div class="toggle-group">
+            <button class="toggle-btn active" onclick="setPayment('abonnement', this)">
+              Abonnement mensuel
+              <span class="label">Facturation mensuelle</span>
+            </button>
+            <button class="toggle-btn" onclick="setPayment('licence', this)">
+              Licence perpetuelle
+              <span class="label">Acompte + échéances</span>
+            </button>
+          </div>
+          <div id="licence-details" style="display:none;" class="licence-breakdown">
+            <h4>Conditions de licence</h4>
+            <div class="licence-option"><span>Durée amortissement</span><span class="val">36 mois</span></div>
+            <div class="licence-option"><span>Acompte initial</span><span class="val">60%</span></div>
+            <div class="licence-option"><span>Solde en</span><span class="val">4 mensualités</span></div>
+            <div class="licence-option"><span>Remise paiement comptant</span><span class="val">-20%</span></div>
+          </div>
+        </div>
+
+        <!-- Effectif -->
+        <div class="section">
+          <div class="section-title">
+            <span class="icon" style="background:rgba(139,92,246,0.10);color:var(--purple);">🎓</span>
+            Effectif élèves
+          </div>
+          <div class="slider-container">
+            <div class="slider-header">
+              <span class="slider-value" id="effectif-display">250 élèves</span>
+              <span class="tranche-badge" id="tranche-badge">T3</span>
+            </div>
+            <input type="range" id="effectif-slider" min="20" max="6000" value="250" oninput="updateEffectif(this.value)">
+            <div class="slider-labels">
+              <span>20</span><span>100</span><span>500</span><span>1000</span><span>2000</span><span>4000</span><span>6000</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Packs -->
+        <div class="section">
+          <div class="section-title">
+            <span class="icon" style="background:rgba(236,72,153,0.10);color:var(--pink);">📦</span>
+            Packs modules (6 disponibles)
+          </div>
+          <div class="packs-grid" id="packs-grid"></div>
+          <div class="alert alert-info" style="margin-top:12px;">
+            💡 Le socle de base (12 modules essentiels) est inclus gratuitement dans toutes les formules.
+          </div>
+        </div>
+
+        <!-- Services additionnels -->
+        <div class="section" id="services-section">
+          <div class="section-title">
+            <span class="icon" style="background:rgba(245,158,11,0.10);color:var(--amber);">⚡</span>
+            Services additionnels
+          </div>
+          <div class="services-row">
+            <div class="service-item">
+              <label><input type="checkbox" id="sms-toggle" onchange="updateResume()"> SMS en masse (recharges)</label>
+              <select id="sms-pack" onchange="updateResume()" disabled>
+                <option value="0">— Choisir un pack —</option>
+                <option value="5000">1 000 crédits — 5 000 F</option>
+                <option value="20000">5 000 crédits — 20 000 F</option>
+                <option value="35000">10 000 crédits — 35 000 F</option>
+              </select>
+            </div>
+            <div class="service-item" id="storage-service" style="display:none;">
+              <label><input type="checkbox" id="storage-toggle" onchange="updateResume()"> Stockage supplémentaire</label>
+              <div style="font-size:0.7rem;color:var(--text3);margin-top:4px;">5 Go inclus • 1 000 F/Go/mois</div>
+              <input type="number" id="storage-gb" value="10" min="1" max="500" onchange="updateResume()" disabled style="margin-top:8px;">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Sidebar Résumé -->
+      <div class="sidebar">
+        <div class="resume-card">
+          <div class="total-label" id="total-label">Total mensuel</div>
+          <div class="total-value" id="total-value">0 F</div>
+          <div class="total-unit" id="total-unit">FCFA / mois</div>
+          <div class="per-student">
+            <span>Coût par élève / mois</span>
+            <span class="val" id="per-student-value">—</span>
+          </div>
+          <div class="per-student">
+            <span>Coût par élève / année (10 mois)</span>
+            <span class="val" id="per-student-year">—</span>
+          </div>
+          <div class="detail-lines" id="detail-lines"></div>
+        </div>
+
+        <div id="licence-resume" style="display:none;">
+          <div class="resume-card">
+            <div class="total-label">Formule Licence</div>
+            <div class="total-value" id="licence-total">0 F</div>
+            <div class="total-unit">FCFA (valeur totale)</div>
+            <div class="detail-lines">
+              <div class="detail-line"><span>Paiement comptant (−20%)</span><span class="val" id="licence-comptant">—</span></div>
+              <div class="detail-line"><span>Acompte 60%</span><span class="val" id="licence-acompte">—</span></div>
+              <div class="detail-line"><span>4 mensualités de</span><span class="val" id="licence-mensualite">—</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="alert-zone"></div>
+
+        <div class="resume-card" style="background:var(--surface2);">
+          <div class="section-title" style="font-size:0.8rem;margin-bottom:12px;">📋 Inclus gratuitement</div>
+          <div style="font-size:0.7rem;color:var(--text3);line-height:1.8;">
+            ✓ Support technique (1 an)<br>
+            ✓ Formation initiale (admin + enseignants)<br>
+            ✓ Mises à jour système<br>
+            ✓ 12 modules socle<br>
+            ✓ 5 Go stockage <span id="storage-note">(local)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Scenarios -->
+  <div id="tab-scenarios" class="tab-content">
+    <div class="section">
+      <div class="section-title">
+        <span class="icon" style="background:rgba(6,182,212,0.10);color:var(--cyan);">📊</span>
+        8 Scénarios de référence
+      </div>
+      <p style="font-size:0.8rem;color:var(--text2);margin-bottom:16px;">
+        Cliquez sur un scénario pour le charger dans le simulateur et explorer les options.
+      </p>
+      <div class="scenarios-grid" id="scenarios-grid"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">📈 Tableau comparatif des scénarios</div>
+      <div style="overflow-x:auto;">
+        <table class="comparison-table" id="comparison-table">
+          <thead>
+            <tr>
+              <th>Scénario</th>
+              <th>Élèves</th>
+              <th>Déploiement</th>
+              <th>Packs</th>
+              <th>Mensuel</th>
+              <th>F/élève/mois</th>
+              <th>Licence (36 mois)</th>
+            </tr>
+          </thead>
+          <tbody id="comparison-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Grille -->
+  <div id="tab-grille" class="tab-content">
+    <div class="section">
+      <div class="section-title">📋 Grille tarifaire complète — Abonnement mensuel (FCFA/mois)</div>
+      <div style="overflow-x:auto;">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Tranche</th>
+              <th>Effectif</th>
+              <th>Plateforme</th>
+              <th>Comm.</th>
+              <th>Logist.</th>
+              <th>Perform.</th>
+              <th>Vie Sc.</th>
+              <th>Finan.</th>
+              <th>Invent.</th>
+              <th>All-in</th>
+            </tr>
+          </thead>
+          <tbody id="grille-body"></tbody>
+        </table>
+      </div>
+      <div class="alert alert-info" style="margin-top:16px;">
+        💡 <strong>Progressivité</strong> : le prix de chaque pack augmente avec la taille de l'établissement (T1→T6).
+        Au-delà de 2 000 élèves (T7-T8), des tarifs enterprise personnalisés s'appliquent (plafond cible : 100 000 F/mois).
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">💰 Licence perpetuelle — Valeur totale (FCFA)</div>
+      <div style="overflow-x:auto;">
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Tranche</th>
+              <th>Base (36 mois)</th>
+              <th>Comptant (−20%)</th>
+              <th>Acompte 60%</th>
+              <th>4 mensualités</th>
+            </tr>
+          </thead>
+          <tbody id="licence-grille-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Socle -->
+  <div id="tab-socle" class="tab-content">
+    <div class="section">
+      <div class="section-title">🏗 Modules du socle de base (inclus gratuitement)</div>
+      <p style="font-size:0.8rem;color:var(--text2);margin-bottom:16px;">
+        Ces 12 modules sont fournis avec chaque déploiement eLISAschool, sans coût supplémentaire.
+      </p>
+      <div class="packs-grid" id="socle-grid"></div>
+    </div>
+    <div class="section">
+      <div class="section-title">📦 Détail des 6 packs payants</div>
+      <div id="packs-detail"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    eLISAschool v3 — Simulateur tarifaire interactif — Modèle : 2 déploiements × 2 paiements × 8 tranches × 6 packs<br>
+    Dernière mise à jour : Août 2026
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DONNEES TARIFAIRES v3
+// ============================================================
+
+const TRANCHES = [
+  { code: 'T1', label: 'T1', min: 1, max: 100, midpoint: 50 },
+  { code: 'T2', label: 'T2', min: 101, max: 200, midpoint: 150 },
+  { code: 'T3', label: 'T3', min: 201, max: 500, midpoint: 350 },
+  { code: 'T4', label: 'T4', min: 501, max: 1000, midpoint: 750 },
+  { code: 'T5', label: 'T5', min: 1001, max: 2000, midpoint: 1500 },
+  { code: 'T6', label: 'T6', min: 2001, max: 3000, midpoint: 2500 },
+  { code: 'T7', label: 'T7 (Enterprise)', min: 3001, max: 5000, midpoint: 4000 },
+  { code: 'T8', label: 'T8 (Enterprise)', min: 5001, max: 99999, midpoint: 6000 },
+];
+
+// Prix mensuels par pack et par tranche (FCFA)
+const PACK_PRICES = {
+  T1: { communication: 2000, logistique: 1500, performance: 2500, vieScolaire: 1500, finances: 3000, inventaire: 1500 },
+  T2: { communication: 3000, logistique: 2500, performance: 4000, vieScolaire: 2500, finances: 4500, inventaire: 2500 },
+  T3: { communication: 4500, logistique: 3500, performance: 5500, vieScolaire: 3500, finances: 6500, inventaire: 3500 },
+  T4: { communication: 6000, logistique: 5000, performance: 8000, vieScolaire: 5000, finances: 9000, inventaire: 5000 },
+  T5: { communication: 8000, logistique: 6500, performance: 10000, vieScolaire: 6500, finances: 12000, inventaire: 6500 },
+  T6: { communication: 10000, logistique: 8000, performance: 13000, vieScolaire: 8000, finances: 15000, inventaire: 8000 },
+  T7: { communication: 10000, logistique: 8000, performance: 13000, vieScolaire: 8000, finances: 15000, inventaire: 8000 },
+  T8: { communication: 10000, logistique: 8000, performance: 13000, vieScolaire: 8000, finances: 15000, inventaire: 8000 },
+};
+
+// Frais de plateforme mensuels (FCFA)
+const PLATEFORME = {
+  T1: 15000, T2: 22000, T3: 30000, T4: 42000, T5: 55000, T6: 70000, T7: 85000, T8: 100000
+};
+
+// SMS — Packs de recharges
+const SMS_PACKS = [
+  { label: '1 000 crédits', price: 5000, credits: 1000 },
+  { label: '5 000 crédits', price: 20000, credits: 5000 },
+  { label: '10 000 crédits', price: 35000, credits: 10000 },
+];
+
+// Stockage (en ligne uniquement)
+const STORAGE_INCLUDED = 5; // Go inclus
+const STORAGE_PRICE_PER_GB = 1000; // F/Go/mois
+
+// Packs definition
+const PACKS = [
+  { id: 'communication', name: 'Pack Communication', icon: '📡', color: 'var(--blue)', modules: ['Messagerie interne', 'Requêtes', 'Sondages', 'Annonces'] },
+  { id: 'logistique', name: 'Pack Logistique', icon: '🚌', color: 'var(--amber)', modules: ['Cantine', 'Transport', 'Parking'] },
+  { id: 'performance', name: 'Pack Performance', icon: '📈', color: 'var(--accent)', modules: ['Emploi du temps', 'Suivi élève', 'Suivi personnel', 'Orientation', 'Gamification'] },
+  { id: 'vieScolaire', name: 'Pack Vie Scolaire', icon: '🏫', color: 'var(--purple)', modules: ['Clubs', 'Cartes', 'Documents', 'Impressions', 'Santé'] },
+  { id: 'finances', name: 'Pack Finances', icon: '💰', color: 'var(--pink)', modules: ['Finances', 'Contrats', 'Paie'] },
+  { id: 'inventaire', name: 'Pack Inventaire', icon: '📋', color: 'var(--cyan)', modules: ['Matériel', 'Inventaire'] },
+];
+
+// Modules du socle (gratuits)
+const SOCLE = [
+  { name: 'Authentification', icon: '🔐' },
+  { name: 'Utilisateurs & RBAC', icon: '👥' },
+  { name: 'Configuration', icon: '⚙' },
+  { name: 'Organisation', icon: '🏗' },
+  { name: 'Élèves', icon: '🎓' },
+  { name: 'Responsables', icon: '👨‍👩‍👧' },
+  { name: 'Notes & Évaluations', icon: '📝' },
+  { name: 'Périodes scolaires', icon: '📅' },
+  { name: 'Classes & Niveaux', icon: '🏫' },
+  { name: 'Matières & Programmes', icon: '📚' },
+  { name: 'Tableau de bord', icon: '📊' },
+  { name: 'Notifications', icon: '🔔' },
+];
+
+// 8 Scenarios
+const SCENARIOS = [
+  {
+    id: 1, titre: 'École primaire rurale',
+    effectif: 80, deploy: 'local', payment: 'abonnement',
+    packs: ['communication'],
+    sms: false, storage: 0,
+    desc: 'Petite école primaire en zone rurale. Serveur local. Communication essentielle avec les parents.',
+    badge: 'T1'
+  },
+  {
+    id: 2, titre: 'Collège privé urbain',
+    effectif: 350, deploy: 'local', payment: 'abonnement',
+    packs: ['communication', 'logistique', 'performance'],
+    sms: false, storage: 0,
+    desc: 'Collège privé 350 élèves. Besoin logistique (cantine, transport) + suivi académique.',
+    badge: 'T3'
+  },
+  {
+    id: 3, titre: 'Lycée connecté',
+    effectif: 700, deploy: 'en-ligne', payment: 'abonnement',
+    packs: ['communication', 'performance', 'vieScolaire', 'finances'],
+    sms: true, smsPack: 2, storage: 20,
+    desc: 'Lycée moderne en ligne. SMS pour notifications parents. Stockage documents cloud.',
+    badge: 'T4'
+  },
+  {
+    id: 4, titre: 'Complexe scolaire bilingue',
+    effectif: 1500, deploy: 'en-ligne', payment: 'licence',
+    packs: ['communication', 'logistique', 'performance', 'vieScolaire', 'finances'],
+    sms: true, smsPack: 2, storage: 50,
+    desc: 'Complexe 1500 élèves, 2 sites. Licence perpetuelle. Tous packs sauf inventaire.',
+    badge: 'T5'
+  },
+  {
+    id: 5, titre: 'Grand groupe scolaire',
+    effectif: 2500, deploy: 'en-ligne', payment: 'licence',
+    packs: ['communication', 'logistique', 'performance', 'vieScolaire', 'finances', 'inventaire'],
+    sms: true, smsPack: 2, storage: 100,
+    desc: 'Groupe scolaire 2500 élèves. Tous les packs. Infrastructure complète.',
+    badge: 'T6'
+  },
+  {
+    id: 6, titre: 'Université privée',
+    effectif: 4000, deploy: 'en-ligne', payment: 'licence',
+    packs: ['communication', 'performance', 'finances'],
+    sms: true, smsPack: 2, storage: 200,
+    desc: 'Université 4000 étudiants. Enterprise. Packs académiques et financiers.',
+    badge: 'T7'
+  },
+  {
+    id: 7, titre: 'Réseau d\'écoles (5 sites)',
+    effectif: 5500, deploy: 'en-ligne', payment: 'licence',
+    packs: ['communication', 'logistique', 'performance', 'vieScolaire', 'finances', 'inventaire'],
+    sms: true, smsPack: 2, storage: 300,
+    desc: 'Réseau de 5 écoles. 5500 élèves cumulés. Déploiement centralisé + antennes locales.',
+    badge: 'T8'
+  },
+  {
+    id: 8, titre: 'École standard minimal',
+    effectif: 150, deploy: 'local', payment: 'abonnement',
+    packs: ['communication', 'finances'],
+    sms: false, storage: 0,
+    desc: 'Petite structure 150 élèves. Packs essentiels : communication et finances uniquement.',
+    badge: 'T2'
+  },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  deploy: 'local',
+  payment: 'abonnement',
+  effectif: 250,
+  packs: [],
+  sms: false,
+  smsPackIndex: 0,
+  storage: 0,
+};
+
+// ============================================================
+// HELPERS
+// ============================================================
+function getTranche(effectif) {
+  for (let i = TRANCHES.length - 1; i >= 0; i--) {
+    if (effectif >= TRANCHES[i].min) return TRANCHES[i];
+  }
+  return TRANCHES[0];
+}
+
+function formatNumber(n) {
+  return new Intl.NumberFormat('fr-FR').format(Math.round(n));
+}
+
+function getMonthlyTotal() {
+  const t = getTranche(state.effectif);
+  const code = t.code.split(' ')[0]; // Handle "T7 (Enterprise)" -> "T7"
+  let total = PLATEFORME[code] || 0;
+  const lines = [{ label: 'Plateforme', value: PLATEFORME[code] || 0 }];
+
+  state.packs.forEach(packId => {
+    const price = (PACK_PRICES[code] || {})[packId] || 0;
+    total += price;
+    const pack = PACKS.find(p => p.id === packId);
+    lines.push({ label: pack ? pack.name : packId, value: price });
+  });
+
+  if (state.sms && state.smsPackIndex > 0) {
+    const smsPrice = SMS_PACKS[state.smsPackIndex - 1]?.price || 0;
+    total += smsPrice;
+    lines.push({ label: 'SMS ' + SMS_PACKS[state.smsPackIndex - 1].label, value: smsPrice });
+  }
+
+  if (state.deploy === 'en-ligne' && state.storage > STORAGE_INCLUDED) {
+    const extraGb = state.storage - STORAGE_INCLUDED;
+    const storageCost = extraGb * STORAGE_PRICE_PER_GB;
+    total += storageCost;
+    lines.push({ label: `Stockage +${extraGb} Go`, value: storageCost });
+  }
+
+  return { total, lines, tranche: t };
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function renderPacks() {
+  const grid = document.getElementById('packs-grid');
+  const t = getTranche(state.effectif);
+  const code = t.code.split(' ')[0];
+  grid.innerHTML = PACKS.map(pack => {
+    const price = (PACK_PRICES[code] || {})[pack.id] || 0;
+    const selected = state.packs.includes(pack.id);
+    return `
+      <div class="pack-card ${selected ? 'selected' : ''}" onclick="togglePack('${pack.id}')">
+        <div class="pack-check">✓</div>
+        <div class="pack-icon">${pack.icon}</div>
+        <div class="pack-name">${pack.name}</div>
+        <div class="pack-modules">${pack.modules.join(' • ')}</div>
+        <div class="pack-price">${formatNumber(price)} F/mois</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderSocle() {
+  document.getElementById('socle-grid').innerHTML = SOCLE.map(m => `
+    <div class="pack-card" style="cursor:default;border-color:var(--border);">
+      <div class="pack-icon">${m.icon}</div>
+      <div class="pack-name">${m.name}</div>
+      <div class="pack-price" style="color:var(--accent);font-size:0.75rem;">Inclus</div>
+    </div>
+  `).join('');
+
+  document.getElementById('packs-detail').innerHTML = PACKS.map(pack => `
+    <div style="margin-bottom:16px;padding:16px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:1.25rem;">${pack.icon}</span>
+        <strong>${pack.name}</strong>
+      </div>
+      <div style="font-size:0.8rem;color:var(--text2);">
+        Modules : ${pack.modules.join(', ')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderScenarios() {
+  const grid = document.getElementById('scenarios-grid');
+  grid.innerHTML = SCENARIOS.map(sc => {
+    // Calculate price
+    const savedState = { ...state };
+    state.effectif = sc.effectif;
+    state.deploy = sc.deploy;
+    state.packs = sc.packs;
+    state.sms = sc.sms;
+    state.smsPackIndex = sc.smsPack || 0;
+    state.storage = sc.storage || 0;
+    const { total } = getMonthlyTotal();
+    const perStudent = total / sc.effectif;
+    const licenceTotal = total * 36;
+    Object.assign(state, savedState);
+
+    return `
+      <div class="scenario-card" onclick="loadScenario(${sc.id})">
+        <div class="sc-header">
+          <span class="sc-title">${sc.titre}</span>
+          <span class="sc-badge">${sc.badge}</span>
+        </div>
+        <div class="sc-details">
+          ${sc.effectif} élèves • ${sc.deploy === 'local' ? 'Local' : 'En ligne'} • ${sc.payment === 'abonnement' ? 'Abonnement' : 'Licence'}<br>
+          ${sc.packs.length} pack(s) ${sc.sms ? '+ SMS' : ''} ${sc.storage > 0 ? '+ ' + sc.storage + ' Go' : ''}
+        </div>
+        <div class="sc-price">${formatNumber(total)} F/mois</div>
+        <div class="sc-per-student">${Math.round(perStudent)} F/élève/mois • Licence: ${formatNumber(licenceTotal)} F</div>
+      </div>
+    `;
+  }).join('');
+
+  // Comparison table
+  const tbody = document.getElementById('comparison-body');
+  tbody.innerHTML = SCENARIOS.map(sc => {
+    const savedState = { ...state };
+    state.effectif = sc.effectif;
+    state.deploy = sc.deploy;
+    state.packs = sc.packs;
+    state.sms = sc.sms;
+    state.smsPackIndex = sc.smsPack || 0;
+    state.storage = sc.storage || 0;
+    const { total } = getMonthlyTotal();
+    const perStudent = Math.round(total / sc.effectif);
+    const licence = total * 36;
+    Object.assign(state, savedState);
+    const packNames = sc.packs.map(p => PACKS.find(pk => pk.id === p)?.name.replace('Pack ', '') || p).join(', ');
+    return `
+      <tr onclick="loadScenario(${sc.id})" style="cursor:pointer;">
+        <td><strong>${sc.titre}</strong></td>
+        <td>${sc.effectif}</td>
+        <td>${sc.deploy === 'local' ? 'Local' : 'En ligne'}</td>
+        <td>${packNames}</td>
+        <td><strong>${formatNumber(total)} F</strong></td>
+        <td>${perStudent} F</td>
+        <td>${formatNumber(licence)} F</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderGrille() {
+  const tbody = document.getElementById('grille-body');
+  tbody.innerHTML = TRANCHES.map(t => {
+    const code = t.code.split(' ')[0];
+    const prices = PACK_PRICES[code] || {};
+    const plat = PLATEFORME[code] || 0;
+    const allIn = plat + Object.values(prices).reduce((a, b) => a + b, 0);
+    return `
+      <tr>
+        <td><strong>${t.label}</strong></td>
+        <td>${t.min}${t.max < 99999 ? '–' + t.max : '+'}</td>
+        <td>${formatNumber(plat)}</td>
+        <td>${formatNumber(prices.communication || 0)}</td>
+        <td>${formatNumber(prices.logistique || 0)}</td>
+        <td>${formatNumber(prices.performance || 0)}</td>
+        <td>${formatNumber(prices.vieScolaire || 0)}</td>
+        <td>${formatNumber(prices.finances || 0)}</td>
+        <td>${formatNumber(prices.inventaire || 0)}</td>
+        <td><strong>${formatNumber(allIn)}</strong></td>
+      </tr>
+    `;
+  }).join('');
+
+  // Licence grille
+  const ltbody = document.getElementById('licence-grille-body');
+  ltbody.innerHTML = TRANCHES.map(t => {
+    const code = t.code.split(' ')[0];
+    const prices = PACK_PRICES[code] || {};
+    const plat = PLATEFORME[code] || 0;
+    const allInMonthly = plat + Object.values(prices).reduce((a, b) => a + b, 0);
+    const base = allInMonthly * 36;
+    const comptant = base * 0.8;
+    const acompte = base * 0.6;
+    const mensualite = (base * 0.4) / 4;
+    return `
+      <tr>
+        <td><strong>${t.label}</strong></td>
+        <td>${formatNumber(base)} F</td>
+        <td>${formatNumber(comptant)} F</td>
+        <td>${formatNumber(acompte)} F</td>
+        <td>4 × ${formatNumber(mensualite)} F</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function updateResume() {
+  // Sync state from UI
+  state.sms = document.getElementById('sms-toggle').checked;
+  state.smsPackIndex = state.sms ? (parseInt(document.getElementById('sms-pack').value) || 0) : 0;
+  document.getElementById('sms-pack').disabled = !state.sms;
+
+  if (state.deploy === 'en-ligne') {
+    document.getElementById('storage-service').style.display = '';
+    state.storage = document.getElementById('storage-toggle').checked ? (parseInt(document.getElementById('storage-gb').value) || 0) : 0;
+    document.getElementById('storage-gb').disabled = !document.getElementById('storage-toggle').checked;
+    document.getElementById('storage-note').textContent = '(5 Go inclus)';
+  } else {
+    document.getElementById('storage-service').style.display = 'none';
+    state.storage = 0;
+    document.getElementById('storage-note').textContent = '(local)';
+  }
+
+  const { total, lines, tranche } = getMonthlyTotal();
+  const perStudent = total / state.effectif;
+  const perStudentYear = perStudent * 10;
+
+  // Update display
+  document.getElementById('effectif-display').textContent = state.effectif + ' élèves';
+  document.getElementById('tranche-badge').textContent = tranche.label;
+
+  if (state.payment === 'abonnement') {
+    document.getElementById('total-label').textContent = 'Total mensuel';
+    document.getElementById('total-value').textContent = formatNumber(total) + ' F';
+    document.getElementById('total-unit').textContent = 'FCFA / mois';
+    document.getElementById('licence-resume').style.display = 'none';
+  } else {
+    const licenceBase = total * 36;
+    document.getElementById('total-label').textContent = 'Équivalent mensuel';
+    document.getElementById('total-value').textContent = formatNumber(total) + ' F';
+    document.getElementById('total-unit').textContent = 'FCFA / mois (licencié sur 36 mois)';
+    document.getElementById('licence-resume').style.display = '';
+    document.getElementById('licence-total').textContent = formatNumber(licenceBase) + ' F';
+    document.getElementById('licence-comptant').textContent = formatNumber(licenceBase * 0.8) + ' F';
+    document.getElementById('licence-acompte').textContent = formatNumber(licenceBase * 0.6) + ' F';
+    document.getElementById('licence-mensualite').textContent = formatNumber((licenceBase * 0.4) / 4) + ' F';
+  }
+
+  document.getElementById('per-student-value').textContent = Math.round(perStudent) + ' F';
+  document.getElementById('per-student-year').textContent = Math.round(perStudentYear) + ' F';
+
+  // Detail lines
+  document.getElementById('detail-lines').innerHTML = lines.map(l =>
+    `<div class="detail-line"><span>${l.label}</span><span class="val">${formatNumber(l.value)} F</span></div>`
+  ).join('') + `<div class="detail-line total"><span>TOTAL</span><span class="val">${formatNumber(total)} F/mois</span></div>`;
+
+  // Alerts
+  let alerts = '';
+  if (perStudent < 400) {
+    alerts += `<div class="alert alert-warning">⚠ Le coût par élève (${Math.round(perStudent)} F) est inférieur au seuil de 400 F/mois. Envisagez d'ajouter des packs.</div>`;
+  }
+  if (total < 30000) {
+    alerts += `<div class="alert alert-warning">⚠ Le revenu mensuel (${formatNumber(total)} F) est sous le seuil de viabilité (30 000 F). Un minimum forfaitaire s'applique.</div>`;
+  }
+  if (total > 100000 && tranche.code <= 'T6') {
+    alerts += `<div class="alert alert-warning">⚠ Le total dépasse 100 000 F/mois. Vérifiez la cohérence avec la bande cible.</div>`;
+  }
+  if (state.packs.length === 6) {
+    alerts += `<div class="alert alert-success">✓ Formule complète — tous les packs activés.</div>`;
+  }
+  document.getElementById('alert-zone').innerHTML = alerts;
+
+  // Refresh packs display
+  renderPacks();
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+function setDeploy(mode, btn) {
+  state.deploy = mode;
+  btn.parentElement.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateResume();
+}
+
+function setPayment(mode, btn) {
+  state.payment = mode;
+  btn.parentElement.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('licence-details').style.display = mode === 'licence' ? '' : 'none';
+  updateResume();
+}
+
+function updateEffectif(val) {
+  state.effectif = parseInt(val);
+  updateResume();
+}
+
+function togglePack(packId) {
+  const idx = state.packs.indexOf(packId);
+  if (idx >= 0) state.packs.splice(idx, 1);
+  else state.packs.push(packId);
+  updateResume();
+}
+
+function loadScenario(id) {
+  const sc = SCENARIOS.find(s => s.id === id);
+  if (!sc) return;
+  state.effectif = sc.effectif;
+  state.deploy = sc.deploy;
+  state.payment = sc.payment;
+  state.packs = [...sc.packs];
+  state.sms = sc.sms || false;
+  state.smsPackIndex = sc.smsPack || 0;
+  state.storage = sc.storage || 0;
+
+  // Sync UI
+  document.getElementById('effectif-slider').value = sc.effectif;
+  document.querySelectorAll('.tab-btn')[0].click();
+
+  // Sync deploy buttons
+  document.querySelectorAll('#tab-simulateur .section:first-child .toggle-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.includes(sc.deploy === 'local' ? 'local' : 'hébergé'));
+  });
+  // Sync payment buttons
+  document.querySelectorAll('#tab-simulateur .section:nth-child(2) .toggle-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.includes(sc.payment === 'abonnement' ? 'Abonnement' : 'Licence'));
+  });
+  document.getElementById('licence-details').style.display = sc.payment === 'licence' ? '' : 'none';
+
+  // Sync SMS
+  document.getElementById('sms-toggle').checked = state.sms;
+  document.getElementById('sms-pack').value = state.smsPackIndex;
+
+  // Sync storage
+  if (state.deploy === 'en-ligne' && state.storage > 0) {
+    document.getElementById('storage-toggle').checked = true;
+    document.getElementById('storage-gb').value = state.storage;
+    document.getElementById('storage-gb').disabled = false;
+  }
+
+  updateResume();
+}
+
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  event.target.classList.add('active');
+
+  if (tabId === 'scenarios') renderScenarios();
+  if (tabId === 'grille') renderGrille();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderPacks();
+renderSocle();
+updateResume();
+</script>
+</body>
+</html>

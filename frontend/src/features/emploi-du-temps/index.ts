@@ -19,10 +19,10 @@ export { EDTTemplatesPage } from './components/edt-templates';
 export { EDTCalendar } from './components/edt-calendar';
 export { EDTGenerationModal } from './components/edt-generation-modal';
 export { EDTCreneauModal } from './components/edt-creneau-modal';
-export { EDTFilterBar, type ContexteType } from './components/edt-filter-bar';
 export { EDTMonthView } from './components/edt-month-view';
 export { EDTDayView } from './components/edt-day-view';
 export { EDTListeView } from './components/edt-liste';
+export { EDTDatePickerModal } from './components/edt-datepicker-modal';
 
 // Hooks
 export * from './hooks/use-emploi-du-temps';

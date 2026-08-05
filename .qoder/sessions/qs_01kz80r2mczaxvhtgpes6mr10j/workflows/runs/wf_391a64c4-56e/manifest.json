@@ -32,6 +32,8 @@
     ]
   },
   "createdAt": "2026-08-05T03:52:31.199Z",
-  "updatedAt": "2026-08-05T03:52:31.199Z",
-  "status": "running"
+  "updatedAt": "2026-08-05T04:58:20.506Z",
+  "status": "completed",
+  "outputPath": "/mnt/DONNEES/projets/eLISAschool/.qoder/sessions/qs_01kz80r2mczaxvhtgpes6mr10j/workflows/runs/wf_391a64c4-56e/output.json",
+  "agents": []
 }

@@ -20,7 +20,8 @@ interface EDTMonthViewProps {
     onDateClick?: (date: Date) => void;
 }
 
-const JOURS_SEMAINE = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM'];
+/** Clés i18n pour les abréviations de jours (lundi → samedi) */
+const JOURS_SEMAINE_KEYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'] as const;
 
 const JOURS_INDEX: Record<JourSemaine, number> = {
     LUNDI: 0,
@@ -93,16 +94,21 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick }: ED
         <div className="flex flex-col gap-[var(--gap-sm)]">
             {/* En-tête jours */}
             <div className="grid grid-cols-6 border-b border-[var(--color-bordure)]">
-                {JOURS_SEMAINE.map((j) => (
-                    <div
-                        key={j}
-                        className="py-[var(--space-xs)] text-center font-semibold text-[var(--color-text-secondary)]"
-                        style={{ fontSize: 'clamp(0.625rem, 0.55rem + 0.25vw, 0.8125rem)' }}
-                    >
-                        <span className="hidden sm:inline">{j}</span>
-                        <span className="sm:hidden">{j.slice(0, 2)}</span>
-                    </div>
-                ))}
+                {JOURS_SEMAINE_KEYS.map((key) => {
+                    const full = t(`jours.${key}`);
+                    // Abréviation : 3 premiers caractères (universel pour FR/EN)
+                    const abbr = full.slice(0, 3);
+                    return (
+                        <div
+                            key={key}
+                            className="py-[var(--space-xs)] text-center font-semibold text-[var(--color-text-secondary)]"
+                            style={{ fontSize: 'clamp(0.625rem, 0.55rem + 0.25vw, 0.8125rem)' }}
+                        >
+                            <span className="hidden sm:inline">{full}</span>
+                            <span className="sm:hidden">{abbr}</span>
+                        </div>
+                    );
+                })}
             </div>
 
             {/* Grille des jours */}
