@@ -10,15 +10,22 @@
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Calendar } from 'lucide-react';
+import { Calendar, Star, CheckCircle2 } from 'lucide-react';
 import { formatDateInput } from '@/lib/date-utils';
-import type { CreneauHoraire, JourSemaine } from '../types/edt.types';
+import type { CreneauHoraire, JourSemaine, JourFerie } from '../types/edt.types';
+import { estJourFerieFromList } from '../hooks/use-jours-feries';
 
 interface EDTMonthViewProps {
     creneaux: CreneauHoraire[];
     mois: Date;
     onCreneauClick?: (creneau: CreneauHoraire) => void;
     onDateClick?: (date: Date) => void;
+    /** Clic sur le "+N" : ouvre la liste complète des créneaux du jour */
+    onPlusNClick?: (creneaux: CreneauHoraire[], jourIndex: number) => void;
+    /** Afficher tous les créneaux (pas de limite 3) */
+    showAll?: boolean;
+    /** Jours fériés à afficher */
+    joursFeries?: JourFerie[];
 }
 
 /** Clés i18n pour les abréviations de jours (lundi → samedi) */
@@ -33,7 +40,7 @@ const JOURS_INDEX: Record<JourSemaine, number> = {
     SAMEDI: 5,
 };
 
-export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick }: EDTMonthViewProps) {
+export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick, onPlusNClick, showAll = false, joursFeries = [] }: EDTMonthViewProps) {
     const { t } = useTranslation('emplois');
 
     /** Calcule les jours de la grille (lundi → samedi) */
@@ -88,7 +95,7 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick }: ED
         const estAujourdhui = toLocalDateStr(jour) === aujourdhui;
         return `min-h-[clamp(60px,10vw,90px)] border border-[var(--color-bordure)] p-[var(--space-xxs)] transition-colors ${
             estAujourdhui
-                ? 'bg-[var(--color-dominant-50)] ring-1 ring-[var(--color-dominant-400)]'
+                ? 'bg-[var(--color-dominant-50)] ring-2 ring-[var(--color-dominant-400)]/60'
                 : estMoisCourant
                     ? 'bg-[var(--color-surface)] hover:bg-[var(--color-surface-hover)]'
                     : 'bg-[var(--color-surface-alt)] opacity-50'
@@ -122,6 +129,7 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick }: ED
                     const colIndex = idx % 6;
                     const creneauxJour = creneauxParJour.get(colIndex) ?? [];
                     const estMoisCourant = jour.getMonth() === moisCourant;
+                    const jfInfo = estMoisCourant ? estJourFerieFromList(jour, joursFeries) : { estFerie: false };
 
                     return (
                         <div
@@ -129,21 +137,50 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick }: ED
                             className={cellClass(jour)}
                             onClick={() => estMoisCourant && onDateClick?.(jour)}
                             role={estMoisCourant ? 'button' : undefined}
+                            title={jfInfo.estFerie ? jfInfo.nom : undefined}
                         >
-                            {/* Numéro du jour */}
-                            <div
-                                className={`mb-[var(--space-xxs)] font-medium ${
-                                    estMoisCourant ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-muted)]'
-                                }`}
-                                style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.2vw, 0.75rem)' }}
-                            >
-                                {jour.getDate()}
+                            {/* Numéro du jour — cercle coloré si aujourd'hui */}
+                            <div className="mb-[var(--space-xxs)] flex items-center gap-0.5">
+                                {(() => {
+                                    const estAujourdhui = toLocalDateStr(jour) === aujourdhui;
+                                    if (estAujourdhui) {
+                                        return (
+                                            <span
+                                                className="inline-flex items-center justify-center rounded-full bg-[var(--color-dominant-600)] font-bold text-white"
+                                                style={{
+                                                    width: 'clamp(1.25rem, 1.1rem + 0.5vw, 1.625rem)',
+                                                    height: 'clamp(1.25rem, 1.1rem + 0.5vw, 1.625rem)',
+                                                    fontSize: 'clamp(0.5625rem, 0.5rem + 0.25vw, 0.75rem)',
+                                                }}
+                                            >
+                                                {jour.getDate()}
+                                            </span>
+                                        );
+                                    }
+                                    return (
+                                        <span
+                                            className={`font-medium ${
+                                                estMoisCourant ? 'text-[var(--color-text-primary)]' : 'text-[var(--color-text-muted)]'
+                                            }`}
+                                            style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.2vw, 0.75rem)' }}
+                                        >
+                                            {jour.getDate()}
+                                        </span>
+                                    );
+                                })()}
+                                {/* Indicateur jour férié */}
+                                {jfInfo.estFerie && (
+                                    <Star
+                                        className="h-2.5 w-2.5 shrink-0 fill-current"
+                                        style={{ color: jfInfo.couleur || 'var(--color-danger)' }}
+                                    />
+                                )}
                             </div>
 
-                            {/* Créneaux (max 3 + indicateur) */}
+                            {/* Créneaux (max 3 sauf si showAll) */}
                             {estMoisCourant && creneauxJour.length > 0 && (
                                 <div className="flex flex-col gap-0.5">
-                                    {creneauxJour.slice(0, 3).map((c) => {
+                                    {(showAll ? creneauxJour : creneauxJour.slice(0, 3)).map((c) => {
                                         const couleur = c.affectationMatiere?.matiere?.couleur;
                                         return (
                                             <button
@@ -152,26 +189,37 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick }: ED
                                                     e.stopPropagation();
                                                     onCreneauClick?.(c);
                                                 }}
-                                                className="truncate rounded px-1 py-0.5 text-left text-white transition-opacity hover:opacity-80"
+                                                className={`truncate rounded px-1 py-0.5 text-left text-white transition-opacity hover:opacity-80 relative ${
+                                                    c.hasHeuresCours ? 'ring-1 ring-inset ring-white/30' : ''
+                                                }`}
                                                 style={{
                                                     fontSize: 'clamp(0.5rem, 0.45rem + 0.15vw, 0.625rem)',
                                                     backgroundColor: couleur || 'var(--color-dominant-500)',
                                                 }}
-                                                title={`${c.affectationMatiere?.matiere?.nom ?? ''} ${c.heureDebut?.slice(0, 5) ?? ''}-${c.heureFin?.slice(0, 5) ?? ''}`}
+                                                title={`${c.affectationMatiere?.matiere?.nom ?? ''} ${c.heureDebut?.slice(0, 5) ?? ''}-${c.heureFin?.slice(0, 5) ?? ''}${c.hasHeuresCours ? ' ✓' : ''}`}
                                             >
                                                 <span className="font-medium">{c.heureDebut?.slice(0, 5)}</span>
                                                 {' '}
                                                 {c.affectationMatiere?.matiere?.nom?.slice(0, 6) ?? '•'}
+                                                {/* Pastille HC discrète */}
+                                                {c.hasHeuresCours && (
+                                                    <CheckCircle2 className="inline-block h-2 w-2 ml-0.5 opacity-80 align-middle" />
+                                                )}
                                             </button>
                                         );
                                     })}
-                                    {creneauxJour.length > 3 && (
-                                        <span
-                                            className="font-medium text-[var(--color-dominant-600)]"
+                                    {!showAll && creneauxJour.length > 3 && (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onPlusNClick?.(creneauxJour, colIndex);
+                                            }}
+                                            className="font-medium text-[var(--color-dominant-600)] hover:underline cursor-pointer text-left"
                                             style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.15vw, 0.625rem)' }}
                                         >
                                             +{creneauxJour.length - 3}
-                                        </span>
+                                        </button>
                                     )}
                                 </div>
                             )}

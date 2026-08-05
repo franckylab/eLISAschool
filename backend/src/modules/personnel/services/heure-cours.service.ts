@@ -15,7 +15,8 @@ import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
-import { CreneauHoraire, JourSemaine, StatutCreneau, TypeCreneau } from '@modules/emploi-du-temps/entities';
+import { CreneauHoraire, JourSemaine, StatutCreneau, TypeCreneau, PreferenceEmploiDuTemps } from '@modules/emploi-du-temps/entities';
+import { jourFerieService, formatDateLocal } from '@modules/emploi-du-temps/services/jour-ferie.service';
 import { ClasseAnnee } from '@modules/classes/entities';
 import { Matiere } from '@modules/matieres/entities';
 import { MembrePersonnel, StatutPersonnel } from '@modules/personnel/entities';
@@ -1001,6 +1002,36 @@ export class HeureCoursService {
             return { created: 0, skipped: 0 };
         }
 
+        // ─── Exclusion jours fériés (préférence EDT) ─────────
+        let datesJFSet = new Set<string>();
+        const prefRepo = AppDataSource.getRepository(PreferenceEmploiDuTemps);
+        const prefs = await prefRepo.findOne({ where: { etablissementId } });
+        const exclureJF = prefs?.exclureJoursFeries ?? true; // défaut: exclure
+
+        if (exclureJF) {
+            const jfList = await jourFerieService.findByPlageDates(
+                formatDateLocal(dateD),
+                formatDateLocal(dateF),
+                etablissementId
+            );
+            for (const jf of jfList) {
+                if (jf.estRecurrent && jf.mois && jf.jourMois) {
+                    // Développer les récurrents en dates concrètes pour la plage
+                    for (let annee = dateD.getFullYear(); annee <= dateF.getFullYear(); annee++) {
+                        const d = new Date(annee, jf.mois - 1, jf.jourMois);
+                        if (d >= dateD && d <= dateF) {
+                            datesJFSet.add(formatDateLocal(d));
+                        }
+                    }
+                } else if (jf.date) {
+                    datesJFSet.add(formatDateLocal(new Date(jf.date + 'T00:00:00')));
+                }
+            }
+            if (datesJFSet.size > 0) {
+                logger.info(`[HeureCours] Exclusion JF activée : ${datesJFSet.size} jours fériés dans la plage`);
+            }
+        }
+
         const jourSemaineIndex: Record<string, number> = {
             [JourSemaine.LUNDI]: 1,
             [JourSemaine.MARDI]: 2,
@@ -1033,6 +1064,13 @@ export class HeureCoursService {
 
                 if (courseDate < dateD || courseDate > dateF) continue;
 
+                // Exclusion jour férié
+                const courseDateStr = formatDateLocal(courseDate);
+                if (exclureJF && datesJFSet.has(courseDateStr)) {
+                    skipped++;
+                    continue;
+                }
+
                 const existing = await this.repo.findOne({
                     where: {
                         enseignantId: slot.affectationMatiere?.enseignantId,
@@ -1057,7 +1095,7 @@ export class HeureCoursService {
                     continue;
                 }
 
-                const dateStr = courseDate.toISOString().split('T')[0];
+                const dateStr = formatDateLocal(courseDate);
                 const conflitsInstance = await this.verifierConflitsInstance(
                     {
                         enseignantId: slotEnseignantId,
@@ -1147,6 +1185,161 @@ export class HeureCoursService {
             createurId,
             req,
         });
+    }
+
+    /**
+     * Statistiques globales pour la page Heures de cours (établissement)
+     */
+    async getStatistiquesGlobales(
+        etablissementId: string,
+        filtres?: { enseignantId?: string; classeAnneeId?: string; periodeId?: string; dateDebut?: string; dateFin?: string },
+    ): Promise<{
+        totalHeures: number;
+        heuresEffectuees: number;
+        heuresAnnulees: number;
+        heuresRemplacees: number;
+        heuresPlanifiees: number;
+        tauxEffectuation: number;
+        tauxAnnulation: number;
+        tauxRemplacement: number;
+        volumeSemaine: number;
+        volumeMois: number;
+    }> {
+        const qb = this.repo.createQueryBuilder('h')
+            .where('h.etablissementId = :etablissementId', { etablissementId });
+
+        if (filtres?.enseignantId) qb.andWhere('h.enseignantId = :enseignantId', { enseignantId: filtres.enseignantId });
+        if (filtres?.classeAnneeId) qb.andWhere('h.classeAnneeId = :classeAnneeId', { classeAnneeId: filtres.classeAnneeId });
+        if (filtres?.periodeId) qb.andWhere('h.periodeId = :periodeId', { periodeId: filtres.periodeId });
+        if (filtres?.dateDebut) qb.andWhere('h.date >= :dateDebut', { dateDebut: filtres.dateDebut });
+        if (filtres?.dateFin) qb.andWhere('h.date <= :dateFin', { dateFin: filtres.dateFin });
+
+        const heures = await qb
+            .select('h.statutEffectue', 'statut')
+            .addSelect('COUNT(*)', 'count')
+            .addSelect(`SUM(EXTRACT(EPOCH FROM (h."heureFin"::time - h."heureDebut"::time)) / 3600)`, 'heures')
+            .groupBy('h.statutEffectue')
+            .getRawMany();
+
+        const stats: Record<string, { count: number; heures: number }> = {};
+        let totalHeures = 0;
+        for (const row of heures) {
+            const h = parseFloat(row.heures) || 0;
+            const c = parseInt(row.count, 10);
+            stats[row.statut] = { count: c, heures: Math.round(h * 10) / 10 };
+            totalHeures += h;
+        }
+
+        const effectuees = stats['EFFECTUE']?.heures || 0;
+        const annulees = stats['ANNULE']?.heures || 0;
+        const remplacees = stats['REMPLACE']?.heures || 0;
+        const planifiees = stats['PLANIFIE']?.heures || 0;
+        const total = totalHeures || 1;
+
+        // Volume semaine courante
+        const now = new Date();
+        const lundi = new Date(now);
+        lundi.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
+        const vendredi = new Date(lundi);
+        vendredi.setDate(lundi.getDate() + 4);
+
+        const volSemaine = await this.repo.createQueryBuilder('h')
+            .where('h.etablissementId = :etablissementId', { etablissementId })
+            .andWhere('h.date >= :lundi', { lundi: lundi.toISOString().split('T')[0] })
+            .andWhere('h.date <= :vendredi', { vendredi: vendredi.toISOString().split('T')[0] })
+            .select(`COALESCE(SUM(EXTRACT(EPOCH FROM (h."heureFin"::time - h."heureDebut"::time)) / 3600), 0)`, 'vol')
+            .getRawOne();
+
+        // Volume mois courant
+        const debutMois = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        const finMois = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
+        const volMois = await this.repo.createQueryBuilder('h')
+            .where('h.etablissementId = :etablissementId', { etablissementId })
+            .andWhere('h.date >= :debutMois', { debutMois })
+            .andWhere('h.date <= :finMois', { finMois })
+            .select(`COALESCE(SUM(EXTRACT(EPOCH FROM (h."heureFin"::time - h."heureDebut"::time)) / 3600), 0)`, 'vol')
+            .getRawOne();
+
+        return {
+            totalHeures: Math.round(totalHeures * 10) / 10,
+            heuresEffectuees: effectuees,
+            heuresAnnulees: annulees,
+            heuresRemplacees: remplacees,
+            heuresPlanifiees: planifiees,
+            tauxEffectuation: Math.round((effectuees / total) * 100),
+            tauxAnnulation: Math.round((annulees / total) * 100),
+            tauxRemplacement: Math.round((remplacees / total) * 100),
+            volumeSemaine: Math.round((parseFloat(volSemaine?.vol) || 0) * 10) / 10,
+            volumeMois: Math.round((parseFloat(volMois?.vol) || 0) * 10) / 10,
+        };
+    }
+
+    /**
+     * Export CSV des heures de cours
+     */
+    async exportCSV(
+        query: QueryHeureCoursDto,
+        etablissementId: string,
+    ): Promise<string> {
+        const { items } = await this.findAll({ ...query, limit: 10000 } as QueryHeureCoursDto, etablissementId);
+
+        const headers = ['Date', 'Heure début', 'Heure fin', 'Matière', 'Classe', 'Enseignant', 'Salle', 'Type', 'Statut', 'Commentaire'];
+        const rows = items.map((h: any) => [
+            h.date?.split('T')[0] || '',
+            h.heureDebut || '',
+            h.heureFin || '',
+            h.matiere?.nom || '',
+            h.classeAnnee?.classe?.nom || '',
+            h.enseignant ? `${h.enseignant.nom} ${h.enseignant.prenom || ''}`.trim() : '',
+            h.salle?.nom || '',
+            h.typeCreneau || '',
+            h.statutEffectue || '',
+            (h.commentaire || '').replace(/"/g, '""'),
+        ]);
+
+        const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+        return csv;
+    }
+
+    /**
+     * Export HTML des heures de cours (formaté pour impression)
+     */
+    async exportHTML(
+        query: QueryHeureCoursDto,
+        etablissementId: string,
+    ): Promise<string> {
+        const { items } = await this.findAll({ ...query, limit: 10000 } as QueryHeureCoursDto, etablissementId);
+
+        const rows = items.map((h: any) => {
+            const date = h.date ? new Date(h.date).toLocaleDateString('fr-FR') : '';
+            const matiere = h.matiere?.nom || '';
+            const classe = h.classeAnnee?.classe?.nom || '';
+            const enseignant = h.enseignant ? `${h.enseignant.prenom || ''} ${h.enseignant.nom || ''}`.trim() : '';
+            const salle = h.salle?.nom || '';
+            const type = h.typeCreneau || '';
+            const statut = h.statutEffectue || '';
+            return `<tr>
+                <td>${date}</td><td>${h.heureDebut || ''} – ${h.heureFin || ''}</td>
+                <td>${matiere}</td><td>${classe}</td><td>${enseignant}</td>
+                <td>${salle}</td><td>${type}</td><td>${statut}</td>
+            </tr>`;
+        }).join('\n');
+
+        return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Heures de cours</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:2em;color:#1a1a1a}
+h1{font-size:1.5em;margin-bottom:.5em}
+table{width:100%;border-collapse:collapse;font-size:.85em}
+th,td{border:1px solid #ddd;padding:.5em .75em;text-align:left}
+th{background:#f5f5f5;font-weight:600}
+tr:nth-child(even){background:#fafafa}
+@media print{body{margin:1em}th{background:#eee}}
+</style></head><body>
+<h1>Heures de cours — Export</h1>
+<p>Généré le ${new Date().toLocaleDateString('fr-FR')} — ${items.length} enregistrement(s)</p>
+<table><thead><tr><th>Date</th><th>Heure</th><th>Matière</th><th>Classe</th><th>Enseignant</th><th>Salle</th><th>Type</th><th>Statut</th></tr></thead>
+<tbody>${rows}</tbody></table></body></html>`;
     }
 }
 

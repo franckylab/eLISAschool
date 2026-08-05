@@ -622,6 +622,8 @@ ALTER TABLE table DROP CONSTRAINT IF EXISTS "UQ_xxx";
 | `eleves` | `/api/eleves` | Académiques | Dossiers élèves |
 | `bulletins` | `/api/bulletins` | Académiques | Génération des bulletins |
 | `sondages` | `/api/sondages` | Communication | **Sondages et votes** (templates, analyses, récurrents, export) |
+| `personnel/heures-cours` | `/api/personnel/heures-cours` | Académiques | Heures de cours (instances datées depuis EDT) |
+| `personnel/remplacements` | `/api/personnel/heures-cours/remplacements` | Académiques | Remplacements d'enseignants (workflow validation) |
 
 ---
 
@@ -662,6 +664,40 @@ Ces fichiers sont les **exemples canoniques** à suivre lors du développement :
 | **Audit trail (service)** | `backend/src/modules/auth/services/audit.service.ts` |
 | **Audit trail (controller)** | `backend/src/modules/audit/controllers/audit.controller.ts` |
 | **Audit interceptor** | `backend/src/common/interceptors/audit.interceptor.ts` |
+| **RemplacementHeureCours (entité)** | `backend/src/modules/personnel/entities/remplacement-heure-cours.entity.ts` |
+| **RemplacementHeureCours (DTOs)** | `backend/src/modules/personnel/dto/remplacement-heure-cours.dto.ts` |
+| **RemplacementHeureCours (service)** | `backend/src/modules/personnel/services/remplacement-heure-cours.service.ts` |
+| **RemplacementHeureCours (controller)** | `backend/src/modules/personnel/controllers/remplacement-heure-cours.controller.ts` |
+| **Migration remplacements** | `backend/database/migrations/148-remplacement-heure-cours.sql` |
+| **Hooks remplacements** | `frontend/src/features/personnel/hooks/use-remplacement-heure-cours.ts` |
+
+---
+
+## Workflow : Ajouter un workflow de remplacement (pattern RemplacementHeureCours)
+
+### Contexte
+
+Le pattern RemplacementHeureCours illustre comment ajouter une entité avec workflow de validation (demande → validation → exécution) intégrée au `validationWorkflowService` existant.
+
+### Étapes réalisées
+
+1. **Entité** : `RemplacementHeureCours` avec enum `StatutRemplacement` (EN_ATTENTE, VALIDEE, REJETEE, EXECUTEE, ANNULEE)
+2. **Migration SQL** : CREATE TABLE + index + seed permissions RBAC + seed paramètres validation workflow
+3. **DTOs Zod** : `creerRemplacementSchema`, `validerRemplacementSchema`, `rejeterRemplacementSchema`, `queryRemplacementSchema`
+4. **Service** : 6 méthodes (create, valider, rejeter, annuler, findAll, getStatistiques) + intégration validationWorkflowService + auditService
+5. **Controller** : 6 routes REST montées AVANT le controller heures-cours pour éviter les conflits `:id`
+6. **Permissions RBAC** : 4 nouvelles permissions granulaires dans `roles.enum.ts` + attribution par rôle
+7. **Frontend** : 8 hooks TanStack Query + 2 pages (globale + dédiée) + StepperModal 3 étapes
+8. **i18n** : ~99 clés FR + EN
+
+### Pattern à réutiliser
+
+Pour tout nouveau workflow de remplacement/approbation :
+- Créer l'entité avec enum de statut + FK vers l'entité cible
+- Intégrer `validationWorkflowService` pour la chaîne de validation
+- Monter le controller remplacements AVANT le controller principal (éviter conflits de routes Express)
+- Permissions granulaires : `:view`, `:demand`, `:validate`
+- Seed paramètres workflow : `require_validation`, `validation_levels`, `validation_roles`
 
 ---
 

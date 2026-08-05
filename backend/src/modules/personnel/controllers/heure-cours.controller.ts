@@ -9,6 +9,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { HeureCoursService } from '../services';
 import { createHeureCoursSchema, updateHeureCoursSchema, queryHeureCoursSchema, genererHeuresCoursFromEdtSchema } from '../dto';
+import { heureCoursService } from '../services/heure-cours.service';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
@@ -52,6 +53,66 @@ router.post(
         } catch (error) {
             next(error);
         }
+    }
+);
+
+/**
+ * GET /api/personnel/heures-cours/statistiques-globales
+ * Statistiques agrégées pour la page Heures de cours
+ */
+router.get(
+    '/statistiques-globales',
+    authMiddleware,
+    requirePermission('heures-cours:view'),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const filtres = {
+                enseignantId: req.query.enseignantId as string | undefined,
+                classeAnneeId: req.query.classeAnneeId as string | undefined,
+                periodeId: req.query.periodeId as string | undefined,
+                dateDebut: req.query.dateDebut as string | undefined,
+                dateFin: req.query.dateFin as string | undefined,
+            };
+            const stats = await heureCoursService.getStatistiquesGlobales(req.etablissementId!, filtres);
+            res.json({ success: true, data: stats });
+        } catch (error) { next(error); }
+    }
+);
+
+/**
+ * GET /api/personnel/heures-cours/export/csv
+ * Export CSV des heures de cours
+ */
+router.get(
+    '/export/csv',
+    authMiddleware,
+    requirePermission('heures-cours:export'),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const query = validateDto(queryHeureCoursSchema, req.query);
+            const csv = await heureCoursService.exportCSV(query, req.etablissementId!);
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', 'attachment; filename="heures-cours.csv"');
+            return res.send(csv);
+        } catch (error) { next(error); }
+    }
+);
+
+/**
+ * GET /api/personnel/heures-cours/export/html
+ * Export HTML des heures de cours (formaté pour impression)
+ */
+router.get(
+    '/export/html',
+    authMiddleware,
+    requirePermission('heures-cours:export'),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const query = validateDto(queryHeureCoursSchema, req.query);
+            const html = await heureCoursService.exportHTML(query, req.etablissementId!);
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.send(html);
+        } catch (error) { next(error); }
     }
 );
 

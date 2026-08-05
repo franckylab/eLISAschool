@@ -39,6 +39,7 @@ import { Route as AuthModulesComplementairesRouteImport } from './routes/_auth.m
 import { Route as AuthModulesAdministratifsRouteImport } from './routes/_auth.modules-administratifs'
 import { Route as AuthMatieresRouteImport } from './routes/_auth.matieres'
 import { Route as AuthInfrastructureRouteImport } from './routes/_auth.infrastructure'
+import { Route as AuthHeuresCoursRouteImport } from './routes/_auth.heures-cours'
 import { Route as AuthGroupesEtablissementsRouteImport } from './routes/_auth.groupes-etablissements'
 import { Route as AuthFinancesRouteImport } from './routes/_auth.finances'
 import { Route as AuthFilieresRouteImport } from './routes/_auth.filieres'
@@ -101,6 +102,7 @@ import { Route as AuthNotesSaisieRouteImport } from './routes/_auth.notes.saisie
 import { Route as AuthNotesIdRouteImport } from './routes/_auth.notes.$id'
 import { Route as AuthNiveauxIdRouteImport } from './routes/_auth.niveaux.$id'
 import { Route as AuthMatieresIdRouteImport } from './routes/_auth.matieres.$id'
+import { Route as AuthHeuresCoursReplacementsRouteImport } from './routes/_auth.heures-cours.replacements'
 import { Route as AuthFilieresIdRouteImport } from './routes/_auth.filieres.$id'
 import { Route as AuthExamensNationauxIdRouteImport } from './routes/_auth.examens-nationaux.$id'
 import { Route as AuthEtablissementsIdRouteImport } from './routes/_auth.etablissements.$id'
@@ -285,6 +287,11 @@ const AuthMatieresRoute = AuthMatieresRouteImport.update({
 const AuthInfrastructureRoute = AuthInfrastructureRouteImport.update({
   id: '/infrastructure',
   path: '/infrastructure',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthHeuresCoursRoute = AuthHeuresCoursRouteImport.update({
+  id: '/heures-cours',
+  path: '/heures-cours',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthGroupesEtablissementsRoute =
@@ -604,6 +611,12 @@ const AuthMatieresIdRoute = AuthMatieresIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthMatieresRoute,
 } as any)
+const AuthHeuresCoursReplacementsRoute =
+  AuthHeuresCoursReplacementsRouteImport.update({
+    id: '/replacements',
+    path: '/replacements',
+    getParentRoute: () => AuthHeuresCoursRoute,
+  } as any)
 const AuthFilieresIdRoute = AuthFilieresIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -804,6 +817,7 @@ export interface FileRoutesByFullPath {
   '/filieres': typeof AuthFilieresRouteWithChildren
   '/finances': typeof AuthFinancesRoute
   '/groupes-etablissements': typeof AuthGroupesEtablissementsRoute
+  '/heures-cours': typeof AuthHeuresCoursRouteWithChildren
   '/infrastructure': typeof AuthInfrastructureRoute
   '/matieres': typeof AuthMatieresRouteWithChildren
   '/modules-administratifs': typeof AuthModulesAdministratifsRoute
@@ -844,6 +858,7 @@ export interface FileRoutesByFullPath {
   '/etablissements/$id': typeof AuthEtablissementsIdRoute
   '/examens-nationaux/$id': typeof AuthExamensNationauxIdRoute
   '/filieres/$id': typeof AuthFilieresIdRoute
+  '/heures-cours/replacements': typeof AuthHeuresCoursReplacementsRoute
   '/matieres/$id': typeof AuthMatieresIdRoute
   '/niveaux/$id': typeof AuthNiveauxIdRoute
   '/notes/$id': typeof AuthNotesIdRoute
@@ -917,6 +932,7 @@ export interface FileRoutesByTo {
   '/emploi-du-temps': typeof AuthEmploiDuTempsRoute
   '/finances': typeof AuthFinancesRoute
   '/groupes-etablissements': typeof AuthGroupesEtablissementsRoute
+  '/heures-cours': typeof AuthHeuresCoursRouteWithChildren
   '/infrastructure': typeof AuthInfrastructureRoute
   '/modules-administratifs': typeof AuthModulesAdministratifsRoute
   '/modules-complementaires': typeof AuthModulesComplementairesRoute
@@ -945,6 +961,7 @@ export interface FileRoutesByTo {
   '/etablissements/$id': typeof AuthEtablissementsIdRoute
   '/examens-nationaux/$id': typeof AuthExamensNationauxIdRoute
   '/filieres/$id': typeof AuthFilieresIdRoute
+  '/heures-cours/replacements': typeof AuthHeuresCoursReplacementsRoute
   '/matieres/$id': typeof AuthMatieresIdRoute
   '/niveaux/$id': typeof AuthNiveauxIdRoute
   '/notes/$id': typeof AuthNotesIdRoute
@@ -1027,6 +1044,7 @@ export interface FileRoutesById {
   '/_auth/filieres': typeof AuthFilieresRouteWithChildren
   '/_auth/finances': typeof AuthFinancesRoute
   '/_auth/groupes-etablissements': typeof AuthGroupesEtablissementsRoute
+  '/_auth/heures-cours': typeof AuthHeuresCoursRouteWithChildren
   '/_auth/infrastructure': typeof AuthInfrastructureRoute
   '/_auth/matieres': typeof AuthMatieresRouteWithChildren
   '/_auth/modules-administratifs': typeof AuthModulesAdministratifsRoute
@@ -1067,6 +1085,7 @@ export interface FileRoutesById {
   '/_auth/etablissements/$id': typeof AuthEtablissementsIdRoute
   '/_auth/examens-nationaux/$id': typeof AuthExamensNationauxIdRoute
   '/_auth/filieres/$id': typeof AuthFilieresIdRoute
+  '/_auth/heures-cours/replacements': typeof AuthHeuresCoursReplacementsRoute
   '/_auth/matieres/$id': typeof AuthMatieresIdRoute
   '/_auth/niveaux/$id': typeof AuthNiveauxIdRoute
   '/_auth/notes/$id': typeof AuthNotesIdRoute
@@ -1154,6 +1173,7 @@ export interface FileRouteTypes {
     | '/filieres'
     | '/finances'
     | '/groupes-etablissements'
+    | '/heures-cours'
     | '/infrastructure'
     | '/matieres'
     | '/modules-administratifs'
@@ -1194,6 +1214,7 @@ export interface FileRouteTypes {
     | '/etablissements/$id'
     | '/examens-nationaux/$id'
     | '/filieres/$id'
+    | '/heures-cours/replacements'
     | '/matieres/$id'
     | '/niveaux/$id'
     | '/notes/$id'
@@ -1267,6 +1288,7 @@ export interface FileRouteTypes {
     | '/emploi-du-temps'
     | '/finances'
     | '/groupes-etablissements'
+    | '/heures-cours'
     | '/infrastructure'
     | '/modules-administratifs'
     | '/modules-complementaires'
@@ -1295,6 +1317,7 @@ export interface FileRouteTypes {
     | '/etablissements/$id'
     | '/examens-nationaux/$id'
     | '/filieres/$id'
+    | '/heures-cours/replacements'
     | '/matieres/$id'
     | '/niveaux/$id'
     | '/notes/$id'
@@ -1376,6 +1399,7 @@ export interface FileRouteTypes {
     | '/_auth/filieres'
     | '/_auth/finances'
     | '/_auth/groupes-etablissements'
+    | '/_auth/heures-cours'
     | '/_auth/infrastructure'
     | '/_auth/matieres'
     | '/_auth/modules-administratifs'
@@ -1416,6 +1440,7 @@ export interface FileRouteTypes {
     | '/_auth/etablissements/$id'
     | '/_auth/examens-nationaux/$id'
     | '/_auth/filieres/$id'
+    | '/_auth/heures-cours/replacements'
     | '/_auth/matieres/$id'
     | '/_auth/niveaux/$id'
     | '/_auth/notes/$id'
@@ -1697,6 +1722,13 @@ declare module '@tanstack/react-router' {
       path: '/infrastructure'
       fullPath: '/infrastructure'
       preLoaderRoute: typeof AuthInfrastructureRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/heures-cours': {
+      id: '/_auth/heures-cours'
+      path: '/heures-cours'
+      fullPath: '/heures-cours'
+      preLoaderRoute: typeof AuthHeuresCoursRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/groupes-etablissements': {
@@ -2133,6 +2165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthMatieresIdRouteImport
       parentRoute: typeof AuthMatieresRoute
     }
+    '/_auth/heures-cours/replacements': {
+      id: '/_auth/heures-cours/replacements'
+      path: '/replacements'
+      fullPath: '/heures-cours/replacements'
+      preLoaderRoute: typeof AuthHeuresCoursReplacementsRouteImport
+      parentRoute: typeof AuthHeuresCoursRoute
+    }
     '/_auth/filieres/$id': {
       id: '/_auth/filieres/$id'
       path: '/$id'
@@ -2524,6 +2563,18 @@ const AuthFilieresRouteWithChildren = AuthFilieresRoute._addFileChildren(
   AuthFilieresRouteChildren,
 )
 
+interface AuthHeuresCoursRouteChildren {
+  AuthHeuresCoursReplacementsRoute: typeof AuthHeuresCoursReplacementsRoute
+}
+
+const AuthHeuresCoursRouteChildren: AuthHeuresCoursRouteChildren = {
+  AuthHeuresCoursReplacementsRoute: AuthHeuresCoursReplacementsRoute,
+}
+
+const AuthHeuresCoursRouteWithChildren = AuthHeuresCoursRoute._addFileChildren(
+  AuthHeuresCoursRouteChildren,
+)
+
 interface AuthMatieresRouteChildren {
   AuthMatieresIdRoute: typeof AuthMatieresIdRoute
   AuthMatieresIndexRoute: typeof AuthMatieresIndexRoute
@@ -2820,6 +2871,7 @@ interface AuthRouteChildren {
   AuthFilieresRoute: typeof AuthFilieresRouteWithChildren
   AuthFinancesRoute: typeof AuthFinancesRoute
   AuthGroupesEtablissementsRoute: typeof AuthGroupesEtablissementsRoute
+  AuthHeuresCoursRoute: typeof AuthHeuresCoursRouteWithChildren
   AuthInfrastructureRoute: typeof AuthInfrastructureRoute
   AuthMatieresRoute: typeof AuthMatieresRouteWithChildren
   AuthModulesAdministratifsRoute: typeof AuthModulesAdministratifsRoute
@@ -2869,6 +2921,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthFilieresRoute: AuthFilieresRouteWithChildren,
   AuthFinancesRoute: AuthFinancesRoute,
   AuthGroupesEtablissementsRoute: AuthGroupesEtablissementsRoute,
+  AuthHeuresCoursRoute: AuthHeuresCoursRouteWithChildren,
   AuthInfrastructureRoute: AuthInfrastructureRoute,
   AuthMatieresRoute: AuthMatieresRouteWithChildren,
   AuthModulesAdministratifsRoute: AuthModulesAdministratifsRoute,

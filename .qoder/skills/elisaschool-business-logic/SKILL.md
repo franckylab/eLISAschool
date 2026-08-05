@@ -421,6 +421,64 @@ HeureCours {
 - `remplacantId` = MembrePersonnel de remplacement (null = enseignant titulaire).
 - Un créneau ANNULE ne génère plus de HeureCours futurs.
 
+### RemplacementHeureCours — Workflow de remplacement d'enseignants (v1.2 — 2026-08)
+
+`RemplacementHeureCours` = demande de remplacement d'un enseignant pour une HeureCours concrète. Workflow de validation intégré via `validationWorkflowService`.
+
+```
+RemplacementHeureCours {
+    id: uuid
+    heureCoursId: uuid (FK → HeureCours)
+    demandeurId: uuid (FK → MembrePersonnel)
+    remplacantId?: uuid nullable (FK → MembrePersonnel)
+    motif: text
+    statut: StatutRemplacement
+    dateDemande, dateValidation?, dateExecution?
+    valideParId?: uuid nullable
+    commentaires?: text nullable
+    etablissementId: uuid (multi-tenant)
+}
+```
+
+**Flux de workflow** :
+
+```
+EN_ATTENTE → VALIDEE → EXECUTEE
+           → REJETEE
+           → ANNULEE (par le demandeur)
+```
+
+1. **Création** (`POST /api/personnel/heures-cours/remplacements`) — perm `heures-cours:remplacer:demand`
+   - Crée la demande EN_ATTENTE, lie à une HeureCours PLANIFIE
+   - Si `require_validation = true` → instance workflow (validationWorkflowService)
+2. **Validation** (`PATCH .../valider`) — perm `heures-cours:remplacer:validate`
+   - Passe à VALIDEE, puis EXECUTEE automatiquement
+   - Met à jour la HeureCours : `statutEffectue → REMPLACE`, `remplacantId` affecté
+   - Log audit : `REMPLACEMENT_HEURE_COURS_VALIDATED`
+3. **Rejet** (`PATCH .../rejeter`) — perm `heures-cours:remplacer:validate`
+   - Passe à REJETEE avec motif obligatoire
+4. **Annulation** (`PATCH .../annuler`) — perm `heures-cours:remplacer:demand`
+   - Uniquement si EN_ATTENTE, par le demandeur original
+
+**Permissions granulaires** :
+
+| Permission | Rôle |
+|-----------|------|
+| `heures-cours:export` | ADMIN, CHEF_ETABLISSEMENT |
+| `heures-cours:remplacer:view` | ADMIN, CHEF_ETABLISSEMENT |
+| `heures-cours:remplacer:demand` | ADMIN, CHEF_ETABLISSEMENT |
+| `heures-cours:remplacer:validate` | ADMIN uniquement |
+
+**Paramètres système** (validation workflow) :
+- `heures_cours_remplacement.require_validation` = true
+- `heures_cours_remplacement.validation_levels` = 1
+- `heures_cours_remplacement.validation_roles` = `{"1":"ADMIN"}`
+
+**Frontend** :
+- Page globale `/heures-cours` : 6 StatCards + DataTable + FilterPanel + ExportModal (CSV/HTML)
+- Page dédiée `/heures-cours/remplacements` : 4 StatCards + DataTable + StepperModal 3 étapes
+- 8 hooks TanStack Query (useRemplacements, useCreerRemplacement, useValiderRemplacement, etc.)
+
 ### Préférences (PreferenceEmploiDuTemps)
 
 Enrichi avec :
@@ -468,6 +526,12 @@ Enrichi avec :
 | Controller | `backend/src/modules/emploi-du-temps/controllers/emploi-du-temps.controller.ts` |
 | DTOs | `backend/src/modules/emploi-du-temps/dto/emploi-du-temps.dto.ts` |
 | Types frontend | `frontend/src/features/emploi-du-temps/types/edt.types.ts` |
+| **Entité RemplacementHeureCours** | `backend/src/modules/personnel/entities/remplacement-heure-cours.entity.ts` |
+| **Service Remplacements** | `backend/src/modules/personnel/services/remplacement-heure-cours.service.ts` |
+| **Controller Remplacements** | `backend/src/modules/personnel/controllers/remplacement-heure-cours.controller.ts` |
+| **Page Heures de cours** | `frontend/src/features/emploi-du-temps/components/heures-cours-page.tsx` |
+| **Page Remplacements** | `frontend/src/features/emploi-du-temps/components/remplacements-page.tsx` |
+| **StepperModal remplacement** | `frontend/src/features/emploi-du-temps/components/remplacement-stepper-modal.tsx` |
 | Hooks frontend | `frontend/src/features/emploi-du-temps/hooks/use-emploi-du-temps.ts` |
 | Calendrier frontend | `frontend/src/features/emploi-du-temps/components/edt-calendar.tsx` |
 

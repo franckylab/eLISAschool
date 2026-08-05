@@ -145,6 +145,8 @@ export const preferenceEmploiDuTempsSchema = z.object({
     repartitionEquilibree: z.boolean().optional(),
     /** Q7 — Matérialisation automatique des instances HeureCours (cron) */
     materialisationAuto: materialisationAutoSchema.optional(),
+    /** Exclure les jours fériés lors de la matérialisation des instances (défaut: true) */
+    exclureJoursFeries: z.boolean().optional(),
 }).transform((data) => {
     const normalized = { ...data } as Record<string, unknown>;
     if (data.dureeCreneauDefaut !== undefined && data.dureeCreneauStandard === undefined) {

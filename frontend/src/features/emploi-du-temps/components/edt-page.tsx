@@ -15,7 +15,7 @@ import {
     Calendar, Settings, Plus, Download, ChevronLeft, ChevronRight,
     ShieldCheck, CalendarCheck, Crosshair,
     CalendarDays, CalendarRange, List as ListIcon, BarChart3,
-    Users, GraduationCap, DoorOpen,
+    Users, GraduationCap, DoorOpen, CheckCircle2, Clock, MapPin, User as UserIcon, Eye,
 } from 'lucide-react';
 import {
     useCreneaux, useValiderCreneauxClasse,
@@ -23,6 +23,7 @@ import {
     useAffectationsOptions, useSallesFromCreneaux,
 } from '../hooks/use-emploi-du-temps';
 import { useNavigationEDT, type PlanningView } from '../hooks/use-navigation-edt';
+import { useJoursFeries } from '../hooks/use-jours-feries';
 import { EDTCalendar } from './edt-calendar';
 import type { OptionSimple } from '../hooks/use-emploi-du-temps';
 import { EDTMonthView } from './edt-month-view';
@@ -83,6 +84,8 @@ export function EDTStandalonePage() {
     const [contexteType, setContexteType] = useState<ContexteType>('classe');
     const [contexteFilter, setContexteFilter] = useState('');
     const [showAnalytique, setShowAnalytique] = useState(false);
+    /** Toggle : afficher tous les créneaux par jour (vue mois) */
+    const [showAllCreneaux, setShowAllCreneaux] = useState(false);
 
     // ─── Navigation calendrier (hook extrait) ─────────
     const {
@@ -103,6 +106,10 @@ export function EDTStandalonePage() {
     const [detailCreneau, setDetailCreneau] = useState<CreneauHoraire | null>(null);
     // Modal datepicker (navigation rapide par date)
     const [datePickerOpen, setDatePickerOpen] = useState(false);
+    // Modal +N (liste créneaux journée — vue mois)
+    const [plusNModalOpen, setPlusNModalOpen] = useState(false);
+    const [plusNCreneaux, setPlusNCreneaux] = useState<CreneauHoraire[]>([]);
+    const [plusNJourIndex, setPlusNJourIndex] = useState<number>(0);
 
     // ─── Tabs ───────────────────────────────────────
 
@@ -110,6 +117,9 @@ export function EDTStandalonePage() {
         { id: 'planning', label: t('onglets.planning'), icon: Calendar },
         { id: 'configuration', label: t('onglets.configuration'), icon: Settings },
     ];
+
+    // ─── Jours fériés (année courante) ─────────────
+    const { data: joursFeries = [] } = useJoursFeries(navigationDate.getFullYear());
 
     // ─── Données de contexte (chargement lazy selon le type) ─────────
     const { data: classes } = useToutesClasses();
@@ -178,12 +188,19 @@ export function EDTStandalonePage() {
 
     // ─── Handlers ───────────────────────────────────
 
+    /** Clic créneau depuis semaine/mois → modal détail (lecture seule) */
     const handleCreneauClick = (creneau: CreneauHoraire) => {
+        setDetailCreneau(creneau);
+        setDetailModalOpen(true);
+    };
+
+    /** Clic créneau depuis la vue jour → modal édition directe */
+    const handleCreneauEdit = (creneau: CreneauHoraire) => {
         setSelectedCreneau(creneau);
         setCreneauModalOpen(true);
     };
 
-    /** Ouvrir le modal de détail (lecture seule) */
+    /** Ouvrir le modal de détail (lecture seule) — vue liste */
     const handleVoir = useCallback((creneau: CreneauHoraire) => {
         setDetailCreneau(creneau);
         setDetailModalOpen(true);
@@ -215,6 +232,16 @@ export function EDTStandalonePage() {
         setPlanningView('jour');
     };
 
+    /** Clic sur "+N" dans la vue mois : ouvrir la liste complète du jour */
+    const handlePlusNClick = useCallback((creneaux: CreneauHoraire[], jourIndex: number) => {
+        setPlusNCreneaux(creneaux);
+        setPlusNJourIndex(jourIndex);
+        setPlusNModalOpen(true);
+    }, []);
+
+    /** Noms de jours pour le modal +N (index → label) */
+    const JOURS_LABELS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'] as const;
+
     // ─── Rendering ──────────────────────────────────
 
     const renderPlanningContent = () => {
@@ -241,12 +268,13 @@ export function EDTStandalonePage() {
                         onCreneauClick={handleCreneauClick}
                         onCellClick={handleCellClick}
                         semaineDebut={semaineDebut}
+                        joursFeries={joursFeries}
                     />
                 );
             case 'mois':
-                return <EDTMonthView creneaux={creneaux} mois={moisDebut} onCreneauClick={handleCreneauClick} onDateClick={handleDateClick} />;
+                return <EDTMonthView creneaux={creneaux} mois={moisDebut} onCreneauClick={handleCreneauClick} onDateClick={handleDateClick} onPlusNClick={handlePlusNClick} joursFeries={joursFeries} showAll={showAllCreneaux} />;
             case 'jour':
-                return <EDTDayView creneaux={creneaux} date={navigationDate} onCreneauClick={handleCreneauClick} />;
+                return <EDTDayView creneaux={creneaux} date={navigationDate} onCreneauClick={handleCreneauEdit} />;
             case 'liste':
                 return <EDTListeView creneaux={creneaux} onVoir={handleVoir} onModifier={handleModifier} matiereOptions={matiereOptions} />;
             default:
@@ -529,6 +557,27 @@ export function EDTStandalonePage() {
                                 <BarChart3 className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
                                 <span className="hidden sm:inline">{t('vues.analytique')}</span>
                             </button>
+
+                            {/* Toggle afficher tous les créneaux (vue mois) */}
+                            {planningView === 'mois' && (
+                                <>
+                                    <div className="w-px h-5 bg-[var(--color-bordure)]" />
+                                    <button
+                                        onClick={() => setShowAllCreneaux(v => !v)}
+                                        className={`flex items-center gap-1 px-[var(--space-sm)] py-[var(--space-xs)] rounded-lg text-xs font-medium transition-colors ${
+                                            showAllCreneaux
+                                                ? 'bg-[var(--color-dominant-100)] text-[var(--color-dominant-700)] dark:bg-[var(--color-dominant-900)]/30 dark:text-[var(--color-dominant-300)]'
+                                                : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
+                                        }`}
+                                        aria-pressed={showAllCreneaux}
+                                        aria-label={t('vues.afficherTout')}
+                                        title={t('vues.afficherToutTooltip')}
+                                    >
+                                        <Eye className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
+                                        <span className="hidden sm:inline">{t('vues.afficherTout')}</span>
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </>
                 )}
@@ -593,6 +642,77 @@ export function EDTStandalonePage() {
                     setPlanningView('semaine');
                 }}
             />
+
+            {/* ─── Modal +N (liste créneaux journée — vue mois) ── */}
+            <CustomModal
+                open={plusNModalOpen}
+                onOpenChange={setPlusNModalOpen}
+                title={t('jours.' + JOURS_LABELS[plusNJourIndex])}
+                description={t('modalPlusN.description', { count: plusNCreneaux.length })}
+                size="md"
+            >
+                <div className="flex flex-col gap-[var(--gap-xs)]">
+                    {[...plusNCreneaux]
+                        .sort((a, b) => a.heureDebut.localeCompare(b.heureDebut))
+                        .map((c) => {
+                            const couleur = c.affectationMatiere?.matiere?.couleur || 'var(--color-dominant-500)';
+                            return (
+                                <button
+                                    key={c.id}
+                                    type="button"
+                                    onClick={() => {
+                                        setPlusNModalOpen(false);
+                                        handleCreneauClick(c);
+                                    }}
+                                    className="flex items-center gap-[var(--gap-sm)] rounded-lg border border-[var(--color-bordure)] p-[var(--space-sm)] text-left transition-colors hover:bg-[var(--color-surface-hover)]"
+                                >
+                                    {/* Pastille couleur matière */}
+                                    <div
+                                        className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                                        style={{ backgroundColor: couleur }}
+                                    >
+                                        {c.affectationMatiere?.matiere?.nom?.charAt(0) ?? '?'}
+                                    </div>
+                                    {/* Infos */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1">
+                                            <span
+                                                className="font-semibold text-[var(--color-text-primary)] truncate"
+                                                style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
+                                            >
+                                                {c.affectationMatiere?.matiere?.nom ?? '—'}
+                                            </span>
+                                            {c.hasHeuresCours && (
+                                                <CheckCircle2 className="h-3 w-3 shrink-0 text-[var(--color-success)]" />
+                                            )}
+                                        </div>
+                                        <div
+                                            className="flex flex-wrap items-center gap-x-[var(--gap-sm)] gap-y-0 text-[var(--color-text-secondary)]"
+                                            style={{ fontSize: 'clamp(0.6875rem, 0.6rem + 0.2vw, 0.8125rem)' }}
+                                        >
+                                            <span className="flex items-center gap-0.5">
+                                                <Clock className="h-3 w-3" />
+                                                {c.heureDebut}–{c.heureFin}
+                                            </span>
+                                            {c.affectationMatiere?.enseignant?.utilisateur?.profil && (
+                                                <span className="flex items-center gap-0.5">
+                                                    <UserIcon className="h-3 w-3" />
+                                                    {c.affectationMatiere.enseignant.utilisateur.profil.prenom} {c.affectationMatiere.enseignant.utilisateur.profil.nom}
+                                                </span>
+                                            )}
+                                            {c.salle && (
+                                                <span className="flex items-center gap-0.5">
+                                                    <MapPin className="h-3 w-3" />
+                                                    {c.salle.nom}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                </div>
+            </CustomModal>
         </div>
     );
 }

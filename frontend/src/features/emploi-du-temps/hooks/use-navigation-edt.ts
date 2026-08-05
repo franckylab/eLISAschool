@@ -17,7 +17,7 @@ export type PlanningView = 'semaine' | 'mois' | 'jour' | 'liste';
  * calcul des bornes (semaine/mois), label dynamique.
  */
 export function useNavigationEDT() {
-    const { t, i18n } = useTranslation('emplois');
+    const { i18n } = useTranslation('emplois');
     const locale = i18n.language || 'fr';
     const [planningView, setPlanningView] = useState<PlanningView>('semaine');
     const [navigationDate, setNavigationDate] = useState(new Date());

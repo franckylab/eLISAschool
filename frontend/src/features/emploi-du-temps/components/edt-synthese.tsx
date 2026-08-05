@@ -285,7 +285,14 @@ function TableauVolumeHoraire({ creneaux, volumeMap }: {
             matiereId: string;
             classeAnneeId: string;
             matiere?: { id: string; nom: string; couleur?: string };
-            enseignant?: { prenom: string; nom: string };
+            enseignant?: {
+                id: string;
+                matricule?: string;
+                utilisateur?: {
+                    id: string;
+                    profil?: { id: string; nom: string; prenom: string };
+                };
+            };
             classeAnnee?: { classe?: { niveau?: string } };
         };
     }>;
@@ -484,7 +491,14 @@ function ChargeEnseignant({ creneaux }: {
         dureeMinutes?: number;
         affectationMatiere?: {
             enseignantId?: string;
-            enseignant?: { id: string; prenom: string; nom: string };
+            enseignant?: {
+                id: string;
+                matricule?: string;
+                utilisateur?: {
+                    id: string;
+                    profil?: { id: string; nom: string; prenom: string };
+                };
+            };
         };
     }>;
 }) {

@@ -7,3 +7,4 @@ export * from './absence-personnel.dto';
 export * from './evaluation.dto';
 export * from './progression-programme.dto';
 export * from './membre-fonction.dto';
+export * from './remplacement-heure-cours.dto';

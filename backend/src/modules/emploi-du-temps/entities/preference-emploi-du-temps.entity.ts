@@ -168,6 +168,14 @@ export class PreferenceEmploiDuTemps {
     @Column({ type: 'jsonb', nullable: true })
     materialisationAuto?: MaterialisationAutoConfig;
 
+    /**
+     * Exclure les jours fériés lors de la matérialisation des instances.
+     * Si true, aucune instance HeureCours n'est créée un jour férié.
+     * Défaut : true (exclusion activée).
+     */
+    @Column({ type: 'boolean', default: true })
+    exclureJoursFeries!: boolean;
+
     @CreateDateColumn()
     createdAt!: Date;
 

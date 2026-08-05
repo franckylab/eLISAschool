@@ -131,6 +131,9 @@ export class ValidationWorkflowService {
                 '1': 'ADMIN',
                 '2': 'SUPER_ADMIN',
             },
+            heures_cours_remplacement: {
+                '1': 'ADMIN',
+            },
         };
 
         return defaults[module] || { '1': 'ADMIN' };

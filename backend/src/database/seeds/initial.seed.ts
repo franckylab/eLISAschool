@@ -23,6 +23,7 @@ import { seedTemplatesOrganisation } from './system/seed-templates';
 import { seedSuperAdmin } from './system/seed-super-admin';
 import { seedParametresFinances } from './system/seed-parametres-finances';
 import { seedEmploiDuTemps } from './system/seed-emploi-du-temps';
+import { seedJoursFeries } from './system/seed-jours-feries';
 import { seedModeleRecu } from './system/seed-modele-recu';
 import { seedCotisations } from './system/seed-cotisations';
 import { seedTypesPrimes } from './system/seed-types-primes';
@@ -95,6 +96,9 @@ export async function runSystemSeeds(): Promise<{
 
     // 14. Paramètres EDT
     await seedEmploiDuTemps();
+
+    // 14b. Jours fériés (modèles pays — 15 pays, fixes + variables 2025-2027)
+    await seedJoursFeries();
 
     // 15. Modèle de reçu
     await seedModeleRecu();

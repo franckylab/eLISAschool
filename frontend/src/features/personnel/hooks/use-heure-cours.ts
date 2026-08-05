@@ -136,3 +136,75 @@ export function useGenererHeuresCoursFromEdt() {
         },
     });
 }
+
+// ─── Statistiques globales (page Heures de cours) ─────────────
+
+export interface StatistiquesGlobalesHeures {
+    totalHeures: number;
+    heuresEffectuees: number;
+    heuresAnnulees: number;
+    heuresRemplacees: number;
+    heuresPlanifiees: number;
+    tauxEffectuation: number;
+    tauxAnnulation: number;
+    tauxRemplacement: number;
+    volumeSemaine: number;
+    volumeMois: number;
+}
+
+export function useStatistiquesGlobales(filtres?: Record<string, string | undefined>) {
+    return useQuery({
+        queryKey: ['personnel', 'heures-cours', 'statistiques-globales', filtres],
+        queryFn: async () => {
+            const params = new URLSearchParams();
+            if (filtres) {
+                for (const [k, v] of Object.entries(filtres)) {
+                    if (v !== undefined && v !== '') params.set(k, v);
+                }
+            }
+            const response = await apiClient.get<StatistiquesGlobalesHeures>(
+                `/api/personnel/heures-cours/statistiques-globales?${params}`,
+            );
+            return response.data;
+        },
+        staleTime: 5 * 60 * 1000, // 5 min
+    });
+}
+
+// ─── Export CSV ─────────────────────────────────────────────────
+
+export function useExportHeuresCoursCSV() {
+    const { t } = useTranslation('emplois');
+    const handleError = useHandleError();
+
+    return useMutation({
+        mutationFn: async (query?: Record<string, string | undefined>) => {
+            const params = new URLSearchParams();
+            if (query) {
+                for (const [k, v] of Object.entries(query)) {
+                    if (v !== undefined && v !== '') params.set(k, v);
+                }
+            }
+            const response = await apiClient.get<Blob>(
+                `/api/personnel/heures-cours/export/csv?${params}`,
+                { responseType: 'blob' },
+            );
+            return response.data;
+        },
+        onSuccess: (blob) => {
+            if (!blob) return;
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `heures-cours-${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            toast.success(t('export.csvSucces'));
+        },
+        onError: (err: unknown) => {
+            handleError(err, t('export.csvErreur'));
+        },
+    });
+}

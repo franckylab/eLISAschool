@@ -60,7 +60,7 @@ import { competencesController } from '@modules/competences';
 import { examensNationauxController } from '@modules/examens-nationaux';
 import { diplomesElevesController } from '@modules/diplomes-eleves';
 import { anneesScolairesController } from '@modules/annees-scolaires';
-import { personnelController, contratController, typeContratController, affectationController, parcoursPersonnelController, heureCoursController, absencePersonnelController, evaluationController, progressionProgrammeController, personnelDashboardController, membreFonctionController } from '@modules/personnel';
+import { personnelController, contratController, typeContratController, affectationController, parcoursPersonnelController, heureCoursController, remplacementHeureCoursController, absencePersonnelController, evaluationController, progressionProgrammeController, personnelDashboardController, membreFonctionController } from '@modules/personnel';
 import { bulletinPaieController, calculPaieController, cotisationsController, typesPrimesController, typesRetenuesController } from '@modules/paie';
 import { classesController, classesAnneesController } from '@modules/classes';
 import { matieresController } from '@modules/matieres';
@@ -453,6 +453,7 @@ export function createApp(): Application {
     app.use('/api/personnel/types-contrat', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), typeContratController);
     app.use('/api/personnel/affectations', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), affectationController);
     app.use('/api/personnel/parcours', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), parcoursPersonnelController);
+    app.use('/api/personnel/heures-cours/remplacements', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), remplacementHeureCoursController);
     app.use('/api/personnel/heures-cours', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), heureCoursController);
     app.use('/api/personnel/absences', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), absencePersonnelController);
     app.use('/api/personnel/evaluations', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), evaluationController);

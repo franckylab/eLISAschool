@@ -435,12 +435,12 @@ export function useSalleOptions(enabled = true) {
                 id: string;
                 nom: string;
                 code?: string;
-            }>('/api/salles', { limit: 100 });
+            }[]>('/api/salles', { limit: 100 });
             const items = response.data ?? [];
-            return items.map(s => ({
+            return items.map((s: { id: string; nom: string; code?: string }) => ({
                 value: s.id,
                 label: s.code ? `${s.nom} (${s.code})` : s.nom,
-            })).sort((a, b) => a.label.localeCompare(b.label));
+            })).sort((a: { label: string }, b: { label: string }) => a.label.localeCompare(b.label));
         },
         staleTime: 3 * 60 * 1000,
         enabled,

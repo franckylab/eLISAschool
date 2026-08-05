@@ -65,6 +65,11 @@ export class EmploiDuTempsService {
             .leftJoinAndSelect('enseignant_utilisateur.profil', 'enseignant_profil')
             .leftJoinAndSelect('am.classeAnnee', 'classeAnnee')
             .leftJoinAndSelect('classeAnnee.classe', 'classe')
+            // Badge HC : sous-requête EXISTS pour savoir si des instances HeureCours existent
+            .addSelect(
+                `EXISTS (SELECT 1 FROM heures_cours hc WHERE hc."creneauId" = ch.id AND hc."deletedAt" IS NULL)`,
+                'ch_hasHeuresCours',
+            )
             .where('ch.etablissementId = :etablissementId', { etablissementId });
 
         // Jointure salle conditionnelle (1 JOIN économisé quand pas de filtre salle)
@@ -88,9 +93,21 @@ export class EmploiDuTempsService {
         if (query.matiereId) qb.andWhere('am.matiereId = :matiereId', { matiereId: query.matiereId });
 
         qb.orderBy(`ch.${query.orderBy}`, query.orderDir);
-        const result = await paginateWithQueryBuilder(qb, query.page, query.limit);
 
-        return result;
+        // Pagination manuelle avec getRawAndEntities pour mapper le champ virtuel hasHeuresCours
+        qb.skip((query.page - 1) * query.limit).take(query.limit);
+        const { entities, raw } = await qb.getRawAndEntities();
+        const total = await qb.getCount();
+
+        // Mapper le champ virtuel hasHeuresCours depuis les résultats raw
+        const items = entities.map((entity, idx) => {
+            const r = raw[idx];
+            (entity as any).hasHeuresCours = r?.ch_hasHeuresCours === true || r?.ch_hasHeuresCours === 't' || r?.ch_hasHeuresCours === 1;
+            return entity;
+        });
+
+        const meta = calculatePaginationMeta(total, query.page, query.limit, items.length);
+        return { items, meta };
     }
 
     async findOne(id: string, etablissementId: string): Promise<CreneauHoraire> {

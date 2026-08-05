@@ -365,6 +365,10 @@ export enum Permission {
     HEURES_COURS_EDIT = 'heures-cours:edit',
     HEURES_COURS_DELETE = 'heures-cours:delete',
     HEURES_COURS_GENERATE = 'heures-cours:generate',
+    HEURES_COURS_EXPORT = 'heures-cours:export',
+    HEURES_COURS_REMPLACER_VIEW = 'heures-cours:remplacer:view',
+    HEURES_COURS_REMPLACER_DEMAND = 'heures-cours:remplacer:demand',
+    HEURES_COURS_REMPLACER_VALIDATE = 'heures-cours:remplacer:validate',
 
     // ==================================
     // CONTRATS (module autonome)
@@ -1063,7 +1067,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         // Heures de cours (granulaires)
         Permission.HEURES_COURS_VIEW, Permission.HEURES_COURS_CREATE,
         Permission.HEURES_COURS_EDIT, Permission.HEURES_COURS_DELETE,
-        Permission.HEURES_COURS_GENERATE,
+        Permission.HEURES_COURS_GENERATE, Permission.HEURES_COURS_EXPORT,
+        Permission.HEURES_COURS_REMPLACER_VIEW, Permission.HEURES_COURS_REMPLACER_DEMAND,
+        Permission.HEURES_COURS_REMPLACER_VALIDATE,
         // Organisation
         Permission.ORGANISATION_VIEW,
         Permission.ORGANISATION_CREATE,
@@ -1285,7 +1291,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         // Heures de cours (granulaires)
         Permission.HEURES_COURS_VIEW, Permission.HEURES_COURS_CREATE,
         Permission.HEURES_COURS_EDIT, Permission.HEURES_COURS_DELETE,
-        Permission.HEURES_COURS_GENERATE,
+        Permission.HEURES_COURS_GENERATE, Permission.HEURES_COURS_EXPORT,
+        Permission.HEURES_COURS_REMPLACER_VIEW, Permission.HEURES_COURS_REMPLACER_DEMAND,
         // Contrats (module autonome)
         Permission.CONTRATS_VIEW, Permission.CONTRATS_CREATE, Permission.CONTRATS_EDIT,
         Permission.CONTRATS_DELETE, Permission.CONTRATS_EXPORT,
@@ -1442,7 +1449,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         // Heures de cours (granulaires)
         Permission.HEURES_COURS_VIEW, Permission.HEURES_COURS_CREATE,
         Permission.HEURES_COURS_EDIT, Permission.HEURES_COURS_DELETE,
-        Permission.HEURES_COURS_GENERATE,
+        Permission.HEURES_COURS_GENERATE, Permission.HEURES_COURS_EXPORT,
+        Permission.HEURES_COURS_REMPLACER_VIEW, Permission.HEURES_COURS_REMPLACER_DEMAND,
+        Permission.HEURES_COURS_REMPLACER_VALIDATE,
     ],
 
     [Role.PRINCIPAL]: [

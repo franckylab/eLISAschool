@@ -9,3 +9,4 @@ export * from './evaluation.service';
 export * from './progression-programme.service';
 export * from './personnel-dashboard.service';
 export * from './membre-fonction.service';
+export * from './remplacement-heure-cours.service';

@@ -28,6 +28,12 @@ const PARTIAL_UNIQUE_INDEXES = [
               ON heures_cours ("enseignantId", date, "heureDebut")
               WHERE "deletedAt" IS NULL AND "creneauId" IS NULL`,
     },
+    {
+        name: 'UQ_jours_feries_nom_pays_etab',
+        sql: `CREATE UNIQUE INDEX IF NOT EXISTS "UQ_jours_feries_nom_pays_etab"
+              ON jours_feries ("nom", "pays", "etablissementId")
+              WHERE "etablissementId" IS NOT NULL`,
+    },
 ];
 
 /**

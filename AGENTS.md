@@ -2253,3 +2253,116 @@ Session grill-me : améliorer la sélection des jours du calendrier EDT et son a
 - `clamp()` sur toutes les dimensions (ultra-responsivité 100px-2560px)
 - `CustomModal` (pas d'overlay custom)
 - i18n 100% (react-i18next, namespaces `emplois`)
+
+## Travail effectué — Session 2026-08-05 (EDT — jours fériés, badge HC, modal +N, toggle)
+### Contexte
+Session grill-me (3 rounds) : 7 axes d'amélioration EDT clarifiés par questions interactives.
+
+### Améliorations implémentées (6)
+1. **Jour actuel distinctif** : semaine = colonne fond léger `bg-[var(--color-accent-50)]/40` + cercle blanc semi-transparent autour numéro header ; mois = cercle `bg-[var(--color-dominant-600)]` autour numéro + ring-2
+2. **Modal détail par défaut** : clic créneau depuis semaine/mois → `EDTCreneauDetailModal` (lecture seule) ; vue jour → `EDTCreneauModal` (édition directe)
+3. **Jours fériés complets** : backend (entité `JourFerie` + migration 147 + seed Cameroun 6 fixes récurrents + 12 variables chrétiens 2025-2027 + CRUD REST) ; frontend (hook `useJoursFeries` + intégration vues semaine/mois avec indicateur étoile `Star` + tooltip nom)
+4. **Badge heures cours** : pastille `CheckCircle2` vert + ring inset pour créneaux avec HC générées ; backend via `addSelect EXISTS` + `getRawAndEntities` pour mapper `hasHeuresCours`
+5. **Modal +N** : clic sur « +N » vue mois → CustomModal liste triée par heure, pastille couleur matière, infos (horaires, enseignant, salle), clic → modal détail
+6. **Toggle « Tout afficher »** : bouton Eye dans toolbar secondaire (vue mois uniquement), supprime la limite 3 créneaux par jour
+
+### Fichiers créés (6)
+- `backend/src/modules/emploi-du-temps/entities/jour-ferie.entity.ts` (108 lignes)
+- `backend/database/migrations/147-jours-feries.sql` (66 lignes)
+- `backend/src/modules/emploi-du-temps/dto/jour-ferie.dto.ts` (43 lignes)
+- `backend/src/modules/emploi-du-temps/services/jour-ferie.service.ts` (206 lignes)
+- `backend/src/modules/emploi-du-temps/controllers/jours-feries.controller.ts` (121 lignes)
+- `frontend/src/features/emploi-du-temps/hooks/use-jours-feries.ts` (104 lignes)
+
+### Fichiers modifiés (9)
+- `edt-page.tsx` : hook `useJoursFeries`, handlers `handleCreneauClick`/`handleCreneauEdit`/`handlePlusNClick`, état `showAllCreneaux`, modal +N CustomModal, toggle Eye toolbar
+- `edt-calendar.tsx` : import `CheckCircle2`/`Star`, props `joursFeries`, DropCell `estAujourdhui`, cercle header, indicateur JF, badge HC CreneauCard
+- `edt-month-view.tsx` : import `CheckCircle2`/`Star`, props `joursFeries`/`showAll`/`onPlusNClick`, cercle numéro actuel, indicateur JF, badge HC, "+N" buttonisé
+- `emploi-du-temps.service.ts` : `addSelect EXISTS` + `getRawAndEntities` pour `hasHeuresCours`
+- `edt.types.ts` : interface `JourFerie` + champ `hasHeuresCours` sur `CreneauHoraire`
+- `use-jours-feries.ts` : fix bug `useHandleError` (hook appelé correctement)
+- `emplois.json` FR/EN : clés `vues.afficherTout*`, `badge.*`, `modalPlusN.*`, `joursFeries.*`
+- `entities/index.ts`, `dto/index.ts`, `services/index.ts`, `controllers/index.ts`, `index.ts` (module backend) : exports
+
+### Bug corrigé
+- `use-jours-feries.ts` : `const handleErr = useHandleError` (référence fonction sans appel hook) → `const handleError = useHandleError()` dans chaque hook de mutation (conformité règles hooks React)
+
+---
+
+## Module Heures de cours — Page globale + Remplacements (2026-08-03)
+
+### Architecture
+- **Portée** : GLOBAL — vue établissement + filtres avancés
+- **Navigation** : Sous-entrées EDT dans la sidebar (Heures de cours + Remplacements)
+- **Tab existant** : CONSERVÉ dans la fiche personnel (`TabHeureCours`)
+- **Remplacements** : Page dédiée `/heures-cours/remplacements`
+- **Permissions** : Granulaires dédiées (`heures-cours:view`, `:export`, `:remplacer:view`, `:remplacer:demand`, `:remplacer:validate`)
+
+### Backend — Entité RemplacementHeureCours
+- **Fichier** : `backend/src/modules/personnel/entities/remplacement-heure-cours.entity.ts`
+- **Enum** : `StatutRemplacement` (EN_ATTENTE, VALIDEE, REJETEE, EXECUTEE, ANNULEE)
+- **FK** : HeureCours, MembrePersonnel (demandeur, remplacant, validePar), Etablissement
+- **Soft delete** : @DeleteDateColumn
+- **Migration** : `backend/database/migrations/148-remplacement-heure-cours.sql`
+
+### Backend — Service + Controller
+- **Service** : `remplacement-heure-cours.service.ts` (6 méthodes : create, valider, rejeter, annuler, findAll, getStatistiques)
+- **Controller** : 6 routes REST (`/api/personnel/heures-cours/remplacements/*`)
+- **Extensions** : `getStatistiquesGlobales()` + `exportCSV()` dans `heure-cours.service.ts`
+- **Workflow** : Intégration `validationWorkflowService` (non-bloquant)
+
+### Frontend — Pages + Hooks
+- **Hooks** : `use-remplacement-heure-cours.ts` (6 hooks TanStack Query)
+- **Extensions** : `useStatistiquesGlobales` + `useExportHeuresCoursCSV` dans `use-heure-cours.ts`
+- **Page Heures de cours** : `heures-cours-page.tsx` (6 StatCards, DataTable, FilterPanel, export CSV)
+- **Page Remplacements** : `remplacements-page.tsx` (4 StatCards, DataTable, FilterPanel, modal détail)
+- **StepperModal** : `remplacement-stepper-modal.tsx` (3 étapes : sélection cours → remplaçant + motif → récapitulatif)
+- **Routes** : `_auth.heures-cours.tsx`, `_auth.heures-cours.replacements.tsx`
+- **Sidebar** : Sous-entrées sous "Emploi du temps" (Planning, Heures de cours, Remplacements)
+
+### Fichiers créés (11)
+- `backend/src/modules/personnel/entities/remplacement-heure-cours.entity.ts`
+- `backend/database/migrations/148-remplacement-heure-cours.sql`
+- `backend/src/modules/personnel/dto/remplacement-heure-cours.dto.ts`
+- `backend/src/modules/personnel/services/remplacement-heure-cours.service.ts`
+- `backend/src/modules/personnel/controllers/remplacement-heure-cours.controller.ts`
+- `frontend/src/features/personnel/hooks/use-remplacement-heure-cours.ts`
+- `frontend/src/features/emploi-du-temps/components/heures-cours-page.tsx`
+- `frontend/src/features/emploi-du-temps/components/remplacements-page.tsx`
+- `frontend/src/features/emploi-du-temps/components/remplacement-stepper-modal.tsx`
+- `frontend/src/routes/_auth.heures-cours.tsx`
+- `frontend/src/routes/_auth.heures-cours.replacements.tsx`
+
+### Fichiers modifiés (10)
+- `shared/src/enums/roles.enum.ts` : 4 nouvelles permissions + attribution ADMIN/CHEF/PROVISEUR
+- `backend/src/modules/auth/entities/audit-log.entity.ts` : 5 AuditAction REMPLACEMENT_HEURE_COURS_*
+- `backend/src/modules/validation-workflow/services/validation-workflow.service.ts` : `heures_cours_remplacement` dans getDefaultRoles()
+- `backend/src/modules/personnel/services/heure-cours.service.ts` : `getStatistiquesGlobales()` + `exportCSV()`
+- `backend/src/modules/personnel/controllers/heure-cours.controller.ts` : 2 routes (statistiques-globales, export/csv)
+- `backend/src/app.ts` : montage controller remplacements AVANT heures-cours
+- `frontend/src/features/personnel/hooks/use-heure-cours.ts` : `useStatistiquesGlobales` + `useExportHeuresCoursCSV`
+- `frontend/src/features/personnel/index.ts` : export barrel hooks remplacements
+- `frontend/src/features/emploi-du-temps/index.ts` : export barrel pages
+- `frontend/src/components/layout/Sidebar.tsx` : sous-entrées EDT (Planning, Heures de cours, Remplacements)
+- `frontend/src/locales/fr/emplois.json` + `en/emplois.json` : ~80 clés i18n (heuresCoursPage.*, remplacements.*, export.*)
+
+## Travail effectué — Session 2026-08-05 (Jours fériés — CRUD + modèles pays + exclusion matérialisation)
+
+### Fonctionnalité complète Jours Fériés
+- **CRUD jours fériés** : section dans les préférences EDT (`edt-preferences.tsx`). Tableau liste avec nom, type (récurrent/ponctuel), origine (système/pays/custom), bouton supprimer (non-système).
+- **Modèles par pays** : 15 pays Afrique centrale + UEMOA (CM, CI, SN, CG, CD, GA, BF, ML, BJ, TG, NE, GN, TD, CF, GQ). Seeds système modifiables avec jours fériés fixes + variables chrétiens 2025-2027 + fêtes islamiques 2025-2027 (Fin Ramadan + Tabaski). Cameroun par défaut.
+- **Chargement modèle** : POST `/api/emploi-du-temps/jours-feries/charger-modele` — copie les JF système du pays vers l'établissement (modifiables). GET `/modeles` liste les pays disponibles.
+- **Exclusion JF dans matérialisation** : `preference-emploi-du-temps.exclureJoursFeries` (boolean, défaut true). Dans `materialiserInstances()`, charge les JF de la plage et skip les instances dont la date tombe un JF.
+
+### Backend (10 fichiers)
+- **Entités** : `jour-ferie.entity.ts` (+ enum `PaysJourFerie` 15 pays, colonne `pays`, index) ; `preference-emploi-du-temps.entity.ts` (+ colonne `exclureJoursFeries`)
+- **DTOs** : `jour-ferie.dto.ts` (+ champ `pays`, `chargerModelePaysSchema`) ; `emploi-du-temps.dto.ts` (+ `exclureJoursFeries`)
+- **Service** : `jour-ferie.service.ts` (+ `chargerModelePays()`, `listerModelesPays()`) ; `heure-cours.service.ts` (+ exclusion JF dans `materialiserInstances()`)
+- **Controller** : `jours-feries.controller.ts` (+ GET `/modeles`, POST `/charger-modele`, routes réordonnées : statiques avant `/:id`)
+- **Migration** : `149-jours-feries-modeles-pays.sql` (ADD COLUMN `pays` + `exclureJoursFeries` + seeds 15 pays : fixes, variables chrétiens, fêtes islamiques)
+
+### Frontend (6 fichiers)
+- **Types** : `edt.types.ts` (+ `pays` sur `JourFerie`, `exclureJoursFeries` sur `PreferenceEDT`)
+- **Hooks** : `use-jours-feries.ts` (+ `useUpdateJourFerie`, `useChargerModelePays`, `useModelesPays`)
+- **Composant** : `edt-preferences.tsx` (+ section Exclusion JF avec toggle, section Jours fériés avec sélecteur pays + bouton charger + tableau liste)
+- **i18n** : `fr/emplois.json` + `en/emplois.json` (+32 clés `joursFeries.*` dont 15 noms de pays)

@@ -61,6 +61,8 @@ export interface CreneauHoraire {
         };
     };
     salle?: { id: string; nom: string; code?: string };
+    /** Badge HC : true si des instances HeureCours ont été générées pour ce créneau */
+    hasHeuresCours?: boolean;
 }
 
 export interface PaginatedResponse<T> {
@@ -117,6 +119,8 @@ export interface PreferenceEDT {
         actif: boolean;
         horaires: { jour: string; heure: string }[];
     };
+    /** Exclure les jours fériés lors de la matérialisation (défaut: true) */
+    exclureJoursFeries?: boolean;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -287,4 +291,24 @@ export interface ChangementsCreneau {
     couleur?: string | null;
     notes?: string;
     propagerForce?: boolean;
+}
+
+// ─── Jours Fériés ───────────────────────────────────────
+
+export interface JourFerie {
+    id: string;
+    nom: string;
+    date?: string | null;
+    estRecurrent: boolean;
+    mois?: number | null;
+    jourMois?: number | null;
+    couleur?: string | null;
+    description?: string | null;
+    etablissementId?: string | null;
+    estSysteme: boolean;
+    pays?: string | null;
+    /** Date calculée pour un JF récurrent dans une année donnée (transient, non persisté) — ISO string depuis le backend */
+    dateCalculee?: string | null;
+    createdAt: string;
+    updatedAt: string;
 }

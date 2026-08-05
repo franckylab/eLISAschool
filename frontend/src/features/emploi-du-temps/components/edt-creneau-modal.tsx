@@ -22,7 +22,14 @@ import { useVerifierConflits, useCreerCreneau, useUpdateCreneau, useSupprimerCre
 interface AffectationOption {
     id: string;
     matiere?: { nom: string; code?: string };
-    enseignant?: { nom: string; prenom: string };
+    enseignant?: {
+        id: string;
+        matricule?: string;
+        utilisateur?: {
+            id: string;
+            profil?: { id: string; nom: string; prenom: string };
+        };
+    };
 }
 
 interface SalleOption {

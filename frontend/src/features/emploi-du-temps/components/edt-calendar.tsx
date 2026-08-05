@@ -21,10 +21,11 @@ import {
     type DragStartEvent,
     type DragEndEvent,
 } from '@dnd-kit/core';
-import { User, MapPin, GripVertical, AlertTriangle, RefreshCw } from 'lucide-react';
+import { User, MapPin, GripVertical, AlertTriangle, RefreshCw, Star, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUpdateCreneau, useVerifierConflits } from '../hooks/use-emploi-du-temps';
-import type { CreneauHoraire, JourSemaine, DonneesVerification, Conflit, RapportPropagation } from '../types/edt.types';
+import type { CreneauHoraire, JourSemaine, DonneesVerification, Conflit, RapportPropagation, JourFerie } from '../types/edt.types';
+import { estJourFerieFromList } from '../hooks/use-jours-feries';
 
 interface EDTCalendarProps {
     creneaux: CreneauHoraire[];
@@ -35,6 +36,8 @@ interface EDTCalendarProps {
     pasMinutes?: number;
     /** Lundi de la semaine affichée (pour afficher les dates dans les en-têtes) */
     semaineDebut?: Date;
+    /** Jours fériés à afficher */
+    joursFeries?: JourFerie[];
 }
 
 const JOURS_SEMAINE: JourSemaine[] = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
@@ -80,6 +83,7 @@ export function EDTCalendar({
     heureFin = '17:00',
     pasMinutes = 30,
     semaineDebut,
+    joursFeries = [],
 }: EDTCalendarProps) {
     const { t, i18n } = useTranslation('emplois');
     const locale = i18n.language || 'fr';
@@ -343,6 +347,9 @@ export function EDTCalendar({
                         const dateLabel = dateReelle
                             ? dateReelle.toLocaleDateString(locale, { day: 'numeric', month: 'short' })
                             : '';
+                        const jourNumero = dateReelle ? dateReelle.getDate() : null;
+                        // Vérifier si c'est un jour férié
+                        const jfInfo = dateReelle ? estJourFerieFromList(dateReelle, joursFeries) : { estFerie: false };
 
                         return (
                             <div
@@ -350,19 +357,43 @@ export function EDTCalendar({
                                 className={`sticky top-0 z-10 flex flex-col items-center justify-center px-[var(--space-xxs)] py-[var(--space-xs)] font-semibold border-b border-l border-[var(--color-dominant-700)] ${
                                     estAujourdhui
                                         ? 'bg-[var(--color-accent-600)] text-white'
-                                        : 'bg-[var(--color-dominant-600)] text-white'
+                                        : jfInfo.estFerie
+                                            ? 'bg-[var(--color-dominant-700)] text-white/90'
+                                            : 'bg-[var(--color-dominant-600)] text-white'
                                 }`}
                                 style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.25vw, 0.75rem)' }}
+                                title={jfInfo.estFerie ? jfInfo.nom : undefined}
                             >
                                 <span className="hidden sm:inline">{jourLabel}</span>
                                 <span className="sm:hidden">{jourLabel.slice(0, 3)}</span>
-                                {dateReelle && (
-                                    <span
-                                        className={`mt-0.5 font-normal ${estAujourdhui ? 'text-white/80' : 'text-white/60'}`}
-                                        style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.625rem)' }}
-                                    >
-                                        {dateLabel}
-                                    </span>
+                                {/* Numéro du jour — cercle coloré si aujourd'hui */}
+                                {jourNumero !== null && (
+                                    estAujourdhui ? (
+                                        <span
+                                            className="mt-0.5 inline-flex items-center justify-center rounded-full bg-white/25 font-bold"
+                                            style={{
+                                                width: 'clamp(1.125rem, 1rem + 0.5vw, 1.5rem)',
+                                                height: 'clamp(1.125rem, 1rem + 0.5vw, 1.5rem)',
+                                                fontSize: 'clamp(0.5625rem, 0.5rem + 0.25vw, 0.75rem)',
+                                            }}
+                                        >
+                                            {jourNumero}
+                                        </span>
+                                    ) : (
+                                        <span
+                                            className={`mt-0.5 font-normal ${estAujourdhui ? 'text-white/80' : 'text-white/60'}`}
+                                            style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.625rem)' }}
+                                        >
+                                            {dateLabel}
+                                        </span>
+                                    )
+                                )}
+                                {/* Indicateur jour férié */}
+                                {jfInfo.estFerie && !estAujourdhui && (
+                                    <Star
+                                        className="mt-0.5 h-2.5 w-2.5 fill-current"
+                                        style={{ color: jfInfo.couleur || 'currentColor' }}
+                                    />
                                 )}
                             </div>
                         );
@@ -384,15 +415,29 @@ export function EDTCalendar({
                             </div>
 
                             {/* Day cells */}
-                            {joursActifs.map((jour, colIdx) => (
-                                <DropCell
-                                    key={`${jour}::${heure}`}
-                                    id={`${jour}::${heure}`}
-                                    row={rowIdx + 2}
-                                    col={colIdx + 2}
-                                    onClick={onCellClick ? () => onCellClick(jour, heure) : undefined}
-                                />
-                            ))}
+                            {joursActifs.map((jour, colIdx) => {
+                                // Vérifier si ce jour est aujourd'hui pour le fond de colonne
+                                let colEstAujourdhui = false;
+                                if (semaineDebut) {
+                                    const offsets: Record<string, number> = {
+                                        LUNDI: 0, MARDI: 1, MERCREDI: 2, JEUDI: 3,
+                                        VENDREDI: 4, SAMEDI: 5, DIMANCHE: 6,
+                                    };
+                                    const d = new Date(semaineDebut);
+                                    d.setDate(d.getDate() + (offsets[jour] ?? 0));
+                                    colEstAujourdhui = d.toDateString() === new Date().toDateString();
+                                }
+                                return (
+                                    <DropCell
+                                        key={`${jour}::${heure}`}
+                                        id={`${jour}::${heure}`}
+                                        row={rowIdx + 2}
+                                        col={colIdx + 2}
+                                        estAujourdhui={colEstAujourdhui}
+                                        onClick={onCellClick ? () => onCellClick(jour, heure) : undefined}
+                                    />
+                                );
+                            })}
                         </Fragment>
                     ))}
 
@@ -495,7 +540,7 @@ export function EDTCalendar({
 
 // ─── Drop cell ────────────────────────────────────────
 
-function DropCell({ id, row, col, onClick }: { id: string; row: number; col: number; onClick?: () => void }) {
+function DropCell({ id, row, col, estAujourdhui, onClick }: { id: string; row: number; col: number; estAujourdhui?: boolean; onClick?: () => void }) {
     const { setNodeRef, isOver } = useDroppable({ id });
 
     return (
@@ -503,7 +548,11 @@ function DropCell({ id, row, col, onClick }: { id: string; row: number; col: num
             ref={setNodeRef}
             onClick={onClick}
             className={`border-t border-l border-[var(--color-bordure)] transition-colors ${
-                isOver ? 'bg-[var(--color-dominant-100)]' : 'hover:bg-[var(--color-surface-hover)]/50'
+                isOver
+                    ? 'bg-[var(--color-dominant-100)]'
+                    : estAujourdhui
+                        ? 'bg-[var(--color-accent-50)]/40 hover:bg-[var(--color-accent-50)]/60 dark:bg-[var(--color-accent-900)]/10'
+                        : 'hover:bg-[var(--color-surface-hover)]/50'
             } ${onClick ? 'cursor-pointer' : ''}`}
             style={{ gridRow: row, gridColumn: col }}
         />
@@ -523,6 +572,7 @@ function CreneauCard({
     onClick?: () => void;
     onResizeStart: (e: React.PointerEvent) => void;
 }) {
+    const { t } = useTranslation('emplois');
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: creneau.id,
     });
@@ -537,12 +587,28 @@ function CreneauCard({
             onClick={onClick}
         >
             <div
-                className="relative h-full rounded-md border-l-[3px] overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                className={`relative h-full rounded-md overflow-hidden cursor-pointer hover:shadow-md transition-shadow ${
+                    creneau.hasHeuresCours ? 'border-l-[3px] ring-1 ring-inset ring-[var(--color-success)]/20' : 'border-l-[3px]'
+                }`}
                 style={{
                     borderLeftColor: couleur,
                     backgroundColor: `color-mix(in srgb, ${couleur} 8%, var(--color-surface))`,
                 }}
             >
+                {/* Badge HC : pastille ✓ si heures cours générées */}
+                {creneau.hasHeuresCours && (
+                    <div
+                        className="absolute top-0.5 left-0.5 z-10 flex items-center justify-center rounded-full bg-[var(--color-success)] text-white"
+                        style={{
+                            width: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.875rem)',
+                            height: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.875rem)',
+                        }}
+                        title={t('badge.heuresCoursGenerees')}
+                    >
+                        <CheckCircle2 className="h-2 w-2" />
+                    </div>
+                )}
+
                 {/* Drag handle */}
                 <div
                     {...listeners}
