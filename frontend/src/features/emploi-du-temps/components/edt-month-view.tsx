@@ -11,6 +11,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar } from 'lucide-react';
+import { formatDateInput } from '@/lib/date-utils';
 import type { CreneauHoraire, JourSemaine } from '../types/edt.types';
 
 interface EDTMonthViewProps {
@@ -76,11 +77,15 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick }: ED
     }, [creneaux]);
 
     const moisCourant = mois.getMonth();
-    const aujourdhui = new Date().toISOString().slice(0, 10);
+    const aujourdhui = formatDateInput(new Date());
+
+    /** Formate une date de la grille en YYYY-MM-DD sans décalage UTC */
+    const toLocalDateStr = (d: Date) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
     const cellClass = (jour: Date) => {
         const estMoisCourant = jour.getMonth() === moisCourant;
-        const estAujourdhui = jour.toISOString().slice(0, 10) === aujourdhui;
+        const estAujourdhui = toLocalDateStr(jour) === aujourdhui;
         return `min-h-[clamp(60px,10vw,90px)] border border-[var(--color-bordure)] p-[var(--space-xxs)] transition-colors ${
             estAujourdhui
                 ? 'bg-[var(--color-dominant-50)] ring-1 ring-[var(--color-dominant-400)]'

@@ -16,6 +16,7 @@ import {
     Info, ChevronLeft,
 } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { formatDateInput } from '@/lib/date-utils';
 import { useGenererHeuresCoursFromEdt, type GenererHeuresCoursResult } from '@/features/personnel';
 
 interface EDTHeuresCoursModalProps {
@@ -39,8 +40,8 @@ export function EDTHeuresCoursModal({ enseignantId, classeAnneeId, onClose }: ED
     const samedi = new Date(lundi);
     samedi.setDate(lundi.getDate() + 5);
 
-    const [dateDebut, setDateDebut] = useState(lundi.toISOString().split('T')[0]);
-    const [dateFin, setDateFin] = useState(samedi.toISOString().split('T')[0]);
+    const [dateDebut, setDateDebut] = useState(formatDateInput(lundi));
+    const [dateFin, setDateFin] = useState(formatDateInput(samedi));
 
     const generer = useGenererHeuresCoursFromEdt();
 
