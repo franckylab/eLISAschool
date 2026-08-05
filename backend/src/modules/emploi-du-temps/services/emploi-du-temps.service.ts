@@ -53,15 +53,24 @@ export class EmploiDuTempsService {
     // ─── CRUD CreneauHoraire ───────────────────────────────────
 
     async findAll(query: QueryCreneauxDto, etablissementId: string) {
+        // Jointures sélectives : charger uniquement les relations nécessaires
+        // - am + matiere + enseignant (+ utilisateur) + classeAnnee + classe : TOUJOURS (affichage frontend)
+        // - salle : seulement si filtre salleId (économie d'1 JOIN dans le cas nominal)
+        // - anneeScolaire : JAMAIS (le frontend EDT n'affiche pas le libellé année scolaire)
         const qb = this.creneauRepo.createQueryBuilder('ch')
             .leftJoinAndSelect('ch.affectationMatiere', 'am')
             .leftJoinAndSelect('am.matiere', 'matiere')
             .leftJoinAndSelect('am.enseignant', 'enseignant')
+            .leftJoinAndSelect('enseignant.utilisateur', 'enseignant_utilisateur')
+            .leftJoinAndSelect('enseignant_utilisateur.profil', 'enseignant_profil')
             .leftJoinAndSelect('am.classeAnnee', 'classeAnnee')
             .leftJoinAndSelect('classeAnnee.classe', 'classe')
-            .leftJoinAndSelect('classeAnnee.anneeScolaire', 'anneeScolaire')
-            .leftJoinAndSelect('ch.salle', 'salle')
             .where('ch.etablissementId = :etablissementId', { etablissementId });
+
+        // Jointure salle conditionnelle (1 JOIN économisé quand pas de filtre salle)
+        if (query.salleId) {
+            qb.leftJoinAndSelect('ch.salle', 'salle');
+        }
 
         // Filtres directs
         if (query.affectationMatiereId) qb.andWhere('ch.affectationMatiereId = :affectationMatiereId', { affectationMatiereId: query.affectationMatiereId });
@@ -91,6 +100,8 @@ export class EmploiDuTempsService {
                 'affectationMatiere',
                 'affectationMatiere.matiere',
                 'affectationMatiere.enseignant',
+                'affectationMatiere.enseignant.utilisateur',
+                'affectationMatiere.enseignant.utilisateur.profil',
                 'affectationMatiere.classeAnnee',
                 'affectationMatiere.classeAnnee.classe',
                 'affectationMatiere.classeAnnee.anneeScolaire',
@@ -185,6 +196,8 @@ export class EmploiDuTempsService {
                     'affectationMatiere',
                     'affectationMatiere.matiere',
                     'affectationMatiere.enseignant',
+                    'affectationMatiere.enseignant.utilisateur',
+                    'affectationMatiere.enseignant.utilisateur.profil',
                     'affectationMatiere.classeAnnee',
                     'affectationMatiere.classeAnnee.classe',
                     'affectationMatiere.classeAnnee.anneeScolaire',
@@ -449,6 +462,8 @@ export class EmploiDuTempsService {
             .leftJoinAndSelect('ch.affectationMatiere', 'am')
             .leftJoinAndSelect('am.matiere', 'matiere')
             .leftJoinAndSelect('am.enseignant', 'enseignant')
+            .leftJoinAndSelect('enseignant.utilisateur', 'enseignant_utilisateur')
+            .leftJoinAndSelect('enseignant_utilisateur.profil', 'enseignant_profil')
             .leftJoinAndSelect('am.classeAnnee', 'classeAnnee')
             .leftJoinAndSelect('ch.salle', 'salle')
             .where('ch.etablissementId = :etablissementId', { etablissementId })
@@ -463,6 +478,8 @@ export class EmploiDuTempsService {
             .leftJoinAndSelect('ch.affectationMatiere', 'am')
             .leftJoinAndSelect('am.matiere', 'matiere')
             .leftJoinAndSelect('am.enseignant', 'enseignant')
+            .leftJoinAndSelect('enseignant.utilisateur', 'enseignant_utilisateur')
+            .leftJoinAndSelect('enseignant_utilisateur.profil', 'enseignant_profil')
             .leftJoinAndSelect('am.classeAnnee', 'classeAnnee')
             .leftJoinAndSelect('classeAnnee.classe', 'classe')
             .leftJoinAndSelect('ch.salle', 'salle')
@@ -478,6 +495,8 @@ export class EmploiDuTempsService {
             .leftJoinAndSelect('ch.affectationMatiere', 'am')
             .leftJoinAndSelect('am.matiere', 'matiere')
             .leftJoinAndSelect('am.enseignant', 'enseignant')
+            .leftJoinAndSelect('enseignant.utilisateur', 'enseignant_utilisateur')
+            .leftJoinAndSelect('enseignant_utilisateur.profil', 'enseignant_profil')
             .leftJoinAndSelect('am.classeAnnee', 'classeAnnee')
             .leftJoinAndSelect('classeAnnee.classe', 'classe')
             .where('ch.etablissementId = :etablissementId', { etablissementId })
@@ -546,7 +565,7 @@ export class EmploiDuTempsService {
         const affectationsRepo = AppDataSource.getRepository(AffectationMatiere);
         const affectations = await affectationsRepo.find({
             where: { classeAnneeId, etablissementId, statut: StatutAffectationMatiere.ACTIVE },
-            relations: ['matiere', 'enseignant'],
+            relations: ['matiere', 'enseignant', 'enseignant.utilisateur', 'enseignant.utilisateur.profil'],
         });
 
         if (affectations.length === 0) {
@@ -760,7 +779,7 @@ export class EmploiDuTempsService {
         const affectationsRepo = AppDataSource.getRepository(AffectationMatiere);
         const affectations = await affectationsRepo.find({
             where: { classeAnneeId, etablissementId, statut: StatutAffectationMatiere.ACTIVE },
-            relations: ['matiere', 'enseignant'],
+            relations: ['matiere', 'enseignant', 'enseignant.utilisateur', 'enseignant.utilisateur.profil'],
         });
 
         if (affectations.length === 0) {
@@ -891,6 +910,8 @@ export class EmploiDuTempsService {
             .leftJoinAndSelect('ch.affectationMatiere', 'am')
             .leftJoinAndSelect('am.matiere', 'matiere')
             .leftJoinAndSelect('am.enseignant', 'enseignant')
+            .leftJoinAndSelect('enseignant.utilisateur', 'enseignant_utilisateur')
+            .leftJoinAndSelect('enseignant_utilisateur.profil', 'enseignant_profil')
             .leftJoinAndSelect('am.classeAnnee', 'classeAnnee')
             .leftJoinAndSelect('classeAnnee.classe', 'classe')
             .leftJoinAndSelect('ch.salle', 'salle')

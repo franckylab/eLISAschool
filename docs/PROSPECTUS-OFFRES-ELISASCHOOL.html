@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eLISAschool — Offres & Tarifs</title>
+<style>
+:root {
+  --bg: #0b0f1a;
+  --surface: #141926;
+  --surface2: #1c2235;
+  --surface3: #242b40;
+  --border: #2a3150;
+  --text: #e8ecf4;
+  --text2: #9aa3bc;
+  --text3: #6b7494;
+  --accent: #28a745;
+  --accent2: #20913c;
+  --accent-glow: rgba(40, 167, 69, 0.15);
+  --blue: #3b82f6;
+  --blue2: #2563eb;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --purple: #8b5cf6;
+  --cyan: #06b6d4;
+  --pink: #ec4899;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+  body { background: white; color: #1a1a2e; }
+  .no-print { display: none !important; }
+  .page-break { page-break-before: always; }
+  .scenario-card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
+  .flyer-header { background: linear-gradient(135deg, #28a745, #2563eb) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pack-badge { border: 1px solid #ddd !important; }
+}
+
+/* ===== NAVIGATION ===== */
+.nav-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(11, 15, 26, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.nav-bar h2 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--accent), var(--blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.nav-links {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.nav-links a {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text2);
+  text-decoration: none;
+  transition: 0.2s;
+  border: 1px solid transparent;
+}
+.nav-links a:hover {
+  color: var(--text);
+  border-color: var(--border);
+}
+.nav-links a.active {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border-color: rgba(40,167,69,0.3);
+}
+
+/* ===== CONTAINER ===== */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+/* ===== FLYER / PROSPECTUS ===== */
+.flyer-header {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--blue2) 100%);
+  border-radius: 16px;
+  padding: 48px 40px;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+.flyer-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 60%;
+  height: 200%;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.flyer-header::after {
+  content: 'elisa°school';
+  position: absolute;
+  bottom: -20px;
+  right: 30px;
+  font-size: 5rem;
+  font-weight: 800;
+  color: rgba(255,255,255,0.05);
+  pointer-events: none;
+  letter-spacing: -2px;
+}
+.flyer-brand {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.flyer-title {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 800;
+  color: white;
+  line-height: 1.2;
+  margin-bottom: 12px;
+}
+.flyer-subtitle {
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  color: rgba(255,255,255,0.85);
+  max-width: 600px;
+  line-height: 1.5;
+}
+.flyer-badges {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.flyer-badge {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(255,255,255,0.15);
+  color: white;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* ===== SECTION ===== */
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-bottom: 24px;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.section-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.section-subtitle {
+  font-size: 0.8rem;
+  color: var(--text3);
+}
+
+/* ===== DEPLOYMENT MODES ===== */
+.deploy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.deploy-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 24px;
+  background: var(--surface2);
+  position: relative;
+}
+.deploy-card .deploy-icon {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+.deploy-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.deploy-card p {
+  font-size: 0.8rem;
+  color: var(--text2);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.deploy-features {
+  list-style: none;
+}
+.deploy-features li {
+  font-size: 0.78rem;
+  color: var(--text2);
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.deploy-features li::before {
+  content: '✓';
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+/* ===== PAYMENT MODES ===== */
+.payment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.payment-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 24px;
+  background: var(--surface2);
+}
+.payment-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.payment-card .payment-tag {
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.payment-card p {
+  font-size: 0.8rem;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+.payment-detail {
+  font-size: 0.78rem;
+  color: var(--text3);
+  padding: 8px 12px;
+  background: var(--surface3);
+  border-radius: 6px;
+  margin-top: 8px;
+}
+.payment-detail strong {
+  color: var(--text);
+}
+
+/* ===== PACKS ===== */
+.packs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.pack-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  background: var(--surface2);
+}
+.pack-item .pack-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.pack-item .pack-emoji {
+  font-size: 1.25rem;
+}
+.pack-item .pack-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.pack-item .pack-modules {
+  font-size: 0.72rem;
+  color: var(--text3);
+  line-height: 1.5;
+}
+.pack-item .pack-range {
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ===== SOCLE ===== */
+.socle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+.socle-item {
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.socle-item .socle-icon {
+  font-size: 0.9rem;
+}
+.socle-free {
+  margin-left: auto;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-glow);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* ===== SERVICES ===== */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+.service-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  background: var(--surface2);
+}
+.service-card h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.service-card p {
+  font-size: 0.78rem;
+  color: var(--text2);
+  margin-bottom: 8px;
+}
+.service-prices {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.service-price-tag {
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--surface3);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.service-price-tag strong {
+  color: var(--accent);
+}
+
+/* ===== TRANCHES TABLE ===== */
+.tranches-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.tranches-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--surface3);
+  color: var(--text2);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+.tranches-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+}
+.tranches-table tr:hover td {
+  background: var(--surface2);
+}
+.tranche-code {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: white;
+}
+.tranche-code.t1 { background: var(--accent); }
+.tranche-code.t2 { background: #22c55e; }
+.tranche-code.t3 { background: var(--blue); }
+.tranche-code.t4 { background: #6366f1; }
+.tranche-code.t5 { background: var(--purple); }
+.tranche-code.t6 { background: var(--pink); }
+.tranche-code.t7 { background: var(--amber); }
+.tranche-code.t8 { background: var(--red); }
+
+/* ===== SCENARIO CARDS ===== */
+.scenarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+.scenario-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+  transition: 0.2s;
+}
+.scenario-card:hover {
+  border-color: var(--text3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.scenario-top {
+  padding: 20px 24px;
+  position: relative;
+}
+.scenario-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: white;
+}
+.scenario-badge.t1 { background: var(--accent); }
+.scenario-badge.t2 { background: #22c55e; }
+.scenario-badge.t3 { background: var(--blue); }
+.scenario-badge.t4 { background: #6366f1; }
+.scenario-badge.t5 { background: var(--purple); }
+.scenario-badge.t6 { background: var(--pink); }
+.scenario-badge.t7 { background: var(--amber); }
+.scenario-badge.t8 { background: var(--red); }
+
+.scenario-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+.scenario-name {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.scenario-desc {
+  font-size: 0.78rem;
+  color: var(--text3);
+  line-height: 1.4;
+}
+.scenario-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.scenario-meta-item {
+  font-size: 0.72rem;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.scenario-meta-item strong {
+  color: var(--text);
+}
+
+.scenario-body {
+  padding: 0 24px 20px;
+}
+.scenario-packs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.pack-badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+
+.scenario-pricing {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+.scenario-pricing .line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.scenario-pricing .line.total {
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+  padding-top: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.scenario-pricing .line.total .amount {
+  color: var(--accent);
+}
+.scenario-pricing .line .amount {
+  font-weight: 600;
+  color: var(--text);
+}
+.scenario-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.per-student {
+  font-size: 0.75rem;
+  color: var(--text3);
+}
+.per-student strong {
+  color: var(--amber);
+  font-size: 0.85rem;
+}
+.deploy-tag {
+  font-size: 0.68rem;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.deploy-tag.local {
+  background: rgba(59,130,246,0.15);
+  color: var(--blue);
+  border: 1px solid rgba(59,130,246,0.3);
+}
+.deploy-tag.online {
+  background: rgba(139,92,246,0.15);
+  color: var(--purple);
+  border: 1px solid rgba(139,92,246,0.3);
+}
+.payment-tag-scenario {
+  font-size: 0.68rem;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.payment-tag-scenario.abonnement {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border: 1px solid rgba(40,167,69,0.3);
+}
+.payment-tag-scenario.licence {
+  background: rgba(245,158,11,0.15);
+  color: var(--amber);
+  border: 1px solid rgba(245,158,11,0.3);
+}
+
+/* ===== LICENCE DETAIL ===== */
+.licence-box {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 6px;
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.2);
+}
+.licence-box h5 {
+  font-size: 0.75rem;
+  color: var(--amber);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.licence-box .licence-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text2);
+  padding: 2px 0;
+}
+.licence-box .licence-line strong {
+  color: var(--text);
+}
+
+/* ===== CONDITIONS ===== */
+.conditions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+.condition-item {
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+}
+.condition-item h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.condition-item p {
+  font-size: 0.78rem;
+  color: var(--text2);
+  line-height: 1.5;
+}
+
+/* ===== FOOTER ===== */
+.doc-footer {
+  text-align: center;
+  padding: 32px;
+  color: var(--text3);
+  font-size: 0.75rem;
+  border-top: 1px solid var(--border);
+  margin-top: 32px;
+}
+.doc-footer strong {
+  color: var(--accent);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .flyer-header { padding: 32px 24px; }
+  .section { padding: 20px; }
+  .scenarios-grid { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav-bar no-print">
+  <h2>eLISAschool — Prospectus</h2>
+  <div class="nav-links">
+    <a href="#prospectus" class="active">Prospectus</a>
+    <a href="#deploiement">Déploiement</a>
+    <a href="#paiement">Paiement</a>
+    <a href="#modules">Modules</a>
+    <a href="#tarifs">Tarifs</a>
+    <a href="#scenarios">Scénarios</a>
+    <a href="#conditions">Conditions</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- ===== PROSPECTUS / FLYER ===== -->
+  <section id="prospectus">
+    <div class="flyer-header">
+      <div class="flyer-brand">eLISAschool</div>
+      <h1 class="flyer-title">La gestion scolaire<br>adaptée à votre établissement</h1>
+      <p class="flyer-subtitle">
+        Une plateforme complète déployable sur votre serveur local ou hébergée en ligne.
+        Payez mensuellement ou en licence. Choisissez uniquement les modules dont vous avez besoin.
+      </p>
+      <div class="flyer-badges">
+        <span class="flyer-badge">12 modules de base gratuits</span>
+        <span class="flyer-badge">6 packs optionnels</span>
+        <span class="flyer-badge">Support 1 an inclus</span>
+        <span class="flyer-badge">Formation initiale offerte</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MODES DE DEPLOIEMENT ===== -->
+  <section id="deploiement" class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background: rgba(59,130,246,0.15);">🖥</div>
+      <div>
+        <div class="section-title">2 modes de déploiement</div>
+        <div class="section-subtitle">Choisissez l'infrastructure adaptée à votre contexte</div>
+      </div>
+    </div>
+    <div class="deploy-grid">
+      <div class="deploy-card">
+        <div class="deploy-icon">🏠</div>
+        <h3>Serveur local</h3>
+        <p>eLISAschool installé sur votre propre serveur, dans votre établissement. Fonctionne sans internet.</p>
+        <ul class="deploy-features">
+          <li>Installation et configuration incluses</li>
+          <li>Données hébergées chez vous</li>
+          <li>Fonctionne hors-ligne (LAN)</li>
+          <li>Mises à jour à distance ou sur site</li>
+          <li>Idéal zones à connexion limitée</li>
+        </ul>
+      </div>
+      <div class="deploy-card">
+        <div class="deploy-icon">☁️</div>
+        <h3>Hébergé en ligne</h3>
+        <p>eLISAschool hébergé sur un serveur cloud sécurisé. Accessible de partout, 24h/24.</p>
+        <ul class="deploy-features">
+          <li>5 Go de stockage inclus</li>
+          <li>Accès web et mobile</li>
+          <li>Sauvegardes automatiques</li>
+          <li>Stockage supplémentaire : 1 000 F/Go/mois</li>
+          <li>Idéal multi-sites et accès parents</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MODES DE PAIEMENT ===== -->
+  <section id="paiement" class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background: rgba(40,167,69,0.15);">💳</div>
+      <div>
+        <div class="section-title">2 modes de paiement</div>
+        <div class="section-subtitle">Flexibilité totale pour s'adapter à votre budget</div>
+      </div>
+    </div>
+    <div class="payment-grid">
+      <div class="payment-card">
+        <h3>
+          Abonnement mensuel
+          <span class="payment-tag" style="background:var(--accent-glow);color:var(--accent);">Populaire</span>
+        </h3>
+        <p>Payez chaque mois, sans engagement. Arrêt possible à tout moment avec préavis de 30 jours.</p>
+        <div class="payment-detail">
+          <strong>Formule :</strong> Plateforme + Packs choisis + Services optionnels<br>
+          <strong>Engagement :</strong> Aucun — résiliable chaque mois<br>
+          <strong>Facturation :</strong> Mensuelle, début de chaque mois
+        </div>
+      </div>
+      <div class="payment-card">
+        <h3>
+          Licence perpétuelle
+          <span class="payment-tag" style="background:rgba(245,158,11,0.15);color:var(--amber);">Économique</span>
+        </h3>
+        <p>Payez une seule fois pour posséder le logiciel à vie. Possibilité de paiement échelonné.</p>
+        <div class="payment-detail">
+          <strong>Calcul :</strong> Équivalent mensuel × 36 mois<br>
+          <strong>Remise comptant :</strong> -20% si paiement intégral<br>
+          <strong>Échelonnement :</strong> 60% à la commande + 4 mensualités<br>
+          <strong>Maintenance :</strong> Support 1 an inclus, puis optionnel
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MODULES ===== -->
+  <section id="modules">
+    <!-- Socle gratuit -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon" style="background: var(--accent-glow);">🎁</div>
+        <div>
+          <div class="section-title">12 modules de base — Inclus gratuitement</div>
+          <div class="section-subtitle">Tout le nécessaire pour gérer votre établissement</div>
+        </div>
+      </div>
+      <div class="socle-grid">
+        <div class="socle-item"><span class="socle-icon">🔐</span> Authentification <span class="socle-free">Gratuit</span></div>
+        <div class="socle-item"><span class="socle-icon">👥</span> Utilisateurs & RBAC <span class="socle-free">Gratuit</span></div>
+        <div class="socle-item"><span class="socle-icon">⚙️</span> Configuration <span class="socle-free">Gratuit</span></div>
+        <div class="socle-item"><span class="socle-icon">🏗️</span> Organisation <span class="socle-free">Gratuit</span></div>
+        <div class="socle-item"><span class="socle-icon">🎓</span> Élèves <span class="socle-free">Gratuit</span></div>
+        <div class="socle-item"><span class="socle-icon">👨‍👩‍👧</span> Responsables <span class="socle-free">Gratuit</span></div>
+        <div class="socle-item"><span class="socle-icon">📝</span> Notes & Évaluations <span class="socle-free">Gratuit</span></div>
+        <div class="socle-item"><span class="socle-icon">📅</span> Périodes scolaires <span class="socle-free">Gratuit</span></div>
+        <div class="socle-item"><span class="socle-icon">🏫</span> Classes & Niveaux <span class="socle-free">Gratuit</span></div>
+        <div class="socle-item"><span class="socle-icon">📚</span> Matières & Programmes <span class="socle-free">Gratuit</span></div>
+        <div class="socle-item"><span class="socle-icon">📊</span> Tableau de bord <span class="socle-free">Gratuit</span></div>
+        <div class="socle-item"><span class="socle-icon">🔔</span> Notifications <span class="socle-free">Gratuit</span></div>
+      </div>
+    </div>
+
+    <!-- Packs payants -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon" style="background: rgba(139,92,246,0.15);">📦</div>
+        <div>
+          <div class="section-title">6 packs optionnels — Payants</div>
+          <div class="section-subtitle">Ajoutez uniquement ce dont vous avez besoin</div>
+        </div>
+      </div>
+      <div class="packs-grid">
+        <div class="pack-item">
+          <div class="pack-head"><span class="pack-emoji">📡</span><span class="pack-label">Communication</span></div>
+          <div class="pack-modules">Messagerie interne • Requêtes • Sondages • Annonces</div>
+          <div class="pack-range">2 000 — 10 000 F/mois</div>
+        </div>
+        <div class="pack-item">
+          <div class="pack-head"><span class="pack-emoji">🚌</span><span class="pack-label">Logistique</span></div>
+          <div class="pack-modules">Cantine • Transport • Parking</div>
+          <div class="pack-range">1 500 — 8 000 F/mois</div>
+        </div>
+        <div class="pack-item">
+          <div class="pack-head"><span class="pack-emoji">📈</span><span class="pack-label">Performance</span></div>
+          <div class="pack-modules">Emploi du temps • Suivi élève • Suivi personnel • Orientation • Gamification</div>
+          <div class="pack-range">2 500 — 13 000 F/mois</div>
+        </div>
+        <div class="pack-item">
+          <div class="pack-head"><span class="pack-emoji">🏫</span><span class="pack-label">Vie Scolaire</span></div>
+          <div class="pack-modules">Clubs • Cartes • Documents • Impressions • Santé</div>
+          <div class="pack-range">1 500 — 8 000 F/mois</div>
+        </div>
+        <div class="pack-item">
+          <div class="pack-head"><span class="pack-emoji">💰</span><span class="pack-label">Finances</span></div>
+          <div class="pack-modules">Finances • Contrats • Paie</div>
+          <div class="pack-range">3 000 — 15 000 F/mois</div>
+        </div>
+        <div class="pack-item">
+          <div class="pack-head"><span class="pack-emoji">📋</span><span class="pack-label">Inventaire</span></div>
+          <div class="pack-modules">Matériel • Inventaire</div>
+          <div class="pack-range">1 500 — 8 000 F/mois</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Services -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon" style="background: rgba(6,182,212,0.15);">🔧</div>
+        <div>
+          <div class="section-title">Services complémentaires</div>
+          <div class="section-subtitle">Options à la carte pour compléter votre offre</div>
+        </div>
+      </div>
+      <div class="services-grid">
+        <div class="service-card">
+          <h4>📱 SMS — Notification parents</h4>
+          <p>Envoi de SMS groupés aux parents. Recharge par lots de crédits, valables sans expiration.</p>
+          <div class="service-prices">
+            <span class="service-price-tag">1 000 crédits : <strong>5 000 F</strong></span>
+            <span class="service-price-tag">5 000 crédits : <strong>20 000 F</strong></span>
+            <span class="service-price-tag">10 000 crédits : <strong>35 000 F</strong></span>
+          </div>
+        </div>
+        <div class="service-card">
+          <h4>💾 Stockage supplémentaire</h4>
+          <p>Au-delà des 5 Go inclus (hébergement en ligne), ajoutez de l'espace pour documents et archives.</p>
+          <div class="service-prices">
+            <span class="service-price-tag"><strong>1 000 F</strong> / Go / mois</span>
+            <span class="service-price-tag">5 Go inclus <strong>gratuits</strong></span>
+          </div>
+        </div>
+        <div class="service-card">
+          <h4>🎓 Formation & Support</h4>
+          <p>Formation initiale offerte (admin + enseignants). Support gratuit pendant 1 an après déploiement.</p>
+          <div class="service-prices">
+            <span class="service-price-tag">Formation initiale : <strong>Offerte</strong></span>
+            <span class="service-price-tag">Support 1 an : <strong>Inclus</strong></span>
+            <span class="service-price-tag">Formation complémentaire : <strong>Sur devis</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GRILLE TARIFAIRE ===== -->
+  <section id="tarifs" class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background: rgba(236,72,153,0.15);">💲</div>
+      <div>
+        <div class="section-title">Grille tarifaire complète</div>
+        <div class="section-subtitle">Prix mensuels en FCFA — Abonnement</div>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="tranches-table">
+        <thead>
+          <tr>
+            <th>Tranche</th>
+            <th>Effectif</th>
+            <th>Plateforme</th>
+            <th>📡 Comm.</th>
+            <th>🚌 Log.</th>
+            <th>📈 Perf.</th>
+            <th>🏫 Vie Sc.</th>
+            <th>💰 Fin.</th>
+            <th>📋 Inv.</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="tranche-code t1">T1</span></td>
+            <td>1 — 100</td>
+            <td><strong>15 000</strong></td>
+            <td>2 000</td><td>1 500</td><td>2 500</td><td>1 500</td><td>3 000</td><td>1 500</td>
+          </tr>
+          <tr>
+            <td><span class="tranche-code t2">T2</span></td>
+            <td>101 — 200</td>
+            <td><strong>22 000</strong></td>
+            <td>3 000</td><td>2 500</td><td>4 000</td><td>2 500</td><td>4 500</td><td>2 500</td>
+          </tr>
+          <tr>
+            <td><span class="tranche-code t3">T3</span></td>
+            <td>201 — 500</td>
+            <td><strong>30 000</strong></td>
+            <td>4 500</td><td>3 500</td><td>5 500</td><td>3 500</td><td>6 500</td><td>3 500</td>
+          </tr>
+          <tr>
+            <td><span class="tranche-code t4">T4</span></td>
+            <td>501 — 1 000</td>
+            <td><strong>42 000</strong></td>
+            <td>6 000</td><td>5 000</td><td>8 000</td><td>5 000</td><td>9 000</td><td>5 000</td>
+          </tr>
+          <tr>
+            <td><span class="tranche-code t5">T5</span></td>
+            <td>1 001 — 2 000</td>
+            <td><strong>55 000</strong></td>
+            <td>8 000</td><td>6 500</td><td>10 000</td><td>6 500</td><td>12 000</td><td>6 500</td>
+          </tr>
+          <tr>
+            <td><span class="tranche-code t6">T6</span></td>
+            <td>2 001 — 3 000</td>
+            <td><strong>70 000</strong></td>
+            <td>10 000</td><td>8 000</td><td>13 000</td><td>8 000</td><td>15 000</td><td>8 000</td>
+          </tr>
+          <tr>
+            <td><span class="tranche-code t7">T7</span></td>
+            <td>3 001 — 5 000</td>
+            <td><strong>85 000</strong></td>
+            <td colspan="6" style="color:var(--amber);font-style:italic;">Tarifs entreprise — Nous consulter</td>
+          </tr>
+          <tr>
+            <td><span class="tranche-code t8">T8</span></td>
+            <td>5 001 +</td>
+            <td><strong>100 000</strong></td>
+            <td colspan="6" style="color:var(--amber);font-style:italic;">Tarifs entreprise — Nous consulter</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== 8 SCENARIOS ===== -->
+  <section id="scenarios">
+    <div class="section">
+      <div class="section-header">
+        <div class="section-icon" style="background: rgba(40,167,69,0.15);">🎯</div>
+        <div>
+          <div class="section-title">8 scénarios types</div>
+          <div class="section-subtitle">Trouvez l'offre la plus proche de votre profil</div>
+        </div>
+      </div>
+      <div class="scenarios-grid" id="scenarios-container">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CONDITIONS ===== -->
+  <section id="conditions" class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background: rgba(107,116,148,0.15);">📋</div>
+      <div>
+        <div class="section-title">Conditions générales</div>
+        <div class="section-subtitle">Ce qui est inclus et ce qui est en option</div>
+      </div>
+    </div>
+    <div class="conditions-grid">
+      <div class="condition-item">
+        <h4>✅ Inclus systématiquement</h4>
+        <p>Installation et configuration initiales, formation admin + enseignants, support technique pendant 1 an, mises à jour correctives, 12 modules de base complets.</p>
+      </div>
+      <div class="condition-item">
+        <h4>📦 Packs optionnels</h4>
+        <p>Activables et désactivables à tout moment. Prix proportionnel à la taille de l'établissement (tranche). Facturation mensuelle ou incluse dans la licence.</p>
+      </div>
+      <div class="condition-item">
+        <h4>📱 SMS à la carte</h4>
+        <p>Recharge par lots de crédits SMS. Pas d'abonnement, pas d'expiration. Utilisables pour notifications aux parents, alertes, rappels de paiement.</p>
+      </div>
+      <div class="condition-item">
+        <h4>💾 Stockage (en ligne)</h4>
+        <p>5 Go inclus pour les déploiements en ligne. Stockage supplémentaire à 1 000 F/Go/mois. Non applicable pour les déploiements locaux (disk du client).</p>
+      </div>
+      <div class="condition-item">
+        <h4>🔄 Résiliation</h4>
+        <p>Abonnement : résiliable chaque mois avec préavis de 30 jours. Licence : aucun remboursement après activation, mais usage à vie garanti.</p>
+      </div>
+      <div class="condition-item">
+        <h4>🛡️ Après 1 an</h4>
+        <p>Support et mises à jour fonctionnelles en option. Contrat de maintenance annuel proposé sur devis. Le logiciel continue de fonctionner normalement.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <div class="doc-footer">
+    <strong>eLISAschool</strong> — Plateforme de gestion scolaire<br>
+    Document commercial v3.0 — Août 2026 — Tous les prix sont en FCFA (XAF)<br>
+    <em>Ce document est un aperçu commercial. Les conditions détaillées sont disponibles sur demande.</em>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// DONNEES
+// ============================================================
+const TRANCHES = [
+  { code: 'T1', min: 1, max: 100 },
+  { code: 'T2', min: 101, max: 200 },
+  { code: 'T3', min: 201, max: 500 },
+  { code: 'T4', min: 501, max: 1000 },
+  { code: 'T5', min: 1001, max: 2000 },
+  { code: 'T6', min: 2001, max: 3000 },
+  { code: 'T7', min: 3001, max: 5000 },
+  { code: 'T8', min: 5001, max: 99999 },
+];
+
+const PACK_PRICES = {
+  T1: { communication: 2000, logistique: 1500, performance: 2500, vieScolaire: 1500, finances: 3000, inventaire: 1500 },
+  T2: { communication: 3000, logistique: 2500, performance: 4000, vieScolaire: 2500, finances: 4500, inventaire: 2500 },
+  T3: { communication: 4500, logistique: 3500, performance: 5500, vieScolaire: 3500, finances: 6500, inventaire: 3500 },
+  T4: { communication: 6000, logistique: 5000, performance: 8000, vieScolaire: 5000, finances: 9000, inventaire: 5000 },
+  T5: { communication: 8000, logistique: 6500, performance: 10000, vieScolaire: 6500, finances: 12000, inventaire: 6500 },
+  T6: { communication: 10000, logistique: 8000, performance: 13000, vieScolaire: 8000, finances: 15000, inventaire: 8000 },
+  T7: { communication: 10000, logistique: 8000, performance: 13000, vieScolaire: 8000, finances: 15000, inventaire: 8000 },
+  T8: { communication: 10000, logistique: 8000, performance: 13000, vieScolaire: 8000, finances: 15000, inventaire: 8000 },
+};
+
+const PLATEFORME = { T1: 15000, T2: 22000, T3: 30000, T4: 42000, T5: 55000, T6: 70000, T7: 85000, T8: 100000 };
+
+const PACKS_INFO = {
+  communication: { name: 'Communication', icon: '📡' },
+  logistique: { name: 'Logistique', icon: '🚌' },
+  performance: { name: 'Performance', icon: '📈' },
+  vieScolaire: { name: 'Vie Scolaire', icon: '🏫' },
+  finances: { name: 'Finances', icon: '💰' },
+  inventaire: { name: 'Inventaire', icon: '📋' },
+};
+
+const SMS_PACKS = [
+  { label: '1 000 crédits', price: 5000 },
+  { label: '5 000 crédits', price: 20000 },
+  { label: '10 000 crédits', price: 35000 },
+];
+
+const STORAGE_INCLUDED = 5;
+const STORAGE_PRICE_PER_GB = 1000;
+
+const SCENARIOS = [
+  {
+    id: 1, titre: 'École primaire rurale', icon: '🏡',
+    effectif: 80, deploy: 'local', payment: 'abonnement',
+    packs: ['communication'],
+    sms: false, storage: 0,
+    desc: 'Petite école primaire en zone rurale. Serveur local. Communication essentielle avec les parents.',
+    badge: 'T1'
+  },
+  {
+    id: 8, titre: 'École standard minimale', icon: '🏫',
+    effectif: 150, deploy: 'local', payment: 'abonnement',
+    packs: ['communication', 'finances'],
+    sms: false, storage: 0,
+    desc: 'Petite structure 150 élèves. Packs essentiels : communication et finances uniquement.',
+    badge: 'T2'
+  },
+  {
+    id: 2, titre: 'Collège privé urbain', icon: '🎒',
+    effectif: 350, deploy: 'local', payment: 'abonnement',
+    packs: ['communication', 'logistique', 'performance'],
+    sms: false, storage: 0,
+    desc: 'Collège privé 350 élèves. Besoin logistique (cantine, transport) + suivi académique renforcé.',
+    badge: 'T3'
+  },
+  {
+    id: 3, titre: 'Lycée connecté', icon: '🌐',
+    effectif: 700, deploy: 'en-ligne', payment: 'abonnement',
+    packs: ['communication', 'performance', 'vieScolaire', 'finances'],
+    sms: true, smsPack: 2, storage: 20,
+    desc: 'Lycée moderne en ligne. SMS pour notifications parents. Stockage documents cloud 20 Go.',
+    badge: 'T4'
+  },
+  {
+    id: 4, titre: 'Complexe scolaire bilingue', icon: '🏛️',
+    effectif: 1500, deploy: 'en-ligne', payment: 'licence',
+    packs: ['communication', 'logistique', 'performance', 'vieScolaire', 'finances'],
+    sms: true, smsPack: 2, storage: 50,
+    desc: 'Complexe 1 500 élèves, 2 sites. Licence perpétuelle. Tous packs sauf inventaire.',
+    badge: 'T5'
+  },
+  {
+    id: 5, titre: 'Grand groupe scolaire', icon: '🏢',
+    effectif: 2500, deploy: 'en-ligne', payment: 'licence',
+    packs: ['communication', 'logistique', 'performance', 'vieScolaire', 'finances', 'inventaire'],
+    sms: true, smsPack: 2, storage: 100,
+    desc: 'Groupe scolaire 2 500 élèves. Tous les 6 packs. Infrastructure complète + 100 Go stockage.',
+    badge: 'T6'
+  },
+  {
+    id: 6, titre: 'Université privée', icon: '🎓',
+    effectif: 4000, deploy: 'en-ligne', payment: 'licence',
+    packs: ['communication', 'performance', 'finances'],
+    sms: true, smsPack: 2, storage: 200,
+    desc: 'Université 4 000 étudiants. Tarifs entreprise. Packs académiques et financiers. 200 Go stockage.',
+    badge: 'T7'
+  },
+  {
+    id: 7, titre: "Réseau d'écoles (5 sites)", icon: '🌍',
+    effectif: 5500, deploy: 'en-ligne', payment: 'licence',
+    packs: ['communication', 'logistique', 'performance', 'vieScolaire', 'finances', 'inventaire'],
+    sms: true, smsPack: 2, storage: 300,
+    desc: "Réseau de 5 écoles. 5 500 élèves cumulés. Déploiement centralisé + antennes locales. 300 Go.",
+    badge: 'T8'
+  },
+];
+
+// ============================================================
+// HELPERS
+// ============================================================
+function fmt(n) {
+  return new Intl.NumberFormat('fr-FR').format(Math.round(n));
+}
+
+function getTranche(effectif) {
+  for (let i = TRANCHES.length - 1; i >= 0; i--) {
+    if (effectif >= TRANCHES[i].min) return TRANCHES[i];
+  }
+  return TRANCHES[0];
+}
+
+function calcScenario(sc) {
+  const t = getTranche(sc.effectif);
+  const code = t.code;
+  let total = PLATEFORME[code];
+  const lines = [{ label: 'Frais de plateforme', value: PLATEFORME[code] }];
+
+  sc.packs.forEach(packId => {
+    const price = (PACK_PRICES[code] || {})[packId] || 0;
+    total += price;
+    lines.push({ label: 'Pack ' + PACKS_INFO[packId].name, value: price });
+  });
+
+  if (sc.sms && sc.smsPack > 0) {
+    const smsPrice = SMS_PACKS[sc.smsPack - 1]?.price || 0;
+    total += smsPrice;
+    lines.push({ label: 'SMS ' + SMS_PACKS[sc.smsPack - 1].label, value: smsPrice });
+  }
+
+  if (sc.deploy === 'en-ligne' && sc.storage > STORAGE_INCLUDED) {
+    const extraGb = sc.storage - STORAGE_INCLUDED;
+    const storageCost = extraGb * STORAGE_PRICE_PER_GB;
+    total += storageCost;
+    lines.push({ label: 'Stockage +' + extraGb + ' Go', value: storageCost });
+  }
+
+  const perStudent = total / sc.effectif;
+  const licenceTotal = total * 36;
+  const licenceCash = licenceTotal * 0.8;
+  const licenceDown = licenceTotal * 0.6;
+  const licenceMonthly = (licenceTotal - licenceDown) / 4;
+
+  return { total, lines, tranche: t, perStudent, licenceTotal, licenceCash, licenceDown, licenceMonthly };
+}
+
+// ============================================================
+// RENDER SCENARIOS
+// ============================================================
+function renderScenarios() {
+  const container = document.getElementById('scenarios-container');
+  container.innerHTML = SCENARIOS.map(sc => {
+    const calc = calcScenario(sc);
+    const tClass = sc.badge.toLowerCase();
+
+    let pricingHTML = calc.lines.map(l =>
+      `<div class="line"><span>${l.label}</span><span class="amount">${fmt(l.value)} F</span></div>`
+    ).join('');
+
+    pricingHTML += `<div class="line total"><span>Total mensuel</span><span class="amount">${fmt(calc.total)} F</span></div>`;
+
+    let licenceHTML = '';
+    if (sc.payment === 'licence') {
+      licenceHTML = `
+        <div class="licence-box">
+          <h5>Licence perpétuelle — Détail</h5>
+          <div class="licence-line"><span>Coût total (36 mois)</span><strong>${fmt(calc.licenceTotal)} F</strong></div>
+          <div class="licence-line"><span>Remise comptant (-20%)</span><strong>${fmt(calc.licenceCash)} F</strong></div>
+          <div class="licence-line"><span>Acompte 60%</span><strong>${fmt(calc.licenceDown)} F</strong></div>
+          <div class="licence-line"><span>4 mensualités de</span><strong>${fmt(calc.licenceMonthly)} F</strong></div>
+        </div>
+      `;
+    }
+
+    let packsHTML = sc.packs.map(p => {
+      const info = PACKS_INFO[p];
+      return `<span class="pack-badge">${info.icon} ${info.name}</span>`;
+    }).join('');
+
+    if (sc.sms) packsHTML += `<span class="pack-badge">📱 SMS</span>`;
+    if (sc.deploy === 'en-ligne' && sc.storage > 0) packsHTML += `<span class="pack-badge">💾 ${sc.storage} Go</span>`;
+
+    return `
+      <div class="scenario-card">
+        <div class="scenario-top">
+          <span class="scenario-badge ${tClass}">${sc.badge}</span>
+          <div class="scenario-icon">${sc.icon}</div>
+          <div class="scenario-name">${sc.titre}</div>
+          <div class="scenario-desc">${sc.desc}</div>
+          <div class="scenario-meta">
+            <div class="scenario-meta-item">👨‍🎓 <strong>${fmt(sc.effectif)}</strong> élèves</div>
+            <span class="deploy-tag ${sc.deploy === 'local' ? 'local' : 'online'}">${sc.deploy === 'local' ? '🏠 Local' : '☁️ En ligne'}</span>
+            <span class="payment-tag-scenario ${sc.payment}">${sc.payment === 'abonnement' ? '📅 Abonnement' : '🔑 Licence'}</span>
+          </div>
+        </div>
+        <div class="scenario-body">
+          <div class="scenario-packs">${packsHTML}</div>
+          <div class="scenario-pricing">
+            ${pricingHTML}
+          </div>
+          ${licenceHTML}
+          <div class="scenario-footer">
+            <div class="per-student">Coût / élève : <strong>${fmt(calc.perStudent)} F/mois</strong></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Init
+renderScenarios();
+
+// Nav active state
+document.querySelectorAll('.nav-links a').forEach(link => {
+  link.addEventListener('click', function() {
+    document.querySelectorAll('.nav-links a').forEach(l => l.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>

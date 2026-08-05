@@ -65,6 +65,8 @@
     "tousEnseignants": "Tous les enseignants",
     "toutesSalles": "Toutes les salles",
     "tousJours": "Tous les jours",
+    "tousStatuts": "Tous les statuts",
+    "rechercherCreneau": "Rechercher un créneau...",
     "reset": "Réinitialiser"
   },
   "mois": {
@@ -408,5 +410,15 @@
     "supprimerDetails": "Les cours déjà effectués ou passés ne sont pas modifiés."
   },
   "type": "Type",
-  "statut": "Statut"
+  "statut": "Statut",
+  "voir": "Voir",
+  "fermer": "Fermer",
+  "actions": "Actions",
+  "detail": {
+    "titre": "Détail du créneau",
+    "sectionIdentification": "Identification",
+    "sectionPlanification": "Planification",
+    "sectionStatut": "Statut & contexte",
+    "typeCreneau": "Type de créneau"
+  }
 }

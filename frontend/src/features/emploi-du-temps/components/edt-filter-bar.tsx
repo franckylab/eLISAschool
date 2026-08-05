@@ -22,9 +22,9 @@ interface OptionSimple {
 export interface EDTFilterBarProps {
     contexteType: ContexteType;
     onContexteTypeChange: (type: ContexteType) => void;
-    classeFilter: string;
-    onClasseFilterChange: (id: string) => void;
-    classeOptions: OptionSimple[];
+    contexteFilter: string;
+    onContexteFilterChange: (id: string) => void;
+    contexteOptions: OptionSimple[];
     // Filtres avancés (optionnels)
     filtreMatiere?: string;
     onFiltreMatiereChange?: (id: string) => void;
@@ -47,9 +47,9 @@ const CONTEXTE_ICONS: Record<ContexteType, React.ReactNode> = {
 export function EDTFilterBar({
     contexteType,
     onContexteTypeChange,
-    classeFilter,
-    onClasseFilterChange,
-    classeOptions,
+    contexteFilter,
+    onContexteFilterChange,
+    contexteOptions,
     filtreMatiere,
     onFiltreMatiereChange,
     matiereOptions,
@@ -91,10 +91,10 @@ export function EDTFilterBar({
                     ))}
                 </div>
 
-                {/* Dropdown principal */}
+                {/* Dropdown principal — options dynamiques selon le contexte */}
                 <select
-                    value={classeFilter}
-                    onChange={(e) => onClasseFilterChange(e.target.value)}
+                    value={contexteFilter}
+                    onChange={(e) => onContexteFilterChange(e.target.value)}
                     className={selectClass}
                     style={{ minWidth: 'clamp(120px, 30vw, 280px)' }}
                 >
@@ -105,7 +105,7 @@ export function EDTFilterBar({
                                 ? t('filtres.tousEnseignants')
                                 : t('filtres.toutesSalles')}
                     </option>
-                    {classeOptions.map((opt) => (
+                    {contexteOptions.map((opt) => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                 </select>

@@ -184,7 +184,7 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
                         {affectations.map(a => (
                             <option key={a.id} value={a.id}>
                                 {a.matiere?.nom ?? a.id.substring(0, 8)}
-                                {a.enseignant ? ` — ${a.enseignant.prenom} ${a.enseignant.nom}` : ''}
+                                {a.enseignant?.utilisateur?.profil ? ` — ${a.enseignant.utilisateur.profil.prenom} ${a.enseignant.utilisateur.profil.nom}` : ''}
                             </option>
                         ))}
                     </select>

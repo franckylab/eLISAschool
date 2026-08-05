@@ -567,7 +567,7 @@ function CreneauCard({
                             >
                                 <User className="h-2.5 w-2.5 shrink-0" />
                                 <span className="truncate">
-                                    {creneau.affectationMatiere.enseignant.prenom} {creneau.affectationMatiere.enseignant.nom}
+                                    {creneau.affectationMatiere?.enseignant?.utilisateur?.profil?.prenom} {creneau.affectationMatiere?.enseignant?.utilisateur?.profil?.nom}
                                 </span>
                             </div>
                         )}

@@ -194,7 +194,7 @@ export function EDTDayView({
                                                 <span className="flex items-center gap-0.5 text-[var(--color-dominant-600)] truncate">
                                                     <User className="h-3 w-3 shrink-0" />
                                                     <span style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.15vw, 0.6875rem)' }}>
-                                                        {c.affectationMatiere.enseignant.prenom} {c.affectationMatiere.enseignant.nom}
+                                                        {c.affectationMatiere?.enseignant?.utilisateur?.profil?.prenom} {c.affectationMatiere?.enseignant?.utilisateur?.profil?.nom}
                                                     </span>
                                                 </span>
                                             )}

@@ -319,8 +319,8 @@ function TableauVolumeHoraire({ creneaux, volumeMap }: {
                     matiereId: aff.matiereId,
                     matiereNom: aff.matiere.nom,
                     matiereCouleur: aff.matiere.couleur,
-                    enseignantNom: aff.enseignant
-                        ? `${aff.enseignant.prenom} ${aff.enseignant.nom}`
+                    enseignantNom: aff.enseignant?.utilisateur?.profil
+                        ? `${aff.enseignant.utilisateur.profil.prenom} ${aff.enseignant.utilisateur.profil.nom}`
                         : '—',
                     heuresPlanifiees: heures,
                     volumeRequis: requis,
@@ -509,7 +509,7 @@ function ChargeEnseignant({ creneaux }: {
             } else {
                 parEnseignant.set(ensId, {
                     enseignantId: ensId,
-                    enseignantNom: `${aff.enseignant.prenom} ${aff.enseignant.nom}`,
+                    enseignantNom: `${aff.enseignant?.utilisateur?.profil?.prenom ?? ''} ${aff.enseignant?.utilisateur?.profil?.nom ?? ''}`.trim() || '—',
                     totalHeures: heures,
                     nombreCreneaux: 1,
                     enAlerte: heures > SEUIL_ALERTE_ENSEIGNANT,

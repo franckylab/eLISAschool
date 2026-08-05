@@ -65,6 +65,8 @@
     "tousEnseignants": "All teachers",
     "toutesSalles": "All rooms",
     "tousJours": "All days",
+    "tousStatuts": "All statuses",
+    "rechercherCreneau": "Search a slot...",
     "reset": "Reset"
   },
   "mois": {
@@ -408,5 +410,15 @@
     "info": "Timetable slots will be converted into real class hours for the selected range. Teacher conflicts are automatically avoided."
   },
   "type": "Type",
-  "statut": "Status"
+  "statut": "Status",
+  "voir": "View",
+  "fermer": "Close",
+  "actions": "Actions",
+  "detail": {
+    "titre": "Slot details",
+    "sectionIdentification": "Identification",
+    "sectionPlanification": "Planning",
+    "sectionStatut": "Status & context",
+    "typeCreneau": "Slot type"
+  }
 }

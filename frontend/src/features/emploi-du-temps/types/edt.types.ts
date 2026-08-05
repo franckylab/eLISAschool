@@ -46,7 +46,14 @@ export interface CreneauHoraire {
         obligatoire: boolean;
         statutValidation: string;
         matiere?: { id: string; nom: string; code?: string; couleur?: string };
-        enseignant?: { id: string; nom: string; prenom: string };
+        enseignant?: {
+            id: string;
+            matricule?: string;
+            utilisateur?: {
+                id: string;
+                profil?: { id: string; nom: string; prenom: string };
+            };
+        };
         classeAnnee?: {
             id: string;
             classe: { id: string; nom: string; niveau?: string };

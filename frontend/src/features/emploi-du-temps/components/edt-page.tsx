@@ -16,9 +16,15 @@ import {
     ShieldCheck, CalendarCheck, ChevronDown,
     CalendarDays, CalendarRange, List as ListIcon, BarChart3,
 } from 'lucide-react';
-import { useCreneaux, useValiderCreneauxClasse } from '../hooks/use-emploi-du-temps';
+import {
+    useCreneaux, useValiderCreneauxClasse,
+    useEnseignantOptions, useSalleOptions, useMatiereOptions,
+    useAffectationsOptions, useSallesFromCreneaux,
+} from '../hooks/use-emploi-du-temps';
+import { useNavigationEDT, type PlanningView } from '../hooks/use-navigation-edt';
 import { EDTCalendar } from './edt-calendar';
 import { EDTFilterBar, type ContexteType } from './edt-filter-bar';
+import type { OptionSimple } from '../hooks/use-emploi-du-temps';
 import { EDTMonthView } from './edt-month-view';
 import { EDTDayView } from './edt-day-view';
 import { EDTListeView } from './edt-liste';
@@ -28,6 +34,7 @@ import { EDTSynthese } from './edt-synthese';
 import { EDTAudit } from './edt-audit';
 import { EDTHeuresCoursModal } from './edt-heures-cours-modal';
 import { EDTCreneauModal } from './edt-creneau-modal';
+import { EDTCreneauDetailModal } from './edt-creneau-detail-modal';
 import { EDTGenerationModal } from './edt-generation-modal';
 import type { CreneauHoraire, JourSemaine } from '../types/edt.types';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -40,7 +47,6 @@ import { CustomModal } from '@/components/modals/CustomModal';
 import { useToutesClasses } from '@/features/classes/hooks/use-toutes-classes';
 
 type EDTTab = 'planning' | 'configuration';
-type PlanningView = 'semaine' | 'mois' | 'jour' | 'liste';
 
 const EDT_TABS: EDTTab[] = ['planning', 'configuration'];
 
@@ -66,95 +72,29 @@ export function EDTStandalonePage() {
 
     // ─── États globaux ──────────────────────────────
     const [contexteType, setContexteType] = useState<ContexteType>('classe');
-    const [classeFilter, setClasseFilter] = useState('');
-    const [planningView, setPlanningView] = useState<PlanningView>('semaine');
+    const [contexteFilter, setContexteFilter] = useState('');
     const [showAnalytique, setShowAnalytique] = useState(false);
-    const [navigationDate, setNavigationDate] = useState(new Date());
     // Filtres avancés (client-side)
     const [filtreMatiere, setFiltreMatiere] = useState('');
     const [filtreJour, setFiltreJour] = useState<JourSemaine | undefined>(undefined);
+
+    // ─── Navigation calendrier (hook extrait) ─────────
+    const {
+        planningView, setPlanningView,
+        navigationDate, setNavigationDate,
+        semaineDebut, moisDebut,
+        navigationLabel, estCourant,
+        naviguerPrecedent, naviguerSuivant, naviguerAujourdhui,
+    } = useNavigationEDT();
 
     // ─── Modals ─────────────────────────────────────
     const [genModalOpen, setGenModalOpen] = useState(false);
     const [heuresCoursModalOpen, setHeuresCoursModalOpen] = useState(false);
     const [creneauModalOpen, setCreneauModalOpen] = useState(false);
     const [selectedCreneau, setSelectedCreneau] = useState<CreneauHoraire | null>(null);
-
-    // ─── Navigation calculée ────────────────────────
-
-    /** Lundi de la semaine de référence */
-    const semaineDebut = useMemo(() => {
-        const d = new Date(navigationDate);
-        const day = d.getDay();
-        const diff = d.getDate() - (day === 0 ? 6 : day - 1);
-        const lundi = new Date(d.setDate(diff));
-        lundi.setHours(0, 0, 0, 0);
-        return lundi;
-    }, [navigationDate]);
-
-    /** 1er du mois de référence */
-    const moisDebut = useMemo(() => {
-        const d = new Date(navigationDate);
-        d.setDate(1);
-        d.setHours(0, 0, 0, 0);
-        return d;
-    }, [navigationDate]);
-
-    /** Label dynamique selon le mode de vue */
-    const navigationLabel = useMemo(() => {
-        switch (planningView) {
-            case 'semaine': {
-                const fin = new Date(semaineDebut);
-                fin.setDate(fin.getDate() + 5);
-                const fmt = (d: Date) => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-                return `S${numeroSemaineISO(semaineDebut)} — ${fmt(semaineDebut)} — ${fmt(fin)}`;
-            }
-            case 'mois':
-                return navigationDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-            case 'jour':
-                return navigationDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-            case 'liste':
-                return '';
-        }
-    }, [planningView, navigationDate, semaineDebut]);
-
-    const estCourant = useMemo(() => {
-        const now = new Date();
-        switch (planningView) {
-            case 'semaine': return isSameWeek(navigationDate, now);
-            case 'mois': return navigationDate.getMonth() === now.getMonth() && navigationDate.getFullYear() === now.getFullYear();
-            case 'jour': return navigationDate.toDateString() === now.toDateString();
-            default: return true;
-        }
-    }, [planningView, navigationDate]);
-
-    const naviguerPrecedent = useCallback(() => {
-        setNavigationDate(prev => {
-            const d = new Date(prev);
-            switch (planningView) {
-                case 'semaine': d.setDate(d.getDate() - 7); break;
-                case 'mois': d.setMonth(d.getMonth() - 1); break;
-                case 'jour': d.setDate(d.getDate() - 1); break;
-            }
-            return d;
-        });
-    }, [planningView]);
-
-    const naviguerSuivant = useCallback(() => {
-        setNavigationDate(prev => {
-            const d = new Date(prev);
-            switch (planningView) {
-                case 'semaine': d.setDate(d.getDate() + 7); break;
-                case 'mois': d.setMonth(d.getMonth() + 1); break;
-                case 'jour': d.setDate(d.getDate() + 1); break;
-            }
-            return d;
-        });
-    }, [planningView]);
-
-    const naviguerAujourdhui = useCallback(() => {
-        setNavigationDate(new Date());
-    }, []);
+    // Modal détail (lecture seule)
+    const [detailModalOpen, setDetailModalOpen] = useState(false);
+    const [detailCreneau, setDetailCreneau] = useState<CreneauHoraire | null>(null);
 
     // ─── Tabs ───────────────────────────────────────
 
@@ -163,37 +103,56 @@ export function EDTStandalonePage() {
         { id: 'configuration', label: t('onglets.configuration'), icon: Settings },
     ];
 
-    // ─── Données ────────────────────────────────────
-
+    // ─── Données de contexte (chargées selon le type) ─────────
     const { data: classes } = useToutesClasses();
-    const classeOptions = (classes ?? [])
-        .filter(c => c.classeAnneeId && c.actif)
-        .map(c => ({
-            value: c.classeAnneeId!,
-            label: `${c.nom}${c.anneeScolaire?.libelle ? ` — ${c.anneeScolaire.libelle}` : ''}`,
-        }));
+    const { data: enseignantOptions = [] } = useEnseignantOptions();
+    const { data: salleOptions = [] } = useSalleOptions();
+    const { data: matiereOptions = [] } = useMatiereOptions();
 
-    const filters = classeFilter
-        ? contexteType === 'classe' ? { classeAnneeId: classeFilter } : { limit: 100 }
-        : { limit: 100 };
-    const { data: paginated, isLoading, error, refetch } = useCreneaux(filters);
+    /** Options de classes pour le contexte 'classe' */
+    const classeOptions: OptionSimple[] = useMemo(() =>
+        (classes ?? [])
+            .filter(c => c.classeAnneeId && c.actif)
+            .map(c => ({
+                value: c.classeAnneeId!,
+                label: `${c.nom}${c.anneeScolaire?.libelle ? ` — ${c.anneeScolaire.libelle}` : ''}`,
+            })),
+        [classes]
+    );
+
+    /** Options contextuelles selon le type de contexte sélectionné */
+    const contexteOptions: OptionSimple[] = useMemo(() => {
+        switch (contexteType) {
+            case 'enseignant': return enseignantOptions;
+            case 'salle': return salleOptions;
+            default: return classeOptions;
+        }
+    }, [contexteType, classeOptions, enseignantOptions, salleOptions]);
+
+    // Reset du filtre quand le type de contexte change
+    const handleContexteTypeChange = useCallback((type: ContexteType) => {
+        setContexteType(type);
+        setContexteFilter('');
+    }, []);
+
+    // ─── Filtre serveur adaptatif ─────────────────────
+    const serverFilters = useMemo(() => {
+        if (!contexteFilter) return { limit: 100 };
+        switch (contexteType) {
+            case 'classe': return { classeAnneeId: contexteFilter, limit: 100 };
+            case 'enseignant': return { enseignantId: contexteFilter, limit: 100 };
+            case 'salle': return { salleId: contexteFilter, limit: 100 };
+        }
+    }, [contexteType, contexteFilter]);
+
+    const { data: paginated, isLoading, error, refetch } = useCreneaux(serverFilters);
     const creneaux = paginated?.items ?? [];
     const validerCreneauxClasse = useValiderCreneauxClasse();
 
-    /** Options de matière déduites des créneaux chargés */
-    const matiereOptions = useMemo(() => {
-        const map = new Map<string, string>();
-        for (const c of creneaux) {
-            const nom = c.affectationMatiere?.matiere?.nom;
-            const id = c.affectationMatiereId;
-            if (id && nom && !map.has(id)) {
-                map.set(id, nom);
-            }
-        }
-        return Array.from(map.entries())
-            .map(([value, label]) => ({ value, label }))
-            .sort((a, b) => a.label.localeCompare(b.label));
-    }, [creneaux]);
+    // ─── Options pour le modal créneau (affectations + salles) ───
+    const classeAnneeIdForModal = contexteType === 'classe' ? contexteFilter || undefined : undefined;
+    const { data: affectationsDisponibles = [] } = useAffectationsOptions(classeAnneeIdForModal);
+    const { data: sallesDisponibles = [] } = useSallesFromCreneaux();
 
     /** Créneaux filtrés côté client (matière + jour) */
     const filteredCreneaux = useMemo(() => {
@@ -207,31 +166,24 @@ export function EDTStandalonePage() {
         return result;
     }, [creneaux, filtreMatiere, filtreJour]);
 
-    /** Affectations et salles déduites des créneaux chargés (pour le modal) */
-    const { affectationsDisponibles, sallesDisponibles } = useMemo(() => {
-        const affectationMap = new Map<string, { id: string; matiere?: { nom: string; code?: string }; enseignant?: { nom: string; prenom: string } }>();
-        const salleMap = new Map<string, { id: string; nom: string; code?: string }>();
-        for (const c of creneaux) {
-            if (c.affectationMatiereId && c.affectationMatiere && !affectationMap.has(c.affectationMatiereId)) {
-                affectationMap.set(c.affectationMatiereId, {
-                    id: c.affectationMatiere.id,
-                    matiere: c.affectationMatiere.matiere,
-                    enseignant: c.affectationMatiere.enseignant,
-                });
-            }
-            if (c.salleId && c.salle && !salleMap.has(c.salleId)) {
-                salleMap.set(c.salleId, { id: c.salle.id, nom: c.salle.nom, code: c.salle.code });
-            }
-        }
-        return { affectationsDisponibles: Array.from(affectationMap.values()), sallesDisponibles: Array.from(salleMap.values()) };
-    }, [creneaux]);
-
     // ─── Handlers ───────────────────────────────────
 
     const handleCreneauClick = (creneau: CreneauHoraire) => {
         setSelectedCreneau(creneau);
         setCreneauModalOpen(true);
     };
+
+    /** Ouvrir le modal de détail (lecture seule) */
+    const handleVoir = useCallback((creneau: CreneauHoraire) => {
+        setDetailCreneau(creneau);
+        setDetailModalOpen(true);
+    }, []);
+
+    /** Ouvrir le modal d'édition depuis le modal détail */
+    const handleModifier = useCallback((creneau: CreneauHoraire) => {
+        setSelectedCreneau(creneau);
+        setCreneauModalOpen(true);
+    }, []);
 
     const handleCreneauCreate = () => {
         setSelectedCreneau(null);
@@ -244,8 +196,8 @@ export function EDTStandalonePage() {
     };
 
     const handleExportPDF = () => {
-        if (!classeFilter) return;
-        window.open(`/api/emploi-du-temps/export/pdf/${classeFilter}`, '_blank');
+        if (!contexteFilter || contexteType !== 'classe') return;
+        window.open(`/api/emploi-du-temps/export/pdf/${contexteFilter}`, '_blank');
     };
 
     const handleDateClick = (date: Date) => {
@@ -260,8 +212,8 @@ export function EDTStandalonePage() {
             return (
                 <div className="flex flex-col gap-[var(--gap-lg)]">
                     <EDTSynthese
-                        classeAnneeId={classeFilter || undefined}
-                        enseignantId={contexteType === 'enseignant' ? classeFilter || undefined : undefined}
+                        classeAnneeId={contexteType === 'classe' ? contexteFilter || undefined : undefined}
+                        enseignantId={contexteType === 'enseignant' ? contexteFilter || undefined : undefined}
                         embedded
                     />
                     <EDTAudit embedded />
@@ -286,7 +238,7 @@ export function EDTStandalonePage() {
             case 'jour':
                 return <EDTDayView creneaux={filteredCreneaux} date={navigationDate} onCreneauClick={handleCreneauClick} />;
             case 'liste':
-                return <EDTListeView creneaux={filteredCreneaux} onCreneauClick={handleCreneauClick} />;
+                return <EDTListeView creneaux={filteredCreneaux} onVoir={handleVoir} onModifier={handleModifier} />;
             default:
                 return null;
         }
@@ -467,10 +419,10 @@ export function EDTStandalonePage() {
                         {/* ─── FilterBar ─────────────────────── */}
                         <EDTFilterBar
                             contexteType={contexteType}
-                            onContexteTypeChange={setContexteType}
-                            classeFilter={classeFilter}
-                            onClasseFilterChange={setClasseFilter}
-                            classeOptions={classeOptions}
+                            onContexteTypeChange={handleContexteTypeChange}
+                            contexteFilter={contexteFilter}
+                            onContexteFilterChange={setContexteFilter}
+                            contexteOptions={contexteOptions}
                             filtreMatiere={filtreMatiere}
                             onFiltreMatiereChange={setFiltreMatiere}
                             matiereOptions={matiereOptions}
@@ -496,12 +448,12 @@ export function EDTStandalonePage() {
                             >
                                 {t('generer')}
                             </ElisaButton>
-                            {classeFilter && contexteType === 'classe' && (
+                            {contexteFilter && contexteType === 'classe' && (
                                 <ElisaButton
                                     variant="secondary"
                                     size="xs"
                                     icon={<ShieldCheck className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
-                                    onClick={() => validerCreneauxClasse.mutate(classeFilter)}
+                                    onClick={() => validerCreneauxClasse.mutate(contexteFilter)}
                                     disabled={validerCreneauxClasse.isPending}
                                 >
                                     <span className="hidden sm:inline">{t('valider')}</span>
@@ -515,7 +467,7 @@ export function EDTStandalonePage() {
                             >
                                 <span className="hidden sm:inline">{t('generationHeuresCours.titre')}</span>
                             </ElisaButton>
-                            {classeFilter && (
+                            {contexteFilter && contexteType === 'classe' && (
                                 <ElisaButton
                                     variant="outline"
                                     size="xs"
@@ -534,11 +486,11 @@ export function EDTStandalonePage() {
             </motion.div>
 
             {/* ─── Modal Génération ─────────────────── */}
-            {classeFilter && (
+            {contexteFilter && contexteType === 'classe' && (
                 <EDTGenerationModal
                     open={genModalOpen}
                     onOpenChange={setGenModalOpen}
-                    classeAnneeId={classeFilter}
+                    classeAnneeId={contexteFilter}
                     onSuccess={() => { setGenModalOpen(false); }}
                 />
             )}
@@ -552,11 +504,19 @@ export function EDTStandalonePage() {
                 size="xl"
             >
                 <EDTHeuresCoursModal
-                    enseignantId={contexteType === 'enseignant' ? classeFilter : ''}
-                    classeAnneeId={contexteType === 'classe' ? classeFilter || undefined : undefined}
+                    enseignantId={contexteType === 'enseignant' ? contexteFilter : ''}
+                    classeAnneeId={contexteType === 'classe' ? contexteFilter || undefined : undefined}
                     onClose={() => setHeuresCoursModalOpen(false)}
                 />
             </CustomModal>
+
+            {/* ─── Modal Détail Créneau (lecture seule) ── */}
+            <EDTCreneauDetailModal
+                open={detailModalOpen}
+                onOpenChange={setDetailModalOpen}
+                creneau={detailCreneau}
+                onModifier={handleModifier}
+            />
 
             {/* ─── Modal Créneau ────────────────────── */}
             <EDTCreneauModal
@@ -570,24 +530,4 @@ export function EDTStandalonePage() {
             />
         </div>
     );
-}
-
-// ─── Helpers ─────────────────────────────────────────
-
-function numeroSemaineISO(d: Date): number {
-    const date = new Date(d);
-    date.setDate(date.getDate() + 3);
-    const yearStart = new Date(date.getFullYear(), 0, 1);
-    return Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + yearStart.getDay() + 1) / 7);
-}
-
-function isSameWeek(a: Date, b: Date): boolean {
-    const getMonday = (d: Date) => {
-        const r = new Date(d);
-        const day = r.getDay();
-        r.setDate(r.getDate() - (day === 0 ? 6 : day - 1));
-        r.setHours(0, 0, 0, 0);
-        return r;
-    };
-    return getMonday(a).getTime() === getMonday(b).getTime();
 }

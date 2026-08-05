@@ -2,291 +2,204 @@
  * ==================================
  * eLISAschool - Vue Liste EDT (DataTable)
  * ==================================
- * Tableau structuré avec colonnes triables, responsive cartes mobile
+ * Tableau structuré basé sur le composant DataTable réutilisable
  * Colonnes : Jour | Horaire | Matière | Enseignant | Classe | Salle | Type | Statut
- * Version: 2.0.0
+ * Version: 3.0.0 — Migration vers DataTable
  */
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowUpDown, ArrowUp, ArrowDown, MapPin, User, ChevronLeft, ChevronRight } from 'lucide-react';
-import type { CreneauHoraire, JourSemaine } from '../types/edt.types';
+import { Eye, Pencil } from 'lucide-react';
+import { DataTable, type Column } from '@/components/ui/DataTable';
+import type { CreneauHoraire } from '../types/edt.types';
 
 interface EDTListeViewProps {
     creneaux: CreneauHoraire[];
-    onCreneauClick?: (creneau: CreneauHoraire) => void;
+    onVoir?: (creneau: CreneauHoraire) => void;
+    onModifier?: (creneau: CreneauHoraire) => void;
 }
 
-type ColonneTri = 'jour' | 'horaire' | 'matiere' | 'enseignant' | 'classe' | 'salle' | 'type' | 'statut';
-type OrdreTri = 'asc' | 'desc';
-
-const JOURS_ORDRE: Record<JourSemaine, number> = {
-    LUNDI: 0, MARDI: 1, MERCREDI: 2, JEUDI: 3, VENDREDI: 4, SAMEDI: 5,
-};
-
-export function EDTListeView({ creneaux, onCreneauClick }: EDTListeViewProps) {
+export function EDTListeView({ creneaux, onVoir, onModifier }: EDTListeViewProps) {
     const { t } = useTranslation('emplois');
-    const [colonneTri, setColonneTri] = useState<ColonneTri>('jour');
-    const [ordreTri, setOrdreTri] = useState<OrdreTri>('asc');
-    const [page, setPage] = useState(1);
-    const ITEMS_PER_PAGE = 50;
 
-    const toggleTri = (col: ColonneTri) => {
-        if (colonneTri === col) {
-            setOrdreTri(o => o === 'asc' ? 'desc' : 'asc');
-        } else {
-            setColonneTri(col);
-            setOrdreTri('asc');
-        }
-    };
-
-    const creneauxTries = useMemo(() => {
-        const sorted = [...creneaux].sort((a, b) => {
-            let cmp = 0;
-            switch (colonneTri) {
-                case 'jour':
-                    cmp = (JOURS_ORDRE[a.jour] ?? 0) - (JOURS_ORDRE[b.jour] ?? 0);
-                    break;
-                case 'horaire':
-                    cmp = a.heureDebut.localeCompare(b.heureDebut);
-                    break;
-                case 'matiere':
-                    cmp = (a.affectationMatiere?.matiere?.nom ?? '').localeCompare(b.affectationMatiere?.matiere?.nom ?? '');
-                    break;
-                case 'enseignant': {
-                    const ea = a.affectationMatiere?.enseignant;
-                    const eb = b.affectationMatiere?.enseignant;
-                    cmp = (`${ea?.prenom ?? ''} ${ea?.nom ?? ''}`).localeCompare(`${eb?.prenom ?? ''} ${eb?.nom ?? ''}`);
-                    break;
-                }
-                case 'classe':
-                    cmp = (a.affectationMatiere?.classeAnnee?.classe?.nom ?? '').localeCompare(
-                        b.affectationMatiere?.classeAnnee?.classe?.nom ?? ''
-                    );
-                    break;
-                case 'salle':
-                    cmp = (a.salle?.nom ?? '').localeCompare(b.salle?.nom ?? '');
-                    break;
-                case 'type':
-                    cmp = a.typeCreneau.localeCompare(b.typeCreneau);
-                    break;
-                case 'statut':
-                    cmp = a.statut.localeCompare(b.statut);
-                    break;
-            }
-            return ordreTri === 'asc' ? cmp : -cmp;
-        });
-        return sorted;
-    }, [creneaux, colonneTri, ordreTri]);
-
-    // Reset page 1 quand les données ou le tri changent
-    const totalPages = Math.max(1, Math.ceil(creneauxTries.length / ITEMS_PER_PAGE));
-    const pageEffectif = Math.min(page, totalPages);
-    const creneauxPagines = useMemo(() => {
-        const start = (pageEffectif - 1) * ITEMS_PER_PAGE;
-        return creneauxTries.slice(start, start + ITEMS_PER_PAGE);
-    }, [creneauxTries, pageEffectif]);
-
-    const TriIcon = ({ col }: { col: ColonneTri }) => {
-        if (colonneTri !== col) return <ArrowUpDown className="h-3 w-3 text-[var(--color-text-muted)]" />;
-        return ordreTri === 'asc'
-            ? <ArrowUp className="h-3 w-3 text-[var(--color-dominant-600)]" />
-            : <ArrowDown className="h-3 w-3 text-[var(--color-dominant-600)]" />;
-    };
-
-    const thClass =
-        'px-[var(--padding-table-cell)] py-[var(--space-sm)] text-left font-medium text-[var(--color-text-secondary)] cursor-pointer hover:bg-[var(--color-surface-hover)] transition-colors select-none';
-    const thStyle = { fontSize: 'clamp(0.6875rem, 0.63rem + 0.2vw, 0.8125rem)' };
+    const colonnes: Column<CreneauHoraire>[] = useMemo(() => [
+        {
+            key: 'jour',
+            header: t('calendrier.jour'),
+            sortable: true,
+            render: (c) => (
+                <span className="font-medium text-[var(--color-text-primary)]">
+                    {t(`jours.${c.jour.toLowerCase()}`)}
+                </span>
+            ),
+        },
+        {
+            key: 'horaire',
+            header: t('horaire'),
+            sortable: true,
+            render: (c) => (
+                <span className="font-mono text-[var(--color-text-primary)]">
+                    {c.heureDebut}–{c.heureFin}
+                </span>
+            ),
+        },
+        {
+            key: 'matiere',
+            header: t('matiere'),
+            sortable: true,
+            render: (c) => {
+                const couleur = c.affectationMatiere?.matiere?.couleur || c.couleur;
+                return (
+                    <div className="flex items-center gap-[var(--gap-xs)]">
+                        {couleur && (
+                            <span
+                                className="inline-block h-3 w-3 rounded-full shrink-0"
+                                style={{ backgroundColor: couleur }}
+                            />
+                        )}
+                        <span className="text-[var(--color-text-primary)] truncate max-w-[120px]">
+                            {c.affectationMatiere?.matiere?.nom ?? '—'}
+                        </span>
+                    </div>
+                );
+            },
+        },
+        {
+            key: 'enseignant',
+            header: t('enseignant'),
+            sortable: true,
+            render: (c) => {
+                const ens = c.affectationMatiere?.enseignant;
+                const prenom = ens?.utilisateur?.profil?.prenom ?? '';
+                const nom = ens?.utilisateur?.profil?.nom ?? '';
+                if (!prenom && !nom) return <span className="text-[var(--color-text-muted)]">—</span>;
+                const initiales = `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase();
+                const nomComplet = `${prenom} ${nom}`.trim();
+                return (
+                    <div className="flex items-center gap-[var(--gap-xs)] truncate max-w-[140px]" title={nomComplet}>
+                        <span
+                            className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-semibold text-white"
+                            style={{
+                                fontSize: 'clamp(0.5rem, 0.45rem + 0.15vw, 0.625rem)',
+                                backgroundColor: 'var(--color-dominant-500)',
+                            }}
+                        >
+                            {initiales}
+                        </span>
+                        <span className="text-[var(--color-text-secondary)] truncate">
+                            {nomComplet}
+                        </span>
+                    </div>
+                );
+            },
+        },
+        {
+            key: 'classe',
+            header: t('classe'),
+            sortable: true,
+            render: (c) => (
+                <span className="text-[var(--color-text-secondary)] truncate max-w-[100px]">
+                    {c.affectationMatiere?.classeAnnee?.classe?.nom ?? '—'}
+                </span>
+            ),
+        },
+        {
+            key: 'salle',
+            header: t('salle'),
+            sortable: true,
+            render: (c) => (
+                <span className="text-[var(--color-text-secondary)]">
+                    {c.salle?.nom ?? '—'}
+                </span>
+            ),
+        },
+        {
+            key: 'typeCreneau',
+            header: t('type'),
+            sortable: true,
+            render: (c) => (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]">
+                    {t(`creneau.types.${c.typeCreneau.toLowerCase()}`)}
+                </span>
+            ),
+        },
+        {
+            key: 'statut',
+            header: t('statut'),
+            sortable: true,
+            render: (c) => (
+                <span
+                    className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                        c.statut === 'VALIDE'
+                            ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]'
+                            : 'bg-[var(--color-info)]/10 text-[var(--color-info)]'
+                    }`}
+                >
+                    {c.statut === 'VALIDE' ? t('heureCours.modal.statuts.effectue') : t('heureCours.modal.statuts.planifie')}
+                </span>
+            ),
+        },
+        ...(onVoir || onModifier ? [{
+            key: 'actions',
+            header: t('actions'),
+            renderActions: (c: CreneauHoraire) => {
+                const actions = [];
+                if (onVoir) actions.push({
+                    key: 'voir',
+                    label: t('voir'),
+                    icon: Eye,
+                    onClick: () => onVoir(c),
+                });
+                if (onModifier) actions.push({
+                    key: 'modifier',
+                    label: t('modifier'),
+                    icon: Pencil,
+                    onClick: () => onModifier(c),
+                });
+                return actions;
+            },
+        }] : []),
+    ], [t, onVoir, onModifier]);
 
     return (
-        <div className="flex flex-col gap-[var(--gap-sm)]">
-            {/* ─── Desktop Table ────────────────────── */}
-            <div className="hidden sm:block rounded-xl border border-[var(--color-bordure)] overflow-hidden">
-                <table className="w-full border-collapse text-sm">
-                    <thead>
-                        <tr className="bg-[var(--color-surface-alt)]">
-                            <th className={thClass} style={thStyle} onClick={() => toggleTri('jour')}>
-                                <span className="flex items-center gap-1">{t('jour')} <TriIcon col="jour" /></span>
-                            </th>
-                            <th className={thClass} style={thStyle} onClick={() => toggleTri('horaire')}>
-                                <span className="flex items-center gap-1">{t('horaire')} <TriIcon col="horaire" /></span>
-                            </th>
-                            <th className={thClass} style={thStyle} onClick={() => toggleTri('matiere')}>
-                                <span className="flex items-center gap-1">{t('matiere')} <TriIcon col="matiere" /></span>
-                            </th>
-                            <th className={thClass} style={thStyle} onClick={() => toggleTri('enseignant')}>
-                                <span className="flex items-center gap-1">{t('enseignant')} <TriIcon col="enseignant" /></span>
-                            </th>
-                            <th className={thClass} style={thStyle} onClick={() => toggleTri('classe')}>
-                                <span className="flex items-center gap-1">{t('classe')} <TriIcon col="classe" /></span>
-                            </th>
-                            <th className={thClass} style={thStyle} onClick={() => toggleTri('salle')}>
-                                <span className="flex items-center gap-1">{t('salle')} <TriIcon col="salle" /></span>
-                            </th>
-                            <th className={thClass} style={thStyle} onClick={() => toggleTri('type')}>
-                                <span className="flex items-center gap-1">{t('type')} <TriIcon col="type" /></span>
-                            </th>
-                            <th className={thClass} style={thStyle} onClick={() => toggleTri('statut')}>
-                                <span className="flex items-center gap-1">{t('statut')} <TriIcon col="statut" /></span>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {creneauxPagines.map((c, i) => (
-                            <tr
-                                key={c.id}
-                                className={`${i % 2 === 0 ? 'bg-[var(--color-surface)]' : 'bg-[var(--color-surface-alt)]'} ${
-                                    onCreneauClick ? 'cursor-pointer hover:bg-[var(--color-surface-hover)]' : ''
-                                } transition-colors`}
-                                onClick={() => onCreneauClick?.(c)}
-                            >
-                                <td className="px-[var(--padding-table-cell)] py-[var(--space-sm)] font-medium text-[var(--color-text-primary)]">
-                                    {t(`jours.${c.jour.toLowerCase()}`)}
-                                </td>
-                                <td className="px-[var(--padding-table-cell)] py-[var(--space-sm)] font-mono text-[var(--color-text-primary)]">
-                                    {c.heureDebut}–{c.heureFin}
-                                </td>
-                                <td className="px-[var(--padding-table-cell)] py-[var(--space-sm)]">
-                                    <div className="flex items-center gap-[var(--gap-xs)]">
-                                        {c.couleur && (
-                                            <span className="inline-block h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: c.couleur }} />
-                                        )}
-                                        <span className="text-[var(--color-text-primary)] truncate max-w-[120px]">
-                                            {c.affectationMatiere?.matiere?.nom ?? '—'}
-                                        </span>
-                                    </div>
-                                </td>
-                                <td className="px-[var(--padding-table-cell)] py-[var(--space-sm)] text-[var(--color-text-secondary)] truncate max-w-[120px]">
-                                    {c.affectationMatiere?.enseignant
-                                        ? `${c.affectationMatiere.enseignant.prenom} ${c.affectationMatiere.enseignant.nom}`
-                                        : '—'}
-                                </td>
-                                <td className="px-[var(--padding-table-cell)] py-[var(--space-sm)] text-[var(--color-text-secondary)] truncate max-w-[100px]">
-                                    {c.affectationMatiere?.classeAnnee?.classe?.nom ?? '—'}
-                                </td>
-                                <td className="px-[var(--padding-table-cell)] py-[var(--space-sm)] text-[var(--color-text-secondary)]">
-                                    {c.salle?.nom ?? '—'}
-                                </td>
-                                <td className="px-[var(--padding-table-cell)] py-[var(--space-sm)]">
-                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]">
-                                        {t(`creneau.types.${c.typeCreneau.toLowerCase()}`)}
-                                    </span>
-                                </td>
-                                <td className="px-[var(--padding-table-cell)] py-[var(--space-sm)]">
-                                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-                                        c.statut === 'VALIDE'
-                                            ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]'
-                                            : 'bg-[var(--color-info)]/10 text-[var(--color-info)]'
-                                    }`}>
-                                        {c.statut === 'VALIDE' ? t('heureCours.modal.statuts.effectue') : t('heureCours.modal.statuts.planifie')}
-                                    </span>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* ─── Mobile Cards ─────────────────────── */}
-            <div className="sm:hidden flex flex-col gap-[var(--gap-sm)]">
-                {creneauxPagines.map(c => (
-                    <button
-                        key={c.id}
-                        onClick={() => onCreneauClick?.(c)}
-                        className="rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] p-[var(--space-md)] text-left transition-colors hover:bg-[var(--color-surface-hover)]"
-                    >
-                        <div className="flex items-center justify-between mb-[var(--gap-xs)]">
-                            <div className="flex items-center gap-[var(--gap-xs)]">
-                                {c.couleur && (
-                                    <span className="inline-block h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: c.couleur }} />
-                                )}
-                                <span className="font-semibold text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}>
-                                    {c.affectationMatiere?.matiere?.nom ?? '—'}
-                                </span>
-                            </div>
-                            <span className="font-mono text-xs text-[var(--color-text-muted)]">
-                                {c.heureDebut}–{c.heureFin}
-                            </span>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-x-[var(--gap-sm)] gap-y-1 text-xs text-[var(--color-text-secondary)]">
-                            <span className="font-medium text-[var(--color-dominant-700)]">{t(`jours.${c.jour.toLowerCase()}`)}</span>
-                            {c.affectationMatiere?.enseignant && (
-                                <span className="flex items-center gap-0.5">
-                                    <User className="h-3 w-3" />
-                                    {c.affectationMatiere.enseignant.prenom} {c.affectationMatiere.enseignant.nom}
-                                </span>
-                            )}
-                            {c.salle && (
-                                <span className="flex items-center gap-0.5">
-                                    <MapPin className="h-3 w-3" />
-                                    {c.salle.nom}
-                                </span>
-                            )}
-                            <span className="ml-auto">
-                                {t(`creneau.types.${c.typeCreneau.toLowerCase()}`)}
-                            </span>
-                        </div>
-                    </button>
-                ))}
-            </div>
-
-            {/* ─── Pagination ─── */}
-            {totalPages > 1 && (
-                <div className="flex items-center justify-between px-[var(--space-sm)] py-[var(--space-xs)] rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)]">
-                    <span
-                        className="text-[var(--color-text-muted)]"
-                        style={{ fontSize: 'clamp(0.6875rem, 0.63rem + 0.2vw, 0.8125rem)' }}
-                    >
-                        {t('liste.pagination', { page: pageEffectif, totalPages, total: creneauxTries.length })}
-                    </span>
-                    <div className="flex items-center gap-[var(--gap-xs)]">
-                        <button
-                            onClick={() => setPage(p => Math.max(1, p - 1))}
-                            disabled={pageEffectif <= 1}
-                            className="rounded-lg border border-[var(--color-bordure)] p-[var(--space-xxs)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                            aria-label={t('navigation.precedent')}
-                        >
-                            <ChevronLeft className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
-                        </button>
-                        {/* Numéros de page */}
-                        <div className="flex items-center gap-0.5">
-                            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                                let pageNum: number;
-                                if (totalPages <= 5) {
-                                    pageNum = i + 1;
-                                } else if (pageEffectif <= 3) {
-                                    pageNum = i + 1;
-                                } else if (pageEffectif >= totalPages - 2) {
-                                    pageNum = totalPages - 4 + i;
-                                } else {
-                                    pageNum = pageEffectif - 2 + i;
-                                }
-                                return (
-                                    <button
-                                        key={pageNum}
-                                        onClick={() => setPage(pageNum)}
-                                        className={`min-w-[clamp(1.5rem,1.25rem+1vw,2rem)] h-[clamp(1.5rem,1.25rem+1vw,2rem)] rounded-lg text-xs font-medium transition-colors ${
-                                            pageNum === pageEffectif
-                                                ? 'bg-[var(--color-dominant-100)] text-[var(--color-dominant-700)]'
-                                                : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
-                                        }`}
-                                    >
-                                        {pageNum}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        <button
-                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                            disabled={pageEffectif >= totalPages}
-                            className="rounded-lg border border-[var(--color-bordure)] p-[var(--space-xxs)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                            aria-label={t('navigation.suivant')}
-                        >
-                            <ChevronRight className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
-                        </button>
-                    </div>
-                </div>
-            )}
-        </div>
+        <DataTable<CreneauHoraire>
+            tableId="emploi-du-temps-liste"
+            data={creneaux}
+            columns={colonnes}
+            enableReordering
+            enablePinning
+            enableColumnVisibility
+            searchable
+            searchPlaceholder={t('filtres.rechercherCreneau')}
+            enableCollapsibleFilters
+            filtres={[
+                {
+                    key: 'jour',
+                    label: t('calendrier.jour'),
+                    type: 'select',
+                    options: [
+                        { value: 'LUNDI', label: t('jours.lundi') },
+                        { value: 'MARDI', label: t('jours.mardi') },
+                        { value: 'MERCREDI', label: t('jours.mercredi') },
+                        { value: 'JEUDI', label: t('jours.jeudi') },
+                        { value: 'VENDREDI', label: t('jours.vendredi') },
+                        { value: 'SAMEDI', label: t('jours.samedi') },
+                    ],
+                    allOptionLabel: t('filtres.tousJours'),
+                },
+                {
+                    key: 'statut',
+                    label: t('statut'),
+                    type: 'select',
+                    options: [
+                        { value: 'PLANIFIE', label: t('heureCours.modal.statuts.planifie') },
+                        { value: 'VALIDE', label: t('heureCours.modal.statuts.effectue') },
+                    ],
+                    allOptionLabel: t('filtres.tousStatuts'),
+                },
+            ]}
+            getRowId={(c) => c.id}
+            emptyMessage={t('aucunCreneau')}
+        />
     );
 }

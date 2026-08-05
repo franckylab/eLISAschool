@@ -2590,3 +2590,34 @@ const handleToggleFullscreen = useCallback(() => {
 - **TOUJOURS** importer les hooks EDT/heures-cours via les barrels (`@/features/personnel`, `@/features/emploi-du-temps`), jamais par chemin direct cross-feature
 - **TOUJOURS** parité i18n FR/EN (`emplois.json`, `personnel.json`) ; les clés `synthese.*`, `audit.*`, `generationHeuresCours.*` doivent exister dans les deux langues
 - **Backend** : audit des créneaux/heures-cours dans les **services** (pas les controllers) — pattern uniforme avec `heure-cours.service.ts`
+
+## 35. Convention i18n — Anti-collision clés objet/string
+
+### Règle
+**JAMAIS** nommer une clé JSON objet et une clé JSON string avec le même nom au même niveau hiérarchique. Cela crée une ambiguïté : `t('cle')` retourne un objet au lieu d'une string.
+
+### Exemple d'anti-pattern (bug `jour`)
+```json
+// ❌ INTERDIT — "jour" est à la fois un objet ET utilisé comme string
+{
+  "jour": { "vide": "...", "precedent": "..." },
+  "jours": { "lundi": "Lundi", ... }
+}
+// Dans le code : t('jour') → retourne l'objet, pas "Jour"
+```
+
+### Pattern correct
+```json
+// ✅ CORRECT — namespaces distincts
+{
+  "jour": { "vide": "...", "precedent": "..." },
+  "jours": { "lundi": "Lundi", ... },
+  "calendrier": { "jour": "Jour", "heure": "Heure", ... }
+}
+// Dans le code : t('calendrier.jour') → "Jour" ✅
+```
+
+### Vérification
+- Avant d'ajouter une clé i18n, vérifier qu'aucune clé homonyme n'existe déjà (objet ou string)
+- Pour les labels de colonnes DataTable, utiliser le namespace sémantique (`calendrier.jour`, `filtres.jour`) plutôt que la clé racine
+- Les clés de pluriel (`_one`/`_other`) sont réservées sur l'objet — jamais sur une string

@@ -83,6 +83,17 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 ### Blocked
 — (none)
 
+## Travail effectué — Session 2026-08-02 (fix i18n EDT — collision clé `jour`)
+
+### Bug critique corrigé
+- **`edt-liste.tsx`** : `t('jour')` utilisé comme header de colonne et label de filtre DataTable → `jour` est un **objet** dans le JSON (`{ vide, precedent, suivant, creneaux_one, creneaux_other }`), pas une string. Résultat : `[object Object]` affiché au lieu de "Jour".
+- **Fix** : `t('jour')` → `t('calendrier.jour')` (clé existante = "Jour" FR / "Day" EN). 2 occurrences corrigées (header colonne l.28, label filtre l.178).
+- **Convention i18n ajoutée** : règle 35 dans `elisaschool-frontend.md` — ne jamais nommer une clé objet et une clé string identiques au même niveau. Utiliser des namespaces distincts (`calendrier.jour` pour le label, `jour.vide` pour la vue jour).
+
+### Qualité
+- 0 `t('jour')` restant dans le module EDT. `calendrier.jour` = "Jour" (FR) / "Day" (EN) vérifié dans les deux fichiers JSON.
+- Parité i18n FR/EN complète sur le module EDT (343+ clés).
+
 ## Travail effectué — Session 2026-08-04 (audit deep-dive EDT + corrections frontend)
 
 ### Contexte

@@ -1,0 +1,37 @@
+{
+  "runId": "wf_391a64c4-56e",
+  "workflowName": "deep-research",
+  "scriptPath": "/mnt/DONNEES/projets/eLISAschool/.qoder/sessions/qs_01kz80r2mczaxvhtgpes6mr10j/workflows/scripts/deep-research-wf_391a64c4-56e.js",
+  "source": "built-in",
+  "args": "Programme pédagogique complet du système éducatif camerounais : structure (maternel, primaire, secondaire général, lycée technique), toutes les matières par niveau et par classe, filières et options (séries A, C, D, G, etc.), volumes horaires hebdomadaires en minutes ou heures par matière et par classe, objectifs pédagogiques par matière, programmes officiels du MINEDUB et MINESEC, réformes récentes (2019-2025), approche par compétences (APC), examens officiels (CEP, BEPC, BACC), enseignement technique et professionnel (BTS, BT, CAP), langues d'enseignement (français/anglais), heures annuelles et hebdomadaires. Couvrir aussi bien le sous-système francophone qu'anglophone.",
+  "meta": {
+    "name": "deep-research",
+    "description": "Deep research harness — fan-out web searches, fetch sources, adversarially verify claims, synthesize a cited report.",
+    "whenToUse": "When the user wants a deep, multi-source, fact-checked research report on any topic. BEFORE invoking, check if the question is specific enough to research directly — if underspecified (e.g., \"what car to buy\" without budget/use-case/region), ask 2-3 clarifying questions to narrow scope. Then pass the refined question as args, weaving the answers in.",
+    "phases": [
+      {
+        "title": "Scope",
+        "detail": "Decompose question (from args) into 5 search angles"
+      },
+      {
+        "title": "Search",
+        "detail": "5 parallel WebSearch agents, one per angle"
+      },
+      {
+        "title": "Fetch",
+        "detail": "URL-dedup, fetch top 15 sources, extract falsifiable claims"
+      },
+      {
+        "title": "Verify",
+        "detail": "3-vote adversarial verification per claim (need 2/3 refutes to kill)"
+      },
+      {
+        "title": "Synthesize",
+        "detail": "Merge semantic dupes, rank by confidence, cite sources"
+      }
+    ]
+  },
+  "createdAt": "2026-08-05T03:52:31.199Z",
+  "updatedAt": "2026-08-05T03:52:31.199Z",
+  "status": "running"
+}

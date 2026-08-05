@@ -390,3 +390,146 @@ export function useAuditConflits(options?: { periodeId?: string; anneeScolaireId
         staleTime: 1 * 60 * 1000,
     });
 }
+
+// ─── Options de contexte (enseignants, salles, matières, affectations) ───
+
+export interface OptionSimple {
+    value: string;
+    label: string;
+}
+
+/**
+ * Charge les enseignants (membres du personnel avec catégorie ENSEIGNANT).
+ * Utilisé par la FilterBar EDT quand contexteType = 'enseignant'.
+ */
+export function useEnseignantOptions() {
+    return useQuery({
+        queryKey: ['emploi-du-temps', 'options', 'enseignants'],
+        queryFn: async () => {
+            const params = { page: 1, limit: 100, categorie: 'ENSEIGNANT' };
+            const response = await apiClient.getPaginated<{
+                id: string;
+                utilisateur?: { profil?: { nom: string; prenom: string } };
+                matricule?: string;
+            }>('/api/personnel', params);
+            const items = response.data?.items ?? [];
+            return items.map(m => ({
+                value: m.id,
+                label: `${m.utilisateur?.profil?.prenom ?? ''} ${m.utilisateur?.profil?.nom ?? ''}`.trim() || m.matricule || m.id.slice(0, 8),
+            })).sort((a, b) => a.label.localeCompare(b.label));
+        },
+        staleTime: 3 * 60 * 1000,
+    });
+}
+
+/**
+ * Charge les salles pour les dropdowns EDT.
+ * Utilisé par la FilterBar EDT quand contexteType = 'salle'.
+ */
+export function useSalleOptions() {
+    return useQuery({
+        queryKey: ['emploi-du-temps', 'options', 'salles'],
+        queryFn: async () => {
+            const response = await apiClient.get<{
+                id: string;
+                nom: string;
+                code?: string;
+            }>('/api/salles', { limit: 100 });
+            const items = response.data ?? [];
+            return items.map(s => ({
+                value: s.id,
+                label: s.code ? `${s.nom} (${s.code})` : s.nom,
+            })).sort((a, b) => a.label.localeCompare(b.label));
+        },
+        staleTime: 3 * 60 * 1000,
+    });
+}
+
+/**
+ * Charge les matières pour les filtres EDT.
+ */
+export function useMatiereOptions() {
+    return useQuery({
+        queryKey: ['emploi-du-temps', 'options', 'matieres'],
+        queryFn: async () => {
+            const params = { page: 1, limit: 100 };
+            const response = await apiClient.getPaginated<{
+                id: string;
+                nom: string;
+                code?: string;
+            }>('/api/matieres', params);
+            const items = response.data?.items ?? [];
+            return items.map(m => ({
+                value: m.id,
+                label: m.code ? `${m.nom} (${m.code})` : m.nom,
+            })).sort((a, b) => a.label.localeCompare(b.label));
+        },
+        staleTime: 5 * 60 * 1000,
+    });
+}
+
+/**
+ * Charge les affectations matière (pour le modal de créneau).
+ * Retourne la liste des affectations avec matière + enseignant pour une classe donnée,
+ * ou toutes les affectations de l'établissement si pas de classe spécifiée.
+ */
+export interface AffectationOption {
+    id: string;
+    matiere?: { nom: string; code?: string };
+    enseignant?: {
+        id: string;
+        matricule?: string;
+        utilisateur?: {
+            id: string;
+            profil?: { id: string; nom: string; prenom: string };
+        };
+    };
+}
+
+export function useAffectationsOptions(classeAnneeId?: string) {
+    return useQuery({
+        queryKey: ['emploi-du-temps', 'options', 'affectations', classeAnneeId],
+        queryFn: async () => {
+            // Charger les créneaux avec toutes les affectations distinctes
+            const params: Record<string, string | number> = { page: 1, limit: 100 };
+            if (classeAnneeId) params.classeAnneeId = classeAnneeId;
+            const response = await apiClient.getPaginated<CreneauHoraire>('/api/emploi-du-temps', params);
+            const items = response.data?.items ?? [];
+            // Extraire les affectations uniques
+            const map = new Map<string, AffectationOption>();
+            for (const c of items) {
+                if (c.affectationMatiereId && c.affectationMatiere && !map.has(c.affectationMatiereId)) {
+                    map.set(c.affectationMatiereId, {
+                        id: c.affectationMatiere.id,
+                        matiere: c.affectationMatiere.matiere,
+                        enseignant: c.affectationMatiere.enseignant,
+                    });
+                }
+            }
+            return Array.from(map.values());
+        },
+        staleTime: 2 * 60 * 1000,
+    });
+}
+
+/**
+ * Charge les salles distinctes à partir des créneaux (pour le modal).
+ */
+export function useSallesFromCreneaux() {
+    return useQuery({
+        queryKey: ['emploi-du-temps', 'options', 'salles-creneaux'],
+        queryFn: async () => {
+            const params = { page: 1, limit: 100 };
+            const response = await apiClient.getPaginated<CreneauHoraire>('/api/emploi-du-temps', params);
+            const items = response.data?.items ?? [];
+            const map = new Map<string, { id: string; nom: string; code?: string }>();
+            for (const c of items) {
+                if (c.salleId && c.salle && !map.has(c.salleId)) {
+                    map.set(c.salleId, { id: c.salle.id, nom: c.salle.nom, code: c.salle.code });
+                }
+            }
+            return Array.from(map.values());
+        },
+        staleTime: 2 * 60 * 1000,
+    });
+}
