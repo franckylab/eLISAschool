@@ -10,7 +10,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BookOpen, Calendar, Clock, MapPin, CheckCircle2, AlertTriangle, AlertCircle, Trash2, ShieldCheck, GraduationCap } from 'lucide-react';
+import { BookOpen, Calendar, Clock, MapPin, CheckCircle2, AlertTriangle, AlertCircle, Trash2, ShieldCheck, GraduationCap, User, CalendarOff, Timer, Hash } from 'lucide-react';
 import { StepperModal } from '@/components/modals/StepperModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { SectionSeparator } from '@/components/ui/SectionSeparator';
@@ -21,7 +21,7 @@ import { useVerifierConflits, useCreerCreneau, useUpdateCreneau, useSupprimerCre
 
 interface AffectationOption {
     id: string;
-    matiere?: { nom: string; code?: string };
+    matiere?: { id: string; nom: string; code?: string; couleur?: string };
     enseignant?: {
         id: string;
         matricule?: string;
@@ -33,6 +33,7 @@ interface AffectationOption {
     classeAnnee?: {
         id: string;
         classe?: { id: string; nom: string; niveau?: string };
+        anneeScolaire?: { id: string; nom?: string; anneeDebut?: number; anneeFin?: number };
     };
 }
 
@@ -85,6 +86,9 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
     const [stepCourant, setStepCourant] = useState(1);
     const [form, setForm] = useState<FormData>(FORM_INIT);
     const [confirmSuppression, setConfirmSuppression] = useState(false);
+    const [matiereSelectId, setMatiereSelectId] = useState('');
+    const [enseignantSelectId, setEnseignantSelectId] = useState('');
+    const [classeSelectId, setClasseSelectId] = useState('');
 
     const verifierConflits = useVerifierConflits();
     const creerCreneau = useCreerCreneau();
@@ -114,6 +118,22 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
                 setForm({ ...FORM_INIT, affectationMatiereId: affectationMatiereId ?? '' });
             }
             setStepCourant(1);
+            // Initialiser cascade depuis l'affectation existante
+            if (creneau?.affectationMatiereId) {
+                const aff = affectations.find(a => a.id === creneau.affectationMatiereId);
+                if (aff) {
+                    setMatiereSelectId(aff.matiere?.id ?? '');
+                    setEnseignantSelectId(aff.enseignant?.id ?? '');
+                    setClasseSelectId(aff.classeAnnee?.classe?.id ?? '');
+                }
+            } else if (affectationMatiereId) {
+                const aff = affectations.find(a => a.id === affectationMatiereId);
+                if (aff) {
+                    setMatiereSelectId(aff.matiere?.id ?? '');
+                    setEnseignantSelectId(aff.enseignant?.id ?? '');
+                    setClasseSelectId(aff.classeAnnee?.classe?.id ?? '');
+                }
+            }
         }
     }, [open, creneau, affectationMatiereId]);
 
@@ -123,6 +143,39 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
     }, [verifierConflits.data]);
 
     const hasConflitsBloquants = conflits.some(c => c.severite === 'BLOQUANT');
+
+    // ─── Cascading selects : Matière → Enseignant → Classe ────
+    const matieresDisponibles = useMemo(() => {
+        const map = new Map<string, string>();
+        for (const a of affectations) {
+            if (a.matiere?.id && a.matiere?.nom) map.set(a.matiere.id, a.matiere.nom);
+        }
+        return Array.from(map.entries()).map(([id, nom]) => ({ id, nom })).sort((a, b) => a.nom.localeCompare(b.nom));
+    }, [affectations]);
+
+    const enseignantsDisponibles = useMemo(() => {
+        if (!matiereSelectId) return [];
+        const map = new Map<string, string>();
+        for (const a of affectations.filter(a => a.matiere?.id === matiereSelectId)) {
+            if (a.enseignant?.id) {
+                const nom = a.enseignant.utilisateur?.profil
+                    ? `${a.enseignant.utilisateur.profil.prenom} ${a.enseignant.utilisateur.profil.nom}`
+                    : a.enseignant.matricule ?? a.enseignant.id.substring(0, 8);
+                map.set(a.enseignant.id, nom);
+            }
+        }
+        return Array.from(map.entries()).map(([id, nom]) => ({ id, nom })).sort((a, b) => a.nom.localeCompare(b.nom));
+    }, [affectations, matiereSelectId]);
+
+    const classesDisponables = useMemo(() => {
+        if (!matiereSelectId || !enseignantSelectId) return [];
+        const map = new Map<string, { nom: string; niveau?: string }>();
+        for (const a of affectations.filter(a => a.matiere?.id === matiereSelectId && a.enseignant?.id === enseignantSelectId)) {
+            const classe = a.classeAnnee?.classe;
+            if (classe?.id && classe?.nom) map.set(classe.id, { nom: classe.nom, niveau: classe.niveau });
+        }
+        return Array.from(map.entries()).map(([id, data]) => ({ id, ...data })).sort((a, b) => a.nom.localeCompare(b.nom));
+    }, [affectations, matiereSelectId, enseignantSelectId]);
 
     useEffect(() => {
         if (form.affectationMatiereId && form.jour && form.heureDebut && form.heureFin) {
@@ -182,20 +235,87 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
             <SectionSeparator title={t('creneau.modal.identification')} icon={<BookOpen className="h-4 w-4" />} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                <div className="space-y-2">
                     <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
-                        {t('creneau.modal.affectation')}
+                        {t('matiere')}
                     </label>
                     <select
-                        value={form.affectationMatiereId}
-                        onChange={e => update({ affectationMatiereId: e.target.value })}
+                        value={matiereSelectId}
+                        onChange={e => {
+                            setMatiereSelectId(e.target.value);
+                            setEnseignantSelectId('');
+                            setClasseSelectId('');
+                            update({ affectationMatiereId: '' });
+                        }}
                         className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm bg-[var(--color-surface)] text-[var(--color-text-primary)]"
                     >
-                        <option value="">{t('creneau.modal.selectionnerAffectation')}</option>
-                        {affectations.map(a => (
-                            <option key={a.id} value={a.id}>
-                                {a.matiere?.nom ?? a.id.substring(0, 8)}
-                                {a.enseignant?.utilisateur?.profil ? ` — ${a.enseignant.utilisateur.profil.prenom} ${a.enseignant.utilisateur.profil.nom}` : ''}
+                        <option value="">{t('selectionnerMatiere')}</option>
+                        {matieresDisponibles.map(m => (
+                            <option key={m.id} value={m.id}>{m.nom}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
+                        {t('enseignant')}
+                    </label>
+                    <select
+                        value={enseignantSelectId}
+                        onChange={e => {
+                            setEnseignantSelectId(e.target.value);
+                            setClasseSelectId('');
+                            // Résoudre si matière + enseignant + 1 seule classe
+                            if (matiereSelectId && e.target.value) {
+                                const matching = affectations.filter(
+                                    a => a.matiere?.id === matiereSelectId && a.enseignant?.id === e.target.value
+                                );
+                                if (matching.length === 1) {
+                                    setClasseSelectId(matching[0].classeAnnee?.classe?.id ?? '');
+                                    update({ affectationMatiereId: matching[0].id });
+                                } else {
+                                    update({ affectationMatiereId: '' });
+                                }
+                            } else {
+                                update({ affectationMatiereId: '' });
+                            }
+                        }}
+                        disabled={!matiereSelectId}
+                        className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm bg-[var(--color-surface)] text-[var(--color-text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <option value="">{t('selectionnerEnseignant')}</option>
+                        {enseignantsDisponibles.map(e => (
+                            <option key={e.id} value={e.id}>{e.nom}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
+                        {t('classe')}
+                    </label>
+                    <select
+                        value={classeSelectId}
+                        onChange={e => {
+                            setClasseSelectId(e.target.value);
+                            if (matiereSelectId && enseignantSelectId && e.target.value) {
+                                const found = affectations.find(
+                                    a => a.matiere?.id === matiereSelectId
+                                        && a.enseignant?.id === enseignantSelectId
+                                        && a.classeAnnee?.classe?.id === e.target.value
+                                );
+                                update({ affectationMatiereId: found?.id ?? '' });
+                            } else {
+                                update({ affectationMatiereId: '' });
+                            }
+                        }}
+                        disabled={!enseignantSelectId}
+                        className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm bg-[var(--color-surface)] text-[var(--color-text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <option value="">{t('selectionnerClasse')}</option>
+                        {classesDisponables.map(c => (
+                            <option key={c.id} value={c.id}>
+                                {c.nom}{c.niveau ? ` (${c.niveau})` : ''}
                             </option>
                         ))}
                     </select>
@@ -217,21 +337,7 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
                 </div>
             </div>
 
-            {/* Classe associée à l'affectation (lecture seule) */}
-            {(() => {
-                const affectationSelectionnee = affectations.find(a => a.id === form.affectationMatiereId);
-                const classeNom = affectationSelectionnee?.classeAnnee?.classe?.nom;
-                if (!classeNom) return null;
-                return (
-                    <div className="flex items-center gap-2 rounded-lg border border-[var(--color-dominant-200)] bg-[var(--color-dominant-50)] px-3 py-2">
-                        <GraduationCap className="h-4 w-4 text-[var(--color-dominant-600)] shrink-0" />
-                        <span className="text-sm font-medium text-[var(--color-dominant-700)]">{classeNom}</span>
-                        {affectationSelectionnee.classeAnnee?.classe?.niveau && (
-                            <span className="text-xs text-[var(--color-dominant-500)]">({affectationSelectionnee.classeAnnee.classe.niveau})</span>
-                        )}
-                    </div>
-                );
-            })()}
+
 
             <div>
                 <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
@@ -346,11 +452,94 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
         </div>
     );
 
+    // ─── Données enrichies pour le résumé ──────────────────────
+    const affectationSelectionnee = affectations.find(a => a.id === form.affectationMatiereId);
+    const matiereNom = affectationSelectionnee?.matiere?.nom;
+    const matiereCode = affectationSelectionnee?.matiere?.code;
+    const enseignantNom = affectationSelectionnee?.enseignant?.utilisateur?.profil
+        ? `${affectationSelectionnee.enseignant.utilisateur.profil.prenom} ${affectationSelectionnee.enseignant.utilisateur.profil.nom}`
+        : null;
+    const classeNom = affectationSelectionnee?.classeAnnee?.classe?.nom;
+    const classeNiveau = affectationSelectionnee?.classeAnnee?.classe?.niveau;
+    const anneeScolaireNom = affectationSelectionnee?.classeAnnee?.anneeScolaire?.nom
+        ?? (affectationSelectionnee?.classeAnnee?.anneeScolaire?.anneeDebut
+            ? `${affectationSelectionnee.classeAnnee.anneeScolaire.anneeDebut}-${affectationSelectionnee.classeAnnee.anneeScolaire.anneeDebut + 1}`
+            : null);
+
+    // Durée calculée
+    const dureeMinutes = useMemo(() => {
+        const [h1, m1] = form.heureDebut.split(':').map(Number);
+        const [h2, m2] = form.heureFin.split(':').map(Number);
+        return (h2 * 60 + m2) - (h1 * 60 + m1);
+    }, [form.heureDebut, form.heureFin]);
+    const dureeFormatee = dureeMinutes > 0
+        ? dureeMinutes >= 60
+            ? `${Math.floor(dureeMinutes / 60)}h${dureeMinutes % 60 > 0 ? String(dureeMinutes % 60).padStart(2, '0') : ''}`
+            : `${dureeMinutes}min`
+        : null;
+
+    // Jours fériés détectés depuis les conflits
+    const joursFeriesDetectes = useMemo(() => {
+        const conflitJF = conflits.find(c => c.type === 'CONFLIT_JOUR_FERIE');
+        if (!conflitJF?.details?.joursFeries) return [];
+        return conflitJF.details.joursFeries as Array<{ date: string; nom: string }>;
+    }, [conflits]);
+
     const etape3 = (
         <div className="space-y-4">
             <SectionSeparator title={t('creneau.modal.resume')} icon={<CheckCircle2 className="h-4 w-4" />} />
 
+            {/* ─── Bloc Contexte ──────────────────────────────── */}
+            <div className="rounded-lg border border-[var(--color-dominant-200)] dark:border-[var(--color-dominant-800)] bg-[var(--color-dominant-50)] dark:bg-[var(--color-dominant-900)]/20 p-4 space-y-2 text-sm">
+                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-dominant-700)] dark:text-[var(--color-dominant-300)] mb-2">
+                    <BookOpen className="h-3.5 w-3.5" />
+                    {t('creneau.modal.contexte')}
+                </div>
+                {matiereNom && (
+                    <div className="flex justify-between">
+                        <span className="text-[var(--color-text-secondary)] flex items-center gap-1">
+                            <Hash className="h-3.5 w-3.5" /> {t('creneau.modal.matiere')} :
+                        </span>
+                        <span className="font-medium flex items-center gap-1.5">
+                            {matiereNom}
+                            {matiereCode && <span className="text-xs text-[var(--color-text-secondary)]">({matiereCode})</span>}
+                        </span>
+                    </div>
+                )}
+                {enseignantNom && (
+                    <div className="flex justify-between">
+                        <span className="text-[var(--color-text-secondary)] flex items-center gap-1">
+                            <User className="h-3.5 w-3.5" /> {t('creneau.modal.enseignant')} :
+                        </span>
+                        <span className="font-medium">{enseignantNom}</span>
+                    </div>
+                )}
+                {classeNom && (
+                    <div className="flex justify-between">
+                        <span className="text-[var(--color-text-secondary)] flex items-center gap-1">
+                            <GraduationCap className="h-3.5 w-3.5" /> {t('classe')} :
+                        </span>
+                        <span className="font-medium">
+                            {classeNom}{classeNiveau && <span className="text-xs text-[var(--color-text-secondary)] ml-1">({classeNiveau})</span>}
+                        </span>
+                    </div>
+                )}
+                {anneeScolaireNom && (
+                    <div className="flex justify-between">
+                        <span className="text-[var(--color-text-secondary)] flex items-center gap-1">
+                            <Calendar className="h-3.5 w-3.5" /> {t('creneau.modal.anneeScolaire')} :
+                        </span>
+                        <span className="font-medium">{anneeScolaireNom}</span>
+                    </div>
+                )}
+            </div>
+
+            {/* ─── Bloc Planification ─────────────────────────── */}
             <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-4 space-y-2 text-sm">
+                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-secondary)] mb-2">
+                    <Clock className="h-3.5 w-3.5" />
+                    {t('creneau.modal.planification')}
+                </div>
                 <div className="flex justify-between">
                     <span className="text-[var(--color-text-secondary)]">{t('creneau.modal.jour')} :</span>
                     <span className="font-medium">{t(`jours.${form.jour.toLowerCase()}`)}</span>
@@ -359,33 +548,51 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
                     <span className="text-[var(--color-text-secondary)]">{t('creneau.modal.horaire')} :</span>
                     <span className="font-mono font-medium">{form.heureDebut} — {form.heureFin}</span>
                 </div>
+                {dureeFormatee && (
+                    <div className="flex justify-between">
+                        <span className="text-[var(--color-text-secondary)] flex items-center gap-1">
+                            <Timer className="h-3.5 w-3.5" /> {t('creneau.modal.duree')} :
+                        </span>
+                        <span className="font-medium">{dureeFormatee}</span>
+                    </div>
+                )}
                 <div className="flex justify-between">
                     <span className="text-[var(--color-text-secondary)]">{t('creneau.modal.typeCreneau')} :</span>
                     <span className="font-medium">{t(`creneau.types.${form.typeCreneau.toLowerCase()}`)}</span>
                 </div>
                 {form.salleId && (
                     <div className="flex justify-between">
-                        <span className="text-[var(--color-text-secondary)]">{t('creneau.modal.salle')} :</span>
-                        <span className="font-medium flex items-center gap-1">
-                            <MapPin className="h-3.5 w-3.5" /> {salles.find(s => s.id === form.salleId)?.nom ?? form.salleId.substring(0, 8)}
+                        <span className="text-[var(--color-text-secondary)] flex items-center gap-1">
+                            <MapPin className="h-3.5 w-3.5" /> {t('creneau.modal.salle')} :
                         </span>
+                        <span className="font-medium">{salles.find(s => s.id === form.salleId)?.nom ?? form.salleId.substring(0, 8)}</span>
                     </div>
                 )}
-                {(() => {
-                    const aff = affectations.find(a => a.id === form.affectationMatiereId);
-                    const classeNom = aff?.classeAnnee?.classe?.nom;
-                    if (!classeNom) return null;
-                    return (
-                        <div className="flex justify-between">
-                            <span className="text-[var(--color-text-secondary)]">{t('classe')} :</span>
-                            <span className="font-medium flex items-center gap-1">
-                                <GraduationCap className="h-3.5 w-3.5" /> {classeNom}
-                            </span>
-                        </div>
-                    );
-                })()}
             </div>
 
+            {/* ─── Section Jours fériés détectés ──────────────── */}
+            {joursFeriesDetectes.length > 0 && (
+                <div className="rounded-lg border border-[var(--color-warning)]/30 bg-[var(--color-warning)]/5 p-3 space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-warning)]">
+                        <CalendarOff className="h-4 w-4" />
+                        {t('creneau.modal.joursFeriesDetectes', { count: joursFeriesDetectes.length })}
+                    </div>
+                    <ul className="space-y-1">
+                        {joursFeriesDetectes.map((jf, idx) => (
+                            <li key={idx} className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
+                                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-warning)]" />
+                                <span className="font-mono">{jf.date}</span>
+                                <span>— {jf.nom}</span>
+                            </li>
+                        ))}
+                    </ul>
+                    <p className="text-xs text-[var(--color-text-secondary)] italic">
+                        {t('creneau.modal.exclusionJF automatique')}
+                    </p>
+                </div>
+            )}
+
+            {/* ─── Conflits ───────────────────────────────────── */}
             {hasConflitsBloquants && (
                 <div className="rounded-lg border border-[var(--color-danger)]/30 bg-[var(--color-danger)]/5 p-3 text-sm text-[var(--color-danger)]">
                     <AlertTriangle className="inline h-4 w-4 mr-1" />
@@ -393,13 +600,14 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
                 </div>
             )}
 
-            {conflits.filter(c => c.severite === 'AVERTISSEMENT').length > 0 && (
+            {conflits.filter(c => c.severite === 'AVERTISSEMENT' && c.type !== 'CONFLIT_JOUR_FERIE').length > 0 && (
                 <div className="rounded-lg border border-[var(--color-warning)]/30 bg-[var(--color-warning)]/5 p-3 text-sm text-[var(--color-warning)]">
                     <AlertTriangle className="inline h-4 w-4 mr-1" />
-                    {t('creneau.modal.avertissements', { count: conflits.filter(c => c.severite === 'AVERTISSEMENT').length })}
+                    {t('creneau.modal.avertissements', { count: conflits.filter(c => c.severite === 'AVERTISSEMENT' && c.type !== 'CONFLIT_JOUR_FERIE').length })}
                 </div>
             )}
 
+            {/* ─── Notes ──────────────────────────────────────── */}
             <div>
                 <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
                     {t('creneau.modal.notes')}

@@ -492,12 +492,12 @@ export function useMatiereOptions(enabled = true) {
 
 /**
  * Charge les affectations matière (pour le modal de créneau).
- * Retourne la liste des affectations avec matière + enseignant pour une classe donnée,
- * ou toutes les affectations de l'établissement si pas de classe spécifiée.
+ * Supporte le filtre contextuel hybride : classe, enseignant ou salle.
+ * Quand type=classe → filtre serveur. Quand type=enseignant/salle → filtre serveur si supporté.
  */
 export interface AffectationOption {
     id: string;
-    matiere?: { nom: string; code?: string };
+    matiere?: { id: string; nom: string; code?: string; couleur?: string };
     enseignant?: {
         id: string;
         matricule?: string;
@@ -512,15 +512,29 @@ export interface AffectationOption {
     };
 }
 
-export function useAffectationsOptions(classeAnneeId?: string) {
+export interface AffectationsContexteFilter {
+    type: 'classe' | 'enseignant' | 'salle';
+    value: string;
+}
+
+export function useAffectationsOptions(contexteFilter?: AffectationsContexteFilter) {
+    const serverParam = contexteFilter
+        ? contexteFilter.type === 'classe' ? contexteFilter.value : undefined
+        : undefined;
+
     return useQuery({
-        queryKey: ['emploi-du-temps', 'options', 'affectations', classeAnneeId],
+        queryKey: ['emploi-du-temps', 'options', 'affectations', contexteFilter?.type, contexteFilter?.value],
         queryFn: async () => {
-            // Charger les créneaux avec toutes les affectations distinctes
-            const params: Record<string, string | number> = { page: 1, limit: 100 };
-            if (classeAnneeId) params.classeAnneeId = classeAnneeId;
+            const params: Record<string, string | number> = { page: 1, limit: 200 };
+            if (serverParam) params.classeAnneeId = serverParam;
             const response = await apiClient.getPaginated<CreneauHoraire>('/api/emploi-du-temps', params);
-            const items = response.data?.items ?? [];
+            let items = response.data?.items ?? [];
+            // Filtrage client pour contexte enseignant/salle
+            if (contexteFilter?.type === 'enseignant' && contexteFilter.value) {
+                items = items.filter(c => c.affectationMatiere?.enseignant?.id === contexteFilter.value);
+            } else if (contexteFilter?.type === 'salle' && contexteFilter.value) {
+                items = items.filter(c => c.salleId === contexteFilter.value);
+            }
             // Extraire les affectations uniques
             const map = new Map<string, AffectationOption>();
             for (const c of items) {

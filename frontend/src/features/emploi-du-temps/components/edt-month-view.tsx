@@ -102,8 +102,10 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick, onPl
 
     return (
         <div className="flex flex-col gap-[var(--gap-sm)]">
-            {/* En-tête jours */}
-            <div className="grid grid-cols-6 border-b border-[var(--color-bordure)]">
+            <div className="overflow-x-auto">
+                <div style={{ minWidth: 'min(100%, 420px)' }}>
+                    {/* En-tête jours */}
+                    <div className="grid grid-cols-6 border-b border-[var(--color-bordure)]">
                 {JOURS_SEMAINE_KEYS.map((key) => {
                     const full = t(`jours.${key}`);
                     // Abréviation : 3 premiers caractères (universel pour FR/EN)
@@ -119,10 +121,10 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick, onPl
                         </div>
                     );
                 })}
-            </div>
+                    </div>
 
-            {/* Grille des jours */}
-            <div className="grid grid-cols-6 gap-0">
+                    {/* Grille des jours */}
+                    <div className="grid grid-cols-6 gap-0">
                 {joursGrille.map((jour, idx) => {
                     const colIndex = idx % 6;
                     const creneauxJour = creneauxParJour.get(colIndex) ?? [];
@@ -249,6 +251,8 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick, onPl
                         </div>
                     );
                 })}
+                    </div>
+                </div>
             </div>
 
             {/* État vide */}

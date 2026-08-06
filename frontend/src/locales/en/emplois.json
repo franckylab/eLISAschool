@@ -6,6 +6,7 @@
     "vide": "No slots this day",
     "precedent": "Previous day",
     "suivant": "Next day",
+    "creneaux_zero": "No slots",
     "creneaux_one": "{{count}} slot",
     "creneaux_other": "{{count}} slots"
   },
@@ -79,6 +80,7 @@
     "rechercherCreneau": "Search a slot...",
     "reset": "Reset",
     "contexteLabel": "Filter by context",
+    "selectionnerMatiere": "Select a subject",
     "selectionnerClasse": "Select a class",
     "selectionnerEnseignant": "Select a teacher",
     "selectionnerSalle": "Select a room"
@@ -102,6 +104,9 @@
     "enseignant": "Teacher",
     "salle": "Room"
   },
+  "selectionnerMatiere": "Select a subject",
+  "selectionnerEnseignant": "Select a teacher",
+  "selectionnerClasse": "Select a class",
   "selectionnerFiltre": "Select a filter",
   "precedent": "Previous",
   "suivant": "Next",
@@ -299,6 +304,9 @@
     "conflitSalle": "Room conflict",
     "depassementVolume": "Volume overflow",
     "creneauImposable": "Imposable slot",
+    "conflitJourFerie": "Holiday",
+    "conflitJourFerieDesc": "This day of the week falls on a holiday during the school year",
+    "joursExclus": "{{count}} day(s) excluded because they fall on a holiday",
     "aucunConflit": "No conflict detected",
     "conflitsDetectes": "{{count}} conflict(s) detected"
   },
@@ -375,11 +383,19 @@
       "conflitsDetectes": "{{count}} conflict(s) detected",
       "conflitsBloquants": "Blocking conflicts — cannot validate",
       "avertissements": "{{count}} warning(s)",
-      "selectionnerAffectation": "Select an assignment",
       "aucuneSalle": "No room",
       "champsRequis": "Missing required fields",
       "erreurAffectationRequise": "Please select a subject assignment",
-      "erreurHeureFinApresDebut": "End time must be after start time"
+      "erreurHeureFinApresDebut": "End time must be after start time",
+      "contexte": "Context",
+      "matiere": "Subject",
+      "enseignant": "Teacher",
+      "anneeScolaire": "School year",
+      "duree": "Duration",
+      "joursFeriesDetectes": "{{count}} holiday(s) detected",
+      "exclusionJF automatique": "Slots will be automatically excluded from these days during generation",
+      "rechercherAffectation": "Search subject, teacher, class…",
+      "aucunResultat": "No assignment found"
     }
   },
   "heureCours": {

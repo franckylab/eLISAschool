@@ -134,7 +134,7 @@ export interface CreneauImposable {
 
 // ─── Conflits ───────────────────────────────────────
 
-export type TypeConflit = 'CONFLIT_CLASSE' | 'CONFLIT_ENSEIGNANT' | 'CONFLIT_SALLE' | 'DEPASSEMENT_VOLUME_HORAIRE' | 'CRENEAU_IMPOSABLE';
+export type TypeConflit = 'CONFLIT_CLASSE' | 'CONFLIT_ENSEIGNANT' | 'CONFLIT_SALLE' | 'DEPASSEMENT_VOLUME_HORAIRE' | 'CRENEAU_IMPOSABLE' | 'CONFLIT_JOUR_FERIE';
 export type SeveriteConflit = 'BLOQUANT' | 'AVERTISSEMENT';
 
 export interface Conflit {

@@ -65,6 +65,9 @@ export function EDTDayView({
     const finMin = heureFin * 60;
     const dureeTotal = finMin - debutMin;
 
+    /** Hauteur de la timeline : ~50px/heure, min/max contraints */
+    const hauteurTimeline = Math.max(400, Math.min(dureeTotal * 0.83, 900));
+
     /** Lignes horaires */
     const lignesHoraires = useMemo(() => {
         const lignes: number[] = [];
@@ -95,7 +98,7 @@ export function EDTDayView({
         : -1;
 
     const nomJour = jourSemaine ? t(`jours.${jourSemaine.toLowerCase()}`) : t('jour.vide');
-    const dateStr = formatDate(date, 'EEEE d MMMM');
+    const dateStr = formatDate(date, 'd MMMM');
 
     return (
         <div className="flex flex-col gap-[var(--gap-sm)]">
@@ -118,15 +121,15 @@ export function EDTDayView({
                 <div className="flex items-center gap-[var(--gap-xs)] text-[var(--color-text-secondary)]">
                     <Clock className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
                     <span style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
-                        {creneauxJour.length} {t('jour.creneaux', { count: creneauxJour.length })}
+                        {t('jour.creneaux', { count: creneauxJour.length })}
                     </span>
                 </div>
             </div>
 
             {/* Timeline */}
             {creneauxJour.length > 0 ? (
-                <div className="relative rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] overflow-hidden">
-                    <div className="relative" style={{ height: 'clamp(400px, 60vh, 700px)' }}>
+                <div className="relative rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] overflow-y-auto" style={{ maxHeight: 'clamp(400px, 70vh, 800px)' }}>
+                    <div className="relative" style={{ height: `${hauteurTimeline}px` }}>
                         {/* Lignes horaires */}
                         {lignesHoraires.map((min) => {
                             const top = ((min - debutMin) / dureeTotal) * 100;

@@ -313,7 +313,7 @@ export function EDTCalendar({
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
         >
-            <div className="overflow-x-auto rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-sm">
+            <div className="overflow-auto rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] shadow-sm" style={{ maxHeight: 'clamp(400px, 75vh, 850px)' }}>
                 <div
                     className="relative grid"
                     style={{

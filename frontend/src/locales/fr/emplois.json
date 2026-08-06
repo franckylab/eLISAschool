@@ -6,6 +6,7 @@
     "vide": "Aucun créneau ce jour",
     "precedent": "Jour précédent",
     "suivant": "Jour suivant",
+    "creneaux_zero": "Aucun créneau",
     "creneaux_one": "{{count}} créneau",
     "creneaux_other": "{{count}} créneaux"
   },
@@ -79,6 +80,7 @@
     "rechercherCreneau": "Rechercher un créneau...",
     "reset": "Réinitialiser",
     "contexteLabel": "Filtrer par contexte",
+    "selectionnerMatiere": "Sélectionner une matière",
     "selectionnerClasse": "Sélectionner une classe",
     "selectionnerEnseignant": "Sélectionner un enseignant",
     "selectionnerSalle": "Sélectionner une salle"
@@ -102,6 +104,9 @@
     "enseignant": "Enseignant",
     "salle": "Salle"
   },
+  "selectionnerMatiere": "Sélectionner une matière",
+  "selectionnerEnseignant": "Sélectionner un enseignant",
+  "selectionnerClasse": "Sélectionner une classe",
   "selectionnerFiltre": "Sélectionner un filtre",
   "precedent": "Précédent",
   "suivant": "Suivant",
@@ -299,6 +304,9 @@
     "conflitSalle": "Conflit de salle",
     "depassementVolume": "Dépassement volume horaire",
     "creneauImposable": "Créneau imposable",
+    "conflitJourFerie": "Jour férié",
+    "conflitJourFerieDesc": "Ce jour de la semaine tombe sur un jour férié dans l'année scolaire",
+    "joursExclus": "{{count}} jour(s) exclu(s) car tombant sur un jour férié",
     "aucunConflit": "Aucun conflit détecté",
     "conflitsDetectes": "{{count}} conflit(s) détecté(s)"
   },
@@ -375,11 +383,17 @@
       "conflitsDetectes": "{{count}} conflit(s) détecté(s)",
       "conflitsBloquants": "Conflits bloquants — impossible de valider",
       "avertissements": "{{count}} avertissement(s)",
-      "selectionnerAffectation": "Sélectionner une affectation",
       "aucuneSalle": "Aucune salle",
       "champsRequis": "Champs requis manquants",
       "erreurAffectationRequise": "Veuillez sélectionner une affectation matière",
-      "erreurHeureFinApresDebut": "L'heure de fin doit être après l'heure de début"
+      "erreurHeureFinApresDebut": "L'heure de fin doit être après l'heure de début",
+      "contexte": "Contexte",
+      "matiere": "Matière",
+      "enseignant": "Enseignant",
+      "anneeScolaire": "Année scolaire",
+      "duree": "Durée",
+      "joursFeriesDetectes": "{{count}} jour(s) férié(s) détecté(s)",
+      "exclusionJF automatique": "Les créneaux seront automatiquement exclus de ces jours lors de la génération"
     }
   },
   "heureCours": {

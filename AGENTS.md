@@ -83,6 +83,125 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 ### Blocked
 — (none)
 
+## Travail effectué — Session 2026-08-06 (cascading selects + scrollbars EDT)
+
+### Cascading selects affectation (`edt-creneau-modal.tsx`)
+- **Ancien pattern** : select unique avec recherche + `optgroup` par matière (doublons visuels)
+- **Nouveau pattern** : 3 selects en cascade **Matière → Enseignant → Classe**
+  - Select 1 : Matière (toutes les matières disponibles)
+  - Select 2 : Enseignant (filtré par matière sélectionnée)
+  - Select 3 : Classe (filtrée par matière + enseignant)
+  - Résolution automatique : si 1 seule combinaison → auto-sélectionnée
+  - Reset en cascade : changer matière → reset enseignant + classe
+  - `disabled` progressif : enseignant désactivé tant que matière non sélectionnée, etc.
+- **Interface `AffectationOption.matiere`** : ajout `id: string` (nécessaire pour cascade)
+- **Hook `useAffectationsOptions`** : interface alignée (`matiere.id` + `couleur`)
+- **Initialisation édition** : cascade pré-remplie depuis l'affectation existante du créneau
+- **Bloc « Classe associée »** supprimé (redondant — maintenant intégré dans le cascade)
+
+### Scrollbars calendrier (3 vues)
+- **Vue jour** (`edt-day-view.tsx`) : `overflow-hidden` → `overflow-y-auto` + `maxHeight: clamp(400px, 70vh, 800px)` + hauteur calculée (`~50px/heure`)
+- **Vue semaine** (`edt-calendar.tsx`) : `overflow-x-auto` → `overflow-auto` + `maxHeight: clamp(400px, 75vh, 850px)` (scroll vertical + horizontal, sticky header préservé)
+- **Vue mois** (`edt-month-view.tsx`) : wrapper `overflow-x-auto` + `minWidth: min(100%, 420px)` (scroll horizontal sur petits écrans)
+
+### i18n
+- Clé `selectionnerMatiere` ajoutée FR+EN (top-level)
+- Clés obsolètes supprimées : `creneau.modal.selectionnerAffectation`, `creneau.modal.rechercherAffectation`, `creneau.modal.aucunResultat`
+
+### Fichiers modifiés (6)
+- `frontend/src/features/emploi-du-temps/components/edt-creneau-modal.tsx` (cascading selects, +52 lignes net)
+- `frontend/src/features/emploi-du-temps/components/edt-day-view.tsx` (scroll vertical + hauteur calculée)
+- `frontend/src/features/emploi-du-temps/components/edt-calendar.tsx` (overflow-auto + max-height)
+- `frontend/src/features/emploi-du-temps/components/edt-month-view.tsx` (wrapper scroll horizontal)
+- `frontend/src/features/emploi-du-temps/hooks/use-emploi-du-temps.ts` (interface `matiere.id`)
+- `frontend/src/locales/fr/emplois.json` (+1 clé, -3 obsolètes)
+- `frontend/src/locales/en/emplois.json` (+1 clé, -1 obsolète)
+
+## Travail effectué — Session 2026-08-06 (fix redondances + dark mode + select affectation)
+
+### Corrections apportées
+1. **Redondance jour vue quotidienne** (`edt-day-view.tsx`) :
+   - `formatDate(date, 'EEEE d MMMM')` → `formatDate(date, 'd MMMM')` : suppression du jour de la date car déjà affiché en titre ("Samedi" + "samedi 15 août" → "Samedi" + "15 août")
+   - `{creneauxJour.length} {t('jour.creneaux', { count })}` → `{t('jour.creneaux', { count })}` : suppression du compteur dupliqué (la traduction contient déjà `{{count}}`)
+   - Clé `creneaux_zero` ajoutée FR+EN pour "Aucun créneau" / "No slots"
+
+2. **Dark mode bloc Contexte** (`edt-creneau-modal.tsx`) :
+   - `bg-[var(--color-dominant-50)]` → ajout `dark:bg-[var(--color-dominant-900)]/20`
+   - `border-[var(--color-dominant-200)]` → ajout `dark:border-[var(--color-dominant-800)]`
+   - `text-[var(--color-dominant-700)]` → ajout `dark:text-[var(--color-dominant-300)]`
+
+3. **Select affectation factorisé** (`edt-creneau-modal.tsx`) :
+   - **Recherche** : champ input avec icône Search pour filtrer par matière/enseignant/classe
+   - **Groupement** : `<optgroup>` par matière pour lever l'ambiguïté des doublons
+   - **Labels enrichis** : chaque option affiche "Enseignant — Classe" (au lieu de "Matière — Enseignant")
+   - **État dédié** : `rechercheAffectation` + `useMemo` pour filtrage et groupement
+   - **Message vide** : "Aucune affectation trouvée" si recherche sans résultat
+
+### Fichiers modifiés (5)
+- `frontend/src/features/emploi-du-temps/components/edt-day-view.tsx` (fix redondance jour + créneaux)
+- `frontend/src/features/emploi-du-temps/components/edt-creneau-modal.tsx` (dark mode + select groupé)
+- `frontend/src/locales/fr/emplois.json` (+3 clés : creneaux_zero, rechercherAffectation, aucunResultat)
+- `frontend/src/locales/en/emplois.json` (+3 clés parité FR)
+
+## Travail effectué — Session 2026-08-06 (résumé enrichi + section JF modal création)
+
+### Diagnostic — Logique de création/génération des créneaux
+- **Modèle abstrait** : `CreneauHoraire` stocke `jour` (LUNDI...SAMEDI) + `heureDebut`/`heureFin`, PAS de date concrète
+- **Année scolaire** : colonnes `periodeId` et `anneeScolaireId` nullable sur l'entité, mais jamais envoyées par le frontend
+- **Résolution implicite** : via la chaîne `affectationMatiere → classeAnnee → anneeScolaire`
+- **Création manuelle** : StepperModal 3 étapes (Identification → Planification → Résumé)
+- **Génération batch** : `genererEmploiDuTemps()` résout automatiquement l'année scolaire via `classeAnnee`
+
+### Améliorations apportées
+- **Backend `findAll()`** : jointure `classeAnnee.anneeScolaire` ajoutée (était commentée « JAMAIS ») pour que le frontend reçoive le libellé année scolaire
+- **Frontend `AffectationOption`** : interface enrichie avec `anneeScolaire` (nom, anneeDebut, anneeFin) et `matiere.couleur`
+- **Résumé (étape 3) réécrit** : 2 blocs distincts + section JF dédiée :
+  - **Bloc Contexte** (fond dominant-50) : Matière (nom + code), Enseignant (nom + prénom), Classe (nom + niveau), Année scolaire
+  - **Bloc Planification** (fond surface-alt) : Jour, Horaire, Durée calculée (ex: « 1h30 »), Type, Salle
+  - **Section JF** : si conflit `CONFLIT_JOUR_FERIE` détecté, liste les dates avec nom du JF + message informatif auto-exclusion
+  - **Conflits** : les conflits JF sont affichés dans la section dédiée, pas dans les avertissements génériques
+- **Durée calculée** : `useMemo` sur `heureDebut`/`heureFin` → format « XhYY » ou « Xmin »
+- **i18n** : 7 clés ajoutées FR+EN (`contexte`, `matiere`, `enseignant`, `anneeScolaire`, `duree`, `joursFeriesDetectes`, `exclusionJF automatique`)
+
+### Fichiers modifiés (5)
+- `backend/src/modules/emploi-du-temps/services/emploi-du-temps.service.ts` (+1 jointure anneeScolaire)
+- `frontend/src/features/emploi-du-temps/components/edt-creneau-modal.tsx` (résumé réécrit, +123 lignes)
+- `frontend/src/locales/fr/emplois.json` (+7 clés)
+- `frontend/src/locales/en/emplois.json` (+7 clés)
+
+## Travail effectué — Session 2026-08-06 (détection conflits jours fériés)
+
+### Problème résolu
+Aucune détection de conflit avec les jours fériés n'existait. Les créneaux sont stockés avec un `jour` (LUNDI, MARDI...) et une `heureDebut`/`heureFin`, mais les jours fériés sont des dates absolues (ex: 2026-05-01 = vendredi). Il fallait résoudre le mapping jour de semaine → date réelle dans l'année scolaire pour détecter les conflits.
+
+### Décisions de conception
+- **Sévérité** : AVERTISSEMENT (warning, pas bloquant) — permet la création mais affiche un avertissement
+- **Portée** : Tout (création manuelle, génération batch, prévisualisation, audit global)
+- **Résolution** : Via année scolaire (mapper jour→date réelle dans la période de l'année scolaire)
+
+### Backend — `conflit-detection.service.ts` (v1.1.0)
+- **Nouveau type de conflit** : `CONFLIT_JOUR_FERIE` ajouté à `TypeConflit`
+- **Nouvelle méthode privée** : `detecterConflitJourFerie()` — résout les dates du jour de semaine dans l'année scolaire, vérifie si l'une d'elles est un jour férié
+- **Audit global** : section 4 ajoutée — scanne tous les créneaux existants et détecte ceux qui tombent sur un jour férié
+- **Imports ajoutés** : `ClasseAnnee`, `AnneeScolaire`, `JourFerie`
+
+### Backend — `emploi-du-temps.service.ts`
+- **`genererEmploiDuTemps()`** : charge les JF de l'établissement, résout les jours de semaine qui tombent sur un JF dans l'année scolaire, les exclut de la liste `jours` utilisée pour la génération, ajoute un avertissement dans le résultat
+- **`previsualiserGeneration()`** : même logique d'exclusion + ajoute un conflit `CONFLIT_JOUR_FERIE` dans le preview si des jours sont exclus
+- **`classeAnnee`** : relation `anneeScolaire` ajoutée au chargement (nécessaire pour résoudre les dates)
+
+### Frontend — Types et i18n
+- **`edt.types.ts`** : `CONFLIT_JOUR_FERIE` ajouté à `TypeConflit`
+- **`fr/emplois.json`** : 3 clés ajoutées dans `conflitDetection` (`conflitJourFerie`, `conflitJourFerieDesc`, `joursExclus`)
+- **`en/emplois.json`** : 3 clés ajoutées (parité FR)
+
+### Fichiers modifiés (5)
+- `backend/src/modules/emploi-du-temps/services/conflit-detection.service.ts` (v1.1.0, +83 lignes)
+- `backend/src/modules/emploi-du-temps/services/emploi-du-temps.service.ts` (+84 lignes)
+- `frontend/src/features/emploi-du-temps/types/edt.types.ts` (+1 type)
+- `frontend/src/locales/fr/emplois.json` (+3 clés)
+- `frontend/src/locales/en/emplois.json` (+3 clés)
+
 ## Travail effectué — Session 2026-08-02 (continuation — i18n, dark mode, responsive EDT)
 
 ### Audit i18n complet (4 problèmes corrigés)

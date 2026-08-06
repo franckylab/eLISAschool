@@ -29,7 +29,7 @@ import { AffectationMatiere, StatutAffectationMatiere } from '@modules/matieres/
 import { coefficientResolverService } from '@modules/matieres/services/coefficient-resolver.service';
 import { salleAvailabilityService } from '@modules/salles/services/salle-availability.service';
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
-import { CreneauHoraire, PreferenceEmploiDuTemps, JourSemaine, TypeCreneau, StatutCreneau } from '../entities';
+import { CreneauHoraire, PreferenceEmploiDuTemps, JourSemaine, TypeCreneau, StatutCreneau, JourFerie } from '../entities';
 import { TemplateEmploiDuTemps } from '../entities/template-emploi-du-temps.entity';
 import { conflitDetectionService } from './conflit-detection.service';
 import {
@@ -54,9 +54,8 @@ export class EmploiDuTempsService {
 
     async findAll(query: QueryCreneauxDto, etablissementId: string) {
         // Jointures sélectives : charger uniquement les relations nécessaires
-        // - am + matiere + enseignant (+ utilisateur) + classeAnnee + classe : TOUJOURS (affichage frontend)
+        // - am + matiere + enseignant (+ utilisateur) + classeAnnee + classe + anneeScolaire : TOUJOURS (affichage frontend)
         // - salle : seulement si filtre salleId (économie d'1 JOIN dans le cas nominal)
-        // - anneeScolaire : JAMAIS (le frontend EDT n'affiche pas le libellé année scolaire)
         const qb = this.creneauRepo.createQueryBuilder('ch')
             .leftJoinAndSelect('ch.affectationMatiere', 'am')
             .leftJoinAndSelect('am.matiere', 'matiere')
@@ -65,6 +64,7 @@ export class EmploiDuTempsService {
             .leftJoinAndSelect('enseignant_utilisateur.profil', 'enseignant_profil')
             .leftJoinAndSelect('am.classeAnnee', 'classeAnnee')
             .leftJoinAndSelect('classeAnnee.classe', 'classe')
+            .leftJoinAndSelect('classeAnnee.anneeScolaire', 'anneeScolaire')
             .leftJoinAndSelect('ch.salle', 'salle')
             // Badge HC : sous-requête EXISTS pour savoir si des instances HeureCours existent
             .addSelect(
@@ -569,7 +569,7 @@ export class EmploiDuTempsService {
         const classeAnneeRepo = AppDataSource.getRepository(ClasseAnnee);
         const classeAnnee = await classeAnneeRepo.findOne({
             where: { id: classeAnneeId, etablissementId },
-            relations: ['classe'],
+            relations: ['classe', 'anneeScolaire'],
         });
         if (!classeAnnee) {
             throw new AppError('Classe/Année non trouvée', 404, 'CLASSE_ANNEE_NOT_FOUND');
@@ -590,8 +590,47 @@ export class EmploiDuTempsService {
         }
 
         const dureeCreneau = preferences.dureeCreneauStandard || 55;
-        const jours = preferences.joursOuvrables || ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI'];
+        let jours = preferences.joursOuvrables || ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI'];
         const respecterContraintes = options?.respecterContraintes ?? true;
+
+        // Exclure les jours de semaine qui tombent sur un jour férié dans l'année scolaire
+        const joursFeries = await AppDataSource.getRepository(JourFerie)
+            .createQueryBuilder('jf')
+            .where('jf.etablissementId = :etablissementId OR jf.etablissementId IS NULL', { etablissementId })
+            .getMany();
+
+        const joursExclusJF: string[] = [];
+        if (joursFeries.length > 0 && classeAnnee.anneeScolaire) {
+            const jourMap: Record<JourSemaine, number> = {
+                LUNDI: 1, MARDI: 2, MERCREDI: 3, JEUDI: 4,
+                VENDREDI: 5, SAMEDI: 6, DIMANCHE: 0,
+            };
+            const dateDebut = new Date(classeAnnee.anneeScolaire.dateDebut);
+            const dateFin = new Date(classeAnnee.anneeScolaire.dateFin);
+
+            for (const jour of jours) {
+                const targetDay = jourMap[jour as JourSemaine];
+                const current = new Date(dateDebut);
+                while (current.getDay() !== targetDay && current <= dateFin) {
+                    current.setDate(current.getDate() + 1);
+                }
+                let tombeSurJF = false;
+                while (current <= dateFin) {
+                    if (joursFeries.some(jf => jf.correspondADate(current))) {
+                        tombeSurJF = true;
+                        break;
+                    }
+                    current.setDate(current.getDate() + 7);
+                }
+                if (tombeSurJF) {
+                    joursExclusJF.push(jour);
+                }
+            }
+
+            if (joursExclusJF.length > 0) {
+                jours = jours.filter(j => !joursExclusJF.includes(j));
+            }
+        }
 
         // Charger les volumes horaires et trier par volume décroissant
         type AffectationAvecVolume = { affectation: AffectationMatiere; volumeMinutes: number; nombreCreneaux: number };
@@ -722,6 +761,16 @@ export class EmploiDuTempsService {
 
         const joursOccupes = Array.from(new Set(creneauxPreview.map(c => c.jour))).sort();
 
+        // Ajouter les conflits JF dans le preview
+        if (joursExclusJF.length > 0) {
+            conflitsPreview.push({
+                type: 'CONFLIT_JOUR_FERIE',
+                matiereNom: '—',
+                seance: '—',
+                message: `${joursExclusJF.length} jour(s) exclu(s) de la génération car tombant sur un jour férié : ${joursExclusJF.join(', ')}`,
+            });
+        }
+
         return {
             creneaux: creneauxPreview,
             conflits: conflitsPreview,
@@ -783,7 +832,7 @@ export class EmploiDuTempsService {
         const classeAnneeRepo = AppDataSource.getRepository(ClasseAnnee);
         const classeAnnee = await classeAnneeRepo.findOne({
             where: { id: classeAnneeId, etablissementId },
-            relations: ['classe'],
+            relations: ['classe', 'anneeScolaire'],
         });
         if (!classeAnnee) {
             throw new AppError('Classe/Année non trouvée', 404, 'CLASSE_ANNEE_NOT_FOUND');
@@ -802,8 +851,50 @@ export class EmploiDuTempsService {
         const requireValidation = await getParamBoolean('emploi-du-temps.require_validation', { defaultValue: false });
         const statutGenere = requireValidation ? StatutCreneau.PLANIFIE : StatutCreneau.VALIDE;
         const dureeCreneau = preferences.dureeCreneauStandard || 55;
-        const jours = preferences.joursOuvrables || ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI'];
+        let jours = preferences.joursOuvrables || ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI'];
         const respecterContraintes = options?.respecterContraintes ?? true;
+
+        // Exclure les jours de semaine qui tombent sur un jour férié dans l'année scolaire
+        const joursFeries = await AppDataSource.getRepository(JourFerie)
+            .createQueryBuilder('jf')
+            .where('jf.etablissementId = :etablissementId OR jf.etablissementId IS NULL', { etablissementId })
+            .getMany();
+
+        if (joursFeries.length > 0 && classeAnnee.anneeScolaire) {
+            const jourMap: Record<JourSemaine, number> = {
+                LUNDI: 1, MARDI: 2, MERCREDI: 3, JEUDI: 4,
+                VENDREDI: 5, SAMEDI: 6, DIMANCHE: 0,
+            };
+            const dateDebut = new Date(classeAnnee.anneeScolaire.dateDebut);
+            const dateFin = new Date(classeAnnee.anneeScolaire.dateFin);
+            const joursExclus: string[] = [];
+
+            for (const jour of jours) {
+                const targetDay = jourMap[jour as JourSemaine];
+                const current = new Date(dateDebut);
+                while (current.getDay() !== targetDay && current <= dateFin) {
+                    current.setDate(current.getDate() + 1);
+                }
+                let tombeSurJF = false;
+                while (current <= dateFin) {
+                    if (joursFeries.some(jf => jf.correspondADate(current))) {
+                        tombeSurJF = true;
+                        break;
+                    }
+                    current.setDate(current.getDate() + 7);
+                }
+                if (tombeSurJF) {
+                    joursExclus.push(jour);
+                }
+            }
+
+            if (joursExclus.length > 0) {
+                jours = jours.filter(j => !joursExclus.includes(j));
+                avertissements.push(
+                    `${joursExclus.length} jour(s) exclu(s) de la génération car tombant sur un jour férié : ${joursExclus.join(', ')}`,
+                );
+            }
+        }
 
         // Charger les volumes horaires (en minutes/semaine — source: MatiereNiveau.volumeHoraire)
         // et trier par volume décroissant (most constrained first)
