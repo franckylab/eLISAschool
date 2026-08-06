@@ -506,6 +506,10 @@ export interface AffectationOption {
             profil?: { id: string; nom: string; prenom: string };
         };
     };
+    classeAnnee?: {
+        id: string;
+        classe?: { id: string; nom: string; niveau?: string };
+    };
 }
 
 export function useAffectationsOptions(classeAnneeId?: string) {
@@ -525,6 +529,7 @@ export function useAffectationsOptions(classeAnneeId?: string) {
                         id: c.affectationMatiere.id,
                         matiere: c.affectationMatiere.matiere,
                         enseignant: c.affectationMatiere.enseignant,
+                        classeAnnee: c.affectationMatiere.classeAnnee,
                     });
                 }
             }

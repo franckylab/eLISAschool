@@ -10,7 +10,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BookOpen, Calendar, Clock, MapPin, CheckCircle2, AlertTriangle, AlertCircle, Trash2, ShieldCheck } from 'lucide-react';
+import { BookOpen, Calendar, Clock, MapPin, CheckCircle2, AlertTriangle, AlertCircle, Trash2, ShieldCheck, GraduationCap } from 'lucide-react';
 import { StepperModal } from '@/components/modals/StepperModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { SectionSeparator } from '@/components/ui/SectionSeparator';
@@ -29,6 +29,10 @@ interface AffectationOption {
             id: string;
             profil?: { id: string; nom: string; prenom: string };
         };
+    };
+    classeAnnee?: {
+        id: string;
+        classe?: { id: string; nom: string; niveau?: string };
     };
 }
 
@@ -213,6 +217,22 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
                 </div>
             </div>
 
+            {/* Classe associée à l'affectation (lecture seule) */}
+            {(() => {
+                const affectationSelectionnee = affectations.find(a => a.id === form.affectationMatiereId);
+                const classeNom = affectationSelectionnee?.classeAnnee?.classe?.nom;
+                if (!classeNom) return null;
+                return (
+                    <div className="flex items-center gap-2 rounded-lg border border-[var(--color-dominant-200)] bg-[var(--color-dominant-50)] px-3 py-2">
+                        <GraduationCap className="h-4 w-4 text-[var(--color-dominant-600)] shrink-0" />
+                        <span className="text-sm font-medium text-[var(--color-dominant-700)]">{classeNom}</span>
+                        {affectationSelectionnee.classeAnnee?.classe?.niveau && (
+                            <span className="text-xs text-[var(--color-dominant-500)]">({affectationSelectionnee.classeAnnee.classe.niveau})</span>
+                        )}
+                    </div>
+                );
+            })()}
+
             <div>
                 <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
                     {t('creneau.modal.couleur')}
@@ -347,10 +367,23 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
                     <div className="flex justify-between">
                         <span className="text-[var(--color-text-secondary)]">{t('creneau.modal.salle')} :</span>
                         <span className="font-medium flex items-center gap-1">
-                            <MapPin className="h-3.5 w-3.5" /> {form.salleId.substring(0, 8)}
+                            <MapPin className="h-3.5 w-3.5" /> {salles.find(s => s.id === form.salleId)?.nom ?? form.salleId.substring(0, 8)}
                         </span>
                     </div>
                 )}
+                {(() => {
+                    const aff = affectations.find(a => a.id === form.affectationMatiereId);
+                    const classeNom = aff?.classeAnnee?.classe?.nom;
+                    if (!classeNom) return null;
+                    return (
+                        <div className="flex justify-between">
+                            <span className="text-[var(--color-text-secondary)]">{t('classe')} :</span>
+                            <span className="font-medium flex items-center gap-1">
+                                <GraduationCap className="h-3.5 w-3.5" /> {classeNom}
+                            </span>
+                        </div>
+                    );
+                })()}
             </div>
 
             {hasConflitsBloquants && (

@@ -12,7 +12,7 @@
 import { useTranslation } from 'react-i18next';
 import {
     BookOpen, Calendar, Clock, MapPin, User, CheckCircle2,
-    AlertCircle, Pencil, Info, Hash, Palette,
+    AlertCircle, Pencil, Info, Hash, Palette, GraduationCap,
 } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -175,6 +175,44 @@ export function EDTCreneauDetailModal({
                     </DetailRow>
 
                     <DetailRow
+                        icon={<GraduationCap className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
+                        label={t('classe')}
+                    >
+                        {classe ? (
+                            <span>
+                                {classe.nom}
+                                {classe.niveau && (
+                                    <span className="ml-1 text-[var(--color-text-muted)]">
+                                        ({classe.niveau})
+                                    </span>
+                                )}
+                            </span>
+                        ) : (
+                            <span className="text-[var(--color-text-muted)]">—</span>
+                        )}
+                    </DetailRow>
+
+                    <DetailRow
+                        icon={<MapPin className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
+                        label={t('salle')}
+                    >
+                        {salle ? (
+                            <span>
+                                {salle.nom}
+                                {salle.code && (
+                                    <span className="ml-1 text-[var(--color-text-muted)]">
+                                        ({salle.code})
+                                    </span>
+                                )}
+                            </span>
+                        ) : (
+                            <span className="text-[var(--color-text-muted)]">
+                                {t('creneau.modal.aucuneSalle')}
+                            </span>
+                        )}
+                    </DetailRow>
+
+                    <DetailRow
                         icon={<Hash className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
                         label={t('detail.typeCreneau')}
                     >
@@ -230,25 +268,6 @@ export function EDTCreneauDetailModal({
                         )}
                     </DetailRow>
 
-                    <DetailRow
-                        icon={<MapPin className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
-                        label={t('salle')}
-                    >
-                        {salle ? (
-                            <span>
-                                {salle.nom}
-                                {salle.code && (
-                                    <span className="ml-1 text-[var(--color-text-muted)]">
-                                        ({salle.code})
-                                    </span>
-                                )}
-                            </span>
-                        ) : (
-                            <span className="text-[var(--color-text-muted)]">
-                                {t('creneau.modal.aucuneSalle')}
-                            </span>
-                        )}
-                    </DetailRow>
                 </dl>
 
                 {/* ─── Section 3 : Statut & contexte ──────────── */}
@@ -275,24 +294,6 @@ export function EDTCreneauDetailModal({
                                 ? t('heureCours.modal.statuts.effectue')
                                 : t('heureCours.modal.statuts.planifie')}
                         </span>
-                    </DetailRow>
-
-                    <DetailRow
-                        icon={<BookOpen className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
-                        label={t('classe')}
-                    >
-                        {classe ? (
-                            <span>
-                                {classe.nom}
-                                {classe.niveau && (
-                                    <span className="ml-1 text-[var(--color-text-muted)]">
-                                        ({classe.niveau})
-                                    </span>
-                                )}
-                            </span>
-                        ) : (
-                            <span className="text-[var(--color-text-muted)]">—</span>
-                        )}
                     </DetailRow>
 
                     {creneau.notes && (
