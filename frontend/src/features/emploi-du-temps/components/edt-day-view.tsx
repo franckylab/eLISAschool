@@ -10,9 +10,10 @@
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Clock, MapPin, User, BookOpen, FileText } from 'lucide-react';
+import { Clock, MapPin, User, BookOpen, FileText, Check, CheckCircle2 } from 'lucide-react';
 import { formatDate } from '@/lib/date-utils';
-import type { CreneauHoraire, JourSemaine } from '../types/edt.types';
+import type { CreneauHoraire, JourSemaine, JourFerie } from '../types/edt.types';
+import { EDTLegend } from './edt-legend';
 
 interface EDTDayViewProps {
     creneaux: CreneauHoraire[];
@@ -20,6 +21,7 @@ interface EDTDayViewProps {
     onCreneauClick?: (creneau: CreneauHoraire) => void;
     heureDebut?: number;
     heureFin?: number;
+    joursFeries?: JourFerie[];
 }
 
 const JOUR_MAP: Record<number, JourSemaine> = {
@@ -46,6 +48,7 @@ export function EDTDayView({
     onCreneauClick,
     heureDebut = 7,
     heureFin = 18,
+    joursFeries,
 }: EDTDayViewProps) {
     const { t } = useTranslation('emplois');
 
@@ -163,15 +166,51 @@ export function EDTDayView({
                                     <button
                                         key={c.id}
                                         onClick={() => onCreneauClick?.(c)}
-                                        className="absolute left-0 right-0 rounded-lg border-l-[3px] px-[var(--space-xs)] py-[var(--space-xxs)] text-left transition-all hover:shadow-md hover:brightness-95 overflow-hidden"
+                                        className={`absolute left-0 right-0 rounded-lg border-l-[3px] px-[var(--space-xs)] py-[var(--space-xxs)] text-left transition-all hover:shadow-md hover:brightness-95 overflow-hidden ${
+                                            c.statut === 'PLANIFIE' ? 'opacity-80' : ''
+                                        }`}
                                         style={{
                                             top: pos.top,
                                             height: pos.height,
                                             minHeight: 'clamp(24px, 4vh, 40px)',
-                                            borderColor: couleur || 'var(--color-dominant-500)',
+                                            borderLeftColor: c.statut === 'VALIDE' ? 'var(--color-success)' : (couleur || 'var(--color-dominant-500)'),
                                             backgroundColor: couleur ? `${couleur}15` : 'var(--color-dominant-50)',
                                         }}
+                                        title={[
+                                            c.affectationMatiere?.matiere?.nom ?? '',
+                                            c.affectationMatiere?.classeAnnee?.classe?.nom ? `🎓 ${c.affectationMatiere.classeAnnee.classe.nom}` : '',
+                                            c.affectationMatiere?.enseignant?.utilisateur?.profil ? `👤 ${c.affectationMatiere.enseignant.utilisateur.profil?.prenom} ${c.affectationMatiere.enseignant.utilisateur.profil?.nom}` : '',
+                                            c.salle?.nom ? `📍 ${c.salle.nom}` : '',
+                                            `${c.heureDebut?.slice(0, 5) ?? ''}–${c.heureFin?.slice(0, 5) ?? ''}`,
+                                            c.statut === 'VALIDE' ? '✓ Validé' : '⏳ En attente',
+                                        ].filter(Boolean).join('\n')}
                                     >
+                                        {/* Badges statut + heures cours */}
+                                        <div className="absolute top-1 right-1 flex items-center gap-0.5">
+                                            {c.hasHeuresCours && (
+                                                <span
+                                                    className="inline-flex items-center justify-center rounded-full bg-[var(--color-success)] text-white"
+                                                    style={{ width: 'clamp(0.875rem, 0.75rem + 0.3vw, 1rem)', height: 'clamp(0.875rem, 0.75rem + 0.3vw, 1rem)' }}
+                                                    title={t('legende.heuresCoursGenerees')}
+                                                >
+                                                    <CheckCircle2 className="h-2.5 w-2.5" />
+                                                </span>
+                                            )}
+                                            <span
+                                                className="inline-flex items-center justify-center rounded-full text-white"
+                                                style={{
+                                                    width: 'clamp(0.875rem, 0.75rem + 0.3vw, 1rem)',
+                                                    height: 'clamp(0.875rem, 0.75rem + 0.3vw, 1rem)',
+                                                    backgroundColor: c.statut === 'VALIDE' ? 'var(--color-success)' : 'var(--color-text-muted)',
+                                                }}
+                                                title={c.statut === 'VALIDE' ? t('legende.creneauValide') : t('legende.creneauAttente')}
+                                            >
+                                                {c.statut === 'VALIDE'
+                                                    ? <Check className="h-3 w-3" strokeWidth={3} />
+                                                    : <Clock className="h-2 w-2" />
+                                                }
+                                            </span>
+                                        </div>
                                         {/* Matière + classe */}
                                         <div className="flex items-center gap-1">
                                             <p
@@ -248,6 +287,9 @@ export function EDTDayView({
                     </p>
                 </div>
             )}
+
+            {/* Légende */}
+            {creneauxJour.length > 0 && <EDTLegend joursFeries={joursFeries} />}
         </div>
     );
 }

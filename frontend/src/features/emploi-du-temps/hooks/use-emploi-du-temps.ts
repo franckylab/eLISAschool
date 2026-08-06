@@ -312,6 +312,25 @@ export function useCreerTemplateEDT() {
     });
 }
 
+export function useModifierTemplateEDT() {
+    const qc = useQueryClient();
+    const { t } = useTranslation('emplois');
+    const handleError = useHandleError();
+    return useMutation({
+        mutationFn: async ({ id, ...dto }: { id: string } & Partial<TemplateEDT>) => {
+            const res = await apiClient.patch<TemplateEDT>(`/api/emploi-du-temps/templates/${id}`, dto);
+            return res.data;
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: EDT_KEYS.templates.all });
+            toast.success(t('toasts.templateModifie'));
+        },
+        onError: (err: unknown) => {
+            handleError(err, t('toasts.erreurModification'));
+        },
+    });
+}
+
 export function useSupprimerTemplateEDT() {
     const qc = useQueryClient();
     const { t } = useTranslation('emplois');

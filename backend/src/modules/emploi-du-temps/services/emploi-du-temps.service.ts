@@ -65,17 +65,13 @@ export class EmploiDuTempsService {
             .leftJoinAndSelect('enseignant_utilisateur.profil', 'enseignant_profil')
             .leftJoinAndSelect('am.classeAnnee', 'classeAnnee')
             .leftJoinAndSelect('classeAnnee.classe', 'classe')
+            .leftJoinAndSelect('ch.salle', 'salle')
             // Badge HC : sous-requête EXISTS pour savoir si des instances HeureCours existent
             .addSelect(
                 `EXISTS (SELECT 1 FROM heures_cours hc WHERE hc."creneauId" = ch.id AND hc."deletedAt" IS NULL)`,
                 'ch_hasHeuresCours',
             )
             .where('ch.etablissementId = :etablissementId', { etablissementId });
-
-        // Jointure salle conditionnelle (1 JOIN économisé quand pas de filtre salle)
-        if (query.salleId) {
-            qb.leftJoinAndSelect('ch.salle', 'salle');
-        }
 
         // Filtres directs
         if (query.affectationMatiereId) qb.andWhere('ch.affectationMatiereId = :affectationMatiereId', { affectationMatiereId: query.affectationMatiereId });

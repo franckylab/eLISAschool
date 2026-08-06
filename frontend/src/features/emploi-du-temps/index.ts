@@ -27,6 +27,8 @@ export { EDTMonthView } from './components/edt-month-view';
 export { EDTDayView } from './components/edt-day-view';
 export { EDTListeView } from './components/edt-liste';
 export { EDTDatePickerModal } from './components/edt-datepicker-modal';
+export { EDTLegend } from './components/edt-legend';
+export { TemplateWizardModal } from './components/template-wizard-modal';
 
 // Hooks
 export * from './hooks/use-emploi-du-temps';

@@ -2366,3 +2366,76 @@ Session grill-me (3 rounds) : 7 axes d'amélioration EDT clarifiés par question
 - **Hooks** : `use-jours-feries.ts` (+ `useUpdateJourFerie`, `useChargerModelePays`, `useModelesPays`)
 - **Composant** : `edt-preferences.tsx` (+ section Exclusion JF avec toggle, section Jours fériés avec sélecteur pays + bouton charger + tableau liste)
 - **i18n** : `fr/emplois.json` + `en/emplois.json` (+32 clés `joursFeries.*` dont 15 noms de pays)
+
+## Travail effectué — Session 2026-08-05 (EDT — Calendrier, Configuration tabs, Templates wizard)
+
+### 1. Calendrier — Jours fériés (vue semaine + mois + légende)
+
+**Vue semaine** (`edt-calendar.tsx`) : détection jour férié par colonne via `estJourFerieFromList()`. Fond semi-transparent `bg-[var(--color-danger)]/5`, bordure supérieure 3px colorée (`jfCouleur`), nom du jour férié affiché sous l'étoile dans le header (texte tronqué).
+
+**Vue mois** (`edt-month-view.tsx`) : `cellClass` amélioré avec paramètre `jfEstFerie` → fond `bg-[var(--color-danger)]/5` + hover `/8`. Badge nom jour férié ajouté (étoile + texte tronqué `max-w-[3rem]`).
+
+**Légende unifiée** (`edt-legend.tsx`, nouveau) : composant réutilisable affichant 4 indicateurs (aujourd'hui, jour férié, créneau validé, créneau en attente). Intégré sous les vues semaine et mois dans `edt-page.tsx`. Thème aware via CSS vars, responsive avec `clamp()`.
+
+### 2. Configuration — Refactor en tabs horizontaux
+
+**`edt-preferences.tsx`** : rewrite complet (660 → ~470 lignes). Structure en 3 onglets :
+1. **Calendrier** : Jours travaillés (toggle buttons) + Horaires de cours + Contraintes de planification
+2. **Jours fériés** : Exclusion toggle + Gestion JF (table, recherche, filtre, pagination, charger modèle pays, générer variables)
+3. **Automation** : Matérialisation automatique (checkbox actif, liste horaires jour+heure, ajouter/supprimer)
+
+Navigation tabs avec icônes (Calendar, Globe, Zap), scrollables horizontalement. Transitions Framer Motion (`AnimatePresence mode="wait"`). Footer sticky avec boutons Réinitialiser + Enregistrer. Validation : si `joursOuvrables` vide → redirection vers tab calendrier.
+
+### 3. Templates — Wizard modal multi-étapes
+
+**`template-wizard-modal.tsx`** (nouveau, ~570 lignes) : wizard 4 étapes via `StepperModal` :
+1. **Identité** : Nom (obligatoire 2+ chars), description, partage (checkbox)
+2. **Calendrier** : Jours travaillés (toggle buttons), plage horaire (début/fin avec validation), durée créneau (slider 15-120 min)
+3. **Contraintes** : Max créneaux/jour, max même matière/jour, max consécutifs (inputs number avec aides)
+4. **Preview** : Résumé visuel (4 stats cards + détails groupés : identité, calendrier, contraintes)
+
+Mode création ET édition (prop `template?: TemplateEDT`). Validators par étape. Hook `useModifierTemplateEDT` ajouté (PATCH `/api/emploi-du-temps/templates/:id`).
+
+### 4. Templates — Amélioration cards
+
+**`edt-templates.tsx`** : rewrite des cards avec :
+- Bandeau dégradé si template partagé
+- Résumé configuration : jours travaillés (pastilles), horaires + durée, contraintes, types de créneau
+- Bouton "Appliquer" rapide (primaire, pleine largeur)
+- Actions secondaires : Modifier (ouvre wizard en mode édition), Dupliquer, Supprimer
+- État vide amélioré avec icône dans un carré arrondi
+
+### 5. Types + Hooks
+
+- `TemplateEDTConfiguration` étendu : `dureeCreneauStandard`, `maxCreneauxParJour`, `maxCreneauxMatiereParJour`, `maxCreneauxConsecutifs`
+- `useModifierTemplateEDT()` ajouté dans `use-emploi-du-temps.ts` (PATCH, toast `templateModifie`)
+
+### 6. i18n FR+EN
+
+~70 clés ajoutées dans chaque fichier :
+- `legende.*` (5 clés) : titre, aujourd'hui, jour férié, créneau validé, créneau en attente
+- `preferences.tabs.*` (3 clés) : calendrier, joursFeries, automation
+- `templates.wizard.*` (45+ clés) : toutes les étapes, labels, validations, preview
+- `templates.appliquer`, `templates.nonConfigure`, etc. (6 clés cards)
+- `toasts.templateModifie`
+
+### Qualité
+- 0 erreur TypeScript (compilation `tsc --noEmit` clean)
+- 0 `any`, 0 couleur hardcodée, 0 chaîne FR en dur
+- Toutes les couleurs via CSS vars (`var(--color-*)`)
+- Responsive mobile-first avec `clamp()`
+- Dark mode natif via CSS vars
+
+### Fichiers modifiés (10)
+- `frontend/src/features/emploi-du-temps/components/edt-legend.tsx` (nouveau)
+- `frontend/src/features/emploi-du-temps/components/template-wizard-modal.tsx` (nouveau)
+- `frontend/src/features/emploi-du-temps/components/edt-calendar.tsx` (bandes JF)
+- `frontend/src/features/emploi-du-temps/components/edt-month-view.tsx` (cellules JF)
+- `frontend/src/features/emploi-du-temps/components/edt-page.tsx` (intégration légende)
+- `frontend/src/features/emploi-du-temps/components/edt-preferences.tsx` (refactor tabs)
+- `frontend/src/features/emploi-du-temps/components/edt-templates.tsx` (cards enrichies)
+- `frontend/src/features/emploi-du-temps/types/edt.types.ts` (TemplateEDTConfiguration étendu)
+- `frontend/src/features/emploi-du-temps/hooks/use-emploi-du-temps.ts` (useModifierTemplateEDT)
+- `frontend/src/features/emploi-du-temps/index.ts` (exports)
+- `frontend/src/locales/fr/emplois.json` (+70 clés)
+- `frontend/src/locales/en/emplois.json` (+70 clés)

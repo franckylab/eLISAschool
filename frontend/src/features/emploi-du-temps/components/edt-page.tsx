@@ -7,7 +7,7 @@
  * Version: 4.0.0 — Toolbar consolidée + code mort supprimé
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
@@ -38,6 +38,7 @@ import { EDTCreneauModal } from './edt-creneau-modal';
 import { EDTCreneauDetailModal } from './edt-creneau-detail-modal';
 import { EDTGenerationModal } from './edt-generation-modal';
 import { EDTDatePickerModal } from './edt-datepicker-modal';
+import { EDTLegend } from './edt-legend';
 import type { CreneauHoraire } from '../types/edt.types';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -158,6 +159,13 @@ export function EDTStandalonePage() {
         setContexteFilter('');
     }, []);
 
+    // ─── Auto-sélection du 1er contexte disponible ─────────────
+    useEffect(() => {
+        if (!contexteFilter && contexteOptions.length > 0) {
+            setContexteFilter(contexteOptions[0].value);
+        }
+    }, [contexteFilter, contexteOptions]);
+
     // ─── Filtre serveur adaptatif ─────────────────────
     const serverFilters = useMemo(() => {
         if (!contexteFilter) return { limit: 100 };
@@ -263,18 +271,26 @@ export function EDTStandalonePage() {
                 if (isLoading) return <PageSkeleton showHeader={false} showStats={false} showTable />;
                 if (creneaux.length === 0) return renderEmpty();
                 return (
-                    <EDTCalendar
-                        creneaux={creneaux}
-                        onCreneauClick={handleCreneauClick}
-                        onCellClick={handleCellClick}
-                        semaineDebut={semaineDebut}
-                        joursFeries={joursFeries}
-                    />
+                    <div className="flex flex-col gap-[var(--gap-sm)]">
+                        <EDTCalendar
+                            creneaux={creneaux}
+                            onCreneauClick={handleCreneauClick}
+                            onCellClick={handleCellClick}
+                            semaineDebut={semaineDebut}
+                            joursFeries={joursFeries}
+                        />
+                        <EDTLegend joursFeries={joursFeries} />
+                    </div>
                 );
             case 'mois':
-                return <EDTMonthView creneaux={creneaux} mois={moisDebut} onCreneauClick={handleCreneauClick} onDateClick={handleDateClick} onPlusNClick={handlePlusNClick} joursFeries={joursFeries} showAll={showAllCreneaux} />;
+                return (
+                    <div className="flex flex-col gap-[var(--gap-sm)]">
+                        <EDTMonthView creneaux={creneaux} mois={moisDebut} onCreneauClick={handleCreneauClick} onDateClick={handleDateClick} onPlusNClick={handlePlusNClick} joursFeries={joursFeries} showAll={showAllCreneaux} />
+                        <EDTLegend joursFeries={joursFeries} />
+                    </div>
+                );
             case 'jour':
-                return <EDTDayView creneaux={creneaux} date={navigationDate} onCreneauClick={handleCreneauEdit} />;
+                return <EDTDayView creneaux={creneaux} date={navigationDate} onCreneauClick={handleCreneauEdit} joursFeries={joursFeries} />;
             case 'liste':
                 return <EDTListeView creneaux={creneaux} onVoir={handleVoir} onModifier={handleModifier} matiereOptions={matiereOptions} />;
             default:
@@ -450,12 +466,12 @@ export function EDTStandalonePage() {
                                     style={{ minWidth: 'clamp(120px, 25vw, 240px)' }}
                                     aria-label={t('filtres.contexteLabel')}
                                 >
-                                    <option value="">
+                                    <option value="" disabled>
                                         {contexteType === 'classe'
-                                            ? t('filtres.toutesClasses')
+                                            ? t('filtres.selectionnerClasse')
                                             : contexteType === 'enseignant'
-                                                ? t('filtres.tousEnseignants')
-                                                : t('filtres.toutesSalles')}
+                                                ? t('filtres.selectionnerEnseignant')
+                                                : t('filtres.selectionnerSalle')}
                                     </option>
                                     {contexteOptions.map((opt) => (
                                         <option key={opt.value} value={opt.value}>{opt.label}</option>

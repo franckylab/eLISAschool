@@ -159,6 +159,10 @@ export interface TemplateEDTConfiguration {
     joursTravailles?: string[];
     heureDebutCours?: string;
     heureFinCours?: string;
+    dureeCreneauStandard?: number;
+    maxCreneauxParJour?: number;
+    maxCreneauxMatiereParJour?: number;
+    maxCreneauxConsecutifs?: number;
 }
 
 export interface TemplateEDT {

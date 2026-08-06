@@ -78,7 +78,10 @@
     "tousStatuts": "All statuses",
     "rechercherCreneau": "Search a slot...",
     "reset": "Reset",
-    "contexteLabel": "Filter by context"
+    "contexteLabel": "Filter by context",
+    "selectionnerClasse": "Select a class",
+    "selectionnerEnseignant": "Select a teacher",
+    "selectionnerSalle": "Select a room"
   },
   "mois": {
     "vide": "No slots this month",
@@ -126,6 +129,8 @@
     "regenererDesc": "Delete all existing slots before generating",
     "respecterContraintes": "Respect constraints",
     "respecterContraintesDesc": "Avoid teacher conflicts and respect preferences",
+    "eleves": "student",
+    "eleves_plural": "students",
     "info": {
       "titre": "Information",
       "l1": "Generation uses class assignments",
@@ -183,7 +188,12 @@
     "reinitialiser": "Reset",
     "enregistrer": "Save preferences",
     "enregistrement": "Saving…",
-    "erreurJoursOuvrables": "Please select at least one working day"
+    "erreurJoursOuvrables": "Please select at least one working day",
+    "tabs": {
+      "calendrier": "Calendar",
+      "joursFeries": "Holidays",
+      "automation": "Automation"
+    }
   },
   "templates": {
     "titre": "Templates",
@@ -208,7 +218,62 @@
     "supprimerTitre": "Delete template",
     "supprimerMessage": "Are you sure you want to delete this template? This action is irreversible.",
     "supprimerConfirmer": "Delete",
-    "bientotDisponible": "Coming soon"
+    "bientotDisponible": "Coming soon",
+    "appliquer": "Apply",
+    "appliquerInfo": "Select template '{{nom}}' in generation",
+    "nonConfigure": "Not configured",
+    "contraintesResumeJours": "/day",
+    "contraintesResumeMatiere": "subject/day",
+    "creneauxTypesResume": "slot type(s)",
+    "wizard": {
+      "titreCreer": "New template",
+      "titreModifier": "Edit template",
+      "descCreer": "Create a reusable template in 4 steps",
+      "descModifier": "Edit the template configuration",
+      "etapeIdentite": "Identity",
+      "etapeCalendrier": "Calendar",
+      "etapeContraintes": "Constraints",
+      "etapePreview": "Preview",
+      "nom": "Template name",
+      "nomPlaceholder": "E.g.: Classic template S1",
+      "nomMin": "Name must be at least 2 characters",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe the purpose of this template…",
+      "partage": "Share this template",
+      "partageDesc": "Visible and usable by other administrators in the institution",
+      "joursTravailles": "Working days",
+      "joursObligatoire": "Select at least one day",
+      "heureDebut": "Start time",
+      "heureFin": "End time",
+      "heureInvalide": "End time must be after start time",
+      "dureeCreneau": "Slot duration",
+      "contraintesTitre": "Planning constraints",
+      "maxCreneauxJour": "Max slots per day",
+      "maxCreneauxJourAide": "Maximum number of slots schedulable on the same day",
+      "maxMemeMatiereJour": "Max same subject per day",
+      "maxMemeMatiereJourAide": "Maximum number of slots for the same subject per day",
+      "maxConsecutifs": "Max consecutive slots",
+      "maxConsecutifsAide": "Maximum number of consecutive same-subject slots",
+      "previewTitre": "Template summary",
+      "previewJours": "Days",
+      "previewCreneaux": "Estimated slots",
+      "previewDuree": "Duration",
+      "previewContraintes": "Constraints",
+      "previewIdentiteSection": "Identity",
+      "previewCalendrierSection": "Calendar",
+      "previewContraintesSection": "Constraints",
+      "previewPartage": "Shared",
+      "previewTotalHeures": "{{heures}}h{{minutes}} per day",
+      "maxCreneauxJourShort": "/day",
+      "maxMatiereJourShort": "subj./day",
+      "maxConsecutifsShort": "consec.",
+      "suivant": "Next",
+      "previsualiser": "Preview",
+      "creer": "Create template",
+      "erreurIdentite": "Please enter a valid name (at least 2 characters)",
+      "erreurCalendrier": "Select at least one working day and valid times",
+      "erreurContraintes": "Constraints must be greater than 0"
+    }
   },
   "calendrier": {
     "heure": "Time",
@@ -346,6 +411,7 @@
     "templateCree": "Template created successfully",
     "templateSupprime": "Template deleted",
     "templateDuplique": "Template duplicated",
+    "templateModifie": "Template updated successfully",
     "erreurCreation": "Error creating",
     "erreurModification": "Error updating",
     "erreurSuppression": "Error deleting",
@@ -654,5 +720,13 @@
     "titre": "Export",
     "csvSucces": "CSV export downloaded successfully",
     "csvErreur": "Error during CSV export"
+  },
+  "legende": {
+    "titre": "Legend",
+    "aujourdhui": "Today",
+    "jourFerie": "Holiday",
+    "creneauValide": "Validated slot",
+    "heuresCoursGenerees": "Class hours generated",
+    "creneauAttente": "Pending slot"
   }
 }

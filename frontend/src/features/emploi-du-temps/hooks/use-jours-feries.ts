@@ -148,7 +148,7 @@ export function useGenererVariablesAnnee() {
         },
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['jours-feries'] });
-            toast.success(t('joursFeries.variablesGenereesSucces', '{{count}} jour(s) férié(s) variable(s) généré(s)', { count: data.length }));
+            toast.success(t('joursFeries.variablesGenereesSucces', '{{count}} jour(s) férié(s) variable(s) généré(s)', { count: data?.length ?? 0 }));
         },
         onError: (error: unknown) => handleError(error, t('joursFeries.erreurGeneration', 'Erreur lors de la génération')),
     });

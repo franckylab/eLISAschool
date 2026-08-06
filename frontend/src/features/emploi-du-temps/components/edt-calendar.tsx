@@ -21,7 +21,7 @@ import {
     type DragStartEvent,
     type DragEndEvent,
 } from '@dnd-kit/core';
-import { User, MapPin, GripVertical, AlertTriangle, RefreshCw, Star, CheckCircle2 } from 'lucide-react';
+import { User, MapPin, GripVertical, AlertTriangle, RefreshCw, Star, CheckCircle2, Clock, Check, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUpdateCreneau, useVerifierConflits } from '../hooks/use-emploi-du-temps';
 import type { CreneauHoraire, JourSemaine, DonneesVerification, Conflit, RapportPropagation, JourFerie } from '../types/edt.types';
@@ -390,10 +390,21 @@ export function EDTCalendar({
                                 )}
                                 {/* Indicateur jour férié */}
                                 {jfInfo.estFerie && !estAujourdhui && (
-                                    <Star
-                                        className="mt-0.5 h-2.5 w-2.5 fill-current"
-                                        style={{ color: jfInfo.couleur || 'currentColor' }}
-                                    />
+                                    <span className="mt-0.5 flex items-center gap-0.5" title={jfInfo.nom}>
+                                        <Star
+                                            className="h-2 w-2 fill-current shrink-0"
+                                            style={{ color: jfInfo.couleur || 'var(--color-danger)' }}
+                                        />
+                                        <span
+                                            className="truncate max-w-[4rem]"
+                                            style={{
+                                                fontSize: 'clamp(0.4375rem, 0.4rem + 0.15vw, 0.5rem)',
+                                                color: jfInfo.couleur || 'rgba(255,255,255,0.8)',
+                                            }}
+                                        >
+                                            {jfInfo.nom}
+                                        </span>
+                                    </span>
                                 )}
                             </div>
                         );
@@ -416,8 +427,11 @@ export function EDTCalendar({
 
                             {/* Day cells */}
                             {joursActifs.map((jour, colIdx) => {
-                                // Vérifier si ce jour est aujourd'hui pour le fond de colonne
+                                // Vérifier si ce jour est aujourd'hui ou un jour férié pour le fond de colonne
                                 let colEstAujourdhui = false;
+                                let colEstJourFerie = false;
+                                let colJfNom = '';
+                                let colJfCouleur = '';
                                 if (semaineDebut) {
                                     const offsets: Record<string, number> = {
                                         LUNDI: 0, MARDI: 1, MERCREDI: 2, JEUDI: 3,
@@ -426,6 +440,10 @@ export function EDTCalendar({
                                     const d = new Date(semaineDebut);
                                     d.setDate(d.getDate() + (offsets[jour] ?? 0));
                                     colEstAujourdhui = d.toDateString() === new Date().toDateString();
+                                    const jfInfo = estJourFerieFromList(d, joursFeries);
+                                    colEstJourFerie = jfInfo.estFerie;
+                                    colJfNom = jfInfo.nom || '';
+                                    colJfCouleur = jfInfo.couleur || '';
                                 }
                                 return (
                                     <DropCell
@@ -434,6 +452,9 @@ export function EDTCalendar({
                                         row={rowIdx + 2}
                                         col={colIdx + 2}
                                         estAujourdhui={colEstAujourdhui}
+                                        estJourFerie={colEstJourFerie}
+                                        jfCouleur={colJfCouleur}
+                                        jfNom={colJfNom}
                                         onClick={onCellClick ? () => onCellClick(jour, heure) : undefined}
                                     />
                                 );
@@ -540,8 +561,16 @@ export function EDTCalendar({
 
 // ─── Drop cell ────────────────────────────────────────
 
-function DropCell({ id, row, col, estAujourdhui, onClick }: { id: string; row: number; col: number; estAujourdhui?: boolean; onClick?: () => void }) {
+function DropCell({ id, row, col, estAujourdhui, estJourFerie, jfCouleur, jfNom, onClick }: { id: string; row: number; col: number; estAujourdhui?: boolean; estJourFerie?: boolean; jfCouleur?: string; jfNom?: string; onClick?: () => void }) {
     const { setNodeRef, isOver } = useDroppable({ id });
+
+    // Style inline pour la bordure supérieure colorée des jours fériés (première ligne uniquement)
+    const style: React.CSSProperties = { gridRow: row, gridColumn: col };
+    if (estJourFerie && row === 2 && jfCouleur) {
+        style.borderTopWidth = '3px';
+        style.borderTopStyle = 'solid';
+        style.borderTopColor = jfCouleur;
+    }
 
     return (
         <div
@@ -552,9 +581,12 @@ function DropCell({ id, row, col, estAujourdhui, onClick }: { id: string; row: n
                     ? 'bg-[var(--color-dominant-100)]'
                     : estAujourdhui
                         ? 'bg-[var(--color-accent-50)]/40 hover:bg-[var(--color-accent-50)]/60 dark:bg-[var(--color-accent-900)]/10'
-                        : 'hover:bg-[var(--color-surface-hover)]/50'
+                        : estJourFerie
+                            ? 'bg-[var(--color-danger)]/5 hover:bg-[var(--color-danger)]/8 dark:bg-[var(--color-danger)]/8'
+                            : 'hover:bg-[var(--color-surface-hover)]/50'
             } ${onClick ? 'cursor-pointer' : ''}`}
-            style={{ gridRow: row, gridColumn: col }}
+            style={style}
+            title={estJourFerie && row === 2 ? jfNom : undefined}
         />
     );
 }
@@ -585,17 +617,25 @@ function CreneauCard({
             style={{ ...style, opacity: isDragging ? 0.4 : 1 }}
             className="select-none group"
             onClick={onClick}
+            title={[
+                creneau.affectationMatiere?.matiere?.nom ?? '',
+                creneau.affectationMatiere?.classeAnnee?.classe?.nom ? `🎓 ${creneau.affectationMatiere.classeAnnee.classe.nom}` : '',
+                creneau.affectationMatiere?.enseignant?.utilisateur?.profil ? `👤 ${creneau.affectationMatiere.enseignant.utilisateur.profil?.prenom} ${creneau.affectationMatiere.enseignant.utilisateur.profil?.nom}` : '',
+                creneau.salle?.nom ? `📍 ${creneau.salle.nom}` : '',
+                `${creneau.heureDebut}–${creneau.heureFin}`,
+                creneau.statut === 'VALIDE' ? '✓ Validé' : '⏳ En attente',
+            ].filter(Boolean).join('\n')}
         >
             <div
                 className={`relative h-full rounded-md overflow-hidden cursor-pointer hover:shadow-md transition-shadow ${
                     creneau.hasHeuresCours ? 'border-l-[3px] ring-1 ring-inset ring-[var(--color-success)]/20' : 'border-l-[3px]'
-                }`}
+                } ${creneau.statut === 'PLANIFIE' ? 'opacity-80' : ''}`}
                 style={{
-                    borderLeftColor: couleur,
+                    borderLeftColor: creneau.statut === 'VALIDE' ? 'var(--color-success)' : couleur,
                     backgroundColor: `color-mix(in srgb, ${couleur} 8%, var(--color-surface))`,
                 }}
             >
-                {/* Badge HC : pastille ✓ si heures cours générées */}
+                {/* Badge HC : pastille ✓ verte si heures cours générées (top-left) */}
                 {creneau.hasHeuresCours && (
                     <div
                         className="absolute top-0.5 left-0.5 z-10 flex items-center justify-center rounded-full bg-[var(--color-success)] text-white"
@@ -608,6 +648,23 @@ function CreneauCard({
                         <CheckCircle2 className="h-2 w-2" />
                     </div>
                 )}
+
+                {/* Badge statut : validé (✓ vert) / en attente (horloge gris) — top-right */}
+                <div
+                    className="absolute top-0.5 right-6 z-10 flex items-center justify-center rounded-full"
+                    style={{
+                        width: 'clamp(0.875rem, 0.75rem + 0.35vw, 1rem)',
+                        height: 'clamp(0.875rem, 0.75rem + 0.35vw, 1rem)',
+                        backgroundColor: creneau.statut === 'VALIDE' ? 'var(--color-success)' : 'var(--color-text-muted)',
+                        color: 'white',
+                    }}
+                    title={creneau.statut === 'VALIDE' ? t('legende.creneauValide') : t('legende.creneauAttente')}
+                >
+                    {creneau.statut === 'VALIDE'
+                        ? <Check className="h-3 w-3" strokeWidth={3} />
+                        : <Clock className="h-2 w-2" />
+                    }
+                </div>
 
                 {/* Drag handle */}
                 <div
@@ -627,6 +684,15 @@ function CreneauCard({
                         >
                             {creneau.affectationMatiere?.matiere?.nom || '—'}
                         </div>
+                        {creneau.affectationMatiere?.classeAnnee?.classe?.nom && (
+                            <div
+                                className="flex items-center gap-0.5 text-[var(--color-dominant-600)] mt-0.5"
+                                style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.5625rem)' }}
+                            >
+                                <BookOpen className="h-2.5 w-2.5 shrink-0" />
+                                <span className="truncate">{creneau.affectationMatiere.classeAnnee.classe.nom}</span>
+                            </div>
+                        )}
                         {creneau.affectationMatiere?.enseignant && (
                             <div
                                 className="flex items-center gap-0.5 text-[var(--color-text-secondary)] mt-0.5"

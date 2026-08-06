@@ -14,11 +14,12 @@ import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Settings, Eye, CheckCircle2, AlertTriangle,
-    Calendar, Clock, MapPin, User, BookOpen, Info,
+    Calendar, Clock, MapPin, User, BookOpen, Info, GraduationCap,
 } from 'lucide-react';
 import { StepperModal } from '@/components/modals/StepperModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { usePrevisualiserEDT, useGenererEDT, useTemplatesEDT } from '../hooks/use-emploi-du-temps';
+import { useToutesClasses } from '@/features/classes/hooks/use-toutes-classes';
 import type { CreneauPreview, ConflitPreview, ResumePreview } from '../types/edt.types';
 
 interface EDTGenerationModalProps {
@@ -39,6 +40,10 @@ export function EDTGenerationModal({ open, onOpenChange, classeAnneeId, onSucces
     const previsualiser = usePrevisualiserEDT();
     const generer = useGenererEDT();
     const { data: templates } = useTemplatesEDT();
+    const { data: classes } = useToutesClasses();
+
+    /** Classe concernée par la génération */
+    const classeConcernee = classes?.find(c => c.classeAnneeId === classeAnneeId);
 
     const [preview, setPreview] = useState<{
         creneaux: CreneauPreview[];
@@ -106,6 +111,26 @@ export function EDTGenerationModal({ open, onOpenChange, classeAnneeId, onSucces
     // ─── ÉTAPE 1 : Options ───────────────────────────
     const etapeOptions = (
         <div className="space-y-4">
+            {/* Classe concernée */}
+            {classeConcernee && (
+                <div className="flex items-center gap-2 rounded-lg border border-[var(--color-dominant-200)] bg-[var(--color-dominant-50)] px-3 py-2">
+                    <GraduationCap className="h-4 w-4 text-[var(--color-dominant-600)]" />
+                    <span className="text-sm font-medium text-[var(--color-dominant-700)]">
+                        {classeConcernee.nom}
+                    </span>
+                    {classeConcernee.anneeScolaire?.libelle && (
+                        <span className="text-xs text-[var(--color-dominant-500)]">
+                            — {classeConcernee.anneeScolaire.libelle}
+                        </span>
+                    )}
+                    {classeConcernee.effectifActuel != null && (
+                        <span className="ml-auto text-xs text-[var(--color-dominant-500)]">
+                            {classeConcernee.effectifActuel} {t('generation.eleves', { count: classeConcernee.effectifActuel })}
+                        </span>
+                    )}
+                </div>
+            )}
+
             <div className="flex items-center gap-3">
                 <Settings className="h-5 w-5 text-[var(--color-dominant-600)]" />
                 <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">{t('generation.options')}</h3>
@@ -402,7 +427,11 @@ export function EDTGenerationModal({ open, onOpenChange, classeAnneeId, onSucces
             open={open}
             onOpenChange={onOpenChange}
             title={t('genererEmploiDuTemps')}
-            description={t('configurerGeneration')}
+            description={
+                classeConcernee
+                    ? `${t('configurerGeneration')} — ${classeConcernee.nom}${classeConcernee.anneeScolaire?.libelle ? ` (${classeConcernee.anneeScolaire.libelle})` : ''}`
+                    : t('configurerGeneration')
+            }
             size="2xl"
             steps={steps}
             nextLabels={nextLabels}

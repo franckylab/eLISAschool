@@ -78,7 +78,10 @@
     "tousStatuts": "Tous les statuts",
     "rechercherCreneau": "Rechercher un créneau...",
     "reset": "Réinitialiser",
-    "contexteLabel": "Filtrer par contexte"
+    "contexteLabel": "Filtrer par contexte",
+    "selectionnerClasse": "Sélectionner une classe",
+    "selectionnerEnseignant": "Sélectionner un enseignant",
+    "selectionnerSalle": "Sélectionner une salle"
   },
   "mois": {
     "vide": "Aucun créneau ce mois",
@@ -126,6 +129,8 @@
     "regenererDesc": "Supprimer tous les créneaux existants avant de générer",
     "respecterContraintes": "Respecter les contraintes",
     "respecterContraintesDesc": "Éviter les conflits d'enseignants et respecter les préférences",
+    "eleves": "élève",
+    "eleves_plural": "élèves",
     "info": {
       "titre": "Informations",
       "l1": "La génération utilise les affectations de la classe",
@@ -183,7 +188,12 @@
     "reinitialiser": "Réinitialiser",
     "enregistrer": "Enregistrer les préférences",
     "enregistrement": "Enregistrement…",
-    "erreurJoursOuvrables": "Veuillez sélectionner au moins un jour travaillé"
+    "erreurJoursOuvrables": "Veuillez sélectionner au moins un jour travaillé",
+    "tabs": {
+      "calendrier": "Calendrier",
+      "joursFeries": "Jours fériés",
+      "automation": "Automation"
+    }
   },
   "templates": {
     "titre": "Templates",
@@ -208,7 +218,62 @@
     "supprimerTitre": "Supprimer le template",
     "supprimerMessage": "Êtes-vous sûr de vouloir supprimer ce template ? Cette action est irréversible.",
     "supprimerConfirmer": "Supprimer",
-    "bientotDisponible": "Fonctionnalité à venir"
+    "bientotDisponible": "Fonctionnalité à venir",
+    "appliquer": "Appliquer",
+    "appliquerInfo": "Sélectionnez le template « {{nom}} » dans la génération",
+    "nonConfigure": "Non configuré",
+    "contraintesResumeJours": "/jour",
+    "contraintesResumeMatiere": "matière/jour",
+    "creneauxTypesResume": "type(s) de créneau(x)",
+    "wizard": {
+      "titreCreer": "Nouveau template",
+      "titreModifier": "Modifier le template",
+      "descCreer": "Créez un modèle réutilisable en 4 étapes",
+      "descModifier": "Modifiez la configuration du template",
+      "etapeIdentite": "Identité",
+      "etapeCalendrier": "Calendrier",
+      "etapeContraintes": "Contraintes",
+      "etapePreview": "Aperçu",
+      "nom": "Nom du template",
+      "nomPlaceholder": "Ex: Template classique S1",
+      "nomMin": "Le nom doit contenir au moins 2 caractères",
+      "description": "Description",
+      "descriptionPlaceholder": "Décrivez l'usage de ce template…",
+      "partage": "Partager ce template",
+      "partageDesc": "Visible et utilisable par les autres administrateurs de l'établissement",
+      "joursTravailles": "Jours travaillés",
+      "joursObligatoire": "Sélectionnez au moins un jour",
+      "heureDebut": "Heure de début",
+      "heureFin": "Heure de fin",
+      "heureInvalide": "L'heure de fin doit être après l'heure de début",
+      "dureeCreneau": "Durée d'un créneau",
+      "contraintesTitre": "Contraintes de planification",
+      "maxCreneauxJour": "Max créneaux par jour",
+      "maxCreneauxJourAide": "Nombre maximum de créneaux planifiables sur une même journée",
+      "maxMemeMatiereJour": "Max même matière par jour",
+      "maxMemeMatiereJourAide": "Nombre maximum de créneaux d'une même matière par jour",
+      "maxConsecutifs": "Max créneaux consécutifs",
+      "maxConsecutifsAide": "Nombre maximum de créneaux de même matière à la suite",
+      "previewTitre": "Résumé du template",
+      "previewJours": "Jours",
+      "previewCreneaux": "Créneaux estimés",
+      "previewDuree": "Durée",
+      "previewContraintes": "Contraintes",
+      "previewIdentiteSection": "Identité",
+      "previewCalendrierSection": "Calendrier",
+      "previewContraintesSection": "Contraintes",
+      "previewPartage": "Partagé",
+      "previewTotalHeures": "{{heures}}h{{minutes}} par jour",
+      "maxCreneauxJourShort": "/jour",
+      "maxMatiereJourShort": "mat./jour",
+      "maxConsecutifsShort": "conséc.",
+      "suivant": "Suivant",
+      "previsualiser": "Aperçu",
+      "creer": "Créer le template",
+      "erreurIdentite": "Veuillez renseigner un nom valide (2 caractères minimum)",
+      "erreurCalendrier": "Sélectionnez au moins un jour travaillé et des heures valides",
+      "erreurContraintes": "Les contraintes doivent être supérieures à 0"
+    }
   },
   "calendrier": {
     "heure": "Heure",
@@ -346,6 +411,7 @@
     "templateCree": "Template créé avec succès",
     "templateSupprime": "Template supprimé",
     "templateDuplique": "Template dupliqué",
+    "templateModifie": "Template modifié avec succès",
     "erreurCreation": "Erreur lors de la création",
     "erreurModification": "Erreur lors de la modification",
     "erreurSuppression": "Erreur lors de la suppression",
@@ -654,5 +720,13 @@
     "titre": "Exporter",
     "csvSucces": "Export CSV téléchargé avec succès",
     "csvErreur": "Erreur lors de l'export CSV"
+  },
+  "legende": {
+    "titre": "Légende",
+    "aujourdhui": "Aujourd'hui",
+    "jourFerie": "Jour férié",
+    "creneauValide": "Créneau validé",
+    "heuresCoursGenerees": "Heures de cours générées",
+    "creneauAttente": "Créneau en attente"
   }
 }
