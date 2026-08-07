@@ -17,7 +17,7 @@ import {
 import { HeureCours, StatutEffectue } from '../entities/heure-cours.entity';
 import {
     CreerRemplacementDto, ValiderRemplacementDto,
-    RejeterRemplacementDto, QueryRemplacementDto,
+    ExecuterRemplacementDto, RejeterRemplacementDto, QueryRemplacementDto,
 } from '../dto/remplacement-heure-cours.dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -131,7 +131,9 @@ export class RemplacementHeureCoursService {
     }
 
     /**
-     * Valider et exécuter un remplacement
+     * Valider une demande de remplacement (étape 1 : approbation)
+     * Passe le statut de EN_ATTENTE → VALIDEE.
+     * L'exécution effective se fait via executer().
      */
     async valider(
         id: string,
@@ -150,29 +152,18 @@ export class RemplacementHeureCoursService {
             );
         }
 
-        // Mettre à jour le remplacement
-        remplacement.statut = StatutRemplacement.EXECUTEE;
+        // Mettre à jour le remplacement : statut VALIDEE + remplaçant obligatoire
+        remplacement.statut = StatutRemplacement.VALIDEE;
         remplacement.remplacantId = dto.remplacantId;
         remplacement.valideParId = valideParId;
         remplacement.dateValidation = new Date();
-        remplacement.dateExecution = new Date();
         remplacement.commentaires = dto.commentaires || null;
         await this.repo.save(remplacement);
-
-        // Mettre à jour la heure de cours : statut REMPLACE + remplacant
-        await this.heureCoursRepo.update(
-            { id: remplacement.heureCoursId },
-            {
-                statutEffectue: StatutEffectue.REMPLACE,
-                remplacantId: dto.remplacantId,
-                commentaire: `Remplacement validé: ${remplacement.motif}`,
-            },
-        );
 
         // Audit
         try {
             await auditService.log({
-                action: AuditAction.REMPLACEMENT_HEURE_COURS_EXECUTE,
+                action: AuditAction.REMPLACEMENT_HEURE_COURS_VALIDATE,
                 entiteType: 'RemplacementHeureCours',
                 entiteId: id,
                 details: {
@@ -186,7 +177,77 @@ export class RemplacementHeureCoursService {
             logger.warn('[Remplacement] Échec audit validation (non bloquant)', error);
         }
 
-        logger.info(`[Remplacement] Demande ${id} validée et exécutée`);
+        logger.info(`[Remplacement] Demande ${id} validée (en attente d'exécution)`);
+        return this.findOne(id, etablissementId);
+    }
+
+    /**
+     * Exécuter un remplacement validé (étape 2 : mise en œuvre effective)
+     * Passe le statut de VALIDEE → EXECUTEE et met à jour la HeureCours.
+     */
+    async executer(
+        id: string,
+        dto: ExecuterRemplacementDto,
+        executeParId: string,
+        etablissementId: string,
+        req?: Request,
+    ): Promise<RemplacementHeureCours> {
+        const remplacement = await this.findOne(id, etablissementId);
+
+        if (remplacement.statut !== StatutRemplacement.VALIDEE) {
+            throw new AppError(
+                'Seules les demandes validées peuvent être exécutées',
+                400,
+                'REMPLACEMENT_NON_EXECUTABLE',
+            );
+        }
+
+        if (!remplacement.remplacantId) {
+            throw new AppError(
+                'Aucun remplaçant affecté — validation requise avant exécution',
+                400,
+                'REMPLACANT_MANQUANT',
+            );
+        }
+
+        // Mettre à jour le remplacement : statut EXECUTEE
+        remplacement.statut = StatutRemplacement.EXECUTEE;
+        remplacement.dateExecution = new Date();
+        if (dto.commentaires) {
+            remplacement.commentaires = remplacement.commentaires
+                ? `${remplacement.commentaires} | Exécution: ${dto.commentaires}`
+                : `Exécution: ${dto.commentaires}`;
+        }
+        await this.repo.save(remplacement);
+
+        // Mettre à jour la heure de cours : statut REMPLACE + remplaçant effectif
+        await this.heureCoursRepo.update(
+            { id: remplacement.heureCoursId },
+            {
+                statutEffectue: StatutEffectue.REMPLACE,
+                remplacantId: remplacement.remplacantId,
+                commentaire: `Remplacement exécuté: ${remplacement.motif}`,
+            },
+        );
+
+        // Audit
+        try {
+            await auditService.log({
+                action: AuditAction.REMPLACEMENT_HEURE_COURS_EXECUTE,
+                entiteType: 'RemplacementHeureCours',
+                entiteId: id,
+                details: {
+                    heureCoursId: remplacement.heureCoursId,
+                    remplacantId: remplacement.remplacantId,
+                    executeParId,
+                },
+                etablissementId,
+            }, req);
+        } catch (error) {
+            logger.warn('[Remplacement] Échec audit exécution (non bloquant)', error);
+        }
+
+        logger.info(`[Remplacement] Demande ${id} exécutée`);
         return this.findOne(id, etablissementId);
     }
 

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { StepperModal } from '@/components/modals/StepperModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { usePrevisualiserEDT, useGenererEDT, useTemplatesEDT } from '../hooks/use-emploi-du-temps';
 import { useToutesClasses } from '@/features/classes/hooks/use-toutes-classes';
 import type { CreneauPreview, ConflitPreview, ResumePreview } from '../types/edt.types';
@@ -186,22 +187,17 @@ export function EDTGenerationModal({ open, onOpenChange, classeAnneeId, onSucces
                     >
                         {t('templates.titre')} (optionnel)
                     </label>
-                    <select
+                    <ElisaSelect
                         value={templateId}
-                        onChange={(e) => setTemplateId(e.target.value)}
-                        className="rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] text-[var(--color-text-primary)] focus:ring-2 focus:ring-[var(--color-dominant-500)] transition-shadow"
-                        style={{
-                            fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)',
-                            padding: 'clamp(0.375rem, 0.3rem + 0.3vw, 0.5rem) clamp(0.5rem, 0.4rem + 0.4vw, 0.75rem)',
-                        }}
-                    >
-                        <option value="">Aucun template (préférences par défaut)</option>
-                        {templates.filter(tpl => tpl.actif).map(tpl => (
-                            <option key={tpl.id} value={tpl.id}>
-                                {tpl.nom}{tpl.description ? ` — ${tpl.description}` : ''}
-                            </option>
-                        ))}
-                    </select>
+                        onValueChange={setTemplateId}
+                        options={[
+                            { value: '', label: 'Aucun template (préférences par défaut)' },
+                            ...templates.filter(tpl => tpl.actif).map(tpl => ({
+                                value: tpl.id,
+                                label: tpl.description ? `${tpl.nom} — ${tpl.description}` : tpl.nom,
+                            })),
+                        ]}
+                    />
                 </div>
             )}
         </div>

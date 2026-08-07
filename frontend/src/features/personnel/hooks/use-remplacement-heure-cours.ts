@@ -81,6 +81,7 @@ export function useStatistiquesRemplacements() {
             );
             return response.data;
         },
+        staleTime: 5 * 60 * 1000, // 5 min — les stats changent rarement
     });
 }
 
@@ -128,11 +129,37 @@ export function useValiderRemplacement() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['personnel', 'remplacements-heure-cours'] });
-            queryClient.invalidateQueries({ queryKey: ['personnel', 'heures-cours'] });
             toast.success(t('remplacements.valide'));
         },
         onError: (err: unknown) => {
             handleError(err, t('remplacements.erreurValidation'));
+        },
+    });
+}
+
+export function useExecuterRemplacement() {
+    const queryClient = useQueryClient();
+    const { t } = useTranslation('emplois');
+    const handleError = useHandleError();
+
+    return useMutation({
+        mutationFn: async ({ id, commentaires }: {
+            id: string;
+            commentaires?: string;
+        }) => {
+            const response = await apiClient.patch<RemplacementHeureCours>(
+                `/api/personnel/heures-cours/remplacements/${id}/executer`,
+                { commentaires },
+            );
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['personnel', 'remplacements-heure-cours'] });
+            queryClient.invalidateQueries({ queryKey: ['personnel', 'heures-cours'] });
+            toast.success(t('remplacements.execute'));
+        },
+        onError: (err: unknown) => {
+            handleError(err, t('remplacements.erreurExecution'));
         },
     });
 }

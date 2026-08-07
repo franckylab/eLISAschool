@@ -17,6 +17,7 @@ import { Clock, Calendar, BarChart3, Loader2, Check, RefreshCw, Plus, Trash2, Gl
 import { usePreferencesEDT, useUpdatePreferencesEDT } from '../hooks/use-emploi-du-temps';
 import { useJoursFeries, useChargerModelePays, useDeleteJourFerie, useModelesPays, useGenererVariablesAnnee } from '../hooks/use-jours-feries';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { useConfirmation } from '@/components/ui/ConfirmationModal';
@@ -384,11 +385,12 @@ export function EDTPreferencesPage() {
                                     <div className="flex flex-wrap items-end gap-3 mb-[var(--space-md)]">
                                         <div className="flex-1" style={{ minWidth: 'clamp(150px, 30vw, 250px)' }}>
                                             <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-2">{t('joursFeries.selectPays')}</label>
-                                            <select value={paysSelectionne} onChange={(e) => setPaysSelectionne(e.target.value)} className={inputClass}>
-                                                {paysCodes.map(code => (
-                                                    <option key={code} value={code}>{t(`joursFeries.pays_${code}`)}</option>
-                                                ))}
-                                            </select>
+                                            <ElisaSelect
+                                                value={paysSelectionne}
+                                                onValueChange={setPaysSelectionne}
+                                                options={paysCodes.map(code => ({ value: code, label: t(`joursFeries.pays_${code}`) }))}
+                                                searchable
+                                            />
                                         </div>
                                         <ElisaButton
                                             type="button" variant="outline" size="md"
@@ -583,15 +585,13 @@ export function EDTPreferencesPage() {
                                 <div className="space-y-3">
                                     {formData.materialisationAuto.horaires.map((horaire, index) => (
                                         <div key={index} className="flex items-center gap-3">
-                                            <select value={horaire.jour}
-                                                onChange={(e) => majHoraire(index, 'jour', e.target.value)}
-                                                className={`${inputClass} flex-1`}
+                                            <ElisaSelect
+                                                value={horaire.jour}
+                                                onValueChange={(v) => majHoraire(index, 'jour', v)}
+                                                options={JOURS_SEMAINE.map(j => ({ value: j.value, label: t(j.labelKey) }))}
                                                 disabled={!formData.materialisationAuto.actif}
-                                            >
-                                                {JOURS_SEMAINE.map(j => (
-                                                    <option key={j.value} value={j.value}>{t(j.labelKey)}</option>
-                                                ))}
-                                            </select>
+                                                compact
+                                            />
                                             <input type="time" value={horaire.heure}
                                                 onChange={(e) => majHoraire(index, 'heure', e.target.value)}
                                                 className={`${inputClass} flex-1`} required

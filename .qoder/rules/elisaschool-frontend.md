@@ -2585,6 +2585,8 @@ const handleToggleFullscreen = useCallback(() => {
 - **TOUJOURS** utiliser `StatCard` partagé pour les KPIs (`edt-synthese`) ; **NE JAMAIS** de KPI Card locale
 - **TOUJOURS** des icônes lucide partout, y compris dans `edt-filter-bar` (jamais d'emoji)
 - **TOUJOURS** CSS vars pour les couleurs (badges statut créneau : `bg-success/*`/`bg-info/*`, jamais `bg-green-*/bg-blue-*`)
+- **TOUJOURS** utiliser `paletteCreneau()` (`@/lib/palette-creneau`) pour colorer les créneaux — jamais de `backgroundColor: couleur` brut. La palette génère `fondTeinte` (vue semaine/jour), `fondAssombri` (vue mois), `texteSurFond`/`texteSurTeinte` (contraste auto WCAG), `bordure`, `fondBadge`. Import : `import { paletteCreneau } from '@/lib/palette-creneau'`
+- **NE JAMAIS** afficher une couleur matière sans contraste vérifié — `paletteCreneau()` garantit ≥ 3:1 (texte) et ≥ 4.5:1 (fond assombri) automatiquement
 - **Ordre canon des jours** : `LUNDI..SAMEDI` (index `0=LUNDI`) — ne jamais mapper `getDay()` (0=dimanche) directement sur la semaine EDT sans décalage
 - **TOUJOURS** wrapper les onglets de `personnel-detail-page.tsx` dans un `ErrorBoundary` (y compris `TabHeureCours`)
 - **TOUJOURS** importer les hooks EDT/heures-cours via les barrels (`@/features/personnel`, `@/features/emploi-du-temps`), jamais par chemin direct cross-feature
@@ -2621,3 +2623,63 @@ const handleToggleFullscreen = useCallback(() => {
 - Avant d'ajouter une clé i18n, vérifier qu'aucune clé homonyme n'existe déjà (objet ou string)
 - Pour les labels de colonnes DataTable, utiliser le namespace sémantique (`calendrier.jour`, `filtres.jour`) plutôt que la clé racine
 - Les clés de pluriel (`_one`/`_other`) sont réservées sur l'objet — jamais sur une string
+
+## 36. Composants partagés EDT / Heures de cours / Remplacements
+
+### Emplacement
+`frontend/src/components/ui/data-table/` — barrel `index.ts`.
+
+### Composants disponibles
+| Composant | Usage | Props clés |
+|---|---|---|
+| `ColonneEnseignant` | Avatar initiales + nom complet | `enseignant: { prenom, nom } \| undefined` |
+| `ColonneMatiere` | Dot couleur + nom + code responsive | `matiere: { nom, couleur?, code? } \| undefined` |
+| `ColonneClasse` | Icône GraduationCap + nom + code | `classe: { nom, code? } \| undefined` |
+| `ColonneSalle` | Icône MapPin + nom/code | `salle: { nom, code? } \| undefined` |
+| `BadgeStatutCreneau` | Badge statut unifié (8 états) | `statut: string, label: string, size?: 'xs' \| 'sm'` |
+
+### Règles d'utilisation
+- **OBLIGATOIRE** dans les DataTable des pages `edt-liste.tsx`, `heures-cours-page.tsx`, `remplacements-page.tsx` — jamais de renderer inline dupliqué
+- **Import** via `@/components/ui/data-table` (barrel), jamais par chemin relatif direct
+- **Extension** : si une nouvelle page a besoin du même pattern de cellule, utiliser ces composants ; si le style diffère, créer une variante (prop) plutôt qu'un nouveau composant
+
+### ElisaSelect v2.1
+- **Prop `searchable`** : affiche un input search dans le dropdown (filtrage live côté client)
+- **Prop `compact`** : variant `h-8` / `text-xs` pour les filtres DataTable et FilterPanel
+- **Prop `aria-label`** : accessibilité ARIA sur le trigger (propagée au SelectPrimitive.Trigger)
+- **Dark mode** : classes `dark:` explicites sur Trigger et Content (portal)
+- **Contraintes viewport** : `max-h-[min(70vh,360px)]`, `w-[--radix-select-trigger-width]`, `max-w-[calc(100vw-2rem)]`, `avoidCollisions` — empêche le débordement écran
+- **Items tronqués** : `truncate` sur ItemText — les labels longs ne débordent pas
+- **Scroll buttons** : gradient fade (surface→transparent) + border subtile — indicateurs visuels de débordement
+- **Pattern "Tous"** : pour les filtres, prépending `{ value: '', label: 'Tous...' }` dans les options
+- **Valeurs numériques** : convertir via `String(value)` à l'aller, `Number(v)` au retour
+- **Controller RHF** : `field.value` → `String()`, `onValueChange` → `field.onChange(v)`
+- **Utilisation** : FilterPanel, DataTable toolbar, et TOUS les modals du module EDT — aucun `<select>` natif
+
+### Interdit
+- `<select>` natif HTML dans les filtres, formulaires ou modals — toujours ElisaSelect
+- Renderer inline dupliqué pour enseignant/matière/classe/salle dans les DataTable du module EDT
+- Badge de statut inline avec classes conditionnelles — toujours BadgeStatutCreneau
+
+### Toolbars — Pattern anti-chevauchement (v2.1)
+- **`shrink-0`** sur TOUT segmented button group et son conteneur parent — empêche l'écrasement par les éléments flex adjacents
+- **`shrink-0`** sur chaque bouton dans un segmented group avec `overflow-hidden`
+- **`gap-y-[var(--gap-sm)] gap-x-[var(--gap-xs)]`** sur les toolbars `flex-wrap` — gap vertical plus grand que horizontal pour le wrapping naturel
+- **ElisaSelect dans toolbar** : `w-[clamp(100px,20vw,200px)]` (largeur fluide bornée) au lieu de `min-w-[clamp(120px,25vw,240px)]` (min-width rigide qui pousse les voisins)
+- **Groupes d'actions** : `shrink-0` pour qu'ils ne soient jamais compressés
+- **Séparateurs** : `hidden sm:block` — masqués sur mobile pour économiser l'espace horizontal
+
+### Segmented button groups — Standard de contraste (v2.1)
+- **Fond du groupe** : `bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface)]` — fond légèrement teinté pour différencier du fond principal
+- **Bordure extérieure** : `border-gray-300 dark:border-[var(--color-bordure)]` — gris 300 (#d1d5db→#9ca3af) en light pour visibilité, var en dark
+- **Bordure inter-boutons** : `border-l border-gray-200 dark:border-[var(--color-bordure)]/60` — séparation subtile mais visible (#e5e7eb en light)
+- **Actif** : `bg-[var(--color-dominant-600)] text-white dark:bg-[var(--color-dominant-700)] shadow-sm` — rempli solide + ombre subtile (contraste max)
+- **Inactif** : `text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] dark:text-[var(--color-text-secondary)]` — texte lisible en light, discret en dark
+- **Séparateurs toolbar** : `bg-gray-300 dark:bg-[var(--color-bordure)]` — même couleur que les bordures extérieures
+- **Cohérence** : TOUS les toggles actifs d'une page utilisent le MÊME pattern solide (`dominant-600 text-white`) — jamais de mix pastel/solide
+- **Navigation pill** : `border-gray-300 dark:border-[var(--color-bordure)]` + `hover:border-[var(--color-dominant-400)]`
+
+### Variables CSS — Alias FR obligatoires
+- **`--color-secondaire`** : défini dans globals.css — light `#e5e7eb` (gray-200), dark `#334155` (slate-700). Utilisé par ElisaButton variant `secondary`.
+- **`--color-dominante`**, **`--color-accent`**, **`--color-texte`**, **`--color-bordure`**, **`--color-fond`** : tous définis en light ET dark dans globals.css, surchargés au runtime par `theme-utils.ts` pour dominante/accent.
+- **Vérification** : avant d'utiliser un alias FR (`--color-xxx`) dans un composant, TOUJOURS vérifier qu'il est défini dans globals.css (light + dark).

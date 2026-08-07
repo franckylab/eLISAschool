@@ -13,6 +13,7 @@ import { remplacementHeureCoursService } from '../services/remplacement-heure-co
 import {
     creerRemplacementSchema,
     validerRemplacementSchema,
+    executerRemplacementSchema,
     rejeterRemplacementSchema,
     queryRemplacementSchema,
 } from '../dto/remplacement-heure-cours.dto';
@@ -75,7 +76,7 @@ router.post(
 
 /**
  * PATCH /api/personnel/heures-cours/remplacements/:id/valider
- * Valider et exécuter un remplacement
+ * Valider une demande de remplacement (étape 1 : approbation → VALIDEE)
  */
 router.patch(
     '/:id/valider',
@@ -87,7 +88,26 @@ router.patch(
             const remplacement = await remplacementHeureCoursService.valider(
                 req.params.id, dto, req.utilisateur?.id!, req.etablissementId!, req,
             );
-            return res.json({ success: true, data: remplacement, message: 'Remplacement validé et exécuté' });
+            return res.json({ success: true, data: remplacement, message: 'Remplacement validé' });
+        } catch (error) { next(error); }
+    },
+);
+
+/**
+ * PATCH /api/personnel/heures-cours/remplacements/:id/executer
+ * Exécuter un remplacement validé (étape 2 : mise en œuvre → EXECUTEE)
+ */
+router.patch(
+    '/:id/executer',
+    authMiddleware,
+    requirePermission('heures-cours:remplacer:validate'),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const dto = validateDto(executerRemplacementSchema, req.body);
+            const remplacement = await remplacementHeureCoursService.executer(
+                req.params.id, dto, req.utilisateur?.id!, req.etablissementId!, req,
+            );
+            return res.json({ success: true, data: remplacement, message: 'Remplacement exécuté' });
         } catch (error) { next(error); }
     },
 );

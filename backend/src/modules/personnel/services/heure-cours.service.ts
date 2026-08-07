@@ -568,15 +568,22 @@ export class HeureCoursService {
     }
 
     async findAll(query: QueryHeureCoursDto, etablissementId?: string): Promise<PaginatedResult<HeureCours>> {
-        const { page, limit, search, enseignantId, classeAnneeId, matiereId, dateDebut, dateFin, statutEffectue } = query;
+        const { page, limit, search, enseignantId, classeAnneeId, matiereId, salleId, dateDebut, dateFin, statutEffectue } = query;
 
         const qb = this.repo
             .createQueryBuilder('h')
             .leftJoinAndSelect('h.enseignant', 'ens')
+            .leftJoinAndSelect('ens.utilisateur', 'ens_u')
+            .leftJoinAndSelect('ens_u.profil', 'ens_p')
             .leftJoinAndSelect('h.classeAnnee', 'ca')
             .leftJoinAndSelect('ca.classe', 'c')
+            .leftJoinAndSelect('ca.anneeScolaire', 'as_col')
             .leftJoinAndSelect('h.matiere', 'm')
+            .leftJoinAndSelect('h.salle', 's')
             .leftJoinAndSelect('h.creneau', 'creneau')
+            .leftJoinAndSelect('h.remplacant', 'rempl')
+            .leftJoinAndSelect('rempl.utilisateur', 'rempl_u')
+            .leftJoinAndSelect('rempl_u.profil', 'rempl_p')
             .where('1=1');
 
         if (etablissementId) {
@@ -593,6 +600,10 @@ export class HeureCoursService {
 
         if (matiereId) {
             qb.andWhere('h.matiereId = :matiereId', { matiereId });
+        }
+
+        if (salleId) {
+            qb.andWhere('h.salleId = :salleId', { salleId });
         }
 
         if (dateDebut) {

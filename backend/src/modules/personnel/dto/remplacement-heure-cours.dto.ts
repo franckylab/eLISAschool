@@ -29,6 +29,14 @@ export const validerRemplacementSchema = z.object({
 
 export type ValiderRemplacementDto = z.infer<typeof validerRemplacementSchema>;
 
+// ─── Exécution d'un remplacement (après validation) ────────────
+
+export const executerRemplacementSchema = z.object({
+    commentaires: z.string().max(500).optional(),
+});
+
+export type ExecuterRemplacementDto = z.infer<typeof executerRemplacementSchema>;
+
 // ─── Rejet d'un remplacement ───────────────────────────────────
 
 export const rejeterRemplacementSchema = z.object({

@@ -21,11 +21,12 @@ export interface HeureCours {
     commentaire?: string;
     remplacantId?: string;
     updatedAt?: string;
-    classeAnnee?: { id: string; classe?: { id: string; nom: string }; anneeScolaire?: { id: string; nom: string } };
-    matiere?: { id: string; nom: string };
+    enseignant?: { id: string; matricule?: string; utilisateur?: { profil?: { nom: string; prenom: string } } };
+    classeAnnee?: { id: string; classe?: { id: string; nom: string; code?: string }; anneeScolaire?: { id: string; nom: string; libelle?: string } };
+    matiere?: { id: string; nom: string; code?: string; couleur?: string };
     periode?: { id: string; nom: string };
-    salle?: { id: string; nom: string };
-    remplacant?: { id: string; nom: string; prenom: string };
+    salle?: { id: string; nom: string; code?: string; capacite?: number; typeSalle?: string };
+    remplacant?: { id: string; utilisateur?: { profil?: { nom: string; prenom: string } } };
 }
 
 export interface ResumeMensuelHeures {
@@ -59,7 +60,10 @@ export function useHeureCoursList(query?: Record<string, string | number | boole
                     if (v !== undefined && v !== null && v !== '') params.set(k, String(v));
                 }
             }
-            const response = await apiClient.get<{ items: HeureCours[]; total: number }>(`/api/personnel/heures-cours?${params}`);
+            const response = await apiClient.get<{
+                items: HeureCours[];
+                meta: { totalItems: number; itemCount: number; itemsPerPage: number; totalPages: number; currentPage: number };
+            }>(`/api/personnel/heures-cours?${params}`);
             return response.data;
         },
         enabled: true,
@@ -205,6 +209,38 @@ export function useExportHeuresCoursCSV() {
         },
         onError: (err: unknown) => {
             handleError(err, t('export.csvErreur'));
+        },
+    });
+}
+
+export function useExportHeuresCoursHTML() {
+    const { t } = useTranslation('emplois');
+    const handleError = useHandleError();
+
+    return useMutation({
+        mutationFn: async (query?: Record<string, string | undefined>) => {
+            const params = new URLSearchParams();
+            if (query) {
+                for (const [k, v] of Object.entries(query)) {
+                    if (v !== undefined && v !== '') params.set(k, v);
+                }
+            }
+            const response = await apiClient.get<string>(
+                `/api/personnel/heures-cours/export/html?${params}`,
+                { responseType: 'text' as any },
+            );
+            return response.data;
+        },
+        onSuccess: (html) => {
+            if (!html) return;
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = window.URL.createObjectURL(blob);
+            window.open(url, '_blank');
+            setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+            toast.success(t('export.htmlSucces', { defaultValue: 'Export HTML ouvert dans un nouvel onglet' }));
+        },
+        onError: (err: unknown) => {
+            handleError(err, t('export.htmlErreur', { defaultValue: 'Erreur lors de l\'export HTML' }));
         },
     });
 }

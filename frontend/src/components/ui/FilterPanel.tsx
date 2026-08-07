@@ -5,6 +5,7 @@ import {
     SlidersHorizontal, Calendar,
     ChevronDown, RotateCcw,
 } from 'lucide-react';
+import { ElisaSelect } from './ElisaSelect';
 
 export interface FilterDef {
     key: string;
@@ -46,19 +47,20 @@ function SelectFilter({
     value: string;
     onChange: (v: string) => void;
 }) {
+    // Prépendre l'option "Tous" (value='')
+    const optionsAvecTous = [
+        { value: '', label: def.allOptionLabel ?? `Tous` },
+        ...(def.options ?? []),
+    ];
     return (
-        <select
+        <ElisaSelect
+            options={optionsAvecTous}
             value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] px-[clamp(0.5rem,0.4rem+0.3vw,0.75rem)] py-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)] text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20 transition-shadow"
-            style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
-            aria-label={def.label}
-        >
-            <option value="">{def.allOptionLabel ?? `Tous`}</option>
-            {def.options?.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-        </select>
+            onValueChange={onChange}
+            compact
+            fullWidth={false}
+            className="min-w-[clamp(120px,20vw,200px)]"
+        />
     );
 }
 

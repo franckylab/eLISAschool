@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, Crosshair, CalendarDays } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ElisaSelect } from '@/components/ui/ElisaSelect';
 
 interface EDTDatePickerModalProps {
     open: boolean;
@@ -185,30 +186,23 @@ export function EDTDatePickerModal({
 
                     <div className="flex items-center gap-[var(--gap-xs)] flex-1 justify-center">
                         {/* Dropdown mois */}
-                        <select
-                            value={viewMonth}
-                            onChange={(e) => setViewMonth(Number(e.target.value))}
-                            className="h-[clamp(1.75rem,1.5rem+0.5vw,2.25rem)] rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] px-[var(--space-sm)] text-[var(--color-text-primary)] text-sm font-medium capitalize transition-colors hover:border-[var(--color-dominant-400)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-300)]"
+                        <ElisaSelect
+                            value={String(viewMonth)}
+                            onValueChange={(v) => setViewMonth(Number(v))}
+                            options={moisOptions.map(opt => ({ value: String(opt.value), label: opt.label }))}
+                            compact
                             aria-label={t('navigation.selectionnerMois')}
-                        >
-                            {moisOptions.map(opt => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                        </select>
+                        />
 
                         {/* Dropdown année */}
-                        <select
-                            value={viewYear}
-                            onChange={(e) => {
-                                setViewYear(Number(e.target.value));
-                            }}
-                            className="h-[clamp(1.75rem,1.5rem+0.5vw,2.25rem)] w-[clamp(4rem,10vw,5.5rem)] rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] px-[var(--space-sm)] text-[var(--color-text-primary)] text-sm font-medium transition-colors hover:border-[var(--color-dominant-400)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-300)]"
+                        <ElisaSelect
+                            value={String(viewYear)}
+                            onValueChange={(v) => setViewYear(Number(v))}
+                            options={anneeOptions.map(opt => ({ value: String(opt.value), label: opt.label }))}
+                            compact
+                            className="w-[clamp(4rem,10vw,5.5rem)]"
                             aria-label={t('navigation.selectionnerAnnee')}
-                        >
-                            {anneeOptions.map(opt => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                        </select>
+                        />
                     </div>
 
                     <ElisaButton

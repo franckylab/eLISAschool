@@ -11,6 +11,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Eye, Pencil } from 'lucide-react';
 import { DataTable, type Column } from '@/components/ui/DataTable';
+import { ColonneEnseignant, ColonneMatiere, ColonneClasse, ColonneSalle, BadgeStatutCreneau } from '@/components/ui/data-table';
 import type { CreneauHoraire } from '../types/edt.types';
 
 interface EDTListeViewProps {
@@ -49,20 +50,8 @@ export function EDTListeView({ creneaux, onVoir, onModifier, matiereOptions }: E
             header: t('matiere'),
             sortable: true,
             render: (c) => {
-                const couleur = c.affectationMatiere?.matiere?.couleur || c.couleur;
-                return (
-                    <div className="flex items-center gap-[var(--gap-xs)]">
-                        {couleur && (
-                            <span
-                                className="inline-block h-3 w-3 rounded-full shrink-0"
-                                style={{ backgroundColor: couleur }}
-                            />
-                        )}
-                        <span className="text-[var(--color-text-primary)] truncate max-w-[120px]">
-                            {c.affectationMatiere?.matiere?.nom ?? '—'}
-                        </span>
-                    </div>
-                );
+                const mat = c.affectationMatiere?.matiere;
+                return <ColonneMatiere matiere={mat ? { nom: mat.nom, couleur: mat.couleur ?? c.couleur, code: null } : undefined} />;
             },
         },
         {
@@ -71,27 +60,8 @@ export function EDTListeView({ creneaux, onVoir, onModifier, matiereOptions }: E
             sortable: true,
             render: (c) => {
                 const ens = c.affectationMatiere?.enseignant;
-                const prenom = ens?.utilisateur?.profil?.prenom ?? '';
-                const nom = ens?.utilisateur?.profil?.nom ?? '';
-                if (!prenom && !nom) return <span className="text-[var(--color-text-muted)]">—</span>;
-                const initiales = `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase();
-                const nomComplet = `${prenom} ${nom}`.trim();
-                return (
-                    <div className="flex items-center gap-[var(--gap-xs)] truncate max-w-[140px]" title={nomComplet}>
-                        <span
-                            className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-semibold text-white"
-                            style={{
-                                fontSize: 'clamp(0.5rem, 0.45rem + 0.15vw, 0.625rem)',
-                                backgroundColor: 'var(--color-dominant-500)',
-                            }}
-                        >
-                            {initiales}
-                        </span>
-                        <span className="text-[var(--color-text-secondary)] truncate">
-                            {nomComplet}
-                        </span>
-                    </div>
-                );
+                const profil = ens?.utilisateur?.profil;
+                return <ColonneEnseignant enseignant={profil ? { prenom: profil.prenom, nom: profil.nom } : undefined} />;
             },
         },
         {
@@ -99,9 +69,7 @@ export function EDTListeView({ creneaux, onVoir, onModifier, matiereOptions }: E
             header: t('classe'),
             sortable: true,
             render: (c) => (
-                <span className="text-[var(--color-text-secondary)] truncate max-w-[100px]">
-                    {c.affectationMatiere?.classeAnnee?.classe?.nom ?? '—'}
-                </span>
+                <ColonneClasse classe={c.affectationMatiere?.classeAnnee?.classe ? { nom: c.affectationMatiere.classeAnnee.classe.nom, code: null } : undefined} />
             ),
         },
         {
@@ -109,9 +77,7 @@ export function EDTListeView({ creneaux, onVoir, onModifier, matiereOptions }: E
             header: t('salle'),
             sortable: true,
             render: (c) => (
-                <span className="text-[var(--color-text-secondary)]">
-                    {c.salle?.nom ?? '—'}
-                </span>
+                <ColonneSalle salle={c.salle ? { nom: c.salle.nom, code: null } : undefined} />
             ),
         },
         {
@@ -128,17 +94,13 @@ export function EDTListeView({ creneaux, onVoir, onModifier, matiereOptions }: E
             key: 'statut',
             header: t('statut'),
             sortable: true,
-            render: (c) => (
-                <span
-                    className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-                        c.statut === 'VALIDE'
-                            ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]'
-                            : 'bg-[var(--color-info)]/10 text-[var(--color-info)]'
-                    }`}
-                >
-                    {c.statut === 'VALIDE' ? t('heureCours.modal.statuts.effectue') : t('heureCours.modal.statuts.planifie')}
-                </span>
-            ),
+            render: (c) => {
+                const statutEdt = c.statut === 'VALIDE' ? 'EFFECTUE' : 'PLANIFIE';
+                const label = c.statut === 'VALIDE'
+                    ? t('heureCours.modal.statuts.effectue')
+                    : t('heureCours.modal.statuts.planifie');
+                return <BadgeStatutCreneau statut={statutEdt} label={label} />;
+            },
         },
         ...(onVoir || onModifier ? [{
             key: 'actions',

@@ -74,6 +74,7 @@ import { ElisaButton } from '@/components/ui/ElisaButton';
 import { RowActions } from '@/components/ui/RowActions';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { FilterPanel } from '@/components/ui/FilterPanel';
+import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { usePermissions, useDataTablePreferences } from '@/hooks';
 import type { ReactNode } from 'react';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -1084,20 +1085,23 @@ function BarreOutils({
                     </div>
                 ) : (
                     <div className="flex flex-wrap items-center gap-[var(--gap-sm)]">
-                        {filtres.filter(f => f.type === 'select' || !f.type || f.options).map((f) => (
-                            <select
-                                key={f.key}
-                                value={valeurFiltres?.[f.key] ?? ''}
-                                onChange={(e) => onFiltreChange?.(f.key, e.target.value)}
-                                className="rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] px-[clamp(0.5rem,0.4rem+0.3vw,0.75rem)] py-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)] text-sm text-[var(--color-text-secondary)] focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/20"
-                                style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
-                            >
-                                <option value="">{f.allOptionLabel ?? `Tous les ${f.label.toLowerCase()}`}</option>
-                                {f.options?.map((opt) => (
-                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                ))}
-                            </select>
-                        ))}
+                        {filtres.filter(f => f.type === 'select' || !f.type || f.options).map((f) => {
+                            const optionsAvecTous = [
+                                { value: '', label: f.allOptionLabel ?? `Tous les ${f.label.toLowerCase()}` },
+                                ...(f.options ?? []),
+                            ];
+                            return (
+                                <ElisaSelect
+                                    key={f.key}
+                                    options={optionsAvecTous}
+                                    value={valeurFiltres?.[f.key] ?? ''}
+                                    onValueChange={(v) => onFiltreChange?.(f.key, v)}
+                                    compact
+                                    fullWidth={false}
+                                    className="min-w-[clamp(120px,20vw,200px)]"
+                                />
+                            );
+                        })}
                     </div>
                 )
             )}
@@ -1105,16 +1109,13 @@ function BarreOutils({
                 {enableRowHeight && (
                     <div className="flex items-center gap-[var(--gap-xs)]">
                         <Rows3 className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-[var(--color-text-muted)]" />
-                        <select
-                            value={hauteurLigne}
-                            onChange={(e) => onHauteurChange(Number(e.target.value))}
-                            className="rounded-[var(--radius-sm)] border border-[var(--color-bordure)] bg-[var(--color-surface)] px-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)] py-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)] text-xs text-[var(--color-text-secondary)]"
-                            style={{ fontSize: 'clamp(0.625rem, 0.55rem + 0.2vw, 0.75rem)' }}
-                        >
-                            {PRESETS_HAUTEUR.map((p) => (
-                                <option key={p.valeur} value={p.valeur}>{p.label}</option>
-                            ))}
-                        </select>
+                        <ElisaSelect
+                            options={PRESETS_HAUTEUR.map((p) => ({ value: String(p.valeur), label: p.label }))}
+                            value={String(hauteurLigne)}
+                            onValueChange={(v) => onHauteurChange(Number(v))}
+                            compact
+                            fullWidth={false}
+                        />
                     </div>
                 )}
                 {enablePinning && colonnes && colonnes.length > 0 && (
@@ -1948,18 +1949,13 @@ export function DataTable<T>({
                             {t('pagination.resultats', { total: paginationNormalisee.total })}
                         </span>
                         {paginationNormalisee.onLimitChange && (
-                            <select
-                                value={paginationNormalisee.limit}
-                                onChange={(e) => paginationNormalisee.onLimitChange!(Number(e.target.value))}
-                                className="rounded-[var(--radius-sm)] border border-[var(--color-bordure)] bg-[var(--color-surface)] px-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)] py-[clamp(0.25rem,0.2rem+0.1vw,0.375rem)] text-sm"
-                                style={{ fontSize: 'clamp(0.75rem, 0.65rem + 0.3vw, 0.875rem)' }}
-                            >
-                                {limits.map((limit) => (
-                                    <option key={limit} value={limit}>
-                                        {limit} / page
-                                    </option>
-                                ))}
-                            </select>
+                            <ElisaSelect
+                                options={limits.map((l) => ({ value: String(l), label: `${l} / page` }))}
+                                value={String(paginationNormalisee.limit)}
+                                onValueChange={(v) => paginationNormalisee.onLimitChange!(Number(v))}
+                                compact
+                                fullWidth={false}
+                            />
                         )}
                     </div>
 

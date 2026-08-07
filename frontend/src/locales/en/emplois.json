@@ -730,12 +730,25 @@
     "annulee": "Replacement request cancelled",
     "erreurAnnulation": "Error during cancellation",
     "aucuneDemande": "No replacement requests",
-    "aucuneDemandeDescription": "Create a new replacement request to get started."
+    "aucuneDemandeDescription": "Create a new replacement request to get started.",
+    "execute": "Replacement executed successfully",
+    "erreurExecution": "Error during replacement execution",
+    "confirmerValidation": "Confirm approval",
+    "confirmerValidationMessage": "Approve this replacement request? The substitute will be assigned to the course.",
+    "confirmerRejet": "Confirm rejection",
+    "motifRejet": "Rejection reason",
+    "motifRejetPlaceholder": "State the reason for rejection...",
+    "aucunRemplacant": "No substitute proposed"
   },
   "export": {
     "titre": "Export",
+    "description": "Choose the export format",
+    "csvDescription": "Spreadsheet (Excel, Google Sheets)",
+    "htmlDescription": "Print / Browser PDF",
     "csvSucces": "CSV export downloaded successfully",
-    "csvErreur": "Error during CSV export"
+    "csvErreur": "Error during CSV export",
+    "htmlSucces": "HTML export opened in a new tab",
+    "htmlErreur": "Error during HTML export"
   },
   "legende": {
     "titre": "Legend",

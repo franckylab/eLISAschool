@@ -10,8 +10,9 @@
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Calendar, Star, CheckCircle2, Clock, Check } from 'lucide-react';
+import { Calendar, Star, CheckCircle2, Clock, Check, MapPin, User } from 'lucide-react';
 import { formatDateInput } from '@/lib/date-utils';
+import { paletteCreneau } from '@/lib/palette-creneau';
 import type { CreneauHoraire, JourSemaine, JourFerie } from '../types/edt.types';
 import { estJourFerieFromList } from '../hooks/use-jours-feries';
 
@@ -93,7 +94,7 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick, onPl
     const cellClass = (jour: Date, jfEstFerie?: boolean) => {
         const estMoisCourant = jour.getMonth() === moisCourant;
         const estAujourdhui = toLocalDateStr(jour) === aujourdhui;
-        const base = `min-h-[clamp(60px,10vw,90px)] border border-[var(--color-bordure)] p-[var(--space-xxs)] transition-colors`;
+        const base = `min-h-[clamp(60px,10vw,90px)] border border-gray-300 dark:border-[var(--color-bordure)] p-[var(--space-xxs)] transition-colors`;
         if (estAujourdhui) return `${base} bg-[var(--color-dominant-50)] ring-2 ring-[var(--color-dominant-400)]/60`;
         if (!estMoisCourant) return `${base} bg-[var(--color-surface-alt)] opacity-50`;
         if (jfEstFerie) return `${base} bg-[var(--color-danger)]/5 hover:bg-[var(--color-danger)]/8`;
@@ -194,6 +195,10 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick, onPl
                                 <div className="flex flex-col gap-0.5">
                                     {(showAll ? creneauxJour : creneauxJour.slice(0, 3)).map((c) => {
                                         const couleur = c.affectationMatiere?.matiere?.couleur;
+                                        const pal = couleur ? paletteCreneau(couleur) : null;
+                                        const enseignantInitiales = c.affectationMatiere?.enseignant?.utilisateur?.profil
+                                            ? `${c.affectationMatiere.enseignant.utilisateur.profil.prenom?.[0] ?? ''}${c.affectationMatiere.enseignant.utilisateur.profil.nom?.[0] ?? ''}`.toUpperCase()
+                                            : '';
                                         return (
                                             <button
                                                 key={c.id}
@@ -201,13 +206,14 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick, onPl
                                                     e.stopPropagation();
                                                     onCreneauClick?.(c);
                                                 }}
-                                                className={`truncate rounded px-1 py-0.5 text-left text-white transition-opacity hover:opacity-80 relative ${
-                                                    c.hasHeuresCours ? 'ring-1 ring-inset ring-white/30' : ''
+                                                className={`rounded px-1 py-0.5 text-left transition-opacity hover:opacity-85 relative shadow-sm overflow-hidden ${
+                                                    c.hasHeuresCours ? 'ring-1 ring-inset ring-white/20' : ''
                                                 } ${c.statut === 'PLANIFIE' ? 'opacity-75' : ''}`}
                                                 style={{
                                                     fontSize: 'clamp(0.5rem, 0.45rem + 0.15vw, 0.625rem)',
-                                                    backgroundColor: couleur || 'var(--color-dominant-500)',
-                                                    borderLeft: c.statut === 'VALIDE' ? '2px solid var(--color-success)' : undefined,
+                                                    backgroundColor: pal?.fondAssombri ?? 'var(--color-dominant-700)',
+                                                    color: pal?.texteSurFond ?? '#ffffff',
+                                                    borderLeft: c.statut === 'VALIDE' ? '2px solid var(--color-success)' : pal ? `2px solid ${pal.bordure}` : undefined,
                                                 }}
                                                 title={[
                                                     c.affectationMatiere?.matiere?.nom ?? '',
@@ -218,17 +224,35 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick, onPl
                                                     c.statut === 'VALIDE' ? '✓ Validé' : '⏳ En attente',
                                                 ].filter(Boolean).join('\n')}
                                             >
-                                                <span className="font-medium">{c.heureDebut?.slice(0, 5)}</span>
-                                                {' '}
-                                                {c.affectationMatiere?.matiere?.nom?.slice(0, 6) ?? '•'}
-                                                {/* Badge statut : validé (✓) / en attente (horloge) */}
-                                                {c.statut === 'VALIDE'
-                                                    ? <Check className="inline-block h-2.5 w-2.5 ml-0.5 align-middle" strokeWidth={3} />
-                                                    : <Clock className="inline-block h-2 w-2 ml-0.5 opacity-60 align-middle" />
-                                                }
+                                                {/* L1 : horaire + matière tronquée + statut */}
+                                                <div className="flex items-center gap-0.5 truncate">
+                                                    <span className="font-semibold shrink-0">{c.heureDebut?.slice(0, 5)}</span>
+                                                    <span className="truncate">{c.affectationMatiere?.matiere?.nom?.slice(0, 8) ?? '•'}</span>
+                                                    {c.statut === 'VALIDE'
+                                                        ? <Check className="shrink-0 inline-block h-2.5 w-2.5 ml-auto" strokeWidth={3} />
+                                                        : <Clock className="shrink-0 inline-block h-2 w-2 ml-auto opacity-60" />
+                                                    }
+                                                </div>
+                                                {/* L2 : initiales enseignant + salle (si disponibles, masqué sur très petits écrans) */}
+                                                {(enseignantInitiales || c.salle?.nom) && (
+                                                    <div className="hidden sm:flex items-center gap-1 mt-px opacity-80 truncate" style={{ fontSize: 'clamp(0.4375rem, 0.4rem + 0.1vw, 0.5rem)' }}>
+                                                        {enseignantInitiales && (
+                                                            <span className="flex items-center gap-px shrink-0">
+                                                                <User className="h-1.5 w-1.5" />
+                                                                {enseignantInitiales}
+                                                            </span>
+                                                        )}
+                                                        {c.salle?.nom && (
+                                                            <span className="flex items-center gap-px truncate">
+                                                                <MapPin className="h-1.5 w-1.5 shrink-0" />
+                                                                <span className="truncate">{c.salle.nom}</span>
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
                                                 {/* Pastille HC discrète */}
                                                 {c.hasHeuresCours && (
-                                                    <CheckCircle2 className="inline-block h-2 w-2 ml-0.5 opacity-80 align-middle" />
+                                                    <CheckCircle2 className="absolute bottom-0 right-0.5 h-1.5 w-1.5 opacity-70" />
                                                 )}
                                             </button>
                                         );

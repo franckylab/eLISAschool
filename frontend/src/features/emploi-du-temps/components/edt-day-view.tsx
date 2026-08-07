@@ -12,6 +12,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Clock, MapPin, User, BookOpen, FileText, Check, CheckCircle2 } from 'lucide-react';
 import { formatDate } from '@/lib/date-utils';
+import { paletteCreneau } from '@/lib/palette-creneau';
 import type { CreneauHoraire, JourSemaine, JourFerie } from '../types/edt.types';
 import { EDTLegend } from './edt-legend';
 
@@ -164,7 +165,8 @@ export function EDTDayView({
                         <div className="absolute inset-0 ml-[clamp(2.5rem,8vw,4rem)] mr-[var(--space-sm)]">
                             {creneauxJour.map((c) => {
                                 const pos = positionner(c.heureDebut ?? '08:00', c.heureFin ?? '09:00');
-                                const couleur = c.affectationMatiere?.matiere?.couleur;
+                                const couleurHex = c.affectationMatiere?.matiere?.couleur;
+                                const pal = couleurHex ? paletteCreneau(couleurHex) : null;
                                 return (
                                     <button
                                         key={c.id}
@@ -176,8 +178,8 @@ export function EDTDayView({
                                             top: pos.top,
                                             height: pos.height,
                                             minHeight: 'clamp(24px, 4vh, 40px)',
-                                            borderLeftColor: c.statut === 'VALIDE' ? 'var(--color-success)' : (couleur || 'var(--color-dominant-500)'),
-                                            backgroundColor: couleur ? `${couleur}15` : 'var(--color-dominant-50)',
+                                            borderLeftColor: c.statut === 'VALIDE' ? 'var(--color-success)' : (pal?.bordure ?? 'var(--color-dominant-500)'),
+                                            backgroundColor: pal?.fondTeinte ?? 'var(--color-dominant-100)',
                                         }}
                                         title={[
                                             c.affectationMatiere?.matiere?.nom ?? '',
@@ -214,26 +216,31 @@ export function EDTDayView({
                                                 }
                                             </span>
                                         </div>
-                                        {/* Matière + classe */}
+                                        {/* Matière + badge classe */}
                                         <div className="flex items-center gap-1">
                                             <p
-                                                className="font-medium text-[var(--color-dominant-800)] truncate"
+                                                className="font-semibold text-[var(--color-text-primary)] truncate"
                                                 style={{ fontSize: 'clamp(0.6875rem, 0.63rem + 0.2vw, 0.8125rem)' }}
                                             >
                                                 {c.affectationMatiere?.matiere?.nom ?? '—'}
                                             </p>
                                             {c.affectationMatiere?.classeAnnee?.classe?.nom && (
                                                 <span
-                                                    className="shrink-0 rounded bg-[var(--color-dominant-200)] px-1 text-[var(--color-dominant-700)]"
-                                                    style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.1vw, 0.625rem)' }}
+                                                    className="shrink-0 rounded px-1"
+                                                    style={{
+                                                        fontSize: 'clamp(0.5rem, 0.45rem + 0.1vw, 0.625rem)',
+                                                        backgroundColor: pal?.fondBadge ?? 'var(--color-dominant-100)',
+                                                        color: pal?.bordure ?? 'var(--color-dominant-700)',
+                                                    }}
                                                 >
                                                     {c.affectationMatiere.classeAnnee.classe.nom}
                                                 </span>
                                             )}
                                         </div>
+                                        {/* Enseignant + salle — icônes compactes */}
                                         <div className="flex flex-wrap items-center gap-x-[var(--gap-xs)] gap-y-0">
                                             {c.affectationMatiere?.enseignant && (
-                                                <span className="flex items-center gap-0.5 text-[var(--color-dominant-600)] truncate">
+                                                <span className="flex items-center gap-0.5 text-[var(--color-text-secondary)] truncate">
                                                     <User className="h-3 w-3 shrink-0" />
                                                     <span style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.15vw, 0.6875rem)' }}>
                                                         {c.affectationMatiere?.enseignant?.utilisateur?.profil?.prenom} {c.affectationMatiere?.enseignant?.utilisateur?.profil?.nom}
@@ -241,7 +248,7 @@ export function EDTDayView({
                                                 </span>
                                             )}
                                             {c.salle && (
-                                                <span className="flex items-center gap-0.5 text-[var(--color-dominant-500)]">
+                                                <span className="flex items-center gap-0.5 text-[var(--color-text-secondary)]">
                                                     <MapPin className="h-3 w-3 shrink-0" />
                                                     <span style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.15vw, 0.6875rem)' }}>
                                                         {c.salle.nom}
@@ -249,18 +256,22 @@ export function EDTDayView({
                                                 </span>
                                             )}
                                         </div>
-                                        {/* Horaire + type + statut */}
+                                        {/* Horaire + type */}
                                         <div className="flex items-center gap-1">
                                             <span
-                                                className="text-[var(--color-dominant-500)]"
+                                                className="text-[var(--color-text-muted)]"
                                                 style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.15vw, 0.625rem)' }}
                                             >
                                                 {c.heureDebut?.slice(0, 5)} — {c.heureFin?.slice(0, 5)}
                                             </span>
                                             {c.typeCreneau && c.typeCreneau !== 'COURS' && (
                                                 <span
-                                                    className="rounded bg-[var(--color-accent-100)] px-1 text-[var(--color-accent-700)]"
-                                                    style={{ fontSize: 'clamp(0.4375rem, 0.4rem + 0.1vw, 0.5625rem)' }}
+                                                    className="rounded px-1"
+                                                    style={{
+                                                        fontSize: 'clamp(0.4375rem, 0.4rem + 0.1vw, 0.5625rem)',
+                                                        backgroundColor: 'var(--color-accent-100)',
+                                                        color: 'var(--color-accent-700)',
+                                                    }}
                                                 >
                                                     {t(`creneau.types.${c.typeCreneau.toLowerCase()}`)}
                                                 </span>

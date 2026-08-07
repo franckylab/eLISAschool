@@ -37,6 +37,7 @@ export const queryHeureCoursSchema = paginationWithSortSchema
         enseignantId: z.string().uuid().optional(),
         classeAnneeId: z.string().uuid().optional(),
         matiereId: z.string().uuid().optional(),
+        salleId: z.string().uuid().optional(),
         dateDebut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
         dateFin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
         statutEffectue: z.enum(['PLANIFIE', 'EFFECTUE', 'ANNULE', 'REMPLACE']).optional(),

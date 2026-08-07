@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { Download, FileText, Printer } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { useExportHeuresCoursCSV } from '@/features/personnel/hooks/use-heure-cours';
+import { useExportHeuresCoursCSV, useExportHeuresCoursHTML } from '@/features/personnel/hooks/use-heure-cours';
 
 interface HeuresCoursExportModalProps {
     open: boolean;
@@ -26,36 +26,31 @@ export function HeuresCoursExportModal({ open, onOpenChange, filtres }: HeuresCo
     const { t } = useTranslation('emplois');
     const [format, setFormat] = useState<FormatExport>('csv');
     const exportCSV = useExportHeuresCoursCSV();
+    const exportHTML = useExportHeuresCoursHTML();
+
+    const isPending = exportCSV.isPending || exportHTML.isPending;
 
     const handleExport = useCallback(() => {
         if (format === 'csv') {
             exportCSV.mutate(filtres);
-            onOpenChange(false);
         } else {
-            // Export HTML — ouvrir dans une nouvelle fenêtre pour impression
-            const params = new URLSearchParams();
-            if (filtres) {
-                for (const [k, v] of Object.entries(filtres)) {
-                    if (v !== undefined && v !== '') params.set(k, v);
-                }
-            }
-            window.open(`/api/personnel/heures-cours/export/html?${params}`, '_blank');
-            onOpenChange(false);
+            exportHTML.mutate(filtres);
         }
-    }, [format, filtres, exportCSV, onOpenChange]);
+        onOpenChange(false);
+    }, [format, filtres, exportCSV, exportHTML, onOpenChange]);
 
     const formats: { id: FormatExport; label: string; icon: React.ReactNode; description: string }[] = [
         {
             id: 'csv',
             label: 'CSV',
             icon: <FileText className="h-[clamp(1.25rem,2vw,1.5rem)] w-[clamp(1.25rem,2vw,1.5rem)]" />,
-            description: 'Tableur (Excel, Google Sheets)',
+            description: t('export.csvDescription'),
         },
         {
             id: 'html',
             label: 'HTML',
             icon: <Printer className="h-[clamp(1.25rem,2vw,1.5rem)] w-[clamp(1.25rem,2vw,1.5rem)]" />,
-            description: 'Impression / PDF navigateur',
+            description: t('export.htmlDescription'),
         },
     ];
 
@@ -64,7 +59,7 @@ export function HeuresCoursExportModal({ open, onOpenChange, filtres }: HeuresCo
             open={open}
             onOpenChange={onOpenChange}
             title={t('export.titre')}
-            description="Choisissez le format d'export"
+            description={t('export.description')}
             size="sm"
             footer={
                 <div className="flex items-center justify-end gap-[var(--gap-sm)] w-full">
@@ -75,8 +70,8 @@ export function HeuresCoursExportModal({ open, onOpenChange, filtres }: HeuresCo
                         variant="primary"
                         icon={<Download className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
                         onClick={handleExport}
-                        disabled={exportCSV.isPending}
-                        loading={exportCSV.isPending}
+                        disabled={isPending}
+                        loading={isPending}
                     >
                         {t('heuresCoursPage.actions.exportCSV')}
                     </ElisaButton>

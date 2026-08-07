@@ -13,6 +13,7 @@ import {
     BarChart3, Clock, BookOpen, Users, Building2, AlertTriangle,
     CheckCircle2, TrendingUp, UserCheck,
 } from 'lucide-react';
+import { paletteCreneau } from '@/lib/palette-creneau';
 import { useStatistiquesEDT, useCreneaux } from '../hooks/use-emploi-du-temps';
 import { useTousMatieresNiveaux } from '@/features/matieres/hooks/use-matieres';
 import { PageSkeleton } from '@/components/ui/Skeleton';
@@ -179,7 +180,9 @@ export function EDTSynthese({ classeAnneeId, enseignantId, embedded = false }: E
                         {t('synthese.repartitionMatiere')}
                     </h3>
                     <div className="flex flex-col gap-[var(--gap-sm)]">
-                        {stats.repartitionParMatiere.slice(0, 10).map(matiere => (
+                        {stats.repartitionParMatiere.slice(0, 10).map(matiere => {
+                            const pal = matiere.couleur ? paletteCreneau(matiere.couleur) : null;
+                            return (
                             <div key={matiere.matiereId} className="flex items-center gap-[var(--gap-sm)]">
                                 <span
                                     className="w-[clamp(60px,15vw,120px)] text-xs font-medium text-[var(--color-text-secondary)] truncate shrink-0"
@@ -192,15 +195,23 @@ export function EDTSynthese({ classeAnneeId, enseignantId, embedded = false }: E
                                         className="h-full rounded-[var(--radius-sm)] transition-all duration-500"
                                         style={{
                                             width: `${(matiere.totalHeures / maxHeuresParMatiere) * 100}%`,
-                                            backgroundColor: matiere.couleur || 'var(--color-accent-500)',
+                                            backgroundColor: pal?.bordure ?? (matiere.couleur || 'var(--color-accent-500)'),
                                         }}
                                     />
-                                    <span className="absolute inset-0 flex items-center px-2 text-[10px] font-medium text-[var(--color-text-primary)]">
+                                    <span
+                                        className="absolute inset-0 flex items-center px-2 font-semibold"
+                                        style={{
+                                            fontSize: 'clamp(0.5625rem, 0.5rem + 0.15vw, 0.6875rem)',
+                                            color: 'var(--color-text-primary)',
+                                            textShadow: '0 0 3px var(--color-surface), 0 0 6px var(--color-surface)',
+                                        }}
+                                    >
                                         {matiere.totalHeures.toFixed(1)}h
                                     </span>
                                 </div>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             </div>

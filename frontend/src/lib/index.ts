@@ -29,3 +29,12 @@ export {
     appliquerThemeCSS,
     COULEURS_DOMINANTES,
 } from './theme-utils';
+export {
+    paletteCreneau,
+    hexToRgb,
+    luminanceRelative,
+    ratioContraste,
+    melangeCouleur,
+    estCouleurClaire,
+    type PaletteCreneau,
+} from './palette-creneau';

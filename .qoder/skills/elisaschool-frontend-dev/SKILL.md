@@ -2202,6 +2202,59 @@ La page `/unauthorized` affiche un message d'erreur personnalisé avec :
 
 ---
 
+## Composants partagés DataTable (EDT / Heures de cours / Remplacements)
+
+### Contexte
+Les modules EDT, Heures de cours et Remplacements partagent les mêmes patterns de cellules DataTable (enseignant, matière, classe, salle) et de badges de statut.
+
+### Emplacement
+`frontend/src/components/ui/data-table/` — barrel `index.ts`
+
+### Composants disponibles
+```tsx
+import { ColonneEnseignant, ColonneMatiere, ColonneClasse, ColonneSalle, BadgeStatutCreneau } from '@/components/ui/data-table';
+
+// Dans une définition de colonne DataTable :
+{
+    key: 'enseignant',
+    header: t('enseignant'),
+    render: (item) => <ColonneEnseignant enseignant={item.enseignant?.profil} />,
+}
+```
+
+### ElisaSelect v2.1 (select Radix amélioré)
+```tsx
+// Select compact pour filtres
+<ElisaSelect options={opts} value={val} onValueChange={setVal} compact />
+
+// Select avec recherche (modals)
+<ElisaSelect options={opts} value={val} onValueChange={setVal} searchable />
+
+// Pattern "Tous" pour filtres
+const optionsAvecTous = [{ value: '', label: 'Tous' }, ...opts];
+
+// Valeurs numériques (mois, année)
+<ElisaSelect value={String(val)} onValueChange={(v) => setVal(Number(v))} options={...} />
+
+// Controller RHF
+<Controller render={({ field }) => (
+    <ElisaSelect value={String(field.value ?? '')} onValueChange={(v) => field.onChange(v)} options={...} />
+)} />
+```
+
+### Règles
+1. **OBLIGATOIRE** : utiliser les composants partagés dans les DataTable EDT/Heures-cours/Remplacements
+2. **INTERDIT** : `<select>` natif HTML — toujours ElisaSelect (filtres, formulaires, modals)
+3. **INTERDIT** : renderer inline dupliqué pour enseignant/matière/classe/salle
+4. **INTERDIT** : badge de statut inline avec classes conditionnelles — toujours BadgeStatutCreneau
+
+### Fichiers de Référence
+- **Composants** : `frontend/src/components/ui/data-table/` (3 fichiers + barrel)
+- **ElisaSelect** : `frontend/src/components/ui/ElisaSelect.tsx` (v2.1 — searchable, compact, dark mode, contraintes viewport)
+- **Consommateurs** : `edt-liste.tsx`, `heures-cours-page.tsx`, `remplacements-page.tsx`, `FilterPanel.tsx`, `DataTable.tsx`
+
+---
+
 ## Maintenance et Évolution
 
 Ce skill est un document **vivant** qui évolue avec le projet.

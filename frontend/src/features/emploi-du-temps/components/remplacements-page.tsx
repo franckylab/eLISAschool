@@ -3,8 +3,8 @@
  * eLISAschool - Page Remplacements
  * ==================================
  * Page dédiée à la gestion des remplacements d'enseignants.
- * Stats rapides + DataTable + StepperModal de création.
- * Version: 1.0.0
+ * Stats rapides + DataTable (filtres intégrés) + workflow 2 étapes.
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  */
 
@@ -14,53 +14,56 @@ import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import {
     UserCheck, Clock, CheckCircle2, XCircle, AlertCircle,
-    Plus, Eye, ThumbsUp, ThumbsDown, Ban,
+    Plus, Eye, ThumbsUp, ThumbsDown, Ban, Play,
 } from 'lucide-react';
 import {
     useRemplacements, useStatistiquesRemplacements,
     useValiderRemplacement, useRejeterRemplacement, useAnnulerRemplacement,
+    useExecuterRemplacement,
 } from '@/features/personnel/hooks/use-remplacement-heure-cours';
 import type { RemplacementHeureCours } from '@/features/personnel/hooks/use-remplacement-heure-cours';
 import { useEnseignantOptions } from '@/features/emploi-du-temps/hooks/use-emploi-du-temps';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCard } from '@/components/ui/StatCard';
-import { FilterPanel } from '@/components/ui/FilterPanel';
 import type { FilterDef } from '@/components/ui/FilterPanel';
 import { DataTable } from '@/components/ui/DataTable';
 import type { Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { Badge } from '@/components/ui';
 import { CustomModal } from '@/components/modals/CustomModal';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { ColonneEnseignant, ColonneMatiere, ColonneClasse, BadgeStatutCreneau } from '@/components/ui/data-table';
 import { RemplacementStepperModal } from './remplacement-stepper-modal';
 
-// ─── Badge statut remplacement ──────────────────────────────
+// ─── Labels statut remplacement ─────────────────────────────
 
-function BadgeStatutRemplacement({ statut, label }: { statut: string; label: string }) {
-    const variantMap: Record<string, 'default' | 'success' | 'danger' | 'warning' | 'outline'> = {
-        EN_ATTENTE: 'warning',
-        VALIDEE: 'success',
-        REJETEE: 'danger',
-        EXECUTEE: 'success',
-        ANNULEE: 'outline',
-    };
-    return <Badge variant={variantMap[statut] ?? 'outline'} size="sm">{label}</Badge>;
-}
+const STATUT_REMPLACEMENT_LABEL_KEYS: Record<string, string> = {
+    EN_ATTENTE: 'remplacements.statuts.enAttente',
+    VALIDEE: 'remplacements.statuts.validee',
+    REJETEE: 'remplacements.statuts.rejetee',
+    EXECUTEE: 'remplacements.statuts.executee',
+    ANNULEE: 'remplacements.statuts.annulee',
+};
 
 // ─── Composant principal ─────────────────────────────────────
 
 export function RemplacementsPage() {
-    const { t } = useTranslation('emplois');
+    const { t, i18n } = useTranslation('emplois');
     const navigate = useNavigate();
+    const locale = i18n.language || 'fr';
 
     // ─── État ────────────────────────────────────────────
     const [stepperOpen, setStepperOpen] = useState(false);
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [detailRemplacement, setDetailRemplacement] = useState<RemplacementHeureCours | null>(null);
     const [filtres, setFiltres] = useState<Record<string, string>>({ statut: '', demandeurId: '' });
-    const [filterPanelOpen, setFilterPanelOpen] = useState(false);
     const [page, setPage] = useState(1);
     const limit = 25;
+
+    // ─── Modals confirmation ─────────────────────────────
+    const [confirmValidate, setConfirmValidate] = useState<RemplacementHeureCours | null>(null);
+    const [confirmReject, setConfirmReject] = useState<RemplacementHeureCours | null>(null);
+    const [motifRejet, setMotifRejet] = useState('');
 
     const updateFiltre = useCallback((key: string, value: string) => {
         setFiltres(prev => ({ ...prev, [key]: value }));
@@ -86,6 +89,7 @@ export function RemplacementsPage() {
     const valider = useValiderRemplacement();
     const rejeter = useRejeterRemplacement();
     const annuler = useAnnulerRemplacement();
+    const executer = useExecuterRemplacement();
     const { data: enseignantOptions = [] } = useEnseignantOptions();
 
     // ─── Filtres defs ────────────────────────────────────
@@ -112,8 +116,6 @@ export function RemplacementsPage() {
         },
     ], [t, enseignantOptions]);
 
-    const activeFilterCount = useMemo(() => Object.values(filtres).filter(v => v !== '').length, [filtres]);
-
     // ─── Colonnes DataTable ──────────────────────────────
     const columns: Column<RemplacementHeureCours>[] = useMemo(() => [
         {
@@ -124,7 +126,7 @@ export function RemplacementsPage() {
             render: (item) => (
                 <span className="font-medium text-[var(--color-text-primary)]">
                     {item.heureCours?.date
-                        ? new Date(item.heureCours.date).toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' })
+                        ? new Date(item.heureCours.date).toLocaleDateString(locale, { weekday: 'short', day: '2-digit', month: 'short' })
                         : '—'}
                 </span>
             ),
@@ -145,37 +147,30 @@ export function RemplacementsPage() {
             key: 'matiere',
             header: t('remplacements.colonnes.matiere'),
             render: (item) => (
-                <span className="font-medium text-[var(--color-text-primary)]">
-                    {item.heureCours?.matiere?.nom ?? '—'}
-                </span>
+                <ColonneMatiere matiere={item.heureCours?.matiere ? { nom: item.heureCours.matiere.nom, couleur: null, code: null } : undefined} />
             ),
         },
         {
             key: 'classe',
             header: t('remplacements.colonnes.classe'),
             render: (item) => (
-                <span className="text-[var(--color-text-secondary)]">
-                    {item.heureCours?.classeAnnee?.classe?.nom ?? '—'}
-                </span>
+                <ColonneClasse classe={item.heureCours?.classeAnnee?.classe ? { nom: item.heureCours.classeAnnee.classe.nom, code: null } : undefined} />
             ),
         },
         {
             key: 'enseignantAbsent',
             header: t('remplacements.colonnes.enseignantAbsent'),
             render: (item) => (
-                <span className="text-[var(--color-text-secondary)]">
-                    {item.demandeur ? `${item.demandeur.prenom} ${item.demandeur.nom}` : '—'}
-                </span>
+                <ColonneEnseignant enseignant={item.demandeur ? { prenom: item.demandeur.prenom, nom: item.demandeur.nom } : undefined} />
             ),
         },
         {
             key: 'remplacant',
             header: t('remplacements.colonnes.remplacantPropose'),
-            render: (item) => (
-                <span className="text-[var(--color-text-secondary)]">
-                    {item.remplacant ? `${item.remplacant.prenom} ${item.remplacant.nom}` : '—'}
-                </span>
-            ),
+            render: (item) => {
+                if (!item.remplacant) return <span className="italic text-[var(--color-text-muted)]">{t('remplacements.aucunRemplacant')}</span>;
+                return <ColonneEnseignant enseignant={{ prenom: item.remplacant.prenom, nom: item.remplacant.nom }} />;
+            },
         },
         {
             key: 'motif',
@@ -192,20 +187,14 @@ export function RemplacementsPage() {
             header: t('remplacements.colonnes.statut'),
             size: 120,
             render: (item) => {
-                const labelMap: Record<string, string> = {
-                    EN_ATTENTE: t('remplacements.statuts.enAttente'),
-                    VALIDEE: t('remplacements.statuts.validee'),
-                    REJETEE: t('remplacements.statuts.rejetee'),
-                    EXECUTEE: t('remplacements.statuts.executee'),
-                    ANNULEE: t('remplacements.statuts.annulee'),
-                };
-                return <BadgeStatutRemplacement statut={item.statut} label={labelMap[item.statut] ?? item.statut} />;
+                const label = t(STATUT_REMPLACEMENT_LABEL_KEYS[item.statut] ?? item.statut);
+                return <BadgeStatutCreneau statut={item.statut} label={label} />;
             },
         },
         {
             key: 'actions',
             header: t('remplacements.colonnes.actions'),
-            size: 160,
+            size: 180,
             enableResizing: false,
             render: (item) => (
                 <div className="flex items-center gap-1">
@@ -223,20 +212,16 @@ export function RemplacementsPage() {
                                 variant="ghost"
                                 size="xs"
                                 icon={<ThumbsUp className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-success)]" />}
-                                onClick={() => {
-                                    if (item.remplacant) {
-                                        valider.mutate({ id: item.id, remplacantId: item.remplacant.id! });
-                                    }
-                                }}
+                                onClick={() => setConfirmValidate(item)}
                                 disabled={!item.remplacantId}
                                 aria-label={t('remplacements.actions.valider')}
-                                title={t('remplacements.actions.valider')}
+                                title={item.remplacantId ? t('remplacements.actions.valider') : t('remplacements.aucunRemplacant')}
                             />
                             <ElisaButton
                                 variant="ghost"
                                 size="xs"
                                 icon={<ThumbsDown className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-danger)]" />}
-                                onClick={() => rejeter.mutate({ id: item.id, motif: 'Rejeté par le validateur' })}
+                                onClick={() => setConfirmReject(item)}
                                 aria-label={t('remplacements.actions.rejeter')}
                                 title={t('remplacements.actions.rejeter')}
                             />
@@ -250,10 +235,35 @@ export function RemplacementsPage() {
                             />
                         </>
                     )}
+                    {item.statut === 'VALIDEE' && (
+                        <ElisaButton
+                            variant="ghost"
+                            size="xs"
+                            icon={<Play className="h-[var(--icon-xs)] w-[var(--icon-xs)] text-[var(--color-dominant-600)]" />}
+                            onClick={() => executer.mutate({ id: item.id })}
+                            aria-label={t('remplacements.actions.executer')}
+                            title={t('remplacements.actions.executer')}
+                        />
+                    )}
                 </div>
             ),
         },
-    ], [t, valider, rejeter, annuler]);
+    ], [t, locale, annuler, executer]);
+
+    // ─── Handlers confirmation ───────────────────────────
+
+    const handleConfirmValidate = useCallback(async () => {
+        if (!confirmValidate?.remplacantId) return;
+        valider.mutate({ id: confirmValidate.id, remplacantId: confirmValidate.remplacantId });
+        setConfirmValidate(null);
+    }, [confirmValidate, valider]);
+
+    const handleConfirmReject = useCallback(async () => {
+        if (!confirmReject || motifRejet.length < 3) return;
+        rejeter.mutate({ id: confirmReject.id, motif: motifRejet });
+        setConfirmReject(null);
+        setMotifRejet('');
+    }, [confirmReject, motifRejet, rejeter]);
 
     // ─── Erreur ──────────────────────────────────────────
     if (error) {
@@ -312,7 +322,7 @@ export function RemplacementsPage() {
                 />
             </div>
 
-            {/* ─── Toolbar ─────────────────────────────── */}
+            {/* ─── Toolbar + DataTable (filtres intégrés) ── */}
             <div className="flex flex-wrap items-center gap-[var(--gap-xs)]">
                 <ElisaButton
                     variant="primary"
@@ -324,18 +334,6 @@ export function RemplacementsPage() {
                 </ElisaButton>
             </div>
 
-            {/* ─── FilterPanel ─────────────────────────── */}
-            <FilterPanel
-                open={filterPanelOpen}
-                onOpenChange={setFilterPanelOpen}
-                filters={filterDefs}
-                values={filtres}
-                onChange={updateFiltre}
-                onClear={clearFiltres}
-                activeCount={activeFilterCount}
-            />
-
-            {/* ─── DataTable ───────────────────────────── */}
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -347,6 +345,10 @@ export function RemplacementsPage() {
                     columns={columns}
                     isLoading={isLoading}
                     searchable={false}
+                    enableCollapsibleFilters
+                    filtres={filterDefs}
+                    onFilterChange={updateFiltre}
+                    onClearFilters={clearFiltres}
                     pagination={{
                         page,
                         limit,
@@ -377,7 +379,7 @@ export function RemplacementsPage() {
                             <span className="text-sm text-[var(--color-text-secondary)]">{t('remplacements.colonnes.dateCours')}</span>
                             <span className="font-medium">
                                 {detailRemplacement.heureCours?.date
-                                    ? new Date(detailRemplacement.heureCours.date).toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long' })
+                                    ? new Date(detailRemplacement.heureCours.date).toLocaleDateString(locale, { weekday: 'long', day: '2-digit', month: 'long' })
                                     : '—'}
                             </span>
                         </div>
@@ -407,19 +409,69 @@ export function RemplacementsPage() {
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-sm text-[var(--color-text-secondary)]">{t('remplacements.colonnes.statut')}</span>
-                            <BadgeStatutRemplacement
+                            <BadgeStatutCreneau
                                 statut={detailRemplacement.statut}
-                                label={{ EN_ATTENTE: t('remplacements.statuts.enAttente'), VALIDEE: t('remplacements.statuts.validee'), REJETEE: t('remplacements.statuts.rejetee'), EXECUTEE: t('remplacements.statuts.executee'), ANNULEE: t('remplacements.statuts.annulee') }[detailRemplacement.statut] ?? detailRemplacement.statut}
+                                label={t(STATUT_REMPLACEMENT_LABEL_KEYS[detailRemplacement.statut] ?? detailRemplacement.statut)}
                             />
                         </div>
                         {detailRemplacement.commentaires && (
                             <div className="border-t border-[var(--color-bordure)] pt-[var(--space-sm)]">
-                                <span className="text-sm text-[var(--color-text-secondary)]">Commentaires</span>
+                                <span className="text-sm text-[var(--color-text-secondary)]">{t('remplacements.colonnes.commentaires', { defaultValue: 'Commentaires' })}</span>
                                 <p className="text-sm text-[var(--color-text-primary)] mt-1">{detailRemplacement.commentaires}</p>
                             </div>
                         )}
                     </div>
                 )}
+            </CustomModal>
+
+            {/* ─── Confirmation validation ─────────────── */}
+            <ConfirmationModal
+                isOpen={!!confirmValidate}
+                title={t('remplacements.confirmerValidation')}
+                message={t('remplacements.confirmerValidationMessage')}
+                confirmLabel={t('remplacements.actions.valider')}
+                variant="info"
+                onConfirm={handleConfirmValidate}
+                onCancel={() => setConfirmValidate(null)}
+                isLoading={valider.isPending}
+            />
+
+            {/* ─── Modal rejet (avec motif) ────────────── */}
+            <CustomModal
+                open={!!confirmReject}
+                onOpenChange={(open) => { if (!open) { setConfirmReject(null); setMotifRejet(''); } }}
+                title={t('remplacements.confirmerRejet')}
+                size="sm"
+                footer={
+                    <div className="flex items-center justify-end gap-[var(--gap-sm)] w-full">
+                        <ElisaButton variant="ghost" onClick={() => { setConfirmReject(null); setMotifRejet(''); }}>
+                            {t('fermer', { defaultValue: 'Annuler' })}
+                        </ElisaButton>
+                        <ElisaButton
+                            variant="danger"
+                            icon={<ThumbsDown className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
+                            onClick={handleConfirmReject}
+                            disabled={motifRejet.length < 3}
+                            loading={rejeter.isPending}
+                        >
+                            {t('remplacements.actions.rejeter')}
+                        </ElisaButton>
+                    </div>
+                }
+            >
+                <div className="flex flex-col gap-[var(--gap-sm)]">
+                    <p className="text-sm text-[var(--color-text-secondary)]">
+                        {t('remplacements.confirmerValidationMessage', { defaultValue: 'Indiquez le motif du rejet.' })}
+                    </p>
+                    <textarea
+                        value={motifRejet}
+                        onChange={(e) => setMotifRejet(e.target.value)}
+                        placeholder={t('remplacements.motifRejetPlaceholder')}
+                        className="w-full rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] p-[var(--space-md)] text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-1 focus:ring-[var(--color-dominant-500)]/30 min-h-[80px] resize-none"
+                        style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)' }}
+                        autoFocus
+                    />
+                </div>
             </CustomModal>
         </div>
     );

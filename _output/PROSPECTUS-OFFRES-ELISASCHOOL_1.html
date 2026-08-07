@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eLISAschool — Offres & Tarifs</title>
+<style>
+:root {
+  --bg: #f8f9fc;
+  --surface: #ffffff;
+  --surface2: #f3f4f8;
+  --surface3: #e8ebf2;
+  --border: #e2e5ed;
+  --text: #1a1d2e;
+  --text2: #4a5068;
+  --text3: #6b7494;
+  --accent: #28a745;
+  --accent2: #20913c;
+  --accent-glow: rgba(40, 167, 69, 0.10);
+  --blue: #3b82f6;
+  --blue2: #2563eb;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --purple: #8b5cf6;
+  --cyan: #06b6d4;
+  --pink: #ec4899;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.06);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+  body { background: white; color: #1a1a2e; }
+  .no-print { display: none !important; }
+  .page-break { page-break-before: always; }
+  .scenario-card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
+  .flyer-header { background: linear-gradient(135deg, #28a745, #2563eb) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pack-badge { border: 1px solid #ddd !important; }
+}
+
+/* ===== NAVIGATION ===== */
+.nav-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nav-logo-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+.nav-brand h2 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.nav-links {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.nav-links a {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text2);
+  text-decoration: none;
+  transition: 0.2s;
+  border: 1px solid transparent;
+}
+.nav-links a:hover {
+  color: var(--text);
+  border-color: var(--border);
+  background: var(--surface2);
+}
+.nav-links a.active {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border-color: rgba(40,167,69,0.25);
+}
+
+/* ===== CONTAINER ===== */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+/* ===== FLYER / PROSPECTUS ===== */
+.flyer-header {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--blue2) 100%);
+  border-radius: 16px;
+  padding: 48px 40px;
+  margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+.flyer-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 60%;
+  height: 200%;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.flyer-header::after {
+  content: 'elisa°school';
+  position: absolute;
+  bottom: -20px;
+  right: 30px;
+  font-size: 5rem;
+  font-weight: 800;
+  color: rgba(255,255,255,0.06);
+  pointer-events: none;
+  letter-spacing: -2px;
+}
+.flyer-brand {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.flyer-title {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 800;
+  color: white;
+  line-height: 1.2;
+  margin-bottom: 12px;
+}
+.flyer-subtitle {
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  color: rgba(255,255,255,0.9);
+  max-width: 600px;
+  line-height: 1.5;
+}
+.flyer-badges {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.flyer-badge {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(255,255,255,0.18);
+  color: white;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.25);
+}
+
+/* ===== SECTION ===== */
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.section-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.section-subtitle {
+  font-size: 0.8rem;
+  color: var(--text3);
+}
+
+/* ===== DEPLOYMENT MODES ===== */
+.deploy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.deploy-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 24px;
+  background: var(--surface2);
+  position: relative;
+  transition: 0.2s;
+}
+.deploy-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 16px rgba(40,167,69,0.08);
+}
+.deploy-card .deploy-icon {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+.deploy-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.deploy-card p {
+  font-size: 0.8rem;
+  color: var(--text2);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.deploy-features {
+  list-style: none;
+}
+.deploy-features li {
+  font-size: 0.78rem;
+  color: var(--text2);
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.deploy-features li::before {
+  content: '✓';
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+/* ===== PAYMENT MODES ===== */
+.payment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.payment-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 24px;
+  background: var(--surface2);
+  transition: 0.2s;
+}
+.payment-card:hover {
+  border-color: var(--blue);
+  box-shadow: 0 4px 16px rgba(59,130,246,0.08);
+}
+.payment-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.payment-card .payment-tag {
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.payment-card p {
+  font-size: 0.8rem;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+.payment-detail {
+  font-size: 0.78rem;
+  color: var(--text3);
+  padding: 8px 12px;
+  background: var(--surface3);
+  border-radius: 6px;
+  margin-top: 8px;
+}
+.payment-detail strong {
+  color: var(--text);
+}
+
+/* ===== PACKS ===== */
+.packs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.pack-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  background: var(--surface2);
+  transition: 0.2s;
+}
+.pack-item:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 12px rgba(40,167,69,0.06);
+}
+.pack-item .pack-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.pack-item .pack-emoji {
+  font-size: 1.25rem;
+}
+.pack-item .pack-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.pack-item .pack-modules {
+  font-size: 0.72rem;
+  color: var(--text3);
+  line-height: 1.5;
+}
+.pack-item .pack-range {
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ===== SOCLE ===== */
+.socle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+.socle-item {
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.socle-item .socle-icon {
+  font-size: 0.9rem;
+}
+.socle-free {
+  margin-left: auto;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-glow);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* ===== SERVICES ===== */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+.service-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  background: var(--surface2);
+  transition: 0.2s;
+}
+.service-card:hover {
+  border-color: var(--amber);
+}
+.service-card h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.service-card p {
+  font-size: 0.78rem;
+  color: var(--text2);
+  margin-bottom: 8px;
+}
+.service-prices {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.service-price-tag {
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--surface3);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.service-price-tag strong {
+  color: var(--accent);
+}
+
+/* ===== TRANCHES TABLE ===== */
+.tranches-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.tranches-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--surface2);
+  color: var(--text2);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+.tranches-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+}
+.tranches-table tr:hover td {
+  background: var(--surface2);
+}
+.tranche-code {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: white;
+}
+.tranche-code.t1 { background: var(--accent); }
+.tranche-code.t2 { background: #22c55e; }
+.tranche-code.t3 { background: var(--blue); }
+.tranche-code.t4 { background: #6366f1; }
+.tranche-code.t5 { background: var(--purple); }
+.tranche-code.t6 { background: var(--pink); }
+.tranche-code.t7 { background: var(--amber); }
+.tranche-code.t8 { background: var(--red); }
+
+/* ===== SCENARIO CARDS ===== */
+.scenarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+.scenario-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+  transition: 0.2s;
+  box-shadow: var(--shadow);
+}
+.scenario-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+}
+.scenario-top {
+  padding: 20px 24px;
+  position: relative;
+}
+.scenario-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: white;
+}
+.scenario-badge.t1 { background: var(--accent); }
+.scenario-badge.t2 { background: #22c55e; }
+.scenario-badge.t3 { background: var(--blue); }
+.scenario-badge.t4 { background: #6366f1; }
+.scenario-badge.t5 { background: var(--purple); }
+.scenario-badge.t6 { background: var(--pink); }
+.scenario-badge.t7 { background: var(--amber); }
+.scenario-badge.t8 { background: var(--red); }
+
+.scenario-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+.scenario-name {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.scenario-desc {
+  font-size: 0.78rem;
+  color: var(--text3);
+  line-height: 1.4;
+}
+.scenario-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.scenario-meta-item {
+  font-size: 0.72rem;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.scenario-meta-item strong {
+  color: var(--text);
+}
+
+.scenario-body {
+  padding: 0 24px 20px;
+}
+.scenario-packs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.pack-badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+
+.scenario-pricing {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+.scenario-pricing .line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+.scenario-pricing .line.total {
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+  padding-top: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.scenario-pricing .line.total .amount {
+  color: var(--accent);
+}
+.scenario-pricing .line .amount {
+  font-weight: 600;
+  color: var(--text);
+}
+.scenario-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.per-student {
+  font-size: 0.75rem;
+  color: var(--text3);
+}
+.per-student strong {
+  color: var(--amber);
+  font-size: 0.85rem;
+}
+.deploy-tag {
+  font-size: 0.68rem;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.deploy-tag.local {
+  background: rgba(59,130,246,0.10);
+  color: var(--blue);
+  border: 1px solid rgba(59,130,246,0.2);
+}
+.deploy-tag.online {
+  background: rgba(139,92,246,0.10);
+  color: var(--purple);
+  border: 1px solid rgba(139,92,246,0.2);
+}
+.payment-tag-scenario {
+  font-size: 0.68rem;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.payment-tag-scenario.abonnement {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border: 1px solid rgba(40,167,69,0.2);
+}
+.payment-tag-scenario.licence {
+  background: rgba(245,158,11,0.10);
+  color: var(--amber);
+  border: 1px solid rgba(245,158,11,0.2);
+}
+
+/* ===== LICENCE DETAIL ===== */
+.licence-box {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 6px;
+  background: rgba(245,158,11,0.06);
+  border: 1px solid rgba(245,158,11,0.15);
+}
+.licence-box h5 {
+  font-size: 0.75rem;
+  color: var(--amber);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.licence-box .licence-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text2);
+  padding: 2px 0;
+}
+.licence-box .licence-line strong {
+  color: var(--text);
+}
+
+/* ===== CONDITIONS ===== */
+.conditions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+.condition-item {
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+}
+.condition-item h4 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.condition-item p {
+  font-size: 0.78rem;
+  color: var(--text2);
+  line-height: 1.5;
+}
+
+/* ===== FOOTER ===== */
+.doc-footer {
+  text-align: center;
+  padding: 32px;
+  color: var(--text3);
+  font-size: 0.75rem;
+  border-top: 1px solid var(--border);
+  margin-top: 32px;
+}
+.doc-footer strong {
+  color: var(--accent);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .flyer-header { padding: 32px 24px; }
+  .section { padding: 20px; }
+  .scenarios-grid { grid-template-columns: 1fr; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav-bar no-print">
+  <div class="nav-brand">
+    <svg class="nav-logo-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="32" cy="32" r="30" stroke="#28a745" stroke-width="2.5" fill="rgba(40,167,69,0.08)"/>
+      <path d="M20 40 C20 28, 32 20, 32 20 C32 20, 44 28, 44 40" stroke="#2563eb" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M32 20 L32 42" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M24 34 C28 30, 32 32, 32 32 C32 32, 36 30, 40 34" stroke="#28a745" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+      <circle cx="32" cy="16" r="3" fill="#f59e0b"/>
+      <path d="M30.5 14.5 L32 12 L33.5 14.5 L36 15 L34 17 L34.5 19.5 L32 18 L29.5 19.5 L30 17 L28 15 Z" fill="#f59e0b" opacity="0.6"/>
+    </svg>
+    <h2>eLISAschool — Prospectus</h2>
+  </div>
+  <div class="nav-links">
+    <a href="#prospectus" class="active">Prospectus</a>
+    <a href="#deploiement">Déploiement</a>
+    <a href="#paiement">Paiement</a>
+    <a href="#modules">Modules</a>
+    <a href="#tarifs">Tarifs</a>
+    <a href="#scenarios">Scénarios</a>
+    <a href="#conditions">Conditions</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- ===== PROSPECTUS / FLYER ===== -->
+  <section id="prospectus">
+    <div class="flyer-header">
+      <div class="flyer-brand">eLISAschool</div>
+      <h1 class="flyer-title">La gestion scolaire<br>adaptée à votre établissement</h1>
+      <p class="flyer-subtitle">
+        Une plateforme complète déployable sur votre serveur local ou hébergée en ligne.
+        Payez mensuellement ou en licence. Choisissez uniquement les modules dont vous avez besoin.
+      </p>
+      <div class="flyer-badges">
+        <span class="flyer-badge">12 modules de base gratuits</span>
+        <span class="flyer-badge">6 packs optionnels</span>
+        <span class="flyer-badge">Support 1 an inclus</span>
+        <span class="flyer-badge">Formation initiale offerte</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MODES DE DEPLOIEMENT ===== -->
+  <section id="deploiement" class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background: rgba(59,130,246,0.10);">🖥</div>
+      <div>
+        <div class="section-title">2 modes de déploiement</div>
+        <div class="section-subtitle">Choisissez l'infrastructure adaptée à votre contexte</div>
+      </div>
+    </div>
+    <div class="deploy-grid">
+      <div class="deploy-card">
+        <div class="deploy-icon">🏠</div>
+        <h3>Serveur local</h3>
+        <p>eLISAschool installé sur votre propre serveur, dans votre établissement. Fonctionne sans internet.</p>
+        <ul class="deploy-features">
+          <li>Installation et configuration incluses</li>
+          <li>Données hébergées chez vous</li>
+          <li>Fonctionne hors-ligne (LAN)</li>
+          <li>Mises à jour à distance ou sur site</li>
+          <li>Idéal zones à connexion limitée</li>
+        </ul>
+      </div>
+      <div class="deploy-card">
+        <div class="deploy-icon">☁️</div>
+        <h3>Hébergé en ligne</h3>
+        <p>eLISAschool hébergé sur un serveur cloud sécurisé. Accessible de partout, 24h/24.</p>
+        <ul class="deploy-features">
+          <li>5 Go de stockage inclus</li>
+          <li>Accès web et mobile</li>
+          <li>Sauvegardes automatiques</li>
+          <li>Stockage supplémentaire : 1 000 F/Go/mois</li>
+          <li>Idéal multi-sites et accès parents</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MODES DE PAIEMENT ===== -->
+  <section id="paiement" class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background: rgba(40,167,69,0.10);">💳</div>
+      <div>
+        <div class="section-title">2 modes de paiement</div>
+        <div class="section-subtitle">Abonnement mensuel ou licence perpétuelle</div>
+      </div>
+    </div>
+    <div class="payment-grid">
+      <div class="payment-card">
+        <h3>📅 Abonnement mensuel <span class="payment-tag" style="background:var(--accent-glow);color:var(--accent);">Populaire</span></h3>
+        <p>Payez chaque mois, sans engagement. Résiliable à tout moment.</p>
+        <div class="payment-detail">
+          <strong>Facturation :</strong> Mensuelle, fin de mois<br>
+          <strong>Support :</strong> Inclus (email + téléphone)<br>
+          <strong>Mises à jour :</strong> Incluses<br>
+          <strong>Engagement :</strong> Aucun
+        </div>
+      </div>
+      <div class="payment-card">
+        <h3>🏷 Licence perpétuelle <span class="payment-tag" style="background:rgba(245,158,11,0.10);color:var(--amber);">Économique</span></h3>
+        <p>Achat en une fois, logiciel à vie. Amortissement sur 36 mois.</p>
+        <div class="payment-detail">
+          <strong>Acompte :</strong> 60% à la commande<br>
+          <strong>Solde :</strong> 4 mensualités<br>
+          <strong>Remise comptant :</strong> -20%<br>
+          <strong>Maintenance :</strong> 15% du prix/an après garantie
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MODULES INCLUS ===== -->
+  <section id="modules" class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background: rgba(139,92,246,0.10);">📦</div>
+      <div>
+        <div class="section-title">Modules inclus & optionnels</div>
+        <div class="section-subtitle">12 modules de base gratuits + 6 packs complémentaires</div>
+      </div>
+    </div>
+
+    <h4 style="font-size:0.9rem;font-weight:600;margin-bottom:12px;color:var(--accent);">✓ Socle de base — 12 modules essentiels (gratuits)</h4>
+    <div class="socle-grid" style="margin-bottom:20px;">
+      <div class="socle-item"><span class="socle-icon">👨‍🎓</span> Élèves <span class="socle-free">Inclus</span></div>
+      <div class="socle-item"><span class="socle-icon">👨‍🏫</span> Personnel <span class="socle-free">Inclus</span></div>
+      <div class="socle-item"><span class="socle-icon">🏫</span> Classes <span class="socle-free">Inclus</span></div>
+      <div class="socle-item"><span class="socle-icon">📚</span> Matières <span class="socle-free">Inclus</span></div>
+      <div class="socle-item"><span class="socle-icon">📝</span> Notes <span class="socle-free">Inclus</span></div>
+      <div class="socle-item"><span class="socle-icon">📊</span> Bulletins <span class="socle-free">Inclus</span></div>
+      <div class="socle-item"><span class="socle-icon">📅</span> Périodes <span class="socle-free">Inclus</span></div>
+      <div class="socle-item"><span class="socle-icon">📆</span> Années scolaires <span class="socle-free">Inclus</span></div>
+      <div class="socle-item"><span class="socle-icon">⚙️</span> Configuration <span class="socle-free">Inclus</span></div>
+      <div class="socle-item"><span class="socle-icon">🔐</span> Authentification <span class="socle-free">Inclus</span></div>
+      <div class="socle-item"><span class="socle-icon">🔔</span> Notifications <span class="socle-free">Inclus</span></div>
+      <div class="socle-item"><span class="socle-icon">📈</span> Tableau de bord <span class="socle-free">Inclus</span></div>
+    </div>
+
+    <h4 style="font-size:0.9rem;font-weight:600;margin-bottom:12px;color:var(--blue);">📦 6 packs optionnels</h4>
+    <div class="packs-grid" id="packs-grid"></div>
+  </section>
+
+  <!-- ===== GRILLE TARIFAIRE ===== -->
+  <section id="tarifs" class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background: rgba(236,72,153,0.10);">💰</div>
+      <div>
+        <div class="section-title">Grille tarifaire</div>
+        <div class="section-subtitle">8 tranches adaptées à la taille de votre établissement</div>
+      </div>
+    </div>
+    <table class="tranches-table">
+      <thead>
+        <tr>
+          <th>Tranche</th>
+          <th>Effectif</th>
+          <th>Abonnement</th>
+          <th>Licence</th>
+          <th>Par élève/mois</th>
+        </tr>
+      </thead>
+      <tbody id="grille-body"></tbody>
+    </table>
+  </section>
+
+  <!-- ===== SCÉNARIOS ===== -->
+  <section id="scenarios" class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background: rgba(6,182,212,0.10);">🎯</div>
+      <div>
+        <div class="section-title">8 scénarios types</div>
+        <div class="section-subtitle">Exemples concrets pour chaque type d'établissement</div>
+      </div>
+    </div>
+    <div class="scenarios-grid" id="scenarios-grid"></div>
+  </section>
+
+  <!-- ===== CONDITIONS ===== -->
+  <section id="conditions" class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background: rgba(245,158,11,0.10);">📋</div>
+      <div>
+        <div class="section-title">Conditions générales</div>
+        <div class="section-subtitle">Informations importantes sur nos offres</div>
+      </div>
+    </div>
+    <div class="conditions-grid">
+      <div class="condition-item">
+        <h4>🎓 Formation initiale</h4>
+        <p>Formation gratuite de 2 jours pour votre personnel à la mise en service. Inclut supports papier et vidéo.</p>
+      </div>
+      <div class="condition-item">
+        <h4>🛠 Support technique</h4>
+        <p>Support par email et téléphone inclus 1 an. Extensions disponibles : 60 000 F/an (standard) ou 120 000 F/an (prioritaire).</p>
+      </div>
+      <div class="condition-item">
+        <h4>🔄 Mises à jour</h4>
+        <p>Mises à jour correctives incluses pendant toute la durée d'abonnement. Mises à jour majeures : selon contrat.</p>
+      </div>
+      <div class="condition-item">
+        <h4>💾 Sauvegardes</h4>
+        <p>Sauvegardes automatiques quotidiennes en ligne. Locale : selon votre infrastructure. Restauration incluse.</p>
+      </div>
+      <div class="condition-item">
+        <h4>📱 Accès mobile</h4>
+        <p>Application web responsive accessible sur smartphone et tablette. Portail parents inclus.</p>
+      </div>
+      <div class="condition-item">
+        <h4>🤝 Engagement</h4>
+        <p>Abonnement : sans engagement, résiliable à tout moment (préavis 30 jours). Licence : achat définitif.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="doc-footer">
+  <strong>elisa°school</strong> — Plateforme de gestion scolaire moderne<br>
+  Document commercial — Tarif valable 30 jours à compter de la date d'émission<br>
+  © 2026 eLISAschool. Tous droits réservés.
+</footer>
+
+<script>
+// ===== DONNÉES =====
+const TRANCHES = [
+  { code: 'T1', min: 20, max: 100, label: '20 – 100 élèves', abonnement: 25000, licence: 750000 },
+  { code: 'T2', min: 101, max: 250, label: '101 – 250 élèves', abonnement: 45000, licence: 1350000 },
+  { code: 'T3', min: 251, max: 500, label: '251 – 500 élèves', abonnement: 75000, licence: 2250000 },
+  { code: 'T4', min: 501, max: 1000, label: '501 – 1 000 élèves', abonnement: 120000, licence: 3600000 },
+  { code: 'T5', min: 1001, max: 2000, label: '1 001 – 2 000 élèves', abonnement: 180000, licence: 5400000 },
+  { code: 'T6', min: 2001, max: 3000, label: '2 001 – 3 000 élèves', abonnement: 240000, licence: 7200000 },
+  { code: 'T7', min: 3001, max: 4000, label: '3 001 – 4 000 élèves', abonnement: 300000, licence: 9000000 },
+  { code: 'T8', min: 4001, max: 6000, label: '4 001 – 6 000 élèves', abonnement: 380000, licence: 11400000 },
+];
+
+const PACK_PRICES = {
+  'cantine': { abonnement: 8000, licence: 240000 },
+  'transport': { abonnement: 10000, licence: 300000 },
+  'bibliotheque': { abonnement: 5000, licence: 150000 },
+  'laboratoire': { abonnement: 6000, licence: 180000 },
+  'discipline': { abonnement: 4000, licence: 120000 },
+  'evenements': { abonnement: 3000, licence: 90000 },
+};
+
+const PLATEFORME = { local: 0, 'en-ligne': 5000 };
+
+const SCENARIOS = [
+  { nom: 'École primaire rurale', desc: 'Petit établissement de 80 élèves en zone rurale. Serveur local, pas d\'internet stable.', tranche: 'T1', packs: ['cantine','evenements'], deploy: 'local', payment: 'abonnement', eleves: 80 },
+  { nom: 'Collège urbain standard', desc: 'Collège de 350 élèves en ville. Serveur hébergé, accès parents souhaité.', tranche: 'T3', packs: ['cantine','transport','discipline'], deploy: 'en-ligne', payment: 'abonnement', eleves: 350 },
+  { nom: 'Lycée privé confessionnel', desc: 'Lycée de 800 élèves. Licence perpétuelle, serveur local avec sauvegarde cloud.', tranche: 'T4', packs: ['cantine','transport','bibliotheque','laboratoire','discipline'], deploy: 'local', payment: 'licence', eleves: 800 },
+  { nom: 'Complexe scolaire bilingue', desc: 'Complexe 1 500 élèves (primaire + secondaire). Hébergé, tous packs.', tranche: 'T5', packs: ['cantine','transport','bibliotheque','laboratoire','discipline','evenements'], deploy: 'en-ligne', payment: 'abonnement', eleves: 1500 },
+  { nom: 'École maternelle', desc: 'Petite école de 50 élèves. Minimal : socle + cantine.', tranche: 'T1', packs: ['cantine'], deploy: 'local', payment: 'abonnement', eleves: 50 },
+  { nom: 'Institut technique', desc: '600 élèves, filières techniques. Laboratoire + discipline essentiels.', tranche: 'T4', packs: ['laboratoire','discipline','transport'], deploy: 'local', payment: 'licence', eleves: 600 },
+  { nom: 'Groupe scolaire multi-sites', desc: '3 sites, 2 500 élèves total. Hébergé pour accès centralisé.', tranche: 'T6', packs: ['cantine','transport','bibliotheque','discipline','evenements'], deploy: 'en-ligne', payment: 'abonnement', eleves: 2500 },
+  { nom: 'Centre de formation pro', desc: '200 apprenants, formation continue. Minimal + événements.', tranche: 'T2', packs: ['evenements'], deploy: 'en-ligne', payment: 'abonnement', eleves: 200 },
+];
+
+// ===== HELPERS =====
+function fmt(n) {
+  return n.toLocaleString('fr-FR');
+}
+
+function getTranche(code) {
+  return TRANCHES.find(t => t.code === code);
+}
+
+function calcScenario(s) {
+  const t = getTranche(s.tranche);
+  let total = 0;
+  if (s.payment === 'abonnement') {
+    total = t.abonnement;
+    s.packs.forEach(p => { total += PACK_PRICES[p].abonnement; });
+    if (s.deploy === 'en-ligne') total += PLATEFORME['en-ligne'];
+  } else {
+    total = t.licence;
+    s.packs.forEach(p => { total += PACK_PRICES[p].licence; });
+  }
+  const perStudent = s.payment === 'abonnement'
+    ? Math.round(total / s.eleves)
+    : Math.round((total / 36) / s.eleves);
+  return { total, perStudent };
+}
+
+// ===== RENDU =====
+function renderScenarios() {
+  const grid = document.getElementById('scenarios-grid');
+  grid.innerHTML = SCENARIOS.map(s => {
+    const t = getTranche(s.tranche);
+    const { total, perStudent } = calcScenario(s);
+    const trancheClass = s.tranche.toLowerCase();
+    const packLabels = s.packs.map(p => {
+      const names = { cantine:'Cantine', transport:'Transport', bibliotheque:'Bibliothèque', laboratoire:'Laboratoire', discipline:'Discipline', evenements:'Événements' };
+      return `<span class="pack-badge">${names[p]}</span>`;
+    }).join('');
+    const unit = s.payment === 'abonnement' ? '/mois' : '(lic.)';
+    return `
+      <div class="scenario-card">
+        <div class="scenario-top">
+          <span class="scenario-badge ${trancheClass}">${s.tranche}</span>
+          <div class="scenario-icon">${s.deploy === 'local' ? '🏠' : '☁️'}</div>
+          <div class="scenario-name">${s.nom}</div>
+          <div class="scenario-desc">${s.desc}</div>
+          <div class="scenario-meta">
+            <span class="scenario-meta-item">🎓 <strong>${fmt(s.eleves)}</strong> élèves</span>
+            <span class="scenario-meta-item">📦 <strong>${s.packs.length}</strong> packs</span>
+          </div>
+        </div>
+        <div class="scenario-body">
+          <div class="scenario-packs">${packLabels}</div>
+          <div class="scenario-pricing">
+            <div class="line"><span>Tranche ${s.tranche} (${t.label})</span><span class="amount">${s.payment === 'abonnement' ? fmt(t.abonnement) : fmt(t.licence)} F</span></div>
+            <div class="line"><span>${s.packs.length} pack(s)</span><span class="amount">${s.payment === 'abonnement' ? fmt(total - t.abonnement - (s.deploy === 'en-ligne' ? 5000 : 0)) : fmt(total - t.licence)} F</span></div>
+            ${s.deploy === 'en-ligne' && s.payment === 'abonnement' ? `<div class="line"><span>Stockage 5 Go</span><span class="amount">5 000 F</span></div>` : ''}
+            <div class="line total"><span>Total ${s.payment === 'abonnement' ? 'mensuel' : 'licence'}</span><span class="amount">${fmt(total)} F ${unit}</span></div>
+          </div>
+          <div class="scenario-footer">
+            <span class="per-student">Par élève : <strong>${fmt(perStudent)} F</strong>/mois</span>
+            <span class="deploy-tag ${s.deploy === 'local' ? 'local' : 'online'}">${s.deploy === 'local' ? '🏠 Local' : '☁️ En ligne'}</span>
+            <span class="payment-tag-scenario ${s.payment}">${s.payment === 'abonnement' ? '📅 Abonnement' : '🏷 Licence'}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderGrille() {
+  const body = document.getElementById('grille-body');
+  body.innerHTML = TRANCHES.map(t => {
+    const perEleve = Math.round(t.abonnement / t.min);
+    const cls = t.code.toLowerCase();
+    return `<tr>
+      <td><span class="tranche-code ${cls}">${t.code}</span></td>
+      <td>${t.label}</td>
+      <td><strong>${fmt(t.abonnement)} F</strong>/mois</td>
+      <td><strong>${fmt(t.licence)} F</strong></td>
+      <td>~${fmt(perEleve)} F/élève/mois</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPacks() {
+  const grid = document.getElementById('packs-grid');
+  const packs = [
+    { id: 'cantine', icon: '🍽', nom: 'Cantine', modules: 'Gestion repas, menus, paiements, allergies' },
+    { id: 'transport', icon: '🚌', nom: 'Transport', modules: 'Lignes, arrêts, suivi, notifications parents' },
+    { id: 'bibliotheque', icon: '📖', nom: 'Bibliothèque', modules: 'Catalogue, prêts, retards, inventaire' },
+    { id: 'laboratoire', icon: '🔬', nom: 'Laboratoire', modules: 'Stock, expériences, matériel, sécurité' },
+    { id: 'discipline', icon: '⚠️', nom: 'Discipline', modules: 'Incidents, sanctions, suivi, notifications' },
+    { id: 'evenements', icon: '🎉', nom: 'Événements', modules: 'Calendrier, inscriptions, participation' },
+  ];
+  grid.innerHTML = packs.map(p => `
+    <div class="pack-item">
+      <div class="pack-head"><span class="pack-emoji">${p.icon}</span><span class="pack-label">${p.nom}</span></div>
+      <div class="pack-modules">${p.modules}</div>
+      <div class="pack-range">+${fmt(PACK_PRICES[p.id].abonnement)} F/mois (abo.)</div>
+    </div>
+  `).join('');
+}
+
+// ===== NAV ACTIVE STATE =====
+document.querySelectorAll('.nav-links a').forEach(link => {
+  link.addEventListener('click', function() {
+    document.querySelectorAll('.nav-links a').forEach(l => l.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ===== INIT =====
+renderPacks();
+renderGrille();
+renderScenarios();
+</script>
+</body>
+</html>

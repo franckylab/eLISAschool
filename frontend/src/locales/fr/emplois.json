@@ -728,12 +728,25 @@
     "annulee": "Demande de remplacement annulée",
     "erreurAnnulation": "Erreur lors de l'annulation",
     "aucuneDemande": "Aucune demande de remplacement",
-    "aucuneDemandeDescription": "Créez une nouvelle demande de remplacement pour commencer."
+    "aucuneDemandeDescription": "Créez une nouvelle demande de remplacement pour commencer.",
+    "execute": "Remplacement exécuté avec succès",
+    "erreurExecution": "Erreur lors de l'exécution du remplacement",
+    "confirmerValidation": "Confirmer la validation",
+    "confirmerValidationMessage": "Valider cette demande de remplacement ? Le remplaçant sera affecté au cours.",
+    "confirmerRejet": "Confirmer le rejet",
+    "motifRejet": "Motif du rejet",
+    "motifRejetPlaceholder": "Indiquez la raison du rejet...",
+    "aucunRemplacant": "Aucun remplaçant proposé"
   },
   "export": {
     "titre": "Exporter",
+    "description": "Choisissez le format d'export",
+    "csvDescription": "Tableur (Excel, Google Sheets)",
+    "htmlDescription": "Impression / PDF navigateur",
     "csvSucces": "Export CSV téléchargé avec succès",
-    "csvErreur": "Erreur lors de l'export CSV"
+    "csvErreur": "Erreur lors de l'export CSV",
+    "htmlSucces": "Export HTML ouvert dans un nouvel onglet",
+    "htmlErreur": "Erreur lors de l'export HTML"
   },
   "legende": {
     "titre": "Légende",

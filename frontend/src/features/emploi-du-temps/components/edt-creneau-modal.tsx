@@ -8,16 +8,17 @@
  *  3. Résumé + validation conflits temps réel
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BookOpen, Calendar, Clock, MapPin, CheckCircle2, AlertTriangle, AlertCircle, Trash2, ShieldCheck, GraduationCap, User, CalendarOff, Timer, Hash } from 'lucide-react';
 import { StepperModal } from '@/components/modals/StepperModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { toast } from 'sonner';
 import type { CreneauHoraire, JourSemaine, TypeCreneau, DonneesVerification } from '../types/edt.types';
-import { useVerifierConflits, useCreerCreneau, useUpdateCreneau, useSupprimerCreneau, useValiderCreneau } from '../hooks/use-emploi-du-temps';
+import { useVerifierConflits, useCreerCreneau, useUpdateCreneau, useSupprimerCreneau, useValiderCreneau, useAffectationsOptions, useSallesFromCreneaux } from '../hooks/use-emploi-du-temps';
 
 interface AffectationOption {
     id: string;
@@ -49,9 +50,13 @@ interface EDTCreneauModalProps {
     creneau?: CreneauHoraire | null;
     affectationMatiereId?: string;
     etablissementId: string;
+    /** @deprecated Le modal charge maintenant ses propres affectations */
     affectations?: AffectationOption[];
+    /** @deprecated Le modal charge maintenant ses propres salles */
     salles?: SalleOption[];
     onSuccess?: () => void;
+    /** Contexte classe pour pré-sélection (optionnel) */
+    contexteClasseId?: string;
 }
 
 const JOURS: JourSemaine[] = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI'];
@@ -81,7 +86,7 @@ const FORM_INIT: FormData = {
     genereAutomatiquement: true,
 };
 
-export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatiereId, etablissementId: _etablissementId, affectations = [], salles = [], onSuccess }: EDTCreneauModalProps) {
+export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatiereId, etablissementId: _etablissementId, affectations: _affectationsProp = [], salles: _sallesProp = [], onSuccess, contexteClasseId }: EDTCreneauModalProps) {
     const { t } = useTranslation('emplois');
     const [stepCourant, setStepCourant] = useState(1);
     const [form, setForm] = useState<FormData>(FORM_INIT);
@@ -89,6 +94,15 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
     const [matiereSelectId, setMatiereSelectId] = useState('');
     const [enseignantSelectId, setEnseignantSelectId] = useState('');
     const [classeSelectId, setClasseSelectId] = useState('');
+    const isInitializingRef = useRef(true);
+
+    // ─── Chargement interne des affectations et salles (indépendant du filtre toolbar) ───
+    const { data: affectationsChargees = [] } = useAffectationsOptions();
+    const { data: sallesChargees = [] } = useSallesFromCreneaux();
+    
+    // Utiliser les props si fournies (rétrocompatibilité), sinon les données chargées
+    const affectations = _affectationsProp.length > 0 ? _affectationsProp : affectationsChargees;
+    const salles = _sallesProp.length > 0 ? _sallesProp : sallesChargees;
 
     const verifierConflits = useVerifierConflits();
     const creerCreneau = useCreerCreneau();
@@ -102,6 +116,7 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
     // Initialiser le formulaire
     useEffect(() => {
         if (open) {
+            isInitializingRef.current = true;
             if (creneau) {
                 setForm({
                     affectationMatiereId: creneau.affectationMatiereId,
@@ -116,6 +131,10 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
                 });
             } else {
                 setForm({ ...FORM_INIT, affectationMatiereId: affectationMatiereId ?? '' });
+                // Pré-sélection classe si contexte toolbar
+                if (contexteClasseId) {
+                    setClasseSelectId(contexteClasseId);
+                }
             }
             setStepCourant(1);
             // Initialiser cascade depuis l'affectation existante
@@ -134,6 +153,8 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
                     setClasseSelectId(aff.classeAnnee?.classe?.id ?? '');
                 }
             }
+            // Marquer l'initialisation comme terminée après le render
+            setTimeout(() => { isInitializingRef.current = false; }, 0);
         }
     }, [open, creneau, affectationMatiereId]);
 
@@ -144,19 +165,29 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
 
     const hasConflitsBloquants = conflits.some(c => c.severite === 'BLOQUANT');
 
-    // ─── Cascading selects : Matière → Enseignant → Classe ────
-    const matieresDisponibles = useMemo(() => {
-        const map = new Map<string, string>();
+    // ─── Cascading selects : Classe → Matière → Enseignant ────
+    const classesDisponibles = useMemo(() => {
+        const map = new Map<string, { nom: string; niveau?: string }>();
         for (const a of affectations) {
+            const classe = a.classeAnnee?.classe;
+            if (classe?.id && classe?.nom) map.set(classe.id, { nom: classe.nom, niveau: classe.niveau });
+        }
+        return Array.from(map.entries()).map(([id, data]) => ({ id, ...data })).sort((a, b) => a.nom.localeCompare(b.nom));
+    }, [affectations]);
+
+    const matieresDisponibles = useMemo(() => {
+        if (!classeSelectId) return [];
+        const map = new Map<string, string>();
+        for (const a of affectations.filter(a => a.classeAnnee?.classe?.id === classeSelectId)) {
             if (a.matiere?.id && a.matiere?.nom) map.set(a.matiere.id, a.matiere.nom);
         }
         return Array.from(map.entries()).map(([id, nom]) => ({ id, nom })).sort((a, b) => a.nom.localeCompare(b.nom));
-    }, [affectations]);
+    }, [affectations, classeSelectId]);
 
     const enseignantsDisponibles = useMemo(() => {
-        if (!matiereSelectId) return [];
+        if (!classeSelectId || !matiereSelectId) return [];
         const map = new Map<string, string>();
-        for (const a of affectations.filter(a => a.matiere?.id === matiereSelectId)) {
+        for (const a of affectations.filter(a => a.classeAnnee?.classe?.id === classeSelectId && a.matiere?.id === matiereSelectId)) {
             if (a.enseignant?.id) {
                 const nom = a.enseignant.utilisateur?.profil
                     ? `${a.enseignant.utilisateur.profil.prenom} ${a.enseignant.utilisateur.profil.nom}`
@@ -165,17 +196,42 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
             }
         }
         return Array.from(map.entries()).map(([id, nom]) => ({ id, nom })).sort((a, b) => a.nom.localeCompare(b.nom));
-    }, [affectations, matiereSelectId]);
+    }, [affectations, classeSelectId, matiereSelectId]);
 
-    const classesDisponables = useMemo(() => {
-        if (!matiereSelectId || !enseignantSelectId) return [];
-        const map = new Map<string, { nom: string; niveau?: string }>();
-        for (const a of affectations.filter(a => a.matiere?.id === matiereSelectId && a.enseignant?.id === enseignantSelectId)) {
-            const classe = a.classeAnnee?.classe;
-            if (classe?.id && classe?.nom) map.set(classe.id, { nom: classe.nom, niveau: classe.niveau });
+    // ─── Auto-résolution cascade 1-unique ────────────────────────
+    // Si Classe → 1 seule Matière possible → auto-sélectionner
+    useEffect(() => {
+        if (isInitializingRef.current) return;
+        if (classeSelectId && !matiereSelectId && matieresDisponibles.length === 1) {
+            const unique = matieresDisponibles[0];
+            setMatiereSelectId(unique.id);
+            // Continuer vers l'enseignant
+            const matching = affectations.filter(
+                a => a.classeAnnee?.classe?.id === classeSelectId && a.matiere?.id === unique.id
+            );
+            if (matching.length === 1) {
+                setEnseignantSelectId(matching[0].enseignant?.id ?? '');
+                update({ affectationMatiereId: matching[0].id });
+            } else {
+                update({ affectationMatiereId: '' });
+            }
         }
-        return Array.from(map.entries()).map(([id, data]) => ({ id, ...data })).sort((a, b) => a.nom.localeCompare(b.nom));
-    }, [affectations, matiereSelectId, enseignantSelectId]);
+    }, [classeSelectId, matieresDisponibles]);
+
+    // Si Classe + Matière → 1 seul Enseignant possible → auto-sélectionner
+    useEffect(() => {
+        if (isInitializingRef.current) return;
+        if (classeSelectId && matiereSelectId && !enseignantSelectId && enseignantsDisponibles.length === 1) {
+            const unique = enseignantsDisponibles[0];
+            setEnseignantSelectId(unique.id);
+            const found = affectations.find(
+                a => a.classeAnnee?.classe?.id === classeSelectId
+                    && a.matiere?.id === matiereSelectId
+                    && a.enseignant?.id === unique.id
+            );
+            update({ affectationMatiereId: found?.id ?? '' });
+        }
+    }, [matiereSelectId, enseignantsDisponibles]);
 
     useEffect(() => {
         if (form.affectationMatiereId && form.jour && form.heureDebut && form.heureFin) {
@@ -235,105 +291,81 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
             <SectionSeparator title={t('creneau.modal.identification')} icon={<BookOpen className="h-4 w-4" />} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
+                {/* Type créneau en premier */}
+                <div>
                     <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
-                        {t('matiere')}
+                        {t('creneau.modal.typeCreneau')}
                     </label>
-                    <select
-                        value={matiereSelectId}
-                        onChange={e => {
-                            setMatiereSelectId(e.target.value);
-                            setEnseignantSelectId('');
-                            setClasseSelectId('');
-                            update({ affectationMatiereId: '' });
-                        }}
-                        className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm bg-[var(--color-surface)] text-[var(--color-text-primary)]"
-                    >
-                        <option value="">{t('selectionnerMatiere')}</option>
-                        {matieresDisponibles.map(m => (
-                            <option key={m.id} value={m.id}>{m.nom}</option>
-                        ))}
-                    </select>
+                    <ElisaSelect
+                        value={form.typeCreneau}
+                        onValueChange={(v) => update({ typeCreneau: v as TypeCreneau })}
+                        options={TYPES_CRENEAU.map(type => ({ value: type, label: t(`creneau.types.${type.toLowerCase()}`) }))}
+                    />
                 </div>
 
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
-                        {t('enseignant')}
-                    </label>
-                    <select
-                        value={enseignantSelectId}
-                        onChange={e => {
-                            setEnseignantSelectId(e.target.value);
-                            setClasseSelectId('');
-                            // Résoudre si matière + enseignant + 1 seule classe
-                            if (matiereSelectId && e.target.value) {
-                                const matching = affectations.filter(
-                                    a => a.matiere?.id === matiereSelectId && a.enseignant?.id === e.target.value
-                                );
-                                if (matching.length === 1) {
-                                    setClasseSelectId(matching[0].classeAnnee?.classe?.id ?? '');
-                                    update({ affectationMatiereId: matching[0].id });
-                                } else {
-                                    update({ affectationMatiereId: '' });
-                                }
-                            } else {
-                                update({ affectationMatiereId: '' });
-                            }
-                        }}
-                        disabled={!matiereSelectId}
-                        className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm bg-[var(--color-surface)] text-[var(--color-text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <option value="">{t('selectionnerEnseignant')}</option>
-                        {enseignantsDisponibles.map(e => (
-                            <option key={e.id} value={e.id}>{e.nom}</option>
-                        ))}
-                    </select>
-                </div>
-
+                {/* Classe en deuxième */}
                 <div className="space-y-2">
                     <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
                         {t('classe')}
                     </label>
-                    <select
+                    <ElisaSelect
                         value={classeSelectId}
-                        onChange={e => {
-                            setClasseSelectId(e.target.value);
-                            if (matiereSelectId && enseignantSelectId && e.target.value) {
+                        onValueChange={(v) => {
+                            setClasseSelectId(v);
+                            setMatiereSelectId('');
+                            setEnseignantSelectId('');
+                            update({ affectationMatiereId: '' });
+                        }}
+                        placeholder={t('selectionnerClasse')}
+                        options={classesDisponibles.map(c => ({ value: c.id, label: `${c.nom}${c.niveau ? ` (${c.niveau})` : ''}` }))}
+                        searchable
+                    />
+                </div>
+
+                {/* Matière en troisième */}
+                <div className="space-y-2">
+                    <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
+                        {t('matiere')}
+                    </label>
+                    <ElisaSelect
+                        value={matiereSelectId}
+                        onValueChange={(v) => {
+                            setMatiereSelectId(v);
+                            setEnseignantSelectId('');
+                            update({ affectationMatiereId: '' });
+                        }}
+                        placeholder={t('selectionnerMatiere')}
+                        disabled={!classeSelectId}
+                        options={matieresDisponibles.map(m => ({ value: m.id, label: m.nom }))}
+                        searchable
+                    />
+                </div>
+
+                {/* Enseignant en quatrième */}
+                <div className="space-y-2">
+                    <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
+                        {t('enseignant')}
+                    </label>
+                    <ElisaSelect
+                        value={enseignantSelectId}
+                        onValueChange={(v) => {
+                            setEnseignantSelectId(v);
+                            if (classeSelectId && matiereSelectId && v) {
                                 const found = affectations.find(
-                                    a => a.matiere?.id === matiereSelectId
-                                        && a.enseignant?.id === enseignantSelectId
-                                        && a.classeAnnee?.classe?.id === e.target.value
+                                    a => a.classeAnnee?.classe?.id === classeSelectId
+                                        && a.matiere?.id === matiereSelectId
+                                        && a.enseignant?.id === v
                                 );
                                 update({ affectationMatiereId: found?.id ?? '' });
                             } else {
                                 update({ affectationMatiereId: '' });
                             }
                         }}
-                        disabled={!enseignantSelectId}
-                        className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm bg-[var(--color-surface)] text-[var(--color-text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <option value="">{t('selectionnerClasse')}</option>
-                        {classesDisponables.map(c => (
-                            <option key={c.id} value={c.id}>
-                                {c.nom}{c.niveau ? ` (${c.niveau})` : ''}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
-                        {t('creneau.modal.typeCreneau')}
-                    </label>
-                    <select
-                        value={form.typeCreneau}
-                        onChange={e => update({ typeCreneau: e.target.value as TypeCreneau })}
-                        className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm bg-[var(--color-surface)] text-[var(--color-text-primary)]"
-                    >
-                        {TYPES_CRENEAU.map(type => (
-                            <option key={type} value={type}>{t(`creneau.types.${type.toLowerCase()}`)}</option>
-                        ))}
-                    </select>
+                        placeholder={t('selectionnerEnseignant')}
+                        disabled={!matiereSelectId}
+                        options={enseignantsDisponibles.map(e => ({ value: e.id, label: e.nom }))}
+                        searchable
+                    />
                 </div>
             </div>
 
@@ -375,33 +407,22 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
                     <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
                         {t('creneau.modal.jour')}
                     </label>
-                    <select
+                    <ElisaSelect
                         value={form.jour}
-                        onChange={e => update({ jour: e.target.value as JourSemaine })}
-                        className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm bg-[var(--color-surface)] text-[var(--color-text-primary)]"
-                    >
-                        {JOURS.map(j => (
-                            <option key={j} value={j}>{t(`jours.${j.toLowerCase()}`)}</option>
-                        ))}
-                    </select>
+                        onValueChange={(v) => update({ jour: v as JourSemaine })}
+                        options={JOURS.map(j => ({ value: j, label: t(`jours.${j.toLowerCase()}`) }))}
+                    />
                 </div>
 
                 <div>
                     <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
                         {t('creneau.modal.salle')}
                     </label>
-                    <select
+                    <ElisaSelect
                         value={form.salleId}
-                        onChange={e => update({ salleId: e.target.value })}
-                        className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm bg-[var(--color-surface)] text-[var(--color-text-primary)]"
-                    >
-                        <option value="">{t('creneau.modal.aucuneSalle')}</option>
-                        {salles.map(s => (
-                            <option key={s.id} value={s.id}>
-                                {s.nom}{s.code ? ` (${s.code})` : ''}
-                            </option>
-                        ))}
-                    </select>
+                        onValueChange={(v) => update({ salleId: v })}
+                        options={[{ value: '', label: t('creneau.modal.aucuneSalle') }, ...salles.map(s => ({ value: s.id, label: `${s.nom}${s.code ? ` (${s.code})` : ''}` }))]}
+                    />
                 </div>
             </div>
 

@@ -20,7 +20,6 @@ import {
 import {
     useCreneaux, useValiderCreneauxClasse,
     useEnseignantOptions, useSalleOptions, useMatiereOptions,
-    useAffectationsOptions, useSallesFromCreneaux,
 } from '../hooks/use-emploi-du-temps';
 import { useNavigationEDT, type PlanningView } from '../hooks/use-navigation-edt';
 import { useJoursFeries } from '../hooks/use-jours-feries';
@@ -41,6 +40,7 @@ import { EDTDatePickerModal } from './edt-datepicker-modal';
 import { EDTLegend } from './edt-legend';
 import type { CreneauHoraire } from '../types/edt.types';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -190,9 +190,8 @@ export function EDTStandalonePage() {
     const validerCreneauxClasse = useValiderCreneauxClasse();
 
     // ─── Options pour le modal créneau (affectations + salles) ───
-    const classeAnneeIdForModal = contexteType === 'classe' ? contexteFilter || undefined : undefined;
-    const { data: affectationsDisponibles = [] } = useAffectationsOptions(classeAnneeIdForModal);
-    const { data: sallesDisponibles = [] } = useSallesFromCreneaux();
+    // Le modal charge maintenant ses propres données indépendamment du filtre toolbar
+    const contexteClasseIdForModal = contexteType === 'classe' && contexteFilter ? contexteFilter : undefined;
 
     // ─── Handlers ───────────────────────────────────
 
@@ -373,9 +372,9 @@ export function EDTStandalonePage() {
                 {tab === 'planning' && (
                     <>
                         {/* ─── Toolbar principale : Navigation + Contexte + Actions ─── */}
-                        <div className="flex flex-wrap items-center gap-[var(--gap-sm)]">
+                        <div className="flex flex-wrap items-center gap-y-[var(--gap-sm)] gap-x-[var(--gap-xs)]">
                             {/* Navigation calendrier — pill compact */}
-                            <div className="group flex items-center gap-[var(--gap-xs)] rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface)] px-[var(--space-xxs)] py-[var(--space-xxs)] transition-colors hover:border-[var(--color-dominant-300)]">
+                            <div className="group flex shrink-0 items-center gap-[var(--gap-xs)] rounded-[var(--radius-lg)] border border-gray-300 dark:border-[var(--color-bordure)] bg-[var(--color-surface)] px-[var(--space-xxs)] py-[var(--space-xxs)] transition-colors hover:border-[var(--color-dominant-400)] dark:hover:border-[var(--color-dominant-300)]">
                                 <ElisaButton
                                     variant="ghost"
                                     size="xs"
@@ -437,19 +436,21 @@ export function EDTStandalonePage() {
                             </div>
 
                             {/* Séparateur */}
-                            <div className="hidden sm:block w-px h-6 bg-[var(--color-bordure)]" />
+                            <div className="hidden sm:block w-px h-6 bg-gray-300 dark:bg-[var(--color-bordure)]" />
 
                             {/* Contexte (classe/enseignant/salle) */}
-                            <div className="flex items-center gap-[var(--gap-xs)]">
-                                <div className="flex rounded-lg border border-[var(--color-bordure)] overflow-hidden">
-                                    {(['classe', 'enseignant', 'salle'] as ContexteType[]).map((type) => (
+                            <div className="flex shrink-0 items-center gap-[var(--gap-xs)]">
+                                <div className="flex shrink-0 rounded-lg border border-gray-300 dark:border-[var(--color-bordure)] overflow-hidden bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface)]">
+                                    {(['classe', 'enseignant', 'salle'] as ContexteType[]).map((type, idx) => (
                                         <button
                                             key={type}
                                             onClick={() => handleContexteTypeChange(type)}
-                                            className={`flex items-center gap-1 px-[var(--space-sm)] py-[var(--space-xs)] text-xs font-medium transition-colors ${
+                                            className={`flex shrink-0 items-center gap-1 px-[var(--space-sm)] py-[var(--space-xs)] text-xs font-medium transition-colors ${
+                                                idx > 0 ? 'border-l border-gray-200 dark:border-[var(--color-bordure)]/60' : ''
+                                            } ${
                                                 contexteType === type
-                                                    ? 'bg-[var(--color-dominant-100)] text-[var(--color-dominant-700)] dark:bg-[var(--color-dominant-900)]/30 dark:text-[var(--color-dominant-300)]'
-                                                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
+                                                    ? 'bg-[var(--color-dominant-600)] text-white dark:bg-[var(--color-dominant-700)] shadow-sm'
+                                                    : 'text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] dark:text-[var(--color-text-secondary)]'
                                             }`}
                                             aria-pressed={contexteType === type}
                                             aria-label={t(`contexte.${type}`)}
@@ -459,31 +460,29 @@ export function EDTStandalonePage() {
                                         </button>
                                     ))}
                                 </div>
-                                <select
+                                <ElisaSelect
                                     value={contexteFilter}
-                                    onChange={(e) => setContexteFilter(e.target.value)}
-                                    className="h-[clamp(1.75rem,1.5rem+0.5vw,2.25rem)] rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface)] px-[var(--space-sm)] text-[var(--color-text-primary)] text-sm transition-colors hover:border-[var(--color-dominant-400)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-300)]"
-                                    style={{ minWidth: 'clamp(120px, 25vw, 240px)' }}
-                                    aria-label={t('filtres.contexteLabel')}
-                                >
-                                    <option value="" disabled>
-                                        {contexteType === 'classe'
+                                    onValueChange={setContexteFilter}
+                                    placeholder={
+                                        contexteType === 'classe'
                                             ? t('filtres.selectionnerClasse')
                                             : contexteType === 'enseignant'
                                                 ? t('filtres.selectionnerEnseignant')
-                                                : t('filtres.selectionnerSalle')}
-                                    </option>
-                                    {contexteOptions.map((opt) => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                    ))}
-                                </select>
+                                                : t('filtres.selectionnerSalle')
+                                    }
+                                    options={contexteOptions}
+                                    searchable
+                                    compact
+                                    className="w-[clamp(132px,26vw,264px)]"
+                                    aria-label={t('filtres.contexteLabel')}
+                                />
                             </div>
 
                             {/* Séparateur */}
-                            <div className="hidden sm:block w-px h-6 bg-[var(--color-bordure)]" />
+                            <div className="hidden sm:block w-px h-6 bg-gray-300 dark:bg-[var(--color-bordure)]" />
 
                             {/* Actions */}
-                            <div className="flex items-center gap-[var(--gap-xs)]">
+                            <div className="flex shrink-0 items-center gap-[var(--gap-xs)]">
                                 <ElisaButton
                                     variant="primary"
                                     size="xs"
@@ -533,21 +532,23 @@ export function EDTStandalonePage() {
                         </div>
 
                         {/* ─── Toolbar secondaire : Vues + Analytique ─── */}
-                        <div className="flex flex-wrap items-center gap-[var(--gap-xs)]">
-                            <div className="flex rounded-lg border border-[var(--color-bordure)] overflow-hidden">
+                        <div className="flex flex-wrap items-center gap-y-[var(--gap-xs)] gap-x-[var(--gap-xs)]">
+                            <div className="flex shrink-0 rounded-lg border border-gray-300 dark:border-[var(--color-bordure)] overflow-hidden bg-[var(--color-surface-alt)] dark:bg-[var(--color-surface)]">
                                 {([
                                     { id: 'semaine' as PlanningView, icon: CalendarDays },
                                     { id: 'mois' as PlanningView, icon: CalendarRange },
                                     { id: 'jour' as PlanningView, icon: Calendar },
                                     { id: 'liste' as PlanningView, icon: ListIcon },
-                                ]).map(({ id, icon: Icon }) => (
+                                ]).map(({ id, icon: Icon }, idx) => (
                                     <button
                                         key={id}
                                         onClick={() => { setPlanningView(id); setShowAnalytique(false); }}
-                                        className={`flex items-center gap-1 px-[var(--space-sm)] py-[var(--space-xs)] text-xs font-medium transition-colors ${
+                                        className={`flex shrink-0 items-center gap-1 px-[var(--space-sm)] py-[var(--space-xs)] text-xs font-medium transition-colors ${
+                                            idx > 0 ? 'border-l border-gray-200 dark:border-[var(--color-bordure)]/60' : ''
+                                        } ${
                                             planningView === id && !showAnalytique
-                                                ? 'bg-[var(--color-dominant-600)] text-white dark:bg-[var(--color-dominant-700)]'
-                                                : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
+                                                ? 'bg-[var(--color-dominant-600)] text-white dark:bg-[var(--color-dominant-700)] shadow-sm'
+                                                : 'text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] dark:text-[var(--color-text-secondary)]'
                                         }`}
                                         aria-pressed={planningView === id && !showAnalytique}
                                         aria-label={t(`vues.${id}`)}
@@ -558,14 +559,14 @@ export function EDTStandalonePage() {
                                 ))}
                             </div>
 
-                            <div className="w-px h-5 bg-[var(--color-bordure)]" />
+                            <div className="w-px h-5 bg-gray-300 dark:bg-[var(--color-bordure)]" />
 
                             <button
                                 onClick={() => setShowAnalytique(v => !v)}
                                 className={`flex items-center gap-1 px-[var(--space-sm)] py-[var(--space-xs)] rounded-lg text-xs font-medium transition-colors ${
                                     showAnalytique
                                         ? 'bg-[var(--color-accent-600)] text-white dark:bg-[var(--color-accent-700)]'
-                                        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
+                                        : 'text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] dark:text-[var(--color-text-secondary)]'
                                 }`}
                                 aria-pressed={showAnalytique}
                                 aria-label={t('vues.analytique')}
@@ -577,13 +578,13 @@ export function EDTStandalonePage() {
                             {/* Toggle afficher tous les créneaux (vue mois) */}
                             {planningView === 'mois' && (
                                 <>
-                                    <div className="w-px h-5 bg-[var(--color-bordure)]" />
+                                    <div className="w-px h-5 bg-gray-300 dark:bg-[var(--color-bordure)]" />
                                     <button
                                         onClick={() => setShowAllCreneaux(v => !v)}
                                         className={`flex items-center gap-1 px-[var(--space-sm)] py-[var(--space-xs)] rounded-lg text-xs font-medium transition-colors ${
                                             showAllCreneaux
-                                                ? 'bg-[var(--color-dominant-100)] text-[var(--color-dominant-700)] dark:bg-[var(--color-dominant-900)]/30 dark:text-[var(--color-dominant-300)]'
-                                                : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
+                                                ? 'bg-[var(--color-dominant-600)] text-white dark:bg-[var(--color-dominant-700)] shadow-sm'
+                                                : 'text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] dark:text-[var(--color-text-secondary)]'
                                         }`}
                                         aria-pressed={showAllCreneaux}
                                         aria-label={t('vues.afficherTout')}
@@ -641,8 +642,7 @@ export function EDTStandalonePage() {
                 onOpenChange={setCreneauModalOpen}
                 creneau={selectedCreneau}
                 etablissementId=""
-                affectations={affectationsDisponibles}
-                salles={sallesDisponibles}
+                contexteClasseId={contexteClasseIdForModal}
                 onSuccess={() => refetch()}
             />
 

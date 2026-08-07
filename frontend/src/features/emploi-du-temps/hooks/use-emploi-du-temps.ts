@@ -525,7 +525,7 @@ export function useAffectationsOptions(contexteFilter?: AffectationsContexteFilt
     return useQuery({
         queryKey: ['emploi-du-temps', 'options', 'affectations', contexteFilter?.type, contexteFilter?.value],
         queryFn: async () => {
-            const params: Record<string, string | number> = { page: 1, limit: 200 };
+            const params: Record<string, string | number> = { page: 1, limit: 100 };
             if (serverParam) params.classeAnneeId = serverParam;
             const response = await apiClient.getPaginated<CreneauHoraire>('/api/emploi-du-temps', params);
             let items = response.data?.items ?? [];

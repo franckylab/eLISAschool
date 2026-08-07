@@ -21,14 +21,15 @@ import { useEnseignantOptions, useSalleOptions, useMatiereOptions } from '@/feat
 import { useToutesClasses } from '@/features/classes/hooks/use-toutes-classes';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCard } from '@/components/ui/StatCard';
-import { FilterPanel } from '@/components/ui/FilterPanel';
 import type { FilterDef } from '@/components/ui/FilterPanel';
 import { DataTable } from '@/components/ui/DataTable';
 import type { Column } from '@/components/ui/DataTable';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { Badge } from '@/components/ui';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { ColonneEnseignant, ColonneMatiere, ColonneClasse, ColonneSalle, BadgeStatutCreneau } from '@/components/ui/data-table';
 import { HeuresCoursExportModal } from './heures-cours-export-modal';
+import { RemplacementStepperModal } from './remplacement-stepper-modal';
 
 // ─── Types filtres ────────────────────────────────────────────
 
@@ -60,28 +61,26 @@ const FILTRES_INITIAUX: FiltresHeuresCours = {
     sortOrder: 'DESC',
 };
 
-// ─── Badge statut ─────────────────────────────────────────────
+// ─── Labels statut ────────────────────────────────────────────
 
-function BadgeStatut({ statut, label }: { statut: string; label: string }) {
-    const variantMap: Record<string, 'default' | 'success' | 'danger' | 'warning' | 'outline'> = {
-        PLANIFIE: 'default',
-        EFFECTUE: 'success',
-        ANNULE: 'danger',
-        REMPLACE: 'warning',
-    };
-    return <Badge variant={variantMap[statut] ?? 'outline'} size="sm">{label}</Badge>;
-}
+const STATUT_LABEL_KEYS: Record<string, string> = {
+    PLANIFIE: 'heuresCoursPage.statuts.planifie',
+    EFFECTUE: 'heuresCoursPage.statuts.effectue',
+    ANNULE: 'heuresCoursPage.statuts.annule',
+    REMPLACE: 'heuresCoursPage.statuts.remplace',
+};
 
 // ─── Composant principal ──────────────────────────────────────
 
 export function HeuresCoursPage() {
-    const { t } = useTranslation('emplois');
+    const { t, i18n } = useTranslation('emplois');
     const navigate = useNavigate();
+    const locale = i18n.language || 'fr';
 
     // ─── État filtres ──────────────────────────────────────
     const [filtres, setFiltres] = useState<FiltresHeuresCours>(FILTRES_INITIAUX);
-    const [filterPanelOpen, setFilterPanelOpen] = useState(false);
     const [exportModalOpen, setExportModalOpen] = useState(false);
+    const [coursARemplacer, setCoursARemplacer] = useState<HeureCours | null>(null);
 
     const updateFiltre = useCallback((key: string, value: string) => {
         setFiltres(prev => ({ ...prev, [key]: value, page: 1 }));
@@ -163,18 +162,6 @@ export function HeuresCoursPage() {
         { key: 'dateFin', label: t('heuresCoursPage.filtres.dateFin'), type: 'date' },
     ], [t, enseignantOptions, classeOptions, matiereOptions, salleOptions]);
 
-    const filterValues = useMemo(() => ({
-        enseignantId: filtres.enseignantId,
-        classeAnneeId: filtres.classeAnneeId,
-        matiereId: filtres.matiereId,
-        salleId: filtres.salleId,
-        statutEffectue: filtres.statutEffectue,
-        dateDebut: filtres.dateDebut,
-        dateFin: filtres.dateFin,
-    }), [filtres]);
-
-    const activeFilterCount = useMemo(() => Object.values(filterValues).filter(v => v !== '').length, [filterValues]);
-
     // ─── Colonnes DataTable ────────────────────────────────
     const columns: Column<HeureCours>[] = useMemo(() => [
         {
@@ -183,54 +170,53 @@ export function HeuresCoursPage() {
             sortable: true,
             size: 120,
             render: (item) => (
-                <span className="font-medium text-[var(--color-text-primary)]">
-                    {new Date(item.date).toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' })}
+                <span className="font-medium text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
+                    {new Date(item.date).toLocaleDateString(locale, { weekday: 'short', day: '2-digit', month: 'short' })}
                 </span>
             ),
         },
         {
             key: 'heure',
             header: t('heuresCoursPage.colonnes.heure'),
-            size: 120,
+            size: 110,
             render: (item) => (
-                <span className="text-[var(--color-text-secondary)]">
+                <span className="text-[var(--color-text-secondary)] tabular-nums" style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}>
                     {item.heureDebut} – {item.heureFin}
-                </span>
-            ),
-        },
-        {
-            key: 'matiere',
-            header: t('heuresCoursPage.colonnes.matiere'),
-            sortable: true,
-            render: (item) => (
-                <span className="font-medium text-[var(--color-text-primary)]">
-                    {item.matiere?.nom ?? '—'}
-                </span>
-            ),
-        },
-        {
-            key: 'classe',
-            header: t('heuresCoursPage.colonnes.classe'),
-            render: (item) => (
-                <span className="text-[var(--color-text-secondary)]">
-                    {item.classeAnnee?.classe?.nom ?? '—'}
                 </span>
             ),
         },
         {
             key: 'enseignant',
             header: t('heuresCoursPage.colonnes.enseignant'),
-            hidden: true,
-            render: (_item) => <span className="text-[var(--color-text-secondary)]">—</span>,
+            size: 160,
+            render: (item) => {
+                const profil = item.enseignant?.utilisateur?.profil;
+                return <ColonneEnseignant enseignant={profil ? { prenom: profil.prenom, nom: profil.nom } : undefined} />;
+            },
+        },
+        {
+            key: 'matiere',
+            header: t('heuresCoursPage.colonnes.matiere'),
+            sortable: true,
+            size: 140,
+            render: (item) => (
+                <ColonneMatiere matiere={item.matiere ? { nom: item.matiere.nom, couleur: item.matiere.couleur, code: item.matiere.code } : undefined} />
+            ),
+        },
+        {
+            key: 'classe',
+            header: t('heuresCoursPage.colonnes.classe'),
+            size: 120,
+            render: (item) => (
+                <ColonneClasse classe={item.classeAnnee?.classe ? { nom: item.classeAnnee.classe.nom, code: item.classeAnnee.classe.code } : undefined} />
+            ),
         },
         {
             key: 'salle',
             header: t('heuresCoursPage.colonnes.salle'),
-            size: 100,
+            size: 110,
             render: (item) => (
-                <span className="text-[var(--color-text-secondary)]">
-                    {item.salle?.nom ?? '—'}
-                </span>
+                <ColonneSalle salle={item.salle ? { nom: item.salle.nom, code: item.salle.code } : undefined} />
             ),
         },
         {
@@ -246,14 +232,8 @@ export function HeuresCoursPage() {
             header: t('heuresCoursPage.colonnes.statut'),
             size: 120,
             render: (item) => {
-                const statutKey = item.statutEffectue.toLowerCase().replace('_e', 'e');
-                const labelMap: Record<string, string> = {
-                    PLANIFIE: t('heuresCoursPage.statuts.planifie'),
-                    EFFECTUE: t('heuresCoursPage.statuts.effectue'),
-                    ANNULE: t('heuresCoursPage.statuts.annule'),
-                    REMPLACE: t('heuresCoursPage.statuts.remplace'),
-                };
-                return <BadgeStatut statut={item.statutEffectue} label={labelMap[item.statutEffectue] ?? statutKey} />;
+                const label = t(STATUT_LABEL_KEYS[item.statutEffectue] ?? item.statutEffectue.toLowerCase());
+                return <BadgeStatutCreneau statut={item.statutEffectue} label={label} />;
             },
         },
         {
@@ -281,20 +261,20 @@ export function HeuresCoursPage() {
                                 aria-label={t('heuresCoursPage.actions.marquerAnnule')}
                                 title={t('heuresCoursPage.actions.marquerAnnule')}
                             />
+                            <ElisaButton
+                                variant="ghost"
+                                size="xs"
+                                icon={<UserCheck className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
+                                onClick={() => setCoursARemplacer(item)}
+                                aria-label={t('heuresCoursPage.actions.remplacer')}
+                                title={t('heuresCoursPage.actions.remplacer')}
+                            />
                         </>
                     )}
-                    <ElisaButton
-                        variant="ghost"
-                        size="xs"
-                        icon={<UserCheck className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
-                        onClick={() => navigate({ to: '/heures-cours/remplacements' } as any)}
-                        aria-label={t('heuresCoursPage.actions.remplacer')}
-                        title={t('heuresCoursPage.actions.remplacer')}
-                    />
                 </div>
             ),
         },
-    ], [t, updateHeureCours, navigate]);
+    ], [t, locale, updateHeureCours]);
 
     // ─── Handlers ──────────────────────────────────────────
 
@@ -418,18 +398,7 @@ export function HeuresCoursPage() {
                 </ElisaButton>
             </div>
 
-            {/* ─── FilterPanel ─────────────────────────── */}
-            <FilterPanel
-                open={filterPanelOpen}
-                onOpenChange={setFilterPanelOpen}
-                filters={filterDefs}
-                values={filterValues}
-                onChange={updateFiltre}
-                onClear={clearFiltres}
-                activeCount={activeFilterCount}
-            />
-
-            {/* ─── DataTable ───────────────────────────── */}
+            {/* ─── DataTable (filtres intégrés) ───────── */}
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -441,10 +410,14 @@ export function HeuresCoursPage() {
                     columns={columns}
                     isLoading={isLoading}
                     searchable={false}
+                    enableCollapsibleFilters
+                    filtres={filterDefs}
+                    onFilterChange={updateFiltre}
+                    onClearFilters={clearFiltres}
                     pagination={{
                         page: filtres.page,
                         limit: filtres.limit,
-                        total: paginated?.total ?? 0,
+                        total: paginated?.meta?.totalItems ?? 0,
                     }}
                     onPageChange={(page) => setFiltres(prev => ({ ...prev, page }))}
                     onLimitChange={(limit) => setFiltres(prev => ({ ...prev, limit, page: 1 }))}
@@ -461,6 +434,13 @@ export function HeuresCoursPage() {
                 open={exportModalOpen}
                 onOpenChange={setExportModalOpen}
                 filtres={exportQuery}
+            />
+
+            {/* ─── Modal Remplacement (cours pré-sélectionné) ─── */}
+            <RemplacementStepperModal
+                open={!!coursARemplacer}
+                onOpenChange={(open) => { if (!open) setCoursARemplacer(null); }}
+                coursPreselectionne={coursARemplacer}
             />
         </div>
     );

@@ -119,6 +119,7 @@
         --color-bordure: var(--color-border);
         --color-fond: var(--color-background);
         --color-surface-hover: #f0f0f0;
+        --color-secondaire: #e5e7eb;
         --color-error: var(--color-danger);
 
         /* Tailles de police fluides (clamp) */
@@ -191,6 +192,7 @@
         --color-bordure: var(--color-border);
         --color-fond: var(--color-background);
         --color-surface-hover: #243252;
+        --color-secondaire: #334155;
         --color-card: #1a2744;
         --color-card-foreground: #eaeaea;
         --color-error: #ef4444;

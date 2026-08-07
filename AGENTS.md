@@ -83,6 +83,34 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 ### Blocked
 — (none)
 
+## Travail effectué — Session 2026-08-06 (palette créneaux EDT — contraste WCAG)
+
+### Utilitaire palette (`frontend/src/lib/palette-creneau.ts`)
+- **Nouveau fichier** : `paletteCreneau(couleur, surface?)` → `PaletteCreneau` complet (fondTeinte, fondAssombri, texteSurFond, texteSurTeinte, bordure, fondBadge)
+- **Fonctions exportées** : `hexToRgb`, `luminanceRelative`, `ratioContraste` (WCAG 2.1), `melangeCouleur`, `estCouleurClaire`
+- **Contraste garanti** : `couleurTexteAuto()` choisit blanc (#ffffff) ou sombre (#1f2937) selon ratio ≥ 3:1 ; fond assombri (60% couleur + 40% noir) garantit ≥ 4.5:1 avec blanc
+- **Surface adaptative** : paramètre `surface` (défaut `#ffffff`) pour le mélange en mode clair ; en dark, la surface sombre (`#111827`) est utilisée pour le fond assombri
+
+### Composants migrés (4 vues + 1 légende + 1 synthèse)
+- **`edt-month-view.tsx`** : créneaux avec `fondAssombri` + `texteSurFond` (contraste max en vue condensée)
+- **`edt-calendar.tsx`** : week view avec `fondTeinte` + `texteSurTeinte` + bordure gauche `pal.bordure`
+- **`edt-day-view.tsx`** : day view avec `fondTeinte` + `texteSurTeinte` + bordure gauche `pal.bordure`
+- **`edt-legend.tsx`** : surface pleine (`fondAssombri`) + `texteSurFond` pour contraste amélioré
+- **`edt-synthese.tsx`** : barres matières avec `fondTeinte` + bordure `pal.bordure`
+
+### Règle frontend ajoutée (règle 34 — section EDT)
+- **TOUJOURS** utiliser `paletteCreneau()` (`@/lib/palette-creneau`) pour colorer les créneaux — jamais de `backgroundColor: couleur` brut
+- **NE JAMAIS** afficher une couleur matière sans contraste vérifié
+
+### Fichiers modifiés (6)
+- `frontend/src/lib/palette-creneau.ts` (nouveau, 134 lignes)
+- `frontend/src/features/emploi-du-temps/components/edt-month-view.tsx`
+- `frontend/src/features/emploi-du-temps/components/edt-calendar.tsx`
+- `frontend/src/features/emploi-du-temps/components/edt-day-view.tsx`
+- `frontend/src/features/emploi-du-temps/components/edt-legend.tsx`
+- `frontend/src/features/emploi-du-temps/components/edt-synthese.tsx`
+- `.qoder/rules/elisaschool-frontend.md` (+2 règles palette dans section 34)
+
 ## Travail effectué — Session 2026-08-06 (cascading selects + scrollbars EDT)
 
 ### Cascading selects affectation (`edt-creneau-modal.tsx`)
@@ -116,6 +144,101 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 - `frontend/src/features/emploi-du-temps/hooks/use-emploi-du-temps.ts` (interface `matiere.id`)
 - `frontend/src/locales/fr/emplois.json` (+1 clé, -3 obsolètes)
 - `frontend/src/locales/en/emplois.json` (+1 clé, -1 obsolète)
+
+## Travail effectué — Session 2026-08-06 (grill-me : fix i18n + cohérence contexte + auto-résolution cascade)
+
+### Audit /grill-me — 3 bugs identifiés et corrigés
+1. **Bug i18n (CRITIQUE)** : Clés `selectionnerMatiere/Enseignant/Classe` appelées à la racine du namespace `emplois` mais inexistantes → affichées en texte brut
+   - **Fix** : Ajout des 3 clés à la racine des fichiers FR+EN (`emplois.json`)
+   
+2. **Bug contexte (CRITIQUE)** : `classeAnneeIdForModal = undefined` quand `contexteType !== 'classe'` → selects cascade vides hors contexte classe
+   - **Fix** : Refactoré `useAffectationsOptions` pour accepter `AffectationsContexteFilter` (type+value) au lieu de `classeAnneeId?: string`
+   - **Nouvelle interface** : `{ type: 'classe' | 'enseignant' | 'salle'; value: string }`
+   - **Filtrage serveur** : `type=classe` → `classeAnneeId` query param
+   - **Filtrage client** : `type=enseignant/salle` → limit:100 + filtrage JS côté frontend (convention backend max 100)
+   
+3. **Bug UX (MODÉRÉ)** : Placeholders des selects non-désactivés → sélectionnables
+   - **Fix** : Ajout `disabled` sur les `<option value="">` des 3 selects cascade
+
+### Améliorations ajoutées
+- **Auto-résolution cascade 1-unique** :
+  - Si Matière → 1 seul Enseignant possible → auto-sélection + résolution continue vers Classe
+  - Si Enseignant → 1 seule Classe possible → auto-sélection
+  - Pattern `isInitializingRef` pour distinguer initialisation vs interaction utilisateur
+  - 2 `useEffect` dédiés (déclenchés sur `matiereSelectId` et `enseignantSelectId`)
+
+- **Cohérence toolbar↔modal** :
+  - `edt-page.tsx` : passage du contexte complet (`contexteType` + `contexteFilter`) au hook
+  - Modal reçoit les affectations filtrées selon le contexte actif (classe/enseignant/salle)
+
+### Fichiers modifiés (4)
+- `frontend/src/features/emploi-du-temps/hooks/use-emploi-du-temps.ts` : refactoré `useAffectationsOptions` + export `AffectationsContexteFilter`
+- `frontend/src/features/emploi-du-temps/components/edt-page.tsx` : passage contexte complet au hook + import type
+- `frontend/src/features/emploi-du-temps/components/edt-creneau-modal.tsx` : auto-résolution + `isInitializingRef` + placeholders disabled
+- `frontend/src/locales/fr/emplois.json` : +3 clés racine (`selectionnerMatiere/Enseignant/Classe`)
+- `frontend/src/locales/en/emplois.json` : +3 clés racine (parité EN)
+
+## Travail effectué — Session 2026-08-06 (fix validation limit backend)
+
+### Bug identifié via logs backend
+**Erreur 400 répétée** : `[VALIDATION_ERROR] Erreur de validation: limit: Number must be less than or equal to 100`
+
+**Cause** : Hook `useAffectationsOptions` utilisait `limit: 200` (introduit dans la session précédente), mais le backend valide avec max 100 (convention eLISAschool).
+
+**Impact** : Cascading selects du modal créneau échouaient à charger les affectations hors contexte classe.
+
+**Fix** : `limit: 200` → `limit: 100` dans `useAffectationsOptions` (conforme convention backend).
+
+**Fichier modifié** :
+- `frontend/src/features/emploi-du-temps/hooks/use-emploi-du-temps.ts` (ligne 528)
+
+## Travail effectué — Session 2026-08-06 (refactor modal créneau : indépendance toolbar + ordre cascade)
+
+### Problème identifié
+Le modal de création de créneaux dépendait du filtre toolbar (Classe/Enseignant/Salle) pour charger les affectations. Les selects cascade étaient limités par le contexte toolbar, ce qui empêchait de créer des créneaux pour d'autres classes/matières/enseignants.
+
+### Corrections apportées
+1. **Indépendance modal↔toolbar** :
+   - Le modal charge maintenant SES PROPRES affectations via `useAffectationsOptions()` sans filtre contexte
+   - Le modal charge SES PROPRES salles via `useSallesFromCreneaux()`
+   - Le filtre toolbar ne sert QU'À filtrer l'affichage des créneaux dans la vue principale
+   - Props `affectations` et `salles` marquées `@deprecated` (rétrocompatibilité)
+
+2. **Pré-sélection classe** :
+   - Si contexte toolbar = classe avec valeur → `contexteClasseId` passé au modal
+   - Le select classe du modal est pré-sélectionné (l'utilisateur peut la changer)
+
+3. **Réorganisation cascade** :
+   - **Nouvel ordre** : Type créneau → Classe → Matière → Enseignant
+   - **Logique** : On choisit d'abord le type, puis le contexte (classe), puis le contenu (matière), puis le responsable (enseignant)
+   - Plus logique pédagogiquement et fonctionnellement
+
+4. **Auto-résolution cascade adaptée** :
+   - Si Classe → 1 seule Matière possible → auto-sélection
+   - Si Classe + Matière → 1 seul Enseignant possible → auto-sélection
+   - Pattern `isInitializingRef` conservé pour distinguer init vs interaction
+
+5. **Améliorations UI/UX** :
+   - Selects avec hover/focus states harmonisés (`hover:border-[var(--color-dominant-400)]`)
+   - Focus ring visible (`focus:ring-2 focus:ring-[var(--color-dominant-300)]`)
+   - `disabled:opacity-50 disabled:cursor-not-allowed` pour les selects dépendants
+   - Placeholders `disabled` (non-sélectionnables)
+
+### Fichiers modifiés (2)
+- `frontend/src/features/emploi-du-temps/components/edt-creneau-modal.tsx` :
+  - Import `useAffectationsOptions` + `useSallesFromCreneaux`
+  - Props `affectations`/`salles` dépréciées + nouvelle prop `contexteClasseId`
+  - Hooks internes pour charger affectations/salles
+  - Cascade réorganisée : `classesDisponibles` → `matieresDisponibles` → `enseignantsDisponibles`
+  - Auto-résolution adaptée au nouvel ordre
+  - Pré-sélection classe si `contexteClasseId` fourni
+  - Selects UI améliorés (hover, focus, disabled states)
+
+- `frontend/src/features/emploi-du-temps/components/edt-page.tsx` :
+  - Retrait `useAffectationsOptions` + `useSallesFromCreneaux` (plus utilisés ici)
+  - Retrait import `AffectationsContexteFilter`
+  - Ajout `contexteClasseIdForModal` (pré-sélection classe si contexte toolbar)
+  - Modal appelé avec `contexteClasseId` au lieu de `affectations`/`salles`
 
 ## Travail effectué — Session 2026-08-06 (fix redondances + dark mode + select affectation)
 
@@ -2425,18 +2548,20 @@ Session grill-me (3 rounds) : 7 axes d'amélioration EDT clarifiés par question
 - **Migration** : `backend/database/migrations/148-remplacement-heure-cours.sql`
 
 ### Backend — Service + Controller
-- **Service** : `remplacement-heure-cours.service.ts` (6 méthodes : create, valider, rejeter, annuler, findAll, getStatistiques)
-- **Controller** : 6 routes REST (`/api/personnel/heures-cours/remplacements/*`)
-- **Extensions** : `getStatistiquesGlobales()` + `exportCSV()` dans `heure-cours.service.ts`
-- **Workflow** : Intégration `validationWorkflowService` (non-bloquant)
+- **Service** : `remplacement-heure-cours.service.ts` (7 méthodes : create, valider, executer, rejeter, annuler, findAll, getStatistiques)
+- **Controller** : 7 routes REST (`/api/personnel/heures-cours/remplacements/*`)
+- **Extensions** : `getStatistiquesGlobales()` + `exportCSV()` + `exportHTML()` dans `heure-cours.service.ts`
+- **Workflow 2 étapes** : `valider()` EN_ATTENTE→VALIDEE (approbation, ne touche pas HeureCours) puis `executer()` VALIDEE→EXECUTEE (mise en œuvre, met à jour HeureCours statut REMPLACE + remplacantId)
+- **findAll() enrichi** : 10 leftJoinAndSelect (enseignant→utilisateur→profil, classeAnnee→classe+anneeScolaire, matiere, salle, creneau, remplacant→utilisateur→profil). Filtre `salleId` ajouté (DTO + service).
 
 ### Frontend — Pages + Hooks
-- **Hooks** : `use-remplacement-heure-cours.ts` (6 hooks TanStack Query)
-- **Extensions** : `useStatistiquesGlobales` + `useExportHeuresCoursCSV` dans `use-heure-cours.ts`
-- **Page Heures de cours** : `heures-cours-page.tsx` (6 StatCards, DataTable, FilterPanel, export CSV)
-- **Page Remplacements** : `remplacements-page.tsx` (4 StatCards, DataTable, FilterPanel, modal détail)
-- **StepperModal** : `remplacement-stepper-modal.tsx` (3 étapes : sélection cours → remplaçant + motif → récapitulatif)
-- **Routes** : `_auth.heures-cours.tsx`, `_auth.heures-cours.replacements.tsx`
+- **Hooks** : `use-remplacement-heure-cours.ts` (7 hooks : useRemplacements, useStatistiquesRemplacements, useCreerRemplacement, useValiderRemplacement, useExecuterRemplacement, useRejeterRemplacement, useAnnulerRemplacement)
+- **Extensions** : `useStatistiquesGlobales` + `useExportHeuresCoursCSV` + `useExportHeuresCoursHTML` dans `use-heure-cours.ts`
+- **Page Heures de cours** : `heures-cours-page.tsx` (6 StatCards, DataTable avec `enableCollapsibleFilters`, export CSV/HTML authentifié). Colonnes enrichies : Enseignant (avatar initiales + nom complet via `enseignant.utilisateur.profil`), Matière (dot couleur + code), Classe (icône GraduationCap + code), Salle (icône MapPin + code). Pagination corrigée (`meta.totalItems`).
+- **Page Remplacements** : `remplacements-page.tsx` (4 StatCards, DataTable avec `enableCollapsibleFilters`, workflow 2 étapes avec confirmation modale validation/rejet, bouton Exécuter pour VALIDEE)
+- **StepperModal** : `remplacement-stepper-modal.tsx` v2.0 (3 étapes : sélection cours → remplaçant + motif → récapitulatif). Prop `coursPreselectionne` : skip étape 1 si cours connu (bouton Remplacer depuis heures-cours-page). Recherche remplaçant avec dropdown filtrable. Locale dynamique `i18n.language`. Bouton Remplacer visible uniquement pour statut PLANIFIE.
+- **Export modal** : `heures-cours-export-modal.tsx` (choix CSV/HTML, export HTML authentifié via apiClient)
+- **Routes** : `_auth.heures-cours.tsx` (`requirePermission('heures-cours:view')`), `_auth.heures-cours.replacements.tsx` (`requirePermission('heures-cours:remplacer:view')`)
 - **Sidebar** : Sous-entrées sous "Emploi du temps" (Planning, Heures de cours, Remplacements)
 
 ### Fichiers créés (11)
@@ -2464,6 +2589,56 @@ Session grill-me (3 rounds) : 7 axes d'amélioration EDT clarifiés par question
 - `frontend/src/features/emploi-du-temps/index.ts` : export barrel pages
 - `frontend/src/components/layout/Sidebar.tsx` : sous-entrées EDT (Planning, Heures de cours, Remplacements)
 - `frontend/src/locales/fr/emplois.json` + `en/emplois.json` : ~80 clés i18n (heuresCoursPage.*, remplacements.*, export.*)
+
+## Composants partagés EDT / Heures de cours / Remplacements (2026-08-06)
+
+### Composants colonnes (`components/ui/data-table/`)
+- **Barrel** : `components/ui/data-table/index.ts`
+- **ColonneEnseignant** : avatar rond initiales (dominant-100/dark-900) + nom complet tronqué. Style canonical = heures-cours-page.
+- **ColonneMatiere** : dot couleur + nom + code (`hidden lg:inline`)
+- **ColonneClasse** : icône GraduationCap + nom + code (`hidden xl:inline`)
+- **ColonneSalle** : icône MapPin + nom/code
+- **BadgeStatutCreneau** : badge unifié 8 états (PLANIFIE→outline, EFFECTUE→success, ANNULE→danger, REMPLACE→warning, EN_ATTENTE→warning, VALIDEE→success, REJETEE→danger, EXECUTEE→success)
+- **Utilisation obligatoire** dans `edt-liste.tsx`, `heures-cours-page.tsx`, `remplacements-page.tsx`
+
+### ElisaSelect v2.1
+- **Prop `searchable`** : input search dans dropdown (filtrage live Radix)
+- **Prop `compact`** : `h-8` / `text-xs` pour filtres DataTable/FilterPanel
+- **Prop `aria-label`** : accessibilité ARIA sur le trigger
+- **Dark mode** : classes `dark:` explicites sur Trigger et Content portal
+- **Contraintes viewport (v2.1)** : `max-h-[min(70vh,360px)]`, `w-[--radix-select-trigger-width]`, `max-w-[calc(100vw-2rem)]`, `avoidCollisions` — empêche le débordement écran. Items tronqués (`truncate` sur ItemText). Scroll buttons avec gradient fade.
+- **Migration** : FilterPanel et DataTable toolbar — tous les `<select>` natifs remplacés par ElisaSelect compact
+- **Migration modals EDT** : 14 `<select>` natifs migrés vers ElisaSelect (edt-creneau-modal ×6, edt-generation-modal ×1, edt-preferences ×2, jour-ferie-form-modal ×2, edt-datepicker-modal ×2, edt-page ×1). Selects cascading (classe→matière→enseignant) avec `searchable`. Valeurs numériques (mois/année) converties via `String()`/`Number()`. Controller RHF adapté.
+- **Fix toolbar anti-chevauchement (v2.1)** : `shrink-0` sur segmented groups (contexte + vues) et boutons, ElisaSelect `w-[clamp(100px,20vw,200px)]` au lieu de `min-w`, `gap-y/gap-x` séparés sur toolbars `flex-wrap`. Groupes actions en `shrink-0`.
+- **Segmented groups standard contraste (v2.1)** : fond `surface-alt`, bordures `gray-300` (light) / `var(--color-bordure)` (dark), séparateurs inter-boutons `gray-200`, actif `dominant-600 text-white shadow-sm`, inactif `text-primary` (light) / `text-secondary` (dark). Séparateurs toolbar en `gray-300`. Toggle "afficher tout" aligné sur le pattern solide. Navigation pill `hover:border-dominant-400`.
+- **`--color-secondaire` défini (v2.1)** : light `#e5e7eb`, dark `#334155` — corrige ElisaButton `secondary` qui référençait une variable inexistante (fond transparent). Outline variant : `border-gray-300 dark:border-[var(--color-bordure)]`.
+- **Palette créneau EDT (v2.2)** : utilitaire `palette-creneau.ts` — génère fond teinté (18%), fond assombri (60%+noir), texte auto (luminance WCAG), bordure (40%), fond badge (10%) depuis couleur matière hex. Utilisé dans month/week/day/synthese. Garantit contraste ≥ 4.5:1 quelle que soit la couleur choisie par l'utilisateur.
+- **Créneaux progressifs (v2.2)** : contenu adapté à la taille du slot. Month view : L1=horaire+matière+statut, L2=initiales enseignant+salle (hidden sm). Week view : compact (< 72px)=matière+horaire, normal=+classe, grand (≥ 120px)=+enseignant+salle. Day view : badge classe avec fond palette, enseignant/salle en `text-secondary`.
+- **Légende EDT v2 (v2.2)** : surface `surface-alt` pleine, bordure `gray-300 dark:border-bordure`, titre `text-secondary` (pas muted), items `text-primary` (pas secondary). Collapsible (ChevronDown). Badges réduits à 0.625rem.
+- **Bordures calendrier light mode (v2.2)** : `gray-300 dark:border-[var(--color-bordure)]` sur grille, cellules, conteneur, labels heures (au lieu de `var(--color-bordure)` trop pâle en light).
+- **Synthese barres matières (v2.2)** : barres utilisent `pal.bordure` (teinte 40%) au lieu de couleur brute. Texte heures avec `textShadow` halo pour lisibilité sur fond coloré. Font-size en `clamp()` au lieu de `text-[10px]` fixe.
+
+### Fichiers créés (3)
+- `frontend/src/components/ui/data-table/BadgeStatutCreneau.tsx`
+- `frontend/src/components/ui/data-table/colonnes-partagees.tsx`
+- `frontend/src/components/ui/data-table/index.ts`
+
+### Fichiers modifiés (8)
+- `frontend/src/components/ui/ElisaSelect.tsx` : v2 (searchable, compact, dark mode, aria-label)
+- `frontend/src/components/ui/FilterPanel.tsx` : SelectFilter → ElisaSelect compact
+- `frontend/src/components/ui/DataTable.tsx` : 3 `<select>` natifs → ElisaSelect compact (filtres inline, hauteur ligne, pagination)
+- `frontend/src/features/emploi-du-temps/components/heures-cours-page.tsx` : colonnes → composants partagés, BadgeStatut local supprimé
+- `frontend/src/features/emploi-du-temps/components/edt-liste.tsx` : colonnes → composants partagés, badges inline → BadgeStatutCreneau
+- `frontend/src/features/emploi-du-temps/components/remplacements-page.tsx` : colonnes → composants partagés, BadgeStatutRemplacement → BadgeStatutCreneau
+- `frontend/src/features/emploi-du-temps/components/remplacement-stepper-modal.tsx` : dropdown custom 70 lignes → ElisaSelect searchable (10 lignes)
+
+### Fichiers modifiés — migration modals EDT (6 fichiers, 14 selects)
+- `edt-creneau-modal.tsx` : 6 `<select>` → ElisaSelect (type créneau, classe searchable, matière searchable cascading, enseignant searchable cascading, jour, salle)
+- `edt-generation-modal.tsx` : 1 `<select>` → ElisaSelect (template)
+- `edt-preferences.tsx` : 2 `<select>` → ElisaSelect (pays searchable, horaire jour compact)
+- `jour-ferie-form-modal.tsx` : 2 `<select>` Controller RHF → ElisaSelect (mois, pays searchable)
+- `edt-datepicker-modal.tsx` : 2 `<select>` → ElisaSelect compact (mois, année — valeurs numériques converties)
+- `edt-page.tsx` : 1 `<select>` → ElisaSelect compact (filtre contexte avec placeholder dynamique)
 
 ## Travail effectué — Session 2026-08-05 (Jours fériés — CRUD + modèles pays + exclusion matérialisation)
 

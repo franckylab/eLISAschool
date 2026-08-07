@@ -28,7 +28,7 @@ const buttonVariants = cva(
                 danger:
                     'bg-[var(--color-error)] text-white shadow-sm hover:opacity-90 active:scale-[0.98]',
                 outline:
-                    'border border-[var(--color-bordure)] bg-transparent text-[var(--color-texte)] hover:bg-[var(--color-surface-hover)] active:bg-[var(--color-surface-hover)]',
+                    'border border-gray-300 dark:border-[var(--color-bordure)] bg-transparent text-[var(--color-texte)] hover:bg-[var(--color-surface-hover)] active:bg-[var(--color-surface-hover)]',
             },
             size: {
                 xs: 'h-[clamp(1.5rem,1.25rem+0.5vw,1.75rem)] px-[clamp(0.375rem,0.3rem+0.2vw,0.5rem)]',

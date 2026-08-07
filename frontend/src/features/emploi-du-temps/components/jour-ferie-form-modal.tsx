@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { Save } from 'lucide-react';
 import { useCreateJourFerie, useUpdateJourFerie, useModelesPays } from '../hooks/use-jours-feries';
 import type { JourFerie } from '../types/edt.types';
@@ -203,16 +204,17 @@ export function JourFerieFormModal({ open, onOpenChange, jourFerie, paysDefaut }
                                 control={control}
                                 name="mois"
                                 render={({ field }) => (
-                                    <select
-                                        value={field.value ?? ''}
-                                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
-                                        className={inputClass}
-                                    >
-                                        <option value="">—</option>
-                                        {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                                            <option key={m} value={m}>{t(`joursFeries.moisNoms.${m}`)}</option>
-                                        ))}
-                                    </select>
+                                    <ElisaSelect
+                                        value={field.value != null ? String(field.value) : ''}
+                                        onValueChange={(v) => field.onChange(v ? parseInt(v) : null)}
+                                        options={[
+                                            { value: '', label: '—' },
+                                            ...Array.from({ length: 12 }, (_, i) => i + 1).map(m => ({
+                                                value: String(m),
+                                                label: t(`joursFeries.moisNoms.${m}`),
+                                            })),
+                                        ]}
+                                    />
                                 )}
                             />
                             {errors.mois && <p className="text-xs text-[var(--color-destructive)] mt-1">{errors.mois.message}</p>}
@@ -275,16 +277,18 @@ export function JourFerieFormModal({ open, onOpenChange, jourFerie, paysDefaut }
                         control={control}
                         name="pays"
                         render={({ field }) => (
-                            <select
+                            <ElisaSelect
                                 value={field.value ?? ''}
-                                onChange={(e) => field.onChange(e.target.value || null)}
-                                className={inputClass}
-                            >
-                                <option value="">— {t('joursFeries.custom', 'Personnalisé')} —</option>
-                                {(modelesPays.data ?? []).map(m => (
-                                    <option key={m.pays} value={m.pays}>{t(`joursFeries.pays_${m.pays}`, m.pays)}</option>
-                                ))}
-                            </select>
+                                onValueChange={(v) => field.onChange(v || null)}
+                                options={[
+                                    { value: '', label: `— ${t('joursFeries.custom', 'Personnalisé')} —` },
+                                    ...(modelesPays.data ?? []).map(m => ({
+                                        value: m.pays,
+                                        label: t(`joursFeries.pays_${m.pays}`, m.pays),
+                                    })),
+                                ]}
+                                searchable
+                            />
                         )}
                     />
                 </div>
