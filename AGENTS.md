@@ -83,6 +83,40 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 ### Blocked
 — (none)
 
+## Travail effectué — Session 2026-08-07 (templates toggle toolbar + validation masse EDT)
+
+### Templates — section dédiée dans la toolbar
+- **`edt-page.tsx`** : `EDTTemplatesPage` retiré de `renderConfiguration()` → accessible via toggle dans la toolbar secondaire (bouton `FileText`, `aria-pressed`, mutuellement exclusif avec Analytique)
+- **Pattern "section toggle"** : `useState<boolean>` par section + rendu conditionnel dans `renderPlanningContent()` avec priorité (Templates > Analytique > vues planning)
+- **Exclusion mutuelle** : `onClick={() => { setShowXxx(v => !v); setShowYyy(false); }}`
+
+### Modal validation en masse (`edt-validation-masse-modal.tsx` — 427 lignes)
+- **3 étapes StepperModal** : Aperçu (stats cards + détail par jour avec pastilles couleur) → Résumé (tableau détaillé trié par jour/heure + avertissement) → Résultat (loading → succès/erreur + boutons Fermer/Voir EDT)
+- **Données dérivées `useMemo`** : `aValider` (statut PLANIFIE), `dejaValides` (VALIDE), `parJour` (groupement), `avecAuto` (genereAutomatiquement), `matieresDistinctes`, `totalMinutes`
+- **Props StepperModal** : `validate: () => aValider.length > 0`, `nextLabels: [...]`, `hideFooterOnLastStep`, `isSubmitting={validerMutation.isPending}`, `disableNextOnInvalid`
+- **Remplace** : le bouton validation directe (`validerCreneauxClasse.mutate()`) dans la toolbar → `setValidationMasseOpen(true)`
+
+### Bugs corrigés
+- **Type `resultat`** : `{ valide, total }` (incorrect) → `{ nbValides, instancesGenerees }` (aligné sur le retour du hook `useValiderCreneauxClasse`)
+- **`onSuccess` non appelé** : ajout `onSuccess()` dans `handleValider` après `setResultat(res)` — le parent (`edt-page.tsx`) passe `onSuccess={() => refetch()}`
+
+### Barrel enrichi (`features/emploi-du-temps/index.ts`)
+- Ajouts : `EDTValidationMasseModal`, `EDTCreneauDetailModal`, `EDTHeuresCoursModal`, `EDTSynthese`, `EDTAudit`
+
+### i18n — +39 clés `validationMasse.*` (FR + EN, parité complète)
+- Clés principales : `titre`, `description`, `etape1-3`, `aValider_one/other`, `dejaValides_one/other`, `jours`, `matieres`, `totalHeures`, `autoGen`, `parJour`, `resumeValidation`, `detailCreneaux`, `voirResume`, `lancerValidation`, `validationEnCours`, `validationReussie`, `nbValides_one/other`, `voirEDT`, `fermer`, `erreurTitre`, `aucunAValider`, `tousValides`
+
+### Règles mises à jour (`.qoder/rules/elisaschool-frontend.md`)
+- **Règle 34** : 3 sous-sections ajoutées — "Pattern Section Toggle", "Pattern StepperModal — Validation en masse", "Lazy Loading des options par contexte"
+- **Règle 34 Architecture** : liste des composants mise à jour (edt-validation-masse-modal, edt-creneau-detail-modal, edt-datepicker-modal ajoutés ; edt-filter-bar retiré car supprimé session précédente)
+
+### Fichiers modifiés (5)
+- `frontend/src/features/emploi-du-temps/components/edt-page.tsx` (templates toggle + validation masse modal)
+- `frontend/src/features/emploi-du-temps/components/edt-validation-masse-modal.tsx` (NOUVEAU — 427 lignes)
+- `frontend/src/features/emploi-du-temps/index.ts` (+5 exports barrel)
+- `frontend/src/locales/fr/emplois.json` (+39 clés)
+- `frontend/src/locales/en/emplois.json` (+39 clés)
+
 ## Travail effectué — Session 2026-08-07 (modal génération HeuresCours — 4 étapes + preview)
 
 ### Backend — preview HeuresCours

@@ -28,6 +28,11 @@ export { EDTDayView } from './components/edt-day-view';
 export { EDTListeView } from './components/edt-liste';
 export { EDTDatePickerModal } from './components/edt-datepicker-modal';
 export { EDTLegend } from './components/edt-legend';
+export { EDTValidationMasseModal } from './components/edt-validation-masse-modal';
+export { EDTCreneauDetailModal } from './components/edt-creneau-detail-modal';
+export { EDTHeuresCoursModal } from './components/edt-heures-cours-modal';
+export { EDTSynthese } from './components/edt-synthese';
+export { EDTAudit } from './components/edt-audit';
 export { TemplateWizardModal } from './components/template-wizard-modal';
 
 // Hooks

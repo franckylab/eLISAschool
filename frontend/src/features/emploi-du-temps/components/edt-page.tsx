@@ -16,9 +16,10 @@ import {
     ShieldCheck, CalendarCheck, Crosshair,
     CalendarDays, CalendarRange, List as ListIcon, BarChart3,
     Users, GraduationCap, DoorOpen, CheckCircle2, Clock, MapPin, User as UserIcon, Eye,
+    FileText,
 } from 'lucide-react';
 import {
-    useCreneaux, useValiderCreneauxClasse,
+    useCreneaux,
     useEnseignantOptions, useSalleOptions, useMatiereOptions,
 } from '../hooks/use-emploi-du-temps';
 import { useNavigationEDT, type PlanningView } from '../hooks/use-navigation-edt';
@@ -36,6 +37,7 @@ import { EDTHeuresCoursModal } from './edt-heures-cours-modal';
 import { EDTCreneauModal } from './edt-creneau-modal';
 import { EDTCreneauDetailModal } from './edt-creneau-detail-modal';
 import { EDTGenerationModal } from './edt-generation-modal';
+import { EDTValidationMasseModal } from './edt-validation-masse-modal';
 import { EDTDatePickerModal } from './edt-datepicker-modal';
 import { EDTLegend } from './edt-legend';
 import type { CreneauHoraire } from '../types/edt.types';
@@ -85,6 +87,8 @@ export function EDTStandalonePage() {
     const [contexteType, setContexteType] = useState<ContexteType>('classe');
     const [contexteFilter, setContexteFilter] = useState('');
     const [showAnalytique, setShowAnalytique] = useState(false);
+    /** Toggle : afficher les templates inline (hors onglet Configuration) */
+    const [showTemplates, setShowTemplates] = useState(false);
     /** Toggle : afficher tous les créneaux par jour (vue mois) */
     const [showAllCreneaux, setShowAllCreneaux] = useState(false);
 
@@ -100,6 +104,7 @@ export function EDTStandalonePage() {
     // ─── Modals ─────────────────────────────────────
     const [genModalOpen, setGenModalOpen] = useState(false);
     const [heuresCoursModalOpen, setHeuresCoursModalOpen] = useState(false);
+    const [validationMasseOpen, setValidationMasseOpen] = useState(false);
     const [creneauModalOpen, setCreneauModalOpen] = useState(false);
     const [selectedCreneau, setSelectedCreneau] = useState<CreneauHoraire | null>(null);
     // Modal détail (lecture seule)
@@ -187,7 +192,6 @@ export function EDTStandalonePage() {
             return true;
         });
     }, [paginated?.items]);
-    const validerCreneauxClasse = useValiderCreneauxClasse();
 
     // ─── Options pour le modal créneau (affectations + salles) ───
     // Le modal charge maintenant ses propres données indépendamment du filtre toolbar
@@ -252,6 +256,11 @@ export function EDTStandalonePage() {
     // ─── Rendering ──────────────────────────────────
 
     const renderPlanningContent = () => {
+        // Templates — section dédiée (prime sur les vues planning)
+        if (showTemplates) {
+            return <EDTTemplatesPage />;
+        }
+
         if (showAnalytique) {
             return (
                 <div className="flex flex-col gap-[var(--gap-lg)]">
@@ -326,7 +335,6 @@ export function EDTStandalonePage() {
     const renderConfiguration = () => (
         <div className="flex flex-col gap-[var(--gap-lg)]">
             <EDTPreferencesPage />
-            <EDTTemplatesPage />
         </div>
     );
 
@@ -505,8 +513,8 @@ export function EDTStandalonePage() {
                                             variant="secondary"
                                             size="xs"
                                             icon={<ShieldCheck className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
-                                            onClick={() => validerCreneauxClasse.mutate(contexteFilter)}
-                                            disabled={validerCreneauxClasse.isPending}
+                                            onClick={() => setValidationMasseOpen(true)}
+                                            aria-label={t('validationMasse.titre')}
                                         >
                                             <span className="hidden sm:inline">{t('valider')}</span>
                                         </ElisaButton>
@@ -562,7 +570,7 @@ export function EDTStandalonePage() {
                             <div className="w-px h-5 bg-gray-300 dark:bg-[var(--color-bordure)]" />
 
                             <button
-                                onClick={() => setShowAnalytique(v => !v)}
+                                onClick={() => { setShowAnalytique(v => !v); setShowTemplates(false); }}
                                 className={`flex items-center gap-1 px-[var(--space-sm)] py-[var(--space-xs)] rounded-lg text-xs font-medium transition-colors ${
                                     showAnalytique
                                         ? 'bg-[var(--color-accent-600)] text-white dark:bg-[var(--color-accent-700)]'
@@ -573,6 +581,22 @@ export function EDTStandalonePage() {
                             >
                                 <BarChart3 className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
                                 <span className="hidden sm:inline">{t('vues.analytique')}</span>
+                            </button>
+
+                            {/* Templates — accès rapide (section dédiée) */}
+                            <div className="w-px h-5 bg-gray-300 dark:bg-[var(--color-bordure)]" />
+                            <button
+                                onClick={() => { setShowTemplates(v => !v); setShowAnalytique(false); }}
+                                className={`flex items-center gap-1 px-[var(--space-sm)] py-[var(--space-xs)] rounded-lg text-xs font-medium transition-colors ${
+                                    showTemplates
+                                        ? 'bg-[var(--color-accent-600)] text-white dark:bg-[var(--color-accent-700)]'
+                                        : 'text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] dark:text-[var(--color-text-secondary)]'
+                                }`}
+                                aria-pressed={showTemplates}
+                                aria-label={t('onglets.templates')}
+                            >
+                                <FileText className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
+                                <span className="hidden sm:inline">{t('onglets.templates')}</span>
                             </button>
 
                             {/* Toggle afficher tous les créneaux (vue mois) */}
@@ -610,6 +634,17 @@ export function EDTStandalonePage() {
                     onOpenChange={setGenModalOpen}
                     classeAnneeId={contexteFilter}
                     onSuccess={() => { setGenModalOpen(false); }}
+                />
+            )}
+
+            {/* ─── Modal Validation en masse ────────── */}
+            {contexteFilter && contexteType === 'classe' && (
+                <EDTValidationMasseModal
+                    open={validationMasseOpen}
+                    onOpenChange={setValidationMasseOpen}
+                    creneaux={creneaux}
+                    classeAnneeId={contexteFilter}
+                    onSuccess={() => refetch()}
                 />
             )}
 

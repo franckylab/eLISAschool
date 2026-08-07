@@ -2623,7 +2623,7 @@ const handleToggleFullscreen = useCallback(() => {
 
 ### Architecture
 - **Module** : `features/emploi-du-temps/` (page standalone `/_auth/emploi-du-temps` → `EDTStandalonePage`, guard `requireModulePermission('emploi-du-temps')`)
-- **Vues** : `edt-page.tsx` (onglets Planning/Configuration), `edt-calendar` (grille semaine dnd-kit), `edt-month-view` / `edt-day-view` (vue mensuelle/journalière), `edt-liste` (liste), `edt-synthese` (KPIs), `edt-audit` (conflits), `edt-preferences`, `edt-templates`, `edt-filter-bar` (barre de contexte classe/enseignant/salle), modals `edt-creneau-modal` / `edt-generation-modal` / `edt-heures-cours-modal`
+- **Vues** : `edt-page.tsx` (onglets Planning/Configuration), `edt-calendar` (grille semaine dnd-kit), `edt-month-view` / `edt-day-view` (vue mensuelle/journalière), `edt-liste` (liste), `edt-synthese` (KPIs), `edt-audit` (conflits), `edt-preferences`, `edt-templates`, `edt-validation-masse-modal` (validation en masse 3 étapes), modals `edt-creneau-modal` / `edt-generation-modal` / `edt-heures-cours-modal` / `edt-creneau-detail-modal` / `edt-datepicker-modal`
 - **Heures de cours** : `features/personnel/` (`tab-heure-cours.tsx`, `heure-cours-form-modal.tsx`, `onglets/onglet-edt.tsx`, `hooks/use-heure-cours.ts`) — consommés par `personnel-detail-page.tsx` ET `edt-heures-cours-modal.tsx`
 
 ### Règles
@@ -2640,6 +2640,26 @@ const handleToggleFullscreen = useCallback(() => {
 - **TOUJOURS** importer les hooks EDT/heures-cours via les barrels (`@/features/personnel`, `@/features/emploi-du-temps`), jamais par chemin direct cross-feature
 - **TOUJOURS** parité i18n FR/EN (`emplois.json`, `personnel.json`) ; les clés `synthese.*`, `audit.*`, `generationHeuresCours.*` doivent exister dans les deux langues
 - **Backend** : audit des créneaux/heures-cours dans les **services** (pas les controllers) — pattern uniforme avec `heure-cours.service.ts`
+
+### Pattern "Section Toggle" (toolbar → contenu conditionnel)
+- **Principe** : un bouton dans la toolbar secondaire bascule l'affichage d'une section inline (Templates, Analytique), **mutuellement exclusif** avec les vues planning
+- **Implémentation** : `useState<boolean>` par section + rendu conditionnel dans `renderPlanningContent()` avec priorité (Templates > Analytique > vues planning)
+- **Bouton** : `aria-pressed={showXxx}` + style actif `bg-[var(--color-accent-600)] text-white dark:bg-[var(--color-accent-700)]`
+- **Exclusion mutuelle** : `onClick={() => { setShowXxx(v => !v); setShowYyy(false); }}` — un seul toggle actif à la fois
+- **Composants concernés** : `EDTTemplatesPage` (section dédiée, sorti de l'onglet Configuration), `EDTSynthese` + `EDTAudit` (analytique inline)
+
+### Pattern StepperModal — Validation en masse (`edt-validation-masse-modal`)
+- **3 étapes** : Aperçu (stats + détail par jour) → Résumé (tableau détaillé) → Résultat (loading → succès/erreur)
+- **Props clés** : `validate: () => aValider.length > 0` (désactive bouton suivant si vide), `nextLabels: [...]` (label dynamique par étape), `hideFooterOnLastStep` (boutons custom étape 3), `isSubmitting={mutation.isPending}` (spinner)
+- **Données dérivées** : `useMemo` sur les créneaux filtrés (aValider=PLANIFIE, dejaValides=VALIDE, parJour, matieresDistinctes, totalMinutes)
+- **Reset à la fermeture** : `handleClose` met `resultat` à null + `onOpenChange(false)`
+- **Hook** : `useValiderCreneauxClasse` (mutation) — appelé dans `onSubmit` du StepperModal
+
+### Lazy Loading des options par contexte
+- **Principe** : les hooks d'options ne chargent que quand le contexte est sélectionné (`enabled: contexteType === 'enseignant'`, etc.)
+- **Hooks concernés** : `useEnseignantOptions(contexteType === 'enseignant')`, `useSalleOptions(contexteType === 'salle')`, `useMatiereOptions(planningView === 'liste')`
+- **Cache** : `staleTime: 3-5 min` — une fois chargé, le switch de contexte est instantané
+- **Toujours chargé** : `useToutesClasses()` (contexte par défaut = 'classe')
 
 ## 35. Convention i18n — Anti-collision clés objet/string
 

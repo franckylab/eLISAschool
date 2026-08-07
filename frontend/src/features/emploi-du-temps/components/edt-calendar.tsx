@@ -21,7 +21,7 @@ import {
     type DragStartEvent,
     type DragEndEvent,
 } from '@dnd-kit/core';
-import { User, MapPin, GripVertical, AlertTriangle, RefreshCw, Star, CheckCircle2, Clock, Check, BookOpen } from 'lucide-react';
+import { User, MapPin, GripVertical, AlertTriangle, RefreshCw, Star, CheckCircle2, Clock, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUpdateCreneau, useVerifierConflits } from '../hooks/use-emploi-du-temps';
 import type { CreneauHoraire, JourSemaine, DonneesVerification, Conflit, RapportPropagation, JourFerie } from '../types/edt.types';
@@ -655,22 +655,19 @@ function CreneauCard({
                     </div>
                 )}
 
-                {/* Badge statut : validé (✓ vert) / en attente (horloge gris) — top-right */}
-                <div
-                    className="absolute top-0.5 right-6 z-10 flex items-center justify-center rounded-full"
-                    style={{
-                        width: 'clamp(0.875rem, 0.75rem + 0.35vw, 1rem)',
-                        height: 'clamp(0.875rem, 0.75rem + 0.35vw, 1rem)',
-                        backgroundColor: creneau.statut === 'VALIDE' ? 'var(--color-success)' : 'var(--color-text-muted)',
-                        color: 'white',
-                    }}
-                    title={creneau.statut === 'VALIDE' ? t('legende.creneauValide') : t('legende.creneauAttente')}
-                >
-                    {creneau.statut === 'VALIDE'
-                        ? <Check className="h-3 w-3" strokeWidth={3} />
-                        : <Clock className="h-2 w-2" />
-                    }
-                </div>
+                {/* Badge statut : uniquement si EN ATTENTE (validé = HC généré → implicite) */}
+                {creneau.statut !== 'VALIDE' && (
+                    <div
+                        className="absolute top-0.5 right-6 z-10 flex items-center justify-center rounded-full bg-[var(--color-text-muted)] text-white"
+                        style={{
+                            width: 'clamp(0.875rem, 0.75rem + 0.35vw, 1rem)',
+                            height: 'clamp(0.875rem, 0.75rem + 0.35vw, 1rem)',
+                        }}
+                        title={t('legende.creneauAttente')}
+                    >
+                        <Clock className="h-2 w-2" />
+                    </div>
+                )}
 
                 {/* Drag handle */}
                 <div

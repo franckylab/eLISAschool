@@ -10,7 +10,7 @@
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Clock, MapPin, User, BookOpen, FileText, Check, CheckCircle2 } from 'lucide-react';
+import { Clock, MapPin, User, BookOpen, FileText, CheckCircle2 } from 'lucide-react';
 import { formatDate } from '@/lib/date-utils';
 import { paletteCreneau, useModeTheme } from '@/lib/palette-creneau';
 import type { CreneauHoraire, JourSemaine, JourFerie } from '../types/edt.types';
@@ -191,32 +191,25 @@ export function EDTDayView({
                                             c.statut === 'VALIDE' ? '✓ Validé' : '⏳ En attente',
                                         ].filter(Boolean).join('\n')}
                                     >
-                                        {/* Badges statut + heures cours */}
-                                        <div className="absolute top-1 right-1 flex items-center gap-0.5">
-                                            {c.hasHeuresCours && (
-                                                <span
-                                                    className="inline-flex items-center justify-center rounded-full bg-[var(--color-success)] text-white"
-                                                    style={{ width: 'clamp(0.875rem, 0.75rem + 0.3vw, 1rem)', height: 'clamp(0.875rem, 0.75rem + 0.3vw, 1rem)' }}
-                                                    title={t('legende.heuresCoursGenerees')}
-                                                >
-                                                    <CheckCircle2 className="h-2.5 w-2.5" />
-                                                </span>
-                                            )}
+                                        {/* Badges : HC généré (top-left) + statut en attente uniquement (top-right) */}
+                                        {c.hasHeuresCours && (
                                             <span
-                                                className="inline-flex items-center justify-center rounded-full text-white"
-                                                style={{
-                                                    width: 'clamp(0.875rem, 0.75rem + 0.3vw, 1rem)',
-                                                    height: 'clamp(0.875rem, 0.75rem + 0.3vw, 1rem)',
-                                                    backgroundColor: c.statut === 'VALIDE' ? 'var(--color-success)' : 'var(--color-text-muted)',
-                                                }}
-                                                title={c.statut === 'VALIDE' ? t('legende.creneauValide') : t('legende.creneauAttente')}
+                                                className="absolute top-1 left-1 inline-flex items-center justify-center rounded-full bg-[var(--color-success)] text-white"
+                                                style={{ width: 'clamp(0.875rem, 0.75rem + 0.3vw, 1rem)', height: 'clamp(0.875rem, 0.75rem + 0.3vw, 1rem)' }}
+                                                title={t('legende.heuresCoursGenerees')}
                                             >
-                                                {c.statut === 'VALIDE'
-                                                    ? <Check className="h-3 w-3" strokeWidth={3} />
-                                                    : <Clock className="h-2 w-2" />
-                                                }
+                                                <CheckCircle2 className="h-2.5 w-2.5" />
                                             </span>
-                                        </div>
+                                        )}
+                                        {c.statut !== 'VALIDE' && (
+                                            <span
+                                                className="absolute top-1 right-1 inline-flex items-center justify-center rounded-full bg-[var(--color-text-muted)] text-white"
+                                                style={{ width: 'clamp(0.875rem, 0.75rem + 0.3vw, 1rem)', height: 'clamp(0.875rem, 0.75rem + 0.3vw, 1rem)' }}
+                                                title={t('legende.creneauAttente')}
+                                            >
+                                                <Clock className="h-2 w-2" />
+                                            </span>
+                                        )}
                                         {/* Matière + badge classe */}
                                         <div className="flex items-center gap-1">
                                             <p
@@ -227,11 +220,12 @@ export function EDTDayView({
                                             </p>
                                             {c.affectationMatiere?.classeAnnee?.classe?.nom && (
                                                 <span
-                                                    className="shrink-0 rounded px-1"
+                                                    className="shrink-0 rounded-md px-1 font-medium"
                                                     style={{
                                                         fontSize: 'clamp(0.5rem, 0.45rem + 0.1vw, 0.625rem)',
-                                                        backgroundColor: pal?.fondBadge ?? 'var(--color-dominant-100)',
-                                                        color: pal?.bordure ?? 'var(--color-dominant-700)',
+                                                        backgroundColor: pal?.fondTeinte ?? 'var(--color-dominant-100)',
+                                                        color: pal?.texteSurTeinte ?? 'var(--color-dominant-700)',
+                                                        border: `1px solid ${pal?.bordure ?? 'var(--color-dominant-300)'}`,
                                                     }}
                                                 >
                                                     {c.affectationMatiere.classeAnnee.classe.nom}
