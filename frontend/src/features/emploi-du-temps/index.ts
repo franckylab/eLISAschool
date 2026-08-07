@@ -33,3 +33,8 @@ export { TemplateWizardModal } from './components/template-wizard-modal';
 // Hooks
 export * from './hooks/use-emploi-du-temps';
 export * from './hooks/use-jours-feries';
+export * from './hooks/use-heure-cours';
+export * from './hooks/use-remplacement-heure-cours';
+
+// Composants heures de cours
+export { HeureCoursFormModal } from './components/heure-cours-form-modal';

@@ -9,7 +9,8 @@
  */
 
 import { AppDataSource } from '@database/data-source';
-import { MembrePersonnel, StatutPersonnel, ContratPersonnel, StatutContrat, HeureCours, StatutEffectue } from '@modules/personnel/entities';
+import { MembrePersonnel, StatutPersonnel, ContratPersonnel, StatutContrat } from '@modules/personnel/entities';
+import { HeureCours, StatutEffectue } from '@modules/emploi-du-temps/entities';
 import { ModeRemunerationEntity } from '@modules/organisation/entities';
 import { CreneauHoraire, JourSemaine, TypeCreneau, StatutCreneau } from '@modules/emploi-du-temps/entities';
 import { AffectationMatiere, StatutAffectationMatiere, StatutValidationAffectation } from '@modules/matieres/entities';

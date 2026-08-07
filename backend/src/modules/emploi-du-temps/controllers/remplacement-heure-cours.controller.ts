@@ -3,7 +3,7 @@
  * eLISAschool - Controller RemplacementHeureCours
  * ==================================
  * Routes API pour la gestion des remplacements d'enseignants.
- * Monté sur /api/personnel/heures-cours/remplacements
+ * Monté sur /api/emploi-du-temps/heures-cours/remplacements
  * Version: 1.0.0
  * Auteur: franck arlos chendjou
  */
@@ -23,7 +23,7 @@ import { validateDto, validateQuery } from '@common/utils';
 const router = Router();
 
 /**
- * GET /api/personnel/heures-cours/remplacements/statistiques
+ * GET /api/emploi-du-temps/heures-cours/remplacements/statistiques
  * Statistiques agrégées des remplacements
  */
 router.get(
@@ -39,7 +39,7 @@ router.get(
 );
 
 /**
- * GET /api/personnel/heures-cours/remplacements
+ * GET /api/emploi-du-temps/heures-cours/remplacements
  * Lister les demandes de remplacement avec pagination et filtres
  */
 router.get(
@@ -56,7 +56,7 @@ router.get(
 );
 
 /**
- * POST /api/personnel/heures-cours/remplacements
+ * POST /api/emploi-du-temps/heures-cours/remplacements
  * Créer une demande de remplacement
  */
 router.post(
@@ -75,7 +75,7 @@ router.post(
 );
 
 /**
- * PATCH /api/personnel/heures-cours/remplacements/:id/valider
+ * PATCH /api/emploi-du-temps/heures-cours/remplacements/:id/valider
  * Valider une demande de remplacement (étape 1 : approbation → VALIDEE)
  */
 router.patch(
@@ -94,7 +94,7 @@ router.patch(
 );
 
 /**
- * PATCH /api/personnel/heures-cours/remplacements/:id/executer
+ * PATCH /api/emploi-du-temps/heures-cours/remplacements/:id/executer
  * Exécuter un remplacement validé (étape 2 : mise en œuvre → EXECUTEE)
  */
 router.patch(
@@ -113,7 +113,7 @@ router.patch(
 );
 
 /**
- * PATCH /api/personnel/heures-cours/remplacements/:id/rejeter
+ * PATCH /api/emploi-du-temps/heures-cours/remplacements/:id/rejeter
  * Rejeter une demande de remplacement
  */
 router.patch(
@@ -132,7 +132,7 @@ router.patch(
 );
 
 /**
- * PATCH /api/personnel/heures-cours/remplacements/:id/annuler
+ * PATCH /api/emploi-du-temps/heures-cours/remplacements/:id/annuler
  * Annuler une demande (par le demandeur)
  */
 router.patch(

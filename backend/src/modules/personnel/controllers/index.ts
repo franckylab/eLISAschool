@@ -3,8 +3,6 @@ export * from './contrat.controller';
 export * from './type-contrat.controller';
 export * from './affectation.controller';
 export * from './parcours-personnel.controller';
-export * from './heure-cours.controller';
-export * from './remplacement-heure-cours.controller';
 export * from './absence-personnel.controller';
 export * from './evaluation.controller';
 export * from './progression-programme.controller';

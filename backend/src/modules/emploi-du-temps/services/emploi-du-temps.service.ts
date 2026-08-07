@@ -13,7 +13,7 @@
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { HeureCours } from '@modules/personnel/entities';
+import { HeureCours } from '../entities';
 import {
     CreerCreneauDto,
     ModifierCreneauDto,
@@ -36,7 +36,7 @@ import {
     heureCoursService,
     ChangementsPropagation,
     RapportPropagation,
-} from '@modules/personnel/services';
+} from './heure-cours.service';
 import { Request } from 'express';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';

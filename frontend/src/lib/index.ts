@@ -36,5 +36,6 @@ export {
     ratioContraste,
     melangeCouleur,
     estCouleurClaire,
+    useModeTheme,
     type PaletteCreneau,
 } from './palette-creneau';

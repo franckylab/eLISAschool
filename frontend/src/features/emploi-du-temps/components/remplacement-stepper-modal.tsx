@@ -12,10 +12,10 @@ import { useTranslation } from 'react-i18next';
 import { CalendarClock, UserCheck, FileCheck } from 'lucide-react';
 import { StepperModal } from '@/components/modals/StepperModal';
 import type { StepperStep } from '@/components/modals/StepperModal';
-import { useHeureCoursList } from '@/features/personnel/hooks/use-heure-cours';
-import type { HeureCours } from '@/features/personnel/hooks/use-heure-cours';
+import { useHeureCoursList } from '../hooks/use-heure-cours';
+import type { HeureCours } from '../hooks/use-heure-cours';
 import { useEnseignantOptions } from '@/features/emploi-du-temps/hooks/use-emploi-du-temps';
-import { useCreerRemplacement } from '@/features/personnel/hooks/use-remplacement-heure-cours';
+import { useCreerRemplacement } from '../hooks/use-remplacement-heure-cours';
 import { Badge } from '@/components/ui';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 

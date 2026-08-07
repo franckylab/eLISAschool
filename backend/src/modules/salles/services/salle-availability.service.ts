@@ -2,7 +2,7 @@ import { Repository, LessThan, MoreThan } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Salle, StatutSalle } from '../entities';
 import { CreneauHoraire } from '@modules/emploi-du-temps/entities';
-import { HeureCours } from '@modules/personnel/entities';
+import { HeureCours } from '@modules/emploi-du-temps/entities';
 import { logger } from '@common/utils/logger.util';
 
 export interface ConflitSalle {

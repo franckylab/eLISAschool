@@ -5,9 +5,11 @@
  * Utilitaire de contraste et palette pour les créneaux du calendrier.
  * Garantit lisibilité et cohérence visuelle quelle que soit la couleur matière,
  * en mode clair comme sombre.
- * Version: 1.0.0
+ * Version: 1.1.0 — theme-aware (mode light/dark)
  * Auteur: franck arlos chendjou
  */
+
+import { useSyncExternalStore } from 'react';
 
 // ─── Conversion couleurs ─────────────────────────────────
 
@@ -89,13 +91,18 @@ export interface PaletteCreneau {
 
 /**
  * Génère une palette complète pour un créneau à partir de sa couleur matière.
+ * Theme-aware : adapte les surfaces selon le mode light/dark.
  *
  * @param couleur - Couleur hex de la matière (ex: `#DDA0DD`)
- * @param surface - Couleur de surface du thème (défaut: `#ffffff` light / `#1a2744` dark)
+ * @param surface - Couleur de surface du thème (défaut: auto selon mode)
+ * @param mode - 'light' | 'dark' (défaut: 'light') — ajuste les surfaces
  *
  * @example
  * ```ts
+ * // Light mode
  * const p = paletteCreneau('#DDA0DD');
+ * // Dark mode
+ * const p = paletteCreneau('#DDA0DD', undefined, 'dark');
  * // Month view:  bg={p.fondAssombri} color={p.texteSurFond}
  * // Week view:   bg={p.fondTeinte}   color={p.texteSurTeinte}
  * // Border:      borderLeft={p.bordure}
@@ -103,24 +110,34 @@ export interface PaletteCreneau {
  */
 export function paletteCreneau(
     couleur: string,
-    surface: string = '#ffffff',
+    surface?: string,
+    mode: 'light' | 'dark' = 'light',
 ): PaletteCreneau {
+    // Surfaces par défaut selon le mode
+    const surfaceDefaut = mode === 'dark' ? '#1e293b' : '#ffffff';
+    const surfaceUtilisee = surface ?? surfaceDefaut;
     // Surface sombre pour le calcul du fond assombri (garantit contraste avec blanc)
     const surfaceSombre = '#111827';
+
+    // Calcul du fond teinté
+    const fondTeinteCalc = melangeCouleur(couleur, 18, surfaceUtilisee);
+    // Calcul du fond assombri
+    const fondAssombriCalc = melangeCouleur(couleur, 60, surfaceSombre);
 
     return {
         base: couleur,
         // Tinte légère (18%) — fond de créneau en vue semaine/jour
-        fondTeinte: melangeCouleur(couleur, 18, surface),
+        fondTeinte: fondTeinteCalc,
         // Fond assombri (60% couleur + 40% noir) — contraste ≥ 4.5:1 avec blanc
-        fondAssombri: melangeCouleur(couleur, 60, surfaceSombre),
+        fondAssombri: fondAssombriCalc,
         // Texte auto selon le fond
-        texteSurFond: couleurTexteAuto(melangeCouleur(couleur, 60, surfaceSombre)),
-        texteSurTeinte: '#1f2937',
+        texteSurFond: couleurTexteAuto(fondAssombriCalc),
+        // Texte auto sur fond teinté (contraste WCAG)
+        texteSurTeinte: couleurTexteAuto(fondTeinteCalc),
         // Bordure (40% couleur + 60% surface)
-        bordure: melangeCouleur(couleur, 40, surface),
+        bordure: melangeCouleur(couleur, 40, surfaceUtilisee),
         // Badge très léger (10% couleur)
-        fondBadge: melangeCouleur(couleur, 10, surface),
+        fondBadge: melangeCouleur(couleur, 10, surfaceUtilisee),
     };
 }
 
@@ -130,4 +147,42 @@ export function paletteCreneau(
  */
 export function estCouleurClaire(hex: string): boolean {
     return luminanceRelative(hex) > 0.5;
+}
+
+// ─── Hook détection mode thème ────────────────────────────
+
+/**
+ * Hook pour détecter le mode thème actuel (light/dark).
+ * Utilise `data-theme` sur `<html>` + MutationObserver pour réactivité.
+ * Retourne 'light' | 'dark'.
+ */
+function subscribeThemeMode(callback: () => void): () => void {
+    const observer = new MutationObserver(callback);
+    observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-theme'],
+    });
+    return () => observer.disconnect();
+}
+
+function getThemeMode(): 'light' | 'dark' {
+    const theme = document.documentElement.getAttribute('data-theme');
+    if (theme === 'dark') return 'dark';
+    if (theme === 'light') return 'light';
+    // auto : détecter via prefers-color-scheme
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+/**
+ * Hook React : retourne le mode thème actuel ('light' | 'dark').
+ * Réactif aux changements de `data-theme` via MutationObserver.
+ *
+ * @example
+ * ```ts
+ * const mode = useModeTheme();
+ * const pal = paletteCreneau('#DDA0DD', undefined, mode);
+ * ```
+ */
+export function useModeTheme(): 'light' | 'dark' {
+    return useSyncExternalStore(subscribeThemeMode, getThemeMode, getThemeMode);
 }

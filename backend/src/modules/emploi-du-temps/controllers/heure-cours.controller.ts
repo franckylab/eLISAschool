@@ -18,7 +18,7 @@ const router = Router();
 const service = new HeureCoursService();
 
 /**
- * POST /api/personnel/heures-cours/generer-from-edt
+ * POST /api/emploi-du-temps/heures-cours/generer-from-edt
  * Générer des HeureCours depuis les créneaux EDT
  * Déclarée AVANT POST / pour éviter les conflits Express Router
  */
@@ -38,7 +38,7 @@ router.post(
 );
 
 /**
- * POST /api/personnel/heures-cours
+ * POST /api/emploi-du-temps/heures-cours
  * Créer un nouveau créneau de cours
  */
 router.post(
@@ -57,7 +57,7 @@ router.post(
 );
 
 /**
- * GET /api/personnel/heures-cours/statistiques-globales
+ * GET /api/emploi-du-temps/heures-cours/statistiques-globales
  * Statistiques agrégées pour la page Heures de cours
  */
 router.get(
@@ -80,7 +80,7 @@ router.get(
 );
 
 /**
- * GET /api/personnel/heures-cours/export/csv
+ * GET /api/emploi-du-temps/heures-cours/export/csv
  * Export CSV des heures de cours
  */
 router.get(
@@ -99,7 +99,7 @@ router.get(
 );
 
 /**
- * GET /api/personnel/heures-cours/export/html
+ * GET /api/emploi-du-temps/heures-cours/export/html
  * Export HTML des heures de cours (formaté pour impression)
  */
 router.get(
@@ -117,7 +117,7 @@ router.get(
 );
 
 /**
- * GET /api/personnel/heures-cours
+ * GET /api/emploi-du-temps/heures-cours
  * Lister tous les créneaux avec pagination
  */
 router.get(
@@ -136,7 +136,7 @@ router.get(
 );
 
 /**
- * GET /api/personnel/heures-cours/enseignants/:id/edt
+ * GET /api/emploi-du-temps/heures-cours/enseignants/:id/edt
  * Obtenir l'emploi du temps hebdomadaire d'un enseignant
  * DOIT être déclarée AVANT /:id pour éviter que 'enseignants' soit capté comme :id
  */
@@ -162,7 +162,7 @@ router.get(
 );
 
 /**
- * GET /api/personnel/enseignants/:id/volume-horaire
+ * GET /api/emploi-du-temps/heures-cours/enseignants/:id/volume-horaire
  * Calculer le volume horaire hebdomadaire d'un enseignant
  */
 router.get(
@@ -196,7 +196,7 @@ router.get(
 );
 
 /**
- * GET /api/personnel/enseignants/:id/resume-mensuel/:annee/:mois
+ * GET /api/emploi-du-temps/heures-cours/enseignants/:id/resume-mensuel/:annee/:mois
  * Obtenir le résumé mensuel des heures d'un enseignant
  */
 router.get(
@@ -229,7 +229,7 @@ router.get(
 );
 
 /**
- * GET /api/personnel/heures-cours/:id
+ * GET /api/emploi-du-temps/heures-cours/:id
  * Récupérer un créneau par son ID
  * Doit être APRÈS les routes /enseignants/ pour éviter les conflits
  */
@@ -248,7 +248,7 @@ router.get(
 );
 
 /**
- * PATCH /api/personnel/heures-cours/:id
+ * PATCH /api/emploi-du-temps/heures-cours/:id
  * Mettre à jour un créneau
  */
 router.patch(
@@ -273,7 +273,7 @@ router.patch(
 );
 
 /**
- * DELETE /api/personnel/heures-cours/:id
+ * DELETE /api/emploi-du-temps/heures-cours/:id
  * Supprimer un créneau
  */
 router.delete(

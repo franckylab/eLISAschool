@@ -18,9 +18,9 @@ import {
 import {
     useResumeMensuel, useGenererHeuresCoursFromEdt,
     useHeureCoursList, useUpdateHeureCours,
-} from '../hooks/use-heure-cours';
-import type { HeureCours } from '../hooks/use-heure-cours';
-import { HeureCoursFormModal } from './heure-cours-form-modal';
+} from '@/features/emploi-du-temps/hooks/use-heure-cours';
+import type { HeureCours } from '@/features/emploi-du-temps/hooks/use-heure-cours';
+import { HeureCoursFormModal } from '@/features/emploi-du-temps/components/heure-cours-form-modal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { CardGrid } from '@/components/ui/CardGrid';
 import { StatCard } from '@/components/ui/StatCard';

@@ -17,7 +17,7 @@ import { logger } from '@common/utils/logger.util';
 import { Etablissement } from '@modules/etablissement/entities';
 import { PreferenceEmploiDuTemps, MaterialisationAutoConfig } from './entities';
 import { JourSemaine } from './entities';
-import { heureCoursService } from '@modules/personnel/services';
+import { heureCoursService } from './services/heure-cours.service';
 
 /** Horaires par défaut quand aucun config matérialisationAuto en base */
 export const DEFAULT_MATERIALISATION_AUTO: MaterialisationAutoConfig = {

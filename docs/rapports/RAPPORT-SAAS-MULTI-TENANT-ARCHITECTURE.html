@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eLISAschool — Rapport Architecture SaaS Multi-Tenant</title>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --accent: #10b981;
+    --accent-dark: #059669;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --surface: #ffffff;
+    --surface-alt: #f8fafc;
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.06);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    background: var(--surface-alt);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Navigation */
+  .nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nav-brand {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .nav-brand span {
+    background: var(--primary);
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 0.25rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .nav-links::-webkit-scrollbar { display: none; }
+
+  .nav-links a {
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+
+  .nav-links a:hover, .nav-links a.active {
+    background: var(--primary);
+    color: white;
+  }
+
+  /* Hero */
+  .hero {
+    margin-top: 56px;
+    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #10b981 100%);
+    padding: 4rem 2rem 3rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  .hero-content {
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 0.35rem 0.9rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+  }
+
+  .hero p {
+    font-size: clamp(0.95rem, 2vw, 1.1rem);
+    opacity: 0.9;
+    max-width: 640px;
+    line-height: 1.7;
+  }
+
+  .hero-meta {
+    display: flex;
+    gap: 2rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .hero-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .hero-meta-item .label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.7;
+  }
+
+  .hero-meta-item .value {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  /* Sections */
+  .section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+  }
+
+  .section-header {
+    margin-bottom: 2rem;
+  }
+
+  .section-header h2 {
+    font-size: clamp(1.3rem, 3vw, 1.75rem);
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .section-header h2 .num {
+    background: var(--primary);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .section-header p {
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.2s;
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-lg);
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .card-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+
+  .card p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* Verdict Banner */
+  .verdict {
+    background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+    border: 1px solid #bbf7d0;
+    border-radius: var(--radius);
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .verdict-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--accent);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    color: white;
+  }
+
+  .verdict h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #166534;
+    margin-bottom: 0.3rem;
+  }
+
+  .verdict p {
+    font-size: 0.9rem;
+    color: #15803d;
+    line-height: 1.6;
+  }
+
+  /* Architecture Diagram */
+  .arch-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+
+  .arch-layers {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 600px;
+  }
+
+  .arch-layer {
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    position: relative;
+  }
+
+  .arch-layer-label {
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    background: var(--surface);
+    padding: 0 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+  }
+
+  .arch-layer-content {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .arch-box {
+    padding: 0.5rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: 1px solid;
+  }
+
+  .arch-box.blue { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+  .arch-box.green { background: #ecfdf5; border-color: #bbf7d0; color: #166534; }
+  .arch-box.amber { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+  .arch-box.purple { background: #f5f3ff; border-color: #ddd6fe; color: #5b21b6; }
+  .arch-box.red { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+  .arch-box.gray { background: #f8fafc; border-color: #e2e8f0; color: #475569; }
+
+  .arch-arrow {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    padding: 0.25rem 0;
+  }
+
+  /* Table */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  th {
+    background: var(--surface-alt);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  /* Status badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  .badge.green { background: #ecfdf5; color: #166534; }
+  .badge.amber { background: #fffbeb; color: #92400e; }
+  .badge.red { background: #fef2f2; color: #991b1b; }
+  .badge.blue { background: #eff6ff; color: #1d4ed8; }
+  .badge.purple { background: #f5f3ff; color: #5b21b6; }
+
+  /* Roadmap Timeline */
+  .timeline {
+    position: relative;
+    padding-left: 2rem;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--primary), var(--accent));
+    border-radius: 2px;
+  }
+
+  .timeline-item {
+    position: relative;
+    padding-bottom: 2rem;
+  }
+
+  .timeline-item:last-child { padding-bottom: 0; }
+
+  .timeline-dot {
+    position: absolute;
+    left: -2rem;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid var(--primary);
+    background: var(--surface);
+    z-index: 1;
+  }
+
+  .timeline-item.completed .timeline-dot {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .timeline-phase {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--primary);
+    margin-bottom: 0.25rem;
+  }
+
+  .timeline-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+  }
+
+  .timeline-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .timeline-tasks {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .timeline-task {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  /* Comparison */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+
+  @media (max-width: 768px) {
+    .compare-grid { grid-template-columns: 1fr; }
+  }
+
+  .compare-card {
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    border: 1px solid;
+  }
+
+  .compare-card.current {
+    background: #fffbeb;
+    border-color: #fde68a;
+  }
+
+  .compare-card.target {
+    background: #ecfdf5;
+    border-color: #bbf7d0;
+  }
+
+  .compare-card h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .compare-card ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .compare-card li {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    line-height: 1.5;
+  }
+
+  .compare-card li::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+
+  .compare-card.current li::before { background: var(--warning); }
+  .compare-card.target li::before { background: var(--accent); }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--primary);
+  }
+
+  .stat-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-top: 0.15rem;
+  }
+
+  /* Risk matrix */
+  .risk-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    background: var(--surface);
+  }
+
+  .risk-level {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+
+  .risk-level.high { background: var(--danger); }
+  .risk-level.medium { background: var(--warning); }
+  .risk-level.low { background: var(--accent); }
+
+  .risk-content h4 {
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+  }
+
+  .risk-content p {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+  }
+
+  /* Separator */
+  .sep {
+    height: 1px;
+    background: var(--border);
+    margin: 2rem 0;
+  }
+
+  /* Footer */
+  .footer {
+    background: var(--text);
+    color: rgba(255,255,255,0.7);
+    padding: 2rem;
+    text-align: center;
+    font-size: 0.8rem;
+  }
+
+  .footer strong { color: white; }
+
+  /* Code block */
+  .code-block {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.78rem;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin: 0.75rem 0;
+  }
+
+  .code-block .comment { color: #64748b; }
+  .code-block .keyword { color: #7dd3fc; }
+  .code-block .string { color: #86efac; }
+  .code-block .type { color: #c4b5fd; }
+
+  /* Flow diagram */
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 0.75rem 0;
+  }
+
+  .flow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .flow-arrow {
+    color: var(--text-muted);
+    font-size: 1rem;
+  }
+
+  /* Highlight box */
+  .highlight-box {
+    background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+    border: 1px solid #c7d2fe;
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin: 1rem 0;
+  }
+
+  .highlight-box h4 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin-bottom: 0.4rem;
+  }
+
+  .highlight-box p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* Print */
+  @media print {
+    .nav { display: none; }
+    .hero { margin-top: 0; }
+    .section { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+  <div class="nav-brand">
+    <span>eS</span>
+    eLISAschool — Rapport SaaS
+  </div>
+  <div class="nav-links">
+    <a href="#etat-lieux">État des lieux</a>
+    <a href="#faisabilité">Faisabilité</a>
+    <a href="#architecture">Architecture cible</a>
+    <a href="#implementation">Implémentation</a>
+    <a href="#roadmap">Roadmap</a>
+    <a href="#risques">Risques</a>
+    <a href="#recommandations">Recommandations</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Rapport d'architecture
+    </div>
+    <h1>Transformation SaaS Multi-Tenant d'eLISAschool</h1>
+    <p>Analyse approfondie de l'architecture actuelle, évaluation de la faisabilité, et proposition d'une architecture hybride multi-instance + multi-tenant pour le modèle SaaS B2B scolaire.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <span class="label">Date</span>
+        <span class="value">7 août 2026</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="label">Version</span>
+        <span class="value">1.0</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="label">Statut</span>
+        <span class="value">Analyse complète</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="label">Complexité</span>
+        <span class="value">Élevée — 6 phases</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Section 1: État des lieux -->
+<section class="section" id="etat-lieux">
+  <div class="section-header">
+    <h2><span class="num">1</span> État des lieux — Architecture actuelle</h2>
+    <p>Analyse du système multi-tenant existant d'eLISAschool et de ses composants SaaS-ready.</p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value">1</div>
+      <div class="stat-label">Base de données</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">N</div>
+      <div class="stat-label">Établissements</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">67</div>
+      <div class="stat-label">Rôles RBAC</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">15+</div>
+      <div class="stat-label">Modules activables</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">UUID</div>
+      <div class="stat-label">Isolation par FK</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <h3 style="margin-bottom: 0.75rem;">Modèle actuel : Shared Schema (single database)</h3>
+    <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7;">
+      eLISAschool utilise un modèle <strong>shared schema</strong> : une seule base PostgreSQL, toutes les tables contiennent une colonne <code>etablissementId</code> (UUID) qui assure l'isolation multi-tenant. Chaque requête est filtrée par ce champ via des middlewares globaux.
+    </p>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-icon" style="background: #eff6ff; color: #1d4ed8;">&#128274;</div>
+      <h3>Isolation par middleware</h3>
+      <p><code>tenant.middleware.ts</code> résout l'etablissementId depuis le JWT et force le filtrage sur toutes les requêtes API. Détection de cross-tenant avec log de violation.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: #ecfdf5; color: #166534;">&#128101;</div>
+      <h3>Multi-établissement utilisateur</h3>
+      <p>Table <code>UtilisateurEtablissement</code> permet à un utilisateur d'accéder à N établissements avec des rôles différents par établissement.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: #f5f3ff; color: #5b21b6;">&#9881;</div>
+      <h3>Modules activables</h3>
+      <p><code>ParametreSysteme</code> scopé (NULL = global, UUID = établissement). Middleware <code>requireModuleActive()</code> protège les routes par module.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: #fffbeb; color: #92400e;">&#128200;</div>
+      <h3>Quotas SaaS (existant)</h3>
+      <p><code>EtablissementConfig</code> stocke déjà : maxEleves, maxUtilisateurs, maxClasses, stockageMaxMB, planAbonnement, dateExpiration.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: #fef2f2; color: #991b1b;">&#128268;</div>
+      <h3>Configuration scopée</h3>
+      <p><code>ParametreSysteme</code> avec override établissement : un paramètre global peut être surchargé par établissement (priorité cascade).</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: #f0fdf4; color: #166534;">&#128279;</div>
+      <h3>Switch établissement</h3>
+      <p>Flow complet : login → détection multi-établissement → sélection → JWT scopé. <code>EtablissementSwitcher</code> dans le header frontend.</p>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- Section 2: Faisabilité -->
+<section class="section" id="faisabilité">
+  <div class="section-header">
+    <h2><span class="num">2</span> Évaluation de faisabilité SaaS</h2>
+    <p>Le modèle proposé est-il compatible avec l'architecture existante ?</p>
+  </div>
+
+  <div class="verdict">
+    <div class="verdict-icon">&#10003;</div>
+    <div>
+      <h3>Verdict : Faisable — Migration progressive recommandée</h3>
+      <p>L'architecture actuelle d'eLISAschool est <strong>pré-saaS</strong> : l'isolation multi-tenant par <code>etablissementId</code>, les quotas (<code>EtablissementConfig</code>), les modules activables et le RBAC granulaire constituent une base solide. La transition vers un modèle hybride (catalog + database-per-instance) est réalisable sans réécriture complète.</p>
+    </div>
+  </div>
+
+  <div class="compare-grid">
+    <div class="compare-card current">
+      <h3>&#9888;&#65039; Architecture actuelle</h3>
+      <ul>
+        <li>1 base PostgreSQL partagée</li>
+        <li>Isolation par colonne <code>etablissementId</code></li>
+        <li>Tous les clients dans la même DB</li>
+        <li>Pas de séparation par souscripteur</li>
+        <li>Pas de catalogue de tenants</li>
+        <li>Pas de provisioning automatique</li>
+        <li>Pas de facturation intégrée</li>
+        <li>Modules activables par établissement (pas par instance)</li>
+      </ul>
+    </div>
+    <div class="compare-card target">
+      <h3>&#9989; Architecture cible SaaS</h3>
+      <ul>
+        <li>1 base catalogue + N bases instances</li>
+        <li>1 souscripteur = 1 instance (1..N établissements)</li>
+        <li>Isolation physique des données clients</li>
+        <li>Multi-tenant par établissement dans chaque instance</li>
+        <li>Catalogue central (routing, billing, provisioning)</li>
+        <li>Provisioning automatique à l'inscription</li>
+        <li>Facturation Stripe intégrée</li>
+        <li>Modules activables par instance (feature flags)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="highlight-box" style="margin-top: 1.5rem;">
+    <h4>Modèle proposé par le porteur de projet</h4>
+    <p>
+      <strong>Client (souscripteur)</strong> → souscrit à un plan → obtient <strong>1 instance</strong> (base de données dédiée).<br>
+      <strong>Instance</strong> → contient <strong>1 à N établissements</strong> (selon le plan) avec isolation multi-tenant interne.<br>
+      <strong>Modules</strong> → activables/désactivables par instance via feature flags.<br>
+      <strong>Catalogue central</strong> → route les utilisateurs vers la bonne instance, gère la facturation et le provisioning.
+    </p>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- Section 3: Architecture cible -->
+<section class="section" id="architecture">
+  <div class="section-header">
+    <h2><span class="num">3</span> Architecture cible — Hybride Multi-Instance + Multi-Tenant</h2>
+    <p>Structure optimisée combinant isolation physique (database-per-instance) et isolation logique (etablissementId) dans chaque instance.</p>
+  </div>
+
+  <!-- Diagramme architecture -->
+  <div class="arch-diagram">
+    <div class="arch-layers">
+      <!-- Couche Presentation -->
+      <div class="arch-layer" style="border-color: #bfdbfe;">
+        <span class="arch-layer-label" style="color: #1d4ed8;">Présentation</span>
+        <div class="arch-layer-content">
+          <div class="arch-box blue">Frontend React (SPA)</div>
+          <div class="arch-box blue">EtablissementSwitcher</div>
+          <div class="arch-box blue">Tenant Router (login)</div>
+          <div class="arch-box blue">Portal Admin (souscripteur)</div>
+        </div>
+      </div>
+
+      <div class="arch-arrow">&#8595;</div>
+
+      <!-- Couche Gateway -->
+      <div class="arch-layer" style="border-color: #c4b5fd;">
+        <span class="arch-layer-label" style="color: #5b21b6;">Gateway / Routing</span>
+        <div class="arch-layer-content">
+          <div class="arch-box purple">API Gateway (Express)</div>
+          <div class="arch-box purple">Tenant Resolver (JWT + catalog)</div>
+          <div class="arch-box purple">Rate Limiter</div>
+          <div class="arch-box purple">Auth Middleware</div>
+        </div>
+      </div>
+
+      <div class="arch-arrow">&#8595;</div>
+
+      <!-- Couche Catalog -->
+      <div class="arch-layer" style="border-color: #fde68a;">
+        <span class="arch-layer-label" style="color: #92400e;">Base Catalogue (shared)</span>
+        <div class="arch-layer-content">
+          <div class="arch-box amber">Souscripteurs</div>
+          <div class="arch-box amber">Instances (DB routing)</div>
+          <div class="arch-box amber">Abonnements & Plans</div>
+          <div class="arch-box amber">Feature Flags</div>
+          <div class="arch-box amber">Facturation (Stripe)</div>
+          <div class="arch-box amber">Utilisateurs globaux</div>
+        </div>
+      </div>
+
+      <div class="arch-arrow">&#8595; connexion dynamique par instance</div>
+
+      <!-- Couche Instance -->
+      <div class="arch-layer" style="border-color: #bbf7d0;">
+        <span class="arch-layer-label" style="color: #166534;">Base Instance (per client — N établissements)</span>
+        <div class="arch-layer-content">
+          <div class="arch-box green">Établissements</div>
+          <div class="arch-box green">Élèves / Notes / Bulletins</div>
+          <div class="arch-box green">Personnel / Paie</div>
+          <div class="arch-box green">EDT / Heures cours</div>
+          <div class="arch-box green">Organisation</div>
+          <div class="arch-box green">Configuration</div>
+          <div class="arch-box green">... tous modules</div>
+        </div>
+      </div>
+
+      <div class="arch-arrow">&#8593; isolation interne par etablissementId</div>
+
+      <!-- Couche Infrastructure -->
+      <div class="arch-layer" style="border-color: #e2e8f0;">
+        <span class="arch-layer-label">Infrastructure</span>
+        <div class="arch-layer-content">
+          <div class="arch-box gray">PostgreSQL (1 catalog + N instances)</div>
+          <div class="arch-box gray">Redis (cache + sessions)</div>
+          <div class="arch-box gray">PgBouncer (connection pooling)</div>
+          <div class="arch-box gray">S3/MinIO (stockage fichiers)</div>
+          <div class="arch-box gray">Cron jobs (par instance)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flux de connexion -->
+  <h3 style="font-size: 1rem; font-weight: 600; margin: 2rem 0 1rem;">Flux de connexion utilisateur</h3>
+  <div class="flow-row">
+    <div class="flow-step">&#128100; Login (email)</div>
+    <span class="flow-arrow">&#8594;</span>
+    <div class="flow-step">&#128270; Catalog : trouver instance</div>
+    <span class="flow-arrow">&#8594;</span>
+    <div class="flow-step">&#128274; JWT avec instanceId</div>
+    <span class="flow-arrow">&#8594;</span>
+    <div class="flow-step">&#128268; Connexion DB instance</div>
+    <span class="flow-arrow">&#8594;</span>
+    <div class="flow-step">&#127979; Sélection établissement</div>
+    <span class="flow-arrow">&#8594;</span>
+    <div class="flow-step" style="border-color: var(--accent); color: var(--accent-dark);">&#9989; Application</div>
+  </div>
+
+  <!-- Entités catalogue -->
+  <h3 style="font-size: 1rem; font-weight: 600; margin: 2rem 0 1rem;">Entités de la base catalogue</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Entité</th>
+          <th>Champs clés</th>
+          <th>Rôle</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Souscripteur</strong></td>
+          <td>id, nom, email, telephone, siret, dateCreation</td>
+          <td>Client B2B (groupe scolaire, école, institution)</td>
+        </tr>
+        <tr>
+          <td><strong>Instance</strong></td>
+          <td>id, souscripteurId, dbHost, dbName, dbPort, statut, planId, dateCreation, dateExpiration</td>
+          <td>Environnement dédié (1 base PostgreSQL). Routing DB.</td>
+        </tr>
+        <tr>
+          <td><strong>Plan</strong></td>
+          <td>id, nom, slug, maxEtablissements, maxEleves, maxUtilisateurs, modulesInclus[], prix, stripePriceId</td>
+          <td>Définit les quotas et modules disponibles</td>
+        </tr>
+        <tr>
+          <td><strong>Abonnement</strong></td>
+          <td>id, instanceId, planId, statut, stripeSubscriptionId, dateDebut, dateFin, renouvellementAuto</td>
+          <td>Lien Stripe ↔ Instance. Cycle de vie facturation.</td>
+        </tr>
+        <tr>
+          <td><strong>FeatureFlag</strong></td>
+          <td>id, instanceId, moduleNom, actif, activeLe, activePar</td>
+          <td>Activation/désactivation modules par instance</td>
+        </tr>
+        <tr>
+          <td><strong>UtilisateurGlobal</strong></td>
+          <td>id, email, passwordHash, souscripteurId, role (admin_instance, user), dernierInstanceId</td>
+          <td>Authentification globale. Route vers la bonne instance.</td>
+        </tr>
+        <tr>
+          <td><strong>UsageMetrique</strong></td>
+          <td>id, instanceId, date, nbEleves, nbUtilisateurs, stockageUtiliseMB, nbRequetesApi</td>
+          <td>Métriques pour billing et alertes quota</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- Section 4: Implémentation -->
+<section class="section" id="implementation">
+  <div class="section-header">
+    <h2><span class="num">4</span> Stratégie d'implémentation</h2>
+    <p>Approche progressive en 6 phases pour minimiser les risques et livrer de la valeur à chaque étape.</p>
+  </div>
+
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <h3>Principe directeur : Migration progressive (Strangler Fig)</h3>
+    <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7; margin-top: 0.5rem;">
+      L'architecture existante reste opérationnelle pendant la migration. Chaque phase ajoute une couche sans casser le système actuel. Le pattern <strong>Strangler Fig</strong> permet de remplacer progressivement les composants monolithiques par les composants SaaS.
+    </p>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-icon" style="background: #eff6ff; color: #1d4ed8;">P1</div>
+      <h3>Phase 1 — Catalogue</h3>
+      <p>Créer la base catalogue avec les entités Souscripteur, Instance, Plan, Abonnement. Ajouter le <code>InstanceResolver</code> qui détermine la DB cible depuis le JWT.</p>
+      <div style="margin-top: 0.75rem;">
+        <span class="badge blue">~2 semaines</span>
+        <span class="badge green">Risque faible</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: #ecfdf5; color: #166534;">P2</div>
+      <h3>Phase 2 — Connection Pool dynamique</h3>
+      <p>Implémenter le <code>ConnectionManager</code> : pool de connexions par instance, cache LRU, health checks, fallback. TypeORM supporte les <code>DataSource</code> multiples.</p>
+      <div style="margin-top: 0.75rem;">
+        <span class="badge blue">~2 semaines</span>
+        <span class="badge amber">Risque moyen</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: #f5f3ff; color: #5b21b6;">P3</div>
+      <h3>Phase 3 — Provisioning</h3>
+      <p>Automatiser la création d'instance : clone DB template, exécute migrations, crée le premier admin, enregistre dans le catalogue. Script <code>provision-instance.ts</code>.</p>
+      <div style="margin-top: 0.75rem;">
+        <span class="badge blue">~1.5 semaines</span>
+        <span class="badge amber">Risque moyen</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: #fffbeb; color: #92400e;">P4</div>
+      <h3>Phase 4 — Feature Flags</h3>
+      <p>Remplacer <code>ParametreSysteme</code> pour les modules par les <code>FeatureFlags</code> du catalogue. Middleware <code>requireModuleActive()</code> lit désormais le catalogue (cache Redis 5min).</p>
+      <div style="margin-top: 0.75rem;">
+        <span class="badge blue">~1 semaine</span>
+        <span class="badge green">Risque faible</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: #fef2f2; color: #991b1b;">P5</div>
+      <h3>Phase 5 — Billing Stripe</h3>
+      <p>Intégrer Stripe : webhooks (invoice.paid, customer.subscription.deleted), portal client, upgrade/downgrade de plan, trial period, prorata.</p>
+      <div style="margin-top: 0.75rem;">
+        <span class="badge blue">~2 semaines</span>
+        <span class="badge red">Risque élevé</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background: #f0fdf4; color: #166534;">P6</div>
+      <h3>Phase 6 — Portal Admin + Migration données</h3>
+      <p>Dashboard souscripteur (usage, factures, settings). Outil de migration des données existantes vers des instances séparées. Monitoring par instance.</p>
+      <div style="margin-top: 0.75rem;">
+        <span class="badge blue">~3 semaines</span>
+        <span class="badge amber">Risque moyen</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+
+  <!-- Détails techniques Phase 1-2 -->
+  <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Détail technique — Connection Manager</h3>
+
+  <div class="code-block">
+<span class="comment">// backend/src/common/database/connection-manager.ts</span>
+
+<span class="keyword">export class</span> <span class="type">ConnectionManager</span> {
+  <span class="keyword">private</span> pools = <span class="keyword">new</span> Map&lt;<span class="type">string</span>, DataSource&gt;();
+  <span class="keyword">private</span> catalogRepo: Repository&lt;Instance&gt;;
+  <span class="keyword">private</span> <span class="keyword">readonly</span> MAX_POOLS = <span class="string">50</span>;  <span class="comment">// LRU eviction</span>
+
+  <span class="keyword">async</span> getConnection(instanceId: <span class="type">string</span>): Promise&lt;DataSource&gt; {
+    <span class="comment">// 1. Cache hit</span>
+    <span class="keyword">if</span> (<span class="keyword">this</span>.pools.has(instanceId)) {
+      <span class="keyword">return this</span>.pools.get(instanceId)!;
+    }
+
+    <span class="comment">// 2. LRU eviction si limite atteinte</span>
+    <span class="keyword">if</span> (<span class="keyword">this</span>.pools.size >= <span class="keyword">this</span>.MAX_POOLS) {
+      <span class="keyword">await this</span>.evictLeastUsed();
+    }
+
+    <span class="comment">// 3. Charger config depuis catalogue</span>
+    <span class="keyword">const</span> instance = <span class="keyword">await this</span>.catalogRepo.findOne({
+      where: { id: instanceId, statut: <span class="string">'ACTIF'</span> }
+    });
+
+    <span class="comment">// 4. Créer DataSource dynamique</span>
+    <span class="keyword">const</span> ds = <span class="keyword">new</span> DataSource({
+      type: <span class="string">'postgres'</span>,
+      host: instance.dbHost,
+      port: instance.dbPort,
+      database: instance.dbName,
+      username: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      synchronize: <span class="keyword">false</span>,  <span class="comment">// JAMAIS en prod</span>
+      entities: [/* mêmes entités */],
+    });
+
+    <span class="keyword">await</span> ds.initialize();
+    <span class="keyword">this</span>.pools.set(instanceId, ds);
+    <span class="keyword">return</span> ds;
+  }
+}
+  </div>
+
+  <div class="highlight-box">
+    <h4>Middleware de résolution d'instance</h4>
+    <p>
+      Le JWT contient désormais un claim <code>instanceId</code>. Le middleware <code>resolveInstance</code> (appliqué globalement) récupère la connexion DataSource correspondante via le ConnectionManager et l'attache à <code>req.dataSource</code>. Tous les repositories utilisent cette connexion dynamique au lieu du DataSource global.
+    </p>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- Section 5: Roadmap -->
+<section class="section" id="roadmap">
+  <div class="section-header">
+    <h2><span class="num">5</span> Roadmap de mise en œuvre</h2>
+    <p>Planning estimé pour une équipe de 2 développeurs. Total : ~11.5 semaines.</p>
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-item completed">
+      <div class="timeline-dot"></div>
+      <div class="timeline-phase">Phase 1 — Semaines 1-2</div>
+      <div class="timeline-title">Base catalogue + Entités fondamentales</div>
+      <div class="timeline-desc">Création de la base catalogue PostgreSQL séparée. Entités Souscripteur, Instance, Plan, Abonnement, FeatureFlag, UtilisateurGlobal. Migration SQL + seeds (3 plans : Starter, Pro, Enterprise).</div>
+      <div class="timeline-tasks">
+        <span class="timeline-task">Schema catalogue SQL</span>
+        <span class="timeline-task">Entités TypeORM</span>
+        <span class="timeline-task">Seeds plans</span>
+        <span class="timeline-task">API CRUD souscripteurs</span>
+        <span class="timeline-task">Tests unitaires</span>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-phase">Phase 2 — Semaines 3-4</div>
+      <div class="timeline-title">Connection Manager + Tenant Resolver</div>
+      <div class="timeline-desc">Pool dynamique de connexions par instance. Middleware de résolution (JWT instanceId → DataSource). Cache LRU avec eviction. Health checks périodiques. Migration du code existant pour utiliser req.dataSource.</div>
+      <div class="timeline-tasks">
+        <span class="timeline-task">ConnectionManager</span>
+        <span class="timeline-task">LRU cache</span>
+        <span class="timeline-task">resolveInstance middleware</span>
+        <span class="timeline-task">Refactor repositories</span>
+        <span class="timeline-task">Tests intégration</span>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-phase">Phase 3 — Semaine 5-6</div>
+      <div class="timeline-title">Provisioning automatique</div>
+      <div class="timeline-desc">Script de provisioning : crée DB, applique migrations, seed données de base, crée admin instance, enregistre dans catalogue. Template DB pour clone rapide. Rollback en cas d'échec.</div>
+      <div class="timeline-tasks">
+        <span class="timeline-task">provision-instance.ts</span>
+        <span class="timeline-task">DB template clone</span>
+        <span class="timeline-task">Migration runner</span>
+        <span class="timeline-task">Admin creator</span>
+        <span class="timeline-task">Rollback handler</span>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-phase">Phase 4 — Semaine 7</div>
+      <div class="timeline-title">Feature Flags + Modules par instance</div>
+      <div class="timeline-desc">Migration du système de modules vers les FeatureFlags du catalogue. Cache Redis 5min. API toggle pour admin instance. Compatibilité descendante avec ParametreSysteme existant.</div>
+      <div class="timeline-tasks">
+        <span class="timeline-task">FeatureFlag entity</span>
+        <span class="timeline-task">Migration middleware</span>
+        <span class="timeline-task">Cache Redis</span>
+        <span class="timeline-task">API toggle</span>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-phase">Phase 5 — Semaines 8-9</div>
+      <div class="timeline-title">Billing Stripe + Portail souscripteur</div>
+      <div class="timeline-desc">Intégration Stripe : checkout, webhooks, customer portal. Upgrade/downgrade de plan. Gestion trial. Alertes quota (80%, 95%, 100%). Dashboard souscripteur basique.</div>
+      <div class="timeline-tasks">
+        <span class="timeline-task">Stripe checkout</span>
+        <span class="timeline-task">Webhooks</span>
+        <span class="timeline-task">Customer portal</span>
+        <span class="timeline-task">Quota alerts</span>
+        <span class="timeline-task">Dashboard souscripteur</span>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-phase">Phase 6 — Semaines 10-12</div>
+      <div class="timeline-title">Monitoring + Migration données + Hardening</div>
+      <div class="timeline-desc">Dashboard admin global (toutes instances). Métriques usage par instance. Outil migration données existantes → instances. Tests charge. Documentation ops. Runbook incident.</div>
+      <div class="timeline-tasks">
+        <span class="timeline-task">Admin dashboard</span>
+        <span class="timeline-task">Usage metrics</span>
+        <span class="timeline-task">Data migration tool</span>
+        <span class="timeline-task">Load testing</span>
+        <span class="timeline-task">Documentation</span>
+        <span class="timeline-task">Runbook</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- Section 6: Risques -->
+<section class="section" id="risques">
+  <div class="section-header">
+    <h2><span class="num">6</span> Analyse des risques</h2>
+    <p>Risques identifiés et stratégies de mitigation.</p>
+  </div>
+
+  <div class="risk-item">
+    <div class="risk-level high"></div>
+    <div class="risk-content">
+      <h4>Fuite de données inter-instances <span class="badge red" style="margin-left: 0.5rem;">Critique</span></h4>
+      <p>Un bug dans le ConnectionManager pourrait servir les données de l'instance A à l'utilisateur de l'instance B. <strong>Mitigation</strong> : tests d'intégration systématiques avec 3+ instances, middleware de vérification croisée, audit logs de chaque requête DB.</p>
+    </div>
+  </div>
+
+  <div class="risk-item">
+    <div class="risk-level high"></div>
+    <div class="risk-content">
+      <h4>Connection pool exhaustion <span class="badge red" style="margin-left: 0.5rem;">Critique</span></h4>
+      <p>Avec 50+ instances actives, le nombre de connexions PostgreSQL peut dépasser les limites serveur. <strong>Mitigation</strong> : PgBouncer en mode transaction, LRU eviction agressive, limite de connexions par pool (max 5/instance), monitoring alertes.</p>
+    </div>
+  </div>
+
+  <div class="risk-item">
+    <div class="risk-level medium"></div>
+    <div class="risk-content">
+      <h4>Migration des données existantes <span class="badge amber" style="margin-left: 0.5rem;">Élevé</span></h4>
+      <p>Transférer les données de la DB unique vers des instances séparées sans perte ni temps d'arrêt prolongé. <strong>Mitigation</strong> : outil de migration avec dry-run, validation checksum, rollback possible, fenêtre de maintenance planifiée.</p>
+    </div>
+  </div>
+
+  <div class="risk-item">
+    <div class="risk-level medium"></div>
+    <div class="risk-content">
+      <h4>Complexité opérationnelle <span class="badge amber" style="margin-left: 0.5rem;">Élevé</span></h4>
+      <p>Gérer N bases de données (backups, migrations schema, monitoring) au lieu d'une seule. <strong>Mitigation</strong> : scripts automatisés de backup par instance, migration runner centralisé, dashboard monitoring unifié, alertes Prometheus/Grafana.</p>
+    </div>
+  </div>
+
+  <div class="risk-item">
+    <div class="risk-level low"></div>
+    <div class="risk-content">
+      <h4>Coût infrastructure <span class="badge green" style="margin-left: 0.5rem;">Modéré</span></h4>
+      <p>N bases PostgreSQL coûtent plus cher qu'une seule (stockage, RAM, CPU). <strong>Mitigation</strong> : PostgreSQL schema-per-tenant comme option intermédiaire pour les petits clients, database-per-tenant uniquement pour les plans Pro/Enterprise. Mutualisation via schemas partagés.</p>
+    </div>
+  </div>
+
+  <div class="risk-item">
+    <div class="risk-level low"></div>
+    <div class="risk-content">
+      <h4>Latence multi-DB <span class="badge green" style="margin-left: 0.5rem;">Modéré</span></h4>
+      <p>Changer de connexion DB à chaque requête ajoute une latence. <strong>Mitigation</strong> : pool persistant (pas de re-connexion), Redis pour les données fréquemment lues, connexion pré-établie au login.</p>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- Section 7: Recommandations -->
+<section class="section" id="recommandations">
+  <div class="section-header">
+    <h2><span class="num">7</span> Recommandations finales</h2>
+    <p>Stratégie optimale basée sur l'analyse du code existant et les meilleures pratiques SaaS 2025-2026.</p>
+  </div>
+
+  <div class="card-grid">
+    <div class="card" style="border-left: 4px solid var(--accent);">
+      <h3>1. Architecture hybride (recommandée)</h3>
+      <p>Combiner <strong>shared schema</strong> pour les petits clients (Starter) et <strong>database-per-instance</strong> pour les plans Pro/Enterprise. Réduit le coût infrastructure tout en offrant l'isolation physique aux clients premium.</p>
+    </div>
+    <div class="card" style="border-left: 4px solid var(--primary);">
+      <h3>2. Catalogue minimaliste</h3>
+      <p>La base catalogue ne contient <strong>aucune donnée métier</strong>. Uniquement : routing, billing, provisioning, feature flags. Toute la logique métier reste dans les bases instances (code existant réutilisé à 95%).</p>
+    </div>
+    <div class="card" style="border-left: 4px solid var(--warning);">
+      <h3>3. Migration progressive</h3>
+      <p>Ne pas réécrire. Ajouter la couche catalogue <strong>par-dessus</strong> l'existant. Le système actuel continue de fonctionner pendant le développement. Migration des données en phase 6 uniquement.</p>
+    </div>
+    <div class="card" style="border-left: 4px solid #8b5cf6;">
+      <h3>4. PgBouncer obligatoire</h3>
+      <p>Indispensable pour le connection pooling multi-DB. Mode <strong>transaction</strong> (pas session). Max 5 connexions actives par instance. Monitoring du pool en temps réel.</p>
+    </div>
+    <div class="card" style="border-left: 4px solid #ec4899;">
+      <h3>5. Stripe natif</h3>
+      <p>Utiliser <strong>Stripe Checkout</strong> + <strong>Customer Portal</strong> (pas de développement de UI de paiement). Webhooks pour synchroniser les statuts. Prorata automatique pour upgrade/downgrade.</p>
+    </div>
+    <div class="card" style="border-left: 4px solid #06b6d4;">
+      <h3>6. Template DB pour provisioning</h3>
+      <p>Créer une <strong>base template</strong> avec schema + seeds système. Le provisioning clone cette template (<code>CREATE DATABASE ... WITH TEMPLATE</code>). Time-to-provision &lt; 30 secondes.</p>
+    </div>
+  </div>
+
+  <div class="highlight-box" style="margin-top: 2rem;">
+    <h4>Réutilisation du code existant</h4>
+    <p>
+      <strong>95% du code métier est réutilisable tel quel.</strong> Les entités, services, controllers, et le frontend ne changent pas. Seules modifications :
+    </p>
+    <ul style="margin-top: 0.5rem; padding-left: 1.5rem; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.8;">
+      <li>Ajout du <code>ConnectionManager</code> et du middleware <code>resolveInstance</code></li>
+      <li>Remplacement du DataSource global par <code>req.dataSource</code> dans les repositories</li>
+      <li>Ajout de la couche catalogue (nouveau module backend)</li>
+      <li>Modification du JWT pour inclure <code>instanceId</code></li>
+      <li>Portal souscripteur (nouveau frontend)</li>
+    </ul>
+  </div>
+
+  <div class="table-wrap" style="margin-top: 2rem;">
+    <table>
+      <thead>
+        <tr>
+          <th>Composant</th>
+          <th>Impact</th>
+          <th>Effort</th>
+          <th>Risque</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Entités métier (40+)</td>
+          <td><span class="badge green">Aucun changement</span></td>
+          <td>0 jour</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>Services métier (30+)</td>
+          <td><span class="badge green">Injection DataSource</span></td>
+          <td>3 jours</td>
+          <td><span class="badge green">Faible</span></td>
+        </tr>
+        <tr>
+          <td>Middleware tenant</td>
+          <td><span class="badge amber">Refactor (instanceId)</span></td>
+          <td>2 jours</td>
+          <td><span class="badge amber">Moyen</span></td>
+        </tr>
+        <tr>
+          <td>Auth / JWT</td>
+          <td><span class="badge amber">Claim instanceId ajouté</span></td>
+          <td>1 jour</td>
+          <td><span class="badge green">Faible</span></td>
+        </tr>
+        <tr>
+          <td>Module activation</td>
+          <td><span class="badge blue">Migration vers FeatureFlags</span></td>
+          <td>2 jours</td>
+          <td><span class="badge green">Faible</span></td>
+        </tr>
+        <tr>
+          <td>Frontend</td>
+          <td><span class="badge green">Quasi-identique</span></td>
+          <td>1 jour</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>Nouveau : Catalogue</td>
+          <td><span class="badge purple">Nouveau module</span></td>
+          <td>10 jours</td>
+          <td><span class="badge amber">Moyen</span></td>
+        </tr>
+        <tr>
+          <td>Nouveau : ConnectionManager</td>
+          <td><span class="badge purple">Nouveau composant</span></td>
+          <td>5 jours</td>
+          <td><span class="badge red">Élevé</span></td>
+        </tr>
+        <tr>
+          <td>Nouveau : Stripe billing</td>
+          <td><span class="badge purple">Nouveau module</span></td>
+          <td>8 jours</td>
+          <td><span class="badge amber">Moyen</span></td>
+        </tr>
+        <tr>
+          <td>Nouveau : Portal souscripteur</td>
+          <td><span class="badge purple">Nouveau frontend</span></td>
+          <td>5 jours</td>
+          <td><span class="badge green">Faible</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="card" style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border-color: #86efac;">
+    <h3 style="color: #166534; margin-bottom: 0.5rem;">Conclusion</h3>
+    <p style="font-size: 0.9rem; color: #15803d; line-height: 1.7;">
+      L'architecture multi-tenant actuelle d'eLISAschool est <strong>excellente base pour une transformation SaaS</strong>. Le modèle proposé (instance par client + multi-tenant interne par établissement + modules activables) est <strong>cohérent, réalisable et aligné sur les meilleures pratiques</strong> du secteur. La migration progressive (Strangler Fig) permet de livrer de la valeur à chaque phase sans interrompre le service existant. Le coût total estimé est de <strong>~11.5 semaines de développement</strong> pour une équipe de 2 personnes, avec un taux de réutilisation du code existant de <strong>95%</strong>.
+    </p>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <p><strong>eLISAschool</strong> — Rapport d'architecture SaaS Multi-Tenant</p>
+  <p style="margin-top: 0.3rem;">Généré le 7 août 2026 &middot; Version 1.0 &middot; Auteur : Admin Project (Qoder)</p>
+</footer>
+
+<script>
+  // Smooth scroll + active nav
+  document.querySelectorAll('.nav-links a').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  // Active nav on scroll
+  const sections = document.querySelectorAll('.section');
+  const navLinks = document.querySelectorAll('.nav-links a');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => {
+          link.classList.toggle('active',
+            link.getAttribute('href') === '#' + entry.target.id
+          );
+        });
+      }
+    });
+  }, { rootMargin: '-80px 0px -60% 0px' });
+
+  sections.forEach(section => observer.observe(section));
+</script>
+
+</body>
+</html>

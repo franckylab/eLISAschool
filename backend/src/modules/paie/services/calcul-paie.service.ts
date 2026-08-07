@@ -19,7 +19,7 @@ import { ElementSalaire, TypeElementSalaire, CategorieElementSalaire } from '../
 import { Cotisation } from '../entities/cotisation.entity';
 import { TypePrime } from '../entities/type-prime.entity';
 import { MembrePersonnel, ContratPersonnel, StatutContrat } from '@modules/personnel/entities';
-import { heureCoursService } from '@modules/personnel/services';
+import { heureCoursService } from '@modules/emploi-du-temps/services';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { auditService } from '@modules/auth/services/audit.service';

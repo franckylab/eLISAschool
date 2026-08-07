@@ -5,7 +5,7 @@ import { useCreateHeureCours, useUpdateHeureCours, useDeleteHeureCours } from '.
 import { useClasses } from '@/features/classes/hooks/use-classes';
 import { useMatieres } from '@/features/matieres/hooks/use-matieres';
 import { useSalles } from '@/features/salles/hooks/use-salles';
-import { usePersonnel } from '../hooks/use-personnel';
+import { usePersonnel } from '@/features/personnel/hooks/use-personnel';
 import type { CategorieFonction } from '@/lib/categorie-fonction';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';

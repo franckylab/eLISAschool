@@ -2733,3 +2733,85 @@ Mode création ET édition (prop `template?: TemplateEDT`). Validators par étap
 - `frontend/src/features/emploi-du-temps/index.ts` (exports)
 - `frontend/src/locales/fr/emplois.json` (+70 clés)
 - `frontend/src/locales/en/emplois.json` (+70 clés)
+
+## Travail effectué — Session 2026-08-05 (contraste créneaux + refactor modal génération HC)
+
+### Axe 1 — Palette theme-aware (dark mode)
+- **`palette-creneau.ts` v1.1.0** : ajout param `mode: 'light' | 'dark'`. Surface par défaut auto (`#ffffff` light, `#1e293b` dark). `texteSurTeinte` calculé par `couleurTexteAuto()` (luminance WCAG) au lieu de `'#1f2937'` hardcodé. Nouveau hook `useModeTheme()` basé sur `useSyncExternalStore` + MutationObserver sur `data-theme`.
+- **`edt-calendar.tsx`** (vue semaine) : CreneauCard toujours tout visible (matière + classe + enseignant initiales + salle code + horaire). Suppression du mode progressif (estCompact/estGrand). Couleurs texte via palette theme-aware. Overlay aussi mis à jour.
+- **`edt-day-view.tsx`** (vue jour) : passage `mode` à `paletteCreneau()`.
+- **`edt-month-view.tsx`** (vue mois) : passage `mode` à `paletteCreneau()`.
+
+### Axe 2 — Modal génération Heures de Cours refactoré (v2.0)
+- **`edt-heures-cours-modal.tsx`** : réécrit sur `StepperModal` partagé (3 étapes).
+  - **Étape 1 (Sélection)** : cascade selects (classe → matière → enseignant) + dates. Auto-résolution 1-unique. Chargement autonome via `useAffectationsOptions()` (indépendant des filtres toolbar).
+  - **Étape 2 (Résumé)** : récapitulatif enrichi (classe/matière/enseignant/période) avec icônes colorées.
+  - **Étape 3 (Résultat)** : statistiques (créées/ignorées/erreurs/total) + fallback valeurs.
+- **Interface changée** : `open`/`onOpenChange` + `contexteEnseignantId?`/`contexteClasseAnneeId?` (pré-sélection optionnelle).
+- **`edt-page.tsx`** : wrapper `CustomModal` supprimé (le modal gère son propre StepperModal). Props mises à jour.
+
+### Axe 3 — i18n
+- 27 nouvelles clés FR+EN dans `generationHeuresCours.*` (étapes, cascade, résumé, résultat).
+- Parité FR/EN complète.
+
+### Qualité
+- 0 `any`, 0 couleur hardcodée, 0 chaîne FR en dur.
+- Tous les composants utilisent `clamp()` et variables CSS.
+- Dark mode natif via `useModeTheme()` + `paletteCreneau()`.
+- Composant réutilisable : `useModeTheme()` exporté depuis `@/lib`.
+
+### Fichiers modifiés (8)
+- `frontend/src/lib/palette-creneau.ts` (v1.1.0 — mode, useModeTheme)
+- `frontend/src/lib/index.ts` (export useModeTheme)
+- `frontend/src/features/emploi-du-temps/components/edt-calendar.tsx` (toujours tout visible + palette dark)
+- `frontend/src/features/emploi-du-temps/components/edt-day-view.tsx` (palette mode)
+- `frontend/src/features/emploi-du-temps/components/edt-month-view.tsx` (palette mode)
+- `frontend/src/features/emploi-du-temps/components/edt-heures-cours-modal.tsx` (v2.0 — 3 étapes StepperModal)
+- `frontend/src/features/emploi-du-temps/components/edt-page.tsx` (invocation mise à jour)
+- `frontend/src/locales/fr/emplois.json` (+27 clés)
+- `frontend/src/locales/en/emplois.json` (+27 clés)
+
+## Travail effectué — Session 2026-08-07 (fix modal génération HC — boucle infinie)
+
+### Bug corrigé
+- **`edt-heures-cours-modal.tsx`** : le `StepperModal` partagé avance les étapes de manière **synchrone**. Quand l'utilisateur clique "Confirmer la génération" à l'étape 2, le StepperModal avance immédiatement à l'étape 3 (`setCurrentStep(2)` synchrone), puis appelle `onSubmit` seulement à la dernière étape. Résultat : l'étape 3 s'affiche avec `resultat === null` → loader infini.
+- **Fix v2.1.0** : remplacement du `StepperModal` par `CustomModal` + gestion manuelle des étapes (`etapeCourante`). Le flux async est maintenant contrôlé :
+  - Étape 1 → bouton "Suivant" dans le footer → `allerEtapeSuivante()`
+  - Étape 2 → bouton "Générer" dans le footer → `handleGenerer()` (async) → **attend la complétion** → `setResultat(res)` → `allerEtapeSuivante()` → étape 3
+  - Étape 3 → `resultat` déjà défini → affichage immédiat des stats
+- **Avantages** : l'étape 3 ne s'affiche qu'après la génération (plus de loader infini). En cas d'erreur, l'utilisateur reste sur l'étape 2 pour retry. Reset complet à la ré-ouverture.
+- **Composants extraits** : `StepperHeader`, `ContenuSelection`, `ContenuResume`, `ContenuResultat` (lisibilité + performance — pas de re-render des étapes non actives).
+
+### Fichier modifié (1)
+- `frontend/src/features/emploi-du-temps/components/edt-heures-cours-modal.tsx` (v2.1.0 — CustomModal + étapes manuelles)
+
+## Travail effectué — Session 2026-08-07 (génération HC en masse — multi-sélection)
+
+### Backend — DTO rétro-compatible
+- **`heure-cours.dto.ts`** : `genererHeuresCoursFromEdtSchema` étendu avec `affectationMatiereIds` (array uuid, optionnel) + `enseignantId`/`classeAnneeId` conservés (rétro-compat tab-heure-cours). `.refine()` garantit qu'au moins un des deux est fourni.
+- **`heure-cours.service.ts`** : `materialiserInstances()` accepte `affectationMatiereIds?: string[]` — filtre `am.id IN (:...affectationMatiereIds)` sur la requête EDT. `genererHeuresCoursFromEdt()` passe les deux paramètres.
+- **Flux** : `affectationMatiereIds` prioritaire (multi-sélection) ; `enseignantId` fallback (tab-heure-cours).
+
+### Frontend — Modal multi-sélection v3.0
+- **`edt-heures-cours-modal.tsx`** : réécrit. Liste d'affectations à cocher (checkboxes) avec :
+  - **Filtre par classe** : chips cliquables (multi-select) pour filtrer les affectations affichées
+  - **Cases à cocher** : chaque affectation montre classe × matière × enseignant (icônes colorées)
+  - **Tout sélectionner / désélectionner** : bouton dans le SectionSeparator + compteur `N/M`
+  - **Étape 2 (Résumé)** : regroupé par classe avec détail matière + enseignant
+  - **Étape 3 (Résultat)** : inchangé (stats créées/ignorées/erreurs)
+- **`use-heure-cours.ts`** : hook `useGenererHeuresCoursFromEdt` payload élargi (`affectationMatiereIds?` + `enseignantId?` + `classeAnneeId?`)
+- **`edt-page.tsx`** : `contexteEnseignantId` retiré de l'invocation (plus pertinent en multi-sélection)
+- **`SectionSeparator.tsx`** : nouvelle prop `action?: ReactNode` (contenu aligné à droite — bouton, compteur)
+
+### i18n — 6 nouvelles clés FR+EN
+- `infoMultiSelection`, `filtrerParClasse`, `affectationsDisponibles`, `toutSelectionner`, `toutDeselectionner`, `resumeMultiDescription`
+
+### Fichiers modifiés (7)
+- `backend/src/modules/personnel/dto/heure-cours.dto.ts` (refine, rétro-compat)
+- `backend/src/modules/personnel/services/heure-cours.service.ts` (affectationMatiereIds filter)
+- `frontend/src/features/emploi-du-temps/components/edt-heures-cours-modal.tsx` (v3.0 — multi-selection)
+- `frontend/src/features/emploi-du-temps/components/edt-page.tsx` (invocation simplifiée)
+- `frontend/src/features/personnel/hooks/use-heure-cours.ts` (payload élargi)
+- `frontend/src/components/ui/SectionSeparator.tsx` (prop action)
+- `frontend/src/locales/fr/emplois.json` (+6 clés)
+- `frontend/src/locales/en/emplois.json` (+6 clés)

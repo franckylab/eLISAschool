@@ -8,22 +8,25 @@
 
 import { Repository, Between, In, Not, EntityManager } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { HeureCours, StatutEffectue, ContratPersonnel, StatutContrat } from '../entities';
+import { HeureCours, StatutEffectue } from '../entities';
+import { ContratPersonnel, StatutContrat } from '@modules/personnel/entities';
 import { CreateHeureCoursDto, UpdateHeureCoursDto, QueryHeureCoursDto, GenererHeuresCoursFromEdtDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { paginateWithQueryBuilder, PaginatedResult } from '@common/utils/pagination.util';
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
-import { CreneauHoraire, JourSemaine, StatutCreneau, TypeCreneau, PreferenceEmploiDuTemps } from '@modules/emploi-du-temps/entities';
-import { jourFerieService, formatDateLocal } from '@modules/emploi-du-temps/services/jour-ferie.service';
+import { CreneauHoraire, JourSemaine, StatutCreneau, TypeCreneau, PreferenceEmploiDuTemps } from '../entities';
+import { jourFerieService, formatDateLocal } from './jour-ferie.service';
 import { ClasseAnnee } from '@modules/classes/entities';
 import { Matiere } from '@modules/matieres/entities';
 import { MembrePersonnel, StatutPersonnel } from '@modules/personnel/entities';
-import { personnelService } from './personnel.service';
+import { Salle } from '@modules/salles/entities';
+import { Periode } from '@modules/periodes/entities';
+import { personnelService } from '@modules/personnel/services';
 import { CategorieFonction } from '../../../shared/constants/personnel.constants';
-import { verifierOverlapHoraire } from '@modules/emploi-du-temps/services/conflit-commun.service';
-import { conflitDetectionService } from '@modules/emploi-du-temps/services/conflit-detection.service';
+import { verifierOverlapHoraire } from './conflit-commun.service';
+import { conflitDetectionService } from './conflit-detection.service';
 import { AnneeScolaire, StatutAnneeScolaire } from '@modules/annees-scolaires/entities';
 import { Request } from 'express';
 
@@ -962,6 +965,7 @@ export class HeureCoursService {
         enseignantId?: string;
         classeAnneeId?: string;
         creneauIds?: string[];
+        affectationMatiereIds?: string[];
         dateDebut: Date | string;
         dateFin: Date | string;
         periodeId?: string;
@@ -974,6 +978,7 @@ export class HeureCoursService {
             enseignantId,
             classeAnneeId,
             creneauIds,
+            affectationMatiereIds,
             dateDebut,
             dateFin,
             periodeId,
@@ -993,6 +998,9 @@ export class HeureCoursService {
             .where('e.etablissementId = :etablissementId', { etablissementId })
             .andWhere('e.statut = :statut', { statut: StatutCreneau.VALIDE });
 
+        if (affectationMatiereIds && affectationMatiereIds.length > 0) {
+            edtQuery.andWhere('am.id IN (:...affectationMatiereIds)', { affectationMatiereIds });
+        }
         if (enseignantId) {
             edtQuery.andWhere('am.enseignantId = :enseignantId', { enseignantId });
         }
@@ -1012,6 +1020,64 @@ export class HeureCoursService {
             logger.info(`[HeureCours] Aucun créneau EDT matérialisable (enseignant=${enseignantId || '-'}, classe=${classeAnneeId || '-'}, creneaux=${creneauIds?.length || 0})`);
             return { created: 0, skipped: 0 };
         }
+
+        // ─── Validation FK pré-insert (données orphelines) ─────
+        // Les affectations_matieres peuvent référencer des enregistrements
+        // supprimés (enseignant, classe, matière, période). Sans validation,
+        // le batch INSERT échoue en entier (atomique) dès qu'UNE seule FK est invalide.
+        const uniqueEnseignantIds = [...new Set(edtSlots.map(s => s.affectationMatiere?.enseignantId).filter(Boolean))] as string[];
+        const uniqueClasseAnneeIds = [...new Set(edtSlots.map(s => s.affectationMatiere?.classeAnneeId).filter(Boolean))] as string[];
+        const uniqueMatiereIds = [...new Set(edtSlots.map(s => s.affectationMatiere?.matiereId).filter(Boolean))] as string[];
+        const uniqueSalleIds = [...new Set(edtSlots.map(s => s.salleId).filter(Boolean))] as string[];
+        // periodeId résolu : DTO global OU créneau (même logique que le create)
+        const uniquePeriodeIds = [...new Set(edtSlots.map(s => (periodeId || s.periodeId)).filter(Boolean))] as string[];
+
+        const [validEnseignantIds, validClasseAnneeIds, validMatiereIds, validSalleIds, validPeriodeIds] = await Promise.all([
+            uniqueEnseignantIds.length > 0
+                ? AppDataSource.getRepository(MembrePersonnel).find({ where: { id: In(uniqueEnseignantIds) }, select: ['id'] }).then(r => new Set(r.map(e => e.id)))
+                : new Set<string>(),
+            uniqueClasseAnneeIds.length > 0
+                ? AppDataSource.getRepository(ClasseAnnee).find({ where: { id: In(uniqueClasseAnneeIds) }, select: ['id'] }).then(r => new Set(r.map(e => e.id)))
+                : new Set<string>(),
+            uniqueMatiereIds.length > 0
+                ? AppDataSource.getRepository(Matiere).find({ where: { id: In(uniqueMatiereIds) }, select: ['id'] }).then(r => new Set(r.map(e => e.id)))
+                : new Set<string>(),
+            uniqueSalleIds.length > 0
+                ? AppDataSource.getRepository(Salle).find({ where: { id: In(uniqueSalleIds) }, select: ['id'] }).then(r => new Set(r.map(e => e.id)))
+                : new Set<string>(),
+            uniquePeriodeIds.length > 0
+                ? AppDataSource.getRepository(Periode).find({ where: { id: In(uniquePeriodeIds) }, select: ['id'] }).then(r => new Set(r.map(e => e.id)))
+                : new Set<string>(),
+        ]);
+
+        const beforeFilter = edtSlots.length;
+        const validSlots = edtSlots.filter(slot => {
+            const am = slot.affectationMatiere;
+            if (!am) return false;
+            if (am.enseignantId && !validEnseignantIds.has(am.enseignantId)) return false;
+            if (am.classeAnneeId && !validClasseAnneeIds.has(am.classeAnneeId)) return false;
+            if (am.matiereId && !validMatiereIds.has(am.matiereId)) return false;
+            if (slot.salleId && !validSalleIds.has(slot.salleId)) return false;
+            // Période résolue (même logique que le create : DTO > créneau)
+            const resolvedPeriodeId = periodeId || slot.periodeId;
+            if (resolvedPeriodeId && !validPeriodeIds.has(resolvedPeriodeId)) return false;
+            return true;
+        });
+
+        if (validSlots.length < beforeFilter) {
+            logger.warn(
+                `[HeureCours] ${beforeFilter - validSlots.length}/${beforeFilter} créneaux ignorés (FK orphelines — enseignant/classe/matière/salle/période supprimés)`,
+            );
+        }
+
+        if (validSlots.length === 0) {
+            logger.info(`[HeureCours] Aucun créneau valide après vérification FK`);
+            return { created: 0, skipped: beforeFilter };
+        }
+
+        // Remplacer par les créneaux validés uniquement
+        edtSlots.length = 0;
+        edtSlots.push(...validSlots);
 
         // ─── Exclusion jours fériés (préférence EDT) ─────────
         let datesJFSet = new Set<string>();
@@ -1133,6 +1199,7 @@ export class HeureCoursService {
                     matiereId: slotMatiereId,
                     periodeId: periodeId || slot.periodeId,
                     creneauId: slot.id,
+                    affectationMatiereId: slot.affectationMatiereId,
                     salleId: slot.salleId,
                     typeCreneau: slot.typeCreneau,
                     date: courseDate,
@@ -1146,31 +1213,68 @@ export class HeureCoursService {
 
                 // Flush du batch par chunks pour éviter les requêtes individuelles
                 if (batch.length >= CHUNK_SIZE) {
-                    await this.repo.save(batch);
-                    created += batch.length;
+                    try {
+                        await this.repo.save(batch);
+                        created += batch.length;
+                    } catch (err) {
+                        // Fallback : sauvegarde individuelle pour isoler les FK invalides
+                        for (const hcItem of batch) {
+                            try {
+                                await this.repo.save(hcItem);
+                                created++;
+                            } catch {
+                                skipped++;
+                                logger.warn(`[HeureCours] Instance ignorée (FK invalide): enseignant=${hcItem.enseignantId}, date=${hcItem.date}`);
+                            }
+                        }
+                    }
                     batch.length = 0;
                 }
             }
 
             // Flush du batch restant en fin de semaine
             if (batch.length > 0) {
-                await this.repo.save(batch);
-                created += batch.length;
+                try {
+                    await this.repo.save(batch);
+                    created += batch.length;
+                } catch (err) {
+                    for (const hcItem of batch) {
+                        try {
+                            await this.repo.save(hcItem);
+                            created++;
+                        } catch {
+                            skipped++;
+                            logger.warn(`[HeureCours] Instance ignorée (FK invalide): enseignant=${hcItem.enseignantId}, date=${hcItem.date}`);
+                        }
+                    }
+                }
                 batch.length = 0;
             }
 
             current.setDate(current.getDate() + 7);
         }
 
-        logger.info(`[HeureCours] Matérialisation: ${created} créées, ${skipped} ignorées (enseignant=${enseignantId || '-'}, classe=${classeAnneeId || '-'}, creneaux=${creneauIds?.length || 0})`);
+        logger.info(`[HeureCours] Matérialisation: ${created} créées, ${skipped} ignorées (enseignant=${enseignantId || '-'}, classe=${classeAnneeId || '-'}, affectations=${affectationMatiereIds?.length || '-'}, creneaux=${creneauIds?.length || '-'})`);
 
         if (createurId) {
+            // Objet d'audit sérialisable (sans `req` qui contient des références circulaires)
+            const resumeAudit = {
+                etablissementId,
+                affectationMatiereIds: affectationMatiereIds ?? null,
+                enseignantId: enseignantId ?? null,
+                classeAnneeId: classeAnneeId ?? null,
+                dateDebut,
+                dateFin,
+                periodeId: periodeId ?? null,
+                creees: created,
+                ignorees: skipped,
+            };
             await auditService.log({
                 utilisateurId: createurId,
                 action: AuditAction.HEURE_COURS_CREATE,
                 cible: 'HeureCours',
                 description: `Matérialisation HeureCours depuis EDT: ${created} créées, ${skipped} ignorées`,
-                nouvellesValeurs: options,
+                nouvellesValeurs: resumeAudit,
                 module: 'personnel',
             }, req);
         }
@@ -1184,9 +1288,10 @@ export class HeureCoursService {
         createurId?: string,
         req?: Request
     ): Promise<{ created: number; skipped: number }> {
-        const { enseignantId, classeAnneeId, dateDebut, dateFin, periodeId } = dto;
+        const { affectationMatiereIds, enseignantId, classeAnneeId, dateDebut, dateFin, periodeId } = dto;
         return this.materialiserInstances({
             etablissementId,
+            affectationMatiereIds,
             enseignantId,
             classeAnneeId,
             dateDebut,

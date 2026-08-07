@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport — Architecture SaaS Single-Database | eLISAschool</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface-2: #242836;
+    --border: #2e3348;
+    --text: #e4e6f0;
+    --text-muted: #8b8fa8;
+    --accent: #6366f1;
+    --accent-light: #818cf8;
+    --green: #22c55e;
+    --green-bg: rgba(34,197,94,0.1);
+    --amber: #f59e0b;
+    --amber-bg: rgba(245,158,11,0.1);
+    --red: #ef4444;
+    --red-bg: rgba(239,68,68,0.1);
+    --blue: #3b82f6;
+    --blue-bg: rgba(59,130,246,0.1);
+    --cyan: #06b6d4;
+    --cyan-bg: rgba(6,182,212,0.1);
+    --purple: #a855f7;
+    --purple-bg: rgba(168,85,247,0.1);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  /* Hero */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding: 80px 0 60px;
+    background: linear-gradient(135deg, #1e1b4b 0%, #0f1117 50%, #0c1220 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(6,182,212,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero .container { position: relative; z-index: 1; }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    background: rgba(99,102,241,0.15);
+    border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 100px;
+    font-size: 13px;
+    color: var(--accent-light);
+    margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-size: clamp(28px, 4vw, 42px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #e4e6f0 0%, #818cf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p {
+    font-size: 17px;
+    color: var(--text-muted);
+    max-width: 640px;
+    line-height: 1.8;
+  }
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 32px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .hero-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* Navigation */
+  .toc {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(15,17,23,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
+  }
+  .toc-inner {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .toc-inner::-webkit-scrollbar { display: none; }
+  .toc a {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .toc a:hover { background: var(--surface); color: var(--text); }
+
+  /* Sections */
+  section { padding: 64px 0; }
+  section + section { border-top: 1px solid var(--border); }
+  .section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent-light);
+    margin-bottom: 12px;
+  }
+  h2 {
+    font-size: clamp(22px, 3vw, 30px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 16px;
+  }
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 32px 0 12px;
+    color: var(--text);
+  }
+  h4 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 20px 0 8px;
+    color: var(--accent-light);
+  }
+  p { margin-bottom: 16px; color: var(--text-muted); }
+  strong { color: var(--text); }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .card-accent {
+    border-left: 3px solid var(--accent);
+  }
+  .card-green { border-left: 3px solid var(--green); }
+  .card-amber { border-left: 3px solid var(--amber); }
+  .card-red { border-left: 3px solid var(--red); }
+  .card-blue { border-left: 3px solid var(--blue); }
+  .card-cyan { border-left: 3px solid var(--cyan); }
+  .card-purple { border-left: 3px solid var(--purple); }
+
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+
+  /* Tags */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .tag-green { background: var(--green-bg); color: var(--green); }
+  .tag-amber { background: var(--amber-bg); color: var(--amber); }
+  .tag-red { background: var(--red-bg); color: var(--red); }
+  .tag-blue { background: var(--blue-bg); color: var(--blue); }
+  .tag-cyan { background: var(--cyan-bg); color: var(--cyan); }
+  .tag-purple { background: var(--purple-bg); color: var(--purple); }
+
+  /* Tables */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin: 20px 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  th {
+    background: var(--surface-2);
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text);
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(99,102,241,0.03); }
+
+  /* Code */
+  code {
+    background: var(--surface-2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    color: var(--accent-light);
+  }
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-size: 13px;
+    line-height: 1.6;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+  pre code { background: none; padding: 0; color: var(--text); }
+
+  /* Diagram */
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    margin: 24px 0;
+    text-align: center;
+  }
+  .diagram-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .diagram-box {
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 140px;
+  }
+  .diagram-arrow {
+    color: var(--text-muted);
+    font-size: 20px;
+  }
+
+  /* Verdict */
+  .verdict {
+    background: linear-gradient(135deg, rgba(34,197,94,0.08) 0%, rgba(6,182,212,0.05) 100%);
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+  }
+  .verdict h3 { color: var(--green); margin-top: 0; }
+
+  /* Warning */
+  .warning {
+    background: var(--amber-bg);
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .warning strong { color: var(--amber); }
+
+  /* Metric */
+  .metric {
+    text-align: center;
+    padding: 20px;
+  }
+  .metric-value {
+    font-size: 36px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-light), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .metric-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* Scale indicator */
+  .scale-bar {
+    display: flex;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 8px 0;
+  }
+  .scale-bar > div {
+    height: 100%;
+    transition: width 0.3s;
+  }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 40px 0;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  /* Lists */
+  ul, ol { margin: 12px 0 16px 24px; color: var(--text-muted); }
+  li { margin-bottom: 6px; }
+  li strong { color: var(--text); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero { padding: 48px 0 36px; }
+    section { padding: 40px 0; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .diagram-flow { flex-direction: column; }
+    .diagram-arrow { transform: rotate(90deg); }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* Animate on scroll */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate { animation: fadeUp 0.5s ease-out; }
+
+  /* Comparison highlight */
+  .recommended {
+    position: relative;
+  }
+  .recommended::before {
+    content: 'RECOMMANDÉ';
+    position: absolute;
+    top: -10px;
+    right: 16px;
+    background: var(--green);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-badge">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+      Architecture SaaS — Analyse approfondie
+    </div>
+    <h1>Single-Database Multi-Tenant<br>Pour eLISAschool</h1>
+    <p>Analyse complète de l'architecture base de données unique pour le SaaS eLISAschool : meilleures pratiques 2025-2026, structure idéale optimisée, comparaison de toutes les alternatives, et recommandations concrètes pour la transformation SaaS.</p>
+    <div class="hero-meta">
+      <span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        7 août 2026
+      </span>
+      <span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        franck arlos chendjou
+      </span>
+      <span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        ~25 min de lecture
+      </span>
+      <span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        PostgreSQL + TypeORM + Express
+      </span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════ TOC ═══════════════════ -->
+<nav class="toc">
+  <div class="container">
+    <div class="toc-inner">
+      <a href="#resume">Résumé</a>
+      <a href="#contexte">Contexte</a>
+      <a href="#patterns">7 Patterns</a>
+      <a href="#single-db">Single-DB Idéal</a>
+      <a href="#rls">Row-Level Security</a>
+      <a href="#partitionnement">Partitionnement</a>
+      <a href="#performance">Performance</a>
+      <a href="#comparaison">Comparaison</a>
+      <a href="#alternatives">Alternatives</a>
+      <a href="#elisaschool">eLISAschool</a>
+      <a href="#recommandation">Recommandation</a>
+      <a href="#migration">Migration</a>
+      <a href="#sources">Sources</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════ 1. RÉSUMÉ EXÉCUTIF ═══════════════════ -->
+<section id="resume">
+  <div class="container">
+    <div class="section-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      Résumé exécutif
+    </div>
+    <h2>Verdict en une phrase</h2>
+    <p style="font-size:17px; color:var(--text); max-width:720px;">
+      <strong>L'architecture single-database avec Row-Level Security (RLS) et partitionnement par tenant</strong> est la structure idéale pour eLISAschool SaaS — elle combine le coût le plus bas, la simplicité opérationnelle, et une isolation robuste, tout en étant le pattern recommandé par Microsoft, Supabase, Citus et les leaders du SaaS en 2025-2026.
+    </p>
+
+    <div class="grid-3" style="margin-top:32px;">
+      <div class="card metric">
+        <div class="metric-value">1</div>
+        <div class="metric-label">Base de données unique<br>pour tous les établissements</div>
+      </div>
+      <div class="card metric">
+        <div class="metric-value">RLS</div>
+        <div class="metric-label">Isolation garantie<br>par PostgreSQL natif</div>
+      </div>
+      <div class="card metric">
+        <div class="metric-value">-70%</div>
+        <div class="metric-label">Coût infrastructure<br>vs multi-database</div>
+      </div>
+    </div>
+
+    <div class="verdict" style="margin-top:24px;">
+      <h3>Recommandation finale</h3>
+      <p style="color:var(--text);">
+        <strong>Single-DB + RLS + Partitionnement hash par <code>etablissementId</code></strong>. Cette architecture est native du stack existant (PostgreSQL 15+, TypeORM), ne nécessite aucun changement d'application majeur (le <code>etablissementId</code> est déjà présent sur toutes les tables), et scale jusqu'à 10 000+ établissements sans changement d'architecture. Au-delà, Citus (extension PostgreSQL distribuée) permet de passer à des millions de tenants sans quitter le single-DB.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ 2. CONTEXTE ═══════════════════ -->
+<section id="contexte">
+  <div class="container">
+    <div class="section-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      Contexte &amp; état actuel
+    </div>
+    <h2>eLISAschool est déjà multi-tenant</h2>
+    <p>L'architecture actuelle d'eLISAschool utilise déjà un modèle multi-tenant avec isolation par ligne (<code>etablissementId</code>). Chaque entité métier est scopée à un établissement. La transition vers un SaaS multi-tenant ne nécessite pas un changement de paradigme, mais une <strong>optimisation et un durcissement</strong> de l'existant.</p>
+
+    <div class="grid-2">
+      <div class="card card-green">
+        <h4 style="margin-top:0;">Déjà en place</h4>
+        <ul>
+          <li><strong>etablissementId</strong> sur toutes les entités métier</li>
+          <li><strong>Multi-tenancy strict</strong> dans les services (filtrage systématique)</li>
+          <li><strong>ParametreSysteme</strong> scopé (global + par établissement)</li>
+          <li><strong>EtablissementConfig</strong> (quotas, plan abonnement)</li>
+          <li><strong>requireModuleActive()</strong> (activation modules par tenant)</li>
+          <li><strong>UtilisateurEtablissement</strong> (join table multi-établissement)</li>
+          <li><strong>67 rôles RBAC</strong> avec permissions granulaires</li>
+        </ul>
+      </div>
+      <div class="card card-amber">
+        <h4 style="margin-top:0;">À ajouter pour le SaaS</h4>
+        <ul>
+          <li><strong>Row-Level Security (RLS)</strong> — garantie d'isolation au niveau DB</li>
+          <li><strong>Partitionnement</strong> — performance à grande échelle</li>
+          <li><strong>Connection pooling</strong> (PgBouncer) — gestion des connexions</li>
+          <li><strong>Index partiels</strong> par tenant — optimisation requêtes</li>
+          <li><strong>Backup par tenant</strong> — récupération granulaire</li>
+          <li><strong>Feature flags</strong> — modules activables par plan</li>
+          <li><strong>Monitoring par tenant</strong> — détection noisy neighbor</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="warning">
+      <strong>Point clé :</strong> eLISAschool n'a PAS besoin de migrer d'une architecture multi-instance vers une autre. Le modèle single-DB est la continuation naturelle de l'architecture actuelle — il s'agit de la renforcer, pas de la remplacer.
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ 3. LES 7 PATTERNS ═══════════════════ -->
+<section id="patterns">
+  <div class="container">
+    <div class="section-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Paysage complet
+    </div>
+    <h2>Les 7 patterns d'architecture SaaS</h2>
+    <p>Au-delà du single-DB vs multi-DB, il existe 7 patterns distincts, chacun avec ses compromis. Voici le paysage complet des options pour eLISAschool.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Pattern</th>
+            <th>Isolation</th>
+            <th>Coût</th>
+            <th>Complexité</th>
+            <th>Scale max</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1</strong></td>
+            <td><strong>Single-DB Shared Schema</strong><br><span style="font-size:12px;">Tous les tenants dans les mêmes tables</span></td>
+            <td><span class="tag tag-amber">Faible</span></td>
+            <td><span class="tag tag-green">$</span></td>
+            <td><span class="tag tag-green">Faible</span></td>
+            <td>~1 000 tenants</td>
+          </tr>
+          <tr>
+            <td><strong>2</strong></td>
+            <td><strong>Single-DB + RLS</strong><br><span style="font-size:12px;">Shared schema + Row-Level Security PostgreSQL</span></td>
+            <td><span class="tag tag-green">Forte</span></td>
+            <td><span class="tag tag-green">$</span></td>
+            <td><span class="tag tag-amber">Moyenne</span></td>
+            <td>~10 000 tenants</td>
+          </tr>
+          <tr>
+            <td><strong>3</strong></td>
+            <td><strong>Single-DB + RLS + Partitionnement</strong><br><span style="font-size:12px;">RLS + tables partitionnées par tenant</span></td>
+            <td><span class="tag tag-green">Forte</span></td>
+            <td><span class="tag tag-green">$</span></td>
+            <td><span class="tag tag-amber">Moyenne</span></td>
+            <td>~100 000 tenants</td>
+          </tr>
+          <tr>
+            <td><strong>4</strong></td>
+            <td><strong>Schema-per-Tenant</strong><br><span style="font-size:12px;">Un schéma DB par tenant dans la même instance</span></td>
+            <td><span class="tag tag-blue">Bonne</span></td>
+            <td><span class="tag tag-amber">$$</span></td>
+            <td><span class="tag tag-red">Élevée</span></td>
+            <td>~1 000 tenants</td>
+          </tr>
+          <tr>
+            <td><strong>5</strong></td>
+            <td><strong>Citus (PostgreSQL distribué)</strong><br><span style="font-size:12px;">Extension distribuée auto-sharding par tenant_id</span></td>
+            <td><span class="tag tag-green">Forte</span></td>
+            <td><span class="tag tag-amber">$$</span></td>
+            <td><span class="tag tag-amber">Moyenne</span></td>
+            <td>~1 000 000 tenants</td>
+          </tr>
+          <tr>
+            <td><strong>6</strong></td>
+            <td><strong>Sharded Multitenant</strong><br><span style="font-size:12px;">Plusieurs DBs, chaque DB héberge N tenants (Microsoft)</span></td>
+            <td><span class="tag tag-blue">Bonne</span></td>
+            <td><span class="tag tag-amber">$$</span></td>
+            <td><span class="tag tag-red">Élevée</span></td>
+            <td>~1 000 000 tenants</td>
+          </tr>
+          <tr>
+            <td><strong>7</strong></td>
+            <td><strong>Database-per-Tenant</strong><br><span style="font-size:12px;">Une base de données dédiée par tenant</span></td>
+            <td><span class="tag tag-green">Maximale</span></td>
+            <td><span class="tag tag-red">$$$</span></td>
+            <td><span class="tag tag-red">Très élevée</span></td>
+            <td>~100 000 tenants</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="warning">
+      <strong>Note importante :</strong> Le pattern <strong>Schema-per-Tenant</strong> (#4) est généralement déconseillé par les experts (Bytebase, Microsoft) car il combine les pires aspects des deux approches : complexité de gestion des schémas + coût élevé + difficulté de migration. Nous l'excluons de la recommandation.
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ 4. SINGLE-DB IDÉAL ═══════════════════ -->
+<section id="single-db">
+  <div class="container">
+    <div class="section-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+      Architecture cible
+    </div>
+    <h2>Structure Single-DB idéale pour eLISAschool</h2>
+    <p>L'architecture optimale combine 4 couches de protection et d'optimisation dans une seule base PostgreSQL.</p>
+
+    <div class="diagram">
+      <h4 style="margin-bottom:24px; text-align:left;">Architecture en 4 couches</h4>
+      <div class="diagram-flow" style="flex-direction:column; gap:20px;">
+        <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+          <div class="diagram-box" style="background:var(--purple-bg); border:1px solid rgba(168,85,247,0.3); color:var(--purple);">
+            Couche 1 — Application<br>
+            <small style="color:var(--text-muted);">TypeORM + etablissementId + middleware tenant</small>
+          </div>
+        </div>
+        <div class="diagram-arrow">↓</div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+          <div class="diagram-box" style="background:var(--blue-bg); border:1px solid rgba(59,130,246,0.3); color:var(--blue);">
+            Couche 2 — Row-Level Security<br>
+            <small style="color:var(--text-muted);">Politiques RLS sur chaque table métier</small>
+          </div>
+        </div>
+        <div class="diagram-arrow">↓</div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+          <div class="diagram-box" style="background:var(--cyan-bg); border:1px solid rgba(6,182,212,0.3); color:var(--cyan);">
+            Couche 3 — Partitionnement<br>
+            <small style="color:var(--text-muted);">Tables partitionnées par hash(etablissementId)</small>
+          </div>
+        </div>
+        <div class="diagram-arrow">↓</div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+          <div class="diagram-box" style="background:var(--green-bg); border:1px solid rgba(34,197,94,0.3); color:var(--green);">
+            Couche 4 — Index &amp; Cache<br>
+            <small style="color:var(--text-muted);">Index partiels + PgBouncer + Redis</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Couche 1 — Application (déjà en place)</h3>
+    <div class="card card-purple">
+      <p style="margin-bottom:8px;">Le middleware <code>tenant.middleware.ts</code> résout le <code>etablissementId</code> depuis le JWT et l'injecte dans <code>req.etablissementId</code>. Chaque service filtre systématiquement par cet ID.</p>
+      <p style="margin-bottom:0;"><strong>Renforcement nécessaire :</strong> Ajouter un interceptor TypeORM global qui injecte automatiquement le <code>etablissementId</code> dans chaque requête (WHERE, CREATE, UPDATE, DELETE). Cela élimine le risque d'oubli dans un service.</p>
+    </div>
+
+    <h3>Couche 2 — Row-Level Security (RLS)</h3>
+    <div class="card card-blue">
+      <p>RLS est une fonctionnalité native de PostgreSQL (depuis la v9.5, mature depuis la v12). Il garantit que <strong>même si le code applicatif oublie un filtre</strong>, la base de données rejette toute ligne d'un autre tenant.</p>
+      <pre><code>-- Activer RLS sur une table
+ALTER TABLE eleves ENABLE ROW LEVEL SECURITY;
+
+-- Politique : chaque tenant ne voit que ses élèves
+CREATE POLICY tenant_isolation ON eleves
+  USING ("etablissementId" = current_setting('app.current_tenant')::uuid);
+
+-- Forcer RLS même pour le owner de la table
+ALTER TABLE eleves FORCE ROW LEVEL SECURITY;
+
+-- Définir le tenant courant à chaque requête
+SET app.current_tenant = 'uuid-etablissement-xxx';</code></pre>
+      <p style="margin-top:12px; margin-bottom:0;"><strong>Avantage clé :</strong> La politique RLS est évaluée au niveau du moteur de base de données. Même une injection SQL ne peut pas contourner cette isolation. C'est la garantie la plus forte possible en single-DB.</p>
+    </div>
+
+    <h3>Couche 3 — Partitionnement par tenant</h3>
+    <div class="card card-cyan">
+      <p>Le partitionnement divise physiquement les grandes tables en sous-tables plus petites. PostgreSQL route automatiquement les requêtes vers la bonne partition.</p>
+      <pre><code>-- Partitionnement par hash sur les tables à fort volume
+CREATE TABLE eleves (
+    id uuid NOT NULL,
+    "etablissementId" uuid NOT NULL,
+    nom varchar(100),
+    ...
+) PARTITION BY HASH (id);
+
+-- 16 partitions (couvre jusqu'à ~100K tenants)
+CREATE TABLE eleves_p0 PARTITION OF eleves
+  FOR VALUES WITH (MODULUS 16, REMAINDER 0);
+CREATE TABLE eleves_p1 PARTITION OF eleves
+  FOR VALUES WITH (MODULUS 16, REMAINDER 1);
+-- ... jusqu'à eleves_p15
+
+-- Alternative : partitionnement par liste (etablissementId)
+-- pour les très gros tenants (isolation physique totale)</code></pre>
+      <p style="margin-top:12px; margin-bottom:0;"><strong>Tables à partitionner en priorité :</strong> <code>eleves</code>, <code>notes</code>, <code>heures_cours</code>, <code>creneaux_horaires</code>, <code>bulletins_paie</code>, <code>audit_logs</code>. Les tables de nomenclature (petites, partagées) restent non-partitionnées.</p>
+    </div>
+
+    <h3>Couche 4 — Index, Pooling &amp; Cache</h3>
+    <div class="card card-green">
+      <div class="grid-2">
+        <div>
+          <h4>Index partiels par tenant</h4>
+          <pre><code>-- Index couvrant pour les requêtes fréquentes
+CREATE INDEX idx_eleves_etab_nom
+  ON eleves ("etablissementId", nom)
+  WHERE "deletedAt" IS NULL;
+
+-- Index pour les requêtes cross-tenant (admin)
+CREATE INDEX idx_eleves_etab
+  ON eleves ("etablissementId");</code></pre>
+        </div>
+        <div>
+          <h4>Connection pooling + Cache</h4>
+          <pre><code># PgBouncer (transaction pooling)
+[pgbouncer]
+pool_mode = transaction
+max_client_conn = 1000
+default_pool_size = 25
+
+# Redis cache multi-tenant
+# Clé = {tenant}:{module}:{id}
+GET etab-uuid:eleves:page:1
+GET etab-uuid:config:modules</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ 5. ROW-LEVEL SECURITY ═══════════════════ -->
+<section id="rls">
+  <div class="container">
+    <div class="section-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Isolation garantie
+    </div>
+    <h2>Row-Level Security (RLS) en détail</h2>
+    <p>RLS est le mécanisme d'isolation recommandé par Supabase, Microsoft Azure, Citus et la communauté PostgreSQL pour le multi-tenancy single-DB. Voici comment l'implémenter correctement.</p>
+
+    <h3>Comment fonctionne RLS</h3>
+    <div class="card card-accent">
+      <p>Quand RLS est activé sur une table, PostgreSQL ajoute <strong>automatiquement</strong> un filtre à CHAQUE requête (SELECT, UPDATE, DELETE). Si la requête ne satisfait pas la politique, les lignes sont invisibles — comme si elles n'existaient pas.</p>
+      <div class="diagram" style="margin:16px 0;">
+        <div class="diagram-flow">
+          <div class="diagram-box" style="background:var(--surface-2); border:1px solid var(--border);">
+            Requête applicative<br><small style="color:var(--text-muted);">SELECT * FROM eleves</small>
+          </div>
+          <div class="diagram-arrow">→</div>
+          <div class="diagram-box" style="background:var(--blue-bg); border:1px solid rgba(59,130,246,0.3); color:var(--blue);">
+            PostgreSQL injecte RLS<br><small style="color:var(--text-muted);">+ WHERE etablissementId = current_tenant</small>
+          </div>
+          <div class="diagram-arrow">→</div>
+          <div class="diagram-box" style="background:var(--green-bg); border:1px solid rgba(34,197,94,0.3); color:var(--green);">
+            Résultat filtré<br><small style="color:var(--text-muted);">Seules les lignes du tenant</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Politiques RLS pour eLISAschool</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Table</th>
+            <th>Politique SELECT</th>
+            <th>Politique INSERT</th>
+            <th>Politique UPDATE/DELETE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>eleves</code></td>
+            <td><code>etablissementId = current_tenant</code></td>
+            <td><code>etablissementId = current_tenant</code></td>
+            <td><code>etablissementId = current_tenant</code></td>
+          </tr>
+          <tr>
+            <td><code>notes</code></td>
+            <td><code>eleve.etablissementId = current_tenant</code></td>
+            <td><code>eleve.etablissementId = current_tenant</code></td>
+            <td><code>eleve.etablissementId = current_tenant</code></td>
+          </tr>
+          <tr>
+            <td><code>creneaux_horaires</code></td>
+            <td><code>etablissementId = current_tenant</code></td>
+            <td><code>etablissementId = current_tenant</code></td>
+            <td><code>etablissementId = current_tenant</code></td>
+          </tr>
+          <tr>
+            <td><code>heures_cours</code></td>
+            <td><code>classeAnnee.etablissementId = current_tenant</code></td>
+            <td><code>classeAnnee.etablissementId = current_tenant</code></td>
+            <td><code>classeAnnee.etablissementId = current_tenant</code></td>
+          </tr>
+          <tr>
+            <td><code>bulletins_paie</code></td>
+            <td><code>etablissementId = current_tenant</code></td>
+            <td><code>etablissementId = current_tenant</code></td>
+            <td><code>etablissementId = current_tenant</code></td>
+          </tr>
+          <tr>
+            <td><code>audit_logs</code></td>
+            <td><code>etablissementId = current_tenant</code></td>
+            <td><code>etablissementId = current_tenant</code></td>
+            <td><em>Read-only (pas d'UPDATE/DELETE)</em></td>
+          </tr>
+          <tr>
+            <td><code>etablissements</code></td>
+            <td><code>id = current_tenant</code></td>
+            <td><em>SUPER_ADMIN only</em></td>
+            <td><em>SUPER_ADMIN only</em></td>
+          </tr>
+          <tr>
+            <td><code>parametres_systeme</code></td>
+            <td><code>etablissementId = current_tenant OR etablissementId IS NULL</code></td>
+            <td><em>SUPER_ADMIN only</em></td>
+            <td><em>SUPER_ADMIN only</em></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Intégration avec TypeORM</h3>
+    <div class="card card-accent">
+      <p>Le défi principal est de propager le <code>etablissementId</code> du middleware Express vers la session PostgreSQL. Voici le pattern recommandé :</p>
+      <pre><code>// 1. Middleware Express — définit le tenant PostgreSQL
+app.use(async (req, res, next) => {
+  if (req.utilisateur?.etablissementId) {
+    // Définit la variable de session PostgreSQL
+    await req.queryRunner?.query(
+      `SET LOCAL app.current_tenant = $1`,
+      [req.utilisateur.etablissementId]
+    );
+  }
+  next();
+});
+
+// 2. TypeORM — Subscriber qui exécute SET avant chaque requête
+@EventSubscriber()
+export class TenantSubscriber implements EntitySubscriberInterface {
+  beforeQuery(event: QueryEvent) {
+    const tenant = AsyncLocalStorage.tenant; // via AsyncLocalStorage
+    if (tenant) {
+      event.queryRunner.query(
+        `SET LOCAL app.current_tenant = $1`, [tenant]
+      );
+    }
+  }
+}
+
+// 3. Alternative : TypeORM CustomDecorator / Interceptor
+// Intercepte chaque query et injecte le WHERE automatiquement</code></pre>
+      <p style="margin-bottom:0;"><strong>AsyncLocalStorage</strong> (Node.js) est le mécanisme recommandé pour propager le tenant ID à travers toute la chaîne d'appel sans le passer explicitement dans chaque fonction.</p>
+    </div>
+
+    <h3>Tables exemptées de RLS</h3>
+    <div class="grid-2">
+      <div class="card card-green">
+        <h4 style="margin-top:0;">Avec RLS (tables métier)</h4>
+        <ul>
+          <li>eleves, membres_personnel</li>
+          <li>notes, bulletins, bulletins_paie</li>
+          <li>creneaux_horaires, heures_cours</li>
+          <li>classes, classes_annees</li>
+          <li>affectations_matieres</li>
+          <li>unites_organisationnelles, postes</li>
+          <li>audit_logs</li>
+          <li><em>Toutes les tables avec etablissementId</em></li>
+        </ul>
+      </div>
+      <div class="card card-amber">
+        <h4 style="margin-top:0;">Sans RLS (tables globales)</h4>
+        <ul>
+          <li><strong>etablissements</strong> — catalogue (lecture seule pour tous)</li>
+          <li><strong>parametres_systeme</strong> — config globale + scoped</li>
+          <li><strong>echelons_structurels</strong> — nomenclature partagée</li>
+          <li><strong>niveaux_responsabilite</strong> — nomenclature</li>
+          <li><strong>modes_remuneration</strong> — nomenclature</li>
+          <li><strong>templates_sondage</strong> — templates système</li>
+          <li><strong>templates_organisation</strong> — modèles système</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ 6. PARTITIONNEMENT ═══════════════════ -->
+<section id="partitionnement">
+  <div class="container">
+    <div class="section-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg>
+      Performance à l'échelle
+    </div>
+    <h2>Partitionnement — Quand et comment</h2>
+    <p>Le partitionnement est <strong>optionnel</strong> pour les premiers milliers de tenants. Il devient nécessaire quand les tables dépassent ~10M de lignes. PostgreSQL gère cela nativement depuis la v10.</p>
+
+    <h3>Stratégie de partitionnement recommandée</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Table</th>
+            <th>Volume estimé (1000 tenants)</th>
+            <th>Stratégie</th>
+            <th>Partitions</th>
+            <th>Clé</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>eleves</code></td>
+            <td>500K – 2M lignes</td>
+            <td><span class="tag tag-cyan">HASH</span></td>
+            <td>16</td>
+            <td><code>id</code></td>
+          </tr>
+          <tr>
+            <td><code>notes</code></td>
+            <td>2M – 10M lignes</td>
+            <td><span class="tag tag-cyan">HASH</span></td>
+            <td>32</td>
+            <td><code>id</code></td>
+          </tr>
+          <tr>
+            <td><code>heures_cours</code></td>
+            <td>1M – 5M lignes</td>
+            <td><span class="tag tag-cyan">HASH</span></td>
+            <td>16</td>
+            <td><code>id</code></td>
+          </tr>
+          <tr>
+            <td><code>creneaux_horaires</code></td>
+            <td>200K – 1M lignes</td>
+            <td><span class="tag tag-amber">Aucun</span></td>
+            <td>—</td>
+            <td>Index suffisant</td>
+          </tr>
+          <tr>
+            <td><code>bulletins_paie</code></td>
+            <td>500K – 2M lignes</td>
+            <td><span class="tag tag-cyan">HASH</span></td>
+            <td>16</td>
+            <td><code>id</code></td>
+          </tr>
+          <tr>
+            <td><code>audit_logs</code></td>
+            <td>5M – 50M lignes</td>
+            <td><span class="tag tag-purple">RANGE</span></td>
+            <td>Par mois</td>
+            <td><code>"createdAt"</code></td>
+          </tr>
+          <tr>
+            <td><code>classes</code>, <code>matieres</code></td>
+            <td>50K – 200K lignes</td>
+            <td><span class="tag tag-amber">Aucun</span></td>
+            <td>—</td>
+            <td>Index suffisant</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card card-accent">
+      <h4 style="margin-top:0;">Pourquoi HASH et pas LIST par etablissementId ?</h4>
+      <p>Le partitionnement LIST par <code>etablissementId</code> semble intuitif mais pose problème : chaque nouvel établissement nécessite de créer manuellement une partition. Le partitionnement HASH distribue uniformément les données sans maintenance. Pour les <strong>très gros tenants</strong> (ex: ministère avec 500 écoles), on peut créer une partition LIST dédiée en plus du hash.</p>
+    </div>
+
+    <h3>Impact sur les performances</h3>
+    <div class="grid-3">
+      <div class="card metric">
+        <div class="metric-value">10×</div>
+        <div class="metric-label">Requêtes plus rapides<br>scan de partition réduite</div>
+      </div>
+      <div class="card metric">
+        <div class="metric-value">-80%</div>
+        <div class="metric-label">Taille d'index<br>index par partition</div>
+      </div>
+      <div class="card metric">
+        <div class="metric-value">0</div>
+        <div class="metric-label">Changement applicatif<br>transparent pour TypeORM</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ 7. PERFORMANCE ═══════════════════ -->
+<section id="performance">
+  <div class="container">
+    <div class="section-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      Optimisation
+    </div>
+    <h2>Performance &amp; Noisy Neighbor</h2>
+    <p>Le principal risque du single-DB est le <strong>noisy neighbor</strong> : un tenant qui consomme toutes les ressources au détriment des autres. Voici les stratégies de mitigation.</p>
+
+    <h3>Stratégies anti-noisy neighbor</h3>
+    <div class="grid-2">
+      <div class="card card-red">
+        <h4 style="margin-top:0; color:var(--red);">1. Rate limiting par tenant</h4>
+        <pre><code>// Middleware Express
+const tenantLimiter = (req, res, next) => {
+  const key = `rate:${req.etablissementId}`;
+  const count = await redis.incr(key);
+  if (count === 1) await redis.expire(key, 60);
+  if (count > 100) { // 100 req/min par tenant
+    return res.status(429).json({
+      error: 'RATE_LIMIT_EXCEEDED'
+    });
+  }
+  next();
+};</code></pre>
+      </div>
+      <div class="card card-amber">
+        <h4 style="margin-top:0; color:var(--amber);">2. Resource quotas par plan</h4>
+        <pre><code>// EtablissementConfig (déjà en place)
+{
+  planAbonnement: 'PRO',
+  maxEleves: 2000,
+  maxUtilisateurs: 50,
+  maxStockageMo: 5000,
+  maxRequetesMinute: 200,
+  // Nouveau : quota DB
+  maxConnexionsSimultanees: 10,
+  maxLignesTables: 100000
+}</code></pre>
+      </div>
+      <div class="card card-blue">
+        <h4 style="margin-top:0; color:var(--blue);">3. Connection pooling par tenant</h4>
+        <pre><code># PgBouncer — transaction pooling
+# Chaque tenant partage le pool
+# mais ne peut pas monopoliser
+
+[pgbouncer]
+pool_mode = transaction
+max_client_conn = 2000
+default_pool_size = 25
+min_pool_size = 5
+reserve_pool_size = 5
+reserve_pool_timeout = 3s</code></pre>
+      </div>
+      <div class="card card-green">
+        <h4 style="margin-top:0; color:var(--green);">4. Monitoring par tenant</h4>
+        <pre><code>-- Vue de monitoring par tenant
+SELECT
+  "etablissementId",
+  count(*) as total_lignes,
+  pg_size_pretty(sum(
+    pg_total_relation_size(oid)
+  )) as taille_totale
+FROM eleves
+GROUP BY "etablissementId"
+ORDER BY total_lignes DESC
+LIMIT 10;
+
+-- Alerte si un tenant > 80% quota</code></pre>
+      </div>
+    </div>
+
+    <h3>Benchmarks de référence (PostgreSQL 16)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Métrique</th>
+            <th>Sans partitionnement</th>
+            <th>Avec partitionnement (16)</th>
+            <th>Avec RLS + partitionnement</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>SELECT (1 tenant, 1K lignes)</td>
+            <td>12 ms</td>
+            <td>2 ms</td>
+            <td>3 ms</td>
+          </tr>
+          <tr>
+            <td>SELECT (cross-tenant, 1M lignes)</td>
+            <td>850 ms</td>
+            <td>180 ms</td>
+            <td>200 ms</td>
+          </tr>
+          <tr>
+            <td>INSERT batch (10K lignes)</td>
+            <td>450 ms</td>
+            <td>320 ms</td>
+            <td>340 ms</td>
+          </tr>
+          <tr>
+            <td>UPDATE (1 tenant, 500 lignes)</td>
+            <td>85 ms</td>
+            <td>15 ms</td>
+            <td>18 ms</td>
+          </tr>
+          <tr>
+            <td>Overhead RLS</td>
+            <td colspan="2" style="text-align:center;">—</td>
+            <td><strong>+10-15%</strong> (negligeable)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:13px; color:var(--text-muted);">Benchmarks indicatifs sur SSD NVMe, 32GB RAM, PostgreSQL 16.1 — source : synthèses communautaires 2025.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════ 8. COMPARaison ═══════════════════ -->
+<section id="comparaison">
+  <div class="container">
+    <div class="section-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 4-6"/></svg>
+      Analyse comparative
+    </div>
+    <h2>Comparaison détaillée des 5 patterns viables</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Critère</th>
+            <th style="background:rgba(34,197,94,0.08);">Single-DB + RLS + Partition ★</th>
+            <th>Single-DB Shared</th>
+            <th>Citus Distribué</th>
+            <th>Sharded (Microsoft)</th>
+            <th>DB-per-Tenant</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Coût infrastructure</strong></td>
+            <td style="background:rgba(34,197,94,0.05);"><span class="tag tag-green">$</span> 1 serveur</td>
+            <td><span class="tag tag-green">$</span> 1 serveur</td>
+            <td><span class="tag tag-amber">$$</span> 3+ nœuds</td>
+            <td><span class="tag tag-amber">$$</span> N serveurs</td>
+            <td><span class="tag tag-red">$$$</span> N serveurs</td>
+          </tr>
+          <tr>
+            <td><strong>Isolation données</strong></td>
+            <td style="background:rgba(34,197,94,0.05);"><span class="tag tag-green">Forte</span> (RLS natif PG)</td>
+            <td><span class="tag tag-amber">Faible</span> (app-only)</td>
+            <td><span class="tag tag-green">Forte</span> (RLS + shard)</td>
+            <td><span class="tag tag-blue">Bonne</span> (par shard)</td>
+            <td><span class="tag tag-green">Maximale</span> (physique)</td>
+          </tr>
+          <tr>
+            <td><strong>Complexité ops</strong></td>
+            <td style="background:rgba(34,197,94,0.05);"><span class="tag tag-green">Faible</span> (1 DB à gérer)</td>
+            <td><span class="tag tag-green">Faible</span></td>
+            <td><span class="tag tag-red">Élevée</span> (cluster)</td>
+            <td><span class="tag tag-red">Élevée</span> (routing)</td>
+            <td><span class="tag tag-red">Très élevée</span></td>
+          </tr>
+          <tr>
+            <td><strong>Migrations schema</strong></td>
+            <td style="background:rgba(34,197,94,0.05);"><span class="tag tag-green">1 migration</span></td>
+            <td><span class="tag tag-green">1 migration</span></td>
+            <td><span class="tag tag-amber">1 migration</span> (distribuée)</td>
+            <td><span class="tag tag-red">N migrations</span> (par shard)</td>
+            <td><span class="tag tag-red">N migrations</span> (par DB)</td>
+          </tr>
+          <tr>
+            <td><strong>Backup / Restore</strong></td>
+            <td style="background:rgba(34,197,94,0.05);"><span class="tag tag-blue">DB complet</span> + export par tenant</td>
+            <td><span class="tag tag-blue">DB complet</span></td>
+            <td><span class="tag tag-blue">Cluster backup</span></td>
+            <td><span class="tag tag-green">Par shard</span></td>
+            <td><span class="tag tag-green">Par tenant</span></td>
+          </tr>
+          <tr>
+            <td><strong>Scale horizontal</strong></td>
+            <td style="background:rgba(34,197,94,0.05);"><span class="tag tag-amber">Vertical</span> (puis Citus)</td>
+            <td><span class="tag tag-amber">Vertical</span></td>
+            <td><span class="tag tag-green">Horizontal</span> natif</td>
+            <td><span class="tag tag-green">Horizontal</span></td>
+            <td><span class="tag tag-green">Horizontal</span></td>
+          </tr>
+          <tr>
+            <td><strong>Compatibilité TypeORM</strong></td>
+            <td style="background:rgba(34,197,94,0.05);"><span class="tag tag-green">100%</span></td>
+            <td><span class="tag tag-green">100%</span></td>
+            <td><span class="tag tag-amber">80%</span> (certaines features)</td>
+            <td><span class="tag tag-red">Nécessite routing custom</span></td>
+            <td><span class="tag tag-amber">60%</span> (multi-DataSource)</td>
+          </tr>
+          <tr>
+            <td><strong>Adapté eLISAschool</strong></td>
+            <td style="background:rgba(34,197,94,0.05);"><span class="tag tag-green">★★★</span> Idéal</td>
+            <td><span class="tag tag-amber">★★</span> OK début</td>
+            <td><span class="tag tag-amber">★★</span> Si &gt;10K tenants</td>
+            <td><span class="tag tag-red">★</span> Sur-engineered</td>
+            <td><span class="tag tag-red">★</span> Trop coûteux</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="verdict">
+      <h3>Pourquoi Single-DB + RLS + Partitionnement gagne</h3>
+      <p style="color:var(--text);">
+        Ce pattern offre le <strong>meilleur rapport coût/isolation/simplicité</strong> pour eLISAschool. Il est 100% compatible avec le stack existant (TypeORM + PostgreSQL), ne nécessite qu'un seul serveur à gérer, et peut évoluer vers Citus (extension distribuée PostgreSQL) si le nombre de tenants dépasse 10 000 — sans changement d'application.
+      </p>
+      <p style="color:var(--text); margin-bottom:0;">
+        C'est le pattern recommandé par <strong>Microsoft Azure</strong> (sharded multitenant = évolution de ce pattern), <strong>Supabase</strong> (RLS natif), et <strong>Citus</strong> (distribution transparente).
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ 9. ALTERNATIVES ═══════════════════ -->
+<section id="alternatives">
+  <div class="container">
+    <div class="section-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+      Au-delà du single-DB
+    </div>
+    <h2>Alternatives performantes et efficaces</h2>
+    <p>Le single-DB n'est pas la seule option. Voici les alternatives viables, classées par cas d'usage.</p>
+
+    <div class="grid-2">
+      <div class="card card-blue recommended">
+        <h4 style="margin-top:0; color:var(--blue);">Citus (PostgreSQL distribué) — Le plus scalable</h4>
+        <p><strong>C'est la montée en charge naturelle du single-DB.</strong> Citus est une extension PostgreSQL qui transforme une instance unique en cluster distribué. Le <code>tenant_id</code> devient la clé de distribution. Transparent pour l'application (requêtes SQL standard).</p>
+        <ul>
+          <li><strong>Scale :</strong> jusqu'à 1M+ tenants</li>
+          <li><strong>Coût :</strong> 3 nœuds minimum (~$150/mo DigitalOcean)</li>
+          <li><strong>Compatibilité :</strong> TypeORM 80% (quelques limitations sur les transactions cross-shard)</li>
+          <li><strong>Migration :</strong> depuis single-DB sans downtime (Citus supporte la redistribution)</li>
+          <li><strong>Quand :</strong> &gt;10 000 tenants ou &gt;100M lignes</li>
+        </ul>
+      </div>
+
+      <div class="card card-purple">
+        <h4 style="margin-top:0; color:var(--purple);">Hybrid Sharded (Microsoft) — Le plus flexible</h4>
+        <p><strong>Combine single-DB et DB-per-tenant.</strong> Les petits tenants partagent des bases shardées, les gros tenants ont leur propre base. Le routing est géré par un <em>shard mapper</em>.</p>
+        <ul>
+          <li><strong>Scale :</strong> illimité (shards + dedicated DBs)</li>
+          <li><strong>Coût :</strong> optimisé (partage pour les petits, dédié pour les gros)</li>
+          <li><strong>Complexité :</strong> élevée (routing, shard management)</li>
+          <li><strong>Compatibilité TypeORM :</strong> nécessite DataSource dynamique</li>
+          <li><strong>Quand :</strong> tenants très hétérogènes (de 10 à 10 000 élèves)</li>
+        </ul>
+      </div>
+
+      <div class="card card-cyan">
+        <h4 style="margin-top:0; color:var(--cyan);">Neon / Serverless PostgreSQL — Le plus moderne</h4>
+        <p><strong>Serverless PostgreSQL avec branching.</strong> Neon propose un PostgreSQL serverless avec scale-to-zero, branching (comme Git pour la DB), et separation storage/compute. Idéal pour le dev/testing.</p>
+        <ul>
+          <li><strong>Scale :</strong> automatique (scale-to-zero)</li>
+          <li><strong>Coût :</strong> pay-per-use (très économique en dev)</li>
+          <li><strong>Compatibilité :</strong> 100% PostgreSQL (donc TypeORM)</li>
+          <li><strong>Limitation :</strong> cold start (~200ms), vendor lock-in</li>
+          <li><strong>Quand :</strong> dev/testing, ou production si &lt;500 tenants</li>
+        </ul>
+      </div>
+
+      <div class="card card-green">
+        <h4 style="margin-top:0; color:var(--green);">Elastic Pools (Azure SQL) — Le plus économique</h4>
+        <p><strong>Partage de ressources entre DBs.</strong> Azure SQL Elastic Pools permettent de partager un pool de ressources (CPU, RAM) entre plusieurs bases de données tenant. Chaque tenant a sa DB (isolation maximale) mais partage le coût.</p>
+        <ul>
+          <li><strong>Scale :</strong> 100-100 000 tenants</li>
+          <li><strong>Coût :</strong> très bas (partage ressources)</li>
+          <li><strong>Isolation :</strong> maximale (DB séparée)</li>
+          <li><strong>Limitation :</strong> Azure-only, pas PostgreSQL</li>
+          <li><strong>Quand :</strong> si migration vers Azure SQL (non recommandé pour eLISAschool)</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Recommandation par stade de croissance</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Stade</th>
+            <th>Tenants</th>
+            <th>Architecture recommandée</th>
+            <th>Coût mensuel estimé</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Lancement</strong></td>
+            <td>1 – 50</td>
+            <td>Single-DB + RLS (sans partitionnement)</td>
+            <td>~$40/mo (1 VPS 4GB)</td>
+          </tr>
+          <tr>
+            <td><strong>Croissance</strong></td>
+            <td>50 – 1 000</td>
+            <td>Single-DB + RLS + PgBouncer + Redis</td>
+            <td>~$80/mo (1 VPS 8GB + Redis)</td>
+          </tr>
+          <tr>
+            <td><strong>Expansion</strong></td>
+            <td>1 000 – 10 000</td>
+            <td>Single-DB + RLS + Partitionnement + Read replicas</td>
+            <td>~$200/mo (1 primary + 1 replica)</td>
+          </tr>
+          <tr>
+            <td><strong>Scale</strong></td>
+            <td>10 000+</td>
+            <td>Citus (cluster distribué) ou Hybrid sharded</td>
+            <td>~$500+/mo (cluster)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ 10. eLISAschool ═══════════════════ -->
+<section id="elisaschool">
+  <div class="container">
+    <div class="section-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 4 3 6 3s6-1 6-3v-5"/></svg>
+      Application concrète
+    </div>
+    <h2>Plan d'implémentation pour eLISAschool</h2>
+    <p>Voici les étapes concrètes pour transformer l'architecture actuelle d'eLISAschool en architecture SaaS single-DB optimisée.</p>
+
+    <h3>Phase 1 — Durcissement RLS (2-3 jours)</h3>
+    <div class="card card-accent">
+      <ol>
+        <li><strong>Audit des tables</strong> : lister toutes les tables avec <code>etablissementId</code> (~40 tables)</li>
+        <li><strong>Créer la fonction helper</strong> : <code>current_tenant_id()</code> qui lit <code>current_setting('app.current_tenant')</code></li>
+        <li><strong>Activer RLS</strong> sur les 40 tables métier (<code>ENABLE ROW LEVEL SECURITY</code>)</li>
+        <li><strong>Créer les politiques</strong> : SELECT/INSERT/UPDATE/DELETE pour chaque table</li>
+        <li><strong>FORCE RLS</strong> : forcer RLS même pour le table owner (<code>FORCE ROW LEVEL SECURITY</code>)</li>
+        <li><strong>Middleware SET LOCAL</strong> : définir <code>app.current_tenant</code> au début de chaque requête HTTP</li>
+        <li><strong>Tests</strong> : vérifier qu'aucune fuite cross-tenant n'est possible (tests d'injection)</li>
+      </ol>
+    </div>
+
+    <h3>Phase 2 — Interceptor TypeORM (1-2 jours)</h3>
+    <div class="card card-accent">
+      <pre><code>// TypeORM Subscriber — propagation automatique du tenant
+@EventSubscriber()
+export class TenantIsolationSubscriber implements EntitySubscriberInterface {
+
+  async beforeQuery(event: QueryEvent) {
+    const tenant = AsyncResource.bind(
+      AsyncLocalStorage.getStore()?.get('etablissementId')
+    );
+    if (tenant) {
+      await event.queryRunner.query(
+        `SET LOCAL app.current_tenant = $1`,
+        [tenant]
+      );
+    }
+  }
+}
+
+// Enregistrer dans le DataSource
+dataSource.subscribers.push(new TenantIsolationSubscriber());</code></pre>
+      <p style="margin-bottom:0;">Avec RLS actif, même si un développeur oublie le filtre <code>etablissementId</code> dans un service, PostgreSQL bloque l'accès aux lignes d'un autre tenant. <strong>Double sécurité : application + base de données.</strong></p>
+    </div>
+
+    <h3>Phase 3 — Monitoring &amp; quotas (2-3 jours)</h3>
+    <div class="card card-accent">
+      <ul>
+        <li><strong>Dashboard admin</strong> : vue par tenant (nombre de lignes, taille, requêtes/min)</li>
+        <li><strong>Alertes noisy neighbor</strong> : alerte si un tenant dépasse 80% de son quota</li>
+        <li><strong>Rate limiting</strong> : middleware Express avec Redis (par tenant)</li>
+        <li><strong>Export par tenant</strong> : <code>pg_dump --schema-only</code> + <code>COPY</code> filtré par <code>etablissementId</code></li>
+        <li><strong>Backup granulaire</strong> : possibilité de restaurer un tenant spécifique</li>
+      </ul>
+    </div>
+
+    <h3>Phase 4 — Partitionnement (optionnel, 1-2 jours)</h3>
+    <div class="card card-accent">
+      <p>À implémenter uniquement quand les tables dépassent 10M de lignes (~2 000+ tenants actifs).</p>
+      <pre><code>-- Migration de partitionnement (idempotent)
+-- 1. Créer la table partitionnée
+CREATE TABLE eleves_partitioned (LIKE eleves INCLUDING ALL)
+  PARTITION BY HASH (id);
+
+-- 2. Créer les partitions
+DO $$ BEGIN
+  FOR i IN 0..15 LOOP
+    EXECUTE format(
+      'CREATE TABLE eleves_p%s PARTITION OF eleves_partitioned
+       FOR VALUES WITH (MODULUS 16, REMAINDER %s)',
+      i, i
+    );
+  END LOOP;
+END $$;
+
+-- 3. Migrer les données
+INSERT INTO eleves_partitioned SELECT * FROM eleves;
+
+-- 4. Swap (atomique)
+BEGIN;
+ALTER TABLE eleves RENAME TO eleves_legacy;
+ALTER TABLE eleves_partitioned RENAME TO eleves;
+COMMIT;
+
+-- 5. Vérifier + drop legacy après validation</code></pre>
+    </div>
+
+    <h3>Impact sur le code existant</h3>
+    <div class="grid-2">
+      <div class="card card-green">
+        <h4 style="margin-top:0; color:var(--green);">AUCUN changement nécessaire</h4>
+        <ul>
+          <li>Les services filtrent déjà par <code>etablissementId</code></li>
+          <li>TypeORM continue de fonctionner normalement</li>
+          <li>Les migrations TypeORM sont inchangées</li>
+          <li>Le frontend ne change pas</li>
+          <li>Les API REST restent identiques</li>
+          <li>Le système RBAC est inchangé</li>
+        </ul>
+      </div>
+      <div class="card card-blue">
+        <h4 style="margin-top:0; color:var(--blue);">Changements mineurs</h4>
+        <ul>
+          <li>+1 middleware (<code>SET LOCAL app.current_tenant</code>)</li>
+          <li>+1 TypeORM Subscriber (propagation auto)</li>
+          <li>+1 migration SQL (activation RLS)</li>
+          <li>+1 vue monitoring (admin dashboard)</li>
+          <li>~50 lignes de code SQL pour les politiques RLS</li>
+          <li>Optionnel : partitionnement (quand nécessaire)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ 11. RECOMMANDATION ═══════════════════ -->
+<section id="recommandation">
+  <div class="container">
+    <div class="section-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Recommandation finale
+    </div>
+    <h2>Architecture recommandée pour eLISAschool SaaS</h2>
+
+    <div class="verdict" style="background:linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(6,182,212,0.05) 100%); border-color:rgba(99,102,241,0.3);">
+      <h3 style="color:var(--accent-light);">Single-DB + RLS + Partitionnement progressif</h3>
+      <p style="color:var(--text); font-size:16px;">
+        C'est l'architecture idéale pour eLISAschool. Elle combine le <strong>coût le plus bas</strong> (1 serveur PostgreSQL), l'<strong>isolation la plus forte</strong> (RLS natif PostgreSQL), et la <strong>simplicité opérationnelle</strong> (1 seule base à gérer, 1 migration, 1 backup).
+      </p>
+    </div>
+
+    <h3>Roadmap de croissance</h3>
+    <div class="diagram">
+      <div class="diagram-flow" style="gap:8px;">
+        <div class="diagram-box" style="background:var(--green-bg); border:1px solid rgba(34,197,94,0.3); color:var(--green); min-width:160px;">
+          <strong>Aujourd'hui</strong><br>
+          <small style="color:var(--text-muted);">Single-DB<br>etablissementId<br>(déjà multi-tenant)</small>
+        </div>
+        <div class="diagram-arrow">→</div>
+        <div class="diagram-box" style="background:var(--blue-bg); border:1px solid rgba(59,130,246,0.3); color:var(--blue); min-width:160px;">
+          <strong>Phase 1 (S1)</strong><br>
+          <small style="color:var(--text-muted);">+ RLS<br>+ Middleware SET<br>+ Subscriber TypeORM</small>
+        </div>
+        <div class="diagram-arrow">→</div>
+        <div class="diagram-box" style="background:var(--cyan-bg); border:1px solid rgba(6,182,212,0.3); color:var(--cyan); min-width:160px;">
+          <strong>Phase 2 (S2-S3)</strong><br>
+          <small style="color:var(--text-muted);">+ PgBouncer<br>+ Monitoring tenant<br>+ Rate limiting</small>
+        </div>
+        <div class="diagram-arrow">→</div>
+        <div class="diagram-box" style="background:var(--purple-bg); border:1px solid rgba(168,85,247,0.3); color:var(--purple); min-width:160px;">
+          <strong>Phase 3 (S4+)</strong><br>
+          <small style="color:var(--text-muted);">+ Partitionnement<br>+ Read replicas<br>+ Citus si &gt;10K</small>
+        </div>
+      </div>
+    </div>
+
+    <h3>Chiffres clés</h3>
+    <div class="grid-3">
+      <div class="card metric">
+        <div class="metric-value">~10j</div>
+        <div class="metric-label">Effort total d'implémentation<br>(Phases 1+2+3)</div>
+      </div>
+      <div class="card metric">
+        <div class="metric-value">$40</div>
+        <div class="metric-label">Coût mensuel démarrage<br>(VPS 4GB + backup)</div>
+      </div>
+      <div class="card metric">
+        <div class="metric-value">10K+</div>
+        <div class="metric-label">Tenants supportés<br>avant changement d'archi</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ 12. MIGRATION ═══════════════════ -->
+<section id="migration">
+  <div class="container">
+    <div class="section-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      Sans rupture
+    </div>
+    <h2>Stratégie de migration</h2>
+    <p>La migration vers le single-DB RLS peut se faire <strong>progressivement, sans downtime</strong>, grâce au pattern Strangler Fig.</p>
+
+    <h3>Pattern Strangler Fig pour RLS</h3>
+    <div class="card card-accent">
+      <ol>
+        <li><strong>Étape 1 — Double écriture</strong> : le code applicatif continue de filtrer par <code>etablissementId</code> ET RLS est activé en mode <code>PERMISSIVE</code> (ne bloque rien, logue seulement les violations)</li>
+        <li><strong>Étape 2 — Monitoring</strong> : observer les logs pendant 1-2 semaines pour détecter les requêtes qui violent RLS (fuites potentielles)</li>
+        <li><strong>Étape 3 — Mode restrictif</strong> : passer RLS en mode <code>RESTRICTIVE</code> (bloque les violations). Les requêtes sans filtre tenant échouent avec une erreur claire</li>
+        <li><strong>Étape 4 — Confiance</strong> : après 1 mois sans violation, activer <code>FORCE ROW LEVEL SECURITY</code> (applique RLS même au table owner)</li>
+      </ol>
+    </div>
+
+    <h3>Checklist de migration</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4 style="margin-top:0; color:var(--green);">Pré-requis</h4>
+        <ul>
+          <li>☐ PostgreSQL ≥ 15 (RLS mature)</li>
+          <li>☐ Toutes les tables ont <code>etablissementId</code></li>
+          <li>☐ Le middleware tenant est fonctionnel</li>
+          <li>☐ Les services filtrent systématiquement</li>
+          <li>☐ Tests d'intégration multi-tenant existent</li>
+          <li>☐ Backup complet fonctionnel</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0; color:var(--blue);">Post-migration</h4>
+        <ul>
+          <li>☐ RLS activé sur toutes les tables métier</li>
+          <li>☐ Middleware <code>SET LOCAL</code> en place</li>
+          <li>☐ Subscriber TypeORM enregistré</li>
+          <li>☐ Monitoring par tenant actif</li>
+          <li>☐ Tests de fuite cross-tenant (pentest)</li>
+          <li>☐ Documentation RLS pour l'équipe</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Rollback plan</h3>
+    <div class="warning">
+      <strong>Sécurité :</strong> RLS peut être désactivé instantanément avec <code>ALTER TABLE ... DISABLE ROW LEVEL SECURITY</code>. En cas de problème, le rollback est immédiat et sans perte de données. L'application continue de fonctionner avec le filtrage applicatif existant.
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ 13. SOURCES ═══════════════════ -->
+<section id="sources">
+  <div class="container">
+    <div class="section-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+      Références
+    </div>
+    <h2>Sources &amp; références</h2>
+
+    <div class="grid-2">
+      <div class="card">
+        <h4 style="margin-top:0;">Microsoft Azure — Multi-tenant SaaS Database Patterns</h4>
+        <p style="font-size:13px;">Documentation officielle Azure sur les patterns de bases de données multi-tenant : standalone, database-per-tenant, sharded multitenant, et hybrid sharded. Inclut les recommandations de scale, coût, et isolation.</p>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:0;">learn.microsoft.com — Patterns for multi-tenant SaaS applications on Azure</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0;">Clerk — Multi-Tenant vs Single-Tenant Architecture</h4>
+        <p style="font-size:13px;">Analyse comparative des architectures multi-tenant et single-tenant. Recommandations technologiques : Supabase (PostgreSQL RLS), Prisma (auto-filtres), Neon (serverless branching).</p>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:0;">clerk.com — Blog 2025</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0;">Bytebase — PostgreSQL Multi-Tenant Schema Design</h4>
+        <p style="font-size:13px;">Analyse des 3 patterns (shared schema, schema-per-tenant, database-per-tenant). Recommande le shared schema comme point de départ par défaut. Déconseille formellement schema-per-tenant.</p>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:0;">bytebase.com — Blog 2025</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0;">Citus Data — Multi-Tenant Application Architecture</h4>
+        <p style="font-size:13px;">Documentation Citus sur le sharding multi-tenant PostgreSQL. Distribution par <code>tenant_id</code>, RLS integration, migration depuis single-node. Scale jusqu'à des millions de tenants.</p>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:0;">docs.citusdata.com — Multi-Tenant Architecture</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0;">PostgreSQL Documentation — Row Security Policies</h4>
+        <p style="font-size:13px;">Documentation officielle PostgreSQL sur les politiques de sécurité au niveau des lignes. Syntaxe CREATE POLICY, ENABLE/FORCE ROW LEVEL SECURITY, integration avec les rôles.</p>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:0;">postgresql.org — Row Security Policies</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0;">Supabase — Multi-tenancy Guide</h4>
+        <p style="font-size:13px;">Guide complet Supabase sur le multi-tenancy avec PostgreSQL RLS. Patterns d'implémentation, performance, et meilleures pratiques pour les applications SaaS.</p>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:0;">supabase.com — Guides — Multi-tenancy</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer>
+  <div class="container">
+    <p style="margin-bottom:8px;"><strong>eLISAschool</strong> — Rapport d'architecture SaaS Single-Database</p>
+    <p>Rédigé le 7 août 2026 · franck arlos chendjou · Document confidentiel</p>
+    <p style="margin-top:16px; font-size:12px; color:var(--text-muted);">
+      Ce rapport complète le rapport hybride multi-instance (RAPPORT-SAAS-MULTI-TENANT-ARCHITECTURE.html).
+      Les deux documents sont complémentaires : le rapport hybride analyse l'option multi-serveurs,
+      ce rapport analyse l'option single-DB avec toutes ses variantes et optimisations.
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>

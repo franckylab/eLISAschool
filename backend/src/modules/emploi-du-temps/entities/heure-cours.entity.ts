@@ -17,14 +17,14 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import { MembrePersonnel } from './personnel.entity';
+import { MembrePersonnel } from '@modules/personnel/entities';
 import { Classe, ClasseAnnee } from '@modules/classes/entities';
 import { Matiere } from '@modules/matieres/entities';
 import { Periode } from '@modules/periodes/entities';
 import { Salle } from '@modules/salles/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 import { AffectationMatiere } from '@modules/matieres/entities';
-import { CreneauHoraire, TypeCreneau } from '@modules/emploi-du-temps/entities';
+import { CreneauHoraire, TypeCreneau } from './creneau-horaire.entity';
 
 /**
  * Statut d'exécution du cours

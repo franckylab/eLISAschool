@@ -44,12 +44,18 @@ export const queryHeureCoursSchema = paginationWithSortSchema
     });
 
 export const genererHeuresCoursFromEdtSchema = z.object({
-    enseignantId: z.string().uuid(),
+    // Multi-sélection (nouveau — prioritaire)
+    affectationMatiereIds: z.array(z.string().uuid()).optional(),
+    // Ancien payload (rétro-compatible — tab-heure-cours)
+    enseignantId: z.string().uuid().optional(),
     classeAnneeId: z.string().uuid().optional(),
     dateDebut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     dateFin: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     periodeId: z.string().uuid().optional(),
-});
+}).refine(
+    data => (data.affectationMatiereIds && data.affectationMatiereIds.length > 0) || data.enseignantId,
+    { message: 'affectationMatiereIds ou enseignantId requis', path: ['affectationMatiereIds'] }
+);
 
 export type CreateHeureCoursDto = z.infer<typeof createHeureCoursSchema>;
 export type UpdateHeureCoursDto = z.infer<typeof updateHeureCoursSchema>;

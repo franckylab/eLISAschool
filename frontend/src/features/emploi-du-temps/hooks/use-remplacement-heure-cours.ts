@@ -65,7 +65,7 @@ export function useRemplacements(query?: Record<string, string | number | boolea
                 }
             }
             const response = await apiClient.get<{ items: RemplacementHeureCours[]; total: number }>(
-                `/api/personnel/heures-cours/remplacements?${params}`,
+                `/api/emploi-du-temps/heures-cours/remplacements?${params}`,
             );
             return response.data;
         },
@@ -77,7 +77,7 @@ export function useStatistiquesRemplacements() {
         queryKey: ['personnel', 'remplacements-heure-cours', 'statistiques'],
         queryFn: async () => {
             const response = await apiClient.get<StatistiquesRemplacements>(
-                '/api/personnel/heures-cours/remplacements/statistiques',
+                '/api/emploi-du-temps/heures-cours/remplacements/statistiques',
             );
             return response.data;
         },
@@ -95,7 +95,7 @@ export function useCreerRemplacement() {
     return useMutation({
         mutationFn: async (payload: { heureCoursId: string; motif: string; remplacantId?: string | null }) => {
             const response = await apiClient.post<RemplacementHeureCours>(
-                '/api/personnel/heures-cours/remplacements',
+                '/api/emploi-du-temps/heures-cours/remplacements',
                 payload,
             );
             return response.data;
@@ -122,7 +122,7 @@ export function useValiderRemplacement() {
             commentaires?: string;
         }) => {
             const response = await apiClient.patch<RemplacementHeureCours>(
-                `/api/personnel/heures-cours/remplacements/${id}/valider`,
+                `/api/emploi-du-temps/heures-cours/remplacements/${id}/valider`,
                 { remplacantId, commentaires },
             );
             return response.data;
@@ -148,7 +148,7 @@ export function useExecuterRemplacement() {
             commentaires?: string;
         }) => {
             const response = await apiClient.patch<RemplacementHeureCours>(
-                `/api/personnel/heures-cours/remplacements/${id}/executer`,
+                `/api/emploi-du-temps/heures-cours/remplacements/${id}/executer`,
                 { commentaires },
             );
             return response.data;
@@ -172,7 +172,7 @@ export function useRejeterRemplacement() {
     return useMutation({
         mutationFn: async ({ id, motif }: { id: string; motif: string }) => {
             const response = await apiClient.patch<RemplacementHeureCours>(
-                `/api/personnel/heures-cours/remplacements/${id}/rejeter`,
+                `/api/emploi-du-temps/heures-cours/remplacements/${id}/rejeter`,
                 { motif },
             );
             return response.data;
@@ -195,7 +195,7 @@ export function useAnnulerRemplacement() {
     return useMutation({
         mutationFn: async (id: string) => {
             const response = await apiClient.patch<RemplacementHeureCours>(
-                `/api/personnel/heures-cours/remplacements/${id}/annuler`,
+                `/api/emploi-du-temps/heures-cours/remplacements/${id}/annuler`,
             );
             return response.data;
         },

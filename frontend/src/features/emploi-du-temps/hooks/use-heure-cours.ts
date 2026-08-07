@@ -43,7 +43,7 @@ export function useResumeMensuel(enseignantId: string, mois: number, annee: numb
     return useQuery({
         queryKey: ['personnel', 'heures-cours', 'resume', enseignantId, mois, annee],
         queryFn: async () => {
-            const response = await apiClient.get<ResumeMensuelHeures>(`/api/personnel/heures-cours/enseignants/${enseignantId}/resume-mensuel/${annee}/${mois}`);
+            const response = await apiClient.get<ResumeMensuelHeures>(`/api/emploi-du-temps/heures-cours/enseignants/${enseignantId}/resume-mensuel/${annee}/${mois}`);
             return response.data;
         },
         enabled: !!enseignantId,
@@ -63,7 +63,7 @@ export function useHeureCoursList(query?: Record<string, string | number | boole
             const response = await apiClient.get<{
                 items: HeureCours[];
                 meta: { totalItems: number; itemCount: number; itemsPerPage: number; totalPages: number; currentPage: number };
-            }>(`/api/personnel/heures-cours?${params}`);
+            }>(`/api/emploi-du-temps/heures-cours?${params}`);
             return response.data;
         },
         enabled: true,
@@ -74,7 +74,7 @@ export function useCreateHeureCours() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (payload: Partial<HeureCours>) => {
-            const response = await apiClient.post<HeureCours>('/api/personnel/heures-cours', payload);
+            const response = await apiClient.post<HeureCours>('/api/emploi-du-temps/heures-cours', payload);
             return response.data;
         },
         onSuccess: () => {
@@ -87,7 +87,7 @@ export function useUpdateHeureCours() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async ({ id, ...payload }: { id: string } & Partial<HeureCours>) => {
-            const response = await apiClient.patch<HeureCours>(`/api/personnel/heures-cours/${id}`, payload);
+            const response = await apiClient.patch<HeureCours>(`/api/emploi-du-temps/heures-cours/${id}`, payload);
             return response.data;
         },
         onSuccess: () => {
@@ -100,7 +100,7 @@ export function useDeleteHeureCours() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (id: string) => {
-            await apiClient.delete(`/api/personnel/heures-cours/${id}`);
+            await apiClient.delete(`/api/emploi-du-temps/heures-cours/${id}`);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['personnel', 'heures-cours'] });
@@ -121,13 +121,14 @@ export function useGenererHeuresCoursFromEdt() {
     const handleError = useHandleError();
     return useMutation({
         mutationFn: async (payload: {
-            enseignantId: string;
+            affectationMatiereIds?: string[];
+            enseignantId?: string;
             classeAnneeId?: string;
             dateDebut: string;
             dateFin: string;
             periodeId?: string;
         }) => {
-            const response = await apiClient.post<GenererHeuresCoursResult>('/api/personnel/heures-cours/generer-from-edt', payload);
+            const response = await apiClient.post<GenererHeuresCoursResult>('/api/emploi-du-temps/heures-cours/generer-from-edt', payload);
             return response.data;
         },
         onSuccess: (result) => {
@@ -167,7 +168,7 @@ export function useStatistiquesGlobales(filtres?: Record<string, string | undefi
                 }
             }
             const response = await apiClient.get<StatistiquesGlobalesHeures>(
-                `/api/personnel/heures-cours/statistiques-globales?${params}`,
+                `/api/emploi-du-temps/heures-cours/statistiques-globales?${params}`,
             );
             return response.data;
         },
@@ -190,7 +191,7 @@ export function useExportHeuresCoursCSV() {
                 }
             }
             const response = await apiClient.get<Blob>(
-                `/api/personnel/heures-cours/export/csv?${params}`,
+                `/api/emploi-du-temps/heures-cours/export/csv?${params}`,
                 { responseType: 'blob' },
             );
             return response.data;
@@ -226,7 +227,7 @@ export function useExportHeuresCoursHTML() {
                 }
             }
             const response = await apiClient.get<string>(
-                `/api/personnel/heures-cours/export/html?${params}`,
+                `/api/emploi-du-temps/heures-cours/export/html?${params}`,
                 { responseType: 'text' as any },
             );
             return response.data;

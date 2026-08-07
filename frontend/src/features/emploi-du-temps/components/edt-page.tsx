@@ -614,19 +614,11 @@ export function EDTStandalonePage() {
             )}
 
             {/* ─── Modal Génération Heures de Cours ──── */}
-            <CustomModal
+            <EDTHeuresCoursModal
                 open={heuresCoursModalOpen}
                 onOpenChange={setHeuresCoursModalOpen}
-                title={t('generationHeuresCours.titre')}
-                description={t('generationHeuresCours.description')}
-                size="xl"
-            >
-                <EDTHeuresCoursModal
-                    enseignantId={contexteType === 'enseignant' ? contexteFilter : ''}
-                    classeAnneeId={contexteType === 'classe' ? contexteFilter || undefined : undefined}
-                    onClose={() => setHeuresCoursModalOpen(false)}
-                />
-            </CustomModal>
+                contexteClasseAnneeId={contexteType === 'classe' ? contexteFilter || undefined : undefined}
+            />
 
             {/* ─── Modal Détail Créneau (lecture seule) ── */}
             <EDTCreneauDetailModal

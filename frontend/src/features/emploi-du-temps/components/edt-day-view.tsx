@@ -12,7 +12,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Clock, MapPin, User, BookOpen, FileText, Check, CheckCircle2 } from 'lucide-react';
 import { formatDate } from '@/lib/date-utils';
-import { paletteCreneau } from '@/lib/palette-creneau';
+import { paletteCreneau, useModeTheme } from '@/lib/palette-creneau';
 import type { CreneauHoraire, JourSemaine, JourFerie } from '../types/edt.types';
 import { EDTLegend } from './edt-legend';
 
@@ -52,6 +52,7 @@ export function EDTDayView({
     joursFeries,
 }: EDTDayViewProps) {
     const { t } = useTranslation('emplois');
+    const mode = useModeTheme();
 
     const jourSemaine = JOUR_MAP[date.getDay()];
 
@@ -166,7 +167,7 @@ export function EDTDayView({
                             {creneauxJour.map((c) => {
                                 const pos = positionner(c.heureDebut ?? '08:00', c.heureFin ?? '09:00');
                                 const couleurHex = c.affectationMatiere?.matiere?.couleur;
-                                const pal = couleurHex ? paletteCreneau(couleurHex) : null;
+                                const pal = couleurHex ? paletteCreneau(couleurHex, undefined, mode) : null;
                                 return (
                                     <button
                                         key={c.id}

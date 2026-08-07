@@ -394,18 +394,28 @@ export class JourFerieService {
         await queryRunner.startTransaction();
 
         try {
-            // Vérifier les doublons existants pour cet établissement (par nom + pays + date)
+            // Vérifier les doublons existants pour cet établissement (par nom + pays)
+            // Clé de déduplication :
+            // - Récurrents : nom + pays + etablissementId (match l'index unique partiel)
+            // - Non récurrents : nom + pays + date + etablissementId (même nom, années différentes OK)
             const existants = await queryRunner.manager.find(JourFerie, {
                 where: { pays, etablissementId },
             });
             const clesExistantes = new Set(existants.map(e => {
+                if (e.estRecurrent) {
+                    return `R::${e.nom}::${e.pays ?? ''}`;
+                }
                 const dateStr = e.date ? (e.date instanceof Date ? e.date.toISOString().slice(0, 10) : e.date) : '';
-                return `${e.nom}::${e.pays ?? ''}::${dateStr}`;
+                return `NR::${e.nom}::${e.pays ?? ''}::${dateStr}`;
             }));
 
             // Filtrer : ne copier que les JF qui n'existent pas déjà
             const aCopier = jfGeneres.filter(jf => {
-                const cle = `${jf.nom}::${jf.pays}::${jf.date ?? ''}`;
+                if (jf.estRecurrent) {
+                    const cle = `R::${jf.nom}::${jf.pays}`;
+                    return !clesExistantes.has(cle);
+                }
+                const cle = `NR::${jf.nom}::${jf.pays}::${jf.date ?? ''}`;
                 return !clesExistantes.has(cle);
             });
 
@@ -506,7 +516,7 @@ export class JourFerieService {
                 const existingByNom = await queryRunner.manager.findOne(JourFerie, {
                     where: {
                         nom,
-                        date: dateStr,
+                        date: new Date(dateStr + 'T00:00:00'),
                         etablissementId: etablissementId ?? undefined,
                     },
                 });
@@ -515,7 +525,7 @@ export class JourFerieService {
                 // Aussi vérifier si un JF existe déjà à cette date (même date, nom différent)
                 const existingByDate = await queryRunner.manager.findOne(JourFerie, {
                     where: {
-                        date: dateStr,
+                        date: new Date(dateStr + 'T00:00:00'),
                         etablissementId: etablissementId ?? undefined,
                     },
                 });

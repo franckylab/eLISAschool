@@ -21,7 +21,7 @@ import {
     Index,
 } from 'typeorm';
 import { HeureCours } from './heure-cours.entity';
-import { MembrePersonnel } from './personnel.entity';
+import { MembrePersonnel } from '@modules/personnel/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 
 // ─── Enums ─────────────────────────────────────────────────────

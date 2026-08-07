@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { Download, FileText, Printer } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
-import { useExportHeuresCoursCSV, useExportHeuresCoursHTML } from '@/features/personnel/hooks/use-heure-cours';
+import { useExportHeuresCoursCSV, useExportHeuresCoursHTML } from '../hooks/use-heure-cours';
 
 interface HeuresCoursExportModalProps {
     open: boolean;

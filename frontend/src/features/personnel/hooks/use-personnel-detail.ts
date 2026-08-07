@@ -86,7 +86,7 @@ export function useEnseignantEdt(enseignantId: string, semaine?: string, periode
             const params = new URLSearchParams({ semaine: s });
             if (periodeId) params.set('periodeId', periodeId);
             const response = await apiClient.get<EdtEnseignant>(
-                `/api/personnel/heures-cours/enseignants/${enseignantId}/edt?${params.toString()}`
+                `/api/emploi-du-temps/heures-cours/enseignants/${enseignantId}/edt?${params.toString()}`
             );
             return response.data;
         },
@@ -155,7 +155,7 @@ export function useEnseignantHeures(enseignantId: string, periodeId?: string) {
             const params = new URLSearchParams({ dateDebut, dateFin });
             if (periodeId) params.set('periodeId', periodeId);
             const response = await apiClient.get<{ totalHeures: number; heuresParSemaine: number; nbSemaines: number }>(
-                `/api/personnel/heures-cours/enseignants/${enseignantId}/volume-horaire?${params.toString()}`
+                `/api/emploi-du-temps/heures-cours/enseignants/${enseignantId}/volume-horaire?${params.toString()}`
             );
             return response.data ?? { totalHeures: 0, heuresParSemaine: 0, nbSemaines: 0 };
         },

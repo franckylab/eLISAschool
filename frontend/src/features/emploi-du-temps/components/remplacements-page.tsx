@@ -20,8 +20,8 @@ import {
     useRemplacements, useStatistiquesRemplacements,
     useValiderRemplacement, useRejeterRemplacement, useAnnulerRemplacement,
     useExecuterRemplacement,
-} from '@/features/personnel/hooks/use-remplacement-heure-cours';
-import type { RemplacementHeureCours } from '@/features/personnel/hooks/use-remplacement-heure-cours';
+} from '../hooks/use-remplacement-heure-cours';
+import type { RemplacementHeureCours } from '../hooks/use-remplacement-heure-cours';
 import { useEnseignantOptions } from '@/features/emploi-du-temps/hooks/use-emploi-du-temps';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCard } from '@/components/ui/StatCard';

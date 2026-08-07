@@ -26,7 +26,7 @@ import { toast } from 'sonner';
 import { useUpdateCreneau, useVerifierConflits } from '../hooks/use-emploi-du-temps';
 import type { CreneauHoraire, JourSemaine, DonneesVerification, Conflit, RapportPropagation, JourFerie } from '../types/edt.types';
 import { estJourFerieFromList } from '../hooks/use-jours-feries';
-import { paletteCreneau } from '@/lib/palette-creneau';
+import { paletteCreneau, useModeTheme, melangeCouleur } from '@/lib/palette-creneau';
 
 interface EDTCalendarProps {
     creneaux: CreneauHoraire[];
@@ -606,18 +606,16 @@ function CreneauCard({
     onResizeStart: (e: React.PointerEvent) => void;
 }) {
     const { t } = useTranslation('emplois');
+    const mode = useModeTheme();
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: creneau.id,
     });
 
     const couleurHex = creneau.affectationMatiere?.matiere?.couleur;
-    const pal = couleurHex ? paletteCreneau(couleurHex) : null;
+    const pal = couleurHex ? paletteCreneau(couleurHex, undefined, mode) : null;
     const couleur = couleurHex || 'var(--color-dominant-500)';
-
-    // Détection de la hauteur du slot pour affichage progressif
-    const slotHeight = typeof style.height === 'string' ? parseFloat(style.height) : (style.height as number) || HAUTEUR_SLOT;
-    const estCompact = slotHeight < HAUTEUR_SLOT * 1.5;  // < 72px = 1 créneau
-    const estGrand = slotHeight >= HAUTEUR_SLOT * 2.5;   // >= 120px = 3+ créneaux
+    const texteCouleur = pal?.texteSurTeinte ?? 'var(--color-text-primary)';
+    const texteSecondaire = pal ? melangeCouleur(pal.texteSurTeinte, 70, mode === 'dark' ? '#94a3b8' : '#6b7280') : 'var(--color-text-secondary)';
 
     return (
         <div
@@ -688,43 +686,43 @@ function CreneauCard({
                     <div>
                         {/* Matière — toujours visible */}
                         <div
-                            className="font-semibold text-[var(--color-text-primary)] truncate leading-tight"
-                            style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.25vw, 0.6875rem)' }}
+                            className="font-semibold truncate leading-tight"
+                            style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.25vw, 0.6875rem)', color: texteCouleur }}
                         >
                             {creneau.affectationMatiere?.matiere?.nom || '—'}
                         </div>
-                        {/* Classe — visible si pas compact */}
-                        {!estCompact && creneau.affectationMatiere?.classeAnnee?.classe?.nom && (
+                        {/* Classe — toujours visible */}
+                        {creneau.affectationMatiere?.classeAnnee?.classe?.nom && (
                             <div
-                                className="flex items-center gap-0.5 text-[var(--color-dominant-600)] mt-0.5"
-                                style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.5625rem)' }}
+                                className="flex items-center gap-0.5 mt-0.5"
+                                style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.5625rem)', color: texteSecondaire }}
                             >
                                 <BookOpen className="h-2.5 w-2.5 shrink-0" />
                                 <span className="truncate">{creneau.affectationMatiere.classeAnnee.classe.nom}</span>
                             </div>
                         )}
-                        {/* Enseignant — visible si grand */}
-                        {estGrand && creneau.affectationMatiere?.enseignant && (
+                        {/* Enseignant — toujours visible */}
+                        {creneau.affectationMatiere?.enseignant && (
                             <div
-                                className="flex items-center gap-0.5 text-[var(--color-text-secondary)] mt-0.5"
-                                style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.5625rem)' }}
+                                className="flex items-center gap-0.5 mt-0.5"
+                                style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.5625rem)', color: texteSecondaire }}
                             >
                                 <User className="h-2.5 w-2.5 shrink-0" />
                                 <span className="truncate">
-                                    {creneau.affectationMatiere?.enseignant?.utilisateur?.profil?.prenom} {creneau.affectationMatiere?.enseignant?.utilisateur?.profil?.nom}
+                                    {creneau.affectationMatiere?.enseignant?.utilisateur?.profil?.prenom?.[0]}. {creneau.affectationMatiere?.enseignant?.utilisateur?.profil?.nom}
                                 </span>
                             </div>
                         )}
                     </div>
                     {/* Horaire + salle — en bas */}
                     <div
-                        className="flex items-center justify-between text-[var(--color-text-muted)]"
-                        style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.5625rem)' }}
+                        className="flex items-center justify-between"
+                        style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.5625rem)', color: texteSecondaire }}
                     >
                         <span>{creneau.heureDebut}–{creneau.heureFin}</span>
-                        {creneau.salle && estGrand && (
-                            <span className="flex items-center gap-0.5">
-                                <MapPin className="h-2.5 w-2.5" />{creneau.salle.nom}
+                        {creneau.salle && (
+                            <span className="flex items-center gap-0.5 truncate ml-1">
+                                <MapPin className="h-2.5 w-2.5 shrink-0" />{creneau.salle.code ?? creneau.salle.nom}
                             </span>
                         )}
                     </div>
@@ -744,8 +742,9 @@ function CreneauCard({
 // ─── Drag overlay card ────────────────────────────────
 
 function CreneauCardOverlay({ creneau }: { creneau: CreneauHoraire }) {
+    const mode = useModeTheme();
     const couleurHex = creneau.affectationMatiere?.matiere?.couleur;
-    const pal = couleurHex ? paletteCreneau(couleurHex) : null;
+    const pal = couleurHex ? paletteCreneau(couleurHex, undefined, mode) : null;
 
     return (
         <div className="w-[160px] rounded-md border-l-[3px] bg-[var(--color-surface)] shadow-xl opacity-90 p-2"

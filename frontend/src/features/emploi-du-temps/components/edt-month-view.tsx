@@ -12,7 +12,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar, Star, CheckCircle2, Clock, Check, MapPin, User } from 'lucide-react';
 import { formatDateInput } from '@/lib/date-utils';
-import { paletteCreneau } from '@/lib/palette-creneau';
+import { paletteCreneau, useModeTheme } from '@/lib/palette-creneau';
 import type { CreneauHoraire, JourSemaine, JourFerie } from '../types/edt.types';
 import { estJourFerieFromList } from '../hooks/use-jours-feries';
 
@@ -43,6 +43,7 @@ const JOURS_INDEX: Record<JourSemaine, number> = {
 
 export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick, onPlusNClick, showAll = false, joursFeries = [] }: EDTMonthViewProps) {
     const { t } = useTranslation('emplois');
+    const mode = useModeTheme();
 
     /** Calcule les jours de la grille (lundi → samedi) */
     const joursGrille = useMemo(() => {
@@ -195,7 +196,7 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick, onPl
                                 <div className="flex flex-col gap-0.5">
                                     {(showAll ? creneauxJour : creneauxJour.slice(0, 3)).map((c) => {
                                         const couleur = c.affectationMatiere?.matiere?.couleur;
-                                        const pal = couleur ? paletteCreneau(couleur) : null;
+                                        const pal = couleur ? paletteCreneau(couleur, undefined, mode) : null;
                                         const enseignantInitiales = c.affectationMatiere?.enseignant?.utilisateur?.profil
                                             ? `${c.affectationMatiere.enseignant.utilisateur.profil.prenom?.[0] ?? ''}${c.affectationMatiere.enseignant.utilisateur.profil.nom?.[0] ?? ''}`.toUpperCase()
                                             : '';

@@ -15,8 +15,8 @@ import {
     Clock, CalendarPlus, Download, Plus, CheckCircle2, XCircle,
     UserCheck, BarChart3, TrendingUp, CalendarDays,
 } from 'lucide-react';
-import { useHeureCoursList, useStatistiquesGlobales, useUpdateHeureCours } from '@/features/personnel/hooks/use-heure-cours';
-import type { HeureCours } from '@/features/personnel/hooks/use-heure-cours';
+import { useHeureCoursList, useStatistiquesGlobales, useUpdateHeureCours } from '../hooks/use-heure-cours';
+import type { HeureCours } from '../hooks/use-heure-cours';
 import { useEnseignantOptions, useSalleOptions, useMatiereOptions } from '@/features/emploi-du-temps/hooks/use-emploi-du-temps';
 import { useToutesClasses } from '@/features/classes/hooks/use-toutes-classes';
 import { PageHeader } from '@/components/layout/PageHeader';
