@@ -16,6 +16,7 @@ import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
+import { ColorFieldInherited } from '@/components/ui/ColorFieldInherited';
 import { toast } from 'sonner';
 import type { CreneauHoraire, JourSemaine, TypeCreneau, DonneesVerification } from '../types/edt.types';
 import { useVerifierConflits, useCreerCreneau, useUpdateCreneau, useSupprimerCreneau, useValiderCreneau, useAffectationsOptions, useSallesFromCreneaux } from '../hooks/use-emploi-du-temps';
@@ -177,12 +178,18 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
 
     const matieresDisponibles = useMemo(() => {
         if (!classeSelectId) return [];
-        const map = new Map<string, string>();
+        const map = new Map<string, { nom: string; couleur?: string }>();
         for (const a of affectations.filter(a => a.classeAnnee?.classe?.id === classeSelectId)) {
-            if (a.matiere?.id && a.matiere?.nom) map.set(a.matiere.id, a.matiere.nom);
+            if (a.matiere?.id && a.matiere?.nom) map.set(a.matiere.id, { nom: a.matiere.nom, couleur: a.matiere.couleur });
         }
-        return Array.from(map.entries()).map(([id, nom]) => ({ id, nom })).sort((a, b) => a.nom.localeCompare(b.nom));
+        return Array.from(map.entries()).map(([id, data]) => ({ id, ...data })).sort((a, b) => a.nom.localeCompare(b.nom));
     }, [affectations, classeSelectId]);
+
+    // ─── Couleur héritée de la matière (utilisée comme aperçu quand form.couleur est vide) ───
+    const couleurMatiereSelectionnee = useMemo(() => {
+        if (!matiereSelectId) return undefined;
+        return matieresDisponibles.find(m => m.id === matiereSelectId)?.couleur;
+    }, [matiereSelectId, matieresDisponibles]);
 
     const enseignantsDisponibles = useMemo(() => {
         if (!classeSelectId || !matiereSelectId) return [];
@@ -260,7 +267,7 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
             typeCreneau: form.typeCreneau,
             salleId: form.salleId || undefined,
             notes: form.notes || undefined,
-            couleur: form.couleur || undefined,
+            couleur: form.couleur || null,
             ...(isEdit ? {} : { genereAutomatiquement: form.genereAutomatiquement }),
         };
 
@@ -371,17 +378,16 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
 
 
 
-            <div>
-                <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
-                    {t('creneau.modal.couleur')}
-                </label>
-                <input
-                    type="color"
-                    value={form.couleur || '#3b82f6'}
-                    onChange={e => update({ couleur: e.target.value })}
-                    className="h-10 w-20 rounded-lg border border-[var(--color-border)] cursor-pointer"
-                />
-            </div>
+            <ColorFieldInherited
+                label={t('creneau.modal.couleur')}
+                value={form.couleur}
+                onChange={(v) => update({ couleur: v })}
+                inheritedColor={couleurMatiereSelectionnee}
+                inheritedLabel={t('creneau.modal.couleurMatiere')}
+                placeholder={t('creneau.modal.couleurAuto')}
+                resetLabel={t('creneau.modal.couleurReset')}
+                hint={!couleurMatiereSelectionnee ? t('creneau.modal.couleurHint') : undefined}
+            />
 
             <div className="md:col-span-2 flex items-center gap-3">
                 <input

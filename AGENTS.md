@@ -83,6 +83,39 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 ### Blocked
 — (none)
 
+## Travail effectué — Session 2026-08-07 (modal génération HeuresCours — 4 étapes + preview)
+
+### Backend — preview HeuresCours
+- **`heure-cours.service.ts`** : nouvelle méthode `previsualiserHeuresCoursFromEdt()` — même logique d'expansion que `materialiserInstances()` mais en lecture seule (query créneaux EDT validés + expansion dates + exclusion JF). Retourne `{ creneaux[], stats: { totalCreneaux, totalHeures, joursCouverts, matieresCouvertes, detailParMatiere[], detailParJour[] } }`.
+- **`materialiserInstances()`** : return type enrichi avec `detailParMatiere` (tracking `creees`/`ignorees` par `matiereId` via helpers `trackSkip`/`trackCreate`).
+- **`heure-cours.controller.ts`** : nouvel endpoint `POST /previsualiser` (permission `heures-cours:view`).
+- **`genererHeuresCoursFromEdt()`** : retour enrichi `{ created, skipped, errors, total, detailParMatiere }`.
+
+### Frontend — types + hooks
+- **`use-heure-cours.ts`** : nouveaux types `CreneauPreviewHC`, `DetailMatierePreview`, `DetailJourPreview`, `PreviewHeuresCoursResult`. Hook `usePrevisualiserHeuresCours()` (mutation POST). `GenererHeuresCoursResult` enrichi avec `detailParMatiere`.
+
+### Frontend — composants partagés (`generation-ui.tsx`)
+- **`GenerationStatsCard`** : carte stat compacte avec 6 couleurs (dominant, accent, success, warning, danger, info), dark mode, clamp() responsive.
+- **`StatsIcons`** : preset d'icônes lucide (creneaux, heures, matieres, conflits, creees, ignorees, erreurs, total).
+- **`GenerationResultBreakdown`** : breakdown par matière avec barres de progression inline, supporte mode 'resultat' (creees/ignorees) et 'preview' (creneaux/heures).
+- **`MiniBarChart`** : mini graphique barres pour distribution par jour.
+
+### Frontend — refactor modal HeuresCours (4 étapes)
+- **`edt-heures-cours-modal.tsx` v4.0** : passage de 3 à 4 étapes — Sélection → Aperçu (preview API) → Résumé+Confirmation → Résultats.
+- **Étape Aperçu** : `GenerationStatsCard` (4 stats) + `MiniBarChart` (distribution par jour) + `GenerationResultBreakdown` (détail par matière).
+- **Étape Résultats** : `GenerationStatsCard` (créées/ignorées/erreurs/total) + `GenerationResultBreakdown` (breakdown par matière). Remplace l'ancien `ResultatCard` supprimé.
+
+### Frontend — refactor modal génération EDT
+- **`edt-generation-modal.tsx`** : `ResumeCard` local supprimé → remplacé par `GenerationStatsCard` + `StatsIcons` (composants partagés). Import `BookOpen` retiré (inutilisé).
+
+### i18n — 14 clés ajoutées FR+EN
+- `generationHeuresCours.etapeApercu`, `creneauxIdentifies`, `heuresPlanifiees`, `joursCouverts`, `matieresCouvertes`, `detailParMatiere`, `detailParJour`, `aucunCreneauPreview`, `modifierSelection`, `detailParMatiereResultat`, `creeesLabel`, `ignoreesLabel`, `generationComplete`, `aucunDetail`.
+
+### Qualité
+- `tsc --noEmit` : 0 erreur frontend + backend.
+- Parité i18n FR/EN complète sur le module.
+- Composants réutilisables (generation-ui.tsx) partagés entre les 2 modals de génération.
+
 ## Travail effectué — Session 2026-08-06 (palette créneaux EDT — contraste WCAG)
 
 ### Utilitaire palette (`frontend/src/lib/palette-creneau.ts`)
@@ -2815,3 +2848,52 @@ Mode création ET édition (prop `template?: TemplateEDT`). Validators par étap
 - `frontend/src/components/ui/SectionSeparator.tsx` (prop action)
 - `frontend/src/locales/fr/emplois.json` (+6 clés)
 - `frontend/src/locales/en/emplois.json` (+6 clés)
+
+## Travail effectué — Session 2026-08-07 (ColorPicker v2.0 + cohérence couleurs créneaux)
+
+### Problème résolu
+Les couleurs des créneaux étaient incohérentes entre les vues :
+- **Calendrier** et **aperçu génération** : couleur de la matière (ex: `#DDA0DD`)
+- **Modal d'édition** : couleur propre du créneau avec fallback bleu hardcodé `#3B82F6`
+- **Input natif `<input type="color">`** dans un CustomModal : dialogue OS bloqué par le focus trap Radix, pas de bouton Confirmer, lenteur du curseur de teintes
+
+### Cause racine
+1. Le modal d'édition utilisait `creneau.couleur` (souvent vide) au lieu de dériver depuis `matiere.couleur`
+2. `<input type="color">` natif dans un modal Radix = dialogue OS séparé bloqué par z-index/focus trap
+
+### Corrections appliquées
+
+**ColorPicker v3.0 partagé** (`components/ui/ColorPicker.tsx`) :
+- **Suppression de `<input type="color">` natif** — remplacé par palette inline 54 couleurs (12 familles chromatiques)
+- **Mode compact** (12 couleurs) + **extensible** (54 couleurs avec familles labelisées)
+- **React.memo** sur chaque swatch → O(1) re-render par sélection, 60fps garanti
+- **Transitions ciblées** (`transition-transform duration-100 will-change-transform`) — pas de layout thrash
+- **Saisie HEX manuelle** avec validation temps réel, normalisation auto, support 3 et 6 caractères
+- **Pas de useEffect** pour sync hex → dérivation directe (`isFocused ? hexInput : upperValue`)
+- **Rétro-compatibilité** `presetColors` (utilisé par etablissement-edit-page)
+- **Check mark SVG** sur la couleur sélectionnée (contraste auto light/dark)
+- **`sourceLabel`** : prop optionnelle pour indiquer la source de la couleur (ex: "de la matière")
+- **Dark mode** : variables CSS uniquement, pas de classes hardcodées
+- **Ultra-responsif** : tous les dimensions en `clamp()`
+- **Accessibilité** : `role="radiogroup"`, `aria-checked`, `aria-label`, focus ring visible
+
+**Cohérence couleurs** (`edt-creneau-modal.tsx`) :
+- `effectiveCouleur` = `couleurMatiereSelectionnee || form.couleur || '#3b82f6'` — priorité matière
+- Intégration du `ColorPicker` partagé (remplace 31 lignes par 7)
+- Indicateur source "(de la matière)" via `sourceLabel`
+
+**Module matières** (`matiere-form-modal.tsx`) :
+- Remplacement `<input type="color">` natif → `ColorPicker` partagé
+- Grille responsive `grid-cols-1 md:grid-cols-2`
+
+**i18n** : 2 clés ajoutées FR+EN (`couleurMatiere`, `couleurHint`)
+
+### Convention ajoutée
+**Règle** : JAMAIS d'`<input type="color">` natif dans un CustomModal. Toujours utiliser le `ColorPicker` partagé (`components/ui/ColorPicker.tsx`).
+
+### Fichiers modifiés (5)
+- `frontend/src/components/ui/ColorPicker.tsx` (v3.0 — palette 54 couleurs, React.memo, expandable)
+- `frontend/src/features/emploi-du-temps/components/edt-creneau-modal.tsx` (ColorPicker + effectiveCouleur)
+- `frontend/src/features/matieres/components/matiere-form-modal.tsx` (ColorPicker)
+- `frontend/src/locales/fr/emplois.json` (+2 clés)
+- `frontend/src/locales/en/emplois.json` (+2 clés)

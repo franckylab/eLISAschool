@@ -1151,6 +1151,10 @@ Les modals **spécialisés** (caméra QR scanner, video player) peuvent utiliser
 - **Barrel** : `frontend/src/components/modals/index.ts`
 - **Hooks barrel** : `frontend/src/hooks/index.ts`
 
+### Composants interdits dans les Modals
+
+**JAMAIS** utiliser `<input type="color">` natif dans un CustomModal. Le dialogue OS est bloqué par le focus trap Radix. Utiliser **exclusivement** `ColorPicker` partagé (`components/ui/ColorPicker.tsx` v3.0) — palette 54 couleurs (12 familles), mode compact/extensible, React.memo par swatch, saisie HEX, 60fps, dark mode, responsive.
+
 ---
 
 ## 24. Consolidation des Documents

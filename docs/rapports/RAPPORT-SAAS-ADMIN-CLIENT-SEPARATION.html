@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport SaaS — Séparation Admin/Client eLISAschool</title>
+<style>
+  :root {
+    --bg-primary: #0f1117;
+    --bg-secondary: #1a1d27;
+    --bg-card: #222536;
+    --bg-card-hover: #2a2e42;
+    --border: #2e3348;
+    --border-accent: #4f46e5;
+    --text-primary: #e8eaed;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --accent: #6366f1;
+    --accent-light: #818cf8;
+    --success: #22c55e;
+    --success-bg: rgba(34,197,94,0.1);
+    --warning: #f59e0b;
+    --warning-bg: rgba(245,158,11,0.1);
+    --danger: #ef4444;
+    --danger-bg: rgba(239,68,68,0.1);
+    --info: #3b82f6;
+    --info-bg: rgba(59,130,246,0.1);
+    --critical: #dc2626;
+    --critical-bg: rgba(220,38,38,0.12);
+    --gradient-1: linear-gradient(135deg, #6366f1, #8b5cf6);
+    --gradient-2: linear-gradient(135deg, #3b82f6, #6366f1);
+    --gradient-3: linear-gradient(135deg, #22c55e, #3b82f6);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.3);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #0f1117 0%, #1a1040 40%, #0f1117 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 4rem 2rem 3rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(99,102,241,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 50%, rgba(139,92,246,0.06) 0%, transparent 50%);
+    animation: pulse 8s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+  .hero-content { position: relative; z-index: 1; max-width: 800px; margin: 0 auto; }
+  .hero-badge {
+    display: inline-block;
+    background: var(--gradient-1);
+    color: white;
+    padding: 0.35rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+  .hero h1 {
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, #e8eaed, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+  .hero p {
+    color: var(--text-secondary);
+    font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .hero-meta {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+  }
+  .hero-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+  .hero-meta-item svg { width: 16px; height: 16px; opacity: 0.6; }
+
+  /* Layout */
+  .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  /* TOC */
+  .toc {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    margin-bottom: 3rem;
+  }
+  .toc h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--accent-light);
+  }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.5rem;
+  }
+  .toc a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.88rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .toc a:hover { background: var(--bg-card); color: var(--text-primary); }
+  .toc-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  /* Sections */
+  .section { margin-bottom: 3.5rem; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .section-header h2 {
+    font-size: clamp(1.2rem, 2.5vw, 1.5rem);
+    font-weight: 700;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--border-accent); }
+  .card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .card p, .card li { color: var(--text-secondary); font-size: 0.9rem; }
+  .card ul { padding-left: 1.25rem; }
+  .card li { margin-bottom: 0.35rem; }
+
+  /* Stat Grid */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* Severity badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .badge-critical { background: var(--critical-bg); color: var(--critical); border: 1px solid rgba(220,38,38,0.25); }
+  .badge-high { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+  .badge-medium { background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(245,158,11,0.2); }
+  .badge-low { background: var(--info-bg); color: var(--info); border: 1px solid rgba(59,130,246,0.2); }
+  .badge-success { background: var(--success-bg); color: var(--success); border: 1px solid rgba(34,197,94,0.2); }
+
+  /* Gap items */
+  .gap-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 0.75rem;
+    border-left: 3px solid var(--border);
+    transition: all 0.2s;
+  }
+  .gap-item:hover { background: var(--bg-card-hover); }
+  .gap-item.critical { border-left-color: var(--critical); }
+  .gap-item.high { border-left-color: var(--danger); }
+  .gap-item.medium { border-left-color: var(--warning); }
+  .gap-item.low { border-left-color: var(--info); }
+  .gap-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .gap-title { font-weight: 600; font-size: 0.95rem; }
+  .gap-desc { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 0.5rem; }
+  .gap-impact { color: var(--text-muted); font-size: 0.82rem; font-style: italic; }
+  .gap-fix { color: var(--success); font-size: 0.85rem; margin-top: 0.5rem; }
+  .gap-fix::before { content: 'Fix : '; font-weight: 600; }
+
+  /* Strength items */
+  .strength-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+  }
+  .strength-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    border-left: 3px solid var(--success);
+  }
+  .strength-item h4 {
+    font-size: 0.92rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--success);
+  }
+  .strength-item p { font-size: 0.85rem; color: var(--text-secondary); }
+
+  /* Proposal cards */
+  .proposal {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+  .proposal-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .proposal-letter {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: white;
+    flex-shrink: 0;
+  }
+  .proposal-header h3 { font-size: 1.05rem; font-weight: 700; }
+  .proposal-body { padding: 1.5rem; }
+  .proposal-body p { margin-bottom: 0.75rem; font-size: 0.9rem; color: var(--text-secondary); }
+  .proposal-body h4 {
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+    color: var(--text-primary);
+  }
+  .proposal-body ul { padding-left: 1.25rem; }
+  .proposal-body li { margin-bottom: 0.3rem; font-size: 0.88rem; color: var(--text-secondary); }
+
+  /* Roadmap */
+  .roadmap-phase {
+    position: relative;
+    padding-left: 2.5rem;
+    margin-bottom: 2rem;
+  }
+  .roadmap-phase::before {
+    content: '';
+    position: absolute;
+    left: 14px;
+    top: 32px;
+    bottom: -2rem;
+    width: 2px;
+    background: var(--border);
+  }
+  .roadmap-phase:last-child::before { display: none; }
+  .phase-dot {
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: white;
+  }
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .phase-title { font-size: 1.05rem; font-weight: 700; }
+  .phase-duration {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+  .phase-tasks {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+  }
+  .phase-tasks ul { padding-left: 1.25rem; }
+  .phase-tasks li {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.4rem;
+  }
+  .phase-tasks li strong { color: var(--text-primary); }
+
+  /* Architecture diagram */
+  .arch-diagram {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+  .arch-layers {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 500px;
+  }
+  .arch-layer {
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.25rem;
+    border: 1px solid;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .arch-layer-label {
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    min-width: 120px;
+  }
+  .arch-layer-items {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .arch-item {
+    background: rgba(255,255,255,0.06);
+    padding: 0.3rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .arch-arrow {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+
+  /* Comparison table */
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    margin: 1rem 0;
+  }
+  .comparison-table th {
+    background: var(--bg-secondary);
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border);
+  }
+  .comparison-table td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+  .comparison-table tr:hover td { background: var(--bg-card); }
+  .check { color: var(--success); }
+  .cross { color: var(--danger); }
+  .partial { color: var(--warning); }
+
+  /* Verdict box */
+  .verdict {
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.06));
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .verdict h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent-light);
+    margin-bottom: 0.75rem;
+  }
+  .verdict p { font-size: 0.92rem; color: var(--text-secondary); }
+  .verdict-score {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(99,102,241,0.15);
+  }
+  .score-circle {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: white;
+    flex-shrink: 0;
+  }
+  .score-label { font-size: 0.85rem; color: var(--text-muted); }
+
+  /* Footer */
+  .report-footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem 0;
+    margin-top: 3rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero { padding: 2.5rem 1rem 2rem; }
+    .container { padding: 1.5rem 1rem; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .strength-grid { grid-template-columns: 1fr; }
+    .toc-grid { grid-template-columns: 1fr; }
+    .hero-meta { gap: 1rem; }
+    .comparison-table { font-size: 0.78rem; }
+    .comparison-table th, .comparison-table td { padding: 0.5rem; }
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; color: #1a1a1a; }
+    .hero { background: white; border-bottom: 2px solid #6366f1; }
+    .hero h1 { -webkit-text-fill-color: #1a1a1a; color: #1a1a1a; }
+    .card, .gap-item, .strength-item, .proposal, .phase-tasks { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ HERO ═══════════════════════════════════════════════ -->
+<header class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">Audit Architecture SaaS</div>
+    <h1>Séparation Espace Client / Panel Admin</h1>
+    <p>Analyse approfondie de la separation des responsabilites, de la gestion des permissions et de l'isolation multi-tenant dans eLISAschool. Recommandations et feuille de route.</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        7 aout 2026
+      </div>
+      <div class="hero-meta-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        franck arlos chendjou
+      </div>
+      <div class="hero-meta-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        22 failles identifiees
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+<!-- ═══════════════════════════════════════════════ TOC ═══════════════════════════════════════════════ -->
+<nav class="toc">
+  <h2>Table des matieres</h2>
+  <div class="toc-grid">
+    <a href="#resume"><span class="toc-num">1</span> Resume executif</a>
+    <a href="#metrique"><span class="toc-num">2</span> Metriques cles</a>
+    <a href="#fort"><span class="toc-num">3</span> Points forts actuels</a>
+    <a href="#rbac"><span class="toc-num">4</span> Audit RBAC (9 failles)</a>
+    <a href="#config"><span class="toc-num">5</span> Configuration & Isolation (7 failles)</a>
+    <a href="#frontend"><span class="toc-num">6</span> Frontend Permissions (6 failles)</a>
+    <a href="#bench"><span class="toc-num">7</span> Benchmark vs meilleures pratiques</a>
+    <a href="#propositions"><span class="toc-num">8</span> Propositions d'architecture</a>
+    <a href="#roadmap"><span class="toc-num">9</span> Feuille de route</a>
+    <a href="#alternatives"><span class="toc-num">10</span> Alternatives & outillage</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════ 1. RESUME ═══════════════════════════════════════════════ -->
+<section class="section" id="resume">
+  <div class="section-header">
+    <div class="section-icon" style="background:var(--gradient-1);color:white;">1</div>
+    <h2>Resume executif</h2>
+  </div>
+
+  <div class="verdict">
+    <h3>Verdict global</h3>
+    <p>eLISAschool dispose d'une base technique solide pour le multi-tenant (cascade de configuration a 3 niveaux, resolution serveur des permissions, detection cross-tenant). Cependant, <strong>la separation entre espace client (etablissement) et panel proprietaire de la plateforme est insuffisante</strong>. Les roles ADMIN et SUPER_ADMIN cumulent des permissions operatives (gestion etablissement) et des permissions plateforme (activation modules, audit global, monitoring infrastructure) sans cloisonnement structurel.</p>
+    <div class="verdict-score">
+      <div class="score-circle" style="background:var(--gradient-1);">5.5<span style="font-size:0.7rem">/10</span></div>
+      <div>
+        <strong style="color:var(--warning);">Maturite partielle</strong> — Les fondations sont la, mais le cloisonnement proprietaire/client et la separation des plans d'administration necessitent une refonte structurelle avant la mise en production multi-tenant.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Synthese en 3 points</h3>
+    <ul>
+      <li><strong>Pas de separation structurelle</strong> : une seule arborescence de routes (<code>_auth/</code>), un seul sidebar, un seul contexte utilisateur. Les items plateforme (Roles, Audit, Monitoring) cohabitent avec les items client (Finances, Transport) sans cloisonnement visuel ni technique.</li>
+      <li><strong>Permissions trop larges</strong> : le role ADMIN dispose de 230+ permissions dont des operations plateforme (toggle modules, backup/restore, config globale). SUPER_ADMIN et ADMIN bypassent toutes les gardes frontend, ce qui rend tout audit de permissions inoperant pour ces roles.</li>
+      <li><strong>Isolation multi-tenant fonctionnelle mais perfectible</strong> : le filtrage par <code>etablissementId</code> est applique systematiquement dans les services, et la detection cross-tenant est en place. Mais certains endpoints (configuration publique, stats etablissement) sont accessibles sans guard adequat.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ 2. METRIQUES ═══════════════════════════════════════════════ -->
+<section class="section" id="metrique">
+  <div class="section-header">
+    <div class="section-icon" style="background:var(--gradient-2);color:white;">2</div>
+    <h2>Metriques cles</h2>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--accent-light);">67</div>
+      <div class="stat-label">Roles definis</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--warning);">~230</div>
+      <div class="stat-label">Permissions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--danger);">22</div>
+      <div class="stat-label">Failles identifiees</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--success);">3</div>
+      <div class="stat-label">Niveaux config</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--critical);">1</div>
+      <div class="stat-label">Faille critique</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--danger);">5</div>
+      <div class="stat-label">Failles haute</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Repartition des failles par severite</h3>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.75rem;">
+      <span class="badge badge-critical">1 Critique</span>
+      <span class="badge badge-high">5 Haute</span>
+      <span class="badge badge-medium">7 Moyenne</span>
+      <span class="badge badge-low">9 Basse</span>
+    </div>
+    <p style="margin-top:1rem;">Les failles critiques et hautes concernent principalement : le bypass total des gardes par SUPER_ADMIN/ADMIN, les permissions plateforme attribuees au role ADMIN (client), et les endpoints sans authentification adequate.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ 3. POINTS FORTS ═══════════════════════════════════════════════ -->
+<section class="section" id="fort">
+  <div class="section-header">
+    <div class="section-icon" style="background:var(--gradient-3);color:white;">3</div>
+    <h2>Points forts actuels</h2>
+  </div>
+
+  <div class="strength-grid">
+    <div class="strength-item">
+      <h4>Cascade de configuration 3 niveaux</h4>
+      <p><code>ParametreSysteme</code> avec resolution : etablissement (priorite 1) &rarr; global (fallback) &rarr; <code>MODULE_REGISTRY</code> (defaut). Permet aux clients de personnaliser sans toucher au global.</p>
+    </div>
+    <div class="strength-item">
+      <h4>Resolution serveur des permissions</h4>
+      <p>Les permissions ne sont PAS dans le JWT (evite le gonflement a 16KB). <code>permissionResolverService</code> avec cache Redis 5 min + in-memory. Toutes les verifications sont cote serveur.</p>
+    </div>
+    <div class="strength-item">
+      <h4>Detection cross-tenant</h4>
+      <p><code>filterByEtablissement()</code> force l'<code>etablissementId</code> depuis le token et logue les tentatives d'acces inter-etablissements avec alerte <code>CROSS_TENANT_ACCESS_DENIED</code>.</p>
+    </div>
+    <div class="strength-item">
+      <h4>Multi-etablissement natif</h4>
+      <p>Table de jointure <code>utilisateur_etablissements</code>, modal de selection, <code>switchEtablissement()</code> dans le store. Un utilisateur peut appartenir a plusieurs etablissements.</p>
+    </div>
+    <div class="strength-item">
+      <h4>Activation modules middleware</h4>
+      <p><code>requireModuleActive()</code> protege chaque route de module. 4 modules critiques exemptes (auth, utilisateurs, configuration, notifications). Cascade 3 niveaux pour la resolution.</p>
+    </div>
+    <div class="strength-item">
+      <h4>Soft delete systematique</h4>
+      <p>19 tables transactionnelles avec <code>@DeleteDateColumn()</code>. Les nomenclatures systeme sont protegees par <code>assertNotSystem()</code> (backend) et UI adaptee (bouton supprimer cache).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ 4. AUDIT RBAC ═══════════════════════════════════════════════ -->
+<section class="section" id="rbac">
+  <div class="section-header">
+    <div class="section-icon" style="background:var(--danger-bg);color:var(--danger);">4</div>
+    <h2>Audit RBAC — 9 failles</h2>
+  </div>
+
+  <div class="gap-item critical">
+    <div class="gap-header">
+      <span class="gap-title">RBAC-1 : DIRECTEUR — permissions cross-tenant</span>
+      <span class="badge badge-critical">Critique</span>
+    </div>
+    <div class="gap-desc">Le role <code>DIRECTEUR</code> possede les 9 permissions <code>GROUPES_ETABLISSEMENTS_*</code> qui permettent de gerer des groupes d'etablissements. Un directeur d'etablissement client ne devrait jamais avoir de visibilite sur d'autres etablissements.</div>
+    <div class="gap-impact">Impact : Un client peut voir et modifier la composition de groupes multi-etablissements, accedant indirectement aux donnees d'autres clients.</div>
+    <div class="gap-fix">Creer un role dedie <code>DIRECTEUR_GROUPE</code> (portee plateforme) et retirer ces permissions du role <code>DIRECTEUR</code> client.</div>
+  </div>
+
+  <div class="gap-item high">
+    <div class="gap-header">
+      <span class="gap-title">RBAC-2 : ADMIN — permissions plateforme</span>
+      <span class="badge badge-high">Haute</span>
+    </div>
+    <div class="gap-desc">Le role <code>ADMIN</code> (client) dispose de <code>CONFIG_APP_EDIT</code>, <code>CONFIG_MODULE_TOGGLE</code>, <code>CONFIG_PARAM_CREATE/EDIT/DELETE/RESET</code>, <code>CONFIG_BACKUP_CREATE/RESTORE</code>. Ces operations sont de portee plateforme et ne devraient etre accessibles qu'au proprietaire (SUPER_ADMIN).</div>
+    <div class="gap-impact">Impact : Un admin client peut activer/desactiver des modules globalement, modifier la configuration applicative, et creer/restaurer des backups de la plateforme entiere.</div>
+    <div class="gap-fix">Spliter les permissions config en 2 tiers : <code>config:etablissement:*</code> (client, parametres scopés) et <code>config:plateforme:*</code> (proprietaire, global).</div>
+  </div>
+
+  <div class="gap-item high">
+    <div class="gap-header">
+      <span class="gap-title">RBAC-3 : ADMIN — acces monitoring infrastructure</span>
+      <span class="badge badge-high">Haute</span>
+    </div>
+    <div class="gap-desc"><code>NETWORK_ADMIN</code> attribue a ADMIN donne acces aux metriques infrastructure (latence DB, memoire serveur, sondes internet). Ces donnees revelent l'architecture technique de la plateforme.</div>
+    <div class="gap-impact">Impact : Exposition d'informations sensibles sur l'infrastructure hebergeant tous les clients.</div>
+    <div class="gap-fix">Restreindre <code>NETWORK_ADMIN</code> a SUPER_ADMIN uniquement. Creer <code>NETWORK_VIEW</code> (statut connexion) pour les clients.</div>
+  </div>
+
+  <div class="gap-item medium">
+    <div class="gap-header">
+      <span class="gap-title">RBAC-4 : TECHNICIEN_INFO — config view</span>
+      <span class="badge badge-medium">Moyenne</span>
+    </div>
+    <div class="gap-desc"><code>TECHNICIEN_INFO</code> a <code>CONFIG_VIEW</code> et <code>MONITORING_VIEW</code>. Ce role est cense etre un role client technique, pas un administrateur plateforme.</div>
+    <div class="gap-fix">Limiter aux parametres scopes a l'etablissement. Retirer <code>MONITORING_VIEW</code>.</div>
+  </div>
+
+  <div class="gap-item medium">
+    <div class="gap-header">
+      <span class="gap-title">RBAC-5 : AUDITEUR_INTERNE — config + roles view</span>
+      <span class="badge badge-medium">Moyenne</span>
+    </div>
+    <div class="gap-desc"><code>AUDITEUR_INTERNE</code> a <code>CONFIG_VIEW</code>, <code>ROLES_VIEW</code>, <code>MONITORING_VIEW</code>. Un auditeur client ne devrait auditer que les operations de son etablissement.</div>
+    <div class="gap-fix">Scoper l'audit aux logs de l'etablissement. Retirer les permissions config et monitoring globales.</div>
+  </div>
+
+  <div class="gap-item medium">
+    <div class="gap-header">
+      <span class="gap-title">RBAC-6 : STATISTICIEN — monitoring</span>
+      <span class="badge badge-medium">Moyenne</span>
+    </div>
+    <div class="gap-desc"><code>STATISTICIEN</code> possede des permissions <code>MONITORING_*</code>. Le role devrait se limiter aux statistiques metier, pas a l'infrastructure.</div>
+    <div class="gap-fix">Retirer toutes les permissions <code>MONITORING_*</code> du role STATISTICIEN.</div>
+  </div>
+
+  <div class="gap-item low">
+    <div class="gap-header">
+      <span class="gap-title">RBAC-7 : COMPTABLE — audit multi-modules</span>
+      <span class="badge badge-low">Basse</span>
+    </div>
+    <div class="gap-desc"><code>COMPTABLE</code> a des permissions d'audit sur des modules non-financiers (classes, eleves, etc.). Principe de moindre privilege viole.</div>
+    <div class="gap-fix">Limiter l'audit comptable aux modules financiers (paie, bulletins, cotisations).</div>
+  </div>
+
+  <div class="gap-item low">
+    <div class="gap-header">
+      <span class="gap-title">RBAC-8 : SUPER_ADMIN_ALL non utilise</span>
+      <span class="badge badge-low">Basse</span>
+    </div>
+    <div class="gap-desc">La permission <code>super_admin:all</code> est definie dans l'enum mais n'est jamais attribuee dans <code>DEFAULT_ROLE_PERMISSIONS</code>. Code mort qui prete a confusion.</div>
+    <div class="gap-fix">Supprimer la definition ou documenter son usage prevu.</div>
+  </div>
+
+  <div class="gap-item low">
+    <div class="gap-header">
+      <span class="gap-title">RBAC-9 : Pas de separation SUPER_ADMIN / ADMIN</span>
+      <span class="badge badge-low">Basse (design)</span>
+    </div>
+    <div class="gap-desc">SUPER_ADMIN et ADMIN partagent la majorite des permissions admin. La distinction actuelle est principalement dans le bypass frontend et la portee multi-etablissement. Pas de modele formel de "proprietaire plateforme" vs "admin etablissement".</div>
+    <div class="gap-fix">Definir un modele a 3 niveaux : Super Admin (plateforme) &rarr; Tenant Admin (etablissement) &rarr; Tenant User.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ 5. CONFIG & ISOLATION ═══════════════════════════════════ -->
+<section class="section" id="config">
+  <div class="section-header">
+    <div class="section-icon" style="background:var(--warning-bg);color:var(--warning);">5</div>
+    <h2>Configuration & Isolation — 7 failles</h2>
+  </div>
+
+  <div class="gap-item medium">
+    <div class="gap-header">
+      <span class="gap-title">CFG-1 : Endpoint configuration sans authentification</span>
+      <span class="badge badge-medium">Moyenne</span>
+    </div>
+    <div class="gap-desc"><code>GET /api/configuration</code> (controller configuration, ligne 68) n'a pas de <code>authMiddleware</code>. Retourne tous les parametres globaux visibles a tout appelant non authentifie.</div>
+    <div class="gap-impact">Impact : Exposition de la configuration globale de la plateforme (langue defaut, modules actifs, etc.) a des acteurs non authentifies.</div>
+    <div class="gap-fix">Ajouter <code>authMiddleware</code> ou limiter strictement les parametres retournes aux seuls parametres publics documentes.</div>
+  </div>
+
+  <div class="gap-item medium">
+    <div class="gap-header">
+      <span class="gap-title">CFG-2 : Categories parametres sans garde</span>
+      <span class="badge badge-medium">Moyenne</span>
+    </div>
+    <div class="gap-desc"><code>GET /api/configuration/parametres/categories</code> (ligne 328) n'a que <code>authMiddleware</code> sans <code>requirePermission</code>. Tout utilisateur authentifie peut lister les categories de configuration.</div>
+    <div class="gap-fix">Ajouter <code>requirePermission('config:view')</code>.</div>
+  </div>
+
+  <div class="gap-item low">
+    <div class="gap-header">
+      <span class="gap-title">CFG-3 : Stats etablissement accessibles</span>
+      <span class="badge badge-low">Basse</span>
+    </div>
+    <div class="gap-desc"><code>GET /api/etablissements/:id</code>, <code>/:id/config</code>, <code>/:id/stats</code> sont accessibles a tout utilisateur authentifie sans verification d'appartenance a l'etablissement cible.</div>
+    <div class="gap-fix">Ajouter une verification d'appartenance ou restreindre aux roles SUPER_ADMIN/ADMIN de l'etablissement.</div>
+  </div>
+
+  <div class="gap-item low">
+    <div class="gap-header">
+      <span class="gap-title">CFG-4 : SUPER_ADMIN etablissementId via query</span>
+      <span class="badge badge-low">Basse (design)</span>
+    </div>
+    <div class="gap-desc">Le <code>tenantMiddleware</code> permet au SUPER_ADMIN de specifier n'importe quel <code>etablissementId</code> via query parameter. Par conception, mais sans validation de la cible existante.</div>
+    <div class="gap-fix">Documenter ce comportement. Ajouter une validation d'existence de l'etablissement cible.</div>
+  </div>
+
+  <div class="gap-item low">
+    <div class="gap-header">
+      <span class="gap-title">CFG-5 : Pas de RLS PostgreSQL</span>
+      <span class="badge badge-low">Basse</span>
+    </div>
+    <div class="gap-desc">L'isolation multi-tenant repose entierement sur le code applicatif (WHERE etablissementId = X). Aucune Row-Level Security PostgreSQL en defense-in-depth.</div>
+    <div class="gap-impact">Impact : Un bug dans le code applicatif peut exposer des donnees inter-établissements sans detection au niveau DB.</div>
+    <div class="gap-fix">Implementer RLS sur les tables critiques (eleves, notes, bulletins, personnel) comme couche de securite supplementaire.</div>
+  </div>
+
+  <div class="gap-item low">
+    <div class="gap-header">
+      <span class="gap-title">CFG-6 : Cache Redis sans prefix tenant</span>
+      <span class="badge badge-low">Basse</span>
+    </div>
+    <div class="gap-desc">Le cache Redis pour les permissions et la configuration n'utilise pas systematiquement un prefix par etablissement. Risque de collision si deux etablissements ont des parametres homonymes.</div>
+    <div class="gap-fix">Prefixer toutes les cles cache par <code>tenant:{etablissementId}:</code>.</div>
+  </div>
+
+  <div class="gap-item low">
+    <div class="gap-header">
+      <span class="gap-title">CFG-7 : Pas de quotas d'API par tenant</span>
+      <span class="badge badge-low">Basse</span>
+    </div>
+    <div class="gap-desc">Le rate limiting est global (pas par tenant). Un etablissement peut consommer tout le quota au detriment des autres.</div>
+    <div class="gap-fix">Implementer un rate limiting par <code>etablissementId</code> avec des quotas proportionnels au plan d'abonnement.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ 6. FRONTEND ═══════════════════════════════════════════════ -->
+<section class="section" id="frontend">
+  <div class="section-header">
+    <div class="section-icon" style="background:var(--info-bg);color:var(--info);">6</div>
+    <h2>Frontend Permissions — 6 failles</h2>
+  </div>
+
+  <div class="gap-item high">
+    <div class="gap-header">
+      <span class="gap-title">FE-1 : Bypass total SUPER_ADMIN + ADMIN</span>
+      <span class="badge badge-high">Haute</span>
+    </div>
+    <div class="gap-desc"><code>permission-guards.ts</code> lignes 37-39, 83-85, 141-143, 174-176 : SUPER_ADMIN et ADMIN bypassent <strong>toutes</strong> les gardes de permission. Cela rend impossible l'audit de ce que ces roles voient ou font, et masque les bugs de permission.</div>
+    <div class="gap-impact">Impact : Si une route est montee sans garde backend, un ADMIN y accedera sans jamais voir de refus. Les erreurs de configuration de permissions sont invisibles.</div>
+    <div class="gap-fix">Remplacer le bypass par une evaluation reelle des permissions. SUPER_ADMIN devrait avoir toutes les permissions <em>attribuees</em>, pas un bypass magique.</div>
+  </div>
+
+  <div class="gap-item high">
+    <div class="gap-header">
+      <span class="gap-title">FE-2 : 3 routes production sans guard</span>
+      <span class="badge badge-high">Haute</span>
+    </div>
+    <div class="gap-desc"><code>_auth.finances.tsx</code>, <code>_auth.transport.tsx</code>, <code>_auth.bibliotheque.tsx</code> n'ont aucun <code>beforeLoad</code> guard. Tout utilisateur authentifie peut y acceder independamment des permissions.</div>
+    <div class="gap-fix">Ajouter <code>requirePermission('finances:view')</code>, <code>requirePermission('transport:view')</code>, <code>requirePermission('bibliotheque:view')</code> en <code>beforeLoad</code>.</div>
+  </div>
+
+  <div class="gap-item high">
+    <div class="gap-header">
+      <span class="gap-title">FE-3 : Pas de separation plateforme/client</span>
+      <span class="badge badge-high">Haute</span>
+    </div>
+    <div class="gap-desc">Une seule arborescence <code>_auth/</code> pour tout. Les routes admin plateforme (<code>_auth.admin.roles</code>, <code>_auth.admin.audit</code>) sont dans le meme layout que les routes client. Pas de route tree <code>_platform/</code> ou <code>_auth.admin/</code> dedie.</div>
+    <div class="gap-fix">Creer un layout <code>_platform/</code> separe avec ses propres guards, ou au minimum un sous-layout <code>_auth.admin/</code> avec guard global.</div>
+  </div>
+
+  <div class="gap-item medium">
+    <div class="gap-header">
+      <span class="gap-title">FE-4 : Sidebar — pas de section plateforme dediee</span>
+      <span class="badge badge-medium">Moyenne</span>
+    </div>
+    <div class="gap-desc">Le Sidebar melange les items plateforme (Roles & Permissions, Audit global) et client (Finances, Transport) dans les memes sections. Pas de separation visuelle ni de section "Administration plateforme" distincte.</div>
+    <div class="gap-fix">Ajouter une section "Administration plateforme" (visible uniquement SUPER_ADMIN) separee des sections "Administration etablissement".</div>
+  </div>
+
+  <div class="gap-item medium">
+    <div class="gap-header">
+      <span class="gap-title">FE-5 : PermissionGate — hook dans conditionnel</span>
+      <span class="badge badge-medium">Moyenne</span>
+    </div>
+    <div class="gap-desc"><code>PermissionGate.tsx</code> ligne 102 : <code>useModulePermissions</code> est appele dans une branche conditionnelle, violant les <strong>regles des hooks de React</strong>. Peut causer des bugs de rendu imprevisibles.</div>
+    <div class="gap-fix">Deplacer le hook avant tout conditionnel. Utiliser un composant wrapper si necessaire.</div>
+  </div>
+
+  <div class="gap-item low">
+    <div class="gap-header">
+      <span class="gap-title">FE-6 : Inconsistence sidebar vs route guards</span>
+      <span class="badge badge-low">Basse</span>
+    </div>
+    <div class="gap-desc">La sidebar utilise <code>useModulePermissions</code> (verifie <code>view</code> OU <code>manage</code>), les route guards utilisent une logique differente (<code>view</code>, <code>read</code>, <code>manage</code>, <code>list</code>). Un item peut etre visible dans la sidebar mais la route refusee, ou l'inverse.</div>
+    <div class="gap-fix">Unifier la logique de verification : un seul helper <code>hasPermission()</code> utilise partout.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ 7. BENCHMARK ═══════════════════════════════════════════ -->
+<section class="section" id="bench">
+  <div class="section-header">
+    <div class="section-icon" style="background:var(--gradient-1);color:white;">7</div>
+    <h2>Benchmark vs meilleures pratiques SaaS 2025-2026</h2>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Pratique</th>
+          <th>Reference</th>
+          <th>eLISAschool</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Separation 3 niveaux admin</td>
+          <td>Super Admin / Tenant Admin / User</td>
+          <td>SUPER_ADMIN / ADMIN+roles (confondus)</td>
+          <td><span class="partial">&#9679; Partiel</span></td>
+        </tr>
+        <tr>
+          <td>Isolation DB multi-tenant</td>
+          <td>RLS ou filtre applicatif strict</td>
+          <td>Filtre applicatif (etablissementId)</td>
+          <td><span class="check">&#10003; OK</span></td>
+        </tr>
+        <tr>
+          <td>Permissions resolues cote serveur</td>
+          <td>Jamais depuis le client seul</td>
+          <td>permissionResolverService + cache Redis</td>
+          <td><span class="check">&#10003; OK</span></td>
+        </tr>
+        <tr>
+          <td>RBAC + ABAC hybride</td>
+          <td>Roles + attributs contextuels</td>
+          <td>RBAC pur (pas de contexte)</td>
+          <td><span class="cross">&#10007; Non</span></td>
+        </tr>
+        <tr>
+          <td>Feature flags par tenant</td>
+          <td>ConfigCat, GrowthBook, etc.</td>
+          <td>ParametreSysteme (custom, fonctionnel)</td>
+          <td><span class="partial">&#9679; Partiel</span></td>
+        </tr>
+        <tr>
+          <td>Defense-in-depth isolation</td>
+          <td>DB + cache + sessions + storage</td>
+          <td>DB uniquement (pas de prefix cache/sessions)</td>
+          <td><span class="cross">&#10007; Partiel</span></td>
+        </tr>
+        <tr>
+          <td>Panel admin separe</td>
+          <td>Dashboard proprietaire distinct</td>
+          <td>Meme sidebar, memes routes</td>
+          <td><span class="cross">&#10007; Non</span></td>
+        </tr>
+        <tr>
+          <td>Audit trail complet</td>
+          <td>Toute action critique loguee</td>
+          <td>Instrumente sur 8+ modules</td>
+          <td><span class="check">&#10003; OK</span></td>
+        </tr>
+        <tr>
+          <td>Rate limiting par tenant</td>
+          <td>Token bucket par etablissement</td>
+          <td>Rate limit global uniquement</td>
+          <td><span class="cross">&#10007; Non</span></td>
+        </tr>
+        <tr>
+          <td>Quotas par plan</td>
+          <td>maxEleves, maxStockage par plan</td>
+          <td>EtablissementConfig a les champs, pas enforce</td>
+          <td><span class="partial">&#9679; Partiel</span></td>
+        </tr>
+        <tr>
+          <td>Authorization library</td>
+          <td>CASL.js, Permit.io, OPA</td>
+          <td>Custom (requirePermission par route)</td>
+          <td><span class="partial">&#9679; Fonctionnel</span></td>
+        </tr>
+        <tr>
+          <td>Row-Level Security PostgreSQL</td>
+          <td>Defense-in-depth DB</td>
+          <td>Non implemente</td>
+          <td><span class="cross">&#10007; Non</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="verdict">
+    <h3>Ecart principal</h3>
+    <p>Les meilleures pratiques SaaS 2025-2026 recommandent une <strong>separation structurelle</strong> entre le plan de gestion de la plateforme (proprietaire) et le plan de gestion des donnees (client). eLISAschool fonctionne avec un modele "plat" ou les deux plans sont fusionnes. C'est la source de la majorite des failles identifiees.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ 8. PROPOSITIONS ═══════════════════════════════════ -->
+<section class="section" id="propositions">
+  <div class="section-header">
+    <div class="section-icon" style="background:var(--gradient-2);color:white;">8</div>
+    <h2>Propositions d'architecture</h2>
+  </div>
+
+  <!-- Architecture cible -->
+  <div class="arch-diagram">
+    <h3 style="margin-bottom:1rem;font-size:0.95rem;color:var(--text-secondary);">Architecture cible — 3 plans de gestion</h3>
+    <div class="arch-layers">
+      <div class="arch-layer" style="border-color:var(--critical);background:rgba(220,38,38,0.05);">
+        <div class="arch-layer-label" style="color:var(--critical);">Plan Plateforme</div>
+        <div class="arch-layer-items">
+          <span class="arch-item">Dashboard proprietaire</span>
+          <span class="arch-item">Gestion etablissements</span>
+          <span class="arch-item">Plans & facturation</span>
+          <span class="arch-item">Monitoring global</span>
+          <span class="arch-item">Config applicative</span>
+          <span class="arch-item">Audit plateforme</span>
+        </div>
+      </div>
+      <div class="arch-arrow">&darr; API separee &darr;</div>
+      <div class="arch-layer" style="border-color:var(--warning);background:rgba(245,158,11,0.05);">
+        <div class="arch-layer-label" style="color:var(--warning);">Plan Tenant</div>
+        <div class="arch-layer-items">
+          <span class="arch-item">Admin etablissement</span>
+          <span class="arch-item">Config modules</span>
+          <span class="arch-item">Roles & permissions</span>
+          <span class="arch-item">Parametres etab.</span>
+          <span class="arch-item">Audit etab.</span>
+          <span class="arch-item">Backup etab.</span>
+        </div>
+      </div>
+      <div class="arch-arrow">&darr; API filtree par etablissementId &darr;</div>
+      <div class="arch-layer" style="border-color:var(--success);background:rgba(34,197,94,0.05);">
+        <div class="arch-layer-label" style="color:var(--success);">Plan Utilisateur</div>
+        <div class="arch-layer-items">
+          <span class="arch-item">Eleves</span>
+          <span class="arch-item">Notes & Bulletins</span>
+          <span class="arch-item">EDT</span>
+          <span class="arch-item">Personnel</span>
+          <span class="arch-item">Communication</span>
+          <span class="arch-item">Modules metier</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Proposition A -->
+  <div class="proposal">
+    <div class="proposal-header">
+      <div class="proposal-letter" style="background:var(--gradient-1);">A</div>
+      <h3>Separation structurelle des routes et layouts</h3>
+    </div>
+    <div class="proposal-body">
+      <p>Creer un arbre de routes <code>_platform/</code> distinct du layout client <code>_auth/</code>. Le panel proprietaire a son propre layout, sa propre sidebar, ses propres guards.</p>
+      <h4>Implmentation</h4>
+      <ul>
+        <li><code>_platform/dashboard.tsx</code> — Dashboard proprietaire (etablissements, revenus, sante)</li>
+        <li><code>_platform/etablissements.tsx</code> — CRUD etablissements (cree depuis <code>_auth.admin/</code>)</li>
+        <li><code>_platform/configuration.tsx</code> — Config applicative globale</li>
+        <li><code>_platform/monitoring.tsx</code> — Monitoring infrastructure</li>
+        <li><code>_platform/audit.tsx</code> — Audit global (tous etablissements)</li>
+        <li><code>_platform/facturation.tsx</code> — Plans, abonnements, quotas</li>
+        <li>Guard global : <code>requireRole('SUPER_ADMIN')</code> en <code>beforeLoad</code> du layout</li>
+      </ul>
+      <h4>Avantages</h4>
+      <ul>
+        <li>Separation visuelle immediate : le proprietaire sait qu'il est dans le panel plateforme</li>
+        <li>Guards centralises au niveau du layout (pas de guard oublie par route)</li>
+        <li>Sidebar dediee : pas de melange des items</li>
+        <li>Facilite l'evolution future (multi-proprietaire, support tickets, etc.)</li>
+      </ul>
+      <h4>Efort estime</h4>
+      <p><span class="badge badge-medium">2-3 semaines</span> — Deplacement de 6-8 routes existantes + creation du layout + migration sidebar</p>
+    </div>
+  </div>
+
+  <!-- Proposition B -->
+  <div class="proposal">
+    <div class="proposal-header">
+      <div class="proposal-letter" style="background:var(--gradient-2);">B</div>
+      <h3>Integration CASL.js — Authorization declarative</h3>
+    </div>
+    <div class="proposal-body">
+      <p>Remplacer le systeme custom <code>requirePermission()</code> par <a href="https://casl.js.org" style="color:var(--accent-light);">CASL.js</a>, le standard TypeScript pour l'autorisation. Permet des regles contextuelles (ABAC) en plus du RBAC.</p>
+      <h4>Exemple d'implementation</h4>
+      <ul>
+        <li><code>defineAbility(user, etablissementId)</code> — construit les regles en fonction du role ET du contexte</li>
+        <li><code>can('manage', 'Etablissement')</code> — uniquement si SUPER_ADMIN</li>
+        <li><code>can('read', 'Note', { etablissementId })</code> — filtrage automatique par tenant</li>
+        <li>Middleware Express : <code>app.use(caslMiddleware)</code> injecte <code>req.ability</code></li>
+        <li>Frontend : <code>&lt;Can I="read" a="Note"&gt;</code> remplace <code>PermissionGate</code></li>
+      </ul>
+      <h4>Avantages</h4>
+      <ul>
+        <li>Regles contextuelles : "un enseignant ne voit que les notes de ses matieres"</li>
+        <li>Testable unitairement (les regles sont des fonctions pures)</li>
+        <li>Partage frontend/backend (meme DSL)</li>
+        <li>Communaute active, documentation exhaustive</li>
+      </ul>
+      <h4>Efort estime</h4>
+      <p><span class="badge badge-medium">3-4 semaines</span> — Definition des ability + migration progressive des controllers + tests</p>
+    </div>
+  </div>
+
+  <!-- Proposition C -->
+  <div class="proposal">
+    <div class="proposal-header">
+      <div class="proposal-letter" style="background:var(--gradient-3);">C</div>
+      <h3>PostgreSQL RLS — Defense-in-depth</h3>
+    </div>
+    <div class="proposal-body">
+      <p>Ajouter des politiques Row-Level Security sur les tables critiques comme couche de securite supplementaire. Meme si le code applicatif a un bug, la DB refuse les acces cross-tenant.</p>
+      <h4>Politiques a implementer</h4>
+      <ul>
+        <li><code>CREATE POLICY tenant_isolation ON eleves USING ("etablissementId" = current_setting('app.current_tenant')::uuid)</code></li>
+        <li>Appliquer sur : eleves, notes, bulletins, personnel, creneaux_horaires, heures_cours, absences_personnel</li>
+        <li>Set <code>current_tenant</code> dans le middleware tenant : <code>SET LOCAL app.current_tenant = '...'</code></li>
+        <li>SUPER_ADMIN bypass : <code>SET LOCAL app.current_tenant = '00000000-0000-0000-0000-000000000000'</code> + policy permissive</li>
+      </ul>
+      <h4>Avantages</h4>
+      <ul>
+        <li>Zero trust au niveau DB — aucun bug applicatif ne peut fuir des donnees</li>
+        <li>Transparent pour le code existant (pas de changement de requetes)</li>
+        <li>Auditable : les politiques RLS sont versionnees avec les migrations</li>
+      </ul>
+      <h4>Efort estime</h4>
+      <p><span class="badge badge-low">1-2 semaines</span> — Migrations SQL + test sur tables critiques</p>
+    </div>
+  </div>
+
+  <!-- Proposition D -->
+  <div class="proposal">
+    <div class="proposal-header">
+      <div class="proposal-letter" style="background:linear-gradient(135deg, #f59e0b, #ef4444);">D</div>
+      <h3>Feature flags par tenant + quotas enforcees</h3>
+    </div>
+    <div class="proposal-body">
+      <p>Transformer le <code>ParametreSysteme</code> en systeme de feature flags complet avec targeting par tenant, et activer le controle des quotas definis dans <code>EtablissementConfig</code>.</p>
+      <h4>Feature flags</h4>
+      <ul>
+        <li>Interface <code>FeatureFlagService.isEnabled(flag, etablissementId)</code> avec cache</li>
+        <li>Flags par plan : <code>export_pdf</code>, <code>api_access</code>, <code>multi_etablissements</code>, <code>white_label</code></li>
+        <li>Override par tenant : un etablissement premium peut avoir des flags supplementaires</li>
+        <li>UI : composant <code>&lt;FeatureFlag flag="export_pdf"&gt;</code> pour masquer/afficher les fonctionnalites</li>
+      </ul>
+      <h4>Quotas</h4>
+      <ul>
+        <li>Middleware <code>requireQuota('eleves', 1)</code> avant les creations</li>
+        <li>Verification : <code>count(eleves) &lt; EtablissementConfig.maxEleves</code></li>
+        <li>Alerte a 80% de consommation (notification admin etablissement)</li>
+        <li>Blocage a 100% avec message d'upgrade de plan</li>
+      </ul>
+      <h4>Efort estime</h4>
+      <p><span class="badge badge-medium">2-3 semaines</span> — Service feature flags + middleware quotas + UI gating</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ 9. ROADMAP ═══════════════════════════════════════════ -->
+<section class="section" id="roadmap">
+  <div class="section-header">
+    <div class="section-icon" style="background:var(--gradient-1);color:white;">9</div>
+    <h2>Feuille de route recommandee</h2>
+  </div>
+
+  <div class="roadmap-phase">
+    <div class="phase-dot" style="background:var(--critical);">P0</div>
+    <div class="phase-header">
+      <span class="phase-title">Phase 0 — Corrections de securite immediates</span>
+      <span class="phase-duration">1 semaine</span>
+    </div>
+    <div class="phase-tasks">
+      <ul>
+        <li><strong>RBAC-1</strong> : Retirer les permissions <code>GROUPES_ETABLISSEMENTS_*</code> du role DIRECTEUR</li>
+        <li><strong>RBAC-2/3</strong> : Spliter les permissions config en <code>config:etablissement:*</code> et <code>config:plateforme:*</code></li>
+        <li><strong>FE-1</strong> : Remplacer le bypass SUPER_ADMIN/ADMIN par une evaluation reelle des permissions</li>
+        <li><strong>FE-2</strong> : Ajouter les guards <code>beforeLoad</code> sur finances, transport, bibliotheque</li>
+        <li><strong>CFG-1/2</strong> : Ajouter <code>authMiddleware</code> + <code>requirePermission</code> sur les endpoints configuration</li>
+        <li><strong>FE-5</strong> : Fix hook conditionnel dans PermissionGate</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="roadmap-phase">
+    <div class="phase-dot" style="background:var(--danger);">P1</div>
+    <div class="phase-header">
+      <span class="phase-title">Phase 1 — Separation structurelle plateforme/client</span>
+      <span class="phase-duration">2-3 semaines</span>
+    </div>
+    <div class="phase-tasks">
+      <ul>
+        <li><strong>Proposition A</strong> : Creer le layout <code>_platform/</code> avec guard global SUPER_ADMIN</li>
+        <li>Deplacer les routes plateforme (etablissements, config globale, monitoring, audit global)</li>
+        <li>Creer la sidebar plateforme dediee (separee de la sidebar client)</li>
+        <li>Renommer <code>_auth.admin/</code> en <code>_auth.etablissement/</code> pour clarifier la portee</li>
+        <li>Unifier la logique sidebar vs route guards (un seul helper <code>hasPermission()</code>)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="roadmap-phase">
+    <div class="phase-dot" style="background:var(--warning);">P2</div>
+    <div class="phase-header">
+      <span class="phase-title">Phase 2 — Framework d'autorisation avance</span>
+      <span class="phase-duration">3-4 semaines</span>
+    </div>
+    <div class="phase-tasks">
+      <ul>
+        <li><strong>Proposition B</strong> : Integrer CASL.js avec <code>defineAbility(user, etablissementId)</code></li>
+        <li>Definir les regles ABAC : "enseignant voit notes de ses matieres", "parent voit notes de ses enfants"</li>
+        <li>Migration progressive des controllers vers <code>req.ability.can()</code></li>
+        <li>Remplacer <code>PermissionGate</code> par <code>&lt;Can&gt;</code> de CASL</li>
+        <li>Tests unitaires sur les ability definitions</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="roadmap-phase">
+    <div class="phase-dot" style="background:var(--success);">P3</div>
+    <div class="phase-header">
+      <span class="phase-title">Phase 3 — Defense-in-depth + monetisation</span>
+      <span class="phase-duration">2-3 semaines</span>
+    </div>
+    <div class="phase-tasks">
+      <ul>
+        <li><strong>Proposition C</strong> : RLS PostgreSQL sur 8 tables critiques</li>
+        <li><strong>Proposition D</strong> : Feature flags par plan + quotas enforcees</li>
+        <li>Prefixer les cles cache Redis par <code>tenant:{id}:</code></li>
+        <li>Rate limiting par etablissement</li>
+        <li>Page facturation/upgrade dans le panel client</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ 10. ALTERNATIVES ═══════════════════════════════════ -->
+<section class="section" id="alternatives">
+  <div class="section-header">
+    <div class="section-icon" style="background:var(--gradient-3);color:white;">10</div>
+    <h2>Alternatives & outillage</h2>
+  </div>
+
+  <div class="card">
+    <h3>Outils d'autorisation recommandes</h3>
+    <table class="comparison-table">
+      <thead>
+        <tr><th>Outil</th><th>Type</th><th>Avantage</th><th>Pour eLISAschool</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>CASL.js</strong></td>
+          <td>Librairie TypeScript</td>
+          <td>RBAC + ABAC, partageable front/back</td>
+          <td><span class="check">&#10003; Recommande</span></td>
+        </tr>
+        <tr>
+          <td><strong>Permit.io</strong></td>
+          <td>SaaS external</td>
+          <td>Policy-as-code, audit trail, UI admin</td>
+          <td><span class="partial">Si budget</span></td>
+        </tr>
+        <tr>
+          <td><strong>OPA (Open Policy Agent)</strong></td>
+          <td>Moteur de policies</td>
+          <td>Regles declaratives (Rego), decouple</td>
+          <td><span class="partial">Overkill pour la taille actuelle</span></td>
+        </tr>
+        <tr>
+          <td><strong>Amazon Cedar</strong></td>
+          <td>Language de policies</td>
+          <td>Formel, prouvable, AWS Verified Permissions</td>
+          <td><span class="cross">Ecosysteme AWS uniquement</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Patterns d'isolation multi-tenant</h3>
+    <table class="comparison-table">
+      <thead>
+        <tr><th>Pattern</th><th>Isolation</th><th>Cout</th><th>Complexite</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Shared DB, shared schema</strong> (actuel)</td>
+          <td><span class="partial">Applicative</span></td>
+          <td><span class="check">Faible</span></td>
+          <td><span class="check">Faible</span></td>
+        </tr>
+        <tr>
+          <td><strong>Shared DB, schema-per-tenant</strong></td>
+          <td><span class="check">Schema</span></td>
+          <td><span class="partial">Moyen</span></td>
+          <td><span class="partial">Moyenne</span></td>
+        </tr>
+        <tr>
+          <td><strong>DB-per-tenant</strong></td>
+          <td><span class="check">Totale</span></td>
+          <td><span class="cross">Eleve</span></td>
+          <td><span class="cross">Elevee</span></td>
+        </tr>
+        <tr>
+          <td><strong>Hybride</strong> (shared + RLS)</td>
+          <td><span class="check">Forte</span></td>
+          <td><span class="check">Faible</span></td>
+          <td><span class="partial">Moyenne</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin-top:1rem;">Recommandation pour eLISAschool : rester en <strong>shared DB + RLS</strong> (hybride). Le modele actuel est fonctionnel ; le RLS ajoute la defense-in-depth sans changer l'architecture.</p>
+  </div>
+
+  <div class="card">
+    <h3>Feature flags — Solutions 2025-2026</h3>
+    <ul>
+      <li><strong>ConfigCat</strong> — SDK TypeScript, targeting par attributs (plan, etablissementId), dashboard UI, 0 latence (evaluation locale)</li>
+      <li><strong>GrowthBook</strong> — Open source, self-hostable, SDK TypeScript, experiments A/B integres</li>
+      <li><strong>AWS AppConfig</strong> — Natif AWS, validation de schemas, deployments progressifs</li>
+      <li><strong>Custom (ParametreSysteme actuel)</strong> — Fonctionnel, sans dependance externe, mais manque le targeting avance et le rollback instantane</li>
+    </ul>
+    <p style="margin-top:0.75rem;">Recommandation : <strong>GrowthBook</strong> (self-hosted, gratuit, SDK TypeScript natif) ou conserver le systeme custom en ajoutant le targeting par plan.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ FOOTER ═══════════════════════════════════════════════ -->
+<footer class="report-footer">
+  <p><strong>eLISAschool</strong> — Rapport d'audit architecture SaaS</p>
+  <p style="margin-top:0.5rem;">Genere le 7 aout 2026 &middot; Auteur : franck arlos chendjou &middot; Classification : interne</p>
+  <p style="margin-top:0.5rem;color:var(--text-muted);">Ce document contient des recommandations architecturales. Les corrections de securite (Phase 0) devraient etre priorisees avant tout deploiement multi-tenant.</p>
+</footer>
+
+</main>
+</body>
+</html>

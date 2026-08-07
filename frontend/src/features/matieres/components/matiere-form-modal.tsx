@@ -5,6 +5,7 @@ import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaInput } from '@/components/ui/ElisaInput';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
+import { ColorPicker } from '@/components/ui/ColorPicker';
 import type { Matiere, CreerMatiereDto, SousSysteme } from '../types/matiere.types';
 
 interface MatiereFormModalProps {
@@ -118,19 +119,12 @@ export function MatiereFormModal({ open, onOpenChange, matiere, onSave, isLoadin
                     placeholder="Ex: Mathematics"
                 />
 
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-secondary mb-2">{t('couleur')}</label>
-                        <div className="flex items-center gap-3">
-                            <input
-                                type="color"
-                                value={couleur}
-                                onChange={(e) => setCouleur(e.target.value)}
-                                className="w-12 h-10 rounded border border-border cursor-pointer"
-                            />
-                            <span className="text-sm text-muted-foreground font-mono">{couleur}</span>
-                        </div>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ColorPicker
+                        label={t('couleur')}
+                        value={couleur}
+                        onChange={setCouleur}
+                    />
                     <ElisaSelect
                         label={t('sousSysteme')}
                         value={sousSysteme}

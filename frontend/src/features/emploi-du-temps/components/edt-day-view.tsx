@@ -166,7 +166,7 @@ export function EDTDayView({
                         <div className="absolute inset-0 ml-[clamp(2.5rem,8vw,4rem)] mr-[var(--space-sm)]">
                             {creneauxJour.map((c) => {
                                 const pos = positionner(c.heureDebut ?? '08:00', c.heureFin ?? '09:00');
-                                const couleurHex = c.affectationMatiere?.matiere?.couleur;
+                                const couleurHex = c.couleur || c.affectationMatiere?.matiere?.couleur;
                                 const pal = couleurHex ? paletteCreneau(couleurHex, undefined, mode) : null;
                                 return (
                                     <button

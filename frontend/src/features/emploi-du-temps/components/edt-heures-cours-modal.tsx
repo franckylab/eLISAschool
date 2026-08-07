@@ -2,16 +2,16 @@
  * ==================================
  * eLISAschool - Modal Génération Heures de Cours depuis EDT (multi-sélection)
  * ==================================
- * 3 étapes (CustomModal + gestion manuelle) :
+ * 4 étapes (CustomModal + gestion manuelle) :
  *  1. Sélection — multi-sélection affectations (classe × matière × enseignant) + dates
- *  2. Résumé — récapitulatif des affectations sélectionnées
- *  3. Résultat — statistiques (créées / ignorées / erreurs)
+ *  2. Aperçu — statistiques + détail par matière des créneaux identifiés (preview)
+ *  3. Résumé — récapitulatif + confirmation avant génération
+ *  4. Résultats — statistiques de génération + breakdown par matière
  *
- * Flux async contrôlé : l'étape 3 ne s'affiche QU'APRÈS la complétion
- * de la génération (pas de StepperModal — incompatible async).
+ * Flux : Sélection → (appel preview API) → Aperçu → Résumé → (appel génération API) → Résultats
  *
  * Autonome : charge ses propres affectations (indépendant des filtres toolbar).
- * Version: 3.0.0
+ * Version: 4.0.0
  * Auteur: franck arlos chendjou
  */
 
@@ -21,14 +21,26 @@ import {
     Loader2, CheckCircle2, AlertTriangle,
     Info, GraduationCap, BookOpen, Users, CalendarDays,
     ClipboardList, Sparkles, CheckSquare, Square, Filter,
+    Eye, ArrowLeft,
 } from 'lucide-react';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { SectionSeparator } from '@/components/ui/SectionSeparator';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { AnimatePresence, motion } from 'framer-motion';
 import { formatDateInput } from '@/lib/date-utils';
-import { useGenererHeuresCoursFromEdt, type GenererHeuresCoursResult } from '../hooks/use-heure-cours';
+import {
+    useGenererHeuresCoursFromEdt,
+    usePrevisualiserHeuresCours,
+    type GenererHeuresCoursResult,
+    type PreviewHeuresCoursResult,
+} from '../hooks/use-heure-cours';
 import { useAffectationsOptions, type AffectationOption } from '../hooks/use-emploi-du-temps';
+import {
+    GenerationStatsCard,
+    StatsIcons,
+    GenerationResultBreakdown,
+    MiniBarChart,
+} from './generation-ui';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -51,13 +63,19 @@ function getSemaineCourante(): { lundi: string; samedi: string } {
     return { lundi: formatDateInput(lundi), samedi: formatDateInput(samedi) };
 }
 
-// ─── Métadonnées étapes ─────────────────────────────────
+// ─── Métadonnées étapes (4 étapes) ──────────────────────
 
 const ETAPES_META = [
     { id: 'selection', icon: ClipboardList },
+    { id: 'apercu', icon: Eye },
     { id: 'resume', icon: Sparkles },
     { id: 'resultat', icon: CheckCircle2 },
 ] as const;
+
+const JOURS_LABELS: Record<string, string> = {
+    LUNDI: 'Lun', MARDI: 'Mar', MERCREDI: 'Mer',
+    JEUDI: 'Jeu', VENDREDI: 'Ven', SAMEDI: 'Sam', DIMANCHE: 'Dim',
+};
 
 // ─── Composant ──────────────────────────────────────────
 
@@ -76,16 +94,17 @@ export function EDTHeuresCoursModal({
     const [dateDebut, setDateDebut] = useState(lundi);
     const [dateFin, setDateFin] = useState(samedi);
 
-    // ─── État étapes (manuel) ───
+    // ─── État étapes (manuel, 4 étapes) ───
     const [etapeCourante, setEtapeCourante] = useState(0);
+    const [preview, setPreview] = useState<PreviewHeuresCoursResult | null>(null);
     const [resultat, setResultat] = useState<GenererHeuresCoursResult | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const isInitializingRef = useRef(true);
 
-    // ─── Chargement autonome des affectations ───
+    // ─── Hooks API ───
     const { data: affectations = [], isLoading: chargementAffectations } = useAffectationsOptions();
-
+    const previsualiser = usePrevisualiserHeuresCours();
     const generer = useGenererHeuresCoursFromEdt();
 
     // ─── Classes disponibles (pour le filtre) ───
@@ -115,6 +134,7 @@ export function EDTHeuresCoursModal({
         // Reset complet
         setAffectationsSelectionnees(new Set());
         setFiltreClasseIds(new Set());
+        setPreview(null);
         setResultat(null);
         setIsSubmitting(false);
         setEtapeCourante(0);
@@ -161,25 +181,40 @@ export function EDTHeuresCoursModal({
             else next.add(classeId);
             return next;
         });
-        // Désélectionner les affectations qui ne correspondent plus au filtre
         setAffectationsSelectionnees(new Set());
     }, []);
 
-    // ─── Validation étape 1 ───
+    // ─── Validation étape 1 (Sélection) ───
     const etape1Valide = useMemo(() => {
         return affectationsSelectionnees.size > 0 && !!dateDebut && !!dateFin && dateDebut <= dateFin;
     }, [affectationsSelectionnees, dateDebut, dateFin]);
 
     // ─── Navigation étapes ───
     const allerEtapeSuivante = useCallback(() => {
-        setEtapeCourante(prev => Math.min(prev + 1, 2));
+        setEtapeCourante(prev => Math.min(prev + 1, 3));
     }, []);
 
     const allerEtapePrecedente = useCallback(() => {
         setEtapeCourante(prev => Math.max(prev - 1, 0));
     }, []);
 
-    // ─── Soumission asynchrone (étape 2 → génération → étape 3) ───
+    // ─── Étape 1 → 2 : lancer preview ───
+    const handlePrevisualiser = useCallback(async () => {
+        if (affectationsSelectionnees.size === 0 || !dateDebut || !dateFin) return;
+        try {
+            const res = await previsualiser.mutateAsync({
+                affectationMatiereIds: Array.from(affectationsSelectionnees),
+                dateDebut,
+                dateFin,
+            });
+            setPreview(res ?? null);
+            allerEtapeSuivante();
+        } catch {
+            // Erreur gérée par le hook TanStack Query (toast)
+        }
+    }, [affectationsSelectionnees, dateDebut, dateFin, previsualiser, allerEtapeSuivante]);
+
+    // ─── Étape 2 → 3 : lancer génération ───
     const handleGenerer = useCallback(async () => {
         if (affectationsSelectionnees.size === 0 || !dateDebut || !dateFin) return;
         setIsSubmitting(true);
@@ -206,6 +241,7 @@ export function EDTHeuresCoursModal({
     // ─── Labels étapes ───
     const labelsEtapes = useMemo(() => [
         t('generationHeuresCours.etape1Titre'),
+        t('generationHeuresCours.etapeApercu'),
         t('generationHeuresCours.etape2Titre'),
         t('generationHeuresCours.etape3Titre'),
     ], [t]);
@@ -222,8 +258,9 @@ export function EDTHeuresCoursModal({
                         variant="primary"
                         size="md"
                         disabled={!etape1Valide}
-                        onClick={allerEtapeSuivante}
-                        icon={<CalendarDays className="h-4 w-4" />}
+                        onClick={handlePrevisualiser}
+                        loading={previsualiser.isPending}
+                        icon={!previsualiser.isPending ? <Eye className="h-4 w-4" /> : undefined}
                     >
                         {t('common:boutons.suivant')}
                     </ElisaButton>
@@ -231,6 +268,24 @@ export function EDTHeuresCoursModal({
             );
         }
         if (etapeCourante === 1) {
+            return (
+                <>
+                    <ElisaButton variant="outline" size="md" onClick={allerEtapePrecedente}>
+                        <ArrowLeft className="h-4 w-4 mr-1" />
+                        {t('common:boutons.retour')}
+                    </ElisaButton>
+                    <ElisaButton
+                        variant="primary"
+                        size="md"
+                        onClick={allerEtapeSuivante}
+                        icon={<Sparkles className="h-4 w-4" />}
+                    >
+                        {t('common:boutons.suivant')}
+                    </ElisaButton>
+                </>
+            );
+        }
+        if (etapeCourante === 2) {
             return (
                 <>
                     <ElisaButton variant="outline" size="md" onClick={allerEtapePrecedente}>
@@ -249,7 +304,7 @@ export function EDTHeuresCoursModal({
             );
         }
         return null;
-    }, [etapeCourante, etape1Valide, isSubmitting, handleClose, allerEtapeSuivante, allerEtapePrecedente, handleGenerer, affectationsSelectionnees.size, t]);
+    }, [etapeCourante, etape1Valide, isSubmitting, handleClose, handlePrevisualiser, allerEtapeSuivante, allerEtapePrecedente, handleGenerer, affectationsSelectionnees.size, t, previsualiser.isPending]);
 
     return (
         <CustomModal
@@ -301,6 +356,13 @@ export function EDTHeuresCoursModal({
                         />
                     )}
                     {etapeCourante === 1 && (
+                        <ContenuApercu
+                            t={t}
+                            preview={preview}
+                            isPending={previsualiser.isPending}
+                        />
+                    )}
+                    {etapeCourante === 2 && (
                         <ContenuResume
                             t={t}
                             affectations={affectations}
@@ -309,7 +371,7 @@ export function EDTHeuresCoursModal({
                             dateFin={dateFin}
                         />
                     )}
-                    {etapeCourante === 2 && (
+                    {etapeCourante === 3 && (
                         <ContenuResultat
                             t={t}
                             resultat={resultat}
@@ -323,6 +385,7 @@ export function EDTHeuresCoursModal({
 }
 
 // ─── Contenu Étape 1 : Multi-sélection ──────────────────
+// (Inchangé — même composant)
 
 function ContenuSelection({ t, chargementAffectations, classesDisponibles, filtreClasseIds, toggleFiltreClasse, affectationsFiltrees, affectationsSelectionnees, toggleAffectation, toutSelectionner, toutDeselectionner, dateDebut, setDateDebut, dateFin, setDateFin }: {
     t: ReturnType<typeof useTranslation>['t'];
@@ -428,13 +491,10 @@ function ContenuSelection({ t, chargementAffectations, classesDisponibles, filtr
                                     isSelected ? 'bg-[var(--color-dominant-50)]' : ''
                                 }`}
                             >
-                                {/* Checkbox */}
                                 {isSelected
                                     ? <CheckSquare className="h-4 w-4 text-[var(--color-dominant-600)] shrink-0" />
                                     : <Square className="h-4 w-4 text-[var(--color-text-muted)] shrink-0" />
                                 }
-
-                                {/* Infos affectation */}
                                 <div className="flex-1 min-w-0 grid grid-cols-3 gap-2">
                                     <div className="flex items-center gap-1.5 min-w-0">
                                         <GraduationCap className="h-3 w-3 text-[var(--color-dominant-600)] shrink-0" />
@@ -500,7 +560,108 @@ function ContenuSelection({ t, chargementAffectations, classesDisponibles, filtr
     );
 }
 
-// ─── Contenu Étape 2 : Résumé ───────────────────────────
+// ─── Contenu Étape 2 : Aperçu (preview) ─────────────────
+
+function ContenuApercu({ t, preview, isPending }: {
+    t: ReturnType<typeof useTranslation>['t'];
+    preview: PreviewHeuresCoursResult | null;
+    isPending: boolean;
+}) {
+    if (isPending || !preview) {
+        return (
+            <div className="flex flex-col items-center justify-center py-8 gap-3">
+                <Loader2 className="h-6 w-6 animate-spin text-[var(--color-dominant-600)]" />
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                    {t('generationHeuresCours.enCours')}
+                </p>
+            </div>
+        );
+    }
+
+    const { stats } = preview;
+
+    // Données pour le mini graphique par jour
+    const dataJours = stats.detailParJour.map(j => ({
+        label: JOURS_LABELS[j.jour] || j.jour.slice(0, 3),
+        value: j.creneaux,
+    }));
+
+    return (
+        <div className="space-y-4">
+            {/* Stats globales */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-[var(--gap-sm)]">
+                <GenerationStatsCard
+                    icon={StatsIcons.creneaux}
+                    label={t('generationHeuresCours.creneauxIdentifies')}
+                    value={stats.totalCreneaux}
+                    color="dominant"
+                />
+                <GenerationStatsCard
+                    icon={StatsIcons.heures}
+                    label={t('generationHeuresCours.heuresPlanifiees')}
+                    value={`${stats.totalHeures.toFixed(1)}h`}
+                    color="accent"
+                />
+                <GenerationStatsCard
+                    icon={StatsIcons.matieres}
+                    label={t('generationHeuresCours.matieresCouvertes')}
+                    value={stats.matieresCouvertes}
+                    color="success"
+                />
+                <GenerationStatsCard
+                    icon={StatsIcons.total}
+                    label={t('generationHeuresCours.joursCouverts')}
+                    value={stats.joursCouverts}
+                    color="info"
+                />
+            </div>
+
+            {/* Distribution par jour */}
+            {dataJours.length > 0 && (
+                <>
+                    <SectionSeparator
+                        title={t('generationHeuresCours.detailParJour')}
+                        icon={<CalendarDays className="h-4 w-4" />}
+                    />
+                    <MiniBarChart data={dataJours} />
+                </>
+            )}
+
+            {/* Détail par matière */}
+            {stats.detailParMatiere.length > 0 && (
+                <>
+                    <SectionSeparator
+                        title={t('generationHeuresCours.detailParMatiere')}
+                        icon={<BookOpen className="h-4 w-4" />}
+                    />
+                    <GenerationResultBreakdown
+                        items={stats.detailParMatiere.map(m => ({
+                            matiereId: m.matiereId,
+                            matiereNom: m.matiereNom,
+                            matiereCouleur: m.matiereCouleur,
+                            classeNom: m.classeNom,
+                            creneaux: m.creneaux,
+                            heures: m.heures,
+                        }))}
+                        type="preview"
+                    />
+                </>
+            )}
+
+            {/* Alerte si aucun créneau */}
+            {stats.totalCreneaux === 0 && (
+                <div className="flex items-center gap-2 p-3 rounded-[var(--radius-md)] border border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10">
+                    <AlertTriangle className="h-4 w-4 text-[var(--color-warning)] shrink-0" />
+                    <span className="text-xs text-[var(--color-warning)]">
+                        {t('generationHeuresCours.aucunCreneauPreview')}
+                    </span>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── Contenu Étape 3 : Résumé ───────────────────────────
 
 function ContenuResume({ t, affectations, affectationsSelectionnees, dateDebut, dateFin }: {
     t: ReturnType<typeof useTranslation>['t'];
@@ -511,7 +672,6 @@ function ContenuResume({ t, affectations, affectationsSelectionnees, dateDebut, 
 }) {
     const selected = affectations.filter(a => affectationsSelectionnees.has(a.id));
 
-    // Grouper par classe pour le résumé
     const parClasse = useMemo(() => {
         const map = new Map<string, AffectationOption[]>();
         for (const aff of selected) {
@@ -571,7 +731,7 @@ function ContenuResume({ t, affectations, affectationsSelectionnees, dateDebut, 
     );
 }
 
-// ─── Contenu Étape 3 : Résultat ─────────────────────────
+// ─── Contenu Étape 4 : Résultats ────────────────────────
 
 function ContenuResultat({ t, resultat, onClose }: {
     t: ReturnType<typeof useTranslation>['t'];
@@ -591,22 +751,59 @@ function ContenuResultat({ t, resultat, onClose }: {
 
     return (
         <div className="space-y-4">
+            {/* En-tête succès */}
             <div className="flex flex-col items-center py-2">
                 <div className="h-14 w-14 rounded-full bg-[var(--color-success)]/10 flex items-center justify-center mb-3">
                     <CheckCircle2 className="h-7 w-7 text-[var(--color-success)]" />
                 </div>
                 <h3 className="font-semibold text-[var(--color-text-primary)]" style={{ fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.25rem)' }}>
-                    {t('generationHeuresCours.resultat')}
+                    {t('generationHeuresCours.generationComplete')}
                 </h3>
             </div>
 
+            {/* Stats principales */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-[var(--gap-sm)]">
-                <ResultatCard label={t('generationHeuresCours.creees')} value={resultat.created} color="success" />
-                <ResultatCard label={t('generationHeuresCours.ignorees')} value={resultat.skipped} color="warning" />
-                <ResultatCard label={t('generationHeuresCours.erreurs')} value={resultat.errors ?? 0} color="danger" />
-                <ResultatCard label={t('generationHeuresCours.totalTraite')} value={resultat.total ?? (resultat.created + resultat.skipped)} color="dominant" />
+                <GenerationStatsCard
+                    icon={StatsIcons.creees}
+                    label={t('generationHeuresCours.creees')}
+                    value={resultat.created}
+                    color="success"
+                />
+                <GenerationStatsCard
+                    icon={StatsIcons.ignorees}
+                    label={t('generationHeuresCours.ignorees')}
+                    value={resultat.skipped}
+                    color="warning"
+                />
+                <GenerationStatsCard
+                    icon={StatsIcons.erreurs}
+                    label={t('generationHeuresCours.erreurs')}
+                    value={resultat.errors ?? 0}
+                    color="danger"
+                />
+                <GenerationStatsCard
+                    icon={StatsIcons.total}
+                    label={t('generationHeuresCours.totalTraite')}
+                    value={resultat.total ?? (resultat.created + resultat.skipped)}
+                    color="dominant"
+                />
             </div>
 
+            {/* Détail par matière */}
+            {resultat.detailParMatiere && resultat.detailParMatiere.length > 0 && (
+                <>
+                    <SectionSeparator
+                        title={t('generationHeuresCours.detailParMatiereResultat')}
+                        icon={<BookOpen className="h-4 w-4" />}
+                    />
+                    <GenerationResultBreakdown
+                        items={resultat.detailParMatiere}
+                        type="resultat"
+                    />
+                </>
+            )}
+
+            {/* Alerte si rien créé */}
             {resultat.created === 0 && (
                 <div className="flex items-center gap-2 p-3 rounded-[var(--radius-md)] border border-[var(--color-warning)]/30 bg-[var(--color-warning)]/10">
                     <AlertTriangle className="h-4 w-4 text-[var(--color-warning)] shrink-0" />
@@ -663,26 +860,7 @@ function StepperHeader({ etapeCourante, labels, icons }: {
     );
 }
 
-// ─── Composants utilitaires ─────────────────────────────
-
-function ResultatCard({ label, value, color }: {
-    label: string;
-    value: number;
-    color: 'success' | 'warning' | 'danger' | 'dominant';
-}) {
-    const colorMap = {
-        success: 'bg-[var(--color-success)]/10 text-[var(--color-success)] border-[var(--color-success)]/30',
-        warning: 'bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/30',
-        danger: 'bg-[var(--color-danger)]/10 text-[var(--color-danger)] border-[var(--color-danger)]/30',
-        dominant: 'bg-[var(--color-dominant-50)] text-[var(--color-dominant-700)] border-[var(--color-dominant-200)]',
-    };
-    return (
-        <div className={`p-3 rounded-[var(--radius-md)] border text-center ${colorMap[color]}`}>
-            <div className="text-xl font-bold">{value}</div>
-            <div className="text-[10px] font-medium uppercase tracking-wide mt-1 opacity-80">{label}</div>
-        </div>
-    );
-}
+// ─── Utilitaires ────────────────────────────────────────
 
 function formatDateAffichage(dateStr: string): string {
     try {

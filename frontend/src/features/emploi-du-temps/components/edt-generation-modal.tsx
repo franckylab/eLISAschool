@@ -14,7 +14,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Settings, Eye, CheckCircle2, AlertTriangle,
-    Calendar, Clock, MapPin, User, BookOpen, Info, GraduationCap,
+    Calendar, Clock, MapPin, User, Info, GraduationCap,
 } from 'lucide-react';
 import { StepperModal } from '@/components/modals/StepperModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -22,6 +22,7 @@ import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { usePrevisualiserEDT, useGenererEDT, useTemplatesEDT } from '../hooks/use-emploi-du-temps';
 import { useToutesClasses } from '@/features/classes/hooks/use-toutes-classes';
 import type { CreneauPreview, ConflitPreview, ResumePreview } from '../types/edt.types';
+import { GenerationStatsCard, StatsIcons } from './generation-ui';
 
 interface EDTGenerationModalProps {
     open: boolean;
@@ -208,28 +209,28 @@ export function EDTGenerationModal({ open, onOpenChange, classeAnneeId, onSucces
         <div className="space-y-4">
             {/* Résumé */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <ResumeCard
-                    icon={<Calendar className="h-4 w-4" />}
+                <GenerationStatsCard
+                    icon={StatsIcons.creneaux}
                     label={t('generation.preview.creneaux')}
-                    value={preview.resume.totalCreneaux.toString()}
+                    value={preview.resume.totalCreneaux}
                     color="dominant"
                 />
-                <ResumeCard
-                    icon={<Clock className="h-4 w-4" />}
+                <GenerationStatsCard
+                    icon={StatsIcons.heures}
                     label={t('generation.preview.heures')}
                     value={`${preview.resume.totalHeures.toFixed(1)}h`}
                     color="accent"
                 />
-                <ResumeCard
-                    icon={<BookOpen className="h-4 w-4" />}
+                <GenerationStatsCard
+                    icon={StatsIcons.matieres}
                     label={t('generation.preview.matieres')}
-                    value={preview.resume.matieres.toString()}
+                    value={preview.resume.matieres}
                     color="success"
                 />
-                <ResumeCard
-                    icon={<AlertTriangle className="h-4 w-4" />}
+                <GenerationStatsCard
+                    icon={StatsIcons.conflits}
                     label={t('generation.preview.conflits')}
-                    value={preview.resume.totalConflits.toString()}
+                    value={preview.resume.totalConflits}
                     color={preview.resume.totalConflits > 0 ? 'warning' : 'success'}
                 />
             </div>
@@ -439,28 +440,4 @@ export function EDTGenerationModal({ open, onOpenChange, classeAnneeId, onSucces
     );
 }
 
-// ─── Composant résumé ────────────────────────────────
 
-function ResumeCard({ icon, label, value, color }: {
-    icon: React.ReactNode;
-    label: string;
-    value: string;
-    color: 'dominant' | 'accent' | 'success' | 'warning';
-}) {
-    const colorMap = {
-        dominant: 'bg-[var(--color-dominant-50)] text-[var(--color-dominant-700)] border-[var(--color-dominant-200)]',
-        accent: 'bg-[var(--color-accent-50)] text-[var(--color-accent-700)] border-[var(--color-accent-200)]',
-        success: 'bg-[var(--color-success)]/10 text-[var(--color-success)] border-[var(--color-success)]/20',
-        warning: 'bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/20',
-    };
-
-    return (
-        <div className={`p-3 rounded-lg border ${colorMap[color]}`}>
-            <div className="flex items-center gap-1.5 mb-1 opacity-80">
-                {icon}
-                <span className="text-[10px] font-medium uppercase tracking-wide">{label}</span>
-            </div>
-            <div className="text-xl font-bold">{value}</div>
-        </div>
-    );
-}

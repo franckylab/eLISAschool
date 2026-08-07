@@ -5,6 +5,7 @@ export { ElisaInput } from './ElisaInput';
 export { ElisaSelect } from './ElisaSelect';
 export { ElisaToggle } from './ElisaToggle';
 export { ColorPicker } from './ColorPicker';
+export { ColorFieldInherited } from './ColorFieldInherited';
 export { RowActions } from './RowActions';
 export { Badge } from './Badge';
 export { StatCard } from './StatCard';

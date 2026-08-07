@@ -195,7 +195,7 @@ export function EDTMonthView({ creneaux, mois, onCreneauClick, onDateClick, onPl
                             {estMoisCourant && creneauxJour.length > 0 && (
                                 <div className="flex flex-col gap-0.5">
                                     {(showAll ? creneauxJour : creneauxJour.slice(0, 3)).map((c) => {
-                                        const couleur = c.affectationMatiere?.matiere?.couleur;
+                                        const couleur = c.couleur || c.affectationMatiere?.matiere?.couleur;
                                         const pal = couleur ? paletteCreneau(couleur, undefined, mode) : null;
                                         const enseignantInitiales = c.affectationMatiere?.enseignant?.utilisateur?.profil
                                             ? `${c.affectationMatiere.enseignant.utilisateur.profil.prenom?.[0] ?? ''}${c.affectationMatiere.enseignant.utilisateur.profil.nom?.[0] ?? ''}`.toUpperCase()

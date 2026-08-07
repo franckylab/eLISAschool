@@ -94,7 +94,7 @@ export function EDTCreneauDetailModal({
     const ensNom = enseignant?.utilisateur?.profil?.nom ?? '';
     const classe = creneau.affectationMatiere?.classeAnnee?.classe;
     const salle = creneau.salle;
-    const couleur = matiere?.couleur || creneau.couleur;
+    const couleur = creneau.couleur || matiere?.couleur;
     const estValide = creneau.statut === 'VALIDE';
 
     return (

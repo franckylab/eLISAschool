@@ -113,6 +113,78 @@ export interface GenererHeuresCoursResult {
     skipped: number;
     errors: number;
     total: number;
+    detailParMatiere: Array<{
+        matiereId: string;
+        matiereNom: string;
+        creees: number;
+        ignorees: number;
+    }>;
+}
+
+// ─── Preview Heures de Cours ─────────────────────────────
+
+export interface CreneauPreviewHC {
+    creneauId: string;
+    jour: string;
+    heureDebut: string;
+    heureFin: string;
+    matiereId: string;
+    matiereNom: string;
+    matiereCouleur: string | null;
+    classeAnneeId: string;
+    classeNom: string;
+    enseignantId: string;
+    enseignantNom: string;
+    salleNom: string | null;
+    volumeMinutes: number;
+}
+
+export interface DetailMatierePreview {
+    matiereId: string;
+    matiereNom: string;
+    matiereCouleur: string | null;
+    classeNom: string;
+    creneaux: number;
+    heures: number;
+}
+
+export interface DetailJourPreview {
+    date: string;
+    jour: string;
+    creneaux: number;
+    heures: number;
+}
+
+export interface PreviewHeuresCoursResult {
+    creneaux: CreneauPreviewHC[];
+    stats: {
+        totalCreneaux: number;
+        totalHeures: number;
+        joursCouverts: number;
+        matieresCouvertes: number;
+        detailParMatiere: DetailMatierePreview[];
+        detailParJour: DetailJourPreview[];
+    };
+}
+
+export function usePrevisualiserHeuresCours() {
+    const handleError = useHandleError();
+    return useMutation({
+        mutationFn: async (payload: {
+            affectationMatiereIds?: string[];
+            enseignantId?: string;
+            classeAnneeId?: string;
+            dateDebut: string;
+            dateFin: string;
+            periodeId?: string;
+        }) => {
+            const response = await apiClient.post<PreviewHeuresCoursResult>('/api/emploi-du-temps/heures-cours/previsualiser', payload);
+            return response.data;
+        },
+        onError: (err: unknown) => {
+            handleError(err, 'Erreur de prévisualisation');
+        },
+    });
 }
 
 export function useGenererHeuresCoursFromEdt() {

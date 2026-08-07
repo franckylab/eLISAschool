@@ -18,6 +18,26 @@ const router = Router();
 const service = new HeureCoursService();
 
 /**
+ * POST /api/emploi-du-temps/heures-cours/previsualiser
+ * Prévisualiser les heures de cours qui seraient générées (lecture seule)
+ * Déclarée AVANT POST / pour éviter les conflits Express Router
+ */
+router.post(
+    '/previsualiser',
+    authMiddleware,
+    requirePermission('heures-cours:view'),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const dto = validateDto(genererHeuresCoursFromEdtSchema, req.body);
+            const result = await heureCoursService.previsualiserHeuresCoursFromEdt(dto, req.etablissementId!);
+            res.json({ success: true, data: result });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+/**
  * POST /api/emploi-du-temps/heures-cours/generer-from-edt
  * Générer des HeureCours depuis les créneaux EDT
  * Déclarée AVANT POST / pour éviter les conflits Express Router

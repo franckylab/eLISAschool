@@ -891,6 +891,54 @@ interface DragDropBoardProps<T> {
 
 ---
 
+## 14bis. Sélecteur de Couleur — ColorPicker
+
+### Règle Fondamentale
+
+**JAMAIS** utiliser `<input type="color">` natif dans un `CustomModal` ou tout composant modal.
+
+**Raisons** :
+- Le dialogue OS natif est bloqué par le focus trap Radix (z-index, pointer-events)
+- Pas de bouton "Confirmer" — la couleur est appliquée à la fermeture du dialogue OS
+- Lenteur du curseur de teintes (re-renders fréquents, pas de 60fps)
+- Comportement incohérent entre navigateurs/OS
+
+**Solution** : Utiliser **exclusivement** le `ColorPicker` partagé (`components/ui/ColorPicker.tsx`).
+
+### ColorPicker Partagé
+
+```typescript
+import { ColorPicker } from '@/components/ui/ColorPicker';
+
+<ColorPicker
+    label="Couleur"
+    value="#43A047"
+    onChange={(v) => setCouleur(v)}
+    sourceLabel="(de la matière)"  // Optionnel — indique la source
+    hint="Sélectionnez ou saisissez un code HEX"  // Optionnel
+    presetColors={['#E53935', '#43A047', '#1E88E5']}  // Optionnel — 24 par défaut
+    showHexInput={true}  // Défaut: true
+    disabled={false}
+/>
+```
+
+**Architecture** :
+- **54 couleurs** organisées en 12 familles chromatiques (Rouges, Rosés, Oranges, Jaunes, Verts, Turquoises, Bleus, Indigo, Violets, Marron, Neutres)
+- **Mode compact** (12 couleurs) + **extensible** (54 couleurs avec familles labelisées)
+- **React.memo** sur chaque swatch → O(1) re-render, 60fps garanti
+- **Transitions ciblées** (`transition-transform will-change-transform`) — pas de layout thrash
+- **Saisie HEX manuelle** avec validation temps réel, normalisation auto (# + 3 ou 6 chars)
+- **Pas de useEffect** pour sync hex → dérivation directe (`isFocused ? hexInput : upperValue`)
+- **Check mark SVG** sur la couleur sélectionnée (contraste auto light/dark)
+- **Rétro-compatibilité** `presetColors` (palette custom pour etablissement)
+- **Dark mode** : variables CSS uniquement
+- **Ultra-responsif** : `clamp()` sur toutes les dimensions
+- **Accessibilité** : `role="radiogroup"`, `aria-checked`, focus-visible ring
+
+**Fichier de référence** : `frontend/src/components/ui/ColorPicker.tsx` (v3.0)
+
+---
+
 ## 15. Calendrier Personnalisé
 
 ### 15.1 Composant ElisaDatePicker

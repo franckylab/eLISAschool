@@ -663,7 +663,7 @@ export function EDTStandalonePage() {
                     {[...plusNCreneaux]
                         .sort((a, b) => a.heureDebut.localeCompare(b.heureDebut))
                         .map((c) => {
-                            const couleur = c.affectationMatiere?.matiere?.couleur || 'var(--color-dominant-500)';
+                            const couleur = c.couleur || c.affectationMatiere?.matiere?.couleur || 'var(--color-dominant-500)';
                             return (
                                 <button
                                     key={c.id}

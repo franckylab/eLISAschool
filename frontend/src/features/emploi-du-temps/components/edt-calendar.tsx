@@ -611,7 +611,7 @@ function CreneauCard({
         id: creneau.id,
     });
 
-    const couleurHex = creneau.affectationMatiere?.matiere?.couleur;
+    const couleurHex = creneau.couleur || creneau.affectationMatiere?.matiere?.couleur;
     const pal = couleurHex ? paletteCreneau(couleurHex, undefined, mode) : null;
     const couleur = couleurHex || 'var(--color-dominant-500)';
     const texteCouleur = pal?.texteSurTeinte ?? 'var(--color-text-primary)';
@@ -743,7 +743,7 @@ function CreneauCard({
 
 function CreneauCardOverlay({ creneau }: { creneau: CreneauHoraire }) {
     const mode = useModeTheme();
-    const couleurHex = creneau.affectationMatiere?.matiere?.couleur;
+    const couleurHex = creneau.couleur || creneau.affectationMatiere?.matiere?.couleur;
     const pal = couleurHex ? paletteCreneau(couleurHex, undefined, mode) : null;
 
     return (

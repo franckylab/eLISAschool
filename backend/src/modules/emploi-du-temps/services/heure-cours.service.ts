@@ -972,7 +972,7 @@ export class HeureCoursService {
         respecterFlagAuto?: boolean;
         createurId?: string;
         req?: Request;
-    }): Promise<{ created: number; skipped: number }> {
+    }): Promise<{ created: number; skipped: number; detailParMatiere: Array<{ matiereId: string; matiereNom: string; creees: number; ignorees: number }> }> {
         const {
             etablissementId,
             enseignantId,
@@ -1122,6 +1122,23 @@ export class HeureCoursService {
         let skipped = 0;
         const batch: HeureCours[] = [];
         const CHUNK_SIZE = 50;
+        const detailParMatiereMap = new Map<string, { matiereId: string; matiereNom: string; creees: number; ignorees: number }>();
+
+        // Helper : tracker les skips par matière
+        const trackSkip = (slot: CreneauHoraire) => {
+            const matId = slot.affectationMatiere?.matiereId;
+            if (!matId) return;
+            if (!detailParMatiereMap.has(matId)) {
+                detailParMatiereMap.set(matId, { matiereId: matId, matiereNom: slot.affectationMatiere?.matiere?.nom ?? '—', creees: 0, ignorees: 0 });
+            }
+            detailParMatiereMap.get(matId)!.ignorees++;
+        };
+        const trackCreate = (matId: string, matNom: string) => {
+            if (!detailParMatiereMap.has(matId)) {
+                detailParMatiereMap.set(matId, { matiereId: matId, matiereNom: matNom, creees: 0, ignorees: 0 });
+            }
+            detailParMatiereMap.get(matId)!.creees++;
+        };
 
         const current = new Date(dateD);
         const dayOfWeek = current.getDay();
@@ -1145,6 +1162,7 @@ export class HeureCoursService {
                 const courseDateStr = formatDateLocal(courseDate);
                 if (exclureJF && datesJFSet.has(courseDateStr)) {
                     skipped++;
+                    trackSkip(slot);
                     continue;
                 }
 
@@ -1159,6 +1177,7 @@ export class HeureCoursService {
 
                 if (existing) {
                     skipped++;
+                    trackSkip(slot);
                     continue;
                 }
 
@@ -1169,6 +1188,7 @@ export class HeureCoursService {
                 const slotEnseignantId = slot.affectationMatiere?.enseignantId;
                 if (!slotClasseAnneeId || !slotMatiereId || !slotEnseignantId) {
                     skipped++;
+                    trackSkip(slot);
                     continue;
                 }
 
@@ -1190,6 +1210,7 @@ export class HeureCoursService {
                         `[HeureCours] Conflit détecté à la matérialisation: ${slotEnseignantId} le ${dateStr} ${slot.heureDebut}-${slot.heureFin} — ${conflitsInstance.map(c => c.type).join(', ')} — créneau ignoré`,
                     );
                     skipped++;
+                    trackSkip(slot);
                     continue;
                 }
 
@@ -1210,6 +1231,7 @@ export class HeureCoursService {
                 });
 
                 batch.push(hc);
+                trackCreate(slotMatiereId, slot.affectationMatiere?.matiere?.nom ?? '—');
 
                 // Flush du batch par chunks pour éviter les requêtes individuelles
                 if (batch.length >= CHUNK_SIZE) {
@@ -1279,7 +1301,239 @@ export class HeureCoursService {
             }, req);
         }
 
-        return { created, skipped };
+        return { created, skipped, detailParMatiere: Array.from(detailParMatiereMap.values()) };
+    }
+
+    /**
+     * Prévisualiser les heures de cours qui seraient générées depuis l'EDT.
+     * Même logique que materialiserInstances mais SANS création — lecture seule.
+     * Retourne les créneaux trouvés, stats par matière, stats par jour.
+     */
+    async previsualiserHeuresCoursFromEdt(
+        dto: GenererHeuresCoursFromEdtDto,
+        etablissementId: string,
+    ): Promise<{
+        creneaux: Array<{
+            creneauId: string;
+            jour: string;
+            heureDebut: string;
+            heureFin: string;
+            matiereId: string;
+            matiereNom: string;
+            matiereCouleur: string | null;
+            classeAnneeId: string;
+            classeNom: string;
+            enseignantId: string;
+            enseignantNom: string;
+            salleNom: string | null;
+            volumeMinutes: number;
+        }>;
+        stats: {
+            totalCreneaux: number;
+            totalHeures: number;
+            joursCouverts: number;
+            matieresCouvertes: number;
+            detailParMatiere: Array<{
+                matiereId: string;
+                matiereNom: string;
+                matiereCouleur: string | null;
+                classeNom: string;
+                creneaux: number;
+                heures: number;
+            }>;
+            detailParJour: Array<{
+                date: string;
+                jour: string;
+                creneaux: number;
+                heures: number;
+            }>;
+        };
+    }> {
+        const { affectationMatiereIds, enseignantId, classeAnneeId, dateDebut, dateFin } = dto;
+        const dateD = new Date(dateDebut);
+        const dateF = new Date(dateFin);
+
+        const edtRepo = AppDataSource.getRepository(CreneauHoraire);
+        const edtQuery = edtRepo
+            .createQueryBuilder('e')
+            .leftJoinAndSelect('e.affectationMatiere', 'am')
+            .leftJoinAndSelect('am.matiere', 'm')
+            .leftJoinAndSelect('am.classeAnnee', 'ca')
+            .leftJoinAndSelect('ca.classe', 'cl')
+            .leftJoinAndSelect('am.enseignant', 'ens')
+            .leftJoinAndSelect('ens.utilisateur', 'u')
+            .leftJoinAndSelect('u.profil', 'p')
+            .leftJoinAndSelect('e.salle', 's')
+            .where('e.etablissementId = :etablissementId', { etablissementId })
+            .andWhere('e.statut = :statut', { statut: StatutCreneau.VALIDE });
+
+        if (affectationMatiereIds && affectationMatiereIds.length > 0) {
+            edtQuery.andWhere('am.id IN (:...affectationMatiereIds)', { affectationMatiereIds });
+        }
+        if (enseignantId) {
+            edtQuery.andWhere('am.enseignantId = :enseignantId', { enseignantId });
+        }
+        if (classeAnneeId) {
+            edtQuery.andWhere('am.classeAnneeId = :classeAnneeId', { classeAnneeId });
+        }
+
+        const edtSlots = await edtQuery.getMany();
+
+        if (edtSlots.length === 0) {
+            return {
+                creneaux: [],
+                stats: { totalCreneaux: 0, totalHeures: 0, joursCouverts: 0, matieresCouvertes: 0, detailParMatiere: [], detailParJour: [] },
+            };
+        }
+
+        // Exclusion jours fériés
+        const prefRepo = AppDataSource.getRepository(PreferenceEmploiDuTemps);
+        const prefs = await prefRepo.findOne({ where: { etablissementId } });
+        const exclureJF = prefs?.exclureJoursFeries ?? true;
+        let datesJFSet = new Set<string>();
+
+        if (exclureJF) {
+            const jfList = await jourFerieService.findByPlageDates(
+                formatDateLocal(dateD),
+                formatDateLocal(dateF),
+                etablissementId,
+            );
+            for (const jf of jfList) {
+                if (jf.estRecurrent && jf.mois && jf.jourMois) {
+                    for (let annee = dateD.getFullYear(); annee <= dateF.getFullYear(); annee++) {
+                        const d = new Date(annee, jf.mois - 1, jf.jourMois);
+                        if (d >= dateD && d <= dateF) datesJFSet.add(formatDateLocal(d));
+                    }
+                } else if (jf.date) {
+                    datesJFSet.add(formatDateLocal(new Date(jf.date + 'T00:00:00')));
+                }
+            }
+        }
+
+        const jourSemaineIndex: Record<string, number> = {
+            [JourSemaine.LUNDI]: 1, [JourSemaine.MARDI]: 2, [JourSemaine.MERCREDI]: 3,
+            [JourSemaine.JEUDI]: 4, [JourSemaine.VENDREDI]: 5, [JourSemaine.SAMEDI]: 6,
+        };
+        const JOUR_LABELS: Record<number, string> = { 1: 'LUNDI', 2: 'MARDI', 3: 'MERCREDI', 4: 'JEUDI', 5: 'VENDREDI', 6: 'SAMEDI' };
+
+        const creneaux: Array<{
+            creneauId: string;
+            jour: string;
+            heureDebut: string;
+            heureFin: string;
+            matiereId: string;
+            matiereNom: string;
+            matiereCouleur: string | null;
+            classeAnneeId: string;
+            classeNom: string;
+            enseignantId: string;
+            enseignantNom: string;
+            salleNom: string | null;
+            volumeMinutes: number;
+        }> = [];
+        const parMatiereMap = new Map<string, { matiereId: string; matiereNom: string; matiereCouleur: string | null; classeNom: string; creneaux: number; heures: number }>();
+        const parJourMap = new Map<string, { date: string; jour: string; creneaux: number; heures: number }>();
+
+        const current = new Date(dateD);
+        const dayOfWeek = current.getDay();
+        const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        current.setDate(current.getDate() + diffToMonday);
+        current.setHours(0, 0, 0, 0);
+
+        while (current <= dateF) {
+            const semaineStart = new Date(current);
+
+            for (const slot of edtSlots) {
+                const targetDayIndex = jourSemaineIndex[slot.jour];
+                if (targetDayIndex === undefined) continue;
+
+                const courseDate = new Date(semaineStart);
+                courseDate.setDate(semaineStart.getDate() + (targetDayIndex - 1));
+                if (courseDate < dateD || courseDate > dateF) continue;
+
+                const courseDateStr = formatDateLocal(courseDate);
+                if (exclureJF && datesJFSet.has(courseDateStr)) continue;
+
+                const am = slot.affectationMatiere;
+                if (!am?.matiereId || !am?.classeAnneeId || !am?.enseignantId) continue;
+
+                const [h1, m1] = slot.heureDebut.split(':').map(Number);
+                const [h2, m2] = slot.heureFin.split(':').map(Number);
+                const duree = (h2 * 60 + m2) - (h1 * 60 + m1);
+                const heures = duree / 60;
+
+                const matiereNom = (am.matiere as any)?.nom ?? '—';
+                const matiereCouleur = (am.matiere as any)?.couleur ?? null;
+                const classeNom = (am.classeAnnee as any)?.classe?.nom ?? '—';
+                const enseignantNom = (am.enseignant as any)?.utilisateur?.profil
+                    ? `${(am.enseignant as any).utilisateur.profil.prenom} ${(am.enseignant as any).utilisateur.profil.nom}`
+                    : '—';
+                const salleNom = (slot as any).salle?.nom ?? slot.salleId ?? null;
+
+                creneaux.push({
+                    creneauId: slot.id,
+                    jour: courseDateStr,
+                    heureDebut: slot.heureDebut,
+                    heureFin: slot.heureFin,
+                    matiereId: am.matiereId,
+                    matiereNom,
+                    matiereCouleur,
+                    classeAnneeId: am.classeAnneeId,
+                    classeNom,
+                    enseignantId: am.enseignantId,
+                    enseignantNom,
+                    salleNom,
+                    volumeMinutes: duree,
+                });
+
+                // Stats par matière
+                const matKey = `${am.matiereId}::${am.classeAnneeId}`;
+                if (!parMatiereMap.has(matKey)) {
+                    parMatiereMap.set(matKey, { matiereId: am.matiereId, matiereNom, matiereCouleur, classeNom, creneaux: 0, heures: 0 });
+                }
+                const mat = parMatiereMap.get(matKey)!;
+                mat.creneaux++;
+                mat.heures += heures;
+
+                // Stats par jour
+                if (!parJourMap.has(courseDateStr)) {
+                    parJourMap.set(courseDateStr, { date: courseDateStr, jour: JOUR_LABELS[targetDayIndex] || slot.jour, creneaux: 0, heures: 0 });
+                }
+                const jour = parJourMap.get(courseDateStr)!;
+                jour.creneaux++;
+                jour.heures += heures;
+            }
+
+            current.setDate(current.getDate() + 7);
+        }
+
+        const totalMinutes = creneaux.reduce((sum, c) => {
+            const [h1, m1] = c.heureDebut.split(':').map(Number);
+            const [h2, m2] = c.heureFin.split(':').map(Number);
+            return sum + ((h2 * 60 + m2) - (h1 * 60 + m1));
+        }, 0);
+
+        // Arrondir les heures
+        const detailParMatiere = Array.from(parMatiereMap.values()).map(m => ({
+            ...m,
+            heures: Math.round(m.heures * 10) / 10,
+        }));
+        const detailParJour = Array.from(parJourMap.values()).sort((a, b) => a.date.localeCompare(b.date)).map(j => ({
+            ...j,
+            heures: Math.round(j.heures * 10) / 10,
+        }));
+
+        return {
+            creneaux,
+            stats: {
+                totalCreneaux: creneaux.length,
+                totalHeures: Math.round((totalMinutes / 60) * 10) / 10,
+                joursCouverts: parJourMap.size,
+                matieresCouvertes: parMatiereMap.size,
+                detailParMatiere,
+                detailParJour,
+            },
+        };
     }
 
     async genererHeuresCoursFromEdt(
@@ -1287,9 +1541,20 @@ export class HeureCoursService {
         etablissementId: string,
         createurId?: string,
         req?: Request
-    ): Promise<{ created: number; skipped: number }> {
+    ): Promise<{
+        created: number;
+        skipped: number;
+        errors: number;
+        total: number;
+        detailParMatiere: Array<{
+            matiereId: string;
+            matiereNom: string;
+            creees: number;
+            ignorees: number;
+        }>;
+    }> {
         const { affectationMatiereIds, enseignantId, classeAnneeId, dateDebut, dateFin, periodeId } = dto;
-        return this.materialiserInstances({
+        const base = await this.materialiserInstances({
             etablissementId,
             affectationMatiereIds,
             enseignantId,
@@ -1301,6 +1566,11 @@ export class HeureCoursService {
             createurId,
             req,
         });
+        return {
+            ...base,
+            errors: 0,
+            total: base.created + base.skipped,
+        };
     }
 
     /**
