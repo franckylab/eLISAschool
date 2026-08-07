@@ -2,18 +2,19 @@
  * ==================================
  * eLISAschool - Préférences EDT (Configuration)
  * ==================================
- * Organisé en 3 onglets horizontaux :
+ * Organisé en 4 onglets horizontaux :
  *  1. Calendrier (jours travaillés + horaires + contraintes)
  *  2. Jours fériés (exclusion + gestion + génération)
  *  3. Automation (matérialisation automatique)
- * Version: 2.0.0 — Refactor tabs horizontaux
+ *  4. Templates (gestion des modèles d'emploi du temps)
+ * Version: 3.0.0 — Ajout onglet Templates
  * Auteur: franck arlos chendjou
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, Calendar, BarChart3, Loader2, Check, RefreshCw, Plus, Trash2, Globe, Shield, Edit, Sparkles, Search, ChevronLeft, ChevronRight, Zap } from 'lucide-react';
+import { Clock, Calendar, BarChart3, Loader2, Check, RefreshCw, Plus, Trash2, Globe, Shield, Edit, Sparkles, Search, ChevronLeft, ChevronRight, Zap, FileText } from 'lucide-react';
 import { usePreferencesEDT, useUpdatePreferencesEDT } from '../hooks/use-emploi-du-temps';
 import { useJoursFeries, useChargerModelePays, useDeleteJourFerie, useModelesPays, useGenererVariablesAnnee } from '../hooks/use-jours-feries';
 import { ElisaButton } from '@/components/ui/ElisaButton';
@@ -23,6 +24,7 @@ import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { useConfirmation } from '@/components/ui/ConfirmationModal';
 import { toast } from 'sonner';
 import { JourFerieFormModal } from './jour-ferie-form-modal';
+import { EDTTemplatesPage } from './edt-templates';
 import type { JourFerie } from '../types/edt.types';
 
 const PAYS_FALLBACK = ['CM', 'CI', 'SN', 'CG', 'CD', 'GA', 'BF', 'ML', 'BJ', 'TG', 'NE', 'GN', 'TD', 'CF', 'GQ'] as const;
@@ -44,12 +46,13 @@ const DEFAULT_MATERIALISATION_AUTO = {
     ],
 };
 
-type ConfigTab = 'calendrier' | 'joursFeries' | 'automation';
+type ConfigTab = 'calendrier' | 'joursFeries' | 'automation' | 'templates';
 
 const CONFIG_TABS: { id: ConfigTab; labelKey: string; icon: typeof Calendar }[] = [
     { id: 'calendrier', labelKey: 'preferences.tabs.calendrier', icon: Calendar },
     { id: 'joursFeries', labelKey: 'preferences.tabs.joursFeries', icon: Globe },
     { id: 'automation', labelKey: 'preferences.tabs.automation', icon: Zap },
+    { id: 'templates', labelKey: 'preferences.tabs.templates', icon: FileText },
 ];
 
 export function EDTPreferencesPage() {
@@ -106,6 +109,24 @@ export function EDTPreferencesPage() {
             });
         }
     }, [preferences]);
+
+    /** Détection de modifications non enregistrées */
+    const isDirty = useMemo(() => {
+        if (!preferences) return false;
+        return (
+            JSON.stringify(formData.joursOuvrables.sort()) !== JSON.stringify((preferences.joursOuvrables || []).sort()) ||
+            formData.heureDebutCours !== (preferences.heureDebutCours || '07:30') ||
+            formData.heureFinCours !== (preferences.heureFinCours || '17:30') ||
+            formData.dureeCreneauStandard !== (preferences.dureeCreneauStandard || 55) ||
+            formData.dureeRecreation !== (preferences.dureeRecreation || 15) ||
+            formData.maxCreneauxParJour !== (preferences.maxCreneauxParJour || 8) ||
+            formData.maxCreneauxMatiereParJour !== (preferences.maxCreneauxMatiereParJour || 2) ||
+            formData.maxCreneauxConsecutifs !== (preferences.maxCreneauxConsecutifs || 2) ||
+            formData.repartitionEquilibree !== (preferences.repartitionEquilibree ?? true) ||
+            JSON.stringify(formData.materialisationAuto) !== JSON.stringify(preferences.materialisationAuto ?? DEFAULT_MATERIALISATION_AUTO) ||
+            formData.exclureJoursFeries !== (preferences.exclureJoursFeries ?? true)
+        );
+    }, [formData, preferences]);
 
     const handleToggleJour = (jour: string) => {
         setFormData(prev => ({
@@ -616,20 +637,43 @@ export function EDTPreferencesPage() {
                                 </ElisaButton>
                             </div>
                         )}
+
+                        {activeTab === 'templates' && (
+                            <EDTTemplatesPage />
+                        )}
                     </motion.div>
                 </AnimatePresence>
 
                 {/* ─── Footer actions (sticky) ──────────────────────── */}
-                <div className="flex justify-end gap-3 sticky bottom-0 bg-[var(--color-background)]/95 backdrop-blur-sm py-[var(--space-md)] -mx-[var(--space-sm)] px-[var(--space-sm)] border-t border-[var(--color-bordure)]/50 rounded-b-xl">
-                    <ElisaButton type="button" variant="outline" size="lg" onClick={reinitialiser}>
-                        {t('preferences.reinitialiser')}
-                    </ElisaButton>
-                    <ElisaButton type="submit" variant="primary" size="lg"
-                        icon={updatePreferences.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                        disabled={updatePreferences.isPending}
-                    >
-                        {updatePreferences.isPending ? t('preferences.enregistrement') : t('preferences.enregistrer')}
-                    </ElisaButton>
+                <div className="sticky bottom-0 z-10 -mx-[var(--space-sm)] px-[var(--space-md)] py-[var(--space-sm)] bg-[var(--color-background)]/95 backdrop-blur-md border-t border-[var(--color-bordure)]">
+                    <div className="flex items-center justify-between gap-[var(--gap-sm)] max-w-full">
+                        {/* Indicateur modifications non enregistrées */}
+                        <div className="flex items-center gap-[var(--gap-xs)] min-w-0">
+                            {isDirty && !updatePreferences.isPending && (
+                                <>
+                                    <span className="h-2 w-2 rounded-full bg-[var(--color-accent-500)] shrink-0 animate-pulse" />
+                                    <span className="text-xs text-[var(--color-text-secondary)] truncate hidden sm:inline">
+                                        {t('preferences.modificationsNonEnregistrees')}
+                                    </span>
+                                </>
+                            )}
+                        </div>
+                        {/* Actions */}
+                        <div className="flex items-center gap-[var(--gap-sm)] shrink-0">
+                            <ElisaButton type="button" variant="outline" size="md" onClick={reinitialiser}
+                                icon={<RefreshCw className="h-4 w-4" />}
+                                disabled={!isDirty || updatePreferences.isPending}
+                            >
+                                <span className="hidden sm:inline">{t('preferences.reinitialiser')}</span>
+                            </ElisaButton>
+                            <ElisaButton type="submit" variant="primary" size="md"
+                                icon={updatePreferences.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                                disabled={!isDirty || updatePreferences.isPending}
+                            >
+                                {updatePreferences.isPending ? t('preferences.enregistrement') : t('preferences.enregistrer')}
+                            </ElisaButton>
+                        </div>
+                    </div>
                 </div>
             </form>
             {ConfirmJFModal}

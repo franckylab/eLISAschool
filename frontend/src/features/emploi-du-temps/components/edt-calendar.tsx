@@ -684,7 +684,11 @@ function CreneauCard({
                         {/* Matière — toujours visible */}
                         <div
                             className="font-semibold truncate leading-tight"
-                            style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.25vw, 0.6875rem)', color: texteCouleur }}
+                            style={{
+                                fontSize: 'clamp(0.5625rem, 0.5rem + 0.25vw, 0.6875rem)',
+                                color: texteCouleur,
+                                textShadow: `0 1px 2px rgba(0,0,0,0.15), 0 0 4px ${pal?.fondTeinte ?? 'transparent'}`,
+                            }}
                         >
                             {creneau.affectationMatiere?.matiere?.nom || '—'}
                         </div>
@@ -692,7 +696,11 @@ function CreneauCard({
                         {creneau.affectationMatiere?.classeAnnee?.classe?.nom && (
                             <div
                                 className="flex items-center gap-0.5 mt-0.5"
-                                style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.5625rem)', color: texteSecondaire }}
+                                style={{
+                                    fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.5625rem)',
+                                    color: texteSecondaire,
+                                    textShadow: `0 0 3px ${pal?.fondTeinte ?? 'var(--color-surface)'}, 0 0 6px ${pal?.fondTeinte ?? 'var(--color-surface)'}`,
+                                }}
                             >
                                 <BookOpen className="h-2.5 w-2.5 shrink-0" />
                                 <span className="truncate">{creneau.affectationMatiere.classeAnnee.classe.nom}</span>
@@ -702,7 +710,11 @@ function CreneauCard({
                         {creneau.affectationMatiere?.enseignant && (
                             <div
                                 className="flex items-center gap-0.5 mt-0.5"
-                                style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.5625rem)', color: texteSecondaire }}
+                                style={{
+                                    fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.5625rem)',
+                                    color: texteSecondaire,
+                                    textShadow: `0 0 3px ${pal?.fondTeinte ?? 'var(--color-surface)'}, 0 0 6px ${pal?.fondTeinte ?? 'var(--color-surface)'}`,
+                                }}
                             >
                                 <User className="h-2.5 w-2.5 shrink-0" />
                                 <span className="truncate">
@@ -714,7 +726,11 @@ function CreneauCard({
                     {/* Horaire + salle — en bas */}
                     <div
                         className="flex items-center justify-between"
-                        style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.5625rem)', color: texteSecondaire }}
+                        style={{
+                            fontSize: 'clamp(0.5rem, 0.45rem + 0.2vw, 0.5625rem)',
+                            color: texteSecondaire,
+                            textShadow: `0 0 3px ${pal?.fondTeinte ?? 'var(--color-surface)'}, 0 0 6px ${pal?.fondTeinte ?? 'var(--color-surface)'}`,
+                        }}
                     >
                         <span>{creneau.heureDebut}–{creneau.heureFin}</span>
                         {creneau.salle && (

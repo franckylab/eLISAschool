@@ -16,7 +16,6 @@ import {
     ShieldCheck, CalendarCheck, Crosshair,
     CalendarDays, CalendarRange, List as ListIcon, BarChart3,
     Users, GraduationCap, DoorOpen, CheckCircle2, Clock, MapPin, User as UserIcon, Eye,
-    FileText,
 } from 'lucide-react';
 import {
     useCreneaux,
@@ -30,7 +29,6 @@ import { EDTMonthView } from './edt-month-view';
 import { EDTDayView } from './edt-day-view';
 import { EDTListeView } from './edt-liste';
 import { EDTPreferencesPage } from './edt-preferences';
-import { EDTTemplatesPage } from './edt-templates';
 import { EDTSynthese } from './edt-synthese';
 import { EDTAudit } from './edt-audit';
 import { EDTHeuresCoursModal } from './edt-heures-cours-modal';
@@ -87,8 +85,6 @@ export function EDTStandalonePage() {
     const [contexteType, setContexteType] = useState<ContexteType>('classe');
     const [contexteFilter, setContexteFilter] = useState('');
     const [showAnalytique, setShowAnalytique] = useState(false);
-    /** Toggle : afficher les templates inline (hors onglet Configuration) */
-    const [showTemplates, setShowTemplates] = useState(false);
     /** Toggle : afficher tous les créneaux par jour (vue mois) */
     const [showAllCreneaux, setShowAllCreneaux] = useState(false);
 
@@ -193,6 +189,25 @@ export function EDTStandalonePage() {
         });
     }, [paginated?.items]);
 
+    // ─── Dates avec créneaux (pour datepicker) ────────────────
+    const JOUR_OFFSET: Record<string, number> = {
+        LUNDI: 0, MARDI: 1, MERCREDI: 2, JEUDI: 3, VENDREDI: 4, SAMEDI: 5, DIMANCHE: 6,
+    };
+    const datesAvecCreneaux = useMemo(() => {
+        const set = new Set<string>();
+        for (const c of creneaux) {
+            const offset = JOUR_OFFSET[c.jour];
+            if (offset == null) continue;
+            const d = new Date(semaineDebut);
+            d.setDate(d.getDate() + offset);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            set.add(`${y}-${m}-${day}`);
+        }
+        return set;
+    }, [creneaux, semaineDebut]);
+
     // ─── Options pour le modal créneau (affectations + salles) ───
     // Le modal charge maintenant ses propres données indépendamment du filtre toolbar
     const contexteClasseIdForModal = contexteType === 'classe' && contexteFilter ? contexteFilter : undefined;
@@ -256,11 +271,6 @@ export function EDTStandalonePage() {
     // ─── Rendering ──────────────────────────────────
 
     const renderPlanningContent = () => {
-        // Templates — section dédiée (prime sur les vues planning)
-        if (showTemplates) {
-            return <EDTTemplatesPage />;
-        }
-
         if (showAnalytique) {
             return (
                 <div className="flex flex-col gap-[var(--gap-lg)]">
@@ -570,7 +580,7 @@ export function EDTStandalonePage() {
                             <div className="w-px h-5 bg-gray-300 dark:bg-[var(--color-bordure)]" />
 
                             <button
-                                onClick={() => { setShowAnalytique(v => !v); setShowTemplates(false); }}
+                                onClick={() => { setShowAnalytique(v => !v); }}
                                 className={`flex items-center gap-1 px-[var(--space-sm)] py-[var(--space-xs)] rounded-lg text-xs font-medium transition-colors ${
                                     showAnalytique
                                         ? 'bg-[var(--color-accent-600)] text-white dark:bg-[var(--color-accent-700)]'
@@ -581,22 +591,6 @@ export function EDTStandalonePage() {
                             >
                                 <BarChart3 className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
                                 <span className="hidden sm:inline">{t('vues.analytique')}</span>
-                            </button>
-
-                            {/* Templates — accès rapide (section dédiée) */}
-                            <div className="w-px h-5 bg-gray-300 dark:bg-[var(--color-bordure)]" />
-                            <button
-                                onClick={() => { setShowTemplates(v => !v); setShowAnalytique(false); }}
-                                className={`flex items-center gap-1 px-[var(--space-sm)] py-[var(--space-xs)] rounded-lg text-xs font-medium transition-colors ${
-                                    showTemplates
-                                        ? 'bg-[var(--color-accent-600)] text-white dark:bg-[var(--color-accent-700)]'
-                                        : 'text-[var(--color-text-primary)] hover:bg-[var(--color-surface-hover)] dark:text-[var(--color-text-secondary)]'
-                                }`}
-                                aria-pressed={showTemplates}
-                                aria-label={t('onglets.templates')}
-                            >
-                                <FileText className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
-                                <span className="hidden sm:inline">{t('onglets.templates')}</span>
                             </button>
 
                             {/* Toggle afficher tous les créneaux (vue mois) */}
@@ -684,6 +678,8 @@ export function EDTStandalonePage() {
                     setNavigationDate(new Date());
                     setPlanningView('semaine');
                 }}
+                datesAvecCreneaux={datesAvecCreneaux}
+                joursFeries={joursFeries}
             />
 
             {/* ─── Modal +N (liste créneaux journée — vue mois) ── */}

@@ -60,7 +60,12 @@
     "moisSuivant": "Mois suivant",
     "selectionnerMois": "Sélectionner un mois",
     "selectionnerAnnee": "Sélectionner une année",
-    "allerAujourdhui": "Retour à aujourd'hui"
+    "allerAujourdhui": "Retour à aujourd'hui",
+    "toggleSemaine": "Début semaine",
+    "lundi": "Lu",
+    "dimanche": "Di",
+    "creneauxDispo": "Créneaux disponibles",
+    "jourFerie": "Jour férié"
   },
   "filtres": {
     "titre": "Filtres",
@@ -193,11 +198,13 @@
     "reinitialiser": "Réinitialiser",
     "enregistrer": "Enregistrer les préférences",
     "enregistrement": "Enregistrement…",
+    "modificationsNonEnregistrees": "Modifications non enregistrées",
     "erreurJoursOuvrables": "Veuillez sélectionner au moins un jour travaillé",
     "tabs": {
       "calendrier": "Calendrier",
       "joursFeries": "Jours fériés",
-      "automation": "Automation"
+      "automation": "Automation",
+      "templates": "Templates"
     }
   },
   "templates": {

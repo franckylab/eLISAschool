@@ -26,13 +26,19 @@ interface EDTDatePickerModalProps {
     onToday: () => void;
     /** Callback pour aller à la semaine courante */
     onCurrentWeek: () => void;
+    /** Dates avec créneaux (pour pastilles indicatrices) — format 'YYYY-MM-DD' */
+    datesAvecCreneaux?: Set<string>;
+    /** Dates des jours fériés */
+    joursFeries?: Array<{ date?: string | null; nom: string; couleur?: string | null }>;
 }
 
-const JOURS_SEMAINE_KEYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'] as const;
+const JOURS_SEMAINE_LU = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'] as const;
+const JOURS_SEMAINE_DI = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'] as const;
 
 /**
  * Modal de navigation par date pour l'emploi du temps.
  * Calendrier mensuel avec dropdowns mois/année + footer actions rapides.
+ * Badges créneaux/JF + toggle semaine Lu/Di.
  */
 export function EDTDatePickerModal({
     open,
@@ -41,6 +47,8 @@ export function EDTDatePickerModal({
     onDateSelect,
     onToday,
     onCurrentWeek,
+    datesAvecCreneaux,
+    joursFeries,
 }: EDTDatePickerModalProps) {
     const { t, i18n } = useTranslation('emplois');
     const locale = i18n.language || 'fr';
@@ -48,6 +56,21 @@ export function EDTDatePickerModal({
     // Mois/année en cours de visualisation dans le modal
     const [viewMonth, setViewMonth] = useState(currentDate.getMonth());
     const [viewYear, setViewYear] = useState(currentDate.getFullYear());
+
+    // Toggle semaine : lundi (défaut) ou dimanche en première colonne
+    const [semaineLundi, setSemaineLundi] = useState(true);
+    const JOURS_SEMAINE_KEYS = semaineLundi ? JOURS_SEMAINE_LU : JOURS_SEMAINE_DI;
+
+    // ─── Map jours fériés (date string → JF info) ─────
+    const jfMap = useMemo(() => {
+        const map = new Map<string, { nom: string; couleur?: string | null }>();
+        if (joursFeries) {
+            for (const jf of joursFeries) {
+                if (jf.date) map.set(jf.date, { nom: jf.nom, couleur: jf.couleur });
+            }
+        }
+        return map;
+    }, [joursFeries]);
 
     // ─── Options mois/année ───────────────────────────
     const moisOptions = useMemo(() =>
@@ -71,9 +94,10 @@ export function EDTDatePickerModal({
         const premierJour = new Date(viewYear, viewMonth, 1);
         const dernierJour = new Date(viewYear, viewMonth + 1, 0);
 
-        // Jour de la semaine du 1er (0=dim, 1=lun, ..., 6=sam) → convertir en index lun=0
+        // Jour de la semaine du 1er (0=dim, 1=lun, ..., 6=sam)
         const jourSemaine = premierJour.getDay();
-        const offset = jourSemaine === 0 ? 6 : jourSemaine - 1;
+        // Offset : si semaineLundi, lundi=0 → dim=6 ; si semaineDi, dimanche=0 direct
+        const offset = semaineLundi ? (jourSemaine === 0 ? 6 : jourSemaine - 1) : jourSemaine;
 
         const cellules: Array<{ date: Date; jour: number; dansMois: boolean }> = [];
 
@@ -96,7 +120,7 @@ export function EDTDatePickerModal({
         }
 
         return cellules;
-    }, [viewMonth, viewYear]);
+    }, [viewMonth, viewYear, semaineLundi]);
 
     // ─── Navigation interne au modal ──────────────────
     const moisPrecedent = useCallback(() => {
@@ -138,6 +162,22 @@ export function EDTDatePickerModal({
     const today = new Date();
     const isToday = (d: Date) => d.toDateString() === today.toDateString();
     const isSelected = (d: Date) => d.toDateString() === currentDate.toDateString();
+
+    // ─── Format date → 'YYYY-MM-DD' pour lookups ─────
+    const formatDateKey = useCallback((d: Date) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }, []);
+
+    const hasCreneaux = useCallback((d: Date) => {
+        return datesAvecCreneaux?.has(formatDateKey(d)) ?? false;
+    }, [datesAvecCreneaux, formatDateKey]);
+
+    const getJF = useCallback((d: Date) => {
+        return jfMap.get(formatDateKey(d));
+    }, [jfMap, formatDateKey]);
 
     // ─── Titre du label mois/année ────────────────────
     const titreMoisAnnee = new Date(viewYear, viewMonth, 1)
@@ -214,8 +254,8 @@ export function EDTDatePickerModal({
                     />
                 </div>
 
-                {/* ─── Label mois/année (accessibilité) ─── */}
-                <div className="text-center">
+                {/* ─── Label mois/année (accessibilité) + toggle semaine ─── */}
+                <div className="flex items-center justify-center gap-[var(--gap-sm)]">
                     <span
                         className="font-semibold text-[var(--color-text-primary)] capitalize"
                         style={{ fontSize: 'clamp(0.875rem, 0.8rem + 0.3vw, 1.0625rem)' }}
@@ -223,6 +263,35 @@ export function EDTDatePickerModal({
                     >
                         {titreMoisAnnee}
                     </span>
+                    {/* Toggle début semaine Lu/Di */}
+                    <div className="flex items-center rounded-md border border-[var(--color-bordure)] overflow-hidden">
+                        <button
+                            type="button"
+                            onClick={() => setSemaineLundi(true)}
+                            className={`px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
+                                semaineLundi
+                                    ? 'bg-[var(--color-dominant-600)] text-white'
+                                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
+                            }`}
+                            aria-label={t('navigation.lundi')}
+                            title={t('navigation.toggleSemaine')}
+                        >
+                            {t('navigation.lundi')}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setSemaineLundi(false)}
+                            className={`px-1.5 py-0.5 text-[10px] font-medium transition-colors border-l border-[var(--color-bordure)] ${
+                                !semaineLundi
+                                    ? 'bg-[var(--color-dominant-600)] text-white'
+                                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)]'
+                            }`}
+                            aria-label={t('navigation.dimanche')}
+                            title={t('navigation.toggleSemaine')}
+                        >
+                            {t('navigation.dimanche')}
+                        </button>
+                    </div>
                 </div>
 
                 {/* ─── Grille jours de la semaine (en-têtes) ─── */}
@@ -247,6 +316,8 @@ export function EDTDatePickerModal({
                     {joursDuMois.map(({ date, jour, dansMois }, index) => {
                         const aujourdhui = isToday(date);
                         const selectionne = isSelected(date);
+                        const avecCreneaux = dansMois && hasCreneaux(date);
+                        const jf = dansMois ? getJF(date) : undefined;
 
                         return (
                             <button
@@ -268,11 +339,27 @@ export function EDTDatePickerModal({
                                 style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
                                 aria-label={date.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })}
                                 aria-current={aujourdhui ? 'date' : undefined}
+                                title={jf ? `${jf.nom}` : undefined}
                             >
                                 {jour}
-                                {/* Dot indicateur pour aujourd'hui */}
+                                {/* Dot indicateur aujourd'hui (bottom-center) */}
                                 {aujourdhui && !selectionne && (
                                     <span className="absolute bottom-[clamp(0.125rem,0.1rem+0.1vw,0.1875rem)] left-1/2 -translate-x-1/2 h-[3px] w-[3px] rounded-full bg-[var(--color-dominant-500)]" />
+                                )}
+                                {/* Dot créneaux (bottom-right) */}
+                                {avecCreneaux && !selectionne && (
+                                    <span
+                                        className="absolute bottom-[2px] right-[2px] h-[3px] w-[3px] rounded-full bg-[var(--color-success)]"
+                                        title={t('navigation.creneauxDispo')}
+                                    />
+                                )}
+                                {/* Dot jour férié (top-right) */}
+                                {jf && !selectionne && (
+                                    <span
+                                        className="absolute top-[2px] right-[2px] h-[3px] w-[3px] rounded-full"
+                                        style={{ backgroundColor: jf.couleur || 'var(--color-accent-500)' }}
+                                        title={jf.nom}
+                                    />
                                 )}
                             </button>
                         );

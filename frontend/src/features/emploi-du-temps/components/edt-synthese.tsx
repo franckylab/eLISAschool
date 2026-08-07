@@ -159,7 +159,11 @@ export function EDTSynthese({ classeAnneeId, enseignantId, embedded = false }: E
                                         style={{ width: `${(jour.totalHeures / maxHeuresParJour) * 100}%` }}
                                     />
                                     <span
-                                        className="absolute inset-0 flex items-center px-2 text-[10px] font-medium text-[var(--color-text-primary)]"
+                                        className="absolute inset-0 flex items-center px-2 font-semibold text-[var(--color-text-primary)]"
+                                        style={{
+                                            fontSize: 'clamp(0.5625rem, 0.5rem + 0.15vw, 0.6875rem)',
+                                            textShadow: '0 0 3px var(--color-surface), 0 0 6px var(--color-surface)',
+                                        }}
                                     >
                                         {jour.totalHeures.toFixed(1)}h · {jour.nombreCreneaux} {t('synthese.creneauxLabel')}
                                     </span>
@@ -203,7 +207,7 @@ export function EDTSynthese({ classeAnneeId, enseignantId, embedded = false }: E
                                         style={{
                                             fontSize: 'clamp(0.5625rem, 0.5rem + 0.15vw, 0.6875rem)',
                                             color: 'var(--color-text-primary)',
-                                            textShadow: '0 0 3px var(--color-surface), 0 0 6px var(--color-surface)',
+                                            textShadow: '0 0 4px var(--color-surface), 0 0 8px var(--color-surface)',
                                         }}
                                     >
                                         {matiere.totalHeures.toFixed(1)}h
@@ -596,7 +600,13 @@ function ChargeEnseignant({ creneaux }: {
                                     }`}
                                     style={{ width: `${pct}%` }}
                                 />
-                                <span className="absolute inset-0 flex items-center justify-between px-2 text-[10px] font-medium text-[var(--color-text-primary)]">
+                                <span
+                                    className="absolute inset-0 flex items-center justify-between px-2 font-semibold text-[var(--color-text-primary)]"
+                                    style={{
+                                        fontSize: 'clamp(0.5625rem, 0.5rem + 0.15vw, 0.6875rem)',
+                                        textShadow: '0 0 3px var(--color-surface), 0 0 6px var(--color-surface)',
+                                    }}
+                                >
                                     <span>{ens.totalHeures.toFixed(1)}h · {ens.nombreCreneaux} {t('synthese.creneaux')}</span>
                                     {estEnAlerte && (
                                         <AlertTriangle className="h-3 w-3 text-[var(--color-danger)]" />

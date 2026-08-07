@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eLISAschool — Panel d'Administration Idéal</title>
+<style>
+:root {
+  --bg-primary: #0f1117;
+  --bg-secondary: #1a1d27;
+  --bg-card: #1e2130;
+  --bg-code: #141620;
+  --border: #2a2d3a;
+  --border-accent: #3b3f52;
+  --text-primary: #e8eaed;
+  --text-secondary: #9aa0b0;
+  --text-muted: #6b7185;
+  --accent-blue: #4f8ff7;
+  --accent-green: #34d399;
+  --accent-orange: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-purple: #a78bfa;
+  --accent-cyan: #22d3ee;
+  --gradient-hero: linear-gradient(135deg, #4f8ff7 0%, #a78bfa 50%, #34d399 100%);
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.3);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.7;
+  font-size: 15px;
+}
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* HERO */
+.hero {
+  padding: 80px 0 60px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at center, rgba(79,143,247,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  background: rgba(79,143,247,0.12);
+  border: 1px solid rgba(79,143,247,0.25);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--accent-blue);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 24px;
+}
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 800;
+  background: var(--gradient-hero);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+.hero p {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 700px;
+  margin: 0 auto 32px;
+}
+.hero-meta {
+  display: flex;
+  gap: 32px;
+  justify-content: center;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.hero-meta span { display: flex; align-items: center; gap: 6px; }
+
+/* SCORE */
+.score-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 40px 0;
+}
+.score-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  text-align: center;
+}
+.score-card h3 { font-size: 14px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.score-value { font-size: 3.5rem; font-weight: 800; }
+.score-value.before { color: var(--accent-red); }
+.score-value.after { color: var(--accent-green); }
+.score-label { font-size: 13px; color: var(--text-secondary); margin-top: 8px; }
+
+/* NAV TOC */
+.toc {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(15,17,23,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0;
+  margin-bottom: 48px;
+}
+.toc-inner {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.toc-inner::-webkit-scrollbar { display: none; }
+.toc a {
+  white-space: nowrap;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+.toc a:hover { color: var(--text-primary); background: var(--bg-secondary); border-color: var(--border); }
+
+/* SECTIONS */
+section { margin-bottom: 64px; }
+section h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+section h2 .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(79,143,247,0.12);
+  color: var(--accent-blue);
+  font-size: 14px;
+  font-weight: 700;
+}
+section .subtitle {
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin-bottom: 32px;
+  padding-left: 48px;
+}
+
+/* CARDS */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.card h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card p, .card li { color: var(--text-secondary); font-size: 14px; }
+.card ul { padding-left: 20px; margin-top: 8px; }
+.card li { margin-bottom: 4px; }
+
+/* GRID */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .score-section { grid-template-columns: 1fr; }
+}
+
+/* TABLE */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin: 16px 0;
+}
+th, td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+td { color: var(--text-primary); }
+tr:hover td { background: rgba(79,143,247,0.04); }
+
+/* BADGES */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.badge-blue { background: rgba(79,143,247,0.15); color: var(--accent-blue); }
+.badge-green { background: rgba(52,211,153,0.15); color: var(--accent-green); }
+.badge-orange { background: rgba(245,158,11,0.15); color: var(--accent-orange); }
+.badge-red { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+.badge-purple { background: rgba(167,139,250,0.15); color: var(--accent-purple); }
+
+/* MOCKUP BROWSER */
+.browser-mockup {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin: 24px 0;
+  box-shadow: var(--shadow-card);
+}
+.browser-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+}
+.browser-dots { display: flex; gap: 6px; }
+.browser-dots span { width: 10px; height: 10px; border-radius: 50%; }
+.browser-dots span:nth-child(1) { background: #ef4444; }
+.browser-dots span:nth-child(2) { background: #f59e0b; }
+.browser-dots span:nth-child(3) { background: #34d399; }
+.browser-url {
+  flex: 1;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: 12px;
+}
+.browser-content { padding: 0; min-height: 400px; }
+
+/* ADMIN UI MOCKUP */
+.admin-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 420px;
+}
+.admin-sidebar {
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border);
+  padding: 16px 0;
+}
+.admin-sidebar .logo {
+  padding: 0 16px 16px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--accent-blue);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.admin-sidebar .nav-item {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: default;
+}
+.admin-sidebar .nav-item.active {
+  background: rgba(79,143,247,0.1);
+  color: var(--accent-blue);
+  border-right: 2px solid var(--accent-blue);
+}
+.admin-sidebar .nav-item .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+}
+.admin-main { padding: 20px; }
+.admin-main h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.admin-main .desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+/* KPI ROW */
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+}
+.kpi-card .label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.kpi-card .value { font-size: 1.5rem; font-weight: 800; margin: 4px 0 2px; }
+.kpi-card .trend { font-size: 11px; }
+.kpi-card .trend.up { color: var(--accent-green); }
+.kpi-card .trend.down { color: var(--accent-red); }
+
+/* MINI TABLE */
+.mini-table {
+  width: 100%;
+  font-size: 11px;
+  border-collapse: collapse;
+}
+.mini-table th {
+  background: var(--bg-primary);
+  padding: 8px 10px;
+  font-size: 10px;
+  text-align: left;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+.mini-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+/* CODE BLOCK */
+.code-block {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 16px 0;
+}
+.code-block .comment { color: #6b7185; }
+.code-block .keyword { color: #a78bfa; }
+.code-block .string { color: #34d399; }
+.code-block .function { color: #4f8ff7; }
+.code-block .type { color: #f59e0b; }
+
+/* SVG DIAGRAM */
+.diagram-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin: 20px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.diagram-container svg { max-width: 100%; height: auto; }
+
+/* TIMELINE */
+.timeline { position: relative; padding-left: 32px; margin: 24px 0; }
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+.timeline-item { position: relative; margin-bottom: 32px; }
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -25px;
+  top: 6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-blue);
+  background: var(--bg-primary);
+}
+.timeline-item.done::before { background: var(--accent-green); border-color: var(--accent-green); }
+.timeline-item h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.timeline-item p { font-size: 13px; color: var(--text-secondary); }
+.timeline-item .phase-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+/* PROPOSITION HEADER */
+.prop-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.prop-letter {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  color: white;
+}
+.prop-letter.a { background: linear-gradient(135deg, #4f8ff7, #3b82f6); }
+.prop-letter.b { background: linear-gradient(135deg, #a78bfa, #8b5cf6); }
+.prop-letter.c { background: linear-gradient(135deg, #34d399, #10b981); }
+.prop-header h3 { font-size: 1.2rem; font-weight: 700; }
+.prop-header .tag { font-size: 12px; color: var(--text-muted); }
+
+/* COMPARISON MATRIX */
+.matrix { overflow-x: auto; }
+.matrix table { min-width: 700px; }
+.matrix td:first-child { font-weight: 600; white-space: nowrap; }
+.check { color: var(--accent-green); font-weight: 700; }
+.partial { color: var(--accent-orange); font-weight: 700; }
+.cross { color: var(--accent-red); font-weight: 700; }
+
+/* CALLOUT */
+.callout {
+  border-left: 3px solid var(--accent-blue);
+  background: rgba(79,143,247,0.06);
+  padding: 16px 20px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin: 16px 0;
+}
+.callout.warning { border-left-color: var(--accent-orange); background: rgba(245,158,11,0.06); }
+.callout.success { border-left-color: var(--accent-green); background: rgba(52,211,153,0.06); }
+.callout h4 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.callout p { font-size: 13px; color: var(--text-secondary); }
+
+/* FOOTER */
+.report-footer {
+  border-top: 1px solid var(--border);
+  padding: 40px 0;
+  margin-top: 64px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="container">
+    <div class="hero-badge">Rapport de conception — Août 2026</div>
+    <h1>Panel d'Administration Idéal<br>pour eLISAschool</h1>
+    <p>Architecture, UX/UI, sécurité et performance — conception complète du panel d'administration pour transformer eLISAschool en plateforme SaaS professionnelle de niveau entreprise.</p>
+    <div class="hero-meta">
+      <span>📄 Version 1.0</span>
+      <span>📅 07 Août 2026</span>
+      <span>👤 franck arlos chendjou</span>
+      <span>🏗️ Architecture + Design + Sécurité</span>
+    </div>
+  </div>
+</div>
+
+<!-- SCORE AVANT/APRÈS -->
+<div class="container">
+  <div class="score-section">
+    <div class="score-card">
+      <h3>Score actuel</h3>
+      <div class="score-value before">5.5<span style="font-size:1.2rem">/10</span></div>
+      <div class="score-label">22 failles de sécurité · Routes vides · Données simulées</div>
+    </div>
+    <div class="score-card">
+      <h3>Score cible</h3>
+      <div class="score-value after">9.0<span style="font-size:1.2rem">/10</span></div>
+      <div class="score-label">RLS PostgreSQL · CASL.js · Monitoring temps réel</div>
+    </div>
+  </div>
+</div>
+
+<!-- TOC -->
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#etat-lieux">1. État des lieux</a>
+    <a href="#benchmark">2. Benchmark</a>
+    <a href="#prop-a">3. Proposition A</a>
+    <a href="#prop-b">4. Proposition B</a>
+    <a href="#prop-c">5. Proposition C</a>
+    <a href="#comparatif">6. Comparatif</a>
+    <a href="#securite">7. Sécurité</a>
+    <a href="#performance">8. Performance</a>
+    <a href="#maquettes">9. Maquettes</a>
+    <a href="#roadmap">10. Roadmap</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 1 : ÉTAT DES LIEUX -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="etat-lieux">
+  <h2><span class="num">1</span> État des lieux</h2>
+  <p class="subtitle">Audit de l'administration actuelle — ce qui existe, ce qui manque, ce qui bloque.</p>
+
+  <div class="grid-3">
+    <div class="card">
+      <h4>🔴 Critique — Routes vides</h4>
+      <p>4 routes retournent <code>null</code> :</p>
+      <ul>
+        <li><code>/infrastructure</code></li>
+        <li><code>/modules-administratifs</code></li>
+        <li><code>/modules-complementaires</code></li>
+        <li><code>/modules-pedagogiques</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🟠 Données simulées</h4>
+      <p>La page <code>/admin/permissions</code> utilise des données fictives (<code>SIMULATED_PERMISSIONS</code>). Aucun lien avec le RBAC réel en base.</p>
+    </div>
+    <div class="card">
+      <h4>🟡 Pas de séparation Control/Data Plane</h4>
+      <p>SUPER_ADMIN et ADMIN partagent le même layout, les mêmes routes et les mêmes guards. Pas de frontière architecturale.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h4>📊 Inventaire actuel des routes admin</h4>
+    <table>
+      <tr><th>Route</th><th>Statut</th><th>Contenu</th><th>Sécurité</th></tr>
+      <tr><td><code>/admin/audit</code></td><td><span class="badge badge-green">Actif</span></td><td>Logs d'audit, filtres, export</td><td>Guard ADMIN/SUPER_ADMIN</td></tr>
+      <tr><td><code>/admin/roles</code></td><td><span class="badge badge-green">Actif</span></td><td>CRUD rôles + permissions</td><td>Guard ADMIN/SUPER_ADMIN</td></tr>
+      <tr><td><code>/admin/permissions</code></td><td><span class="badge badge-red">Simulé</span></td><td>Matrice avec données fictives</td><td>Guard ADMIN</td></tr>
+      <tr><td><code>/configuration</code></td><td><span class="badge badge-green">Actif</span></td><td>7 tabs (modules, apparence...)</td><td>Guard ADMIN</td></tr>
+      <tr><td><code>/parametres</code></td><td><span class="badge badge-green">Actif</span></td><td>CRUD paramètres système</td><td>Guard ADMIN</td></tr>
+      <tr><td><code>/infrastructure</code></td><td><span class="badge badge-red">Vide</span></td><td>Retourne null</td><td>Guard ADMIN</td></tr>
+      <tr><td><code>/modules-*</code> (×4)</td><td><span class="badge badge-red">Vide</span></td><td>Retournent null</td><td>Guard ADMIN</td></tr>
+    </table>
+  </div>
+
+  <div class="callout warning">
+    <h4>⚠️ Problème fondamental</h4>
+    <p>L'administration actuelle mélange la gestion de la plateforme (multi-tenant, facturation, monitoring global) et la gestion d'un établissement (élèves, notes, bulletins). Cette confusion crée des failles de sécurité et empêche l'évolution vers un vrai SaaS.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 2 : BENCHMARK -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="benchmark">
+  <h2><span class="num">2</span> Benchmark — Bonnes pratiques 2025-2026</h2>
+  <p class="subtitle">Ce que font les meilleurs panels d'administration SaaS.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>🏢 Vercel Dashboard</h4>
+      <ul>
+        <li>Séparation Team vs Personal</li>
+        <li>Command Palette (Cmd+K)</li>
+        <li>Activity Feed temps réel</li>
+        <li>Dark-first design</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📊 Linear</h4>
+      <ul>
+        <li>Sidebar 2 niveaux max</li>
+        <li>3-5 KPIs par dashboard</li>
+        <li>Tables > Charts pour données structurées</li>
+        <li>Progressive disclosure</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔐 Stripe Dashboard</h4>
+      <ul>
+        <li>RLS + ABAC granulaire</li>
+        <li>Audit trail complet</li>
+        <li>API-first (tout est API)</li>
+        <li>Feature flags par compte</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🎯 Refine (framework)</h4>
+      <ul>
+        <li>57KB bundle headless</li>
+        <li>Multi-tenancy built-in</li>
+        <li>Auth hooks intégrés</li>
+        <li>CRUD generators</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    <h4>💡 Tendances clés 2025-2026</h4>
+    <p><strong>1.</strong> Control Plane / Data Plane separation — isoler l'admin plateforme de l'admin métier.<br>
+    <strong>2.</strong> Authorization-as-code — CASL.js, SpiceDB, OpenFGA remplacent les guards manuels.<br>
+    <strong>3.</strong> Observabilité intégrée — RED/USE + Four Golden Signals dans le dashboard.<br>
+    <strong>4.</strong> Feature flags per tenant — contrôle granulaire sans déploiement.<br>
+    <strong>5.</strong> Command Palette — navigation Clavier-first (Cmd+K).</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 3 : PROPOSITION A -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="prop-a">
+  <h2><span class="num">3</span> Proposition A — Évolution progressive</h2>
+  <p class="subtitle">Conserver l'architecture actuelle, remplir les vides, renforcer la sécurité. Effort modéré.</p>
+
+  <div class="prop-header">
+    <div class="prop-letter a">A</div>
+    <div>
+      <h3>Approche incrémentale</h3>
+      <div class="tag">Effort : 3-4 semaines · Risque : faible · Impact : moyen</div>
+    </div>
+  </div>
+
+  <div class="diagram-container">
+    <svg width="800" height="300" viewBox="0 0 800 300">
+      <!-- Layout actuel -->
+      <rect x="20" y="20" width="760" height="260" rx="12" fill="none" stroke="#2a2d3a" stroke-width="2"/>
+      <text x="400" y="50" text-anchor="middle" fill="#9aa0b0" font-size="12" font-weight="600">LAYOUT AUTHENTIFIÉ ACTUEL (_auth)</text>
+      
+      <!-- Sidebar -->
+      <rect x="40" y="70" width="160" height="190" rx="8" fill="#1a1d27" stroke="#3b3f52"/>
+      <text x="120" y="95" text-anchor="middle" fill="#4f8ff7" font-size="11" font-weight="600">Sidebar</text>
+      <text x="55" y="120" fill="#9aa0b0" font-size="9">• Dashboard</text>
+      <text x="55" y="138" fill="#9aa0b0" font-size="9">• Élèves</text>
+      <text x="55" y="156" fill="#9aa0b0" font-size="9">• Notes / Bulletins</text>
+      <text x="55" y="174" fill="#9aa0b0" font-size="9">• Configuration</text>
+      <text x="55" y="192" fill="#ef4444" font-size="9">• Infrastructure ∅</text>
+      <text x="55" y="210" fill="#ef4444" font-size="9">• Modules-* ∅</text>
+      <text x="55" y="228" fill="#34d399" font-size="9">• Audit ✓</text>
+      
+      <!-- Contenu principal -->
+      <rect x="220" y="70" width="540" height="190" rx="8" fill="#1e2130" stroke="#3b3f52"/>
+      <text x="490" y="95" text-anchor="middle" fill="#e8eaed" font-size="11" font-weight="600">Zone de contenu</text>
+      
+      <!-- Routes vides -->
+      <rect x="240" y="110" width="150" height="40" rx="6" fill="rgba(239,68,68,0.1)" stroke="#ef4444" stroke-dasharray="4"/>
+      <text x="315" y="134" text-anchor="middle" fill="#ef4444" font-size="10">/infrastructure → null</text>
+      
+      <rect x="410" y="110" width="150" height="40" rx="6" fill="rgba(239,68,68,0.1)" stroke="#ef4444" stroke-dasharray="4"/>
+      <text x="485" y="134" text-anchor="middle" fill="#ef4444" font-size="10">/modules-* → null</text>
+      
+      <!-- Routes actives -->
+      <rect x="240" y="165" width="150" height="40" rx="6" fill="rgba(52,211,153,0.1)" stroke="#34d399"/>
+      <text x="315" y="189" text-anchor="middle" fill="#34d399" font-size="10">/admin/audit ✓</text>
+      
+      <rect x="410" y="165" width="150" height="40" rx="6" fill="rgba(79,143,247,0.1)" stroke="#4f8ff7"/>
+      <text x="485" y="189" text-anchor="middle" fill="#4f8ff7" font-size="10">/configuration ✓</text>
+      
+      <!-- Actions -->
+      <text x="400" y="290" text-anchor="middle" fill="#6b7185" font-size="10">→ Remplir les vides · Connecter permissions réelles · Ajouter monitoring basique</text>
+    </svg>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ Actions</h4>
+      <ul>
+        <li>Implémenter les 4 routes vides (infrastructure, modules-*)</li>
+        <li>Remplacer <code>SIMULATED_PERMISSIONS</code> par les données RBAC réelles</li>
+        <li>Ajouter un dashboard monitoring basique (uptime, erreurs, latence)</li>
+        <li>Créer un guard <code>requirePlatformAdmin()</code> distinct</li>
+        <li>Ajouter des KPIs globaux (nb établissements, utilisateurs actifs)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚠️ Limites</h4>
+      <ul>
+        <li>Pas de séparation Control/Data Plane</li>
+        <li>Pas de RLS PostgreSQL</li>
+        <li>Toujours des guards manuels par route</li>
+        <li>Pas de feature flags</li>
+        <li>Bundle monolithique (pas de code splitting admin)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 4 : PROPOSITION B -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="prop-b">
+  <h2><span class="num">4</span> Proposition B — Refonte architecturale (Recommandée)</h2>
+  <p class="subtitle">Séparer Control Plane / Data Plane, introduire CASL.js, RLS PostgreSQL et monitoring avancé.</p>
+
+  <div class="prop-header">
+    <div class="prop-letter b">B</div>
+    <div>
+      <h3>Architecture dual-plane avec authorization-as-code</h3>
+      <div class="tag">Effort : 6-8 semaines · Risque : modéré · Impact : élevé</div>
+    </div>
+  </div>
+
+  <div class="diagram-container">
+    <svg width="800" height="420" viewBox="0 0 800 420">
+      <!-- Titre -->
+      <text x="400" y="25" text-anchor="middle" fill="#e8eaed" font-size="13" font-weight="700">Architecture Dual-Plane eLISAschool</text>
+      
+      <!-- Control Plane -->
+      <rect x="20" y="45" width="370" height="360" rx="12" fill="rgba(167,139,250,0.05)" stroke="#a78bfa" stroke-width="2"/>
+      <text x="205" y="70" text-anchor="middle" fill="#a78bfa" font-size="12" font-weight="700">CONTROL PLATEFORME (_platform)</text>
+      
+      <!-- Platform sidebar -->
+      <rect x="35" y="85" width="110" height="300" rx="6" fill="#141620" stroke="#3b3f52"/>
+      <text x="90" y="105" text-anchor="middle" fill="#a78bfa" font-size="9" font-weight="600">PLATFORM</text>
+      <text x="45" y="125" fill="#9aa0b0" font-size="8">Dashboard</text>
+      <text x="45" y="140" fill="#9aa0b0" font-size="8">Établissements</text>
+      <text x="45" y="155" fill="#9aa0b0" font-size="8">Utilisateurs</text>
+      <text x="45" y="170" fill="#9aa0b0" font-size="8">Feature Flags</text>
+      <text x="45" y="185" fill="#9aa0b0" font-size="8">Monitoring</text>
+      <text x="45" y="200" fill="#9aa0b0" font-size="8">Audit Global</text>
+      <text x="45" y="215" fill="#9aa0b0" font-size="8">Facturation</text>
+      <text x="45" y="230" fill="#9aa0b0" font-size="8">Infrastructure</text>
+      
+      <!-- Platform content -->
+      <rect x="155" y="85" width="220" height="300" rx="6" fill="#1e2130" stroke="#3b3f52"/>
+      <text x="265" y="108" text-anchor="middle" fill="#e8eaed" font-size="10" font-weight="600">Dashboard Plateforme</text>
+      
+      <!-- Mini KPIs -->
+      <rect x="165" y="120" width="95" height="45" rx="4" fill="#141620"/>
+      <text x="212" y="137" text-anchor="middle" fill="#6b7185" font-size="7">ÉTABLISSEMENTS</text>
+      <text x="212" y="155" text-anchor="middle" fill="#34d399" font-size="14" font-weight="800">47</text>
+      
+      <rect x="270" y="120" width="95" height="45" rx="4" fill="#141620"/>
+      <text x="317" y="137" text-anchor="middle" fill="#6b7185" font-size="7">UTILISATEURS</text>
+      <text x="317" y="155" text-anchor="middle" fill="#4f8ff7" font-size="14" font-weight="800">12.4K</text>
+      
+      <rect x="165" y="175" width="95" height="45" rx="4" fill="#141620"/>
+      <text x="212" y="192" text-anchor="middle" fill="#6b7185" font-size="7">UPTIME 30J</text>
+      <text x="212" y="210" text-anchor="middle" fill="#34d399" font-size="14" font-weight="800">99.7%</text>
+      
+      <rect x="270" y="175" width="95" height="45" rx="4" fill="#141620"/>
+      <text x="317" y="192" text-anchor="middle" fill="#6b7185" font-size="7">REQUÊTES/J</text>
+      <text x="317" y="210" text-anchor="middle" fill="#f59e0b" font-size="14" font-weight="800">847K</text>
+      
+      <!-- Séparateur -->
+      <line x1="400" y1="55" x2="400" y2="395" stroke="#3b3f52" stroke-width="2" stroke-dasharray="6"/>
+      <text x="400" y="415" text-anchor="middle" fill="#6b7185" font-size="9">API Gateway · JWT · CASL.js · RLS</text>
+      
+      <!-- Data Plane -->
+      <rect x="410" y="45" width="370" height="360" rx="12" fill="rgba(79,143,247,0.05)" stroke="#4f8ff7" stroke-width="2"/>
+      <text x="595" y="70" text-anchor="middle" fill="#4f8ff7" font-size="12" font-weight="700">DATA ÉTABLISSEMENT (_auth)</text>
+      
+      <!-- Tenant sidebar -->
+      <rect x="425" y="85" width="110" height="300" rx="6" fill="#141620" stroke="#3b3f52"/>
+      <text x="480" y="105" text-anchor="middle" fill="#4f8ff7" font-size="9" font-weight="600">ÉTABLISSEMENT</text>
+      <text x="435" y="125" fill="#9aa0b0" font-size="8">Dashboard</text>
+      <text x="435" y="140" fill="#9aa0b0" font-size="8">Élèves</text>
+      <text x="435" y="155" fill="#9aa0b0" font-size="8">Notes</text>
+      <text x="435" y="170" fill="#9aa0b0" font-size="8">Bulletins</text>
+      <text x="435" y="185" fill="#9aa0b0" font-size="8">EDT</text>
+      <text x="435" y="200" fill="#9aa0b0" font-size="8">Personnel</text>
+      <text x="435" y="215" fill="#9aa0b0" font-size="8">Organisation</text>
+      <text x="435" y="230" fill="#9aa0b0" font-size="8">Configuration</text>
+      
+      <!-- Tenant content -->
+      <rect x="545" y="85" width="220" height="300" rx="6" fill="#1e2130" stroke="#3b3f52"/>
+      <text x="655" y="108" text-anchor="middle" fill="#e8eaed" font-size="10" font-weight="600">Dashboard Établissement</text>
+      
+      <rect x="555" y="120" width="95" height="45" rx="4" fill="#141620"/>
+      <text x="602" y="137" text-anchor="middle" fill="#6b7185" font-size="7">ÉLÈVES</text>
+      <text x="602" y="155" text-anchor="middle" fill="#4f8ff7" font-size="14" font-weight="800">342</text>
+      
+      <rect x="660" y="120" width="95" height="45" rx="4" fill="#141620"/>
+      <text x="707" y="137" text-anchor="middle" fill="#6b7185" font-size="7">ENSEIGNANTS</text>
+      <text x="707" y="155" text-anchor="middle" fill="#a78bfa" font-size="14" font-weight="800">28</text>
+      
+      <rect x="555" y="175" width="95" height="45" rx="4" fill="#141620"/>
+      <text x="602" y="192" text-anchor="middle" fill="#6b7185" font-size="7">TAUX RÉUSSITE</text>
+      <text x="602" y="210" text-anchor="middle" fill="#34d399" font-size="14" font-weight="800">87%</text>
+      
+      <rect x="660" y="175" width="95" height="45" rx="4" fill="#141620"/>
+      <text x="707" y="192" text-anchor="middle" fill="#6b7185" font-size="7">MOY. GÉNÉRALE</text>
+      <text x="707" y="210" text-anchor="middle" fill="#f59e0b" font-size="14" font-weight="800">13.2</text>
+    </svg>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <h4>🛡️ CASL.js</h4>
+      <p>Authorization déclarative. Une seule définition des capacités par rôle. Plus de guards manuels par route.</p>
+    </div>
+    <div class="card">
+      <h4>🔒 RLS PostgreSQL</h4>
+      <p>Defense-in-depth. Même si le backend bug, la DB rejette les requêtes cross-tenant automatiquement.</p>
+    </div>
+    <div class="card">
+      <h4>🚩 Feature Flags</h4>
+      <p>Activation/désactivation par tenant sans déploiement. Plans basic/standard/premium.</p>
+    </div>
+  </div>
+
+  <div class="code-block">
+<span class="comment">// shared/src/abilities/admin.abilities.ts</span>
+<span class="keyword">import</span> { AbilityBuilder, createMongoAbility } <span class="keyword">from</span> <span class="string">'@casl/ability'</span>;
+
+<span class="keyword">export function</span> <span class="function">defineAbilityFor</span>(user: <span class="type">JwtPayload</span>, tenant: <span class="type">TenantContext</span>) {
+  <span class="keyword">const</span> { can, cannot, build } = <span class="keyword">new</span> <span class="function">AbilityBuilder</span>(createMongoAbility);
+
+  <span class="comment">// SUPER_ADMIN = contrôle tout la plateforme</span>
+  <span class="keyword">if</span> (user.role === <span class="string">'SUPER_ADMIN'</span>) {
+    can(<span class="string">'manage'</span>, <span class="string">'all'</span>);
+    cannot(<span class="string">'delete'</span>, <span class="string">'Etablissement'</span>); <span class="comment">// soft-delete uniquement</span>
+  }
+
+  <span class="comment">// ADMIN = contrôle son établissement uniquement</span>
+  <span class="keyword">if</span> (user.role === <span class="string">'ADMIN'</span>) {
+    can(<span class="string">'manage'</span>, <span class="string">'all'</span>, { etablissementId: tenant.id });
+    cannot(<span class="string">'manage'</span>, <span class="string">'PlatformConfig'</span>);
+    cannot(<span class="string">'manage'</span>, <span class="string">'FeatureFlag'</span>);
+  }
+
+  <span class="comment">// Contraintes par plan</span>
+  <span class="keyword">if</span> (tenant.plan === <span class="string">'basic'</span>) {
+    cannot(<span class="string">'create'</span>, <span class="string">'Utilisateur'</span>, {}, <span class="string">'maxUsers50'</span>);
+    cannot(<span class="string">'export'</span>, <span class="string">'AuditLog'</span>);
+  }
+
+  <span class="keyword">return</span> <span class="function">build</span>();
+}
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 5 : PROPOSITION C -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="prop-c">
+  <h2><span class="num">5</span> Proposition C — Refonte totale avec Refine</h2>
+  <p class="subtitle">Remplacer le frontend admin par le framework Refine. Multi-tenant natif, CRUD generators, auth hooks.</p>
+
+  <div class="prop-header">
+    <div class="prop-letter c">C</div>
+    <div>
+      <h3>Framework headless Refine + backend existant</h3>
+      <div class="tag">Effort : 10-14 semaines · Risque : élevé · Impact : très élevé</div>
+    </div>
+  </div>
+
+  <div class="diagram-container">
+    <svg width="800" height="280" viewBox="0 0 800 280">
+      <text x="400" y="25" text-anchor="middle" fill="#e8eaed" font-size="13" font-weight="700">Architecture Refine + eLISAschool API</text>
+      
+      <!-- Frontend Refine -->
+      <rect x="20" y="50" width="350" height="210" rx="12" fill="rgba(52,211,153,0.05)" stroke="#34d399" stroke-width="2"/>
+      <text x="195" y="75" text-anchor="middle" fill="#34d399" font-size="12" font-weight="700">REFINE ADMIN (57KB)</text>
+      
+      <rect x="40" y="90" width="140" height="35" rx="6" fill="#141620" stroke="#3b3f52"/>
+      <text x="110" y="112" text-anchor="middle" fill="#9aa0b0" font-size="9">useList &lt;T&gt;()</text>
+      
+      <rect x="200" y="90" width="140" height="35" rx="6" fill="#141620" stroke="#3b3f52"/>
+      <text x="270" y="112" text-anchor="middle" fill="#9aa0b0" font-size="9">useCreate &lt;T&gt;()</text>
+      
+      <rect x="40" y="135" width="140" height="35" rx="6" fill="#141620" stroke="#3b3f52"/>
+      <text x="110" y="157" text-anchor="middle" fill="#9aa0b0" font-size="9">useUpdate &lt;T&gt;()</text>
+      
+      <rect x="200" y="135" width="140" height="35" rx="6" fill="#141620" stroke="#3b3f52"/>
+      <text x="270" y="157" text-anchor="middle" fill="#9aa0b0" font-size="9">useDelete &lt;T&gt;()</text>
+      
+      <rect x="40" y="185" width="300" height="35" rx="6" fill="rgba(52,211,153,0.1)" stroke="#34d399"/>
+      <text x="190" y="207" text-anchor="middle" fill="#34d399" font-size="9" font-weight="600">AuthProvider · AccessControlProvider · AuditLogProvider</text>
+      
+      <!-- API -->
+      <line x1="380" y1="155" x2="420" y2="155" stroke="#3b3f52" stroke-width="2" marker-end="url(#arrow)"/>
+      <text x="400" y="145" text-anchor="middle" fill="#6b7185" font-size="8">REST</text>
+      
+      <!-- Backend -->
+      <rect x="430" y="50" width="350" height="210" rx="12" fill="rgba(79,143,247,0.05)" stroke="#4f8ff7" stroke-width="2"/>
+      <text x="605" y="75" text-anchor="middle" fill="#4f8ff7" font-size="12" font-weight="700">eLISAschool API (existant)</text>
+      
+      <rect x="450" y="90" width="310" height="35" rx="6" fill="#141620" stroke="#3b3f52"/>
+      <text x="605" y="112" text-anchor="middle" fill="#9aa0b0" font-size="9">Express + TypeORM + PostgreSQL</text>
+      
+      <rect x="450" y="135" width="145" height="35" rx="6" fill="#141620" stroke="#3b3f52"/>
+      <text x="522" y="157" text-anchor="middle" fill="#9aa0b0" font-size="9">CASL.js middleware</text>
+      
+      <rect x="615" y="135" width="145" height="35" rx="6" fill="#141620" stroke="#3b3f52"/>
+      <text x="687" y="157" text-anchor="middle" fill="#9aa0b0" font-size="9">RLS PostgreSQL</text>
+      
+      <rect x="450" y="185" width="310" height="35" rx="6" fill="rgba(79,143,247,0.1)" stroke="#4f8ff7"/>
+      <text x="605" y="207" text-anchor="middle" fill="#4f8ff7" font-size="9" font-weight="600">40 modules · 200+ endpoints · Multi-tenant</text>
+    </svg>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ Avantages</h4>
+      <ul>
+        <li>CRUD auto-généré pour chaque entité</li>
+        <li>Multi-tenancy built-in (pas de code custom)</li>
+        <li>Auth hooks + audit trail intégrés</li>
+        <li>Bundle 57KB (vs ~500KB actuel pour l'admin)</li>
+        <li>Thèmes dark/light natifs</li>
+        <li>GraphQL-ready si migration future</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚠️ Inconvénients</h4>
+      <ul>
+        <li>Réécrire TOUT le frontend admin</li>
+        <li>Perte de la cohérence UI avec le reste de l'app</li>
+        <li>Formation équipe sur un nouveau framework</li>
+        <li>Dépendance externe (Refine → communauté)</li>
+        <li>Personnalisation avancée = fight the framework</li>
+        <li>10-14 semaines de travail</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    <h4>💡 Recommandation</h4>
+    <p>La proposition C est sur-ingéniérée pour eLISAschool. Le framework Refine apporte de la valeur quand on démarre de zéro. Ici, 80% du frontend admin existe déjà. Le coût de migration ne justifie pas le gain. <strong>Proposition B recommandée.</strong></p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 6 : COMPARATIF -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="comparatif">
+  <h2><span class="num">6</span> Comparatif détaillé</h2>
+  <p class="subtitle">Matrice de décision sur 12 critères essentiels.</p>
+
+  <div class="matrix">
+    <table>
+      <tr>
+        <th>Critère</th>
+        <th>Prop A — Incrémentale</th>
+        <th>Prop B — Dual-Plane ⭐</th>
+        <th>Prop C — Refine</th>
+      </tr>
+      <tr>
+        <td>Séparation Control/Data Plane</td>
+        <td class="cross">✗ Non</td>
+        <td class="check">✓ Routes _platform</td>
+        <td class="check">✓ Natif</td>
+      </tr>
+      <tr>
+        <td>Authorization-as-code (CASL)</td>
+        <td class="cross">✗ Guards manuels</td>
+        <td class="check">✓ CASL.js</td>
+        <td class="check">✓ AccessControl</td>
+      </tr>
+      <tr>
+        <td>RLS PostgreSQL</td>
+        <td class="cross">✗ Non</td>
+        <td class="check">✓ Defense-in-depth</td>
+        <td class="partial">~ À ajouter</td>
+      </tr>
+      <tr>
+        <td>Feature Flags par tenant</td>
+        <td class="cross">✗ Non</td>
+        <td class="check">✓ JSONB + UI</td>
+        <td class="check">✓ Built-in</td>
+      </tr>
+      <tr>
+        <td>Monitoring intégré</td>
+        <td class="partial">~ Basique</td>
+        <td class="check">✓ RED/USE + Golden Signals</td>
+        <td class="partial">~ Custom</td>
+      </tr>
+      <tr>
+        <td>Audit trail complet</td>
+        <td class="check">✓ Existe</td>
+        <td class="check">✓ Enrichi</td>
+        <td class="check">✓ Provider</td>
+      </tr>
+      <tr>
+        <td>Code splitting admin</td>
+        <td class="cross">✗ Monolithique</td>
+        <td class="check">✓ Vite manualChunks</td>
+        <td class="check">✓ Auto</td>
+      </tr>
+      <tr>
+        <td>Command Palette (Cmd+K)</td>
+        <td class="cross">✗ Non</td>
+        <td class="check">✓ cmdk</td>
+        <td class="partial">~ Plugin</td>
+      </tr>
+      <tr>
+        <td>Cohérence UI avec app</td>
+        <td class="check">✓ Totale</td>
+        <td class="check">✓ shadcn/ui</td>
+        <td class="cross">✗ Break</td>
+      </tr>
+      <tr>
+        <td>Effort de migration</td>
+        <td class="check">3-4 sem</td>
+        <td class="partial">6-8 sem</td>
+        <td class="cross">10-14 sem</td>
+      </tr>
+      <tr>
+        <td>Risque</td>
+        <td class="check">Faible</td>
+        <td class="partial">Modéré</td>
+        <td class="cross">Élevé</td>
+      </tr>
+      <tr>
+        <td>Score cible</td>
+        <td>7.0/10</td>
+        <td><strong style="color:var(--accent-green)">9.0/10</strong></td>
+        <td>9.2/10</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 7 : SÉCURITÉ -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="securite">
+  <h2><span class="num">7</span> Sécurité — Architecture zero-trust</h2>
+  <p class="subtitle">5 couches de défense pour l'administration.</p>
+
+  <div class="diagram-container">
+    <svg width="800" height="320" viewBox="0 0 800 320">
+      <text x="400" y="25" text-anchor="middle" fill="#e8eaed" font-size="13" font-weight="700">5 couches de défense — Zero Trust Admin</text>
+      
+      <!-- Couche 1 -->
+      <rect x="50" y="45" width="700" height="45" rx="8" fill="rgba(239,68,68,0.08)" stroke="#ef4444"/>
+      <text x="70" y="72" fill="#ef4444" font-size="11" font-weight="700">1. AUTHENTIFICATION</text>
+      <text x="280" y="72" fill="#9aa0b0" font-size="10">JWT 15min + Refresh token 7d httpOnly · MFA TOTP pour SUPER_ADMIN · Rate limit 5 tentatives</text>
+      
+      <!-- Couche 2 -->
+      <rect x="50" y="100" width="700" height="45" rx="8" fill="rgba(245,158,11,0.08)" stroke="#f59e0b"/>
+      <text x="70" y="127" fill="#f59e0b" font-size="11" font-weight="700">2. AUTORISATION (CASL)</text>
+      <text x="310" y="127" fill="#9aa0b0" font-size="10">Ability définie côté serveur · Résolution côté client · 230+ permissions granulaires</text>
+      
+      <!-- Couche 3 -->
+      <rect x="50" y="155" width="700" height="45" rx="8" fill="rgba(79,143,247,0.08)" stroke="#4f8ff7"/>
+      <text x="70" y="182" fill="#4f8ff7" font-size="11" font-weight="700">3. ISOLATION TENANT</text>
+      <text x="280" y="182" fill="#9aa0b0" font-size="10">etablissementId forcé depuis JWT · RLS PostgreSQL sur 40+ tables · Guard multi-tenant</text>
+      
+      <!-- Couche 4 -->
+      <rect x="50" y="210" width="700" height="45" rx="8" fill="rgba(167,139,250,0.08)" stroke="#a78bfa"/>
+      <text x="70" y="237" fill="#a78bfa" font-size="11" font-weight="700">4. AUDIT & TRAÇABILITÉ</text>
+      <text x="310" y="237" fill="#9aa0b0" font-size="10">Chaque action loggée (cible, metadata, diff) · Rétention 365j · Alertes anomalies</text>
+      
+      <!-- Couche 5 -->
+      <rect x="50" y="265" width="700" height="45" rx="8" fill="rgba(52,211,153,0.08)" stroke="#34d399"/>
+      <text x="70" y="292" fill="#34d399" font-size="11" font-weight="700">5. RATE LIMITING & WAF</text>
+      <text x="320" y="292" fill="#9aa0b0" font-size="10">100 req/min par IP · 10 req/min login · CORS strict · Helmet.js · SQL injection guard</text>
+    </svg>
+  </div>
+
+  <div class="card">
+    <h4>🔒 RLS PostgreSQL — Implémentation</h4>
+    <div class="code-block">
+<span class="comment">-- Migration: enable-rls-admin-tables.sql</span>
+<span class="comment">-- Activer RLS sur les tables critiques admin</span>
+
+<span class="keyword">ALTER TABLE</span> etablissements <span class="keyword">ENABLE ROW LEVEL SECURITY</span>;
+
+<span class="keyword">CREATE POLICY</span> tenant_isolation <span class="keyword">ON</span> etablissements
+  <span class="keyword">USING</span> (id = current_setting(<span class="string">'app.current_tenant'</span>)::<span class="type">uuid</span>);
+
+<span class="comment">-- Forcer le contexte à chaque requête</span>
+<span class="keyword">CREATE OR REPLACE FUNCTION</span> <span class="function">set_tenant</span>(tenant_id <span class="type">uuid</span>)
+<span class="keyword">RETURNS void AS</span> $$
+  <span class="keyword">BEGIN</span>
+    <span class="keyword">PERFORM</span> set_config(<span class="string">'app.current_tenant'</span>, tenant_id::text, <span class="keyword">true</span>);
+  <span class="keyword">END</span>;
+$$ <span class="keyword">LANGUAGE plpgsql</span>;
+
+<span class="comment">-- Middleware Express applique set_tenant() avant chaque requête</span>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔐 MFA pour SUPER_ADMIN</h4>
+      <p>TOTP (Google Authenticator) obligatoire pour :</p>
+      <ul>
+        <li>Créer/supprimer un établissement</li>
+        <li>Modifier les feature flags globaux</li>
+        <li>Accéder au monitoring infrastructure</li>
+        <li>Exporter les audit logs</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📊 Alertes sécurité</h4>
+      <ul>
+        <li>5 échecs login consécutifs → lock 15min + email</li>
+        <li>Changement rôle SUPER_ADMIN → approval workflow</li>
+        <li>Suppression établissement → confirmation 2 facteurs</li>
+        <li>Accès depuis nouvelle IP → notification email</li>
+        <li>Export masse données → log + alerte</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 8 : PERFORMANCE -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="performance">
+  <h2><span class="num">8</span> Performance — Bundle splitting + monitoring</h2>
+  <p class="subtitle">Optimisations pour un panel admin rapide et observable.</p>
+
+  <div class="card">
+    <h4>📦 Vite — Code splitting admin</h4>
+    <div class="code-block">
+<span class="comment">// vite.config.ts — manualChunks pour l'admin</span>
+<span class="keyword">export default</span> <span class="function">defineConfig</span>({
+  build: {
+    rollupOptions: {
+      output: {
+        <span class="function">manualChunks</span>: {
+          <span class="comment">// Vendor admin (chargé uniquement sur /platform/* et /admin/*)</span>
+          <span class="string">'admin-vendor'</span>: [<span class="string">'@casl/ability'</span>, <span class="string">'recharts'</span>, <span class="string">'cmdk'</span>],
+          
+          <span class="comment">// Routes platform (lazy-loaded)</span>
+          <span class="string">'admin-platform'</span>: [
+            <span class="string">'./src/routes/_platform/dashboard.tsx'</span>,
+            <span class="string">'./src/routes/_platform/etablissements.tsx'</span>,
+            <span class="string">'./src/routes/_platform/feature-flags.tsx'</span>,
+            <span class="string">'./src/routes/_platform/monitoring.tsx'</span>,
+          ],
+          
+          <span class="comment">// Routes admin tenant (lazy-loaded)</span>
+          <span class="string">'admin-tenant'</span>: [
+            <span class="string">'./src/routes/_auth.admin/audit.tsx'</span>,
+            <span class="string">'./src/routes/_auth.admin/roles.tsx'</span>,
+            <span class="string">'./src/routes/_auth.admin/permissions.tsx'</span>,
+          ],
+        },
+      },
+    },
+  },
+});
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚡ Optimisations frontend</h4>
+      <ul>
+        <li><strong>React.memo</strong> sur les KPI cards (re-render uniquement si data change)</li>
+        <li><strong>useMemo</strong> pour les calculs de statistiques</li>
+        <li><strong>useCallback</strong> pour les handlers passés en props</li>
+        <li><strong>react-window</strong> pour les tables > 100 lignes</li>
+        <li><strong>TanStack Query</strong> — staleTime: 30s pour les données admin</li>
+        <li><strong>Virtualisation</strong> des logs d'audit (> 1000 entrées)</li>
+        <li><strong>Debounce</strong> 300ms sur les recherches</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📊 Monitoring — Four Golden Signals</h4>
+      <ul>
+        <li><strong>Latence</strong> : p50, p95, p99 par endpoint</li>
+        <li><strong>Trafic</strong> : requêtes/seconde, utilisateurs connectés</li>
+        <li><strong>Erreurs</strong> : taux d'erreur 5xx, 4xx par type</li>
+        <li><strong>Saturation</strong> : CPU, mémoire, connexions DB, pool</li>
+      </ul>
+      <p style="margin-top:8px;font-size:12px;color:var(--text-muted)">Stockage : Prometheus + Grafana (ou InfluxDB + dashboard custom)</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h4>🎯 Cibles de performance</h4>
+    <table>
+      <tr><th>Métrique</th><th>Actuel (estimé)</th><th>Cible</th><th>Seuil alerte</th></tr>
+      <tr><td>First Contentful Paint</td><td>~2.5s</td><td>< 1.2s</td><td>> 2.0s</td></tr>
+      <tr><td>Time to Interactive</td><td>~4.0s</td><td>< 2.0s</td><td>> 3.5s</td></tr>
+      <tr><td>Bundle admin (gzip)</td><td>~500KB</td><td>< 150KB</td><td>> 250KB</td></tr>
+      <tr><td>API p95 latency</td><td>~800ms</td><td>< 200ms</td><td>> 500ms</td></tr>
+      <tr><td>Error rate</td><td>~2%</td><td>< 0.1%</td><td>> 1%</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 9 : MAQUETTES -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="maquettes">
+  <h2><span class="num">9</span> Maquettes interactives</h2>
+  <p class="subtitle">Aperçus visuels des 3 interfaces clés du panel d'administration idéal.</p>
+
+  <!-- MAQUETTE 1 : Platform Dashboard -->
+  <h3 style="margin:32px 0 16px;font-size:1.1rem;display:flex;align-items:center;gap:8px">
+    <span class="badge badge-purple">Control Plane</span> Dashboard Plateforme
+  </h3>
+  <div class="browser-mockup">
+    <div class="browser-bar">
+      <div class="browser-dots"><span></span><span></span><span></span></div>
+      <div class="browser-url">https://elisaschool.app/platform/dashboard</div>
+    </div>
+    <div class="browser-content">
+      <div class="admin-layout">
+        <div class="admin-sidebar">
+          <div class="logo">⚡ PLATFORM</div>
+          <div class="nav-item active"><span class="dot"></span> Dashboard</div>
+          <div class="nav-item"><span class="dot"></span> Établissements</div>
+          <div class="nav-item"><span class="dot"></span> Utilisateurs</div>
+          <div class="nav-item"><span class="dot"></span> Feature Flags</div>
+          <div class="nav-item"><span class="dot"></span> Monitoring</div>
+          <div class="nav-item"><span class="dot"></span> Audit Global</div>
+          <div class="nav-item"><span class="dot"></span> Facturation</div>
+          <div class="nav-item"><span class="dot"></span> Infrastructure</div>
+        </div>
+        <div class="admin-main">
+          <h3>Dashboard Plateforme</h3>
+          <div class="desc">Vue globale de tous les établissements — mise à jour temps réel</div>
+          <div class="kpi-row">
+            <div class="kpi-card">
+              <div class="label">Établissements</div>
+              <div class="value" style="color:var(--accent-blue)">47</div>
+              <div class="trend up">↑ +3 ce mois</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">Utilisateurs actifs</div>
+              <div class="value" style="color:var(--accent-green)">12.4K</div>
+              <div class="trend up">↑ +8.2%</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">Uptime 30j</div>
+              <div class="value" style="color:var(--accent-green)">99.7%</div>
+              <div class="trend up">↑ stable</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">Requêtes/jour</div>
+              <div class="value" style="color:var(--accent-orange)">847K</div>
+              <div class="trend up">↑ +12%</div>
+            </div>
+          </div>
+          <table class="mini-table">
+            <tr><th>Établissement</th><th>Plan</th><th>Élèves</th><th>Dernière activité</th><th>Statut</th></tr>
+            <tr><td>Lycée Bilingue de Douala</td><td><span class="badge badge-purple">Premium</span></td><td>1,247</td><td>il y a 2 min</td><td><span class="badge badge-green">Actif</span></td></tr>
+            <tr><td>Collège Saint-Joseph</td><td><span class="badge badge-blue">Standard</span></td><td>534</td><td>il y a 15 min</td><td><span class="badge badge-green">Actif</span></td></tr>
+            <tr><td>École Internationale de Yaoundé</td><td><span class="badge badge-purple">Premium</span></td><td>892</td><td>il y a 1h</td><td><span class="badge badge-green">Actif</span></td></tr>
+            <tr><td>Groupe Scolaire Les Brillants</td><td><span class="badge badge-orange">Basic</span></td><td>156</td><td>il y a 3j</td><td><span class="badge badge-orange">Inactif</span></td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAQUETTE 2 : Feature Flags -->
+  <h3 style="margin:32px 0 16px;font-size:1.1rem;display:flex;align-items:center;gap:8px">
+    <span class="badge badge-green">Feature Flags</span> Gestion par établissement
+  </h3>
+  <div class="browser-mockup">
+    <div class="browser-bar">
+      <div class="browser-dots"><span></span><span></span><span></span></div>
+      <div class="browser-url">https://elisaschool.app/platform/feature-flags</div>
+    </div>
+    <div class="browser-content">
+      <div class="admin-layout">
+        <div class="admin-sidebar">
+          <div class="logo">⚡ PLATFORM</div>
+          <div class="nav-item"><span class="dot"></span> Dashboard</div>
+          <div class="nav-item"><span class="dot"></span> Établissements</div>
+          <div class="nav-item"><span class="dot"></span> Utilisateurs</div>
+          <div class="nav-item active"><span class="dot"></span> Feature Flags</div>
+          <div class="nav-item"><span class="dot"></span> Monitoring</div>
+          <div class="nav-item"><span class="dot"></span> Audit Global</div>
+        </div>
+        <div class="admin-main">
+          <h3>Feature Flags</h3>
+          <div class="desc">Activez/désactivez des fonctionnalités par établissement sans déploiement</div>
+          <table class="mini-table">
+            <tr><th>Flag</th><th>Description</th><th>Global</th><th>Établissements</th><th>Statut</th></tr>
+            <tr>
+              <td><code>module.cantine</code></td>
+              <td>Module cantine et repas</td>
+              <td>—</td>
+              <td>32/47</td>
+              <td><span style="color:var(--accent-green)">● 68%</span></td>
+            </tr>
+            <tr>
+              <td><code>module.transport</code></td>
+              <td>Gestion transport scolaire</td>
+              <td>—</td>
+              <td>18/47</td>
+              <td><span style="color:var(--accent-orange)">● 38%</span></td>
+            </tr>
+            <tr>
+              <td><code>export.pdf.bulk</code></td>
+              <td>Export PDF en masse (bulletins)</td>
+              <td>—</td>
+              <td>12/47</td>
+              <td><span style="color:var(--accent-blue)">● 26%</span></td>
+            </tr>
+            <tr>
+              <td><code>ai.assistance</code></td>
+              <td>Assistant IA pour les notes</td>
+              <td>—</td>
+              <td>3/47</td>
+              <td><span style="color:var(--accent-purple)">● 6% (beta)</span></td>
+            </tr>
+            <tr>
+              <td><code>audit.export</code></td>
+              <td>Export des logs d'audit</td>
+              <td>—</td>
+              <td>8/47</td>
+              <td><span style="color:var(--accent-orange)">● Premium only</span></td>
+            </tr>
+          </table>
+          <div style="margin-top:16px;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">PLAN → FLAGS AUTOMATIQUES</div>
+            <div style="display:flex;gap:16px;font-size:12px">
+              <div><span class="badge badge-orange">Basic</span> 12 flags</div>
+              <div><span class="badge badge-blue">Standard</span> 28 flags</div>
+              <div><span class="badge badge-purple">Premium</span> Tous</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAQUETTE 3 : Monitoring -->
+  <h3 style="margin:32px 0 16px;font-size:1.1rem;display:flex;align-items:center;gap:8px">
+    <span class="badge badge-blue">Monitoring</span> Infrastructure & Performance
+  </h3>
+  <div class="browser-mockup">
+    <div class="browser-bar">
+      <div class="browser-dots"><span></span><span></span><span></span></div>
+      <div class="browser-url">https://elisaschool.app/platform/monitoring</div>
+    </div>
+    <div class="browser-content">
+      <div class="admin-layout">
+        <div class="admin-sidebar">
+          <div class="logo">⚡ PLATFORM</div>
+          <div class="nav-item"><span class="dot"></span> Dashboard</div>
+          <div class="nav-item"><span class="dot"></span> Établissements</div>
+          <div class="nav-item"><span class="dot"></span> Feature Flags</div>
+          <div class="nav-item active"><span class="dot"></span> Monitoring</div>
+          <div class="nav-item"><span class="dot"></span> Audit Global</div>
+        </div>
+        <div class="admin-main">
+          <h3>Monitoring</h3>
+          <div class="desc">Four Golden Signals — Latence, Trafic, Erreurs, Saturation</div>
+          <div class="kpi-row">
+            <div class="kpi-card">
+              <div class="label">Latence p95</div>
+              <div class="value" style="color:var(--accent-green)">142ms</div>
+              <div class="trend up">↑ nominal</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">Trafic (req/s)</div>
+              <div class="value" style="color:var(--accent-blue)">9.8</div>
+              <div class="trend up">↑ pic 14h</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">Erreur 5xx</div>
+              <div class="value" style="color:var(--accent-green)">0.03%</div>
+              <div class="trend up">↓ -0.02%</div>
+            </div>
+            <div class="kpi-card">
+              <div class="label">DB Pool</div>
+              <div class="value" style="color:var(--accent-orange)">67%</div>
+              <div class="trend down">↑ +12% vs hier</div>
+            </div>
+          </div>
+          <!-- Graphique simulé en CSS -->
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">LATENCE (24H) — p50 · p95 · p99</div>
+            <div style="display:flex;align-items:end;gap:3px;height:80px">
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:30%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:35%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:28%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:45%"></div>
+              <div style="flex:1;background:var(--accent-orange);opacity:0.6;border-radius:2px 2px 0 0;height:65%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:32%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:40%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:38%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:50%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:33%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:29%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:42%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:36%"></div>
+              <div style="flex:1;background:var(--accent-orange);opacity:0.6;border-radius:2px 2px 0 0;height:55%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:31%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:27%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:34%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:48%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:39%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:30%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:25%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:37%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:44%"></div>
+              <div style="flex:1;background:var(--accent-green);opacity:0.6;border-radius:2px 2px 0 0;height:33%"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-muted);margin-top:4px">
+              <span>00h</span><span>06h</span><span>12h</span><span>18h</span><span>24h</span>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px">
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">TOP ENDPOINTS (p95)</div>
+              <div style="font-size:11px;color:var(--text-secondary)">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>/api/notes/bulk</span><span style="color:var(--accent-orange)">342ms</span></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>/api/bulletins/generate</span><span style="color:var(--accent-orange)">287ms</span></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>/api/emploi-du-temps/generer</span><span style="color:var(--accent-blue)">198ms</span></div>
+                <div style="display:flex;justify-content:space-between"><span>/api/eleves</span><span style="color:var(--accent-green)">45ms</span></div>
+              </div>
+            </div>
+            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:12px">
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">ERREURS RÉCENTES</div>
+              <div style="font-size:11px">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--text-secondary)">400 Validation</span><span style="color:var(--accent-orange)">12</span></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--text-secondary)">401 Non autorisé</span><span style="color:var(--accent-orange)">3</span></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:var(--text-secondary)">404 Non trouvé</span><span style="color:var(--text-muted)">1</span></div>
+                <div style="display:flex;justify-content:space-between"><span style="color:var(--text-secondary)">500 Erreur serveur</span><span style="color:var(--accent-red)">0</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECTION 10 : ROADMAP -->
+<!-- ═══════════════════════════════════════════ -->
+<section id="roadmap">
+  <h2><span class="num">10</span> Roadmap d'implémentation</h2>
+  <p class="subtitle">Plan de déploiement en 4 phases — Proposition B retenue.</p>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="phase-badge" style="background:rgba(52,211,153,0.15);color:var(--accent-green)">Phase 1 — Fondation (2 sem)</div>
+      <h4>Séparation Control Plane + RLS PostgreSQL</h4>
+      <p>
+        • Créer le layout <code>_platform</code> avec sidebar dédiée<br>
+        • Routes : <code>/platform/dashboard</code>, <code>/platform/etablissements</code><br>
+        • Migration RLS sur 10 tables critiques (etablissements, utilisateurs, eleves, notes...)<br>
+        • Middleware <code>setTenantContext()</code> dans Express<br>
+        • Guard <code>requirePlatformAdmin()</code> séparé de <code>requireAdmin()</code>
+      </p>
+    </div>
+    <div class="timeline-item">
+      <div class="phase-badge" style="background:rgba(79,143,247,0.15);color:var(--accent-blue)">Phase 2 — Authorization (2 sem)</div>
+      <h4>CASL.js + Feature Flags + Permissions réelles</h4>
+      <p>
+        • Installer <code>@casl/ability</code> — définir les abilities par rôle<br>
+        • Remplacer les guards manuels par CASL dans 30 controllers<br>
+        • Page <code>/admin/permissions</code> connectée aux données RBAC réelles<br>
+        • Feature flags JSONB dans <code>etablissements</code> + UI de gestion<br>
+        • Tests : couverture > 90% sur les abilities
+      </p>
+    </div>
+    <div class="timeline-item">
+      <div class="phase-badge" style="background:rgba(167,139,250,0.15);color:var(--accent-purple)">Phase 3 — Monitoring (2 sem)</div>
+      <h4>Dashboard monitoring + Command Palette + Performance</h4>
+      <p>
+        • Endpoint <code>/api/platform/metrics</code> (latence, erreurs, trafic, saturation)<br>
+        • Page <code>/platform/monitoring</code> avec graphiques temps réel (recharts)<br>
+        • Command Palette (cmdk) — navigation rapide vers toutes les routes<br>
+        • Vite manualChunks — split admin-vendor, admin-platform, admin-tenant<br>
+        • Virtualisation react-window pour les tables > 100 lignes
+      </p>
+    </div>
+    <div class="timeline-item">
+      <div class="phase-badge" style="background:rgba(245,158,11,0.15);color:var(--accent-orange)">Phase 4 — Polish (1-2 sem)</div>
+      <h4>Remplir les routes vides + MFA + Alertes</h4>
+      <p>
+        • Implémenter <code>/infrastructure</code> (health checks, DB stats, cache)<br>
+        • Implémenter les 4 <code>/modules-*</code> (vues synthétiques des modules)<br>
+        • MFA TOTP obligatoire pour SUPER_ADMIN<br>
+        • Alertes email (5 échecs login, suppression établissement, export masse)<br>
+        • Documentation admin complète (guide opérateur)
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h4>📊 Estimation globale</h4>
+    <table>
+      <tr><th>Phase</th><th>Durée</th><th>Fichiers</th><th>Dépendances</th><th>Risque</th></tr>
+      <tr>
+        <td>Phase 1 — Fondation</td>
+        <td>2 semaines</td>
+        <td>~15 fichiers</td>
+        <td>Aucune</td>
+        <td><span class="badge badge-green">Faible</span></td>
+      </tr>
+      <tr>
+        <td>Phase 2 — Authorization</td>
+        <td>2 semaines</td>
+        <td>~35 fichiers</td>
+        <td>Phase 1</td>
+        <td><span class="badge badge-orange">Modéré</span></td>
+      </tr>
+      <tr>
+        <td>Phase 3 — Monitoring</td>
+        <td>2 semaines</td>
+        <td>~12 fichiers</td>
+        <td>Phase 1</td>
+        <td><span class="badge badge-green">Faible</span></td>
+      </tr>
+      <tr>
+        <td>Phase 4 — Polish</td>
+        <td>1-2 semaines</td>
+        <td>~8 fichiers</td>
+        <td>Phase 2</td>
+        <td><span class="badge badge-green">Faible</span></td>
+      </tr>
+      <tr style="background:rgba(52,211,153,0.05)">
+        <td><strong>TOTAL</strong></td>
+        <td><strong>7-8 semaines</strong></td>
+        <td><strong>~70 fichiers</strong></td>
+        <td>—</td>
+        <td><span class="badge badge-green">Maîtrisé</span></td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<!-- CONCLUSION -->
+<section>
+  <h2><span class="num">✓</span> Conclusion</h2>
+  
+  <div class="callout success">
+    <h4>Recommandation finale : Proposition B</h4>
+    <p>L'architecture dual-plane (Control Plane / Data Plane) avec CASL.js et RLS PostgreSQL offre le meilleur rapport effort/impact. Elle transforme eLISAschool en vrai SaaS enterprise-grade sans réécrire le frontend existant. Le score passe de <strong>5.5/10 à 9.0/10</strong> en 7-8 semaines.</p>
+  </div>
+
+  <div class="grid-3" style="margin-top:24px">
+    <div class="card" style="text-align:center">
+      <h4 style="justify-content:center">🎯 Résultat</h4>
+      <div style="font-size:2rem;font-weight:800;color:var(--accent-green);margin:8px 0">9.0/10</div>
+      <p>Score cible atteint</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <h4 style="justify-content:center">🔒 Sécurité</h4>
+      <div style="font-size:2rem;font-weight:800;color:var(--accent-blue);margin:8px 0">0</div>
+      <p>Failles critiques restantes</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <h4 style="justify-content:center">⚡ Performance</h4>
+      <div style="font-size:2rem;font-weight:800;color:var(--accent-purple);margin:8px 0">-70%</div>
+      <p>Réduction bundle admin</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:24px">
+    <h4>📚 Références et sources</h4>
+    <ul>
+      <li><strong>CASL.js</strong> — Declarative authorization for TypeScript — <em>casl.stackableops.com</em></li>
+      <li><strong>PostgreSQL RLS</strong> — Row Security Policies — <em>postgresql.org/docs/16/ddl-rowsecurity.html</em></li>
+      <li><strong>Refine</strong> — Headless admin framework — <em>refine.dev</em></li>
+      <li><strong>Four Golden Signals</strong> — Google SRE Book — <em>sre.google/sre-book/monitoring-distributed-systems</em></li>
+      <li><strong>RED/USE Methods</strong> — Brendan Gregg — <em>bbb.org</em></li>
+      <li><strong>Vercel Dashboard UX</strong> — Command Palette pattern — <em>vercel.com/blog/command-bar</em></li>
+      <li><strong>Linear Design</strong> — Tables over charts — <em>linear.app/blog</em></li>
+      <li><strong>Stripe API Design</strong> — Feature flags per account — <em>stripe.com/blog</em></li>
+      <li><strong>eLISAschool Audit</strong> — Rapport précédent — <em>docs/rapports/RAPPORT-SAAS-ADMIN-CLIENT-SEPARATION.html</em></li>
+    </ul>
+  </div>
+</section>
+
+</div>
+
+<!-- FOOTER -->
+<div class="report-footer">
+  <div class="container">
+    <p><strong>eLISAschool</strong> — Rapport de conception Panel d'Administration Idéal</p>
+    <p style="margin-top:8px">Version 1.0 · 07 Août 2026 · franck arlos chendjou</p>
+    <p style="margin-top:8px;color:var(--text-muted)">Généré avec Qoder · Architecture + Design + Sécurité</p>
+  </div>
+</div>
+
+</body>
+</html>

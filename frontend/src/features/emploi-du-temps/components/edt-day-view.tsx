@@ -12,7 +12,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Clock, MapPin, User, BookOpen, FileText, CheckCircle2 } from 'lucide-react';
 import { formatDate } from '@/lib/date-utils';
-import { paletteCreneau, useModeTheme } from '@/lib/palette-creneau';
+import { paletteCreneau, useModeTheme, melangeCouleur } from '@/lib/palette-creneau';
 import type { CreneauHoraire, JourSemaine, JourFerie } from '../types/edt.types';
 import { EDTLegend } from './edt-legend';
 
@@ -168,6 +168,9 @@ export function EDTDayView({
                                 const pos = positionner(c.heureDebut ?? '08:00', c.heureFin ?? '09:00');
                                 const couleurHex = c.couleur || c.affectationMatiere?.matiere?.couleur;
                                 const pal = couleurHex ? paletteCreneau(couleurHex, undefined, mode) : null;
+                                const texteCouleur = pal?.texteSurTeinte ?? 'var(--color-text-primary)';
+                                const texteSecondaire = pal ? melangeCouleur(pal.texteSurTeinte, 70, mode === 'dark' ? '#94a3b8' : '#6b7280') : 'var(--color-text-secondary)';
+                                const ombreSecondaire = `0 0 3px ${pal?.fondTeinte ?? 'var(--color-surface)'}, 0 0 6px ${pal?.fondTeinte ?? 'var(--color-surface)'}`;
                                 return (
                                     <button
                                         key={c.id}
@@ -213,8 +216,12 @@ export function EDTDayView({
                                         {/* Matière + badge classe */}
                                         <div className="flex items-center gap-1">
                                             <p
-                                                className="font-semibold text-[var(--color-text-primary)] truncate"
-                                                style={{ fontSize: 'clamp(0.6875rem, 0.63rem + 0.2vw, 0.8125rem)' }}
+                                                className="font-semibold truncate"
+                                                style={{
+                                                    fontSize: 'clamp(0.6875rem, 0.63rem + 0.2vw, 0.8125rem)',
+                                                    color: texteCouleur,
+                                                    textShadow: `0 1px 2px rgba(0,0,0,0.15), 0 0 4px ${pal?.fondTeinte ?? 'transparent'}`,
+                                                }}
                                             >
                                                 {c.affectationMatiere?.matiere?.nom ?? '—'}
                                             </p>
@@ -235,7 +242,7 @@ export function EDTDayView({
                                         {/* Enseignant + salle — icônes compactes */}
                                         <div className="flex flex-wrap items-center gap-x-[var(--gap-xs)] gap-y-0">
                                             {c.affectationMatiere?.enseignant && (
-                                                <span className="flex items-center gap-0.5 text-[var(--color-text-secondary)] truncate">
+                                                <span className="flex items-center gap-0.5 truncate" style={{ color: texteSecondaire, textShadow: ombreSecondaire }}>
                                                     <User className="h-3 w-3 shrink-0" />
                                                     <span style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.15vw, 0.6875rem)' }}>
                                                         {c.affectationMatiere?.enseignant?.utilisateur?.profil?.prenom} {c.affectationMatiere?.enseignant?.utilisateur?.profil?.nom}
@@ -243,7 +250,7 @@ export function EDTDayView({
                                                 </span>
                                             )}
                                             {c.salle && (
-                                                <span className="flex items-center gap-0.5 text-[var(--color-text-secondary)]">
+                                                <span className="flex items-center gap-0.5" style={{ color: texteSecondaire, textShadow: ombreSecondaire }}>
                                                     <MapPin className="h-3 w-3 shrink-0" />
                                                     <span style={{ fontSize: 'clamp(0.5625rem, 0.5rem + 0.15vw, 0.6875rem)' }}>
                                                         {c.salle.nom}
@@ -254,8 +261,11 @@ export function EDTDayView({
                                         {/* Horaire + type */}
                                         <div className="flex items-center gap-1">
                                             <span
-                                                className="text-[var(--color-text-muted)]"
-                                                style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.15vw, 0.625rem)' }}
+                                                style={{
+                                                    fontSize: 'clamp(0.5rem, 0.45rem + 0.15vw, 0.625rem)',
+                                                    color: texteSecondaire,
+                                                    textShadow: ombreSecondaire,
+                                                }}
                                             >
                                                 {c.heureDebut?.slice(0, 5)} — {c.heureFin?.slice(0, 5)}
                                             </span>
@@ -275,8 +285,12 @@ export function EDTDayView({
                                         {/* Notes */}
                                         {c.notes && (
                                             <span
-                                                className="flex items-center gap-0.5 text-[var(--color-text-muted)] italic truncate"
-                                                style={{ fontSize: 'clamp(0.4375rem, 0.4rem + 0.1vw, 0.5625rem)' }}
+                                                className="flex items-center gap-0.5 italic truncate"
+                                                style={{
+                                                    fontSize: 'clamp(0.4375rem, 0.4rem + 0.1vw, 0.5625rem)',
+                                                    color: texteSecondaire,
+                                                    textShadow: ombreSecondaire,
+                                                }}
                                             >
                                                 <FileText className="h-2.5 w-2.5 shrink-0" />
                                                 {c.notes}

@@ -60,7 +60,12 @@
     "moisSuivant": "Next month",
     "selectionnerMois": "Select a month",
     "selectionnerAnnee": "Select a year",
-    "allerAujourdhui": "Back to today"
+    "allerAujourdhui": "Back to today",
+    "toggleSemaine": "Week start",
+    "lundi": "Mo",
+    "dimanche": "Su",
+    "creneauxDispo": "Available slots",
+    "jourFerie": "Holiday"
   },
   "filtres": {
     "titre": "Filters",
@@ -193,11 +198,13 @@
     "reinitialiser": "Reset",
     "enregistrer": "Save preferences",
     "enregistrement": "Saving…",
+    "modificationsNonEnregistrees": "Unsaved changes",
     "erreurJoursOuvrables": "Please select at least one working day",
     "tabs": {
       "calendrier": "Calendar",
       "joursFeries": "Holidays",
-      "automation": "Automation"
+      "automation": "Automation",
+      "templates": "Templates"
     }
   },
   "templates": {
