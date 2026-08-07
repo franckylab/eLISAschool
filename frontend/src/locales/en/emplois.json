@@ -484,6 +484,7 @@
       "CONFLIT_CLASSE": "Class conflict",
       "CONFLIT_ENSEIGNANT": "Teacher conflict",
       "CONFLIT_SALLE": "Room conflict",
+      "CONFLIT_JOUR_FERIE": "Holiday conflict",
       "DEPASSEMENT_VOLUME_HORAIRE": "Volume overload",
       "CRENEAU_IMPOSABLE": "Unavailable slot"
     },

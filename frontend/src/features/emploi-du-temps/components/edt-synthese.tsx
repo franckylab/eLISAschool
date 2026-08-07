@@ -18,6 +18,7 @@ import { useStatistiquesEDT, useCreneaux } from '../hooks/use-emploi-du-temps';
 import { useTousMatieresNiveaux } from '@/features/matieres/hooks/use-matieres';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
+import { StatCard } from '@/components/ui';
 
 interface EDTSyntheseProps {
     classeAnneeId?: string;
@@ -95,41 +96,53 @@ export function EDTSynthese({ classeAnneeId, enseignantId, embedded = false }: E
             )}
             {/* ─── KPIs ─────────────────────────────────── */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-[var(--gap-md)]">
-                <KpiCard
-                    icon={<Clock className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                <StatCard
+                    icon={Clock}
                     label={t('synthese.kpiHeures')}
                     value={`${stats.totalHeures}h`}
-                    color="dominant"
+                    tone="accent"
+                    orientation="horizontal"
+                    compact
                 />
-                <KpiCard
-                    icon={<BarChart3 className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                <StatCard
+                    icon={BarChart3}
                     label={t('synthese.kpiCreneaux')}
                     value={String(stats.totalCreneaux)}
-                    color="accent"
+                    tone="accent"
+                    orientation="horizontal"
+                    compact
                 />
-                <KpiCard
-                    icon={<BookOpen className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                <StatCard
+                    icon={BookOpen}
                     label={t('synthese.kpiMatieres')}
                     value={String(stats.totalMatieres)}
-                    color="secondary"
+                    tone="purple"
+                    orientation="horizontal"
+                    compact
                 />
-                <KpiCard
-                    icon={<Users className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                <StatCard
+                    icon={Users}
                     label={t('synthese.enseignants')}
                     value={String(stats.totalEnseignants)}
-                    color="dominant"
+                    tone="accent"
+                    orientation="horizontal"
+                    compact
                 />
-                <KpiCard
-                    icon={<Building2 className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                <StatCard
+                    icon={Building2}
                     label={t('synthese.kpiSalles')}
                     value={String(stats.totalSallesOccupees)}
-                    color="accent"
+                    tone="accent"
+                    orientation="horizontal"
+                    compact
                 />
-                <KpiCard
-                    icon={<TrendingUp className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                <StatCard
+                    icon={TrendingUp}
                     label={t('synthese.tauxSalle')}
                     value={`${stats.tauxOccupationSalle}%`}
-                    color="secondary"
+                    tone="purple"
+                    orientation="horizontal"
+                    compact
                 />
             </div>
 
@@ -229,50 +242,6 @@ export function EDTSynthese({ classeAnneeId, enseignantId, embedded = false }: E
             {creneaux.length > 0 && (
                 <TableauVolumeHoraire creneaux={creneaux} volumeMap={volumeMap} />
             )}
-        </div>
-    );
-}
-
-// ─── KPI Card ─────────────────────────────────────────
-
-function KpiCard({ icon, label, value, color }: {
-    icon: React.ReactNode;
-    label: string;
-    value: string;
-    color: 'dominant' | 'accent' | 'secondary';
-}) {
-    const bgMap = {
-        dominant: 'bg-[var(--color-dominant-50)]',
-        accent: 'bg-[var(--color-accent-50)]',
-        secondary: 'bg-[var(--color-secondary-50)]',
-    };
-    const iconColorMap = {
-        dominant: 'text-[var(--color-dominant-600)]',
-        accent: 'text-[var(--color-accent-600)]',
-        secondary: 'text-[var(--color-secondary-600)]',
-    };
-
-    return (
-        <div
-            className="rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] p-[var(--space-md)] flex items-center gap-[var(--gap-sm)]"
-        >
-            <div className={`p-[var(--space-xs)] rounded-[var(--radius-md)] ${bgMap[color]} ${iconColorMap[color]} shrink-0`}>
-                {icon}
-            </div>
-            <div className="min-w-0">
-                <div
-                    className="font-bold text-[var(--color-text-primary)] truncate"
-                    style={{ fontSize: 'clamp(1rem, 0.85rem + 0.5vw, 1.5rem)' }}
-                >
-                    {value}
-                </div>
-                <div
-                    className="text-[var(--color-text-secondary)] truncate"
-                    style={{ fontSize: 'clamp(0.625rem, 0.58rem + 0.2vw, 0.75rem)' }}
-                >
-                    {label}
-                </div>
-            </div>
         </div>
     );
 }

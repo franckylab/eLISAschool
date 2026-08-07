@@ -37,3 +37,5 @@ export { ValidationTimeline } from './ValidationTimeline';
 export { ValidationActions } from './ValidationActions';
 export { AuditTimeline } from './AuditTimeline';
 export type { AuditLogEntry } from './AuditTimeline';
+export { SubTabBar } from './SubTabBar';
+export type { SubTab, SubTabBarProps } from './SubTabBar';

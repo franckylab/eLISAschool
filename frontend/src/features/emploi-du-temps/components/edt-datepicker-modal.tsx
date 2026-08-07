@@ -10,7 +10,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, ChevronRight, Crosshair, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Crosshair, CalendarDays } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
@@ -143,6 +143,21 @@ export function EDTDatePickerModal({
         });
     }, []);
 
+    /** Navigation par semaine : décale de ±7 jours */
+    const semainePrecedente = useCallback(() => {
+        const d = new Date(viewYear, viewMonth, 1);
+        d.setDate(d.getDate() - 7);
+        setViewMonth(d.getMonth());
+        setViewYear(d.getFullYear());
+    }, [viewMonth, viewYear]);
+
+    const semaineSuivante = useCallback(() => {
+        const d = new Date(viewYear, viewMonth, 1);
+        d.setDate(d.getDate() + 7);
+        setViewMonth(d.getMonth());
+        setViewYear(d.getFullYear());
+    }, [viewMonth, viewYear]);
+
     const handleDateClick = useCallback((date: Date) => {
         onDateSelect(date);
         onOpenChange(false);
@@ -183,6 +198,21 @@ export function EDTDatePickerModal({
     const titreMoisAnnee = new Date(viewYear, viewMonth, 1)
         .toLocaleDateString(locale, { month: 'long', year: 'numeric' });
 
+    // ─── Numéros de semaine ISO pour chaque rangée ────
+    const numerosSemaine = useMemo(() => {
+        const semaines: { num: number; visible: boolean }[] = [];
+        for (let i = 0; i < joursDuMois.length; i += 7) {
+            const row = joursDuMois.slice(i, i + 7);
+            const premierJourSemaine = row[0];
+            if (premierJourSemaine) {
+                // Visible uniquement si la semaine a au moins un jour dans le mois affiché
+                const aJoursDansMois = row.some(c => c.dansMois);
+                semaines.push({ num: getISOWeek(premierJourSemaine.date), visible: aJoursDansMois });
+            }
+        }
+        return semaines;
+    }, [joursDuMois]);
+
     return (
         <CustomModal
             open={open}
@@ -216,13 +246,22 @@ export function EDTDatePickerModal({
             <div className="flex flex-col gap-[var(--gap-md)]">
                 {/* ─── Header : dropdowns mois + année + navigation ─── */}
                 <div className="flex items-center justify-between gap-[var(--gap-sm)]">
-                    <ElisaButton
-                        variant="ghost"
-                        size="xs"
-                        icon={<ChevronLeft className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
-                        onClick={moisPrecedent}
-                        aria-label={t('navigation.moisPrecedent')}
-                    />
+                    <div className="flex items-center gap-[var(--gap-xxs)]">
+                        <ElisaButton
+                            variant="ghost"
+                            size="xs"
+                            icon={<ChevronsLeft className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
+                            onClick={semainePrecedente}
+                            aria-label={t('navigation.semainePrecedente', 'Semaine précédente')}
+                        />
+                        <ElisaButton
+                            variant="ghost"
+                            size="xs"
+                            icon={<ChevronLeft className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
+                            onClick={moisPrecedent}
+                            aria-label={t('navigation.moisPrecedent')}
+                        />
+                    </div>
 
                     <div className="flex items-center gap-[var(--gap-xs)] flex-1 justify-center">
                         {/* Dropdown mois */}
@@ -245,13 +284,22 @@ export function EDTDatePickerModal({
                         />
                     </div>
 
-                    <ElisaButton
-                        variant="ghost"
-                        size="xs"
-                        icon={<ChevronRight className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
-                        onClick={moisSuivant}
-                        aria-label={t('navigation.moisSuivant')}
-                    />
+                    <div className="flex items-center gap-[var(--gap-xxs)]">
+                        <ElisaButton
+                            variant="ghost"
+                            size="xs"
+                            icon={<ChevronRight className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
+                            onClick={moisSuivant}
+                            aria-label={t('navigation.moisSuivant')}
+                        />
+                        <ElisaButton
+                            variant="ghost"
+                            size="xs"
+                            icon={<ChevronsRight className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />}
+                            onClick={semaineSuivante}
+                            aria-label={t('navigation.semaineSuivante', 'Semaine suivante')}
+                        />
+                    </div>
                 </div>
 
                 {/* ─── Label mois/année (accessibilité) + toggle semaine ─── */}
@@ -295,7 +343,15 @@ export function EDTDatePickerModal({
                 </div>
 
                 {/* ─── Grille jours de la semaine (en-têtes) ─── */}
-                <div className="grid grid-cols-7 gap-[var(--gap-xs)]">
+                <div className="grid grid-cols-[1.5rem_repeat(7,1fr)] gap-[var(--gap-xs)] items-center">
+                    <div className="w-6 text-center">
+                        <span
+                            className="font-medium text-[var(--color-text-muted)] uppercase"
+                            style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.1vw, 0.5625rem)' }}
+                        >
+                            #
+                        </span>
+                    </div>
                     {JOURS_SEMAINE_KEYS.map((key) => (
                         <div
                             key={key}
@@ -312,60 +368,90 @@ export function EDTDatePickerModal({
                 </div>
 
                 {/* ─── Grille calendrier (6 semaines max) ─── */}
-                <div className="grid grid-cols-7 gap-[var(--gap-xs)]">
-                    {joursDuMois.map(({ date, jour, dansMois }, index) => {
-                        const aujourdhui = isToday(date);
-                        const selectionne = isSelected(date);
-                        const avecCreneaux = dansMois && hasCreneaux(date);
-                        const jf = dansMois ? getJF(date) : undefined;
+                <div className="flex flex-col gap-[var(--gap-xs)]">
+                    {numerosSemaine.map((sem, rowIdx) => (
+                        <div key={rowIdx} className="grid grid-cols-[1.5rem_repeat(7,1fr)] gap-[var(--gap-xs)] items-center">
+                            {/* Numéro de semaine (visible si la semaine a ≥1 jour dans le mois) */}
+                            <div className="w-6 text-center">
+                                {sem.visible && (
+                                    <span
+                                        className="font-medium text-[var(--color-text-muted)]"
+                                        style={{ fontSize: 'clamp(0.5rem, 0.45rem + 0.1vw, 0.5625rem)' }}
+                                    >
+                                        S{sem.num}
+                                    </span>
+                                )}
+                            </div>
+                            {/* Jours de la semaine */}
+                            {joursDuMois.slice(rowIdx * 7, rowIdx * 7 + 7).map(({ date, jour, dansMois }, index) => {
+                                const aujourdhui = isToday(date);
+                                const selectionne = isSelected(date);
+                                const avecCreneaux = dansMois && hasCreneaux(date);
+                                const jf = dansMois ? getJF(date) : undefined;
 
-                        return (
-                            <button
-                                key={index}
-                                type="button"
-                                onClick={() => handleDateClick(date)}
-                                className={`
-                                    relative flex items-center justify-center rounded-[var(--radius-md)]
-                                    transition-all duration-150
-                                    h-[clamp(1.75rem,1.5rem+0.5vw,2.25rem)]
-                                    w-full
-                                    text-[var(--color-text-primary)]
-                                    hover:bg-[var(--color-surface-hover)]
-                                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dominant-400)]
-                                    ${!dansMois ? 'text-[var(--color-text-muted)] opacity-40' : ''}
-                                    ${aujourdhui && !selectionne ? 'ring-1 ring-[var(--color-dominant-400)] font-semibold' : ''}
-                                    ${selectionne ? 'bg-[var(--color-dominant-600)] text-white font-bold hover:bg-[var(--color-dominant-700)]' : ''}
-                                `}
-                                style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
-                                aria-label={date.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })}
-                                aria-current={aujourdhui ? 'date' : undefined}
-                                title={jf ? `${jf.nom}` : undefined}
-                            >
-                                {jour}
-                                {/* Dot indicateur aujourd'hui (bottom-center) */}
-                                {aujourdhui && !selectionne && (
-                                    <span className="absolute bottom-[clamp(0.125rem,0.1rem+0.1vw,0.1875rem)] left-1/2 -translate-x-1/2 h-[3px] w-[3px] rounded-full bg-[var(--color-dominant-500)]" />
-                                )}
-                                {/* Dot créneaux (bottom-right) */}
-                                {avecCreneaux && !selectionne && (
-                                    <span
-                                        className="absolute bottom-[2px] right-[2px] h-[3px] w-[3px] rounded-full bg-[var(--color-success)]"
-                                        title={t('navigation.creneauxDispo')}
-                                    />
-                                )}
-                                {/* Dot jour férié (top-right) */}
-                                {jf && !selectionne && (
-                                    <span
-                                        className="absolute top-[2px] right-[2px] h-[3px] w-[3px] rounded-full"
-                                        style={{ backgroundColor: jf.couleur || 'var(--color-accent-500)' }}
-                                        title={jf.nom}
-                                    />
-                                )}
-                            </button>
-                        );
-                    })}
+                                return (
+                                    <button
+                                        key={index}
+                                        type="button"
+                                        onClick={() => handleDateClick(date)}
+                                        className={`
+                                            relative flex items-center justify-center rounded-[var(--radius-md)]
+                                            transition-all duration-150
+                                            h-[clamp(1.75rem,1.5rem+0.5vw,2.25rem)]
+                                            w-full
+                                            text-[var(--color-text-primary)]
+                                            hover:bg-[var(--color-surface-hover)]
+                                            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dominant-400)]
+                                            ${!dansMois ? 'text-[var(--color-text-muted)] opacity-30' : ''}
+                                            ${aujourdhui && !selectionne ? 'ring-2 ring-[var(--color-dominant-400)] font-semibold' : ''}
+                                            ${selectionne ? 'bg-[var(--color-dominant-600)] text-white font-bold shadow-sm hover:bg-[var(--color-dominant-700)]' : ''}
+                                        `}
+                                        style={{ fontSize: 'clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem)' }}
+                                        aria-label={date.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })}
+                                        aria-current={aujourdhui ? 'date' : undefined}
+                                        title={jf ? `${jf.nom}` : undefined}
+                                    >
+                                        {jour}
+                                        {/* Dot indicateur aujourd'hui (bottom-center) */}
+                                        {aujourdhui && !selectionne && (
+                                            <span className="absolute bottom-[3px] left-1/2 -translate-x-1/2 h-[5px] w-[5px] rounded-full bg-[var(--color-dominant-500)]" />
+                                        )}
+                                        {/* Dot créneaux (bottom-right) */}
+                                        {avecCreneaux && !selectionne && (
+                                            <span
+                                                className="absolute bottom-[3px] right-[3px] h-[5px] w-[5px] rounded-full bg-[var(--color-success)]"
+                                                title={t('navigation.creneauxDispo')}
+                                            />
+                                        )}
+                                        {/* Dot jour férié (top-right) */}
+                                        {jf && !selectionne && (
+                                            <span
+                                                className="absolute top-[3px] right-[3px] h-[5px] w-[5px] rounded-full"
+                                                style={{ backgroundColor: jf.couleur || 'var(--color-accent-500)' }}
+                                                title={jf.nom}
+                                            />
+                                        )}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    ))}
                 </div>
             </div>
         </CustomModal>
     );
+}
+
+// ─── Helper : Numéro de semaine ISO ─────────────────
+
+/**
+ * Calcule le numéro de semaine ISO 8601 pour une date donnée.
+ * Semaine ISO : commence le lundi, semaine 1 = première semaine avec un jeudi.
+ */
+function getISOWeek(date: Date): number {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }

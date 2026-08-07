@@ -11,14 +11,15 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Shield, AlertTriangle, CheckCircle2, RefreshCw,
-    Users, Building2, BookOpen, Filter,
+    Shield, AlertTriangle, AlertCircle, CheckCircle2, RefreshCw,
+    Users, Building2, BookOpen, Filter, CalendarOff,
 } from 'lucide-react';
 import { useAuditConflits } from '../hooks/use-emploi-du-temps';
 import type { AuditConflitDetail, TypeConflit } from '../types/edt.types';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { StatCard } from '@/components/ui';
 
 type FiltreAudit = 'tous' | 'bloquants' | 'avertissements';
 
@@ -76,23 +77,29 @@ export function EDTAudit({ embedded = false }: EDTAuditProps) {
             )}
             {/* ─── KPIs Résumé ─────────────────────────── */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-[var(--gap-md)]">
-                <AuditKpi
-                    icon={<AlertTriangle className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                <StatCard
+                    icon={AlertTriangle}
                     label={t('audit.totalConflits')}
                     value={String(totalConflits)}
-                    color={totalConflits > 0 ? 'danger' : 'success'}
+                    tone={totalConflits > 0 ? 'danger' : 'success'}
+                    orientation="horizontal"
+                    compact
                 />
-                <AuditKpi
-                    icon={<Users className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                <StatCard
+                    icon={Users}
                     label={t('audit.bloquants')}
                     value={String(bloquants)}
-                    color={bloquants > 0 ? 'danger' : 'success'}
+                    tone={bloquants > 0 ? 'danger' : 'success'}
+                    orientation="horizontal"
+                    compact
                 />
-                <AuditKpi
-                    icon={<BookOpen className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}
+                <StatCard
+                    icon={BookOpen}
                     label={t('audit.avertissements')}
                     value={String(avertissements)}
-                    color={avertissements > 0 ? 'warning' : 'success'}
+                    tone={avertissements > 0 ? 'warning' : 'success'}
+                    orientation="horizontal"
+                    compact
                 />
             </div>
 
@@ -152,10 +159,10 @@ export function EDTAudit({ embedded = false }: EDTAuditProps) {
                         {Array.from(conflitsGroupe.entries()).map(([type, conflits]) => (
                             <div
                                 key={type}
-                                className="rounded-xl border border-[var(--color-bordure)] overflow-hidden"
+                                className={`rounded-xl border border-[var(--color-bordure)] overflow-hidden border-l-[3px] ${borderLColor(type)}`}
                             >
                                 {/* Header du groupe */}
-                                <div className="flex items-center justify-between px-[var(--space-md)] py-[var(--space-sm)] bg-[var(--color-surface-alt)]">
+                                <div className={`flex items-center justify-between px-[var(--space-md)] py-[var(--space-sm)] ${headerBgColor(type)}`}>
                                     <div className="flex items-center gap-[var(--gap-xs)]">
                                         {iconeType(type)}
                                         <span
@@ -165,7 +172,7 @@ export function EDTAudit({ embedded = false }: EDTAuditProps) {
                                             {t(`audit.types.${type}`)}
                                         </span>
                                     </div>
-                                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[var(--color-dominant-100)] text-[var(--color-dominant-700)]">
+                                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${badgeColor(type)}`}>
                                         {conflits.length}
                                     </span>
                                 </div>
@@ -203,7 +210,7 @@ function ConflitRow({ conflit }: { conflit: AuditConflitDetail }) {
                 {estBloquant ? (
                     <AlertTriangle className="h-3 w-3" />
                 ) : (
-                    <Building2 className="h-3 w-3" />
+                    <AlertCircle className="h-3 w-3" />
                 )}
                 {t(`audit.severites.${conflit.severite}`)}
             </span>
@@ -226,48 +233,6 @@ function ConflitRow({ conflit }: { conflit: AuditConflitDetail }) {
     );
 }
 
-// ─── KPI Card Audit ──────────────────────────────────
-
-function AuditKpi({ icon, label, value, color }: {
-    icon: React.ReactNode;
-    label: string;
-    value: string;
-    color: 'danger' | 'warning' | 'success';
-}) {
-    const bgMap = {
-        danger: 'bg-[var(--color-danger)]/10',
-        warning: 'bg-[var(--color-warning)]/10',
-        success: 'bg-[var(--color-success)]/10',
-    };
-    const iconColorMap = {
-        danger: 'text-[var(--color-danger)]',
-        warning: 'text-[var(--color-warning)]',
-        success: 'text-[var(--color-success)]',
-    };
-
-    return (
-        <div className="rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] p-[var(--space-md)] flex items-center gap-[var(--gap-sm)]">
-            <div className={`p-[var(--space-xs)] rounded-[var(--radius-md)] ${bgMap[color]} ${iconColorMap[color]} shrink-0`}>
-                {icon}
-            </div>
-            <div className="min-w-0">
-                <div
-                    className="font-bold text-[var(--color-text-primary)] truncate"
-                    style={{ fontSize: 'clamp(1.25rem, 1rem + 0.8vw, 2rem)' }}
-                >
-                    {value}
-                </div>
-                <div
-                    className="text-[var(--color-text-secondary)] truncate"
-                    style={{ fontSize: 'clamp(0.6875rem, 0.63rem + 0.2vw, 0.8125rem)' }}
-                >
-                    {label}
-                </div>
-            </div>
-        </div>
-    );
-}
-
 // ─── Helpers ─────────────────────────────────────────
 
 function iconeType(type: TypeConflit): React.ReactNode {
@@ -279,7 +244,42 @@ function iconeType(type: TypeConflit): React.ReactNode {
             return <Users className={`${cls} text-[var(--color-warning)]`} />;
         case 'CONFLIT_SALLE':
             return <Building2 className={`${cls} text-[var(--color-accent-600)]`} />;
+        case 'CONFLIT_JOUR_FERIE':
+            return <CalendarOff className={`${cls} text-[var(--color-accent-600)]`} />;
         default:
             return <Shield className={`${cls} text-[var(--color-text-muted)]`} />;
+    }
+}
+
+/** Couleur de la bordure gauche selon le type de conflit */
+function borderLColor(type: TypeConflit): string {
+    switch (type) {
+        case 'CONFLIT_CLASSE': return 'border-l-[var(--color-danger)]';
+        case 'CONFLIT_ENSEIGNANT': return 'border-l-[var(--color-warning)]';
+        case 'CONFLIT_SALLE': return 'border-l-[var(--color-accent-600)]';
+        case 'CONFLIT_JOUR_FERIE': return 'border-l-[var(--color-accent-600)]';
+        default: return 'border-l-[var(--color-text-muted)]';
+    }
+}
+
+/** Background du header selon le type de conflit */
+function headerBgColor(type: TypeConflit): string {
+    switch (type) {
+        case 'CONFLIT_CLASSE': return 'bg-[var(--color-danger)]/5';
+        case 'CONFLIT_ENSEIGNANT': return 'bg-[var(--color-warning)]/5';
+        case 'CONFLIT_SALLE': return 'bg-[var(--color-accent-600)]/5';
+        case 'CONFLIT_JOUR_FERIE': return 'bg-[var(--color-accent-600)]/5';
+        default: return 'bg-[var(--color-surface-alt)]';
+    }
+}
+
+/** Couleur du badge count selon le type de conflit */
+function badgeColor(type: TypeConflit): string {
+    switch (type) {
+        case 'CONFLIT_CLASSE': return 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]';
+        case 'CONFLIT_ENSEIGNANT': return 'bg-[var(--color-warning)]/10 text-[var(--color-warning)]';
+        case 'CONFLIT_SALLE': return 'bg-[var(--color-accent-600)]/10 text-[var(--color-accent-700)]';
+        case 'CONFLIT_JOUR_FERIE': return 'bg-[var(--color-accent-600)]/10 text-[var(--color-accent-700)]';
+        default: return 'bg-[var(--color-dominant-100)] text-[var(--color-dominant-700)]';
     }
 }

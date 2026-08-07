@@ -19,6 +19,7 @@ import { usePreferencesEDT, useUpdatePreferencesEDT } from '../hooks/use-emploi-
 import { useJoursFeries, useChargerModelePays, useDeleteJourFerie, useModelesPays, useGenererVariablesAnnee } from '../hooks/use-jours-feries';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { ElisaSelect } from '@/components/ui/ElisaSelect';
+import { SubTabBar } from '@/components/ui/SubTabBar';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
 import { useConfirmation } from '@/components/ui/ConfirmationModal';
@@ -69,6 +70,13 @@ export function EDTPreferencesPage() {
     const joursFeries = joursFeriesData ?? [];
     const paysCodes = modelesPays?.map(m => m.pays) ?? [...PAYS_FALLBACK];
     const { ask, ConfirmationModal: ConfirmJFModal } = useConfirmation();
+
+    /** Tabs configurés pour le SubTabBar */
+    const subTabs = useMemo(() => CONFIG_TABS.map(({ id, labelKey, icon }) => ({
+        id,
+        label: t(labelKey),
+        icon,
+    })), [t]);
 
     const [formData, setFormData] = useState({
         joursOuvrables: [] as string[],
@@ -218,24 +226,11 @@ export function EDTPreferencesPage() {
         <>
             <form onSubmit={handleSubmit} className="flex flex-col gap-[var(--gap-md)]">
                 {/* ─── Tabs de navigation ─────────────────────────── */}
-                <div className="flex items-center gap-[var(--gap-xs)] overflow-x-auto pb-[var(--space-xxs)] -mx-[var(--space-xxs)] px-[var(--space-xxs)]">
-                    {CONFIG_TABS.map(({ id, labelKey, icon: Icon }) => (
-                        <button
-                            key={id}
-                            type="button"
-                            onClick={() => setActiveTab(id)}
-                            className={`flex items-center gap-[var(--space-xs)] px-[var(--space-md)] py-[var(--space-sm)] rounded-[var(--radius-lg)] text-sm font-medium transition-all whitespace-nowrap ${
-                                activeTab === id
-                                    ? 'bg-[var(--color-dominant-600)] text-white shadow-sm'
-                                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-hover)] border border-[var(--color-bordure)]'
-                            }`}
-                            aria-pressed={activeTab === id}
-                        >
-                            <Icon className="h-[var(--icon-xs)] w-[var(--icon-xs)]" />
-                            <span className="hidden sm:inline">{t(labelKey)}</span>
-                        </button>
-                    ))}
-                </div>
+                <SubTabBar
+                    tabs={subTabs}
+                    activeTab={activeTab}
+                    onTabChange={(id) => setActiveTab(id as ConfigTab)}
+                />
 
                 {/* ─── Contenu des onglets ─────────────────────────── */}
                 <AnimatePresence mode="wait">
@@ -646,13 +641,19 @@ export function EDTPreferencesPage() {
 
                 {/* ─── Footer actions (sticky) ──────────────────────── */}
                 <div className="sticky bottom-0 z-10 -mx-[var(--space-sm)] px-[var(--space-md)] py-[var(--space-sm)] bg-[var(--color-background)]/95 backdrop-blur-md border-t border-[var(--color-bordure)]">
+                    {/* Barre de progression subtile */}
+                    {updatePreferences.isPending && (
+                        <div className="absolute top-0 left-0 right-0 h-0.5 bg-[var(--color-dominant-500)] overflow-hidden">
+                            <div className="h-full w-1/3 bg-[var(--color-dominant-300)] animate-pulse" />
+                        </div>
+                    )}
                     <div className="flex items-center justify-between gap-[var(--gap-sm)] max-w-full">
                         {/* Indicateur modifications non enregistrées */}
                         <div className="flex items-center gap-[var(--gap-xs)] min-w-0">
                             {isDirty && !updatePreferences.isPending && (
                                 <>
-                                    <span className="h-2 w-2 rounded-full bg-[var(--color-accent-500)] shrink-0 animate-pulse" />
-                                    <span className="text-xs text-[var(--color-text-secondary)] truncate hidden sm:inline">
+                                    <span className="h-2 w-2 rounded-full bg-[var(--color-accent-500)] shrink-0 animate-pulse transition-all duration-200" />
+                                    <span className="text-xs text-[var(--color-text-secondary)] truncate transition-all duration-200">
                                         {t('preferences.modificationsNonEnregistrees')}
                                     </span>
                                 </>
@@ -660,13 +661,14 @@ export function EDTPreferencesPage() {
                         </div>
                         {/* Actions */}
                         <div className="flex items-center gap-[var(--gap-sm)] shrink-0">
-                            <ElisaButton type="button" variant="outline" size="md" onClick={reinitialiser}
+                            <ElisaButton type="button" variant="ghost" size="md" onClick={reinitialiser}
                                 icon={<RefreshCw className="h-4 w-4" />}
                                 disabled={!isDirty || updatePreferences.isPending}
                             >
                                 <span className="hidden sm:inline">{t('preferences.reinitialiser')}</span>
                             </ElisaButton>
                             <ElisaButton type="submit" variant="primary" size="md"
+                                className={`shadow-sm transition-all duration-200 hover:shadow-md ${!isDirty || updatePreferences.isPending ? 'opacity-50 shadow-none' : ''}`}
                                 icon={updatePreferences.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                                 disabled={!isDirty || updatePreferences.isPending}
                             >

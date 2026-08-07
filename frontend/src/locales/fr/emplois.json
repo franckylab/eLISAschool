@@ -471,6 +471,7 @@
       "CONFLIT_CLASSE": "Conflit classe",
       "CONFLIT_ENSEIGNANT": "Conflit enseignant",
       "CONFLIT_SALLE": "Conflit salle",
+      "CONFLIT_JOUR_FERIE": "Conflit jour férié",
       "DEPASSEMENT_VOLUME_HORAIRE": "Dépassement volume",
       "CRENEAU_IMPOSABLE": "Créneau imposable"
     },
