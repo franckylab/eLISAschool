@@ -11,4 +11,5 @@ export * from './constants';
 export * from './types';
 export * from './validators';
 export * from './config';
+export * from './casl';
 export * from './helpers/system-protection.helper';

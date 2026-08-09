@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan d'Implémentation SaaS — eLISAschool</title>
+<style>
+:root {
+  --bg: #0f172a; --surface: #1e293b; --surface2: #334155;
+  --text: #f1f5f9; --text2: #94a3b8; --accent: #3b82f6;
+  --success: #22c55e; --warning: #f59e0b; --danger: #ef4444;
+  --info: #06b6d4; --purple: #8b5cf6;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+h1 { font-size: 2.5rem; background: linear-gradient(135deg, var(--accent), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
+h2 { font-size: 1.8rem; color: var(--accent); margin: 3rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--surface2); }
+h3 { font-size: 1.3rem; color: var(--info); margin: 2rem 0 0.75rem; }
+h4 { font-size: 1.1rem; color: var(--purple); margin: 1.5rem 0 0.5rem; }
+.subtitle { color: var(--text2); font-size: 1.1rem; margin-bottom: 2rem; }
+.meta { display: flex; gap: 2rem; color: var(--text2); font-size: 0.9rem; margin-bottom: 2rem; flex-wrap: wrap; }
+.meta span { display: flex; align-items: center; gap: 0.4rem; }
+.card { background: var(--surface); border-radius: 12px; padding: 1.5rem; margin: 1rem 0; border: 1px solid var(--surface2); }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+.stat-card { background: var(--surface); border-radius: 12px; padding: 1.25rem; text-align: center; border: 1px solid var(--surface2); }
+.stat-card .number { font-size: 2.5rem; font-weight: 700; }
+.stat-card .label { color: var(--text2); font-size: 0.85rem; margin-top: 0.25rem; }
+.phase { background: var(--surface); border-radius: 16px; padding: 2rem; margin: 2rem 0; border-left: 4px solid var(--accent); position: relative; }
+.phase.p0 { border-left-color: var(--danger); }
+.phase.p1 { border-left-color: var(--warning); }
+.phase.p2 { border-left-color: var(--purple); }
+.phase.p3 { border-left-color: var(--info); }
+.phase.p4 { border-left-color: var(--success); }
+.phase.p5 { border-left-color: var(--accent); }
+.phase.p6 { border-left-color: var(--purple); }
+.phase.p7 { border-left-color: var(--info); }
+.phase-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
+.phase-title { font-size: 1.4rem; font-weight: 700; }
+.phase-badge { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+.badge-critical { background: rgba(239,68,68,0.2); color: var(--danger); }
+.badge-high { background: rgba(245,158,11,0.2); color: var(--warning); }
+.badge-medium { background: rgba(59,130,246,0.2); color: var(--accent); }
+.badge-low { background: rgba(34,197,94,0.2); color: var(--success); }
+.task-list { list-style: none; }
+.task-list li { padding: 0.6rem 0; border-bottom: 1px solid var(--surface2); display: flex; align-items: flex-start; gap: 0.75rem; }
+.task-list li:last-child { border-bottom: none; }
+.task-list li::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: 0.5rem; flex-shrink: 0; }
+.task-list .sub-task { padding-left: 1.5rem; font-size: 0.9rem; color: var(--text2); }
+.task-list .sub-task::before { background: var(--surface2); width: 6px; height: 6px; }
+.tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
+.tag-be { background: rgba(59,130,246,0.15); color: var(--accent); }
+.tag-fe { background: rgba(139,92,246,0.15); color: var(--purple); }
+.tag-db { background: rgba(6,182,212,0.15); color: var(--info); }
+.tag-infra { background: rgba(245,158,11,0.15); color: var(--warning); }
+.tag-sec { background: rgba(239,68,68,0.15); color: var(--danger); }
+.timeline { display: flex; gap: 0; margin: 2rem 0; overflow-x: auto; }
+.timeline-item { flex: 1; min-width: 140px; text-align: center; position: relative; padding: 1rem 0.5rem; }
+.timeline-item::after { content: ''; position: absolute; top: 2rem; right: 0; width: 50%; height: 3px; background: var(--surface2); }
+.timeline-item::before { content: ''; position: absolute; top: 2rem; left: 0; width: 50%; height: 3px; background: var(--surface2); }
+.timeline-item:first-child::before { display: none; }
+.timeline-item:last-child::after { display: none; }
+.timeline-dot { width: 16px; height: 16px; border-radius: 50%; margin: 1.2rem auto 0.5rem; position: relative; z-index: 1; }
+.timeline-label { font-size: 0.8rem; color: var(--text2); }
+.timeline-duration { font-weight: 700; font-size: 0.9rem; margin-top: 0.25rem; }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--surface2); }
+th { background: var(--surface2); font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text2); }
+td { font-size: 0.9rem; }
+.alert { padding: 1rem 1.25rem; border-radius: 8px; margin: 1rem 0; }
+.alert-danger { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); }
+.alert-warning { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); }
+.alert-info { background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); }
+.alert-success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); }
+.code { background: var(--surface2); padding: 0.2rem 0.5rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+pre { background: var(--surface2); padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 0.75rem 0; }
+pre code { background: none; padding: 0; }
+.dep-arrow { color: var(--accent); font-weight: bold; }
+.toc { background: var(--surface); border-radius: 12px; padding: 1.5rem 2rem; margin: 2rem 0; }
+.toc a { color: var(--accent); text-decoration: none; display: block; padding: 0.3rem 0; }
+.toc a:hover { text-decoration: underline; }
+.toc .toc-phase { padding-left: 1rem; font-size: 0.9rem; color: var(--text2); }
+.risk-meter { display: flex; gap: 2px; margin: 0.5rem 0; }
+.risk-bar { height: 8px; flex: 1; border-radius: 4px; background: var(--surface2); }
+.risk-bar.active-danger { background: var(--danger); }
+.risk-bar.active-warning { background: var(--warning); }
+.risk-bar.active-success { background: var(--success); }
+.file-ref { color: var(--text2); font-size: 0.85rem; font-style: italic; }
+.summary-box { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.5rem 0; }
+@media (max-width: 768px) {
+  .summary-box { grid-template-columns: repeat(2, 1fr); }
+  .timeline { flex-direction: column; }
+  .timeline-item::after, .timeline-item::before { display: none; }
+  h1 { font-size: 1.8rem; }
+  .phase-header { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- EN-TÊTE -->
+<h1>Plan d'Implémentation SaaS — eLISAschool</h1>
+<p class="subtitle">Transformation complète en plateforme SaaS professionnelle niveau entreprise</p>
+<div class="meta">
+  <span>&#128197; Date : 2026-08-08</span>
+  <span>&#128100; Auteur : eLISAschool AI Admin</span>
+  <span>&#128203; Statut : Plan de référence</span>
+  <span>&#128736; Version : 1.0.0</span>
+</div>
+
+<!-- RÉSUMÉ EXÉCUTIF -->
+<div class="card">
+  <h3>&#127919; Résumé Exécutif</h3>
+  <p>Ce plan détaille la transformation d'eLISAschool en plateforme SaaS professionnelle, couvrant <strong>8 phases</strong> sur <strong>~14-18 semaines</strong>. L'approche combine les recommandations des 4 rapports de référence avec l'analyse approfondie du codebase existant.</p>
+  <div class="summary-box">
+    <div class="stat-card"><div class="number" style="color:var(--danger)">22</div><div class="label">Vulnérabilités à corriger</div></div>
+    <div class="stat-card"><div class="number" style="color:var(--warning)">8</div><div class="label">Phases d'implémentation</div></div>
+    <div class="stat-card"><div class="number" style="color:var(--accent)">~160</div><div class="label">Tâches identifiées</div></div>
+    <div class="stat-card"><div class="number" style="color:var(--success)">14-18</div><div class="label">Semaines estimées</div></div>
+  </div>
+</div>
+
+<!-- TABLE DES MATIÈRES -->
+<div class="toc">
+  <h3>&#128218; Table des matières</h3>
+  <a href="#architecture">1. Architecture cible</a>
+  <a href="#etat-actuel">2. État actuel — Diagnostic</a>
+  <a href="#timeline">3. Timeline global</a>
+  <a href="#p0">4. Phase P0 — Sécurité critique (1 semaine)</a>
+  <a href="#p1">5. Phase P1 — Séparation plateforme (2 semaines)</a>
+  <a href="#p2">6. Phase P2 — CASL.js + RLS (3 semaines)</a>
+  <a href="#p3">7. Phase P3 — Abonnements & Facturation (3 semaines)</a>
+  <a href="#p4">8. Phase P4 — Paiements multi-providers (2 semaines)</a>
+  <a href="#p5">9. Phase P5 — Panel Administration (2-3 semaines)</a>
+  <a href="#p6">10. Phase P6 — Module Gating & Feature Flags (1-2 semaines)</a>
+  <a href="#p7">11. Phase P7 — Monitoring & Performance (1-2 semaines)</a>
+  <a href="#risques">12. Matrice des risques</a>
+  <a href="#recommandations">13. Recommandations transversales</a>
+</div>
+
+<!-- 1. ARCHITECTURE CIBLE -->
+<h2 id="architecture">1. Architecture cible</h2>
+
+<div class="card">
+  <h4>&#127959; Séparation Control Plane / Data Plane</h4>
+  <table>
+    <tr><th>Plan</th><th>Routes</th><th>Utilisateurs</th><th>Responsabilité</th></tr>
+    <tr><td><strong>Control Plane</strong></td><td><code class="code">/api/platform/*</code></td><td>SUPER_ADMIN uniquement</td><td>Abonnements, facturation, monitoring global, gestion tenants</td></tr>
+    <tr><td><strong>Data Plane</strong></td><td><code class="code">/api/*</code> (existant)</td><td>Tous rôles tenant</td><td>Métier scolaire (notes, bulletins, EDT, etc.)</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h4>&#128737; Modèle de sécurité — 4 couches</h4>
+  <div class="card-grid">
+    <div class="stat-card"><div class="number" style="color:var(--danger);font-size:1.5rem">L1</div><div class="label">RLS PostgreSQL<br>Isolation données garantie au niveau DB</div></div>
+    <div class="stat-card"><div class="number" style="color:var(--warning);font-size:1.5rem">L2</div><div class="label">CASL.js<br>Autorisation déclarative par ability</div></div>
+    <div class="stat-card"><div class="number" style="color:var(--accent);font-size:1.5rem">L3</div><div class="label">Middleware Express<br>Guards route + tenant isolation</div></div>
+    <div class="stat-card"><div class="number" style="color:var(--success);font-size:1.5rem">L4</div><div class="label">Feature Flags<br>Gating modules par plan/tenant</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <h4>&#128202; Stratégie de partitionnement</h4>
+  <table>
+    <tr><th>Table</th><th>Stratégie</th><th>Partitions</th><th>Justification</th></tr>
+    <tr><td>eleves</td><td>HASH(id)</td><td>16</td><td>Volume élevé, lectures fréquentes</td></tr>
+    <tr><td>notes</td><td>HASH(id)</td><td>32</td><td>Table la plus volumineuse</td></tr>
+    <tr><td>heures_cours</td><td>HASH(id)</td><td>16</td><td>Matérialisation croissante</td></tr>
+    <tr><td>audit_logs</td><td>RANGE(createdAt)</td><td>12 (mois)</td><td>Données temporelles, purge cyclique</td></tr>
+    <tr><td>bulletins_paie</td><td>HASH(id)</td><td>8</td><td>Volume modéré</td></tr>
+  </table>
+</div>
+
+<!-- 2. ÉTAT ACTUEL -->
+<h2 id="etat-actuel">2. État actuel — Diagnostic</h2>
+
+<div class="alert alert-danger">
+  <strong>&#128680; 22 vulnérabilités identifiées</strong> — dont 3 CRITIQUE, 6 HAUTE, 8 MOYENNE, 5 BASSE
+</div>
+
+<div class="card">
+  <h4>Vulnérabilités CRITIQUES (P0)</h4>
+  <table>
+    <tr><th>ID</th><th>Description</th><th>Fichier</th><th>Impact</th></tr>
+    <tr><td>SEC-1</td><td>SUPER_ADMIN bypass TOUS les guards de permission</td><td><code class="code">permission-guards.ts</code> L37-39, 83-85, 141-143, 174-176</td><td>Accès cross-tenant possible</td></tr>
+    <tr><td>SEC-2</td><td>ADMIN a accès aux configs plateforme</td><td><code class="code">configuration.controller.ts</code></td><td>Modification paramètres globaux</td></tr>
+    <tr><td>SEC-3</td><td>DIRECTEUR a permissions cross-tenant</td><td><code class="code">roles.enum.ts</code> DEFAULT_ROLE_PERMISSIONS</td><td>Lecture données autres établissements</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h4>État des composants SaaS existants</h4>
+  <table>
+    <tr><th>Composant</th><th>État</th><th>Commentaire</th></tr>
+    <tr><td>Module Registry (38 modules)</td><td style="color:var(--warning)">&#9888; Partiel</td><td>7 modules marqués <code class="code">premium:true</code> mais flag JAMAIS enforce</td></tr>
+    <tr><td>Champs abonnement (EtablissementConfig)</td><td style="color:var(--danger)">&#10060; Mort</td><td>planAbonnement, maxEleves, dateExpiration — déclarés mais jamais enforce</td></tr>
+    <tr><td>Système notifications</td><td style="color:var(--success)">&#9989; Production</td><td>4 canaux, multi-provider, quotas, fallback</td></tr>
+    <tr><td>Système backup</td><td style="color:var(--success)">&#9989; Production</td><td>AES-256-GCM, gzip, multi-storage</td></tr>
+    <tr><td>Groupes établissements</td><td style="color:var(--success)">&#9989; Mature</td><td>GroupeEtablissement + liens + admin, max 50/group</td></tr>
+    <tr><td>Configuration multi-tenant</td><td style="color:var(--success)">&#9989; Solide</td><td>Cascade 3 niveaux, ParametreSysteme</td></tr>
+    <tr><td>Facturation SaaS</td><td style="color:var(--danger)">&#10060; Inexistant</td><td>Aucun système d'abonnement/billing</td></tr>
+    <tr><td>Paiements en ligne</td><td style="color:var(--danger)">&#10060; Inexistant</td><td>Module finances = frais scolarité uniquement</td></tr>
+    <tr><td>Dashboard admin plateforme</td><td style="color:var(--danger)">&#10060; Inexistant</td><td>Pas de séparation _platform/_auth</td></tr>
+    <tr><td>CASL.js</td><td style="color:var(--danger)">&#10060; Inexistant</td><td>RBAC custom via enums, pas de declarative auth</td></tr>
+    <tr><td>RLS PostgreSQL</td><td style="color:var(--danger)">&#10060; Inexistant</td><td>Isolation uniquement par middleware Express</td></tr>
+  </table>
+</div>
+
+<!-- 3. TIMELINE -->
+<h2 id="timeline">3. Timeline global</h2>
+
+<div class="timeline">
+  <div class="timeline-item"><div class="timeline-dot" style="background:var(--danger)"></div><div class="timeline-label">P0 Sécurité</div><div class="timeline-duration">1 sem</div></div>
+  <div class="timeline-item"><div class="timeline-dot" style="background:var(--warning)"></div><div class="timeline-label">P1 Séparation</div><div class="timeline-duration">2 sem</div></div>
+  <div class="timeline-item"><div class="timeline-dot" style="background:var(--purple)"></div><div class="timeline-label">P2 CASL+RLS</div><div class="timeline-duration">3 sem</div></div>
+  <div class="timeline-item"><div class="timeline-dot" style="background:var(--info)"></div><div class="timeline-label">P3 Billing</div><div class="timeline-duration">3 sem</div></div>
+  <div class="timeline-item"><div class="timeline-dot" style="background:var(--success)"></div><div class="timeline-label">P4 Paiements</div><div class="timeline-duration">2 sem</div></div>
+  <div class="timeline-item"><div class="timeline-dot" style="background:var(--accent)"></div><div class="timeline-label">P5 Admin</div><div class="timeline-duration">2-3 sem</div></div>
+  <div class="timeline-item"><div class="timeline-dot" style="background:var(--purple)"></div><div class="timeline-label">P6 Gating</div><div class="timeline-duration">1-2 sem</div></div>
+  <div class="timeline-item"><div class="timeline-dot" style="background:var(--info)"></div><div class="timeline-label">P7 Monitoring</div><div class="timeline-duration">1-2 sem</div></div>
+</div>
+
+<div class="card">
+  <h4>Dépendances entre phases</h4>
+  <pre><code>P0 (Sécurité) ──────────────────────────────────────┐
+  │                                                    │
+  ▼                                                    │
+P1 (Séparation plateforme)                             │
+  │                                                    │
+  ├──► P2 (CASL.js + RLS)                             │
+  │      │                                             │
+  │      ├──► P6 (Module Gating)                       │
+  │      │                                             │
+  │      └──► P3 (Abonnements) ──► P4 (Paiements)     │
+  │                                                    │
+  └──► P5 (Admin Panel) ◄─────────────────────────────┘
+         │
+         └──► P7 (Monitoring)
+</code></pre>
+</div>
+
+<!-- PHASE P0 -->
+<h2 id="p0">4. Phase P0 — Sécurité critique</h2>
+<div class="phase p0">
+  <div class="phase-header">
+    <div class="phase-title">&#128680; P0 — Corrections sécurité critiques</div>
+    <span class="phase-badge badge-critical">CRITIQUE — 1 semaine</span>
+  </div>
+  <p class="file-ref">Prérequis : aucun | Bloque : toutes les phases suivantes</p>
+
+  <h4>Tâches backend <span class="tag tag-sec">sécurité</span><span class="tag tag-be">backend</span></p>
+  <ul class="task-list">
+    <li><strong>P0.1 — Supprimer bypass SUPER_ADMIN dans permission-guards</strong>
+      <br><span class="file-ref">permission-guards.ts L37-39, 83-85, 141-143, 174-176</span>
+      <ul class="task-list">
+        <li class="sub-task">Remplacer <code class="code">if (user.role === 'SUPER_ADMIN') return true</code> par résolution CASL (P2)</li>
+        <li class="sub-task">En attendant P2 : ajouter logging obligatoire + restriction au scope plateforme</li>
+        <li class="sub-task">SUPER_ADMIN doit avoir TOUTES les permissions mais avec traçabilité</li>
+      </ul>
+    </li>
+    <li><strong>P0.2 — Isoler ADMIN des configs plateforme</strong>
+      <br><span class="file-ref">configuration.controller.ts, app.ts</span>
+      <ul class="task-list">
+        <li class="sub-task">Créer middleware <code class="code">requirePlatformAccess()</code> — SUPER_ADMIN uniquement</li>
+        <li class="sub-task">Appliquer aux routes : <code class="code">/api/configuration/systeme/*</code>, <code class="code">/api/modules/toggle</code></li>
+        <li class="sub-task">ADMIN établissement ne peut modifier que le scope <code class="code">etablissementId</code></li>
+      </ul>
+    </li>
+    <li><strong>P0.3 — Corriger permissions cross-tenant DIRECTEUR</strong>
+      <br><span class="file-ref">roles.enum.ts DEFAULT_ROLE_PERMISSIONS</span>
+      <ul class="task-list">
+        <li class="sub-task">Audit complet des permissions attribuées à DIRECTEUR/CHEF_ETABLISSEMENT</li>
+        <li class="sub-task">Supprimer toute permission sans filtre <code class="code">etablissementId</code></li>
+        <li class="sub-task">Ajouter test automatisé : vérifier que chaque permission a un guard multi-tenant</li>
+      </ul>
+    </li>
+    <li><strong>P0.4 — Forcer etablissementId sur TOUTES les mutations</strong>
+      <ul class="task-list">
+        <li class="sub-task">Audit de tous les controllers : vérifier que <code class="code">etablissementId</code> vient du JWT, jamais du body</li>
+        <li class="sub-task">Créer helper <code class="code">forceTenantId(req)</code> qui override toute valeur body/query</li>
+        <li class="sub-task">Logger toute tentative de cross-tenant avec alerte</li>
+      </ul>
+    </li>
+    <li><strong>P0.5 — Ajouter tests de sécurité automatisés</strong>
+      <ul class="task-list">
+        <li class="sub-task">Test : utilisateur tenant A ne peut PAS lire données tenant B</li>
+        <li class="sub-task">Test : ADMIN ne peut PAS accéder aux routes plateforme</li>
+        <li class="sub-task">Test : SUPER_ADMIN ne peut PAS bypasser les guards sans audit trail</li>
+        <li class="sub-task">Intégrer dans CI/CD (blocage merge si échec)</li>
+      </ul>
+    </li>
+  </ul>
+
+  <div class="alert alert-danger">
+    <strong>&#9888; Risque</strong> : Ces corrections peuvent casser des fonctionnalités existantes qui reposent sur le bypass. Tester exhaustivement avant déploiement.
+  </div>
+</div>
+
+<!-- PHASE P1 -->
+<h2 id="p1">5. Phase P1 — Séparation plateforme</h2>
+<div class="phase p1">
+  <div class="phase-header">
+    <div class="phase-title">&#128736; P1 — Séparation Control Plane / Data Plane</div>
+    <span class="phase-badge badge-high">HAUTE — 2 semaines</span>
+  </div>
+  <p class="file-ref">Prérequis : P0 | Bloque : P2, P3, P5</p>
+
+  <h4>Tâches backend <span class="tag tag-be">backend</span><span class="tag tag-infra">infrastructure</span></h4>
+  <ul class="task-list">
+    <li><strong>P1.1 — Créer module <code class="code">plateforme/</code></strong>
+      <ul class="task-list">
+        <li class="sub-task">Entités : <code class="code">Tenant</code> (wrapper etablissement), <code class="code">Abonnement</code>, <code class="code">Facture</code>, <code class="code">Transaction</code></li>
+        <li class="sub-task">Services : <code class="code">TenantService</code>, <code class="code">AbonnementService</code>, <code class="code">FacturationService</code></li>
+        <li class="sub-task">Controllers : <code class="code">plateforme.controller.ts</code> (SUPER_ADMIN uniquement)</li>
+      </ul>
+    </li>
+    <li><strong>P1.2 — Routes <code class="code">/api/platform/*</code></strong>
+      <ul class="task-list">
+        <li class="sub-task"><code class="code">GET /api/platform/tenants</code> — liste tous les tenants avec stats</li>
+        <li class="sub-task"><code class="code">GET /api/platform/tenants/:id</code> — détail tenant + usage</li>
+        <li class="sub-task"><code class="code">PATCH /api/platform/tenants/:id/plan</code> — changer plan</li>
+        <li class="sub-task"><code class="code">POST /api/platform/tenants/:id/suspend</code> — suspendre</li>
+        <li class="sub-task"><code class="code">GET /api/platform/metrics</code> — métriques globales</li>
+        <li class="sub-task"><code class="code">GET /api/platform/billing/invoices</code> — factures globales</li>
+      </ul>
+    </li>
+    <li><strong>P1.3 — Frontend : layout <code class="code">_platform/</code></strong>
+      <ul class="task-list">
+        <li class="sub-task">Nouveau route layout TanStack : <code class="code">_platform.tsx</code> (sidebar dédiée SUPER_ADMIN)</li>
+        <li class="sub-task">Routes : <code class="code">/platform/tenants</code>, <code class="code">/platform/billing</code>, <code class="code">/platform/monitoring</code>, <code class="code">/platform/settings</code></li>
+        <li class="sub-task">Guard : <code class="code">requireRole('SUPER_ADMIN')</code> sur toutes les routes _platform</li>
+        <li class="sub-task">Code splitting Vite : chunk séparé <code class="code">admin-platform</code></li>
+      </ul>
+    </li>
+    <li><strong>P1.4 — Middleware <code class="code">requirePlatformAccess()</code></strong>
+      <ul class="task-list">
+        <li class="sub-task">Vérifie role SUPER_ADMIN dans JWT</li>
+        <li class="sub-task">Vérifie que la requête ne contient PAS de <code class="code">etablissementId</code> body (anti-confusion)</li>
+        <li class="sub-task">Logger toutes les actions plateforme dans <code class="code">audit_logs</code> avec <code class="code">scope='platform'</code></li>
+      </ul>
+    </li>
+    <li><strong>P1.5 — Séparer les permissions</strong>
+      <ul class="task-list">
+        <li class="sub-task">Ajouter prefix <code class="code">platform:</code> aux permissions plateforme dans <code class="code">roles.enum.ts</code></li>
+        <li class="sub-task"><code class="code">platform:tenants:manage</code>, <code class="code">platform:billing:manage</code>, <code class="code">platform:monitoring:view</code></li>
+        <li class="sub-task">Attribuées UNIQUEMENT à SUPER_ADMIN</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h4>Tâches frontend <span class="tag tag-fe">frontend</span></h4>
+  <ul class="task-list">
+    <li><strong>P1.6 — Sidebar plateforme dédiée</strong>
+      <ul class="task-list">
+        <li class="sub-task">Layout distinct du layout <code class="code">_auth</code> (même design system, navigation différente)</li>
+        <li class="sub-task">Sections : Tenants, Facturation, Monitoring, Configuration globale, Audit plateforme</li>
+      </ul>
+    </li>
+    <li><strong>P1.7 — Page liste tenants</strong>
+      <ul class="task-list">
+        <li class="sub-task">DataTable serveur avec recherche, filtres (plan, statut, établissement)</li>
+        <li class="sub-task">Colonnes : nom, plan, statut, nb élèves, nb users, date expiration, MRR</li>
+        <li class="sub-task">Actions : voir détail, changer plan, suspendre, envoyer message</li>
+      </ul>
+    </li>
+  </ul>
+</div>
+
+<!-- PHASE P2 -->
+<h2 id="p2">6. Phase P2 — CASL.js + RLS</h2>
+<div class="phase p2">
+  <div class="phase-header">
+    <div class="phase-title">&#128737; P2 — CASL.js + Row Level Security</div>
+    <span class="phase-badge badge-high">HAUTE — 3 semaines</span>
+  </div>
+  <p class="file-ref">Prérequis : P0, P1 | Bloque : P3, P6</p>
+
+  <h4>Semaine 1 — CASL.js <span class="tag tag-be">backend</span></h4>
+  <ul class="task-list">
+    <li><strong>P2.1 — Installer <code class="code">@casl/ability</code></strong>
+      <ul class="task-list">
+        <li class="sub-task"><code class="code">npm install @casl/ability</code> dans backend + shared</li>
+        <li class="sub-task">Créer <code class="code">shared/src/auth/ability.ts</code> — définition des types</li>
+      </ul>
+    </li>
+    <li><strong>P2.2 — Définir le factory <code class="code">defineAbilityFor(user, tenant)</code></strong>
+      <ul class="task-list">
+        <li class="sub-task">Mapper les 230 permissions existantes vers des règles CASL</li>
+        <li class="sub-task">Pattern : <code class="code">can('read', 'Eleve', { etablissementId: tenant.id })</code></li>
+        <li class="sub-task">SUPER_ADMIN : <code class="code">can('manage', 'all')</code> + <code class="code">cannot('delete', 'Etablissement')</code></li>
+        <li class="sub-task">ADMIN : <code class="code">can('manage', 'all', { etablissementId: tenant.id })</code></li>
+        <li class="sub-task">Plans : <code class="code">if (tenant.plan === 'basic') cannot('export', 'AuditLog')</code></li>
+      </ul>
+    </li>
+    <li><strong>P2.3 — Middleware CASL</strong>
+      <ul class="task-list">
+        <li class="sub-task"><code class="code">caslMiddleware</code> : construit l'ability et l'attache à <code class="code">req.ability</code></li>
+        <li class="sub-task">Helper <code class="code">authorize(action, subject)</code> pour les controllers</li>
+        <li class="sub-task">Remplacement progressif de <code class="code">requirePermission()</code> par <code class="code">authorize()</code></li>
+      </ul>
+    </li>
+    <li><strong>P2.4 — Migration progressive des guards</strong>
+      <ul class="task-list">
+        <li class="sub-task">Strangler Fig : double-write (ancien guard + CASL) pendant 1 semaine</li>
+        <li class="sub-task">Comparer les résultats (logs) — alerte si divergence</li>
+        <li class="sub-task">Supprimer ancien guard module par module</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h4>Semaine 2 — RLS PostgreSQL <span class="tag tag-db">database</span></h4>
+  <ul class="task-list">
+    <li><strong>P2.5 — Activer RLS sur les tables business</strong>
+      <ul class="task-list">
+        <li class="sub-task">40+ tables : <code class="code">ALTER TABLE xxx ENABLE ROW LEVEL SECURITY</code></li>
+        <li class="sub-task">Policy standard : <code class="code">USING ("etablissementId" = current_setting('app.current_tenant')::uuid)</code></li>
+        <li class="sub-task">Tables SANS RLS : etablissements, parametres_systeme, nomenclatures globales</li>
+      </ul>
+    </li>
+    <li><strong>P2.6 — Fonction <code class="code">set_tenant()</code></strong>
+      <ul class="task-list">
+        <li class="sub-task"><code class="code">CREATE FUNCTION set_tenant(tenant_id uuid)</code> — set_config transaction-scoped</li>
+        <li class="sub-task">Appelée par le middleware Express au début de chaque requête</li>
+      </ul>
+    </li>
+    <li><strong>P2.7 — AsyncLocalStorage pour propagation tenant</strong>
+      <ul class="task-list">
+        <li class="sub-task">Créer <code class="code">backend/src/common/async-storage/tenant-context.ts</code></li>
+        <li class="sub-task">Wrapper middleware : <code class="code">tenantContext.run({ id: etablissementId }, next)</code></li>
+        <li class="sub-task">Custom TypeORM subscriber : appelle <code class="code">set_tenant()</code> avant chaque query</li>
+      </ul>
+    </li>
+    <li><strong>P2.8 — Tests RLS</strong>
+      <ul class="task-list">
+        <li class="sub-task">Test : connexion avec tenant A → query retourne uniquement données A</li>
+        <li class="sub-task">Test : injection <code class="code">SET app.current_tenant = 'B'</code> dans body → ignorée</li>
+        <li class="sub-task">Test : SUPER_ADMIN sans set_tenant → accès global (policy dedicated)</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h4>Semaine 3 — Intégration + Partitioning <span class="tag tag-db">database</span><span class="tag tag-be">backend</span></h4>
+  <ul class="task-list">
+    <li><strong>P2.9 — Hash partitioning (tables volumineuses)</strong>
+      <ul class="task-list">
+        <li class="sub-task">Migration : convertir <code class="code">eleves</code>, <code class="code">notes</code>, <code class="code">heures_cours</code> en partitioned tables</li>
+        <li class="sub-task">Strangler Fig : double-write pendant transition</li>
+        <li class="sub-task">16 partitions HASH pour eleves/heures_cours, 32 pour notes</li>
+      </ul>
+    </li>
+    <li><strong>P2.10 — Range partitioning audit_logs</strong>
+      <ul class="task-list">
+        <li class="sub-task">12 partitions mensuelles (rolling window)</li>
+        <li class="sub-task">Cron job : créer partition mois+3, archiver purge mois-12</li>
+      </ul>
+    </li>
+    <li><strong>P2.11 — Monitoring RLS</strong>
+      <ul class="task-list">
+        <li class="sub-task">Vue <code class="code">v_rls_stats</code> : nombre de policies par table, tables sans RLS</li>
+        <li class="sub-task">Alerte si nouvelle table créée sans RLS</li>
+      </ul>
+    </li>
+  </ul>
+
+  <div class="alert alert-info">
+    <strong>&#128161; Pattern CASL.js cible :</strong>
+    <pre><code>export function defineAbilityFor(user: JwtPayload, tenant: TenantContext) {
+  const { can, cannot, build } = new AbilityBuilder(createMongoAbility);
+  
+  if (user.role === 'SUPER_ADMIN') {
+    can('manage', 'all');
+    cannot('delete', 'Etablissement'); // protection plateforme
+  }
+  
+  if (user.role === 'ADMIN') {
+    can('manage', 'all', { etablissementId: tenant.id });
+    cannot('manage', 'PlatformConfig');
+  }
+  
+  // Restrictions par plan
+  if (tenant.plan === 'basic') {
+    cannot('export', 'AuditLog');
+    cannot('create', 'Utilisateur', {}, 'maxUsers50');
+  }
+  if (tenant.plan === 'standard') {
+    cannot('access', 'Module', { premium: true });
+  }
+  
+  return build();
+}</code></pre>
+  </div>
+</div>
+
+<!-- PHASE P3 -->
+<h2 id="p3">7. Phase P3 — Abonnements & Facturation</h2>
+<div class="phase p3">
+  <div class="phase-header">
+    <div class="phase-title">&#128176; P3 — Moteur d'abonnements et facturation</div>
+    <span class="phase-badge badge-medium">MOYENNE — 3 semaines</span>
+  </div>
+  <p class="file-ref">Prérequis : P1, P2 | Bloque : P4</p>
+
+  <h4>Semaine 1 — Plans & Abonnements <span class="tag tag-be">backend</span><span class="tag tag-db">database</span></h4>
+  <ul class="task-list">
+    <li><strong>P3.1 — Entités abonnement</strong>
+      <ul class="task-list">
+        <li class="sub-task"><code class="code">PlanAbonnement</code> : nom, slug, prixBase (integer XAF), maxEleves, maxUtilisateurs, modulesInclus[], featureFlags{}, actif</li>
+        <li class="sub-task"><code class="code">Abonnement</code> : tenantId, planId, dateDebut, dateFin, statut (ACTIF/EXPIRE/SUSPENDU/ESSAI), autoRenew</li>
+        <li class="sub-task"><code class="code">TrancheEleves</code> : planId, borneMin, borneMax, prixSupplement (integer XAF)</li>
+        <li class="sub-task"><code class="code">GroupeAbonnement</code> : groupeId, planId, tarifNegocie, reduction%</li>
+      </ul>
+    </li>
+    <li><strong>P3.2 — Seed plans par défaut</strong>
+      <table>
+        <tr><th>Plan</th><th>Prix/mois</th><th>Élèves</th><th>Users</th><th>Modules</th></tr>
+        <tr><td>Gratuit</td><td>0 XAF</td><td>50</td><td>5</td><td>12 basiques</td></tr>
+        <tr><td>Essentiel</td><td>15 000 XAF</td><td>200</td><td>15</td><td>20 modules</td></tr>
+        <tr><td>Standard</td><td>25 000 XAF</td><td>500</td><td>50</td><td>30 modules</td></tr>
+        <tr><td>Premium</td><td>50 000 XAF</td><td>1500</td><td>illimité</td><td>38 modules (tous)</td></tr>
+        <tr><td>Entreprise</td><td>Sur devis</td><td>illimité</td><td>illimité</td><td>Tous + custom</td></tr>
+      </table>
+    </li>
+    <li><strong>P3.3 — Tranches configurables</strong>
+      <ul class="task-list">
+        <li class="sub-task">Exemple : Standard 25000 XAF (300 élèves inclus)</li>
+        <li class="sub-task">Tranche 301-800 : +15 000 XAF</li>
+        <li class="sub-task">Tranche 801-1200 : +20 000 XAF</li>
+        <li class="sub-task">Tranche 1201+ : +25 000 XAF</li>
+        <li class="sub-task">Service <code class="code">CalculerPrixAbonnement(plan, nbElevesActuel)</code></li>
+        <li class="sub-task">TVA 19.25% (Cameroun) configurable par pays</li>
+      </ul>
+    </li>
+    <li><strong>P3.4 — Service abonnements</strong>
+      <ul class="task-list">
+        <li class="sub-task"><code class="code">AbonnementService.creer(tenantId, planId)</code> — crée abonnement + active modules</li>
+        <li class="sub-task"><code class="code">AbonnementService.upgrade(tenantId, newPlanId)</code> — prorate</li>
+        <li class="sub-task"><code class="code">AbonnementService.renew(tenantId)</code> — renouvelle + génère facture</li>
+        <li class="sub-task"><code class="code">AbonnementService.suspendre(tenantId, raison)</code> — désactive modules</li>
+        <li class="sub-task"><code class="code">AbonnementService.calculerFacture(tenantId)</code> — base + tranches + TVA</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h4>Semaine 2 — Facturation OHADA <span class="tag tag-be">backend</span></h4>
+  <ul class="task-list">
+    <li><strong>P3.5 — Entités facturation</strong>
+      <ul class="task-list">
+        <li class="sub-task"><code class="code">Facture</code> : numero (séquentiel OHADA), tenantId, dateEmission, dateEcheance, lignes[], totalHT, totalTVA, totalTTC, statut (BROUILLON/EMISE/PAYEE/EN_RETARD/ANNULEE)</li>
+        <li class="sub-task"><code class="code">FactureLigne</code> : description, quantite, prixUnitaire, montantHT, tauxTVA</li>
+        <li class="sub-task"><code class="code">Avoir</code> : factureId, montant, raison, statut</li>
+        <li class="sub-task">Numérotation : <code class="code">FAC-{YYYY}-{SEQUENCE}</code> (séquence par établissement)</li>
+      </ul>
+    </li>
+    <li><strong>P3.6 — Service facturation</strong>
+      <ul class="task-list">
+        <li class="sub-task">Génération automatique à chaque renouvellement</li>
+        <li class="sub-task">Calcul tranches dynamique basé sur le nombre d'élèves actifs</li>
+        <li class="sub-task">Gestion avoirs et notes de crédit</li>
+        <li class="sub-task">Export PDF conforme OHADA (logo, RC, NI, compte bancaire)</li>
+        <li class="sub-task">Relance automatique : J+7, J+15, J+30</li>
+      </ul>
+    </li>
+    <li><strong>P3.7 — Quotas & Limites enforcement</strong>
+      <ul class="task-list">
+        <li class="sub-task">Middleware <code class="code">requireQuota(type)</code> : vérifie avant création</li>
+        <li class="sub-task"><code class="code">requireQuota('eleves')</code> : bloque si > maxEleves plan</li>
+        <li class="sub-task"><code class="code">requireQuota('storage')</code> : bloque si > stockageMaxMB</li>
+        <li class="sub-task">Notification automatique à 80% et 95% de quota</li>
+        <li class="sub-task">Grace period configurable (3-7 jours) après dépassement</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h4>Semaine 3 — Frontend billing <span class="tag tag-fe">frontend</span></h4>
+  <ul class="task-list">
+    <li><strong>P3.8 — Page facturation tenant</strong>
+      <ul class="task-list">
+        <li class="sub-task">DataTable factures avec filtres (statut, période, montant)</li>
+        <li class="sub-task">Détail facture : lignes, TVA, total, bouton télécharger PDF</li>
+        <li class="sub-task">Graphique évolution consommation (élèves, stockage, modules)</li>
+      </ul>
+    </li>
+    <li><strong>P3.9 — Page changement de plan</strong>
+      <ul class="task-list">
+        <li class="sub-task">Comparateur de plans (cards côte à côte)</li>
+        <li class="sub-task">Simulateur : slider nb élèves → prix calculé en temps réel</li>
+        <li class="sub-task">Prévisualisation prorate (crédit ancien plan vs nouveau)</li>
+        <li class="sub-task">Confirmation multi-étapes (StepperModal)</li>
+      </ul>
+    </li>
+    <li><strong>P3.10 — Dashboard usage tenant</strong>
+      <ul class="task-list">
+        <li class="sub-task">Jauges : élèves (actuel/max), users, stockage</li>
+        <li class="sub-task">Barre de progression vers prochaine tranche</li>
+        <li class="sub-task">Alertes visuelles : quota proche, abonnement expirant</li>
+      </ul>
+    </li>
+  </ul>
+</div>
+
+<!-- PHASE P4 -->
+<h2 id="p4">8. Phase P4 — Paiements multi-providers</h2>
+<div class="phase p4">
+  <div class="phase-header">
+    <div class="phase-title">&#128179; P4 — Intégrations paiements</div>
+    <span class="phase-badge badge-medium">MOYENNE — 2 semaines</span>
+  </div>
+  <p class="file-ref">Prérequis : P3 | Bloque : rien (indépendant pour P5)</p>
+
+  <h4>Semaine 1 — Strategy Pattern + Providers <span class="tag tag-be">backend</span></h4>
+  <ul class="task-list">
+    <li><strong>P4.1 — Interface <code class="code">IPaymentAdapter</code></strong>
+      <pre><code>interface IPaymentAdapter {
+  readonly nom: string;
+  readonly supportedCurrencies: string[];
+  initierPaiement(demande: DemandePaiement): Promise<ResultatInitiation>;
+  verifierStatut(reference: string): Promise<StatutPaiement>;
+  traiterWebhook(payload: any, headers: Record&lt;string, string&gt;): Promise<EvenementPaiement>;
+  rembourser(reference: string, montant: number): Promise<ResultatRemboursement>;
+}</code></pre>
+    </li>
+    <li><strong>P4.2 — Adapters implémentés</strong>
+      <table>
+        <tr><th>Provider</th><th>Type</th><th>Région</th><th>Spécificités</th></tr>
+        <tr><td>MTN MoMo</td><td>Mobile Money</td><td>Cameroun, CI, Sénégal...</td><td>Collection + Disbursement</td></tr>
+        <tr><td>Orange Money</td><td>Mobile Money</td><td>Cameroun, CI, Mali...</td><td>API REST v2</td></tr>
+        <tr><td>Wave</td><td>Mobile Money</td><td>Sénégal, CI, Cameroun</td><td>Webhook temps réel</td></tr>
+        <tr><td>Paystack</td><td>Gateway</td><td>Afrique (15 pays)</td><td>Carte + Mobile Money + Bank</td></tr>
+        <tr><td>Flutterwave</td><td>Gateway</td><td>Afrique (34 pays)</td><td>Multi-currency, installments</td></tr>
+        <tr><td>Bank Transfer</td><td>Virement</td><td>International</td><td>RIB, confirmation manuelle</td></tr>
+      </table>
+    </li>
+    <li><strong>P4.3 — Service paiement unifié</strong>
+      <ul class="task-list">
+        <li class="sub-task"><code class="code">PaiementService.initier(factureId, providerId)</code> — sélectionne adapter, crée transaction</li>
+        <li class="sub-task"><code class="code">PaiementService.webhook(provider, payload, headers)</code> — dispatch au bon adapter</li>
+        <li class="sub-task"><code class="code">PaiementService.reconcilier()</code> — cron quotidien vérifie cohérence</li>
+        <li class="sub-task">Fallback automatique : si provider échoue → suivant dans la priorité</li>
+      </ul>
+    </li>
+    <li><strong>P4.4 — Configuration dynamique providers</strong>
+      <ul class="task-list">
+        <li class="sub-task">Entité <code class="code">ProviderConfiguration</code> : credentials chiffrés (AES-256), actif, priorite, limites</li>
+        <li class="sub-task">Configuration via panel admin (pas de .env pour les credentials provider)</li>
+        <li class="sub-task">Test de connexion avant activation</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h4>Semaine 2 — Frontend paiements <span class="tag tag-fe">frontend</span></h4>
+  <ul class="task-list">
+    <li><strong>P4.5 — Page checkout</strong>
+      <ul class="task-list">
+        <li class="sub-task">Récapitulatif facture (lignes, total)</li>
+        <li class="sub-task">Sélection provider (cards avec logos, frais)</li>
+        <li class="sub-task">Flow MTN/OM : input numéro téléphone → USSD push → attente confirmation</li>
+        <li class="sub-task">Flow Paystack/Flutterwave : iframe embed → callback</li>
+        <li class="sub-task">Flow Bank : affichage RIB + upload preuve de virement</li>
+      </ul>
+    </li>
+    <li><strong>P4.6 — Admin configuration providers</strong>
+      <ul class="task-list">
+        <li class="sub-task">Page <code class="code">/platform/settings/paiements</code></li>
+        <li class="sub-task">Activation/désactivation par provider</li>
+        <li class="sub-task">Saisie credentials (champs masqués, test connexion)</li>
+        <li class="sub-task">Ordre de priorité (drag & drop)</li>
+        <li class="sub-task">Logs des transactions récentes</li>
+      </ul>
+    </li>
+    <li><strong>P4.7 — Webhooks & réconciliation</strong>
+      <ul class="task-list">
+        <li class="sub-task">Routes <code class="code">POST /api/platform/webhooks/:provider</code> (public, signature vérifiée)</li>
+        <li class="sub-task">Dashboard réconciliation : transactions en attente, échouées, orphelines</li>
+        <li class="sub-task">Retry automatique (3 tentatives exponentielles)</li>
+      </ul>
+    </li>
+  </ul>
+</div>
+
+<!-- PHASE P5 -->
+<h2 id="p5">9. Phase P5 — Panel Administration avancé</h2>
+<div class="phase p5">
+  <div class="phase-header">
+    <div class="phase-title">&#128202; P5 — Dashboard administration extrême</div>
+    <span class="phase-badge badge-medium">MOYENNE — 2-3 semaines</span>
+  </div>
+  <p class="file-ref">Prérequis : P1 | Bloque : P7</p>
+
+  <h4>Semaine 1 — Métriques & Monitoring <span class="tag tag-be">backend</span><span class="tag tag-fe">frontend</span></h4>
+  <ul class="task-list">
+    <li><strong>P5.1 — API métriques globales</strong>
+      <ul class="task-list">
+        <li class="sub-task"><code class="code">GET /api/platform/metrics/global</code> : MRR, ARR, churn rate, LTV, CAC</li>
+        <li class="sub-task"><code class="code">GET /api/platform/metrics/tenants</code> : top tenants, croissance, usage</li>
+        <li class="sub-task"><code class="code">GET /api/platform/metrics/infrastructure</code> : CPU, RAM, DB connections, cache hit ratio</li>
+        <li class="sub-task"><code class="code">GET /api/platform/metrics/api</code> : 4 Golden Signals (latency, traffic, errors, saturation)</li>
+      </ul>
+    </li>
+    <li><strong>P5.2 — Dashboard principal plateforme</strong>
+      <ul class="task-list">
+        <li class="sub-task">KPI Cards : MRR, tenants actifs, taux conversion, churn (trend arrows)</li>
+        <li class="sub-task">Graphique MRR évolution (12 mois) avec projection</li>
+        <li class="sub-task">Carte géographique des tenants (Cameroun, Afrique)</li>
+        <li class="sub-task">Timeline événements : inscriptions, upgrades, suspensions</li>
+        <li class="sub-task">Widget alertes : tenants en retard paiement, quotas dépassés</li>
+      </ul>
+    </li>
+    <li><strong>P5.3 — Monitoring infrastructure</strong>
+      <ul class="task-list">
+        <li class="sub-task">Dashboard temps réel : requêtes/s, p50/p95/p99 latency, error rate</li>
+        <li class="sub-task">Health checks : DB, Redis, providers paiement, SMS, email</li>
+        <li class="sub-task">Grafana-like graphs (Chart.js ou Recharts)</li>
+        <li class="sub-task">Alertes configurables : seuils + notifications (email, Slack, webhook)</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h4>Semaine 2 — Gestion tenants avancée <span class="tag tag-fe">frontend</span></h4>
+  <ul class="task-list">
+    <li><strong>P5.4 — Page détail tenant</strong>
+      <ul class="task-list">
+        <li class="sub-task">Tabs : Infos | Abonnement | Factures | Usage | Audit | Settings</li>
+        <li class="sub-task">Infos : coordonnées, logo, plan actuel, date inscription</li>
+        <li class="sub-task">Abonnement : plan, tranches, prochaine facturation, historique changements</li>
+        <li class="sub-task">Usage : graphiques nb élèves/users/storage dans le temps</li>
+        <li class="sub-task">Audit : tous les logs d'actions du tenant</li>
+        <li class="sub-task">Settings : override paramètres, feature flags custom</li>
+      </ul>
+    </li>
+    <li><strong>P5.5 — Actions admin sur tenants</strong>
+      <ul class="task-list">
+        <li class="sub-task">Changer plan (avec prorate automatique)</li>
+        <li class="sub-task">Suspendre / réactiver (avec motif obligatoire)</li>
+        <li class="sub-task">Accorder essai premium (durée configurable)</li>
+        <li class="sub-task">Envoyer message (in-app + email)</li>
+        <li class="sub-task">Impersonate (se connecter en tant que — avec audit trail)</li>
+        <li class="sub-task">Exporter données du tenant (GDPR)</li>
+      </ul>
+    </li>
+    <li><strong>P5.6 — Command Palette (cmdk)</strong>
+      <ul class="task-list">
+        <li class="sub-task">Raccourci <code class="code">Cmd+K</code> / <code class="code">Ctrl+K</code></li>
+        <li class="sub-task">Recherche : tenants, factures, actions rapides</li>
+        <li class="sub-task">Actions : suspendre tenant, changer plan, générer facture</li>
+        <li class="sub-task">Navigation : sauter vers n'importe quelle page</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h4>Semaine 3 — Rapports & Exports <span class="tag tag-be">backend</span><span class="tag tag-fe">frontend</span></h4>
+  <ul class="task-list">
+    <li><strong>P5.7 — Rapports automatisés</strong>
+      <ul class="task-list">
+        <li class="sub-task">Rapport hebdomadaire : nouveaux tenants, MRR, churn, incidents</li>
+        <li class="sub-task">Rapport mensuel : croissance, revenue forecast, top/bottom tenants</li>
+        <li class="sub-task">Export PDF/Excel avec graphiques</li>
+        <li class="sub-task">Envoi automatique par email (configurable)</li>
+      </ul>
+    </li>
+    <li><strong>P5.8 — Audit plateforme</strong>
+      <ul class="task-list">
+        <li class="sub-task">Page dédiée : toutes les actions SUPER_ADMIN</li>
+        <li class="sub-task">Filtres : action, tenant cible, période, sévérité</li>
+        <li class="sub-task">Export CSV/JSON</li>
+        <li class="sub-task">Alertes : actions sensibles (suspendre tenant, modifier prix)</li>
+      </ul>
+    </li>
+  </ul>
+</div>
+
+<!-- PHASE P6 -->
+<h2 id="p6">10. Phase P6 — Module Gating & Feature Flags</h2>
+<div class="phase p6">
+  <div class="phase-header">
+    <div class="phase-title">&#128274; P6 — Module Gating & Feature Flags</div>
+    <span class="phase-badge badge-medium">MOYENNE — 1-2 semaines</span>
+  </div>
+  <p class="file-ref">Prérequis : P2 (CASL) | Bloque : rien</p>
+
+  <ul class="task-list">
+    <li><strong>P6.1 — Feature Flags dynamiques</strong>
+      <ul class="task-list">
+        <li class="sub-task">Entité <code class="code">FeatureFlag</code> : clé, description, scope (global/plan/tenant), valeur (boolean/JSON), enabled</li>
+        <li class="sub-task">Service <code class="code">FeatureFlagService.isEnabled(flagKey, tenantId)</code> — cascade : tenant override → plan → global</li>
+        <li class="sub-task">Cache Redis (TTL 5 min) + invalidation on update</li>
+        <li class="sub-task">Middleware <code class="code">requireFeature(flagKey)</code> — 403 si désactivé</li>
+      </ul>
+    </li>
+    <li><strong>P6.2 — Enforce premium flag</strong>
+      <ul class="task-list">
+        <li class="sub-task">Étendre <code class="code">requireModuleActive()</code> : après vérification actif, vérifier premium</li>
+        <li class="sub-task">Si module premium → vérifier plan tenant via CASL ability</li>
+        <li class="sub-task">Si plan insuffisant → 403 avec message "Module disponible dans le plan Premium"</li>
+        <li class="sub-task">Frontend : modules premium grisés avec badge "Premium" + tooltip</li>
+      </ul>
+    </li>
+    <li><strong>P6.3 — Configuration par tenant/groupe</strong>
+      <ul class="task-list">
+        <li class="sub-task">Admin plateforme : activer/désactiver modules par tenant individuellement</li>
+        <li class="sub-task">Override groupe : tous les tenants d'un groupe héritent des modules du groupe</li>
+        <li class="sub-task">Admin tenant : voir modules disponibles, demander activation (workflow)</li>
+      </ul>
+    </li>
+    <li><strong>P6.4 — Frontend module gating</strong>
+      <ul class="task-list">
+        <li class="sub-task">Sidebar : modules non disponibles masqués ou grisés avec cadenas</li>
+        <li class="sub-task">Page modules : grille avec statut (actif/inactif/premium/verrouillé)</li>
+        <li class="sub-task">Modal upgrade : "Ce module nécessite le plan Standard. Voulez-vous upgrader ?"</li>
+      </ul>
+    </li>
+  </ul>
+</div>
+
+<!-- PHASE P7 -->
+<h2 id="p7">11. Phase P7 — Monitoring & Performance</h2>
+<div class="phase p7">
+  <div class="phase-header">
+    <div class="phase-title">&#9889; P7 — Monitoring, Performance & Polish</div>
+    <span class="phase-badge badge-low">BASSE — 1-2 semaines</span>
+  </div>
+  <p class="file-ref">Prérequis : P5 | Bloque : rien (continu)</p>
+
+  <ul class="task-list">
+    <li><strong>P7.1 — Performance backend</strong>
+      <ul class="task-list">
+        <li class="sub-task">PgBouncer : connection pooling (transaction mode, max_client_conn=2000)</li>
+        <li class="sub-task">Redis : cache queries lourdes (stats, dashboard, rapports)</li>
+        <li class="sub-task">Query optimization : EXPLAIN ANALYZE sur les 20 queries les plus lentes</li>
+        <li class="sub-task">Index review : vérifier couverture index pour toutes les FK</li>
+        <li class="sub-task">N+1 detection : audit TypeORM relations loading</li>
+      </ul>
+    </li>
+    <li><strong>P7.2 — Performance frontend</strong>
+      <ul class="task-list">
+        <li class="sub-task">Vite manualChunks : admin-vendor, admin-platform, admin-tenant séparés</li>
+        <li class="sub-task">Lazy loading : routes _platform chargées uniquement pour SUPER_ADMIN</li>
+        <li class="sub-task">Image optimization : WebP, lazy loading, CDN headers</li>
+        <li class="sub-task">Bundle analysis : target admin < 150KB, tenant < 300KB gzipped</li>
+        <li class="sub-task">Target : FCP < 1.2s, TTI < 2.0s, API p95 < 200ms</li>
+      </ul>
+    </li>
+    <li><strong>P7.3 — Observabilité</strong>
+      <ul class="task-list">
+        <li class="sub-task">Structured logging (JSON) avec correlation ID</li>
+        <li class="sub-task">Distributed tracing (OpenTelemetry ready)</li>
+        <li class="sub-task">Health check endpoint enrichi : <code class="code">GET /api/health</code> avec DB, Redis, providers</li>
+        <li class="sub-task">Metrics endpoint : <code class="code">GET /api/metrics</code> (Prometheus format)</li>
+      </ul>
+    </li>
+    <li><strong>P7.4 — Polish UX</strong>
+      <ul class="task-list">
+        <li class="sub-task">Onboarding wizard nouveau tenant (5 étapes)</li>
+        <li class="sub-task">Tooltips contextuels sur les pages admin</li>
+        <li class="sub-task">Empty states illustrés pour toutes les pages</li>
+        <li class="sub-task">Skeleton loading sur toutes les pages (SchoolLoading)</li>
+        <li class="sub-task">Dark mode complet sur toutes les nouvelles pages</li>
+        <li class="sub-task">Ultra-responsivité : test 320px → 2560px</li>
+      </ul>
+    </li>
+  </ul>
+</div>
+
+<!-- MATRICE DES RISQUES -->
+<h2 id="risques">12. Matrice des risques</h2>
+
+<table>
+  <tr><th>Risque</th><th>Impact</th><th>Probabilité</th><th>Mitigation</th></tr>
+  <tr>
+    <td>Casser des fonctionnalités existantes en supprimant les bypasses</td>
+    <td><div class="risk-meter"><div class="risk-bar active-danger"></div><div class="risk-bar active-danger"></div><div class="risk-bar active-danger"></div><div class="risk-bar active-danger"></div><div class="risk-bar active-danger"></div></div></td>
+    <td><div class="risk-meter"><div class="risk-bar active-warning"></div><div class="risk-bar active-warning"></div><div class="risk-bar active-warning"></div><div class="risk-bar"></div><div class="risk-bar"></div></div></td>
+    <td>Tests E2E avant merge, feature flags pour rollback instantané</td>
+  </tr>
+  <tr>
+    <td>RLS bloque des requêtes légitimes (faux positifs)</td>
+    <td><div class="risk-meter"><div class="risk-bar active-danger"></div><div class="risk-bar active-danger"></div><div class="risk-bar active-danger"></div><div class="risk-bar active-danger"></div><div class="risk-bar"></div></div></td>
+    <td><div class="risk-meter"><div class="risk-bar active-warning"></div><div class="risk-bar active-warning"></div><div class="risk-bar"></div><div class="risk-bar"></div><div class="risk-bar"></div></div></td>
+    <td>Mode log-only pendant 2 semaines avant enforcement, monitoring dédié</td>
+  </tr>
+  <tr>
+    <td>Migration partitioning cause downtime</td>
+    <td><div class="risk-meter"><div class="risk-bar active-danger"></div><div class="risk-bar active-danger"></div><div class="risk-bar active-danger"></div><div class="risk-bar"></div><div class="risk-bar"></div></div></td>
+    <td><div class="risk-meter"><div class="risk-bar active-warning"></div><div class="risk-bar active-warning"></div><div class="risk-bar"></div><div class="risk-bar"></div><div class="risk-bar"></div></div></td>
+    <td>Strangler Fig (double-write), migration hors heures de pointe</td>
+  </tr>
+  <tr>
+    <td>Provider paiement indisponible</td>
+    <td><div class="risk-meter"><div class="risk-bar active-warning"></div><div class="risk-bar active-warning"></div><div class="risk-bar active-warning"></div><div class="risk-bar"></div><div class="risk-bar"></div></div></td>
+    <td><div class="risk-meter"><div class="risk-bar active-warning"></div><div class="risk-bar active-warning"></div><div class="risk-bar active-warning"></div><div class="risk-bar"></div><div class="risk-bar"></div></div></td>
+    <td>Multi-provider avec fallback automatique, retry exponentiel</td>
+  </tr>
+  <tr>
+    <td>Fuite de données cross-tenant malgré RLS</td>
+    <td><div class="risk-meter"><div class="risk-bar active-danger"></div><div class="risk-bar active-danger"></div><div class="risk-bar active-danger"></div><div class="risk-bar active-danger"></div><div class="risk-bar active-danger"></div></div></td>
+    <td><div class="risk-meter"><div class="risk-bar"></div><div class="risk-bar"></div><div class="risk-bar"></div><div class="risk-bar"></div><div class="risk-bar"></div></div></td>
+    <td>Tests automatisés + audit logs + alertes temps réel</td>
+  </tr>
+</table>
+
+<!-- RECOMMANDATIONS -->
+<h2 id="recommandations">13. Recommandations transversales</h2>
+
+<div class="card">
+  <h4>&#128161; Recommandations architecture</h4>
+  <ul class="task-list">
+    <li><strong>Monnaie</strong> : TOUS les montants stockés en <strong>integer XAF</strong> (pas de float). Conversion centimes si nécessaire. Affichage avec <code class="code">Intl.NumberFormat</code>.</li>
+    <li><strong>Horodatage</strong> : <code class="code">Africa/Douala</code> (UTC+1) partout. Cron jobs avec timezone explicite.</li>
+    <li><strong>Soft delete</strong> : obligatoire sur toutes les entités transactionnelles (abonnements, factures, transactions). Hard delete interdit sauf nomenclatures.</li>
+    <li><strong>Audit</strong> : TOUTE action plateforme loguée avec <code class="code">scope='platform'</code>, <code class="code">cible</code>, <code class="code">cibleId</code>, <code class="code">metadata</code>.</li>
+    <li><strong>Chiffrement</strong> : credentials providers chiffrés AES-256-GCM. Clé dans <code class="code">.env</code> (jamais en base).</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h4>&#127912; Recommandations UX/UI</h4>
+  <ul class="task-list">
+    <li><strong>Design system</strong> : réutiliser les composants existants (CustomModal, DataTable, StatCard, ElisaButton, StepperModal). Pas de nouveaux patterns.</li>
+    <li><strong>i18n</strong> : toutes les nouvelles pages en FR + EN. Clés dans <code class="code">platform.json</code> (nouveau namespace).</li>
+    <li><strong>Responsive</strong> : clamp() partout, 11 breakpoints, transformation table→card < 480px.</li>
+    <li><strong>Dark mode</strong> : CSS vars uniquement, testé sur chaque nouveau composant.</li>
+    <li><strong>Performance</strong> : skeleton loading, lazy loading routes, code splitting Vite.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h4>&#128272; Recommandations sécurité</h4>
+  <ul class="task-list">
+    <li><strong>Defense in depth</strong> : 4 couches (RLS + CASL + Middleware + Feature Flags). Aucune couche seule ne suffit.</li>
+    <li><strong>Zero trust</strong> : jamais faire confiance au body/query pour <code class="code">etablissementId</code>. Toujours extraire du JWT.</li>
+    <li><strong>Audit trail</strong> : toute action sensible loguée avec metadata complète. Rétention 1 an minimum.</li>
+    <li><strong>Rate limiting</strong> : endpoints paiement (10/min), auth (5/min), export (3/min).</li>
+    <li><strong>Secrets</strong> : rotation automatique tous les 90 jours. Vault-ready (interface abstraite).</li>
+  </ul>
+</div>
+
+<div class="alert alert-success">
+  <strong>&#9989; Prochaines étapes</strong>
+  <ol style="margin-top:0.5rem;padding-left:1.5rem">
+    <li>Valider ce plan (phases, priorités, timeline)</li>
+    <li>Répondre aux questions interactives ci-dessous</li>
+    <li>Démarrer P0 (sécurité critique) — estimé 1 semaine</li>
+    <li>Mettre à jour les règles et skills eLISAschool</li>
+  </ol>
+</div>
+
+</div>
+</body>
+</html>

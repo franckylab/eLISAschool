@@ -8,7 +8,7 @@
  * Tâches planifiées pour le module d'authentification
  */
 
-import cron from 'node-cron';
+import { scheduleWithLock } from '@common/services/cron-lock.service';
 import { blocageAuthService } from './services/blocage-auth.service';
 import { logger } from '@common/utils/logger.util';
 
@@ -19,7 +19,7 @@ export function initAuthCronJobs(): void {
     logger.info('[Auth Cron] Initialisation des tâches planifiées...');
 
     // Nettoyage des anciennes tentatives de connexion (toutes les heures à 00:00)
-    cron.schedule('0 * * * *', async () => {
+    scheduleWithLock('auth-nettoyage-tentatives', '0 * * * *', async () => {
         try {
             const nbNettoyes = await blocageAuthService.nettoyerAnciennesTentatives();
             

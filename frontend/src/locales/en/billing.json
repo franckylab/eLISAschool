@@ -1,0 +1,87 @@
+{
+    "titre": "Billing & Subscription",
+    "description": "Manage your subscription, view invoices and simulate costs",
+    "abonnement": {
+        "titre": "Current subscription",
+        "plan": "Plan",
+        "statut": "Status",
+        "montantMensuel": "Monthly amount",
+        "dateDebut": "Start date",
+        "dateFin": "End date",
+        "cycleFacturation": "Billing cycle",
+        "autoRenouvellement": "Auto-renewal",
+        "aucun": "No active subscription",
+        "actif": "Active",
+        "suspendu": "Suspended",
+        "expire": "Expired",
+        "enAttente": "Pending"
+    },
+    "modules": {
+        "titre": "Active modules",
+        "aucun": "No active module",
+        "source": {
+            "plan": "Plan",
+            "supplementaire": "Add-on",
+            "custom": "Custom"
+        }
+    },
+    "factures": {
+        "titre": "Recent invoices",
+        "numero": "No.",
+        "dateEmission": "Issue date",
+        "montantTotal": "Total amount",
+        "statut": "Status",
+        "telecharger": "Download",
+        "aucune": "No invoice",
+        "statuts": {
+            "payee": "Paid",
+            "emise": "Issued",
+            "enRetard": "Overdue",
+            "annulee": "Cancelled",
+            "avoir": "Credit note"
+        }
+    },
+    "consommation": {
+        "titre": "Usage",
+        "aucunQuota": "No quota defined",
+        "eleves": "Students",
+        "utilisateurs": "Users",
+        "stockage": "Storage",
+        "illimite": "Unlimited"
+    },
+    "simulateur": {
+        "titre": "Simulator",
+        "description": "Simulate the cost based on your number of students",
+        "nbEleves": "Number of students",
+        "supplement": "Bracket supplement",
+        "parMois": "XAF/month",
+        "coutTotal": "Estimated total cost",
+        "planBase": "Base plan",
+        "total": "Total"
+    },
+    "tranches": {
+        "titre": "Pricing brackets",
+        "personnaliser": "Customize my brackets",
+        "cascade": "Cascade: Establishment → Plan → System",
+        "min": "Min",
+        "max": "Max",
+        "montant": "Amount",
+        "actif": "Active",
+        "inactif": "Inactive"
+    },
+    "quota": {
+        "depasse": "Quota exceeded",
+        "approche": "Quota near limit",
+        "ok": "Within limits",
+        "upgrade": "Please upgrade your plan",
+        "alerte80": "You have consumed 80% of your quota",
+        "alerte90": "You have consumed 90% of your quota",
+        "alerte100": "Quota fully consumed"
+    },
+    "actions": {
+        "voirFactures": "View all invoices",
+        "changerPlan": "Change plan",
+        "contacterSupport": "Contact support",
+        "simuler": "Simulate"
+    }
+}

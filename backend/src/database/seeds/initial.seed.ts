@@ -28,6 +28,7 @@ import { seedModeleRecu } from './system/seed-modele-recu';
 import { seedCotisations } from './system/seed-cotisations';
 import { seedTypesPrimes } from './system/seed-types-primes';
 import { seedTypesRetenues } from './system/seed-types-retenues';
+import { seedModulesCatalogue } from './system/seed-modules-catalogue';
 import { logger } from '@common/utils/logger.util';
 
 export async function runSystemSeeds(): Promise<{
@@ -73,6 +74,9 @@ export async function runSystemSeeds(): Promise<{
 
     // 8. RBAC (rôles + permissions + mappings)
     await seedRBAC();
+
+    // 8b. Catalogue modules unifié (source de vérité — Lot A v7)
+    await seedModulesCatalogue();
 
     // 9. Super admin
     await seedSuperAdmin(etablissementPrincipalId, etablissementSecondaireId);

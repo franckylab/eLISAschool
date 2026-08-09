@@ -74,3 +74,9 @@ export type {
     ValidationNiveau,
     WorkflowValidation,
 } from './use-validation-workflow';
+
+// CASL Ability (Refonte SaaS v4)
+export { useAbility } from './use-ability';
+
+// Monitoring temps réel (Refonte SaaS v5 — Socket.IO)
+export { useRealtimeMonitoring } from './use-realtime-monitoring';

@@ -30,6 +30,9 @@ import { generateSecureToken } from '@common/utils/crypto.util';
 import { getParamNumber, getParamBoolean, getParam } from '@modules/configuration/utils/config.helper';
 import { permissionResolverService } from './permission-resolver.service';
 import { blocageAuthService, StatutBlocageComplet } from './blocage-auth.service';
+import { mfaService } from './mfa.service';
+import jwt from 'jsonwebtoken';
+import { envConfig } from '@config/env.config';
 
 /**
  * Service d'authentification avec configuration centralisée
@@ -279,6 +282,34 @@ export class AuthService {
             adresseIp || 'unknown',
             userAgent
         );
+
+        // ==========================================
+        // MFA CHECK — Phase P1 v6
+        // Si MFA activé, retourner un token temporaire
+        // au lieu des tokens complets
+        // ==========================================
+        const mfaEnabled = await mfaService.isMFAEnabled(utilisateur.id);
+        if (mfaEnabled) {
+            // Générer un token MFA temporaire (valide 5 minutes)
+            const mfaToken = jwt.sign(
+                {
+                    sub: utilisateur.id,
+                    mfaPending: true,
+                    iat: Math.floor(Date.now() / 1000),
+                },
+                envConfig.jwt.secret,
+                { expiresIn: '5m', issuer: 'eLISAschool', audience: 'elisaschool-api' }
+            );
+
+            logger.info(`[MFA] Connexion avec MFA requise pour: ${utilisateur.email}`);
+
+            return {
+                mfaRequired: true,
+                mfaToken,
+            } as LoginResponseDto;
+        }
+
+        // Pas de MFA → flux normal
 
         // Mettre à jour la dernière connexion
         utilisateur.derniereConnexion = new Date();
@@ -794,6 +825,132 @@ export class AuthService {
                 telephone: profil.telephone,
                 photo: profil.photoUrl ?? null,
             } : null,
+        };
+    }
+
+    /**
+     * Finalise la connexion après vérification MFA réussie.
+     * Génère les tokens complets (access + refresh) comme le flux normal.
+     * Phase P1 v6
+     */
+    async completeLoginAfterMFA(
+        utilisateurId: string,
+        adresseIp?: string,
+        userAgent?: string
+    ): Promise<LoginResponseDto> {
+        const securityParams = await this.getSecurityParams();
+
+        const utilisateur = await this.utilisateurRepository.findOne({
+            where: { id: utilisateurId },
+            select: ['id', 'email', 'matricule', 'pseudonyme', 'role', 'statut'],
+        });
+
+        if (!utilisateur || utilisateur.statut !== StatutUtilisateur.ACTIF) {
+            throw new AppError('Utilisateur non autorisé', 401, 'USER_NOT_AUTHORIZED');
+        }
+
+        // Mettre à jour la dernière connexion
+        utilisateur.derniereConnexion = new Date();
+        await this.utilisateurRepository.save(utilisateur);
+
+        // Récupération du profil
+        const profil = await this.profilRepository.findOne({
+            where: { utilisateurId: utilisateur.id },
+        });
+
+        // Chargement des établissements
+        const utilisateurEtablissements = await this.utilisateurEtablissementRepo.find({
+            where: { utilisateurId: utilisateur.id, actif: true },
+            relations: ['role'],
+            order: { etablissementPrincipal: 'DESC', creeAt: 'ASC' }
+        });
+
+        if (utilisateurEtablissements.length === 0) {
+            throw new AppError(
+                'Aucun établissement associé à votre compte.',
+                403,
+                'NO_ETABLISSEMENT'
+            );
+        }
+
+        const etablissementsPayload = utilisateurEtablissements.map(ue => ({
+            etablissementId: ue.etablissementId,
+            role: ue.role.code,
+            etablissementPrincipal: ue.etablissementPrincipal,
+            actif: ue.actif
+        }));
+
+        const requiereSelection = utilisateurEtablissements.length > 1;
+        const etablissementActifId = !requiereSelection && utilisateurEtablissements.length === 1
+            ? utilisateurEtablissements[0].etablissementId
+            : undefined;
+
+        const resolvedPermissions = await permissionResolverService.resolvePermissions(utilisateur.id, etablissementActifId);
+        const userRoles = await permissionResolverService.getUserRoles(utilisateur.id, etablissementActifId);
+
+        const roleToUse = etablissementActifId
+            ? (utilisateurEtablissements.find(ue => ue.etablissementId === etablissementActifId)?.role.code || utilisateur.role)
+            : utilisateur.role;
+
+        const payload: JwtPayload = {
+            sub: utilisateur.id,
+            email: utilisateur.email,
+            role: roleToUse,
+            roles: userRoles.map(r => r.code),
+            etablissementId: etablissementActifId,
+            etablissements: etablissementsPayload,
+        };
+
+        const accessToken = this.tokenService.generateAccessToken(payload);
+        const refreshToken = await this.tokenService.generateRefreshToken(
+            utilisateur.id,
+            adresseIp,
+            userAgent
+        );
+
+        await auditService.logLogin(utilisateur.id, true);
+        logger.info(`[MFA] Connexion complétée après MFA: ${utilisateur.email}`);
+
+        const expiresIn = securityParams.sessionDuration * 60;
+
+        // Charger les détails des établissements
+        const etablissementRepo = AppDataSource.getRepository('Etablissement');
+        const etablissementsDetails = await Promise.all(
+            utilisateurEtablissements.map(async (ue) => {
+                const etab = await etablissementRepo.findOne({
+                    where: { id: ue.etablissementId },
+                    select: ['id', 'nom', 'codeEtablissement', 'logoBase64', 'logoType']
+                }) as any;
+
+                return {
+                    id: ue.etablissementId,
+                    nom: etab?.nom || 'Établissement',
+                    code: etab?.codeEtablissement,
+                    role: ue.role.code,
+                    etablissementPrincipal: ue.etablissementPrincipal,
+                    logoUrl: etab?.logoBase64 || undefined,
+                };
+            })
+        );
+
+        return {
+            accessToken,
+            refreshToken,
+            expiresIn,
+            requiereSelectionEtablissement: requiereSelection,
+            tokenTemporaire: requiereSelection,
+            utilisateur: {
+                id: utilisateur.id,
+                email: utilisateur.email,
+                matricule: utilisateur.matricule,
+                role: roleToUse,
+                nom: profil?.nom || '',
+                prenom: profil?.prenom || '',
+                etablissementActif: etablissementActifId,
+                etablissements: etablissementsPayload,
+                permissions: Array.from(resolvedPermissions),
+            },
+            etablissementsDisponibles: etablissementsDetails,
         };
     }
 }

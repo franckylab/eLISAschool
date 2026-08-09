@@ -23,3 +23,6 @@ export {
 
 // Préférences utilisateur
 export { preferenceUtilisateurService, DEFAULT_PREFERENCES } from './preference-utilisateur.service';
+
+// MFA (Multi-Factor Authentication) — Phase P1 v6
+export { MFAService, mfaService } from './mfa.service';

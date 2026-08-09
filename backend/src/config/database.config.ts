@@ -46,13 +46,22 @@ export const databaseConfig: DataSourceOptions = {
         ? [path.join(basePath, 'database', 'migrations', '*.js')]
         : [path.join(basePath, 'database', 'migrations', '*.ts')],
 
-    // Subscribers
+    // Subscribers (Phase H.2 — tenant-isolation + subscribers legacy)
     subscribers: isProduction
-        ? [path.join(basePath, 'database', 'subscribers', '*.js')]
-        : [path.join(basePath, 'database', 'subscribers', '*.ts')],
+        ? [
+            path.join(basePath, 'database', 'subscribers', '*.js'),
+            path.join(basePath, 'common', 'subscribers', '*.js'),
+        ]
+        : [
+            path.join(basePath, 'database', 'subscribers', '*.ts'),
+            path.join(basePath, 'common', 'subscribers', '*.ts'),
+        ],
 
     // Pool de connexions
-    poolSize: envConfig.app.isProduction ? 20 : 5,
+    // Dynamique selon environnement + recyclage pour éviter les connexions stale
+    poolSize: envConfig.app.isProduction
+        ? parseInt(process.env.DB_POOL_SIZE || '20', 10)
+        : 5,
 
     // SSL en production (certificats valides requis)
     ssl: envConfig.app.isProduction ? { rejectUnauthorized: true } : false,
@@ -63,6 +72,9 @@ export const databaseConfig: DataSourceOptions = {
         connectionTimeoutMillis: 30000,
         // Timeout d'inactivité (10 minutes)
         idleTimeoutMillis: 600000,
+        // Recyclage des connexions après N utilisations (évite fuites mémoire PG)
+        // Phase P3.1 — Refonte SaaS v6
+        maxUses: parseInt(process.env.DB_POOL_MAX_USES || '1000', 10),
     },
 };
 

@@ -1,0 +1,76 @@
+{
+    "titre": "Providers",
+    "description": "Configure and manage external services (payment, SMS, email)",
+    "paiement": {
+        "titre": "Payment providers",
+        "description": "Accept mobile and online payments",
+        "configurer": "Configure",
+        "tester": "Test connection",
+        "testReussi": "Connection successful",
+        "testEchoue": "Connection failed",
+        "configure": "Configured",
+        "nonConfigure": "Not configured",
+        "sandbox": "Sandbox",
+        "production": "Production",
+        "noms": {
+            "mtn_momo": "MTN Mobile Money",
+            "orange_money": "Orange Money",
+            "wave": "Wave",
+            "paystack": "Paystack",
+            "flutterwave": "Flutterwave",
+            "stripe": "Stripe",
+            "manuel": "Manual payment"
+        }
+    },
+    "sms": {
+        "titre": "SMS providers",
+        "description": "Send SMS notifications to parents and staff",
+        "noms": {
+            "twilio": "Twilio",
+            "africas_talking": "Africa's Talking"
+        }
+    },
+    "email": {
+        "titre": "Email providers",
+        "description": "Send transactional emails and notifications",
+        "noms": {
+            "resend": "Resend",
+            "sendgrid": "SendGrid"
+        }
+    },
+    "champs": {
+        "apiKey": "API key",
+        "apiSecret": "API secret",
+        "webhookSecret": "Webhook secret",
+        "mode": "Mode",
+        "canaux": "Supported channels",
+        "senderId": "Sender ID",
+        "fromEmail": "From email",
+        "fromName": "From name"
+    },
+    "webhooks": {
+        "titre": "Webhook logs",
+        "date": "Date",
+        "provider": "Provider",
+        "evenement": "Event",
+        "statut": "Status",
+        "aucun": "No webhook received",
+        "traite": "Processed",
+        "erreur": "Error",
+        "enAttente": "Pending"
+    },
+    "actions": {
+        "sauvegarder": "Save",
+        "tester": "Test",
+        "activer": "Enable",
+        "desactiver": "Disable",
+        "voirLogs": "View logs",
+        "retour": "Back"
+    },
+    "statuts": {
+        "actif": "Active",
+        "inactif": "Inactive",
+        "erreur": "Connection error",
+        "ok": "Operational"
+    }
+}

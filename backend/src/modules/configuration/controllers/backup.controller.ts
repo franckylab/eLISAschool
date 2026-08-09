@@ -11,6 +11,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { configBackupService } from '../services/backup/config-backup.service';
 import { databaseBackupService } from '../services/backup/database-backup.service';
+import { backupScheduler } from '../services/backup/backup-scheduler.service';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
@@ -452,4 +453,83 @@ router.get('/storage-usage', authMiddleware, requirePermission('config:edit'), a
 });
 
 export const backupController = router;
+
+// ============================================
+// SCHEDULE MANAGEMENT — Phase P2 v6
+// ============================================
+
+/**
+ * GET /api/backups/schedule
+ * Récupérer la planification des backups pour l'établissement courant
+ */
+router.get('/schedule', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.etablissementId;
+        if (!etablissementId) {
+            throw new AppError('etablissementId requis', 400, 'MISSING_ETABLISSEMENT_ID');
+        }
+
+        const schedule = backupScheduler.getSchedule(etablissementId);
+
+        res.json({
+            success: true,
+            data: schedule || null,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/backups/schedule
+ * Créer ou mettre à jour la planification des backups
+ */
+router.post('/schedule', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.etablissementId;
+        if (!etablissementId) {
+            throw new AppError('etablissementId requis', 400, 'MISSING_ETABLISSEMENT_ID');
+        }
+
+        const schedule = {
+            ...req.body,
+            etablissementId,
+        };
+
+        await backupScheduler.setSchedule(schedule);
+
+        res.status(200).json({
+            success: true,
+            message: 'Planification des backups enregistrée',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/backups/trigger
+ * Déclencher un backup immédiat
+ */
+router.post('/trigger', authMiddleware, requirePermission('config:edit'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.etablissementId;
+        if (!etablissementId) {
+            throw new AppError('etablissementId requis', 400, 'MISSING_ETABLISSEMENT_ID');
+        }
+
+        const { type = 'complet' } = req.body;
+
+        const result = await backupScheduler.executerBackup(etablissementId, type);
+
+        res.status(200).json({
+            success: result.succes,
+            data: result,
+            message: result.succes ? 'Backup déclenché avec succès' : 'Échec du backup',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 export default router;

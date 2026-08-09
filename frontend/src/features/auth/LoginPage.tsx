@@ -440,6 +440,13 @@ export function LoginPage() {
             // Étape 1 : Login avec validation établissements
             // Le store gère MAINTENANT la détection multi-établissements
             await login(data.identifiant, data.motDePasse);
+
+            // MFA — Phase P1 v6 : Si MFA requise, rediriger vers la page de vérification
+            if (useAuthStore.getState().mfaRequired) {
+                toast.info('Vérification MFA requise');
+                router.navigate({ to: '/mfa-verify' });
+                return;
+            }
             
             // CONNEXION RÉUSSIE : Réinitialiser le compteur de tentatives
             setTentativesRestantes(20);

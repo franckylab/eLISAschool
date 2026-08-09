@@ -1262,7 +1262,66 @@ Between(dateDebut, dateFin)
 
 ---
 
-## 25. Maintenance et skills disponibles
+## 25. Refonte SaaS v5 — Conventions Spécifiques
+
+### Architecture Multi-Tenant v5
+
+- **3 plans de gestion** :
+  - **Control Plane** (`_platform/`) — SUPER_ADMIN uniquement
+  - **Data Plane Tenant** (`_auth/`) — Administration établissement (ADMIN, DIRECTEUR)
+  - **Data Plane User** — Utilisateurs opérationnels (ENSEIGNANT, PARENT, ELEVE, COMPTABLE)
+
+### CASL.js — Authorization Partagée
+
+- **Source de vérité** : `shared/src/casl/abilities.ts` — `defineAbility(ctx)`
+- **Types** : `AppAbility`, `Action`, `Subject`, `AbilityContext`
+- **Frontend** : `frontend/src/lib/casl/index.tsx` + `AbilityProvider` dans `providers.tsx`
+- **Backend** : `backend/src/casl/casl.middleware.ts` injecte `req.ability`
+- **RÈGLE** : Toujours utiliser les types du `shared/` — JAMAIS de définition CASL locale
+
+### Row-Level Security (RLS)
+
+- **Toutes les tables** avec `etablissementId` ont RLS activé (migrations 152, 153)
+- **Policy** : `"etablissementId"::text = current_setting('app.current_tenant', true)`
+- **SUPER_ADMIN bypass** : UUID `00000000-0000-0000-0000-000000000000`
+- **Tables exemptées** : etablissements, plans_abonnement, modules_optionnels (globales)
+- **RÈGLE** : Le middleware RLS (`rls.middleware.ts`) propage le tenant via AsyncLocalStorage
+
+### Billing Configurable — Cascade
+
+- **Tranches** : établissement → plan → système (`TrancheConfigService`)
+- **Feature Flags** : tenant override → plan flags → modules inclus → défaut false (`FeatureFlagService`)
+- **Modules** : inclus (plan) + supplémentaires souscrits (`ModuleResolutionService`)
+- **Quotas** : `requireQuota(resource, quantity)` middleware — erreur 429 si dépassé
+
+### RBAC v5 — Permissions Plateforme
+
+- **NETWORK_*** : Réservé SUPER_ADMIN (retiré de ADMIN depuis v5.1)
+- **config:plateforme:*** : Réservé SUPER_ADMIN
+- **config:etablissement:*** : ADMIN, DIRECTEUR
+- **RÈGLE** : ADMIN ne peut PAS `manage` Monitoring, GroupeEtablissement, Module toggle
+
+### Fichiers Clés v5
+
+| Fichier | Rôle |
+|---------|------|
+| `shared/src/casl/abilities.ts` | Définitions CASL par rôle |
+| `shared/src/enums/roles.enum.ts` | Permissions RBAC |
+| `backend/src/common/middlewares/rls.middleware.ts` | Propagation tenant RLS |
+| `backend/src/modules/billing/services/tranche-config.service.ts` | Cascade tranches |
+| `backend/src/modules/billing/services/module-resolution.service.ts` | Résolution modules |
+| `backend/src/modules/billing/services/feature-flags.service.ts` | Cascade feature flags |
+| `backend/src/modules/monitoring/services/` | Metrics, Alerting, NoisyNeighbor |
+
+### Documentation v5
+
+- `docs/guides/GUIDE-SAAS-V5.md` — Architecture globale
+- `docs/guides/GUIDE-CONFIGURATION-TRANCHES.md` — Configuration tranches
+- `docs/guides/GUIDE-PROVIDERS.md` — Intégration providers
+
+---
+
+## 26. Maintenance et skills disponibles
 
 Cette règle et les skills associés sont conçus pour **évoluer avec le projet** :
 

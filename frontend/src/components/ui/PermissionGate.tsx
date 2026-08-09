@@ -82,6 +82,9 @@ export function PermissionGate({
     message = 'Vous n\'avez pas la permission nécessaire',
 }: PermissionGateProps) {
     const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
+    // [FE-5] Hook appelé inconditionnellement (règles des hooks de React)
+    // Rapport audit SaaS 2026-08-07 — hook déplacé avant tout conditionnel
+    const modulePerms = useModulePermissions(module ?? '');
     
     let hasAccess = false;
 
@@ -97,9 +100,8 @@ export function PermissionGate({
     else if (allPermissions && allPermissions.length > 0) {
         hasAccess = hasAllPermissions(allPermissions);
     }
-    // Vérification via module avancé
+    // Vérification via module avancé (hook maintenant appelé inconditionnellement)
     else if (module && action) {
-        const modulePerms = useModulePermissions(module);
         const actionMap: Record<string, keyof ReturnType<typeof useModulePermissions>> = {
             view: 'canView',
             create: 'canCreate',

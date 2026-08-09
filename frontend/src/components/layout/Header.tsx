@@ -5,7 +5,7 @@
  * En-tête principal avec recherche, language/theme switchers, notifications, user menu
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRouter, Link } from '@tanstack/react-router';
 import {
@@ -16,6 +16,7 @@ import {
     KeyRound,
     Settings,
     X,
+    Shield,
 } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,6 +28,20 @@ import { ThemeSwitcher } from '@/components/navigation/ThemeSwitcher';
 import { EtablissementSwitcher } from '@/components/auth/EtablissementSwitcher';
 import { ElisaLogo } from '@/components/branding';
 import { ConnectionIndicator } from '@/features/network';
+
+/** Rôles plateforme ayant accès au panel d'administration */
+const ROLES_PLATEFORME = [
+    'SUPER_ADMIN',
+    'ADMINISTRATION_PLATEFORME',
+    'SECURITE_PLATEFORME',
+    'SUPPORT_PLATEFORME',
+    'COMMERCIAL_PLATEFORME',
+    'MONITORING_PLATEFORME',
+] as const;
+
+function estRolePlateforme(role?: string): boolean {
+    return !!role && ROLES_PLATEFORME.includes(role as typeof ROLES_PLATEFORME[number]);
+}
 
 export function Header() {
     const { t } = useTranslation('common');
@@ -41,6 +56,23 @@ export function Header() {
         const { handleLogout: secureHandleLogout } = await import('@/lib/secure-logout');
         await secureHandleLogout({ redirect: true });
     };
+
+    // ── Raccourci clavier Cmd+Shift+A → Panel Administration ──
+    const handleKeyboardShortcut = useCallback((e: KeyboardEvent) => {
+        if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
+            if (estRolePlateforme(utilisateur?.role)) {
+                e.preventDefault();
+                router.navigate({ to: '/platform/dashboard' });
+            }
+        }
+    }, [utilisateur?.role, router]);
+
+    useEffect(() => {
+        if (estRolePlateforme(utilisateur?.role)) {
+            document.addEventListener('keydown', handleKeyboardShortcut);
+            return () => document.removeEventListener('keydown', handleKeyboardShortcut);
+        }
+    }, [utilisateur?.role, handleKeyboardShortcut]);
 
     return (
         <header className="flex h-12 items-center justify-between border-b border-[var(--color-bordure)] bg-[var(--color-surface)] px-2 xs:h-14 xs:px-3 sm:h-16 sm:px-4 md:px-6">
@@ -163,6 +195,24 @@ export function Header() {
                                     </p>
                                 </DropdownMenu.Label>
                                 <DropdownMenu.Separator className="my-0.5 h-px bg-[var(--color-bordure)] xs:my-1" />
+
+                                {/* ── Accès Administration Plateforme (rôles plateforme uniquement) ── */}
+                                {estRolePlateforme(utilisateur.role) && (
+                                    <>
+                                        <DropdownMenu.Item
+                                            className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold text-[var(--color-dominante)] outline-none focus:bg-[var(--color-dominante)]/10 xs:gap-2 xs:px-3 xs:py-2 xs:text-sm"
+                                            onSelect={() => router.navigate({ to: '/platform/dashboard' })}
+                                        >
+                                            <Shield className="h-3.5 w-3.5 flex-shrink-0 xs:h-4 xs:w-4" />
+                                            <span className="break-words">{t('header.administration')}</span>
+                                            <span className="ml-auto rounded bg-[var(--color-dominante)] px-1.5 py-0.5 text-[8px] font-bold text-white xs:text-[9px]">
+                                                {t('header.plateforme', 'PLATEFORME')}
+                                            </span>
+                                        </DropdownMenu.Item>
+                                        <DropdownMenu.Separator className="my-0.5 h-px bg-[var(--color-bordure)] xs:my-1" />
+                                    </>
+                                )}
+
                                 <DropdownMenu.Item
                                     className="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-[var(--color-texte)] outline-none focus:bg-[var(--color-surface-hover)] xs:gap-2 xs:px-3 xs:py-2 xs:text-sm"
                                     onSelect={() => router.navigate({ to: '/change-password' })}

@@ -27,3 +27,6 @@ export { PreferenceUtilisateur, CategoriePreference } from './preference-utilisa
 
 // Gestion de blocage authentification
 export { TentativeConnexion, TypeBlocage } from './tentative-connexion.entity';
+
+// MFA (Multi-Factor Authentication) — Phase P1 v6
+export { MfaConfig } from './mfa-config.entity';

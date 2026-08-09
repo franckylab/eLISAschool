@@ -15,6 +15,7 @@
 import Redis from 'ioredis';
 import { envConfig } from '@config/env.config';
 import { logger } from '@common/utils/logger.util';
+import { getCurrentEtablissementId } from '@common/async-local-storage';
 
 /**
  * Configuration du client Redis
@@ -116,6 +117,44 @@ class RedisService {
      */
     getSubscriberClient(): Redis | null {
         return this.subscriberClient;
+    }
+
+    /**
+     * Construit explicitement une clé cache préfixée par tenant.
+     * Phase 3.4 — Refonte SaaS.
+     * Utiliser quand l'etablissementId est connu explicitement (hors contexte ALS).
+     * Pour les méthodes tenant-aware auto (getTenant, setTenant...), utiliser la
+     * méthode privée tenantKey() qui récupère le tenant depuis AsyncLocalStorage.
+     * 
+     * @param etablissementId ID de l'établissement (tenant)
+     * @param key Clé relative (ex: 'permissions:userId', 'config:*')
+     * @returns Clé préfixée: 'tenant:{etablissementId}:{key}'
+     */
+    buildTenantKey(etablissementId: string, key: string): string {
+        return `tenant:${etablissementId}:${key}`;
+    }
+
+    /**
+     * Supprime toutes les clés d'un tenant spécifique.
+     * Phase 3.4 — Flush sélectif par tenant.
+     */
+    async flushTenant(etablissementId: string): Promise<number> {
+        const client = await this.getClient();
+        const pattern = `tenant:${etablissementId}:*`;
+        let count = 0;
+
+        let cursor = '0';
+        do {
+            const [nextCursor, keys] = await client.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+            cursor = nextCursor;
+            if (keys.length > 0) {
+                await client.del(...keys);
+                count += keys.length;
+            }
+        } while (cursor !== '0');
+
+        logger.info(`[Redis] Flush tenant ${etablissementId}: ${count} clés supprimées`);
+        return count;
     }
 
     /**
@@ -284,6 +323,84 @@ class RedisService {
             await client.del(key);
         } catch (error) {
             logger.error(`[Redis] DEL ${key} error:`, error);
+        }
+    }
+
+    // ==========================================
+    // Méthodes tenant-aware — Phase P3.2 v6
+    // Prefixe les clés par tenant:{etablissementId}:
+    // ==========================================
+
+    /**
+     * Construit une clé préfixée par le tenant courant.
+     */
+    private tenantKey(key: string): string {
+        const tenantId = getCurrentEtablissementId();
+        if (tenantId) {
+            return `tenant:${tenantId}:${key}`;
+        }
+        return key;
+    }
+
+    /**
+     * GET avec préfixe tenant automatique
+     */
+    async getTenant(key: string): Promise<string | null> {
+        return this.get(this.tenantKey(key));
+    }
+
+    /**
+     * SET avec préfixe tenant automatique
+     */
+    async setTenant(key: string, value: string, ttl?: number): Promise<void> {
+        return this.set(this.tenantKey(key), value, ttl);
+    }
+
+    /**
+     * GET JSON avec préfixe tenant automatique
+     */
+    async getTenantJSON<T>(key: string): Promise<T | null> {
+        return this.getJSON<T>(this.tenantKey(key));
+    }
+
+    /**
+     * SET JSON avec préfixe tenant automatique
+     */
+    async setTenantJSON(key: string, value: any, ttl?: number): Promise<void> {
+        return this.setJSON(this.tenantKey(key), value, ttl);
+    }
+
+    /**
+     * DEL avec préfixe tenant automatique
+     */
+    async delTenant(key: string): Promise<void> {
+        return this.del(this.tenantKey(key));
+    }
+
+    /**
+     * Invalide toutes les clés d'un tenant (via SCAN + DEL).
+     * Utiliser avec modération.
+     */
+    async invalidateTenant(tenantId: string): Promise<number> {
+        try {
+            const client = await this.getClient();
+            const pattern = `tenant:${tenantId}:*`;
+            let deleted = 0;
+            let cursor = '0';
+
+            do {
+                const [nextCursor, keys] = await client.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+                cursor = nextCursor;
+                if (keys.length > 0) {
+                    deleted += await client.del(...keys);
+                }
+            } while (cursor !== '0');
+
+            logger.info(`[Redis] Invalidé ${deleted} clés pour tenant ${tenantId}`);
+            return deleted;
+        } catch (error) {
+            logger.error(`[Redis] invalidateTenant error:`, error);
+            return 0;
         }
     }
 

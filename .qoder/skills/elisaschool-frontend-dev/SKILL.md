@@ -2271,3 +2271,102 @@ Ce skill est un document **vivant** qui évolue avec le projet.
 - *« Mets à jour le skill frontend pour inclure les graphiques »*
 - *« Ajoute un workflow pour les composants de saisie en tableau »*
 - *« Actualise les conventions de thème »*
+
+---
+
+## Panel Admin Platform — Composants v7
+
+### PlatformHeader (`components/layout/PlatformHeader.tsx`)
+
+Header dédié à l'espace plateforme (Control Plane). Remplace la bannière statique.
+
+**Props :**
+```typescript
+interface PlatformHeaderProps {
+    santeSysteme?: 'ok' | 'warning' | 'critical';
+    notificationsCount?: number;
+}
+```
+
+**Éléments :**
+- Logo elisa°school + badge "ADMIN" rouge
+- Barre recherche globale (Cmd+K) avec animation
+- Indicateur santé système (vert/orange/rouge) → navigation monitoring
+- Notifications avec badge compteur
+- Dropdown profil admin : infos, rôle, "Retour espace établissement", configuration, déconnexion
+
+### Sidebar Plateforme (`components/layout/platform-sidebar.tsx`)
+
+4 groupes workflow (14 items) :
+
+```
+PILOTAGE (3) : Dashboard, Monitoring, Revenus
+TENANTS (4) : Établissements, Groupes, Facturation, Abonnements
+TECHNIQUE (4) : Modules, Configuration, Notifications, Providers
+SÉCURITÉ (5) : Utilisateurs, Rôles plateforme, Permissions, Sessions & activité, Audit
+```
+
+**Type :**
+```typescript
+type PlatformNavItem = {
+    id: string;
+    label: string;
+    path: string;
+    icon: LucideIcon;
+    group: 'pilotage' | 'tenants' | 'technique' | 'securite';
+    description?: string;
+};
+```
+
+### CommandPalette (`components/CommandPalette.tsx`)
+
+15 routes plateforme accessibles via Cmd+K :
+- Toutes les routes `/platform/*` avec `requireSuperAdmin: true`
+- Catégories : "Plateforme" (badge distinctif)
+- Recherche fuzzy par label, description, keywords
+
+### Bouton Administration (`components/layout/Header.tsx`)
+
+- Bouton conditionnel dans le dropdown profil (visible pour `SUPER_ADMIN`)
+- Badge "PLATEFORME" vert
+- Raccourci clavier Cmd+Shift+A
+- Navigation vers `/platform/dashboard`
+
+### Routes plateforme
+
+| Route | Fichier | Description |
+|-------|---------|-------------|
+| `/platform/dashboard` | `platform.dashboard.tsx` | KPIs globaux |
+| `/platform/monitoring` | `platform.monitoring.tsx` | Santé & métriques |
+| `/platform/revenus` | `platform.revenus.tsx` | MRR, ARR, revenus (stub) |
+| `/platform/etablissements` | `platform.etablissements.tsx` | CRUD tenants |
+| `/platform/groupes` | `platform.groupes.tsx` | Groupes SaaS |
+| `/platform/facturation` | `platform.facturation.tsx` | Plans & factures |
+| `/platform/abonnements` | `platform.abonnements.tsx` | Abonnements actifs (stub) |
+| `/platform/modules` | `platform.modules.tsx` | Registre modules |
+| `/platform/configuration` | `platform.configuration.tsx` | Paramètres système |
+| `/platform/notifications-config` | `platform.notifications-config.tsx` | Config notifications |
+| `/platform/providers` | `platform.providers.tsx` | Providers paiement |
+| `/platform/utilisateurs` | `platform.utilisateurs.tsx` | Comptes plateforme (stub) |
+| `/platform/permissions` | `platform.permissions.tsx` | Matrice RBAC |
+| `/platform/audit` | `platform.audit.tsx` | Journal d'audit |
+| `/platform/roles` | `platform.roles.tsx` | Matrice permissions par rôle |
+| `/platform/sessions` | `platform.sessions.tsx` | Sessions & activité |
+| `/platform/utilisateurs/:id` | `platform.utilisateurs.$id.tsx` | Détail utilisateur plateforme |
+
+### Pages Identité Plateforme (Modèle C — Dual-Plane)
+
+Composants dans `frontend/src/features/platform/components/` :
+
+| Composant | Description |
+|-----------|-------------|
+| `platform-permissions-matrix.tsx` | Grille 6 rôles × ~40 permissions, toggle checkboxes, sauvegarde inline par rôle |
+| `platform-user-detail-page.tsx` | Détail utilisateur (3 onglets : Infos, Sessions, Audit) |
+| `platform-sessions-page.tsx` | Sessions actives, révocation individuelle/totale, KPIs |
+
+**Hooks TanStack Query** dans `features/platform/hooks/` :
+- `use-platform-users.ts` — `usePlatformUsers()`, `useCreatePlatformUser()`, `useSuspendUser()`, etc.
+- `use-platform-roles.ts` — `usePlatformPermissions()`, `usePlatformPermissionsMatrix()`, `useUpdateRolePermissions()`
+- `use-platform-sessions.ts` — `usePlatformSessions()`, `useRevokeSession()`, `useRevokeAllSessions()`
+
+**i18n** : Namespace `platform-identity` (fichiers `locales/{fr,en}/platform-identity.json`, ~160 clés chacun)

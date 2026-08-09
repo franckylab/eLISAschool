@@ -33,6 +33,7 @@ import { AppError } from '@common/filters/error.filter';
 import { validateDto } from '@common/utils';
 import { MODULE_REGISTRY } from '@shared/config/config.registry';
 import { ModuleName, MODULE_CATEGORIES } from '@shared/enums/modules.enum';
+import { moduleRegistry } from '../services/module-registry.service';
 import {
     canViewConfigApp,
     canEditConfigApp,
@@ -50,6 +51,11 @@ import {
     canRestoreBackup,
     canExportConfig,
     canInvalidateCache,
+    // [RBAC-2] Guards plateforme — SUPER_ADMIN uniquement
+    canEditConfigAppPlateforme,
+    canToggleModulePlateforme,
+    canCreateBackupPlateforme,
+    canRestoreBackupPlateforme,
 } from '../guards';
 
 const router = Router();
@@ -63,17 +69,29 @@ const historyService = new ConfigurationHistoryService();
 
 /**
  * GET /api/configuration
- * Récupère les paramètres globaux de l'application
+ * Récupère les paramètres globaux PUBLICS de l'application
+ * 
+ * [CFG-1] Sécurisation v5.1 — Rapport audit SaaS 2026-08-07
+ * Whitelist de clés publiques (accessibles sans authentification).
+ * Seules les clés strictement nécessaires au fonctionnement client
+ * avant login sont exposées. Tout autre paramètre nécessite
+ * l'endpoint /full (authMiddleware + canViewConfigApp).
  */
+const PUBLIC_CONFIG_KEYS = new Set([
+    'app.nom', 'app.version', 'app.langueDefaut', 'app.devise',
+    'app.fuseauHoraire', 'app.theme', 'app.logo',
+    'app.maintenance', 'app.licence',
+]);
+
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     try {
         // Récupérer les paramètres globaux depuis ParametreSysteme
         const params = await configurationService.getParametres({ visible: true });
         
-        // Construire la configuration publique
+        // Construire la configuration publique — WHITELIST uniquement
         const publicConfig: any = {};
         for (const param of params) {
-            if (!param.etablissementId) { // Uniquement les paramètres globaux
+            if (!param.etablissementId && PUBLIC_CONFIG_KEYS.has(param.cle)) {
                 try {
                     publicConfig[param.cle] = JSON.parse(param.valeur);
                 } catch {
@@ -100,8 +118,12 @@ router.get('/full', authMiddleware, canViewConfigApp, async (req: Request, res: 
 /**
  * PATCH /api/configuration
  * Met à jour les paramètres globaux
+ * 
+ * [RBAC-2] v5.1 — Nécessite canEditConfigAppPlateforme (SUPER_ADMIN)
+ * car cette opération modifie la config GLOBALE (sans scopage établissement).
+ * Rapport audit SaaS 2026-08-07
  */
-router.patch('/', authMiddleware, canEditConfigApp, async (req: Request, res: Response, next: NextFunction) => {
+router.patch('/', authMiddleware, canEditConfigApp, canEditConfigAppPlateforme, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateConfigAppSchema, req.body);
         
@@ -223,7 +245,8 @@ router.patch('/modules/:moduleNom', authMiddleware, canEditConfigModule, async (
     } catch (error) { next(error); }
 });
 
-router.post('/modules/:moduleNom/toggle', authMiddleware, canToggleModule, async (req: Request, res: Response, next: NextFunction) => {
+// [RBAC-2] v5.1 — Toggle global nécessite canToggleModulePlateforme (SUPER_ADMIN)
+router.post('/modules/:moduleNom/toggle', authMiddleware, canToggleModule, canToggleModulePlateforme, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { actif } = validateDto(toggleModuleSchema, req.body);
         const result = await configurationService.toggleModule(
@@ -238,7 +261,8 @@ router.post('/modules/:moduleNom/toggle', authMiddleware, canToggleModule, async
 });
 
 // Nouvelle route toggle avec moduleNom dans le body (correspond au frontend)
-router.post('/modules/toggle', authMiddleware, canToggleModule, async (req: Request, res: Response, next: NextFunction) => {
+// [RBAC-2] v5.1 — Toggle global nécessite canToggleModulePlateforme (SUPER_ADMIN)
+router.post('/modules/toggle', authMiddleware, canToggleModule, canToggleModulePlateforme, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { moduleNom, actif } = req.body;
         if (!moduleNom || typeof actif !== 'boolean') {
@@ -325,7 +349,9 @@ router.get('/parametres', authMiddleware, canViewParams, async (req: Request, re
     } catch (error) { next(error); }
 });
 
-router.get('/parametres/categories', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+// [CFG-2] Sécurisation v5.1 — Ajout canViewParams
+// Rapport audit SaaS 2026-08-07
+router.get('/parametres/categories', authMiddleware, canViewParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
         res.json({ success: true, data: Object.values(CategorieParametre) });
     } catch (error) { next(error); }
@@ -591,14 +617,16 @@ router.get('/sauvegardes', authMiddleware, canViewHistory, async (req: Request, 
     } catch (error) { next(error); }
 });
 
-router.post('/sauvegardes', authMiddleware, canCreateBackup, async (req: Request, res: Response, next: NextFunction) => {
+// [RBAC-2] v5.1 — Backup globale nécessite canCreateBackupPlateforme (SUPER_ADMIN)
+router.post('/sauvegardes', authMiddleware, canCreateBackup, canCreateBackupPlateforme, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await historyService.creerSauvegarde(req.utilisateur?.id);
         res.status(201).json({ success: true, data: result, message: 'Sauvegarde créée' });
     } catch (error) { next(error); }
 });
 
-router.post('/sauvegardes/:id/restore', authMiddleware, canRestoreBackup, async (req: Request, res: Response, next: NextFunction) => {
+// [RBAC-2] v5.1 — Restore globale nécessite canRestoreBackupPlateforme (SUPER_ADMIN)
+router.post('/sauvegardes/:id/restore', authMiddleware, canRestoreBackup, canRestoreBackupPlateforme, async (req: Request, res: Response, next: NextFunction) => {
     try {
         await historyService.restaurerSauvegarde(req.params.id, req.utilisateur?.id);
         configurationListener.emitCacheInvalidated();
@@ -655,6 +683,126 @@ router.get('/export', authMiddleware, canExportConfig, async (req: Request, res:
         });
 
         res.json({ success: true, data: exported });
+    } catch (error) { next(error); }
+});
+
+// =============================================
+// MODULE REGISTRY AVANCÉ (Phase 10)
+// =============================================
+
+/**
+ * GET /configuration/modules-advanced/status
+ * Statut de tous les modules (définitions avancées) pour un établissement.
+ */
+router.get('/modules-advanced/status', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.utilisateur?.etablissementId;
+        if (!etablissementId) {
+            throw new AppError('etablissementId requis', 400, 'MISSING_ETABLISSEMENT');
+        }
+        const statuses = await moduleRegistry.getModulesStatus(etablissementId);
+        res.json({ success: true, data: statuses });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /configuration/modules-advanced/definitions
+ * Toutes les définitions de modules.
+ */
+router.get('/modules-advanced/definitions', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const definitions = moduleRegistry.getAllDefinitions();
+        res.json({ success: true, data: definitions });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /configuration/modules-advanced/categories
+ * Modules groupés par catégorie.
+ */
+router.get('/modules-advanced/categories', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const categories = moduleRegistry.getModulesByCategorie();
+        res.json({ success: true, data: categories });
+    } catch (error) { next(error); }
+});
+
+/**
+ * PUT /configuration/modules-advanced/:moduleId/toggle
+ * Active/désactive un module pour l'établissement.
+ */
+router.put('/modules-advanced/:moduleId/toggle', authMiddleware, canToggleModule, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { moduleId } = req.params;
+        const { actif } = req.body;
+        const etablissementId = req.utilisateur?.etablissementId;
+
+        if (!etablissementId) {
+            throw new AppError('etablissementId requis', 400, 'MISSING_ETABLISSEMENT');
+        }
+
+        await moduleRegistry.setModuleActif(moduleId, etablissementId, !!actif);
+
+        await historyService.logAction({
+            utilisateurId: req.utilisateur?.id,
+            action: ActionConfiguration.UPDATE,
+            cible: CibleConfiguration.MODULE,
+            description: `Module ${moduleId} ${actif ? 'activé' : 'désactivé'}`,
+            req,
+        });
+
+        res.json({ success: true, message: `Module ${moduleId} ${actif ? 'activé' : 'désactivé'}` });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /configuration/modules-advanced/:moduleId/impact
+ * Prévisualise l'impact de l'activation d'un module.
+ */
+router.get('/modules-advanced/:moduleId/impact', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { moduleId } = req.params;
+        const etablissementId = req.utilisateur?.etablissementId;
+        if (!etablissementId) {
+            throw new AppError('etablissementId requis', 400, 'MISSING_ETABLISSEMENT');
+        }
+        const preview = await moduleRegistry.previewActivationImpact(moduleId, etablissementId);
+        if (!preview) {
+            throw new AppError(`Module "${moduleId}" introuvable`, 404, 'MODULE_NOT_FOUND');
+        }
+        res.json({ success: true, data: preview });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /configuration/modules-advanced/:moduleId/config
+ * Configuration spécifique d'un module.
+ */
+router.get('/modules-advanced/:moduleId/config', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { moduleId } = req.params;
+        const etablissementId = req.utilisateur?.etablissementId;
+        if (!etablissementId) {
+            throw new AppError('etablissementId requis', 400, 'MISSING_ETABLISSEMENT');
+        }
+        const config = await moduleRegistry.getModuleConfig(moduleId, etablissementId);
+        res.json({ success: true, data: config });
+    } catch (error) { next(error); }
+});
+
+/**
+ * PUT /configuration/modules-advanced/:moduleId/config
+ * Met à jour la configuration d'un module.
+ */
+router.put('/modules-advanced/:moduleId/config', authMiddleware, canEditConfigModule, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { moduleId } = req.params;
+        const etablissementId = req.utilisateur?.etablissementId;
+        if (!etablissementId) {
+            throw new AppError('etablissementId requis', 400, 'MISSING_ETABLISSEMENT');
+        }
+        await moduleRegistry.setModuleConfig(moduleId, etablissementId, req.body);
+        res.json({ success: true, message: `Configuration du module ${moduleId} mise à jour` });
     } catch (error) { next(error); }
 });
 

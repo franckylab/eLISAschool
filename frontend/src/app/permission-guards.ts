@@ -2,15 +2,51 @@
  * ==================================
  * eLISAschool - Permission Route Guards
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  *
  * Guards TanStack Router pour la protection par permissions
  * À utiliser dans beforeLoad des routes
+ *
+ * [G.1] v3.0 — Bypass magique SUPER_ADMIN SUPPRIMÉ
+ * SUPER_ADMIN obtient toutes ses permissions via DEFAULT_ROLE_PERMISSIONS
+ * (Object.values(Permission) dans roles.enum.ts).
+ * L'évaluation est maintenant réelle pour TOUS les rôles sans exception.
+ * Seul le tenant sentinel RLS (00000000-...) conserve un traitement spécial.
+ * Rapport audit SaaS v3 — 2026
  */
 
 import { redirect } from '@tanstack/react-router';
 import { useAuthStore } from '@/stores/auth.store';
+
+/**
+ * [G.1] Évaluation réelle des permissions — sans bypass.
+ * SUPER_ADMIN a toutes les permissions attribuées via DEFAULT_ROLE_PERMISSIONS,
+ * donc permissions.includes(permission) sera true naturellement.
+ */
+function hasPermissionOrRole(permissions: string[], permission: string): boolean {
+    return permissions.includes(permission);
+}
+
+function hasAnyPermissionOrRole(permissions: string[], requiredPermissions: string[]): boolean {
+    return requiredPermissions.some(p => permissions.includes(p));
+}
+
+function hasAllPermissionsOrRole(permissions: string[], requiredPermissions: string[]): boolean {
+    return requiredPermissions.every(p => permissions.includes(p));
+}
+
+function hasModuleAccessOrRole(permissions: string[], module: string, fallbackAction: string): boolean {
+    return permissions.some(p => {
+        const parts = p.split(':');
+        const moduleName = parts[0];
+        const action = parts[parts.length - 1];
+        return (
+            moduleName === module &&
+            (action === 'view' || action === 'read' || action === fallbackAction || action === 'manage' || action === 'list')
+        );
+    });
+}
 
 /**
  * Vérifie si l'utilisateur a accès à un module
@@ -33,27 +69,12 @@ export function requireModulePermission(module: string, fallbackAction: string =
         throw redirect({ to: '/login' as any });
     }
 
-    // SUPER_ADMIN et ADMIN ont toujours accès
-    if (utilisateur.role === 'SUPER_ADMIN' || utilisateur.role === 'ADMIN') {
-        return;
-    }
-
     const permissions = utilisateur.permissions || [];
 
-    // Vérifier les permissions du module
-    const hasAccess = permissions.some(p => {
-        const parts = p.split(':');
-        const moduleName = parts[0];
-        const action = parts[parts.length - 1];
-
-        return (
-            moduleName === module &&
-            (action === 'view' || action === 'read' || action === fallbackAction || action === 'manage' || action === 'list')
-        );
-    });
+    // [G.1] Évaluation réelle — tous les rôles évalués uniformément
+    const hasAccess = hasModuleAccessOrRole(permissions, module, fallbackAction);
 
     if (!hasAccess) {
-        // ✅ Rediriger vers dashboard au lieu de / avec message d'erreur
         throw redirect({
             to: '/dashboard' as any,
         });
@@ -79,14 +100,10 @@ export function requirePermission(permission: string) {
         throw redirect({ to: '/login' as any });
     }
 
-    // SUPER_ADMIN et ADMIN ont toujours accès
-    if (utilisateur.role === 'SUPER_ADMIN' || utilisateur.role === 'ADMIN') {
-        return;
-    }
-
     const permissions = utilisateur.permissions || [];
 
-    if (!permissions.includes(permission)) {
+    // [G.1] Évaluation réelle — tous les rôles évalués uniformément
+    if (!hasPermissionOrRole(permissions, permission)) {
         throw redirect({
             to: '/dashboard' as any,
         });
@@ -137,15 +154,9 @@ export function requireAllPermissions(permissions: string[]) {
         throw redirect({ to: '/login' as any });
     }
 
-    // SUPER_ADMIN et ADMIN ont toujours accès
-    if (utilisateur.role === 'SUPER_ADMIN' || utilisateur.role === 'ADMIN') {
-        return;
-    }
-
+    // [G.1] Évaluation réelle — tous les rôles évalués uniformément
     const userPermissions = utilisateur.permissions || [];
-    const hasAll = permissions.every(p => userPermissions.includes(p));
-
-    if (!hasAll) {
+    if (!hasAllPermissionsOrRole(userPermissions, permissions)) {
         throw redirect({
             to: '/dashboard' as any,
         });
@@ -170,15 +181,9 @@ export function requireAnyPermission(permissions: string[]) {
         throw redirect({ to: '/login' as any });
     }
 
-    // SUPER_ADMIN et ADMIN ont toujours accès
-    if (utilisateur.role === 'SUPER_ADMIN' || utilisateur.role === 'ADMIN') {
-        return;
-    }
-
+    // [G.1] Évaluation réelle — tous les rôles évalués uniformément
     const userPermissions = utilisateur.permissions || [];
-    const hasAny = permissions.some(p => userPermissions.includes(p));
-
-    if (!hasAny) {
+    if (!hasAnyPermissionOrRole(userPermissions, permissions)) {
         throw redirect({
             to: '/dashboard' as any,
         });

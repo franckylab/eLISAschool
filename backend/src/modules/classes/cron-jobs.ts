@@ -9,7 +9,7 @@
  * - Réconciliation hebdomadaire du compteur effectifActuel
  */
 
-import cron from 'node-cron';
+import { scheduleWithLock } from '@common/services/cron-lock.service';
 import { logger } from '@common/utils/logger.util';
 import { AppDataSource } from '@database/data-source';
 import { ClasseAnnee } from './entities/classe-annee.entity';
@@ -25,7 +25,7 @@ export function initClassesCronJobs(): void {
     // Cron Job : Réconciliation effectifActuel
     // Exécution : Tous les lundis à 3h00
     // ========================================
-    cron.schedule('0 3 * * 1', async () => {
+    scheduleWithLock('classes-reconciliation-effectif', '0 3 * * 1', async () => {
         try {
             logger.info('🔄 [Cron] Démarration réconciliation effectifActuel des classes...');
 

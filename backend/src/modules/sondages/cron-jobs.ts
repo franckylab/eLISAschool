@@ -8,7 +8,7 @@
  * Tâches planifiées pour les sondages automatiques
  */
 
-import cron from 'node-cron';
+import { scheduleWithLock } from '@common/services/cron-lock.service';
 import { logger } from '@common/utils/logger.util';
 import { sondageService } from './services';
 
@@ -22,7 +22,7 @@ export function initSondageCronJobs(): void {
     // Cron Job 1: Activation des sondages programmés
     // Exécution: Toutes les 5 minutes
     // ========================================
-    cron.schedule('*/5 * * * *', async () => {
+    scheduleWithLock('sondages-activation-programmes', '*/5 * * * *', async () => {
         try {
             const count = await sondageService.activerSondagesProgrammes();
             
@@ -38,7 +38,7 @@ export function initSondageCronJobs(): void {
     // Cron Job 2: Fermeture automatique des sondages expirés
     // Exécution: Toutes les heures
     // ========================================
-    cron.schedule('0 * * * *', async () => {
+    scheduleWithLock('sondages-fermeture-expire', '0 * * * *', async () => {
         try {
             logger.info('📅 [Cron] Fermeture automatique des sondages expirés - Démarrage');
             
@@ -56,7 +56,7 @@ export function initSondageCronJobs(): void {
     // Cron Job 3: Nettoyage des anciens votes (> 1 an)
     // Exécution: Tous les jours à 3h00 du matin
     // ========================================
-    cron.schedule('0 3 * * *', async () => {
+    scheduleWithLock('sondages-nettoyage-votes', '0 3 * * *', async () => {
         try {
             logger.info('📅 [Cron] Nettoyage des anciens votes - Démarrage');
             
@@ -72,7 +72,7 @@ export function initSondageCronJobs(): void {
     // Cron Job 4: Création des sondages récurrents
     // Exécution: Tous les jours à 1h00 du matin
     // ========================================
-    cron.schedule('0 1 * * *', async () => {
+    scheduleWithLock('sondages-recurrence', '0 1 * * *', async () => {
         try {
             logger.info('📅 [Cron] Création des sondages récurrents - Démarrage');
             

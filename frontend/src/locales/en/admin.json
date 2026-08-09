@@ -1,0 +1,1399 @@
+{
+    "titre": "Platform Administration",
+    "sousTitre": "Global management of the eLISAschool platform",
+    "navigation": {
+        "dashboard": "Dashboard",
+        "etablissements": "Schools",
+        "facturation": "Billing",
+        "monitoring": "Monitoring",
+        "modules": "Modules",
+        "audit": "Audit",
+        "configuration": "Configuration",
+        "notifications": "Notifications",
+        "providers": "Providers",
+        "approbations": "Approvals",
+        "groupes": "Groups",
+        "permissions": "Permissions",
+        "revenus": "Revenue",
+        "abonnements": "Subscriptions",
+        "utilisateurs": "Users",
+        "parametresCascade": "Cascade parameters",
+"rolesPlateforme": "Platform roles",
+"sessionsActivite": "Sessions & Activity"
+    },
+    "sidebar": {
+        "titre": "Platform",
+        "sousTitre": "Control Plane",
+        "accesProprietaire": "Owner access",
+        "groupePilotage": "Steering",
+        "groupeTenants": "Tenants",
+        "groupeTechnique": "Technical",
+        "groupeSecurite": "Security",
+        "descDashboard": "Overview",
+        "descEtablissements": "Tenant management",
+        "descFacturation": "Plans & subscriptions",
+        "descModules": "Optional modules",
+        "descMonitoring": "Health & metrics",
+        "descAudit": "Audit log",
+        "descNotifications": "Notification config",
+        "descConfiguration": "Platform settings",
+        "descProviders": "Payment providers",
+                "descParametresCascade": "4-level cascade",
+                "parametresCascade": "Cascade parameters",
+        "descApprobations": "2F critical actions",
+        "ouvrirNavigation": "Open platform navigation",
+        "deplier": "Expand",
+        "replier": "Collapse",
+        "descGroupes": "School groups",
+        "descPermissions": "Permission matrix",
+        "descRevenus": "MRR, ARR & revenue",
+        "descAbonnements": "Active subscriptions",
+        "descUtilisateurs": "Platform accounts",
+"descRolesPlateforme": "Control Plane roles management",
+"descSessionsActivite": "Active sessions & revocation",
+        "sousGroupeIdentite": "Identity",
+        "sousGroupeSurveillance": "Monitoring"
+    },
+    "dashboard": {
+        "titre": "Platform Dashboard",
+        "sousTitre": "Overview — eLISAschool",
+        "kpiEtablissements": "Schools",
+        "kpiUtilisateurs": "Users",
+        "tauxActivite": "Activity rate",
+        "actifs": "active",
+        "utilisateursActifs": "active users",
+        "facturation": "Billing",
+        "totalFacture": "Total invoiced",
+        "totalPaye": "Total paid",
+        "totalImpaye": "Total unpaid",
+        "tauxRecouvrement": "Collection rate",
+        "facturesRetard": "Overdue invoices",
+        "santeEtablissements": "School Health",
+        "sains": "Healthy",
+        "attention": "Attention",
+        "critiques": "Critical",
+        "relancesEnvoyees": "Reminders sent",
+        "abonnementsSuspendus": "Suspended subscriptions",
+        "accesRapide": "Quick access",
+        "scoreSante": "Composite health score",
+        "scoreBase": "Based on healthy establishments, collection rate and activity",
+        "actionsEnAttente": "Pending actions",
+        "approbationsEnAttente": "Pending critical approvals",
+        "etablissementsCritiquesAction": "Critical establishments to monitor",
+        "facturesEnRetardAction": "Overdue invoices",
+        "notificationsNonLues": "Unread notifications",
+        "tendanceMRR": "MRR 6-month trend (indicative data)"
+    },
+    "plans": {
+        "titre": "Subscription Plans",
+        "creer": "New Plan",
+        "editer": "Edit Plan",
+        "supprimer": "Delete",
+        "confirmerSuppression": "Are you sure you want to delete this plan?",
+        "etapes": {
+            "infos": "Information",
+            "quotas": "Quotas",
+            "modules": "Included Modules",
+            "tranches": "Student Tiers",
+            "flags": "Feature Flags",
+            "resume": "Summary"
+        },
+        "champs": {
+            "nom": "Plan Name",
+            "slug": "Slug",
+            "description": "Description",
+            "prixBase": "Base Price",
+            "devise": "Currency",
+            "badge": "Badge",
+            "actif": "Active Plan",
+            "visible": "Visible to Clients"
+        },
+        "quotas": {
+            "titre": "Quotas & Limits",
+            "maxEleves": "Max Students",
+            "maxUtilisateurs": "Max Users",
+            "maxClasses": "Max Classes",
+            "maxMatieres": "Max Subjects",
+            "stockageGo": "Storage (GB)",
+            "smsInclus": "Included SMS/month",
+            "illimite": "Unlimited"
+        },
+        "modules": {
+            "titre": "Included Modules",
+            "critiques": "Critical Modules",
+            "premium": "Premium Modules",
+            "addons": "Add-on Modules",
+            "selectionner": "Select Modules"
+        },
+        "tranches": {
+            "titre": "Pricing Tiers",
+            "ajouter": "Add Tier",
+            "supprimer": "Delete",
+            "minEleves": "Min Students",
+            "maxEleves": "Max Students",
+            "montant": "Amount",
+            "label": "Label",
+            "aucune": "No tier configured"
+        },
+        "flags": {
+            "titre": "Feature Flags",
+            "activer": "Enable",
+            "desactiver": "Disable"
+        },
+        "resume": {
+            "titre": "Plan Summary",
+            "prix": "Price",
+            "modulesInclus": "{{count}} modules included",
+            "tranches": "{{count}} tiers configured",
+            "creer": "Create Plan",
+            "modifier": "Save"
+        },
+        "succes": {
+            "cree": "Plan created successfully",
+            "modifie": "Plan updated successfully",
+            "supprime": "Plan deleted"
+        }
+    },
+    "etablissements": {
+        "titre": "Schools",
+        "sousTitrePlateforme": "Platform administration — all schools",
+        "creer": "New School",
+        "editer": "Edit",
+        "suspendre": "Suspend",
+        "reactiver": "Reactivate",
+        "exporter": "Export CSV",
+        "actionsMasse": "Bulk Actions",
+        "stats": {
+            "total": "Total",
+            "actifs": "Active",
+            "enEssai": "Trial",
+            "suspendus": "Suspended",
+            "eleves": "Students",
+            "utilisateurs": "Users",
+            "santeOk": "Health OK"
+        },
+        "sante": {
+            "label": "Health",
+            "sains": "healthy",
+            "attention": "attention",
+            "critiques": "critical"
+        },
+        "etapes": {
+            "infos": "Information",
+            "plan": "Subscription Plan",
+            "options": "Options",
+            "resume": "Summary"
+        },
+        "champs": {
+            "nom": "School Name",
+            "code": "Code",
+            "type": "Type",
+            "adresse": "Address",
+            "telephone": "Phone",
+            "email": "Email",
+            "contacts": "Responsible Contacts"
+        },
+        "plan": {
+            "selectionner": "Select a Plan",
+            "cycleFacturation": "Billing Cycle",
+            "mensuel": "Monthly",
+            "trimestriel": "Quarterly",
+            "annuel": "Annual"
+        },
+        "options": {
+            "modulesAdditionnels": "Add-on Modules",
+            "featureFlags": "Feature Flags (override)"
+        },
+        "succes": {
+            "cree": "School created successfully",
+            "modifie": "School updated",
+            "suspendu": "School suspended",
+            "reactive": "School reactivated"
+        }
+    },
+    "providers": {
+        "titre": "Payment Providers",
+        "configurer": "Configure",
+        "tester": "Test Connection",
+        "testReussi": "Connection successful",
+        "testEchoue": "Connection failed",
+        "configure": "Configured",
+        "nonConfigure": "Not configured",
+        "sandbox": "Sandbox",
+        "production": "Production",
+        "champs": {
+            "apiKey": "API Key",
+            "apiSecret": "API Secret",
+            "webhookSecret": "Webhook Secret",
+            "mode": "Mode",
+            "canaux": "Supported Channels"
+        },
+        "providers_noms": {
+            "mtn_momo": "MTN Mobile Money",
+            "orange_money": "Orange Money",
+            "wave": "Wave",
+            "paystack": "Paystack",
+            "flutterwave": "Flutterwave",
+            "stripe": "Stripe",
+            "manuel": "Manual"
+        }
+    },
+    "usage": {
+        "titre": "Usage & Quotas",
+        "sousTitre": "Resource usage per school",
+        "jauge": {
+            "utilise": "{{utilise}} / {{max}}",
+            "pourcentage": "{{pct}}% used",
+            "illimite": "Unlimited"
+        },
+        "alertes": {
+            "normal": "Normal usage",
+            "attention": "Warning — quota > 80%",
+            "critique": "Critical — quota > 90%",
+            "depasse": "Quota exceeded",
+            "actionRequise": "Some quotas are approaching or exceeding limits. Action required.",
+            "selectionnez": "Select a school to view its usage",
+            "aucuneDonneeQuota": "No quota data for this school",
+            "selectionnerEtab": "Select a school",
+            "rechercherEtab": "Search for a school...",
+            "badgeDepasse": "Exceeded",
+            "badgeAlerte": "Warning",
+            "badgeOk": "OK"
+        },
+        "colonnes": {
+            "etablissement": "School",
+            "plan": "Plan",
+            "eleves": "Students",
+            "utilisateurs": "Users",
+            "stockage": "Storage",
+            "sms": "SMS",
+            "statut": "Status"
+        },
+        "export": "Export CSV"
+    },
+    "revenus": {
+        "titre": "Revenue & Analytics",
+        "sousTitre": "Platform financial metrics",
+        "kpi": {
+            "mrr": "MRR",
+            "arr": "ARR",
+            "churn": "Churn Rate",
+            "ltv": "Average LTV",
+            "arpu": "ARPU",
+            "abonnements": "Subscriptions",
+            "facturesImpayees": "Unpaid Invoices",
+            "sousMrr": "Monthly Recurring Revenue",
+            "sousArr": "Annual Recurring Revenue",
+            "sousChurn": "Cancellation rate",
+            "sousLtv": "Average Lifetime Value",
+            "sousArpu": "Average Revenue Per User",
+            "actifs": "Active Subscriptions",
+            "surTotal": "out of {{total}} total",
+            "facturesPayees": "Paid Invoices",
+            "enRetard": "Late",
+            "facturesEchues": "Overdue Invoices"
+        },
+        "repartition": {
+            "titre": "Distribution by Plan",
+            "etablissements": "{{count}} schools"
+        },
+        "top10": {
+            "titre": "Top 10 Schools",
+            "revenuMensuel": "Monthly Revenue"
+        },
+        "evolution": "MRR Trend (12 months)",
+        "statuts": {
+            "actif": "Active",
+            "essai": "Trial",
+            "suspendu": "Suspended",
+            "annule": "Cancelled"
+        },
+        "repartitionStatut": "Distribution by Status",
+        "actualiser": "Refresh",
+        "aucuneDonnee": "No data"
+    },
+    "abonnements": {
+        "titre": "Subscriptions",
+        "detail": {
+            "infos": "Information",
+            "plan": "Plan",
+            "dates": "Period",
+            "montant": "Amount",
+            "statut": "Status",
+            "factures": "Invoices",
+            "historique": "History",
+            "consommation": "Usage",
+            "actions": "Actions"
+        },
+        "actions": {
+            "suspendre": "Suspend",
+            "reactiver": "Reactivate",
+            "changerPlan": "Change Plan",
+            "resilier": "Terminate",
+            "factureManuelle": "Manual Invoice",
+            "confirmerSuspension": "Suspend this subscription?",
+            "confirmerResiliation": "Permanently terminate this subscription?",
+            "confirmerReactation": "Reactivate this subscription?"
+        },
+        "statuts": {
+            "ACTIF": "Active",
+            "EN_ESSAI": "Trial",
+            "SUSPENDU": "Suspended",
+            "ANNULE": "Cancelled",
+            "EXPIRE": "Expired"
+        }
+    },
+    "factures": {
+        "titre": "Invoices",
+        "statuts": {
+            "EMISE": "Issued",
+            "PAYEE": "Paid",
+            "EN_RETARD": "Overdue",
+            "ANNULEE": "Cancelled",
+            "AVOIR": "Credit Note",
+            "BROUILLON": "Draft",
+            "PARTIELLEMENT_PAYEE": "Partially Paid"
+        },
+        "exportPdf": "Download PDF",
+        "genererPdf": "Generate PDF",
+        "pdfPret": "PDF ready",
+        "pdfErreur": "Error generating PDF"
+    },
+    "webhooks": {
+        "titre": "Webhook Logs",
+        "titreRecus": "Received Webhooks",
+        "sousTitre": "History of webhooks received from payment providers",
+        "tousProviders": "All providers",
+        "tousStatuts": "All statuses",
+        "colonnes": {
+            "provider": "Provider",
+            "type": "Event Type",
+            "statut": "Status",
+            "date": "Received Date",
+            "tentatives": "Attempts"
+        },
+        "filtrer": {
+            "provider": "Filter by provider",
+            "statut": "Filter by status",
+            "tous": "All"
+        },
+        "retry": "Retry",
+        "retrySucces": "Retry successful",
+        "detail": {
+            "titre": "Webhook Detail",
+            "payload": "Received Payload",
+            "reponse": "Sent Response",
+            "headers": "Headers"
+        },
+        "aucun": "No webhooks received. Webhooks will appear here when payment events occur.",
+        "succes": "Success",
+        "echec": "Failed",
+        "en_attente": "Pending"
+    },
+    "notifications": {
+        "titre": "Notification Configuration",
+        "sousTitre": "Manage notification channels and templates",
+        "onglets": {
+            "providers": "Providers",
+            "templates": "Templates",
+            "test": "Send Test"
+        },
+        "providers": {
+            "email": "Email (SMTP)",
+            "sms": "SMS",
+            "push": "Push (Firebase)",
+            "inApp": "In-App",
+            "configurer": "Configure",
+            "actif": "Active",
+            "inactif": "Inactive",
+            "configure": "Configured",
+            "nonConfigure": "Not configured",
+            "aucun": "No notification provider configured",
+            "hote": "SMTP Host",
+            "port": "Port",
+            "expediteur": "Sender",
+            "cleApi": "API Key"
+        },
+        "templates": {
+            "creer": "New Template",
+            "editer": "Edit",
+            "supprimer": "Delete",
+            "canal": "Channel",
+            "sujet": "Subject",
+            "corps": "Message Body",
+            "variables": "Available Variables",
+            "preview": "Preview",
+            "aucun": "No notification template",
+            "pasSujet": "No subject"
+        },
+        "test": {
+            "envoyer": "Send test",
+            "destinataire": "Recipient",
+            "canal": "Channel",
+            "template": "Template",
+            "message": "Message",
+            "placeholder": "Email, phone number, or user ID",
+            "succes": "Notification sent successfully",
+            "echec": "Error during test"
+        }
+    },
+    "audit": {
+        "titre": "Audit Log",
+        "sousTitre": "Audit logs — all schools",
+        "filtres": {
+            "module": "Module",
+            "severite": "Severity",
+            "statut": "Status",
+            "dateDebut": "Start Date",
+            "dateFin": "End Date",
+            "action": "Action",
+            "utilisateur": "Search user",
+            "tous": "All",
+            "tousModules": "All modules",
+            "toutesSeverites": "All severities",
+            "tousStatuts": "All statuses"
+        },
+        "colonnes": {
+            "date": "Date",
+            "utilisateur": "User",
+            "action": "Action",
+            "module": "Module",
+            "cible": "Target",
+            "severite": "Severity",
+            "statut": "Status"
+        },
+        "detail": {
+            "titre": "Audit Detail",
+            "general": "General",
+            "modifications": "Changes",
+            "contexte": "Technical Context"
+        },
+        "export": {
+            "csv": "Export CSV",
+            "json": "Export JSON",
+            "enCours": "Exporting...",
+            "reussi": "{{format}} export successful ({{taille}})"
+        },
+        "stats": {
+            "total": "Total logs",
+            "dernieres24h": "Last 24h",
+            "tauxEchec": "Failure rate"
+        },
+        "succes": "Success",
+        "echec": "Failed",
+        "idCopie": "ID copied to clipboard",
+        "copierId": "Copy ID"
+    },
+    "composants": {
+        "statCard": {
+            "tendanceHausse": "Trending up",
+            "tendanceBaisse": "Trending down",
+            "stable": "Stable"
+        },
+        "confirmAction": {
+            "confirmer": "Confirm",
+            "annuler": "Cancel"
+        },
+        "emptyState": {
+            "aucuneDonnee": "No data",
+            "creerPremier": "Create first item"
+        },
+        "dataTable": {
+            "recherche": "Search...",
+            "aucunResultat": "No results",
+            "lignesParPage": "Rows per page",
+            "page": "Page {{page}} of {{total}}",
+            "triAsc": "Sort ascending",
+            "triDesc": "Sort descending"
+        }
+    },
+    "facturation": {
+        "titre": "Billing",
+        "sousTitre": "Manage plans, subscriptions and invoices",
+        "pageTitre": "Billing & Subscriptions",
+        "pageSousTitre": "Manage plans, client subscriptions and platform billing",
+        "chargement": "Loading...",
+        "onglets": {
+            "plans": "Plans",
+            "abonnements": "Subscriptions",
+            "factures": "Invoices",
+            "credits": "Credit Notes",
+            "usage": "Usage",
+            "revenus": "Revenue",
+            "modules": "Modules",
+            "flags": "Feature Flags",
+            "providers": "Providers",
+            "groupes": "Groups"
+        },
+        "plans": {
+            "nouveau": "New plan",
+            "elevesMax": "Max students",
+            "utilisateursMax": "Max users",
+            "classesMax": "Max classes",
+            "illimite": "Unlimited",
+            "modulesInclus": "Included modules:",
+            "tranchesSupp": "Additional tiers:",
+            "actif": "Active",
+            "inactif": "Inactive",
+            "modifier": "Edit",
+            "parMois": "/month"
+        },
+        "abonnements": {
+            "nombre": "{{count}} subscription{{plural}}",
+            "etablissement": "School",
+            "plan": "Plan",
+            "statut": "Status",
+            "eleves": "Students",
+            "montantMois": "Amount/month",
+            "fin": "End",
+            "auto": "Auto",
+            "aucun": "No active subscription",
+            "retour": "← Back to subscriptions"
+        },
+        "facturesPage": {
+            "numero": "Number",
+            "dateEmission": "Issue date",
+            "echeance": "Due date",
+            "montantTotal": "Total amount",
+            "paye": "Paid",
+            "statut": "Status",
+            "aucune": "No invoice"
+        },
+        "modulesPage": {
+            "nouveau": "New module",
+            "mensuel": "Monthly:",
+            "annuel": "Yearly:",
+            "aucun": "No optional module configured",
+            "description": "Modules available for subscriptions",
+            "nomLabel": "Name",
+            "modifier": "Edit module",
+            "actif": "Active",
+            "inactif": "Inactive",
+            "activer": "Enable",
+            "desactiver": "Disable",
+            "confirmSuppressionTitre": "Delete this module?",
+            "confirmSuppression": "This action is irreversible. The module will be permanently deleted."
+        },
+        "flagsPage": {
+            "etablissementId": "School ID",
+            "placeholder": "School UUID",
+            "charger": "Load",
+            "flag": "Flag",
+            "active": "Enabled",
+            "desactive": "Disabled",
+            "hint": "Enter a school ID to view its feature flags",
+            "action": "Action",
+            "activer": "Enable",
+            "desactiver": "Disable",
+            "aucunFlag": "No feature flag found for this school"
+        }
+    },
+    "configuration": {
+        "titre": "Platform Configuration",
+        "sousTitre": "Global system settings — SUPER_ADMIN",
+        "actualiser": "Refresh",
+        "featureFlags": "Feature Flags",
+        "chargement": "Loading...",
+        "aucunParametre": "No parameter in this category",
+        "sauver": "Save",
+        "categories": {
+            "systeme": "System",
+            "securite": "Security",
+            "notifications": "Notifications",
+            "regional": "Regional",
+            "modules": "Modules",
+            "personnalise": "Custom"
+        },
+        "oui": "Yes",
+        "non": "No"
+    },
+    "platform": {
+        "banniere": "Platform Space — Owner Access",
+        "erreurTitre": "Platform Error",
+        "erreurMessage": "An unexpected error occurred in the platform space.",
+        "detailsTechniques": "Technical details",
+        "reessayer": "Retry",
+        "rechargerPage": "Reload page"
+    },
+    "monitoring": {
+        "titre": "Infrastructure Monitoring",
+        "sousTitre": "Real-time metrics, health checks, alerts",
+        "periodes": {
+            "1h": "1 hour",
+            "24h": "24 hours",
+            "7d": "7 days"
+        },
+        "health": {
+            "titre": "Service Status",
+            "database": "Database",
+            "api": "API",
+            "external": "External Services"
+        },
+        "metriques": {
+            "etablissements": "Schools",
+            "utilisateurs": "Users",
+            "eleves": "Students"
+        },
+        "goldenSignals": {
+            "titre": "Four Golden Signals",
+            "latence": "Latency",
+            "trafic": "Traffic",
+            "erreurs": "Errors",
+            "saturation": "Saturation",
+            "moyenne": "average",
+            "reqSec": "req/s",
+            "usersActifs": "active users",
+            "total5xx": "total 5xx",
+            "total4xx": "total 4xx",
+            "cpu": "CPU",
+            "memoire": "Memory",
+            "dbConn": "DB conn.",
+            "nonDisponible": "Golden Signals data unavailable"
+        },
+        "export": {
+            "titre": "Report Export",
+            "activiteCsv": "Activity (CSV)",
+            "facturationCsv": "Billing (CSV)",
+            "securiteCsv": "Security (CSV)",
+            "completJson": "Full (JSON)",
+            "completPdf": "Full (PDF)"
+        },
+        "alertes": {
+            "titre": "Active Alerts",
+            "aucune": "No active alert",
+            "valeur": "Value",
+            "seuil": "Threshold",
+            "regle": "Rule"
+        },
+        "noisyNeighbor": {
+            "titre": "Noisy Neighbor Detection",
+            "alertes": "{{count}} alerts",
+            "etablissement": "School",
+            "eleves": "Students",
+            "volume": "Volume",
+            "charge": "Load",
+            "statut": "Status",
+            "aucuneDonnee": "No consumption data available",
+            "alertesActives": "Active alerts"
+        },
+        "tempsReel": {
+            "titre": "Real-time",
+            "connecte": "Connected",
+            "polling": "Polling",
+            "modeActuel": "Current mode:",
+            "pollingHttp": "HTTP Polling (30s)",
+            "wsIndisponible": "WebSocket will be enabled when Socket.IO is configured on the server.",
+            "dernieresAlertes": "Latest real-time alerts",
+            "aucuneAlerte": "No real-time alert received"
+        },
+        "derniereMaj": "Last updated:",
+        "etatPlateforme": "Platform Health",
+        "derniereVerification": "Last checked",
+        "rules": {
+            "titre": "Alert rules",
+            "nouvelle": "New rule",
+            "aucune": "No alert rule configured",
+            "actif": "Active",
+            "desactive": "Disabled",
+            "duree": "Duration",
+            "supprimer": "Delete",
+            "annuler": "Cancel",
+            "creer": "Create rule",
+            "nom": "Rule name",
+            "nomPlaceholder": "e.g. High API latency",
+            "metrique": "Metric",
+            "condition": "Condition",
+            "seuil": "Threshold",
+            "severity": "Severity",
+            "message": "Alert message",
+            "messagePlaceholder": "e.g. Average latency exceeds threshold",
+            "aide": "The rule triggers when the metric crosses the threshold for the specified duration (in minutes).",
+            "suppressionTitre": "Delete rule",
+            "suppressionConfirm": "Confirm deletion of rule « {{nom}} »?",
+            "metric": {
+                "http_request_duration_ms": "Request latency (ms)",
+                "http_errors_5xx_total": "5xx errors",
+                "http_requests_total": "Total requests",
+                "resource_database_percent": "Database usage (%)",
+                "resource_memory_percent": "Memory usage (%)"
+            },
+            "modifier": "Edit",
+            "enregistrer": "Save",
+            "activer": "Enable rule"
+        }
+    },
+    "groupes": {
+        "titre": "School Groups",
+        "description": "Manage logical groups of schools and their SaaS configuration",
+        "creer": "New group",
+        "nom": "Group name",
+        "code": "Unique code",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Optional description...",
+        "membres": "members",
+        "etablissementId": "School ID",
+        "ajouter": "Add",
+        "aucunMembre": "No members in this group",
+        "vide": "No group configured",
+        "videDescription": "Create your first group to get started",
+        "tabs": {
+            "membres": "Members",
+            "modules": "Modules",
+            "tranches": "Tiers",
+            "abonnement": "Subscription"
+        },
+        "modulesComing": "Module configuration coming soon",
+        "tranchesComing": "Tier configuration coming soon",
+        "abonnementComing": "Subscription configuration coming soon",
+        "configuration": "Configuration",
+        "tranches": {
+            "label": "Label",
+            "min": "Min",
+            "max": "Max",
+            "montant": "Amount"
+        },
+        "abonnement": {
+            "statut": "Status",
+            "modeFacturation": "Billing mode",
+            "repartition": "Distribution",
+            "tarifDegressif": "Tiered pricing"
+        },
+        "modalCreate": {
+            "titre": "New group"
+        },
+        "toast": {
+            "cree": "Group created",
+            "supprime": "Group deleted",
+            "membreAjoute": "Member added",
+            "membreRetire": "Member removed",
+            "erreurCreation": "Error during creation"
+        },
+        "facturation": {
+            "individuelle": "Individual",
+            "consolidee": "Consolidated",
+            "hybride": "Hybrid",
+            "degressivite": "Tiered Discount",
+            "repartition": "Pro-rata Distribution"
+        }
+    },
+    "onboarding": {
+        "titre": "Welcome to eLISAschool",
+        "sousTitre": "Let's set up your platform in a few steps",
+        "etape": "Step {{current}} of {{total}}",
+        "completees": "{{count}}/{{total}} completed",
+        "precedent": "Previous",
+        "suivant": "Next",
+        "terminer": "Finish",
+        "allerPage": "Go to page",
+        "passer": "Skip onboarding",
+        "optionnel": "(optional)",
+        "fermer": "Close onboarding",
+        "steps": {
+            "configPlatform": {
+                "titre": "Platform Configuration",
+                "desc": "Check global settings: language, currency, timezone, theme."
+            },
+            "createEtab": {
+                "titre": "First School",
+                "desc": "Create your first client school to get started."
+            },
+            "inviteAdmin": {
+                "titre": "Invite an Administrator",
+                "desc": "Invite an administrator to manage the school daily."
+            },
+            "activateModules": {
+                "titre": "Enable Modules",
+                "desc": "Enable the required modules: grades, report cards, finances, etc."
+            },
+            "configBilling": {
+                "titre": "Configure Billing",
+                "desc": "Define subscription plans and student tiers."
+            }
+        }
+    },
+    "abonnement": {
+        "titre": "Subscription Detail",
+        "montantMois": "Amount/month",
+        "elevesActuels": "Current students",
+        "debut": "Start",
+        "fin": "End",
+        "autoRenouvellement": "Auto-renewal",
+        "pasAutoRenouvellement": "No auto-renewal",
+        "onglets": {
+            "infos": "Info",
+            "factures": "Invoices",
+            "actions": "Actions"
+        },
+        "details": {
+            "titre": "Subscription Details",
+            "id": "ID:",
+            "etablissementId": "School ID:",
+            "planId": "Plan ID:",
+            "cycle": "Cycle:"
+        },
+        "factures": {
+            "nombre": "{{count}} invoice(s)",
+            "exportPdf": "Export PDF",
+            "numero": "Number",
+            "date": "Date",
+            "montant": "Amount",
+            "statut": "Status",
+            "aucune": "No invoices"
+        },
+        "actions": {
+            "suspendre": "Suspend",
+            "suspendreDesc": "Access temporarily disabled",
+            "reactiver": "Reactivate",
+            "reactiverDesc": "Restore full access",
+            "changerPlan": "Change plan",
+            "changerPlanDesc": "Upgrade or downgrade",
+            "genererFacture": "Generate invoice",
+            "genererFactureDesc": "PDF export of the latest invoice",
+            "zoneDanger": "Danger Zone",
+            "zoneDangerDesc": "Termination is irreversible. The school will lose all access to the platform.",
+            "resilier": "Terminate subscription",
+            "confirmResilier": "Are you sure you want to terminate this subscription?"
+        },
+        "changerPlan": {
+            "description": "Select a new plan for this school. Prorated calculation will be applied.",
+            "enCours": "Changing plan...",
+            "succes": "Plan changed successfully"
+        },
+        "resilier": {
+            "confirmation": "This action will permanently terminate this school's subscription.",
+            "irreversible": "Warning: this action is irreversible. The school will immediately lose all access to the platform.",
+            "motif": "Termination reason (optional)",
+            "motifPlaceholder": "Explain the reason for termination...",
+            "succes": "Subscription terminated successfully"
+        }
+    },
+    "provider": {
+        "titre": "Payment Providers",
+        "titreModal": "Payment Provider Configuration",
+        "sousTitreModal": "Manage accepted payment methods",
+        "configure": "Configured",
+        "nonConfigure": "Not configured",
+        "configurer": "Configure",
+        "modal": {
+            "titre": "Configure {{name}}",
+            "description": "Enter provider credentials",
+            "enregistrer": "Save",
+            "canal": "Payment channel",
+            "mode": "{{mode}} mode",
+            "sandbox": "Test transactions only",
+            "production": "Real transactions",
+            "credentials": "Credentials",
+            "placeholder": "Enter {{field}}"
+        }
+    },
+    "permissions": {
+        "titre": "Permissions Matrix",
+        "sousTitre": "Complete overview of access by role and module",
+        "tousRoles": "All roles",
+        "tousModules": "All modules",
+        "sauvegarder": "Save",
+        "exporter": "Export",
+        "rechercher": "Search...",
+        "matrice": "Matrix",
+        "liste": "List",
+        "modulePermission": "Module / Permission",
+        "totalPermissions": "Total Permissions",
+        "modules": "Modules",
+        "roles": "Roles",
+        "couvertureMoyenne": "Average Coverage",
+        "sauvegardeReussie": "Permissions updated",
+        "sauvegardeErreur": "Failed to save permissions"
+    },
+    "planForm": {
+        "nouveau": "New subscription plan",
+        "modifier": "Edit: {{nom}}",
+        "creer": "Create plan",
+        "etape": "Step {{current}}/{{total}}",
+        "precedent": "Previous",
+        "suivant": "Next",
+        "infos": {
+            "nom": "Plan name *",
+            "nomPlaceholder": "E.g.: Starter, Pro, Enterprise",
+            "slug": "Slug",
+            "description": "Description",
+            "descriptionPlaceholder": "Plan description for customers...",
+            "prix": "Base price *",
+            "devise": "Currency",
+            "badge": "Badge (optional)",
+            "badgePlaceholder": "E.g.: Popular, New, -20%"
+        },
+        "quotas": {
+            "desc": "Define consumption limits for this plan.",
+            "maxEleves": "Max students",
+            "maxUsers": "Max users",
+            "illimite": "0 = unlimited",
+            "maxClasses": "Max classes",
+            "stockage": "Storage (GB)",
+            "sms": "Included SMS/month"
+        },
+        "modules": {
+            "desc": "Select modules included in this plan.",
+            "critique": "Critical (free)",
+            "premium": "Premium (included in plan)",
+            "addon": "Add-on (extra)"
+        },
+        "tranches": {
+            "desc": "Pricing tiers beyond the base plan.",
+            "ajouter": "Add",
+            "aucune": "No tier configured. Students beyond {{max}} will not be billed extra.",
+            "titre": "Tier {{n}}",
+            "elevesMin": "Min students",
+            "elevesMax": "Max students",
+            "montant": "Extra amount",
+            "label": "Label",
+            "labelPlaceholder": "E.g.: 301-800 students",
+            "modeTitre": "Billing mode & rules",
+            "mode": "Billing mode",
+            "modeAuto": "Automatic",
+            "modeDeclaratif": "Declarative",
+            "modeAutoDesc": "Recomputation by actual student count + prorated mid-cycle.",
+            "modeDeclaratifDesc": "Manually subscribed tier, fixed billing.",
+            "plafondMax": "Max student ceiling",
+            "plafondMaxDesc": "Beyond → critical workflow. Leave empty = unlimited.",
+            "tolerance": "Overrun tolerance",
+            "prorata": "Immediate prorating",
+            "blocage": "Block beyond"
+        },
+        "flags": {
+            "desc": "Enable feature flags for schools on this plan."
+        },
+        "resume": {
+            "nouveauPlan": "New plan",
+            "pasDescription": "No description",
+            "mois": "/month",
+            "elevesMax": "Max students",
+            "utilisateurs": "Users",
+            "illimite": "Unlimited",
+            "classes": "Classes",
+            "stockage": "Storage",
+            "modulesInclus": "Included modules ({{count}})",
+            "tranches": "Tiers ({{count}})",
+            "flagsActifs": "Enabled feature flags"
+        },
+        "erreurCreation": "Error during creation",
+        "erreurModification": "Error during update"
+    },
+    "etablissementForm": {
+        "nouveau": "New school",
+        "modifier": "Edit: {{nom}}",
+        "creer": "Create school",
+        "etape": "Step {{current}}/{{total}}",
+        "precedent": "Previous",
+        "suivant": "Next",
+        "infos": {
+            "nom": "School name *",
+            "nomPlaceholder": "E.g.: Bilingual High School of Douala",
+            "code": "Code",
+            "codePlaceholder": "E.g.: BHD",
+            "type": "Type",
+            "adresse": "Address",
+            "adressePlaceholder": "Full address",
+            "telephone": "Phone",
+            "email": "Email"
+        },
+        "plan": {
+            "desc": "Select the subscription plan for this school.",
+            "maxEleves": "Up to {{max}} students",
+            "mois": "/month",
+            "aucun": "No plan available. Create a plan first in the Billing tab.",
+            "cycle": "Billing cycle"
+        },
+        "options": {
+            "desc": "Additional options for this school.",
+            "info": "Additional modules and feature flags can be configured after creation via the Billing page."
+        },
+        "resume": {
+            "nouvelEtab": "New school",
+            "abonnement": "Subscription",
+            "plan": "Plan:",
+            "cycle": "Cycle:",
+            "mois": "month",
+            "periode": "period"
+        },
+        "erreurCreation": "Error during creation"
+    },
+    "providersPage": {
+        "titre": "Payment Providers",
+        "description": "Description",
+        "creer": "New provider",
+        "nom": "Name",
+        "slug": "Slug",
+        "type": "Type",
+        "credentials": "Credentials (JSON)",
+        "credentialsHint": "Credentials will be encrypted with AES-256-GCM",
+        "sandbox": "Sandbox Mode",
+        "actif": "Active",
+        "tester": "Test",
+        "vide": "No provider configured",
+        "videDescription": "Add your first payment provider",
+        "modalCreate": {
+            "titre": "New provider"
+        },
+        "toast": {
+            "cree": "Provider created",
+            "supprime": "Provider deleted",
+            "erreurCreation": "Error during creation",
+            "erreurTest": "Error during test",
+            "credentialsInvalides": "Invalid JSON credentials",
+            "connexionOk": "Connection OK",
+            "echecConnexion": "Connection failed"
+        },
+        "inactif": "Inactive",
+        "types": {
+            "mobileMoney": "Mobile Money",
+            "carte": "Bank card",
+            "virement": "Bank transfer",
+            "mixte": "Mixed"
+        },
+        "detail": {
+            "sandbox": "Sandbox",
+            "production": "Production",
+            "creeLe": "Created on",
+            "modifieLe": "Modified on",
+            "mode": "Mode",
+            "statut": "Status"
+        }
+    },
+    "tenant": {
+        "etablissements": "Schools",
+        "etablissement": "School",
+        "utilisateurs": "Users",
+        "eleves": "Students",
+        "mensuel": "Monthly",
+        "charge": "Load",
+        "statut": "Status",
+        "aucuneDonnee": "No data available"
+    },
+    "approbations": {
+        "titre": "Critical Actions Approvals",
+        "description": "2F workflow for sensitive platform operations",
+        "enAttente": "Pending",
+        "approuvees": "Approved",
+        "rejetees": "Rejected",
+        "executees": "Executed",
+        "expirees": "Expired",
+        "tousStatuts": "All statuses",
+        "tousTypes": "All types",
+        "nouvelleDemande": "New request",
+        "aucuneAction": "No critical action found",
+        "detailTitre": "Critical Action Detail",
+        "approuverTitre": "Approve with MFA",
+        "rejeterTitre": "Reject action",
+        "confirmerApprobation": "Confirm",
+        "confirmerRejet": "Reject",
+        "codeMFA": "MFA Code (6 digits)",
+        "mfaExplication": "Enter the TOTP code from your authenticator app",
+        "motifRejet": "Rejection reason",
+        "motifPlaceholder": "Explain why you are rejecting this action...",
+        "demandeur": "Requester",
+        "approuveur": "Approver",
+        "dateDemande": "Request date",
+        "dateApprobation": "Approval date",
+        "etablissement": "Institution",
+        "cible": "Target",
+        "expiration": "Expiration",
+        "tentatives": "Attempts",
+        "raison": "Request reason",
+        "donneesAction": "Action data",
+        "resultatExecution": "Execution result",
+        "approuver": "Approve (MFA)",
+        "rejeter": "Reject",
+        "annuler": "Cancel",
+        "expire": "Expired"
+    },
+    "actionsCritiques": {
+        "types": {
+            "resilier": "Terminate subscription",
+            "suspendre": "Suspend subscription",
+            "upgrade": "Change plan",
+            "supprimerEtablissement": "Delete school",
+            "accorderAvoir": "Grant credit",
+            "restaurerBackup": "Restore backup",
+            "reinitialiserGlobal": "Global reset",
+            "modifierTarifs": "Modify pricing"
+        },
+        "statuts": {
+            "enAttente": "Pending",
+            "approuvee": "Approved",
+            "rejetee": "Rejected",
+            "executee": "Executed",
+            "expiree": "Expired",
+            "annulee": "Cancelled"
+        },
+        "toast": {
+            "demandee": "Critical action requested",
+            "approuvee": "Critical action approved",
+            "rejetee": "Critical action rejected",
+            "annulee": "Critical action cancelled",
+            "erreurDemande": "Error during request",
+            "mfaInvalide": "Invalid MFA code",
+            "erreurRejet": "Error during rejection",
+            "erreurAnnulation": "Error during cancellation"
+        }
+    },
+    "providerConfig": {
+        "erreurConfiguration": "Configuration error",
+        "carteBancaire": "Bank card",
+        "virement": "Bank transfer",
+        "paiementManuel": "Manual Payment"
+    },
+    "catalogue": {
+        "titre": "Modules Catalogue",
+        "sousTitre": "Single source of truth — criteria, pricing and per-school resolution",
+        "synchroniser": "Synchronize",
+        "nouveauModule": "New module",
+        "totalModules": "Total modules",
+        "critiquesGratuits": "Critical (free)",
+        "facturables": "Billable (Premium/Add-on)",
+        "actifsDefaut": "Active by default",
+        "rechercher": "Search module (name, code)...",
+        "chargement": "Loading catalogue...",
+        "aucunModule": "No module found",
+        "aucunModuleDesc": "Adjust your filters or create your first catalogue entry.",
+        "resolution": "Per-school resolution",
+        "aucunModuleActif": "No active module for this school",
+        "selectionnerEtab": "Select a school to display resolved modules",
+        "previsualiserCascade": "Preview the catalogue → plan → add-on cascade per school",
+        "payants": "{{count}} billable",
+        "actif": "Active",
+        "inactif": "Disabled",
+        "systeme": "System",
+        "inclus": "Included",
+        "activer": "Activate",
+        "desactiver": "Deactivate",
+        "categories": {
+            "toutes": "All categories",
+            "critiques": "Critical (free)",
+            "premium": "Premium (plans)",
+            "addons": "Add-ons (extras)"
+        },
+        "badge": {
+            "critique": "Critical",
+            "premium": "Premium",
+            "addon": "Add-on"
+        },
+        "source": {
+            "catalogue": "Default",
+            "plan": "Included in plan",
+            "supplement": "Extra"
+        },
+        "modal": {
+            "nouveau": "New catalogue module",
+            "modifier": "Edit module — {{code}}",
+            "codeRequis": "Code and name are required",
+            "annuler": "Cancel",
+            "enregistrer": "Save",
+            "creer": "Create",
+            "code": "Code *",
+            "nom": "Name *",
+            "description": "Description",
+            "categorie": "Category",
+            "prixMensuel": "Monthly price (F)",
+            "prixAnnuel": "Annual price (F)",
+            "planMinimum": "Minimum plan",
+            "icone": "Icon (Lucide name)",
+            "actifDefaut": "Active by default",
+            "visibleCatalogue": "Visible in catalogue",
+            "codeProtege": "Protected code (system module)",
+            "categorieCritique": "Critical (free)",
+            "categoriePremium": "Premium (plan)",
+            "categorieAddon": "Add-on (extra)",
+            "planAucun": "None"
+        },
+        "toast": {
+            "cree": "Catalogue module created",
+            "misAJour": "Catalogue module updated",
+            "supprime": "Module removed from catalogue",
+            "toggle": "Module state updated",
+            "sync": "Catalogue synchronized ({{count}} entries)",
+            "erreurCreation": "Error during creation",
+            "erreurMaj": "Error during update",
+            "erreurSuppression": "Error during deletion",
+            "erreurToggle": "Error during toggle",
+            "erreurSync": "Error during synchronization"
+        },
+        "confirm": {
+            "supprimerTitre": "Delete « {{nom}} »?",
+            "supprimerDesc": "This entry will be removed from the catalogue. System modules (seeds) are protected.",
+            "supprimerLabel": "Delete"
+        }
+    },
+    "featureFlags": {
+        "titre": "Feature Flags",
+        "overrideTenant": "Tenant override",
+        "selectionnerEtab": "Select a school",
+        "selectionnerEtabMessage": "Select a school to view its feature flags",
+        "rechercher": "Search for a flag...",
+        "tous": "All",
+        "plan": "Plan",
+        "override": "Override",
+        "defaut": "Default",
+        "aucunFlag": "No feature flag found",
+        "toastToggleSuccess": "Flag updated",
+        "toastToggleError": "Error updating flag"
+    },
+    "platformUsers": {
+        "creer": "New account",
+        "total": "Total accounts",
+        "superAdmins": "Super Admins",
+        "mfaActif": "MFA active",
+        "sessionsActives": "Active sessions",
+        "rechercher": "Search user...",
+        "tousRoles": "All roles",
+        "tousStatuts": "All statuses",
+        "utilisateur": "User",
+        "role": "Role",
+        "statut": "Status",
+        "derniereConnexion": "Last login",
+        "aucunUtilisateur": "No platform users",
+        "creerPremierCompte": "Create the first admin account",
+        "voir": "View details",
+        "modifier": "Edit",
+        "revoquerSessions": "Revoke sessions",
+        "desactiver": "Deactivate",
+        "reactiver": "Reactivate",
+        "nouveauCompte": "New platform account",
+        "fermer": "Close"
+    },
+    "platformRoles": {
+        "titre": "Role Builder",
+        "description": "Platform roles management — system & custom",
+        "creerRole": "New role",
+        "matriceTitre": "Permissions matrix",
+        "module": "Module",
+        "actions": "Actions",
+        "rolesSysteme": "System roles",
+        "listeRoles": "Roles",
+        "nom": "Name",
+        "type": "Type",
+        "scope": "Scope",
+        "permissions": "Permissions",
+        "aucunRole": "No roles configured",
+        "rolesSystemeAuto": "System roles will be created automatically after migration",
+        "nouveauRole": "New custom role",
+        "fermer": "Close",
+        "roleIntrouvable": "Role not found",
+        "retourListe": "Back to roles",
+        "permissionsDetail": "Assigned permissions",
+        "aucunePermission": "No permissions assigned",
+        "nomRole": "Role name",
+        "descriptionRole": "Description",
+        "annuler": "Cancel",
+        "creer": "Create",
+        "systeme": "System"
+    },
+    "parametresCascade": {
+        "titre": "Cascade parameters",
+        "sousTitre": "System → Global → Group → Establishment",
+        "listeParametres": "Parameters",
+        "rechercher": "Search for a parameter...",
+        "tousModules": "All modules",
+        "chargement": "Loading...",
+        "selectionnerParametre": "Select a parameter to view its cascade",
+        "valeurEffective": "Effective value",
+        "historique": "History",
+        "timelineModifications": "Modification timeline",
+        "aucunHistorique": "No modifications recorded",
+        "restaurerVersion": "Restore this version",
+        "modifier": "Edit",
+        "resetOverride": "Reset",
+        "propager": "Propagate to all",
+        "propagationConfirm": "Propagate global value to all establishments without override?",
+        "incoherencesDetectees": "{{count}} inconsistency(ies) detected",
+        "niveau_systeme": "System",
+        "niveau_global": "Global",
+        "niveau_groupe": "Group",
+        "niveau_etablissement": "Establishment",
+        "aucunParametre": "No parameter configured",
+        "propageable": "Propagable",
+        "nonPropageable": "Not propagable",
+        "overrides": "overrides",
+        "toastGlobalUpdated": "Global value updated",
+        "toastOverrideCreated": "Override created",
+        "toastOverrideReset": "Override reset",
+        "toastPropagationDone": "{{count}} establishment(s) updated",
+        "toastRollbackDone": "Version restored successfully",
+        "erreurParametreNotFound": "Parameter not found",
+        "erreurOverrideNotFound": "No override found",
+        "erreurNotPropagable": "This parameter is not propagable"
+    },
+    "platformSessions": {
+        "title": "Sessions & Activity",
+        "subtitle": "Platform active sessions management",
+        "revokeAll": "Revoke all",
+        "activeSessions": "Active sessions",
+        "uniqueUsers": "Unique users",
+        "maxPerUser": "Max per user",
+        "noSessions": "No active sessions",
+        "revoke": "Revoke this session",
+        "expire": "Expires"
+    },
+    "platformUsers": {
+        "detailNotFound": "User not found",
+        "tabInfos": "Information",
+        "tabSessions": "Sessions",
+        "tabAudit": "Audit",
+        "suspendre": "Suspend",
+        "reactiver": "Reactivate",
+        "resetMfa": "Reset MFA",
+        "profil": "Profile",
+        "role": "Role",
+        "creeLe": "Created on",
+        "dernierAcces": "Last access",
+        "statut": "Status",
+        "actif": "Active",
+        "inactif": "Inactive",
+        "noSessions": "No active sessions",
+        "revokeSession": "Revoke",
+        "auditComingSoon": "Audit history — Coming soon"
+    },
+    "identite": {
+        "titre": "Global Identities",
+        "description": "Single source of truth — identities, memberships, access",
+        "creer": "New identity",
+        "email": "Email",
+        "emailVerifie": "Email verified",
+        "mfaActive": "MFA active",
+        "statut": "Status",
+        "derniereConnexion": "Last login",
+        "memberships": "Memberships",
+        "contexte": "Context",
+        "role": "Role",
+        "assignerRole": "Assign role",
+        "revoquer": "Revoke",
+        "verifierEmail": "Verify email",
+        "supprimer": "Delete",
+        "aucuneIdentite": "No identities registered",
+        "creerPremiere": "Create the first global identity",
+        "totalIdentites": "Total identities",
+        "mfaPourcentage": "% MFA active",
+        "emailVerifiePourcentage": "% email verified"
+    },
+    "platformPermissions": {
+        "title": "Permissions Matrix",
+        "subtitle": "Granular permissions management per platform role",
+        "permission": "Permission",
+        "granted": "Granted",
+        "denied": "Denied",
+        "pending": "Pending",
+        "unsavedChanges": "Unsaved changes",
+        "changes": "changes",
+        "saveRole": "Save",
+        "summary": "{{total}} permissions · {{roles}} roles · {{modules}} modules",
+        "modules": {
+            "dashboard": "Dashboard",
+            "etablissements": "Institutions",
+            "facturation": "Billing",
+            "monitoring": "Monitoring",
+            "securite": "Security",
+            "audit": "Audit",
+            "actions": "Critical actions",
+            "config": "Configuration"
+        }
+    }
+}

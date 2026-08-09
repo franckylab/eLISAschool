@@ -488,7 +488,9 @@ export function ModulesTab() {
     const toggleModule = useToggleModule();
     const userRole = useAuthStore((s) => s.utilisateur?.role);
 
-    const canToggle = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN';
+    // [RBAC-2] v5.1 — Toggle module = opération plateforme (SUPER_ADMIN uniquement)
+    // ADMIN (client) ne peut plus activer/désactiver les modules globalement.
+    const canToggle = userRole === 'SUPER_ADMIN';
 
     const [searchQuery, setSearchQuery] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');

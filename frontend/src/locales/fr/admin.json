@@ -1,0 +1,1399 @@
+{
+    "titre": "Administration Plateforme",
+    "sousTitre": "Gestion globale de la plateforme eLISAschool",
+    "navigation": {
+        "dashboard": "Tableau de bord",
+        "etablissements": "Établissements",
+        "facturation": "Facturation",
+        "monitoring": "Monitoring",
+        "modules": "Modules",
+        "audit": "Audit",
+        "configuration": "Configuration",
+        "notifications": "Notifications",
+        "providers": "Providers",
+        "approbations": "Approbations",
+        "groupes": "Groupes",
+        "permissions": "Permissions",
+        "revenus": "Revenus",
+        "abonnements": "Abonnements",
+        "utilisateurs": "Utilisateurs",
+        "parametresCascade": "Paramètres cascade",
+        "rolesPlateforme": "Rôles plateforme",
+        "sessionsActivite": "Sessions & activité"
+    },
+    "sidebar": {
+        "titre": "Plateforme",
+        "sousTitre": "Control Plane",
+        "accesProprietaire": "Accès propriétaire",
+        "groupePilotage": "Pilotage",
+        "groupeTenants": "Tenants",
+        "groupeTechnique": "Technique",
+        "groupeSecurite": "Sécurité",
+        "descDashboard": "Vue d'ensemble",
+        "descEtablissements": "Gestion des tenants",
+        "descFacturation": "Plans & abonnements",
+        "descModules": "Modules optionnels",
+        "descMonitoring": "Santé & métriques",
+        "descAudit": "Journal d'audit",
+        "descNotifications": "Config. notifications",
+        "descConfiguration": "Paramètres plateforme",
+        "descProviders": "Providers de paiement",
+                "descParametresCascade": "Cascade 4 niveaux",
+                "parametresCascade": "Paramètres cascade",
+        "descApprobations": "Actions critiques 2F",
+        "ouvrirNavigation": "Ouvrir la navigation plateforme",
+        "deplier": "Déplier",
+        "replier": "Replier",
+        "descGroupes": "Groupes d'établissements",
+        "descPermissions": "Matrice des permissions",
+        "descRevenus": "MRR, ARR & revenus",
+        "descAbonnements": "Abonnements actifs",
+        "descUtilisateurs": "Comptes plateforme",
+        "descRolesPlateforme": "Gestion des rôles Control Plane",
+        "descSessionsActivite": "Sessions actives & révocation",
+        "sousGroupeIdentite": "Identité",
+        "sousGroupeSurveillance": "Surveillance"
+    },
+    "dashboard": {
+        "titre": "Dashboard Plateforme",
+        "sousTitre": "Vue d'ensemble — eLISAschool",
+        "kpiEtablissements": "Établissements",
+        "kpiUtilisateurs": "Utilisateurs",
+        "tauxActivite": "Taux activité",
+        "actifs": "actifs",
+        "utilisateursActifs": "utilisateurs actifs",
+        "facturation": "Facturation",
+        "totalFacture": "Total facturé",
+        "totalPaye": "Total payé",
+        "totalImpaye": "Total impayé",
+        "tauxRecouvrement": "Taux recouvrement",
+        "facturesRetard": "Factures en retard",
+        "santeEtablissements": "Santé Établissements",
+        "sains": "Sains",
+        "attention": "Attention",
+        "critiques": "Critiques",
+        "relancesEnvoyees": "Relances envoyées",
+        "abonnementsSuspendus": "Abonnements suspendus",
+        "accesRapide": "Accès rapide",
+        "scoreSante": "Score santé composite",
+        "scoreBase": "Basé sur établissements sains, taux de recouvrement et activité",
+        "actionsEnAttente": "Actions en attente",
+        "approbationsEnAttente": "Approbations critiques en attente",
+        "etablissementsCritiquesAction": "Établissements critiques à surveiller",
+        "facturesEnRetardAction": "Factures en retard",
+        "notificationsNonLues": "Notifications non lues",
+        "tendanceMRR": "Tendance MRR 6 mois (données indicatives)"
+    },
+    "plans": {
+        "titre": "Plans d'abonnement",
+        "creer": "Nouveau plan",
+        "editer": "Modifier le plan",
+        "supprimer": "Supprimer",
+        "confirmerSuppression": "Êtes-vous sûr de vouloir supprimer ce plan ?",
+        "etapes": {
+            "infos": "Informations",
+            "quotas": "Quotas",
+            "modules": "Modules inclus",
+            "tranches": "Tranches d'élèves",
+            "flags": "Feature flags",
+            "resume": "Résumé"
+        },
+        "champs": {
+            "nom": "Nom du plan",
+            "slug": "Slug",
+            "description": "Description",
+            "prixBase": "Prix de base",
+            "devise": "Devise",
+            "badge": "Badge",
+            "actif": "Plan actif",
+            "visible": "Visible aux clients"
+        },
+        "quotas": {
+            "titre": "Quotas & Limites",
+            "maxEleves": "Max. élèves",
+            "maxUtilisateurs": "Max. utilisateurs",
+            "maxClasses": "Max. classes",
+            "maxMatieres": "Max. matières",
+            "stockageGo": "Stockage (Go)",
+            "smsInclus": "SMS inclus/mois",
+            "illimite": "Illimité"
+        },
+        "modules": {
+            "titre": "Modules inclus",
+            "critiques": "Modules critiques",
+            "premium": "Modules premium",
+            "addons": "Modules add-on",
+            "selectionner": "Sélectionner les modules"
+        },
+        "tranches": {
+            "titre": "Tranches de tarification",
+            "ajouter": "Ajouter une tranche",
+            "supprimer": "Supprimer",
+            "minEleves": "Min. élèves",
+            "maxEleves": "Max. élèves",
+            "montant": "Montant",
+            "label": "Libellé",
+            "aucune": "Aucune tranche configurée"
+        },
+        "flags": {
+            "titre": "Feature flags",
+            "activer": "Activer",
+            "desactiver": "Désactiver"
+        },
+        "resume": {
+            "titre": "Résumé du plan",
+            "prix": "Prix",
+            "modulesInclus": "{{count}} modules inclus",
+            "tranches": "{{count}} tranches configurées",
+            "creer": "Créer le plan",
+            "modifier": "Enregistrer"
+        },
+        "succes": {
+            "cree": "Plan créé avec succès",
+            "modifie": "Plan modifié avec succès",
+            "supprime": "Plan supprimé"
+        }
+    },
+    "etablissements": {
+        "titre": "Établissements",
+        "sousTitrePlateforme": "Administration plateforme — tous les établissements",
+        "creer": "Nouvel établissement",
+        "editer": "Modifier",
+        "suspendre": "Suspendre",
+        "reactiver": "Réactiver",
+        "exporter": "Exporter CSV",
+        "actionsMasse": "Actions en masse",
+        "stats": {
+            "total": "Total",
+            "actifs": "Actifs",
+            "enEssai": "En essai",
+            "suspendus": "Suspendus",
+            "eleves": "Élèves",
+            "utilisateurs": "Utilisateurs",
+            "santeOk": "Santé OK"
+        },
+        "sante": {
+            "label": "Santé",
+            "sains": "sains",
+            "attention": "attention",
+            "critiques": "critiques"
+        },
+        "etapes": {
+            "infos": "Informations",
+            "plan": "Plan d'abonnement",
+            "options": "Options",
+            "resume": "Résumé"
+        },
+        "champs": {
+            "nom": "Nom de l'établissement",
+            "code": "Code",
+            "type": "Type",
+            "adresse": "Adresse",
+            "telephone": "Téléphone",
+            "email": "Email",
+            "contacts": "Contacts responsables"
+        },
+        "plan": {
+            "selectionner": "Sélectionner un plan",
+            "cycleFacturation": "Cycle de facturation",
+            "mensuel": "Mensuel",
+            "trimestriel": "Trimestriel",
+            "annuel": "Annuel"
+        },
+        "options": {
+            "modulesAdditionnels": "Modules additionnels",
+            "featureFlags": "Feature flags (override)"
+        },
+        "succes": {
+            "cree": "Établissement créé avec succès",
+            "modifie": "Établissement modifié",
+            "suspendu": "Établissement suspendu",
+            "reactive": "Établissement réactivé"
+        }
+    },
+    "providers": {
+        "titre": "Providers de paiement",
+        "configurer": "Configurer",
+        "tester": "Tester la connexion",
+        "testReussi": "Connexion réussie",
+        "testEchoue": "Connexion échouée",
+        "configure": "Configuré",
+        "nonConfigure": "Non configuré",
+        "sandbox": "Sandbox",
+        "production": "Production",
+        "champs": {
+            "apiKey": "Clé API",
+            "apiSecret": "Secret API",
+            "webhookSecret": "Secret Webhook",
+            "mode": "Mode",
+            "canaux": "Canaux supportés"
+        },
+        "providers_noms": {
+            "mtn_momo": "MTN Mobile Money",
+            "orange_money": "Orange Money",
+            "wave": "Wave",
+            "paystack": "Paystack",
+            "flutterwave": "Flutterwave",
+            "stripe": "Stripe",
+            "manuel": "Manuel"
+        }
+    },
+    "usage": {
+        "titre": "Consommation & Quotas",
+        "sousTitre": "Utilisation des ressources par établissement",
+        "jauge": {
+            "utilise": "{{utilise}} / {{max}}",
+            "pourcentage": "{{pct}}% utilisé",
+            "illimite": "Illimité"
+        },
+        "alertes": {
+            "normal": "Usage normal",
+            "attention": "Attention — quota > 80%",
+            "critique": "Critique — quota > 90%",
+            "depasse": "Quota dépassé",
+            "actionRequise": "Certains quotas approchent ou dépassent les limites. Action requise.",
+            "selectionnez": "Sélectionnez un établissement pour voir sa consommation",
+            "aucuneDonneeQuota": "Aucune donnée de quota pour cet établissement",
+            "selectionnerEtab": "Sélectionner un établissement",
+            "rechercherEtab": "Rechercher un établissement...",
+            "badgeDepasse": "Dépassé",
+            "badgeAlerte": "Alerte",
+            "badgeOk": "OK"
+        },
+        "colonnes": {
+            "etablissement": "Établissement",
+            "plan": "Plan",
+            "eleves": "Élèves",
+            "utilisateurs": "Utilisateurs",
+            "stockage": "Stockage",
+            "sms": "SMS",
+            "statut": "Statut"
+        },
+        "export": "Exporter CSV"
+    },
+    "revenus": {
+        "titre": "Revenus & Analytique",
+        "sousTitre": "Indicateurs financiers de la plateforme",
+        "kpi": {
+            "mrr": "MRR",
+            "arr": "ARR",
+            "churn": "Taux de churn",
+            "ltv": "LTV moyen",
+            "arpu": "ARPU",
+            "abonnements": "Abonnements",
+            "facturesImpayees": "Factures impayées",
+            "sousMrr": "Revenu récurrent mensuel",
+            "sousArr": "Revenu récurrent annuel",
+            "sousChurn": "Taux d'annulation",
+            "sousLtv": "Lifetime Value moyen",
+            "sousArpu": "Revenu moyen par utilisateur",
+            "actifs": "Abonnements actifs",
+            "surTotal": "sur {{total}} total",
+            "facturesPayees": "Factures payées",
+            "enRetard": "En retard",
+            "facturesEchues": "Factures échues"
+        },
+        "repartition": {
+            "titre": "Répartition par plan",
+            "etablissements": "{{count}} établissements"
+        },
+        "top10": {
+            "titre": "Top 10 établissements",
+            "revenuMensuel": "Revenu mensuel"
+        },
+        "evolution": "Évolution du MRR (12 mois)",
+        "statuts": {
+            "actif": "Actifs",
+            "essai": "En essai",
+            "suspendu": "Suspendus",
+            "annule": "Annulés"
+        },
+        "repartitionStatut": "Répartition par statut",
+        "actualiser": "Actualiser",
+        "aucuneDonnee": "Aucune donnée"
+    },
+    "abonnements": {
+        "titre": "Abonnements",
+        "detail": {
+            "infos": "Informations",
+            "plan": "Plan",
+            "dates": "Période",
+            "montant": "Montant",
+            "statut": "Statut",
+            "factures": "Factures",
+            "historique": "Historique",
+            "consommation": "Consommation",
+            "actions": "Actions"
+        },
+        "actions": {
+            "suspendre": "Suspendre",
+            "reactiver": "Réactiver",
+            "changerPlan": "Changer de plan",
+            "resilier": "Résilier",
+            "factureManuelle": "Facture manuelle",
+            "confirmerSuspension": "Suspendre cet abonnement ?",
+            "confirmerResiliation": "Résilier définitivement cet abonnement ?",
+            "confirmerReactation": "Réactiver cet abonnement ?"
+        },
+        "statuts": {
+            "ACTIF": "Actif",
+            "EN_ESSAI": "En essai",
+            "SUSPENDU": "Suspendu",
+            "ANNULE": "Annulé",
+            "EXPIRE": "Expiré"
+        }
+    },
+    "factures": {
+        "titre": "Factures",
+        "statuts": {
+            "EMISE": "Émise",
+            "PAYEE": "Payée",
+            "EN_RETARD": "En retard",
+            "ANNULEE": "Annulée",
+            "AVOIR": "Avoir",
+            "BROUILLON": "Brouillon",
+            "PARTIELLEMENT_PAYEE": "Partiellement payée"
+        },
+        "exportPdf": "Télécharger PDF",
+        "genererPdf": "Générer le PDF",
+        "pdfPret": "PDF prêt",
+        "pdfErreur": "Erreur lors de la génération du PDF"
+    },
+    "webhooks": {
+        "titre": "Journaux Webhooks",
+        "titreRecus": "Webhooks reçus",
+        "sousTitre": "Historique des webhooks reçus des providers de paiement",
+        "tousProviders": "Tous les providers",
+        "tousStatuts": "Tous les statuts",
+        "colonnes": {
+            "provider": "Provider",
+            "type": "Type d'événement",
+            "statut": "Statut",
+            "date": "Date de réception",
+            "tentatives": "Tentatives"
+        },
+        "filtrer": {
+            "provider": "Filtrer par provider",
+            "statut": "Filtrer par statut",
+            "tous": "Tous"
+        },
+        "retry": "Relancer",
+        "retrySucces": "Relance effectuée",
+        "detail": {
+            "titre": "Détail Webhook",
+            "payload": "Payload reçu",
+            "reponse": "Réponse envoyée",
+            "headers": "Headers"
+        },
+        "aucun": "Aucun webhook reçu. Les webhooks apparaîtront ici lorsque des événements de paiement se produiront.",
+        "succes": "Succès",
+        "echec": "Échec",
+        "en_attente": "En attente"
+    },
+    "notifications": {
+        "titre": "Configuration des Notifications",
+        "sousTitre": "Gérer les canaux et templates de notifications",
+        "onglets": {
+            "providers": "Providers",
+            "templates": "Templates",
+            "test": "Test d'envoi"
+        },
+        "providers": {
+            "email": "Email (SMTP)",
+            "sms": "SMS",
+            "push": "Push (Firebase)",
+            "inApp": "In-App",
+            "configurer": "Configurer",
+            "actif": "Actif",
+            "inactif": "Inactif",
+            "configure": "Configuré",
+            "nonConfigure": "Non configuré",
+            "aucun": "Aucun provider de notification configuré",
+            "hote": "Hôte SMTP",
+            "port": "Port",
+            "expediteur": "Expéditeur",
+            "cleApi": "Clé API"
+        },
+        "templates": {
+            "creer": "Nouveau template",
+            "editer": "Modifier",
+            "supprimer": "Supprimer",
+            "canal": "Canal",
+            "sujet": "Sujet",
+            "corps": "Corps du message",
+            "variables": "Variables disponibles",
+            "preview": "Aperçu",
+            "aucun": "Aucun template de notification",
+            "pasSujet": "Pas de sujet"
+        },
+        "test": {
+            "envoyer": "Envoyer le test",
+            "destinataire": "Destinataire",
+            "canal": "Canal",
+            "template": "Template",
+            "message": "Message",
+            "placeholder": "Email, numéro de téléphone, ou ID utilisateur",
+            "succes": "Notification envoyée avec succès",
+            "echec": "Erreur lors du test"
+        }
+    },
+    "audit": {
+        "titre": "Journal d'Audit",
+        "sousTitre": "Logs audit — tous établissements",
+        "filtres": {
+            "module": "Module",
+            "severite": "Sévérité",
+            "statut": "Statut",
+            "dateDebut": "Date début",
+            "dateFin": "Date fin",
+            "action": "Action",
+            "utilisateur": "Rechercher un utilisateur",
+            "tous": "Tous",
+            "tousModules": "Tous les modules",
+            "toutesSeverites": "Toutes les sévérités",
+            "tousStatuts": "Tous les statuts"
+        },
+        "colonnes": {
+            "date": "Date",
+            "utilisateur": "Utilisateur",
+            "action": "Action",
+            "module": "Module",
+            "cible": "Cible",
+            "severite": "Sévérité",
+            "statut": "Statut"
+        },
+        "detail": {
+            "titre": "Détail de l'audit",
+            "general": "Général",
+            "modifications": "Modifications",
+            "contexte": "Contexte technique"
+        },
+        "export": {
+            "csv": "Export CSV",
+            "json": "Export JSON",
+            "enCours": "Export en cours...",
+            "reussi": "Export {{format}} réussi ({{taille}})"
+        },
+        "stats": {
+            "total": "Total logs",
+            "dernieres24h": "Dernières 24h",
+            "tauxEchec": "Taux d'échec"
+        },
+        "succes": "Succès",
+        "echec": "Échec",
+        "idCopie": "ID copié dans le presse-papier",
+        "copierId": "Copier l'ID"
+    },
+    "composants": {
+        "statCard": {
+            "tendanceHausse": "En hausse",
+            "tendanceBaisse": "En baisse",
+            "stable": "Stable"
+        },
+        "confirmAction": {
+            "confirmer": "Confirmer",
+            "annuler": "Annuler"
+        },
+        "emptyState": {
+            "aucuneDonnee": "Aucune donnée",
+            "creerPremier": "Créer le premier élément"
+        },
+        "dataTable": {
+            "recherche": "Rechercher...",
+            "aucunResultat": "Aucun résultat",
+            "lignesParPage": "Lignes par page",
+            "page": "Page {{page}} sur {{total}}",
+            "triAsc": "Tri croissant",
+            "triDesc": "Tri décroissant"
+        }
+    },
+    "facturation": {
+        "titre": "Facturation",
+        "sousTitre": "Gestion des plans, abonnements et factures",
+        "pageTitre": "Facturation & Abonnements",
+        "pageSousTitre": "Gestion des plans, abonnements clients et facturation plateforme",
+        "chargement": "Chargement...",
+        "onglets": {
+            "plans": "Plans",
+            "abonnements": "Abonnements",
+            "factures": "Factures",
+            "credits": "Avoirs",
+            "usage": "Usage",
+            "revenus": "Revenus",
+            "modules": "Modules",
+            "flags": "Feature Flags",
+            "providers": "Providers",
+            "groupes": "Groupes"
+        },
+        "plans": {
+            "nouveau": "Nouveau plan",
+            "elevesMax": "Élèves max",
+            "utilisateursMax": "Utilisateurs max",
+            "classesMax": "Classes max",
+            "illimite": "Illimité",
+            "modulesInclus": "Modules inclus:",
+            "tranchesSupp": "Tranches supplémentaires:",
+            "actif": "Actif",
+            "inactif": "Inactif",
+            "modifier": "Modifier",
+            "parMois": "/mois"
+        },
+        "abonnements": {
+            "nombre": "{{count}} abonnement{{plural}}",
+            "etablissement": "Établissement",
+            "plan": "Plan",
+            "statut": "Statut",
+            "eleves": "Élèves",
+            "montantMois": "Montant/mois",
+            "fin": "Fin",
+            "auto": "Auto",
+            "aucun": "Aucun abonnement actif",
+            "retour": "← Retour aux abonnements"
+        },
+        "facturesPage": {
+            "numero": "Numéro",
+            "dateEmission": "Date émission",
+            "echeance": "Échéance",
+            "montantTotal": "Montant total",
+            "paye": "Payé",
+            "statut": "Statut",
+            "aucune": "Aucune facture"
+        },
+        "modulesPage": {
+            "nouveau": "Nouveau module",
+            "mensuel": "Mensuel:",
+            "annuel": "Annuel:",
+            "aucun": "Aucun module optionnel configuré",
+            "description": "Modules disponibles pour les abonnements",
+            "nomLabel": "Nom",
+            "modifier": "Modifier le module",
+            "actif": "Actif",
+            "inactif": "Inactif",
+            "activer": "Activer",
+            "desactiver": "Désactiver",
+            "confirmSuppressionTitre": "Supprimer ce module ?",
+            "confirmSuppression": "Cette action est irréversible. Le module sera définitivement supprimé."
+        },
+        "flagsPage": {
+            "etablissementId": "Établissement ID",
+            "placeholder": "UUID de l'établissement",
+            "charger": "Charger",
+            "flag": "Flag",
+            "active": "Activé",
+            "desactive": "Désactivé",
+            "hint": "Entrez un ID d'établissement pour voir ses feature flags",
+            "action": "Action",
+            "activer": "Activer",
+            "desactiver": "Désactiver",
+            "aucunFlag": "Aucun feature flag trouvé pour cet établissement"
+        }
+    },
+    "configuration": {
+        "titre": "Configuration Plateforme",
+        "sousTitre": "Paramètres système globaux — SUPER_ADMIN",
+        "actualiser": "Actualiser",
+        "featureFlags": "Feature Flags",
+        "chargement": "Chargement...",
+        "aucunParametre": "Aucun paramètre dans cette catégorie",
+        "sauver": "Sauver",
+        "categories": {
+            "systeme": "Système",
+            "securite": "Sécurité",
+            "notifications": "Notifications",
+            "regional": "Régional",
+            "modules": "Modules",
+            "personnalise": "Personnalisé"
+        },
+        "oui": "Oui",
+        "non": "Non"
+    },
+    "platform": {
+        "banniere": "Espace Plateforme — Accès propriétaire",
+        "erreurTitre": "Erreur de la plateforme",
+        "erreurMessage": "Une erreur inattendue s'est produite dans l'espace plateforme.",
+        "detailsTechniques": "Détails techniques",
+        "reessayer": "Réessayer",
+        "rechargerPage": "Recharger la page"
+    },
+    "monitoring": {
+        "titre": "Monitoring Infrastructure",
+        "sousTitre": "Métriques temps réel, health checks, alertes",
+        "periodes": {
+            "1h": "1 heure",
+            "24h": "24 heures",
+            "7d": "7 jours"
+        },
+        "health": {
+            "titre": "État des services",
+            "database": "Base de données",
+            "api": "API",
+            "external": "Services externes"
+        },
+        "metriques": {
+            "etablissements": "Établissements",
+            "utilisateurs": "Utilisateurs",
+            "eleves": "Élèves"
+        },
+        "goldenSignals": {
+            "titre": "Four Golden Signals",
+            "latence": "Latence",
+            "trafic": "Trafic",
+            "erreurs": "Erreurs",
+            "saturation": "Saturation",
+            "moyenne": "moyenne",
+            "reqSec": "req/s",
+            "usersActifs": "utilisateurs actifs",
+            "total5xx": "total 5xx",
+            "total4xx": "total 4xx",
+            "cpu": "CPU",
+            "memoire": "Mémoire",
+            "dbConn": "DB conn.",
+            "nonDisponible": "Données Golden Signals non disponibles"
+        },
+        "export": {
+            "titre": "Export Rapports",
+            "activiteCsv": "Activité (CSV)",
+            "facturationCsv": "Facturation (CSV)",
+            "securiteCsv": "Sécurité (CSV)",
+            "completJson": "Complet (JSON)",
+            "completPdf": "Complet (PDF)"
+        },
+        "alertes": {
+            "titre": "Alertes actives",
+            "aucune": "Aucune alerte active",
+            "valeur": "Valeur",
+            "seuil": "Seuil",
+            "regle": "Règle"
+        },
+        "noisyNeighbor": {
+            "titre": "Noisy Neighbor Detection",
+            "alertes": "{{count}} alertes",
+            "etablissement": "Établissement",
+            "eleves": "Élèves",
+            "volume": "Volume",
+            "charge": "Charge",
+            "statut": "Statut",
+            "aucuneDonnee": "Aucune donnée de consommation disponible",
+            "alertesActives": "Alertes actives"
+        },
+        "tempsReel": {
+            "titre": "Temps réel",
+            "connecte": "Connecté",
+            "polling": "Polling",
+            "modeActuel": "Mode actuel :",
+            "pollingHttp": "Polling HTTP (30s)",
+            "wsIndisponible": "Le WebSocket sera activé quand Socket.IO sera configuré sur le serveur.",
+            "dernieresAlertes": "Dernières alertes temps réel",
+            "aucuneAlerte": "Aucune alerte temps réel reçue"
+        },
+        "derniereMaj": "Dernière mise à jour :",
+        "etatPlateforme": "État de la plateforme",
+        "derniereVerification": "Dernière vérification",
+        "rules": {
+            "titre": "Règles d'alerte",
+            "nouvelle": "Nouvelle règle",
+            "aucune": "Aucune règle d'alerte configurée",
+            "actif": "Actif",
+            "desactive": "Désactivé",
+            "duree": "Durée",
+            "supprimer": "Supprimer",
+            "annuler": "Annuler",
+            "creer": "Créer la règle",
+            "nom": "Nom de la règle",
+            "nomPlaceholder": "ex: Latence API élevée",
+            "metrique": "Métrique",
+            "condition": "Condition",
+            "seuil": "Seuil",
+            "severite": "Sévérité",
+            "message": "Message d'alerte",
+            "messagePlaceholder": "ex. La latence moyenne dépasse le seuil",
+            "aide": "La règle s'active quand la métrique franchit le seuil pendant la durée indiquée (en minutes).",
+            "suppressionTitre": "Supprimer la règle",
+            "suppressionConfirm": "Confirmer la suppression de la règle « {{nom}} » ?",
+            "metric": {
+                "http_request_duration_ms": "Latence requêtes (ms)",
+                "http_errors_5xx_total": "Erreurs 5xx",
+                "http_requests_total": "Requêtes totales",
+                "resource_database_percent": "Charge base de données (%)",
+                "resource_memory_percent": "Mémoire utilisée (%)"
+            },
+            "modifier": "Modifier",
+            "enregistrer": "Enregistrer",
+            "activer": "Activer la règle"
+        }
+    },
+    "groupes": {
+        "titre": "Groupes d'établissements",
+        "description": "Gérez les groupes logiques d'établissements et leur configuration SaaS",
+        "creer": "Nouveau groupe",
+        "nom": "Nom du groupe",
+        "code": "Code unique",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Description optionnelle...",
+        "membres": "membres",
+        "etablissementId": "ID établissement",
+        "ajouter": "Ajouter",
+        "aucunMembre": "Aucun membre dans ce groupe",
+        "vide": "Aucun groupe configuré",
+        "videDescription": "Créez votre premier groupe pour commencer",
+        "tabs": {
+            "membres": "Membres",
+            "modules": "Modules",
+            "tranches": "Tranches",
+            "abonnement": "Abonnement"
+        },
+        "modulesComing": "Configuration des modules à venir",
+        "tranchesComing": "Configuration des tranches à venir",
+        "abonnementComing": "Configuration de l'abonnement à venir",
+        "configuration": "Configuration",
+        "tranches": {
+            "label": "Label",
+            "min": "Min",
+            "max": "Max",
+            "montant": "Montant"
+        },
+        "abonnement": {
+            "statut": "Statut",
+            "modeFacturation": "Mode facturation",
+            "repartition": "Répartition",
+            "tarifDegressif": "Tarif dégressif"
+        },
+        "modalCreate": {
+            "titre": "Nouveau groupe"
+        },
+        "toast": {
+            "cree": "Groupe créé",
+            "supprime": "Groupe supprimé",
+            "membreAjoute": "Membre ajouté",
+            "membreRetire": "Membre retiré",
+            "erreurCreation": "Erreur lors de la création"
+        },
+        "facturation": {
+            "individuelle": "Individuelle",
+            "consolidee": "Consolidée",
+            "hybride": "Hybride",
+            "degressivite": "Dégressivité",
+            "repartition": "Répartition au prorata"
+        }
+    },
+    "onboarding": {
+        "titre": "Bienvenue sur eLISAschool",
+        "sousTitre": "Configurons votre plateforme en quelques étapes",
+        "etape": "Étape {{current}} sur {{total}}",
+        "completees": "{{count}}/{{total}} complétées",
+        "precedent": "Précédent",
+        "suivant": "Suivant",
+        "terminer": "Terminer",
+        "allerPage": "Aller à la page",
+        "passer": "Passer l'onboarding",
+        "optionnel": "(optionnel)",
+        "fermer": "Fermer l'onboarding",
+        "steps": {
+            "configPlatform": {
+                "titre": "Configuration plateforme",
+                "desc": "Vérifiez les paramètres globaux : langue, devise, fuseau horaire, thème."
+            },
+            "createEtab": {
+                "titre": "Premier établissement",
+                "desc": "Créez votre premier établissement client pour commencer."
+            },
+            "inviteAdmin": {
+                "titre": "Inviter un administrateur",
+                "desc": "Invitez un administrateur pour gérer l'établissement au quotidien."
+            },
+            "activateModules": {
+                "titre": "Activer les modules",
+                "desc": "Activez les modules nécessaires : notes, bulletins, finances, etc."
+            },
+            "configBilling": {
+                "titre": "Configurer la facturation",
+                "desc": "Définissez les plans d'abonnement et les tranches d'élèves."
+            }
+        }
+    },
+    "abonnement": {
+        "titre": "Détail abonnement",
+        "montantMois": "Montant/mois",
+        "elevesActuels": "Élèves actuels",
+        "debut": "Début",
+        "fin": "Fin",
+        "autoRenouvellement": "Auto-renouvellement",
+        "pasAutoRenouvellement": "Pas de renouvellement auto",
+        "onglets": {
+            "infos": "Infos",
+            "factures": "Factures",
+            "actions": "Actions"
+        },
+        "details": {
+            "titre": "Détails de l'abonnement",
+            "id": "ID:",
+            "etablissementId": "Établissement ID:",
+            "planId": "Plan ID:",
+            "cycle": "Cycle:"
+        },
+        "factures": {
+            "nombre": "{{count}} facture(s)",
+            "exportPdf": "Export PDF",
+            "numero": "Numéro",
+            "date": "Date",
+            "montant": "Montant",
+            "statut": "Statut",
+            "aucune": "Aucune facture"
+        },
+        "actions": {
+            "suspendre": "Suspendre",
+            "suspendreDesc": "Accès temporairement désactivé",
+            "reactiver": "Réactiver",
+            "reactiverDesc": "Restaurer l'accès complet",
+            "changerPlan": "Changer de plan",
+            "changerPlanDesc": "Upgrade ou downgrade",
+            "genererFacture": "Générer facture",
+            "genererFactureDesc": "Export PDF de la dernière facture",
+            "zoneDanger": "Zone de danger",
+            "zoneDangerDesc": "La résiliation est irréversible. L'établissement perdra tout accès à la plateforme.",
+            "resilier": "Résilier l'abonnement",
+            "confirmResilier": "Êtes-vous sûr de vouloir résilier cet abonnement ?"
+        },
+        "changerPlan": {
+            "description": "Sélectionnez un nouveau plan pour cet établissement. Le calcul prorata sera appliqué.",
+            "enCours": "Changement en cours...",
+            "succes": "Plan changé avec succès"
+        },
+        "resilier": {
+            "confirmation": "Cette action résiliera définitivement l'abonnement de cet établissement.",
+            "irreversible": "Attention : cette action est irréversible. L'établissement perdra immédiatement tout accès à la plateforme.",
+            "motif": "Motif de résiliation (optionnel)",
+            "motifPlaceholder": "Expliquez la raison de la résiliation...",
+            "succes": "Abonnement résilié avec succès"
+        }
+    },
+    "provider": {
+        "titre": "Providers de paiement",
+        "titreModal": "Configuration des providers de paiement",
+        "sousTitreModal": "Gérez les moyens de paiement acceptés",
+        "configure": "Configuré",
+        "nonConfigure": "Non configuré",
+        "configurer": "Configurer",
+        "modal": {
+            "titre": "Configurer {{name}}",
+            "description": "Entrez les credentials du provider",
+            "enregistrer": "Enregistrer",
+            "canal": "Canal de paiement",
+            "mode": "Mode {{mode}}",
+            "sandbox": "Transactions de test uniquement",
+            "production": "Transactions réelles",
+            "credentials": "Credentials",
+            "placeholder": "Entrez {{field}}"
+        }
+    },
+    "permissions": {
+        "titre": "Matrice des Permissions",
+        "sousTitre": "Visualisation complète des accès par rôle et module",
+        "tousRoles": "Tous les rôles",
+        "tousModules": "Tous les modules",
+        "sauvegarder": "Sauvegarder",
+        "exporter": "Exporter",
+        "rechercher": "Rechercher...",
+        "matrice": "Matrice",
+        "liste": "Liste",
+        "modulePermission": "Module / Permission",
+        "totalPermissions": "Total Permissions",
+        "modules": "Modules",
+        "roles": "Rôles",
+        "couvertureMoyenne": "Couverture Moyenne",
+        "sauvegardeReussie": "Permissions mises à jour",
+        "sauvegardeErreur": "Échec de la sauvegarde des permissions"
+    },
+    "planForm": {
+        "nouveau": "Nouveau plan d'abonnement",
+        "modifier": "Modifier: {{nom}}",
+        "creer": "Créer le plan",
+        "etape": "Étape {{current}}/{{total}}",
+        "precedent": "Précédent",
+        "suivant": "Suivant",
+        "infos": {
+            "nom": "Nom du plan *",
+            "nomPlaceholder": "Ex: Starter, Pro, Enterprise",
+            "slug": "Slug",
+            "description": "Description",
+            "descriptionPlaceholder": "Description du plan pour les clients...",
+            "prix": "Prix de base *",
+            "devise": "Devise",
+            "badge": "Badge (optionnel)",
+            "badgePlaceholder": "Ex: Populaire, Nouveau, -20%"
+        },
+        "quotas": {
+            "desc": "Définissez les limites de consommation pour ce plan.",
+            "maxEleves": "Max élèves",
+            "maxUsers": "Max utilisateurs",
+            "illimite": "0 = illimité",
+            "maxClasses": "Max classes",
+            "stockage": "Stockage (Go)",
+            "sms": "SMS inclus /mois"
+        },
+        "modules": {
+            "desc": "Sélectionnez les modules inclus dans ce plan.",
+            "critique": "Critiques (gratuits)",
+            "premium": "Premium (inclus dans le plan)",
+            "addon": "Add-on (supplément)"
+        },
+        "tranches": {
+            "desc": "Tranches de pricing au-delà du plan de base.",
+            "ajouter": "Ajouter",
+            "aucune": "Aucune tranche configurée. Les élèves au-delà de {{max}} ne seront pas facturés en supplément.",
+            "titre": "Tranche {{n}}",
+            "elevesMin": "Élèves min",
+            "elevesMax": "Élèves max",
+            "montant": "Montant suppl.",
+            "label": "Label",
+            "labelPlaceholder": "Ex: 301-800 élèves",
+            "modeTitre": "Mode & règles de facturation",
+            "mode": "Mode de facturation",
+            "modeAuto": "Automatique",
+            "modeDeclaratif": "Déclaratif",
+            "modeAutoDesc": "Recomputation par nb élèves réel + prorata inter-cycle.",
+            "modeDeclaratifDesc": "Tranche souscrite manuellement, facturation fixe.",
+            "plafondMax": "Plafond max élèves",
+            "plafondMaxDesc": "Au-delà → workflow critique. Laisser vide = illimité.",
+            "tolerance": "Tolérance dépassement",
+            "prorata": "Prorata immédiat",
+            "blocage": "Blocage au-delà"
+        },
+        "flags": {
+            "desc": "Activez les feature flags pour les établissements de ce plan."
+        },
+        "resume": {
+            "nouveauPlan": "Nouveau plan",
+            "pasDescription": "Pas de description",
+            "mois": "/mois",
+            "elevesMax": "Élèves max",
+            "utilisateurs": "Utilisateurs",
+            "illimite": "Illimité",
+            "classes": "Classes",
+            "stockage": "Stockage",
+            "modulesInclus": "Modules inclus ({{count}})",
+            "tranches": "Tranches ({{count}})",
+            "flagsActifs": "Feature flags activés"
+        },
+        "erreurCreation": "Erreur lors de la création",
+        "erreurModification": "Erreur lors de la modification"
+    },
+    "etablissementForm": {
+        "nouveau": "Nouvel établissement",
+        "modifier": "Modifier: {{nom}}",
+        "creer": "Créer l'établissement",
+        "etape": "Étape {{current}}/{{total}}",
+        "precedent": "Précédent",
+        "suivant": "Suivant",
+        "infos": {
+            "nom": "Nom de l'établissement *",
+            "nomPlaceholder": "Ex: Lycée Bilingue de Douala",
+            "code": "Code",
+            "codePlaceholder": "Ex: LBD",
+            "type": "Type",
+            "adresse": "Adresse",
+            "adressePlaceholder": "Adresse complète",
+            "telephone": "Téléphone",
+            "email": "Email"
+        },
+        "plan": {
+            "desc": "Sélectionnez le plan d'abonnement pour cet établissement.",
+            "maxEleves": "Jusqu'à {{max}} élèves",
+            "mois": "/mois",
+            "aucun": "Aucun plan disponible. Créez d'abord un plan dans l'onglet Facturation.",
+            "cycle": "Cycle de facturation"
+        },
+        "options": {
+            "desc": "Options additionnelles pour cet établissement.",
+            "info": "Les modules additionnels et feature flags peuvent être configurés après la création via la page Facturation."
+        },
+        "resume": {
+            "nouvelEtab": "Nouvel établissement",
+            "abonnement": "Abonnement",
+            "plan": "Plan:",
+            "cycle": "Cycle:",
+            "mois": "mois",
+            "periode": "période"
+        },
+        "erreurCreation": "Erreur lors de la création"
+    },
+    "providersPage": {
+        "titre": "Providers de paiement",
+        "description": "Description",
+        "creer": "Nouveau provider",
+        "nom": "Nom",
+        "slug": "Slug",
+        "type": "Type",
+        "credentials": "Credentials (JSON)",
+        "credentialsHint": "Les credentials seront chiffrées AES-256-GCM",
+        "sandbox": "Mode Sandbox",
+        "actif": "Actif",
+        "tester": "Tester",
+        "vide": "Aucun provider configuré",
+        "videDescription": "Ajoutez votre premier provider de paiement",
+        "modalCreate": {
+            "titre": "Nouveau provider"
+        },
+        "toast": {
+            "cree": "Provider créé",
+            "supprime": "Provider supprimé",
+            "erreurCreation": "Erreur lors de la création",
+            "erreurTest": "Erreur lors du test",
+            "credentialsInvalides": "Credentials JSON invalide",
+            "connexionOk": "Connexion OK",
+            "echecConnexion": "Échec de connexion"
+        },
+        "inactif": "Inactif",
+        "types": {
+            "mobileMoney": "Mobile Money",
+            "carte": "Carte bancaireire",
+            "virement": "Virement",
+            "mixte": "Mixte"
+        },
+        "detail": {
+            "sandbox": "Sandbox",
+            "production": "Production",
+            "creeLe": "Créé le",
+            "modifieLe": "Modifié le",
+            "mode": "Mode",
+            "statut": "Statut"
+        }
+    },
+    "tenant": {
+        "etablissements": "Établissements",
+        "etablissement": "Établissement",
+        "utilisateurs": "Utilisateurs",
+        "eleves": "Élèves",
+        "mensuel": "Mensuel",
+        "charge": "Charge",
+        "statut": "Statut",
+        "aucuneDonnee": "Aucune donnée disponible"
+    },
+    "approbations": {
+        "titre": "Approbations Actions Critiques",
+        "description": "Workflow 2F pour les opérations sensibles de la plateforme",
+        "enAttente": "En attente",
+        "approuvees": "Approuvées",
+        "rejetees": "Rejetées",
+        "executees": "Exécutées",
+        "expirees": "Expirées",
+        "tousStatuts": "Tous les statuts",
+        "tousTypes": "Tous les types",
+        "nouvelleDemande": "Nouvelle demande",
+        "aucuneAction": "Aucune action critique trouvée",
+        "detailTitre": "Détail Action Critique",
+        "approuverTitre": "Approuver avec MFA",
+        "rejeterTitre": "Rejeter l'action",
+        "confirmerApprobation": "Confirmer",
+        "confirmerRejet": "Rejeter",
+        "codeMFA": "Code MFA (6 chiffres)",
+        "mfaExplication": "Entrez le code TOTP de votre application d'authentification",
+        "motifRejet": "Motif du rejet",
+        "motifPlaceholder": "Expliquez pourquoi vous rejetez cette action...",
+        "demandeur": "Demandeur",
+        "approuveur": "Approuveur",
+        "dateDemande": "Date demande",
+        "dateApprobation": "Date approbation",
+        "etablissement": "Établissement",
+        "cible": "Cible",
+        "expiration": "Expiration",
+        "tentatives": "Tentatives",
+        "raison": "Raison de la demande",
+        "donneesAction": "Données de l'action",
+        "resultatExecution": "Résultat d'exécution",
+        "approuver": "Approuver (MFA)",
+        "rejeter": "Rejeter",
+        "annuler": "Annuler",
+        "expire": "Expiré"
+    },
+    "actionsCritiques": {
+        "types": {
+            "resilier": "Résilier abonnement",
+            "suspendre": "Suspendre abonnement",
+            "upgrade": "Changer de plan",
+            "supprimerEtablissement": "Supprimer établissement",
+            "accorderAvoir": "Accorder avoir",
+            "restaurerBackup": "Restaurer backup",
+            "reinitialiserGlobal": "Réinitialiser global",
+            "modifierTarifs": "Modifier tarifs"
+        },
+        "statuts": {
+            "enAttente": "En attente",
+            "approuvee": "Approuvée",
+            "rejetee": "Rejetée",
+            "executee": "Exécutée",
+            "expiree": "Expirée",
+            "annulee": "Annulée"
+        },
+        "toast": {
+            "demandee": "Action critique demandée",
+            "approuvee": "Action critique approuvée",
+            "rejetee": "Action critique rejetée",
+            "annulee": "Action critique annulée",
+            "erreurDemande": "Erreur lors de la demande",
+            "mfaInvalide": "Code MFA invalide",
+            "erreurRejet": "Erreur lors du rejet",
+            "erreurAnnulation": "Erreur lors de l'annulation"
+        }
+    },
+    "providerConfig": {
+        "erreurConfiguration": "Erreur de configuration",
+        "carteBancaire": "Carte bancaire",
+        "virement": "Virement",
+        "paiementManuel": "Paiement Manuel"
+    },
+    "catalogue": {
+        "titre": "Catalogue des modules",
+        "sousTitre": "Source de vérité unique — critères, prix et résolution par établissement",
+        "synchroniser": "Synchroniser",
+        "nouveauModule": "Nouveau module",
+        "totalModules": "Total modules",
+        "critiquesGratuits": "Critiques (gratuits)",
+        "facturables": "Facturables (Premium/Add-on)",
+        "actifsDefaut": "Actifs par défaut",
+        "rechercher": "Rechercher un module (nom, code)...",
+        "chargement": "Chargement du catalogue...",
+        "aucunModule": "Aucun module trouvé",
+        "aucunModuleDesc": "Modifiez vos filtres ou créez votre première entrée catalogue.",
+        "resolution": "Résolution par établissement",
+        "aucunModuleActif": "Aucun module actif pour cet établissement",
+        "selectionnerEtab": "Sélectionnez un établissement pour afficher les modules résolus",
+        "previsualiserCascade": "Prévisualisez la cascade catalogue → plan → supplément par établissement",
+        "payants": "{{count}} payants",
+        "actif": "Actif",
+        "inactif": "Désactivé",
+        "systeme": "Système",
+        "inclus": "Inclus",
+        "activer": "Activer",
+        "desactiver": "Désactiver",
+        "categories": {
+            "toutes": "Toutes les catégories",
+            "critiques": "Critiques (gratuits)",
+            "premium": "Premium (plans)",
+            "addons": "Add-ons (suppléments)"
+        },
+        "badge": {
+            "critique": "Critique",
+            "premium": "Premium",
+            "addon": "Add-on"
+        },
+        "source": {
+            "catalogue": "Défaut",
+            "plan": "Inclus dans le plan",
+            "supplement": "Supplément"
+        },
+        "modal": {
+            "nouveau": "Nouveau module catalogue",
+            "modifier": "Modifier le module — {{code}}",
+            "codeRequis": "Le code et le nom sont requis",
+            "annuler": "Annuler",
+            "enregistrer": "Enregistrer",
+            "creer": "Créer",
+            "code": "Code *",
+            "nom": "Nom *",
+            "description": "Description",
+            "categorie": "Catégorie",
+            "prixMensuel": "Prix mensuel (F)",
+            "prixAnnuel": "Prix annuel (F)",
+            "planMinimum": "Plan minimum",
+            "icone": "Icône (nom Lucide)",
+            "actifDefaut": "Actif par défaut",
+            "visibleCatalogue": "Visible dans le catalogue",
+            "codeProtege": "Code protégé (module système)",
+            "categorieCritique": "Critique (gratuit)",
+            "categoriePremium": "Premium (plan)",
+            "categorieAddon": "Add-on (supplément)",
+            "planAucun": "Aucun"
+        },
+        "toast": {
+            "cree": "Module catalogue créé",
+            "misAJour": "Module catalogue mis à jour",
+            "supprime": "Module supprimé du catalogue",
+            "toggle": "État du module mis à jour",
+            "sync": "Catalogue synchronisé ({{count}} entrées)",
+            "erreurCreation": "Erreur lors de la création",
+            "erreurMaj": "Erreur lors de la mise à jour",
+            "erreurSuppression": "Erreur lors de la suppression",
+            "erreurToggle": "Erreur lors du toggle",
+            "erreurSync": "Erreur lors de la synchronisation"
+        },
+        "confirm": {
+            "supprimerTitre": "Supprimer « {{nom}} » ?",
+            "supprimerDesc": "Cette entrée sera retirée du catalogue. Les modules système (seeds) sont protégés.",
+            "supprimerLabel": "Supprimer"
+        }
+    },
+    "featureFlags": {
+        "titre": "Feature Flags",
+        "overrideTenant": "Override tenant",
+        "selectionnerEtab": "Sélectionner un établissement",
+        "selectionnerEtabMessage": "Sélectionnez un établissement pour voir ses feature flags",
+        "rechercher": "Rechercher un flag...",
+        "tous": "Tous",
+        "plan": "Plan",
+        "override": "Override",
+        "defaut": "Défaut",
+        "aucunFlag": "Aucun feature flag trouvé",
+        "toastToggleSuccess": "Flag mis à jour",
+        "toastToggleError": "Erreur lors de la mise à jour du flag"
+    },
+    "platformUsers": {
+        "creer": "Nouveau compte",
+        "total": "Total comptes",
+        "superAdmins": "Super Admins",
+        "mfaActif": "MFA actif",
+        "sessionsActives": "Sessions actives",
+        "rechercher": "Rechercher un utilisateur...",
+        "tousRoles": "Tous les rôles",
+        "tousStatuts": "Tous les statuts",
+        "utilisateur": "Utilisateur",
+        "role": "Rôle",
+        "statut": "Statut",
+        "derniereConnexion": "Dernière connexion",
+        "aucunUtilisateur": "Aucun utilisateur plateforme",
+        "creerPremierCompte": "Créez le premier compte administrateur",
+        "voir": "Voir détail",
+        "modifier": "Modifier",
+        "revoquerSessions": "Révoquer sessions",
+        "desactiver": "Désactiver",
+        "reactiver": "Réactiver",
+        "nouveauCompte": "Nouveau compte plateforme",
+        "fermer": "Fermer"
+    },
+    "platformRoles": {
+        "titre": "Role Builder",
+        "description": "Gestion des rôles plateforme — système et personnalisés",
+        "creerRole": "Nouveau rôle",
+        "matriceTitre": "Matrice des permissions",
+        "module": "Module",
+        "actions": "Actions",
+        "rolesSysteme": "Rôles système",
+        "listeRoles": "Rôles",
+        "nom": "Nom",
+        "type": "Type",
+        "scope": "Scope",
+        "permissions": "Permissions",
+        "aucunRole": "Aucun rôle configuré",
+        "rolesSystemeAuto": "Les rôles système seront créés automatiquement après migration",
+        "nouveauRole": "Nouveau rôle personnalisé",
+        "fermer": "Fermer",
+        "roleIntrouvable": "Rôle introuvable",
+        "retourListe": "Retour aux rôles",
+        "permissionsDetail": "Permissions attribuées",
+        "aucunePermission": "Aucune permission attribuée",
+        "nomRole": "Nom du rôle",
+        "descriptionRole": "Description",
+        "annuler": "Annuler",
+        "creer": "Créer",
+        "systeme": "Système"
+    },
+    "parametresCascade": {
+        "titre": "Paramètres cascade",
+        "sousTitre": "Système → Global → Groupe → Établissement",
+        "listeParametres": "Paramètres",
+        "rechercher": "Rechercher un paramètre...",
+        "tousModules": "Tous les modules",
+        "chargement": "Chargement...",
+        "selectionnerParametre": "Sélectionnez un paramètre pour voir sa cascade",
+        "valeurEffective": "Valeur effective",
+        "historique": "Historique",
+        "timelineModifications": "Timeline des modifications",
+        "aucunHistorique": "Aucune modification enregistrée",
+        "restaurerVersion": "Restaurer cette version",
+        "modifier": "Modifier",
+        "resetOverride": "Réinitialiser",
+        "propager": "Propager à tous",
+        "propagationConfirm": "Propager la valeur globale à tous les établissements sans override ?",
+        "incoherencesDetectees": "{{count}} incohérence(s) détectée(s)",
+        "niveau_systeme": "Système",
+        "niveau_global": "Global",
+        "niveau_groupe": "Groupe",
+        "niveau_etablissement": "Établissement",
+        "aucunParametre": "Aucun paramètre configuré",
+        "propageable": "Propageable",
+        "nonPropageable": "Non propageable",
+        "overrides": "overrides",
+        "toastGlobalUpdated": "Valeur globale mise à jour",
+        "toastOverrideCreated": "Override créé",
+        "toastOverrideReset": "Override réinitialisé",
+        "toastPropagationDone": "{{count}} établissement(s) mis à jour",
+        "toastRollbackDone": "Version restaurée avec succès",
+        "erreurParametreNotFound": "Paramètre non trouvé",
+        "erreurOverrideNotFound": "Aucun override trouvé",
+        "erreurNotPropagable": "Ce paramètre n'est pas propageable"
+    },
+    "platformSessions": {
+        "title": "Sessions & Activité",
+        "subtitle": "Gestion des sessions actives de la plateforme",
+        "revokeAll": "Tout révoquer",
+        "activeSessions": "Sessions actives",
+        "uniqueUsers": "Utilisateurs uniques",
+        "maxPerUser": "Max par utilisateur",
+        "noSessions": "Aucune session active",
+        "revoke": "Révoquer cette session",
+        "expire": "Expire"
+    },
+    "platformUsers": {
+        "detailNotFound": "Utilisateur introuvable",
+        "tabInfos": "Informations",
+        "tabSessions": "Sessions",
+        "tabAudit": "Audit",
+        "suspendre": "Suspendre",
+        "reactiver": "Réactiver",
+        "resetMfa": "Reset MFA",
+        "profil": "Profil",
+        "role": "Rôle",
+        "creeLe": "Créé le",
+        "dernierAcces": "Dernier accès",
+        "statut": "Statut",
+        "actif": "Actif",
+        "inactif": "Inactif",
+        "noSessions": "Aucune session active",
+        "revokeSession": "Révoquer",
+        "auditComingSoon": "Historique d'audit — Bientôt disponible"
+    },
+    "identite": {
+        "titre": "Identités globales",
+        "description": "Source unique de vérité — identités, memberships, accès",
+        "creer": "Nouvelle identité",
+        "email": "Email",
+        "emailVerifie": "Email vérifié",
+        "mfaActive": "MFA actif",
+        "statut": "Statut",
+        "derniereConnexion": "Dernière connexion",
+        "memberships": "Memberships",
+        "contexte": "Contexte",
+        "role": "Rôle",
+        "assignerRole": "Assigner un rôle",
+        "revoquer": "Révoquer",
+        "verifierEmail": "Vérifier l'email",
+        "supprimer": "Supprimer",
+        "aucuneIdentite": "Aucune identité enregistrée",
+        "creerPremiere": "Créez la première identité globale",
+        "totalIdentites": "Total identités",
+        "mfaPourcentage": "% MFA actif",
+        "emailVerifiePourcentage": "% email vérifié"
+    },
+    "platformPermissions": {
+        "title": "Matrice des Permissions",
+        "subtitle": "Gestion granulaire des permissions par rôle plateforme",
+        "permission": "Permission",
+        "granted": "Accordée",
+        "denied": "Refusée",
+        "pending": "En attente",
+        "unsavedChanges": "Modifications non sauvegardées",
+        "changes": "modif.",
+        "saveRole": "Sauvegarder",
+        "summary": "{{total}} permissions · {{roles}} rôles · {{modules}} modules",
+        "modules": {
+            "dashboard": "Tableau de bord",
+            "etablissements": "Établissements",
+            "facturation": "Facturation",
+            "monitoring": "Monitoring",
+            "securite": "Sécurité",
+            "audit": "Audit",
+            "actions": "Actions critiques",
+            "config": "Configuration"
+        }
+    }
+}

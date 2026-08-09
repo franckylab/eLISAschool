@@ -47,10 +47,10 @@ export type {
  * Réponse de connexion réussie
  */
 export interface LoginResponseDto {
-    accessToken: string;
-    refreshToken: string;
-    expiresIn: number;
-    utilisateur: {
+    accessToken?: string;
+    refreshToken?: string;
+    expiresIn?: number;
+    utilisateur?: {
         id: string;
         email: string;
         matricule: string;
@@ -77,6 +77,9 @@ export interface LoginResponseDto {
     }>;
     requiereSelectionEtablissement?: boolean;
     tokenTemporaire?: boolean;
+    // MFA — Phase P1 v6
+    mfaRequired?: boolean;
+    mfaToken?: string;
 }
 
 /**

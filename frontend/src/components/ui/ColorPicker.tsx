@@ -22,7 +22,7 @@
  * Auteur: franck arlos chendjou
  */
 
-import { useState, useCallback, useMemo, memo } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/cn';
 

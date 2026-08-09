@@ -14,6 +14,7 @@ import {
 } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
+import { AppError } from '@common/filters/error.filter';
 import { validateDto } from '@common/utils';
 
 const router = Router();
@@ -175,13 +176,27 @@ router.get(
 /**
  * GET /api/etablissements/:id/stats
  * Statistiques d'un établissement spécifique
+ * [0.2] Vérification d'appartenance — Rapport audit SaaS 2026
  */
 router.get(
     '/:id/stats',
     authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const stats = await etablissementService.getEtablissementStats(req.params.id);
+            const targetId = req.params.id;
+            const userRole = req.utilisateur?.role;
+            const userEtabId = req.etablissementId;
+
+            // [0.2] Non-SUPER_ADMIN ne peut voir que les stats de son propre établissement
+            if (userRole !== Role.SUPER_ADMIN && targetId !== userEtabId) {
+                return next(new AppError(
+                    'Accès refusé — vous ne pouvez consulter que les statistiques de votre établissement',
+                    403,
+                    'FORBIDDEN'
+                ));
+            }
+
+            const stats = await etablissementService.getEtablissementStats(targetId);
             res.json({ success: true, data: stats });
         } catch (error) { next(error); }
     }

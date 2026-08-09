@@ -109,7 +109,11 @@
         "etablissements": "Establishments",
         "menu": "Menu",
         "notifications": "Notifications",
-        "menuUtilisateur": "User menu"
+        "menuUtilisateur": "User menu",
+        "administration": "Administration",
+        "plateforme": "PLATFORM",
+        "retourEspaceTenant": "Back to establishment space",
+        "santeSysteme": "System health"
     },
     "pagination": {
         "pageSur": "Page {{page}} of {{total}}",

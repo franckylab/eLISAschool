@@ -1,0 +1,87 @@
+{
+    "titre": "Facturation & Abonnement",
+    "description": "Gérez votre abonnement, consultez vos factures et simulez les coûts",
+    "abonnement": {
+        "titre": "Abonnement courant",
+        "plan": "Plan",
+        "statut": "Statut",
+        "montantMensuel": "Montant mensuel",
+        "dateDebut": "Début",
+        "dateFin": "Fin",
+        "cycleFacturation": "Cycle de facturation",
+        "autoRenouvellement": "Auto-renouvellement",
+        "aucun": "Aucun abonnement actif",
+        "actif": "Actif",
+        "suspendu": "Suspendu",
+        "expire": "Expiré",
+        "enAttente": "En attente"
+    },
+    "modules": {
+        "titre": "Modules activés",
+        "aucun": "Aucun module activé",
+        "source": {
+            "plan": "Plan",
+            "supplementaire": "Supplément",
+            "custom": "Personnalisé"
+        }
+    },
+    "factures": {
+        "titre": "Factures récentes",
+        "numero": "N°",
+        "dateEmission": "Date d'émission",
+        "montantTotal": "Montant total",
+        "statut": "Statut",
+        "telecharger": "Télécharger",
+        "aucune": "Aucune facture",
+        "statuts": {
+            "payee": "Payée",
+            "emise": "Émise",
+            "enRetard": "En retard",
+            "annulee": "Annulée",
+            "avoir": "Avoir"
+        }
+    },
+    "consommation": {
+        "titre": "Consommation",
+        "aucunQuota": "Aucun quota défini",
+        "eleves": "Élèves",
+        "utilisateurs": "Utilisateurs",
+        "stockage": "Stockage",
+        "illimite": "Illimité"
+    },
+    "simulateur": {
+        "titre": "Simulateur",
+        "description": "Simulez le coût selon votre nombre d'élèves",
+        "nbEleves": "Nombre d'élèves",
+        "supplement": "Supplément tranches",
+        "parMois": "XAF/mois",
+        "coutTotal": "Coût total estimé",
+        "planBase": "Plan de base",
+        "total": "Total"
+    },
+    "tranches": {
+        "titre": "Tranches tarifaires",
+        "personnaliser": "Personnaliser mes tranches",
+        "cascade": "Cascade : Établissement → Plan → Système",
+        "min": "Min",
+        "max": "Max",
+        "montant": "Montant",
+        "actif": "Actif",
+        "inactif": "Inactif"
+    },
+    "quota": {
+        "depasse": "Quota dépassé",
+        "approche": "Quota proche de la limite",
+        "ok": "Dans les limites",
+        "upgrade": "Veuillez upgrader votre plan",
+        "alerte80": "Vous avez consommé 80% de votre quota",
+        "alerte90": "Vous avez consommé 90% de votre quota",
+        "alerte100": "Quota entièrement consommé"
+    },
+    "actions": {
+        "voirFactures": "Voir toutes les factures",
+        "changerPlan": "Changer de plan",
+        "contacterSupport": "Contacter le support",
+        "simuler": "Simuler"
+    }
+}

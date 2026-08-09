@@ -29,6 +29,7 @@
         "db:fix-duplicate-index": "./scripts/fix-duplicate-index.sh"
     },
     "dependencies": {
+        "@casl/ability": "^6.8.1",
         "@types/node-cron": "^3.0.11",
         "bcryptjs": "^2.4.3",
         "compression": "^1.7.4",
@@ -47,6 +48,7 @@
         "qrcode": "^1.5.4",
         "reflect-metadata": "^0.2.2",
         "sharp": "^0.35.2",
+        "socket.io": "^4.7.5",
         "swagger-ui-express": "^5.0.1",
         "twilio": "^6.0.2",
         "typeorm": "^0.3.20",

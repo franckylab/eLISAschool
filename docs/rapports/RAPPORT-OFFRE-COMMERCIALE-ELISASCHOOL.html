@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eLISAschool — Analyse Stratégique de l'Offre Commerciale</title>
+<style>
+  :root {
+    --primary: #28a745;
+    --primary-dark: #1e7e34;
+    --accent: #007bff;
+    --accent-dark: #0056b3;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --surface: #ffffff;
+    --surface-alt: #f8f9fa;
+    --text: #1a1a2e;
+    --text-secondary: #6c757d;
+    --border: #e5e7eb;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 6px rgba(0,0,0,0.07), 0 10px 24px rgba(0,0,0,0.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* === HEADER === */
+  .hero {
+    background: linear-gradient(135deg, var(--primary) 0%, #20c997 50%, var(--accent) 100%);
+    color: white;
+    padding: 3rem 2rem 2.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.3;
+  }
+  .hero h1 { font-size: 2.2rem; font-weight: 800; position: relative; letter-spacing: -0.02em; }
+  .hero .subtitle { font-size: 1.1rem; opacity: 0.9; margin-top: 0.5rem; position: relative; }
+  .hero .meta { display: flex; gap: 1.5rem; justify-content: center; margin-top: 1.2rem; position: relative; font-size: 0.85rem; opacity: 0.8; flex-wrap: wrap; }
+  .hero .meta span { display: flex; align-items: center; gap: 0.3rem; }
+
+  /* === NAVIGATION === */
+  .nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    overflow-x: auto;
+  }
+  .nav-inner {
+    display: flex;
+    gap: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .nav a {
+    padding: 0.85rem 1rem;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 500;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .nav a:hover, .nav a.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  /* === LAYOUT === */
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+  section { margin-bottom: 3rem; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--primary);
+  }
+  .section-header .icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--primary), #20c997);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1.2rem;
+  }
+  .section-header h2 { font-size: 1.4rem; font-weight: 700; color: var(--text); }
+
+  /* === CARDS === */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    transition: box-shadow 0.2s;
+  }
+  .card:hover { box-shadow: var(--shadow-lg); }
+  .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text); }
+
+  /* === GRID === */
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.25rem; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+
+  /* === KPI === */
+  .kpi {
+    text-align: center;
+    padding: 1.25rem;
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+  .kpi .value { font-size: 2rem; font-weight: 800; color: var(--primary); }
+  .kpi .label { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; }
+
+  /* === PRICING CARDS === */
+  .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+  .pricing-card {
+    background: var(--surface);
+    border-radius: 16px;
+    border: 2px solid var(--border);
+    padding: 2rem 1.5rem;
+    text-align: center;
+    position: relative;
+    transition: all 0.3s;
+    box-shadow: var(--shadow);
+  }
+  .pricing-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+  .pricing-card.popular {
+    border-color: var(--primary);
+    background: linear-gradient(180deg, rgba(40,167,69,0.03) 0%, var(--surface) 100%);
+  }
+  .pricing-card.popular::before {
+    content: 'Populaire';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary);
+    color: white;
+    padding: 0.2rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .pricing-card .plan-name { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+  .pricing-card .plan-price { font-size: 2.5rem; font-weight: 800; color: var(--primary); }
+  .pricing-card .plan-price span { font-size: 0.9rem; font-weight: 400; color: var(--text-secondary); }
+  .pricing-card .plan-period { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem; }
+  .pricing-card .plan-features { text-align: left; list-style: none; }
+  .pricing-card .plan-features li {
+    padding: 0.4rem 0;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    color: var(--text);
+  }
+  .pricing-card .plan-features li::before { content: ''; display: none; }
+  .pricing-card .plan-features .check { color: var(--primary); font-weight: 700; flex-shrink: 0; }
+  .pricing-card .plan-features .cross { color: var(--text-secondary); flex-shrink: 0; opacity: 0.4; }
+  .pricing-card .plan-features .muted { color: var(--text-secondary); }
+
+  /* === TABLE === */
+  .table-wrapper { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th { background: var(--surface-alt); font-weight: 600; text-align: left; padding: 0.75rem 1rem; border-bottom: 2px solid var(--border); white-space: nowrap; }
+  td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(40,167,69,0.03); }
+
+  /* === BADGES === */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .badge-green { background: rgba(40,167,69,0.1); color: var(--primary-dark); }
+  .badge-blue { background: rgba(0,123,255,0.1); color: var(--accent-dark); }
+  .badge-orange { background: rgba(255,193,7,0.15); color: #856404; }
+  .badge-red { background: rgba(220,53,69,0.1); color: var(--danger); }
+  .badge-gray { background: rgba(108,117,125,0.1); color: var(--text-secondary); }
+
+  /* === SWOT === */
+  .swot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .swot-card { padding: 1.25rem; border-radius: var(--radius); }
+  .swot-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; }
+  .swot-card ul { list-style: none; }
+  .swot-card li { padding: 0.3rem 0; font-size: 0.82rem; display: flex; align-items: flex-start; gap: 0.4rem; }
+  .swot-s { background: rgba(40,167,69,0.06); border: 1px solid rgba(40,167,69,0.2); }
+  .swot-w { background: rgba(220,53,69,0.06); border: 1px solid rgba(220,53,69,0.2); }
+  .swot-o { background: rgba(0,123,255,0.06); border: 1px solid rgba(0,123,255,0.2); }
+  .swot-t { background: rgba(255,193,7,0.08); border: 1px solid rgba(255,193,7,0.25); }
+
+  /* === TIMELINE === */
+  .timeline { position: relative; padding-left: 2rem; }
+  .timeline::before { content: ''; position: absolute; left: 0.5rem; top: 0; bottom: 0; width: 2px; background: var(--border); }
+  .timeline-item { position: relative; margin-bottom: 1.5rem; }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -1.65rem;
+    top: 0.35rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 2px solid var(--surface);
+    box-shadow: 0 0 0 2px var(--primary);
+  }
+  .timeline-item .phase { font-weight: 700; font-size: 0.9rem; color: var(--primary); }
+  .timeline-item .desc { font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem; }
+
+  /* === PROGRESS BAR === */
+  .progress-bar { height: 8px; background: var(--surface-alt); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+
+  /* === COMPARISON === */
+  .compare-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+  .compare-row:last-child { border-bottom: none; }
+  .compare-label { min-width: 140px; font-size: 0.82rem; font-weight: 500; }
+  .compare-bar { flex: 1; }
+
+  /* === CALLOUT === */
+  .callout {
+    padding: 1.25rem;
+    border-radius: var(--radius);
+    margin: 1rem 0;
+    font-size: 0.88rem;
+  }
+  .callout-info { background: rgba(0,123,255,0.06); border-left: 4px solid var(--accent); }
+  .callout-success { background: rgba(40,167,69,0.06); border-left: 4px solid var(--primary); }
+  .callout-warning { background: rgba(255,193,7,0.08); border-left: 4px solid var(--warning); }
+  .callout-danger { background: rgba(220,53,69,0.06); border-left: 4px solid var(--danger); }
+  .callout strong { display: block; margin-bottom: 0.3rem; }
+
+  /* === FOOTER === */
+  .footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+  }
+
+  /* === PRINT === */
+  @media print {
+    .hero { padding: 1.5rem; }
+    .nav { display: none; }
+    .container { padding: 1rem; }
+    .pricing-card, .card { break-inside: avoid; }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 1.6rem; }
+    .swot-grid { grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .nav a { padding: 0.7rem 0.75rem; font-size: 0.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== HERO ==================== -->
+<header class="hero">
+  <h1>eLISAschool</h1>
+  <p class="subtitle">Analyse Stratégique de l'Offre Commerciale</p>
+  <div class="meta">
+    <span>&#128197; 9 août 2026</span>
+    <span>&#127758; Afrique Centrale &amp; UEMOA</span>
+    <span>&#127891; SaaS Éducatif</span>
+    <span>&#128200; 41 modules &bull; 3 plans recommandés</span>
+  </div>
+</header>
+
+<!-- ==================== NAV ==================== -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#synthese" class="active">Synthèse</a>
+    <a href="#marche">Marché</a>
+    <a href="#concurrents">Concurrents</a>
+    <a href="#offre-actuelle">Offre Actuelle</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#matrice">Matrice</a>
+    <a href="#swot">SWOT</a>
+    <a href="#roadmap">Roadmap</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ==================== 1. SYNTHÈSE EXÉCUTIVE ==================== -->
+<section id="synthese">
+  <div class="section-header">
+    <div class="icon">&#9889;</div>
+    <h2>Synthèse Exécutive</h2>
+  </div>
+
+  <div class="grid-4" style="margin-bottom: 1.5rem;">
+    <div class="kpi"><div class="value">41</div><div class="label">Modules disponibles</div></div>
+    <div class="kpi"><div class="value">20</div><div class="label">Modules critiques (gratuits)</div></div>
+    <div class="kpi"><div class="value">3</div><div class="label">Plans recommandés</div></div>
+    <div class="kpi"><div class="value">14j</div><div class="label">Essai gratuit optimal</div></div>
+  </div>
+
+  <div class="callout callout-success">
+    <strong>&#127919; Recommandation stratégique</strong>
+    Structurer l'offre en <strong>3 plans</strong> (Essentiel / Professionnel / Enterprise) avec pricing en FCFA,
+    essai gratuit de 14 jours, et <strong>Mobile Money natif</strong> (MTN MoMo, Orange Money, Wave) comme avantage
+    concurrentiel unique. Le pricing charm (X,900 FCFA) maximise la conversion (+24% vs prix ronds).
+  </div>
+
+  <div class="callout callout-warning">
+    <strong>&#9888;&#65039; Lacune critique identifiée</strong>
+    Aucun plan d'abonnement n'est seedé en base de données. Le catalogue de 41 modules existe mais la ladder de pricing
+    est entièrement vide. Priorité absolue : créer les 3 plans + tranches + feature flags avant tout lancement commercial.
+  </div>
+</section>
+
+<!-- ==================== 2. MARCHÉ ==================== -->
+<section id="marche">
+  <div class="section-header">
+    <div class="icon">&#127758;</div>
+    <h2>Analyse du Marché</h2>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>&#127757; Marché cible</h3>
+      <p style="font-size:0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+        Le marché de la gestion scolaire en Afrique francophone est en forte croissance, porté par la digitalisation
+        des systèmes éducatifs et l'adoption du mobile money.
+      </p>
+      <div style="display:flex; flex-direction:column; gap:0.75rem;">
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:0.25rem;">
+            <span>Cameroun — Établissements secondaires</span><span style="font-weight:700;">~8 500</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:85%; background: var(--primary);"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:0.25rem;">
+            <span>UEMOA — Marché total</span><span style="font-weight:700;">~45 000</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:65%; background: var(--accent);"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:0.25rem;">
+            <span>Afrique centrale + UEMOA — Primaire + Secondaire</span><span style="font-weight:700;">~120 000</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:45%; background: #6f42c1;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>&#128200; Tendances clés</h3>
+      <ul style="list-style:none; display:flex; flex-direction:column; gap:0.6rem;">
+        <li style="font-size:0.85rem; display:flex; gap:0.5rem; align-items:flex-start;">
+          <span style="color:var(--primary); font-weight:700;">&#9679;</span>
+          <span><strong>Mobile Money</strong> — 55% des transactions en Afrique subsaharienne. Intégration MTN/OM/Wave = avantage décisif.</span>
+        </li>
+        <li style="font-size:0.85rem; display:flex; gap:0.5rem; align-items:flex-start;">
+          <span style="color:var(--primary); font-weight:700;">&#9679;</span>
+          <span><strong>SaaS vs On-Premise</strong> — Migration accélérée post-COVID. 67% des écoles prévoient un SIS cloud d'ici 2027.</span>
+        </li>
+        <li style="font-size:0.85rem; display:flex; gap:0.5rem; align-items:flex-start;">
+          <span style="color:var(--primary); font-weight:700;">&#9679;</span>
+          <span><strong>PPP ajusté</strong> — Le pricing international ($1-3/élève/mois) est 60-70% trop cher pour le pouvoir d'achat local.</span>
+        </li>
+        <li style="font-size:0.85rem; display:flex; gap:0.5rem; align-items:flex-start;">
+          <span style="color:var(--primary); font-weight:700;">&#9679;</span>
+          <span><strong>Conformité OHADA</strong> — Facturation TVA 19,25% obligatoire. Peu de concurrents s'y conforment.</span>
+        </li>
+        <li style="font-size:0.85rem; display:flex; gap:0.5rem; align-items:flex-start;">
+          <span style="color:var(--primary); font-weight:700;">&#9679;</span>
+          <span><strong>Multi-tenant</strong> — Groupes scolaires, réseaux confessionnels : besoin de gestion multi-établissements.</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 3. CONCURRENTS ==================== -->
+<section id="concurrents">
+  <div class="section-header">
+    <div class="icon">&#128269;</div>
+    <h2>Paysage Concurrentiel</h2>
+  </div>
+
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <h3>Pricing des principaux concurrents</h3>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Plateforme</th>
+            <th>Région</th>
+            <th>Modèle</th>
+            <th>Prix</th>
+            <th>Points forts</th>
+            <th>Lacunes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>QuickSchools</strong></td>
+            <td><span class="badge badge-blue">USA</span></td>
+            <td>Par élève</td>
+            <td>$0.99 – $2.99 /élève/mois</td>
+            <td>Simple, rapide</td>
+            <td>Pas Afrique, pas Mobile Money</td>
+          </tr>
+          <tr>
+            <td><strong>Gradelink</strong></td>
+            <td><span class="badge badge-blue">USA</span></td>
+            <td>Forfait</td>
+            <td>$99 – $299 /mois</td>
+            <td>Bulletins, notes</td>
+            <td>Cher, pas multi-tenant</td>
+          </tr>
+          <tr>
+            <td><strong>Fedena</strong></td>
+            <td><span class="badge badge-orange">Inde</span></td>
+            <td>Annuel</td>
+            <td>$999 – $2 299 /an</td>
+            <td>Open source, modules</td>
+            <td>Pricing opaque, support lent</td>
+          </tr>
+          <tr>
+            <td><strong>Edupage</strong></td>
+            <td><span class="badge badge-green">Europe</span></td>
+            <td>Freemium</td>
+            <td>Gratuit – $16/mois</td>
+            <td>EDT puissant, gratuit</td>
+            <td>Limité en free, pas Africa</td>
+          </tr>
+          <tr>
+            <td><strong>OpenSIS</strong></td>
+            <td><span class="badge badge-blue">USA</span></td>
+            <td>Par staff</td>
+            <td>$4 – $12 /staff/mois</td>
+            <td>Open source, complet</td>
+            <td>UX datée, pas mobile-first</td>
+          </tr>
+          <tr>
+            <td><strong>SchoolTime</strong></td>
+            <td><span class="badge badge-orange">Afrique</span></td>
+            <td>Forfait</td>
+            <td>~50 000 – 150 000 FCFA/an</td>
+            <td>Local, SMS</td>
+            <td>Limité, pas SaaS natif</td>
+          </tr>
+          <tr>
+            <td><strong>ScoolS</strong></td>
+            <td><span class="badge badge-orange">Afrique</span></td>
+            <td>Par élève</td>
+            <td>~500 FCFA /élève/an</td>
+            <td>Prix bas, local</td>
+            <td>Fonctionnalités basiques</td>
+          </tr>
+          <tr style="background: rgba(40,167,69,0.05);">
+            <td><strong style="color: var(--primary);">eLISAschool</strong></td>
+            <td><span class="badge badge-green">Afrique</span></td>
+            <td>Hybride</td>
+            <td><strong>14 900 – 49 900 FCFA/mois</strong></td>
+            <td>41 modules, OHADA, Mobile Money, multi-tenant</td>
+            <td>Non lancé commercialement</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="callout callout-info">
+    <strong>&#128161; Positionnement concurrentiel</strong>
+    eLISAschool se positionne entre les solutions basiques locales (ScoolS, SchoolTime) et les plateformes internationales
+    coûteuses (QuickSchools, Fedena). L'offre se distingue par : <strong>profondeur fonctionnelle</strong> (41 modules),
+    <strong>conformité locale</strong> (OHADA, FCFA, Mobile Money), et <strong>pricing PPP-adjusted</strong>.
+  </div>
+</section>
+
+<!-- ==================== 4. OFFRE ACTUELLE ==================== -->
+<section id="offre-actuelle">
+  <div class="section-header">
+    <div class="icon">&#128230;</div>
+    <h2>Offre Actuelle — Audit</h2>
+  </div>
+
+  <div class="grid-3" style="margin-bottom: 1.5rem;">
+    <div class="card" style="text-align:center;">
+      <div style="font-size:2.5rem; font-weight:800; color: var(--primary);">20</div>
+      <div style="font-size:0.85rem; font-weight:600; margin:0.25rem 0;">Modules CRITIQUES</div>
+      <div style="font-size:0.78rem; color: var(--text-secondary);">Toujours actifs, inclus dans tous les plans<br>Auth, Notes, EDT, Élèves, Personnel, Paie, Dashboard...</div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:2.5rem; font-weight:800; color: var(--accent);">6</div>
+      <div style="font-size:0.85rem; font-weight:600; margin:0.25rem 0;">Modules PREMIUM</div>
+      <div style="font-size:0.78rem; color: var(--text-secondary);">30 000 FCFA/mois cumulés<br>Bulletins, Orientation, Finances, Gamification, Scoring, Périphériques</div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:2.5rem; font-weight:800; color: #6f42c1;">15</div>
+      <div style="font-size:0.85rem; font-weight:600; margin:0.25rem 0;">Modules ADD-ON</div>
+      <div style="font-size:0.78rem; color: var(--text-secondary);">106 000 FCFA/mois cumulés<br>Cantine, Transport, Parking, Santé, Recrutement, Inventaire...</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3 style="color: var(--primary);">&#9989; Points forts</h3>
+      <ul style="list-style:none; display:flex; flex-direction:column; gap:0.5rem;">
+        <li style="font-size:0.85rem;">&#10004; <strong>41 modules</strong> — couverture fonctionnelle supérieure à 95% des concurrents</li>
+        <li style="font-size:0.85rem;">&#10004; <strong>Architecture SaaS moderne</strong> — multi-tenant, RLS, CASL.js, Redis</li>
+        <li style="font-size:0.85rem;">&#10004; <strong>Conformité OHADA</strong> — TVA 19,25%, facturation normalisée</li>
+        <li style="font-size:0.85rem;">&#10004; <strong>7 providers paiement</strong> — MTN MoMo, OM, Wave, Paystack, Flutterwave, Stripe, Manuel</li>
+        <li style="font-size:0.85rem;">&#10004; <strong>Ultra-responsive</strong> — 11 breakpoints (100px → 2560px+)</li>
+        <li style="font-size:0.85rem;">&#10004; <strong>i18n FR/EN</strong> — bilingue natif</li>
+        <li style="font-size:0.85rem;">&#10004; <strong>Panel admin complet</strong> — Control Plane + Data Plane séparés</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color: var(--danger);">&#10060; Lacunes critiques</h3>
+      <ul style="list-style:none; display:flex; flex-direction:column; gap:0.5rem;">
+        <li style="font-size:0.85rem;">&#10060; <strong>Aucun plan seedé</strong> — la ladder de pricing est vide en base</li>
+        <li style="font-size:0.85rem;">&#10060; <strong>Pas de page pricing publique</strong> — aucun moyen pour un prospect de découvrir l'offre</li>
+        <li style="font-size:0.85rem;">&#10060; <strong>Pas d'essai gratuit</strong> — mécanisme de trial absent</li>
+        <li style="font-size:0.85rem;">&#10060; <strong>Pas de discount annuel</strong> — la rétention n'est pas incentivée</li>
+        <li style="font-size:0.85rem;">&#10060; <strong>Providers paiement en stub</strong> — intégrations non fonctionnelles</li>
+        <li style="font-size:0.85rem;">&#10060; <strong>Pas de self-service onboarding</strong> — inscription manuelle</li>
+        <li style="font-size:0.85rem;">&#10060; <strong>Pas de NRR tracking</strong> — aucune métrique d'expansion revenue</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 5. PRICING RECOMMANDÉ ==================== -->
+<section id="pricing">
+  <div class="section-header">
+    <div class="icon">&#128176;</div>
+    <h2>Pricing Recommandé — 3 Plans</h2>
+  </div>
+
+  <div class="callout callout-info" style="margin-bottom: 1.5rem;">
+    <strong>&#128202; Pourquoi 3 plans ?</strong>
+    Le modèle 3-tier (Good/Better/Best) est le standard SaaS validé par +10 ans de données :
+    <strong>+30% ARPU</strong>, <strong>+27% conversion</strong> vs 4+ tiers. Le plan du milieu (Pro) capture 60-70% des ventes grâce à l'effet de centrage.
+    Le charm pricing (X,900) ajoute +24% de conversion vs prix ronds.
+  </div>
+
+  <div class="pricing-grid">
+    <!-- ESSENTIEL -->
+    <div class="pricing-card">
+      <div class="plan-name">Essentiel</div>
+      <div class="plan-price">14<span>,900</span></div>
+      <div class="plan-period">FCFA / mois &bull; jusqu'à 150 élèves</div>
+      <ul class="plan-features">
+        <li><span class="check">&#10003;</span> 20 modules critiques inclus</li>
+        <li><span class="check">&#10003;</span> Gestion élèves, notes, EDT</li>
+        <li><span class="check">&#10003;</span> Personnel &amp; contrats</li>
+        <li><span class="check">&#10003;</span> Dashboard &amp; rapports</li>
+        <li><span class="check">&#10003;</span> Notifications (email + in-app)</li>
+        <li><span class="check">&#10003;</span> Support email (48h)</li>
+        <li><span class="cross">&#10005;</span> <span class="muted">Bulletins scolaires</span></li>
+        <li><span class="cross">&#10005;</span> <span class="muted">Module finances</span></li>
+        <li><span class="cross">&#10005;</span> <span class="muted">Add-ons (cantine, transport...)</span></li>
+      </ul>
+      <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--border);">
+        <div style="font-size:0.78rem; color:var(--text-secondary);">Idéal pour :</div>
+        <div style="font-size:0.85rem; font-weight:600;">Petites écoles (&lt;150 élèves)</div>
+      </div>
+    </div>
+
+    <!-- PROFESSIONNEL -->
+    <div class="pricing-card popular">
+      <div class="plan-name">Professionnel</div>
+      <div class="plan-price">24<span>,900</span></div>
+      <div class="plan-period">FCFA / mois &bull; jusqu'à 500 élèves</div>
+      <ul class="plan-features">
+        <li><span class="check">&#10003;</span> Tout Essentiel +</li>
+        <li><span class="check">&#10003;</span> <strong>6 modules Premium inclus</strong></li>
+        <li><span class="check">&#10003;</span> Bulletins scolaires complets</li>
+        <li><span class="check">&#10003;</span> Finances &amp; facturation OHADA</li>
+        <li><span class="check">&#10003;</span> Gamification &amp; scoring</li>
+        <li><span class="check">&#10003;</span> Orientation scolaire</li>
+        <li><span class="check">&#10003;</span> <strong>2 add-ons inclus</strong> (cantine + transport)</li>
+        <li><span class="check">&#10003;</span> Mobile Money (MTN, OM, Wave)</li>
+        <li><span class="check">&#10003;</span> Support prioritaire (24h)</li>
+      </ul>
+      <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--border);">
+        <div style="font-size:0.78rem; color:var(--text-secondary);">Idéal pour :</div>
+        <div style="font-size:0.85rem; font-weight:600;">Établissements moyens (150-500 élèves)</div>
+      </div>
+    </div>
+
+    <!-- ENTERPRISE -->
+    <div class="pricing-card">
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-price">49<span>,900</span><span style="font-size:0.8rem;">+</span></div>
+      <div class="plan-period">FCFA / mois &bull; élèves illimités</div>
+      <ul class="plan-features">
+        <li><span class="check">&#10003;</span> Tout Professionnel +</li>
+        <li><span class="check">&#10003;</span> <strong>Tous les 15 add-ons inclus</strong></li>
+        <li><span class="check">&#10003;</span> Multi-établissements (groupes)</li>
+        <li><span class="check">&#10003;</span> Parking, matériel, santé</li>
+        <li><span class="check">&#10003;</span> Recrutement &amp; inventaire</li>
+        <li><span class="check">&#10003;</span> API &amp; webhooks avancés</li>
+        <li><span class="check">&#10003;</span> Backup automatique quotidien</li>
+        <li><span class="check">&#10003;</span> Account manager dédié</li>
+        <li><span class="check">&#10003;</span> SLA 99.9% garanti</li>
+      </ul>
+      <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--border);">
+        <div style="font-size:0.78rem; color:var(--text-secondary);">Idéal pour :</div>
+        <div style="font-size:0.85rem; font-weight:600;">Grands établissements &amp; groupes scolaires</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tranches & Options -->
+  <div class="grid-2" style="margin-top: 1.5rem;">
+    <div class="card">
+      <h3>&#128200; Tranches de prix (au-delà du plafond)</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Tranche</th><th>Essentiel</th><th>Pro</th><th>Enterprise</th></tr></thead>
+          <tbody>
+            <tr><td>1 – plafond plan</td><td>Inclus</td><td>Inclus</td><td>Inclus</td></tr>
+            <tr><td>151 – 300 élèves</td><td>5 000 F</td><td>5 000 F</td><td rowspan="3" style="vertical-align:middle; text-align:center;">Sur devis</td></tr>
+            <tr><td>301 – 800 élèves</td><td>15 000 F</td><td>10 000 F</td></tr>
+            <tr><td>801 – 1 200 élèves</td><td>20 000 F</td><td>15 000 F</td></tr>
+            <tr><td>1 201+ élèves</td><td colspan="2" style="text-align:center;">Sur devis</td><td>Sur devis</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>&#127873; Options &amp; réductions</h3>
+      <ul style="list-style:none; display:flex; flex-direction:column; gap:0.6rem;">
+        <li style="font-size:0.85rem; display:flex; justify-content:space-between; padding:0.4rem 0; border-bottom:1px solid var(--border);">
+          <span>Essai gratuit</span><span style="font-weight:700; color:var(--primary);">14 jours</span>
+        </li>
+        <li style="font-size:0.85rem; display:flex; justify-content:space-between; padding:0.4rem 0; border-bottom:1px solid var(--border);">
+          <span>Facturation annuelle</span><span style="font-weight:700; color:var(--primary);">-20%</span>
+        </li>
+        <li style="font-size:0.85rem; display:flex; justify-content:space-between; padding:0.4rem 0; border-bottom:1px solid var(--border);">
+          <span>Add-on unitaire (hors plan)</span><span style="font-weight:700;">3 000 – 10 000 F/mois</span>
+        </li>
+        <li style="font-size:0.85rem; display:flex; justify-content:space-between; padding:0.4rem 0; border-bottom:1px solid var(--border);">
+          <span>Groupe scolaire (dégressivité)</span><span style="font-weight:700; color:var(--primary);">-5% à -25%</span>
+        </li>
+        <li style="font-size:0.85rem; display:flex; justify-content:space-between; padding:0.4rem 0;">
+          <span>Formation sur site</span><span style="font-weight:700;">50 000 F / jour</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-success" style="margin-top:1rem;">
+    <strong>&#128176; Projection MRR (scénario conservateur)</strong>
+    50 écoles Essentiel + 30 Pro + 10 Enterprise = <strong>1 495 000 FCFA/mois</strong> (≈ 2 280 EUR).
+    Avec 20% en annuel payé d'avance : <strong>trésorerie Year 1 = 17 940 000 FCFA</strong>.
+  </div>
+</section>
+
+<!-- ==================== 6. MATRICE FONCTIONNELLE ==================== -->
+<section id="matrice">
+  <div class="section-header">
+    <div class="icon">&#128203;</div>
+    <h2>Matrice Fonctionnelle par Plan</h2>
+  </div>
+
+  <div class="card">
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Catégorie</th>
+            <th>Module</th>
+            <th style="text-align:center;">Essentiel</th>
+            <th style="text-align:center;">Pro</th>
+            <th style="text-align:center;">Enterprise</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- CRITIQUE -->
+          <tr style="background: rgba(40,167,69,0.04);"><td colspan="5" style="font-weight:700; font-size:0.78rem; color:var(--primary); text-transform:uppercase; letter-spacing:0.05em;">&#9679; 20 modules critiques — inclus dans tous les plans</td></tr>
+          <tr><td rowspan="8" style="font-weight:500; vertical-align:top;">Core</td><td>Authentification &amp; MFA</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Gestion élèves</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Notes &amp; évaluations</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Emploi du temps</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Organisation &amp; organigramme</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Personnel &amp; contrats</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Paie &amp; bulletins salaire</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Dashboard &amp; rapports</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td></td><td>+ 12 modules core (programmes, classes, matières, périodes, configurations, notifications, sondages, bibliothèque, discipline, événements, courriers, archives)</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+
+          <!-- PREMIUM -->
+          <tr style="background: rgba(0,123,255,0.04);"><td colspan="5" style="font-weight:700; font-size:0.78rem; color:var(--accent); text-transform:uppercase; letter-spacing:0.05em;">&#9679; 6 modules premium</td></tr>
+          <tr><td rowspan="6" style="font-weight:500; vertical-align:top;">Premium</td><td>Bulletins scolaires</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Orientation scolaire</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Finances &amp; comptabilité</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Gamification</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Scoring avancé</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Périphériques scolaires</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+
+          <!-- ADDON -->
+          <tr style="background: rgba(111,66,193,0.04);"><td colspan="5" style="font-weight:700; font-size:0.78rem; color:#6f42c1; text-transform:uppercase; letter-spacing:0.05em;">&#9679; 15 modules add-on</td></tr>
+          <tr><td rowspan="15" style="font-weight:500; vertical-align:top;">Add-on</td><td>Cantine scolaire</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Transport scolaire</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Parking</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Matériel &amp; inventaire</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Santé scolaire</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Recrutement personnel</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Laboratoire</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Stages &amp; formations</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Examens officiels</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Vie scolaire</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Communication parents</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Club &amp; activités</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Annuaire avancé</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Gestion documentaire</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td></tr>
+          <tr><td>Analytique avancée</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center; color:var(--text-secondary);">&#10005;</td><td style="text-align:center;">&#10003;</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 7. SWOT ==================== -->
+<section id="swot">
+  <div class="section-header">
+    <div class="icon">&#128170;</div>
+    <h2>Analyse SWOT</h2>
+  </div>
+
+  <div class="swot-grid">
+    <div class="swot-card swot-s">
+      <h4 style="color: var(--primary-dark);">&#128170; Forces</h4>
+      <ul>
+        <li>&#8226; 41 modules — couverture la plus large du marché africain francophone</li>
+        <li>&#8226; Architecture SaaS enterprise (RLS, CASL, Redis, multi-tenant)</li>
+        <li>&#8226; Conformité OHADA native (TVA, facturation normalisée)</li>
+        <li>&#8226; 7 providers paiement (Mobile Money prioritaire)</li>
+        <li>&#8226; Ultra-responsive 100px → 4K (mobile-first pour l'Afrique)</li>
+        <li>&#8226; Organigramme interactif + détection conflits EDT temps réel</li>
+        <li>&#8226; Panel admin complet (Control Plane / Data Plane)</li>
+      </ul>
+    </div>
+    <div class="swot-card swot-w">
+      <h4 style="color: var(--danger);">&#9888;&#65039; Faiblesses</h4>
+      <ul>
+        <li>&#8226; Aucun plan d'abonnement seedé — offre non commercialisable</li>
+        <li>&#8226; Pas de page pricing publique</li>
+        <li>&#8226; Providers paiement en stub (non fonctionnels)</li>
+        <li>&#8226; Pas de mécanisme d'essai gratuit / trial</li>
+        <li>&#8226; Pas de discount annuel configuré</li>
+        <li>&#8226; Pas de self-service onboarding</li>
+        <li>&#8226; Marque inconnue — zéro notoriété</li>
+      </ul>
+    </div>
+    <div class="swot-card swot-o">
+      <h4 style="color: var(--accent-dark);">&#127775; Opportunités</h4>
+      <ul>
+        <li>&#8226; Marché sous-digitalisé : &lt;10% des écoles ont un SIS en Afrique centrale</li>
+        <li>&#8226; Mobile Money = 55% des transactions (avantage structurel)</li>
+        <li>&#8226; Groupes scolaires / réseaux confessionnels = multi-tenant naturel</li>
+        <li>&#8226; Conformité OHADA = barrière à l'entrée pour concurrents internationaux</li>
+        <li>&#8226; PPP -60% vs international = pricing inaccessible aux étrangers</li>
+        <li>&#8226; Digitalisation accélérée post-COVID dans l'éducation</li>
+        <li>&#8226; Expansion UEMOA (Sénégal, Côte d'Ivoire) = marché 5x le Cameroun</li>
+      </ul>
+    </div>
+    <div class="swot-card swot-t">
+      <h4 style="color: #856404;">&#9889; Menaces</h4>
+      <ul>
+        <li>&#8226; Concurrents gratuits (Edupage free tier) — capture le bas du marché</li>
+        <li>&#8226; Solutions open source (OpenSIS, Fedena) — pricing agressive</li>
+        <li>&#8226; Pouvoir d'achat limité — écoles communales à budget &lt;100 000 FCFA/an</li>
+        <li>&#8226; Infrastructures internet instables (zones rurales)</li>
+        <li>&#8226; Résistance au changement — processus papier ancrés</li>
+        <li>&#8226; Big tech entrants (Google Classroom, Microsoft Teams for Education)</li>
+        <li>&#8226; Régulation data protection (loi camerounaise 2010) — compliance requise</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 8. ROADMAP ==================== -->
+<section id="roadmap">
+  <div class="section-header">
+    <div class="icon">&#128640;</div>
+    <h2>Roadmap de Lancement Commercial</h2>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="phase">Phase 1 — Fondations (Semaines 1-2)</div>
+          <div class="desc">
+            &#8226; Seeder les 3 plans (Essentiel/Pro/Enterprise) en base<br>
+            &#8226; Configurer les tranches de prix et feature flags<br>
+            &#8226; Activer le discount annuel (-20%)<br>
+            &#8226; Configurer le trial 14 jours (cron d'expiration)
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="phase">Phase 2 — Page Pricing (Semaines 3-4)</div>
+          <div class="desc">
+            &#8226; Créer la page pricing publique (/tarifs)<br>
+            &#8226; Comparateur de plans interactif<br>
+            &#8226; Simulateur de prix (nombre d'élèves → prix)<br>
+            &#8226; FAQ pricing + cas d'usage par type d'école
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="phase">Phase 3 — Paiement (Semaines 5-8)</div>
+          <div class="desc">
+            &#8226; Intégrer MTN MoMo (priorité 1 — 40% du marché)<br>
+            &#8226; Intégrer Orange Money (priorité 2)<br>
+            &#8226; Intégrer Wave (priorité 3 — croissance rapide)<br>
+            &#8226; Tester le flow complet : inscription → paiement → activation
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="phase">Phase 4 — Onboarding (Semaines 9-10)</div>
+          <div class="desc">
+            &#8226; Self-service registration (inscription en ligne)<br>
+            &#8226; Wizard de configuration initial (5 étapes)<br>
+            &#8226; Import CSV élèves depuis Excel<br>
+            &#8226; Templates de données pré-remplis
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="phase">Phase 5 — Lancement (Semaines 11-12)</div>
+          <div class="desc">
+            &#8226; Beta fermée avec 5 écoles pilotes (gratuit 3 mois)<br>
+            &#8226; Collecte feedback + ajustements pricing<br>
+            &#8226; Lancement public avec offre de lancement (-30% 3 premiers mois)<br>
+            &#8226; Campagne marketing ciblée (Facebook, WhatsApp, radio locale)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card" style="margin-bottom:1rem;">
+        <h3>&#127919; Objectifs Year 1</h3>
+        <div style="display:flex; flex-direction:column; gap:0.75rem; margin-top:0.75rem;">
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:0.25rem;">
+              <span>Établissements actifs</span><span style="font-weight:700;">100</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:33%; background: var(--primary);"></div></div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:0.25rem;">
+              <span>MRR cible</span><span style="font-weight:700;">2 000 000 FCFA</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:40%; background: var(--accent);"></div></div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:0.25rem;">
+              <span>Trial → Payant</span><span style="font-weight:700;">25%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:25%; background: #6f42c1;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:0.25rem;">
+              <span>Churn mensuel</span><span style="font-weight:700;">&lt; 5%</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:15%; background: var(--warning);"></div></div>
+          </div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:0.25rem;">
+              <span>NRR (Net Revenue Retention)</span><span style="font-weight:700;">110%+</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width:55%; background: #20c997;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>&#128161; Avantages concurrentiels durables</h3>
+        <ul style="list-style:none; display:flex; flex-direction:column; gap:0.5rem; margin-top:0.5rem;">
+          <li style="font-size:0.85rem; display:flex; gap:0.5rem;">
+            <span style="background:var(--primary); color:white; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; flex-shrink:0;">1</span>
+            <span><strong>Mobile Money natif</strong> — Aucun concurrent international ne l'intègre</span>
+          </li>
+          <li style="font-size:0.85rem; display:flex; gap:0.5rem;">
+            <span style="background:var(--primary); color:white; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; flex-shrink:0;">2</span>
+            <span><strong>OHADA natif</strong> — Conformité comptable obligatoire, barrière à l'entrée</span>
+          </li>
+          <li style="font-size:0.85rem; display:flex; gap:0.5rem;">
+            <span style="background:var(--primary); color:white; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; flex-shrink:0;">3</span>
+            <span><strong>PPP pricing</strong> — 14 900 FCFA vs $99+ international = 80% moins cher</span>
+          </li>
+          <li style="font-size:0.85rem; display:flex; gap:0.5rem;">
+            <span style="background:var(--primary); color:white; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; flex-shrink:0;">4</span>
+            <span><strong>Multi-tenant groupes</strong> — Réseaux confessionnels, chaînes d'écoles</span>
+          </li>
+          <li style="font-size:0.85rem; display:flex; gap:0.5rem;">
+            <span style="background:var(--primary); color:white; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:700; flex-shrink:0;">5</span>
+            <span><strong>41 modules</strong> — De la gestion de classe à la comptabilité OHADA</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 9. BENCHMARKS ==================== -->
+<section>
+  <div class="section-header">
+    <div class="icon">&#128202;</div>
+    <h2>Benchmarks &amp; Métriques SaaS</h2>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Conversion &amp; rétention — Best practices</h3>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Métrique</th><th>Best practice</th><th>eLISAschool cible</th></tr></thead>
+          <tbody>
+            <tr><td>Trial → Payant</td><td>25-30% (EdTech: 24.8%)</td><td style="font-weight:700; color:var(--primary);">25%</td></tr>
+            <tr><td>Durée trial optimale</td><td>14 jours (+30% vs 30j)</td><td style="font-weight:700; color:var(--primary);">14 jours</td></tr>
+            <tr><td>Churn mensuel</td><td>&lt; 5% (SMB SaaS)</td><td style="font-weight:700; color:var(--primary);">&lt; 5%</td></tr>
+            <tr><td>Annual discount</td><td>15-20%</td><td style="font-weight:700; color:var(--primary);">20%</td></tr>
+            <tr><td>Plan mix (répartition)</td><td>60/30/10 (mid/pro/enterprise)</td><td style="font-weight:700; color:var(--primary);">50/35/15</td></tr>
+            <tr><td>NRR médian</td><td>97% (top: 118%+)</td><td style="font-weight:700; color:var(--primary);">110%</td></tr>
+            <tr><td>Payback period</td><td>&lt; 12 mois</td><td style="font-weight:700; color:var(--primary);">6 mois</td></tr>
+            <tr><td>LTV/CAC</td><td>&gt; 3x</td><td style="font-weight:700; color:var(--primary);">5x</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Pricing psychology — Règles validées</h3>
+      <ul style="list-style:none; display:flex; flex-direction:column; gap:0.6rem;">
+        <li style="font-size:0.85rem; display:flex; gap:0.5rem; align-items:flex-start;">
+          <span style="color:var(--primary); font-weight:700;">&#10003;</span>
+          <span><strong>3 tiers</strong> — +30% ARPU, +27% conversion vs 4+ tiers. Le plan milieu = 60-70% des ventes.</span>
+        </li>
+        <li style="font-size:0.85rem; display:flex; gap:0.5rem; align-items:flex-start;">
+          <span style="color:var(--primary); font-weight:700;">&#10003;</span>
+          <span><strong>Charm pricing</strong> — X,900 au lieu de X+1,000. +24% de conversion (prix se terminant par 9).</span>
+        </li>
+        <li style="font-size:0.85rem; display:flex; gap:0.5rem; align-items:flex-start;">
+          <span style="color:var(--primary); font-weight:700;">&#10003;</span>
+          <span><strong>Ancre de prix</strong> — Afficher Enterprise en premier (49 900) rend Pro (24 900) "raisonnable".</span>
+        </li>
+        <li style="font-size:0.85rem; display:flex; gap:0.5rem; align-items:flex-start;">
+          <span style="color:var(--primary); font-weight:700;">&#10003;</span>
+          <span><strong>Badge "Populaire"</strong> — Guide 70% des choix vers le plan cible (Pro). Effet de preuve sociale.</span>
+        </li>
+        <li style="font-size:0.85rem; display:flex; gap:0.5rem; align-items:flex-start;">
+          <span style="color:var(--primary); font-weight:700;">&#10003;</span>
+          <span><strong>Annual commit</strong> — 15-20% de réduction → churn divisé par 3-5x. Trésorerie upfront.</span>
+        </li>
+        <li style="font-size:0.85rem; display:flex; gap:0.5rem; align-items:flex-start;">
+          <span style="color:var(--primary); font-weight:700;">&#10003;</span>
+          <span><strong>PPP adjustment</strong> — -60% à -70% vs pricing US/EU pour pouvoir d'achat africain.</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<footer class="footer">
+  <p><strong>eLISAschool</strong> — Analyse stratégique de l'offre commerciale</p>
+  <p>Rapport généré le 9 août 2026 &bull; Données basées sur 24+ concurrents analysés &bull; Benchmarks SaaS EdTech</p>
+  <p style="margin-top:0.5rem; color: var(--primary); font-weight:600;">Recommandation : 3 plans &bull; 14 900 / 24 900 / 49 900 FCFA &bull; Mobile Money natif &bull; OHADA &bull; Essai 14 jours</p>
+</footer>
+
+<script>
+  // Smooth scroll navigation
+  document.querySelectorAll('.nav a').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  // Active nav on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(section => {
+      const top = section.offsetTop - 100;
+      if (scrollY >= top) current = section.getAttribute('id');
+    });
+    navLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('href') === '#' + current) link.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>

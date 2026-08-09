@@ -11,7 +11,7 @@
  * scolaire EN_COURS, pour tous les créneaux VALIDE + genereAutomatiquement.
  */
 
-import cron from 'node-cron';
+import { scheduleWithLock } from '@common/services/cron-lock.service';
 import { AppDataSource } from '@database/data-source';
 import { logger } from '@common/utils/logger.util';
 import { Etablissement } from '@modules/etablissement/entities';
@@ -76,7 +76,7 @@ export async function materialiserSiNecessaire(etablissementId: string): Promise
 
 export function initEmploiDuTempsCronJobs(): void {
     // Vérification chaque minute : la config horaire détermine le déclenchement.
-    cron.schedule('* * * * *', async () => {
+    scheduleWithLock('edt-materialisation', '* * * * *', async () => {
         try {
             const etablissementRepo = AppDataSource.getRepository(Etablissement);
             const etablissements = await etablissementRepo.find({ select: ['id'] });

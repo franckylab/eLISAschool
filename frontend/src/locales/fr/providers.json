@@ -1,0 +1,76 @@
+{
+    "titre": "Providers",
+    "description": "Configurez et gérez les services externes (paiement, SMS, email)",
+    "paiement": {
+        "titre": "Providers de paiement",
+        "description": "Acceptez des paiements mobiles et en ligne",
+        "configurer": "Configurer",
+        "tester": "Tester la connexion",
+        "testReussi": "Connexion réussie",
+        "testEchoue": "Connexion échouée",
+        "configure": "Configuré",
+        "nonConfigure": "Non configuré",
+        "sandbox": "Sandbox",
+        "production": "Production",
+        "noms": {
+            "mtn_momo": "MTN Mobile Money",
+            "orange_money": "Orange Money",
+            "wave": "Wave",
+            "paystack": "Paystack",
+            "flutterwave": "Flutterwave",
+            "stripe": "Stripe",
+            "manuel": "Paiement manuel"
+        }
+    },
+    "sms": {
+        "titre": "Providers SMS",
+        "description": "Envoyez des notifications SMS aux parents et au personnel",
+        "noms": {
+            "twilio": "Twilio",
+            "africas_talking": "Africa's Talking"
+        }
+    },
+    "email": {
+        "titre": "Providers Email",
+        "description": "Envoyez des emails transactionnels et des notifications",
+        "noms": {
+            "resend": "Resend",
+            "sendgrid": "SendGrid"
+        }
+    },
+    "champs": {
+        "apiKey": "Clé API",
+        "apiSecret": "Secret API",
+        "webhookSecret": "Secret Webhook",
+        "mode": "Mode",
+        "canaux": "Canaux supportés",
+        "senderId": "Sender ID",
+        "fromEmail": "Email expéditeur",
+        "fromName": "Nom expéditeur"
+    },
+    "webhooks": {
+        "titre": "Logs Webhooks",
+        "date": "Date",
+        "provider": "Provider",
+        "evenement": "Événement",
+        "statut": "Statut",
+        "aucun": "Aucun webhook reçu",
+        "traite": "Traité",
+        "erreur": "Erreur",
+        "enAttente": "En attente"
+    },
+    "actions": {
+        "sauvegarder": "Sauvegarder",
+        "tester": "Tester",
+        "activer": "Activer",
+        "desactiver": "Désactiver",
+        "voirLogs": "Voir les logs",
+        "retour": "Retour"
+    },
+    "statuts": {
+        "actif": "Actif",
+        "inactif": "Inactif",
+        "erreur": "Erreur de connexion",
+        "ok": "Opérationnel"
+    }
+}

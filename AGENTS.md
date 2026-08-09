@@ -1,5 +1,329 @@
 # eLISAschool — Session Context
 
+## Refonte SaaS v4 — Plan d'Implémentation
+
+### Phase P1 — Fondations Backend (✅ COMPLET)
+- **P1.1 Cron Jobs Billing** — `backend/src/modules/billing/cron-jobs.ts` (524 lignes)
+  - 5 cron jobs : renouvellementAuto, generationFactures, dunning, alerteQuota, expirationEssai
+  - `initBillingCronJobs()` enregistré dans `index.ts` (node-cron, timezone Africa/Douala)
+- **P1.2 Facturation Groupes** — `backend/src/modules/billing/services/facturation-groupe.service.ts` (507 lignes)
+  - 3 modèles : INDIVIDUELLE, CONSOLIDÉE, HYBRIDE
+  - Dégressivité progressive (5% → 25% selon nombre membres)
+- **P1.3 Intégrations Notifications** — `dunning.service.ts` + `quota.service.ts` modifiés
+  - NotificationOrchestrator intégré (non-bloquant, try/catch)
+- **P1.4 Export PDF Factures** — `backend/src/modules/billing/services/facture-pdf.service.ts` (237 lignes)
+  - Endpoint `GET /api/platform/facturation/factures/:id/pdf-data`
+  - Données structurées conformes OHADA pour génération jsPDF frontend
+
+### Phase P2 — Panel Admin Complet (✅ COMPLET)
+- **P2.1 CRUD Plans + Tranches** — `frontend/src/features/admin/components/plan-form-modal.tsx` (716 lignes)
+  - Modal multi-étapes (6 étapes) : Infos → Quotas → Modules → Tranches → Feature Flags → Résumé
+  - Intégré dans `_platform.facturation.tsx` (boutons Créer/Éditer)
+- **P2.2 Gestion Établissements** — `frontend/src/features/admin/components/etablissement-form-modal.tsx` (416 lignes)
+  - Modal multi-étapes (4 étapes) : Infos → Plan → Options → Résumé
+  - Intégré dans `_platform.etablissements.tsx`
+- **P2.3 Config Providers Paiement** — `frontend/src/features/admin/components/provider-config-modal.tsx` (334 lignes)
+  - 7 providers (MTN, OM, Wave, Paystack, Flutterwave, Stripe, Manuel)
+  - Credentials masqués, mode sandbox/production, sélection canal
+- **P2.4 Dashboard Usage Meters** — `frontend/src/features/admin/components/usage-meters-dashboard.tsx` (281 lignes)
+  - Indicateurs quota (jauge), alertes visuelles (vert/jaune/rouge), export CSV
+- **P2.5 Dashboard Revenus** — `frontend/src/features/admin/components/revenus-dashboard.tsx` (397 lignes)
+  - KPIs SaaS : MRR, ARR, Churn, LTV, ARPU, répartition par plan, top 10 établissements
+- **P2.6 Détail Abonnement** — `frontend/src/features/admin/components/abonnement-detail.tsx` (422 lignes)
+  - Infos, factures, actions (suspendre/réactiver/changer plan/résilier), export PDF
+
+### Phase P3 — Sécurité Frontend (✅ COMPLET)
+- **P3.1 CASL Guards** — `frontend/src/components/guards/RequireAbility.tsx` (48 lignes)
+  - Composant guard basé sur `useAbility()` existant (`lib/casl.ts`)
+  - Fallback personnalisable, message accès non autorisé
+- **P3.1b Hook useAbility** — `frontend/src/hooks/use-ability.ts` (21 lignes)
+  - Ré-export depuis `lib/casl` pour cohérence barrel hooks
+  - Exporté dans `frontend/src/hooks/index.ts`
+- **P3.2 Audit Trail** — `frontend/src/features/admin/components/audit-page.tsx` (988 lignes)
+  - Déjà connecté aux vraies données API (`/api/audit/logs`, `/api/audit/logs/statistics`)
+  - Filtres : module, sévérité, statut, date, action, utilisateur
+  - Export CSV/JSON, detail view avec diff (avant/après)
+  - Backend monté sur `/api/platform/audit` via `platform.routes.ts`
+
+### Phase P4 — Intégrations (✅ COMPLET)
+- **P4.2 Webhook Logs** — `frontend/src/features/admin/components/webhook-logs.tsx` (218 lignes)
+  - Liste webhooks par provider, filtres, payload/réponse, retry manuel
+- **P4.3 Notifications Config** — `frontend/src/routes/_platform.notifications-config.tsx` (316 lignes)
+  - 3 onglets : Providers, Templates, Test d'envoi
+
+### Phase P5 — Polish & Performance (✅ P5.3 + P5.4 COMPLET)
+- **P5.3 i18n** — `frontend/src/locales/fr/admin.json` (429 lignes) + `frontend/src/locales/en/admin.json` (429 lignes)
+  - Namespace `admin` avec toutes les clés pour les pages platform
+  - Couvre : plans, établissements, providers, usage, revenus, abonnements, factures, webhooks, notifications, audit, composants
+  - Parité FR/EN complète, enregistré dans `lib/i18n.ts`
+- **P5.4 Composants réutilisables** — `frontend/src/features/admin/components/ui-platform.tsx` (198 lignes)
+  - `StatCard` : carte statistique (label, value, icon, trend, loading)
+  - `StatusBadge` : badge coloré avec mapping auto statut→variant
+  - `ConfirmAction` : modal confirmation avec variants (danger, warning, default)
+  - `EmptyState` : état vide avec icône, titre, description, CTA
+
+### Phase P6 — Tests & Documentation (✅ COMPLET)
+- **P6.1 Tests unitaires billing** :
+  - `backend/test/unit/facturation.service.spec.ts` (330 lignes)
+    - TVA OHADA (19.25% centièmes), calcul montant mensuel (base + tranches + options), numérotation factures, création avoir
+  - `backend/test/unit/facturation-groupe.service.spec.ts` (255 lignes)
+    - Dégressivité progressive (barème 0-25%), application dégressivité, modèle individuelle, calcul consommation membres
+- **P6.2 Documentation** — AGENTS.md mis à jour avec toutes les phases v4
+
+### Fichiers créés/modifiés v4
+| Fichier | Lignes | Phase |
+|---------|--------|-------|
+| `backend/src/modules/billing/cron-jobs.ts` | 524 | P1.1 |
+| `backend/src/modules/billing/services/facturation-groupe.service.ts` | 507 | P1.2 |
+| `backend/src/modules/billing/services/facture-pdf.service.ts` | 237 | P1.4 |
+| `backend/src/modules/billing/services/dunning.service.ts` | modifié | P1.3 |
+| `backend/src/modules/billing/services/quota.service.ts` | modifié | P1.3 |
+| `backend/src/modules/billing/controllers/billing.controller.ts` | modifié | P1.4 |
+| `backend/src/modules/billing/index.ts` | modifié | P1 |
+| `backend/src/index.ts` | modifié | P1.1 |
+| `frontend/src/features/admin/components/plan-form-modal.tsx` | 716 | P2.1 |
+| `frontend/src/features/admin/components/etablissement-form-modal.tsx` | 416 | P2.2 |
+| `frontend/src/features/admin/components/provider-config-modal.tsx` | 334 | P2.3 |
+| `frontend/src/features/admin/components/usage-meters-dashboard.tsx` | 281 | P2.4 |
+| `frontend/src/features/admin/components/revenus-dashboard.tsx` | 397 | P2.5 |
+| `frontend/src/features/admin/components/abonnement-detail.tsx` | 422 | P2.6 |
+| `frontend/src/features/admin/components/webhook-logs.tsx` | 218 | P4.2 |
+| `frontend/src/routes/_platform.notifications-config.tsx` | 316 | P4.3 |
+| `frontend/src/routes/_platform.facturation.tsx` | modifié | P2 |
+| `frontend/src/routes/_platform.etablissements.tsx` | modifié | P2.2 |
+| `frontend/src/components/guards/RequireAbility.tsx` | 48 | P3.1 |
+| `frontend/src/hooks/use-ability.ts` | 21 | P3.1b |
+| `frontend/src/features/admin/components/ui-platform.tsx` | 198 | P5.4 |
+| `frontend/src/locales/fr/admin.json` | 429 | P5.3 |
+| `frontend/src/locales/en/admin.json` | 429 | P5.3 |
+| `frontend/src/lib/i18n.ts` | modifié | P5.3 |
+| `backend/test/unit/facturation.service.spec.ts` | 330 | P6.1 |
+| `backend/test/unit/facturation-groupe.service.spec.ts` | 255 | P6.1 |
+
+---
+
+## Refonte SaaS v5 — Plan d'Implémentation (✅ TERMINÉ)
+
+> Plan complet : `/home/franck/.config/Qoder/SharedClientCache/cache/plans/Refonte_SaaS_v5_eLISAschool_task-e1b.md`
+
+### Décisions architecturales validées
+- **CASL.js complet** : `@casl/ability` + `@casl/typeorm` via `shared/`, remplacement total du custom
+- **RLS étendu** : Toutes les tables avec `etablissementId` (~40+ tables)
+- **Billing configurable** : Tranches, modules, feature flags avant les providers paiement
+- **Single-DB + RLS** : Pas de partitionnement immédiat (optionnel Phase 6+)
+- **3 plans de gestion** : Control Plane (`_platform/`), Data Plane Tenant (`_auth/`), Data Plane User
+
+### Phase 0 — Corrections Sécurité Immédiates (✅ COMPLET)
+- **RBAC-1** : GROUPES_ETABLISSEMENTS_* déjà retiré du rôle DIRECTEUR (v5.1)
+- **RBAC-2** : Permissions config déjà splitées `config:etablissement:*` + `config:plateforme:*`
+- **RBAC-3** : NETWORK_VIEW/NETWORK_DETAILS/NETWORK_ADMIN retiré de Role.ADMIN → SUPER_ADMIN uniquement
+- **FE-1** : Bypass SUPER_ADMIN déjà supprimé (v3.0) dans `permission-guards.ts`
+- **FE-2** : Guards `beforeLoad` déjà en place sur finances, transport, bibliotheque
+- **FE-5** : PermissionGate sans hook conditionnel — OK
+- **CFG-1/2** : Endpoints configuration protégés (authMiddleware + canViewConfigApp/canViewParams)
+- **0.2** : `GET /etablissements/:id/stats` — vérification d'appartenance ajoutée
+
+### Phase 1 — CASL.js Complet (✅ COMPLET)
+- **1.1** : `shared/src/casl/abilities.ts` (360 lignes) — `defineAbility()`, types `AppAbility`, `Action`, `Subject`
+- **1.2** : `backend/src/casl/casl.middleware.ts` (95 lignes) — `caslMiddleware` + `requireCasl()`
+- **1.3** : `frontend/src/lib/casl/index.tsx` (125 lignes) — migré vers shared `defineAbility()`
+- **1.4** : Migration progressive des controllers (continu — modules cœur métier prioritaires)
+- Suppression de `frontend/src/lib/casl.ts` (doublon) — types `CaslAbilityInterface` remplacés par `AppAbility`
+- `AbilityProvider` ajouté dans `frontend/src/app/providers.tsx`
+
+### Phase 2 — Row-Level Security (✅ COMPLET)
+- **152** : RLS sur 8 tables critiques (eleves, notes, bulletins, membres_personnel, heures_cours, creneaux_horaires, absences_personnel, parametres_systeme)
+- **153** : RLS sur 6 tables non-critiques (paiements, factures, sondages, factures_fournisseur, depenses, budgets)
+- **155** : Partitionnement hash 16 partitions sur tables à fort volume
+- Middleware RLS : `backend/src/common/middlewares/rls.middleware.ts`
+- AsyncLocalStorage : `backend/src/common/subscribers/tenant-isolation.subscriber.ts`
+
+### Phase 3 — Billing Configurable (✅ COMPLET)
+- **3.1** : `tranche-supplement.entity.ts` créé, `estCustomisable` ajouté à TrancheEleves, `tranchesConfigurables` ajouté à PlanAbonnement
+- **3.1** : `tranche-config.service.ts` (202 lignes) — cascade établissement → plan → système
+- **3.2** : `module-resolution.service.ts` (112 lignes) — résolution modules plan + suppléments
+- **3.3** : `feature-flags.service.ts` déjà en place avec cascade (plan → tenant override → global)
+- **3.4** : `frontend/src/routes/_auth.facturation.tsx` (287 lignes) — page facturation client avec abonnement, modules, factures, usage, simulateur
+- Migration 156 : `156-billing-configurable-avance.sql` créée
+- Endpoints ajoutés : `GET/PUT/DELETE /api/billing/tranches/*`, `GET /api/billing/modules/resolved|catalogue`
+
+### Phase 4 — Quotas & Enforcement (✅ COMPLET)
+- `requireQuota()` middleware déjà en place dans `quota.service.ts`
+- Alertes quota (80%, 90%, 100%) dans `cron-jobs.ts` + `quota.service.ts`
+- Notification orchestrator intégré
+
+### Phase 5 — Providers d'Intégration (✅ COMPLET)
+- **Paiement** : 7 providers (MTN MoMo, Orange Money, Wave, Paystack, Flutterwave, Stripe, Manuel)
+- **Notifications** : Provider registry avec fallback automatique
+- **Backup** : Local + S3 providers
+- **Storage** : Database storage provider
+
+### Phase 6 — Monitoring & Observabilité (✅ COMPLET — existait)
+- **6.1** : `metrics-collector.service.ts` (521 lignes) — Golden Signals (p50/p95/p99, saturation CPU/mémoire/DB)
+- **6.2** : `_platform.monitoring.tsx` (741 lignes) — Dashboard monitoring avec health checks, charts, noisy neighbor detection
+- **6.3** : `alerting.service.ts` (439 lignes) — Règles d'alertes (erreur >5%, latence >5s, quota >80%, DB >90%)
+- **Noisy Neighbor** : `noisy-neighbor.service.ts` (361 lignes) — Détection tenants gourmands
+- **WebSocket** : `monitoring.gateway.ts` (251 lignes) — Events temps réel
+
+### Phase 7 — Polish UX/UI & i18n (✅ COMPLET)
+- **7.1** : `_platform.tsx` — Layout dédié avec bannière + guard SUPER_ADMIN
+- **7.2** : i18n billing/providers créé :
+  - `frontend/src/locales/fr/billing.json` (88 lignes)
+  - `frontend/src/locales/en/billing.json` (88 lignes)
+  - `frontend/src/locales/fr/providers.json` (77 lignes)
+  - `frontend/src/locales/en/providers.json` (77 lignes)
+- **7.3** : `ui-platform.tsx` (249 lignes) — PlatformStatCard, StatusBadge, ConfirmAction, EmptyState
+
+### Phase 8 — Tests & Documentation (✅ COMPLET)
+- **8.1** Tests unitaires :
+  - `backend/test/unit/casl-abilities.spec.ts` (261 lignes) — Définitions CASL par rôle
+  - `backend/test/unit/quota-guard.spec.ts` (193 lignes) — Middleware quotas
+  - `backend/test/unit/feature-flags.spec.ts` (179 lignes) — Cascade feature flags
+  - `backend/test/unit/tranche-config.spec.ts` (211 lignes) — Cascade tranches pricing
+- **8.2** Tests E2E :
+  - `backend/test/e2e/billing-flow.spec.ts` (240 lignes) — Flow billing complet
+  - `backend/test/e2e/multi-tenant-isolation-v5.spec.ts` (258 lignes) — Isolation multi-tenant v5
+- **8.3** Documentation :
+  - `docs/guides/GUIDE-SAAS-V5.md` (224 lignes) — Architecture globale v5
+  - `docs/guides/GUIDE-CONFIGURATION-TRANCHES.md` (97 lignes) — Configuration tranches billing
+  - `docs/guides/GUIDE-PROVIDERS.md` (131 lignes) — Intégration providers
+
+### Fichiers créés/modifiés v5 (complet)
+| Fichier | Phase | Action |
+|---------|-------|--------|
+| `shared/src/enums/roles.enum.ts` | 0.1 | RBAC-3 : NETWORK_* retiré de ADMIN |
+| `backend/src/modules/etablissement/controllers/etablissement.controller.ts` | 0.2 | Appartenance vérifiée sur /:id/stats |
+| `shared/src/index.ts` | 1.1 | Export CASL ajouté |
+| `shared/package.json` | 1.1 | @casl/ability ajouté |
+| `frontend/src/lib/casl.ts` | 1.3 | Supprimé (doublon avec casl/index.tsx) |
+| `frontend/src/lib/casl/index.tsx` | 1.3 | Déjà OK (shared defineAbility) |
+| `frontend/src/app/providers.tsx` | 1.3 | AbilityProvider ajouté |
+| `frontend/src/components/guards/RequireAbility.tsx` | 1.3 | Types migrés vers Action/Subject |
+| `frontend/src/hooks/use-ability.ts` | 1.3 | CaslAbilityInterface → AppAbility |
+| `backend/src/modules/billing/entities/tranche-eleves.entity.ts` | 3.1 | estCustomisable ajouté |
+| `backend/src/modules/billing/entities/plan-abonnement.entity.ts` | 3.1 | tranchesConfigurables ajouté |
+| `backend/src/modules/billing/entities/tranche-supplement.entity.ts` | 3.1 | NOUVEAU |
+| `backend/src/modules/billing/entities/index.ts` | 3.1 | Export TrancheSupplement |
+| `backend/src/modules/billing/services/tranche-config.service.ts` | 3.1 | NOUVEAU (202 lignes) |
+| `backend/src/modules/billing/services/module-resolution.service.ts` | 3.2 | NOUVEAU (112 lignes) |
+| `backend/src/modules/billing/services/index.ts` | 3.2 | Exports ajoutés |
+| `backend/src/modules/billing/controllers/billing.controller.ts` | 3.1 | Endpoints tranches/modules ajoutés |
+| `backend/database/migrations/156-billing-configurable-avance.sql` | 3.1 | NOUVEAU |
+| `frontend/src/locales/fr/billing.json` | 7.2 | NOUVEAU (88 lignes) |
+| `frontend/src/locales/en/billing.json` | 7.2 | NOUVEAU (88 lignes) |
+| `frontend/src/locales/fr/providers.json` | 7.2 | NOUVEAU (77 lignes) |
+| `frontend/src/locales/en/providers.json` | 7.2 | NOUVEAU (77 lignes) |
+| `backend/test/unit/casl-abilities.spec.ts` | 8.1 | NOUVEAU (261 lignes) |
+| `backend/test/unit/quota-guard.spec.ts` | 8.1 | NOUVEAU (193 lignes) |
+| `backend/test/unit/feature-flags.spec.ts` | 8.1 | NOUVEAU (179 lignes) |
+| `backend/test/unit/tranche-config.spec.ts` | 8.1 | NOUVEAU (211 lignes) |
+| `backend/test/e2e/billing-flow.spec.ts` | 8.2 | NOUVEAU (240 lignes) |
+| `backend/test/e2e/multi-tenant-isolation-v5.spec.ts` | 8.2 | NOUVEAU (258 lignes) |
+| `docs/guides/GUIDE-SAAS-V5.md` | 8.3 | NOUVEAU (224 lignes) |
+| `docs/guides/GUIDE-CONFIGURATION-TRANCHES.md` | 8.3 | NOUVEAU (97 lignes) |
+| `docs/guides/GUIDE-PROVIDERS.md` | 8.3 | NOUVEAU (131 lignes) |
+
+---
+
+## Refonte SaaS v6 — Consolidation & Optimisation (✅ TERMINÉ)
+
+> Contexte : Correction des failles d'audit v5, optimisation performances, intégration MFA, backups et polish plateforme.
+
+### Phase P0 — Correction RLS Middleware (✅ COMPLET)
+- **P0.1 Transaction conditionnelle** — `backend/src/common/middlewares/rls.middleware.ts`
+  - Transaction ouverte uniquement sur les requêtes write (POST/PUT/PATCH/DELETE)
+  - Pour les GET : SET LOCAL sans transaction (plus léger)
+  - Listener `res.on('finish')` au lieu de monkey-patch res.end
+- **P0.2 Event listener** — `res.on('finish', ...)` pour commit/rollback
+- **P0.3 Compteur cluster-safe** — Suppression variable globale `crossTenantAttempts`, logger directement
+
+### Phase P1 — Intégration MFA (✅ COMPLET)
+- **P1.1 Backend MFA** :
+  - `backend/database/migrations/157-mfa-config.sql` (45 lignes) — Table mfa_configs
+  - `backend/src/modules/auth/entities/mfa-config.entity.ts` (60 lignes) — Entité MfaConfig
+  - `backend/src/modules/auth/services/mfa.service.ts` (329 lignes) — Service MFA v2 avec AES-256-GCM
+  - `backend/src/modules/auth/services/auth.service.ts` — Check MFA dans login(), completeLoginAfterMFA()
+  - `backend/src/modules/auth/controllers/auth.controller.ts` — 6 endpoints MFA (verify, setup, activate, status, disable, regenerate-backup-codes)
+- **P1.2 Frontend MFA** :
+  - `frontend/src/features/auth/MFAVerifyPage.tsx` (222 lignes) — Page vérification TOTP (6 inputs)
+  - `frontend/src/features/auth/components/MFASettings.tsx` (443 lignes) — Setup/disable MFA dans settings
+  - `frontend/src/stores/auth.store.ts` — mfaToken/mfaRequired state, verifyMFA action
+  - `frontend/src/lib/api-client.ts` — Méthodes MFA API
+  - `frontend/src/routes/mfa-verify.tsx` — Route /mfa-verify
+
+### Phase P2 — Backup API Unifiée (✅ COMPLET)
+- **P2.1 Controller backup** — `backend/src/modules/configuration/controllers/backup.controller.ts`
+  - 3 endpoints ajoutés : GET /schedule, POST /schedule, POST /trigger
+- **P2.2 Frontend backup** — `frontend/src/features/configuration/components/BackupManagement.tsx` (346 lignes)
+  - 3 onglets : Vue d'ensemble, Planification, Historique
+
+### Phase P3 — Performance & Connection Pool (✅ COMPLET)
+- **P3.1 TypeORM pool** — `backend/src/config/database.config.ts`
+  - poolSize dynamique via env var (20 prod, 5 dev)
+  - extra.maxUses pour recyclage connexions (1000 utilisations)
+- **P3.2 Cache Redis tenant-aware** — `backend/src/common/services/redis.service.ts`
+  - Méthodes tenant-aware : getTenant, setTenant, getTenantJSON, setTenantJSON, delTenant
+  - invalidateTenant(tenantId) via SCAN + DEL
+- **P3.3 Batch queries monitoring** — `backend/src/modules/monitoring/services/metrics-collector.service.ts`
+  - FLUSH_INTERVAL réduit de 30s à 10s
+  - Stockage Redis time-series (sorted sets) pour durées HTTP
+  - Agrégation par fenêtre de 10s stockée en Redis (TTL 24h)
+  - Restauration des durées depuis Redis au démarrage
+
+### Phase P4 — Polish UX Plateforme (✅ COMPLET)
+- **P4.1 ErrorBoundary** — `frontend/src/routes/_platform.tsx`
+  - PlatformErrorBoundary (class component) wrappant `<Outlet/>`
+  - Fallback UI avec détails techniques, boutons réessayer/recharger
+- **P4.2 Loading states** — `frontend/src/routes/_platform.tsx`
+  - PlatformSkeleton : header, stats cards, table, loader
+  - Suspense wrappant `<Outlet/>` avec fallback skeleton
+- **P4.3 Command Palette** — `frontend/src/routes/_platform.tsx`
+  - `<CommandPalette/>` intégré dans le layout plateforme
+  - Navigation rapide Cmd+K vers toutes les sections
+
+### Phase P5 — Sécurité Renforcée (✅ COMPLET)
+- **P5.1 Audit routes platform** — `backend/src/routes/platform.routes.ts`
+  - Audit complet : 11 groupes de routes tous protégés par guard global SUPER_ADMIN
+  - Documentation des routes auditables inline
+- **P5.2 Rate limiting par plan** — `backend/src/common/middlewares/rate-limit.middleware.ts`
+  - Résolution du plan tenant via Redis cache → DB (AbonnementClient)
+  - Limites : Gratuit 100, Standard 500, Premium 2000, Enterprise 3000 req/min
+  - Cache local 5 min + Redis 15 min pour les plans
+- **P5.3 Chiffrement credentials** — `backend/src/common/utils/encryption.util.ts` (135 lignes)
+  - Utilitaire centralisé AES-256-GCM (encrypt, decrypt, encryptJSON, decryptJSON)
+  - Intégré dans `paiement.service.ts` avec compatibilité ascendante (ancien format CBC supporté)
+  - Format : iv:authTag:encrypted (base64)
+
+### Fichiers créés/modifiés v6
+| Fichier | Phase | Action |
+|---------|-------|--------|
+| `backend/src/common/middlewares/rls.middleware.ts` | P0.1 | Transaction conditionnelle + event listener |
+| `backend/src/common/middlewares/rls.middleware.ts` | P0.3 | Compteur cluster-safe |
+| `backend/database/migrations/157-mfa-config.sql` | P1.1 | NOUVEAU (45 lignes) |
+| `backend/src/modules/auth/entities/mfa-config.entity.ts` | P1.1 | NOUVEAU (60 lignes) |
+| `backend/src/modules/auth/services/mfa.service.ts` | P1.1 | Réécriture v2 (329 lignes) |
+| `backend/src/modules/auth/services/auth.service.ts` | P1.1 | Check MFA + completeLoginAfterMFA |
+| `backend/src/modules/auth/controllers/auth.controller.ts` | P1.1 | 6 endpoints MFA |
+| `backend/src/modules/auth/dto/auth.dto.ts` | P1.1 | LoginResponseDto MFA fields |
+| `frontend/src/features/auth/MFAVerifyPage.tsx` | P1.2 | NOUVEAU (222 lignes) |
+| `frontend/src/features/auth/components/MFASettings.tsx` | P1.2 | NOUVEAU (443 lignes) |
+| `frontend/src/routes/mfa-verify.tsx` | P1.2 | NOUVEAU |
+| `frontend/src/stores/auth.store.ts` | P1.2 | mfaToken/mfaRequired/verifyMFA |
+| `frontend/src/lib/api-client.ts` | P1.2 | Méthodes MFA API |
+| `frontend/src/features/auth/LoginPage.tsx` | P1.2 | Redirection MFA |
+| `backend/src/modules/configuration/controllers/backup.controller.ts` | P2.1 | 3 endpoints (schedule, trigger) |
+| `frontend/src/features/configuration/components/BackupManagement.tsx` | P2.2 | NOUVEAU (346 lignes) |
+| `backend/src/config/database.config.ts` | P3.1 | poolSize dynamique + maxUses |
+| `backend/src/common/services/redis.service.ts` | P3.2 | Méthodes tenant-aware |
+| `backend/src/modules/monitoring/services/metrics-collector.service.ts` | P3.3 | Redis time-series + batch 10s |
+| `frontend/src/routes/_platform.tsx` | P4.1-4.3 | ErrorBoundary + Skeleton + CommandPalette |
+| `backend/src/routes/platform.routes.ts` | P5.1 | Audit documentation |
+| `backend/src/common/middlewares/rate-limit.middleware.ts` | P5.2 | Rate limit par plan (Redis+DB) |
+| `backend/src/common/utils/encryption.util.ts` | P5.3 | NOUVEAU (135 lignes) |
+| `backend/src/modules/paiement/services/paiement.service.ts` | P5.3 | Chiffrement centralisé + compat |
+
+---
+
 ## Objective
 Refactorer le module organisation et ses nomenclatures en une source de vérité unique, avec routes dédiées, composants génériques, i18n 100% flat, et permissions granulaires.
 
@@ -2931,3 +3255,1019 @@ Les couleurs des créneaux étaient incohérentes entre les vues :
 - `frontend/src/features/matieres/components/matiere-form-modal.tsx` (ColorPicker)
 - `frontend/src/locales/fr/emplois.json` (+2 clés)
 - `frontend/src/locales/en/emplois.json` (+2 clés)
+
+---
+
+## Refonte SaaS eLISAschool — Plan d'implémentation global (v5.1)
+
+**Plan complet** : `~/.config/Qoder/SharedClientCache/cache/plans/Refonte_SaaS_eLISAschool_task-b46.md`
+
+### Architecture dual-plane
+- **Control Plane** (plateforme) : routes `/api/platform/*`, layout `_platform/`, guard `SUPER_ADMIN`
+- **Data Plane** (établissement) : routes `/api/*` existantes, layout `_auth/`, guard par permissions
+
+### Phase 0 — Corrections de sécurité immédiates (TERMINÉ)
+- **0.1** : Retrait 9 permissions `GROUPES_ETABLISSEMENTS_*` du rôle DIRECTEUR (cross-tenant)
+- **0.2** : Split permissions config — `config:plateforme:*` (SUPER_ADMIN) vs `config:*` (ADMIN établissement). Bypass ADMIN supprimé dans `config.guard.ts`. Guards plateforme ajoutés sur PATCH /, modules toggle, backups.
+- **0.3** : Bypass magique SUPER_ADMIN/ADMIN supprimé dans `permission-guards.ts`. SUPER_ADMIN évalué via helpers, ADMIN évalué selon permissions JWT réelles.
+- **0.4** : Guards `requireModulePermission` ajoutés sur finances, transport, bibliotheque
+- **0.5** : Hook conditionnel `useModulePermissions` déplacé avant tout conditionnel dans `PermissionGate.tsx`
+- **0.6** : Whitelist `PUBLIC_CONFIG_KEYS` sur GET /api/configuration, guard `canViewParams` sur /parametres/categories
+
+### Phase 1 — Séparation structurelle plateforme/client (TERMINÉ)
+- **1.1** : `backend/src/routes/platform.routes.ts` — Router `/api/platform/*` avec guard `requireRole('SUPER_ADMIN')`. Monte etablissement, configuration, monitoring, audit, dashboard controllers.
+- **1.2** : Layout `_platform.tsx` + 5 pages (dashboard, etablissements, configuration, monitoring, audit)
+- **1.3** : Section "Administration plateforme" dans `Sidebar.tsx` — visible SUPER_ADMIN, couleur destructive, séparateur dashed
+- **1.4** : Middleware tenant renforcé — validation existence établissement pour SUPER_ADMIN, logging tentatives cross-tenant
+
+### Phase 2 — Framework d'autorisation CASL.js (TERMINÉ)
+- **2.1** : `@casl/ability` ajouté aux deps backend + frontend. Middleware `caslMiddleware` injecte `req.ability` sur toutes les routes auth.
+- **2.2** : `shared/src/casl/abilities.ts` — `defineAbility(ctx)` avec rules par rôle : SUPER_ADMIN (manage all), ADMIN (manage scoped), ENSEIGNANT (ABAC matieres), PARENT (ABAC enfants), COMPTABLE (finances read)
+- **2.3** : `requireCasl(action, subject)` guard middleware disponible. Migration progressive — infrastructure prête.
+- **2.4** : `frontend/src/lib/casl/index.tsx` — `AbilityProvider`, `useAbility()`, `useCan()`, `<Can I="read" a="Eleve">`, `<Cannot>`
+- **2.5** : Package `shared/src/casl/` partagé frontend/backend — même fichier `abilities.ts`
+
+### Phase 3 — RLS PostgreSQL + Defense-in-depth (TERMINÉ)
+- **3.1** : Migration `1799000000000-EnableRLS.ts` — RLS activé sur 8 tables (eleves, notes, bulletins, personnel, creneaux_horaires, heures_cours, absences_personnel, etablissement_config). Policies : `super_admin_bypass` (permissive) + `tenant_isolation` (restrictive).
+- **3.2** : `rlsMiddleware` — `SET LOCAL app.current_tenant` dans transaction. SUPER_ADMIN = UUID nul (bypass). Logging cross-tenant.
+
+### Fichiers clés modifiés
+- `shared/src/enums/roles.enum.ts` — Permissions `CONFIG_PLATEFORME_*` ajoutées
+- `backend/src/modules/configuration/guards/config-permissions.ts` — Permissions plateforme, ADMIN restreint
+- `backend/src/modules/configuration/guards/config.guard.ts` — Bypass ADMIN supprimé, guards plateforme
+- `backend/src/modules/configuration/controllers/configuration.controller.ts` — Guards plateforme sur routes globales
+- `frontend/src/app/permission-guards.ts` — Bypasses magiques remplacés par évaluation réelle
+- `backend/src/common/middlewares/tenant.middleware.ts` — Validation + logging cross-tenant
+- `frontend/src/components/layout/Sidebar.tsx` — Section plateforme dual
+- `backend/src/routes/platform.routes.ts` — NOUVEAU : router plateforme
+- `backend/src/app.ts` — Enregistrement platform router
+- `frontend/src/routes/_platform*.tsx` — NOUVEAU : layout + 5 pages plateforme
+- `shared/src/casl/abilities.ts` — NOUVEAU : définitions CASL partagées (rules par rôle + ABAC)
+- `shared/src/casl/index.ts` — NOUVEAU : barrel exports CASL partagé
+- `backend/src/casl/casl.middleware.ts` — NOUVEAU : middleware CASL (req.ability + requireCasl)
+- `backend/src/casl/index.ts` — NOUVEAU : barrel exports CASL backend
+- `frontend/src/lib/casl/index.tsx` — NOUVEAU : AbilityProvider + hooks + composants <Can>
+- `backend/src/database/migrations/1799000000000-EnableRLS.ts` — NOUVEAU : migration RLS 8 tables
+- `backend/src/common/middlewares/rls.middleware.ts` — NOUVEAU : middleware RLS (SET LOCAL)
+
+---
+
+### Phase 4 — Framework Abonnements & Facturation (TERMINÉ)
+- **4.1** : 10 entités billing créées : `PlanAbonnement`, `TrancheEleves`, `AbonnementClient`, `Facture`, `LigneFacture`, `ModuleOptionnel`, `AbonnementModule`, `PaiementAbonnement`, `QuotaUtilisation`, `FeatureFlagTenant`
+- **4.2** : `FacturationService` — calcul tranches automatique, génération factures, prorata temporis pour upgrade/downgrade
+- **4.3** : `QuotaService` + middleware `requireQuota()` — vérification/enforcement quotas avec alerte 80% et blocage 100%
+- **4.4** : `FeatureFlagService` — résolution cascade (plan → override tenant → global), cache mémoire 5min
+- **4.5** : `billing.controller.ts` — Routes plateforme `/api/platform/facturation/*` + routes client `/api/billing/*`
+- **4.6** : `_platform.facturation.tsx` — Page plateforme avec onglets Plans, Abonnements, Factures, Modules, Feature Flags
+- **4.7** : `_auth.mon-abonnement.tsx` — Page client avec abonnement, factures, quotas, modules actifs
+
+### Phase 5 — Multi-Providers Paiement (TERMINÉ)
+- **5.1-5.2** : Interface `PaymentProvider` + 3 implémentations : `MtnMomoProvider`, `StripeProvider`, `OrangeMoneyProvider`
+- **5.3** : `ProviderConfig` entity — credentials chiffrées AES-256, configuration dynamique par tenant
+- **5.4** : `PaiementService` orchestrateur — initiation, vérification statut, fallback. `paiementController` avec routes `/api/paiement/*`
+- **5.5** : Webhooks idempotents — `PaiementWebhook` entity, vérification signature, traitement avec retry. Routes publiques avant tenantMiddleware
+
+### Phase 6 — Panel Administration Avancé (compléments)
+- **6.5** : Composant `<FeatureFlag>` + hook `useFeatureFlag()` — rendu conditionnel UI basé sur les flags
+- **6.6** : `CommandPalette` (Cmd+K) — navigation rapide avec recherche fuzzy, raccourcis clavier, groupement par catégorie
+
+### Fichiers clés Phases 4-6
+- `backend/src/modules/billing/` — NOUVEAU : module complet (entities, services, controllers)
+- `backend/src/modules/paiement/` — NOUVEAU : module paiement multi-providers (entities, providers, services)
+- `frontend/src/routes/_platform.facturation.tsx` — NOUVEAU : page facturation plateforme
+- `frontend/src/routes/_auth.mon-abonnement.tsx` — NOUVEAU : page abonnement client
+- `frontend/src/routes/_auth.paiements.tsx` — NOUVEAU : page configuration paiements
+- `frontend/src/components/CommandPalette.tsx` — NOUVEAU : Command Palette (Cmd+K)
+- `frontend/src/components/FeatureFlag.tsx` — NOUVEAU : composant + hook FeatureFlag
+- `backend/src/app.ts` — Enregistrement routes billing + paiement
+- `backend/src/routes/platform.routes.ts` — Montage `/facturation` sur platform router
+- `frontend/src/components/layout/Sidebar.tsx` — Ajout "Facturation" dans nav plateforme
+
+---
+
+### Phase 7 — Monitoring & Métriques (TERMINÉ)
+- **7.1** : `MetricsCollectorService` — collecte RED (Requests, Errors, Duration) + USE (Utilization, Saturation, Errors). Buffer mémoire avec flush périodique 30s. Health checks DB/API/externes.
+- **7.1** : `AlertingService` — règles configurables (seuils, sévérité), alertes actives avec acquittement, 4 règles par défaut (error rate, latency, DB)
+- **7.2** : Endpoints ajoutés au `monitoring.controller.ts` :
+  - `GET /monitoring/health/detail` — health checks détaillés
+  - `GET /monitoring/metrics/aggregated?period=1h|24h|7d` — métriques agrégées
+  - `GET /monitoring/alerts` — alertes actives
+  - `GET /monitoring/alerts/rules` — règles configurées
+  - `POST /monitoring/alerts/rules` — ajouter règle
+  - `POST /monitoring/alerts/:id/acknowledge` — acquitter alerte
+
+### Phase 8 — Multi-Providers Notifications (TERMINÉ)
+- **8.1** : Entités ajoutées : `NotificationProviderConfig` (config par tenant), `NotificationTemplate` (templates avec variables dynamiques)
+- **8.1** : `NotificationOrchestratorService` — routage multi-canal (email+SMS+push+in-app simultanés), résolution templates, méthodes contextuelles (bienvenue, alerte quota, facture, retard paiement)
+- Templates avec rendu `{{variable}}` — fallback global si template tenant introuvable
+
+### Phase 9 — Multi-Providers Backup (TERMINÉ)
+- **9.1** : Interface `BackupProvider` + 2 implémentations : `LocalBackupProvider` (filesystem), `S3BackupProvider` (AWS S3/MinIO)
+- **9.2** : `BackupSchedulerService` — planification cron par établissement (daily/weekly/monthly), backup complet+différentiel, politique de rétention configurable, restauration avec sélection point dans le temps. Scheduler automatique (vérification chaque minute).
+
+### Phase 10 — Module Activability & Configurabilité (TERMINÉ)
+- **10.1** : `ModuleRegistryService` — registre avancé de 14 modules avec :
+  - Catégories : core, pedagogie, gestion, communication, optionnel
+  - Activation cascade : override tenant → feature flag → plan → défaut
+  - `planMinimum`, `featureFlag`, `prixMensuel` par module
+  - Preview impact avant activation (prix, quotas, modules débloqués)
+  - Configuration sous-paramètres par tenant
+- **10.2** : `_platform.modules.tsx` — page frontend avec grille modules par catégorie, toggle, stats rapides, panel impact
+- **API** : 7 nouveaux endpoints dans `configuration.controller.ts` :
+  - `GET /modules-advanced/status` — statut tous modules
+  - `GET /modules-advanced/definitions` — définitions
+  - `GET /modules-advanced/categories` — groupés par catégorie
+  - `PUT /modules-advanced/:moduleId/toggle` — activer/désactiver
+  - `GET /modules-advanced/:moduleId/impact` — preview impact
+  - `GET/PUT /modules-advanced/:moduleId/config` — configuration
+
+### Fichiers clés Phases 7-10
+- `backend/src/modules/monitoring/services/metrics-collector.service.ts` — NOUVEAU : collecte métriques RED/USE
+- `backend/src/modules/monitoring/services/alerting.service.ts` — NOUVEAU : alerting configurable
+- `backend/src/modules/monitoring/controllers/monitoring.controller.ts` — AJOUT : 6 endpoints métriques/alertes
+- `backend/src/modules/notifications/services/notification-orchestrator.service.ts` — NOUVEAU : orchestrateur multi-canal
+- `backend/src/modules/notifications/entities/notification-provider-config.entity.ts` — NOUVEAU
+- `backend/src/modules/notifications/entities/notification-template.entity.ts` — NOUVEAU
+- `backend/src/modules/configuration/services/backup/backup-provider.interface.ts` — NOUVEAU : interface BackupProvider
+- `backend/src/modules/configuration/services/backup/local-backup.provider.ts` — NOUVEAU
+- `backend/src/modules/configuration/services/backup/s3-backup.provider.ts` — NOUVEAU
+- `backend/src/modules/configuration/services/backup/backup-scheduler.service.ts` — NOUVEAU : planification+exécution
+- `backend/src/modules/configuration/services/module-registry.service.ts` — NOUVEAU : registre avancé 14 modules
+- `frontend/src/routes/_platform.modules.tsx` — NOUVEAU : page gestion modules
+- `frontend/src/components/layout/Sidebar.tsx` — AJOUT : "Modules" dans nav plateforme
+
+---
+
+## Refonte SaaS v2 — Phases A-F
+
+### Phase A — PostgreSQL RLS Defense-in-Depth
+- **Migration 152** (`152-enable-rls-critical-tables.sql`, 272 lignes) : RLS sur 8 tables critiques (eleves, notes, bulletins, membres_personnel, heures_cours, creneaux_horaires, absences_personnel, parametres_systeme)
+  - Policy : `USING ("etablissementId" = current_setting('app.current_tenant')::uuid)`
+  - WITH CHECK sur INSERT/UPDATE pour empêcher cross-tenant
+  - SUPER_ADMIN bypass via UUID sentinel `00000000-0000-0000-0000-000000000000`
+  - Fonctions `set_tenant(uuid)` et `current_tenant()`
+- **Migration 153** (`153-enable-rls-non-critical-tables.sql`, 117 lignes) : RLS sur 6 tables non-critiques (paiements, factures, sondages, factures_fournisseur, depenses, budgets)
+  - Note : `notifications` exclue (scopée par `destinataireId`, pas `etablissementId`)
+- **rls.middleware.ts** (v6.0.0, 195 lignes) :
+  - Exports : `SUPER_ADMIN_TENANT`, `TENANT_CONFIG_KEY`, `getCrossTenantAttempts`, `resetCrossTenantAttempts`
+  - Vérification contexte après SET LOCAL
+  - `runWithTenant(fn, tenantId)` pour exécution dans contexte tenant
+
+### Phase B — Facturation par Tranches & OHADA
+- **Entités** :
+  - `usage-meter.entity.ts` (55 lignes) : compteurs par module/établissement/période, UNIQUE(etab, module, periode)
+  - `transaction-ledger.entity.ts` (84 lignes) : double entrée débit/crédit, comptes OHADA (411, 521, 706, 443)
+  - `credit-note.entity.ts` (77 lignes) : avoir lié à facture, montants en int
+  - `facture.entity.ts` (131 lignes) : enrichi avec numeroOHADA, montantHT/TVA (int), tauxTVA (1925 centièmes), mentionsLegales, dunning fields
+  - `tranche-eleves.entity.ts` (54 lignes) : enrichi avec `ordre`, conversion decimal→int
+- **Services** :
+  - `dunning.service.ts` (244 lignes) : 4 niveaux (PREMIERE→SUSPENSION), relances J+3/J+7/J+15, suspension J+30
+  - `ledger.service.ts` (299 lignes) : écritures équilibrées débit/crédit, rapports comptables, export CSV
+  - `facturation.service.ts` (613 lignes) : TVA 19.25% centièmes, numérotation OHADA (FAC-OHADA-YYYY-NNNNNN), crédits (avoirs)
+- **Migration 154** (`154-facturation-ohada-tables.sql`, 136 lignes) : tables usage_meters, transactions_ledger, credit_notes + ALTER factures
+
+### Phase C — Quotas & Module Gating Premium
+- `quota.middleware.ts` (88 lignes) : `requireQuotaMiddleware(resource, count)`, headers X-Quota-Limit/Used/Remaining, erreur 429
+- `module-access.middleware.ts` (129 lignes) : 8 modules gratuits + 7 modules premium, vérification abonnement, erreur 402
+- `FeatureFlag.tsx` (enrichi) : PLAN_FEATURES map (GRATUIT→ENTERPRISE), hook `usePlanFeature`, composant `<PremiumGate>`
+
+### Phase D — Providers Paiement Afrique & Notifications
+- **Providers paiement** :
+  - `wave.provider.ts` (163 lignes) : mobile money, frais 1%, SN/CI/CM
+  - `paystack.provider.ts` (149 lignes) : cartes + MoMo, NG/GH
+  - `flutterwave.provider.ts` (152 lignes) : 34+ pays, multi-devise
+  - `manuel.provider.ts` (97 lignes) : saisie manuelle hors-ligne
+- **Provider notifications** :
+  - `sms-infobip.provider.ts` (156 lignes) : SMS Afrique 40+ pays
+- **Idempotency** : PaiementWebhook existant couvre D.3 avec UNIQUE(provider, webhookId)
+
+### Phase E — Panel Admin Avancé & UX Enterprise
+- `_platform.configuration.tsx` (198 lignes) : interface complète, 6 catégories, édition paramètres runtime
+- `_platform.dashboard.tsx` (enrichi) : 4 KPIs (établissements, utilisateurs, MRR, taux activité) + section facturation + section santé établissements + dunning
+- `_platform.etablissements.tsx` (enrichi) : 7 stats rapides, indicateur santé, bouton création
+- `CommandPalette.tsx` (enrichi) : ajout routes modules, permissions, notifications-config, sondages
+- `vite.config.ts` : manualChunks `admin-vendor` (@casl/ability, recharts) + `admin-platform` (7 routes)
+- `mfa.service.ts` (238 lignes) : TOTP compatible Google Authenticator, HMAC-SHA1, 30s/6 digits, codes de secours, Base32 encode/decode
+- `VirtualTable.tsx` (169 lignes) : virtualisation native sans dépendance externe, windowing + overscan, hook `useInfiniteScroll`
+- `admin-permissions-matrix.tsx` (v2.0.0) : connecté au RBAC réel via `useQuery`/`useMutation`, bouton Sauvegarder avec compteur changements
+
+### Phase F — Monitoring Avancé & Observabilité
+- `metrics-collector.service.ts` (521 lignes) :
+  - Golden Signals : latence p50/p95/p99, trafic req/s, erreurs 5xx/4xx, saturation CPU/mémoire/DB/Redis
+  - Health checks distribués : database, Redis (ping), SMTP (TCP test), external services
+  - Séparation compteurs 5xx/4xx pour métriques distinctes
+- `alerting.service.ts` (439 lignes) :
+  - Multi-canal : LOG, EMAIL, SLACK (webhook), WEBHOOK custom
+  - Règles combinées : `combinedWith` (latence > 500ms ET erreur > 5%)
+  - Escalade : critique non acquittée 30min → notification SUPER_ADMIN
+  - Nettoyage auto alertes acquittées > 24h
+- `rapport-export.service.ts` (378 lignes) :
+  - 4 types : activite, facturation, securite, complet
+  - 3 formats : CSV, JSON, PDF (HTML imprimable avec @page)
+  - Export ledger OHADA CSV (comptes 411, 521, 706, 443)
+- `monitoring.controller.ts` (enrichi) : 3 nouveaux endpoints
+  - `GET /golden-signals` — Four Golden Signals
+  - `GET /export/rapport` — Export rapports (type, format, periode, etablissementId)
+  - `GET /export/ledger` — Export ledger OHADA CSV
+- `_platform.monitoring.tsx` (enrichi) : section Golden Signals (4 cartes : latence, trafic, erreurs, saturation avec barres progression) + section export rapports (5 boutons)
+
+### Fichiers clés Phases A-F (v2)
+- `backend/database/migrations/152-enable-rls-critical-tables.sql` — NOUVEAU
+- `backend/database/migrations/153-enable-rls-non-critical-tables.sql` — NOUVEAU
+- `backend/database/migrations/154-facturation-ohada-tables.sql` — NOUVEAU
+- `backend/src/common/middlewares/rls.middleware.ts` — MAJ v6.0.0
+- `backend/src/common/middlewares/quota.middleware.ts` — NOUVEAU
+- `backend/src/common/middlewares/module-access.middleware.ts` — NOUVEAU
+- `backend/src/modules/billing/entities/usage-meter.entity.ts` — NOUVEAU
+- `backend/src/modules/billing/entities/transaction-ledger.entity.ts` — NOUVEAU
+- `backend/src/modules/billing/entities/credit-note.entity.ts` — NOUVEAU
+- `backend/src/modules/billing/services/dunning.service.ts` — NOUVEAU
+- `backend/src/modules/billing/services/ledger.service.ts` — NOUVEAU
+- `backend/src/modules/paiement/providers/wave.provider.ts` — NOUVEAU
+- `backend/src/modules/paiement/providers/paystack.provider.ts` — NOUVEAU
+- `backend/src/modules/paiement/providers/flutterwave.provider.ts` — NOUVEAU
+- `backend/src/modules/paiement/providers/manuel.provider.ts` — NOUVEAU
+- `backend/src/modules/notifications/providers/sms-infobip.provider.ts` — NOUVEAU
+- `backend/src/modules/auth/services/mfa.service.ts` — NOUVEAU
+- `backend/src/modules/monitoring/services/rapport-export.service.ts` — NOUVEAU
+- `backend/src/modules/monitoring/services/metrics-collector.service.ts` — MAJ (Golden Signals + health distribués)
+- `backend/src/modules/monitoring/services/alerting.service.ts` — MAJ (multi-canal + escalade)
+- `frontend/src/components/VirtualTable.tsx` — NOUVEAU
+- `frontend/src/components/CommandPalette.tsx` — MAJ (routes ajoutées)
+- `frontend/src/components/FeatureFlag.tsx` — MAJ (PLAN_FEATURES + PremiumGate)
+- `frontend/src/routes/_platform.dashboard.tsx` — MAJ (KPIs revenus/santé)
+- `frontend/src/routes/_platform.etablissements.tsx` — MAJ (stats + santé)
+- `frontend/src/routes/_platform.monitoring.tsx` — MAJ (Golden Signals + exports)
+- `frontend/vite.config.ts` — MAJ (manualChunks)
+- `backend/test/refonte-v2-features.test.ts` — NOUVEAU : tests plan v2
+
+## Travail effectué — Session 2026-08-08 (Refonte SaaS v3 — Phases G-N)
+
+### Phase G — Sécurité RBAC — Suppression bypass + durcissement
+- **G.1** : Suppression du bypass magique `if (role === 'SUPER_ADMIN') return true` dans `permission-guards.ts`. SUPER_ADMIN obtient toutes ses permissions via `DEFAULT_ROLE_PERMISSIONS` (Object.values(Permission)).
+- **G.2** : Retrait des 9 permissions `GROUPES_ETABLISSEMENTS_*` du rôle CHEF_ETABLISSEMENT dans `roles.enum.ts`.
+- **G.3** : Audit endpoints configuration — confirmés déjà sécurisés (whitelist PUBLIC_CONFIG_KEYS, double guards plateforme).
+
+### Phase H — PostgreSQL Partitionnement + TypeORM Interceptor
+- **H.1** : Migration 155 — Partitionnement HASH 16 partitions sur 8 tables (eleves, notes, bulletins, heures_cours, creneaux_horaires, absences_personnel, paiements, factures).
+- **H.2** : TypeORM subscriber `tenant-isolation.subscriber.ts` — injection auto etablissementId via AsyncLocalStorage. `beforeInsert` injecte, `beforeUpdate` bloque cross-tenant, `afterLoad` audit.
+- **H.3** : PgBouncer configuré dans docker-compose (mode transaction, pool 20, max 200 clients).
+
+### Phase I — Backup par Tenant + Noisy Neighbor Detection
+- **I.1** : Service `tenant-backup.service.ts` — export/import JSON par tenant, historique des backups.
+- **I.2** : Service `noisy-neighbor.service.ts` — métriques par tenant (élèves, volume, users), score de charge 0-100, alertes warning/critical. 4 endpoints ajoutés au monitoring controller.
+
+### Phase J — Panel Admin UX Avancé
+- **J.2** : Onboarding wizard 5 étapes pour nouveau SUPER_ADMIN (`onboarding-wizard.tsx`).
+- **Monitoring** : Section NoisyNeighbor ajoutée au dashboard monitoring (top 10 tenants + alertes).
+
+### Phase K — Espace Client Facturation Self-Service
+- **K.1** : `_auth.mon-abonnement.tsx` enrichi — upgrade/downgrade, historique des plans, simulateur intégré.
+- **K.2** : `_auth.factures.tsx` NOUVEAU — liste factures avec filtres, paiement en ligne, demande d'avoir.
+- **K.3** : `_auth.paiements.tsx` enrichi — statut temps réel, filtres par provider/statut, reçus téléchargeables.
+- **K.4** : `plan-simulator.tsx` NOUVEAU — simulateur de plan avec slider nombre d'élèves, comparaison côte-à-côte.
+- **K.5** : 5 endpoints self-service ajoutés au billing controller : `POST /simuler`, `PATCH /abonnement/upgrade`, `POST /factures/:id/payer`, `POST /factures/:id/avoir`, `GET /historique-plans`.
+- **Enum étendue** : `StatutFacture.EN_PAIEMENT` et `StatutFacture.AVOIR` ajoutés.
+
+### Phase L — CASL.js Progressive Migration
+- **L.1** : `backend/src/common/casl/abilities.ts` — framework CASL complet avec règles contextuelles par rôle (SUPER_ADMIN, ADMIN, ENSEIGNANT, PARENT, CHEF_ETABLISSEMENT, COMPTABLE).
+- **L.2** : `backend/src/common/casl/casl.middleware.ts` — middleware injecte `req.ability` depuis contexte JWT + matières/enfants.
+- **L.4** : `frontend/src/lib/casl.ts` — DSL CASL frontend (hook `useAbility()`, composants `<Can>` et `<Cannot>`).
+
+### Phase M — Monitoring Noisy Neighbor + WebSocket Temps Réel
+- **M.1** : `monitoring.gateway.ts` — WebSocket gateway pour broadcast temps réel (alertes, santé, paiements, noisy neighbor, métriques).
+- **M.2** : Section temps réel ajoutée au dashboard monitoring. Hook `use-realtime-monitoring.ts` pour les événements WebSocket.
+
+### Phase N — Documentation + Tests
+- **N.1** : `backend/test/refonte-v3-features.test.ts` — tests CASL abilities, calcul simulateur, noisy neighbor score, existence fichiers.
+
+### Fichiers créés/modifiés (v3)
+- `frontend/src/app/permission-guards.ts` — MODIFIÉ (bypass SUPER_ADMIN supprimé)
+- `shared/src/enums/roles.enum.ts` — MODIFIÉ (permissions GROUPES_ETABLISSEMENTS retirées de CHEF_ETABLISSEMENT)
+- `backend/database/migrations/155-partitionnement-hash-tables.sql` — NOUVEAU
+- `backend/src/common/async-local-storage.ts` — NOUVEAU
+- `backend/src/common/subscribers/tenant-isolation.subscriber.ts` — NOUVEAU
+- `backend/src/common/casl/abilities.ts` — NOUVEAU
+- `backend/src/common/casl/casl.middleware.ts` — NOUVEAU
+- `backend/src/modules/configuration/services/backup/tenant-backup.service.ts` — NOUVEAU
+- `backend/src/modules/monitoring/services/noisy-neighbor.service.ts` — NOUVEAU
+- `backend/src/modules/monitoring/websocket/monitoring.gateway.ts` — NOUVEAU
+- `backend/src/modules/monitoring/controllers/monitoring.controller.ts` — MODIFIÉ (+4 endpoints noisy neighbor)
+- `backend/src/modules/billing/controllers/billing.controller.ts` — MODIFIÉ (+5 endpoints self-service)
+- `backend/src/modules/billing/entities/facture.entity.ts` — MODIFIÉ (+2 statuts enum)
+- `backend/src/routes/platform.routes.ts` — MODIFIÉ (+4 endpoints backup tenant)
+- `backend/src/config/database.config.ts` — MODIFIÉ (subscribers path)
+- `backend/src/common/middlewares/rls.middleware.ts` — MODIFIÉ (runInTenantContext)
+- `docker/docker-compose.yml` — MODIFIÉ (PgBouncer)
+- `docker/pgbouncer/pgbouncer.ini` — NOUVEAU
+- `frontend/src/features/admin/components/onboarding-wizard.tsx` — NOUVEAU
+- `frontend/src/features/billing/components/plan-simulator.tsx` — NOUVEAU
+- `frontend/src/routes/_auth.mon-abonnement.tsx` — MODIFIÉ (enrichi K.1)
+- `frontend/src/routes/_auth.factures.tsx` — NOUVEAU
+- `frontend/src/routes/_auth.paiements.tsx` — MODIFIÉ (enrichi K.3)
+- `frontend/src/routes/_platform.monitoring.tsx` — MODIFIÉ (+NoisyNeighbor +Realtime)
+- `frontend/src/lib/casl.ts` — NOUVEAU
+- `frontend/src/hooks/use-realtime-monitoring.ts` — NOUVEAU
+- `backend/test/refonte-v3-features.test.ts` — NOUVEAU
+
+## Travail effectué — Session 2026-08-08 (corrections post-revue v4)
+
+### Revue de code — 3 perspectives
+- **Complétude** : 6/6 phases implémentées, namespace i18n `admin` créé (429 lignes FR+EN) mais non consommé par les composants
+- **Correcteur** : 25+ couleurs Tailwind hardcodées dans 8 composants admin, 1 `icon: any`, 9× `new QuotaService()`/`new DunningService()` au lieu de singletons
+- **Impact** : Renommage `StatCard` → `PlatformStatCard` dans `ui-platform.tsx` sans breaking change (composant isolé)
+
+### Corrections appliquées — 13 fichiers
+
+**Frontend — Dark mode (variables CSS thème-aware) :**
+- `revenus-dashboard.tsx` : 12 couleurs hardcodées → variables CSS + `icon: any` → `ComponentType<{ className?: string }>` + `clamp()` sur KPICard/StatBadge
+- `usage-meters-dashboard.tsx` : 12 couleurs hardcodées → variables CSS + `clamp()` responsive
+- `plan-form-modal.tsx` : 6 couleurs hardcodées → variables CSS (bouton supprimer, feature flags, erreur, catégories modules)
+- `etablissement-form-modal.tsx` : 1 couleur hardcodée → variable CSS (bandeau erreur)
+- `provider-config-modal.tsx` : 6 couleurs hardcodées → variables CSS (configured, toggle sandbox, erreur)
+- `webhook-logs.tsx` : 1 couleur résiduelle → variable CSS
+- `abonnement-detail.tsx` : 2 couleurs résiduelles → variables CSS
+- `RequireAbility.tsx` : 2 couleurs → variables CSS (`text-muted-foreground` → `text-[var(--color-text-muted)]`, `text-red-400` → `text-[var(--color-danger-400)]`)
+- `onboarding-wizard.tsx` : 7 couleurs hardcodées → variables CSS (hover, progress bar, indicators)
+- `admin-permissions-matrix.tsx` : 20+ couleurs hardcodées → variables CSS (rôles, matrice, liste, boutons, filtres)
+
+**Backend — Singletons :**
+- `quota.service.ts` : ajout `export const quotaService = new QuotaService();` + suppression `new QuotaService()` dans middleware `requireQuota`
+- `dunning.service.ts` : ajout `export const dunningService = new DunningService();`
+- `billing.controller.ts` : import singleton `quotaService` + suppression de 6× `new QuotaService()`
+- `cron-jobs.ts` : import singletons `dunningService` + `quotaService` au lieu de `new` locaux
+
+**Ultra-responsivité :**
+- `revenus-dashboard.tsx` : KPICard + StatBadge refactorés avec `clamp()` et variables CSS
+- `usage-meters-dashboard.tsx` : badges quota avec `clamp()` responsive
+
+### Canvas mis à jour
+- `refonte-saas-v4-completion.canvas.tsx` : section "Corrections post-revue" ajoutée (timeline, stats, tableau détaillé)
+
+### Vérification finale
+- Grep : 0 couleur Tailwind hardcodée restante dans les 10 composants core du plan v4
+- Imports backend : cohérence vérifiée (singletons importés, pas de `new` résiduel)
+
+---
+
+## Refonte SaaS v7 — Plan d'Implémentation Global (Enterprise-Grade)
+
+> Plan maître : `docs/plans/PLAN-SAAS-V7.md` (mis à jour au fil de l'avancement).
+> Rapports de référence : `docs/rapports/RAPPORT-ABONNEMENTS-FACTURATION-IDEAL.html`,
+> `RAPPORT-PANEL-ADMINISTRATION-IDEAL.html`, `RAPPORT-SAAS-ADMIN-CLIENT-SEPARATION.html`,
+> `RAPPORT-SAAS-SINGLE-DATABASE-ARCHITECTURE.html`.
+
+### Décisions validées (grill-me 2026-08-08)
+| # | Sujet | Décision |
+|---|-------|----------|
+| D1 | Séquençage | 6 lots cumulatifs **A → F** (A: catalogue modules unifié, B: tranches extrême, C: groupes SaaS, D: providers dynamiques, E: RLS+partition généralisés, F: panel polish + workflow critique) |
+| D2 | Tranches (301-800=15 000F, 801-1200=20 000F) | **Hybride paramétrable** en DB : mode `auto` (recomputation + prorata) ou `declaratif` (tranche souscrite), par plan |
+| D3 | Modules payants/gratuits | **Catalogue 100% en DB** (`modules_catalogue`) + cascade **groupe → plan → établissement → système** ; 2 niveaux d'override |
+| D4 | Add-ons | **Crédits prépayés** : packs facturés, compteurs, alertes 20/10%, tolérance par plan |
+| D5 | Actions critiques | **Workflow 2 facteurs (MFA)** : suspendre/résilier/upgrader, supprimer établissement, avoir, restore backup, flags globaux |
+| D6 | Source de vérité | Un seul catalogue modules + une cascade de pricing/config (suppression des 3 registres divergents) |
+| D7 | Architecture | Single-DB + RLS ~40 tables + partitionnement volume + CASL.js déjà en place |
+
+### Architecture cible
+```
+modules_catalogue (DB + seeds)        ← remplace les 3 registres divergents
+   ├─ override Groupe (ModulesGroupe) [Lot C]
+   ├─ override Plan (modulesInclus)
+   └─ override Établissement (AbonnementModule + config)
+tranches (plan TrancheEleves · groupe TrancheGroupe [C] · étab TrancheSupplement)
+   └─ pricing = facturation.service (TVA 1925‰ OHADA) + prorata inter-cycle
+params (ParametreSysteme : global / groupe [C] / étab) + feature flags cascade
+workflow_actions_critiques (approbation MFA 2F) + audit + validation
+```
+
+### Migrations
+160 `modules-catalogue` → 161 `tranches-hybride` → 162 `groupes-saas` → 163 `rls-all-tables` → 164 `workflow-actions-critiques` + partitions batch conditionnelles.
+
+### Conformité transverse
+i18n 100% flat FR/EN · audit dans les services · filtres dans DataTable collapsibles · StepperModal modals riches · breadcrumbs via PageHeader uniquement · clamp()/CSS vars/dark · 0 any · tsc ≥ 0 in-scope.
+
+## Travail effectué — Session 2026-08-08 (Plan v7 + Lot A : catalogue modules unifié)
+
+### Documents
+- `docs/plans/PLAN-SAAS-V7.md` créé (plan global A→F, décisions, migrations, tests).
+- Section v7 insérée dans AGENTS.md (ci-dessus).
+
+### Lot A — backend (COMPLET)
+- **Entité `ModuleCatalogue`** (`backend/src/modules/billing/entities/module-catalogue.entity.ts`, 134 l.) — table `modules_catalogue`, enum `CategorieModule` (CRITIQUE/PREMIUM/ADDON), prix XAF entiers, `dependencies`/`permissionsRequises` simple-array, `config` jsonb, `estSysteme`, `estActif`, `etablissementId` nullable (RLS), index `code` unique + `categorie` + `estActif`. Exporté dans `entities/index.ts`.
+- **Migration** `backend/database/migrations/160-modules-catalogue.sql` (idempotente) — CREATE TABLE + index uniques (staging/prod ; local = synchronize).
+- **Seed** `backend/src/database/seeds/system/seed-modules-catalogue.ts` — 41 modules depuis `MODULE_REGISTRY` (@shared/config/config.registry.ts), upsert idempotent par code, prix dep `PRIX_MODULES`, `planMinimal='pro'` pour finances, `estFacturable/estSouscriptible` = non-CRITIQUE, `actifParDefaut` = CRITIQUE (20), `estSysteme: true`. Branché dans `initial.seed.ts` (étape **8b**, après seedRBAC). ✅ exécuté en local : 41 créées puis 0 créées/41 mises à jour (idempotence vérifiée).
+- **Service v2** `module-resolution.service.ts` — cascade **catalogue (actifParDefaut) → plan (PlanAbonnement.modulesInclus) → AbonnementModule (moduleOptionnel.slug)** ; override désactivation `ParametreSysteme modules.{code}.actif` laissé à `configurationService.isModuleActive` ; cache mémoire TTL 5 min (`CACHE_TTL_MS`) + `invalidate(etablissementId?)` ; singleton `moduleResolutionService` exporté (avec types `ModuleResolu`/`SourceModule`) via `services/index.ts`. ✅ Résolution vérifiée en local : 41 modules, 20 actives (20 CRITIQUES).
+- **Middleware `module-access.middleware.ts` v3.0.0** — `requireModuleAccess` branché sur le catalogue (fini les sets hardcodés) : activation via ConfigService (403 MODULE_INACTIVE) → si facturable : abonnement ACTIF requis (402 SUBSCRIPTION_REQUIRED) → souscription plan/supplément (403 MODULE_PREMIUM_REQUIS). SUPER_ADMIN bypass + `moduleInfo` conservés. Helpers `isModulePremium/Free` marqués `@deprecated` (aucun usage externe).
+- **API plateforme** (`billing.controller.ts`, platformBillingRouter — guard global SUPER_ADMIN via `platform.routes.ts:75`) :
+  - `GET/POST/PUT/DELETE /modules/catalogue` (filtres categorie/search/actif, 409 code dupliqué, code protégé si estSysteme, DELETE 403 si système)
+  - `POST /modules/catalogue/sync` (re-seed idempotent → `{ total }`)
+  - `GET /modules/catalogue/resolution?etablissementId=` (cascade par établissement)
+  - Chaque mutation : `moduleResolutionService.invalidate()` ; doublon local `new ModuleResolutionService()` supprimé (singleton importé) ; route client `GET /api/billing/modules/catalogue` corrigée → `getCatalogue()`.
+
+### Lot A — frontend (COMPLET)
+- **`_platform.modules.tsx` réécrit** (~600 l.) — bascule de l'ancien registre `modules-advanced` vers le catalogue unifié :
+  - 4 `PlatformStatCard` (total, critiques, facturables, actifs par défaut), toolbar recherche + filtre catégorie (ElisaSelect), accordéons par catégorie avec badges (StatusBadge : Actif/Désactivé, Système, prix F/mois), actions Modifier/Supprimer/toggle `estActif` (hors système : pas de delete).
+  - Modal CRUD `CatalogueFormModal` (CustomModal, reset useEffect à l'ouverture) — code (lecture seule si système), nom, description, catégorie, prix mensuel/annuel XAF, planMinimum, icône Lucide, checkboxes actifParDefaut/estActif.
+  - Panneau Résolution par établissement : select établissement → grille modules actifs avec badge source (catalogue ⚪/plan 🔵/supplément 🟠).
+  - `ConfirmAction` (danger) pour la suppression ; toasts sonner ; 100% CSS vars + `clamp()` ; 0 any.
+
+### Lot A — validation
+- tsc backend : 0 erreur in-scope sur les fichiers Lot A (99 préexistantes hors périmètre : cron-jobs, facturation-groupe, avoir l.905).
+- tsc frontend : 0 erreur sur `_platform.modules.tsx` (erreurs préexistantes inchangées).
+- Walkthrough réel (conteneur docker, DB locale) : seed 41 modules ✅ → re-run idempotent ✅ → résolution 41/20 actives ✅.
+- ⚠️ **API client note** : 1 détail — `apiClient.get(url, params)` (params = 2e arg direct, pas `{ params }`) ; `apiClient` via `@/lib/api-client`.
+
+### Reste (lot suivant ou tests) — non bloquant
+- Tests unitaires du service v2 (mocks getRepository AbonnementClient/AbonnementModule) + e2e sync endpoint.
+- i18n plateforme `admin.json` (bandes non consommées — chantier transversal hors Lot A).
+
+## Travail effectué — Session 2026-08-08 (Lot B : tranches facturation extrême)
+
+### B.1 Migration 161 `tranches-hybride`
+- `backend/database/migrations/161-tranches-hybride.sql` (51 lignes) — 5 colonnes ajoutées à `plans_abonnement` :
+  - `modeFacturationTranches` varchar(20) DEFAULT 'auto' (auto|declarative)
+  - `toleranceDepassement` int DEFAULT 10 (%)
+  - `prorataImmediat` boolean DEFAULT true
+  - `blocageAuDela` boolean DEFAULT false
+  - `plafondMaxEleves` int nullable
+- Index partiel `idx_plans_mode_facturation` sur mode auto.
+
+### B.2 Entité `PlanAbonnement` — Lot B v7
+- `plan-abonnement.entity.ts` : ajout enum `ModeFacturationTranches` (AUTO, DECLARATIF) + 5 colonnes.
+- `entities/index.ts` : export `ModeFacturationTranches`.
+
+### B.3 `tranche-config.service` v3
+- Nouvelle interface `CalculTranchesResult` (montantBase, montantTranches, nbEleves, plafondPlan, plafondMaxEleves, mode, trancheActive, detail[], depassement{}).
+- `calculerMontantTranches(etabId, nbEleves)` : cascade étab→plan→système + calcul dépassement.
+- `simulerMontantTranches(plan, tranches, nbEleves)` : simulation pure (sans DB) pour plateforme.
+
+### B.4 Cron `billing-controle-tranches`
+- `cron-jobs.ts` : `cronControleTranches()` quotidien 02h00 (Africa/Douala).
+- Parcourt les abonnements actifs en mode auto → compte élèves réels → détecte franchissements/dépassements.
+- Enregistré via `scheduleWithLock('billing-controle-tranches', '0 2 * * *')`.
+
+### B.5 API endpoints
+- **Plateforme** : `GET /api/platform/facturation/tranches/simulate?planId=&nbEleves=` (simulation via `simulerMontantTranches`).
+- **Client** : `GET /api/billing/tranches/simulate?nbEleves=` (calculerMontantTranches v3).
+- **Client** : `POST /api/billing/simuler` (base + tranches + TVA OHADA 19.25%).
+
+### B.6 UI `plan-form-modal` — étape Tranches enrichie
+- Section « Mode & règles » ajoutée (mode auto/declaratif, plafond max, tolérance %, prorata, blocage).
+- `PlanFormData` : 5 nouveaux champs + DEFAULT_FORM mis à jour.
+- i18n : 11 nouvelles clés FR/EN dans `planForm.tranches.*` (admin.json).
+
+### Fichiers modifiés (8)
+- `backend/database/migrations/161-tranches-hybride.sql` (NOUVEAU 51 lignes)
+- `backend/src/modules/billing/entities/plan-abonnement.entity.ts` (+32 lignes)
+- `backend/src/modules/billing/entities/index.ts` (+1 export)
+- `backend/src/modules/billing/services/tranche-config.service.ts` (+164 lignes)
+- `backend/src/modules/billing/cron-jobs.ts` (+131 lignes)
+- `backend/src/modules/billing/controllers/billing.controller.ts` (+79 lignes)
+- `frontend/src/features/admin/components/plan-form-modal.tsx` (+87 lignes)
+- `frontend/src/locales/fr/admin.json` (+11 clés)
+- `frontend/src/locales/en/admin.json` (+11 clés)
+- `docs/plans/PLAN-SAAS-V7.md` (Lot B marqué ✅)
+
+## Travail effectué — Session 2026-08-08 (Lot C : Groupes SaaS)
+
+### C.1 Migration 162 `groupes-saas`
+- `backend/database/migrations/162-groupes-saas.sql` (105 lignes) — 4 nouvelles tables :
+  - `modules_groupe` : override modules par groupe (FK groupe + module catalogue)
+  - `tranches_groupe` : override tranches pricing par groupe (ordre, minEleves, maxEleves, montant)
+  - `feature_flags_groupe` : feature flags par groupe (cle + actif)
+  - `abonnements_groupe` : plan d'abonnement du groupe (planId, statut, modeFacturation, repartitionFacturation, tarifDegressif)
+- Colonne `groupeEtablissementId` ajoutée à `parametres_systeme` (scope groupe)
+- Index partiels sur groupeEtablissementId
+
+### C.2 Entités Lot C v7
+- `modules-groupe.entity.ts` (48 lignes) — override modules par groupe
+- `tranche-groupe.entity.ts` (56 lignes) — override tranches par groupe
+- `abonnement-groupe.entity.ts` (86 lignes) — enums `StatutAbonnementGroupe`, `ModeFacturationGroupe`, `RepartitionFacturation`
+- `entities/index.ts` : exports ajoutés
+
+### C.3 Cascade module-resolution v3
+- `module-resolution.service.ts` : cascade enrichie avec niveau `groupe` entre `plan` et `supplement`
+- `SourceModule` étendu : `'catalogue' | 'plan' | 'groupe' | 'supplement'`
+- Résolution du groupe via `GroupeEtablissementLien` puis chargement des `ModulesGroupe`
+- Override groupe appliqué après plan, avant supplément
+
+### C.4 Cascade tranche-config v4
+- `tranche-config.service.ts` : cascade enrichie avec niveau `groupe` entre `etablissement` et `plan`
+- `ResolvedTranche.source` étendu : `'etablissement' | 'groupe' | 'plan' | 'systeme'`
+- Chargement parallèle des 3 niveaux (Promise.all)
+
+### C.5 Service `GroupeSaaSService`
+- `groupe-saas.service.ts` (286 lignes) — CRUD complet :
+  - Groupes : create, get, getAll, update, delete
+  - Membres : addMembre, removeMembre
+  - Modules groupe : getModulesGroupe, setModuleGroupe (upsert)
+  - Tranches groupe : getTranchesGroupe, setTranchesGroupe (replace)
+  - Abonnement groupe : getAbonnementGroupe, setAbonnementGroupe (upsert), suspendreAbonnementGroupe
+
+### C.6 API endpoints plateforme (15 routes)
+- `billing.controller.ts` : +190 lignes de routes sur `platformBillingRouter` :
+  - CRUD : GET/POST/PATCH/DELETE `/groupes`
+  - Membres : POST `/groupes/:id/membres`, DELETE `/groupes/:id/membres/:etabId`
+  - Config : GET/PUT `/groupes/:id/modules`, `/groupes/:id/tranches`, `/groupes/:id/abonnement`
+  - Actions : POST `/groupes/:id/abonnement/suspendre`
+
+### C.7 Frontend `GroupesSaaSPage`
+- `groupes-saas-page.tsx` (525 lignes) — page plateforme :
+  - Liste des groupes avec cartes (nom, code, nb membres)
+  - Modal création (nom, code, description)
+  - Modal configuration 4 onglets : Membres, Modules, Tranches, Abonnement
+  - Tab Membres fonctionnel (add/remove)
+  - Tabs Modules/Tranches/Abonnement : placeholders (coming soon)
+  - Hooks TanStack Query : useGroupes, useCreateGroupe, useUpdateGroupe, useDeleteGroupe, useAddMembre, useRemoveMembre
+
+### C.8 i18n
+- `fr/admin.json` : +28 clés `groupes.*` (titre, description, tabs, modal, placeholders)
+- `en/admin.json` : +24 clés (parité FR/EN)
+
+### Fichiers modifiés (Lot C)
+- `backend/database/migrations/162-groupes-saas.sql` (NOUVEAU 105 lignes)
+- `backend/src/modules/billing/entities/modules-groupe.entity.ts` (NOUVEAU 48 lignes)
+- `backend/src/modules/billing/entities/tranche-groupe.entity.ts` (NOUVEAU 56 lignes)
+- `backend/src/modules/billing/entities/abonnement-groupe.entity.ts` (NOUVEAU 86 lignes)
+- `backend/src/modules/billing/entities/index.ts` (+4 exports)
+- `backend/src/modules/billing/services/module-resolution.service.ts` (+36 lignes cascade groupe)
+- `backend/src/modules/billing/services/tranche-config.service.ts` (+38 lignes cascade groupe)
+- `backend/src/modules/billing/services/groupe-saas.service.ts` (NOUVEAU 286 lignes)
+- `backend/src/modules/billing/controllers/billing.controller.ts` (+190 lignes routes)
+- `frontend/src/features/admin/components/groupes-saas-page.tsx` (NOUVEAU 525 lignes)
+- `frontend/src/locales/fr/admin.json` (+28 clés)
+- `frontend/src/locales/en/admin.json` (+24 clés)
+
+## Travail effectué — Session 2026-08-08 (Lot D : Providers paiement dynamiques)
+
+### D.1 Migration 163 `providers-paiement`
+- `backend/database/migrations/163-providers-paiement.sql` (64 lignes) — 2 tables :
+  - `providers_paiement` : providers centralisés (nom, slug, type, canaux, credentials chiffrées, sandbox, actif)
+  - `provider_assignments` : assignment des providers aux plans/établissements (scope global/plan/etablissement, priorite)
+
+### D.2 Entités Lot D v7
+- `provider-paiement.entity.ts` (74 lignes) — enum `TypeProviderPaiement` (MOBILE_MONEY, CARD, BANK_TRANSFER, MIXED)
+- `provider-assignment.entity.ts` (61 lignes) — enum `ScopeAssignment` (GLOBAL, PLAN, ETABLISSEMENT)
+- `entities/index.ts` : exports ajoutés
+
+### D.3 Service `ProviderPaiementService`
+- `provider-paiement.service.ts` (342 lignes) — CRUD complet :
+  - Providers : create, getAll, getActive, getById, getBySlug, update, delete
+  - Chiffrement AES-256-GCM des credentials (via `encryption.util.ts`)
+  - Sanitize : credentials masquées dans les réponses API
+  - Test connexion : simulation par provider (Stripe, Paystack, Flutterwave, Wave, MTN, Orange, Manuel)
+  - Assignments : getAssignments, assign (upsert), unassign
+  - Résolution cascade : `resolveProvider(etabId, planId)` → établissement → plan → global
+
+### D.4 API endpoints plateforme (10 routes)
+- `billing.controller.ts` : +137 lignes de routes :
+  - CRUD : GET/POST/PATCH/DELETE `/providers`
+  - Active : GET `/providers/active`
+  - Test : POST `/providers/:id/test`
+  - Assignments : GET `/providers/:id/assignments`, POST `/providers/assign`, DELETE `/providers/assignments/:id`
+
+### D.5 Frontend `ProvidersPaiementPage` + route + sidebar
+- `providers-paiement-page.tsx` (529 lignes) — page plateforme :
+  - Grille de cartes providers (nom, slug, type, sandbox/production, actif/inactif)
+  - Modal création (nom, slug, type, description, credentials JSON, sandbox, actif)
+  - Modal détail (infos, credentials masquées, dates)
+  - Bouton test connexion par provider
+  - Hooks TanStack Query : useProviders, useCreateProvider, useUpdateProvider, useDeleteProvider, useTestProvider
+- `platform.providers.tsx` (27 lignes) — route `/platform/providers` (wrapper layout plateforme)
+- `platform-sidebar.tsx` : ajout item "Providers" (icône Wallet, description "Providers de paiement")
+
+### D.6 i18n
+- `fr/admin.json` : +20 clés `providersPage.*`
+- `en/admin.json` : +20 clés (parité FR/EN)
+
+### Fichiers modifiés (Lot D)
+- `backend/database/migrations/163-providers-paiement.sql` (NOUVEAU 64 lignes)
+- `backend/src/modules/billing/entities/provider-paiement.entity.ts` (NOUVEAU 74 lignes)
+- `backend/src/modules/billing/entities/provider-assignment.entity.ts` (NOUVEAU 61 lignes)
+- `backend/src/modules/billing/entities/index.ts` (+3 exports)
+- `backend/src/modules/billing/services/provider-paiement.service.ts` (NOUVEAU 342 lignes)
+- `backend/src/modules/billing/controllers/billing.controller.ts` (+137 lignes routes)
+- `frontend/src/features/admin/components/providers-paiement-page.tsx` (NOUVEAU 529 lignes)
+- `frontend/src/routes/platform.providers.tsx` (NOUVEAU 27 lignes)
+- `frontend/src/components/layout/platform-sidebar.tsx` (+7 lignes, item Providers Wallet)
+- `frontend/src/locales/fr/admin.json` (+20 clés)
+- `frontend/src/locales/en/admin.json` (+20 clés)
+
+## Travail effectué — Session 2026-08-08 (Lot E : RLS + Partitionnement généralisés)
+
+### E.1 Migration 164 — RLS généralisé (détection dynamique)
+- `backend/database/migrations/164-rls-generalise.sql` (193 lignes) — détection automatique via `information_schema` :
+  - Parcours toutes les tables avec colonne `etablissementId` (hors 14 déjà couvertes + partitions)
+  - ENABLE RLS + FORCE RLS sur chaque table détectée
+  - Policy adaptative : `etablissementId` NULLABLE → NULL = global (visible par tous) ; NOT NULL → isolation stricte
+  - Bypass SUPER_ADMIN (`00000000-...`) + bypass GESTIONNAIRE_GROUPES (`00000000-...0001`)
+  - Index `idx_rls_{table}_etablissement` sur chaque table
+  - Vues diagnostic mises à jour : `v_rls_status` (toutes tables RLS), `v_rls_policies` (toutes policies), `v_rls_missing` (tables sans RLS = 0 attendu)
+  - Idempotent : DROP POLICY IF EXISTS + rebCréation
+
+### E.2 Middleware RLS v8.0.0 — cas GESTIONNAIRE_GROUPES
+- `backend/src/common/middlewares/rls.middleware.ts` :
+  - Nouvelle constante `GROUP_TENANT_SENTINEL = '00000000-0000-0000-0000-000000000001'`
+  - `resolveTenantId()` étendu : GESTIONNAIRE_GROUPES → sentinelle groupe (bypass RLS + filtrage applicatif)
+  - Audit log : `[RLS] Contexte groupe — User: {id} → sentinelle groupe`
+  - Rétro-compatible : SUPER_ADMIN et tenant normal inchangés
+
+### E.3 Index partiels tenant
+- Inclus dans la migration 164 (boucle dynamique) : `CREATE INDEX IF NOT EXISTS idx_rls_{table}_etablissement` sur chaque table couverte
+
+### Fichiers modifiés (Lot E)
+- `backend/database/migrations/164-rls-generalise.sql` (NOUVEAU 193 lignes)
+- `backend/src/common/middlewares/rls.middleware.ts` (MAJ v8.0.0, +18 lignes)
+
+## Travail effectué — Session 2026-08-08 (Lot F : Workflow Critique 2F + Approbations)
+
+### F.1 Migration 165 `workflow-actions-critiques`
+- `backend/database/migrations/165-workflow-actions-critiques.sql` (233 lignes) — table `actions_critiques` :
+  - `type_action` varchar(30) : RESILIER, SUSPENDRE, UPGRADE, SUPPRIMER_ETABLISSEMENT, ACCORDER_AVOIR, RESTAURER_BACKUP, REINITIALISER_GLOBAL, MODIFIER_TARIFS
+  - `statut` varchar(20) : EN_ATTENTE, APPROUVEE, REJETEE, EXECUTEE, EXPIREE, ANNULEE
+  - `payload` jsonb, `demandeur_id` uuid, `approuveur_id` uuid, `etablissement_id` uuid
+  - `cible_type` varchar(50), `cible_id` uuid, `resultat_execution` jsonb
+  - Dates : `date_demande`, `date_approbation`, `date_execution`, `date_expiration` (défaut +24h)
+  - Sécurité MFA : `mfa_verification_hash`, `tentatives_approbation` (max 5)
+  - Audit : `raison`, `motif_rejet`, IPs, user-agents
+  - 6 index + 2 contraintes CHECK + fonction `expirer_actions_critiques_obsoletes()` + vue `v_actions_critiques_synthese`
+
+### F.2 Entité `ActionCritique` + Enums
+- `action-critique.entity.ts` (233 lignes) — enums `TypeActionCritique` (8 types), `StatutActionCritique` (6 statuts)
+- Constantes : `ACTION_CRITIQUE_EXPIRATION_HEURES = 24`, `ACTION_CRITIQUE_MAX_TENTATIVES = 5`
+- Méthodes utilitaires : `estEnAttente`, `estExpiree`, `peutApprouver`, `typeActionLabel`
+- `entities/index.ts` : exports ajoutés
+
+### F.3 Nouvelles AuditActions (7)
+- `ACTION_CRITIQUE_DEMANDEE`, `ACTION_CRITIQUE_APPROUVEE`, `ACTION_CRITIQUE_REJETEE`, `ACTION_CRITIQUE_EXECUTEE`, `ACTION_CRITIQUE_EXPIREE`, `ACTION_CRITIQUE_ANNULEE`, `ACTION_CRITIQUE_MFA_ECHEC`
+
+### F.4 Service `ActionCritiqueService`
+- `action-critique.service.ts` (609 lignes) — workflow complet :
+  - `demanderAction()` : crée EN_ATTENTE, vérifie doublon sur même cible, audit log
+  - `listerActions()` : filtres (statut, type, demandeur, établissement) + pagination + compteurs
+  - `getAction()` : détail avec relations (demandeur, approuveur, établissement)
+  - `approuverAction()` : vérif MFA TOTP via `mfaService.verifierMFA()`, auto-approbation interdite, max tentatives, hash preuve MFA
+  - `executerAction()` : marque EXECUTEE après opération réelle
+  - `rejeterAction()` : motif obligatoire, audit log
+  - `annulerAction()` : par le demandeur uniquement
+  - `expirerActionsObsoletes()` : bulk update EN_ATTENTE → EXPIREE (pour cron)
+  - `getStatistiques()` : total, parStatut, parType, delaiMoyenApprobationHeures
+
+### F.5 API endpoints plateforme (8 routes)
+- `billing.controller.ts` : +179 lignes sur `platformBillingRouter` :
+  - `GET /actions-critiques/statistiques` — stats globales
+  - `GET /actions-critiques` — liste paginée + filtres + compteurs
+  - `GET /actions-critiques/:id` — détail
+  - `POST /actions-critiques` — demander (typeAction + payload)
+  - `POST /actions-critiques/:id/approuver` — approuver avec codeMFA
+  - `POST /actions-critiques/:id/rejeter` — rejeter avec motif
+  - `POST /actions-critiques/:id/annuler` — annuler (demandeur)
+  - `POST /actions-critiques/:id/executer` — marquer exécutée
+
+### F.6 Frontend — Hooks TanStack Query
+- `use-actions-critiques.ts` (285 lignes) — 3 queries + 4 mutations :
+  - `useListerActionsCritiques(filters)`, `useGetActionCritique(id)`, `useStatistiquesActionsCritiques()`
+  - `useDemanderActionCritique()`, `useApprouverActionCritique()`, `useRejeterActionCritique()`, `useAnnulerActionCritique()`
+- Types partagés : `ActionCritique`, `TypeActionCritique`, `StatutActionCritique`
+- Helpers : `TYPE_ACTION_LABELS`, `STATUT_LABELS`, `STATUT_VARIANTS`
+
+### F.7 Frontend — Page `ApprobationsPage`
+- `approbations-page.tsx` (639 lignes) — page plateforme complète :
+  - 5 StatCards (en attente, approuvées, rejetées, exécutées, expirées)
+  - Toolbar filtres (statut, type) + bouton nouvelle demande + refresh
+  - Liste `ActionCritiqueCard` avec actions contextuelles (voir, approuver, rejeter, annuler)
+  - Modal détail (payload JSON, métadonnées, raison, motif rejet, résultat exécution)
+  - Modal approbation MFA (input 6 chiffres TOTP)
+  - Modal rejet (textarea motif obligatoire)
+  - Pagination
+  - 100% CSS vars + clamp() responsive + dark mode
+
+### F.8 Route + Sidebar
+- `platform.approbations.tsx` (26 lignes) — route `/platform/approbations`
+- `platform-sidebar.tsx` : ajout item "Approbations" (icône ShieldCheck, description "Actions critiques 2F")
+
+### F.9 i18n — 35 clés FR+EN
+- `fr/admin.json` : +35 clés `approbations.*`
+- `en/admin.json` : +35 clés (parité FR/EN complète)
+
+### Fichiers modifiés (Lot F)
+- `backend/database/migrations/165-workflow-actions-critiques.sql` (NOUVEAU 233 lignes)
+- `backend/src/modules/billing/entities/action-critique.entity.ts` (NOUVEAU 233 lignes)
+- `backend/src/modules/billing/entities/index.ts` (+3 exports)
+- `backend/src/modules/billing/entities/audit-log.entity.ts` (+7 AuditActions)
+- `backend/src/modules/billing/services/action-critique.service.ts` (NOUVEAU 609 lignes)
+- `backend/src/modules/billing/services/index.ts` (+8 exports)
+- `backend/src/modules/billing/controllers/billing.controller.ts` (+182 lignes routes)
+- `frontend/src/features/admin/hooks/use-actions-critiques.ts` (NOUVEAU 285 lignes)
+- `frontend/src/features/admin/components/approbations-page.tsx` (NOUVEAU 639 lignes)
+- `frontend/src/routes/platform.approbations.tsx` (NOUVEAU 26 lignes)
+- `frontend/src/components/layout/platform-sidebar.tsx` (+7 lignes, item Approbations ShieldCheck)
+- `frontend/src/locales/fr/admin.json` (+35 clés)
+- `frontend/src/locales/en/admin.json` (+35 clés)
+- `backend/test/unit/action-critique.service.spec.ts` (NOUVEAU 532 lignes — 28 tests, 8 describe blocks)
+- `docs/plans/PLAN-SAAS-V7.md` (Lot F ✅ + migration 163 ajoutée + statut global ✅ COMPLET)
+
+## Refonte SaaS v7.1 — Panel Admin Enterprise (en cours)
+
+> Plan global : `docs/plans/PLAN-PANEL-ADMIN-ENTERPRISE.md`
+> Sources : 4 rapports (`docs/rapports/RAPPORT-*.html` — score actuel 5.5/10, 22 failles) + plan v7
+> Cadrage validé (grill 2026-08-08) : **vagues verticales incrémentales**, **V0 fixes d'abord**, **V1 = Monitoring & Dashboard** (Golden Signals + Health, Noisy Neighbor, Realtime WS, Alerting mgmt, Dashboard KPIs)
+
+### V0 — Correctifs critiques de socle (en cours)
+- **V0.1** : Pattern ApiResponse — `apiClient.get<T>()` retourne `ApiResponse<T>` (`{success, data?: T}`). 12 appels pages platform passent `T={success,data:X}` → `res.data` typé enveloppe ; monitoring fait `res.data.data` (undefined). Correctif : `get<X>` + `return res.data`.
+- **V0.2** : `--color-texte-muted` non défini (571 usages) → ajouter dans globals.css.
+- **V0.3** : 376 erreurs tsc frontend (111 routes platform, 93 features/admin, 12 `@casl/ability` introuvable dans shared).
+- **V0.4** : StepperModal jamais importé dans les modals admin complexes.
+
+### V1 — Monitoring & Dashboard (planifié)
+Backend existant et sain (metrics-collector, alerting, noisy-neighbor, monitoring.gateway). Travail = intégration UI + wiring + fixes runtime : golden signals (p50/p95/p99, trafic, erreurs, saturation), noisy neighbor top 10 tenants, websocket temps réel, page alerting (règles/acquittement), dashboard KPIs réels (stats/revenues/sante).
+
+## Travail effectué — Session 2026-08-09 (V2 : Matrice RBAC réelle + routes Groupes/Permissions)
+
+### Contexte
+Suite du plan v7.1 : verticale « Organisation, Plans, Permissions ». La matrice RBAC frontend pointait vers des **endpoints fantômes** (`/api/admin/permissions/matrix`) → réécriture complète branchée sur le backend RBAC réel (`/api/rbac`), + pages plateforme manquantes + nettoyage `any` dans la facturation.
+
+### 1. `admin-permissions-matrix.tsx` v3.0 — branché sur `/api/rbac`
+- **Queries** : `GET /api/rbac/permissions/modules` (groupé par module, `successResponse`), `GET /api/rbac/roles` (→ `RbacRole {id, code, libelle, description?, estSysteme, actif, nbUtilisateurs?}`), puis `GET /api/rbac/roles/:id/permissions` en parallèle (Promise.all) → `rolePermissions: Record<roleId, Set<permId>>`.
+- **Sauvegarde par delta** : clic sur case → `pendingChanges[]` (`{roleId, permissionId, granted}`) ; bouton Sauvegarder regroupe par rôle et envoie `PUT /api/rbac/roles/:id/permissions/batch` avec `{addedPermissionIds, removedPermissionIds}` ; mutations parallèles + invalidation queries + toast.
+- **Rôles système** (estSysteme) : badge `Lock` + cellules désactivées (le backend renvoie 400 `SYSTEM_ROLE_IMMUTABLE` — anticipé côté UI).
+- **Vues** : Matrice (table module × rôles) / Liste (cartes par module, pastilles par rôle) ; filtres rôle/module/recherche ; export JSON ; StatCards (totalPermissions, modules, rôles, couvertureMoyenne %).
+- **0 erreur tsc, 0 `any`** (types `RbacPermission`, `RbacRole`, `PendingChange`).
+
+### 2. Pages plateforme ajoutées
+- `frontend/src/routes/platform.permissions.tsx` → `/platform/permissions` (wrapper de `AdminPermissionsMatrixPage`).
+- `frontend/src/routes/platform.groupes.tsx` → `/platform/groupes` (wrapper de `GroupesSaaSPage`, export default).
+- `platform-sidebar.tsx` : +2 nav items — `navigation.groupes` (Network, groupe **gestion**), `navigation.permissions` (KeyRound, groupe **systeme**).
+- `routeTree.gen.ts` régénéré automatiquement (les 2 routes présentes).
+
+### 3. Typage `platform.facturation.tsx`
+- `ModulesTab` : 8 `any` → `ModuleOptionnel` (id, nom, slug, description?, prixMensuel, prixAnnuel, actif) : `get<ModuleOptionnel[]>` + `Omit<ModuleOptionnel, 'id' | 'actif'>` (POST) + `Partial<ModuleOptionnel>` (PUT).
+
+### 4. i18n
+- FR+EN : `admin.navigation.groupes/permissions`, `admin.sidebar.descGroupes/descPermissions`, `admin.permissions.sauvegardeReussie/sauvegardeErreur`.
+
+### Qualité
+- `npx tsc --noEmit` frontend : **0 erreur** (exit 0, complet) ; routeTree OK ; 0 `any` dans les fichiers touchés ; docs `PLAN-PANEL-ADMIN-ENTERPRISE.md` mise à jour (V2 ✅).
+
+### Fichiers modifiés/créés
+| Fichier | Action |
+|---------|--------|
+| `frontend/src/features/admin/components/admin-permissions-matrix.tsx` | REWRITE v3.0 (426 lignes) — branchement réel /api/rbac |
+| `frontend/src/routes/platform.permissions.tsx` | NOUVEAU (20 lignes) |
+| `frontend/src/routes/platform.groupes.tsx` | NOUVEAU (20 lignes) |
+| `frontend/src/components/layout/platform-sidebar.tsx` | +2 nav items (KeyRound, Network) |
+| `frontend/src/routes/platform.facturation.tsx` | 8 `any` → `ModuleOption` |
+| `frontend/src/locales/fr/admin.json` | +4 clés |
+| `frontend/src/locales/en/admin.json` | +4 clés |
+
+### Prochaines étapes (V2 suite / V3)
+- V2 : compléter les onglets modules/tranches/abonnement de la page Groupes (actuellement read-only sur GET, toggles sur `PUT /groupes/:id/modules/:moduleId`) ;
+- Brancher la page « Abonnements » sur les données réelles si nécessaire ;
+- V3 : vagues Billing Enterprise (plan/tranches), Sécurité & Plateformes (RLS ~40 tables, CASL complet).
+
+## Travail effectué — Session 2026-08-08 (audit panel admin + fixes critiques)
+
+### Audit profond du panel d'administration
+- **Séparation platform/tenant** : vérifiée et confirmée — `platform.routes.ts` (guard global SUPER_ADMIN), `tenant.middleware.ts` (SUPER_ADMIN accès tous établissements), routes platform montées après tenant dans `app.ts`
+- **Guard frontend** : `requireRole(['SUPER_ADMIN'])` dans `beforeLoad` du layout `/platform` (permission-guards.ts)
+- **Double sidebar** : Sidebar principale (section platform conditionnelle) + PlatformSidebar dédiée (platform-sidebar.tsx)
+
+### Bugs critiques corrigés
+- **Sidebar.tsx** : 7 chemins platform sans préfixe `/platform/` (redirigeaient vers routes tenant) + 3 items manquants ajoutés (Approbations, Notifications, Providers) + imports Bell, ShieldCheck
+- **CommandPalette.tsx** : 8 commandes platform sans préfixe `/platform/` + route inexistante `/admin/permissions` remplacée par `/platform/approbations`
+- **platform.dashboard.tsx** : DollarSign → Wallet (convention icônes)
+- **platform.etablissements.tsx** : i18n complet (7 labels FR hardcodés remplacés + clés FR/EN)
+
+### Fix #1 — Bouton changement de plan (abonnement-detail.tsx)
+- **Modal de sélection** : fetch des plans disponibles (`GET /plans`), filtrage plan actuel, affichage prix/max élèves
+- **Mutation upgrade** : `PUT /abonnements/:id/upgrade` avec `{ nouveauPlanId }` (API existante)
+- **État** : `showChangerPlan` boolean + `upgradeMutation` avec invalidation queries
+
+### Fix #2 — Résiliation abonnement (backend + frontend)
+- **Service backend** : `facturationService.resilierAbonnement(id, motif?)` — passage à ANNULE + désactivation auto-renouvellement + dateFin immédiate
+- **Endpoint backend** : `PUT /abonnements/:id/resilier` (body: `{ motif }`) + endpoint `PUT /abonnements/:id/reactiver` ajouté
+- **Frontend** : modal de confirmation avec champ motif optionnel, mutation `resilierMutation`, état `showResilier`
+
+### Fix #3 — Tabs groupes SaaS (groupes-saas-page.tsx)
+- **ModulesTab** : fetch `GET /groupes/:id/modules` + toggle actif/inactif via `PUT /groupes/:id/modules/:moduleId`
+- **TranchesTab** : fetch `GET /groupes/:id/tranches` + affichage tableau (label, min, max, montant)
+- **AbonnementTab** : fetch `GET /groupes/:id/abonnement` + affichage 4 cards (statut, mode facturation, répartition, dégressivité)
+
+### i18n — +11 clés FR + 11 clés EN
+- `abonnement.changerPlan.*` (3 clés) : description, enCours, succes
+- `abonnement.resilier.*` (5 clés) : confirmation, irreversible, motif, motifPlaceholder, succes
+- `etablissements.sousTitrePlateforme`, `stats.*` (7 clés), `sante.*` (4 clés)
+
+### Fichiers modifiés (9)
+| Fichier | Modification |
+|---------|-------------|
+| `frontend/src/components/layout/Sidebar.tsx` | Préfixe `/platform/*` + 3 items ajoutés |
+| `frontend/src/components/CommandPalette.tsx` | Préfixe `/platform/*` + Approbations |
+| `frontend/src/routes/platform.dashboard.tsx` | DollarSign → Wallet |
+| `frontend/src/routes/platform.etablissements.tsx` | i18n complet |
+| `frontend/src/features/admin/components/abonnement-detail.tsx` | Modal changement plan + résiliation |
+| `frontend/src/features/admin/components/groupes-saas-page.tsx` | 3 tabs implémentés |
+| `backend/src/modules/billing/services/facturation.service.ts` | `resilierAbonnement()` |
+| `backend/src/modules/billing/controllers/billing.controller.ts` | endpoints résiliation + réactivation |
+| `frontend/src/locales/{fr,en}/admin.json` | +11 clés FR + 11 clés EN |
+
+### Conformité transverse (tous les lots)
+i18n flat FR/EN parité · audit dans services · filtres DataTable collapsibles · breadcrumbs PageHeader seuls · StepperModal pour modals riches · clamp()/CSS vars/dark · 0 any · `get<X>`+`res.data` · singletons backend · tsc 0 in-scope.
+
+---
+
+## Refonte Panel Admin v7 — Restructuration Plateforme (✅ TOUTES PHASES TERMINÉES)
+
+> Plan complet : `/home/franck/.config/Qoder/SharedClientCache/cache/plans/Restructuration_Panel_Admin_task-0d7.md`
+
+### Décisions architecturales validées
+
+| Décision | Choix | Justification |
+|----------|-------|---------------|
+| Sidebar | 4 groupes workflow | Pattern Stripe/Notion, scalable |
+| Accès admin | Bouton + Retour tenant + Cmd+Shift+A | 3 points d'entrée complémentaires |
+| Header plateforme | Complet (recherche + notifs + santé + profil) | Tous les 4 éléments |
+| Rôles plateforme | 6 rôles + Role Builder + scope groupes | Granularité max + extensibilité |
+| Sécurité | MFA + protection dernier SA + mdp policy + 3 sessions | Enterprise-grade |
+| Paramètres | Cascade 4 niveaux + propagation + alertes + historique | Full cascade UI |
+| Documentation | 3 ADR + glossaire | Traçabilité décisions |
+
+### Phase V0 — Correctifs Critiques (✅ COMPLET)
+
+- **V0.1** — Bouton "Administration" dans dropdown profil Header.tsx (conditionnel SUPER_ADMIN + badge PLATEFORME)
+- **V0.2** — PlatformHeader.tsx créé (347 lignes) : logo + badge ADMIN, recherche Cmd+K, notifications, santé système, dropdown profil
+- **V0.3** — Layout platform.tsx : bannière statique remplacée par PlatformHeader
+- **V0.4** — Raccourci clavier Cmd+Shift+A dans Header.tsx
+
+### Phase V1 — Réorganisation Navigation Sidebar (✅ COMPLET)
+
+- **V1.1** — platform-sidebar.tsx refactoré : 4 groupes (Pilotage/Tenants/Technique/Sécurité), 14 items
+- **V1.2** — 3 pages stub créées : `platform.revenus.tsx`, `platform.abonnements.tsx`, `platform.utilisateurs.tsx`
+- **V1.3** — i18n : nouvelles clés navigation + sidebar groupes (FR + EN)
+- **V1.4** — CommandPalette : 7 routes plateforme ajoutées (revenus, abonnements, utilisateurs, groupes, permissions, notifications, providers)
+
+### Phase V2 — Utilisateurs Plateforme (✅ COMPLET)
+
+- **V2.1** — Rôles plateforme : 5 nouveaux rôles dans `roles.enum.ts` + migration SQL 166
+- **V2.2** — Module `platform-users/` : controller (192 lignes), service (399 lignes), DTOs, 9 endpoints REST
+- **V2.3** — Module `platform-roles/` : Role Builder, controller (119 lignes), service (197 lignes), 5 endpoints
+- **V2.4** — Page `platform-users-page.tsx` (337 lignes) : KPIs, toolbar filtres, tableau, RoleBadge, StatutBadge, modal création
+- **V2.5** — Page `role-builder-page.tsx` (271 lignes) : matrice permissions, liste rôles, modal création
+- **V2.6** — i18n `platformUsers.*` + `platformRoles.*` (FR + EN)
+
+### Phase V3 — Paramètres Cascade UI (✅ COMPLET)
+
+- **V3.1** — Backend cascade : migration 167, DTOs, service (789 lignes), controller (225 lignes), 11 endpoints REST
+- **V3.2** — Frontend `parametres-cascade-page.tsx` (554 lignes) : liste groupée, vue 4 colonnes, historique, rollback, alertes incohérences
+- **V3.3** — i18n `parametresCascade.*` (35 clés FR + EN)
+
+### Phase V4 — Polish & Monitoring (✅ COMPLET)
+
+- **V4.1** — Dashboard enrichi : score santé composite, widget Actions en attente, MRR sparkline SVG, 8 quick actions
+- **V4.2** — Export PDF `export-pdf-platforme.ts` (251 lignes) : 3 fonctions export (établissements, utilisateurs, facturation)
+- **V4.3** — WebSocket monitoring : hook `useRealtimeMonitoring` intégré dans PlatformHeader, dropdown alertes temps réel, indicateur connexion
+- **V4.4** — Skeleton loading `platform-skeleton.tsx` (98 lignes) : 5 composants réutilisables
+- **V4.5** — Tests E2E `platform-panel.spec.ts` (779 lignes) : 6 suites (sidebar, rôles, CRUD users, cascade, RBAC, WebSocket)
+
+### Documentation créée
+
+| Fichier | Description |
+|---------|-------------|
+| `docs/architectures/ADR-001-restructuration-sidebar-plateforme.md` | Sidebar 3→4 groupes workflow |
+| `docs/architectures/ADR-002-roles-plateforme.md` | 6 rôles + Role Builder + scope |
+| `docs/architectures/ADR-003-parametres-multi-niveaux.md` | Cascade 4 niveaux + UI |
+| `docs/guides/GLOSSAIRE-PLATEFORME-ADMIN.md` | Termes Control Plane/Data Plane/RBAC/Cascade |
+
+### Fichiers modifiés (Phases V0 + V1)
+
+| Fichier | Modification |
+|---------|-------------|
+| `frontend/src/components/layout/Header.tsx` | Bouton Administration + Cmd+Shift+A |
+| `frontend/src/components/layout/PlatformHeader.tsx` | NOUVEAU (458 lignes) — WebSocket monitoring intégré |
+| `frontend/src/routes/platform.tsx` | Bannière → PlatformHeader |
+| `frontend/src/components/layout/platform-sidebar.tsx` | 4 groupes workflow (15 items) |
+| `frontend/src/routes/platform.revenus.tsx` | NOUVEAU stub |
+| `frontend/src/routes/platform.abonnements.tsx` | NOUVEAU stub |
+| `frontend/src/routes/platform.utilisateurs.tsx` | NOUVEAU stub |
+| `frontend/src/components/CommandPalette.tsx` | +7 routes plateforme |
+| `frontend/src/locales/fr/admin.json` | Clés navigation + sidebar + platformUsers + platformRoles + parametresCascade |
+| `frontend/src/locales/en/admin.json` | Clés navigation + sidebar + platformUsers + platformRoles + parametresCascade |
+| `frontend/src/locales/fr/common.json` | Clés header (administration, plateforme, santé) |
+| `frontend/src/locales/en/common.json` | Clés header (administration, plateforme, santé) |
+
+### Fichiers créés (Phases V2 + V3 + V4)
+
+| Fichier | Description |
+|---------|-------------|
+| `shared/src/enums/roles.enum.ts` | 5 nouveaux rôles plateforme |
+| `backend/database/migrations/166-roles-plateforme.sql` | Migration rôles + permissions |
+| `backend/database/migrations/167-parametres-cascade-multi-niveaux.sql` | Cascade colonnes groupe + propageable |
+| `backend/src/modules/platform-users/` | Module complet (controller, service, DTOs) |
+| `backend/src/modules/platform-roles/` | Module Role Builder (controller, service, DTOs) |
+| `backend/src/modules/configuration/controllers/parametres-cascade.controller.ts` | 11 endpoints cascade |
+| `backend/src/modules/configuration/services/parametres-cascade.service.ts` | Logique cascade 789 lignes |
+| `backend/src/modules/configuration/dto/parametres-cascade.dto.ts` | 5 schémas Zod cascade |
+| `frontend/src/features/admin/components/platform-users-page.tsx` | Page CRUD utilisateurs (337 lignes) |
+| `frontend/src/features/admin/components/role-builder-page.tsx` | Page Role Builder (271 lignes) |
+| `frontend/src/features/admin/components/parametres-cascade-page.tsx` | Page cascade 4 niveaux (554 lignes) |
+| `frontend/src/features/admin/components/platform-skeleton.tsx` | Skeleton loading (98 lignes) |
+| `frontend/src/features/admin/utils/export-pdf-platforme.ts` | Export PDF rapports (251 lignes) |
+| `frontend/src/routes/platform.parametres-cascade.tsx` | Route TanStack cascade |
+| `backend/test/e2e/platform-panel.spec.ts` | Tests E2E panel (779 lignes) |
+
+### Skills mis à jour
+- `elisaschool-dev` : section "Module Plateforme (Control Plane)"
+- `elisaschool-business-logic` : sections "Rôles Plateforme et Scope" + "Cascade Paramètres UI"
+- `elisaschool-frontend-dev` : section "Panel Admin Platform — Composants v7"
+
+## Modèle C — Auth0 Internalisé Dual-Plane (✅ TOUTES PHASES TERMINÉES)
+
+> Plan complet : Auth0_Internalisé_Dual-Plane
+> Architecture : séparation stricte Control Plane (plateforme) / Data Plane (tenants)
+> 4 tables, 6 rôles plateforme, ~40 permissions, CASL dual, 4 pages frontend, 4 modules backend
+
+### Phase V0 — Fondations Schema & Migration (✅ COMPLET)
+
+- **V0.1** — Entité `Identite` : table `identites` (source unique de vérité auth) — email, motDePasseHash, MFA, statut
+- **V0.2** — Entité `UtilisateurPlateforme` : table `utilisateurs_plateforme` (FK → identites, OneToOne)
+- **V0.3** — Entité `Membership` : table pivot `memberships` (identiteId × contexteType × contexteId, index unique composite)
+- **V0.4** — Entité `PermissionPlateforme` : table `permissions_plateforme` (code unique, module, ordre)
+- **V0.5** — Migration SQL `168-auth0-internalise-dual-plane.sql` (327 lignes) : 5 tables + seed 38 permissions + migration données + triggers
+- **V0.6** — Enums partagés `shared/` : `RolePlateforme` (6 rôles), `PermissionPlateforme` (~40 permissions), `StatutIdentite`, `ContexteType`
+
+### Phase V1 — Backend Auth Dual-Plane (✅ COMPLET)
+
+- **V1.1** — Module `platform-auth/` : login (bcrypt + memberships), logout, getMe — JWT scopé `{ platform, tenant }`
+- **V1.2** — Middleware `scope-discrimination.middleware.ts` (92 lignes) : discrimination par préfixe `/api/platform/`
+- **V1.3** — Module `platform-sessions/` : entity `sessions_plateforme`, CRUD sessions, limite LRU 3, révocation
+
+### Phase V2 — Backend Modules Platform (✅ COMPLET)
+
+- **V2.1** — Routes `/api/platform/auth` (avant guard) + `/api/platform/sessions` (après guard) enregistrées
+- **V2.2** — Exports modules `platform-auth`, `platform-sessions` dans `modules/index.ts`
+
+### Phase V3 — CASL Dual (✅ COMPLET)
+
+- **V3.1** — `shared/src/casl/platform-abilities.ts` (306 lignes) : `definePlatformAbility()` avec 6 switch cases
+- **V3.2** — Exports CASL : `definePlatformAbility`, `PlatformAppAbility`, `PlatformAbilityContext` dans `shared/src/casl/index.ts`
+
+### Phase V4 — Frontend Pages Platform (✅ COMPLET)
+
+- **V4.1** — Sidebar : 2 items ajoutés dans Sécurité (Rôles plateforme, Sessions & activité)
+- **V4.2** — Page `platform-user-detail-page.tsx` (221 lignes) : 3 onglets (Infos, Sessions, Audit)
+- **V4.3** — Page `platform-sessions-page.tsx` (152 lignes) : KPIs, liste sessions, révocation individuelle + totale
+- **V4.4** — Page `platform-permissions-matrix.tsx` (338 lignes) : grille 6 rôles × ~40 permissions, toggle checkboxes, sauvegarde inline
+- **V4.5** — Hooks TanStack Query : `use-platform-users.ts` (147 lignes), `use-platform-roles.ts` (56 lignes), `use-platform-sessions.ts` (61 lignes)
+- **V4.6** — Routes TanStack Router : `platform.roles.tsx`, `platform.sessions.tsx`, `platform.utilisateurs.$id.tsx`, `platform.permissions.tsx` (mis à jour)
+- **V4.7** — i18n : `platform-identity.json` FR (160 lignes) + EN (160 lignes), namespace `platform-identity` enregistré dans `i18n.ts`
+
+### Phase V5 — Tests (✅ COMPLET)
+
+- **V5.1** — Tests unitaires : `platform-abilities.spec.ts` (106 lignes, 6 rôles) + `dual-plane-auth.spec.ts` (120 lignes)
+- **V5.2** — Test E2E : `platform-identity-flow.spec.ts` (444 lignes, 6 suites : création, login, CRUD, sessions, scope, matrice)
+
+### Phase V6 — Documentation (✅ COMPLET)
+
+- **V6.1** — `docs/architectures/ADR-004-auth0-internalise-dual-plane.md` (115 lignes)
+- **V6.2** — `docs/guides/GLOSSAIRE-IDENTITE-PLATEFORME.md` (45 lignes)
+- **V6.3** — AGENTS.md mis à jour avec toutes les phases V0-V6
+- **V6.4** — Skills mis à jour (dual-plane auth, platform pages, identités/memberships)
+
+### Fichiers créés (Modèle C)
+
+| Fichier | Description |
+|---------|-------------|
+| `backend/src/modules/identite/entities/` | 4 entités TypeORM (identite, utilisateur-plateforme, membership, permission-plateforme) |
+| `backend/src/modules/identite/services/identite.service.ts` | CRUD identité globale (233 lignes) |
+| `backend/src/modules/identite/services/membership.service.ts` | Gestion memberships + matrice (249 lignes) |
+| `backend/src/modules/identite/controllers/identite.controller.ts` | 9 endpoints REST identités |
+| `backend/src/modules/identite/controllers/platform-permissions.controller.ts` | 3 endpoints permissions |
+| `backend/src/modules/identite/dto/identite.dto.ts` | Schémas Zod validation |
+| `backend/src/modules/identite/index.ts` | Barrel export module |
+| `backend/src/modules/platform-auth/` | Module auth dual-plane (controller, service, dto) |
+| `backend/src/modules/platform-sessions/` | Module sessions plateforme (entity, controller, service) |
+| `backend/src/common/middlewares/dual-casl.middleware.ts` | Middleware CASL dual platform/tenant (114 lignes) |
+| `shared/src/enums/platform-roles.enum.ts` | Enums RolePlateforme, ContexteType, StatutIdentite (72 lignes) |
+| `shared/src/casl/platform-abilities.ts` | CASL dual pour la plateforme (222 lignes) |
+| `backend/database/migrations/170-identites-global.sql` | Table identites + backfill |
+| `backend/database/migrations/171-utilisateurs-plateforme.sql` | Table utilisateurs_plateforme + backfill |
+| `backend/database/migrations/172-memberships-pivot.sql` | Table memberships pivot + backfill |
+| `backend/database/migrations/173-permissions-plateforme.sql` | Table permissions + seed ~30 permissions |
+| `frontend/src/features/platform/components/platform-permissions-matrix.tsx` | Matrice permissions (338 lignes) |
+| `frontend/src/features/platform/components/platform-user-detail-page.tsx` | Détail utilisateur (221 lignes) |
+| `frontend/src/features/platform/components/platform-sessions-page.tsx` | Sessions & activité (152 lignes) |
+| `frontend/src/features/platform/hooks/use-platform-users.ts` | Hooks TanStack Query users (148 lignes) |
+| `frontend/src/features/platform/hooks/use-platform-roles.ts` | Hooks TanStack Query roles (56 lignes) |
+| `frontend/src/features/platform/hooks/use-platform-sessions.ts` | Hooks TanStack Query sessions (61 lignes) |
+| `frontend/src/components/layout/platform-sidebar.tsx` | Sidebar avec sous-groupes Identité/Surveillance |
+| `frontend/src/features/admin/components/platform-users-page.tsx` | Page users connectée aux API |
+| `frontend/src/routes/platform.roles.tsx` | Route rôles plateforme |
+| `frontend/src/routes/platform.permissions.tsx` | Route permissions plateforme |
+| `frontend/src/routes/platform.sessions.tsx` | Route sessions plateforme |
+| `frontend/src/routes/platform.utilisateurs.$id.tsx` | Route détail utilisateur |
+| `frontend/src/locales/fr/admin.json` | +identite.*, +platformPermissions.*, +sidebar.sousGroupe* |
+| `frontend/src/locales/en/admin.json` | Parité FR/EN |
+| `backend/test/unit/platform-abilities.spec.ts` | Tests CASL 6 rôles + null |
+| `backend/test/unit/dual-plane-auth.spec.ts` | Tests auth dual-plane |
+| `backend/test/e2e/platform-identity-flow.spec.ts` | Test E2E flow complet (444 lignes) |
+| `docs/architectures/ADR-004-auth0-internalise-dual-plane.md` | ADR Modèle C mis à jour |

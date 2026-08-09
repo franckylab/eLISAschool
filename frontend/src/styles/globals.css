@@ -82,6 +82,55 @@
     --color-danger: #dc3545;
     --color-info: #17a2b8;
 
+    /* Échelles sémantiques (50→950) pour variants danger/success/warning */
+    --color-danger-50: #fef2f2;
+    --color-danger-100: #fee2e2;
+    --color-danger-200: #fecaca;
+    --color-danger-300: #fca5a5;
+    --color-danger-400: #f87171;
+    --color-danger-500: #ef4444;
+    --color-danger-600: #dc3545;
+    --color-danger-700: #b91c1c;
+    --color-danger-800: #991b1b;
+    --color-danger-900: #7f1d1d;
+    --color-danger-950: #450a0a;
+
+    --color-success-50: #f0fdf4;
+    --color-success-100: #dcfce7;
+    --color-success-200: #bbf7d0;
+    --color-success-300: #86efac;
+    --color-success-400: #4ade80;
+    --color-success-500: #28a745;
+    --color-success-600: #16a34a;
+    --color-success-700: #15803d;
+    --color-success-800: #166534;
+    --color-success-900: #14532d;
+    --color-success-950: #052e16;
+
+    --color-warning-50: #fffbeb;
+    --color-warning-100: #fef3c7;
+    --color-warning-200: #fde68a;
+    --color-warning-300: #fcd34d;
+    --color-warning-400: #fbbf24;
+    --color-warning-500: #fd7e14;
+    --color-warning-600: #ea580c;
+    --color-warning-700: #c2410c;
+    --color-warning-800: #9a3412;
+    --color-warning-900: #7c2d12;
+    --color-warning-950: #431407;
+
+    --color-info-50: #ecfeff;
+    --color-info-100: #cffafe;
+    --color-info-200: #a5f3fc;
+    --color-info-300: #67e8f9;
+    --color-info-400: #22d3ee;
+    --color-info-500: #17a2b8;
+    --color-info-600: #0891b2;
+    --color-info-700: #0e7490;
+    --color-info-800: #155e75;
+    --color-info-900: #164e63;
+    --color-info-950: #083344;
+
     /* Couleurs de surface et texte (light) — surchargées en dark via @layer base */
     --color-surface: #ffffff;
     --color-surface-alt: #f8f9fa;
@@ -116,6 +165,7 @@
         --color-accent-hover: var(--color-accent-700);
         --color-texte: var(--color-text-primary);
         --color-texte-secondaire: var(--color-text-secondary);
+        --color-texte-muted: var(--color-text-muted);
         --color-bordure: var(--color-border);
         --color-fond: var(--color-background);
         --color-surface-hover: #f0f0f0;
@@ -189,6 +239,7 @@
         --color-accent-hover: var(--color-accent-600);
         --color-texte: var(--color-text-primary);
         --color-texte-secondaire: var(--color-text-secondary);
+        --color-texte-muted: var(--color-text-muted);
         --color-bordure: var(--color-border);
         --color-fond: var(--color-background);
         --color-surface-hover: #243252;

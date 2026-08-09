@@ -31,6 +31,12 @@
             "@database/*": [
                 "database/*"
             ],
+            "@routes/*": [
+                "routes/*"
+            ],
+            "@casl/*": [
+                "casl/*"
+            ],
             "@shared/*": [
                 "../../shared/src/*"
             ]

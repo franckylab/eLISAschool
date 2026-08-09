@@ -13,6 +13,7 @@
  */
 
 import cron from 'node-cron';
+import { scheduleWithLock } from '@common/services/cron-lock.service';
 import { AppDataSource } from '@database/data-source';
 import { Etablissement } from '@modules/etablissement/entities';
 import { scolariteService } from '../services/scolarite.service';
@@ -29,7 +30,7 @@ export function initFinanceCronJobs(): void {
     // CRON JOB 1: Relances automatiques scolarité
     // ==================================
     // Exécution: Tous les jours à 8h00
-    cron.schedule('0 8 * * *', async () => {
+    scheduleWithLock('finances-relances-impayes', '0 8 * * *', async () => {
         try {
             logger.info('[Cron Finance] Détection impayés et envoi relances...');
             
@@ -77,7 +78,7 @@ export function initFinanceCronJobs(): void {
     // CRON JOB 2: Alertes budget
     // ==================================
     // Exécution: Tous les lundis à 9h00
-    cron.schedule('0 9 * * 1', async () => {
+    scheduleWithLock('finances-alertes-budget', '0 9 * * 1', async () => {
         try {
             logger.info('[Cron Finance] Vérification alertes budget...');
             
@@ -111,7 +112,7 @@ export function initFinanceCronJobs(): void {
     // CRON JOB 3: Nettoyage anciens reçus PDF
     // ==================================
     // Exécution: 1er du mois à 2h00
-    cron.schedule('0 2 1 * *', async () => {
+    scheduleWithLock('finances-nettoyage-pdf', '0 2 1 * *', async () => {
         try {
             logger.info('[Cron Finance] Nettoyage reçus PDF > 90 jours...');
             
@@ -128,7 +129,7 @@ export function initFinanceCronJobs(): void {
     // CRON JOB 4: Rapport financier hebdomadaire
     // ==================================
     // Exécution: Vendredi 17h00
-    cron.schedule('0 17 * * 5', async () => {
+    scheduleWithLock('finances-rapport-hebdo', '0 17 * * 5', async () => {
         try {
             logger.info('[Cron Finance] Génération rapports hebdomadaires...');
             
@@ -147,7 +148,7 @@ export function initFinanceCronJobs(): void {
     // CRON JOB 5: Vérification seuils caisse
     // ==================================
     // Exécution: Tous les jours à 7h00 (avant ouverture)
-    cron.schedule('0 7 * * *', async () => {
+    scheduleWithLock('finances-verification-caisse', '0 7 * * *', async () => {
         try {
             logger.info('[Cron Finance] Vérification seuils caisse...');
             

@@ -92,6 +92,14 @@ export class ParametreSysteme {
     @Column({ type: 'uuid', nullable: true })
     etablissementId?: string;
 
+    /**
+     * ID du groupe d'établissements pour le scopage intermédiaire (cascade niveau 3).
+     * NULL = non scopé groupe.
+     * Cascade : Système → Global → Groupe → Établissement
+     */
+    @Column({ type: 'uuid', nullable: true })
+    groupeEtablissementId?: string;
+
     /** Description du paramètre */
     @Column({ type: 'text', nullable: true })
     description?: string;
@@ -115,6 +123,10 @@ export class ParametreSysteme {
     /** Validation (regex pattern) */
     @Column({ type: 'varchar', length: 500, nullable: true })
     validation?: string;
+
+    /** Si true, la valeur globale peut être propagée aux établissements sans override */
+    @Column({ type: 'boolean', default: true })
+    propageable!: boolean;
 
     /** Options pour les selects */
     @Column({ type: 'simple-json', nullable: true })

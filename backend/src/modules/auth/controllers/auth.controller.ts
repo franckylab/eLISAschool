@@ -13,6 +13,7 @@ import { etablissementSelectionService } from '../services/etablissement-selecti
 import { permissionResolverService } from '../services/permission-resolver.service';
 import { tokenService } from '../services/token.service';
 import { auditService, AuditAction, AuditSeverity } from '../services/audit.service';
+import { mfaService } from '../services/mfa.service';
 import { AppDataSource } from '@database/data-source';
 import {
     loginSchema,
@@ -30,6 +31,8 @@ import { validateDto } from '@common/utils';
 import { logger } from '@common/utils/logger.util';
 import { getClientIP } from '@common/utils/client-ip.util';
 import { authMiddleware, UtilisateurAuth } from '../middlewares/auth.middleware';
+import jwt, { JwtPayload } from 'jsonwebtoken';
+import { envConfig } from '@config/env.config';
 
 const router = Router();
 const authService = new AuthService();
@@ -448,6 +451,228 @@ router.get('/etablissements-disponibles', authMiddleware, async (req: Request, r
         res.status(200).json({
             success: true,
             data: etablissements,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ==========================================
+// Endpoints MFA — Phase P1 v6
+// ==========================================
+
+/**
+ * POST /api/auth/mfa/verify
+ * Vérifie un code TOTP après login et finalise la connexion.
+ * Body: { mfaToken: string, code: string }
+ */
+router.post('/mfa/verify', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { mfaToken, code } = req.body;
+
+        if (!mfaToken || !code) {
+            throw new AppError('mfaToken et code requis', 400, 'MISSING_MFA_PARAMS');
+        }
+
+        // Vérifier le token MFA temporaire
+        let payload: JwtPayload & { mfaPending?: boolean };
+        try {
+            const verified = jwt.verify(mfaToken, envConfig.jwt.secret, {
+                issuer: 'eLISAschool',
+                audience: 'elisaschool-api',
+            });
+            payload = verified as JwtPayload & { mfaPending?: boolean };
+        } catch {
+            throw new AppError('Token MFA invalide ou expiré. Veuillez vous reconnecter.', 401, 'INVALID_MFA_TOKEN');
+        }
+
+        if (!payload.mfaPending || !payload.sub) {
+            throw new AppError('Token MFA invalide', 401, 'INVALID_MFA_TOKEN');
+        }
+
+        // Vérifier le code TOTP ou backup code
+        let verifyResult = await mfaService.verifierMFA(payload.sub, code);
+        if (!verifyResult.success) {
+            // Essayer comme code de secours
+            verifyResult = await mfaService.verifierBackupCode(payload.sub, code);
+        }
+
+        if (!verifyResult.success) {
+            throw new AppError(verifyResult.message || 'Code MFA invalide', 401, 'INVALID_MFA_CODE');
+        }
+
+        // MFA vérifié → finaliser la connexion
+        const loginResult = await authService.completeLoginAfterMFA(
+            payload.sub,
+            getClientIP(req),
+            req.get('User-Agent')
+        );
+
+        res.status(200).json({
+            success: true,
+            data: loginResult,
+            message: 'Connexion MFA vérifiée avec succès',
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/auth/mfa/setup
+ * Initie la configuration MFA pour l'utilisateur connecté.
+ * Retourne le secret, l'URL QR et les codes de secours.
+ */
+router.post('/mfa/setup', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const utilisateurId = req.utilisateur!.id;
+        const email = req.utilisateur!.email;
+
+        const result = await mfaService.setupMFA(utilisateurId, email);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.CONFIG_CHANGE,
+            severity: AuditSeverity.INFO,
+            description: 'Setup MFA initié',
+            module: 'auth',
+        }, req);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                secret: result.secret,
+                qrCodeUrl: result.qrCodeUrl,
+                backupCodes: result.backupCodes,
+            },
+            message: 'Configuration MFA initiée. Scannez le QR code avec votre application.',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/auth/mfa/activate
+ * Active le MFA après vérification du premier code TOTP.
+ * Body: { code: string }
+ */
+router.post('/mfa/activate', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const utilisateurId = req.utilisateur!.id;
+        const { code } = req.body;
+
+        if (!code) {
+            throw new AppError('Code TOTP requis', 400, 'MISSING_CODE');
+        }
+
+        const result = await mfaService.activerMFA(utilisateurId, code);
+
+        if (!result.success) {
+            throw new AppError(result.message || 'Activation MFA échouée', 400, 'MFA_ACTIVATION_FAILED');
+        }
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.CONFIG_CHANGE,
+            severity: AuditSeverity.INFO,
+            description: 'MFA activé',
+            module: 'auth',
+        }, req);
+
+        res.status(200).json({
+            success: true,
+            message: 'MFA activé avec succès.',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * GET /api/auth/mfa/status
+ * Vérifie le statut MFA de l'utilisateur connecté.
+ */
+router.get('/mfa/status', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const utilisateurId = req.utilisateur!.id;
+        const status = await mfaService.getMFAStatus(utilisateurId);
+
+        res.status(200).json({
+            success: true,
+            data: status,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/auth/mfa/disable
+ * Désactive le MFA pour l'utilisateur connecté.
+ * Body: { code: string } — Code TOTP pour confirmation
+ */
+router.post('/mfa/disable', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const utilisateurId = req.utilisateur!.id;
+        const { code } = req.body;
+
+        if (!code) {
+            throw new AppError('Code TOTP requis pour désactiver le MFA', 400, 'MISSING_CODE');
+        }
+
+        // Vérifier le code avant de désactiver
+        const verifyResult = await mfaService.verifierMFA(utilisateurId, code);
+        if (!verifyResult.success) {
+            throw new AppError('Code TOTP invalide', 401, 'INVALID_MFA_CODE');
+        }
+
+        await mfaService.desactiverMFA(utilisateurId);
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.CONFIG_CHANGE,
+            severity: AuditSeverity.WARNING,
+            description: 'MFA désactivé',
+            module: 'auth',
+        }, req);
+
+        res.status(200).json({
+            success: true,
+            message: 'MFA désactivé avec succès.',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/auth/mfa/regenerate-backup-codes
+ * Régénère les codes de secours MFA.
+ * Body: { code: string } — Code TOTP pour confirmation
+ */
+router.post('/mfa/regenerate-backup-codes', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const utilisateurId = req.utilisateur!.id;
+        const { code } = req.body;
+
+        if (!code) {
+            throw new AppError('Code TOTP requis', 400, 'MISSING_CODE');
+        }
+
+        // Vérifier le code
+        const verifyResult = await mfaService.verifierMFA(utilisateurId, code);
+        if (!verifyResult.success) {
+            throw new AppError('Code TOTP invalide', 401, 'INVALID_MFA_CODE');
+        }
+
+        const newCodes = await mfaService.regenererBackupCodes(utilisateurId);
+
+        res.status(200).json({
+            success: true,
+            data: { backupCodes: newCodes },
+            message: 'Codes de secours régénérés. Conservez-les en lieu sûr.',
         });
     } catch (error) {
         next(error);

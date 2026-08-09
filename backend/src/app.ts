@@ -22,6 +22,7 @@ import { errorHandler } from '@common/filters/error.filter';
 import { notFoundHandler } from '@common/filters/not-found.filter';
 import { requestLogger } from '@common/interceptors/request-logger.interceptor';
 import { tenantMiddleware } from '@common/middlewares/tenant.middleware';
+import { tenantRateLimitMiddleware } from '@common/middlewares/rate-limit.middleware';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from '@config/swagger.config';
 
@@ -87,6 +88,11 @@ import { organisationController } from '@modules/organisation';
 import { recrutementController } from '@modules/recrutement';
 import { parkingController } from '@modules/parking';
 import { networkController } from '@modules/network';
+import { platformRouter } from '@routes/platform.routes';
+import { caslMiddleware } from '@casl/casl.middleware';
+import { rlsMiddleware, rlsTransactionEnd } from '@common/middlewares/rls.middleware';
+import { clientBillingRouter } from '@modules/billing';
+import { paiementController } from '@modules/paiement';
 
 /**
  * Crée et configure l'application Express
@@ -358,12 +364,32 @@ export function createApp(): Application {
     });
 
     // ==================================
+    // Paiement (AVANT tenantMiddleware — webhooks sans auth)
+    // [Phase 5] Multi-Providers Paiement
+    // Les routes authentifiées ont leur propre authMiddleware
+    // ==================================
+    app.use('/api/paiement', paiementController);
+
+    // ==================================
     // Middleware Multi-Tenancy (APRÈS les routes publiques)
     // ==================================
 
     // Attache automatiquement l'etablissementId depuis le JWT
     // Les SUPER_ADMIN peuvent accéder à tous les établissements
     app.use('/api/', tenantMiddleware);
+
+    // [Rate Limit] Limitation par tenant — token bucket proportionnel au plan
+    // Phase 3.5 — Refonte SaaS. Alerte 80%, blocage 100%.
+    app.use('/api/', tenantRateLimitMiddleware);
+
+    // [CASL] Middleware d'autorisation déclarative — injecte req.ability
+    // Phase 2 — Refonte SaaS. Disponible sur toutes les routes authentifiées.
+    app.use('/api/', caslMiddleware);
+
+    // [RLS] Middleware Row Level Security — définit le contexte tenant PostgreSQL
+    // Phase 3 — Defense-in-depth. Filtrage automatique par etablissementId au niveau DB.
+    app.use('/api/', rlsMiddleware);
+    app.use('/api/', rlsTransactionEnd);
 
     // Désactiver le cache navigateur pour les routes API (React Query gère le cache applicatif)
     app.use('/api/', (req, res, next) => {
@@ -480,6 +506,18 @@ export function createApp(): Application {
 
     // Module audit (doit être après tenantMiddleware)
     app.use('/api/audit', auditController);
+
+    // ==================================
+    // Routes BILLING client (Data Plane)
+    // [Phase 4] Framework Abonnements & Facturation
+    // ==================================
+    app.use('/api/billing', clientBillingRouter);
+
+    // ==================================
+    // Routes PLATEFORME (Control Plane) — SUPER_ADMIN uniquement
+    // [RBAC-2] Séparation plateforme/établissement v5.1
+    // ==================================
+    app.use('/api/platform', platformRouter);
 
     // ==================================
     // Gestion des erreurs

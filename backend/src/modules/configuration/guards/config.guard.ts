@@ -27,17 +27,16 @@ export function requireConfigPermission(
 
             const userRole = req.utilisateur.role;
 
-            // Super admin bypass
+            // Super admin — accès total (vérifié en premier pour performance)
             if (userRole === 'SUPER_ADMIN') {
                 next();
                 return;
             }
 
-            // ADMIN bypass (cohérence frontend: ADMIN voit tout)
-            if (userRole === 'ADMIN') {
-                next();
-                return;
-            }
+            // [RBAC-2] ADMIN bypass SUPPRIMÉ v5.1
+            // ADMIN (client) ne peut plus modifier la config GLOBALE.
+            // Les permissions sont évaluées via CONFIG_ROLE_PERMISSIONS.
+            // Rapport audit SaaS 2026-08-07
 
             // Vérification avec fallback: d'abord les permissions JWT dynamiques,
             // puis le mapping statique par rôle
@@ -82,10 +81,22 @@ export const canExportConfig = requireConfigPermission(ConfigPermission.CONFIG_E
 export const canImportConfig = requireConfigPermission(ConfigPermission.CONFIG_IMPORT);
 export const canInvalidateCache = requireConfigPermission(ConfigPermission.CONFIG_CACHE_INVALIDATE);
 
+// [RBAC-2] Guards PLATEFORME — SUPER_ADMIN uniquement
+// Ces guards vérifient les permissions de portée PLATEFORME (opérations globales).
+// Rapport audit SaaS 2026-08-07
+export const canEditConfigAppPlateforme = requireConfigPermission(ConfigPermission.CONFIG_PLATEFORME_APP_EDIT);
+export const canToggleModulePlateforme = requireConfigPermission(ConfigPermission.CONFIG_PLATEFORME_MODULE_TOGGLE);
+export const canCreateBackupPlateforme = requireConfigPermission(ConfigPermission.CONFIG_PLATEFORME_BACKUP_CREATE);
+export const canRestoreBackupPlateforme = requireConfigPermission(ConfigPermission.CONFIG_PLATEFORME_BACKUP_RESTORE);
+
 export default {
     requireConfigPermission,
     canViewConfigApp,
     canEditConfigApp,
     canViewParams,
     canEditParams,
+    canEditConfigAppPlateforme,
+    canToggleModulePlateforme,
+    canCreateBackupPlateforme,
+    canRestoreBackupPlateforme,
 };

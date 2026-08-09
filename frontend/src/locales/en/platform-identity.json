@@ -1,0 +1,159 @@
+{
+    "platformIdentity": {
+        "title": "Identity & Platform",
+        "subtitle": "Platform identities, roles and permissions management"
+    },
+    "platformUsers": {
+        "title": "Platform Users",
+        "subtitle": "Platform administrator account management",
+        "invite": "Invite a user",
+        "create": "Create a user",
+        "edit": "Edit user",
+        "suspend": "Suspend",
+        "reactivate": "Reactivate",
+        "resetMfa": "Reset MFA",
+        "delete": "Delete",
+        "viewDetail": "View details",
+        "totalUsers": "Total users",
+        "activeUsers": "Active users",
+        "mfaEnabled": "MFA enabled",
+        "pendingInvitations": "Pending invitations",
+        "columns": {
+            "user": "User",
+            "role": "Role",
+            "status": "Status",
+            "lastAccess": "Last access",
+            "mfa": "MFA",
+            "actions": "Actions"
+        },
+        "roles": {
+            "SUPER_ADMIN": "Super Admin",
+            "ADMIN_PLATEFORME": "Platform Admin",
+            "SUPPORT": "Support",
+            "BILLING_MANAGER": "Billing Manager",
+            "ANALYST": "Analyst",
+            "AUDITOR": "Auditor"
+        },
+        "status": {
+            "ACTIF": "Active",
+            "SUSPENDU": "Suspended",
+            "DESACTIVE": "Disabled"
+        },
+        "filters": {
+            "search": "Search by name or email...",
+            "role": "Filter by role",
+            "status": "Filter by status",
+            "mfa": "Filter by MFA",
+            "all": "All",
+            "active": "Active only"
+        },
+        "confirm": {
+            "suspend": "Are you sure you want to suspend this user?",
+            "reactivate": "Are you sure you want to reactivate this user?",
+            "resetMfa": "Are you sure you want to reset MFA? The user will need to reconfigure it.",
+            "delete": "Are you sure you want to delete this user? This action is irreversible."
+        },
+        "success": {
+            "created": "User created successfully",
+            "updated": "User updated successfully",
+            "suspended": "User suspended",
+            "reactivated": "User reactivated",
+            "mfaReset": "MFA reset",
+            "deleted": "User deleted"
+        }
+    },
+    "platformUserDetail": {
+        "title": "Platform User Detail",
+        "tabs": {
+            "infos": "Information",
+            "sessions": "Sessions",
+            "audit": "Audit",
+            "delegation": "Delegation"
+        },
+        "infos": {
+            "email": "Email",
+            "role": "Platform role",
+            "createdAt": "Created at",
+            "lastAccess": "Last access",
+            "mfaStatus": "MFA status",
+            "enabled": "Enabled",
+            "disabled": "Disabled",
+            "memberships": "Memberships",
+            "noMemberships": "No associated memberships"
+        },
+        "sessions": {
+            "activeSessions": "Active sessions",
+            "noSessions": "No active sessions",
+            "revoke": "Revoke",
+            "revokeAll": "Revoke all",
+            "ip": "IP address",
+            "userAgent": "User-Agent",
+            "expiresAt": "Expires at",
+            "createdAt": "Created at"
+        },
+        "audit": {
+            "history": "Action history",
+            "noHistory": "No recorded actions",
+            "action": "Action",
+            "date": "Date",
+            "ip": "IP"
+        },
+        "delegation": {
+            "impersonate": "Impersonate",
+            "impersonateDesc": "Log in as this user (future)",
+            "comingSoon": "Coming soon"
+        }
+    },
+    "platformPermissions": {
+        "title": "Permissions Matrix",
+        "subtitle": "Granular permission management by platform role",
+        "permission": "Permission",
+        "granted": "Granted",
+        "denied": "Denied",
+        "pending": "Pending",
+        "changes": "changes",
+        "unsavedChanges": "Unsaved changes",
+        "saveRole": "Save",
+        "summary": "{{total}} permissions · {{roles}} roles · {{modules}} modules",
+        "modules": {
+            "pilotage": "Steering",
+            "tenants": "Tenants",
+            "facturation": "Billing",
+            "technique": "Technical",
+            "identite": "Identity",
+            "securite": "Security"
+        }
+    },
+    "platformSessions": {
+        "title": "Sessions & Activity",
+        "subtitle": "Platform active sessions management",
+        "activeSessions": "Active sessions",
+        "uniqueUsers": "Unique users",
+        "maxPerUser": "Max / user",
+        "revokeAll": "Revoke all",
+        "revoke": "Revoke",
+        "noSessions": "No active sessions",
+        "columns": {
+            "user": "User",
+            "ip": "IP address",
+            "userAgent": "User-Agent",
+            "createdAt": "Created at",
+            "expiresAt": "Expires at",
+            "actions": "Actions"
+        },
+        "confirm": {
+            "revoke": "Are you sure you want to revoke this session?",
+            "revokeAll": "Are you sure you want to revoke ALL sessions? All users will be disconnected."
+        },
+        "success": {
+            "revoked": "Session revoked",
+            "allRevoked": "All sessions have been revoked"
+        }
+    },
+    "navigation": {
+        "rolesPlateforme": "Platform roles",
+        "sessionsActivite": "Sessions & activity",
+        "utilisateursPlateforme": "Platform users",
+        "matricePermissions": "Permissions matrix"
+    }
+}

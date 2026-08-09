@@ -101,7 +101,7 @@ export function EDTValidationMasseModal({
 
     const handleValider = async () => {
         const res = await validerMutation.mutateAsync(classeAnneeId);
-        setResultat(res);
+        setResultat(res ?? null);
         onSuccess();
     };
 

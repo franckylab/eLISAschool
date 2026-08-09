@@ -78,6 +78,14 @@ export * from './eleves';
 export * from './bulletins';
 export * from './responsables-eleves';
 export * from './diplomes-eleves';
+// Module Dual-Plane (Modèle C — Auth0 Internalisé)
+export * from './identites';
+export * from './utilisateurs-plateforme';
+export * from './memberships';
+export * from './permissions-plateforme';
+export * from './platform-auth';
+export * from './platform-sessions';
+
 // Export explicite pour lever l'ambiguïté avec l'enum `CreneauHoraire` (classe.entity,
 // créneau MATIN/APRES_MIDI/JOURNEE_COMPLETE) : l'entité EDT prime via modules/index.
 export { CreneauHoraire } from './emploi-du-temps/entities/creneau-horaire.entity';

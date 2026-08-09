@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eLISAschool — Système d'Abonnements, Facturation & Paiement</title>
+<style>
+  :root {
+    --bg: #0a0e17;
+    --bg-card: #111827;
+    --bg-card-hover: #1a2332;
+    --border: #1e293b;
+    --border-accent: #3b82f6;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-strong: #f8fafc;
+    --accent: #3b82f6;
+    --accent-light: #60a5fa;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --purple: #8b5cf6;
+    --pink: #ec4899;
+    --cyan: #06b6d4;
+    --orange: #f97316;
+    --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --mono: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 clamp(1rem, 3vw, 2rem); position: relative; z-index: 1; }
+
+  /* Hero */
+  .hero {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(3rem, 8vw, 6rem) 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -20%;
+    width: 140%;
+    height: 200%;
+    background: radial-gradient(ellipse at 30% 50%, rgba(59,130,246,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 30%, rgba(139,92,246,0.06) 0%, transparent 50%);
+    animation: heroGlow 8s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  @keyframes heroGlow {
+    0% { opacity: 0.6; transform: translateY(0); }
+    100% { opacity: 1; transform: translateY(-20px); }
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(59,130,246,0.1);
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 0.8rem;
+    color: var(--accent-light);
+    margin-bottom: 1.5rem;
+    width: fit-content;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    color: var(--text-strong);
+    line-height: 1.15;
+    margin-bottom: 1rem;
+    letter-spacing: -0.02em;
+  }
+  .hero h1 span { color: var(--accent); }
+  .hero p {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    color: var(--text-muted);
+    max-width: 700px;
+    margin-bottom: 2rem;
+  }
+  .hero-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+  .hero-stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.5rem;
+    min-width: 140px;
+  }
+  .hero-stat .value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--accent-light);
+  }
+  .hero-stat .label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Sections */
+  section { padding: clamp(2rem, 5vw, 4rem) 0; }
+  .section-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-number {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+  }
+  .section-header h2 {
+    font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+    font-weight: 700;
+    color: var(--text-strong);
+    letter-spacing: -0.01em;
+  }
+  .section-header p {
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    max-width: 700px;
+  }
+
+  /* Cards */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: 1.25rem;
+  }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: clamp(1rem, 2vw, 1.5rem);
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .card:hover {
+    border-color: var(--border-accent);
+    transform: translateY(-2px);
+  }
+  .card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin-bottom: 0.75rem;
+  }
+  .card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-strong);
+    margin-bottom: 0.5rem;
+  }
+  .card p {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* Tables */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin: 1.5rem 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+  thead { background: rgba(59,130,246,0.05); }
+  th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    color: var(--text-strong);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(59,130,246,0.02); }
+
+  /* Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .badge-success { background: rgba(16,185,129,0.15); color: var(--success); }
+  .badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); }
+  .badge-danger { background: rgba(239,68,68,0.15); color: var(--danger); }
+  .badge-info { background: rgba(59,130,246,0.15); color: var(--accent-light); }
+  .badge-purple { background: rgba(139,92,246,0.15); color: var(--purple); }
+
+  /* Code blocks */
+  .code-block {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin: 1.5rem 0;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    background: rgba(59,130,246,0.05);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .code-header .filename {
+    font-family: var(--mono);
+    color: var(--accent-light);
+  }
+  pre {
+    padding: 1rem;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: #c9d1d9;
+  }
+  .kw { color: #ff7b72; }
+  .str { color: #a5d6ff; }
+  .cm { color: #8b949e; }
+  .fn { color: #d2a8ff; }
+  .tp { color: #79c0ff; }
+  .num { color: #f2cc60; }
+
+  /* SVG diagrams */
+  .diagram-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+  .diagram-wrap svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+
+  /* Comparison matrix */
+  .matrix { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 1.25rem; margin: 1.5rem 0; }
+  .matrix-col {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    position: relative;
+  }
+  .matrix-col.recommended {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(59,130,246,0.1);
+  }
+  .matrix-col.recommended::before {
+    content: 'RECOMMANDÉ';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 12px;
+    border-radius: 100px;
+    letter-spacing: 0.05em;
+  }
+  .matrix-col h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-strong);
+    margin-bottom: 0.25rem;
+  }
+  .matrix-col .price {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--accent-light);
+    margin: 0.5rem 0;
+  }
+  .matrix-col .price small { font-size: 0.75rem; color: var(--text-muted); font-weight: 400; }
+  .matrix-col ul { list-style: none; margin-top: 1rem; }
+  .matrix-col li {
+    padding: 0.4rem 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .matrix-col li::before {
+    content: '✓';
+    color: var(--success);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .matrix-col li.con::before { content: '✗'; color: var(--danger); }
+
+  /* Browser mockup */
+  .browser-mock {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin: 1.5rem 0;
+  }
+  .browser-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #0d1117;
+    border-bottom: 1px solid var(--border);
+  }
+  .browser-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .browser-url {
+    flex: 1;
+    margin-left: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: var(--mono);
+  }
+  .browser-body {
+    padding: clamp(1rem, 3vw, 2rem);
+    min-height: 300px;
+  }
+
+  /* TOC */
+  .toc {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin: 2rem 0;
+  }
+  .toc h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-strong);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .toc ol {
+    list-style: none;
+    counter-reset: toc;
+  }
+  .toc li {
+    counter-increment: toc;
+    padding: 0.4rem 0;
+  }
+  .toc a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: color 0.2s;
+  }
+  .toc a:hover { color: var(--accent-light); }
+  .toc a::before {
+    content: counter(toc, decimal-leading-zero);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-weight: 600;
+    min-width: 24px;
+  }
+
+  /* Flow diagram */
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1.5rem 0;
+  }
+  .flow-step {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .flow-arrow {
+    color: var(--accent);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 2rem; margin: 1.5rem 0; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -2rem;
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: var(--bg);
+    z-index: 1;
+  }
+  .timeline-item.done::before { background: var(--success); border-color: var(--success); }
+  .timeline-item h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-strong);
+    margin-bottom: 0.25rem;
+  }
+  .timeline-item p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .timeline-item .duration {
+    font-size: 0.7rem;
+    color: var(--accent);
+    font-weight: 600;
+    margin-top: 0.25rem;
+  }
+
+  /* Alert box */
+  .alert {
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    font-size: 0.875rem;
+  }
+  .alert-info { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); }
+  .alert-warning { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+  .alert-success { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); }
+  .alert-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+
+  /* Footer */
+  footer {
+    padding: 3rem 0;
+    border-top: 1px solid var(--border);
+    margin-top: 3rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero { min-height: auto; padding: 2rem 0; }
+    .hero-stats { gap: 0.75rem; }
+    .hero-stat { min-width: 100px; padding: 0.75rem 1rem; }
+    .hero-stat .value { font-size: 1.4rem; }
+    .matrix { grid-template-columns: 1fr; }
+    .flow { flex-direction: column; align-items: flex-start; }
+    .flow-arrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<!-- ==================== HERO ==================== -->
+<header class="hero">
+  <div class="hero-badge">📋 Rapport de conception — Août 2026</div>
+  <h1>Système d'<span>Abonnements</span>,<br>Facturation & <span>Paiement</span></h1>
+  <p>Architecture complète pour transformer eLISAschool en plateforme SaaS monétisable : gestion des abonnements, facturation multi-établissement, intégration paiement Afrique (Mobile Money, Wave, Orange Money), catégorisation dynamique des modules et configuration propriétaire depuis l'interface.</p>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="value">38</div><div class="label">Modules</div></div>
+    <div class="hero-stat"><div class="value">10+</div><div class="label">Tables DB</div></div>
+    <div class="hero-stat"><div class="value">6</div><div class="label">Payeurs</div></div>
+    <div class="hero-stat"><div class="value">OHADA</div><div class="label">Conformité</div></div>
+  </div>
+</header>
+
+<!-- ==================== TOC ==================== -->
+<nav class="toc">
+  <h3>Table des matières</h3>
+  <ol>
+    <li><a href="#s1">Contexte & Fondations existantes</a></li>
+    <li><a href="#s2">Architecture cible</a></li>
+    <li><a href="#s3">Trois propositions — Comparatif</a></li>
+    <li><a href="#s4">Catégorisation dynamique des modules</a></li>
+    <li><a href="#s5">Schéma de base de données</a></li>
+    <li><a href="#s6">Intégration paiement Afrique</a></li>
+    <li><a href="#s7">Facturation multi-établissement & Groupes</a></li>
+    <li><a href="#s8">Interface propriétaire de plateforme</a></li>
+    <li><a href="#s9">Roadmap d'implémentation</a></li>
+    <li><a href="#s10">Recommandation finale</a></li>
+  </ol>
+</nav>
+
+<!-- ==================== SECTION 1 ==================== -->
+<section id="s1">
+  <div class="section-header">
+    <div class="section-number">Section 01</div>
+    <h2>Contexte & Fondations existantes</h2>
+    <p>eLISAschool dispose déjà de briques essentielles. Ce rapport s'appuie dessus pour construire le système SaaS sans tout réécrire.</p>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-icon" style="background:rgba(59,130,246,0.1);color:var(--accent);">🏢</div>
+      <h3>Multi-tenant actif</h3>
+      <p>Isolation par <code>etablissementId</code> sur ~40 tables. Middleware <code>authMiddleware</code> + filtrage systématique dans les services.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:rgba(139,92,246,0.1);color:var(--purple);">📦</div>
+      <h3>Module Registry (38 modules)</h3>
+      <p><code>config.registry.ts</code> avec flag <code>premium: boolean</code> défini mais <strong>non appliqué</strong>. Hook naturel pour le gating d'abonnement.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:rgba(16,185,129,0.1);color:var(--success);">🔑</div>
+      <h3>RBAC complet</h3>
+      <p>67 rôles, ~230 permissions. <code>SUPER_ADMIN</code> avec <code>super_admin:all</code>. Prêt pour les permissions de gestion d'abonnement.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:rgba(245,158,11,0.1);color:var(--warning);">⚙️</div>
+      <h3>ParametreSysteme</h3>
+      <p>Source unique de vérité pour la configuration. Multi-tenant avec override établissement. 3 niveaux de priorité.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:rgba(236,72,153,0.1);color:var(--pink);">🏗️</div>
+      <h3>Groupes d'établissements</h3>
+      <p><code>GroupeEtablissement</code>, <code>GroupeEtablissementLien</code>, <code>GroupeAdmin</code> — fondation pour la facturation groupée.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:rgba(6,182,212,0.1);color:var(--cyan);">💰</div>
+      <h3>Module Finances</h3>
+      <p>Facturation élèves existante (frais scolaires, paiements). Séparé de la facturation SaaS plateforme → établissements.</p>
+    </div>
+  </div>
+
+  <div class="alert alert-warning" style="margin-top:1.5rem;">
+    <span class="alert-icon">⚠️</span>
+    <div>
+      <strong>Lacunes identifiées :</strong> Pas de moteur de facturation SaaS, pas d'intégration paiement, pas de système d'abonnement, pas de suivi de consommation (usage meters), pas de conformité OHADA pour les factures émises par la plateforme.
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Existant</th><th>État</th><th>Ce qui manque</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>EtablissementConfig.planAbonnement</code></td><td><span class="badge badge-warning">Champ only</span></td><td>Pas de logique, pas d'entité Abonnement liée</td></tr>
+        <tr><td><code>ModuleConfig.premium</code></td><td><span class="badge badge-warning">Non appliqué</span></td><td>Middleware de gating, plans_modules</td></tr>
+        <tr><td><code>GroupeEtablissement</code></td><td><span class="badge badge-success">Actif</span></td><td>Facturation consolidée, répartition</td></tr>
+        <tr><td><code>ParametreSysteme</code></td><td><span class="badge badge-success">Actif</span></td><td>Clés abonnement, quotas dynamiques</td></tr>
+        <tr><td>Module Finances</td><td><span class="badge badge-success">Actif</span></td><td>Compte comptable plateforme, lettrage</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== SECTION 2 ==================== -->
+<section id="s2">
+  <div class="section-header">
+    <div class="section-number">Section 02</div>
+    <h2>Architecture cible</h2>
+    <p>5 couches séparées : API Gateway → Subscription Engine → Payment Adapters → Ledger → UI Propriétaire</p>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg" style="max-width:900px;">
+      <!-- Background layers -->
+      <defs>
+        <linearGradient id="g1" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#3b82f6" stop-opacity="0.15"/><stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.15"/></linearGradient>
+        <linearGradient id="g2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#10b981" stop-opacity="0.15"/><stop offset="100%" stop-color="#06b6d4" stop-opacity="0.15"/></linearGradient>
+        <linearGradient id="g3" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#f59e0b" stop-opacity="0.15"/><stop offset="100%" stop-color="#f97316" stop-opacity="0.15"/></linearGradient>
+        <linearGradient id="g4" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ec4899" stop-opacity="0.15"/><stop offset="100%" stop-color="#ef4444" stop-opacity="0.15"/></linearGradient>
+        <linearGradient id="g5" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#6366f1" stop-opacity="0.15"/><stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.15"/></linearGradient>
+      </defs>
+      <!-- Layer 1: API Gateway -->
+      <rect x="20" y="10" width="860" height="80" rx="12" fill="url(#g1)" stroke="#3b82f6" stroke-opacity="0.3"/>
+      <text x="50" y="38" fill="#60a5fa" font-size="11" font-weight="700" font-family="system-ui">COUCHE 1 — API GATEWAY & AUTH</text>
+      <rect x="50" y="50" width="120" height="28" rx="6" fill="#1e293b" stroke="#3b82f6" stroke-opacity="0.4"/><text x="72" y="69" fill="#94a3b8" font-size="10" font-family="system-ui">authMiddleware</text>
+      <rect x="190" y="50" width="140" height="28" rx="6" fill="#1e293b" stroke="#3b82f6" stroke-opacity="0.4"/><text x="207" y="69" fill="#94a3b8" font-size="10" font-family="system-ui">requireModuleAccess</text>
+      <rect x="350" y="50" width="130" height="28" rx="6" fill="#1e293b" stroke="#3b82f6" stroke-opacity="0.4"/><text x="370" y="69" fill="#94a3b8" font-size="10" font-family="system-ui">checkQuota(etabId)</text>
+      <rect x="500" y="50" width="140" height="28" rx="6" fill="#1e293b" stroke="#3b82f6" stroke-opacity="0.4"/><text x="517" y="69" fill="#94a3b8" font-size="10" font-family="system-ui">resolveSubscription</text>
+      <rect x="660" y="50" width="190" height="28" rx="6" fill="#1e293b" stroke="#3b82f6" stroke-opacity="0.4"/><text x="680" y="69" fill="#94a3b8" font-size="10" font-family="system-ui">webhook /api/payments/webhook</text>
+
+      <!-- Layer 2: Subscription Engine -->
+      <rect x="20" y="105" width="860" height="90" rx="12" fill="url(#g2)" stroke="#10b981" stroke-opacity="0.3"/>
+      <text x="50" y="133" fill="#34d399" font-size="11" font-weight="700" font-family="system-ui">COUCHE 2 — SUBSCRIPTION ENGINE</text>
+      <rect x="50" y="145" width="130" height="35" rx="6" fill="#1e293b" stroke="#10b981" stroke-opacity="0.4"/><text x="67" y="167" fill="#94a3b8" font-size="10" font-family="system-ui">PlanService</text>
+      <rect x="200" y="145" width="150" height="35" rx="6" fill="#1e293b" stroke="#10b981" stroke-opacity="0.4"/><text x="217" y="167" fill="#94a3b8" font-size="10" font-family="system-ui">AbonnementService</text>
+      <rect x="370" y="145" width="140" height="35" rx="6" fill="#1e293b" stroke="#10b981" stroke-opacity="0.4"/><text x="387" y="167" fill="#94a3b8" font-size="10" font-family="system-ui">FactureService</text>
+      <rect x="530" y="145" width="150" height="35" rx="6" fill="#1e293b" stroke="#10b981" stroke-opacity="0.4"/><text x="547" y="167" fill="#94a3b8" font-size="10" font-family="system-ui">UsageMeterService</text>
+      <rect x="700" y="145" width="150" height="35" rx="6" fill="#1e293b" stroke="#10b981" stroke-opacity="0.4"/><text x="717" y="167" fill="#94a3b8" font-size="10" font-family="system-ui">QuotaService</text>
+
+      <!-- Layer 3: Payment Adapters -->
+      <rect x="20" y="210" width="860" height="90" rx="12" fill="url(#g3)" stroke="#f59e0b" stroke-opacity="0.3"/>
+      <text x="50" y="238" fill="#fbbf24" font-size="11" font-weight="700" font-family="system-ui">COUCHE 3 — PAYMENT ADAPTERS (Strategy Pattern)</text>
+      <rect x="50" y="250" width="110" height="35" rx="6" fill="#1e293b" stroke="#f59e0b" stroke-opacity="0.4"/><text x="72" y="272" fill="#94a3b8" font-size="10" font-family="system-ui">MTN MoMo</text>
+      <rect x="180" y="250" width="110" height="35" rx="6" fill="#1e293b" stroke="#f59e0b" stroke-opacity="0.4"/><text x="197" y="272" fill="#94a3b8" font-size="10" font-family="system-ui">Orange Money</text>
+      <rect x="310" y="250" width="90" height="35" rx="6" fill="#1e293b" stroke="#f59e0b" stroke-opacity="0.4"/><text x="337" y="272" fill="#94a3b8" font-size="10" font-family="system-ui">Wave</text>
+      <rect x="420" y="250" width="100" height="35" rx="6" fill="#1e293b" stroke="#f59e0b" stroke-opacity="0.4"/><text x="437" y="272" fill="#94a3b8" font-size="10" font-family="system-ui">Paystack</text>
+      <rect x="540" y="250" width="110" height="35" rx="6" fill="#1e293b" stroke="#f59e0b" stroke-opacity="0.4"/><text x="555" y="272" fill="#94a3b8" font-size="10" font-family="system-ui">Flutterwave</text>
+      <rect x="670" y="250" width="180" height="35" rx="6" fill="#1e293b" stroke="#f59e0b" stroke-opacity="0.4"/><text x="687" y="272" fill="#94a3b8" font-size="10" font-family="system-ui">Virement / Espèces (manuel)</text>
+
+      <!-- Layer 4: Ledger -->
+      <rect x="20" y="315" width="860" height="80" rx="12" fill="url(#g4)" stroke="#ec4899" stroke-opacity="0.3"/>
+      <text x="50" y="343" fill="#f472b6" font-size="11" font-weight="700" font-family="system-ui">COUCHE 4 — LEDGER & CONFORMITÉ OHADA</text>
+      <rect x="50" y="355" width="160" height="28" rx="6" fill="#1e293b" stroke="#ec4899" stroke-opacity="0.4"/><text x="67" y="374" fill="#94a3b8" font-size="10" font-family="system-ui">TransactionLedger (double entrée)</text>
+      <rect x="230" y="355" width="130" height="28" rx="6" fill="#1e293b" stroke="#ec4899" stroke-opacity="0.4"/><text x="247" y="374" fill="#94a3b8" font-size="10" font-family="system-ui">CreditNoteService</text>
+      <rect x="380" y="355" width="140" height="28" rx="6" fill="#1e293b" stroke="#ec4899" stroke-opacity="0.4"/><text x="397" y="374" fill="#94a3b8" font-size="10" font-family="system-ui">InvoiceNumbering (séquentiel)</text>
+      <rect x="540" y="355" width="130" height="28" rx="6" fill="#1e293b" stroke="#ec4899" stroke-opacity="0.4"/><text x="557" y="374" fill="#94a3b8" font-size="10" font-family="system-ui">TaxReport (TVA 19.25%)</text>
+      <rect x="690" y="355" width="160" height="28" rx="6" fill="#1e293b" stroke="#ec4899" stroke-opacity="0.4"/><text x="707" y="374" fill="#94a3b8" font-size="10" font-family="system-ui">DunningService (relances)</text>
+
+      <!-- Layer 5: UI -->
+      <rect x="20" y="410" width="860" height="100" rx="12" fill="url(#g5)" stroke="#6366f1" stroke-opacity="0.3"/>
+      <text x="50" y="438" fill="#818cf8" font-size="11" font-weight="700" font-family="system-ui">COUCHE 5 — INTERFACE PROPRIÉTAIRE DE PLATEFORME</text>
+      <rect x="50" y="450" width="140" height="45" rx="6" fill="#1e293b" stroke="#6366f1" stroke-opacity="0.4"/><text x="67" y="470" fill="#94a3b8" font-size="9" font-family="system-ui">Gestion Plans</text><text x="67" y="484" fill="#6366f1" font-size="8" font-family="system-ui">/admin/plans</text>
+      <rect x="210" y="450" width="140" height="45" rx="6" fill="#1e293b" stroke="#6366f1" stroke-opacity="0.4"/><text x="227" y="470" fill="#94a3b8" font-size="9" font-family="system-ui">Dashboard Revenus</text><text x="227" y="484" fill="#6366f1" font-size="8" font-family="system-ui">/admin/billing</text>
+      <rect x="370" y="450" width="140" height="45" rx="6" fill="#1e293b" stroke="#6366f1" stroke-opacity="0.4"/><text x="387" y="470" fill="#94a3b8" font-size="9" font-family="system-ui">Suivi Établissements</text><text x="387" y="484" fill="#6366f1" font-size="8" font-family="system-ui">/admin/etablissements</text>
+      <rect x="530" y="450" width="140" height="45" rx="6" fill="#1e293b" stroke="#6366f1" stroke-opacity="0.4"/><text x="547" y="470" fill="#94a3b8" font-size="9" font-family="system-ui">Config Modules</text><text x="547" y="484" fill="#6366f1" font-size="8" font-family="system-ui">/admin/modules</text>
+      <rect x="690" y="450" width="160" height="45" rx="6" fill="#1e293b" stroke="#6366f1" stroke-opacity="0.4"/><text x="707" y="470" fill="#94a3b8" font-size="9" font-family="system-ui">Paiements & Webhooks</text><text x="707" y="484" fill="#6366f1" font-size="8" font-family="system-ui">/admin/payments</text>
+    </svg>
+  </div>
+
+  <h3 style="color:var(--text-strong);margin:1.5rem 0 0.75rem;font-size:1.1rem;">Cycle de vie d'un abonnement</h3>
+  <div class="flow">
+    <div class="flow-step">🎯 Choix de plan</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step">📝 Création abonnement (essai 30j)</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step">💳 Premier paiement</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step">📄 Facture générée</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step">🔄 Renouvellement auto</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step">⬆️ Upgrade / Downgrade</div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 3 ==================== -->
+<section id="s3">
+  <div class="section-header">
+    <div class="section-number">Section 03</div>
+    <h2>Trois propositions — Comparatif</h2>
+    <p>Analyse de 3 approches : moteur custom, plateforme Lago (open-source), ou Stripe Billing. Contexte Afrique = contraintes spécifiques.</p>
+  </div>
+
+  <div class="matrix">
+    <div class="matrix-col recommended">
+      <h3>A. Moteur Custom</h3>
+      <div class="price">0 <small>licence + dev interne</small></div>
+      <p style="font-size:0.8rem;color:var(--text-muted);">Construction interne TypeORM + Express, adapters paiement Afrique natifs.</p>
+      <ul>
+        <li>Contrôle total sur la logique SaaS</li>
+        <li>Mobile Money natif (MTN, OM, Wave)</li>
+        <li>Conformité OHADA sur mesure</li>
+        <li>Intégration parfaite avec ModuleRegistry</li>
+        <li>Pas de dépendance externe critique</li>
+        <li>Facturation XAF/XOF sans conversion</li>
+        <li class="con">Effort de développement initial (~8 s.h.)</li>
+        <li class="con">Responsabilité PCI-DSS (allégé si pas de stockage carte)</li>
+      </ul>
+    </div>
+    <div class="matrix-col">
+      <h3>B. Lago (open-source)</h3>
+      <div class="price">~150€ <small>/mois (cloud) ou self-hosted</small></div>
+      <p style="font-size:0.8rem;color:var(--text-muted);">Plateforme de facturation usage-based open-source, API REST.</p>
+      <ul>
+        <li>Usage meters built-in</li>
+        <li>Facturation récurrente avancée</li>
+        <li>Self-hosted possible (Docker)</li>
+        <li class="con">Pas de support Mobile Money natif</li>
+        <li class="con">Devise EUR/USD uniquement (pas XAF)</li>
+        <li class="con">Infrastructure supplémentaire (PostgreSQL dédié)</li>
+        <li class="con">Intégration complexe avec ModuleRegistry</li>
+        <li class="con">Conformité OHADA à implémenter</li>
+      </ul>
+    </div>
+    <div class="matrix-col">
+      <h3>C. Stripe Billing</h3>
+      <div class="price">34€ <small>/mois + 1.4% + 0.24€ / transaction</small></div>
+      <p style="font-size:0.8rem;color:var(--text-muted);">Leader mondial SaaS billing. Webhooks, dunning, proration.</p>
+      <ul>
+        <li>Feature-complete (dunning, proration, credits)</li>
+        <li>Dashboard propriétaire puissant</li>
+        <li class="con">Mobile Money très limité en Afrique</li>
+        <li class="con">Pas de support XAF/XOF natif</li>
+        <li class="con">Frais élevés pour petits montants</li>
+        <li class="con">Dépendance vendor lock-in forte</li>
+        <li class="con">Non disponible dans tous les pays CEMAC</li>
+        <li class="con">Conformité OHADA non native</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="alert alert-success">
+    <span class="alert-icon">✅</span>
+    <div><strong>Recommandation : Option A (Moteur Custom)</strong> — Le contexte Afrique (XAF/XOF, Mobile Money dominant, OHADA) rend les solutions internationales inadaptées. Le coût de développement est amorti en 6 mois par l'absence de commissions per-transaction. L'architecture existante (TypeORM, ModuleRegistry, ParametreSysteme) fournit 70% des briques nécessaires.</div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 4 ==================== -->
+<section id="s4">
+  <div class="section-header">
+    <div class="section-number">Section 04</div>
+    <h2>Catégorisation dynamique des modules</h2>
+    <p>Le propriétaire de plateforme configure depuis l'interface quels modules sont gratuits, premium, ou add-on — sans toucher au code.</p>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 800 350" xmlns="http://www.w3.org/2000/svg" style="max-width:800px;">
+      <!-- Module Registry -->
+      <rect x="300" y="10" width="200" height="50" rx="10" fill="#1e293b" stroke="#3b82f6" stroke-width="2"/>
+      <text x="340" y="40" fill="#60a5fa" font-size="12" font-weight="700" font-family="system-ui">ModuleRegistry</text>
+
+      <!-- 3 categories -->
+      <rect x="30" y="100" width="220" height="230" rx="10" fill="rgba(16,185,129,0.08)" stroke="#10b981" stroke-opacity="0.4"/>
+      <text x="75" y="125" fill="#34d399" font-size="11" font-weight="700" font-family="system-ui">🟢 GRATUITS (critiques)</text>
+      <text x="50" y="150" fill="#94a3b8" font-size="10" font-family="system-ui">• Auth, Utilisateurs</text>
+      <text x="50" y="170" fill="#94a3b8" font-size="10" font-family="system-ui">• Configuration</text>
+      <text x="50" y="190" fill="#94a3b8" font-size="10" font-family="system-ui">• Élèves, Classes</text>
+      <text x="50" y="210" fill="#94a3b8" font-size="10" font-family="system-ui">• Notes, Bulletins</text>
+      <text x="50" y="230" fill="#94a3b8" font-size="10" font-family="system-ui">• Emploi du temps</text>
+      <text x="50" y="260" fill="#34d399" font-size="9" font-family="system-ui">Toujours accessibles</text>
+      <text x="50" y="280" fill="#34d399" font-size="9" font-family="system-ui">Aucun gating d'abonnement</text>
+
+      <rect x="290" y="100" width="220" height="230" rx="10" fill="rgba(139,92,246,0.08)" stroke="#8b5cf6" stroke-opacity="0.4"/>
+      <text x="325" y="125" fill="#a78bfa" font-size="11" font-weight="700" font-family="system-ui">🟣 PREMIUM (plans)</text>
+      <text x="310" y="150" fill="#94a3b8" font-size="10" font-family="system-ui">• Cantine, Transport</text>
+      <text x="310" y="170" fill="#94a3b8" font-size="10" font-family="system-ui">• Sondages, Inventaire</text>
+      <text x="310" y="190" fill="#94a3b8" font-size="10" font-family="system-ui">• Laboratoire, Stage</text>
+      <text x="310" y="210" fill="#94a3b8" font-size="10" font-family="system-ui">• Examen, Discipline</text>
+      <text x="310" y="230" fill="#94a3b8" font-size="10" font-family="system-ui">• Bibliothèque</text>
+      <text x="310" y="260" fill="#a78bfa" font-size="9" font-family="system-ui">Inclus dans plans Standard+</text>
+      <text x="310" y="280" fill="#a78bfa" font-size="9" font-family="system-ui">Gating par plan_modules</text>
+
+      <rect x="550" y="100" width="220" height="230" rx="10" fill="rgba(245,158,11,0.08)" stroke="#f59e0b" stroke-opacity="0.4"/>
+      <text x="585" y="125" fill="#fbbf24" font-size="11" font-weight="700" font-family="system-ui">🟡 ADD-ON (à la carte)</text>
+      <text x="570" y="150" fill="#94a3b8" font-size="10" font-family="system-ui">• SMS Gateway</text>
+      <text x="570" y="170" fill="#94a3b8" font-size="10" font-family="system-ui">• Stockage cloud étendu</text>
+      <text x="570" y="190" fill="#94a3b8" font-size="10" font-family="system-ui">• Export avancé (PDF)</text>
+      <text x="570" y="210" fill="#94a3b8" font-size="10" font-family="system-ui">• API externe</text>
+      <text x="570" y="230" fill="#94a3b8" font-size="10" font-family="system-ui">• White-label</text>
+      <text x="570" y="260" fill="#fbbf24" font-size="9" font-family="system-ui">Facturation séparée</text>
+      <text x="570" y="280" fill="#fbbf24" font-size="9" font-family="system-ui">Usage-based possible</text>
+
+      <!-- Arrows -->
+      <line x1="350" y1="60" x2="140" y2="100" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <line x1="400" y1="60" x2="400" y2="100" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <line x1="450" y1="60" x2="660" y2="100" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,3"/>
+    </svg>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header"><span class="filename">requireModuleAccess.middleware.ts</span><span>TypeScript</span></div>
+    <pre><span class="cm">// Middleware unifié : remplace requireModuleActive</span>
+<span class="kw">export function</span> <span class="fn">requireModuleAccess</span>(moduleNom: <span class="tp">string</span>) {
+  <span class="kw">return async</span> (req: <span class="tp">Request</span>, res: <span class="tp">Response</span>, next: <span class="tp">NextFunction</span>) => {
+    <span class="kw">const</span> etabId = req.utilisateur?.etablissementId;
+    <span class="kw">const</span> config = MODULE_REGISTRY[moduleNom];
+
+    <span class="cm">// 1. Modules critiques = toujours accessibles</span>
+    <span class="kw">if</span> (config?.critical) <span class="kw">return</span> next();
+
+    <span class="cm">// 2. Vérifier activation (ParametreSysteme)</span>
+    <span class="kw">const</span> estActif = <span class="kw">await</span> configService.isModuleActive(moduleNom, etabId);
+    <span class="kw">if</span> (!estActif) <span class="kw">throw new</span> AppError(<span class="str">'Module inactif'</span>, <span class="num">403</span>, <span class="str">'MODULE_INACTIVE'</span>);
+
+    <span class="cm">// 3. Gating premium → vérifie l'abonnement</span>
+    <span class="kw">if</span> (config?.premium) {
+      <span class="kw">const</span> abonnement = <span class="kw">await</span> subscriptionService.getActiveSubscription(etabId);
+      <span class="kw">if</span> (!abonnement?.modulesSouscrits.includes(moduleNom)) {
+        <span class="kw">throw new</span> AppError(<span class="str">'Module premium non souscrit'</span>, <span class="num">403</span>, <span class="str">'MODULE_PREMIUM_REQUIS'</span>);
+      }
+    }
+
+    <span class="cm">// 4. Quotas (ex: max 500 élèves en plan gratuit)</span>
+    <span class="kw">const</span> quotaOk = <span class="kw">await</span> quotaService.checkQuota(etabId, moduleNom);
+    <span class="kw">if</span> (!quotaOk) <span class="kw">throw new</span> AppError(<span class="str">'Quota dépassé'</span>, <span class="num">429</span>, <span class="str">'QUOTA_EXCEEDED'</span>);
+
+    next();
+  };
+}</pre>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Catégorie</th><th>Accès</th><th>Configuration</th><th>Facturation</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="badge badge-success">Critique</span></td><td>Tous les plans</td><td>Non modifiable par le propriétaire</td><td>Inclus</td></tr>
+        <tr><td><span class="badge badge-purple">Premium</span></td><td>Plans Standard, Premium, Entreprise</td><td>Assignable par plan via l'UI</td><td>Inclus dans le prix du plan</td></tr>
+        <tr><td><span class="badge badge-warning">Add-on</span></td><td>Activable à la carte</td><td>Toggle par établissement</td><td>Facturation séparée (fixe ou usage)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== SECTION 5 ==================== -->
+<section id="s5">
+  <div class="section-header">
+    <div class="section-number">Section 05</div>
+    <h2>Schéma de base de données</h2>
+    <p>12 tables core pour le système d'abonnement. Entités TypeORM auto-découvertes par le glob existant.</p>
+  </div>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 880 480" xmlns="http://www.w3.org/2000/svg" style="max-width:880px;">
+      <!-- Plans -->
+      <rect x="20" y="20" width="200" height="180" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+      <rect x="20" y="20" width="200" height="30" rx="8" fill="rgba(59,130,246,0.15)"/>
+      <text x="70" y="40" fill="#60a5fa" font-size="11" font-weight="700" font-family="system-ui">plans</text>
+      <text x="30" y="65" fill="#94a3b8" font-size="9" font-family="monospace">id: uuid PK</text>
+      <text x="30" y="80" fill="#94a3b8" font-size="9" font-family="monospace">nom: varchar(50)</text>
+      <text x="30" y="95" fill="#94a3b8" font-size="9" font-family="monospace">code: varchar(20) UNIQUE</text>
+      <text x="30" y="110" fill="#94a3b8" font-size="9" font-family="monospace">prix_mensuel: integer (XAF)</text>
+      <text x="30" y="125" fill="#94a3b8" font-size="9" font-family="monospace">prix_annuel: integer (XAF)</text>
+      <text x="30" y="140" fill="#94a3b8" font-size="9" font-family="monospace">essai_jours: integer DEFAULT 30</text>
+      <text x="30" y="155" fill="#94a3b8" font-size="9" font-family="monospace">max_eleves: integer</text>
+      <text x="30" y="170" fill="#94a3b8" font-size="9" font-family="monospace">max_utilisateurs: integer</text>
+      <text x="30" y="185" fill="#94a3b8" font-size="9" font-family="monospace">actif: boolean DEFAULT true</text>
+
+      <!-- Plan Modules -->
+      <rect x="260" y="20" width="200" height="120" rx="8" fill="#1e293b" stroke="#8b5cf6" stroke-width="1.5"/>
+      <rect x="260" y="20" width="200" height="30" rx="8" fill="rgba(139,92,246,0.15)"/>
+      <text x="290" y="40" fill="#a78bfa" font-size="11" font-weight="700" font-family="system-ui">plan_modules</text>
+      <text x="270" y="65" fill="#94a3b8" font-size="9" font-family="monospace">id: uuid PK</text>
+      <text x="270" y="80" fill="#94a3b8" font-size="9" font-family="monospace">planId: uuid FK→plans</text>
+      <text x="270" y="95" fill="#94a3b8" font-size="9" font-family="monospace">module_nom: varchar(50)</text>
+      <text x="270" y="110" fill="#94a3b8" font-size="9" font-family="monospace">inclus: boolean DEFAULT true</text>
+      <text x="270" y="125" fill="#94a3b8" font-size="9" font-family="monospace">UNIQUE(planId, module_nom)</text>
+
+      <!-- Abonnements -->
+      <rect x="20" y="240" width="220" height="220" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1.5"/>
+      <rect x="20" y="240" width="220" height="30" rx="8" fill="rgba(16,185,129,0.15)"/>
+      <text x="65" y="260" fill="#34d399" font-size="11" font-weight="700" font-family="system-ui">abonnements</text>
+      <text x="30" y="285" fill="#94a3b8" font-size="9" font-family="monospace">id: uuid PK</text>
+      <text x="30" y="300" fill="#94a3b8" font-size="9" font-family="monospace">etablissementId: uuid FK</text>
+      <text x="30" y="315" fill="#94a3b8" font-size="9" font-family="monospace">planId: uuid FK→plans</text>
+      <text x="30" y="330" fill="#94a3b8" font-size="9" font-family="monospace">statut: varchar(20)</text>
+      <text x="30" y="345" fill="#94a3b8" font-size="9" font-family="monospace">date_debut: timestamp</text>
+      <text x="30" y="360" fill="#94a3b8" font-size="9" font-family="monospace">date_fin: timestamp</text>
+      <text x="30" y="375" fill="#94a3b8" font-size="9" font-family="monospace">montant: integer (XAF)</text>
+      <text x="30" y="390" fill="#94a3b8" font-size="9" font-family="monospace">cycle: varchar(10) mensuel|annuel</text>
+      <text x="30" y="405" fill="#94a3b8" font-size="9" font-family="monospace">modules_souscrits: jsonb []</text>
+      <text x="30" y="420" fill="#94a3b8" font-size="9" font-family="monospace">groupe_id: uuid NULL</text>
+      <text x="30" y="435" fill="#94a3b8" font-size="9" font-family="monospace">auto_renouveler: boolean</text>
+      <text x="30" y="450" fill="#94a3b8" font-size="9" font-family="monospace">deletedAt: timestamp NULL</text>
+
+      <!-- Factures -->
+      <rect x="280" y="180" width="220" height="200" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+      <rect x="280" y="180" width="220" height="30" rx="8" fill="rgba(245,158,11,0.15)"/>
+      <text x="350" y="200" fill="#fbbf24" font-size="11" font-weight="700" font-family="system-ui">factures</text>
+      <text x="290" y="225" fill="#94a3b8" font-size="9" font-family="monospace">id: uuid PK</text>
+      <text x="290" y="240" fill="#94a3b8" font-size="9" font-family="monospace">numero: varchar(30) UNIQUE</text>
+      <text x="290" y="255" fill="#94a3b8" font-size="9" font-family="monospace">etablissementId: uuid FK</text>
+      <text x="290" y="270" fill="#94a3b8" font-size="9" font-family="monospace">abonnementId: uuid FK</text>
+      <text x="290" y="285" fill="#94a3b8" font-size="9" font-family="monospace">statut: varchar(20)</text>
+      <text x="290" y="300" fill="#94a3b8" font-size="9" font-family="monospace">total_ht: integer (XAF)</text>
+      <text x="290" y="315" fill="#94a3b8" font-size="9" font-family="monospace">total_ttc: integer (XAF)</text>
+      <text x="290" y="330" fill="#94a3b8" font-size="9" font-family="monospace">date_emission: date</text>
+      <text x="290" y="345" fill="#94a3b8" font-size="9" font-family="monospace">date_echeance: date</text>
+      <text x="290" y="360" fill="#94a3b8" font-size="9" font-family="monospace">date_paiement: date NULL</text>
+      <text x="290" y="375" fill="#94a3b8" font-size="9" font-family="monospace">pdf_url: varchar NULL</text>
+
+      <!-- Paiements -->
+      <rect x="540" y="180" width="220" height="180" rx="8" fill="#1e293b" stroke="#06b6d4" stroke-width="1.5"/>
+      <rect x="540" y="180" width="220" height="30" rx="8" fill="rgba(6,182,212,0.15)"/>
+      <text x="600" y="200" fill="#22d3ee" font-size="11" font-weight="700" font-family="system-ui">paiements</text>
+      <text x="550" y="225" fill="#94a3b8" font-size="9" font-family="monospace">id: uuid PK</text>
+      <text x="550" y="240" fill="#94a3b8" font-size="9" font-family="monospace">factureId: uuid FK</text>
+      <text x="550" y="255" fill="#94a3b8" font-size="9" font-family="monospace">montant: integer (XAF)</text>
+      <text x="550" y="270" fill="#94a3b8" font-size="9" font-family="monospace">canal: varchar(30)</text>
+      <text x="550" y="285" fill="#94a3b8" font-size="9" font-family="monospace">reference_ext: varchar NULL</text>
+      <text x="550" y="300" fill="#94a3b8" font-size="9" font-family="monospace">statut: varchar(20)</text>
+      <text x="550" y="315" fill="#94a3b8" font-size="9" font-family="monospace">date_paiement: timestamp</text>
+      <text x="550" y="330" fill="#94a3b8" font-size="9" font-family="monospace">metadata: jsonb</text>
+      <text x="550" y="345" fill="#94a3b8" font-size="9" font-family="monospace">deletedAt: timestamp NULL</text>
+
+      <!-- Usage Meters -->
+      <rect x="540" y="20" width="200" height="130" rx="8" fill="#1e293b" stroke="#ec4899" stroke-width="1.5"/>
+      <rect x="540" y="20" width="200" height="30" rx="8" fill="rgba(236,72,153,0.15)"/>
+      <text x="580" y="40" fill="#f472b6" font-size="11" font-weight="700" font-family="system-ui">usage_meters</text>
+      <text x="550" y="65" fill="#94a3b8" font-size="9" font-family="monospace">id: uuid PK</text>
+      <text x="550" y="80" fill="#94a3b8" font-size="9" font-family="monospace">etablissementId: uuid FK</text>
+      <text x="550" y="95" fill="#94a3b8" font-size="9" font-family="monospace">module_nom: varchar(50)</text>
+      <text x="550" y="110" fill="#94a3b8" font-size="9" font-family="monospace">consommation: integer</text>
+      <text x="550" y="125" fill="#94a3b8" font-size="9" font-family="monospace">periode: varchar(10)</text>
+      <text x="550" y="140" fill="#94a3b8" font-size="9" font-family="monospace">UNIQUE(etab, module, periode)</text>
+
+      <!-- Transaction Ledger -->
+      <rect x="280" y="410" width="220" height="60" rx="8" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
+      <rect x="280" y="410" width="220" height="30" rx="8" fill="rgba(239,68,68,0.15)"/>
+      <text x="310" y="430" fill="#f87171" font-size="11" font-weight="700" font-family="system-ui">transaction_ledger</text>
+      <text x="290" y="455" fill="#94a3b8" font-size="9" font-family="monospace">double entrée : débit / crédit / solde cumulé</text>
+
+      <!-- Relations -->
+      <line x1="220" y1="80" x2="260" y2="80" stroke="#3b82f6" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="130" y1="200" x2="130" y2="240" stroke="#10b981" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="240" y1="350" x2="280" y2="280" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="500" y1="280" x2="540" y2="280" stroke="#06b6d4" stroke-width="1" stroke-dasharray="3,3"/>
+    </svg>
+  </div>
+
+  <div class="alert alert-info">
+    <span class="alert-icon">💡</span>
+    <div><strong>Convention montants :</strong> Tous les montants sont stockés en <strong>entiers (XAF)</strong> — pas de float. 15000 = 15 000 FCFA. La TVA (19.25% Cameroun) est calculée au moment de la facturation, pas stockée dans le prix du plan.</div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 6 ==================== -->
+<section id="s6">
+  <div class="section-header">
+    <div class="section-number">Section 06</div>
+    <h2>Intégration paiement Afrique</h2>
+    <p>6 adapters pour couvrir le paysage de paiement en Afrique centrale et de l'Ouest. Strategy pattern pour ajouter de nouveaux canaux sans modifier le core.</p>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-icon" style="background:rgba(245,158,11,0.1);color:var(--warning);">📱</div>
+      <h3>MTN Mobile Money</h3>
+      <p>19+ pays africains. API REST avec OAuth2. Push payment (USSD trigger). Callback webhook asynchrone. Frais ~1%.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:rgba(249,115,22,0.1);color:var(--orange);">🍊</div>
+      <h3>Orange Money</h3>
+      <p>OAuth2 (tokens 55min). API Web + USSD. Couverture : 15+ pays. Push payment + pull payment. Frais ~1.5%.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:rgba(6,182,212,0.1);color:var(--cyan);">🌊</div>
+      <h3>Wave</h3>
+      <p>Frais les plus bas (~1%). Sénégal, Côte d'Ivoire, Cameroun. API simple, webhook temps réel. Pas de carte bancaire.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:rgba(16,185,129,0.1);color:var(--success);">💳</div>
+      <h3>Paystack</h3>
+      <p>Nigeria, Ghana, Afrique du Sud, Kenya. Cartes + mobile money + bank transfer. 1.5% + ₦100. Dashboard excellent.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:rgba(139,92,246,0.1);color:var(--purple);">🔄</div>
+      <h3>Flutterwave</h3>
+      <p>34+ pays africains. Multi-devise (XAF, XOF, NGN, GHS...). Cartes + mobile money + bank. 3.8% international.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:rgba(236,72,153,0.1);color:var(--pink);">🏦</div>
+      <h3>Manuel (Virement/Espèces)</h3>
+      <p>Saisie manuelle par le SUPER_ADMIN après vérification bancaire. Preuve de paiement uploadée. Aucun frais API.</p>
+    </div>
+  </div>
+
+  <div class="code-block" style="margin-top:1.5rem;">
+    <div class="code-header"><span class="filename">payment-adapter.interface.ts</span><span>Strategy Pattern</span></div>
+    <pre><span class="kw">interface</span> <span class="tp">IPaymentAdapter</span> {
+  <span class="fn">initialiserPaiement</span>(params: {
+    montant: <span class="tp">number</span>;         <span class="cm">// en XAF</span>
+    devise: <span class="str">'XAF'</span> | <span class="str">'XOF'</span>;
+    referenceFacture: <span class="tp">string</span>;
+    canal: <span class="tp">CanalPaiement</span>;    <span class="cm">// 'mtn_momo' | 'orange_money' | 'wave' | ...</span>
+    returnUrl: <span class="tp">string</span>;
+    webhookUrl: <span class="tp">string</span>;
+    metadata?: <span class="tp">Record</span>&lt;<span class="tp">string</span>, <span class="tp">unknown</span>&gt;;
+  }): <span class="tp">Promise</span>&lt;{ urlPaiement: <span class="tp">string</span>; referenceExterne: <span class="tp">string</span> }&gt;;
+
+  <span class="fn">verifierStatut</span>(referenceExterne: <span class="tp">string</span>): <span class="tp">Promise</span>&lt;{
+    statut: <span class="str">'succes'</span> | <span class="str">'echec'</span> | <span class="str">'en_attente'</span>;
+    montantRecu: <span class="tp">number</span>;
+    frais?: <span class="tp">number</span>;
+  }&gt;;
+
+  <span class="fn">traiterWebhook</span>(payload: <span class="tp">unknown</span>, signature: <span class="tp">string</span>): {
+    type: <span class="str">'payment.succeeded'</span> | <span class="str">'payment.failed'</span> | <span class="str">'refund.completed'</span>;
+    referenceFacture: <span class="tp">string</span>;
+    montant: <span class="tp">number</span>;
+  };
+}
+
+<span class="cm">// Registry des adapters — configurable via ParametreSysteme</span>
+<span class="kw">const</span> paymentAdapters: <span class="tp">Map</span>&lt;<span class="tp">CanalPaiement</span>, <span class="tp">IPaymentAdapter</span>&gt; = <span class="kw">new</span> Map([
+  [<span class="str">'mtn_momo'</span>, <span class="kw">new</span> <span class="fn">MTNMoMoAdapter</span>()],
+  [<span class="str">'orange_money'</span>, <span class="kw">new</span> <span class="fn">OrangeMoneyAdapter</span>()],
+  [<span class="str">'wave'</span>, <span class="kw">new</span> <span class="fn">WaveAdapter</span>()],
+  [<span class="str">'paystack'</span>, <span class="kw">new</span> <span class="fn">PaystackAdapter</span>()],
+  [<span class="str">'flutterwave'</span>, <span class="kw">new</span> <span class="fn">FlutterwaveAdapter</span>()],
+  [<span class="str">'manuel'</span>, <span class="kw">new</span> <span class="fn">ManuelAdapter</span>()],
+]);</pre>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Provider</th><th>Pays couverts</th><th>Devise</th><th>Frais</th><th>Webhook</th><th>Remboursement</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>MTN MoMo</td><td>19+ (CM, CI, SN, GH...)</td><td>XAF, XOF, GHS...</td><td>~1%</td><td>✅ Async</td><td>✅ API</td></tr>
+        <tr><td>Orange Money</td><td>15+ (CM, SN, ML, CI...)</td><td>XAF, XOF, EUR</td><td>~1.5%</td><td>✅ Async</td><td>✅ API</td></tr>
+        <tr><td>Wave</td><td>SN, CI, CM</td><td>XOF, XAF</td><td>~1%</td><td>✅ Temps réel</td><td>❌ Manuel</td></tr>
+        <tr><td>Paystack</td><td>NG, GH, ZA, KE</td><td>NGN, GHS, ZAR, KES</td><td>1.5% + ₦100</td><td>✅ Temps réel</td><td>✅ API</td></tr>
+        <tr><td>Flutterwave</td><td>34+ pays</td><td>Multi-devise</td><td>3.8% intl</td><td>✅ Temps réel</td><td>✅ API</td></tr>
+        <tr><td>Manuel</td><td>Universel</td><td>Tout</td><td>0%</td><td>N/A</td><td>N/A</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== SECTION 7 ==================== -->
+<section id="s7">
+  <div class="section-header">
+    <div class="section-number">Section 07</div>
+    <h2>Facturation multi-établissement & Groupes</h2>
+    <p>3 modèles de facturation pour les groupes d'établissements. Le modèle hybride est recommandé pour la flexibilité.</p>
+  </div>
+
+  <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));">
+    <div class="card" style="border-top: 3px solid var(--success);">
+      <h3>A. Facturation individuelle</h3>
+      <p>Chaque établissement a son propre abonnement et sa propre facture. Indépendance totale.</p>
+      <div style="margin-top:0.75rem;font-size:0.8rem;color:var(--text-muted);">
+        <strong>Avantage :</strong> Simple, isolation comptable<br>
+        <strong>Inconvénient :</strong> Pas de volume discount
+      </div>
+    </div>
+    <div class="card" style="border-top: 3px solid var(--accent);">
+      <h3>B. Facturation consolidée</h3>
+      <p>Une seule facture pour le groupe. Le propriétaire du groupe reçoit tout. Répartition interne libre.</p>
+      <div style="margin-top:0.75rem;font-size:0.8rem;color:var(--text-muted);">
+        <strong>Avantage :</strong> Volume discount, une seule facture<br>
+        <strong>Inconvénient :</strong> Pas de visibilité par établissement
+      </div>
+    </div>
+    <div class="card" style="border-top: 3px solid var(--purple);">
+      <h3>C. Hybride (recommandé)</h3>
+      <p>Facture consolidée + détail par établissement. Le groupe voit le total, chaque établissement voit sa part.</p>
+      <div style="margin-top:0.75rem;font-size:0.8rem;color:var(--text-muted);">
+        <strong>Avantage :</strong> Le meilleur des deux mondes<br>
+        <strong>Inconvénient :</strong> Plus complexe à implémenter
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block" style="margin-top:1.5rem;">
+    <div class="code-header"><span class="filename">facture-groupe.service.ts</span><span>Modèle hybride</span></div>
+    <pre><span class="kw">async</span> <span class="fn">genererFactureGroupe</span>(groupeId: <span class="tp">string</span>, periode: <span class="tp">Date</span>) {
+  <span class="kw">const</span> membres = <span class="kw">await</span> groupeService.getMembres(groupeId);
+  <span class="kw">const</span> plan = <span class="kw">await</span> planService.getPlanGroupe(groupeId);
+
+  <span class="cm">// Calculer le total consolidé avec dégressivité</span>
+  <span class="kw">const</span> totalBrut = plan.prix_mensuel * membres.length;
+  <span class="kw">const</span> reduction = <span class="fn">calculerDegressivite</span>(membres.length); <span class="cm">// ex: -10% si >5</span>
+  <span class="kw">const</span> totalNet = totalBrut * (<span class="num">1</span> - reduction);
+
+  <span class="cm">// Créer la facture consolidée</span>
+  <span class="kw">const</span> facture = <span class="kw">await</span> <span class="kw">this</span>.repo.save({
+    groupeId,
+    numero: <span class="kw">await</span> <span class="fn">genererNumero</span>(<span class="str">'GR'</span>),
+    total_ht: totalNet,
+    total_ttc: <span class="fn">calculerTVA</span>(totalNet),
+    lignes: membres.map(m => ({
+      etablissementId: m.id,
+      etablissementNom: m.nom,
+      montant: totalNet / membres.length, <span class="cm">// répartition égale</span>
+    })),
+  });
+
+  <span class="cm">// Notification au propriétaire du groupe + chaque établissement</span>
+  <span class="kw">await</span> <span class="fn">notifierFactureGroupe</span>(facture, membres);
+  <span class="kw">return</span> facture;
+}</pre>
+  </div>
+</section>
+
+<!-- ==================== SECTION 8 ==================== -->
+<section id="s8">
+  <div class="section-header">
+    <div class="section-number">Section 08</div>
+    <h2>Interface propriétaire de plateforme</h2>
+    <p>Le SUPER_ADMIN configure tout depuis l'interface : plans, prix, modules inclus, canaux de paiement, et suit les revenus en temps réel.</p>
+  </div>
+
+  <!-- Browser mockup: Plan configuration -->
+  <div class="browser-mock">
+    <div class="browser-bar">
+      <div class="browser-dot" style="background:#ef4444;"></div>
+      <div class="browser-dot" style="background:#f59e0b;"></div>
+      <div class="browser-dot" style="background:#10b981;"></div>
+      <div class="browser-url">elisaschool.com/admin/billing/plans</div>
+    </div>
+    <div class="browser-body">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+        <div>
+          <h3 style="color:var(--text-strong);font-size:1.2rem;font-weight:700;">Plans d'abonnement</h3>
+          <p style="color:var(--text-muted);font-size:0.85rem;">Configurez les offres disponibles pour les établissements</p>
+        </div>
+        <div style="background:var(--accent);color:white;padding:8px 16px;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;">+ Nouveau plan</div>
+      </div>
+
+      <!-- Plan cards -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;">
+        <!-- Gratuit -->
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem;">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+            <span style="font-size:1.2rem;">🆓</span>
+            <span style="color:var(--text-strong);font-weight:700;">Gratuit</span>
+            <span class="badge badge-success" style="margin-left:auto;">Actif</span>
+          </div>
+          <div style="font-size:1.8rem;font-weight:800;color:var(--success);margin:0.5rem 0;">0 <small style="font-size:0.7rem;color:var(--text-muted);font-weight:400;">XAF/mois</small></div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.75rem;">5 modules critiques • 50 élèves max • 3 utilisateurs</div>
+          <div style="display:flex;gap:0.5rem;">
+            <div style="flex:1;text-align:center;padding:4px;background:rgba(16,185,129,0.1);border-radius:6px;font-size:0.7rem;color:var(--success);">12 étab.</div>
+            <div style="flex:1;text-align:center;padding:4px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:0.7rem;color:var(--accent-light);">Essai →</div>
+          </div>
+        </div>
+
+        <!-- Standard -->
+        <div style="background:var(--bg);border:2px solid var(--accent);border-radius:12px;padding:1.25rem;position:relative;">
+          <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--accent);color:white;font-size:0.6rem;padding:2px 8px;border-radius:100px;font-weight:700;">POPULAIRE</div>
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+            <span style="font-size:1.2rem;">⭐</span>
+            <span style="color:var(--text-strong);font-weight:700;">Standard</span>
+            <span class="badge badge-success" style="margin-left:auto;">Actif</span>
+          </div>
+          <div style="font-size:1.8rem;font-weight:800;color:var(--accent-light);margin:0.5rem 0;">25 000 <small style="font-size:0.7rem;color:var(--text-muted);font-weight:400;">XAF/mois</small></div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.75rem;">15 modules • 300 élèves • 20 utilisateurs</div>
+          <div style="display:flex;gap:0.5rem;">
+            <div style="flex:1;text-align:center;padding:4px;background:rgba(59,130,246,0.1);border-radius:6px;font-size:0.7rem;color:var(--accent-light);">45 étab.</div>
+            <div style="flex:1;text-align:center;padding:4px;background:rgba(139,92,246,0.1);border-radius:6px;font-size:0.7rem;color:var(--purple);">2.25M/mois</div>
+          </div>
+        </div>
+
+        <!-- Premium -->
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem;">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+            <span style="font-size:1.2rem;">💎</span>
+            <span style="color:var(--text-strong);font-weight:700;">Premium</span>
+            <span class="badge badge-success" style="margin-left:auto;">Actif</span>
+          </div>
+          <div style="font-size:1.8rem;font-weight:800;color:var(--purple);margin:0.5rem 0;">50 000 <small style="font-size:0.7rem;color:var(--text-muted);font-weight:400;">XAF/mois</small></div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.75rem;">Tous modules • Illimité • Support prioritaire</div>
+          <div style="display:flex;gap:0.5rem;">
+            <div style="flex:1;text-align:center;padding:4px;background:rgba(139,92,246,0.1);border-radius:6px;font-size:0.7rem;color:var(--purple);">18 étab.</div>
+            <div style="flex:1;text-align:center;padding:4px;background:rgba(236,72,153,0.1);border-radius:6px;font-size:0.7rem;color:var(--pink);">900K/mois</div>
+          </div>
+        </div>
+
+        <!-- Entreprise -->
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:1.25rem;">
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+            <span style="font-size:1.2rem;">🏢</span>
+            <span style="color:var(--text-strong);font-weight:700;">Entreprise</span>
+            <span class="badge badge-warning" style="margin-left:auto;">Sur devis</span>
+          </div>
+          <div style="font-size:1.8rem;font-weight:800;color:var(--warning);margin:0.5rem 0;">Custom</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.75rem;">Multi-sites • White-label • SLA garanti</div>
+          <div style="display:flex;gap:0.5rem;">
+            <div style="flex:1;text-align:center;padding:4px;background:rgba(245,158,11,0.1);border-radius:6px;font-size:0.7rem;color:var(--warning);">3 groupes</div>
+            <div style="flex:1;text-align:center;padding:4px;background:rgba(249,115,22,0.1);border-radius:6px;font-size:0.7rem;color:var(--orange);">1.5M/mois</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Browser mockup: Revenue dashboard -->
+  <div class="browser-mock" style="margin-top:1.5rem;">
+    <div class="browser-bar">
+      <div class="browser-dot" style="background:#ef4444;"></div>
+      <div class="browser-dot" style="background:#f59e0b;"></div>
+      <div class="browser-dot" style="background:#10b981;"></div>
+      <div class="browser-url">elisaschool.com/admin/billing/dashboard</div>
+    </div>
+    <div class="browser-body">
+      <h3 style="color:var(--text-strong);font-size:1.2rem;font-weight:700;margin-bottom:1rem;">Dashboard Revenus</h3>
+
+      <!-- KPI row -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem;">
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1rem;">
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">MRR</div>
+          <div style="font-size:1.5rem;font-weight:800;color:var(--success);">4.65M <small style="font-size:0.65rem;font-weight:400;">XAF</small></div>
+          <div style="font-size:0.7rem;color:var(--success);">↑ 12% vs mois dernier</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1rem;">
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Établissements actifs</div>
+          <div style="font-size:1.5rem;font-weight:800;color:var(--accent-light);">78</div>
+          <div style="font-size:0.7rem;color:var(--success);">↑ 5 ce mois</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1rem;">
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Taux de renouvellement</div>
+          <div style="font-size:1.5rem;font-weight:800;color:var(--purple);">94%</div>
+          <div style="font-size:0.7rem;color:var(--warning);">↓ 2% vs trimestre</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1rem;">
+          <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Factures impayées</div>
+          <div style="font-size:1.5rem;font-weight:800;color:var(--danger);">3</div>
+          <div style="font-size:0.7rem;color:var(--danger);">75 000 XAF en retard</div>
+        </div>
+      </div>
+
+      <!-- Revenue chart mockup -->
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <span style="font-size:0.85rem;color:var(--text-strong);font-weight:600;">Revenus mensuels (XAF)</span>
+          <div style="display:flex;gap:0.5rem;">
+            <span style="font-size:0.7rem;padding:3px 8px;background:rgba(59,130,246,0.1);border-radius:4px;color:var(--accent-light);">6 mois</span>
+            <span style="font-size:0.7rem;padding:3px 8px;background:transparent;border-radius:4px;color:var(--text-muted);">12 mois</span>
+          </div>
+        </div>
+        <svg viewBox="0 0 600 120" style="width:100%;height:120px;">
+          <defs>
+            <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <!-- Grid lines -->
+          <line x1="0" y1="30" x2="600" y2="30" stroke="#1e293b" stroke-width="0.5"/>
+          <line x1="0" y1="60" x2="600" y2="60" stroke="#1e293b" stroke-width="0.5"/>
+          <line x1="0" y1="90" x2="600" y2="90" stroke="#1e293b" stroke-width="0.5"/>
+          <!-- Area -->
+          <path d="M0,90 L100,75 L200,80 L300,55 L400,40 L500,25 L600,20 L600,120 L0,120 Z" fill="url(#chartGrad)"/>
+          <!-- Line -->
+          <path d="M0,90 L100,75 L200,80 L300,55 L400,40 L500,25 L600,20" fill="none" stroke="#3b82f6" stroke-width="2"/>
+          <!-- Dots -->
+          <circle cx="0" cy="90" r="3" fill="#3b82f6"/>
+          <circle cx="100" cy="75" r="3" fill="#3b82f6"/>
+          <circle cx="200" cy="80" r="3" fill="#3b82f6"/>
+          <circle cx="300" cy="55" r="3" fill="#3b82f6"/>
+          <circle cx="400" cy="40" r="3" fill="#3b82f6"/>
+          <circle cx="500" cy="25" r="3" fill="#3b82f6"/>
+          <circle cx="600" cy="20" r="4" fill="#3b82f6" stroke="#0a0e17" stroke-width="2"/>
+          <!-- Labels -->
+          <text x="0" y="115" fill="#94a3b8" font-size="9" font-family="system-ui">Fév</text>
+          <text x="100" y="115" fill="#94a3b8" font-size="9" font-family="system-ui">Mar</text>
+          <text x="200" y="115" fill="#94a3b8" font-size="9" font-family="system-ui">Avr</text>
+          <text x="300" y="115" fill="#94a3b8" font-size="9" font-family="system-ui">Mai</text>
+          <text x="400" y="115" fill="#94a3b8" font-size="9" font-family="system-ui">Jun</text>
+          <text x="500" y="115" fill="#94a3b8" font-size="9" font-family="system-ui">Jul</text>
+          <text x="580" y="115" fill="#60a5fa" font-size="9" font-weight="700" font-family="system-ui">Aoû</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SECTION 9 ==================== -->
+<section id="s9">
+  <div class="section-header">
+    <div class="section-number">Section 09</div>
+    <h2>Roadmap d'implémentation</h2>
+    <p>4 phases sur 12 semaines. Chaque phase livre de la valeur immédiatement et est testable indépendamment.</p>
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <h4>Phase 1 — Fondations (Semaines 1-3)</h4>
+      <p>Entités TypeORM (plans, abonnements, factures, paiements). Migration SQL. CRUD API pour plans et abonnements. Middleware <code>requireModuleAccess</code>. Seed de 4 plans par défaut.</p>
+      <div class="duration">~3 semaines • 2 personnes</div>
+    </div>
+    <div class="timeline-item">
+      <h4>Phase 2 — Paiement (Semaines 4-6)</h4>
+      <p>Interface IPaymentAdapter + 3 adapters prioritaires (MTN MoMo, Orange Money, Wave). Webhook handler. Gestion des échecs de paiement. Dunning basique (3 relances email). Paiement manuel (virement/espèces).</p>
+      <div class="duration">~3 semaines • 2 personnes</div>
+    </div>
+    <div class="timeline-item">
+      <h4>Phase 3 — UI Propriétaire (Semaines 7-9)</h4>
+      <p>Page admin /admin/billing avec dashboard revenus (MRR, ARR, churn). Configuration des plans depuis l'interface (CRUD complet). Gestion des modules par plan (drag & drop). Suivi des établissements (filtres, export).</p>
+      <div class="duration">~3 semaines • 2 personnes</div>
+    </div>
+    <div class="timeline-item">
+      <h4>Phase 4 — Avancé (Semaines 10-12)</h4>
+      <p>Facturation de groupe (modèle hybride). Usage meters pour add-ons (SMS, stockage). Crédits et avoirs (credit notes). Conformité OHADA complète (numérotation séquentielle, TVA, export comptable). Paystack + Flutterwave adapters.</p>
+      <div class="duration">~3 semaines • 2 personnes</div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Phase</th><th>Livrables</th><th>Dépendances</th><th>Risque</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-info">P1</span> Fondations</td>
+          <td>6 entités, 15 routes API, middleware gating</td>
+          <td>Aucune (indépendant)</td>
+          <td><span class="badge badge-success">Faible</span></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-purple">P2</span> Paiement</td>
+          <td>3 adapters, webhook, dunning, paiement manuel</td>
+          <td>P1 (entités factures/paiements)</td>
+          <td><span class="badge badge-warning">Moyen</span> — APIs externes</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-warning">P3</span> UI</td>
+          <td>Dashboard, config plans, suivi établissements</td>
+          <td>P1 + P2 (APIs complètes)</td>
+          <td><span class="badge badge-success">Faible</span></td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-danger">P4</span> Avancé</td>
+          <td>Groupes, usage meters, OHADA, 2 adapters</td>
+          <td>P1 + P2 + P3</td>
+          <td><span class="badge badge-warning">Moyen</span> — complexité métier</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ==================== SECTION 10 ==================== -->
+<section id="s10">
+  <div class="section-header">
+    <div class="section-number">Section 10</div>
+    <h2>Recommandation finale</h2>
+    <p>Synthèse des décisions architecturales et prochaines étapes immédiates.</p>
+  </div>
+
+  <div class="alert alert-success">
+    <span class="alert-icon">✅</span>
+    <div>
+      <strong>Moteur custom</strong> — Construction interne avec TypeORM + Express. Pas de dépendance à Stripe/Lago. Contrôle total sur la logique SaaS et les adapters paiement Afrique.
+    </div>
+  </div>
+
+  <div class="card-grid" style="margin-top:1.5rem;">
+    <div class="card">
+      <h3>🏗️ Architecture</h3>
+      <p>5 couches : API Gateway → Subscription Engine → Payment Adapters → Ledger OHADA → UI Propriétaire. Middleware <code>requireModuleAccess</code> unifié remplace <code>requireModuleActive</code>.</p>
+    </div>
+    <div class="card">
+      <h3>💰 Monétisation</h3>
+      <p>4 plans (Gratuit/Standard/Premium/Entreprise). Modules en 3 catégories (critique/premium/add-on). Facturation mensuelle ou annuelle avec dégressivité groupe.</p>
+    </div>
+    <div class="card">
+      <h3>🌍 Paiement Afrique</h3>
+      <p>6 adapters (MTN MoMo, Orange Money, Wave, Paystack, Flutterwave, Manuel). Strategy pattern. XAF/XOF natifs. Webhooks asynchrones.</p>
+    </div>
+    <div class="card">
+      <h3>📊 Conformité</h3>
+      <p>OHADA : numérotation séquentielle, TVA 19.25%, journal comptable double entrée. Export CSV/PDF pour comptable externe.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text-strong);margin:2rem 0 1rem;font-size:1.1rem;">Prochaines étapes immédiates</h3>
+  <div class="flow">
+    <div class="flow-step" style="border-color:var(--success);">1. Valider ce rapport</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step" style="border-color:var(--accent);">2. Créer les 6 entités TypeORM</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step" style="border-color:var(--purple);">3. Migration SQL + seeds</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step" style="border-color:var(--warning);">4. CRUD API plans/abonnements</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step" style="border-color:var(--pink);">5. Middleware requireModuleAccess</div>
+  </div>
+
+  <div class="alert alert-info" style="margin-top:1.5rem;">
+    <span class="alert-icon">📎</span>
+    <div>
+      <strong>Fichiers de référence à consulter :</strong><br>
+      • <code>shared/src/config/config.registry.ts</code> — ModuleRegistry avec flag premium<br>
+      • <code>shared/src/enums/modules.enum.ts</code> — 38 modules, 7 catégories<br>
+      • <code>backend/src/modules/etablissement/entities/etablissement-config.entity.ts</code> — Champs abonnement existants<br>
+      • <code>backend/src/modules/groupes-etablissements/entities/</code> — Fondation groupes<br>
+      • <code>backend/src/modules/configuration/middlewares/module-active.middleware.ts</code> — Pattern à étendre
+    </div>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <div class="container">
+    <p><strong>eLISAschool</strong> — Rapport de conception : Abonnements, Facturation & Paiement</p>
+    <p style="margin-top:0.5rem;">Généré le 2026-08-07 • Version 1.0 • Auteur : franck arlos chendjou</p>
+    <p style="margin-top:0.5rem;color:var(--border);">Document de conception — Ne pas déployer en production sans validation</p>
+  </div>
+</footer>
+
+</body>
+</html>

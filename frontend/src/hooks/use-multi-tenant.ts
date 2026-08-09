@@ -101,13 +101,13 @@ export function useMultiTenantDetail<T>(
     return useQuery({
         queryKey: [key, 'detail', id],
         queryFn: async () => {
-            const response = await apiClient.get<{ success: boolean; data: T }>(endpoint);
+            const response = await apiClient.get<T>(endpoint);
             
-            if (!response.data?.success) {
+            if (!response.data) {
                 throw new Error('Entité non trouvée');
             }
 
-            return response.data.data;
+            return response.data;
         },
         enabled: isAuthenticated && !!id,
         staleTime: 3 * 60 * 1000, // 3 minutes
@@ -143,13 +143,13 @@ export function useMultiTenantCreate<TRequest, TResponse>(
 
     return useMutation({
         mutationFn: async (dto: TRequest) => {
-            const response = await apiClient.post<{ success: boolean; data: TResponse }>(endpoint, dto);
+            const response = await apiClient.post<TResponse>(endpoint, dto);
             
-            if (!response.data?.success) {
+            if (!response.success || response.data === undefined) {
                 throw new Error('Erreur lors de la création');
             }
 
-            return response.data.data;
+            return response.data;
         },
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: [key, 'list'] });
@@ -187,16 +187,16 @@ export function useMultiTenantUpdate<TRequest extends { id: string }, TResponse>
 
     return useMutation({
         mutationFn: async ({ id, ...dto }: TRequest) => {
-            const response = await apiClient.patch<{ success: boolean; data: TResponse }>(
+            const response = await apiClient.patch<TResponse>(
                 `${endpoint}/${id}`,
                 dto
             );
             
-            if (!response.data?.success) {
+            if (!response.success || response.data === undefined) {
                 throw new Error('Erreur lors de la modification');
             }
 
-            return response.data.data;
+            return response.data;
         },
         onSuccess: (data, variables) => {
             queryClient.invalidateQueries({ queryKey: [key, 'list'] });

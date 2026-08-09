@@ -1922,3 +1922,102 @@ Ce skill doit être **mis à jour** lorsque :
 3. Les modifications sont toujours communiquées à l'utilisateur
 
 > **Ce skill est vivant** — il reflète l'état actuel de la logique métier et évolue avec le projet.
+
+---
+
+## Rôles Plateforme et Scope (Panel Admin v7)
+
+### 6 rôles plateforme par défaut
+
+| Rôle | Permissions | Scope |
+|------|-------------|-------|
+| `SUPER_ADMIN` | `platform:*:*` | Global (tous établissements) |
+| `ADMINISTRATION_PLATEFORME` | `platform:administration:*` | Par groupe |
+| `SECURITE_PLATEFORME` | `platform:securite:*` | Par groupe |
+| `SUPPORT_PLATEFORME` | `platform:support:*` | Par groupe |
+| `COMMERCIAL_PLATEFORME` | `platform:commercial:*` | Par groupe |
+| `MONITORING_PLATEFORME` | `platform:monitoring:*` (read-only sur reste) | Par groupe |
+
+### Règles métier critiques
+
+1. **Protection dernier SUPER_ADMIN** — Impossible de supprimer/rétrograder le dernier SUPER_ADMIN
+2. **MFA obligatoire** — Grace period 24h, puis accès bloqué
+3. **Limite sessions** — Maximum 3 sessions simultanées par compte
+4. **Scope par groupe** — `groupeEtablissementIds` (uuid[]) sur table `utilisateurs`
+5. **Audit trail** — Toutes les actions sur les utilisateurs plateforme sont tracées
+
+### Role Builder (rôles personnalisés)
+
+- Entité `RolePlateforme` : `nom`, `description`, `estSysteme`, `permissions` (text[]), `scopeType` ('global' | 'groupe')
+- Rôles système (`estSysteme = true`) non supprimables
+- Permissions granulaires sélectionnables par module
+
+---
+
+## Identités & Memberships (Modèle C — Auth0 Internalisé)
+
+### Architecture Dual-Plane
+
+Le Modèle C reproduit les concepts Auth0 en interne (PostgreSQL + CASL) :
+
+```
+identites (source unique auth)
+├── email (unique), motDePasseHash (bcrypt), mfaActive, mfaSecret (chiffré AES-256-GCM)
+├── statut : ACTIF | SUSPENDU | DESACTIVE
+├── utilisateurs_plateforme (FK → identites, OneToOne)
+│   └── rolePlateforme : SUPER_ADMIN | ADMIN_PLATEFORME | SUPPORT | BILLING_MANAGER | ANALYST | AUDITOR
+├── memberships (pivot identité × contexte)
+│   ├── contexteType : PLATEFORME | ETABLISSEMENT
+│   ├── contexteId : uuid (etablissementId si ETABLISSEMENT, null si PLATEFORME)
+│   ├── role : RolePlateforme ou Role (selon contexte)
+│   └── permissionsCustom : jsonb (override RBAC)
+└── permissions_plateforme (registre ~40 permissions)
+    └── code unique (ex: platform:users:read), module, ordre
+```
+
+### 6 rôles plateforme (Modèle C)
+
+| Rôle | Permissions | Scope |
+|------|-------------|-------|
+| `SUPER_ADMIN` | Toutes (~40) | Global |
+| `ADMIN_PLATEFORME` | CRUD établissements, users, facturation, config | Global |
+| `SUPPORT` | Lecture monitoring, audit, users (read-only) | Global |
+| `BILLING_MANAGER` | Facturation, plans, abonnements, revenus | Global |
+| `ANALYST` | Dashboard, stats, exports (read-only + export) | Global |
+| `AUDITOR` | Audit, sécurité, lecture users/sessions | Global |
+
+### Règles métier identités
+
+1. **Identité unique par email** — Pas de doublons, migration depuis `utilisateurs`
+2. **Membership multiple** — Une identité peut avoir N memberships (PLATEFORME + ETABLISSEMENT)
+3. **Index unique composite** — `(identiteId, contexteType, contexteId)` sur memberships
+4. **Sessions LRU** — Limite 3 sessions par utilisateur plateforme (la plus ancienne supprimée)
+5. **JWT scopé** — Claims `platform` et `tenant` pour discrimination automatique par middleware
+
+### Permissions plateforme par module
+
+```
+PILOTAGE (5)    : dashboard:view, monitoring:view/manage, revenus:view/export
+TENANTS (8)     : etablissements:read/write/delete, groupes:read/write, abonnements:read/write/suspend
+FACTURATION (5) : facturation:read/manage, plans:read/write, tranches:manage
+TECHNIQUE (6)   : modules:manage, configuration:read/write, notifications:manage, providers:manage, cascade:manage
+IDENTITÉ (8)    : users:read/write/delete/suspend/invite, roles:read/write, sessions:view/revoke
+SÉCURITÉ (5)    : audit:read/export, webhooks:manage, actions-critiques:approve, impersonate
+```
+
+---
+
+## Cascade Paramètres UI (Panel Admin v7)
+
+### Modèle de résolution (4 niveaux)
+
+```
+Système (défaut code) → Global (tous établissements) → Groupe → Établissement (override)
+```
+
+### Règles de cascade
+
+1. **Priorité** : Établissement > Groupe > Global > Système
+2. **Override explicite** : Si un établissement a un override, la propagation globale ne l'affecte pas
+3. **Détection incohérences** : Alertes quand des overrides contradictoires sont détectés
+4. **Historique** : Timeline des modifications avec rollback possible

@@ -9,6 +9,7 @@ import type { ReactNode } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { queryClient } from '@/lib/query-client';
+import { AbilityProvider } from '@/lib/casl';
 
 interface ProvidersProps {
     children: ReactNode;
@@ -17,7 +18,9 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
     return (
         <QueryClientProvider client={queryClient}>
-            {children}
+            <AbilityProvider>
+                {children}
+            </AbilityProvider>
             <Toaster
                 position="top-right"
                 richColors

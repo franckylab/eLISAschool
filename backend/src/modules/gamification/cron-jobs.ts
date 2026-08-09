@@ -12,6 +12,7 @@
  */
 
 import cron from 'node-cron';
+import { scheduleWithLock } from '@common/services/cron-lock.service';
 import { logger } from '@common/utils/logger.util';
 import { getParamBoolean, getParamNumber } from '@modules/configuration/utils/config.helper';
 import { gamificationService } from './services/gamification.service';
@@ -29,7 +30,7 @@ export function initGamificationCronJobs(): void {
     // Cron Job 1: Attribution points assiduité journalière
     // Exécution: Tous les jours à 23h00
     // ========================================
-    cron.schedule('0 23 * * *', async () => {
+    scheduleWithLock('gamification-points-assiduite', '0 23 * * *', async () => {
         try {
             const enabled = await getParamBoolean('gamification.auto_attendance', { defaultValue: true });
             if (!enabled) {
@@ -80,7 +81,7 @@ export function initGamificationCronJobs(): void {
     // Cron Job 2: Reset des points hebdomadaires
     // Exécution: Tous les dimanches à 23h59
     // ========================================
-    cron.schedule('59 23 * * 0', async () => {
+    scheduleWithLock('gamification-reset-hebdo', '59 23 * * 0', async () => {
         try {
             logger.info('🎮 [Cron] Reset points hebdomadaires - Démarrage');
             
@@ -101,7 +102,7 @@ export function initGamificationCronJobs(): void {
     // Cron Job 3: Attribution badges automatiques
     // Exécution: Tous les jours à 00h00 (minuit)
     // ========================================
-    cron.schedule('0 0 * * *', async () => {
+    scheduleWithLock('gamification-badges-auto', '0 0 * * *', async () => {
         try {
             logger.info('🎮 [Cron] Vérification badges automatiques - Démarrage');
             
@@ -148,7 +149,7 @@ export function initGamificationCronJobs(): void {
     // Cron Job 4: Reset des points mensuels
     // Exécution: 1er du mois à 00h00
     // ========================================
-    cron.schedule('0 0 1 * *', async () => {
+    scheduleWithLock('gamification-reset-mensuel', '0 0 1 * *', async () => {
         try {
             logger.info('🎮 [Cron] Reset points mensuels - Démarrage');
             

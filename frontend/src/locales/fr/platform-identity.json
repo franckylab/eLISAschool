@@ -1,0 +1,159 @@
+{
+    "platformIdentity": {
+        "title": "Identité & Plateforme",
+        "subtitle": "Gestion des identités, rôles et permissions de la plateforme"
+    },
+    "platformUsers": {
+        "title": "Utilisateurs Plateforme",
+        "subtitle": "Gestion des comptes administrateur de la plateforme",
+        "invite": "Inviter un utilisateur",
+        "create": "Créer un utilisateur",
+        "edit": "Modifier l'utilisateur",
+        "suspend": "Suspendre",
+        "reactivate": "Réactiver",
+        "resetMfa": "Reset MFA",
+        "delete": "Supprimer",
+        "viewDetail": "Voir le détail",
+        "totalUsers": "Total utilisateurs",
+        "activeUsers": "Utilisateurs actifs",
+        "mfaEnabled": "MFA activé",
+        "pendingInvitations": "Invitations en attente",
+        "columns": {
+            "user": "Utilisateur",
+            "role": "Rôle",
+            "status": "Statut",
+            "lastAccess": "Dernier accès",
+            "mfa": "MFA",
+            "actions": "Actions"
+        },
+        "roles": {
+            "SUPER_ADMIN": "Super Admin",
+            "ADMIN_PLATEFORME": "Admin Plateforme",
+            "SUPPORT": "Support",
+            "BILLING_MANAGER": "Gestionnaire Facturation",
+            "ANALYST": "Analyste",
+            "AUDITOR": "Auditeur"
+        },
+        "status": {
+            "ACTIF": "Actif",
+            "SUSPENDU": "Suspendu",
+            "DESACTIVE": "Désactivé"
+        },
+        "filters": {
+            "search": "Rechercher par nom ou email...",
+            "role": "Filtrer par rôle",
+            "status": "Filtrer par statut",
+            "mfa": "Filtrer par MFA",
+            "all": "Tous",
+            "active": "Actifs uniquement"
+        },
+        "confirm": {
+            "suspend": "Êtes-vous sûr de vouloir suspendre cet utilisateur ?",
+            "reactivate": "Êtes-vous sûr de vouloir réactiver cet utilisateur ?",
+            "resetMfa": "Êtes-vous sûr de vouloir réinitialiser le MFA ? L'utilisateur devra le reconfigurer.",
+            "delete": "Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible."
+        },
+        "success": {
+            "created": "Utilisateur créé avec succès",
+            "updated": "Utilisateur mis à jour avec succès",
+            "suspended": "Utilisateur suspendu",
+            "reactivated": "Utilisateur réactivé",
+            "mfaReset": "MFA réinitialisé",
+            "deleted": "Utilisateur supprimé"
+        }
+    },
+    "platformUserDetail": {
+        "title": "Détail Utilisateur Plateforme",
+        "tabs": {
+            "infos": "Informations",
+            "sessions": "Sessions",
+            "audit": "Audit",
+            "delegation": "Délégation"
+        },
+        "infos": {
+            "email": "Email",
+            "role": "Rôle plateforme",
+            "createdAt": "Créé le",
+            "lastAccess": "Dernier accès",
+            "mfaStatus": "Statut MFA",
+            "enabled": "Activé",
+            "disabled": "Désactivé",
+            "memberships": "Memberships",
+            "noMemberships": "Aucune membership associée"
+        },
+        "sessions": {
+            "activeSessions": "Sessions actives",
+            "noSessions": "Aucune session active",
+            "revoke": "Révoquer",
+            "revokeAll": "Tout révoquer",
+            "ip": "Adresse IP",
+            "userAgent": "User-Agent",
+            "expiresAt": "Expire le",
+            "createdAt": "Créée le"
+        },
+        "audit": {
+            "history": "Historique des actions",
+            "noHistory": "Aucune action enregistrée",
+            "action": "Action",
+            "date": "Date",
+            "ip": "IP"
+        },
+        "delegation": {
+            "impersonate": "Impersonate",
+            "impersonateDesc": "Se connecter en tant que cet utilisateur (futur)",
+            "comingSoon": "Fonctionnalité à venir"
+        }
+    },
+    "platformPermissions": {
+        "title": "Matrice des Permissions",
+        "subtitle": "Gestion granulaire des permissions par rôle plateforme",
+        "permission": "Permission",
+        "granted": "Accordée",
+        "denied": "Refusée",
+        "pending": "En attente",
+        "changes": "modif.",
+        "unsavedChanges": "Modifications non sauvegardées",
+        "saveRole": "Sauvegarder",
+        "summary": "{{total}} permissions · {{roles}} rôles · {{modules}} modules",
+        "modules": {
+            "pilotage": "Pilotage",
+            "tenants": "Tenants",
+            "facturation": "Facturation",
+            "technique": "Technique",
+            "identite": "Identité",
+            "securite": "Sécurité"
+        }
+    },
+    "platformSessions": {
+        "title": "Sessions & Activité",
+        "subtitle": "Gestion des sessions actives de la plateforme",
+        "activeSessions": "Sessions actives",
+        "uniqueUsers": "Utilisateurs uniques",
+        "maxPerUser": "Max / utilisateur",
+        "revokeAll": "Tout révoquer",
+        "revoke": "Révoquer",
+        "noSessions": "Aucune session active",
+        "columns": {
+            "user": "Utilisateur",
+            "ip": "Adresse IP",
+            "userAgent": "User-Agent",
+            "createdAt": "Créée le",
+            "expiresAt": "Expire le",
+            "actions": "Actions"
+        },
+        "confirm": {
+            "revoke": "Êtes-vous sûr de vouloir révoquer cette session ?",
+            "revokeAll": "Êtes-vous sûr de vouloir révoquer TOUTES les sessions ? Tous les utilisateurs seront déconnectés."
+        },
+        "success": {
+            "revoked": "Session révoquée",
+            "allRevoked": "Toutes les sessions ont été révoquées"
+        }
+    },
+    "navigation": {
+        "rolesPlateforme": "Rôles plateforme",
+        "sessionsActivite": "Sessions & activité",
+        "utilisateursPlateforme": "Utilisateurs plateforme",
+        "matricePermissions": "Matrice permissions"
+    }
+}

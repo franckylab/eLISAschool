@@ -2751,3 +2751,37 @@ const handleToggleFullscreen = useCallback(() => {
 - **`--color-secondaire`** : défini dans globals.css — light `#e5e7eb` (gray-200), dark `#334155` (slate-700). Utilisé par ElisaButton variant `secondary`.
 - **`--color-dominante`**, **`--color-accent`**, **`--color-texte`**, **`--color-bordure`**, **`--color-fond`** : tous définis en light ET dark dans globals.css, surchargés au runtime par `theme-utils.ts` pour dominante/accent.
 - **Vérification** : avant d'utiliser un alias FR (`--color-xxx`) dans un composant, TOUJOURS vérifier qu'il est défini dans globals.css (light + dark).
+
+## 37. Panel Administration Plateforme (Control Plane)
+
+### Architecture Routes
+- **Layout** : `frontend/src/routes/platform.tsx` — guard `requireRole(['SUPER_ADMIN'])` dans `beforeLoad`, hérité par TOUTES les sous-routes
+- **11 fichiers de routes** : `platform.{dashboard,etablissements,facturation,modules,monitoring,audit,approbations,notifications-config,configuration,providers}.tsx`
+- **Sidebar dédiée** : `frontend/src/components/layout/platform-sidebar.tsx` — 10 items répartis en 3 groupes (Principal, Gestion, Système)
+- **Composants** : `frontend/src/features/admin/components/` — tous les sous-composants du panel
+
+### Conventions CSS — Zéro classe shadcn
+- **TOUJOURS** utiliser les CSS vars eLISAschool dans les composants admin — JAMAIS de classes shadcn (`text-muted-foreground`, `bg-primary`, `bg-background`, `bg-muted`, `border-border`, etc.)
+- **Mapping obligatoire** :
+  - `text-muted-foreground` → `text-[var(--color-texte-muted)]`
+  - `bg-background` → `bg-[var(--color-surface)]`
+  - `bg-muted` → `bg-[var(--color-surface-hover)]`
+  - `bg-primary text-primary-foreground` → `style={{ backgroundColor: 'var(--color-dominant-600)', color: '#fff' }}`
+  - `border-border` → `border-[var(--color-bordure)]`
+  - `hover:bg-muted` → `hover:bg-[var(--color-surface-hover)]`
+  - `bg-primary/10` → `style={{ backgroundColor: 'color-mix(in srgb, var(--color-dominant-600) 10%, transparent)' }}`
+
+### i18n — Namespace `admin`
+- **TOUJOURS** `useTranslation('admin')` dans les composants platform — jamais de texte en dur
+- **Fichiers** : `locales/{fr,en}/admin.json` — parité de clés FR/EN obligatoire
+- **Sections** : `navigation.*`, `sidebar.*`, `dashboard.*`, `plans.*`, `abonnements.*`, `facturesPage.*`, `provider.*`, `webhooks.*`, `revenus.*`, `usage.*`, `monitoring.*`, `configuration.*`, `audit.*`, `etablissementForm.*`, `planForm.*`
+
+### Composants réutilisables admin
+- **`ui-platform.tsx`** : `StatCard`, `StatusBadge`, `ConfirmAction`, `EmptyState` — utilisés dans toutes les pages platform
+- **`monitoring-sections.tsx`** : 7 sous-composants extraits (HealthChecks, MetricsCards, GoldenSignals, Alertes, NoisyNeighbor, Realtime, ExportButton)
+- **`generation-ui.tsx`** : `GenerationStatsCard`, `GenerationResultBreakdown`, `MiniBarChart` — partagés entre modals de génération
+
+### TODOs connus (non bloquants)
+1. `plan-form-modal.tsx` : synchronisation des tranches en mode édition
+2. `abonnement-detail.tsx` : modal de changement de plan (action)
+3. `abonnement-detail.tsx` : API de résiliation d'abonnement

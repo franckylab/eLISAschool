@@ -19,10 +19,10 @@ interface TokenPair {
 }
 
 interface LoginResponseData {
-    accessToken: string;
-    refreshToken: string;
-    expiresIn: number;
-    utilisateur: {
+    accessToken?: string;
+    refreshToken?: string;
+    expiresIn?: number;
+    utilisateur?: {
         id: string;
         email: string;
         matricule: string;
@@ -49,6 +49,9 @@ interface LoginResponseData {
     }>;
     requiereSelectionEtablissement?: boolean;
     tokenTemporaire?: boolean;
+    // MFA — Phase P1 v6
+    mfaRequired?: boolean;
+    mfaToken?: string;
 }
 
 export interface PreLoginResponse {
@@ -501,7 +504,7 @@ class ApiClient {
             method: 'POST',
             body: JSON.stringify({ identifiant, motDePasse }),
         });
-        if (response.data) {
+        if (response.data && !response.data.mfaRequired && response.data.accessToken && response.data.refreshToken) {
             this.setTokens({
                 accessToken: response.data.accessToken,
                 refreshToken: response.data.refreshToken,
@@ -539,13 +542,72 @@ class ApiClient {
             method: 'POST',
             body: JSON.stringify({ etablissementId }),
         });
-        if (response.data) {
+        if (response.data && response.data.accessToken && response.data.refreshToken) {
             this.setTokens({
                 accessToken: response.data.accessToken,
                 refreshToken: response.data.refreshToken,
             });
         }
         return response.data!;
+    }
+
+    // ─── MFA (Phase P1 v6) ──────────────────────
+
+    /**
+     * Vérifie un code MFA et finalise la connexion.
+     */
+    async verifyMFA(mfaToken: string, code: string): Promise<LoginResponseData> {
+        const response = await this.request<ApiResponse<LoginResponseData>>('/api/auth/mfa/verify', {
+            method: 'POST',
+            body: JSON.stringify({ mfaToken, code }),
+        });
+        if (response.data && response.data.accessToken && response.data.refreshToken) {
+            this.setTokens({
+                accessToken: response.data.accessToken,
+                refreshToken: response.data.refreshToken,
+            });
+        }
+        return response.data!;
+    }
+
+    /**
+     * Récupère le statut MFA de l'utilisateur connecté.
+     */
+    async getMFAStatus(): Promise<{ enabled: boolean; setupComplete: boolean }> {
+        const response = await this.request<ApiResponse<{ enabled: boolean; setupComplete: boolean }>>('/api/auth/mfa/status', {
+            method: 'GET',
+        });
+        return response.data!;
+    }
+
+    /**
+     * Initie le setup MFA (retourne secret, QR code URL, backup codes).
+     */
+    async setupMFA(): Promise<{ secret: string; qrCodeUrl: string; backupCodes: string[] }> {
+        const response = await this.request<ApiResponse<{ secret: string; qrCodeUrl: string; backupCodes: string[] }>>('/api/auth/mfa/setup', {
+            method: 'POST',
+        });
+        return response.data!;
+    }
+
+    /**
+     * Active le MFA après vérification du premier code.
+     */
+    async activateMFA(code: string): Promise<void> {
+        await this.request<ApiResponse<null>>('/api/auth/mfa/activate', {
+            method: 'POST',
+            body: JSON.stringify({ code }),
+        });
+    }
+
+    /**
+     * Désactive le MFA (nécessite un code TOTP de confirmation).
+     */
+    async disableMFA(code: string): Promise<void> {
+        await this.request<ApiResponse<null>>('/api/auth/mfa/disable', {
+            method: 'POST',
+            body: JSON.stringify({ code }),
+        });
     }
 
     /**

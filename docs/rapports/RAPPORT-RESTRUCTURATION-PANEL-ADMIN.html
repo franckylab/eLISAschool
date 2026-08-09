@@ -1,0 +1,1891 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport — Restructuration Panel Admin eLISAschool</title>
+<style>
+  :root {
+    --dominant: #28a745;
+    --dominant-light: #e8f5e9;
+    --dominant-dark: #1b5e20;
+    --accent: #007bff;
+    --accent-light: #e3f2fd;
+    --danger: #dc3545;
+    --danger-light: #fce4ec;
+    --warning: #f59e0b;
+    --warning-light: #fff8e1;
+    --surface: #ffffff;
+    --surface-alt: #f8fafc;
+    --surface-hover: #f1f5f9;
+    --text: #1a1a2e;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.1), 0 8px 32px rgba(0,0,0,0.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--surface-alt);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+  /* ===== HERO ===== */
+  .hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white;
+    padding: 80px 0 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(40,167,69,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(0,123,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero-content { position: relative; z-index: 1; }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 24px;
+    backdrop-filter: blur(8px);
+  }
+  .hero-badge .dot { width: 8px; height: 8px; background: var(--dominant); border-radius: 50%; }
+  .hero h1 { font-size: 42px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 16px; line-height: 1.15; }
+  .hero h1 span { background: linear-gradient(135deg, var(--dominant), #4ade80); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero p { font-size: 18px; color: rgba(255,255,255,0.7); max-width: 640px; line-height: 1.7; }
+  .hero-meta {
+    display: flex;
+    gap: 32px;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    font-size: 14px;
+    color: rgba(255,255,255,0.5);
+  }
+  .hero-meta strong { color: rgba(255,255,255,0.9); }
+
+  /* ===== SECTIONS ===== */
+  .section { padding: 64px 0; }
+  .section + .section { border-top: 1px solid var(--border); }
+  .section-header { margin-bottom: 40px; }
+  .section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--dominant);
+    margin-bottom: 12px;
+  }
+  .section-label .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: var(--dominant);
+    color: white;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .section h2 { font-size: 28px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 8px; }
+  .section h3 { font-size: 20px; font-weight: 600; margin: 32px 0 16px; }
+  .section p.lead { font-size: 16px; color: var(--text-secondary); max-width: 720px; }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+  }
+  .card + .card { margin-top: 16px; }
+  .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .card-icon.green { background: var(--dominant-light); color: var(--dominant); }
+  .card-icon.blue { background: var(--accent-light); color: var(--accent); }
+  .card-icon.red { background: var(--danger-light); color: var(--danger); }
+  .card-icon.amber { background: var(--warning-light); color: var(--warning); }
+  .card-icon.purple { background: #f3e8ff; color: #7c3aed; }
+  .card h4 { font-size: 16px; font-weight: 600; }
+  .card p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+  /* ===== GRID ===== */
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+
+  /* ===== SCORE ===== */
+  .score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 24px 0; }
+  .score-card { text-align: center; padding: 24px 16px; }
+  .score-value { font-size: 36px; font-weight: 800; }
+  .score-value.green { color: var(--dominant); }
+  .score-value.red { color: var(--danger); }
+  .score-value.amber { color: var(--warning); }
+  .score-value.blue { color: var(--accent); }
+  .score-label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+  /* ===== MOCKUP CONTAINER ===== */
+  .mockup-wrapper {
+    margin: 32px 0;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+  }
+  .mockup-toolbar {
+    background: #1e293b;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mockup-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .mockup-dot.r { background: #ef4444; }
+  .mockup-dot.y { background: #f59e0b; }
+  .mockup-dot.g { background: #22c55e; }
+  .mockup-url {
+    flex: 1;
+    margin-left: 12px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .mockup-body { background: #f1f5f9; min-height: 400px; }
+
+  /* ===== SIDEBAR MOCKUP ===== */
+  .sidebar-mock {
+    display: flex;
+    height: 520px;
+  }
+  .sidebar-nav {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    padding: 16px 0;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .sidebar-logo {
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sidebar-logo-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--dominant), #4ade80);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 800;
+    font-size: 14px;
+  }
+  .sidebar-logo-text { font-size: 15px; font-weight: 700; color: var(--text); }
+  .sidebar-logo-badge {
+    font-size: 9px;
+    background: var(--danger);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: auto;
+  }
+  .sidebar-group-label {
+    padding: 8px 20px 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-muted);
+  }
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 20px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: default;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  .sidebar-item.active {
+    background: var(--dominant-light);
+    color: var(--dominant-dark);
+    border-left-color: var(--dominant);
+    font-weight: 600;
+  }
+  .sidebar-item .si-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    opacity: 0.7;
+  }
+  .sidebar-item.active .si-icon { opacity: 1; }
+  .sidebar-item .si-badge {
+    margin-left: auto;
+    font-size: 10px;
+    background: var(--danger-light);
+    color: var(--danger);
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+  .sidebar-main {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+  }
+  .sidebar-main-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .sidebar-main-title { font-size: 18px; font-weight: 700; }
+  .sidebar-main-actions { display: flex; gap: 8px; }
+  .mock-btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: white;
+    color: var(--text-secondary);
+    cursor: default;
+  }
+  .mock-btn.primary { background: var(--dominant); color: white; border-color: var(--dominant); }
+  .mock-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .mock-kpi {
+    background: white;
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid var(--border);
+  }
+  .mock-kpi-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  .mock-kpi-value { font-size: 22px; font-weight: 800; }
+  .mock-kpi-trend { font-size: 10px; color: var(--dominant); font-weight: 600; }
+  .mock-table {
+    width: 100%;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .mock-table-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 80px;
+    padding: 10px 16px;
+    background: var(--surface-alt);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .mock-table-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 80px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    align-items: center;
+  }
+  .mock-table-row:last-child { border-bottom: none; }
+  .mock-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .mock-status.active { background: var(--dominant-light); color: var(--dominant-dark); }
+  .mock-status.warning { background: var(--warning-light); color: #92400e; }
+  .mock-status.danger { background: var(--danger-light); color: var(--danger); }
+
+  /* ===== HEADER MOCKUP ===== */
+  .header-mock {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--dominant), #4ade80);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .header-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--text-muted);
+    cursor: default;
+  }
+  .header-search {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--text-muted);
+    width: 200px;
+  }
+
+  /* ===== DROPDOWN MOCKUP ===== */
+  .dropdown-mock-wrapper {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px;
+  }
+  .dropdown-mock {
+    position: relative;
+    width: 300px;
+  }
+  .dropdown-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: default;
+  }
+  .dropdown-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 280px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    z-index: 10;
+  }
+  .dropdown-user {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .dropdown-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--dominant), #4ade80);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .dropdown-user-info { flex: 1; }
+  .dropdown-user-name { font-size: 14px; font-weight: 600; }
+  .dropdown-user-email { font-size: 11px; color: var(--text-muted); }
+  .dropdown-items { padding: 6px; }
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: default;
+  }
+  .dropdown-item:hover { background: var(--surface-alt); }
+  .dropdown-item.highlight {
+    background: var(--dominant-light);
+    color: var(--dominant-dark);
+    font-weight: 600;
+    border: 1px solid rgba(40,167,69,0.2);
+  }
+  .dropdown-item .di-icon { font-size: 15px; width: 20px; text-align: center; }
+  .dropdown-item .di-badge {
+    margin-left: auto;
+    font-size: 9px;
+    background: var(--dominant);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+  .dropdown-sep { height: 1px; background: var(--border); margin: 4px 8px; }
+  .dropdown-item.danger { color: var(--danger); }
+
+  /* ===== PARAM CASCADE MOCKUP ===== */
+  .param-cascade {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    margin: 24px 0;
+  }
+  .param-level {
+    flex: 1;
+    padding: 20px;
+    border: 1px solid var(--border);
+    background: white;
+    position: relative;
+  }
+  .param-level:first-child { border-radius: 12px 0 0 12px; }
+  .param-level:last-child { border-radius: 0 12px 12px 0; }
+  .param-level-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .param-level-label .pl-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .param-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .param-row:last-child { border-bottom: none; }
+  .param-toggle {
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+    position: relative;
+    cursor: default;
+  }
+  .param-toggle.on { background: var(--dominant); }
+  .param-toggle.off { background: #cbd5e1; }
+  .param-toggle::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: white;
+    position: absolute;
+    top: 2px;
+    transition: left 0.2s;
+  }
+  .param-toggle.on::after { left: 18px; }
+  .param-toggle.off::after { left: 2px; }
+  .param-arrow {
+    width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .param-override-badge {
+    font-size: 9px;
+    background: var(--warning-light);
+    color: #92400e;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  /* ===== COMPARISON TABLE ===== */
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 13px;
+  }
+  .comparison-table th {
+    text-align: left;
+    padding: 12px 16px;
+    background: var(--surface-alt);
+    border-bottom: 2px solid var(--border);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+  }
+  .comparison-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .comparison-table tr:last-child td { border-bottom: none; }
+  .check { color: var(--dominant); font-weight: 700; }
+  .cross { color: var(--danger); font-weight: 700; }
+
+  /* ===== TIMELINE ===== */
+  .timeline { position: relative; padding-left: 32px; margin: 24px 0; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-item { position: relative; padding-bottom: 24px; }
+  .timeline-item:last-child { padding-bottom: 0; }
+  .timeline-dot {
+    position: absolute;
+    left: -32px;
+    top: 2px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+    color: white;
+    z-index: 1;
+  }
+  .timeline-dot.green { background: var(--dominant); }
+  .timeline-dot.blue { background: var(--accent); }
+  .timeline-dot.amber { background: var(--warning); }
+  .timeline-dot.red { background: var(--danger); }
+  .timeline-dot.purple { background: #7c3aed; }
+  .timeline-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .timeline-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  .timeline-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .timeline-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    background: var(--surface-alt);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
+
+  /* ===== PROPOSAL BOX ===== */
+  .proposal {
+    border-radius: var(--radius);
+    padding: 24px;
+    margin: 20px 0;
+    position: relative;
+  }
+  .proposal.a { background: linear-gradient(135deg, #e8f5e9, #f1f8e9); border: 1px solid #a5d6a7; }
+  .proposal.b { background: linear-gradient(135deg, #e3f2fd, #e8eaf6); border: 1px solid #90caf9; }
+  .proposal.c { background: linear-gradient(135deg, #f3e8ff, #ede7f6); border: 1px solid #ce93d8; }
+  .proposal-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+  .proposal.a .proposal-label { background: var(--dominant); color: white; }
+  .proposal.b .proposal-label { background: var(--accent); color: white; }
+  .proposal.c .proposal-label { background: #7c3aed; color: white; }
+  .proposal h4 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+  .proposal p { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; }
+  .proposal ul { padding-left: 20px; font-size: 13px; color: var(--text-secondary); }
+  .proposal ul li { margin-bottom: 4px; }
+  .proposal .stars {
+    display: inline-flex;
+    gap: 2px;
+    margin-left: 8px;
+    color: var(--warning);
+    font-size: 14px;
+  }
+
+  /* ===== ALERT BOX ===== */
+  .alert {
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 16px 0;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 14px;
+  }
+  .alert.info { background: var(--accent-light); border: 1px solid #90caf9; color: #1565c0; }
+  .alert.warn { background: var(--warning-light); border: 1px solid #ffe082; color: #92400e; }
+  .alert.success { background: var(--dominant-light); border: 1px solid #a5d6a7; color: var(--dominant-dark); }
+  .alert.danger { background: var(--danger-light); border: 1px solid #ef9a9a; color: #c62828; }
+  .alert-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+  /* ===== BEST PRACTICES ===== */
+  .bp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 24px 0; }
+  .bp-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .bp-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+  }
+  .bp-card.stripe::before { background: linear-gradient(90deg, #635bff, #8b85ff); }
+  .bp-card.vercel::before { background: linear-gradient(90deg, #000, #333); }
+  .bp-card.linear::before { background: linear-gradient(90deg, #5e6ad2, #8b8ff5); }
+  .bp-card.notion::before { background: linear-gradient(90deg, #000, #555); }
+  .bp-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .bp-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; }
+  .bp-items { list-style: none; }
+  .bp-items li { font-size: 12px; padding: 4px 0; display: flex; align-items: center; gap: 6px; color: var(--text-secondary); }
+  .bp-items li::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--dominant); flex-shrink: 0; }
+
+  /* ===== USER MGMT MOCKUP ===== */
+  .user-mgmt-mock {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .user-mgmt-toolbar {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .user-mgmt-search {
+    flex: 1;
+    max-width: 300px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    background: var(--surface-alt);
+  }
+  .user-mgmt-filter {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    background: white;
+    color: var(--text-secondary);
+  }
+  .user-row {
+    display: grid;
+    grid-template-columns: 40px 2fr 1.5fr 1fr 1fr 80px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    font-size: 13px;
+  }
+  .user-row.header {
+    background: var(--surface-alt);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .user-avatar-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    background: #1a1a2e;
+    color: rgba(255,255,255,0.5);
+    padding: 40px 0;
+    text-align: center;
+    font-size: 13px;
+  }
+  .footer strong { color: rgba(255,255,255,0.8); }
+
+  /* ===== MISC ===== */
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .tag.green { background: var(--dominant-light); color: var(--dominant-dark); }
+  .tag.blue { background: var(--accent-light); color: #1565c0; }
+  .tag.red { background: var(--danger-light); color: #c62828; }
+  .tag.amber { background: var(--warning-light); color: #92400e; }
+  .tag.purple { background: #f3e8ff; color: #7c3aed; }
+
+  .divider { height: 1px; background: var(--border); margin: 32px 0; }
+  .spacer { height: 24px; }
+  .text-center { text-align: center; }
+  .mt-16 { margin-top: 16px; }
+  .mt-24 { margin-top: 24px; }
+  .mb-16 { margin-bottom: 16px; }
+  .mb-24 { margin-bottom: 24px; }
+
+  .flow-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin: 24px 0;
+    flex-wrap: wrap;
+  }
+  .flow-box {
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    min-width: 120px;
+  }
+  .flow-arrow { font-size: 20px; color: var(--text-muted); padding: 0 8px; }
+
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 28px; }
+    .hero-meta { flex-direction: column; gap: 12px; }
+    .sidebar-mock { flex-direction: column; height: auto; }
+    .sidebar-nav { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+    .mock-kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .param-cascade { flex-direction: column; }
+    .param-level { border-radius: 12px !important; }
+    .param-level + .param-level { margin-top: 8px; }
+    .param-arrow { transform: rotate(90deg); padding: 8px 0; }
+    .dropdown-mock-wrapper { flex-direction: column; align-items: center; }
+    .mock-table-header, .mock-table-row { grid-template-columns: 1fr 1fr 80px; }
+    .mock-table-header > :nth-child(3),
+    .mock-table-header > :nth-child(4),
+    .mock-table-row > :nth-child(3),
+    .mock-table-row > :nth-child(4) { display: none; }
+    .user-row { grid-template-columns: 32px 1fr 1fr 60px; }
+    .user-row > :nth-child(3), .user-row > :nth-child(5) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== HERO ==================== -->
+<header class="hero">
+  <div class="container hero-content">
+    <div class="hero-badge"><span class="dot"></span> Rapport d'architecture v7.1</div>
+    <h1>Restructuration du <span>Panel Admin</span><br>eLISAschool</h1>
+    <p>Analyse approfondie, restructuration de la navigation, activation du header plateforme, gestion des utilisateurs plateforme, parametres multi-niveaux et feuille de route d'implementation.</p>
+    <div class="hero-meta">
+      <div><strong>Date</strong><br>2026-08-09</div>
+      <div><strong>Perimetre</strong><br>Control Plane — SUPER_ADMIN</div>
+      <div><strong>Score actuel</strong><br>5.5 / 10</div>
+      <div><strong>Cible</strong><br>9.0 / 10</div>
+    </div>
+  </div>
+</header>
+
+<!-- ==================== 1. ETAT DES LIEUX ==================== -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label"><span class="num">1</span> Diagnostic</div>
+      <h2>Etat des lieux du panel actuel</h2>
+      <p class="lead">Audit structurel du panel d'administration plateforme tel qu'implemente aujourd'hui. 13 fichiers de routes, 20 composants feature, 12 items de navigation repartis en 3 groupes.</p>
+    </div>
+
+    <div class="score-grid">
+      <div class="card score-card">
+        <div class="score-value amber">5.5</div>
+        <div class="score-label">Score global actuel /10</div>
+      </div>
+      <div class="card score-card">
+        <div class="score-value blue">12</div>
+        <div class="score-label">Items de navigation</div>
+      </div>
+      <div class="card score-card">
+        <div class="score-value red">22</div>
+        <div class="score-label">Failles identifiees</div>
+      </div>
+      <div class="card score-card">
+        <div class="score-value green">9.0</div>
+        <div class="score-label">Score cible /10</div>
+      </div>
+    </div>
+
+    <h3>Architecture actuelle — Sidebar plateforme</h3>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon green">P</div>
+          <div><h4>Principal (3 items)</h4></div>
+        </div>
+        <p>Dashboard, Etablissements, Facturation — Le coeur operationnel de la plateforme. Navigation vers les fonctions les plus utilisees.</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon blue">G</div>
+          <div><h4>Gestion (5 items)</h4></div>
+        </div>
+        <p>Modules, Monitoring, Audit, Approbations, Groupes — Outils de pilotage et de controle. Surface heterogene melant technique et metier.</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon purple">S</div>
+          <div><h4>Systeme (4 items)</h4></div>
+        </div>
+        <p>Notifications, Permissions, Configuration, Providers — Administration technique. Regroupe des fonctions tres differentes (RBAC, providers paiement, params).</p>
+      </div>
+    </div>
+
+    <h3>Problemes identifies</h3>
+    <div class="grid-2">
+      <div class="alert danger">
+        <span class="alert-icon">1</span>
+        <div><strong>Pas de lien "Administration"</strong> dans le dropdown profil du header. L'acces plateforme est uniquement via la sidebar tenant — pas de decouverte naturelle.</div>
+      </div>
+      <div class="alert warn">
+        <span class="alert-icon">2</span>
+        <div><strong>Header plateforme inexistant</strong> — Le layout platform utilise une simple banniere ("Espace Plateforme") au lieu du composant Header complet (recherche, notifications, profil).</div>
+      </div>
+      <div class="alert warn">
+        <span class="alert-icon">3</span>
+        <div><strong>Pas de gestion utilisateurs plateforme</strong> — Aucun CRUD pour les comptes SUPER_ADMIN / GESTIONNAIRE_GROUPES. Creation manuelle en base.</div>
+      </div>
+      <div class="alert info">
+        <span class="alert-icon">4</span>
+        <div><strong>Parametres mono-niveau en UI</strong> — Le backend supporte la cascade (global + override etablissement) mais l'UI ne visualise pas la cascade ni les overrides.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 2. BENCHMARK ==================== -->
+<section class="section" style="background: white;">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label"><span class="num">2</span> Benchmark</div>
+      <h2>Meilleures pratiques — SaaS Enterprise</h2>
+      <p class="lead">Analyse des patterns des meilleures plateformes SaaS : Stripe, Vercel, Linear, Notion. Principes extraits et applicabilite a eLISAschool.</p>
+    </div>
+
+    <div class="bp-grid">
+      <div class="bp-card stripe">
+        <div class="bp-name">Stripe Dashboard</div>
+        <div class="bp-desc">Reference absolue pour les panels admin enterprise</div>
+        <ul class="bp-items">
+          <li>Widgets personnalisables par utilisateur</li>
+          <li>Mode simulation (test sans impact reel)</li>
+          <li>Navigation par workflow, pas par structure DB</li>
+          <li>Recherche globale omnipresente (Cmd+K)</li>
+          <li>Breadcrumbs interactifs contextuels</li>
+        </ul>
+      </div>
+      <div class="bp-card vercel">
+        <div class="bp-name">Vercel Dashboard</div>
+        <div class="bp-desc">Densite d'information et performance</div>
+        <ul class="bp-items">
+          <li>Haute densite — beaucoup d'info sans scroll</li>
+          <li>Transitions instantanees entre sections</li>
+          <li>Health checks en temps reel visibles</li>
+          <li>Scope switcher en haut (equivalent EtablissementSwitcher)</li>
+          <li>Logs et activites en flux continu</li>
+        </ul>
+      </div>
+      <div class="bp-card linear">
+        <div class="bp-name">Linear</div>
+        <div class="bp-desc">Navigation keyboard-first et rapidite</div>
+        <ul class="bp-items">
+          <li>Raccourcis clavier sur toutes les actions</li>
+          <li>Command palette (Cmd+K) comme navigation principale</li>
+          <li>Filtres combinables en URL (deep linking)</li>
+          <li>Progressive disclosure — complexite cachee</li>
+          <li>Animations subtiles mais informatives</li>
+        </ul>
+      </div>
+      <div class="bp-card notion">
+        <div class="bp-name">Notion Admin</div>
+        <div class="bp-desc">Gestion d'equipe et permissions</div>
+        <ul class="bp-items">
+          <li>Matrice de permissions visuelle intuitive</li>
+          <li>Roles predefinis + personnalisation granulaire</li>
+          <li>Audit trail avec diff visuel</li>
+          <li>SSO/MFA setup guide integre</li>
+          <li>Activity feed avec filtres par type</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="alert success mt-24">
+      <span class="alert-icon">&#10003;</span>
+      <div><strong>Principes retenus pour eLISAschool :</strong> Navigation par workflow (Stripe), densite d'information (Vercel), keyboard-first (Linear), gestion utilisateurs visuelle (Notion). Command palette deja implementee — a enrichir.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 3. REORGANISATION SIDEBAR ==================== -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label"><span class="num">3</span> Restructuration</div>
+      <h2>Nouvelle architecture de navigation</h2>
+      <p class="lead">Reorganisation de la sidebar plateforme en 4 groupes logiques bases sur le workflow SUPER_ADMIN : Pilotage > Tenant > Technique > Securite.</p>
+    </div>
+
+    <h3>Proposition A — Organisation par workflow (Recommandee)</h3>
+    <div class="proposal a">
+      <div class="proposal-label">Proposition A <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span></div>
+      <h4>4 groupes logiques, 14 items — alignes sur le flux de travail SUPER_ADMIN</h4>
+      <p>Regrouper par intention : "Je veux piloter" > "Je veux gerer un tenant" > "Je veux configurer le systeme" > "Je veux securiser".</p>
+      <ul>
+        <li><strong>Pilotage (3)</strong> : Dashboard, Monitoring, Revenus</li>
+        <li><strong>Tenants (4)</strong> : Etablissements, Groupes, Facturation, Abonnements</li>
+        <li><strong>Technique (4)</strong> : Modules, Configuration, Notifications, Providers</li>
+        <li><strong>Securite (3)</strong> : Utilisateurs plateforme, Permissions, Audit & Approbations</li>
+      </ul>
+    </div>
+
+    <h3>Proposition B — Organisation par domaine metier</h3>
+    <div class="proposal b">
+      <div class="proposal-label">Proposition B <span class="stars">&#9733;&#9733;&#9733;&#9733;</span></div>
+      <h4>3 groupes, 14 items — fidele a la structure actuelle mais enrichie</h4>
+      <p>Conserver la logique 3 groupes mais redistribuer les items de facon plus coherente.</p>
+      <ul>
+        <li><strong>Vue d'ensemble (3)</strong> : Dashboard, Monitoring, Audit</li>
+        <li><strong>Gestion Tenants (5)</strong> : Etablissements, Groupes, Facturation, Abonnements, Modules</li>
+        <li><strong>Administration (6)</strong> : Utilisateurs plateforme, Permissions, Configuration, Notifications, Providers, Approbations</li>
+      </ul>
+    </div>
+
+    <h3>Proposition C — Organisation minimaliste (style Linear)</h3>
+    <div class="proposal c">
+      <div class="proposal-label">Proposition C <span class="stars">&#9733;&#9733;&#9733;</span></div>
+      <h4>2 groupes, 10 items — densite maximale, command palette en complement</h4>
+      <p>Reduire la sidebar au minimum. Les fonctions secondaires accessibles via Cmd+K.</p>
+      <ul>
+        <li><strong>Principal (5)</strong> : Dashboard, Etablissements, Facturation, Monitoring, Audit</li>
+        <li><strong>Systeme (5)</strong> : Modules, Configuration, Permissions, Providers, Parametres</li>
+      </ul>
+    </div>
+
+    <h3>Comparatif des 3 propositions</h3>
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Critere</th>
+          <th>A — Workflow</th>
+          <th>B — Domaine</th>
+          <th>C — Minimaliste</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Decouverte naturelle</td>
+          <td><span class="check">&#10003;</span> Excellent</td>
+          <td><span class="check">&#10003;</span> Bon</td>
+          <td><span class="cross">&#10007;</span> Limite</td>
+        </tr>
+        <tr>
+          <td>Scalabilite (ajout futures pages)</td>
+          <td><span class="check">&#10003;</span> 4 groupes extensibles</td>
+          <td><span class="check">&#10003;</span> 3 groupes</td>
+          <td><span class="cross">&#10007;</span> Saturation rapide</td>
+        </tr>
+        <tr>
+          <td>Charge cognitive</td>
+          <td><span class="check">&#10003;</span> Faible — flux naturel</td>
+          <td>Moyenne</td>
+          <td><span class="check">&#10003;</span> Tres faible</td>
+        </tr>
+        <tr>
+          <td>Conformite best practices</td>
+          <td><span class="check">&#10003;</span> Stripe/Notion</td>
+          <td>Classique</td>
+          <td>Linear (niche)</td>
+        </tr>
+        <tr>
+          <td>Effort de migration</td>
+          <td>Moyen — reorganiser les groupes</td>
+          <td>Faible — ajuster les items</td>
+          <td>Important — supprimer des entrees</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="alert success">
+      <span class="alert-icon">&#9733;</span>
+      <div><strong>Recommandation : Proposition A</strong> — Organisation par workflow. C'est le pattern Stripe/Notion, le plus scalable et le plus intuitif pour un SUPER_ADMIN. Les 4 groupes refletent les 4 intentions principales.</div>
+    </div>
+
+    <!-- MOCKUP SIDEBAR REORGANISEE -->
+    <h3>Apercu — Sidebar reorganisee (Proposition A)</h3>
+    <div class="mockup-wrapper">
+      <div class="mockup-toolbar">
+        <span class="mockup-dot r"></span>
+        <span class="mockup-dot y"></span>
+        <span class="mockup-dot g"></span>
+        <span class="mockup-url">https://elisaschool.com/platform/dashboard</span>
+      </div>
+      <div class="mockup-body">
+        <div class="sidebar-mock">
+          <nav class="sidebar-nav">
+            <div class="sidebar-logo">
+              <div class="sidebar-logo-icon">e</div>
+              <span class="sidebar-logo-text">elisa&deg;school</span>
+              <span class="sidebar-logo-badge">Admin</span>
+            </div>
+
+            <div class="sidebar-group-label">Pilotage</div>
+            <div class="sidebar-item active">
+              <span class="si-icon">&#9632;</span> Dashboard
+            </div>
+            <div class="sidebar-item">
+              <span class="si-icon">&#9650;</span> Monitoring
+              <span class="si-badge">3</span>
+            </div>
+            <div class="sidebar-item">
+              <span class="si-icon">&#9679;</span> Revenus
+            </div>
+
+            <div class="sidebar-group-label">Tenants</div>
+            <div class="sidebar-item">
+              <span class="si-icon">&#9634;</span> Etablissements
+            </div>
+            <div class="sidebar-item">
+              <span class="si-icon">&#9670;</span> Groupes
+            </div>
+            <div class="sidebar-item">
+              <span class="si-icon">&#9830;</span> Facturation
+            </div>
+            <div class="sidebar-item">
+              <span class="si-icon">&#9733;</span> Abonnements
+            </div>
+
+            <div class="sidebar-group-label">Technique</div>
+            <div class="sidebar-item">
+              <span class="si-icon">&#9635;</span> Modules
+            </div>
+            <div class="sidebar-item">
+              <span class="si-icon">&#9881;</span> Configuration
+            </div>
+            <div class="sidebar-item">
+              <span class="si-icon">&#9993;</span> Notifications
+            </div>
+            <div class="sidebar-item">
+              <span class="si-icon">&#9741;</span> Providers
+            </div>
+
+            <div class="sidebar-group-label">Securite</div>
+            <div class="sidebar-item">
+              <span class="si-icon">&#9673;</span> Utilisateurs
+            </div>
+            <div class="sidebar-item">
+              <span class="si-icon">&#9951;</span> Permissions
+            </div>
+            <div class="sidebar-item">
+              <span class="si-icon">&#9998;</span> Audit
+            </div>
+          </nav>
+
+          <div class="sidebar-main">
+            <div class="sidebar-main-header">
+              <div class="sidebar-main-title">Dashboard plateforme</div>
+              <div class="sidebar-main-actions">
+                <span class="mock-btn">Exporter</span>
+                <span class="mock-btn primary">+ Nouveau</span>
+              </div>
+            </div>
+            <div class="mock-kpi-row">
+              <div class="mock-kpi">
+                <div class="mock-kpi-label">Etablissements</div>
+                <div class="mock-kpi-value">24</div>
+                <div class="mock-kpi-trend">+2 ce mois</div>
+              </div>
+              <div class="mock-kpi">
+                <div class="mock-kpi-label">MRR</div>
+                <div class="mock-kpi-value">4.2M</div>
+                <div class="mock-kpi-trend">+12%</div>
+              </div>
+              <div class="mock-kpi">
+                <div class="mock-kpi-label">Utilisateurs</div>
+                <div class="mock-kpi-value">8,431</div>
+                <div class="mock-kpi-trend">+340</div>
+              </div>
+              <div class="mock-kpi">
+                <div class="mock-kpi-label">Sante</div>
+                <div class="mock-kpi-value" style="color: var(--dominant);">98%</div>
+                <div class="mock-kpi-trend">Stable</div>
+              </div>
+            </div>
+            <div class="mock-table">
+              <div class="mock-table-header">
+                <span>Etablissement</span>
+                <span>Plan</span>
+                <span>Eleves</span>
+                <span>Statut</span>
+                <span>Actions</span>
+              </div>
+              <div class="mock-table-row">
+                <span style="font-weight:600;">Lycee Bilingue de Douala</span>
+                <span>Enterprise</span>
+                <span>1,240</span>
+                <span><span class="mock-status active">Actif</span></span>
+                <span style="color:var(--text-muted);">&#8943;</span>
+              </div>
+              <div class="mock-table-row">
+                <span style="font-weight:600;">College Saint-Joseph</span>
+                <span>Premium</span>
+                <span>680</span>
+                <span><span class="mock-status active">Actif</span></span>
+                <span style="color:var(--text-muted);">&#8943;</span>
+              </div>
+              <div class="mock-table-row">
+                <span style="font-weight:600;">Ecole Les Petits Genies</span>
+                <span>Standard</span>
+                <span>120</span>
+                <span><span class="mock-status warning">Essai</span></span>
+                <span style="color:var(--text-muted);">&#8943;</span>
+              </div>
+              <div class="mock-table-row">
+                <span style="font-weight:600;">Institut Technique de Yaounde</span>
+                <span>Premium</span>
+                <span>890</span>
+                <span><span class="mock-status danger">Suspendu</span></span>
+                <span style="color:var(--text-muted);">&#8943;</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 4. HEADER ADMINISTRATION ==================== -->
+<section class="section" style="background: white;">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label"><span class="num">4</span> Acces rapide</div>
+      <h2>Bouton "Administration" dans le header</h2>
+      <p class="lead">Ajouter un lien "Administration" dans le dropdown profil du header pour les utilisateurs SUPER_ADMIN. Visible uniquement pour les roles plateforme.</p>
+    </div>
+
+    <h3>Etat actuel vs Etat cible</h3>
+    <div class="grid-2">
+      <!-- AVANT -->
+      <div>
+        <div class="text-center mb-16"><span class="tag red">Actuel</span></div>
+        <div class="card" style="padding:0; overflow:hidden;">
+          <div style="padding:16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px;">
+            <div class="dropdown-user-avatar">FA</div>
+            <div>
+              <div style="font-size:14px; font-weight:600;">Franck Chendjou</div>
+              <div style="font-size:11px; color:var(--text-muted);">franck@elisaschool.com</div>
+            </div>
+          </div>
+          <div style="padding:6px;">
+            <div class="dropdown-item"><span class="di-icon">&#9951;</span> Changer mot de passe</div>
+            <div class="dropdown-item"><span class="di-icon">&#9881;</span> Configuration</div>
+            <div class="dropdown-sep"></div>
+            <div class="dropdown-item danger"><span class="di-icon">&#9211;</span> Deconnecter</div>
+          </div>
+        </div>
+        <div class="alert danger mt-16" style="font-size:13px;">
+          <span class="alert-icon">&#10007;</span>
+          <div>Pas de lien vers le panel admin. L'utilisateur SUPER_ADMIN doit passer par la sidebar tenant.</div>
+        </div>
+      </div>
+
+      <!-- APRES -->
+      <div>
+        <div class="text-center mb-16"><span class="tag green">Cible</span></div>
+        <div class="card" style="padding:0; overflow:hidden; border: 2px solid var(--dominant);">
+          <div style="padding:16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px;">
+            <div class="dropdown-user-avatar">FA</div>
+            <div>
+              <div style="font-size:14px; font-weight:600;">Franck Chendjou</div>
+              <div style="font-size:11px; color:var(--text-muted);">SUPER_ADMIN</div>
+            </div>
+          </div>
+          <div style="padding:6px;">
+            <div class="dropdown-item highlight">
+              <span class="di-icon">&#9881;</span>
+              Administration
+              <span class="di-badge">PLATEFORME</span>
+            </div>
+            <div class="dropdown-sep"></div>
+            <div class="dropdown-item"><span class="di-icon">&#9951;</span> Changer mot de passe</div>
+            <div class="dropdown-item"><span class="di-icon">&#9881;</span> Configuration</div>
+            <div class="dropdown-sep"></div>
+            <div class="dropdown-item danger"><span class="di-icon">&#9211;</span> Deconnecter</div>
+          </div>
+        </div>
+        <div class="alert success mt-16" style="font-size:13px;">
+          <span class="alert-icon">&#10003;</span>
+          <div>Bouton "Administration" mis en evidence (vert) avec badge PLATEFORME. Navigation directe vers <code>/platform/dashboard</code>.</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Implementation technique</h3>
+    <div class="card">
+      <p style="font-size:14px; margin-bottom:16px;">Le bouton "Administration" est conditionnel — affiche uniquement si l'utilisateur a le role <code>SUPER_ADMIN</code>. Utilise le hook <code>useAuth()</code> pour verifier le role.</p>
+      <div style="background: #1e293b; border-radius:8px; padding:16px; font-family: 'SF Mono', monospace; font-size:12px; color: #e2e8f0; overflow-x:auto;">
+        <span style="color:#94a3b8;">// Header.tsx — Dropdown profil</span><br>
+        {user?.role === <span style="color:#4ade80;">'SUPER_ADMIN'</span> && (<br>
+        &nbsp;&nbsp;&lt;<span style="color:#60a5fa;">DropdownMenuItem</span> <span style="color:#f59e0b;">onClick</span>={() => navigate({ to: <span style="color:#4ade80;">'/platform/dashboard'</span> })}<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#f59e0b;">className</span>=<span style="color:#4ade80;">"bg-[var(--color-dominant-50)] text-[var(--color-dominant-700)] font-semibold"</span>&gt;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&lt;<span style="color:#60a5fa;">Settings</span> <span style="color:#f59e0b;">className</span>=<span style="color:#4ade80;">"mr-2 h-4 w-4"</span> /&gt;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;{t(<span style="color:#4ade80;">'administration'</span>)}<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&lt;<span style="color:#60a5fa;">span</span> <span style="color:#f59e0b;">className</span>=<span style="color:#4ade80;">"ml-auto text-xs bg-[var(--color-dominant-600)] text-white px-1.5 py-0.5 rounded"</span>&gt;PLATEFORME&lt;/<span style="color:#60a5fa;">span</span>&gt;<br>
+        &nbsp;&nbsp;&lt;/<span style="color:#60a5fa;">DropdownMenuItem</span>&gt;<br>
+        )}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 5. HEADER PLATEFORME ==================== -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label"><span class="num">5</span> Header plateforme</div>
+      <h2>Activer le header dans le panel d'administration</h2>
+      <p class="lead">Remplacer la banniere simple par un header plateforme complet avec recherche, notifications, profil utilisateur et indicateurs de contexte.</p>
+    </div>
+
+    <h3>Etat actuel — Banniere simple</h3>
+    <div class="mockup-wrapper">
+      <div class="mockup-toolbar">
+        <span class="mockup-dot r"></span><span class="mockup-dot y"></span><span class="mockup-dot g"></span>
+        <span class="mockup-url">Actuel — platform.tsx</span>
+      </div>
+      <div class="mockup-body" style="background:white;">
+        <div style="padding:12px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px;">
+          <span style="font-size:18px; color:var(--danger);">&#9741;</span>
+          <span style="font-size:14px; color:var(--danger); font-weight:600;">Espace Plateforme</span>
+          <span style="font-size:12px; color:var(--text-muted);">— Acces proprietaire</span>
+        </div>
+        <div style="padding:40px; text-align:center; color:var(--text-muted); font-size:13px;">
+          Banniere statique — Pas de recherche, pas de profil, pas de notifications
+        </div>
+      </div>
+    </div>
+
+    <h3>Etat cible — Header plateforme complet</h3>
+    <div class="mockup-wrapper">
+      <div class="mockup-toolbar">
+        <span class="mockup-dot r"></span><span class="mockup-dot y"></span><span class="mockup-dot g"></span>
+        <span class="mockup-url">Cible — PlatformHeader.tsx</span>
+      </div>
+      <div class="mockup-body" style="background:white;">
+        <div class="header-mock">
+          <div class="header-left">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div class="sidebar-logo-icon" style="width:28px; height:28px; font-size:12px;">e</div>
+              <span style="font-size:14px; font-weight:700;">elisa&deg;school</span>
+              <span style="font-size:9px; background:var(--danger); color:white; padding:2px 6px; border-radius:4px; font-weight:700;">ADMIN</span>
+            </div>
+            <div style="width:1px; height:24px; background:var(--border); margin:0 8px;"></div>
+            <div class="header-search">&#8981; Rechercher dans la plateforme... (Cmd+K)</div>
+          </div>
+          <div class="header-right">
+            <div class="header-icon" style="position:relative;">
+              &#9993;
+              <span style="position:absolute; top:2px; right:2px; width:8px; height:8px; background:var(--danger); border-radius:50%; border:2px solid white;"></span>
+            </div>
+            <div class="header-icon">&#9888;</div>
+            <div style="width:1px; height:24px; background:var(--border);"></div>
+            <div style="display:flex; align-items:center; gap:8px; cursor:default;">
+              <div class="header-avatar">FA</div>
+              <div>
+                <div style="font-size:12px; font-weight:600; line-height:1.2;">Franck C.</div>
+                <div style="font-size:10px; color:var(--text-muted);">SUPER_ADMIN</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:40px; text-align:center; color:var(--text-muted); font-size:13px;">
+          Header complet avec recherche globale, notifications, alertes et profil utilisateur
+        </div>
+      </div>
+    </div>
+
+    <h3>Composants du header plateforme</h3>
+    <div class="grid-4">
+      <div class="card text-center">
+        <div style="font-size:24px; margin-bottom:8px;">&#8981;</div>
+        <h4 style="font-size:14px;">Recherche globale</h4>
+        <p style="font-size:12px;">Cmd+K — Recherche fuzzy dans tous les modules plateforme (etablissements, factures, utilisateurs...)</p>
+      </div>
+      <div class="card text-center">
+        <div style="font-size:24px; margin-bottom:8px;">&#9993;</div>
+        <h4 style="font-size:14px;">Notifications</h4>
+        <p style="font-size:12px;">Alertes plateforme : quotas depasses, paiements en retard, incidents monitoring</p>
+      </div>
+      <div class="card text-center">
+        <div style="font-size:24px; margin-bottom:8px;">&#9888;</div>
+        <h4 style="font-size:14px;">Alertes sante</h4>
+        <p style="font-size:12px;">Indicateur global sante plateforme (vert/orange/rouge) avec drill-down</p>
+      </div>
+      <div class="card text-center">
+        <div style="font-size:24px; margin-bottom:8px;">&#9673;</div>
+        <h4 style="font-size:14px;">Profil admin</h4>
+        <p style="font-size:12px;">Dropdown avec infos, MFA, retour espace tenant, deconnexion</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 6. GESTION UTILISATEURS PLATEFORME ==================== -->
+<section class="section" style="background: white;">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label"><span class="num">6</span> Utilisateurs plateforme</div>
+      <h2>Gestion des comptes SUPER_ADMIN & GESTIONNAIRE</h2>
+      <p class="lead">Page dediee a la gestion des utilisateurs de la plateforme (distincts des utilisateurs tenant). CRUD complet avec MFA, audit et delegation.</p>
+    </div>
+
+    <div class="alert info">
+      <span class="alert-icon">&#9432;</span>
+      <div><strong>Distinction fondamentale :</strong> Les utilisateurs plateforme (SUPER_ADMIN, GESTIONNAIRE_GROUPES) gerent l'infrastructure SaaS. Les utilisateurs tenant (ADMIN, ENSEIGNANT, ELEVE...) utilisent l'application au quotidien. Ces deux mondes doivent etre separes.</div>
+    </div>
+
+    <h3>Apercu — Page Utilisateurs plateforme</h3>
+    <div class="mockup-wrapper">
+      <div class="mockup-toolbar">
+        <span class="mockup-dot r"></span><span class="mockup-dot y"></span><span class="mockup-dot g"></span>
+        <span class="mockup-url">/platform/utilisateurs</span>
+      </div>
+      <div class="mockup-body" style="padding:24px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+          <div>
+            <div style="font-size:18px; font-weight:700;">Utilisateurs plateforme</div>
+            <div style="font-size:13px; color:var(--text-muted);">Gestion des comptes administrateurs de l'infrastructure SaaS</div>
+          </div>
+          <span class="mock-btn primary">+ Nouvel utilisateur</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px;">
+          <div class="mock-kpi">
+            <div class="mock-kpi-label">Total comptes</div>
+            <div class="mock-kpi-value">6</div>
+          </div>
+          <div class="mock-kpi">
+            <div class="mock-kpi-label">SUPER_ADMIN</div>
+            <div class="mock-kpi-value" style="color:var(--danger);">2</div>
+          </div>
+          <div class="mock-kpi">
+            <div class="mock-kpi-label">GESTIONNAIRE</div>
+            <div class="mock-kpi-value" style="color:var(--accent);">3</div>
+          </div>
+          <div class="mock-kpi">
+            <div class="mock-kpi-label">MFA actif</div>
+            <div class="mock-kpi-value" style="color:var(--dominant);">83%</div>
+          </div>
+        </div>
+
+        <div class="user-mgmt-mock">
+          <div class="user-mgmt-toolbar">
+            <div class="user-mgmt-search">&#8981; Rechercher par nom ou email...</div>
+            <div class="user-mgmt-filter">Tous les roles &#9662;</div>
+            <div class="user-mgmt-filter">MFA &#9662;</div>
+          </div>
+          <div class="user-row header">
+            <span></span>
+            <span>Utilisateur</span>
+            <span>Role</span>
+            <span>MFA</span>
+            <span>Derniere activite</span>
+            <span>Actions</span>
+          </div>
+          <div class="user-row">
+            <div class="user-avatar-sm" style="background:linear-gradient(135deg,#dc3545,#ff6b6b);">FA</div>
+            <div>
+              <div style="font-weight:600; font-size:13px;">Franck Chendjou</div>
+              <div style="font-size:11px; color:var(--text-muted);">franck@elisaschool.com</div>
+            </div>
+            <div><span class="tag red">SUPER_ADMIN</span></div>
+            <div><span style="color:var(--dominant);">&#10003;</span> TOTP</div>
+            <div style="font-size:12px; color:var(--text-muted);">Il y a 2 min</div>
+            <div style="color:var(--text-muted);">&#8943;</div>
+          </div>
+          <div class="user-row">
+            <div class="user-avatar-sm" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);">AD</div>
+            <div>
+              <div style="font-weight:600; font-size:13px;">Admin Back-up</div>
+              <div style="font-size:11px; color:var(--text-muted);">admin-backup@elisaschool.com</div>
+            </div>
+            <div><span class="tag red">SUPER_ADMIN</span></div>
+            <div><span style="color:var(--dominant);">&#10003;</span> TOTP</div>
+            <div style="font-size:12px; color:var(--text-muted);">Il y a 1h</div>
+            <div style="color:var(--text-muted);">&#8943;</div>
+          </div>
+          <div class="user-row">
+            <div class="user-avatar-sm" style="background:linear-gradient(135deg,#007bff,#60a5fa);">MG</div>
+            <div>
+              <div style="font-weight:600; font-size:13px;">Marie Gestion</div>
+              <div style="font-size:11px; color:var(--text-muted);">marie@elisaschool.com</div>
+            </div>
+            <div><span class="tag blue">GESTIONNAIRE</span></div>
+            <div><span style="color:var(--danger);">&#10007;</span></div>
+            <div style="font-size:12px; color:var(--text-muted);">Il y a 3j</div>
+            <div style="color:var(--text-muted);">&#8943;</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Fonctionnalites de la page</h3>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-header"><div class="card-icon green">+</div><h4>Creation de compte</h4></div>
+        <p>Formulaire avec email, nom complet, role (SUPER_ADMIN / GESTIONNAIRE_GROUPES), generation de mot de passe temporaire, envoi email d'invitation.</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-icon blue">&#9951;</div><h4>MFA obligatoire</h4></div>
+        <p>Tout compte SUPER_ADMIN doit activer MFA (TOTP) dans les 24h. Badge visuel + blocage actions critiques sans MFA. Grace period configurable.</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-icon amber">&#9202;</div><h4>Audit trail</h4></div>
+        <p>Chaque action est tracee : connexion, modification permissions, creation/suppression compte, echec MFA. Timeline visible dans le detail utilisateur.</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-icon purple">&#9673;</div><h4>Delegation</h4></div>
+        <p>Un SUPER_ADMIN peut designer un "delegue" temporaire avec permissions restreintes. Utile pour le support sans donner un acces complet.</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-icon red">&#9211;</div><h4>Desactivation / Suppression</h4></div>
+        <p>Soft delete avec confirmation MFA. Impossibilite de supprimer le dernier SUPER_ADMIN. Transfert de propriete avant suppression.</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-icon green">&#10003;</div><h4>Politique de mot de passe</h4></div>
+        <p>Longueur minimum 12 caracteres, complexite requise, rotation tous les 90 jours, historique 5 derniers mots de passe. Configuration via ParametreSysteme.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 7. PARAMETRES MULTI-NIVEAUX ==================== -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label"><span class="num">7</span> Parametres</div>
+      <h2>Gestion multi-niveaux des parametres</h2>
+      <p class="lead">Visualiser et gerer la cascade de parametres : Systeme (defaut) → Global (tous etablissements) → Groupe → Override etablissement. Le backend supporte deja cette cascade — l'UI doit la reveler.</p>
+    </div>
+
+    <h3>Cascade de resolution — Architecture</h3>
+    <div class="flow-diagram">
+      <div class="flow-box" style="background:#f3e8ff; color:#7c3aed; border:1px solid #ce93d8;">
+        <div style="font-size:10px; opacity:0.7;">Priorite 4 (plus basse)</div>
+        <div style="font-weight:700;">Defaut systeme</div>
+        <div style="font-size:11px;">Seed / Code</div>
+      </div>
+      <div class="flow-arrow">&#8594;</div>
+      <div class="flow-box" style="background:#e3f2fd; color:#1565c0; border:1px solid #90caf9;">
+        <div style="font-size:10px; opacity:0.7;">Priorite 3</div>
+        <div style="font-weight:700;">Global</div>
+        <div style="font-size:11px;">etablissementId = NULL</div>
+      </div>
+      <div class="flow-arrow">&#8594;</div>
+      <div class="flow-box" style="background:#fff8e1; color:#92400e; border:1px solid #ffe082;">
+        <div style="font-size:10px; opacity:0.7;">Priorite 2</div>
+        <div style="font-weight:700;">Groupe</div>
+        <div style="font-size:11px;">groupeEtablissementId</div>
+      </div>
+      <div class="flow-arrow">&#8594;</div>
+      <div class="flow-box" style="background:#e8f5e9; color:#1b5e20; border:2px solid var(--dominant);">
+        <div style="font-size:10px; opacity:0.7;">Priorite 1 (plus haute)</div>
+        <div style="font-weight:700;">Etablissement</div>
+        <div style="font-size:11px;">etablissementId = UUID</div>
+      </div>
+    </div>
+
+    <h3>Apercu — Interface de gestion cascade</h3>
+    <div class="mockup-wrapper">
+      <div class="mockup-toolbar">
+        <span class="mockup-dot r"></span><span class="mockup-dot y"></span><span class="mockup-dot g"></span>
+        <span class="mockup-url">/platform/configuration?param=notes.require_validation</span>
+      </div>
+      <div class="mockup-body" style="padding:24px;">
+        <div style="font-size:16px; font-weight:700; margin-bottom:4px;">Parametre : notes.require_validation</div>
+        <div style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">Activer la validation workflow pour la creation de notes</div>
+
+        <div class="param-cascade">
+          <div class="param-level" style="background:#faf5ff;">
+            <div class="param-level-label" style="color:#7c3aed;">
+              <span class="pl-dot" style="background:#7c3aed;"></span> Systeme (defaut)
+            </div>
+            <div class="param-row">
+              <span style="font-size:12px;">Valeur</span>
+              <span style="font-size:12px; font-weight:600;">false</span>
+            </div>
+            <div class="param-row">
+              <span style="font-size:12px;">Source</span>
+              <span style="font-size:11px; color:var(--text-muted);">seed initial</span>
+            </div>
+            <div style="font-size:10px; color:var(--text-muted); margin-top:8px; font-style:italic;">Non modifiable — valeur par defaut du code</div>
+          </div>
+
+          <div class="param-arrow">&#8594;</div>
+
+          <div class="param-level" style="background:#eff6ff;">
+            <div class="param-level-label" style="color:#1565c0;">
+              <span class="pl-dot" style="background:#1565c0;"></span> Global
+            </div>
+            <div class="param-row">
+              <span style="font-size:12px;">Valeur</span>
+              <div class="param-toggle on"></div>
+            </div>
+            <div class="param-row">
+              <span style="font-size:12px;">Applique a</span>
+              <span style="font-size:11px; font-weight:600;">Tous les 24 etab.</span>
+            </div>
+            <div style="font-size:10px; color:#1565c0; margin-top:8px;">Modifie par Franck C. le 08/08/2026</div>
+          </div>
+
+          <div class="param-arrow">&#8594;</div>
+
+          <div class="param-level" style="background:#fffbeb;">
+            <div class="param-level-label" style="color:#92400e;">
+              <span class="pl-dot" style="background:#92400e;"></span> Groupe
+            </div>
+            <div class="param-row">
+              <span style="font-size:12px;">Valeur</span>
+              <span style="font-size:12px; color:var(--text-muted);">Hérite (true)</span>
+            </div>
+            <div class="param-row">
+              <span style="font-size:12px;">Override</span>
+              <span style="font-size:11px; color:var(--text-muted);">Aucun</span>
+            </div>
+            <div style="font-size:10px; color:var(--text-muted); margin-top:8px; font-style:italic;">Aucun groupe n'override ce parametre</div>
+          </div>
+
+          <div class="param-arrow">&#8594;</div>
+
+          <div class="param-level" style="background:#f0fdf4; border:2px solid var(--dominant);">
+            <div class="param-level-label" style="color:var(--dominant-dark);">
+              <span class="pl-dot" style="background:var(--dominant);"></span> Etablissement
+            </div>
+            <div class="param-row">
+              <span style="font-size:12px;">Lycee Bilingue</span>
+              <div class="param-toggle on"></div>
+            </div>
+            <div class="param-row">
+              <span style="font-size:12px;">College St-Joseph</span>
+              <div class="param-toggle off"></div>
+              <span class="param-override-badge">Override</span>
+            </div>
+            <div class="param-row">
+              <span style="font-size:12px;">Ecole Petits Genies</span>
+              <span style="font-size:12px; color:var(--text-muted);">Hérite (true)</span>
+            </div>
+            <div style="font-size:10px; color:var(--dominant-dark); margin-top:8px;">1 override sur 24 etablissements</div>
+          </div>
+        </div>
+
+        <div style="margin-top:20px; padding:16px; background:white; border-radius:10px; border:1px solid var(--border);">
+          <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Resolution effective</div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; font-size:12px;">
+            <div>
+              <div style="color:var(--text-muted);">Lycee Bilingue</div>
+              <div style="font-weight:600; color:var(--dominant);">true <span style="font-weight:400; color:var(--text-muted);">(etablissement)</span></div>
+            </div>
+            <div>
+              <div style="color:var(--text-muted);">College St-Joseph</div>
+              <div style="font-weight:600; color:var(--warning);">false <span style="font-weight:400; color:var(--text-muted);">(override)</span></div>
+            </div>
+            <div>
+              <div style="color:var(--text-muted);">Ecole Petits Genies</div>
+              <div style="font-weight:600; color:var(--accent);">true <span style="font-weight:400; color:var(--text-muted);">(global)</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Fonctionnalites UI de gestion des parametres</h3>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-icon blue">&#8644;</div><h4>Vue cascade</h4></div>
+        <p>Visualisation en 4 colonnes (Systeme → Global → Groupe → Etablissement) avec fleches de resolution et badges "Override" quand un niveau inferieur modifie la valeur.</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-icon green">&#10003;</div><h4>Modification avec propagation</h4></div>
+        <p>Modifier le global propose automatiquement : "Appliquer a tous les etablissements qui n'ont pas d'override ?" — evite les incohérences silencieuses.</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-icon amber">&#9888;</div><h4>Alertes d'incoherence</h4></div>
+        <p>Detection automatique des overrides contradictoires (ex: module desactive globalement mais active sur un etablissement). Badge d'alerte + explication.</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-icon purple">&#9202;</div><h4>Historique des modifications</h4></div>
+        <p>Timeline des changements par parametre : qui a modifie, quand, ancienne vs nouvelle valeur. Audit trail complet avec rollback possible.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 8. FEUILLE DE ROUTE ==================== -->
+<section class="section" style="background: white;">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label"><span class="num">8</span> Implementation</div>
+      <h2>Feuille de route — 5 vagues incrementales</h2>
+      <p class="lead">Plan d'implementation en 5 vagues, de la plus critique a la plus avancee. Chaque vague est livrable independamment et testable.</p>
+    </div>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot red">V0</div>
+        <div class="timeline-title">Vague 0 — Correctifs critiques <span class="tag red">1-2 jours</span></div>
+        <div class="timeline-desc">Corrections de bugs et manques bloquants avant d'ajouter des fonctionnalites.</div>
+        <div class="timeline-tags">
+          <span class="timeline-tag">Ajouter bouton "Administration" dans Header.tsx dropdown</span>
+          <span class="timeline-tag">Creer PlatformHeader.tsx (remplacer banniere)</span>
+          <span class="timeline-tag">Fix couleur --color-texte-muted (571 usages)</span>
+          <span class="timeline-tag">Resoudre erreurs tsc routes platform</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot amber">V1</div>
+        <div class="timeline-title">Vague 1 — Reorganisation navigation <span class="tag amber">2-3 jours</span></div>
+        <div class="timeline-desc">Restructurer la sidebar plateforme en 4 groupes logiques (Proposition A).</div>
+        <div class="timeline-tags">
+          <span class="timeline-tag">platform-sidebar.tsx — 4 groupes</span>
+          <span class="timeline-tag">Renommer/reorganiser les routes</span>
+          <span class="timeline-tag">i18n — nouvelles cles navigation</span>
+          <span class="timeline-tag">Redirects anciennes routes</span>
+          <span class="timeline-tag">CommandPalette — nouvelles routes</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot blue">V2</div>
+        <div class="timeline-title">Vague 2 — Utilisateurs plateforme <span class="tag blue">3-4 jours</span></div>
+        <div class="timeline-desc">Creer la page de gestion des comptes SUPER_ADMIN et GESTIONNAIRE_GROUPES.</div>
+        <div class="timeline-tags">
+          <span class="timeline-tag">Backend — platform-users controller + service</span>
+          <span class="timeline-tag">CRUD comptes plateforme</span>
+          <span class="timeline-tag">MFA obligatoire SUPER_ADMIN</span>
+          <span class="timeline-tag">Audit trail dedie</span>
+          <span class="timeline-tag">Frontend — platform-users page</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot green">V3</div>
+        <div class="timeline-title">Vague 3 — Parametres cascade UI <span class="tag green">3-4 jours</span></div>
+        <div class="timeline-desc">Enrichir la page Configuration avec la visualisation cascade et les overrides.</div>
+        <div class="timeline-tags">
+          <span class="timeline-tag">Vue cascade 4 colonnes</span>
+          <span class="timeline-tag">Toggle override par etablissement</span>
+          <span class="timeline-tag">Alertes incoherences</span>
+          <span class="timeline-tag">Historique modifications</span>
+          <span class="timeline-tag">Bulk apply global → tous etab.</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot purple">V4</div>
+        <div class="timeline-title">Vague 4 — Polish & Monitoring <span class="tag purple">2-3 jours</span></div>
+        <div class="timeline-desc">Dernieres touches : enrichir le dashboard, ameliorer le monitoring, ajouter des exports.</div>
+        <div class="timeline-tags">
+          <span class="timeline-tag">Dashboard KPIs enrichis</span>
+          <span class="timeline-tag">Export rapports PDF plateforme</span>
+          <span class="timeline-tag">WebSocket temps reel monitoring</span>
+          <span class="timeline-tag">Animations et transitions</span>
+          <span class="timeline-tag">Tests E2E panel complet</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert info mt-24">
+      <span class="alert-icon">&#9201;</span>
+      <div><strong>Estimation totale : 11-16 jours de developpement.</strong> Chaque vague est livrable et testable independamment. La V0 est prerequis pour les vagues suivantes. Les vagues V1-V4 peuvent etre partiellement parallelisees.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 9. SYNTHESE ==================== -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label"><span class="num">9</span> Synthese</div>
+      <h2>Resume des recommandations</h2>
+      <p class="lead">Les 8 actions prioritaires pour transformer le panel admin eLISAschool en plateforme enterprise de niveau Stripe/Vercel.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon green">1</div>
+          <h4>Bouton "Administration" dans le header</h4>
+        </div>
+        <p>Ajouter dans le DropdownMenu du profil (Header.tsx). Conditionnel au role SUPER_ADMIN. Navigation vers <code>/platform/dashboard</code>. Badge "PLATEFORME" pour identification visuelle.</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon green">2</div>
+          <h4>Header plateforme complet</h4>
+        </div>
+        <p>Remplacer la banniere par PlatformHeader.tsx : recherche globale (Cmd+K), notifications, alertes sante, profil admin avec retour espace tenant.</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon green">3</div>
+          <h4>Reorganiser la sidebar en 4 groupes</h4>
+        </div>
+        <p>Pilotage (Dashboard, Monitoring, Revenus) → Tenants (Etablissements, Groupes, Facturation, Abonnements) → Technique (Modules, Config, Notifications, Providers) → Securite (Utilisateurs, Permissions, Audit).</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon green">4</div>
+          <h4>Page Utilisateurs plateforme</h4>
+        </div>
+        <p>CRUD complet pour les comptes SUPER_ADMIN/GESTIONNAIRE. MFA obligatoire, audit trail, delegation temporaire, politique mot de passe, impossibilite de supprimer le dernier SUPER_ADMIN.</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon green">5</div>
+          <h4>Parametres cascade — UI multi-niveaux</h4>
+        </div>
+        <p>Visualisation en 4 colonnes : Systeme → Global → Groupe → Etablissement. Badges "Override", alertes incoherences, bulk apply, historique modifications.</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon green">6</div>
+          <h4>Dashboard KPIs enrichis</h4>
+        </div>
+        <p>Ajouter : MRR evolution (graphique 6 mois), sante globale (score composite), derniers evenements critiques, actions rapides contextuelles, widget "Actions en attente" (approbations).</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon green">7</div>
+          <h4>Command Palette enrichie</h4>
+        </div>
+        <p>Ajouter les routes plateforme dans CommandPalette.tsx : navigation vers toutes les pages admin, creation rapide etablissement, recherche factures, acces direct parametres.</p>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon green">8</div>
+          <h4>Zero couleur hardcodee</h4>
+        </div>
+        <p>Migrer les 25+ couleurs Tailwind residuelles dans les composants admin vers CSS vars. Dark mode complet. Parite i18n FR/EN sur toutes les nouvelles pages.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="text-center">
+      <div style="font-size:14px; color:var(--text-muted); margin-bottom:8px;">Score actuel → Score cible</div>
+      <div style="display:flex; align-items:center; justify-content:center; gap:24px;">
+        <div style="font-size:48px; font-weight:800; color:var(--warning);">5.5</div>
+        <div style="font-size:24px; color:var(--text-muted);">&#8594;</div>
+        <div style="font-size:48px; font-weight:800; color:var(--dominant);">9.0</div>
+      </div>
+      <div style="font-size:13px; color:var(--text-muted); margin-top:8px;">+3.5 points — 5 vagues, ~14 jours de developpement</div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FOOTER ==================== -->
+<footer class="footer">
+  <div class="container">
+    <p><strong>eLISAschool</strong> — Rapport de restructuration Panel Admin v7.1</p>
+    <p style="margin-top:8px;">Genere le 2026-08-09 — Perimetre : Control Plane (SUPER_ADMIN) — 13 routes, 20 composants, 12 items navigation</p>
+    <p style="margin-top:8px; font-size:12px;">References : Stripe Dashboard, Vercel Dashboard, Linear, Notion Admin — Best practices SaaS enterprise 2026</p>
+  </div>
+</footer>
+
+</body>
+</html>

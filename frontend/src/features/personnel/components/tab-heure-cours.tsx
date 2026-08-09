@@ -367,7 +367,7 @@ function HeureLigne({ heure, onPointage, onEdit, isPending }: {
             {heure.remplacant && (
                 <div className="text-xs text-warning flex items-center gap-1 hidden lg:flex">
                     <ArrowRightLeft className="h-3 w-3" />
-                    {heure.remplacant.prenom} {heure.remplacant.nom}
+                    {heure.remplacant.utilisateur?.profil?.prenom} {heure.remplacant.utilisateur?.profil?.nom}
                 </div>
             )}
 

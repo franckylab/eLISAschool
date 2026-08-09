@@ -8,12 +8,12 @@
  * Tâches planifiées pour la maintenance des logs d'audit.
  */
 
-import cron from 'node-cron';
+import { scheduleWithLock } from '@common/services/cron-lock.service';
 import { logger } from '@common/utils/logger.util';
 import { auditRetentionService } from './services/retention.service';
 
 export function initAuditCronJobs(): void {
-    cron.schedule('0 2 * * *', async () => {
+    scheduleWithLock('audit-purge-logs', '0 2 * * *', async () => {
         try {
             const result = await auditRetentionService.purgerLogsExpires();
             if (result.purges > 0) {

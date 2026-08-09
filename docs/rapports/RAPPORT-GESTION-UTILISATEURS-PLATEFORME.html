@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport — Séparation RBAC Plateforme / Tenant | eLISAschool</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-2: #334155;
+    --border: #475569;
+    --text: #f1f5f9;
+    --text-muted: #94a3b8;
+    --accent: #3b82f6;
+    --accent-light: #60a5fa;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --purple: #a855f7;
+    --cyan: #06b6d4;
+    --pink: #ec4899;
+    --orange: #f97316;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+
+  /* Hero */
+  .hero {
+    position: relative;
+    padding: 6rem 0 4rem;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 50%, rgba(59,130,246,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 50%, rgba(168,85,247,0.06) 0%, transparent 50%);
+    animation: drift 20s ease-in-out infinite;
+  }
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-2%, 1%); }
+  }
+  .hero-content { position: relative; z-index: 1; }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 1rem;
+    background: rgba(59,130,246,0.15);
+    border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 2rem;
+    font-size: 0.8rem;
+    color: var(--accent-light);
+    margin-bottom: 1.5rem;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #f1f5f9, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    max-width: 700px;
+    margin-bottom: 2rem;
+  }
+  .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .hero-meta span { display: flex; align-items: center; gap: 0.4rem; }
+
+  /* Sections */
+  section { padding: 4rem 0; }
+  section + section { border-top: 1px solid rgba(71,85,105,0.3); }
+  .section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent-light);
+    margin-bottom: 0.75rem;
+  }
+  .section-title {
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+  .section-desc {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    max-width: 800px;
+    margin-bottom: 2.5rem;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 1.75rem;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .card h3 { font-size: 1.15rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .card p { color: var(--text-muted); font-size: 0.92rem; }
+
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; }
+
+  /* Stats */
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .stat-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+  .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-accent { color: var(--accent-light); }
+  .stat-danger { color: var(--danger); }
+  .stat-warning { color: var(--warning); }
+  .stat-success { color: var(--success); }
+  .stat-purple { color: var(--purple); }
+
+  /* Tables */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    margin: 1.5rem 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  th {
+    background: var(--surface-2);
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(71,85,105,0.3);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(59,130,246,0.04); }
+
+  /* Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 1rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .badge-danger { background: rgba(239,68,68,0.15); color: #fca5a5; }
+  .badge-warning { background: rgba(245,158,11,0.15); color: #fcd34d; }
+  .badge-success { background: rgba(34,197,94,0.15); color: #86efac; }
+  .badge-info { background: rgba(59,130,246,0.15); color: #93c5fd; }
+  .badge-purple { background: rgba(168,85,247,0.15); color: #d8b4fe; }
+
+  /* Diagram */
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin: 2rem 0;
+    overflow-x: auto;
+  }
+  .diagram-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  /* Architecture boxes */
+  .arch-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+  }
+  .arch-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+  }
+  .arch-box {
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: center;
+    min-width: 140px;
+    border: 2px solid;
+  }
+  .arch-box.platform { background: rgba(59,130,246,0.1); border-color: var(--accent); color: var(--accent-light); }
+  .arch-box.tenant { background: rgba(34,197,94,0.1); border-color: var(--success); color: #86efac; }
+  .arch-box.shared { background: rgba(168,85,247,0.1); border-color: var(--purple); color: #d8b4fe; }
+  .arch-box.danger { background: rgba(239,68,68,0.1); border-color: var(--danger); color: #fca5a5; }
+  .arch-arrow {
+    width: 2px;
+    height: 24px;
+    background: var(--border);
+    position: relative;
+  }
+  .arch-arrow::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: -4px;
+    width: 10px;
+    height: 10px;
+    border-right: 2px solid var(--border);
+    border-bottom: 2px solid var(--border);
+    transform: rotate(45deg);
+  }
+  .arch-arrow-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  /* Proposal cards */
+  .proposal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+  .proposal-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .proposal-number {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .proposal-header h3 { font-size: 1.25rem; font-weight: 700; }
+  .proposal-header p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
+  .proposal-body { padding: 2rem; }
+  .proposal-body h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.75rem;
+    color: var(--accent-light);
+  }
+  .proposal-body h4:first-child { margin-top: 0; }
+  .proposal-body ul { padding-left: 1.25rem; margin: 0.5rem 0; }
+  .proposal-body li { margin-bottom: 0.4rem; font-size: 0.9rem; color: var(--text-muted); }
+  .proposal-body li strong { color: var(--text); }
+
+  /* Mockup */
+  .mockup {
+    background: #0c1222;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    margin: 1.5rem 0;
+  }
+  .mockup-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+  }
+  .mockup-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .mockup-body { padding: 1.25rem; }
+  .mockup-sidebar {
+    display: flex;
+    gap: 0;
+  }
+  .mockup-nav {
+    width: 200px;
+    background: rgba(30,41,59,0.5);
+    border-right: 1px solid var(--border);
+    padding: 1rem 0;
+    flex-shrink: 0;
+  }
+  .mockup-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    cursor: default;
+  }
+  .mockup-nav-item.active {
+    background: rgba(59,130,246,0.15);
+    color: var(--accent-light);
+    border-right: 2px solid var(--accent);
+  }
+  .mockup-content { flex: 1; padding: 1rem 1.25rem; min-width: 0; }
+  .mockup-table {
+    width: 100%;
+    font-size: 0.75rem;
+    border-collapse: collapse;
+  }
+  .mockup-table th {
+    background: var(--surface-2);
+    padding: 0.4rem 0.6rem;
+    text-align: left;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .mockup-table td {
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid rgba(71,85,105,0.2);
+    font-size: 0.75rem;
+  }
+  .mockup-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: white;
+    margin-right: 0.4rem;
+    vertical-align: middle;
+  }
+
+  /* Comparison */
+  .comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+  }
+  @media (max-width: 768px) { .comparison { grid-template-columns: 1fr; } }
+  .comparison-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+  }
+  .comparison-col h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .comparison-col ul { list-style: none; padding: 0; }
+  .comparison-col li {
+    padding: 0.4rem 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .comparison-col li::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-top: 0.5rem;
+    flex-shrink: 0;
+  }
+  .col-current li::before { background: var(--danger); }
+  .col-target li::before { background: var(--success); }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 2rem; margin: 2rem 0; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--accent), var(--purple), var(--success));
+  }
+  .timeline-item {
+    position: relative;
+    padding-bottom: 2rem;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -1.65rem;
+    top: 0.35rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: var(--bg);
+  }
+  .timeline-item:last-child { padding-bottom: 0; }
+  .timeline-phase {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent-light);
+    margin-bottom: 0.25rem;
+  }
+  .timeline-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+  .timeline-desc { font-size: 0.85rem; color: var(--text-muted); }
+  .timeline-files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+  }
+  .timeline-file {
+    padding: 0.15rem 0.5rem;
+    background: rgba(59,130,246,0.1);
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: 0.25rem;
+    font-size: 0.7rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent-light);
+  }
+
+  /* Alert */
+  .alert {
+    padding: 1rem 1.25rem;
+    border-radius: 0.75rem;
+    margin: 1rem 0;
+    font-size: 0.88rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  .alert-danger { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); }
+  .alert-warning { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); }
+  .alert-success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); }
+  .alert-icon { font-size: 1.2rem; flex-shrink: 0; line-height: 1.4; }
+
+  /* Source list */
+  .source-list { list-style: none; padding: 0; }
+  .source-list li {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(71,85,105,0.2);
+    font-size: 0.88rem;
+  }
+  .source-list li:last-child { border-bottom: none; }
+  .source-name { font-weight: 600; color: var(--accent-light); }
+  .source-desc { color: var(--text-muted); margin-top: 0.2rem; }
+
+  /* Recommendation */
+  .rec-card {
+    background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(168,85,247,0.05));
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin: 2rem 0;
+  }
+  .rec-card h3 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Score gauge */
+  .gauge-container {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin: 1.5rem 0;
+    flex-wrap: wrap;
+  }
+  .gauge {
+    width: 120px;
+    height: 120px;
+    position: relative;
+  }
+  .gauge svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .gauge-bg { fill: none; stroke: var(--surface-2); stroke-width: 8; }
+  .gauge-fill { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s; }
+  .gauge-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .gauge-value { font-size: 1.8rem; font-weight: 800; }
+  .gauge-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; }
+
+  /* Footer */
+  footer {
+    padding: 3rem 0;
+    border-top: 1px solid rgba(71,85,105,0.3);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+  }
+
+  /* Code */
+  code {
+    background: var(--surface-2);
+    padding: 0.15rem 0.4rem;
+    border-radius: 0.25rem;
+    font-size: 0.82rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent-light);
+  }
+
+  /* Separator */
+  .sep {
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+    margin: 3rem 0;
+  }
+
+  /* Migration block */
+  .migration-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--purple);
+    border-radius: 0 0.5rem 0.5rem 0;
+    padding: 1rem 1.25rem;
+    margin: 0.75rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    overflow-x: auto;
+  }
+  .migration-block .kw { color: var(--purple); }
+  .migration-block .str { color: var(--success); }
+  .migration-block .type { color: var(--cyan); }
+  .migration-block .comment { color: var(--text-muted); opacity: 0.6; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════ HERO -->
+<header class="hero">
+  <div class="container hero-content">
+    <div class="hero-badge">
+      <span style="width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;"></span>
+      Architecture SaaS &middot; RBAC &middot; Multi-tenant
+    </div>
+    <h1>Séparation RBAC Plateforme / Tenant</h1>
+    <p>Analyse approfondie de la gestion des utilisateurs, rôles et permissions du panel de contrôle eLISAschool. Propositions d'architecture pour une séparation complète entre les utilisateurs plateforme et les utilisateurs tenant/établissement.</p>
+    <div class="hero-meta">
+      <span>&#128197; 9 août 2026</span>
+      <span>&#128196; Rapport technique v1.0</span>
+      <span>&#127919; eLISAschool SaaS</span>
+      <span>&#128270; 8 fichiers RBAC audités &middot; 8 sources enterprise</span>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+<!-- ═══════════════════════════════════════════════════════════════ 1. EXECUTIVE SUMMARY -->
+<section id="summary">
+  <div class="section-label">&#9670; Synthèse exécutive</div>
+  <h2 class="section-title">État actuel et enjeux</h2>
+  <p class="section-desc">Le système RBAC actuel d'eLISAschool fonctionne mais présente des failles structurelles critiques pour un SaaS enterprise. L'analyse de 8 fichiers sources et la comparaison avec 8 plateformes enterprise révèlent 5 problèmes majeurs.</p>
+
+  <div class="grid-4" style="margin-bottom: 2rem;">
+    <div class="stat-card">
+      <div class="stat-value stat-accent">67</div>
+      <div class="stat-label">Rôles définis</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value stat-warning">~230</div>
+      <div class="stat-label">Permissions (mixtes)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value stat-danger">5</div>
+      <div class="stat-label">Rôles orphelins</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value stat-purple">1</div>
+      <div class="stat-label">Rôle fantôme</div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card" style="border-left: 3px solid var(--danger);">
+      <h3>&#128308; Rôles orphelins</h3>
+      <p>5 rôles plateforme définis dans l'enum mais sans permissions, sans règles CASL, sans accès aux routes. Code mort.</p>
+      <div style="margin-top:0.75rem;">
+        <span class="badge badge-danger">ADMINISTRATION_PLATEFORME</span>
+        <span class="badge badge-danger">SECURITE_PLATEFORME</span>
+        <span class="badge badge-danger">SUPPORT_PLATEFORME</span>
+        <span class="badge badge-danger">COMMERCIAL_PLATEFORME</span>
+        <span class="badge badge-danger">MONITORING_PLATEFORME</span>
+      </div>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--warning);">
+      <h3>&#128992; Rôle fantôme</h3>
+      <p><code>GESTIONNAIRE_GROUPES</code> référencé dans le middleware RLS (sentinelle UUID <code>...0001</code>) mais <strong>absent</strong> de l'enum Role.</p>
+      <div style="margin-top:0.75rem;">
+        <span class="badge badge-warning">RLS bypass</span>
+        <span class="badge badge-warning">Non défini</span>
+      </div>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--accent);">
+      <h3>&#128309; Table unique</h3>
+      <p>Une seule table <code>utilisateurs</code> pour les admins plateforme ET les utilisateurs établissement. Pas de séparation physique.</p>
+      <div style="margin-top:0.75rem;">
+        <span class="badge badge-info">1 table</span>
+        <span class="badge badge-info">Multi-rôle via junction</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ 2. AUDIT -->
+<section id="audit">
+  <div class="section-label">&#9670; Audit approfondi</div>
+  <h2 class="section-title">Architecture RBAC actuelle</h2>
+  <p class="section-desc">Analyse fichier par fichier du système RBAC actuel, avec identification des points forts et des failles.</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Fichier</th>
+          <th>Rôle</th>
+          <th>Problèmes identifiés</th>
+          <th>Sévérité</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>roles.enum.ts</code><br><span style="font-size:0.75rem;color:var(--text-muted);">2273 lignes</span></td>
+          <td>Enum Permission + Role + DEFAULT_ROLE_PERMISSIONS</td>
+          <td>~230 permissions sans tag scope (platform/tenant). 67 rôles dont 5 orphelins. SUPER_ADMIN = Object.values(Permission).</td>
+          <td><span class="badge badge-danger">CRITIQUE</span></td>
+        </tr>
+        <tr>
+          <td><code>abilities.ts</code><br><span style="font-size:0.75rem;color:var(--text-muted);">369 lignes</span></td>
+          <td>Règles CASL par rôle</td>
+          <td>Aucune règle pour les 5 rôles plateforme. defineAdminAbility a des <code>cannot</code> pour les sujets plateforme mais pas de rules dédiées.</td>
+          <td><span class="badge badge-danger">CRITIQUE</span></td>
+        </tr>
+        <tr>
+          <td><code>utilisateur.entity.ts</code></td>
+          <td>Entité utilisateur unique</td>
+          <td>Pas de distinction plateforme/tenant. <code>maxEtablissementsPersonnel</code> = 0 pour SUPER_ADMIN (hack).</td>
+          <td><span class="badge badge-warning">MAJEUR</span></td>
+        </tr>
+        <tr>
+          <td><code>utilisateur-etablissement.entity.ts</code></td>
+          <td>Junction multi-tenant</td>
+          <td>roleId par établissement — un utilisateur peut avoir des rôles différents selon l'établissement. Complexe mais fonctionnel.</td>
+          <td><span class="badge badge-success">OK</span></td>
+        </tr>
+        <tr>
+          <td><code>platform.routes.ts</code><br><span style="font-size:0.75rem;color:var(--text-muted);">274 lignes</span></td>
+          <td>Routes plateforme</td>
+          <td>Guard global <code>requireRole([SUPER_ADMIN])</code> — seuls les SUPER_ADMIN accèdent. Les 5 rôles plateforme sont bloqués.</td>
+          <td><span class="badge badge-warning">MAJEUR</span></td>
+        </tr>
+        <tr>
+          <td><code>rls.middleware.ts</code><br><span style="font-size:0.75rem;color:var(--text-muted);">275 lignes</span></td>
+          <td>Isolation tenant RLS</td>
+          <td>Sentinelle SUPER_ADMIN OK. Sentinelle GESTIONNAIRE_GROUPES référencée mais rôle inexistant dans l'enum.</td>
+          <td><span class="badge badge-warning">MAJEUR</span></td>
+        </tr>
+        <tr>
+          <td><code>admin-permissions-matrix.tsx</code><br><span style="font-size:0.75rem;color:var(--text-muted);">468 lignes</span></td>
+          <td>Matrice RBAC frontend</td>
+          <td>Affiche TOUS les rôles sans distinction plateforme/tenant. Accessible par ADMIN (ne devrait voir que les rôles tenant).</td>
+          <td><span class="badge badge-warning">MAJEUR</span></td>
+        </tr>
+        <tr>
+          <td><code>platform-sidebar.tsx</code><br><span style="font-size:0.75rem;color:var(--text-muted);">308 lignes</span></td>
+          <td>Navigation plateforme</td>
+          <td>4 groupes, 15 items. Bien séparé de la nav tenant. Points forts : guard SUPER_ADMIN, icônes cohérentes.</td>
+          <td><span class="badge badge-success">OK</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert alert-danger">
+    <span class="alert-icon">&#9888;</span>
+    <div>
+      <strong>Faille critique :</strong> Le SUPER_ADMIN actuel détient <code>Object.values(Permission)</code> — soit ~230 permissions incluant toutes les permissions tenant. Un compromis du compte SUPER_ADMIN donne accès à <strong>tous les établissements et toutes les fonctionnalités</strong>.
+    </div>
+  </div>
+
+  <h3 style="margin: 2rem 0 1rem; font-size: 1.1rem;">Points forts conservables</h3>
+  <div class="grid-3">
+    <div class="card" style="border-left: 3px solid var(--success);">
+      <h3>&#9989; Séparation route-level</h3>
+      <p>Routes <code>/api/platform/*</code> avec guard global SUPER_ADMIN. Séparation clean des endpoints.</p>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--success);">
+      <h3>&#9989; RLS PostgreSQL</h3>
+      <p>Isolation DB par <code>etablissementId</code> avec bypass sentinel UUID. Defense-in-depth efficace.</p>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--success);">
+      <h3>&#9989; CASL cannot rules</h3>
+      <p>L'ADMIN a des <code>cannot</code> explicites sur Configuration delete, Module toggle, GroupeEtablissement, Monitoring.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ 3. BENCHMARK -->
+<section id="benchmark">
+  <div class="section-label">&#9670; Benchmark enterprise</div>
+  <h2 class="section-title">Bonnes pratiques — 8 sources analysées</h2>
+  <p class="section-desc">Recherche approfondie sur les architectures RBAC des principales plateformes SaaS enterprise.</p>
+
+  <ul class="source-list">
+    <li>
+      <div class="source-name">Microsoft Azure AD — Control Plane / Data Plane</div>
+      <div class="source-desc">Séparation physique des identités : comptes organisation (tenant) vs comptes invité (externes). RBAC distinct par plan. Global Admin ≠ Directory Reader.</div>
+    </li>
+    <li>
+      <div class="source-name">Auth0 — Tenant = Platform, Organization = Customer</div>
+      <div class="source-desc">Modèle à 2 niveaux : le tenant Auth0 = la plateforme SaaS, les Organizations = les clients. Roles et Permissions séparés par niveau. B2B SaaS reference architecture.</div>
+    </li>
+    <li>
+      <div class="source-name">WorkOS — Roles tied to Organizations</div>
+      <div class="source-desc">Roles toujours scopés à une Organization. Un utilisateur peut avoir des rôles différents dans chaque Organization. Admin Connection pour le SSO enterprise.</div>
+    </li>
+    <li>
+      <div class="source-name">Cerbos — Externalized PDP</div>
+      <div class="source-desc">Policy Decision Point externalisé. Principals ont des roles + attributes. Resources ont des types. Policies définissent qui peut faire quoi sur quoi. Séparation complète authZ/authN.</div>
+    </li>
+    <li>
+      <div class="source-name">Aserto — Three-Entity Model</div>
+      <div class="source-desc">Users, Roles, Permissions comme 3 entités distinctes avec relations M:N. Support natif du multi-tenancy via directory instances séparées.</div>
+    </li>
+    <li>
+      <div class="source-name">SuperTokens — Dedicated User Pools</div>
+      <div class="source-desc">User pools dédiés par tenant. Chaque tenant a son propre espace d'utilisateurs. Platform users dans un pool séparé (admin pool).</div>
+    </li>
+    <li>
+      <div class="source-name">Clerk — Organization Model</div>
+      <div class="source-desc">Users appartiennent à des Organizations avec des memberships et roles. Platform admins = membres d'une "platform organization" spéciale.</div>
+    </li>
+    <li>
+      <div class="source-name">Next.js SaaS Starter — Role-Based Access</div>
+      <div class="source-desc">Pattern communautaire : table users avec <code>role</code> enum + table organizations + junction <code>organization_members</code> avec role par org. Simple et efficace.</div>
+    </li>
+  </ul>
+
+  <div class="sep"></div>
+
+  <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Patterns récurrents enterprise</h3>
+  <div class="grid-4">
+    <div class="stat-card">
+      <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">&#128274;</div>
+      <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Séparation physique</div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">Tables distinctes platform vs tenant users</div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">&#127919;</div>
+      <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Scope tagging</div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">Permissions taguées platform/tenant</div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">&#128257;</div>
+      <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Cascade roles</div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">Rôles scopés à l'entité (org/tenant)</div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">&#128737;</div>
+      <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Least privilege</div>
+      <div style="font-size: 0.75rem; color: var(--text-muted);">Platform admins ≠ tous les pouvoirs tenant</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ 4. PROPOSALS -->
+<section id="proposals">
+  <div class="section-label">&#9670; Propositions d'architecture</div>
+  <h2 class="section-title">3 modèles de séparation</h2>
+  <p class="section-desc">Trois approches progressives, de la moins invasive (réorganisation logique) à la plus complète (séparation physique totale). Chaque modèle est auto-portant et peut être implémenté indépendamment.</p>
+
+  <!-- PROPOSITION A -->
+  <div class="proposal">
+    <div class="proposal-header">
+      <div class="proposal-number" style="background: rgba(59,130,246,0.15); color: var(--accent-light);">A</div>
+      <div>
+        <h3>Modèle Hybride — Séparation logique (recommandé)</h3>
+        <p>Une seule table utilisateurs + scope tagging sur permissions + rôles plateforme activés. Effort modéré, impact maximal.</p>
+      </div>
+    </div>
+    <div class="proposal-body">
+      <h4>Principe</h4>
+      <p>Conserver la table <code>utilisateurs</code> unique mais ajouter un champ <code>scope</code> (<code>'platform'</code> | <code>'tenant'</code> | <code>'both'</code>). Les permissions sont taguées par scope. Les rôles plateforme sont activés avec leurs permissions propres.</p>
+
+      <h4>Modèle de données</h4>
+      <div class="diagram">
+        <div class="diagram-title">Architecture — Modèle A : Séparation logique</div>
+        <div class="arch-flow">
+          <div class="arch-row">
+            <div class="arch-box shared">utilisateurs<br><span style="font-size:0.7rem;opacity:0.7;">+ scope: platform|tenant|both</span></div>
+          </div>
+          <div class="arch-arrow"></div>
+          <div class="arch-arrow-label">utilisateur_etablissements (junction)</div>
+          <div class="arch-row">
+            <div class="arch-box tenant">roles_tenant<br><span style="font-size:0.7rem;opacity:0.7;">scope = 'tenant'</span></div>
+            <div class="arch-box platform">roles_plateforme<br><span style="font-size:0.7rem;opacity:0.7;">scope = 'platform'</span></div>
+          </div>
+          <div class="arch-arrow"></div>
+          <div class="arch-row">
+            <div class="arch-box tenant">permissions_tenant<br><span style="font-size:0.7rem;opacity:0.7;">~190 perms</span></div>
+            <div class="arch-box platform">permissions_plateforme<br><span style="font-size:0.7rem;opacity:0.7;">~40 perms</span></div>
+          </div>
+        </div>
+      </div>
+
+      <h4>Avantages</h4>
+      <ul>
+        <li><strong>Migration douce</strong> — pas de split de table, pas de changement d'auth flow</li>
+        <li><strong>Rétro-compatible</strong> — les utilisateurs existants continuent de fonctionner</li>
+        <li><strong>Scope tagging</strong> — les permissions sont clairement étiquetées platform/tenant</li>
+        <li><strong>UI séparée</strong> — la matrice RBAC affiche 2 vues distinctes</li>
+      </ul>
+
+      <h4>Inconvénients</h4>
+      <ul>
+        <li>Table unique = risque de confusion si un user a scope='both'</li>
+        <li>Le SUPER_ADMIN reste un super-user avec toutes les permissions</li>
+      </ul>
+
+      <h4>Mockup — Matrice RBAC séparée</h4>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot" style="background:#ef4444;"></div>
+          <div class="mockup-dot" style="background:#f59e0b;"></div>
+          <div class="mockup-dot" style="background:#22c55e;"></div>
+          <span style="margin-left:0.5rem;font-size:0.75rem;color:var(--text-muted);">/platform/permissions</span>
+        </div>
+        <div class="mockup-sidebar" style="display:flex;">
+          <div class="mockup-nav">
+            <div style="padding:0 1rem 0.75rem;font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.08em;">Sécurité</div>
+            <div class="mockup-nav-item">&#128202; Dashboard</div>
+            <div class="mockup-nav-item">&#127970; Établissements</div>
+            <div class="mockup-nav-item">&#128176; Facturation</div>
+            <div class="mockup-nav-item">&#128230; Modules</div>
+            <div class="mockup-nav-item active">&#128272; Permissions</div>
+            <div class="mockup-nav-item">&#128737; Approbations</div>
+          </div>
+          <div class="mockup-content">
+            <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+              <div style="padding:0.35rem 0.75rem;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:0.375rem;font-size:0.75rem;color:var(--accent-light);font-weight:600;">&#128274; Plateforme</div>
+              <div style="padding:0.35rem 0.75rem;background:var(--surface-2);border:1px solid var(--border);border-radius:0.375rem;font-size:0.75rem;color:var(--text-muted);">&#127970; Tenant</div>
+            </div>
+            <table class="mockup-table">
+              <thead>
+                <tr>
+                  <th>Permission</th>
+                  <th>SUPER_ADMIN</th>
+                  <th>ADMIN_PLAT.</th>
+                  <th>SUPPORT</th>
+                  <th>COMMERCIAL</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>config:plateforme:app:edit</td>
+                  <td style="color:var(--success);">&#9745;</td>
+                  <td style="color:var(--success);">&#9745;</td>
+                  <td style="color:var(--danger);">&#9746;</td>
+                  <td style="color:var(--danger);">&#9746;</td>
+                </tr>
+                <tr>
+                  <td>config:plateforme:module:toggle</td>
+                  <td style="color:var(--success);">&#9745;</td>
+                  <td style="color:var(--danger);">&#9746;</td>
+                  <td style="color:var(--danger);">&#9746;</td>
+                  <td style="color:var(--danger);">&#9746;</td>
+                </tr>
+                <tr>
+                  <td>monitoring:view</td>
+                  <td style="color:var(--success);">&#9745;</td>
+                  <td style="color:var(--success);">&#9745;</td>
+                  <td style="color:var(--success);">&#9745;</td>
+                  <td style="color:var(--danger);">&#9746;</td>
+                </tr>
+                <tr>
+                  <td>audit:platform:view</td>
+                  <td style="color:var(--success);">&#9745;</td>
+                  <td style="color:var(--success);">&#9745;</td>
+                  <td style="color:var(--danger);">&#9746;</td>
+                  <td style="color:var(--danger);">&#9746;</td>
+                </tr>
+                <tr>
+                  <td>billing:plans:manage</td>
+                  <td style="color:var(--success);">&#9745;</td>
+                  <td style="color:var(--success);">&#9745;</td>
+                  <td style="color:var(--danger);">&#9746;</td>
+                  <td style="color:var(--success);">&#9745;</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROPOSITION B -->
+  <div class="proposal">
+    <div class="proposal-header">
+      <div class="proposal-number" style="background: rgba(168,85,247,0.15); color: #d8b4fe;">B</div>
+      <div>
+        <h3>Modèle Dual-Table — Séparation physique totale</h3>
+        <p>Deux tables utilisateurs distinctes : <code>utilisateurs_plateforme</code> et <code>utilisateurs</code> (tenant). Auth flow séparé. Isolation complète.</p>
+      </div>
+    </div>
+    <div class="proposal-body">
+      <h4>Principe</h4>
+      <p>Créer une table <code>utilisateurs_plateforme</code> dédiée aux admins de la plateforme. Ces utilisateurs n'ont <strong>aucun lien</strong> avec les établissements. Leur auth flow est séparé (endpoint <code>/api/platform/auth/login</code>, JWT avec claim <code>scope: 'platform'</code>).</p>
+
+      <h4>Modèle de données</h4>
+      <div class="diagram">
+        <div class="diagram-title">Architecture — Modèle B : Dual-Table</div>
+        <div class="arch-flow">
+          <div class="arch-row">
+            <div class="arch-box platform">utilisateurs_plateforme<br><span style="font-size:0.7rem;opacity:0.7;">id, email, role, scope='platform'</span></div>
+            <div class="arch-box tenant">utilisateurs<br><span style="font-size:0.7rem;opacity:0.7;">id, email, role, scope='tenant'</span></div>
+          </div>
+          <div class="arch-row">
+            <div class="arch-box platform">
+              roles_plateforme<br>
+              <span style="font-size:0.68rem;opacity:0.7;">SUPER_ADMIN, ADMIN_PLATEFORME,<br>SECURITE_PLATEFORME, SUPPORT,<br>COMMERCIAL, MONITORING</span>
+            </div>
+            <div class="arch-box tenant">
+              roles_tenant<br>
+              <span style="font-size:0.68rem;opacity:0.7;">ADMIN, DIRECTEUR, ENSEIGNANT,<br>ELEVE, PARENT, COMPTABLE...<br>(62 rôles existants)</span>
+            </div>
+          </div>
+          <div class="arch-row">
+            <div class="arch-box platform">permissions_plateforme<br><span style="font-size:0.7rem;opacity:0.7;">~40 perms scopées</span></div>
+            <div class="arch-box tenant">permissions_tenant<br><span style="font-size:0.7rem;opacity:0.7;">~190 perms scopées</span></div>
+          </div>
+        </div>
+      </div>
+
+      <h4>Flux d'authentification</h4>
+      <div class="diagram">
+        <div class="diagram-title">Auth Flow — Dual-Table</div>
+        <div class="arch-flow">
+          <div class="arch-row">
+            <div class="arch-box shared" style="min-width:200px;">Login Page<br><span style="font-size:0.7rem;opacity:0.7;">/login (tenant) | /platform/login</span></div>
+          </div>
+          <div class="arch-arrow"></div>
+          <div class="arch-row">
+            <div class="arch-box tenant">POST /api/auth/login<br><span style="font-size:0.7rem;opacity:0.7;">→ utilisateurs table</span></div>
+            <div class="arch-box platform">POST /api/platform/auth/login<br><span style="font-size:0.7rem;opacity:0.7;">→ utilisateurs_plateforme</span></div>
+          </div>
+          <div class="arch-arrow"></div>
+          <div class="arch-row">
+            <div class="arch-box tenant">JWT { scope: 'tenant',<br>etablissementIds: [...] }</div>
+            <div class="arch-box platform">JWT { scope: 'platform',<br>role: 'SUPER_ADMIN' }</div>
+          </div>
+        </div>
+      </div>
+
+      <h4>Avantages</h4>
+      <ul>
+        <li><strong>Isolation totale</strong> — un compromised tenant admin ne peut pas accéder à la plateforme</li>
+        <li><strong>Auth flow dédié</strong> — MFA obligatoire pour les platform users, optionnel pour tenant</li>
+        <li><strong>Audit clair</strong> — les logs plateforme et tenant sont naturellement séparés</li>
+        <li><strong>Conformité</strong> — répond aux exigences SOC2/ISO27001 de séparation des accès</li>
+      </ul>
+
+      <h4>Inconvénients</h4>
+      <ul>
+        <li><strong>Migration lourde</strong> — extraction des platform users existants, création de la nouvelle table</li>
+        <li><strong>Double auth</strong> — un utilisateur qui est à la fois platform admin et tenant user doit se connecter 2 fois</li>
+        <li><strong>Complexité</strong> — 2 systèmes de session, 2 middleware d'auth, 2 JWT validators</li>
+      </ul>
+
+      <h4>Mockup — Page Utilisateurs Plateforme</h4>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot" style="background:#ef4444;"></div>
+          <div class="mockup-dot" style="background:#f59e0b;"></div>
+          <div class="mockup-dot" style="background:#22c55e;"></div>
+          <span style="margin-left:0.5rem;font-size:0.75rem;color:var(--text-muted);">/platform/utilisateurs</span>
+        </div>
+        <div class="mockup-sidebar" style="display:flex;">
+          <div class="mockup-nav">
+            <div style="padding:0 1rem 0.75rem;font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);letter-spacing:0.08em;">Tenants</div>
+            <div class="mockup-nav-item">&#127970; Établissements</div>
+            <div class="mockup-nav-item">&#128101; Groupes</div>
+            <div class="mockup-nav-item active">&#128100; Utilisateurs</div>
+            <div class="mockup-nav-item">&#128176; Facturation</div>
+          </div>
+          <div class="mockup-content">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+              <div>
+                <div style="font-size:1rem;font-weight:700;">Utilisateurs plateforme</div>
+                <div style="font-size:0.72rem;color:var(--text-muted);">4 administrateurs actifs</div>
+              </div>
+              <div style="padding:0.35rem 0.75rem;background:var(--accent);border-radius:0.375rem;font-size:0.75rem;color:white;font-weight:600;">+ Nouvel admin</div>
+            </div>
+            <table class="mockup-table">
+              <thead>
+                <tr>
+                  <th>Utilisateur</th>
+                  <th>Rôle</th>
+                  <th>Dernière connexion</th>
+                  <th>MFA</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="mockup-avatar" style="background:var(--accent);">FA</span>Franck Admin</td>
+                  <td><span class="badge badge-purple">SUPER_ADMIN</span></td>
+                  <td>Il y a 2h</td>
+                  <td style="color:var(--success);">&#9989; Actif</td>
+                  <td><span class="badge badge-success">Actif</span></td>
+                </tr>
+                <tr>
+                  <td><span class="mockup-avatar" style="background:var(--purple);">MD</span>Marie Direction</td>
+                  <td><span class="badge badge-info">ADMIN_PLATEFORME</span></td>
+                  <td>Il y a 1j</td>
+                  <td style="color:var(--success);">&#9989; Actif</td>
+                  <td><span class="badge badge-success">Actif</span></td>
+                </tr>
+                <tr>
+                  <td><span class="mockup-avatar" style="background:var(--cyan);">PS</span>Pierre Support</td>
+                  <td><span class="badge badge-info">SUPPORT</span></td>
+                  <td>Il y a 3j</td>
+                  <td style="color:var(--warning);">&#9888; Non configuré</td>
+                  <td><span class="badge badge-success">Actif</span></td>
+                </tr>
+                <tr>
+                  <td><span class="mockup-avatar" style="background:var(--orange);">LC</span>Lucie Commercial</td>
+                  <td><span class="badge badge-info">COMMERCIAL</span></td>
+                  <td>Il y a 1sem</td>
+                  <td style="color:var(--success);">&#9989; Actif</td>
+                  <td><span class="badge badge-warning">Inactif</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROPOSITION C -->
+  <div class="proposal">
+    <div class="proposal-header">
+      <div class="proposal-number" style="background: rgba(34,197,94,0.15); color: #86efac;">C</div>
+      <div>
+        <h3>Modèle Auth0 — Organizations + Platform Directory</h3>
+        <p>Inspiré d'Auth0/WorkOS : un « Platform Directory » séparé + les établissements comme « Organizations ». Le plus aligned enterprise.</p>
+      </div>
+    </div>
+    <div class="proposal-body">
+      <h4>Principe</h4>
+      <p>S'inspirer du modèle Auth0 B2B : la plateforme SaaS est un « Directory » supérieur qui contient des « Organizations » (établissements). Les platform users sont dans le Directory, les tenant users sont dans leur Organization.</p>
+
+      <h4>Modèle conceptuel</h4>
+      <div class="diagram">
+        <div class="diagram-title">Architecture — Modèle C : Auth0-style</div>
+        <div class="arch-flow">
+          <div class="arch-row">
+            <div class="arch-box platform" style="min-width:300px;">
+              &#127760; Platform Directory<br>
+              <span style="font-size:0.7rem;opacity:0.7;">utilisateurs_plateforme + rôles_plateforme + permissions_plateforme</span>
+            </div>
+          </div>
+          <div class="arch-arrow"></div>
+          <div class="arch-arrow-label">contient</div>
+          <div class="arch-row">
+            <div class="arch-box tenant">
+              &#127970; Org: Lycée de Douala<br>
+              <span style="font-size:0.68rem;opacity:0.7;">50 users, 8 rôles</span>
+            </div>
+            <div class="arch-box tenant">
+              &#127970; Org: Collège Yaoundé<br>
+              <span style="font-size:0.68rem;opacity:0.7;">30 users, 6 rôles</span>
+            </div>
+            <div class="arch-box tenant">
+              &#127970; Org: École Bilingue<br>
+              <span style="font-size:0.68rem;opacity:0.7;">45 users, 7 rôles</span>
+            </div>
+          </div>
+          <div class="arch-arrow"></div>
+          <div class="arch-arrow-label">chaque org a ses propres</div>
+          <div class="arch-row">
+            <div class="arch-box shared">roles + permissions + members<br><span style="font-size:0.7rem;opacity:0.7;">isolés par RLS + organisation_id</span></div>
+          </div>
+        </div>
+      </div>
+
+      <h4>Implémentation concrète pour eLISAschool</h4>
+      <ul>
+        <li><code>utilisateurs_plateforme</code> = Platform Directory (table séparée)</li>
+        <li><code>utilisateurs</code> = Organization Members (table existante, rebaptisée conceptuellement)</li>
+        <li><code>etablissements</code> = Organizations (table existante)</li>
+        <li><code>utilisateur_etablissements</code> = Organization Memberships (junction existante)</li>
+        <li>Les rôles dans <code>roles</code> avec <code>etablissementId = null</code> = Platform Roles</li>
+        <li>Les rôles dans <code>roles</code> avec <code>etablissementId = uuid</code> = Organization Roles</li>
+      </ul>
+
+      <h4>Avantages</h4>
+      <ul>
+        <li><strong>Alignement enterprise</strong> — modèle éprouvé par Auth0, WorkOS, Clerk</li>
+        <li><strong>Extensibilité</strong> — facile d'ajouter des « Organization types » (groupes, sous-traitants)</li>
+        <li><strong>Marketplace-ready</strong> — si eLISAschool vend des modules, le modèle supporte les « vendor users »</li>
+      </ul>
+
+      <h4>Inconvénients</h4>
+      <ul>
+        <li><strong>Complexité maximale</strong> — 2 auth flows, 2 tables users, concept d'Organization à introduire</li>
+        <li><strong>Over-engineering risk</strong> — pour un SaaS scolaire camerounais, le modèle Auth0 peut être excessif</li>
+        <li><strong>Migration la plus longue</strong> — estimation 3-4 semaines de développement</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ 5. RECOMMENDATION -->
+<section id="recommendation">
+  <div class="section-label">&#9670; Recommandation</div>
+  <h2 class="section-title">Modèle recommandé : A → B progressif</h2>
+
+  <div class="rec-card">
+    <h3>&#127919; Stratégie en 2 temps</h3>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Commencer par le <strong>Modèle A</strong> (séparation logique, ~1 semaine) puis migrer vers le <strong>Modèle B</strong> (dual-table, ~2 semaines) quand la base utilisateurs plateforme sera définie.</p>
+
+    <div class="comparison">
+      <div class="comparison-col col-current">
+        <h4><span style="color:var(--danger);">&#9679;</span> État actuel</h4>
+        <ul>
+          <li>1 table <code>utilisateurs</code> pour tous</li>
+          <li>~230 permissions sans scope</li>
+          <li>67 rôles dont 5 orphelins</li>
+          <li>1 rôle fantôme (GESTIONNAIRE_GROUPES)</li>
+          <li>SUPER_ADMIN = toutes les permissions</li>
+          <li>Matrice RBAC unique (mixte)</li>
+          <li>Pas de page utilisateurs plateforme</li>
+        </ul>
+      </div>
+      <div class="comparison-col col-target">
+        <h4><span style="color:var(--success);">&#9679;</span> État cible (Modèle A)</h4>
+        <ul>
+          <li>1 table <code>utilisateurs</code> + champ <code>scope</code></li>
+          <li>~230 permissions taguées platform/tenant</li>
+          <li>5 rôles plateforme activés avec permissions</li>
+          <li>GESTIONNAIRE_GROUPES ajouté à l'enum</li>
+          <li>SUPER_ADMIN = permissions plateforme uniquement</li>
+          <li>2 matrices RBAC (plateforme + tenant)</li>
+          <li>Page CRUD utilisateurs plateforme</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ 6. ROADMAP -->
+<section id="roadmap">
+  <div class="section-label">&#9670; Feuille de route</div>
+  <h2 class="section-title">Plan d'implémentation — Modèle A</h2>
+  <p class="section-desc">5 phases incrémentales, chaque phase est déployable indépendamment.</p>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-phase">Phase 1 — Scope tagging (2 jours)</div>
+      <div class="timeline-title">Taguer toutes les permissions par scope</div>
+      <div class="timeline-desc">Ajouter un attribut <code>scope: 'platform' | 'tenant' | 'shared'</code> à chaque entrée de l'enum Permission. Créer un helper <code>isPlatformPermission()</code> et <code>isTenantPermission()</code>.</div>
+      <div class="timeline-files">
+        <span class="timeline-file">shared/src/enums/roles.enum.ts</span>
+        <span class="timeline-file">shared/src/enums/permission-scope.ts</span>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-phase">Phase 2 — Rôles plateforme activés (2 jours)</div>
+      <div class="timeline-title">Définir les permissions des 5 rôles plateforme</div>
+      <div class="timeline-desc">Ajouter les entrées DEFAULT_ROLE_PERMISSIONS pour ADMINISTRATION_PLATEFORME, SECURITE_PLATEFORME, SUPPORT_PLATEFORME, COMMERCIAL_PLATEFORME, MONITORING_PLATEFORME. Ajouter GESTIONNAIRE_GROUPES à l'enum Role. Mettre à jour le guard platform.routes.ts pour accepter ces rôles.</div>
+      <div class="timeline-files">
+        <span class="timeline-file">shared/src/enums/roles.enum.ts</span>
+        <span class="timeline-file">backend/src/routes/platform.routes.ts</span>
+        <span class="timeline-file">shared/src/casl/abilities.ts</span>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-phase">Phase 3 — Page utilisateurs plateforme (3 jours)</div>
+      <div class="timeline-title">CRUD complet des utilisateurs plateforme</div>
+      <div class="timeline-desc">Créer la page <code>/platform/utilisateurs</code> avec DataTable, filtres par rôle/statut, modal création (email, rôle plateforme, MFA obligatoire), actions (activer/désactiver/reset MFA). Backend : endpoints <code>/api/platform/utilisateurs</code> avec guard SUPER_ADMIN.</div>
+      <div class="timeline-files">
+        <span class="timeline-file">frontend/src/routes/platform.utilisateurs.tsx</span>
+        <span class="timeline-file">frontend/src/features/admin/components/platform-users-page.tsx</span>
+        <span class="timeline-file">backend/src/modules/auth/controllers/platform-users.controller.ts</span>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-phase">Phase 4 — Matrice RBAC séparée (2 jours)</div>
+      <div class="timeline-title">2 vues dans la page Permissions</div>
+      <div class="timeline-desc">Ajouter un toggle « Plateforme / Tenant » en haut de la matrice. La vue Plateforme n'affiche que les 6 rôles plateforme + leurs permissions. La vue Tenant affiche les 62 rôles tenant. Filtrage par scope côté backend.</div>
+      <div class="timeline-files">
+        <span class="timeline-file">frontend/src/features/admin/components/admin-permissions-matrix.tsx</span>
+        <span class="timeline-file">backend/src/modules/rbac/controllers/rbac.controller.ts</span>
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-phase">Phase 5 — Durcissement sécurité (1 jour)</div>
+      <div class="timeline-title">MFA obligatoire + audit + least privilege</div>
+      <div class="timeline-desc">Rendre MFA obligatoire pour tous les rôles plateforme. Restreindre SUPER_ADMIN aux seules permissions plateforme (retirer les permissions tenant). Ajouter les règles CASL pour les 5+1 rôles plateforme.</div>
+      <div class="timeline-files">
+        <span class="timeline-file">shared/src/casl/abilities.ts</span>
+        <span class="timeline-file">backend/src/modules/auth/services/mfa.service.ts</span>
+        <span class="timeline-file">backend/src/common/middlewares/rls.middleware.ts</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ 7. MIGRATIONS -->
+<section id="migrations">
+  <div class="section-label">&#9670; Migrations SQL</div>
+  <h2 class="section-title">Schéma de migration</h2>
+  <p class="section-desc">Migrations PostgreSQL nécessaires pour le Modèle A.</p>
+
+  <h3 style="margin-bottom: 1rem;">Migration 166 — Scope tagging + rôles plateforme</h3>
+  <div class="migration-block">
+    <span class="comment">-- Migration 166 : Séparation RBAC plateforme/tenant</span><br><br>
+    <span class="comment">-- 1. Ajouter scope aux permissions (via commentaire convention)</span><br>
+    <span class="kw">ALTER TABLE</span> role_permissions<br>
+    &nbsp;&nbsp;<span class="kw">ADD COLUMN IF NOT EXISTS</span> <span class="str">"scope"</span> <span class="type">varchar(20)</span> <span class="kw">DEFAULT</span> <span class="str">'tenant'</span>;<br><br>
+    <span class="comment">-- 2. Ajouter le rôle GESTIONNAIRE_GROUPES manquant</span><br>
+    <span class="kw">INSERT INTO</span> roles (code, libelle, description, estSysteme, estActif)<br>
+    <span class="kw">VALUES</span> (<span class="str">'GESTIONNAIRE_GROUPES'</span>, <span class="str">'Gestionnaire de groupes'</span>,<br>
+    &nbsp;&nbsp;<span class="str">'Peut gérer les groupes d''établissements'</span>, <span class="kw">true</span>, <span class="kw">true</span>)<br>
+    <span class="kw">ON CONFLICT</span> (code) <span class="kw">DO NOTHING</span>;<br><br>
+    <span class="comment">-- 3. Permissions des 5 rôles plateforme + GESTIONNAIRE_GROUPES</span><br>
+    <span class="comment">-- (INSERT role_permissions pour chaque rôle avec scope = 'platform')</span><br><br>
+    <span class="comment">-- 4. Index pour filtrage par scope</span><br>
+    <span class="kw">CREATE INDEX IF NOT EXISTS</span> idx_role_permissions_scope<br>
+    &nbsp;&nbsp;<span class="kw">ON</span> role_permissions(<span class="str">"scope"</span>);
+  </div>
+
+  <div class="migration-block" style="border-left-color: var(--success);">
+    <span class="comment">-- Migration future (Modèle B) : Table plateforme séparée</span><br><br>
+    <span class="kw">CREATE TABLE IF NOT EXISTS</span> utilisateurs_plateforme (<br>
+    &nbsp;&nbsp;<span class="str">"id"</span> <span class="type">uuid</span> <span class="kw">PRIMARY KEY DEFAULT</span> gen_random_uuid(),<br>
+    &nbsp;&nbsp;<span class="str">"email"</span> <span class="type">varchar(255)</span> <span class="kw">UNIQUE NOT NULL</span>,<br>
+    &nbsp;&nbsp;<span class="str">"motDePasse"</span> <span class="type">varchar(255)</span> <span class="kw">NOT NULL</span>,<br>
+    &nbsp;&nbsp;<span class="str">"role"</span> <span class="type">varchar(30)</span> <span class="kw">NOT NULL</span>,<br>
+    &nbsp;&nbsp;<span class="str">"nom"</span> <span class="type">varchar(100)</span>,<br>
+    &nbsp;&nbsp;<span class="str">"prenom"</span> <span class="type">varchar(100)</span>,<br>
+    &nbsp;&nbsp;<span class="str">"mfaActif"</span> <span class="type">boolean</span> <span class="kw">DEFAULT false</span>,<br>
+    &nbsp;&nbsp;<span class="str">"statut"</span> <span class="type">varchar(20)</span> <span class="kw">DEFAULT</span> <span class="str">'ACTIF'</span>,<br>
+    &nbsp;&nbsp;<span class="str">"derniereConnexion"</span> <span class="type">timestamptz</span>,<br>
+    &nbsp;&nbsp;<span class="str">"createdAt"</span> <span class="type">timestamptz</span> <span class="kw">DEFAULT NOW()</span>,<br>
+    &nbsp;&nbsp;<span class="str">"updatedAt"</span> <span class="type">timestamptz</span> <span class="kw">DEFAULT NOW()</span><br>
+    );<br><br>
+    <span class="comment">-- Migration des SUPER_ADMIN existants vers la nouvelle table</span><br>
+    <span class="kw">INSERT INTO</span> utilisateurs_plateforme (email, <span class="str">"motDePasse"</span>, role, nom, prenom, mfaActif)<br>
+    <span class="kw">SELECT</span> email, <span class="str">"motDePasse"</span>, role, <span class="str">"nom"</span>, <span class="str">"prenom"</span>, <span class="str">"deuxFacteursActif"</span><br>
+    <span class="kw">FROM</span> utilisateurs <span class="kw">WHERE</span> role = <span class="str">'SUPER_ADMIN'</span>;
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ 8. ALTERNATIVES -->
+<section id="alternatives">
+  <div class="section-label">&#9670; Alternatives explorées</div>
+  <h2 class="section-title">Autres approches considérées</h2>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>&#128268; Externalized PDP (Cerbos-style)</h3>
+      <p>Déléguer toute la logique d'autorisation à un service externe (Cerbos, OPA). Séparation complète authN/authZ.</p>
+      <div style="margin-top: 0.75rem;">
+        <span class="badge badge-warning">Complexité élevée</span>
+        <span class="badge badge-info">Infrastructure supplémentaire</span>
+      </div>
+      <p style="margin-top: 0.5rem; font-size: 0.82rem;"><strong>Verdict :</strong> Rejeté — over-engineering pour un SaaS scolaire. CASL.js suffit.</p>
+    </div>
+    <div class="card">
+      <h3>&#128218; ABAC pur (attributes-based)</h3>
+      <p>Remplacer RBAC par ABAC : chaque décision basée sur des attributs (rôle, établissement, module, heure). Plus granulaire mais plus complexe.</p>
+      <div style="margin-top: 0.75rem;">
+        <span class="badge badge-warning">Courbe d'apprentissage</span>
+        <span class="badge badge-info">Très flexible</span>
+      </div>
+      <p style="margin-top: 0.5rem; font-size: 0.82rem;"><strong>Verdict :</strong> Complémentaire. CASL supporte déjà ABAC via les conditions. À enrichir progressivement.</p>
+    </div>
+    <div class="card">
+      <h3>&#128279; Multi-tenant via claims JWT</h3>
+      <p>Stocker toutes les permissions dans le JWT (pas de lookup DB). Plus rapide mais tokens lourds (déjà rencontré : 16KB → 431).</p>
+      <div style="margin-top: 0.75rem;">
+        <span class="badge badge-danger">Token trop lourd</span>
+        <span class="badge badge-danger">Invalidation impossible</span>
+      </div>
+      <p style="margin-top: 0.5rem; font-size: 0.82rem;"><strong>Verdict :</strong> Rejeté — le bug HTTP 431 a déjà montré les limites. Permissions résolues côté serveur.</p>
+    </div>
+    <div class="card">
+      <h3>&#128737; Zero-Trust per-request</h3>
+      <p>Chaque requête re-vérifie toutes les permissions depuis la DB. Sécurité maximale mais latence ajoutée.</p>
+      <div style="margin-top: 0.75rem;">
+        <span class="badge badge-warning">Latence +5-10ms/req</span>
+        <span class="badge badge-success">Sécurité max</span>
+      </div>
+      <p style="margin-top: 0.5rem; font-size: 0.82rem;"><strong>Verdict :</strong> Partiellement en place via le cache permissions (Redis TTL). Suffisant pour le moment.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ 9. SUMMARY TABLE -->
+<section id="summary-table">
+  <div class="section-label">&#9670; Synthèse comparative</div>
+  <h2 class="section-title">Comparaison des 3 modèles</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Critère</th>
+          <th style="color:var(--accent-light);">A — Hybride</th>
+          <th style="color:#d8b4fe;">B — Dual-Table</th>
+          <th style="color:#86efac;">C — Auth0-style</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Effort</strong></td>
+          <td><span class="badge badge-success">~1 semaine</span></td>
+          <td><span class="badge badge-warning">~2-3 semaines</span></td>
+          <td><span class="badge badge-danger">~3-4 semaines</span></td>
+        </tr>
+        <tr>
+          <td><strong>Risque migration</strong></td>
+          <td><span class="badge badge-success">Faible</span></td>
+          <td><span class="badge badge-warning">Moyen</span></td>
+          <td><span class="badge badge-danger">Élevé</span></td>
+        </tr>
+        <tr>
+          <td><strong>Isolation sécurité</strong></td>
+          <td><span class="badge badge-warning">Logique</span></td>
+          <td><span class="badge badge-success">Physique</span></td>
+          <td><span class="badge badge-success">Physique</span></td>
+        </tr>
+        <tr>
+          <td><strong>Rétro-compatibilité</strong></td>
+          <td><span class="badge badge-success">100%</span></td>
+          <td><span class="badge badge-warning">70%</span></td>
+          <td><span class="badge badge-danger">50%</span></td>
+        </tr>
+        <tr>
+          <td><strong>Alignement enterprise</strong></td>
+          <td><span class="badge badge-info">Bon</span></td>
+          <td><span class="badge badge-success">Très bon</span></td>
+          <td><span class="badge badge-success">Excellent</span></td>
+        </tr>
+        <tr>
+          <td><strong>Extensibilité</strong></td>
+          <td><span class="badge badge-info">Moyenne</span></td>
+          <td><span class="badge badge-success">Bonne</span></td>
+          <td><span class="badge badge-success">Excellente</span></td>
+        </tr>
+        <tr>
+          <td><strong>Recommandation</strong></td>
+          <td style="font-weight:700;color:var(--accent-light);">&#9733; IMMÉDIAT</td>
+          <td>Phase 2 (si besoin)</td>
+          <td>Long terme (si scale)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="container">
+    <p style="margin-bottom: 0.5rem;"><strong>eLISAschool</strong> — Rapport de séparation RBAC Plateforme / Tenant</p>
+    <p>Généré le 9 août 2026 &middot; Analyse de 8 fichiers sources &middot; 8 benchmarks enterprise &middot; 3 propositions d'architecture</p>
+    <p style="margin-top: 1rem; font-size: 0.75rem; opacity: 0.5;">Document confidentiel — Usage interne uniquement</p>
+  </div>
+</footer>
+
+</body>
+</html>

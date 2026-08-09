@@ -11,6 +11,10 @@ import { NotificationsService } from '../services/notifications.service';
 import { createNotificationSchema, createBulkNotificationSchema, queryNotificationsSchema } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { validateDto } from '@common/utils';
+import { AppDataSource } from '@database/data-source';
+import { NotificationTemplate } from '../entities/notification-template.entity';
+import { NotificationProviderConfig } from '../entities/notification-provider-config.entity';
+import { logger } from '@common/utils/logger.util';
 
 const router = Router();
 const notificationsService = new NotificationsService();
@@ -199,6 +203,110 @@ router.get('/stats', async (req: Request, res: Response, next: NextFunction) => 
             success: true,
             data: stats,
             timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// =============================================
+// TEMPLATES & TEST (plateforme)
+// =============================================
+
+/**
+ * GET /api/notifications/providers
+ * Liste les providers de notification configurés (tous établissements)
+ * Retourne un résumé par channel : type, service, actif, configure
+ */
+router.get('/providers', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const configRepo = AppDataSource.getRepository(NotificationProviderConfig);
+        const configs = await configRepo.find({ order: { channel: 'ASC', providerName: 'ASC' } });
+
+        // Agréger par channel pour le frontend
+        const canalMap: Record<string, { type: string; service: string; actif: boolean; configure: boolean }> = {};
+        const knownChannels = ['EMAIL', 'SMS', 'PUSH', 'IN_APP'];
+
+        // Initialiser tous les canaux
+        for (const ch of knownChannels) {
+            canalMap[ch] = { type: ch, service: ch.charAt(0) + ch.slice(1).toLowerCase(), actif: false, configure: false };
+        }
+
+        // Remplir avec les configs existantes
+        for (const cfg of configs) {
+            const ch = cfg.channel.toUpperCase();
+            if (canalMap[ch]) {
+                canalMap[ch].service = cfg.providerName;
+                canalMap[ch].actif = cfg.actif;
+                canalMap[ch].configure = true;
+            }
+        }
+
+        res.json({ success: true, data: Object.values(canalMap) });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * GET /api/notifications/templates
+ * Liste les templates de notifications (global + établissement)
+ */
+router.get('/templates', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const templateRepo = AppDataSource.getRepository(NotificationTemplate);
+        const templates = await templateRepo.find({
+            order: { type: 'ASC', channel: 'ASC' },
+        });
+
+        res.json({ success: true, data: templates });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/notifications/test
+ * Envoyer une notification de test (pour vérifier la config)
+ */
+router.post('/test', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { canal, destinataire, message } = req.body;
+
+        if (!canal || !destinataire) {
+            return res.status(400).json({
+                success: false,
+                message: 'canal et destinataire requis',
+            });
+        }
+
+        // Mapper canal frontend → type backend (gère uppercase et lowercase)
+        const canalMap: Record<string, 'PUSH' | 'EMAIL' | 'IN_APP' | 'SMS'> = {
+            push: 'PUSH',
+            email: 'EMAIL',
+            sms: 'SMS',
+            'in-app': 'IN_APP',
+            PUSH: 'PUSH',
+            EMAIL: 'EMAIL',
+            SMS: 'SMS',
+            IN_APP: 'IN_APP',
+        };
+        const typeNotif = canalMap[canal] || canalMap[canal?.toLowerCase()] || 'IN_APP';
+
+        // Créer une notification de test via le service
+        await notificationsService.create({
+            titre: 'Test de notification',
+            contenu: message || `Ceci est un test de notification via ${canal}`,
+            type: typeNotif,
+            destinataireId: req.utilisateur!.id,
+            metadata: { test: true, canalTeste: canal, destinataireTest: destinataire },
+        });
+
+        logger.info(`[Notifications] Test envoyé via ${canal} à ${destinataire} par ${req.utilisateur!.id}`);
+
+        res.json({
+            success: true,
+            message: `Notification de test envoyée via ${canal}`,
         });
     } catch (error) {
         next(error);

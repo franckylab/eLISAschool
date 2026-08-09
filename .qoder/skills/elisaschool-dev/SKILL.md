@@ -2117,3 +2117,134 @@ L'utilisateur peut demander une mise à jour à tout moment avec des instruction
 5. Informer l'utilisateur des modifications apportées
 
 > **Note** : Les mises à jour ne sont jamais silencieuses — l'IA informe toujours l'utilisateur de ce qui a été ajouté, modifié ou supprimé.
+
+---
+
+## Module Plateforme (Control Plane) — Panel Admin v7
+
+### Architecture
+
+Le panel d'administration plateforme (Control Plane) gère la plateforme SaaS dans son ensemble :
+
+```
+Module Plateforme
+├── platform-users/          — CRUD utilisateurs plateforme (6 rôles + scope)
+├── platform-roles/          — Role Builder (rôles personnalisés)
+├── configuration/           — Paramètres cascade 4 niveaux
+└── billing/                 — Facturation, plans, abonnements (existant)
+```
+
+### Rôles plateforme (6 rôles)
+
+```typescript
+// shared/src/enums/roles.enum.ts
+SUPER_ADMIN                    // Accès total, non supprimable
+ADMINISTRATION_PLATEFORME      // Gestion quotidienne
+SECURITE_PLATEFORME            // Sécurité, RBAC, audit
+SUPPORT_PLATEFORME             // Support technique
+COMMERCIAL_PLATEFORME          // Commercial, plans, revenus
+MONITORING_PLATEFORME          // Monitoring, alertes, metrics
+```
+
+### Permissions plateforme
+
+| Permission | Scope |
+|-----------|-------|
+| `platform:administration:*` | CRUD établissements, facturation, modules, config |
+| `platform:securite:*` | RBAC, audit, MFA, users plateforme |
+| `platform:support:*` | Monitoring, providers, debugging |
+| `platform:commercial:*` | Plans, tarifs, offres, revenus |
+| `platform:monitoring:*` | Dashboards, alertes, metrics (read-only) |
+| `platform:roles:manage` | SUPER_ADMIN uniquement (Role Builder) |
+
+### Endpoints plateforme (préfixe `/api/platform/`)
+
+```
+# Utilisateurs plateforme (à implémenter — Phase V2)
+GET    /api/platform/utilisateurs              — Liste paginée (filtres: rôle, MFA, statut)
+POST   /api/platform/utilisateurs              — Créer compte plateforme
+PATCH  /api/platform/utilisateurs/:id          — Modifier (rôle, scope, statut)
+DELETE /api/platform/utilisateurs/:id          — Désactiver (soft delete)
+
+# Role Builder (à implémenter — Phase V2)
+GET    /api/platform/roles                     — Liste rôles (défaut + custom)
+POST   /api/platform/roles                     — Créer rôle personnalisé
+PATCH  /api/platform/roles/:id                 — Modifier permissions
+
+# Cascade paramètres (à implémenter — Phase V3)
+GET    /api/platform/parametres/cascade/:cle   — Cascade complète (4 niveaux)
+PUT    /api/platform/parametres/cascade/:cle/global — Modifier valeur globale
+POST   /api/platform/parametres/cascade/:cle/propager — Appliquer global à tous
+```
+
+### Règles de sécurité
+
+- MFA obligatoire (grace period 24h)
+- Protection dernier SUPER_ADMIN (non supprimable/rétrogradable)
+- Limite 3 sessions simultanées
+- Audit trail automatique sur toutes les actions
+- Scope par groupe d'établissements (`groupeEtablissementIds` uuid[])
+
+### Documentation de référence
+- ADR-001 : `docs/architectures/ADR-001-restructuration-sidebar-plateforme.md`
+- ADR-002 : `docs/architectures/ADR-002-roles-plateforme.md`
+- ADR-003 : `docs/architectures/ADR-003-parametres-multi-niveaux.md`
+- ADR-004 : `docs/architectures/ADR-004-auth0-internalise-dual-plane.md`
+- Glossaire : `docs/guides/GLOSSAIRE-PLATEFORME-ADMIN.md`
+- Glossaire Identité : `docs/guides/GLOSSAIRE-IDENTITE-PLATEFORME.md`
+
+## Auth Dual-Plane (Modèle C — Auth0 Internalisé)
+
+### Architecture Identité
+
+Le Modèle C sépare l'authentification de l'autorisation via 4 tables :
+
+```
+identites                    — Source unique de vérité (email, password hash, MFA, statut)
+├── utilisateurs_plateforme  — Admins plateforme (FK → identites, OneToOne)
+├── memberships              — Pivot identité × contexte (PLATEFORME | ETABLISSEMENT)
+└── permissions_plateforme   — Registre ~40 permissions granulaires
+```
+
+### Modules backend dual-plane
+
+```
+platform-auth/        — Login (bcrypt + memberships → JWT scopé), logout, getMe
+platform-sessions/    — CRUD sessions, limite LRU 3, révocation
+identites/            — Entité Identite (entités TypeORM)
+utilisateurs-plateforme/ — Entité UtilisateurPlateforme
+memberships/          — Entité Membership (pivot)
+permissions-plateforme/ — Entité PermissionPlateforme
+```
+
+### JWT scopé + Middleware discrimination
+
+```typescript
+// JWT payload
+{ sub: identiteId, email, platform: { role } | null, tenant: { etablissementId, role } | null }
+
+// Middleware scope-discrimination.ts
+// Si route /api/platform/ → vérifier jwt.platform !== null → definePlatformAbility()
+// Sinon → vérifier jwt.tenant !== null → defineAbility() (tenant)
+```
+
+### Endpoints auth & sessions plateforme
+
+```
+POST /api/platform/auth/login     — Login plateforme (public)
+POST /api/platform/auth/logout    — Logout (auth requis)
+GET  /api/platform/auth/me        — Profil utilisateur + memberships
+GET  /api/platform/sessions       — Liste sessions actives
+DELETE /api/platform/sessions/:id — Révoquer session
+DELETE /api/platform/sessions/all — Révoquer toutes sessions
+```
+
+### CASL Dual
+
+```typescript
+// shared/src/casl/platform-abilities.ts
+definePlatformAbility(ctx: { identiteId, role }) → PlatformAppAbility
+// 6 switch cases : SUPER_ADMIN, ADMIN_PLATEFORME, SUPPORT, BILLING_MANAGER, ANALYST, AUDITOR
+
+// Subjects plateforme : PlatformUser, PlatformRole, Etablissement, Facturation, Monitoring, Audit, Session, etc.
+```

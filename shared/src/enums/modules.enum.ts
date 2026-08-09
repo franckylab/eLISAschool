@@ -79,6 +79,14 @@ export enum ModuleName {
   PERSONNEL = 'personnel',
   CONTRATS = 'contrats',
   PAIE = 'paie',
+
+  // Modules plateforme (Control Plane)
+  IDENTITES = 'identites',
+  MEMBERSHIPS = 'memberships',
+  PLATFORM_AUTH = 'platform-auth',
+  PLATFORM_SESSIONS = 'platform-sessions',
+  PLATFORM_USERS = 'platform-users',
+  PLATFORM_ROLES = 'platform-roles',
 }
 
 /**
@@ -145,6 +153,12 @@ export const MODULE_CATEGORIES: Record<ModuleName, ModuleCategory> = {
   [ModuleName.PERSONNEL]: ModuleCategory.ACADEMIQUES,
   [ModuleName.CONTRATS]: ModuleCategory.ACADEMIQUES,
   [ModuleName.PAIE]: ModuleCategory.ACADEMIQUES,
+  [ModuleName.IDENTITES]: ModuleCategory.CRITIQUES,
+  [ModuleName.MEMBERSHIPS]: ModuleCategory.CRITIQUES,
+  [ModuleName.PLATFORM_AUTH]: ModuleCategory.CRITIQUES,
+  [ModuleName.PLATFORM_SESSIONS]: ModuleCategory.CRITIQUES,
+  [ModuleName.PLATFORM_USERS]: ModuleCategory.CRITIQUES,
+  [ModuleName.PLATFORM_ROLES]: ModuleCategory.CRITIQUES,
 };
 
 export default { ModuleName, ModuleCategory, MODULE_CATEGORIES };

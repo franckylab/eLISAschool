@@ -12,9 +12,15 @@ import { Permission } from '@shared/enums/roles.enum';
 
 /**
  * Permissions spécifiques au module Configuration
+ * 
+ * [RBAC-2] v5.1 — Séparation plateforme/établissement
+ * Les permissions EDIT/TOGGLE/BACKUP de portée GLOBALE sont retirées
+ * du rôle ADMIN (client). Elles nécessitent les permissions plateforme
+ * dédiées (config:plateforme:*) réservées au SUPER_ADMIN.
+ * Rapport audit SaaS 2026-08-07
  */
 export enum ConfigPermission {
-    // Configuration App
+    // Configuration App (lecture — disponible pour tous les admins)
     CONFIG_APP_VIEW = 'config:app:view',
     CONFIG_APP_EDIT = 'config:app:edit',
 
@@ -42,6 +48,12 @@ export enum ConfigPermission {
 
     // Cache
     CONFIG_CACHE_INVALIDATE = 'config:cache:invalidate',
+
+    // [RBAC-2] Permissions PLATEFORME — SUPER_ADMIN uniquement
+    CONFIG_PLATEFORME_APP_EDIT = 'config:plateforme:app:edit',
+    CONFIG_PLATEFORME_MODULE_TOGGLE = 'config:plateforme:module:toggle',
+    CONFIG_PLATEFORME_BACKUP_CREATE = 'config:plateforme:backup:create',
+    CONFIG_PLATEFORME_BACKUP_RESTORE = 'config:plateforme:backup:restore',
 }
 
 /**
@@ -50,16 +62,16 @@ export enum ConfigPermission {
 export const CONFIG_ROLE_PERMISSIONS: Record<string, ConfigPermission[]> = {
     SUPER_ADMIN: Object.values(ConfigPermission), // Toutes les permissions
 
+    // [RBAC-2] ADMIN (client) — permissions ÉTABLISSEMENT uniquement
+    // Les opérations PLATEFORME (app edit global, module toggle global,
+    // backup/restore) sont retirées. Elles nécessitent SUPER_ADMIN.
     ADMIN: [
         ConfigPermission.CONFIG_APP_VIEW,
-        ConfigPermission.CONFIG_APP_EDIT,
         ConfigPermission.CONFIG_MODULE_VIEW,
         ConfigPermission.CONFIG_MODULE_EDIT,
-        ConfigPermission.CONFIG_MODULE_TOGGLE,
         ConfigPermission.CONFIG_PARAM_VIEW,
         ConfigPermission.CONFIG_PARAM_EDIT,
         ConfigPermission.CONFIG_HISTORY_VIEW,
-        ConfigPermission.CONFIG_BACKUP_CREATE,
         ConfigPermission.CONFIG_EXPORT,
         ConfigPermission.CONFIG_CACHE_INVALIDATE,
     ],

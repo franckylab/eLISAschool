@@ -92,6 +92,10 @@ export default defineConfig(({ mode }) => {
         alias: {
             '@': path.resolve(__dirname, './src'),
             '@shared': path.resolve(__dirname, '../shared/src'),
+            // Phase fix v6 : @casl/ability est dans /app/node_modules mais le shared
+            // est monté à /shared (hors /app). Sans cet alias, Vite ne résout pas
+            // @casl/ability depuis /shared/src/casl/abilities.ts.
+            '@casl/ability': path.resolve(__dirname, 'node_modules/@casl/ability'),
         },
         },
         server: {
@@ -143,16 +147,29 @@ export default defineConfig(({ mode }) => {
         rollupOptions: {
             output: {
                 manualChunks: {
+                    // Core vendors
                     'react-vendor': ['react', 'react-dom'],
                     'query-vendor': ['@tanstack/react-query'],
                     'router-vendor': ['@tanstack/react-router'],
                     'ui-vendor': ['framer-motion', 'lucide-react'],
+                    // Phase E.4 — Code splitting admin/platform
+                    // Note: @casl/react et recharts retirés (non installés)
+                    'admin-vendor': ['@casl/ability'],
+                    'admin-platform': [
+                        './src/routes/platform.dashboard.tsx',
+                        './src/routes/platform.configuration.tsx',
+                        './src/routes/platform.etablissements.tsx',
+                        './src/routes/platform.facturation.tsx',
+                        './src/routes/platform.monitoring.tsx',
+                        './src/routes/platform.modules.tsx',
+                        './src/routes/platform.audit.tsx',
+                    ],
                 },
             },
         },
         },
         optimizeDeps: {
-            include: ['react', 'react-dom', '@tanstack/react-query', 'zustand', 'i18next', 'html-to-image'],
+            include: ['react', 'react-dom', '@tanstack/react-query', 'zustand', 'i18next', 'html-to-image', '@casl/ability'],
         },
     };
 });

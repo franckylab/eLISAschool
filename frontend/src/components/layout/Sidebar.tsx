@@ -53,6 +53,9 @@ import {
     ClipboardList,
     ListPlus,
     ScrollText,
+    Activity,
+    Bell,
+    ShieldCheck,
     type LucideIcon,
 } from 'lucide-react';
 import { useSidebarStore } from '@/stores/sidebar.store';
@@ -79,6 +82,26 @@ interface NavSection {
     title: string;
     items: NavItem[];
 }
+
+/**
+ * [RBAC-2] v5.1 — Navigation PLATEFORME (Control Plane)
+ * Visible uniquement pour SUPER_ADMIN — séparée visuellement
+ * de la navigation établissement (Data Plane).
+ * Rapport audit SaaS 2026-08-07
+ * v5.2 — Correction préfixe /platform/* + alignement 10 items avec PlatformSidebar
+ */
+const PLATFORM_NAV_ITEMS: NavItem[] = [
+    { label: 'Dashboard', path: '/platform/dashboard', icon: LayoutDashboard },
+    { label: 'Établissements', path: '/platform/etablissements', icon: Building2 },
+    { label: 'Facturation', path: '/platform/facturation', icon: CreditCard },
+    { label: 'Modules', path: '/platform/modules', icon: LayoutGrid },
+    { label: 'Monitoring', path: '/platform/monitoring', icon: Activity },
+    { label: 'Audit global', path: '/platform/audit', icon: ScrollText },
+    { label: 'Approbations', path: '/platform/approbations', icon: ShieldCheck },
+    { label: 'Notifications', path: '/platform/notifications-config', icon: Bell },
+    { label: 'Configuration', path: '/platform/configuration', icon: Settings },
+    { label: 'Providers', path: '/platform/providers', icon: Wallet },
+];
 
 // Composant pour les items avec sous-menus (accordéon)
 function NavItemWithChildren({
@@ -324,9 +347,12 @@ export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } =
     const { isCollapsed: storeCollapsed } = useSidebarStore();
     // Le drawer mobile (forceExpanded) affiche toujours les libellés, indépendamment du repli desktop.
     const collapsed = forceExpanded ? false : storeCollapsed;
-    const { etablissementId } = useAuthStore();
+    const { etablissementId, utilisateur } = useAuthStore();
     const matchRoute = useMatchRoute();
     const { hasPermission } = usePermissions();
+
+    // [RBAC-2] v5.1 — Détection SUPER_ADMIN pour la section plateforme
+    const isSuperAdmin = utilisateur?.role === 'SUPER_ADMIN';
 
     // Charger le logo de l'établissement
     const { data: etablissement } = useEtablissement(etablissementId || '');
@@ -484,6 +510,42 @@ export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } =
 
             {/* Navigation */}
             <nav className="flex-1 overflow-y-auto p-2">
+                {/* [RBAC-2] v5.1 — Section PLATEFORME (SUPER_ADMIN uniquement) */}
+                {isSuperAdmin && (
+                    <div className="mb-4">
+                        {!collapsed && (
+                            <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5" style={{ color: 'var(--color-danger-600)' }}>
+                                <Shield className="h-3 w-3" />
+                                Administration plateforme
+                            </p>
+                        )}
+                        {PLATFORM_NAV_ITEMS.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = !!matchRoute({ to: item.path, fuzzy: true });
+                            return (
+                                <Link
+                                    key={`platform-${item.path}`}
+                                    to={item.path as any}
+                                    className={cn(
+                                        'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                                        isActive
+                                            ? 'text-[var(--color-danger-600)]'
+                                            : 'text-[var(--color-texte-secondaire)] hover:text-[var(--color-danger-600)]',
+                                        collapsed && 'justify-center px-2',
+                                    )}
+                                    style={isActive ? { backgroundColor: 'color-mix(in srgb, var(--color-danger-600) 10%, transparent)' } : undefined}
+                                    title={collapsed ? item.label : undefined}
+                                >
+                                    <Icon className="h-5 w-5 shrink-0" />
+                                    <span className={cn("flex-1", collapsed && "hidden")}>{item.label}</span>
+                                </Link>
+                            );
+                        })}
+                        {/* Séparateur visuel */}
+                        <div className="mx-3 my-3 border-t border-dashed" style={{ borderColor: 'var(--color-bordure)' }} />
+                    </div>
+                )}
+
                 {filteredSections.map((section) => (
                     <div key={section.title} className="mb-4">
                         {!collapsed && (

@@ -8,7 +8,7 @@
  * Tâches planifiées pour les notifications automatiques
  */
 
-import cron from 'node-cron';
+import { scheduleWithLock } from '@common/services/cron-lock.service';
 import { logger } from '@common/utils/logger.util';
 import { cantineService } from '@modules/cantine/services';
 import { notificationsService } from '@modules/notifications/services';
@@ -23,7 +23,7 @@ export function initNotificationCronJobs(): void {
     // Cron Job 1: Rappels de paiement cantine
     // Exécution: Tous les jours à 8h00
     // ========================================
-    cron.schedule('0 8 * * *', async () => {
+    scheduleWithLock('notifications-rappels-cantine', '0 8 * * *', async () => {
         try {
             logger.info('📅 [Cron] Rappels de paiement cantine - Démarrage');
             
@@ -43,7 +43,7 @@ export function initNotificationCronJobs(): void {
     // Cron Job 2: Nettoyage des anciennes notifications
     // Exécution: Tous les jours à 2h00 du matin
     // ========================================
-    cron.schedule('0 2 * * *', async () => {
+    scheduleWithLock('notifications-nettoyage', '0 2 * * *', async () => {
         try {
             logger.info('📅 [Cron] Nettoyage des anciennes notifications - Démarrage');
             
@@ -62,7 +62,7 @@ export function initNotificationCronJobs(): void {
     // Cron Job 3: Traitement des notifications programmées
     // Exécution: Toutes les 5 minutes
     // ========================================
-    cron.schedule('*/5 * * * *', async () => {
+    scheduleWithLock('notifications-programmees', '*/5 * * * *', async () => {
         try {
             const count = await notificationsService.processScheduledNotifications();
             
@@ -78,7 +78,7 @@ export function initNotificationCronJobs(): void {
     // Cron Job 4: Menu du jour (Cantine)
     // Exécution: Tous les jours à 7h00
     // ========================================
-    cron.schedule('0 7 * * 1-5', async () => {
+    scheduleWithLock('notifications-menu-jour', '0 7 * * 1-5', async () => {
         try {
             logger.info('📅 [Cron] Envoi du menu du jour - Démarrage');
             

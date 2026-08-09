@@ -509,6 +509,7 @@ export interface AffectationOption {
     classeAnnee?: {
         id: string;
         classe?: { id: string; nom: string; niveau?: string };
+        anneeScolaire?: { id: string; nom?: string; anneeDebut?: number; anneeFin?: number };
     };
 }
 

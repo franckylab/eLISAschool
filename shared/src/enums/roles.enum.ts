@@ -248,6 +248,25 @@ export enum Role {
 
     /** Valideur paie — validation finale des bulletins (séparation 4 yeux) */
     VALIDATEUR_PAIE = 'VALIDATEUR_PAIE',
+
+    // ==================================
+    // RÔLES PLATEFORME (Control Plane) — v7
+    // ==================================
+
+    /** Gestionnaire plateforme — gestion quotidienne (établissements, facturation, modules, config) */
+    ADMINISTRATION_PLATEFORME = 'ADMINISTRATION_PLATEFORME',
+
+    /** Sécurité plateforme — RBAC, audit, MFA, utilisateurs plateforme */
+    SECURITE_PLATEFORME = 'SECURITE_PLATEFORME',
+
+    /** Support plateforme — support technique, monitoring, providers, debugging */
+    SUPPORT_PLATEFORME = 'SUPPORT_PLATEFORME',
+
+    /** Commercial plateforme — plans, tarifs, offres, revenus */
+    COMMERCIAL_PLATEFORME = 'COMMERCIAL_PLATEFORME',
+
+    /** Monitoring plateforme — dashboards, alertes, metrics (read-only sur reste) */
+    MONITORING_PLATEFORME = 'MONITORING_PLATEFORME',
 }
 
 /**
@@ -716,6 +735,15 @@ export enum Permission {
     CONFIG_IMPORT = 'config:import',
     CONFIG_CACHE_INVALIDATE = 'config:cache:invalidate',
 
+    // [RBAC-2] Permissions PLATEFORME — réservées SUPER_ADMIN
+    // Séparation plateforme/établissement — Rapport audit SaaS 2026-08-07
+    // Ces permissions contrôlent les opérations de portée PLATEFORME
+    // (affectent tous les établissements). ADMIN (client) ne doit PAS les avoir.
+    CONFIG_PLATEFORME_APP_EDIT = 'config:plateforme:app:edit',
+    CONFIG_PLATEFORME_MODULE_TOGGLE = 'config:plateforme:module:toggle',
+    CONFIG_PLATEFORME_BACKUP_CREATE = 'config:plateforme:backup:create',
+    CONFIG_PLATEFORME_BACKUP_RESTORE = 'config:plateforme:backup:restore',
+
     // Santé
     SANTE_VIEW = 'sante:view',
     SANTE_CONSULTATIONS = 'sante:consultations',
@@ -987,7 +1015,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.CONFIG_BACKUP_CREATE, Permission.CONFIG_BACKUP_RESTORE,
         Permission.CONFIG_EXPORT, Permission.CONFIG_CACHE_INVALIDATE,
         Permission.MONITORING_VIEW,
-        Permission.NETWORK_VIEW, Permission.NETWORK_DETAILS, Permission.NETWORK_ADMIN,
+        // [RBAC-3] NETWORK_* retiré du rôle ADMIN (v5.1)
+        // Ces permissions sont PLATFORM-LEVEL — SUPER_ADMIN uniquement.
+        // Rapport audit SaaS 2026-08-07
         Permission.DOCUMENTS_VIEW, Permission.DOCUMENTS_CREATE, Permission.DOCUMENTS_PRINT,
         Permission.NOTIFICATIONS_MANAGE,
         Permission.MESSAGES_SEND, Permission.MESSAGES_BROADCAST,
@@ -1256,16 +1286,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.FINANCES_DASHBOARD_VIEW,
         Permission.FINANCES_DASHBOARD_KPI,
         Permission.FINANCES_RAPPORTS_GENERER,
-        // Groupes Établissements (9 permissions unifiées)
-        Permission.GROUPES_ETABLISSEMENTS_VIEW,
-        Permission.GROUPES_ETABLISSEMENTS_CREATE,
-        Permission.GROUPES_ETABLISSEMENTS_EDIT,
-        Permission.GROUPES_ETABLISSEMENTS_DELETE,
-        Permission.GROUPES_ETABLISSEMENTS_MANAGE,
-        Permission.GROUPES_ETABLISSEMENTS_DASHBOARD,
-        Permission.GROUPES_ETABLISSEMENTS_MANAGE_ADMINS,
-        Permission.GROUPES_ETABLISSEMENTS_MANAGE_ETABLISSEMENTS,
-        Permission.GROUPES_ETABLISSEMENTS_RAPPORTS,
         // Programmes Pédagogiques
         Permission.PROGRAMMES_CHAPITRE_READ,
         Permission.PROGRAMMES_CHAPITRE_CREATE,
@@ -1516,16 +1536,11 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.FINANCES_SCOLARITE_VIEW,
         Permission.FINANCES_PAIEMENT_VALIDATE,
         Permission.FINANCES_DASHBOARD_VIEW,
-        // Groupes Établissements (9 permissions unifiées)
-        Permission.GROUPES_ETABLISSEMENTS_VIEW,
-        Permission.GROUPES_ETABLISSEMENTS_CREATE,
-        Permission.GROUPES_ETABLISSEMENTS_EDIT,
-        Permission.GROUPES_ETABLISSEMENTS_DELETE,
-        Permission.GROUPES_ETABLISSEMENTS_MANAGE,
-        Permission.GROUPES_ETABLISSEMENTS_DASHBOARD,
-        Permission.GROUPES_ETABLISSEMENTS_MANAGE_ADMINS,
-        Permission.GROUPES_ETABLISSEMENTS_MANAGE_ETABLISSEMENTS,
-        Permission.GROUPES_ETABLISSEMENTS_RAPPORTS,
+        // Groupes Établissements — RETIRÉ du rôle DIRECTEUR (v5.1)
+        // Ces permissions sont cross-tenant et ne doivent pas être accessibles
+        // à un directeur d'établissement client. Utiliser le rôle dédié
+        // DIRECTEUR_GROUPE (portée plateforme) si nécessaire.
+        // [RBAC-1] Séparation plateforme/client — Rapport audit SaaS 2026-08-07
         // Emploi du Temps
         Permission.EMPLOI_DU_TEMPS_VIEW,
         Permission.EMPLOI_DU_TEMPS_CREATE,
@@ -2246,6 +2261,246 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
     ],
 };
 
+// =============================================
+// RÔLES PLATEFORME (Control Plane) — v8 Dual-Plane
+// Séparés des rôles tenant (établissement)
+// =============================================
+
+/**
+ * Rôles disponibles pour les utilisateurs de la plateforme (Control Plane).
+ * Ces rôles sont distincts des rôles tenant (Role) et gèrent l'administration
+ * du SaaS lui-même, pas des établissements.
+ */
+export enum RolePlateforme {
+    /** Super administrateur plateforme — accès total */
+    SUPER_ADMIN = 'SUPER_ADMIN',
+
+    /** Administrateur plateforme — gestion quotidienne (établissements, users, config) */
+    ADMIN_PLATEFORME = 'ADMIN_PLATEFORME',
+
+    /** Support technique — lecture monitoring, audit, logs (read-only) */
+    SUPPORT = 'SUPPORT',
+
+    /** Gestionnaire facturation — plans, abonnements, factures, paiements */
+    BILLING_MANAGER = 'BILLING_MANAGER',
+
+    /** Analyste — dashboard, statistiques, exports (read-only) */
+    ANALYST = 'ANALYST',
+
+    /** Auditeur — audit logs, conformité, rapports sécurité */
+    AUDITOR = 'AUDITOR',
+}
+
+/**
+ * Statut d'une identité (compte utilisateur global)
+ */
+export enum StatutIdentite {
+    ACTIF = 'ACTIF',
+    SUSPENDU = 'SUSPENDU',
+    DESACTIVE = 'DESACTIVE',
+}
+
+/**
+ * Type de contexte pour les memberships
+ */
+export enum ContexteType {
+    PLATEFORME = 'PLATEFORME',
+    ETABLISSEMENT = 'ETABLISSEMENT',
+}
+
+/**
+ * Permissions granulaires pour la plateforme (Control Plane).
+ * ~40 permissions séparées des permissions tenant.
+ */
+export enum PermissionPlateforme {
+    // =============================================
+    // PILOTAGE
+    // =============================================
+    PLATFORM_DASHBOARD_VIEW = 'platform:dashboard:view',
+    PLATFORM_MONITORING_VIEW = 'platform:monitoring:view',
+    PLATFORM_MONITORING_MANAGE = 'platform:monitoring:manage',
+    PLATFORM_REVENUS_VIEW = 'platform:revenus:view',
+    PLATFORM_REVENUS_EXPORT = 'platform:revenus:export',
+
+    // =============================================
+    // TENANTS (Établissements)
+    // =============================================
+    PLATFORM_ETABLISSEMENTS_READ = 'platform:etablissements:read',
+    PLATFORM_ETABLISSEMENTS_WRITE = 'platform:etablissements:write',
+    PLATFORM_ETABLISSEMENTS_DELETE = 'platform:etablissements:delete',
+    PLATFORM_GROUPES_READ = 'platform:groupes:read',
+    PLATFORM_GROUPES_WRITE = 'platform:groupes:write',
+    PLATFORM_ABONNEMENTS_READ = 'platform:abonnements:read',
+    PLATFORM_ABONNEMENTS_WRITE = 'platform:abonnements:write',
+    PLATFORM_ABONNEMENTS_SUSPEND = 'platform:abonnements:suspend',
+
+    // =============================================
+    // FACTURATION
+    // =============================================
+    PLATFORM_FACTURATION_READ = 'platform:facturation:read',
+    PLATFORM_FACTURATION_MANAGE = 'platform:facturation:manage',
+    PLATFORM_PLANS_READ = 'platform:plans:read',
+    PLATFORM_PLANS_WRITE = 'platform:plans:write',
+    PLATFORM_TRANCHES_MANAGE = 'platform:tranches:manage',
+
+    // =============================================
+    // TECHNIQUE
+    // =============================================
+    PLATFORM_MODULES_MANAGE = 'platform:modules:manage',
+    PLATFORM_CONFIGURATION_READ = 'platform:configuration:read',
+    PLATFORM_CONFIGURATION_WRITE = 'platform:configuration:write',
+    PLATFORM_NOTIFICATIONS_MANAGE = 'platform:notifications:manage',
+    PLATFORM_PROVIDERS_MANAGE = 'platform:providers:manage',
+    PLATFORM_CASCADE_MANAGE = 'platform:cascade:manage',
+
+    // =============================================
+    // IDENTITÉ (utilisateurs plateforme)
+    // =============================================
+    PLATFORM_USERS_READ = 'platform:users:read',
+    PLATFORM_USERS_WRITE = 'platform:users:write',
+    PLATFORM_USERS_DELETE = 'platform:users:delete',
+    PLATFORM_USERS_SUSPEND = 'platform:users:suspend',
+    PLATFORM_USERS_INVITE = 'platform:users:invite',
+    PLATFORM_ROLES_READ = 'platform:roles:read',
+    PLATFORM_ROLES_WRITE = 'platform:roles:write',
+    PLATFORM_SESSIONS_VIEW = 'platform:sessions:view',
+    PLATFORM_SESSIONS_REVOKE = 'platform:sessions:revoke',
+
+    // =============================================
+    // SÉCURITÉ
+    // =============================================
+    PLATFORM_AUDIT_READ = 'platform:audit:read',
+    PLATFORM_AUDIT_EXPORT = 'platform:audit:export',
+    PLATFORM_WEBHOOKS_MANAGE = 'platform:webhooks:manage',
+    PLATFORM_ACTIONS_CRITIQUES_APPROVE = 'platform:actions-critiques:approve',
+    PLATFORM_IMPERSONATE = 'platform:impersonate',
+}
+
+/**
+ * Permissions par défaut pour chaque rôle plateforme
+ */
+export const DEFAULT_ROLE_PLATEFORME_PERMISSIONS: Record<RolePlateforme, PermissionPlateforme[]> = {
+    [RolePlateforme.SUPER_ADMIN]: Object.values(PermissionPlateforme),
+
+    [RolePlateforme.ADMIN_PLATEFORME]: [
+        // Pilotage
+        PermissionPlateforme.PLATFORM_DASHBOARD_VIEW,
+        PermissionPlateforme.PLATFORM_MONITORING_VIEW,
+        PermissionPlateforme.PLATFORM_REVENUS_VIEW,
+        // Tenants
+        PermissionPlateforme.PLATFORM_ETABLISSEMENTS_READ,
+        PermissionPlateforme.PLATFORM_ETABLISSEMENTS_WRITE,
+        PermissionPlateforme.PLATFORM_GROUPES_READ,
+        PermissionPlateforme.PLATFORM_GROUPES_WRITE,
+        PermissionPlateforme.PLATFORM_ABONNEMENTS_READ,
+        PermissionPlateforme.PLATFORM_ABONNEMENTS_WRITE,
+        PermissionPlateforme.PLATFORM_ABONNEMENTS_SUSPEND,
+        // Facturation
+        PermissionPlateforme.PLATFORM_FACTURATION_READ,
+        PermissionPlateforme.PLATFORM_FACTURATION_MANAGE,
+        PermissionPlateforme.PLATFORM_PLANS_READ,
+        PermissionPlateforme.PLATFORM_PLANS_WRITE,
+        PermissionPlateforme.PLATFORM_TRANCHES_MANAGE,
+        // Technique
+        PermissionPlateforme.PLATFORM_MODULES_MANAGE,
+        PermissionPlateforme.PLATFORM_CONFIGURATION_READ,
+        PermissionPlateforme.PLATFORM_CONFIGURATION_WRITE,
+        PermissionPlateforme.PLATFORM_NOTIFICATIONS_MANAGE,
+        PermissionPlateforme.PLATFORM_PROVIDERS_MANAGE,
+        PermissionPlateforme.PLATFORM_CASCADE_MANAGE,
+        // Identité
+        PermissionPlateforme.PLATFORM_USERS_READ,
+        PermissionPlateforme.PLATFORM_USERS_WRITE,
+        PermissionPlateforme.PLATFORM_USERS_DELETE,
+        PermissionPlateforme.PLATFORM_USERS_SUSPEND,
+        PermissionPlateforme.PLATFORM_USERS_INVITE,
+        PermissionPlateforme.PLATFORM_ROLES_READ,
+        PermissionPlateforme.PLATFORM_ROLES_WRITE,
+        PermissionPlateforme.PLATFORM_SESSIONS_VIEW,
+        PermissionPlateforme.PLATFORM_SESSIONS_REVOKE,
+        // Sécurité
+        PermissionPlateforme.PLATFORM_AUDIT_READ,
+        PermissionPlateforme.PLATFORM_AUDIT_EXPORT,
+        PermissionPlateforme.PLATFORM_WEBHOOKS_MANAGE,
+    ],
+
+    [RolePlateforme.SUPPORT]: [
+        // Pilotage (lecture)
+        PermissionPlateforme.PLATFORM_DASHBOARD_VIEW,
+        PermissionPlateforme.PLATFORM_MONITORING_VIEW,
+        PermissionPlateforme.PLATFORM_REVENUS_VIEW,
+        // Tenants (lecture)
+        PermissionPlateforme.PLATFORM_ETABLISSEMENTS_READ,
+        PermissionPlateforme.PLATFORM_GROUPES_READ,
+        PermissionPlateforme.PLATFORM_ABONNEMENTS_READ,
+        // Technique (lecture)
+        PermissionPlateforme.PLATFORM_CONFIGURATION_READ,
+        PermissionPlateforme.PLATFORM_NOTIFICATIONS_MANAGE,
+        // Identité (lecture)
+        PermissionPlateforme.PLATFORM_USERS_READ,
+        PermissionPlateforme.PLATFORM_ROLES_READ,
+        PermissionPlateforme.PLATFORM_SESSIONS_VIEW,
+        // Sécurité (lecture)
+        PermissionPlateforme.PLATFORM_AUDIT_READ,
+    ],
+
+    [RolePlateforme.BILLING_MANAGER]: [
+        // Pilotage (revenus)
+        PermissionPlateforme.PLATFORM_DASHBOARD_VIEW,
+        PermissionPlateforme.PLATFORM_REVENUS_VIEW,
+        PermissionPlateforme.PLATFORM_REVENUS_EXPORT,
+        // Tenants (abonnements)
+        PermissionPlateforme.PLATFORM_ETABLISSEMENTS_READ,
+        PermissionPlateforme.PLATFORM_ABONNEMENTS_READ,
+        PermissionPlateforme.PLATFORM_ABONNEMENTS_WRITE,
+        // Facturation (gestion complète)
+        PermissionPlateforme.PLATFORM_FACTURATION_READ,
+        PermissionPlateforme.PLATFORM_FACTURATION_MANAGE,
+        PermissionPlateforme.PLATFORM_PLANS_READ,
+        PermissionPlateforme.PLATFORM_PLANS_WRITE,
+        PermissionPlateforme.PLATFORM_TRANCHES_MANAGE,
+    ],
+
+    [RolePlateforme.ANALYST]: [
+        // Pilotage (lecture + export)
+        PermissionPlateforme.PLATFORM_DASHBOARD_VIEW,
+        PermissionPlateforme.PLATFORM_MONITORING_VIEW,
+        PermissionPlateforme.PLATFORM_REVENUS_VIEW,
+        PermissionPlateforme.PLATFORM_REVENUS_EXPORT,
+        // Tenants (lecture)
+        PermissionPlateforme.PLATFORM_ETABLISSEMENTS_READ,
+        PermissionPlateforme.PLATFORM_GROUPES_READ,
+        PermissionPlateforme.PLATFORM_ABONNEMENTS_READ,
+        // Technique (lecture)
+        PermissionPlateforme.PLATFORM_CONFIGURATION_READ,
+        // Identité (lecture)
+        PermissionPlateforme.PLATFORM_USERS_READ,
+        PermissionPlateforme.PLATFORM_ROLES_READ,
+        // Sécurité (lecture + export)
+        PermissionPlateforme.PLATFORM_AUDIT_READ,
+        PermissionPlateforme.PLATFORM_AUDIT_EXPORT,
+    ],
+
+    [RolePlateforme.AUDITOR]: [
+        // Pilotage (lecture)
+        PermissionPlateforme.PLATFORM_DASHBOARD_VIEW,
+        PermissionPlateforme.PLATFORM_MONITORING_VIEW,
+        // Tenants (lecture)
+        PermissionPlateforme.PLATFORM_ETABLISSEMENTS_READ,
+        PermissionPlateforme.PLATFORM_ABONNEMENTS_READ,
+        // Technique (lecture)
+        PermissionPlateforme.PLATFORM_CONFIGURATION_READ,
+        // Identité (lecture)
+        PermissionPlateforme.PLATFORM_USERS_READ,
+        PermissionPlateforme.PLATFORM_ROLES_READ,
+        PermissionPlateforme.PLATFORM_SESSIONS_VIEW,
+        // Sécurité (gestion complète)
+        PermissionPlateforme.PLATFORM_AUDIT_READ,
+        PermissionPlateforme.PLATFORM_AUDIT_EXPORT,
+        PermissionPlateforme.PLATFORM_WEBHOOKS_MANAGE,
+    ],
+};
+
 // L'organigramme est consultable par toute la communauté scolaire (enseignants,
 // élèves, parents, personnel…) sans donner accès au reste du module organisation.
 for (const permissions of Object.values(DEFAULT_ROLE_PERMISSIONS)) {
@@ -2254,4 +2509,4 @@ for (const permissions of Object.values(DEFAULT_ROLE_PERMISSIONS)) {
     }
 }
 
-export default { Role, Permission, DEFAULT_ROLE_PERMISSIONS };
+export default { Role, Permission, DEFAULT_ROLE_PERMISSIONS, RolePlateforme, PermissionPlateforme, StatutIdentite, ContexteType, DEFAULT_ROLE_PLATEFORME_PERMISSIONS };

@@ -1,15 +1,17 @@
 /**
  * ==================================
- * eLISAschool - Middleware Multi-Tenancy v4.0
+ * eLISAschool - Middleware Multi-Tenancy v5.1
  * ==================================
- * Version: 4.0.0
+ * Version: 5.1.0
  * 
  * Filtre automatiquement les requêtes par établissement.
  * Supporte les utilisateurs multi-établissements.
  * 
- * NOUVEAU v4.0 :
- * - utilisateurs.etablissementId SUPPRIMÉ
- * - Résolution via utilisateur_etablissements uniquement
+ * [RBAC-3] v5.1 — Renforcement sécurité :
+ * - Validation existence établissement pour SUPER_ADMIN
+ * - Logging des tentatives cross-tenant
+ * - Préfixage cache par tenant
+ * Rapport audit SaaS 2026-08-07
  * 
  * Comportement :
  * - SUPER_ADMIN : accès à tous les établissements (etablissementId optionnel dans le query)
@@ -22,6 +24,7 @@ import { logger } from '@common/utils/logger.util';
 import { Role } from '@modules/auth/entities';
 import { AppDataSource } from '@database/data-source';
 import { UtilisateurEtablissement } from '@modules/auth/entities';
+import { Etablissement } from '@modules/etablissement/entities';
 
 /**
  * Interface pour les établissements dans le JWT
@@ -58,6 +61,24 @@ export async function tenantMiddleware(req: Request, _res: Response, next: NextF
         // 1. SUPER_ADMIN peut accéder à tous les établissements
         if (userRole === 'SUPER_ADMIN' as unknown as Role) {
             const queryEtablissementId = req.query.etablissementId as string | undefined;
+            
+            if (queryEtablissementId) {
+                // [RBAC-3] v5.1 — Valider l'existence de l'établissement ciblé
+                const etablissementRepo = AppDataSource.getRepository(Etablissement);
+                const exists = await etablissementRepo.exists({ where: { id: queryEtablissementId } });
+                
+                if (!exists) {
+                    logger.warn(
+                        `[Multi-tenancy] ⚠️ SUPER_ADMIN ${req.utilisateur.id} — établissement ciblé INEXISTANT: ${queryEtablissementId}`
+                    );
+                    throw new AppError(
+                        'Établissement cible non trouvé',
+                        404,
+                        'ETABLISSEMENT_NOT_FOUND'
+                    );
+                }
+            }
+            
             req.etablissementId = queryEtablissementId || undefined;
             next();
             return;
@@ -76,6 +97,11 @@ export async function tenantMiddleware(req: Request, _res: Response, next: NextF
                 );
                 
                 if (!hasAccess) {
+                    // [RBAC-3] v5.1 — Logger la tentative cross-tenant
+                    logger.warn(
+                        `[Multi-tenancy] 🚨 TENTATIVE CROSS-TENANT — Utilisateur: ${req.utilisateur.id} ` +
+                        `(${req.utilisateur.role}) → Établissement: ${requestedId} — REFUSÉ`
+                    );
                     throw new AppError(
                         'Accès non autorisé à cet établissement',
                         403,

@@ -109,7 +109,11 @@
         "etablissements": "Établissements",
         "menu": "Menu",
         "notifications": "Notifications",
-        "menuUtilisateur": "Menu utilisateur"
+        "menuUtilisateur": "Menu utilisateur",
+        "administration": "Administration",
+        "plateforme": "PLATEFORME",
+        "retourEspaceTenant": "Retour à l'espace établissement",
+        "santeSysteme": "Santé du système"
     },
     "pagination": {
         "pageSur": "Page {{page}} sur {{total}}",

@@ -11,7 +11,7 @@
  * - Mise à jour des classements
  */
 
-import cron from 'node-cron';
+import { scheduleWithLock } from '@common/services/cron-lock.service';
 import { logger } from '@common/utils/logger.util';
 import { scoringPersonnelService } from './services/scoring-personnel.service';
 import { AppDataSource } from '@database/data-source';
@@ -27,7 +27,7 @@ export function initScoringPersonnelCronJobs(): void {
     // =====================================================
     // Cron Job 1: Recalcul quotidien des scores (23h30)
     // =====================================================
-    cron.schedule('30 23 * * *', async () => {
+    scheduleWithLock('scoring-recalcul-quotidien', '30 23 * * *', async () => {
         try {
             const enabled = await getParamBoolean('scoring-personnel.auto_recalcul_quotidien', { defaultValue: true });
             if (!enabled) {
@@ -77,7 +77,7 @@ export function initScoringPersonnelCronJobs(): void {
     // =====================================================
     // Cron Job 2: Mise à jour des classements (00h00)
     // =====================================================
-    cron.schedule('0 0 * * *', async () => {
+    scheduleWithLock('scoring-classement', '0 0 * * *', async () => {
         try {
             const enabled = await getParamBoolean('scoring-personnel.auto_classement', { defaultValue: true });
             if (!enabled) {
@@ -101,7 +101,7 @@ export function initScoringPersonnelCronJobs(): void {
     // =====================================================
     // Cron Job 3: Reset mensuel des scores (1er du mois, 00h30)
     // =====================================================
-    cron.schedule('30 0 1 * *', async () => {
+    scheduleWithLock('scoring-reset-mensuel', '30 0 1 * *', async () => {
         try {
             const enabled = await getParamBoolean('scoring-personnel.reset_mensuel', { defaultValue: false });
             if (!enabled) {
@@ -127,7 +127,7 @@ export function initScoringPersonnelCronJobs(): void {
     // =====================================================
     // Cron Job 4: Nettoyage historique (> 1 an) (dimanche 01h00)
     // =====================================================
-    cron.schedule('0 1 * * 0', async () => {
+    scheduleWithLock('scoring-nettoyage-historique', '0 1 * * 0', async () => {
         try {
             const enabled = await getParamBoolean('scoring-personnel.nettoyage_historique', { defaultValue: false });
             if (!enabled) {

@@ -64,9 +64,14 @@ interface AuthState {
     preLoginData: PreLoginResponse | null;
     showEtablissementModal: boolean;
 
+    // MFA — Phase P1 v6
+    mfaToken: string | null;
+    mfaRequired: boolean;
+
     // Actions
     login: (identifiant: string, motDePasse: string) => Promise<void>;
     completeLogin: (etablissementId: string) => Promise<void>;
+    verifyMFA: (code: string) => Promise<void>;
     logout: () => Promise<void>;
     setTokens: (accessToken: string, refreshToken: string) => void;
     setUtilisateur: (utilisateur: UtilisateurConnecte) => void;
@@ -91,6 +96,8 @@ const initialState = {
     isAuthenticated: false,
     preLoginData: null,
     showEtablissementModal: false,
+    mfaToken: null,
+    mfaRequired: false,
     _initialized: false, // NOUVEAU: Pour l'initialisation unique
 };
 
@@ -119,8 +126,21 @@ export const useAuthStore = create<AuthState>()(
                 try {
                     // Étape 1 : Login - retourne MAINTENANT requiereSelectionEtablissement
                     const data = await apiClient.login(identifiant, motDePasse);
+
+                    // MFA — Phase P1 v6 : Si MFA requise, stocker le token et arrêter le flux
+                    if (data.mfaRequired && data.mfaToken) {
+                        set({
+                            mfaToken: data.mfaToken,
+                            mfaRequired: true,
+                            isLoading: false,
+                        });
+                        return;
+                    }
                     
                     // Étape 2 : Stocker les infos utilisateur SANS token complet si multi-établissements
+                    if (!data.utilisateur || !data.accessToken || !data.refreshToken) {
+                        throw new Error('Réponse de connexion incomplète');
+                    }
                     const newState = {
                         accessToken: data.accessToken,
                         refreshToken: data.refreshToken,
@@ -419,6 +439,74 @@ export const useAuthStore = create<AuthState>()(
                             console.warn('[Auth Store] Échec chargement profil après completeLogin (non bloquant):', error);
                             // Non-bloquant - l'utilisateur peut quand même accéder avec les infos de base
                         }
+                    }
+                } catch (error) {
+                    set({ isLoading: false });
+                    throw error;
+                }
+            },
+
+            // MFA — Phase P1 v6 : Vérification du code TOTP et finalisation connexion
+            verifyMFA: async (code: string) => {
+                const { mfaToken } = get();
+                if (!mfaToken) {
+                    throw new Error('Token MFA manquant. Veuillez vous reconnecter.');
+                }
+
+                set({ isLoading: true });
+                try {
+                    const data = await apiClient.verifyMFA(mfaToken, code);
+
+                    if (!data.accessToken || !data.utilisateur) {
+                        throw new Error('Réponse MFA invalide');
+                    }
+
+                    // Connexion réussie → initialiser le store comme un login normal
+                    set({
+                        accessToken: data.accessToken,
+                        refreshToken: data.refreshToken,
+                        utilisateur: {
+                            id: data.utilisateur.id,
+                            email: data.utilisateur.email,
+                            matricule: data.utilisateur.matricule,
+                            role: data.utilisateur.role,
+                            nom: data.utilisateur.nom,
+                            prenom: data.utilisateur.prenom,
+                        },
+                        etablissements: data.utilisateur.etablissements || [],
+                        etablissementsDisponibles: data.etablissementsDisponibles || [],
+                        etablissementId: data.utilisateur.etablissementActif || null,
+                        isAuthenticated: true,
+                        isLoading: false,
+                        mfaToken: null,
+                        mfaRequired: false,
+                    });
+
+                    apiClient.setTokens({
+                        accessToken: data.accessToken,
+                        refreshToken: data.refreshToken!,
+                    });
+
+                    // Charger le profil complet
+                    try {
+                        const meResponse = await apiClient.get<UtilisateurConnecte>('/api/auth/me');
+                        if (meResponse.data) {
+                            const currentUtilisateur = get().utilisateur;
+                            const currentEtablissementId = get().etablissementId;
+                            const resolvedEtablissementId = meResponse.data.etablissementActif || currentEtablissementId;
+
+                            set({
+                                utilisateur: {
+                                    ...currentUtilisateur,
+                                    ...meResponse.data,
+                                    permissions: meResponse.data.permissions || [],
+                                },
+                                etablissementId: resolvedEtablissementId,
+                                etablissements: meResponse.data.etablissements || get().etablissements,
+                            });
+                        }
+                    } catch (error) {
+                        console.warn('[Auth Store] Échec chargement profil après MFA (non bloquant):', error);
                     }
                 } catch (error) {
                     set({ isLoading: false });

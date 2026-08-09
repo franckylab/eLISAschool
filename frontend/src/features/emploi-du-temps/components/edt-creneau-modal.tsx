@@ -267,7 +267,7 @@ export function EDTCreneauModal({ open, onOpenChange, creneau, affectationMatier
             typeCreneau: form.typeCreneau,
             salleId: form.salleId || undefined,
             notes: form.notes || undefined,
-            couleur: form.couleur || null,
+            couleur: form.couleur || undefined,
             ...(isEdit ? {} : { genereAutomatiquement: form.genereAutomatiquement }),
         };
 
