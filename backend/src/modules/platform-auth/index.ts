@@ -2,8 +2,9 @@
  * ==================================
  * eLISAschool - Module Platform Auth
  * ==================================
- * Authentification dual-plane pour la plateforme (Control Plane).
+ * ADR-005 (v11) — Compatibilité routes plateforme.
+ * Le login est unifié via auth.service.ts.
  */
 export { platformAuthController } from './controllers/platform-auth.controller';
-export { platformAuthService } from './services/platform-auth.service';
-export type { PlatformLoginResponse, PlatformMeResponse } from './dto/platform-auth.dto';
+export { platformLoginSchema } from './dto/platform-auth.dto';
+export type { PlatformLoginDto } from './dto/platform-auth.dto';

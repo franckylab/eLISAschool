@@ -13,8 +13,7 @@ import { AppDataSource } from '@database/data-source';
 import { ConfigurationModule } from '../entities/configuration-module.entity';
 import { ParametreSysteme, CategorieParametre, TypeValeurParametre } from '../entities/parametre-systeme.entity';
 import { logger } from '@common/utils/logger.util';
-import { MODULE_REGISTRY, ModuleConfig } from '@shared/config/config.registry';
-import { ModuleName } from '@shared/enums/modules.enum';
+import { ModuleCatalogue } from '@modules/billing/entities/module-catalogue.entity'; // P2.3 v7
 
 /**
  * Définition d'un paramètre par défaut
@@ -38,10 +37,12 @@ interface ParametreDefaut {
 export class ConfigurationSeedService {
     private configModuleRepo: Repository<ConfigurationModule>;
     private parametreRepo: Repository<ParametreSysteme>;
+    private catalogueRepo: Repository<ModuleCatalogue>; // P2.3 v7
 
     constructor() {
         this.configModuleRepo = AppDataSource.getRepository(ConfigurationModule);
         this.parametreRepo = AppDataSource.getRepository(ParametreSysteme);
+        this.catalogueRepo = AppDataSource.getRepository(ModuleCatalogue); // P2.3 v7
     }
 
     /**
@@ -72,28 +73,31 @@ export class ConfigurationSeedService {
         let created = 0;
         let updated = 0;
 
-        for (const moduleName of Object.values(ModuleName)) {
+        // P2.3 v7 — Lire les modules depuis le catalogue DB
+        const modulesCatalogue = await this.catalogueRepo.find({
+            where: { estActif: true },
+            order: { code: 'ASC' },
+        });
+
+        for (const mc of modulesCatalogue) {
             const existing = await this.configModuleRepo.findOne({ 
                 where: { 
-                    moduleNom: moduleName,
+                    moduleNom: mc.code,
                     ...(etablissementId ? { etablissementId } : { etablissementId: null as any })
                 } 
             });
             
             if (existing && force) {
                 // Forcer la réinitialisation
-                const registryConfig = MODULE_REGISTRY[moduleName];
-                if (!registryConfig) continue;
-
                 const defaultValues = {
                     champsPersonnalises: [],
                     widgets: [],
-                    parametres: registryConfig.defaultSettings || {},
+                    parametres: mc.config || {},
                 };
 
                 Object.assign(existing, {
                     ...defaultValues,
-                    valeurDefaut: defaultValues, // Sauvegarder les valeurs par défaut
+                    valeurDefaut: defaultValues,
                 });
                 await this.configModuleRepo.save(existing);
                 updated++;
@@ -102,17 +106,14 @@ export class ConfigurationSeedService {
             
             if (existing) continue;
 
-            const registryConfig = MODULE_REGISTRY[moduleName];
-            if (!registryConfig) continue;
-
             const defaultValues = {
                 champsPersonnalises: [],
                 widgets: [],
-                parametres: registryConfig.defaultSettings || {},
+                parametres: mc.config || {},
             };
 
             const config = this.configModuleRepo.create({
-                moduleNom: moduleName,
+                moduleNom: mc.code,
                 ...defaultValues,
                 valeurDefaut: defaultValues,
                 ...(etablissementId ? { etablissementId } : {}),
@@ -131,7 +132,7 @@ export class ConfigurationSeedService {
      * @param force Si true, force la réinitialisation même si le paramètre existe
      */
     async seedParametresSysteme(etablissementId?: string, force: boolean = false): Promise<number> {
-        const defaults = this.getAllDefaultParametres();
+        const defaults = await this.getAllDefaultParametres(); // P2.3 v7 — async
         let created = 0;
         let updated = 0;
 
@@ -187,9 +188,15 @@ export class ConfigurationSeedService {
     }
 
     /**
-     * Tous les paramètres par défaut
+     * P2.3 v7 — Tous les paramètres par défaut (async pour lecture catalogue DB)
      */
-    private getAllDefaultParametres(): ParametreDefaut[] {
+    private async getAllDefaultParametres(): Promise<ParametreDefaut[]> {
+        // Lire les modules actifs depuis le catalogue DB
+        const modulesCatalogue = await this.catalogueRepo.find({
+            where: { estActif: true },
+            order: { code: 'ASC' },
+        });
+
         return [
             // ============ SÉCURITÉ (auth) ============
             { cle: 'auth.session_duration', valeur: 1440, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.SECURITE, module: 'auth', description: 'Durée de session en minutes (24h par défaut)', modifiableRuntime: true, visible: true, ordre: 1 },
@@ -405,23 +412,22 @@ export class ConfigurationSeedService {
             { cle: 'regional.date_format', valeur: 'DD/MM/YYYY', typeValeur: TypeValeurParametre.STRING, categorie: CategorieParametre.REGIONAL, description: 'Format de date', modifiableRuntime: true, visible: true, ordre: 4 },
 
             // ============ UTILISATEURS ============
+            // @deprecated — allow_self_registration et require_email_verification sont dans auth.* (SECURITE)
             { cle: 'utilisateurs.default_role', valeur: 'ELEVE', typeValeur: TypeValeurParametre.STRING, categorie: CategorieParametre.MODULE, module: 'utilisateurs', description: 'Rôle par défaut à l\'inscription', modifiableRuntime: true, visible: true, ordre: 1 },
-            { cle: 'utilisateurs.allow_self_registration', valeur: false, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'utilisateurs', description: 'Autoriser l\'auto-inscription', modifiableRuntime: true, visible: true, ordre: 2 },
-            { cle: 'utilisateurs.require_email_verification', valeur: true, typeValeur: TypeValeurParametre.BOOLEAN, categorie: CategorieParametre.MODULE, module: 'utilisateurs', description: 'Exiger la vérification email', modifiableRuntime: true, visible: true, ordre: 3 },
 
             // ============ SYSTÈME ============
             { cle: 'system.backup_retention_days', valeur: 30, typeValeur: TypeValeurParametre.NUMBER, categorie: CategorieParametre.SYSTEME, description: 'Jours de rétention des sauvegardes', modifiableRuntime: false, visible: true, ordre: 1 },
             { cle: 'system.log_level', valeur: 'info', typeValeur: TypeValeurParametre.STRING, categorie: CategorieParametre.SYSTEME, description: 'Niveau de log', modifiableRuntime: true, visible: true, ordre: 2, options: [{ value: 'debug', label: 'Debug' }, { value: 'info', label: 'Info' }, { value: 'warn', label: 'Warning' }, { value: 'error', label: 'Error' }] },
 
             // ============ MODULES - ÉTAT ACTIF ============
-            // Paramètres pour permettre getParamBoolean('{module}.actif')
-            ...Object.entries(MODULE_REGISTRY).map(([moduleName, config], index) => ({
-                cle: `${moduleName}.actif`,
-                valeur: config.defaultActive,
+            // P2.3 v7 — Paramètres depuis le catalogue DB
+            ...modulesCatalogue.map((mc, index) => ({
+                cle: `${mc.code}.actif`,
+                valeur: mc.actifParDefaut,
                 typeValeur: TypeValeurParametre.BOOLEAN,
                 categorie: CategorieParametre.MODULE,
-                module: moduleName,
-                description: `Module ${config.label} actif`,
+                module: mc.code,
+                description: `Module ${mc.nom} actif`,
                 modifiableRuntime: true,
                 visible: true,
                 ordre: 100 + index,

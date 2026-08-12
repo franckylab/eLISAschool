@@ -12,7 +12,6 @@ import { Repository } from 'typeorm';
 import { Request } from 'express';
 import { AppDataSource } from '@database/data-source';
 import { HistoriqueConfiguration, ActionConfiguration, CibleConfiguration } from '../entities/historique-configuration.entity';
-import { ConfigurationApp } from '../entities/configuration-app.entity';
 import { ParametreSysteme } from '../entities/parametre-systeme.entity';
 import { logger } from '@common/utils/logger.util';
 import { getClientIP } from '@common/utils/client-ip.util';
@@ -39,12 +38,10 @@ export interface LogConfigActionOptions {
  */
 export class ConfigurationHistoryService {
     private historiqueRepo: Repository<HistoriqueConfiguration>;
-    private configAppRepo: Repository<ConfigurationApp>;
     private parametreRepo: Repository<ParametreSysteme>;
 
     constructor() {
         this.historiqueRepo = AppDataSource.getRepository(HistoriqueConfiguration);
-        this.configAppRepo = AppDataSource.getRepository(ConfigurationApp);
         this.parametreRepo = AppDataSource.getRepository(ParametreSysteme);
     }
 
@@ -115,38 +112,17 @@ export class ConfigurationHistoryService {
 
         // Restaurer selon le type de cible
         switch (entry.cible) {
-            case CibleConfiguration.APP:
-                await this.restaurerConfigApp(entry.ancienneValeur, utilisateurId);
-                break;
             case CibleConfiguration.PARAMETRE:
                 await this.restaurerParametre(entry.cibleNom || '', entry.ancienneValeur, utilisateurId);
                 break;
+            case CibleConfiguration.APP:
+                // ConfigurationApp supprimée (v3.0) — legacy non restaurable
+                throw new AppError('ConfigurationApp supprimée — restauration legacy non supportée', 400, 'LEGACY_NOT_SUPPORTED');
             default:
                 throw new AppError('Type de restauration non supporté', 400, 'UNSUPPORTED_RESTORE');
         }
 
         logger.info(`Configuration restaurée depuis historique ${historiqueId}`);
-    }
-
-    /**
-     * Restaure la configuration app
-     */
-    private async restaurerConfigApp(ancienneValeur: any, utilisateurId?: string): Promise<void> {
-        const config = await this.configAppRepo.findOne({ where: {} });
-        if (!config) return;
-
-        const valeurActuelle = { ...config };
-        Object.assign(config, ancienneValeur);
-        await this.configAppRepo.save(config);
-
-        await this.logAction({
-            utilisateurId,
-            action: ActionConfiguration.RESTORE,
-            cible: CibleConfiguration.APP,
-            description: 'Configuration app restaurée',
-            ancienneValeur: valeurActuelle,
-            nouvelleValeur: ancienneValeur,
-        });
     }
 
     /**
@@ -175,19 +151,17 @@ export class ConfigurationHistoryService {
      * Crée un point de sauvegarde complet
      */
     async creerSauvegarde(utilisateurId?: string): Promise<{ id: string; timestamp: Date }> {
-        const config = await this.configAppRepo.findOne({ where: {} });
         const parametres = await this.parametreRepo.find();
 
         const sauvegarde = {
-            app: config,
             parametres: parametres.map(p => ({ cle: p.cle, valeur: p.valeur })),
         };
 
         const entry = await this.logAction({
             utilisateurId,
             action: ActionConfiguration.EXPORT,
-            cible: CibleConfiguration.APP,
-            description: 'Sauvegarde complète de la configuration',
+            cible: CibleConfiguration.PARAMETRE,
+            description: 'Sauvegarde complète des paramètres',
             nouvelleValeur: sauvegarde,
             restaurable: true,
         });
@@ -210,12 +184,7 @@ export class ConfigurationHistoryService {
             throw new AppError('Données de sauvegarde invalides', 400, 'INVALID_BACKUP');
         }
 
-        // Restaurer app
-        if (sauvegarde.app) {
-            await this.restaurerConfigApp(sauvegarde.app, utilisateurId);
-        }
-
-        // Restaurer paramètres
+        // Restaurer paramètres uniquement (ConfigurationApp supprimée v3.0)
         if (sauvegarde.parametres) {
             for (const p of sauvegarde.parametres) {
                 try {
@@ -233,7 +202,7 @@ export class ConfigurationHistoryService {
         await this.logAction({
             utilisateurId,
             action: ActionConfiguration.RESTORE,
-            cible: CibleConfiguration.APP,
+            cible: CibleConfiguration.PARAMETRE,
             description: `Configuration restaurée depuis sauvegarde ${sauvegardeId}`,
         });
 

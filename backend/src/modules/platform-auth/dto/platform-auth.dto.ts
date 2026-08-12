@@ -1,64 +1,29 @@
 /**
  * ==================================
- * eLISAschool - DTOs Platform Auth
+ * eLISAschool - DTOs Platform Auth (Compatibilité ADR-005)
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0 — ADR-005 (v11)
  *
- * Schémas Zod pour l'authentification plateforme.
- * Modèle C — Auth0 Internalisé (Dual-Plane)
+ * Schémas Zod pour les routes de compatibilité /api/platform/auth/*.
+ * Le login réel est délégué au auth.service.ts unifié (source unique).
+ *
+ * ADR-005 : Plus de DTOs dual-plane (PlatformLoginResponse, PlatformMfaRequiredResponse,
+ * PlatformMeResponse supprimés). Utilise LoginResponseDto du module auth.
  */
 
 import { z } from 'zod';
 
 // =============================================
-// Schémas de validation
+// Schéma de compatibilité pour la route /api/platform/auth/login
 // =============================================
 
+/**
+ * Schéma de login plateforme (compatibilité route).
+ * Délègue au auth.service.ts unifié (ADR-005 — source unique de vérité).
+ */
 export const platformLoginSchema = z.object({
     email: z.string().email('Email invalide'),
     motDePasse: z.string().min(1, 'Mot de passe requis'),
-    codeMfa: z.string().optional(),
 });
 
 export type PlatformLoginDto = z.infer<typeof platformLoginSchema>;
-
-// =============================================
-// Réponses
-// =============================================
-
-export interface PlatformLoginResponse {
-    accessToken: string;
-    refreshToken: string;
-    expiresIn: number;
-    utilisateur: {
-        identiteId: string;
-        email: string;
-        prenom: string;
-        nom: string;
-        rolePlateforme: string;
-        avatarUrl?: string | null;
-        mfaActive: boolean;
-    };
-    memberships: Array<{
-        contexteType: string;
-        contexteId: string | null;
-        role: string;
-    }>;
-}
-
-export interface PlatformMeResponse {
-    identiteId: string;
-    email: string;
-    prenom: string;
-    nom: string;
-    rolePlateforme: string;
-    avatarUrl?: string | null;
-    mfaActive: boolean;
-    memberships: Array<{
-        contexteType: string;
-        contexteId: string | null;
-        role: string;
-        estActif: boolean;
-    }>;
-    derniereConnexion: Date | null;
-}

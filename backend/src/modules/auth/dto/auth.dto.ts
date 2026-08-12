@@ -77,9 +77,20 @@ export interface LoginResponseDto {
     }>;
     requiereSelectionEtablissement?: boolean;
     tokenTemporaire?: boolean;
-    // MFA — Phase P1 v6
+    // MFA — unifié ADR-005 (tenant + plateforme)
     mfaRequired?: boolean;
     mfaToken?: string;
+    // ======================================
+    // ADR-005 (v11) — Accès plateforme unifié
+    // ======================================
+    /** L'utilisateur a accès au Control Plane (estPlateforme + rôle plateforme) */
+    hasPlatformAccess?: boolean;
+    /** Tokens plateforme (générés si hasPlatformAccess = true, sans MFA) */
+    platformAccessToken?: string;
+    platformRefreshToken?: string;
+    platformExpiresIn?: number;
+    /** Rôle plateforme unifié (ex: SUPER_ADMIN, PLATEFORME_ADMIN) */
+    platformRole?: string;
 }
 
 /**
@@ -90,6 +101,8 @@ export interface JwtPayload {
     email: string;
     role: string;
     roles?: string[];
+    /** Audit sécurité v10 — GAP 8 : plan de gestion du token ('platform' | 'tenant') */
+    plane?: 'platform' | 'tenant';
     // Permissions volontairement exclues du JWT : elles sont résolues côté serveur
     // à chaque requête (permissionResolverService, avec cache) pour éviter un
     // token > 16KB qui provoquerait des erreurs HTTP 431.
@@ -114,6 +127,8 @@ export interface UtilisateurAuth {
     role: string;
     roles?: string[];
     permissions?: string[];
+    /** Audit sécurité v10 — GAP 8 : plan de gestion ('platform' | 'tenant') */
+    plane?: 'platform' | 'tenant';
     etablissementId?: string;
     etablissements?: Array<{
         etablissementId: string;

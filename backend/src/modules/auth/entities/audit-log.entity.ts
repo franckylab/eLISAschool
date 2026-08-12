@@ -412,6 +412,8 @@ export enum AuditAction {
     PLATFORM_USER_REACTIVATE = 'PLATFORM_USER_REACTIVATE',
     PLATFORM_USER_REVOKE_SESSIONS = 'PLATFORM_USER_REVOKE_SESSIONS',
     PLATFORM_USER_DELEGATE = 'PLATFORM_USER_DELEGATE',
+    PLATFORM_USER_RESET_MFA = 'PLATFORM_USER_RESET_MFA',
+    PLATFORM_USER_FORCE_RESET_PASSWORD = 'PLATFORM_USER_FORCE_RESET_PASSWORD',
 }
 
 /**
@@ -502,6 +504,14 @@ export class AuditLog {
 
     @Column({ type: 'text', nullable: true })
     erreur?: string;
+
+    /**
+     * Durcissement v9 — Signature HMAC-SHA256 pour l'intégrité de la chaîne d'audit.
+     * Chaque log contient le hash du précédent (blockchain-like).
+     * Permet de détecter toute falsification a posteriori.
+     */
+    @Column({ type: 'varchar', length: 64, nullable: true })
+    integriteHash?: string;
 
     @CreateDateColumn({ type: 'timestamp' })
     createdAt!: Date;

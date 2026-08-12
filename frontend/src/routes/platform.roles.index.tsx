@@ -3,18 +3,14 @@
  * eLISAschool - Platform Roles Index
  * ==================================
  * Page liste des rôles plateforme (système + personnalisés).
- * Modèle C — Auth0 Internalisé (Dual-Plane)
+ * ADR-005 — Auth unifiée (source unique de vérité)
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { RoleBuilderPage } from '@/features/admin/components/role-builder-page';
-
-function PlatformRolesIndex() {
-    return <RoleBuilderPage />;
-}
+import { PlatformRolesPage } from '@/features/platform/components/platform-roles-page';
 
 export const Route = createFileRoute('/platform/roles/')({
-    component: PlatformRolesIndex,
+    component: PlatformRolesPage,
 });
 
-export default PlatformRolesIndex;
+export default PlatformRolesPage;

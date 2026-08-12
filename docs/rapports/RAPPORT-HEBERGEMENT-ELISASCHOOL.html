@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eLISAschool — Hébergement &amp; Déploiement : Guide Stratégique 1 000 / 5 000 / 10 000 utilisateurs</title>
+<style>
+  :root {
+    --primary: #28a745;
+    --primary-dark: #1e7e34;
+    --accent: #007bff;
+    --accent-dark: #0056b3;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --purple: #6f42c1;
+    --surface: #ffffff;
+    --surface-alt: #f8f9fa;
+    --text: #1a1a2e;
+    --text-secondary: #6c757d;
+    --border: #e5e7eb;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 6px rgba(0,0,0,0.07), 0 10px 24px rgba(0,0,0,0.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* === HEADER === */
+  .hero {
+    background: linear-gradient(135deg, var(--primary) 0%, #20c997 50%, var(--accent) 100%);
+    color: white;
+    padding: 3rem 2rem 2.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.3;
+  }
+  .hero h1 { font-size: 2.2rem; font-weight: 800; position: relative; letter-spacing: -0.02em; }
+  .hero .subtitle { font-size: 1.1rem; opacity: 0.9; margin-top: 0.5rem; position: relative; }
+  .hero .meta { display: flex; gap: 1.5rem; justify-content: center; margin-top: 1.2rem; position: relative; font-size: 0.85rem; opacity: 0.8; flex-wrap: wrap; }
+  .hero .meta span { display: flex; align-items: center; gap: 0.3rem; }
+
+  /* === NAVIGATION === */
+  .nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    overflow-x: auto;
+  }
+  .nav-inner {
+    display: flex;
+    gap: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .nav a {
+    padding: 0.85rem 1rem;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 500;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .nav a:hover, .nav a.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  /* === LAYOUT === */
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+  section { margin-bottom: 3rem; scroll-margin-top: 70px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--primary);
+  }
+  .section-header .icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--primary), #20c997);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1.2rem;
+  }
+  .section-header h2 { font-size: 1.4rem; font-weight: 700; color: var(--text); }
+
+  /* === CARDS === */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    transition: box-shadow 0.2s;
+  }
+  .card:hover { box-shadow: var(--shadow-lg); }
+  .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text); }
+  .card p + p { margin-top: 0.5rem; }
+
+  /* === GRID === */
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.25rem; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+
+  /* === KPI === */
+  .kpi {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--primary);
+    text-align: center;
+  }
+  .kpi .value { font-size: 1.55rem; font-weight: 800; color: var(--primary); line-height: 1.2; }
+  .kpi .label { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; }
+  .kpi.blue { border-top-color: var(--accent); } .kpi.blue .value { color: var(--accent); }
+  .kpi.warn { border-top-color: var(--warning); } .kpi.warn .value { color: #d39e00; }
+  .kpi.danger { border-top-color: var(--danger); } .kpi.danger .value { color: var(--danger); }
+  .kpi.purple { border-top-color: var(--purple); } .kpi.purple .value { color: var(--purple); }
+
+  /* === TABLES === */
+  .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.86rem; min-width: 600px; }
+  thead th {
+    background: var(--surface-alt);
+    text-align: left;
+    padding: 0.7rem 0.9rem;
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody td { padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: rgba(40,167,69,0.03); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* === BADGES === */
+  .badge {
+    display: inline-block;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .badge.green { background: rgba(40,167,69,0.1); color: var(--primary-dark); }
+  .badge.blue { background: rgba(0,123,255,0.1); color: var(--accent-dark); }
+  .badge.warn { background: rgba(255,193,7,0.15); color: #b8860b; }
+  .badge.red { background: rgba(220,53,69,0.1); color: var(--danger); }
+  .badge.purple { background: rgba(111,66,193,0.1); color: var(--purple); }
+  .badge.gray { background: rgba(108,117,125,0.12); color: #495057; }
+
+  /* === CALLOUTS === */
+  .callout {
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+    border-left: 4px solid;
+  }
+  .callout.info { background: rgba(0,123,255,0.06); border-left-color: var(--accent); }
+  .callout.success { background: rgba(40,167,69,0.06); border-left-color: var(--primary); }
+  .callout.warning { background: rgba(255,193,7,0.08); border-left-color: var(--warning); }
+  .callout.danger { background: rgba(220,53,69,0.06); border-left-color: var(--danger); }
+  .callout strong { display: block; margin-bottom: 0.25rem; }
+
+  /* === BARS / CHARTS === */
+  .bar-row { display: flex; align-items: center; gap: 0.6rem; margin: 0.45rem 0; font-size: 0.82rem; }
+  .bar-label { width: 190px; flex-shrink: 0; text-align: right; color: var(--text-secondary); }
+  .bar-track { flex: 1; background: var(--surface-alt); border-radius: 999px; height: 20px; overflow: hidden; border: 1px solid var(--border); }
+  .bar-fill { height: 100%; border-radius: 999px; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.45rem; color: white; font-size: 0.7rem; font-weight: 700; min-width: 2rem; }
+  .bar-value { width: 90px; flex-shrink: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .legend-dots { display: flex; flex-wrap: wrap; gap: 0.9rem; margin-top: 0.6rem; font-size: 0.78rem; color: var(--text-secondary); }
+  .legend-dots span { display: flex; align-items: center; gap: 0.35rem; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+
+  /* === ARCHITECTURE DIAGRAMS === */
+  .diagram {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    overflow-x: auto;
+    box-shadow: var(--shadow);
+    font-family: 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.45;
+    white-space: pre;
+  }
+  .diagram .g { color: #4ade80; }
+  .diagram .b { color: #60a5fa; }
+  .diagram .y { color: #facc15; }
+  .diagram .r { color: #f87171; }
+  .diagram .m { color: #c084fc; }
+  .diagram .dim { color: #64748b; }
+
+  /* === FOOTER === */
+  footer { background: var(--text); color: rgba(255,255,255,0.75); padding: 2rem; text-align: center; font-size: 0.8rem; }
+  footer strong { color: white; }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 1.5rem; }
+    .bar-label { width: 130px; font-size: 0.72rem; }
+    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>🖥️ eLISAschool — Hébergement &amp; Déploiement</h1>
+  <div class="subtitle">Guide stratégique d'hébergement web · dimensionnement 1 000 / 5 000 / 10 000 utilisateurs</div>
+  <div class="meta">
+    <span>📅 Août 2026</span>
+    <span>🧱 Basé sur l'inventaire réel du monorepo</span>
+    <span>🌍 Focus marché Afrique &amp; Cameroun</span>
+    <span>📄 docs/rapports/RAPPORT-HEBERGEMENT-ELISASCHOOL.html</span>
+  </div>
+</header>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#synthese">1. Synthèse exécutive</a>
+    <a href="#profil">2. Profil de charge</a>
+    <a href="#fonctionnement">3. Fonctionnement</a>
+    <a href="#types">4. Types d'hébergement</a>
+    <a href="#fournisseurs">5. Comparatif fournisseurs</a>
+    <a href="#dimensionnement">6. Dimensionnement</a>
+    <a href="#scaling">7. Scaling</a>
+    <a href="#recommandations">8. Recommandations</a>
+    <a href="#annexes">9. Annexes &amp; sources</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ==================== 1. SYNTHÈSE EXÉCUTIVE ==================== -->
+<section id="synthese">
+  <div class="section-header"><div class="icon">🎯</div><h2>1. Synthèse exécutive &amp; recommandations</h2></div>
+
+  <div class="grid-4">
+    <div class="kpi"><div class="value">≈ 20–30 €/mois</div><div class="label">Palier 1 000 utilisateurs (VPS unique)</div></div>
+    <div class="kpi blue"><div class="value">≈ 80–120 €/mois</div><div class="label">Palier 5 000 utilisateurs (split app/DB + LB)</div></div>
+    <div class="kpi purple"><div class="value">≈ 250–450 €/mois</div><div class="label">Palier 10 000 utilisateurs (HA + Postgres managé)</div></div>
+    <div class="kpi warn"><div class="value">≈ 130 ms</div><div class="label">Latence Paris → Douala (CDN pour le statique)</div></div>
+  </div>
+
+  <div class="grid-3" style="margin-top:1.25rem;">
+    <div class="card">
+      <h3>🟢 Verdict — Démarrage (1 000 utilisateurs)</h3>
+      <p><span class="badge green">Recommandé</span> <strong>Hetzner CX32 ou OVH VPS Comfort</strong> (4 vCPU / 8 Go / ~160 Go SSD) — <strong>≈ 16–26 €/mois</strong>.</p>
+      <p>Toute la stack Docker Compose sur un seul VPS (nginx + backend + frontend + PostgreSQL + Redis + PgBouncer), Cloudflare CDN gratuit devant.</p>
+      <p>Redondance : backups quotidiens pg_dump vers R2/Backup Storage + monitoring Uptime Kuma.</p>
+    </div>
+    <div class="card">
+      <h3>🔵 Verdict — Croissance (5 000 utilisateurs)</h3>
+      <p><span class="badge blue">Recommandé</span> <strong>Split applicatif / données</strong> : 2 app nodes (4 vCPU/8 Go) + 1 VPS base (PostgreSQL 16 + Redis + PgBouncer) + nginx load balancer + Cloudflare CDN — <strong>≈ 80–120 €/mois</strong>.</p>
+      <p>Instances Node.js multiples (pas de PM2 cluster en stratégie long terme), session state dans Redis, zero-downtime deploys.</p>
+    </div>
+    <div class="card">
+      <h3>🟣 Verdict — Échelle (10 000 utilisateurs)</h3>
+      <p><span class="badge purple">Recommandé</span> <strong>3+ app nodes autoscalés + PostgreSQL managé HA</strong> (AWS RDS / DigitalOcean / Supabase) ou dédié DB avec réplicas — <strong>≈ 250–450 €/mois</strong>.</p>
+      <p>Stockage objets S3/R2 pour les fichiers (exports PDF, uploads), redis cluster, monitoring Prometheus/Grafana, multi-région optionnel.</p>
+    </div>
+  </div>
+
+  <div class="callout success">
+    <strong>✅ Points clés à retenir</strong>
+    <span>• eLISAschool est un SaaS multi-tenant à 8 tables lourdes — la base de données est LE goulot d'étranglement, pas Node.js.<br>
+    • Le bon ordre de scaling : optimiser SQL + cache Redis → PgBouncer → scaler l'app horizontalement → scaler la DB.<br>
+    • PM2 cluster = rustine temporaire ; instances multiples + nginx = stratégie durable (source BSWEN 2026).<br>
+    • Cloudflare CDN gratuit = −60 % de bande passante, essentiel pour la latence Afrique.<br>
+    • Aucun cloud majeur n'a de région au Cameroun : Paris (~130 ms) reste le meilleur compromis prix/latence ; Johannesburg/Cape Town en alternative.</span>
+  </div>
+</section>
+
+<!-- ==================== 2. PROFIL DE CHARGE ==================== -->
+<section id="profil">
+  <div class="section-header"><div class="icon">⚡</div><h2>2. Profil de charge réel d'eLISAschool</h2></div>
+
+  <div class="callout info">
+    <strong>📋 Inventaire technique (vérifié dans le monorepo, août 2026)</strong>
+    <span>Backend : Node.js 20 · Express 4.21.2 · TypeORM 0.3.20 · pg 8.13.1 · ioredis 5.4.1 · node-cron · socket.io 4.7.5 (actuellement inutilisé) · express-rate-limit · helmet · winston · zod.<br>
+    Frontend : React 19 · Vite 6 · Tailwind 4 · TanStack Router · jsPDF côté client (exports PDF sans serveur).<br>
+    Données : PostgreSQL 16 (port 7002) + PgBouncer (pool 20, max 200 clients) + Redis 7 (port 7003, maxmemory 512 MB).<br>
+    Infra : Docker Compose, nginx:alpine frontend (port 7001), nginx-proxy/acme-companion (Let's Encrypt cloud).</span>
+  </div>
+
+  <h3 class="sub">2.1 Table de conversion — « utilisateurs » ↔ établissements</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Palier</th><th>≈ Établissements (écoles)</th><th>≈ Élèves concernés</th><th>≈ Requêtes actives / s</th><th>≈ Bande passante</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1 000 utilisateurs</strong></td>
+          <td>5 – 15 écoles</td>
+          <td>1 500 – 4 500</td>
+          <td>10 – 40 req/s (pics 80)</td>
+          <td>≈ 2 – 6 Go / jour</td>
+        </tr>
+        <tr>
+          <td><strong>5 000 utilisateurs</strong></td>
+          <td>50 – 100 écoles</td>
+          <td>15 000 – 30 000</td>
+          <td>50 – 200 req/s (pics 400)</td>
+          <td>≈ 10 – 30 Go / jour</td>
+        </tr>
+        <tr>
+          <td><strong>10 000 utilisateurs</strong></td>
+          <td>100 – 300 écoles</td>
+          <td>30 000 – 90 000</td>
+          <td>100 – 400 req/s (pics 800+)</td>
+          <td>≈ 25 – 70 Go / jour</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:0.82rem; color:var(--text-secondary); margin-top:0.4rem;">Hypothèses : 5–15 % de concurrence active ; profil de charge scolaire = pics 07h30–13h00 (Africa/Douala), creux le soir et week-ends ; assets Vite ~1–2 Mo par chargement complet.</p>
+
+  <h3 class="sub">2.2 Points chauds de la charge</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h3>🗄️ 8 tables lourdes (partitionnées)</h3>
+      <p>eleves · notes · bulletins · heures_cours · creneaux_horaires · absences_personnel · paiements · factures.</p>
+      <p>Le partitionnement HASH 16 (migration 155) aide, mais les requêtes agrégées (bulletins, moyennes, rapports) restent les plus coûteuses.</p>
+      <div class="bar-row"><div class="bar-label">Requêtes de lecture</div><div class="bar-track"><div class="bar-fill" style="width:85%; background:linear-gradient(90deg,#28a745,#20c997);">85 %</div></div><div class="bar-value">≈ 85 %</div></div>
+      <div class="bar-row"><div class="bar-label">Écritures (notes, pointage)</div><div class="bar-track"><div class="bar-fill" style="width:15%; background:linear-gradient(90deg,#007bff,#6610f2);">15 %</div></div><div class="bar-value">≈ 15 %</div></div>
+    </div>
+    <div class="card">
+      <h3>🛡️ Quotas &amp; plans (rate limiting)</h3>
+      <p>Plans SaaS : Gratuit 100 · Standard 500 · Premium 2000 · Enterprise 3000 req/min par établissement (middleware rate-limit par plan, cache Redis).</p>
+      <p><strong>Conséquence :</strong> le profil est fortement <em>multi-tenant inégal</em> — quelques gros établissements dominent. Le noisy-neighbor detection (monitoring) est donc indispensable.</p>
+      <div class="callout warning" style="margin:0.6rem 0 0;">
+        <strong>⚠️ Implication dimensionnement</strong>
+        <span>Prévoir 2× la charge nominale en tête (rentrée scolaire, fins de période). Redis déjà configuré à 512 Mo — le monter à 1–2 Go dès le palier 5 000.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 3. FONCTIONNEMENT ==================== -->
+<section id="fonctionnement">
+  <div class="section-header"><div class="icon">🧭</div><h2>3. Comment fonctionne l'hébergement web</h2></div>
+
+  <div class="card">
+    <h3>3.1 Le chemin d'une requête — de l'utilisateur à la base de données</h3>
+    <div class="diagram"><span class="dim">Utilisateur (Douala)</span>  ── DNS (Cloudflare, ~10 ms) ──▶  <span class="b">CDN / WAF</span>  ──▶  <span class="g">Reverse proxy (nginx)</span>
+      │
+      │  HTTPS (TLS 1.3, cache statique + brotli)
+      ▼
+<span class="y">Frontend statique</span> (React/Vite, servi par nginx ou CDN)   ◀── assets JS/CSS/PNG
+      │
+      ▼
+<span class="g">Application Node.js</span> (Express) ──▶ <span class="m">Redis</span> (cache, rate-limit, sessions, pub/sub)
+      │                                                       │
+      │  pool de connexions (PgBouncer : 20 clients actifs, 200 max)
+      ▼
+<span class="b">PostgreSQL 16</span>  (RLS par établissement, 8 tables partitionnées, backups continus)</div>
+  </div>
+
+  <div class="grid-3" style="margin-top:1.25rem;">
+    <div class="card">
+      <h3>🌍 Les briques</h3>
+      <p><strong>DNS</strong> : traduit le nom de domaine en IP (TTL court pour failover).<br>
+      <strong>CDN</strong> : cache les assets près de l'utilisateur (Cloudflare : réseau mondial, gratuit).<br>
+      <strong>Reverse proxy</strong> : TLS, compression, protection, load balancing (nginx).<br>
+      <strong>App server</strong> : exécute le code (Node.js, mono-thread → à multi-instancier).<br>
+      <strong>Base de données</strong> : état durable (PostgreSQL — le goulot d'étranglement n°1).<br>
+      <strong>Cache</strong> : Redis — absorde les lectures répétées (−80 % de requêtes DB).</p>
+    </div>
+    <div class="card">
+      <h3>⚖️ Ce que ça implique pour eLISAschool</h3>
+      <p>• <strong>Stateless app</strong> : aucun état en mémoire processus (sessions, files) → tout dans Redis/Postgres → scale horizontal propre.</p>
+      <p>• <strong>socket.io inutilisé</strong> : pas de contrainte sticky-session WebSocket à gérer aujourd'hui (un point de moins à scaler).</p>
+      <p>• <strong>PDF côté client (jsPDF)</strong> : les exports PDF n'engendrent aucune charge CPU serveur — excellente décision d'architecture.</p>
+    </div>
+    <div class="card">
+      <h3>📏 Le bon ordre de scaling</h3>
+      <div class="bar-row"><div class="bar-label">1. Optimiser SQL + index</div><div class="bar-track"><div class="bar-fill" style="width:100%; background:linear-gradient(90deg,#28a745,#20c997);">1er</div></div><div class="bar-value">gratuit</div></div>
+      <div class="bar-row"><div class="bar-label">2. Cache Redis</div><div class="bar-track"><div class="bar-fill" style="width:90%; background:linear-gradient(90deg,#28a745,#20c997);">2e</div></div><div class="bar-value">−80 %</div></div>
+      <div class="bar-row"><div class="bar-label">3. PgBouncer (pooling)</div><div class="bar-track"><div class="bar-fill" style="width:80%; background:linear-gradient(90deg,#007bff,#6610f2);">3e</div></div><div class="bar-value">déjà fait</div></div>
+      <div class="bar-row"><div class="bar-label">4. Scale horizontal app</div><div class="bar-track"><div class="bar-fill" style="width:65%; background:linear-gradient(90deg,#007bff,#6610f2);">4e</div></div><div class="bar-value">multi-nodes</div></div>
+      <div class="bar-row"><div class="bar-label">5. Scale PostgreSQL</div><div class="bar-track"><div class="bar-fill" style="width:45%; background:linear-gradient(90deg,#f59e0b,#f97316);">5e</div></div><div class="bar-value">HA / managé</div></div>
+      <p style="font-size:0.8rem; color:var(--text-secondary);">Réserver les étapes 4–5 aux paliers 5 000+.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 4. TYPES D'HÉBERGEMENT ==================== -->
+<section id="types">
+  <div class="section-header"><div class="icon">🏷️</div><h2>4. Les types d'offres d'hébergement</h2></div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Type</th><th>Ce que c'est</th><th>Avantages</th><th>Inconvénients</th><th>Pour eLISAschool</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Hébergement mutualisé / shared</strong></td>
+          <td>Un serveur partagé entre des centaines de sites, cPanel</td>
+          <td>Très bon marché, zéro maintenance</td>
+          <td>Pas de Node.js/PostgreSQL propre, performances imprévisibles, pas de Docker</td>
+          <td><span class="badge red">Non</span> incompatible stack</td>
+        </tr>
+        <tr>
+          <td><strong>VPS (Virtual Private Server)</strong></td>
+          <td>Une VM dédiée (KVM/AMD) avec accès root, Docker</td>
+          <td>Prix imbattable (4–50 €/mois), contrôle total, scale vertical simple</td>
+          <td>Ops manuelles (sécurité, backups, mises à jour)</td>
+          <td><span class="badge green">Oui — socle recommandé</span></td>
+        </tr>
+        <tr>
+          <td><strong>PaaS managé (Render, Railway, Fly.io)</strong></td>
+          <td>Platform-as-a-Service : push → déploiement auto</td>
+          <td>Zero ops, scale horizontal intégré, SSL auto</td>
+          <td>Coût plus élevé, lock-in, egress coûteux, latence régions limitées</td>
+          <td><span class="badge blue">Option palier 3+</span></td>
+        </tr>
+        <tr>
+          <td><strong>PaaS self-hosted (Coolify, Dokku, CapRover)</strong></td>
+          <td>Heroku open-source sur VOTRE VPS</td>
+          <td>Push-to-deploy + contrôle total, SSL auto, Docker Compose (Coolify)</td>
+          <td>Plateforme à maintenir elle-même (overhead 100–700 Mo RAM)</td>
+          <td><span class="badge green">Excellent compromis</span> voir §5.4</td>
+        </tr>
+        <tr>
+          <td><strong>Serveurs dédiés</strong></td>
+          <td>Un serveur physique entier pour vous (OVH, Hetzner)</td>
+          <td>Performances max, pas de noisy-neighbor</td>
+          <td>Coût élevé (100–500 €/mois), maintenance hardware</td>
+          <td><span class="badge purple">Palier 10 000+ / DB</span></td>
+        </tr>
+        <tr>
+          <td><strong>Cloud hyperscaler (AWS, Azure, GCP)</strong></td>
+          <td>IaaS managé : EC2, RDS, ELB, autoscaling</td>
+          <td>Scale horizontal infini, services managés, régions Afrique</td>
+          <td>Complexité, facturation USD, coût de sortie élevé</td>
+          <td><span class="badge purple">Palier 10 000+</span></td>
+        </tr>
+        <tr>
+          <td><strong>Serverless / Containers (K8s, ECS, Cloud Run)</strong></td>
+          <td>Exécution événementielle ou orchestration de conteneurs</td>
+          <td>Pay-per-use, autoscaling radical</td>
+          <td>Complexité opérationnelle, cold starts, coût à fort trafic</td>
+          <td><span class="badge gray">À évaluer > 20 000</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout success" style="margin-top:1rem;">
+    <strong>🎯 Recommandation de principe</strong>
+    <span>Pour un SaaS Node.js + PostgreSQL en marché africain avec un budget contraint : <strong>VPS (seul ou via Coolify) pour 1 000 → 5 000 utilisateurs</strong>, <strong>cloud managé (AWS/Azure/GCP) pour 10 000+</strong>. Éviter le shared hosting et le serverless pur à ce stade.</span>
+  </div>
+</section>
+
+<!-- ==================== 5. COMPARATIF FOURNISSEURS ==================== -->
+<section id="fournisseurs">
+  <div class="section-header"><div class="icon">⚖️</div><h2>5. Comparatif détaillé des fournisseurs</h2></div>
+
+  <h3 class="sub">5.1 VPS &amp; serveurs cloud (prix indicatifs 2026, HT/mois)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Fournisseur</th><th>Offre type</th><th>vCPU / RAM / SSD</th><th>Prix ≈</th><th>Datacenters</th><th>Latence Douala*</th><th>Verdict</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Hetzner</strong> 🇩🇪</td>
+          <td>CX32 (Intel/AMD)</td>
+          <td>4 / 8 Go / 160 Go</td>
+          <td class="num">≈ 16 €</td>
+          <td>Francfort, Helsinki, Nuremberg, Falkenstein</td>
+          <td>140–160 ms</td>
+          <td><span class="badge green">Meilleur rapport prix/perf</span></td>
+        </tr>
+        <tr>
+          <td><strong>OVHcloud</strong> 🇫🇷</td>
+          <td>VPS Comfort</td>
+          <td>4 / 8 Go / 160 Go</td>
+          <td class="num">≈ 15,80 €</td>
+          <td>Paris, Gravelines, Strasbourg, Roubaix + 6 pays</td>
+          <td>≈ 130 ms</td>
+          <td><span class="badge green">Recommandé (proximité + 21Vianet Afrique)</span></td>
+        </tr>
+        <tr>
+          <td><strong>Contabo</strong> 🇩🇪</td>
+          <td>Cloud VPS M</td>
+          <td>6 / 30 Go / 200 Go</td>
+          <td class="num">≈ 6–8 €</td>
+          <td>Allemagne, USA, Singapour</td>
+          <td>150–170 ms</td>
+          <td><span class="badge warn">Le moins cher, support variable</span></td>
+        </tr>
+        <tr>
+          <td><strong>DigitalOcean</strong> 🇺🇸</td>
+          <td>Droplet Premium AMD</td>
+          <td>4 / 8 Go / 160 Go</td>
+          <td class="num">≈ 56 $</td>
+          <td>AMS, FRA, LON, NYC, SFO… (aucune en Afrique)</td>
+          <td>150–180 ms</td>
+          <td><span class="badge gray">Cher vs Hetzner, écosystème facile</span></td>
+        </tr>
+        <tr>
+          <td><strong>Linode / Akamai</strong> 🇺🇸</td>
+          <td>Dedicated CPU 8 Go</td>
+          <td>4 / 8 Go / 160 Go</td>
+          <td class="num">≈ 48 $</td>
+          <td>FRA, LON, NYC… (aucune en Afrique)</td>
+          <td>150–180 ms</td>
+          <td><span class="badge gray">Correct, moins intéressant</span></td>
+        </tr>
+        <tr>
+          <td><strong>Vultr</strong> 🇺🇸</td>
+          <td>High Frequency</td>
+          <td>4 / 8 Go / 160 Go</td>
+          <td class="num">≈ 48 $</td>
+          <td>FRA, LON, JHB (Afrique du Sud !), LAG (Nigeria)</td>
+          <td>95–140 ms</td>
+          <td><span class="badge blue">Seul VPS US avec LAG + JHB</span></td>
+        </tr>
+        <tr>
+          <td><strong>AWS EC2</strong> 🌍</td>
+          <td>t3.medium + EBS</td>
+          <td>2 / 4 Go / 30 Go</td>
+          <td class="num">≈ 30–40 $</td>
+          <td><span class="badge green">Cape Town (af-south-1)</span></td>
+          <td>80–120 ms</td>
+          <td><span class="badge purple">Région Afrique, écosystème managé</span></td>
+        </tr>
+        <tr>
+          <td><strong>Azure</strong> 🌍</td>
+          <td>B2ms</td>
+          <td>2 / 8 Go / 32 Go</td>
+          <td class="num">≈ 50 $</td>
+          <td><span class="badge green">South Africa North (JHB) + West (CPT)</span></td>
+          <td>95–140 ms</td>
+          <td><span class="badge purple">2 régions Afrique, entreprise-grade</span></td>
+        </tr>
+        <tr>
+          <td><strong>GCP</strong> 🌍</td>
+          <td>e2-standard-2</td>
+          <td>2 / 8 Go / 100 Go</td>
+          <td class="num">≈ 50 $</td>
+          <td><span class="badge green">Johannesburg (africa-south1, 2024)</span></td>
+          <td>95–140 ms</td>
+          <td><span class="badge purple">Région Afrique récente</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:0.82rem; color:var(--text-secondary); margin-top:0.4rem;">* Latences indicatives internet Cameroun (Lagos ↔ Johannesburg 95–140 ms ; Lagos ↔ Cape Town 80–120 ms). Aucun cloud majeur n'a de région à Douala/Yaoundé : l'hébergement local (colocation Axian/Orange DC Douala, &lt; 5 ms) reste une option Phase 3 de l'étude existante.</p>
+
+  <h3 class="sub">5.2 PostgreSQL managé (base de données as-a-service)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Offre</th><th>Version</th><th>Garantie dispo</th><th>Prix départ ≈</th><th>Points forts</th><th>Points faibles</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>AWS RDS</strong></td>
+          <td>PostgreSQL 16</td>
+          <td>99,95 % (Multi-AZ)</td>
+          <td class="num">≈ 25–50 $/mois</td>
+          <td>PITR, réplicas en lecture, région af-south-1</td>
+          <td>Facturation USD, egress, courbe d'apprentissage</td>
+        </tr>
+        <tr>
+          <td><strong>Supabase</strong></td>
+          <td>PostgreSQL 15/16</td>
+          <td>99,9 % (team)</td>
+          <td class="num">≈ 25 $/mois</td>
+          <td>PITR, pooler intégré, dashboard, auth bonus</td>
+          <td>Stockage max par tier, egress, pas de région Afrique</td>
+        </tr>
+        <tr>
+          <td><strong>Neon</strong></td>
+          <td>PostgreSQL 16/17</td>
+          <td>99,9 %</td>
+          <td class="num">≈ 19 $/mois</td>
+          <td>Branching, storage séparé, autoscaling compute</td>
+          <td>Ping réseau, régions limitées, coût écritures</td>
+        </tr>
+        <tr>
+          <td><strong>DigitalOcean Managed DB</strong></td>
+          <td>PostgreSQL 16</td>
+          <td>99,99 %</td>
+          <td class="num">≈ 15 $/mois</td>
+          <td>Prix simple, backups, failover, région FRA</td>
+          <td>Pas de région Afrique, max RAM par tier</td>
+        </tr>
+        <tr>
+          <td><strong>Render Postgres</strong></td>
+          <td>PostgreSQL 16</td>
+          <td>99,9 %</td>
+          <td class="num">≈ 7 $/mois</td>
+          <td>Départ très accessible, même UI que Render</td>
+          <td>PITR payant, dispo moindre, région EU/FR/OR/OH</td>
+        </tr>
+        <tr>
+          <td><strong>Railway</strong></td>
+          <td>PostgreSQL 16</td>
+          <td>99,9 %</td>
+          <td class="num">≈ 5 $/mois</td>
+          <td>Déploiement super simple, backups</td>
+          <td>Coût par usage (CPU/RAM), moins mature pour prod grosse</td>
+        </tr>
+        <tr>
+          <td><strong>Crunchy Bridge</strong></td>
+          <td>PostgreSQL 16/17</td>
+          <td>99,95 %</td>
+          <td class="num">≈ 60 $/mois</td>
+          <td>Spécialistes Postgres, pgBackRest, extensions</td>
+          <td>Prix premium, pas de région Afrique</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub">5.3 PaaS managé (application)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Plateforme</th><th>Modèle</th><th>Région utile</th><th>Prix départ ≈</th><th>Verdict eLISAschool</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Render</strong></td>
+          <td>Web service + cron + Postgres managé</td>
+          <td>Francfort, Oregon, Ohio, Singapour</td>
+          <td class="num">≈ 7–20 $/mois</td>
+          <td><span class="badge blue">Solide pour palier 3+, zero-ops</span></td>
+        </tr>
+        <tr>
+          <td><strong>Railway</strong></td>
+          <td>Déploiement par service Docker</td>
+          <td>Francfort (via Fly réseau)</td>
+          <td class="num">≈ 5 $/mois + usage</td>
+          <td><span class="badge warn">Simple mais coût usage imprévisible</span></td>
+        </tr>
+        <tr>
+          <td><strong>Fly.io</strong></td>
+          <td>Conteneurs distribués (Anycast)</td>
+          <td>Johannesburg (région JNB)</td>
+          <td class="num">≈ 3–15 $/mois</td>
+          <td><span class="badge purple">Seul PaaS avec région Afrique directe</span></td>
+        </tr>
+        <tr>
+          <td><strong>Heroku</strong></td>
+          <td>PaaS historique</td>
+          <td>Francfort, Virginie</td>
+          <td class="num">≈ 25 $/mois (eco)</td>
+          <td><span class="badge red">Cher et peu flexible vs alternatives</span></td>
+        </tr>
+        <tr>
+          <td><strong>Vercel / Netlify</strong></td>
+          <td>Frontend + serverless</td>
+          <td>Edge mondial</td>
+          <td class="num">Gratuit → 20 $</td>
+          <td><span class="badge gray">Frontend seul — pas adapté à notre backend Express</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub">5.4 PaaS self-hosted — le benchmark 2026 (Coolify vs Dokku vs CapRover)</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Critère</th><th>Coolify</th><th>Dokku</th><th>CapRover</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Interface</strong></td>
+          <td>Web UI excellente (proche Vercel)</td>
+          <td>CLI uniquement (SSH)</td>
+          <td>Web UI correcte</td>
+        </tr>
+        <tr>
+          <td><strong>Docker Compose</strong></td>
+          <td><span class="badge green">✅ Natif — décisif pour notre stack</span></td>
+          <td>Via plugin (limité)</td>
+          <td><span class="badge red">❌ Non</span></td>
+        </tr>
+        <tr>
+          <td><strong>Multi-serveur</strong></td>
+          <td>✅ Natif (agents SSH)</td>
+          <td>❌ Single-server</td>
+          <td>✅ Via Docker Swarm</td>
+        </tr>
+        <tr>
+          <td><strong>Backups DB</strong></td>
+          <td><span class="badge green">✅ Intégrés (S3)</span></td>
+          <td>Plugin manuel</td>
+          <td>Manuel</td>
+        </tr>
+        <tr>
+          <td><strong>Overhead RAM</strong></td>
+          <td>≈ 400–700 Mo</td>
+          <td>≈ 100 Mo (le plus léger)</td>
+          <td>≈ 300–500 Mo</td>
+        </tr>
+        <tr>
+          <td><strong>VPS minimum</strong></td>
+          <td>2 Go RAM (CX22 ≈ 4–6 €)</td>
+          <td>512 Mo – 1 Go</td>
+          <td>1 Go</td>
+        </tr>
+        <tr>
+          <td><strong>Maturité / vélocité</strong></td>
+          <td>Très actif (~45k ★), v4 fréquente</td>
+          <td>10+ ans, stable (~30k ★)</td>
+          <td>Stable mais ralenti (~13k ★)</td>
+        </tr>
+        <tr>
+          <td><strong>Verdict 2026</strong></td>
+          <td><span class="badge green">🏆 Le plus complet — recommandé</span></td>
+          <td>Minimaliste CLI pur</td>
+          <td>Entre-deux, Swarm daté</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout success">
+    <strong>💡 Recommandation Coolify</strong>
+    <span>Le support natif <strong>Docker Compose</strong> + SSL auto + push-to-deploy + multi-serveur + backups S3 en font l'outil idéal pour eLISAschool : notre docker-compose.yml existant (nginx + backend + frontend + postgres + redis + pgbouncer) se colle tel quel. Coût : un VPS 4 Go ≈ 6–16 €/mois. Pour l'équipe, un seul dashboard, zéro SSH pour le quotidien. Pour un opérateur CLI pur, Dokku reste valable (overhead minimal).</span>
+  </div>
+</section>
+
+<!-- ==================== 6. DIMENSIONNEMENT ==================== -->
+<section id="dimensionnement">
+  <div class="section-header"><div class="icon">📐</div><h2>6. Dimensionnement &amp; architecture par palier</h2></div>
+
+  <h3 class="sub">6.1 Règles de dimensionnement appliquées</h3>
+  <div class="grid-3">
+    <div class="card">
+      <h3>🧠 Node.js</h3>
+      <p>≈ 1 vCPU pour 50–150 req/s sur Express typique (hors requêtes DB lourdes). Chaque instance ~300–500 Mo RAM (V8 + dépendances). Pour 400 req/s de pointe : 3–4 instances × 2–4 vCPU.</p>
+    </div>
+    <div class="card">
+      <h3>🗄️ PostgreSQL</h3>
+      <p><strong>shared_buffers ≈ 25 % de la RAM</strong> (ex : 8 Go → 2 Go). Index + partitionnement déjà en place. Prévoir 1 vCPU pour 200–400 req/s simples, mais les agrégats (bulletins) consomment 10–50× plus.</p>
+    </div>
+    <div class="card">
+      <h3>🟥 Redis</h3>
+      <p>512 Mo actuel → 1 Go dès 5 000 utilisateurs (cache config + rate-limit + sessions). Persistance RDB + AOF. Toujours <em>ne pas</em> faire de Redis la source de vérité métier.</p>
+    </div>
+  </div>
+
+  <h3 class="sub">6.2 Palier 1 000 utilisateurs — VPS unique</h3>
+  <div class="diagram"><span class="y">Utilisateurs</span> ──▶ <span class="b">Cloudflare</span> (CDN, DDoS, SSL edge, cache statique)
+                              │
+                              ▼
+┌───────────────────────────────────────────────────────────────┐
+│  <span class="g">VPS UNIQUE — Hetzner CX32 / OVH VPS Comfort</span>               │
+│  4 vCPU · 8 Go RAM · 160 Go SSD NVMe · ≈ 16–26 €/mois          │
+│                                                                │
+│  ┌──────────────┐   ┌─────────────────────────────┐            │
+│  │ <span class="b">nginx:alpine</span> :7001 │   │ <span class="g">backend Node.js</span> :3000        │            │
+│  │ frontend +    │   │ Express + PgBouncer (pool 20)│            │
+│  │ reverse proxy │◀──│ cluster PM2 2–3 workers      │            │
+│  └──────────────┘   └─────────────────────────────┘            │
+│            ▲                          ▲                         │
+│            │                          │                         │
+│  ┌─────────┴──────────┐   ┌───────────┴──────────┐              │
+│  │ <span class="b">PostgreSQL 16</span> :7002  │   │ <span class="m">Redis 7</span> :7003        │              │
+│  │ shared_buffers 2 Go │   │ maxmemory 512 Mo      │              │
+│  └─────────────────────┘   └──────────────────────┘              │
+└───────────────────────────────────────────────────────────────┘
+        │  backups pg_dump toutes les 6 h → Cloudflare R2 (gratuit egress)
+        ▼
+   <span class="dim">Uptime Kuma · fail2ban · UFW (80/443/SSH) · Let's Encrypt auto</span></div>
+
+  <h3 class="sub">6.3 Palier 5 000 utilisateurs — Split app / données</h3>
+  <div class="diagram"><span class="y">Utilisateurs</span> ──▶ <span class="b">Cloudflare CDN</span> (cache statique + WAF)
+                              │
+                              ▼
+┌──────────────────────────────┐
+│ <span class="g">nginx Load Balancer</span> :80/443   │  round-robin / least_conn
+│ (VPS 2 vCPU/4 Go · ~8 €)     │  health checks /health
+└──────────────┬───────────────┘
+               │
+       ┌───────┴────────┐
+       ▼                ▼
+┌──────────────┐  ┌──────────────┐
+│ <span class="g">App Node #1</span>   │  │ <span class="g">App Node #2</span>   │  4 vCPU/8 Go chacun
+│ Express+API  │  │ Express+API  │  (Hetzner CX32 × 2 ≈ 32 €)
+│ PgBouncer p20│  │ PgBouncer p20│  sessions/état → Redis
+└──────┬───────┘  └──────┬───────┘
+       └────────┬────────┘
+                ▼
+┌──────────────────────────────┐
+│ <span class="b">VPS DONNÉES (4 vCPU/8 Go)</span>    │
+│ PostgreSQL 16 (≈ 20–25 €)      │
+│ Redis 7 1 Go (cache partagé)   │
+│ PgBouncer max 200 clients      │
+└──────────────────────────────┘
+        │  pg_dump 6 h + WAL → R2  ·  réplica de secours en standby
+        ▼
+   <span class="dim">~80–120 €/mois · zero-downtime deploys (blue-green sur 2 nodes)</span></div>
+
+  <h3 class="sub">6.4 Palier 10 000 utilisateurs — Haute disponibilité</h3>
+  <div class="diagram"><span class="y">Utilisateurs</span> ──▶ <span class="b">Cloudflare</span> ──▶ <span class="b">Managed LB</span> (AWS ALB / DO LB / nginx × 2)
+                              │
+              ┌───────────────┼────────────────┐
+              ▼               ▼                ▼
+        ┌───────────┐  ┌───────────┐    ┌───────────┐
+        │ <span class="g">App #1</span>    │  │ <span class="g">App #2</span>    │    │ <span class="g">App #3</span>    │  autoscaling 3→6
+        │ 4 vCPU/8 Go│  │ 4 vCPU/8 Go│    │ 4 vCPU/8 Go│  (groupes cibles)
+        └─────┬─────┘  └─────┬─────┘    └─────┬─────┘
+              └──────────────┼────────────────┘
+                             ▼
+┌───────────────────────────────────────────────┐
+│ <span class="b">PostgreSQL managé HA</span> (RDS / DO / Supabase)   │
+│ 2 réplicas en lecture + PITR + failover auto   │  ~80–150 $/mois
+│ PgBouncer (cloud ou sidecar)                   │
+└───────────────────────────────────────────────┘
+        │                │
+        ▼                ▼
+┌──────────────┐  ┌──────────────┐
+│ <span class="m">Redis Cluster</span> │  │ <span class="m">S3 / R2</span>       │  uploads, exports PDF,
+│ 3 nœuds cache │  │ stockage objets│  backups, médias
+└──────────────┘  └──────────────┘
+        │
+        ▼
+   <span class="dim">Prometheus + Grafana + Alertmanager · PagerDuty/Telegram alerts · ~250–450 €/mois</span></div>
+
+  <h3 class="sub">6.5 Récapitulatif coûts</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Composant</th><th class="num">1 000 utilisateurs</th><th class="num">5 000 utilisateurs</th><th class="num">10 000 utilisateurs</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Serveurs (VPS / cloud)</td><td class="num">16 – 26 €</td><td class="num">40 – 60 €</td><td class="num">120 – 200 €</td></tr>
+        <tr><td>PostgreSQL managé (ou self-hosted)</td><td class="num">inclus</td><td class="num">inclus</td><td class="num">80 – 150 $</td></tr>
+        <tr><td>Redis (self / managé)</td><td class="num">inclus</td><td class="num">inclus</td><td class="num">30 – 60 €</td></tr>
+        <tr><td>Stockage objets (R2/S3) + backups</td><td class="num">0 – 3 €</td><td class="num">5 – 10 €</td><td class="num">15 – 40 €</td></tr>
+        <tr><td>Cloudflare (CDN gratuit / pro)</td><td class="num">0 €</td><td class="num">0 – 20 €</td><td class="num">20 – 40 $</td></tr>
+        <tr><td>Monitoring (Uptime Kuma / Grafana)</td><td class="num">0 €</td><td class="num">0 – 10 €</td><td class="num">10 – 30 €</td></tr>
+        <tr><td><strong>Total mensuel ≈</strong></td><td class="num"><strong>16 – 29 €</strong></td><td class="num"><strong>45 – 100 €</strong></td><td class="num"><strong>275 – 480 €</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout warning">
+    <strong>⚠️ Facturation Afrique</strong>
+    <span>Les cloud US (AWS/Azure/GCP/DO) facturent en <strong>USD</strong> — les cartes bancaires camerounaises (Visa/Mastercard locale) rencontrent souvent des refus/plafonds. OVH (facture en €, paiement mobile money via partenaires), Hetzner (€) et la monnaie € réduisent ce friction. Prévoir un moyen de paiement fiable avant engagement.</span>
+  </div>
+</section>
+
+<!-- ==================== 7. SCALING ==================== -->
+<section id="scaling">
+  <div class="section-header"><div class="icon">📈</div><h2>7. Scaling Node.js &amp; PostgreSQL — stratégie</h2></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>⚡ PM2 Cluster vs Instances multiples (source BSWEN, 2026)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Approche</th><th>Quand</th><th>Limites</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>PM2 cluster</strong> (1 serveur, -i max)</td><td>Rustine rapide pour exploiter un VPS multi-cœur (palier 1 000)</td><td>Partage des ressources, débogage complexe, pas d'isolation, zéro-downtime difficile, limité à 1 machine</td></tr>
+            <tr><td><strong>Instances multiples</strong> (Docker compose replicas / 2+ VPS)</td><td>Production (5 000+)</td><td>Nécessite LB, sessions partagées (Redis), pooling DB</td></tr>
+            <tr><td><strong>Kubernetes / ECS</strong></td><td>10 000+ / équipe ops dédiée</td><td>Complexité opérationnelle élevée, surcoût gestion</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:0.82rem; color:var(--text-secondary);">« Le clustering est imprévisible et doit être évité comme stratégie long terme » — recommander les instances multiples pour la production.</p>
+    </div>
+    <div class="card">
+      <h3>⚙️ La recette pour eLISAschool</h3>
+      <p>1. <strong>Stateless</strong> : sessions + rate-limit + cache dans Redis (déjà le cas).<br>
+      2. <strong>nginx upstream</strong> avec <code>least_conn</code> + health checks sur <code>/api/health</code>.<br>
+      3. <strong>2+ replicas</strong> Docker Compose du backend (ports internes 3000, 3001…).<br>
+      4. <strong>Zero-downtime</strong> : blue-green ou rolling deploys (2 nodes → drain pendant upgrade).<br>
+      5. <strong>PgBouncer</strong> côté app (pool 20/instance) pour ne pas épuiser les 200 connexions max.<br>
+      6. <strong>Redis</strong> partagé pour les states entre instances.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1.25rem;">
+    <h3>🗄️ Scaling PostgreSQL — ordre de priorité</h3>
+    <div class="grid-3">
+      <div>
+        <div class="bar-row"><div class="bar-label">1. Index + EXPLAIN</div><div class="bar-track"><div class="bar-fill" style="width:100%; background:linear-gradient(90deg,#28a745,#20c997);">1er</div></div><div class="bar-value">gratuit</div></div>
+        <div class="bar-row"><div class="bar-label">2. Partitionnement</div><div class="bar-track"><div class="bar-fill" style="width:85%; background:linear-gradient(90deg,#28a745,#20c997);">2e</div></div><div class="bar-value">déjà fait</div></div>
+        <div class="bar-row"><div class="bar-label">3. Cache Redis</div><div class="bar-track"><div class="bar-fill" style="width:80%; background:linear-gradient(90deg,#007bff,#6610f2);">3e</div></div><div class="bar-value">−80 %</div></div>
+      </div>
+      <div>
+        <div class="bar-row"><div class="bar-label">4. Vertical scale RAM</div><div class="bar-track"><div class="bar-fill" style="width:70%; background:linear-gradient(90deg,#007bff,#6610f2);">4e</div></div><div class="bar-value">shared_buffers 25 %</div></div>
+        <div class="bar-row"><div class="bar-label">5. Réplica lecture</div><div class="bar-track"><div class="bar-fill" style="width:55%; background:linear-gradient(90deg,#f59e0b,#f97316);">5e</div></div><div class="bar-value">lectures</div></div>
+        <div class="bar-row"><div class="bar-label">6. Managé HA / dédié</div><div class="bar-track"><div class="bar-fill" style="width:40%; background:linear-gradient(90deg,#f59e0b,#f97316);">6e</div></div><div class="bar-value">10 000+</div></div>
+      </div>
+      <div>
+        <div class="bar-row"><div class="bar-label">7. Sharding (optionnel)</div><div class="bar-track"><div class="bar-fill" style="width:25%; background:linear-gradient(90deg,#dc3545,#f87171);">7e</div></div><div class="bar-value">> 50 000</div></div>
+        <div class="bar-row"><div class="bar-label">8. Multi-région</div><div class="bar-track"><div class="bar-fill" style="width:15%; background:linear-gradient(90deg,#dc3545,#f87171);">8e</div></div><div class="bar-value">résilience</div></div>
+        <p style="font-size:0.8rem; color:var(--text-secondary);">Grâce au multi-tenant par <code>etablissementId</code> + RLS, un futur sharding par établissement est théoriquement possible — mais le partitionnement + réplicas suffisent jusqu'à très loin.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 8. RECOMMANDATIONS ==================== -->
+<section id="recommandations">
+  <div class="section-header"><div class="icon">🚀</div><h2>8. Recommandations &amp; offres complètes</h2></div>
+
+  <h3 class="sub">8.1 Offre Économie — 1 000 utilisateurs (≈ 20–30 €/mois)</h3>
+  <div class="card">
+    <p>🖥️ <strong>VPS unique</strong> : Hetzner CX32 (4 vCPU / 8 Go / 160 Go NVMe) ≈ 16 € <em>ou</em> OVH VPS Comfort ≈ 15,80 €.</p>
+    <p>🐳 Docker Compose : nginx + backend (cluster PM2 2–3) + frontend + PostgreSQL 16 + Redis 512 Mo + PgBouncer.</p>
+    <p>☁️ Cloudflare Free : CDN + DDoS + SSL + cache statique (≈ −60 % bande passante).</p>
+    <p>💾 Backups : pg_dump 6 h + upload Cloudflare R2 (0 € egress) · rétention 30 jours.</p>
+    <p>📈 Monitoring : Uptime Kuma (self-hosted, alertes Telegram/WhatsApp).</p>
+    <p>🔐 Sécurité : UFW (80/443/SSH), fail2ban, Let's Encrypt auto, clés SSH uniquement.</p>
+  </div>
+
+  <h3 class="sub">8.2 Offre Standard — 5 000 utilisateurs (≈ 80–120 €/mois)</h3>
+  <div class="card">
+    <p>⚖️ <strong>Split app / données</strong> (3 VPS Hetzner) : LB nginx 2 vCPU/4 Go (~8 €) + 2 app nodes 4 vCPU/8 Go (~32 €) + node données 4 vCPU/8 Go (~20 €) ≈ 60 €.</p>
+    <p>🗄️ PostgreSQL 16 avec shared_buffers 2 Go + PgBouncer (pool 20 × 2 apps, max 200) + réplica standby local.</p>
+    <p>🟥 Redis 1 Go (cache partagé entre instances, sessions, rate-limit par plan).</p>
+    <p>🔄 Zero-downtime deploys : blue-green sur les 2 nodes (drain + bascule upstream nginx).</p>
+    <p>☁️ Cloudflare Pro (option 20 €) : WAF règles personnalisées + analytics. Backups R2 + restauration testée mensuellement.</p>
+    <p>📈 Monitoring : Prometheus + Grafana (ou Uptime Kuma avancé), alertes seuils CPU/RAM/DB/5xx (le code alerte déjà à 80/90/100 % quotas).</p>
+    <p>🧰 <em>Option recommandée : installer Coolify sur le node LB</em> — push-to-deploy, SSL auto, backups S3, dashboard unique.</p>
+  </div>
+
+  <h3 class="sub">8.3 Offre Premium — 10 000 utilisateurs (≈ 250–450 €/mois)</h3>
+  <div class="card">
+    <p>🌐 <strong>Cloud managé</strong> : AWS af-south-1 (Cape Town) / Azure South Africa / GCP africa-south1 — ou Vultr LAG (Nigeria) en compromis budget.</p>
+    <p>📦 App : 3–6 instances (4 vCPU/8 Go) autoscalées derrière un ALB/LB managé + <em>au moins 2 AZ</em>.</p>
+    <p>🗄️ PostgreSQL managé HA (RDS Multi-AZ / DO Managed / Supabase) : failover auto, PITR, 2 réplicas en lecture.</p>
+    <p>🟥 Redis Cluster ou ElastiCache (3 nœuds) + stockage objets S3/R2 (uploads, exports, backups).</p>
+    <p>📈 Observabilité : Prometheus/Grafana/Alertmanager + traces, SLO 99,9 %, runbook d'incident.</p>
+    <p>🌍 Option multi-région : lecture proche utilisateur via CDN + éventuel hébergement local Douala (colocation Axian/Orange DC, &lt; 5 ms) pour la base primaire si le marché camerounais domine.</p>
+  </div>
+
+  <h3 class="sub">8.4 Best practices transverses</h3>
+  <div class="grid-3">
+    <div class="card">
+      <h3>🔒 Sécurité</h3>
+      <p>• TLS 1.3 + HSTS + DNSSEC (Cloudflare)<br>• UFW : 80/443 uniquement ; SSH sur port custom + fail2ban<br>• Secrets via vault/env gitignorés (JWT_SECRET_PLATFORM/TENANT séparés, ENCRYPTION_KEY ≠ JWT_SECRET)<br>• IP allowlist plateforme + MFA/TOTP + WebAuthn déjà implémentés côté app</p>
+    </div>
+    <div class="card">
+      <h3>💾 Backups &amp; RPO/RTO</h3>
+      <p>• pg_dump toutes les 6 h + WAL continu → R2/Backup Storage<br>• RTO &lt; 1 h · RPO &lt; 6 h<br>• Test de restauration mensuel obligatoire<br>• Redis : RDB 1 h + AOF<br>• docker-compose + .env versionnés (Git privé)</p>
+    </div>
+    <div class="card">
+      <h3>🚀 CI/CD</h3>
+      <p>• GitHub Actions : lint → tsc → jest → docker build → push GHCR → SSH deploy<br>• Blue-green sur 2 nodes (zéro downtime)<br>• Health check <code>/api/health</code> avant bascule, rollback automatique<br>• Migrations SQL appliquées AVANT le switch (script apply-migrations-122-145 déjà en place)</p>
+    </div>
+  </div>
+
+  <div class="callout info">
+    <strong>📌 Alignement avec le guide existant (GUIDE-HEBERGEMENT-WEB.md)</strong>
+    <span>Ce rapport actualise et approfondit le guide : mêmes recommandations de socle (OVH VPS Comfort ~16 €, Cloudflare, PgBouncer, R2), ajouts 2026 : benchmark Coolify/Dokku/CapRover, régions Afrique cloud (AWS/Azure/GCP/Vultr LAG-JHB), scaling Node.js instances vs cluster, coûts actualisés par palier, et la table de conversion utilisateurs ↔ établissements.</span>
+  </div>
+</section>
+
+<!-- ==================== 9. ANNEXES ==================== -->
+<section id="annexes">
+  <div class="section-header"><div class="icon">📎</div><h2>9. Annexes &amp; sources</h2></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>📚 Sources web consultées (août 2026)</h3>
+      <ul style="padding-left:1.2rem; font-size:0.85rem;">
+        <li>BSWEN — Node.js Cluster vs Multiple Instances (2026-03)</li>
+        <li>PM2 Keymetrics — Cluster Mode documentation</li>
+        <li>NGINX — Load Balancing Node.js Deployment Guide</li>
+        <li>CoreUI — How to load balance Node.js apps (2026-01)</li>
+        <li>CloudMinister — PM2 and Nginx deployment guide (2026-07)</li>
+        <li>Selfhostable.dev / DraftedBy / Pickuma / OSSAlt — Coolify vs Dokku vs CapRover benchmarks 2026</li>
+        <li>Documentation AWS af-south-1, Azure South Africa, GCP africa-south1</li>
+        <li>Documentation providers Postgres managé (Neon, Supabase, Render, Railway, DigitalOcean, RDS, Crunchy Bridge)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🗂️ Documents liés dans le repo</h3>
+      <ul style="padding-left:1.2rem; font-size:0.85rem;">
+        <li><code>docs/guides/GUIDE-HEBERGEMENT-WEB.md</code> — guide socle (v1.0.0)</li>
+        <li><code>docs/rapports/RAPPORT-ETUDE-MARCHE-AFRIQUE-ELISASCHOOL.html</code> — étude marché Afrique</li>
+        <li><code>docker/docker-compose.yml</code> + <code>docker-compose.cloud.prod.yml</code> — infra de référence</li>
+        <li><code>docker/pgbouncer/pgbouncer.ini</code> — pool 20 / max 200</li>
+        <li><code>backend/src/config/database.config.ts</code> — pool dynamique (20 prod / 5 dev)</li>
+        <li><code>backend/src/common/middlewares/rate-limit.middleware.ts</code> — quotas plans</li>
+        <li><code>backend/scripts/apply-migrations-122-145.sh</code> — migrations DB</li>
+        <li><code>docs/rapports/RAPPORT-DURCISSEMENT-SECURITE-V9.md</code> — sécurité 9,2/10</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout warning" style="margin-top:1.25rem;">
+    <strong>⚠️ Limites &amp; hypothèses</strong>
+    <span>Prix indicatifs publiés en 2026, susceptibles d'évoluer. Les latences sont des ordres de grandeur observés (Cameroun → régions cloud) et dépendent du réseau local (Camtel/MTN/Orange). Le dimensionnement suppose le pattern multi-tenant actuel (RLS + quotas) et un cache Redis correctement utilisé. Aucune recommandation ne remplace un load test sur le palier ciblé avant mise en production.</span>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <strong>eLISAschool</strong> — Rapport Hébergement &amp; Déploiement · docs/rapports/RAPPORT-HEBERGEMENT-ELISASCHOOL.html · Août 2026<br>
+  Stratégie : VPS (Hetzner/OVH) pour démarrer · Cloud managé Afrique pour l'échelle · Cloudflare CDN en façade
+</footer>
+
+</body>
+</html>

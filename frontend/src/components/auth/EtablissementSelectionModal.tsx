@@ -20,6 +20,7 @@ import {
     Search,
     Star,
     Info,
+    Server,
 } from 'lucide-react';
 import { CustomModal } from '@/components/modals';
 import { ElisaButton } from '@/components/ui';
@@ -42,6 +43,9 @@ interface EtablissementSelectionModalProps {
     onCancel?: () => void;
     tokenTemporaire?: string;
     expiresIn?: number;
+    // Dual-plane auto-detection (v10.1)
+    hasPlatformAccess?: boolean;
+    onPlatformAccess?: () => void;
 }
 
 /**
@@ -238,6 +242,8 @@ export function EtablissementSelectionModal({
     onSelect,
     onCancel,
     expiresIn,
+    hasPlatformAccess,
+    onPlatformAccess,
 }: EtablissementSelectionModalProps) {
     const { t } = useTranslation('common');
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -452,6 +458,17 @@ export function EtablissementSelectionModal({
                     ) : <div />}
 
                     <div className="flex gap-[clamp(0.5rem,0.4rem+0.5vw,0.75rem)]">
+                        {/* Bouton accès plateforme — Dual-plane v10.1 */}
+                        {hasPlatformAccess && onPlatformAccess && (
+                            <ElisaButton
+                                variant="outline"
+                                size="sm"
+                                onClick={onPlatformAccess}
+                                icon={<Server className="h-[clamp(0.875rem,0.7rem+0.5vw,1rem)] w-[clamp(0.875rem,0.7rem+0.5vw,1rem)]" />}
+                            >
+                                Plateforme
+                            </ElisaButton>
+                        )}
                         <ElisaButton
                             variant="outline"
                             size="sm"

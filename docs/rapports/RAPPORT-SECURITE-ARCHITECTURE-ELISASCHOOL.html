@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport Sécurité & Architecture — eLISAschool</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" integrity="sha384-N3QqR/7q+xm3BGX+CBbNI8AUmRRqcsDzToy+0z1NLDI0QmTKW8zvwLvqulJgk3dP" crossorigin="anonymous"></script>
+<style>
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface2: #334155;
+  --border: #475569;
+  --text: #f1f5f9;
+  --text2: #94a3b8;
+  --accent: #3b82f6;
+  --accent2: #8b5cf6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #06b6d4;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  scroll-behavior: smooth;
+}
+.container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+
+/* Hero */
+.hero {
+  background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 50%, #1a1a2e 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 4rem 0 3rem;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.hero h1 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, #60a5fa, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.5rem;
+}
+.hero .subtitle {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: var(--text2);
+  max-width: 700px;
+}
+.hero .meta {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+.hero .meta span {
+  font-size: 0.85rem;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.hero .meta span strong { color: var(--text); }
+
+/* Navigation */
+nav.toc {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+nav.toc .container {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+nav.toc a {
+  color: var(--text2);
+  text-decoration: none;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+nav.toc a:hover { background: var(--surface2); color: var(--text); }
+
+/* Sections */
+section {
+  padding: 3rem 0;
+  border-bottom: 1px solid var(--border);
+}
+section:last-child { border-bottom: none; }
+h2 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+h2 .num {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.75rem;
+  color: var(--accent);
+}
+p { margin-bottom: 1rem; color: var(--text2); }
+p strong { color: var(--text); }
+
+/* Cards */
+.grid { display: grid; gap: 1.5rem; }
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.card h4 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.card p { font-size: 0.9rem; margin-bottom: 0; }
+
+/* Stat cards */
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  text-align: center;
+}
+.stat-card .value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.stat-card .label {
+  font-size: 0.8rem;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+th {
+  background: var(--surface2);
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text2);
+  border-bottom: 2px solid var(--border);
+}
+td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2);
+}
+tr:hover td { background: rgba(59,130,246,0.03); }
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.badge-success { background: rgba(16,185,129,0.15); color: var(--success); }
+.badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); }
+.badge-danger { background: rgba(239,68,68,0.15); color: var(--danger); }
+.badge-info { background: rgba(6,182,212,0.15); color: var(--info); }
+.badge-accent { background: rgba(59,130,246,0.15); color: var(--accent); }
+
+/* Diagrams */
+.diagram-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+.diagram-container .mermaid {
+  display: flex;
+  justify-content: center;
+}
+
+/* Code blocks */
+.code-block {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  color: #c9d1d9;
+  line-height: 1.6;
+}
+.code-block .comment { color: #8b949e; }
+.code-block .keyword { color: #ff7b72; }
+.code-block .string { color: #a5d6ff; }
+.code-block .type { color: #79c0ff; }
+
+/* Gap cards */
+.gap-card {
+  background: var(--surface);
+  border-left: 4px solid var(--danger);
+  border-radius: 0 12px 12px 0;
+  padding: 1.25rem 1.5rem;
+  margin: 1rem 0;
+}
+.gap-card.warning { border-left-color: var(--warning); }
+.gap-card.info { border-left-color: var(--info); }
+.gap-card h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.gap-card p { margin-bottom: 0.5rem; }
+.gap-card .fix {
+  background: rgba(16,185,129,0.08);
+  border: 1px solid rgba(16,185,129,0.2);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+}
+.gap-card .fix strong { color: var(--success); }
+
+/* Score gauge */
+.score-section {
+  text-align: center;
+  padding: 3rem 0;
+}
+.score-gauge {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 1.5rem;
+  position: relative;
+}
+.score-gauge svg { transform: rotate(-90deg); }
+.score-gauge .score-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  font-weight: 800;
+}
+.score-gauge .score-label {
+  position: absolute;
+  top: 65%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+
+/* Timeline */
+.timeline {
+  position: relative;
+  padding-left: 2rem;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--accent), var(--accent2));
+}
+.timeline-item {
+  position: relative;
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+}
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -1.65rem;
+  top: 0.5rem;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+}
+
+/* Flow boxes */
+.flow-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+}
+.flow-box.highlight {
+  border-color: var(--accent);
+  background: rgba(59,130,246,0.08);
+}
+
+/* Layer stack */
+.layer-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 1.5rem 0;
+}
+.layer {
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--border);
+  position: relative;
+}
+.layer:first-child { border-radius: 12px 12px 0 0; }
+.layer:last-child { border-radius: 0 0 12px 12px; }
+.layer .layer-num {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2rem;
+  font-weight: 800;
+  opacity: 0.1;
+}
+.layer h4 { font-size: 0.95rem; margin-bottom: 0.25rem; }
+.layer p { font-size: 0.8rem; margin-bottom: 0; }
+.layer-1 { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.3); }
+.layer-2 { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.3); }
+.layer-3 { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3); }
+.layer-4 { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.3); }
+
+/* Footer */
+footer {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 2rem 0;
+  text-align: center;
+  color: var(--text2);
+  font-size: 0.85rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container { padding: 0 1rem; }
+  .hero { padding: 2rem 0; }
+  section { padding: 2rem 0; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .diagram-container { padding: 1rem; }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+section { animation: fadeInUp 0.5s ease-out; }
+
+/* Seed chain */
+.seed-chain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.seed-step {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.seed-step .step-num {
+  background: var(--accent);
+  color: white;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.seed-step.critical { border-color: var(--warning); background: rgba(245,158,11,0.08); }
+.seed-step.critical .step-num { background: var(--warning); }
+
+/* DB Schema visual */
+.schema-table {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+.schema-header {
+  background: var(--surface2);
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.schema-cols {
+  padding: 0.5rem 0;
+}
+.schema-col {
+  display: flex;
+  align-items: center;
+  padding: 0.35rem 1rem;
+  font-size: 0.8rem;
+  gap: 0.5rem;
+}
+.schema-col:hover { background: rgba(59,130,246,0.03); }
+.schema-col .col-icon { width: 1rem; text-align: center; }
+.schema-col .col-name { font-family: monospace; color: var(--text); min-width: 160px; }
+.schema-col .col-type { color: var(--accent); font-size: 0.75rem; min-width: 80px; }
+.schema-col .col-note { color: var(--text2); font-size: 0.75rem; }
+.schema-col.pk .col-icon { color: var(--warning); }
+.schema-col.fk .col-icon { color: var(--accent); }
+.schema-col.idx .col-icon { color: var(--success); }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="container">
+    <h1>Audit Sécurité & Architecture</h1>
+    <p class="subtitle">Analyse complète du système de sécurité, authentification, autorisation, isolation multi-tenant et persistance de la plateforme eLISAschool.</p>
+    <div class="meta">
+      <span><strong>Date :</strong> 10 août 2026</span>
+      <span><strong>Version :</strong> v7.1</span>
+      <span><strong>Statut :</strong> <span class="badge badge-warning">9 failles identifiées</span></span>
+      <span><strong>Score global :</strong> <strong style="color: var(--warning);">7.2 / 10</strong></span>
+    </div>
+  </div>
+</header>
+
+<!-- TOC -->
+<nav class="toc">
+  <div class="container">
+    <a href="#vue-ensemble">Vue d'ensemble</a>
+    <a href="#authentification">Authentification</a>
+    <a href="#autorisation">Autorisation</a>
+    <a href="#isolation">Isolation Tenant</a>
+    <a href="#identite">Identité Dual-Plane</a>
+    <a href="#persistance">Persistance</a>
+    <a href="#seeds">Seeds</a>
+    <a href="#technologies">Technologies</a>
+    <a href="#failles">Failles & Gaps</a>
+    <a href="#verdict">Verdict</a>
+  </div>
+</nav>
+
+<!-- SECTION 1: VUE D'ENSEMBLE -->
+<section id="vue-ensemble">
+  <div class="container">
+    <h2><span class="num">1</span> Vue d'ensemble</h2>
+    <p>eLISAschool est une plateforme SaaS multi-tenant de gestion scolaire déployée en architecture <strong>single-database + Row-Level Security</strong>. Le système de sécurité repose sur <strong>4 couches de défense</strong> en profondeur, un modèle d'identité dual-plane (Control Plane / Data Plane), et une autorisation hybride RBAC + CASL.js.</p>
+
+    <div class="grid grid-4" style="margin-top: 2rem;">
+      <div class="stat-card">
+        <div class="value">68</div>
+        <div class="label">Rôles Tenant</div>
+      </div>
+      <div class="stat-card">
+        <div class="value">529</div>
+        <div class="label">Permissions Tenant</div>
+      </div>
+      <div class="stat-card">
+        <div class="value">6</div>
+        <div class="label">Rôles Plateforme</div>
+      </div>
+      <div class="stat-card">
+        <div class="value">38</div>
+        <div class="label">Permissions Plateforme</div>
+      </div>
+    </div>
+
+    <div class="grid grid-4" style="margin-top: 1rem;">
+      <div class="stat-card">
+        <div class="value">40+</div>
+        <div class="label">Tables avec RLS</div>
+      </div>
+      <div class="stat-card">
+        <div class="value">130+</div>
+        <div class="label">Actions d'audit</div>
+      </div>
+      <div class="stat-card">
+        <div class="value">4</div>
+        <div class="label">Couches de défense</div>
+      </div>
+      <div class="stat-card">
+        <div class="value">15+</div>
+        <div class="label">Migrations sécurité</div>
+      </div>
+    </div>
+
+    <h3>Architecture de sécurité — Vue en coupe</h3>
+    <div class="diagram-container">
+      <pre class="mermaid">
+graph TB
+    subgraph "Client"
+        Browser[Navigateur]
+        Mobile[App Mobile]
+    end
+
+    subgraph "Couche 1 — HTTP"
+        RateLimit[Rate Limiter<br/>Token Bucket par plan]
+        TenantMW[Tenant Middleware<br/>Résolution etablissementId]
+        Auth[Auth Middleware<br/>JWT + Permission Resolution]
+    end
+
+    subgraph "Couche 2 — Autorisation"
+        CASL[CASL.js Dual Middleware<br/>defineAbility / definePlatformAbility]
+        RBAC[RBAC Guards<br/>requirePermission / requireRole]
+        CaslGuard[requireCasl / requirePlatformCasl]
+    end
+
+    subgraph "Couche 3 — PostgreSQL"
+        RLS[Row-Level Security<br/>40+ tables protégées]
+        Sentinel[Bypass Sentinelles<br/>SUPER_ADMIN + GROUP]
+    end
+
+    subgraph "Couche 4 — ORM"
+        Subscriber[TypeORM Subscriber<br/>Auto-inject etablissementId]
+        AsyncLS[AsyncLocalStorage<br/>Contexte tenant]
+    end
+
+    subgraph "Base de données"
+        DB[(PostgreSQL<br/>Single DB + RLS)]
+    end
+
+    Browser --> RateLimit
+    Mobile --> RateLimit
+    RateLimit --> TenantMW
+    TenantMW --> Auth
+    Auth --> CASL
+    CASL --> RBAC
+    RBAC --> CaslGuard
+    CaslGuard --> RLS
+    RLS --> Subscriber
+    Subscriber --> AsyncLS
+    AsyncLS --> DB
+    Sentinel -.-> RLS
+
+    style RateLimit fill:#1e3a5f,stroke:#3b82f6
+    style CASL fill:#2d1b4e,stroke:#8b5cf6
+    style RLS fill:#064e3b,stroke:#10b981
+    style Subscriber fill:#451a03,stroke:#f59e0b
+      </pre>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: AUTHENTIFICATION -->
+<section id="authentification">
+  <div class="container">
+    <h2><span class="num">2</span> Authentification</h2>
+    <p>Le système d'authentification supporte <strong>5 modes de login</strong>, un chiffrement bcrypt(12), des JWT avec résolution serveur des permissions, et une MFA TOTP optionnelle.</p>
+
+    <h3>2.1 — Flux d'authentification</h3>
+    <div class="diagram-container">
+      <pre class="mermaid">
+sequenceDiagram
+    participant U as Utilisateur
+    participant API as Auth Controller
+    participant S as Auth Service
+    participant DB as PostgreSQL
+    participant MFA as MFA Service
+
+    U->>API: POST /api/auth/login<br/>{email, motDePasse}
+    API->>S: login(dto)
+    
+    S->>DB: SELECT * FROM utilisateurs<br/>WHERE email/matricule/pseudonyme/qrCodeId
+    DB-->>S: utilisateur (motDePasse select:false)
+    
+    alt Utilisateur non trouvé
+        S-->>API: AppError 401
+    end
+    
+    S->>S: bcrypt.compare(motDePasse, hash)
+    
+    alt Mot de passe incorrect
+        S->>DB: INSERT audit_logs (LOGIN_FAILED)
+        S->>DB: UPDATE login_attempts
+        S-->>API: AppError 401
+    end
+    
+    S->>DB: SELECT mfa_configs WHERE utilisateurId
+    DB-->>S: mfaConfig
+    
+    alt MFA activée
+        S->>S: Générer token MFA temporaire (5 min)
+        S-->>API: { mfaRequired: true, mfaToken: "..." }
+        U->>API: POST /api/auth/mfa/verify<br/>{code: "123456", mfaToken}
+        API->>MFA: verifierMFA(code, secret)
+        MFA-->>API: { valid: true }
+    end
+    
+    S->>S: Résoudre permissions (côté serveur)
+    S->>S: Générer JWT {sub, email, role, etablissementId}
+    S->>DB: INSERT sessions
+    S->>DB: INSERT audit_logs (LOGIN_SUCCESS)
+    S-->>API: { token, refreshToken, permissions }
+    API-->>U: Réponse 200
+      </pre>
+    </div>
+
+    <h3>2.2 — Modes de login supportés</h3>
+    <div class="grid grid-3">
+      <div class="card">
+        <h4>Email</h4>
+        <p>Mode principal. Unique dans la table <code>utilisateurs</code>. Recherche case-insensitive.</p>
+      </div>
+      <div class="card">
+        <h4>Matricule</h4>
+        <p>Identifiant scolaire unique. Utilisé par le personnel et les élèves.</p>
+      </div>
+      <div class="card">
+        <h4>Pseudonyme</h4>
+        <p>Nom d'utilisateur libre. Unique, alphanumérique + tirets.</p>
+      </div>
+      <div class="card">
+        <h4>QR Code</h4>
+        <p>Champ <code>qrCodeId</code> unique. Scan carte d'identité scolaire.</p>
+      </div>
+      <div class="card">
+        <h4>UUID direct</h4>
+        <p>Identifiant interne. Usage API et intégrations.</p>
+      </div>
+      <div class="card">
+        <h4>Détection SQLi</h4>
+        <p>Regex de détection d'injection SQL sur tous les identifiants avant requête.</p>
+      </div>
+    </div>
+
+    <h3>2.3 — JWT & Sessions</h3>
+    <div class="code-block">
+<span class="comment">// JWT Payload — Permissions EXCLUES (éviter HTTP 431)</span>
+{
+  <span class="string">"sub"</span>: <span class="string">"uuid-utilisateur"</span>,
+  <span class="string">"email"</span>: <span class="string">"admin@ecole.cm"</span>,
+  <span class="string">"role"</span>: <span class="string">"ADMIN"</span>,
+  <span class="string">"roles"</span>: [<span class="string">"ADMIN"</span>],
+  <span class="string">"etablissementId"</span>: <span class="string">"uuid-etab"</span>,
+  <span class="string">"etablissements"</span>: [<span class="string">"uuid-1"</span>, <span class="string">"uuid-2"</span>],
+  <span class="string">"iat"</span>: 1723200000,
+  <span class="string">"exp"</span>: 1723286400
+}
+
+<span class="comment">// Taille token : ~829 octets (vs 16 453 avec permissions)</span>
+<span class="comment">// Permissions résolues côté serveur à chaque requête (cached)</span>
+    </div>
+
+    <h3>2.4 — MFA TOTP</h3>
+    <div class="grid grid-2">
+      <div class="card">
+        <h4>Configuration TOTP</h4>
+        <p><strong>Algorithme :</strong> HMAC-SHA1<br/>
+        <strong>Période :</strong> 30 secondes<br/>
+        <strong>Chiffres :</strong> 6<br/>
+        <strong>Tolérance :</strong> ±1 période (fenêtre 90s)<br/>
+        <strong>Secret :</strong> AES-256-GCM (chiffré en base)<br/>
+        <strong>Backup codes :</strong> 10 codes, 8 hex chars, usage unique</p>
+      </div>
+      <div class="card">
+        <h4>Sécurité du secret</h4>
+        <p><strong>Clé de chiffrement :</strong> <code>SHA256(MFA_PEPPER + JWT_SECRET)</code><br/>
+        <strong>Stockage :</strong> Colonne <code>secret</code> chiffrée AES-256-GCM dans <code>mfa_configs</code><br/>
+        <strong>IV :</strong> 16 bytes aléatoires par chiffrement<br/>
+        <strong>Auth tag :</strong> GCM authentication tag<br/>
+        <strong>Format :</strong> <code>iv:authTag:encrypted</code> (base64)</p>
+      </div>
+    </div>
+
+    <h3>2.5 — Protection contre les attaques</h3>
+    <div class="grid grid-2">
+      <div class="card">
+        <h4>Lockout par identifiant</h4>
+        <p>5 tentatives échouées → verrouillage 15 minutes. Compteur dans <code>login_attempts</code>. Reset après succès.</p>
+      </div>
+      <div class="card">
+        <h4>Lockout par IP</h4>
+        <p>20 tentatives échouées depuis la même IP → verrouillage 1 heure. Protection contre brute-force distribué.</p>
+      </div>
+      <div class="card">
+        <h4>Rate Limiting</h4>
+        <p>Token bucket par <code>etablissementId</code>. Limites par plan : Gratuit=100, Standard=500, Premium=2000, Enterprise=3000 req/min.</p>
+      </div>
+      <div class="card">
+        <h4>Détection SQLi</h4>
+        <p>Regex patterns détectent <code>OR 1=1</code>, <code>UNION SELECT</code>, <code>--</code>, <code>;</code> dans les identifiants de login.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: AUTORISATION -->
+<section id="autorisation">
+  <div class="container">
+    <h2><span class="num">3</span> Autorisation — RBAC + CASL.js</h2>
+    <p>L'autorisation combine un système <strong>RBAC</strong> (Role-Based Access Control) via enums partagées et un framework <strong>CASL.js</strong> (Claim-Based) pour les règles contextuelles ABAC.</p>
+
+    <h3>3.1 — Cascade de résolution des permissions</h3>
+    <div class="diagram-container">
+      <pre class="mermaid">
+graph LR
+    A[Requête HTTP] --> B[authMiddleware]
+    B --> C[Extraire JWT]
+    C --> D[permissionResolverService]
+    D --> E{Cache Redis?}
+    E -->|Oui| F[Permissions cached]
+    E -->|Non| G[SELECT role_permissions<br/>JOIN permissions<br/>WHERE role = JWT.role]
+    G --> H[Store Redis<br/>TTL 15 min]
+    H --> F
+    F --> I[req.utilisateur.permissions]
+    I --> J[requirePermission guard]
+    J --> K{Permission présente?}
+    K -->|Oui| L[Route exécutée]
+    K -->|Non| M[403 Forbidden]
+
+    style A fill:#1e3a5f,stroke:#3b82f6
+    style F fill:#064e3b,stroke:#10b981
+    style L fill:#064e3b,stroke:#10b981
+    style M fill:#450a0a,stroke:#ef4444
+      </pre>
+    </div>
+
+    <h3>3.2 — Architecture RBAC — Enums partagées</h3>
+    <p>Le fichier <code>shared/src/enums/roles.enum.ts</code> (2512 lignes) est la <strong>source unique de vérité</strong> pour tous les rôles et permissions.</p>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <h4>Data Plane (Tenant)</h4>
+        <p><strong>68 rôles</strong> dans <code>enum Role</code><br/>
+        <strong>529 permissions</strong> dans <code>enum Permission</code><br/>
+        <strong>Format :</strong> <code>module:action</code> (ex: <code>notes:create</code>)<br/>
+        <strong>Mapping :</strong> <code>DEFAULT_ROLE_PERMISSIONS</code><br/>
+        <strong>SUPER_ADMIN :</strong> Reçoit TOUTES les 529 permissions<br/>
+        <strong>Post-processing :</strong> <code>ORGANISATION_ORGANIGRAMME_READ</code> ajouté à chaque rôle</p>
+      </div>
+      <div class="card">
+        <h4>Control Plane (Plateforme)</h4>
+        <p><strong>6 rôles</strong> dans <code>enum RolePlateforme</code><br/>
+        SUPER_ADMIN, ADMIN_PLATEFORME, SUPPORT, OBSERVATEUR, GESTIONNAIRE_GROUPES, FACTURATION<br/>
+        <strong>38 permissions</strong> dans <code>enum PermissionPlateforme</code><br/>
+        <strong>Format :</strong> <code>platform:module:action</code><br/>
+        <strong>Mapping :</strong> <code>DEFAULT_ROLE_PLATEFORME_PERMISSIONS</code><br/>
+        <strong>Membership :</strong> Rôle assigné via table pivot <code>memberships</code></p>
+      </div>
+    </div>
+
+    <h3>3.3 — CASL.js — Autorisation contextuelle (ABAC)</h3>
+    <div class="diagram-container">
+      <pre class="mermaid">
+graph TB
+    subgraph "Data Plane — defineAbility()"
+        DP[10 actions × 37 subjects]
+        DP --> SUPER[SUPER_ADMIN<br/>can manage all]
+        DP --> ADMIN[ADMIN<br/>can manage scoped<br/>cannot: platform subjects]
+        DP --> ENS[ENSEIGNANT<br/>can: notes on ownMatiereIds]
+        DP --> PAR[PARENT<br/>can: eleves on ownEleveIds]
+        DP --> COMP[COMPTABLE<br/>can: finances read-only]
+    end
+
+    subgraph "Control Plane — definePlatformAbility()"
+        CP[8 actions × 14 subjects]
+        CP --> PSA[SUPER_ADMIN<br/>can manage all]
+        CP --> PAD[ADMIN_PLATEFORME<br/>can: most platform]
+        CP --> SUP[SUPPORT<br/>can: read-only + tickets]
+        CP --> OBS[OBSERVATEUR<br/>can: read-only]
+        CP --> GG[GESTIONNAIRE_GROUPES<br/>can: groupes only]
+        CP --> FAC[FACTURATION<br/>can: billing + factures]
+    end
+
+    subgraph "dualCaslMiddleware"
+        Route{Path prefix?}
+        Route -->|"/api/platform/"| CP
+        Route -->|Autres| DP
+    end
+
+    style DP fill:#1e3a5f,stroke:#3b82f6
+    style CP fill:#2d1b4e,stroke:#8b5cf6
+      </pre>
+    </div>
+
+    <h3>3.4 — Permissions critiques — Séparation plateforme/tenant</h3>
+    <table>
+      <thead>
+        <tr><th>Permission</th><th>Scope</th><th>Rôles autorisés</th><th>Note</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>config:plateforme:*</code></td><td>Control Plane</td><td>SUPER_ADMIN</td><td>Retiré de ADMIN tenant [RBAC-2]</td></tr>
+        <tr><td><code>network:admin</code></td><td>Control Plane</td><td>SUPER_ADMIN</td><td>Retiré de ADMIN [RBAC-3]</td></tr>
+        <tr><td><code>groupes:etablissements:*</code></td><td>Control Plane</td><td>SUPER_ADMIN, GESTIONNAIRE</td><td>Retiré de DIRECTEUR [RBAC-1]</td></tr>
+        <tr><td><code>organisation:organigramme:read</code></td><td>Data Plane</td><td>TOUS les rôles</td><td>Ajouté en post-processing</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SECTION 4: ISOLATION TENANT -->
+<section id="isolation">
+  <div class="container">
+    <h2><span class="num">4</span> Isolation Multi-Tenant — 4 couches</h2>
+    <p>L'isolation des données entre établissements est assurée par <strong>4 couches de défense en profondeur</strong>. Chaque couche est indépendante — la compromission d'une seule ne suffit pas à accéder aux données d'un autre tenant.</p>
+
+    <div class="layer-stack">
+      <div class="layer layer-1">
+        <h4>Couche 1 — HTTP Tenant Middleware</h4>
+        <p>Résout <code>req.etablissementId</code> depuis le JWT ou la table <code>utilisateur_etablissements</code>. Valide l'existence de l'établissement. SUPER_ADMIN peut cibler n'importe quel tenant via query param.</p>
+        <span class="layer-num">1</span>
+      </div>
+      <div class="layer layer-2">
+        <h4>Couche 2 — Dual CASL Middleware</h4>
+        <p>Injecte <code>req.ability</code> (CASL). Routes <code>/api/platform/*</code> → <code>definePlatformAbility()</code>. Autres routes → <code>defineAbility()</code> avec permissions JWT. Guards granulaires : <code>requireCasl()</code>, <code>requirePlatformCasl()</code>.</p>
+        <span class="layer-num">2</span>
+      </div>
+      <div class="layer layer-3">
+        <h4>Couche 3 — PostgreSQL Row-Level Security</h4>
+        <p>RLS activé sur <strong>40+ tables</strong> via migrations 152→153→164. Policy : <code>"etablissementId"::text = current_setting('app.current_tenant')</code>. Bypass SUPER_ADMIN via sentinelle UUID <code>000...000</code>. Bypass GROUP via <code>000...001</code>.</p>
+        <span class="layer-num">3</span>
+      </div>
+      <div class="layer layer-4">
+        <h4>Couche 4 — TypeORM Subscriber (ORM)</h4>
+        <p><code>tenant-isolation.subscriber.ts</code> — <code>beforeInsert</code> : auto-inject <code>etablissementId</code> depuis AsyncLocalStorage. <code>beforeUpdate</code> : overwrite silencieux si mismatch. <code>afterLoad</code> : audit-only.</p>
+        <span class="layer-num">4</span>
+      </div>
+    </div>
+
+    <h3>4.1 — RLS — Détection dynamique (Migration 164)</h3>
+    <div class="diagram-container">
+      <pre class="mermaid">
+graph TB
+    subgraph "Migration 164 — RLS Généralisé"
+        A[information_schema.columns] --> B{Colonne etablissementId?}
+        B -->|Non| C[Skip]
+        B -->|Oui| D{Déjà couvert?<br/>14 tables migrations 152+153}
+        D -->|Oui| C
+        D -->|Non| E[ENABLE ROW LEVEL SECURITY]
+        E --> F[FORCE ROW LEVEL SECURITY]
+        F --> G{Colonne NULLABLE?}
+        G -->|Oui| H[Policy: NULL = global<br/>visible par tous]
+        G -->|Non| I[Policy: isolation stricte<br/>etablissementId = current_tenant]
+        H --> J[CREATE INDEX idx_rls_table_etablissement]
+        I --> J
+    end
+
+    style E fill:#064e3b,stroke:#10b981
+    style H fill:#451a03,stroke:#f59e0b
+    style I fill:#064e3b,stroke:#10b981
+      </pre>
+    </div>
+
+    <h3>4.2 — Sentinelles de bypass</h3>
+    <table>
+      <thead>
+        <tr><th>Sentinelle</th><th>UUID</th><th>Usage</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>SUPER_ADMIN</strong></td><td><code>00000000-0000-0000-0000-000000000000</code></td><td>Bypass RLS total — toutes policies permissives</td></tr>
+        <tr><td><strong>GROUP</strong></td><td><code>00000000-0000-0000-0000-000000000001</code></td><td>Bypass RLS pour GESTIONNAIRE_GROUPES + filtrage applicatif</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SECTION 5: IDENTITÉ DUAL-PLANE -->
+<section id="identite">
+  <div class="container">
+    <h2><span class="num">5</span> Modèle d'Identité Dual-Plane (Modèle C)</h2>
+    <p>L'architecture dual-plane sépare strictement les identités de la <strong>plateforme</strong> (Control Plane) de celles des <strong>établissements</strong> (Data Plane), avec une table pivot <code>memberships</code> pour les identités multi-contexte.</p>
+
+    <div class="diagram-container">
+      <pre class="mermaid">
+graph TB
+    subgraph "Control Plane — Plateforme"
+        UP[utilisateurs_plateforme<br/>FK → identites]
+        PP[permissions_plateforme<br/>38 permissions]
+        SP[sessions_plateforme<br/>Max 3 par user, 24h]
+    end
+
+    subgraph "Source unique d'identité"
+        ID[(identites<br/>email, motDePasseHash,<br/>mfaEnabled, statut)]
+    end
+
+    subgraph "Pivot — Multi-contexte"
+        MEM[(memberships<br/>identiteId × contexteType × contexteId<br/>index unique composite)]
+    end
+
+    subgraph "Data Plane — Tenant"
+        UT[utilisateurs<br/>role, matricule, pseudonyme]
+        UE[utilisateur_etablissements<br/>FK utilisateur × FK etablissement]
+        RP[role_permissions<br/>FK role × FK permission]
+    end
+
+    ID --> UP
+    ID --> MEM
+    MEM --> UT
+    UT --> UE
+    UP --> SP
+    PP --> RP
+
+    style ID fill:#1e3a5f,stroke:#3b82f6,stroke-width:3px
+    style MEM fill:#2d1b4e,stroke:#8b5cf6,stroke-width:2px
+      </pre>
+    </div>
+
+    <h3>5.1 — Tables du modèle dual-plane</h3>
+    <div class="grid grid-2">
+      <div class="schema-table">
+        <div class="schema-header">identites</div>
+        <div class="schema-cols">
+          <div class="schema-col pk"><span class="col-icon">PK</span><span class="col-name">id</span><span class="col-type">uuid</span><span class="col-note">Auto-généré</span></div>
+          <div class="schema-col idx"><span class="col-icon">UQ</span><span class="col-name">email</span><span class="col-type">varchar</span><span class="col-note">Unique, case-insensitive</span></div>
+          <div class="schema-col"><span class="col-icon">--</span><span class="col-name">motDePasseHash</span><span class="col-type">varchar</span><span class="col-note">bcrypt(12)</span></div>
+          <div class="schema-col"><span class="col-icon">--</span><span class="col-name">statut</span><span class="col-type">enum</span><span class="col-note">ACTIF, INACTIF, SUSPENDU</span></div>
+          <div class="schema-col"><span class="col-icon">--</span><span class="col-name">mfaEnabled</span><span class="col-type">boolean</span><span class="col-note">Défaut false</span></div>
+          <div class="schema-col"><span class="col-icon">--</span><span class="col-name">derniereConnexion</span><span class="col-type">timestamp</span></div>
+        </div>
+      </div>
+      <div class="schema-table">
+        <div class="schema-header">memberships</div>
+        <div class="schema-cols">
+          <div class="schema-col pk"><span class="col-icon">PK</span><span class="col-name">id</span><span class="col-type">uuid</span></div>
+          <div class="schema-col fk"><span class="col-icon">FK</span><span class="col-name">identiteId</span><span class="col-type">uuid</span><span class="col-note">→ identites.id</span></div>
+          <div class="schema-col"><span class="col-icon">--</span><span class="col-name">contexteType</span><span class="col-type">enum</span><span class="col-note">PLATEFORME, ETABLISSEMENT</span></div>
+          <div class="schema-col"><span class="col-icon">--</span><span class="col-name">contexteId</span><span class="col-type">uuid</span><span class="col-note">ID du contexte</span></div>
+          <div class="schema-col"><span class="col-icon">--</span><span class="col-name">role</span><span class="col-type">enum</span><span class="col-note">RolePlateforme ou Role</span></div>
+          <div class="schema-col idx"><span class="col-icon">UQ</span><span class="col-name">(identiteId, contexteType, contexteId)</span><span class="col-type">composite</span><span class="col-note">Index unique</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-top: 1rem;">
+      <div class="schema-table">
+        <div class="schema-header">utilisateurs_plateforme</div>
+        <div class="schema-cols">
+          <div class="schema-col pk"><span class="col-icon">PK</span><span class="col-name">id</span><span class="col-type">uuid</span></div>
+          <div class="schema-col fk"><span class="col-icon">FK</span><span class="col-name">identiteId</span><span class="col-type">uuid</span><span class="col-note">→ identites.id (OneToOne)</span></div>
+          <div class="schema-col"><span class="col-icon">--</span><span class="col-name">nom</span><span class="col-type">varchar</span></div>
+          <div class="schema-col"><span class="col-icon">--</span><span class="col-name">prenom</span><span class="col-type">varchar</span></div>
+          <div class="schema-col"><span class="col-icon">--</span><span class="col-name">rolePlateforme</span><span class="col-type">enum</span><span class="col-note">SUPER_ADMIN, etc.</span></div>
+        </div>
+      </div>
+      <div class="schema-table">
+        <div class="schema-header">sessions_plateforme</div>
+        <div class="schema-cols">
+          <div class="schema-col pk"><span class="col-icon">PK</span><span class="col-name">id</span><span class="col-type">uuid</span></div>
+          <div class="schema-col fk"><span class="col-icon">FK</span><span class="col-name">utilisateurPlateformeId</span><span class="col-type">uuid</span></div>
+          <div class="schema-col idx"><span class="col-icon">UQ</span><span class="col-name">token</span><span class="col-type">varchar</span><span class="col-note">Session token unique</span></div>
+          <div class="schema-col"><span class="col-icon">--</span><span class="col-name">ip</span><span class="col-type">varchar</span></div>
+          <div class="schema-col"><span class="col-icon">--</span><span class="col-name">userAgent</span><span class="col-type">text</span></div>
+          <div class="schema-col"><span class="col-icon">--</span><span class="col-name">expiresAt</span><span class="col-type">timestamp</span><span class="col-note">24h défaut</span></div>
+        </div>
+      </div>
+    </div>
+
+    <h3>5.2 — Workflow Actions Critiques (2FA)</h3>
+    <p>8 opérations sensibles exigent une <strong>double approbation MFA</strong> avant exécution. Stockées dans <code>actions_critiques</code> avec expiration 24h et max 5 tentatives.</p>
+
+    <table>
+      <thead>
+        <tr><th>Action</th><th>Description</th><th>Expiration</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="badge badge-danger">RESILIER</span></td><td>Résilier un abonnement client</td><td>24h</td></tr>
+        <tr><td><span class="badge badge-danger">SUSPENDRE</span></td><td>Suspendre un établissement</td><td>24h</td></tr>
+        <tr><td><span class="badge badge-warning">UPGRADE</span></td><td>Changer de plan (upgrade/downgrade)</td><td>24h</td></tr>
+        <tr><td><span class="badge badge-danger">SUPPRIMER_ETABLISSEMENT</span></td><td>Supprimer un établissement + données</td><td>24h</td></tr>
+        <tr><td><span class="badge badge-warning">ACCORDER_AVOIR</span></td><td>Créer un avoir financier</td><td>24h</td></tr>
+        <tr><td><span class="badge badge-warning">RESTAURER_BACKUP</span></td><td>Restaurer une sauvegarde</td><td>24h</td></tr>
+        <tr><td><span class="badge badge-danger">REINITIALISER_GLOBAL</span></td><td>Réinitialiser un paramètre global</td><td>24h</td></tr>
+        <tr><td><span class="badge badge-warning">MODIFIER_TARIFS</span></td><td>Modifier les tarifs de la plateforme</td><td>24h</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SECTION 6: PERSISTANCE -->
+<section id="persistance">
+  <div class="container">
+    <h2><span class="num">6</span> Persistance — Tables de sécurité</h2>
+    <p>Vue complète des tables dédiées à la sécurité, leur rôle et leur cycle de vie.</p>
+
+    <div class="diagram-container">
+      <pre class="mermaid">
+erDiagram
+    identites {
+        uuid id PK
+        varchar email UK
+        varchar motDePasseHash
+        enum statut
+        boolean mfaEnabled
+    }
+
+    utilisateurs_plateforme {
+        uuid id PK
+        uuid identiteId FK
+        varchar nom
+        varchar prenom
+        enum rolePlateforme
+    }
+
+    memberships {
+        uuid id PK
+        uuid identiteId FK
+        enum contexteType
+        uuid contexteId
+        enum role
+    }
+
+    permissions_plateforme {
+        uuid id PK
+        varchar code UK
+        varchar module
+        varchar libelle
+    }
+
+    sessions_plateforme {
+        uuid id PK
+        uuid utilisateurPlateformeId FK
+        varchar token UK
+        varchar ip
+        timestamp expiresAt
+    }
+
+    mfa_configs {
+        uuid id PK
+        uuid utilisateurId FK
+        varchar secret
+        boolean isActive
+        text backupCodesEncrypted
+    }
+
+    audit_logs {
+        uuid id PK
+        enum action
+        varchar cible
+        uuid cibleId
+        jsonb metadata
+        varchar parentCible
+        uuid parentCibleId
+        uuid etablissementId
+    }
+
+    actions_critiques {
+        uuid id PK
+        enum typeAction
+        enum statut
+        jsonb payload
+        uuid demandeurId FK
+        uuid approuveurId FK
+        varchar mfaVerificationHash
+    }
+
+    identites ||--o| utilisateurs_plateforme : "1:1"
+    identites ||--o{ memberships : "1:N"
+    identites ||--o| mfa_configs : "1:1"
+    utilisateurs_plateforme ||--o{ sessions_plateforme : "1:N"
+    memberships }o--|| permissions_plateforme : "via role"
+      </pre>
+    </div>
+
+    <h3>6.1 — Cycle de vie des données de sécurité</h3>
+    <div class="grid grid-2">
+      <div class="card">
+        <h4>Audit Logs</h4>
+        <p><strong>Création :</strong> Automatique sur chaque action critique (130+ types)<br/>
+        <strong>Rétention :</strong> 30 jours en base active → archivage dans <code>audit_logs_archive</code><br/>
+        <strong>Purge :</strong> 365 jours → suppression définitive (cron quotidien 02:00)<br/>
+        <strong>Metadata :</strong> JSONB extensible (IP, user-agent, browser, OS, device)</p>
+      </div>
+      <div class="card">
+        <h4>Sessions Plateforme</h4>
+        <p><strong>Création :</strong> À chaque login plateforme réussi<br/>
+        <strong>Limite :</strong> Max 3 sessions actives par utilisateur (LRU — la plus ancienne est révoquée)<br/>
+        <strong>Expiration :</strong> 24h par défaut, configurable<br/>
+        <strong>Nettoyage :</strong> Cron supprime les sessions expirées</p>
+      </div>
+      <div class="card">
+        <h4>Actions Critiques</h4>
+        <p><strong>Création :</strong> Demande d'action sensible → statut EN_ATTENTE<br/>
+        <strong>Approbation :</strong> Code MFA TOTP requis, max 5 tentatives<br/>
+        <strong>Expiration :</strong> 24h → statut EXPIREE (cron)<br/>
+        <strong>Exécution :</strong> Après approbation → statut EXECUTEE + résultat JSONB</p>
+      </div>
+      <div class="card">
+        <h4>Login Attempts</h4>
+        <p><strong>Création :</strong> Chaque tentative échouée (par identifiant + par IP)<br/>
+        <strong>Seuil identifiant :</strong> 5 échecs → lockout 15 min<br/>
+        <strong>Seuil IP :</strong> 20 échecs → lockout 1h<br/>
+        <strong>Reset :</strong> Automatique après login réussi</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 7: SEEDS -->
+<section id="seeds">
+  <div class="container">
+    <h2><span class="num">7</span> Chaîne de Seeds — Ordre et dépendances</h2>
+    <p>Le seed initial (<code>initial.seed.ts</code>) exécute <strong>18 étapes ordonnées</strong> avec des dépendances strictes. Les rôles/permissions doivent exister AVANT la création des utilisateurs.</p>
+
+    <div class="seed-chain">
+      <div class="seed-step"><span class="step-num">1</span> Vérifier pré-conditions</div>
+      <div class="seed-step"><span class="step-num">2</span> Seed types contrat</div>
+      <div class="seed-step"><span class="step-num">3</span> Seed modes rémunération</div>
+      <div class="seed-step"><span class="step-num">4</span> Seed échelons structurels</div>
+      <div class="seed-step"><span class="step-num">5</span> Seed niveaux responsabilité</div>
+      <div class="seed-step"><span class="step-num">6</span> Seed fonctions système</div>
+      <div class="seed-step"><span class="step-num">7</span> Seed catégories module</div>
+      <div class="seed-step critical"><span class="step-num">8</span> Seed RBAC (rôles + permissions)</div>
+      <div class="seed-step"><span class="step-num">8b</span> Seed modules catalogue (41)</div>
+      <div class="seed-step critical"><span class="step-num">9</span> Seed Super Admin</div>
+      <div class="seed-step critical"><span class="step-num">9b</span> Seed utilisateurs plateforme</div>
+      <div class="seed-step"><span class="step-num">10</span> Seed paramètres système</div>
+      <div class="seed-step"><span class="step-num">11</span> Seed templates organisation</div>
+      <div class="seed-step"><span class="step-num">12</span> Seed jours fériés système</div>
+      <div class="seed-step"><span class="step-num">13</span> Seed types absence</div>
+      <div class="seed-step"><span class="step-num">14</span> Seed types évaluation</div>
+      <div class="seed-step"><span class="step-num">15</span> Seed configurations initiales</div>
+      <div class="seed-step"><span class="step-num">16</span> Seed données démo (optionnel)</div>
+    </div>
+
+    <h3>7.1 — Seed RBAC (Étape 8 — critique)</h3>
+    <div class="diagram-container">
+      <pre class="mermaid">
+graph LR
+    A[seedRBAC] --> B[Phase 1: Seed Roles]
+    B --> C[68 rôles tenant<br/>+ 6 rôles plateforme]
+    C --> D[Phase 2: Seed Permissions]
+    D --> E[529 permissions tenant<br/>+ 38 permissions plateforme]
+    E --> F[Phase 3: Seed Role-Permissions]
+    F --> G[Mapping DEFAULT_ROLE_PERMISSIONS<br/>Additive-only merge]
+    G --> H[Post-processing]
+    H --> I[ORGANISATION_ORGANIGRAMME_READ<br/>ajouté à TOUS les rôles]
+
+    style C fill:#1e3a5f,stroke:#3b82f6
+    style E fill:#2d1b4e,stroke:#8b5cf6
+    style I fill:#064e3b,stroke:#10b981
+      </pre>
+    </div>
+
+    <h3>7.2 — Seed Super Admin (Étape 9)</h3>
+    <div class="code-block">
+<span class="comment">// Super Administrateur — lié aux 2 établissements</span>
+{
+  <span class="string">"email"</span>: <span class="string">"admin@elisaschool.cm"</span>,
+  <span class="string">"role"</span>: <span class="string">"SUPER_ADMIN"</span>,
+  <span class="string">"nom"</span>: <span class="string">"ADMIN"</span>,
+  <span class="string">"prenom"</span>: <span class="string">"Super"</span>,
+  <span class="string">"etablissements"</span>: [<span class="string">"ETAB-001"</span>, <span class="string">"ETAB-002"</span>],
+  <span class="string">"permissions"</span>: <span class="string">"TOUTES (529 via Object.values(Permission))"</span>
+}
+    </div>
+
+    <h3>7.3 — Seed Utilisateurs Plateforme (Étape 9b — Modèle C)</h3>
+    <div class="code-block">
+<span class="comment">// Utilisateur plateforme — Modèle C dual-plane</span>
+<span class="comment">// Crée: Identite + Membership(PLATEFORME) + UtilisateurPlateforme</span>
+{
+  <span class="string">"identite.email"</span>: <span class="string">"admin@elisaschool.cm"</span>,
+  <span class="string">"identite.statut"</span>: <span class="string">"ACTIF"</span>,
+  <span class="string">"membership.contexteType"</span>: <span class="string">"PLATEFORME"</span>,
+  <span class="string">"membership.role"</span>: <span class="string">"SUPER_ADMIN"</span>,
+  <span class="string">"utilisateurPlateforme.rolePlateforme"</span>: <span class="string">"SUPER_ADMIN"</span>,
+  <span class="string">"motDePasse"</span>: <span class="string">"AdminSecret123!"</span> <span class="comment">// À changer en production</span>
+}
+    </div>
+
+    <h3>7.4 — Idempotence</h3>
+    <p>Tous les seeds sont <strong>idempotents</strong> : exécuter le seed 10 fois produit le même résultat que 1 fois. Pattern "find before create" + <code>assertNotSystem()</code> pour protéger les entrées système.</p>
+  </div>
+</section>
+
+<!-- SECTION 8: TECHNOLOGIES -->
+<section id="technologies">
+  <div class="container">
+    <h2><span class="num">8</span> Technologies & Stack de sécurité</h2>
+
+    <div class="grid grid-3">
+      <div class="card">
+        <h4>Chiffrement</h4>
+        <p><strong>bcrypt(12)</strong> — Mots de passe (salt auto, ~100ms/hash)<br/>
+        <strong>AES-256-GCM</strong> — Secrets MFA, credentials providers<br/>
+        <strong>SHA-256</strong> — Dérivation de clés, checksums</p>
+      </div>
+      <div class="card">
+        <h4>Authentification</h4>
+        <p><strong>JWT</strong> — Tokens stateless (signés HMAC-SHA256)<br/>
+        <strong>Refresh Token Rotation</strong> — Nouveau refresh à chaque utilisation<br/>
+        <strong>TOTP RFC 6238</strong> — MFA compatible Google Authenticator<br/>
+        <strong>Base32 custom</strong> — Encodage secrets MFA (pas de dépendance)</p>
+      </div>
+      <div class="card">
+        <h4>Autorisation</h4>
+        <p><strong>CASL.js v6</strong> — Framework ABAC déclaratif<br/>
+        <strong>RBAC Enum</strong> — 529+38 permissions en TypeScript<br/>
+        <strong>PostgreSQL RLS</strong> — Isolation au niveau ligne<br/>
+        <strong>AsyncLocalStorage</strong> — Contexte tenant thread-safe</p>
+      </div>
+      <div class="card">
+        <h4>Protection réseau</h4>
+        <p><strong>Token Bucket</strong> — Rate limiting par plan (100-3000 req/min)<br/>
+        <strong>CORS</strong> — Origines whitelistées<br/>
+        <strong>Helmet</strong> — Headers HTTP sécurisés<br/>
+        <strong>SQLi Detection</strong> — Regex patterns sur inputs</p>
+      </div>
+      <div class="card">
+        <h4>Audit & Traçabilité</h4>
+        <p><strong>Audit Logs</strong> — 130+ actions, metadata JSONB<br/>
+        <strong>Parent-Child</strong> — Relations agrégées (Classe → Notes)<br/>
+        <strong>Rétention</strong> — 30j active, 365j archive, purge auto<br/>
+        <strong>User-Agent Parsing</strong> — Browser, OS, device detection</p>
+      </div>
+      <div class="card">
+        <h4>Infrastructure</h4>
+        <p><strong>PostgreSQL 15+</strong> — RLS, CTE récursifs, partitions<br/>
+        <strong>Redis</strong> — Cache permissions, sessions, rate limits<br/>
+        <strong>TypeORM</strong> — Subscriber auto-inject tenant<br/>
+        <strong>Express.js</strong> — Middleware chain pattern</p>
+      </div>
+    </div>
+
+    <h3>8.1 — Migrations de sécurité (timeline)</h3>
+    <div class="timeline">
+      <div class="timeline-item">
+        <strong>Migration 152</strong> — RLS sur 8 tables critiques (eleves, notes, bulletins, personnel, heures_cours, creneaux_horaires, absences_personnel, parametres_systeme)
+      </div>
+      <div class="timeline-item">
+        <strong>Migration 153</strong> — RLS sur 6 tables non-critiques (paiements, factures, sondages, factures_fournisseur, depenses, budgets)
+      </div>
+      <div class="timeline-item">
+        <strong>Migration 155</strong> — Partitionnement HASH 16 partitions sur tables à fort volume
+      </div>
+      <div class="timeline-item">
+        <strong>Migration 157</strong> — Table <code>mfa_configs</code> pour MFA TOTP
+      </div>
+      <div class="timeline-item">
+        <strong>Migration 164</strong> — RLS généralisé (détection dynamique via information_schema)
+      </div>
+      <div class="timeline-item">
+        <strong>Migration 165</strong> — Table <code>actions_critiques</code> (workflow 2FA, 8 types d'actions)
+      </div>
+      <div class="timeline-item">
+        <strong>Migration 166</strong> — Rôles plateforme personnalisables (Role Builder)
+      </div>
+      <div class="timeline-item">
+        <strong>Migration 168</strong> — Modèle C dual-plane (identites, utilisateurs_plateforme, memberships, permissions_plateforme)
+      </div>
+      <div class="timeline-item">
+        <strong>Migrations 170-173</strong> — Raffinement Modèle C (camelCase, backfill, permissions seed)
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 9: FAILLES -->
+<section id="failles">
+  <div class="container">
+    <h2><span class="num">9</span> Failles & Gaps identifiés</h2>
+    <p>9 failles identifiées lors de l'audit, classées par sévérité. Chaque faille inclut une recommandation de correction.</p>
+
+    <div class="gap-card">
+      <h4><span class="badge badge-danger">CRITIQUE</span> G1 — Fallback RLS vers SUPER_ADMIN</h4>
+      <p><strong>Fichier :</strong> <code>rls.middleware.ts</code> — <code>resolveTenantId()</code></p>
+      <p>Quand aucun contexte tenant n'est trouvé dans la requête, le middleware fallback vers la sentinelle SUPER_ADMIN (<code>000...000</code>), ce qui <strong>bypass le RLS</strong>. Un bug dans la chaîne de résolution pourrait permettre un accès cross-tenant silencieux.</p>
+      <div class="fix">
+        <strong>Recommandation :</strong> Remplacer le fallback par un rejet explicite (403) quand aucun tenant n'est résolu et que l'utilisateur n'est pas SUPER_ADMIN. Logger en CRITICAL.
+      </div>
+    </div>
+
+    <div class="gap-card">
+      <h4><span class="badge badge-danger">CRITIQUE</span> G2 — Routes backup sans CASL guard</h4>
+      <p><strong>Fichier :</strong> <code>platform.routes.ts</code></p>
+      <p>Les routes <code>/api/platform/configuration/backup/*</code> n'ont pas de guard CASL. Tout membre de la plateforme (même OBSERVATEUR) peut créer/restaurer des backups de n'importe quel tenant.</p>
+      <div class="fix">
+        <strong>Recommandation :</strong> Ajouter <code>requirePlatformCasl('manage', 'Backup')</code> sur les routes backup/restore. Restreindre la restauration aux rôles SUPER_ADMIN et ADMIN_PLATEFORME.
+      </div>
+    </div>
+
+    <div class="gap-card">
+      <h4><span class="badge badge-danger">CRITIQUE</span> G3 — Path traversal dans restore backup</h4>
+      <p><strong>Fichier :</strong> <code>backup.controller.ts</code></p>
+      <p>Le paramètre <code>backupPath</code> est passé depuis le body de la requête sans validation. Un attaquant pourrait injecter un chemin arbitraire (<code>../../etc/passwd</code>) pour lire des fichiers système.</p>
+      <div class="fix">
+        <strong>Recommandation :</strong> Valider que le chemin est dans le répertoire de backup autorisé. Utiliser <code>path.resolve()</code> + vérification du préfixe. Rejeter les chemins contenant <code>..</code>.
+      </div>
+    </div>
+
+    <div class="gap-card warning">
+      <h4><span class="badge badge-warning">MODÉRÉ</span> G4 — Rate limiter non cluster-safe</h4>
+      <p><strong>Fichier :</strong> <code>rate-limit.middleware.ts</code></p>
+      <p>Le rate limiter utilise une <code>Map</code> en mémoire. En cluster (multi-processus Node), chaque processus a son propre compteur → un attaquant peut contourner la limite en répartissant les requêtes.</p>
+      <div class="fix">
+        <strong>Recommandation :</strong> Migrer vers un rate limiter Redis-based (ex: <code>rate-limit-redis</code>) pour un compteur partagé entre tous les processus.
+      </div>
+    </div>
+
+    <div class="gap-card warning">
+      <h4><span class="badge badge-warning">MODÉRÉ</span> G5 — Cross-tenant update silencieux</h4>
+      <p><strong>Fichier :</strong> <code>tenant-isolation.subscriber.ts</code></p>
+      <p>Le subscriber TypeORM <code>beforeUpdate</code> écrase silencieusement le <code>etablissementId</code> s'il ne correspond pas au contexte tenant. Au lieu de rejeter la requête (403), il corrige en silence — masquant les bugs applicatifs.</p>
+      <div class="fix">
+        <strong>Recommandation :</strong> En mode strict (production), lever une erreur au lieu d'écraser silencieusement. Ajouter un flag <code>STRICT_TENANT_ISOLATION</code> activable par environnement.
+      </div>
+    </div>
+
+    <div class="gap-card warning">
+      <h4><span class="badge badge-warning">MODÉRÉ</span> G6 — Données JWT potentiellement stale</h4>
+      <p><strong>Fichier :</strong> <code>tenant.middleware.ts</code></p>
+      <p>La vérification cross-tenant utilise le tableau <code>etablissements</code> du JWT, qui peut être périmé si l'utilisateur a été ajouté/retiré d'un établissement après l'émission du token.</p>
+      <div class="fix">
+        <strong>Recommandation :</strong> Vérifier systématiquement contre la base de données (table <code>utilisateur_etablissements</code>) au lieu de faire confiance au JWT. Accepter le coût DB car c'est déjà fait en fallback.
+      </div>
+    </div>
+
+    <div class="gap-card warning">
+      <h4><span class="badge badge-warning">MODÉRÉ</span> G7 — 5 rôles plateforme sans CASL tenant</h4>
+      <p><strong>Fichier :</strong> <code>shared/src/casl/abilities.ts</code></p>
+      <p>Les 5 rôles plateforme (ADMIN_PLATEFORME, SUPPORT, OBSERVATEUR, GESTIONNAIRE_GROUPES, FACTURATION) n'ont pas de règles CASL dans <code>defineAbility()</code> (Data Plane). Si un membership les assigne aussi à un contexte tenant, ils n'auront aucune permission contextuelle.</p>
+      <div class="fix">
+        <strong>Recommandation :</strong> Ajouter des règles CASL minimales pour les rôles plateforme dans le contexte tenant, ou interdire les doubles memberships (plateforme + tenant) pour ces rôles.
+      </div>
+    </div>
+
+    <div class="gap-card info">
+      <h4><span class="badge badge-info">MINEUR</span> G8 — Commentaires trompeurs dans platform.routes.ts</h4>
+      <p><strong>Fichier :</strong> <code>platform.routes.ts</code></p>
+      <p>Plusieurs commentaires indiquent "SUPER_ADMIN uniquement" alors que les routes sont accessibles à tout rôle plateforme disposant de la permission. Le code est correct (guard <code>requirePlatformAccess()</code>), mais les commentaires sont trompeurs pour les développeurs.</p>
+      <div class="fix">
+        <strong>Recommandation :</strong> Mettre à jour les commentaires pour refléter la réalité : "Nécessite membership plateforme actif + permission CASL".
+      </div>
+    </div>
+
+    <div class="gap-card info">
+      <h4><span class="badge badge-info">MINEUR</span> G9 — dualCaslMiddleware error path</h4>
+      <p><strong>Fichier :</strong> <code>dual-casl.middleware.ts</code></p>
+      <p>En cas d'erreur lors de la résolution des abilities, le middleware appelle <code>next()</code> sans <code>req.ability</code>. Les routes qui n'utilisent pas de guard CASL explicite continuent sans autorisation.</p>
+      <div class="fix">
+        <strong>Recommandation :</strong> En cas d'erreur, appeler <code>next(error)</code> pour retourner un 500 au lieu de laisser passer la requête sans ability.
+      </div>
+    </div>
+
+    <h3>Résumé des failles par sévérité</h3>
+    <div class="grid grid-3">
+      <div class="stat-card" style="border-left: 4px solid var(--danger);">
+        <div class="value" style="color: var(--danger); -webkit-text-fill-color: var(--danger);">3</div>
+        <div class="label">Critiques</div>
+      </div>
+      <div class="stat-card" style="border-left: 4px solid var(--warning);">
+        <div class="value" style="color: var(--warning); -webkit-text-fill-color: var(--warning);">4</div>
+        <div class="label">Modérées</div>
+      </div>
+      <div class="stat-card" style="border-left: 4px solid var(--info);">
+        <div class="value" style="color: var(--info); -webkit-text-fill-color: var(--info);">2</div>
+        <div class="label">Mineures</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 10: VERDICT -->
+<section id="verdict">
+  <div class="container">
+    <h2><span class="num">10</span> Verdict — La sécurité est-elle assurée ?</h2>
+
+    <div class="score-section">
+      <div class="score-gauge">
+        <svg width="200" height="200" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="85" fill="none" stroke="#334155" stroke-width="12"/>
+          <circle cx="100" cy="100" r="85" fill="none" stroke="url(#gauge-gradient)" stroke-width="12"
+                  stroke-dasharray="534" stroke-dashoffset="149" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="gauge-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#f59e0b"/>
+              <stop offset="100%" style="stop-color:#10b981"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="score-text" style="color: var(--warning);">7.2</div>
+        <div class="score-label">/ 10</div>
+      </div>
+      <p style="font-size: 1.1rem; color: var(--text); max-width: 600px; margin: 0 auto;"><strong>Score : 7.2 / 10 — Bon, avec des failles critiques à corriger</strong></p>
+    </div>
+
+    <h3>Points forts</h3>
+    <div class="grid grid-2">
+      <div class="card" style="border-left: 4px solid var(--success);">
+        <h4>Defense-in-depth à 4 couches</h4>
+        <p>L'isolation multi-tenant est assurée par 4 mécanismes indépendants. La compromission d'une seule couche ne suffit pas à accéder aux données d'un autre tenant.</p>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--success);">
+        <h4>RLS PostgreSQL étendu</h4>
+        <p>40+ tables protégées par RLS avec détection dynamique. Les sentinelles de bypass sont documentées et tracées. C'est la couche la plus robuste.</p>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--success);">
+        <h4>Audit trail exhaustif</h4>
+        <p>130+ actions auditées, metadata JSONB riche, rétention avec archivage automatique. La traçabilité est excellente pour l'investigation post-incident.</p>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--success);">
+        <h4>MFA + Actions critiques 2FA</h4>
+        <p>8 opérations sensibles exigent une double approbation MFA. Le système TOTP est implémenté correctement (HMAC-SHA1, fenêtre 90s, backup codes chiffrés).</p>
+      </div>
+    </div>
+
+    <h3>Points faibles</h3>
+    <div class="grid grid-2">
+      <div class="card" style="border-left: 4px solid var(--danger);">
+        <h4>Fallback RLS dangereux</h4>
+        <p>Le fallback vers SUPER_ADMIN quand aucun tenant n'est résolu est un risque de privilege escalation. C'est la faille la plus critique à corriger.</p>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--danger);">
+        <h4>Routes backup non protégées</h4>
+        <p>Tout membre de la plateforme peut accéder aux backups de tous les tenants. Le path traversal dans restore est un risque d'exécution de code.</p>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--warning);">
+        <h4>Rate limiter non distribué</h4>
+        <p>En cluster, le rate limiting est inefficace car chaque processus a son propre compteur. Un attaquant peut contourner la limite.</p>
+      </div>
+      <div class="card" style="border-left: 4px solid var(--warning);">
+        <h4>Permissions JWT stale</h4>
+        <p>Les permissions sont résolues côté serveur (bon), mais le tableau <code>etablissements</code> du JWT n'est pas vérifié en base à chaque requête.</p>
+      </div>
+    </div>
+
+    <h3>Recommandations prioritaires</h3>
+    <table>
+      <thead>
+        <tr><th>Priorité</th><th>Faille</th><th>Effort</th><th>Impact</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="badge badge-danger">P0</span></td><td>G1 — Fallback RLS → rejeter au lieu de bypass</td><td>1h</td><td>Élimine le risque de privilege escalation</td></tr>
+        <tr><td><span class="badge badge-danger">P0</span></td><td>G2+G3 — Guards CASL sur backup + validation path</td><td>2h</td><td>Ferme les 2 vecteurs d'attaque les plus critiques</td></tr>
+        <tr><td><span class="badge badge-warning">P1</span></td><td>G4 — Rate limiter Redis-based</td><td>4h</td><td>Protection effective en cluster</td></tr>
+        <tr><td><span class="badge badge-warning">P1</span></td><td>G5 — Subscriber strict mode en production</td><td>2h</td><td>Détection précoce des bugs d'injection tenant</td></tr>
+        <tr><td><span class="badge badge-warning">P1</span></td><td>G6 — Vérification etablissements en base</td><td>1h</td><td>Élimine le risque de permissions stale</td></tr>
+        <tr><td><span class="badge badge-info">P2</span></td><td>G7 — CASL rules pour rôles plateforme en tenant</td><td>3h</td><td>Couverture complète dual-plane</td></tr>
+        <tr><td><span class="badge badge-info">P2</span></td><td>G8+G9 — Documentation + error handling</td><td>1h</td><td>Réduit les risques de mauvaise compréhension</td></tr>
+      </tbody>
+    </table>
+
+    <div class="card" style="margin-top: 2rem; border: 2px solid var(--warning); text-align: center;">
+      <h4 style="font-size: 1.2rem; justify-content: center;">Conclusion</h4>
+      <p style="font-size: 1rem; color: var(--text); max-width: 800px; margin: 0 auto;">
+        La sécurité d'eLISAschool est <strong>globalement bien assurée</strong> grâce à l'architecture defense-in-depth à 4 couches, au RLS PostgreSQL étendu, et au système d'audit exhaustif. Cependant, <strong>3 failles critiques</strong> (fallback RLS, routes backup non protégées, path traversal) doivent être corrigées <strong>avant la mise en production</strong>. Une fois ces correctifs appliqués, le score passera à <strong>8.5/10</strong>, ce qui constitue un niveau enterprise-grade acceptable pour une plateforme SaaS multi-tenant.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <p>Rapport généré le 10 août 2026 — eLISAschool v7.1 — Audit sécurité & architecture</p>
+    <p style="margin-top: 0.5rem;">Analyse basée sur l'inspection de 50+ fichiers source, 15 migrations de sécurité, et le codebase complet (backend + frontend + shared).</p>
+  </div>
+</footer>
+
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#1e3a5f',
+    primaryTextColor: '#f1f5f9',
+    primaryBorderColor: '#3b82f6',
+    lineColor: '#64748b',
+    secondaryColor: '#2d1b4e',
+    tertiaryColor: '#334155',
+    fontFamily: 'Inter, sans-serif',
+    fontSize: '13px'
+  },
+  flowchart: { curve: 'basis', padding: 15 },
+  sequence: { actorMargin: 50, messageMargin: 30 }
+});
+</script>
+
+</body>
+</html>

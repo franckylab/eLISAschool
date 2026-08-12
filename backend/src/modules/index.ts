@@ -60,6 +60,9 @@ export * from './options';
 // Module RH & Recrutement
 export * from './recrutement';
 
+// Module CMS (pages publiques white-label)
+export * from './cms';
+
 // Modules académiques (multi-établissements)
 export * from './etablissement';
 export * from './cycles';
@@ -78,13 +81,10 @@ export * from './eleves';
 export * from './bulletins';
 export * from './responsables-eleves';
 export * from './diplomes-eleves';
-// Module Dual-Plane (Modèle C — Auth0 Internalisé)
-export * from './identites';
-export * from './utilisateurs-plateforme';
-export * from './memberships';
-export * from './permissions-plateforme';
+// Auth plateforme (ADR-005 — source unique de vérité)
+// ADR-005 (v11) : Modules identites, utilisateurs-plateforme, memberships,
+// permissions-plateforme, platform-sessions SUPPRIMÉS — source unique de vérité.
 export * from './platform-auth';
-export * from './platform-sessions';
 
 // Export explicite pour lever l'ambiguïté avec l'enum `CreneauHoraire` (classe.entity,
 // créneau MATIN/APRES_MIDI/JOURNEE_COMPLETE) : l'entité EDT prime via modules/index.

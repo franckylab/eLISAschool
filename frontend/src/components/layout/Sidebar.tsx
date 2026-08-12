@@ -56,6 +56,7 @@ import {
     Activity,
     Bell,
     ShieldCheck,
+    Globe,
     type LucideIcon,
 } from 'lucide-react';
 import { useSidebarStore } from '@/stores/sidebar.store';
@@ -332,6 +333,20 @@ const NAV_SECTIONS: NavSection[] = [
             { label: 'Communication', path: '/communication', icon: MessageSquare, module: 'communication' },
             { label: 'Transport', path: '/transport', icon: Bus, module: 'transport' },
             { label: 'Bibliothèque', path: '/bibliotheque', icon: Library, module: 'bibliotheque' },
+            {
+                label: 'Site Web (CMS)',
+                path: '/cms',
+                icon: Globe,
+                children: [
+                    { label: 'Dashboard', path: '/cms', icon: LayoutDashboard },
+                    { label: 'Pages', path: '/cms/pages', icon: FileText },
+                    { label: 'Médiathèque', path: '/cms/medias', icon: FileText },
+                    { label: 'Thèmes', path: '/cms/themes', icon: FileText },
+                    { label: 'Navigation', path: '/cms/menus', icon: FileText },
+                    { label: 'Widgets', path: '/cms/widgets', icon: FileText },
+                    { label: 'Versions', path: '/cms/versions', icon: GitBranch },
+                ],
+            },
         ],
     },
     {

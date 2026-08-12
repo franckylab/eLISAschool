@@ -26,6 +26,8 @@ import { permissionResolverService } from '@modules/auth/services/permission-res
 import { JwtPayload } from '@modules/auth/dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+// ADR-005 : détection accès plateforme
+import { isRolePlateforme } from '@shared/enums/roles.enum';
 
 /**
  * Interface pour la réponse de pré-connexion
@@ -287,6 +289,33 @@ export class EtablissementSelectionService {
             `[EtablissementSelection] Connexion complète: ${utilisateur.email} → Établissement ${etablissementId} (${affectation.role.code})`
         );
 
+        // ADR-005 : générer les tokens plateforme si l'utilisateur y a accès
+        let platformAccessData: Record<string, any> = {};
+        if (utilisateur.estPlateforme && isRolePlateforme(utilisateur.role)) {
+            try {
+                const platformPayload: JwtPayload = {
+                    sub: utilisateur.id,
+                    email: utilisateur.email,
+                    role: utilisateur.role,
+                    plane: 'platform',
+                };
+                const platformAccessToken = this.tokenService.generateAccessToken(platformPayload);
+                const platformRefreshToken = await this.tokenService.generateRefreshToken(
+                    utilisateur.id, adresseIp, userAgent, undefined, undefined, 'platform',
+                );
+                platformAccessData = {
+                    hasPlatformAccess: true,
+                    platformAccessToken,
+                    platformRefreshToken,
+                    platformExpiresIn: 86400,
+                    platformRole: utilisateur.role,
+                };
+                logger.info(`[ADR-005] Utilisateur ${utilisateur.email} a accès plateforme (${utilisateur.role})`);
+            } catch (error) {
+                logger.warn('[EtablissementSelection] Erreur génération tokens plateforme (non bloquant)', error);
+            }
+        }
+
         return {
             accessToken,
             refreshToken,
@@ -318,6 +347,7 @@ export class EtablissementSelectionService {
                     logoUrl,
                 };
             }),
+            ...platformAccessData,
         };
     }
 

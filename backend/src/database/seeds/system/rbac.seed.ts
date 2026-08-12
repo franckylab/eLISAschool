@@ -149,6 +149,18 @@ export class RBACSeedService {
         AUDITEUR_INTERNE: { libelle: 'Auditeur Interne', description: 'Audit interne (MINEDUC)' },
         STATISTICIEN: { libelle: 'Statisticien', description: 'Statisticien éducation' },
         CHARGE_COMMUNICATION: { libelle: 'Chargé de Communication', description: 'Communication institutionnelle' },
+
+        // RH & Paie
+        RH: { libelle: 'Responsable RH', description: 'Gestion des contrats et du personnel' },
+        GESTIONNAIRE_PAIE: { libelle: 'Gestionnaire de Paie', description: 'Bulletins, cotisations, primes, retenues' },
+        VALIDATEUR_PAIE: { libelle: 'Validateur Paie', description: 'Validation finale des bulletins (séparation 4 yeux)' },
+
+        // Rôles plateforme unifiés (ADR-005 — v11)
+        PLATEFORME_ADMIN: { libelle: 'Admin Plateforme', description: 'Gestion quotidienne SaaS (établissements, utilisateurs, config)' },
+        PLATEFORME_SUPPORT: { libelle: 'Support Plateforme', description: 'Support technique — monitoring, audit, logs (lecture)' },
+        PLATEFORME_BILLING: { libelle: 'Gestionnaire Facturation', description: 'Plans, abonnements, factures, paiements SaaS' },
+        PLATEFORME_ANALYST: { libelle: 'Analyste Plateforme', description: 'Dashboard, statistiques, exports (lecture seule)' },
+        PLATEFORME_AUDITOR: { libelle: 'Auditeur Plateforme', description: 'Audit logs, conformité, rapports sécurité' },
     };
 
     /**

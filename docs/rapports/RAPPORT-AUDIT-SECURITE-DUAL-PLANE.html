@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit Securite eLISAschool — Rapport Complet</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" integrity="sha384-N3QqR/7q+xm3BGX+CBbNI8AUmRRqcsDzToy+0z1NLDI0QmTKW8zvwLvqulJgk3dP" crossorigin="anonymous"></script>
+<style>
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-2: #334155;
+  --border: #475569;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --accent: #3b82f6;
+  --accent-2: #8b5cf6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #06b6d4;
+  --gradient-1: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  --gradient-2: linear-gradient(135deg, #10b981, #06b6d4);
+  --gradient-3: linear-gradient(135deg, #f59e0b, #ef4444);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* Hero */
+.hero {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 30% 50%, rgba(59,130,246,0.15) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 50%, rgba(139,92,246,0.1) 0%, transparent 60%);
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(255,255,255,0.02) 60px, rgba(255,255,255,0.02) 61px),
+              repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(255,255,255,0.02) 60px, rgba(255,255,255,0.02) 61px);
+}
+.hero-content { position: relative; z-index: 1; }
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 800;
+  background: var(--gradient-1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 16px;
+}
+.hero .subtitle {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: var(--text-muted);
+  max-width: 600px;
+  margin: 0 auto 32px;
+}
+.hero .meta {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.hero .meta-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-size: 0.875rem;
+}
+.hero .meta-item strong { color: var(--accent); }
+
+/* Score */
+.score-section {
+  padding: 80px 0;
+  text-align: center;
+}
+.score-ring {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 32px;
+  position: relative;
+}
+.score-ring svg { transform: rotate(-90deg); }
+.score-ring .value {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.score-ring .value .number {
+  font-size: 3rem;
+  font-weight: 800;
+  background: var(--gradient-2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.score-ring .value .label { font-size: 0.875rem; color: var(--text-muted); }
+
+/* Sections */
+section { padding: 60px 0; }
+section:nth-child(even) { background: rgba(30,41,59,0.3); }
+.section-title {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.section-subtitle {
+  color: var(--text-muted);
+  margin-bottom: 40px;
+  font-size: 1rem;
+}
+
+/* Cards */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+.card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+}
+.card h3 { font-size: 1.125rem; margin-bottom: 8px; }
+.card p { color: var(--text-muted); font-size: 0.875rem; }
+
+/* Comparison Table */
+.comparison-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--surface);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.comparison-table th {
+  background: var(--surface-2);
+  padding: 16px 20px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+.comparison-table td {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+.comparison-table tr:hover td { background: rgba(59,130,246,0.05); }
+
+/* Gap Cards */
+.gap-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 16px;
+  border-left: 4px solid;
+  transition: transform 0.2s;
+}
+.gap-card:hover { transform: translateX(4px); }
+.gap-card.critical { border-left-color: var(--danger); }
+.gap-card.high { border-left-color: var(--warning); }
+.gap-card.medium { border-left-color: var(--info); }
+.gap-card.low { border-left-color: var(--success); }
+.gap-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.gap-badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.gap-badge.critical { background: rgba(239,68,68,0.15); color: var(--danger); }
+.gap-badge.high { background: rgba(245,158,11,0.15); color: var(--warning); }
+.gap-badge.medium { background: rgba(6,182,212,0.15); color: var(--info); }
+.gap-badge.low { background: rgba(16,185,129,0.15); color: var(--success); }
+.gap-title { font-weight: 600; font-size: 1rem; }
+.gap-body { color: var(--text-muted); font-size: 0.875rem; }
+.gap-body code {
+  background: var(--surface-2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+/* Mermaid */
+.mermaid-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  margin: 24px 0;
+  overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+.mermaid svg { max-width: 100%; }
+
+/* Stats Bar */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin: 32px 0;
+}
+.stat-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+.stat-value {
+  font-size: 2rem;
+  font-weight: 800;
+}
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Progress bars */
+.progress-bar {
+  height: 8px;
+  background: var(--surface-2);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s ease;
+}
+
+/* Layers */
+.layer-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 24px 0;
+}
+.layer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.layer-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+.layer-content { flex: 1; }
+.layer-content h4 { font-size: 0.9rem; margin-bottom: 2px; }
+.layer-content p { font-size: 0.8rem; color: var(--text-muted); }
+
+/* Timeline */
+.timeline {
+  position: relative;
+  padding-left: 40px;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+.timeline-item {
+  position: relative;
+  margin-bottom: 32px;
+}
+.timeline-dot {
+  position: absolute;
+  left: -33px;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: var(--bg);
+}
+.timeline-item h4 { font-size: 0.95rem; margin-bottom: 4px; }
+.timeline-item p { font-size: 0.85rem; color: var(--text-muted); }
+
+/* Footer */
+footer {
+  padding: 40px 0;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container { padding: 0 16px; }
+  .hero { min-height: 50vh; }
+  .comparison-table { font-size: 0.75rem; }
+  .comparison-table th, .comparison-table td { padding: 10px 12px; }
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate { animation: fadeInUp 0.6s ease forwards; }
+
+/* TOC */
+.toc {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 32px 0;
+}
+.toc h3 { margin-bottom: 12px; font-size: 1rem; }
+.toc ol { padding-left: 20px; }
+.toc li { margin-bottom: 6px; }
+.toc a {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+.toc a:hover { text-decoration: underline; }
+
+/* Badge inline */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+.badge-success { background: rgba(16,185,129,0.15); color: var(--success); }
+.badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); }
+.badge-danger { background: rgba(239,68,68,0.15); color: var(--danger); }
+.badge-info { background: rgba(6,182,212,0.15); color: var(--info); }
+
+/* Radar chart */
+.radar-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;
+  flex-wrap: wrap;
+  margin: 32px 0;
+}
+.radar-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.radar-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+.radar-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-content">
+    <h1>Audit Securite eLISAschool</h1>
+    <p class="subtitle">Analyse complete de l'architecture de securite dual-plane : authentification, autorisation, isolation tenant et recommandations</p>
+    <div class="meta">
+      <div class="meta-item"><strong>Date</strong> : 10 aout 2026</div>
+      <div class="meta-item"><strong>Version</strong> : v9.0</div>
+      <div class="meta-item"><strong>Score</strong> : 7.2 / 10</div>
+      <div class="meta-item"><strong>Failles</strong> : 10 identifiees</div>
+    </div>
+  </div>
+</div>
+
+<!-- TABLE DES MATIERES -->
+<div class="container">
+  <div class="toc">
+    <h3>Table des matieres</h3>
+    <ol>
+      <li><a href="#resume">Resume executif</a></li>
+      <li><a href="#architecture">Architecture Dual-Plane</a></li>
+      <li><a href="#authentification">Flux d'authentification</a></li>
+      <li><a href="#isolation">Isolation Tenant (3 couches)</a></li>
+      <li><a href="#autorisation">Autorisation CASL + RBAC</a></li>
+      <li><a href="#middleware">Pipeline Middleware</a></li>
+      <li><a href="#comparatif">Tableau comparatif Platform / Tenant</a></li>
+      <li><a href="#failles">10 Failles identifiees</a></li>
+      <li><a href="#recommandations">Recommandations</a></li>
+      <li><a href="#conclusion">Conclusion</a></li>
+    </ol>
+  </div>
+</div>
+
+<!-- RESUME EXECUTIF -->
+<section id="resume">
+  <div class="container">
+    <h2 class="section-title">1. Resume executif</h2>
+    <p class="section-subtitle">Vue d'ensemble de la posture de securite</p>
+
+    <div class="score-section">
+      <div class="score-ring">
+        <svg width="200" height="200" viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="85" fill="none" stroke="#334155" stroke-width="12"/>
+          <circle cx="100" cy="100" r="85" fill="none" stroke="url(#scoreGrad)" stroke-width="12"
+                  stroke-dasharray="534" stroke-dashoffset="150" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#10b981"/>
+              <stop offset="100%" stop-color="#06b6d4"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="value">
+          <span class="number">7.2</span>
+          <span class="label">/ 10</span>
+        </div>
+      </div>
+      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">
+        Score de securite global. L'architecture dual-plane est solide sur le papier mais presente
+        <strong style="color: var(--warning);">10 failles</strong> dont <strong style="color: var(--danger);">3 critiques</strong>
+        necessitant une correction immediate.
+      </p>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-value" style="color: var(--success);">4</div>
+        <div class="stat-label">Tables identite</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" style="color: var(--accent);">6</div>
+        <div class="stat-label">Roles plateforme</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" style="color: var(--accent-2);">~40</div>
+        <div class="stat-label">Permissions plateforme</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" style="color: var(--info);">3</div>
+        <div class="stat-label">Couches isolation</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" style="color: var(--warning);">10</div>
+        <div class="stat-label">Failles detectees</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" style="color: var(--danger);">3</div>
+        <div class="stat-label">Critiques</div>
+      </div>
+    </div>
+
+    <!-- Radar Chart SVG -->
+    <div class="radar-container">
+      <svg width="320" height="320" viewBox="0 0 320 320">
+        <!-- Grid -->
+        <polygon points="160,40 264,100 264,220 160,280 56,220 56,100" fill="none" stroke="#334155" stroke-width="1"/>
+        <polygon points="160,76 232,112 232,208 160,244 88,208 88,112" fill="none" stroke="#334155" stroke-width="0.5"/>
+        <polygon points="160,112 200,124 200,196 160,208 120,196 120,124" fill="none" stroke="#334155" stroke-width="0.5"/>
+        <!-- Axes -->
+        <line x1="160" y1="160" x2="160" y2="40" stroke="#475569" stroke-width="0.5"/>
+        <line x1="160" y1="160" x2="264" y2="100" stroke="#475569" stroke-width="0.5"/>
+        <line x1="160" y1="160" x2="264" y2="220" stroke="#475569" stroke-width="0.5"/>
+        <line x1="160" y1="160" x2="160" y2="280" stroke="#475569" stroke-width="0.5"/>
+        <line x1="160" y1="160" x2="56" y2="220" stroke="#475569" stroke-width="0.5"/>
+        <line x1="160" y1="160" x2="56" y2="100" stroke="#475569" stroke-width="0.5"/>
+        <!-- Data -->
+        <polygon points="160,52 248,106 240,210 160,256 80,200 72,112"
+                 fill="rgba(59,130,246,0.15)" stroke="#3b82f6" stroke-width="2"/>
+        <!-- Points -->
+        <circle cx="160" cy="52" r="4" fill="#3b82f6"/>
+        <circle cx="248" cy="106" r="4" fill="#3b82f6"/>
+        <circle cx="240" cy="210" r="4" fill="#3b82f6"/>
+        <circle cx="160" cy="256" r="4" fill="#3b82f6"/>
+        <circle cx="80" cy="200" r="4" fill="#3b82f6"/>
+        <circle cx="72" cy="112" r="4" fill="#3b82f6"/>
+        <!-- Labels -->
+        <text x="160" y="28" text-anchor="middle" fill="#94a3b8" font-size="11">Auth</text>
+        <text x="278" y="100" text-anchor="start" fill="#94a3b8" font-size="11">Isolation</text>
+        <text x="278" y="224" text-anchor="start" fill="#94a3b8" font-size="11">CASL</text>
+        <text x="160" y="300" text-anchor="middle" fill="#94a3b8" font-size="11">Audit</text>
+        <text x="38" y="224" text-anchor="end" fill="#94a3b8" font-size="11">RLS</text>
+        <text x="38" y="100" text-anchor="end" fill="#94a3b8" font-size="11">Rate Limit</text>
+      </svg>
+      <div class="radar-legend">
+        <div class="radar-legend-item">
+          <div class="radar-legend-dot" style="background: var(--success);"></div>
+          <span>Authentification : <strong>8/10</strong></span>
+        </div>
+        <div class="radar-legend-item">
+          <div class="radar-legend-dot" style="background: var(--warning);"></div>
+          <span>Isolation Tenant : <strong>6/10</strong></span>
+        </div>
+        <div class="radar-legend-item">
+          <div class="radar-legend-dot" style="background: var(--accent);"></div>
+          <span>Autorisation CASL : <strong>7/10</strong></span>
+        </div>
+        <div class="radar-legend-item">
+          <div class="radar-legend-dot" style="background: var(--success);"></div>
+          <span>Audit Trail : <strong>8/10</strong></span>
+        </div>
+        <div class="radar-legend-item">
+          <div class="radar-legend-dot" style="background: var(--accent-2);"></div>
+          <span>RLS PostgreSQL : <strong>7/10</strong></span>
+        </div>
+        <div class="radar-legend-item">
+          <div class="radar-legend-dot" style="background: var(--info);"></div>
+          <span>Rate Limiting : <strong>7/10</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE DUAL-PLANE -->
+<section id="architecture">
+  <div class="container">
+    <h2 class="section-title">2. Architecture Dual-Plane</h2>
+    <p class="section-subtitle">Modele C — Auth0 Internalise : separation stricte Control Plane / Data Plane</p>
+
+    <div class="mermaid-container">
+      <div class="mermaid">
+graph TB
+    subgraph "Control Plane (Plateforme)"
+        direction TB
+        SA[SUPER_ADMIN]
+        AP[ADMIN_PLATEFORME]
+        GEST[GESTIONNAIRE]
+        SUP[SUPPORT]
+        OBS[OBSERVATEUR]
+        GG[GESTIONNAIRE_GROUPES]
+    end
+
+    subgraph "Data Plane (Tenants)"
+        direction TB
+        ADMIN[ADMIN]
+        CHEF[CHEF_ETABLISSEMENT]
+        ENS[ENSEIGNANT]
+        PAR[PARENT]
+        ELE[ELEVE]
+    end
+
+    subgraph "Couche Identite (4 tables)"
+        ID[(identites)]
+        UP[(utilisateurs_plateforme)]
+        MEM[(memberships)]
+        PP[(permissions_plateforme)]
+    end
+
+    subgraph "JWT Dual-Plane"
+        JWT_P["Platform Token<br/>platform.role + tenant:null"]
+        JWT_T["Tenant Token<br/>etablissementId + permissions"]
+    end
+
+    ID --> UP
+    ID --> MEM
+    PP --> MEM
+
+    SA --> JWT_P
+    ADMIN --> JWT_T
+
+    JWT_P --> CP[Control Plane API]
+    JWT_T --> DP[Data Plane API]
+
+    style CP fill:#1e40af,stroke:#3b82f6,color:#fff
+    style DP fill:#065f46,stroke:#10b981,color:#fff
+    style ID fill:#7c3aed,stroke:#8b5cf6,color:#fff
+    style JWT_P fill:#1e40af,stroke:#60a5fa,color:#fff
+    style JWT_T fill:#065f46,stroke:#34d399,color:#fff
+      </div>
+    </div>
+
+    <h3 style="margin: 32px 0 16px; font-size: 1.125rem;">Tables d'identite</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon" style="background: rgba(139,92,246,0.15); color: var(--accent-2);">ID</div>
+        <h3>identites</h3>
+        <p>Source unique de verite. Email, motDePasseHash (bcrypt), MFA, statut. OneToOne avec UtilisateurPlateforme.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background: rgba(59,130,246,0.15); color: var(--accent);">UP</div>
+        <h3>utilisateurs_plateforme</h3>
+        <p>FK vers identites. Profil plateforme avec role (SUPER_ADMIN, ADMIN_PLATEFORME, etc.).</p>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background: rgba(16,185,129,0.15); color: var(--success);">MP</div>
+        <h3>memberships</h3>
+        <p>Table pivot : identiteId x contexteType (PLATEFORME|ETABLISSEMENT) x contexteId. Index unique composite.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background: rgba(6,182,212,0.15); color: var(--info);">PP</div>
+        <h3>permissions_plateforme</h3>
+        <p>~40 permissions granulaires. Code unique, module, ordre. Attribuees via DEFAULT_ROLE_PLATEFORME_PERMISSIONS.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AUTHENTIFICATION -->
+<section id="authentification">
+  <div class="container">
+    <h2 class="section-title">3. Flux d'authentification</h2>
+    <p class="section-subtitle">Deux flux separes : plateforme (login email) et tenant (multi-criteres)</p>
+
+    <div class="mermaid-container">
+      <div class="mermaid">
+sequenceDiagram
+    participant U as Utilisateur
+    participant FE as Frontend
+    participant BE as Backend API
+    participant DB as PostgreSQL
+    participant Redis as Redis Cache
+
+    Note over U,Redis: === FLUX PLATFORM ===
+
+    U->>FE: Email + Mot de passe
+    FE->>BE: POST /api/platform/auth/login
+    BE->>DB: SELECT identite WHERE email
+    BE->>BE: bcrypt.compare()
+    BE->>DB: SELECT utilisateur_plateforme + memberships
+    BE->>BE: Verifier statut ACTIF
+    BE->>BE: Generer JWT platform<br/>{sub, platform:{role}, tenant:null}
+    BE-->>FE: {accessToken, refreshToken, user}
+
+    Note over U,Redis: === FLUX TENANT ===
+
+    U->>FE: Email/Matricule/Pseudonyme + MDP
+    FE->>BE: POST /api/auth/login
+    BE->>BE: Detection SQL injection
+    BE->>DB: SELECT utilisateur (multi-criteres)
+    BE->>BE: bcrypt.compare()
+    BE->>BE: Two-level lockout check
+    alt MFA Active
+        BE-->>FE: {mfaRequired: true, mfaToken: tempJWT}
+        U->>FE: Code TOTP 6 chiffres
+        FE->>BE: POST /api/auth/mfa/verify
+        BE->>BE: totp.verify()
+    end
+    BE->>Redis: resolvePermissions(userId, etabId)
+    BE->>BE: Generer JWT tenant<br/>{sub, etablissementId, role}
+    BE->>DB: INSERT refresh_token (64-byte hex)
+    BE-->>FE: {accessToken, refreshToken, permissions}
+      </div>
+    </div>
+
+    <h3 style="margin: 32px 0 16px; font-size: 1.125rem;">Caracteristiques cles</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon" style="background: rgba(16,185,129,0.15); color: var(--success);">&#x1f512;</div>
+        <h3>Permissions hors JWT</h3>
+        <p>Resolues cote serveur via <code>permissionResolverService</code> avec cache Redis. Evite HTTP 431 (token 16KB > limite header).</p>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background: rgba(59,130,246,0.15); color: var(--accent);">&#x1f504;</div>
+        <h3>Refresh Token Rotation</h3>
+        <p>Famille de tokens avec <code>familleId</code> + <code>tokenPrecedentId</code>. Detection de compromission si token revoque reutilise.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background: rgba(139,92,246,0.15); color: var(--accent-2);">&#x1f4f1;</div>
+        <h3>MFA TOTP + WebAuthn</h3>
+        <p>TOTP compatible Google Authenticator (HMAC-SHA1, 30s/6 digits). WebAuthn/FIDO2 passkeys en supplement.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background: rgba(245,158,11,0.15); color: var(--warning);">&#x1f6e1;</div>
+        <h3>Anti-injection SQL</h3>
+        <p>Detection de patterns SQL injection dans les identifiants au login tenant. Rejet immediat + audit log.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ISOLATION TENANT -->
+<section id="isolation">
+  <div class="container">
+    <h2 class="section-title">4. Isolation Tenant — 3 couches</h2>
+    <p class="section-subtitle">Defense in depth : middleware DB + RLS PostgreSQL + TypeORM Subscriber</p>
+
+    <div class="layer-stack">
+      <div class="layer">
+        <div class="layer-num" style="background: rgba(239,68,68,0.15); color: var(--danger);">1</div>
+        <div class="layer-content">
+          <h4>tenantMiddleware <span class="badge badge-warning">GAP 3</span></h4>
+          <p>Verification DB (Redis-cached 5min) de l'appartenance etablissement. Double next() possible (bug). String cast fragile.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="layer-num" style="background: rgba(245,158,11,0.15); color: var(--warning);">2</div>
+        <div class="layer-content">
+          <h4>rlsMiddleware (v8.0.0)</h4>
+          <p>PostgreSQL <code>SET LOCAL app.current_tenant</code> dans transaction WRITE. READ = <code>SET</code> session. Sentinel UUIDs pour SUPER_ADMIN et GESTIONNAIRE_GROUPES.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="layer-num" style="background: rgba(16,185,129,0.15); color: var(--success);">3</div>
+        <div class="layer-content">
+          <h4>TenantIsolationSubscriber (TypeORM)</h4>
+          <p><code>beforeInsert</code> : auto-inject etablissementId. <code>beforeUpdate</code> : bloque cross-tenant. Mode strict en production (throw), dev (log).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mermaid-container">
+      <div class="mermaid">
+graph LR
+    REQ[Requete HTTP] --> TM[tenantMiddleware<br/>Verif appartenance DB]
+    TM --> RLS[rlsMiddleware<br/>SET LOCAL current_tenant]
+    RLS --> SUB[TenantIsolationSubscriber<br/>Auto-inject FK]
+    SUB --> DB[(PostgreSQL<br/>RLS Policies)]
+
+    TM --> |"Redis cache 5min"| CACHE[(Redis)]
+    RLS --> |"SUPER_ADMIN"| S1["Sentinel 000...000"]
+    RLS --> |"GESTIONNAIRE_GROUPES"| S2["Sentinel 000...001"]
+
+    DB --> |"~40 tables avec RLS"| P1["Policy: etablissementId = current_tenant"]
+    DB --> |"Bypass"| P2["super_admin_bypass (permissive)"]
+
+    style REQ fill:#334155,stroke:#475569,color:#fff
+    style TM fill:#92400e,stroke:#f59e0b,color:#fff
+    style RLS fill:#1e40af,stroke:#3b82f6,color:#fff
+    style SUB fill:#065f46,stroke:#10b981,color:#fff
+    style DB fill:#7c3aed,stroke:#8b5cf6,color:#fff
+      </div>
+    </div>
+
+    <h3 style="margin: 24px 0 16px; font-size: 1.125rem;">Couverture RLS</h3>
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-value" style="color: var(--success);">~40</div>
+        <div class="stat-label">Tables avec RLS</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" style="color: var(--accent);">8</div>
+        <div class="stat-label">Tables critiques (v1)</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" style="color: var(--accent-2);">6</div>
+        <div class="stat-label">Tables non-critiques (v2)</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" style="color: var(--info);">16</div>
+        <div class="stat-label">Partitions hash</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AUTORISATION -->
+<section id="autorisation">
+  <div class="container">
+    <h2 class="section-title">5. Autorisation — CASL.js + RBAC</h2>
+    <p class="section-subtitle">Dual CASL : definePlatformAbility() pour la plateforme, defineAbility() pour le tenant</p>
+
+    <div class="mermaid-container">
+      <div class="mermaid">
+graph TB
+    subgraph "Dual CASL Middleware"
+        DC[dualCaslMiddleware]
+        DC --> |"/api/platform/*"| PA[definePlatformAbility]
+        DC --> |"/api/*"| TA[defineAbility]
+    end
+
+    subgraph "Platform Abilities"
+        PA --> SA_R[SUPER_ADMIN : manage all]
+        PA --> AP_R[ADMIN_PLATEFORME : read/write]
+        PA --> GE_R[GESTIONNAIRE : read]
+        PA --> SU_R[SUPPORT : read limited]
+        PA --> OB_R[OBSERVATEUR : read only]
+        PA --> GG_R[GESTIONNAIRE_GROUPES : scoped]
+    end
+
+    subgraph "Tenant Abilities"
+        TA --> AD_R[ADMIN : manage scoped]
+        TA --> CH_R[CHEF_ETAB : manage scoped]
+        TA --> EN_R[ENSEIGNANT : ABAC matieres]
+        TA --> PR_R[PARENT : ABAC enfants]
+        TA --> EL_R[ELEVE : read own]
+    end
+
+    style DC fill:#1e293b,stroke:#3b82f6,color:#fff
+    style PA fill:#1e40af,stroke:#60a5fa,color:#fff
+    style TA fill:#065f46,stroke:#34d399,color:#fff
+      </div>
+    </div>
+
+    <h3 style="margin: 32px 0 16px; font-size: 1.125rem;">Matrice des roles plateforme</h3>
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>Scope</th>
+          <th>Permissions</th>
+          <th>Capacites cles</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>SUPER_ADMIN</strong></td>
+          <td>Global</td>
+          <td>Toutes (~40)</td>
+          <td>Manage total, bypass RLS, backup, providers</td>
+        </tr>
+        <tr>
+          <td><strong>ADMIN_PLATEFORME</strong></td>
+          <td>Global</td>
+          <td>Read/Write</td>
+          <td>CRUD tenants, plans, facturation</td>
+        </tr>
+        <tr>
+          <td><strong>GESTIONNAIRE</strong></td>
+          <td>Global</td>
+          <td>Read</td>
+          <td>Monitoring, audit, statistiques</td>
+        </tr>
+        <tr>
+          <td><strong>SUPPORT</strong></td>
+          <td>Global</td>
+          <td>Read limited</td>
+          <td>Consultation tickets, logs</td>
+        </tr>
+        <tr>
+          <td><strong>OBSERVATEUR</strong></td>
+          <td>Global</td>
+          <td>Read only</td>
+          <td>Dashboard, rapports (aucune ecriture)</td>
+        </tr>
+        <tr>
+          <td><strong>GESTIONNAIRE_GROUPES</strong></td>
+          <td>Groupe</td>
+          <td>Scoped</td>
+          <td>Gestion multi-etablissements d'un groupe</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- PIPELINE MIDDLEWARE -->
+<section id="middleware">
+  <div class="container">
+    <h2 class="section-title">6. Pipeline Middleware (app.ts)</h2>
+    <p class="section-subtitle">Ordre de montage critique — chaque couche depend de la precedente</p>
+
+    <div class="mermaid-container">
+      <div class="mermaid">
+graph TB
+    A[helmet + CORS] --> B[Rate Limit Global]
+    B --> C[Auth Limiter]
+    C --> D[Compression + JSON]
+    D --> E["Routes publiques<br/>(health, network, webhooks)"]
+    E --> F[tenantMiddleware]
+    F --> G[tenantRateLimit]
+    G --> H[dualCaslMiddleware]
+    H --> I[rlsMiddleware]
+    I --> J["Module routes<br/>(authMiddleware + filterByEtablissement)"]
+    J --> K[ipAllowlistMiddleware]
+    K --> L[platformRouter]
+
+    style A fill:#065f46,stroke:#10b981,color:#fff
+    style F fill:#92400e,stroke:#f59e0b,color:#fff
+    style H fill:#1e40af,stroke:#3b82f6,color:#fff
+    style I fill:#7c3aed,stroke:#8b5cf6,color:#fff
+    style L fill:#1e40af,stroke:#60a5fa,color:#fff
+      </div>
+    </div>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <h4>1. Security Headers</h4>
+        <p>helmet (CSP, X-Frame-Options, HSTS) + CORS (origines whitelistees)</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <h4>2. Rate Limiting</h4>
+        <p>Global IP (100 req/min) + Auth-specific (5 tentatives/15min) + Tenant plan-proportional</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <h4>3. Routes publiques</h4>
+        <p>Health check, network ping, webhooks paiement (avant auth)</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <h4>4. Isolation Tenant</h4>
+        <p>tenantMiddleware → dualCaslMiddleware → rlsMiddleware (3 couches)</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <h4>5. Module routes</h4>
+        <p>Chaque controller monte ses routes avec authMiddleware + requirePermission/requireCasl</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <h4>6. Platform guard</h4>
+        <p>ipAllowlistMiddleware + requirePlatformAccess() sur /api/platform/*</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARATIF -->
+<section id="comparatif">
+  <div class="container">
+    <h2 class="section-title">7. Tableau comparatif Platform / Tenant</h2>
+    <p class="section-subtitle">Separation stricte des responsabilités et des mecanismes</p>
+
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Aspect</th>
+          <th>Control Plane (Plateforme)</th>
+          <th>Data Plane (Tenant)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Route prefix</strong></td>
+          <td><code>/api/platform/*</code></td>
+          <td><code>/api/*</code></td>
+        </tr>
+        <tr>
+          <td><strong>Auth endpoint</strong></td>
+          <td><code>POST /api/platform/auth/login</code></td>
+          <td><code>POST /api/auth/login</code></td>
+        </tr>
+        <tr>
+          <td><strong>Identite source</strong></td>
+          <td>table <code>identites</code> + <code>utilisateurs_plateforme</code></td>
+          <td>table <code>utilisateurs</code> (legacy)</td>
+        </tr>
+        <tr>
+          <td><strong>JWT payload</strong></td>
+          <td><code>{sub, platform:{role}, tenant:null}</code></td>
+          <td><code>{sub, etablissementId, role}</code></td>
+        </tr>
+        <tr>
+          <td><strong>Permissions</strong></td>
+          <td>~40 permissions_plateforme (DB)</td>
+          <td>~200 permissions RBAC (roles.enum.ts)</td>
+        </tr>
+        <tr>
+          <td><strong>CASL function</strong></td>
+          <td><code>definePlatformAbility(role)</code></td>
+          <td><code>defineAbility(permissions, context)</code></td>
+        </tr>
+        <tr>
+          <td><strong>Guard principal</strong></td>
+          <td><code>requirePlatformAccess()</code></td>
+          <td><code>authMiddleware + requirePermission()</code></td>
+        </tr>
+        <tr>
+          <td><strong>RLS bypass</strong></td>
+          <td>Sentinel UUID <code>000...000</code></td>
+          <td>Sentinel UUID <code>000...000</code> (SUPER_ADMIN only)</td>
+        </tr>
+        <tr>
+          <td><strong>IP Allowlist</strong></td>
+          <td>Oui (fail-open)</td>
+          <td>Non</td>
+        </tr>
+        <tr>
+          <td><strong>MFA</strong></td>
+          <td>Commentaire present, <strong>non enforce</strong> <span class="badge badge-danger">GAP 1</span></td>
+          <td>Oui (TOTP obligatoire si active)</td>
+        </tr>
+        <tr>
+          <td><strong>Refresh tokens</strong></td>
+          <td>Non (session simple)</td>
+          <td>Oui (rotation avec famille)</td>
+        </tr>
+        <tr>
+          <td><strong>Layout frontend</strong></td>
+          <td><code>_platform.tsx</code> + PlatformSidebar</td>
+          <td><code>_auth.tsx</code> + Sidebar principale</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- FAILLES -->
+<section id="failles">
+  <div class="container">
+    <h2 class="section-title">8. 10 Failles identifiees</h2>
+    <p class="section-subtitle">Classifieées par severite : 3 critiques, 4 hautes, 3 moyennes</p>
+
+    <!-- Distribution graphique -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-value" style="color: var(--danger);">3</div>
+        <div class="stat-label">Critiques</div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 30%; background: var(--danger);"></div></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" style="color: var(--warning);">4</div>
+        <div class="stat-label">Hautes</div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 40%; background: var(--warning);"></div></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" style="color: var(--info);">3</div>
+        <div class="stat-label">Moyennes</div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 30%; background: var(--info);"></div></div>
+      </div>
+    </div>
+
+    <!-- GAP 1 -->
+    <div class="gap-card critical">
+      <div class="gap-header">
+        <span class="gap-badge critical">Critique</span>
+        <span class="gap-title">GAP 1 — Platform login ne force pas MFA</span>
+      </div>
+      <div class="gap-body">
+        <p><strong>Fichier</strong> : <code>platform-auth.service.ts</code></p>
+        <p>Le commentaire indique "MFA obligatoire" mais le code ne verifie PAS <code>identite.mfaActive</code>. Un SUPER_ADMIN sans MFA peut acceder a la plateforme. Comparer avec le flux tenant qui enforce MFA correctement.</p>
+        <p style="margin-top: 8px;"><strong>Impact</strong> : Compromission compte super-admin sans second facteur.</p>
+        <p><strong>Fix</strong> : Apres bcrypt.compare(), verifier <code>identite.mfaActive</code> et retourner un flow MFA identique au tenant.</p>
+      </div>
+    </div>
+
+    <!-- GAP 2 -->
+    <div class="gap-card high">
+      <div class="gap-header">
+        <span class="gap-badge high">Haute</span>
+        <span class="gap-title">GAP 2 — IP Allowlist fail-open</span>
+      </div>
+      <div class="gap-body">
+        <p><strong>Fichier</strong> : <code>ip-allowlist.middleware.ts</code></p>
+        <p>Si Redis echoue ou si la table est vide, le middleware appelle <code>next()</code> (autorise). En cas de panne Redis, toute IP peut acceder aux routes plateforme.</p>
+        <p style="margin-top: 8px;"><strong>Fix</strong> : Fail-closed en production. Si Redis error → throw 403. Cache local en fallback.</p>
+      </div>
+    </div>
+
+    <!-- GAP 3 -->
+    <div class="gap-card critical">
+      <div class="gap-header">
+        <span class="gap-badge critical">Critique</span>
+        <span class="gap-title">GAP 3 — Tenant middleware double next()</span>
+      </div>
+      <div class="gap-body">
+        <p><strong>Fichier</strong> : <code>tenant.middleware.ts</code> (lignes 208 + 217)</p>
+        <p>Le middleware peut appeler <code>next()</code> deux fois dans certains chemins conditionnels, causant une execution dupliquee du handler ou un crash <code>ERR_HTTP_HEADERS_SENT</code>.</p>
+        <p style="margin-top: 8px;"><strong>Impact</strong> : Requetes dupliquees, corruption potentielle de donnees, crash serveur.</p>
+        <p><strong>Fix</strong> : Ajouter <code>return</code> apres chaque <code>next()</code> ou restructurer le flow avec un seul point de sortie.</p>
+      </div>
+    </div>
+
+    <!-- GAP 4 -->
+    <div class="gap-card high">
+      <div class="gap-header">
+        <span class="gap-badge high">Haute</span>
+        <span class="gap-title">GAP 4 — Deux systemes d'identite paralleles</span>
+      </div>
+      <div class="gap-body">
+        <p><strong>Fichiers</strong> : <code>identite.entity.ts</code> vs <code>utilisateur.entity.ts</code></p>
+        <p>La plateforme utilise <code>identites</code> (nouveau) tandis que le tenant utilise <code>utilisateurs</code> (legacy). Pas de synchronisation automatique entre les deux. Risque de desynchronisation email/mot de passe.</p>
+        <p style="margin-top: 8px;"><strong>Fix</strong> : Migration progressive vers identites comme source unique, ou trigger de synchronisation bidirectionnelle.</p>
+      </div>
+    </div>
+
+    <!-- GAP 5 -->
+    <div class="gap-card high">
+      <div class="gap-header">
+        <span class="gap-badge high">Haute</span>
+        <span class="gap-title">GAP 5 — WebAuthn login bypass MFA + etablissement</span>
+      </div>
+      <div class="gap-body">
+        <p><strong>Fichier</strong> : <code>webauthn.service.ts</code></p>
+        <p>Le login WebAuthn ne verifie pas si MFA est active (court-circuite le flow MFA) et ne passe pas par la selection d'etablissement. Un utilisateur avec MFA obligatoire pourrait se connecter sans second facteur via passkey.</p>
+        <p style="margin-top: 8px;"><strong>Fix</strong> : Integrer WebAuthn dans le flow MFA existant (comme TOTP) et non comme alternative.</p>
+      </div>
+    </div>
+
+    <!-- GAP 6 -->
+    <div class="gap-card medium">
+      <div class="gap-header">
+        <span class="gap-badge medium">Moyenne</span>
+        <span class="gap-title">GAP 6 — Platform auth controller utilise authMiddleware tenant</span>
+      </div>
+      <div class="gap-body">
+        <p><strong>Fichier</strong> : <code>platform-auth.controller.ts</code></p>
+        <p>Certaines routes plateforme utilisent <code>authMiddleware</code> (concue pour le tenant) au lieu d'un middleware dedie plateforme. Fonctionne car le JWT platform est valide, mais la semantique est incorrecte.</p>
+        <p style="margin-top: 8px;"><strong>Fix</strong> : Creer <code>platformAuthMiddleware</code> qui valide specifiquement les tokens platform.</p>
+      </div>
+    </div>
+
+    <!-- GAP 7 -->
+    <div class="gap-card medium">
+      <div class="gap-header">
+        <span class="gap-badge medium">Moyenne</span>
+        <span class="gap-title">GAP 7 — dualCaslMiddleware avant platform guard</span>
+      </div>
+      <div class="gap-body">
+        <p><strong>Fichier</strong> : <code>app.ts</code> + <code>platform.routes.ts</code></p>
+        <p>Le <code>dualCaslMiddleware</code> est monte globalement (avant les routes), tandis que le guard <code>requirePlatformAccess()</code> est dans le router plateforme. Si la resolution Membership echoue, CASL peut creer une ability incorrecte avant que le guard ne rejette.</p>
+        <p style="margin-top: 8px;"><strong>Fix</strong> : Monter un <code>platformCaslMiddleware</code> specifique dans platform.routes.ts, avant les routes.</p>
+      </div>
+    </div>
+
+    <!-- GAP 8 -->
+    <div class="gap-card critical">
+      <div class="gap-header">
+        <span class="gap-badge critical">Critique</span>
+        <span class="gap-title">GAP 8 — JWT secret partage entre planes</span>
+      </div>
+      <div class="gap-body">
+        <p><strong>Fichier</strong> : <code>env.config.ts</code></p>
+        <p>Les deux planes (platform et tenant) utilisent le meme <code>JWT_SECRET</code>. Un token tenant forge pourrait etre accepte par une route plateforme si le guard ne verifie pas la presence du champ <code>platform</code>.</p>
+        <p style="margin-top: 8px;"><strong>Impact</strong> : Escalade de privileges tenant → platform si le guard est bypass.</p>
+        <p><strong>Fix</strong> : Utiliser deux secrets distincts (<code>JWT_SECRET_PLATFORM</code> + <code>JWT_SECRET_TENANT</code>) ou ajouter un <code>plane</code> claim obligatoire dans le JWT.</p>
+      </div>
+    </div>
+
+    <!-- GAP 9 -->
+    <div class="gap-card medium">
+      <div class="gap-header">
+        <span class="gap-badge medium">Moyenne</span>
+        <span class="gap-title">GAP 9 — rlsMiddleware skip unauthenticated requests</span>
+      </div>
+      <div class="gap-body">
+        <p><strong>Fichier</strong> : <code>rls.middleware.ts</code></p>
+        <p>Si <code>req.utilisateur</code> est absent (routes publiques), le RLS est saute. Les routes publiques (health, webhooks) n'ont pas de RLS, ce qui est correct. Mais si une route protegee est montee avant authMiddleware, elle pourrait acceder aux donnees sans isolation.</p>
+        <p style="margin-top: 8px;"><strong>Fix</strong> : Ajouter un guard defensif : si pas de utilisateur ET pas de route publique whitelistee → throw 401.</p>
+      </div>
+    </div>
+
+    <!-- GAP 10 -->
+    <div class="gap-card high">
+      <div class="gap-header">
+        <span class="gap-badge high">Haute</span>
+        <span class="gap-title">GAP 10 — String cast fragile dans tenant.middleware</span>
+      </div>
+      <div class="gap-body">
+        <p><strong>Fichier</strong> : <code>tenant.middleware.ts</code></p>
+        <p>Le code utilise <code>userRole === 'SUPER_ADMIN' as unknown as Role</code> (string cast) au lieu de l'enum. Si la valeur change ou est typo, la comparaison echoue silencieusement.</p>
+        <p style="margin-top: 8px;"><strong>Fix</strong> : Utiliser <code>Role.SUPER_ADMIN</code> directement avec le typage correct.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RECOMMANDATIONS -->
+<section id="recommandations">
+  <div class="container">
+    <h2 class="section-title">9. Recommandations</h2>
+    <p class="section-subtitle">Plan de correction priorise en 3 vagues</p>
+
+    <div class="mermaid-container">
+      <div class="mermaid">
+gantt
+    title Plan de correction securite
+    dateFormat YYYY-MM-DD
+    section Vague 1 (Critique)
+    GAP 1 - MFA Platform        :crit1, 2026-08-11, 2d
+    GAP 3 - Double next()       :crit2, 2026-08-11, 1d
+    GAP 8 - JWT secrets separes :crit3, 2026-08-12, 3d
+    section Vague 2 (Haute)
+    GAP 2 - IP Allowlist closed :high1, after crit3, 2d
+    GAP 4 - Identite unifiee    :high2, after crit3, 5d
+    GAP 5 - WebAuthn MFA flow   :high3, after high1, 3d
+    GAP 10 - String cast        :high4, after crit3, 1d
+    section Vague 3 (Moyenne)
+    GAP 6 - Platform middleware  :med1, after high2, 2d
+    GAP 7 - CASL ordering       :med2, after high2, 2d
+    GAP 9 - RLS guard           :med3, after high2, 1d
+      </div>
+    </div>
+
+    <h3 style="margin: 32px 0 16px; font-size: 1.125rem;">Vague 1 — Corrections critiques (48h)</h3>
+    <div class="card-grid">
+      <div class="card" style="border-left: 3px solid var(--danger);">
+        <h3>GAP 1 — MFA Platform</h3>
+        <p>Ajouter verification <code>mfaActive</code> dans <code>platform-auth.service.ts</code>. Flow MFA identique au tenant (TOTP + backup codes).</p>
+      </div>
+      <div class="card" style="border-left: 3px solid var(--danger);">
+        <h3>GAP 3 — Double next()</h3>
+        <p>Restructurer <code>tenant.middleware.ts</code> avec un seul point de sortie. Ajouter <code>return</code> apres chaque <code>next()</code>.</p>
+      </div>
+      <div class="card" style="border-left: 3px solid var(--danger);">
+        <h3>GAP 8 — JWT secrets</h3>
+        <p>Separer en <code>JWT_SECRET_PLATFORM</code> + <code>JWT_SECRET_TENANT</code>. Migration des tokens existants necessaire.</p>
+      </div>
+    </div>
+
+    <h3 style="margin: 32px 0 16px; font-size: 1.125rem;">Vague 2 — Corrections hautes (1 semaine)</h3>
+    <div class="card-grid">
+      <div class="card" style="border-left: 3px solid var(--warning);">
+        <h3>GAP 2 — IP Allowlist</h3>
+        <p>Fail-closed en production. Cache local en fallback si Redis indisponible.</p>
+      </div>
+      <div class="card" style="border-left: 3px solid var(--warning);">
+        <h3>GAP 4 — Identite unifiee</h3>
+        <p>Trigger de synchronisation ou migration progressive vers <code>identites</code> comme source unique.</p>
+      </div>
+      <div class="card" style="border-left: 3px solid var(--warning);">
+        <h3>GAP 5 — WebAuthn MFA</h3>
+        <p>Integrer WebAuthn dans le flow MFA existant, pas comme bypass.</p>
+      </div>
+      <div class="card" style="border-left: 3px solid var(--warning);">
+        <h3>GAP 10 — String cast</h3>
+        <p>Remplacer les string casts par les enums <code>Role.SUPER_ADMIN</code>.</p>
+      </div>
+    </div>
+
+    <h3 style="margin: 32px 0 16px; font-size: 1.125rem;">Vague 3 — Corrections moyennes (2 semaines)</h3>
+    <div class="card-grid">
+      <div class="card" style="border-left: 3px solid var(--info);">
+        <h3>GAP 6 — Platform middleware</h3>
+        <p>Creer <code>platformAuthMiddleware</code> dedie pour les routes plateforme.</p>
+      </div>
+      <div class="card" style="border-left: 3px solid var(--info);">
+        <h3>GAP 7 — CASL ordering</h3>
+        <p>Monter <code>platformCaslMiddleware</code> dans platform.routes.ts avant les routes.</p>
+      </div>
+      <div class="card" style="border-left: 3px solid var(--info);">
+        <h3>GAP 9 — RLS guard</h3>
+        <p>Guard defensif : routes non-whitelistee sans utilisateur → 401.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONCLUSION -->
+<section id="conclusion">
+  <div class="container">
+    <h2 class="section-title">10. Conclusion</h2>
+    <p class="section-subtitle">La securite d'eLISAschool est-elle assuree ?</p>
+
+    <div class="card" style="border: 2px solid var(--warning); margin-bottom: 32px;">
+      <h3 style="color: var(--warning); margin-bottom: 12px;">Verdict : Partiellement</h3>
+      <p style="color: var(--text-muted);">
+        L'architecture dual-plane est <strong style="color: var(--text);">bien concue sur le papier</strong> avec une separation claire
+        Control Plane / Data Plane, 3 couches d'isolation tenant, CASL.js dual, et des mecanismes avances
+        (MFA, WebAuthn, RLS, audit HMAC, KeyManager). Cependant, <strong style="color: var(--danger);">3 failles critiques</strong>
+        compromettent la securite reelle :
+      </p>
+      <ul style="margin-top: 12px; padding-left: 20px; color: var(--text-muted);">
+        <li>Le login plateforme ne force pas MFA (GAP 1) — un super-admin peut etre compromis sans second facteur</li>
+        <li>Le double <code>next()</code> dans le middleware tenant (GAP 3) peut causer des requetes dupliquees</li>
+        <li>Le secret JWT partage entre planes (GAP 8) permet une escalade de privileges theorique</li>
+      </ul>
+      <p style="margin-top: 12px; color: var(--text-muted);">
+        <strong style="color: var(--success);">Apres correction des 3 failles critiques</strong>, le score passera de 7.2 a ~8.5/10.
+        Les 7 failles restantes (hautes + moyennes) sont des ameliorations de robustesse, pas des bloquants.
+      </p>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-item">
+        <div class="stat-value" style="color: var(--warning);">7.2</div>
+        <div class="stat-label">Score actuel</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" style="color: var(--success);">8.5</div>
+        <div class="stat-label">Score apres Vague 1</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" style="color: var(--accent);">9.2</div>
+        <div class="stat-label">Score apres Vagues 1+2+3</div>
+      </div>
+    </div>
+
+    <div class="card" style="background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(6,182,212,0.1)); border-color: var(--success);">
+      <h3 style="color: var(--success); margin-bottom: 12px;">Points forts a conserver</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 12px;">
+        <div>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">
+            <strong style="color: var(--text);">Defense in depth</strong> — 3 couches d'isolation tenant + RLS PostgreSQL sur ~40 tables
+          </p>
+        </div>
+        <div>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">
+            <strong style="color: var(--text);">CASL.js dual</strong> — Autorisation fine par role avec ABAC (conditions contextuelles)
+          </p>
+        </div>
+        <div>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">
+            <strong style="color: var(--text);">Audit trail</strong> — HMAC-SHA256 chain, metadata JSONB, navigation permission-gated
+          </p>
+        </div>
+        <div>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">
+            <strong style="color: var(--text);">Refresh Token Rotation</strong> — Detection de compromission avec famille de tokens
+          </p>
+        </div>
+        <div>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">
+            <strong style="color: var(--text);">KeyManager</strong> — Chiffrement AES-256-GCM avec rotation automatique 90 jours
+          </p>
+        </div>
+        <div>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">
+            <strong style="color: var(--text);">Rate limiting 3 niveaux</strong> — Global IP, auth-specific, tenant plan-proportional
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <p>Audit Securite eLISAschool v9.0 — Genere le 10 aout 2026</p>
+    <p style="margin-top: 8px;">Architecture : Modele C (Auth0 Internalise Dual-Plane) | Stack : Express + TypeORM + PostgreSQL + CASL.js</p>
+  </div>
+</footer>
+
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#1e40af',
+    primaryTextColor: '#f1f5f9',
+    primaryBorderColor: '#3b82f6',
+    lineColor: '#475569',
+    secondaryColor: '#065f46',
+    tertiaryColor: '#334155',
+    fontFamily: 'Inter, sans-serif',
+    fontSize: '13px'
+  },
+  flowchart: { curve: 'basis', padding: 16 },
+  sequence: { mirrorActors: false, messageMargin: 40 }
+});
+</script>
+</body>
+</html>

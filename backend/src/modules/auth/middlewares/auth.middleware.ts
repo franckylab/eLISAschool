@@ -24,6 +24,8 @@ export interface UtilisateurAuth {
     role: string; // Rôle principal (backward compat)
     roles?: string[]; // NOUVEAU : tous les rôles
     permissions?: string[]; // NOUVEAU : permissions résolues
+    /** Audit sécurité v10 — GAP 8 : plan de gestion ('platform' | 'tenant') */
+    plane?: 'platform' | 'tenant';
     etablissementId?: string;
     etablissements?: Array<{
         etablissementId: string;
@@ -41,6 +43,14 @@ const tokenService = new TokenService();
  */
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
     (async () => {
+        // [ADR-005] Skip si déjà authentifié par platformAuthMiddleware
+        // Évite la re-résolution de permissions qui bloque sur les tables RLS
+        // sans contexte tenant (les routes plateforme n'ont pas le middleware RLS).
+        if (req.contexteType === 'PLATEFORME' && req.utilisateur?.id) {
+            next();
+            return;
+        }
+
         // Récupération du token depuis le header Authorization
         const authHeader = req.headers.authorization;
 
@@ -55,7 +65,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
 
         if (!payload) {
             // Log de débogage pour identifier pourquoi le token est rejeté
-            console.error('[Auth Middleware] Token invalide ou expiré:', {
+            logger.error('[Auth Middleware] Token invalide ou expiré', {
                 tokenPrefix: token.substring(0, 20) + '...',
                 tokenLength: token.length,
                 hasThreeParts: token.split('.').length === 3,
@@ -76,6 +86,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
             role: payload.role,
             roles: payload.roles || [payload.role], // NOUVEAU : tous les rôles
             permissions: Array.from(resolvedPermissions), // Résolues côté serveur (cache)
+            plane: payload.plane || 'tenant', // Audit sécurité v10 — GAP 8 : plan du token
             etablissementId: payload.etablissementId,
             etablissements: payload.etablissements, // NOUVEAU : multi-établissements
         };
@@ -83,7 +94,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
         // DEBUG: Logger les rôles pour diagnostiquer les problèmes 403
         if (process.env.NODE_ENV === 'development') {
             const { role, roles, email } = req.utilisateur;
-            console.log(`[Auth Middleware] Utilisateur: ${email}, Role: ${role}, Roles: ${JSON.stringify(roles)}`);
+            logger.debug(`[Auth Middleware] Utilisateur: ${email}, Role: ${role}, Roles: ${JSON.stringify(roles)}`);
         }
 
         next();
@@ -114,6 +125,7 @@ export function optionalAuthMiddleware(req: Request, res: Response, next: NextFu
                     role: payload.role,
                     roles: payload.roles || [payload.role], // NOUVEAU : tous les rôles
                     permissions: Array.from(resolvedPermissions), // Résolues côté serveur (cache)
+                    plane: payload.plane || 'tenant', // Audit sécurité v10 — GAP 8
                     etablissementId: payload.etablissementId,
                     etablissements: payload.etablissements, // NOUVEAU : multi-établissements
                 };

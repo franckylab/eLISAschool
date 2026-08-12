@@ -28,6 +28,7 @@ import {
     deleguerSchema,
 } from '../dto/platform-users.dto';
 import { platformUsersService } from '../services/platform-users.service';
+import { StatutUtilisateur } from '@modules/auth/entities/utilisateur.entity';
 
 const router = Router();
 
@@ -39,6 +40,27 @@ router.get('/kpis', async (_req: Request, res: Response, next: NextFunction) => 
     try {
         const data = await platformUsersService.getKpis();
         res.json({ success: true, data, timestamp: new Date().toISOString() });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * GET /api/platform/utilisateurs/export/csv
+ * Export CSV des utilisateurs (avec filtres).
+ */
+router.get('/export/csv', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const filters = {
+            search: req.query.search as string | undefined,
+            role: req.query.role as string | undefined,
+            statut: req.query.statut as string | undefined,
+            scope: (req.query.scope as string) || 'tous',
+        };
+        const csv = await platformUsersService.exporterCsv(filters);
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename="utilisateurs-export.csv"');
+        res.send(csv);
     } catch (error) {
         next(error);
     }
@@ -125,6 +147,23 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
 });
 
 /**
+ * POST /api/platform/utilisateurs/:id/suspendre
+ * Suspendre un utilisateur plateforme (alias POST pour DELETE).
+ */
+router.post('/:id/suspendre', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const operateurId = req.utilisateur?.id;
+        if (!operateurId) {
+            return res.status(401).json({ success: false, error: { message: 'Non authentifié', code: 'UNAUTHORIZED' } });
+        }
+        const data = await platformUsersService.desactiverUtilisateur(req.params.id, operateurId);
+        res.json({ success: true, data, timestamp: new Date().toISOString() });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
  * POST /api/platform/utilisateurs/:id/reactiver
  * Réactiver un utilisateur plateforme désactivé.
  */
@@ -159,12 +198,49 @@ router.post('/:id/revoquer-sessions', async (req: Request, res: Response, next: 
 });
 
 /**
+ * POST /api/platform/utilisateurs/:id/reset-mfa
+ * Réinitialiser le MFA d'un utilisateur plateforme.
+ */
+router.post('/:id/reset-mfa', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const operateurId = req.utilisateur?.id;
+        if (!operateurId) {
+            return res.status(401).json({ success: false, error: { message: 'Non authentifié', code: 'UNAUTHORIZED' } });
+        }
+        const data = await platformUsersService.resetMfa(req.params.id, operateurId);
+        res.json({ success: true, data, timestamp: new Date().toISOString() });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/platform/utilisateurs/:id/force-reset-password
+ * Forcer la réinitialisation du mot de passe d'un utilisateur.
+ */
+router.post('/:id/force-reset-password', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const operateurId = req.utilisateur?.id;
+        if (!operateurId) {
+            return res.status(401).json({ success: false, error: { message: 'Non authentifié', code: 'UNAUTHORIZED' } });
+        }
+        const data = await platformUsersService.forceResetPassword(req.params.id, operateurId);
+        res.json({ success: true, data, timestamp: new Date().toISOString() });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
  * GET /api/platform/utilisateurs/:id/audit
- * Audit trail d'un utilisateur plateforme.
+ * Audit trail d'un utilisateur plateforme (paginé).
  */
 router.get('/:id/audit', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const data = await platformUsersService.getAuditUtilisateur(req.params.id);
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+        const module = req.query.module as string | undefined;
+        const data = await platformUsersService.getAuditUtilisateur(req.params.id, page, limit, module);
         res.json({ success: true, data, timestamp: new Date().toISOString() });
     } catch (error) {
         next(error);
@@ -183,6 +259,41 @@ router.post('/:id/deleguer', async (req: Request, res: Response, next: NextFunct
             return res.status(401).json({ success: false, error: { message: 'Non authentifié', code: 'UNAUTHORIZED' } });
         }
         const data = await platformUsersService.deleguer(req.params.id, dto, operateurId);
+        res.json({ success: true, data, timestamp: new Date().toISOString() });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/platform/utilisateurs/:id/archiver
+ * Archiver un utilisateur (statut ARCHIVE — non destructif).
+ */
+router.post('/:id/archiver', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const operateurId = req.utilisateur?.id;
+        if (!operateurId) {
+            return res.status(401).json({ success: false, error: { message: 'Non authentifié', code: 'UNAUTHORIZED' } });
+        }
+        const data = await platformUsersService.archiverUtilisateur(req.params.id, operateurId);
+        res.json({ success: true, data, timestamp: new Date().toISOString() });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/platform/utilisateurs/:id/desarchiver
+ * Désarchiver un utilisateur (restore depuis ARCHIVE vers ACTIF/INACTIF).
+ */
+router.post('/:id/desarchiver', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const operateurId = req.utilisateur?.id;
+        if (!operateurId) {
+            return res.status(401).json({ success: false, error: { message: 'Non authentifié', code: 'UNAUTHORIZED' } });
+        }
+        const nouveauStatut = req.body.statut as StatutUtilisateur | undefined;
+        const data = await platformUsersService.desarchiverUtilisateur(req.params.id, operateurId, nouveauStatut);
         res.json({ success: true, data, timestamp: new Date().toISOString() });
     } catch (error) {
         next(error);

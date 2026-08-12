@@ -91,7 +91,17 @@ function useSplashScreen() {
 
         // Timer minimum 5s pour le branding
         const timer = setTimeout(() => setMinTimeElapsed(true), SPLASH_MIN_DURATION);
-        return () => clearTimeout(timer);
+
+        // Timeout de sécurité : forcer la disparition après 10s quoi qu'il arrive
+        const safetyTimeout = setTimeout(() => {
+            console.warn('[SplashScreen] Timeout de sécurité 10s — disparition forcée');
+            setSplashVisible(false);
+        }, 10000);
+
+        return () => {
+            clearTimeout(timer);
+            clearTimeout(safetyTimeout);
+        };
     }, [initialize]);
 
     useEffect(() => {

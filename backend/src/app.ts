@@ -89,10 +89,14 @@ import { recrutementController } from '@modules/recrutement';
 import { parkingController } from '@modules/parking';
 import { networkController } from '@modules/network';
 import { platformRouter } from '@routes/platform.routes';
+import { ipAllowlistMiddleware } from '@common/middlewares/ip-allowlist.middleware';
 import { caslMiddleware } from '@casl/casl.middleware';
+import { dualCaslMiddleware } from '@common/middlewares/dual-casl.middleware';
 import { rlsMiddleware, rlsTransactionEnd } from '@common/middlewares/rls.middleware';
 import { clientBillingRouter } from '@modules/billing';
 import { paiementController } from '@modules/paiement';
+import { publicEtablissementController } from '@modules/cms/controllers/public-etablissement.controller';
+import { cmsController } from '@modules/cms/controllers/cms.controller';
 
 /**
  * Crée et configure l'application Express
@@ -115,18 +119,31 @@ export function createApp(): Application {
     // ==================================
 
     // Protection des en-têtes HTTP (XSS, Clickjacking, etc.)
+    // Durcissement v9 — CSP améliorée + headers supplémentaires
     app.use(helmet({
         contentSecurityPolicy: {
             directives: {
                 defaultSrc: ["'self'"],
                 styleSrc: ["'self'", "'unsafe-inline'"],
-                scriptSrc: ["'self'"],
+                scriptSrc: ["'self'", "'strict-dynamic'"],
                 // Autoriser chargement des images SVG du catalogue (cross-origin backend)
                 imgSrc: ["'self'", "data:", "blob:", "http://localhost:*", "https://*"],
+                connectSrc: ["'self'", "http://localhost:*", "https://localhost:*"],
+                frameSrc: ["'none'"],
+                objectSrc: ["'none'"],
+                baseUri: ["'self'"],
+                formAction: ["'self'"],
             },
         },
         crossOriginEmbedderPolicy: false,
     }));
+
+    // Durcissement v9 — Headers supplémentaires
+    app.use((_req, res, next) => {
+        res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+        res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
+        next();
+    });
 
     // Configuration CORS
     const allowedOrigins = envConfig.app.allowedOrigins
@@ -300,6 +317,11 @@ export function createApp(): Application {
     app.use('/api/network', networkController);
 
     // ==================================
+    // Routes publiques CMS (pages établissement — SANS auth)
+    // ==================================
+    app.use('/api/public', publicEtablissementController);
+
+    // ==================================
     // Routes publiques de préinscription (AVANT tenantMiddleware)
     // ==================================
     const preinscriptionRouter = Router();
@@ -383,8 +405,8 @@ export function createApp(): Application {
     app.use('/api/', tenantRateLimitMiddleware);
 
     // [CASL] Middleware d'autorisation déclarative — injecte req.ability
-    // Phase 2 — Refonte SaaS. Disponible sur toutes les routes authentifiées.
-    app.use('/api/', caslMiddleware);
+    // Phase 2 — Refonte SaaS. dualCaslMiddleware gère les deux plans (platform + tenant).
+    app.use('/api/', dualCaslMiddleware);
 
     // [RLS] Middleware Row Level Security — définit le contexte tenant PostgreSQL
     // Phase 3 — Defense-in-depth. Filtrage automatique par etablissementId au niveau DB.
@@ -504,6 +526,9 @@ export function createApp(): Application {
     app.use('/api/eleves', authMiddleware, filterByEtablissement(), elevesController);
     app.use('/api/responsables-eleves', authMiddleware, filterByEtablissement(), responsablesElevesController);
 
+    // Module CMS (pages publiques white-label) — authentifié + module actif + multi-tenant
+    app.use('/api/cms', authMiddleware, requireModuleActive('cms'), filterByEtablissement(), cmsController);
+
     // Module audit (doit être après tenantMiddleware)
     app.use('/api/audit', auditController);
 
@@ -516,7 +541,9 @@ export function createApp(): Application {
     // ==================================
     // Routes PLATEFORME (Control Plane) — SUPER_ADMIN uniquement
     // [RBAC-2] Séparation plateforme/établissement v5.1
+    // Durcissement v9 : IP Allowlist middleware avant les routes plateforme
     // ==================================
+    app.use('/api/platform', ipAllowlistMiddleware);
     app.use('/api/platform', platformRouter);
 
     // ==================================

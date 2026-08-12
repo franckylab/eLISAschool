@@ -22,6 +22,7 @@ import { authMiddleware } from '@modules/auth/middlewares/auth.middleware';
 import { checkPermission } from '@modules/auth/guards/check-permission.middleware';
 import { AppError } from '@common/filters/error.filter';
 import { validateDto } from '@common/utils';
+import { logger } from '@common/utils/logger.util';
 import { affecterEtablissementSchema, updateRoleEtablissementSchema } from '../dto/utilisateur-etablissement.dto';
 
 const router = Router();
@@ -117,7 +118,7 @@ router.delete(
             const motif = req.query.motif as string | undefined;
             const nouveauPrincipalId = req.query.nouveauPrincipalId as string | undefined;
             
-            console.log('[RETRAIT][CONTROLLER] Requête DELETE reçue:', {
+            logger.info('[RETRAIT][CONTROLLER] Requête DELETE reçue', {
                 utilisateurId: req.params.id,
                 etablissementId: req.params.etablissementId,
                 motif,
@@ -132,14 +133,14 @@ router.delete(
                 nouveauPrincipalId
             );
             
-            console.log('[RETRAIT][CONTROLLER] Service retiré exécuté avec succès, envoi de la réponse');
+            logger.info('[RETRAIT][CONTROLLER] Service retiré exécuté avec succès');
 
             res.status(200).json({
                 success: true,
                 message: 'Établissement retiré avec succès',
             });
         } catch (error) {
-            console.error('[RETRAIT][CONTROLLER] ERREUR:', error instanceof Error ? error.message : String(error));
+            logger.error('[RETRAIT][CONTROLLER] ERREUR:', error instanceof Error ? error.message : String(error));
             next(error);
         }
     }

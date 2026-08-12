@@ -21,6 +21,7 @@ import { RoleEntity as Role } from '@modules/auth/entities';
 import { Permission } from '@modules/auth/entities';
 import { UtilisateurPermission, TypePermission } from '@modules/auth/entities';
 import { UtilisateurEtablissement } from '@modules/auth/entities';
+import { Utilisateur } from '@modules/auth/entities';
 import { logger } from '@common/utils/logger.util';
 import { redisService } from '@common/services/redis.service';
 
@@ -292,8 +293,12 @@ export class PermissionResolverService {
     }
 
     /**
-     * Récupère les rôles d'un utilisateur avec leurs codes
-     * MULTI-TENANT STRICT : Rôles uniquement via utilisateur_etablissements
+     * Récupère les rôles d'un utilisateur avec leurs codes.
+     * 
+     * Stratégie de résolution (ADR-005) :
+     * 1. Si etablissementId fourni → cherche via utilisateur_etablissements (multi-tenant)
+     * 2. Fallback → rôle global de l'utilisateur (champ `role` sur utilisateurs)
+     *    Cas : SUPER_ADMIN, utilisateurs plateforme sans établissement
      */
     async getUserRoles(utilisateurId: string, etablissementId?: string): Promise<Array<{ code: string; libelle: string; estPrincipal: boolean }>> {
         if (etablissementId) {
@@ -312,7 +317,21 @@ export class PermissionResolverService {
             }
         }
 
-        // MULTI-TENANT STRICT : Pas de fallback sur rôles globaux
+        // Fallback : rôle global de l'utilisateur (ADR-005 — source unique de vérité)
+        // Cas : SUPER_ADMIN, utilisateurs plateforme sans établissement, ou appel sans etablissementId
+        const utilisateur = await AppDataSource.getRepository(Utilisateur).findOne({
+            where: { id: utilisateurId },
+            select: ['id', 'role'],
+        });
+
+        if (utilisateur?.role) {
+            return [{
+                code: utilisateur.role,
+                libelle: utilisateur.role,
+                estPrincipal: true,
+            }];
+        }
+
         logger.warn(`🔐 Aucun rôle trouvé pour l'utilisateur ${utilisateurId}${etablissementId ? ` dans l'établissement ${etablissementId}` : ''}`);
         return [];
     }

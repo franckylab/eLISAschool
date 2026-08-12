@@ -1,0 +1,225 @@
+{
+  "titre": "Platform Configuration",
+  "sousTitre": "Global system settings for eLISAschool",
+  "actualiser": "Refresh",
+  "rechercher": "Search a parameter...",
+  "chargement": "Loading parameters...",
+  "aucunParametre": "No parameters found",
+  "aucunResultat": "No results for this search",
+  "sauvegardeSucces": "Settings saved successfully",
+  "sauvegardeErreur": "Error while saving settings",
+  "resetConfirm": "Reset this category?",
+  "resetMessage": "All parameters in this category will be restored to their default values.",
+  "resetSucces": "Category reset",
+      "resetCategorie": "Reset",
+  "modifications": "unsaved change(s)",
+  "annuler": "Cancel",
+  "enregistrer": "Save",
+  "oui": "Yes",
+  "non": "No",
+  "active": "Active",
+  "inactive": "Inactive",
+  "featureFlags": "Feature Flags",
+  "exporter": "Export",
+  "importer": "Import",
+  "reduire": "Collapse",
+  "developper": "Expand",
+  "sectionReduite": "Section collapsed — click to show content",
+  "categories": {
+    "systeme": "System & Application",
+    "securite": "Security & Authentication",
+    "modules": "Modules & Features",
+    "notifications": "Notifications",
+    "regional": "Regional & Language",
+    "sauvegarde": "Backup & Restore",
+    "historique": "History & Audit",
+    "personnalise": "Custom"
+  },
+  "sections": {
+    "systeme": {
+      "titre": "System & Application",
+      "description": "Core system parameters",
+      "maintenance": {
+        "titre": "Maintenance Mode",
+        "description": "Controls application access during maintenance"
+      },
+      "logs": {
+        "titre": "Logging",
+        "description": "System log verbosity level"
+      },
+      "backup": {
+        "titre": "Automatic Backup",
+        "description": "Automatic backup configuration"
+      }
+    },
+    "securite": {
+      "titre": "Security & Authentication",
+      "description": "Security policies, sessions and authentication",
+      "session": {
+        "titre": "Session Management",
+        "description": "User session duration and behavior"
+      },
+      "password": {
+        "titre": "Password Policy",
+        "description": "Password complexity, length and expiration"
+      },
+      "mfa": {
+        "titre": "Multi-Factor Authentication",
+        "description": "MFA/TOTP configuration"
+      },
+      "protection": {
+        "titre": "Protections",
+        "description": "Brute-force protection and rate limiting"
+      },
+      "tokens": {
+        "titre": "Tokens & JWT",
+        "description": "Access and refresh token lifetimes"
+      }
+    },
+    "modules": {
+      "titre": "Modules & Features",
+      "description": "Activate and configure business modules",
+      "activer": "Enable",
+      "desactiver": "Disable",
+      "impact": "Change impact",
+      "dependances": "Dependencies",
+      "confirmChange": "Confirm status change",
+      "confirmMessage": "This will {{action}} the {{module}} module."
+    },
+    "notifications": {
+      "titre": "Notifications",
+      "description": "Notification channels and preferences",
+      "canaux": {
+        "titre": "Distribution Channels",
+        "description": "Enable or disable notification channels"
+      },
+      "preferences": {
+        "titre": "Event Preferences",
+        "description": "Choose which events trigger notifications"
+      },
+      "email": "Email",
+      "sms": "SMS",
+      "push": "Web Push",
+      "websocket": "Real-time",
+      "emailDesc": "Email notifications",
+      "smsDesc": "Text message notifications",
+      "pushDesc": "Browser notifications",
+      "websocketDesc": "Instant notifications via WebSocket",
+      "nouvellesInscriptions": "New enrollments",
+      "notesAjoutees": "Grades added",
+      "bulletinsDisponibles": "Report cards available",
+      "paiementsRecus": "Payments received",
+      "absencesSignalees": "Absences reported",
+      "retardTransport": "Transport delays",
+      "rappelsEcheances": "Deadline reminders"
+    },
+    "regional": {
+      "titre": "Regional & Language",
+      "description": "Currency, date format, language and timezone",
+      "general": {
+        "titre": "Regional Settings",
+        "description": "Currency, dates and default language"
+      }
+    },
+    "sauvegarde": {
+      "titre": "Backup & Restore",
+      "description": "Manage configuration and database backups",
+      "vueEnsemble": "Overview",
+      "planification": "Scheduling",
+      "historiqueTab": "History",
+      "backupComplet": "Full Backup",
+      "backupDifferentiel": "Differential Backup",
+      "restaurer": "Restore",
+      "supprimer": "Delete",
+      "telecharger": "Download",
+      "aucunBackup": "No backups recorded",
+      "frequence": "Frequency",
+      "heure": "Execution time",
+      "type": "Type",
+      "retention": "Retention",
+      "statut": "Status",
+      "dernierSucces": "Last success",
+      "taille": "Size",
+      "date": "Date",
+      "actions": "Actions",
+      "confirmRestaurer": "Confirm restoration",
+      "confirmRestaurerMessage": "This will restore configuration to the backup state. Continue?",
+      "succes": "Success",
+      "echec": "Failure"
+    },
+    "historique": {
+      "titre": "History & Audit",
+      "description": "Configuration change log",
+      "toutesActions": "All actions",
+      "creation": "Creation",
+      "modification": "Modification",
+      "suppression": "Deletion",
+      "restauration": "Restoration",
+      "chargement": "Loading history...",
+      "aucuneModification": "No modifications recorded",
+      "restaurer": "Restore",
+      "precedent": "Previous",
+      "suivant": "Next",
+      "pageSur": "Page {{page}} of {{total}} — {{count}} entries",
+      "confirmerRestauration": "Confirm restoration",
+      "confirmerMessage": "Restore {{action}} for {{cible}}?"
+    }
+  },
+  "diff": {
+    "titre": "Changes preview",
+    "aucuneModification": "No pending changes",
+    "modification": "change",
+    "modifications": "changes",
+    "avantEnregistrement": "before saving",
+    "critique": "Critical",
+    "ancienneValeur": "Old",
+    "nouvelleValeur": "New"
+  },
+  "search": {
+    "placeholder": "Search a parameter...",
+    "resultats": "{{count}} parameter(s) shown",
+    "total": "of {{total}}",
+    "tousModules": "All modules",
+    "compteur": "{{affiche}} / {{total}} parameter{{totalPluriel}}",
+    "filtre": " (filtered)"
+  },
+  "bulk": {
+    "paramsDansSection": "parameter(s) in this section",
+    "resetConfirmMessage": "All parameters in category {{categorie}} will be restored to default values.",
+    "resetIrreversible": "This action is irreversible. Custom values will be lost."
+  },
+  "diffView": {
+    "modificationsAvant": "change(s) before saving",
+    "critique": "Critical",
+    "active": "Enabled",
+    "desactive": "Disabled",
+    "vide": "(empty)"
+  },
+  "saveBar": {
+    "annuler": "Cancel",
+    "enregistrer": "Save"
+  },
+  "mfa": {
+    "titre": "MFA Verification Required",
+    "description": "This change affects critical security parameters",
+    "alerteTitre": "Critical parameters",
+    "alerteMessage": "Current changes affect sensitive security parameters. MFA verification is required to continue.",
+    "instruction": "Enter the code from your authentication app",
+    "verification": "Verifying...",
+    "codeInvalide": "Invalid MFA code. Please try again.",
+    "codeIncomplet": "Please enter all 6 digits",
+    "verifier": "Verify",
+    "annuler": "Cancel",
+    "succes": "MFA verification successful"
+  },
+  "multiSelect": {
+    "placeholder": "Select...",
+    "rechercher": "Search...",
+    "toutSelectionner": "Select all",
+    "toutDeselectionner": "Deselect all",
+    "toutEffacer": "Clear all",
+    "aucunResultat": "No results",
+    "elementSelectionne": "{{count}} item(s) selected",
+    "selectionne": "selected"
+  }
+}

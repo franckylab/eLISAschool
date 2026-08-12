@@ -1049,18 +1049,33 @@ getParametre(cle, etablissementId?)
 ### Architecture du système de configuration
 
 ```
-ConfigurationService (603 lignes — le plus gros service)
-├── Cache mémoire TTL 5 min (3 niveaux : app, modules, paramètres)
+EntitlementService (source unique de vérité — migration 200)
+├── Cascade : CRITIQUE bypass → abonnement ACTIF → plan modulesInclus → groupe → supplément → catalogue défaut
+├── Cache Redis TTL 60s + in-memory fallback + Pub/Sub cross-instance
+├── check(etablissementId, moduleCode) → EntitlementResult
+├── checkAll(etablissementId) → EntitlementBatchResult[]
+└── isAccessible(etablissementId, moduleCode) → boolean
+
+ConfigurationService (cascade unifiée avec delegation)
+├── Cache mémoire TTL 60s (3 niveaux : app, modules, paramètres)
 ├── Invalidation sélective à chaque modification
+├── isModuleActive() : ParametreSysteme (override) → moduleResolutionService (DB) → catalogue défaut
 ├── HistoriqueConfiguration (audit trail complet)
 └── ConfigurationListener (EventEmitter — événements : CHANGE, APP_CHANGE, MODULE_CHANGE, etc.)
+
+ModuleResolutionService (résolution DB depuis modules_catalogue)
+├── getResolvedModules(etablissementId) → cascade catalogue + plan + groupe + supplément
+├── getCatalogue() → tous les modules actifs du catalogue
+└── isModuleActive(etablissementId, code) → boolean
 
 ConfigHelper (API publique utilisée par 12+ modules)
 ├── getParam<T>(clé, défaut) — avec cache rapide TTL 1 min
 ├── getParamNumber(), getParamBoolean(), getParamJson(), getParamArray()
-├── isModuleActive(moduleName)
+├── isModuleActive(moduleName) → délègue à configurationService
 └── getAppConfig(), getModuleParams()
 ```
+
+**⚠️ ModuleRegistryService SUPPRIMÉ** (migration 200) — Remplacé par EntitlementService + ModuleResolutionService.
 
 ### Paramètres influençant le comportement métier
 
@@ -1925,18 +1940,22 @@ Ce skill doit être **mis à jour** lorsque :
 
 ---
 
-## Rôles Plateforme et Scope (Panel Admin v7)
+## Rôles Plateforme et Scope (Panel Admin v8)
 
-### 6 rôles plateforme par défaut
+### 6 rôles plateforme unifiés (v8 — nettoyage legacy)
 
 | Rôle | Permissions | Scope |
 |------|-------------|-------|
-| `SUPER_ADMIN` | `platform:*:*` | Global (tous établissements) |
-| `ADMINISTRATION_PLATEFORME` | `platform:administration:*` | Par groupe |
-| `SECURITE_PLATEFORME` | `platform:securite:*` | Par groupe |
-| `SUPPORT_PLATEFORME` | `platform:support:*` | Par groupe |
-| `COMMERCIAL_PLATEFORME` | `platform:commercial:*` | Par groupe |
-| `MONITORING_PLATEFORME` | `platform:monitoring:*` (read-only sur reste) | Par groupe |
+| `SUPER_ADMIN` | `platform:*:*` (toutes) | Global (tous établissements) |
+| `PLATEFORME_ADMIN` | CRUD établissements, users, facturation, config | Plateforme |
+| `PLATEFORME_SUPPORT` | Lecture monitoring, audit, users (read-only) | Plateforme |
+| `PLATEFORME_BILLING` | Facturation, plans, abonnements, revenus | Plateforme |
+| `PLATEFORME_ANALYST` | Dashboard, stats, exports (read-only + export) | Plateforme |
+| `PLATEFORME_AUDITOR` | Audit, sécurité, lecture users/sessions | Plateforme |
+
+**Rôles supprimés (v8)** : `PLATEFORME_SUPER_ADMIN`, `ADMINISTRATION_PLATEFORME`, `SECURITE_PLATEFORME`, `SUPPORT_PLATEFORME`, `COMMERCIAL_PLATEFORME`, `MONITORING_PLATEFORME`
+**Migration** : `176-nettoyage-roles-superadmin.sql`
+**Super Admin unique** : `admin@elisaschool.cm` (rôle `SUPER_ADMIN`)
 
 ### Règles métier critiques
 
@@ -1946,53 +1965,48 @@ Ce skill doit être **mis à jour** lorsque :
 4. **Scope par groupe** — `groupeEtablissementIds` (uuid[]) sur table `utilisateurs`
 5. **Audit trail** — Toutes les actions sur les utilisateurs plateforme sont tracées
 
-### Role Builder (rôles personnalisés)
+### Rôles plateforme (ADR-005 — unifiés dans Role enum)
 
-- Entité `RolePlateforme` : `nom`, `description`, `estSysteme`, `permissions` (text[]), `scopeType` ('global' | 'groupe')
-- Rôles système (`estSysteme = true`) non supprimables
-- Permissions granulaires sélectionnables par module
+- Rôles plateforme intégrés dans l'enum `Role` unifié (67 rôles au total après nettoyage v8)
+- 6 rôles plateforme : `SUPER_ADMIN`, `PLATEFORME_ADMIN`, `PLATEFORME_SUPPORT`, `PLATEFORME_BILLING`, `PLATEFORME_ANALYST`, `PLATEFORME_AUDITOR`
+- Détection automatique : `isRolePlateforme(role)` depuis `shared/src/enums/roles.enum.ts`
+- Rôles système non supprimables
 
 ---
 
-## Identités & Memberships (Modèle C — Auth0 Internalisé)
+## Auth Unifiée ADR-005 (v11) — Source unique de vérité
 
-### Architecture Dual-Plane
+### Architecture (ADR-005)
 
-Le Modèle C reproduit les concepts Auth0 en interne (PostgreSQL + CASL) :
+Un seul flux d'authentification pour tous les utilisateurs. Table `utilisateurs` comme source unique :
 
 ```
-identites (source unique auth)
-├── email (unique), motDePasseHash (bcrypt), mfaActive, mfaSecret (chiffré AES-256-GCM)
-├── statut : ACTIF | SUSPENDU | DESACTIVE
-├── utilisateurs_plateforme (FK → identites, OneToOne)
-│   └── rolePlateforme : SUPER_ADMIN | ADMIN_PLATEFORME | SUPPORT | BILLING_MANAGER | ANALYST | AUDITOR
-├── memberships (pivot identité × contexte)
-│   ├── contexteType : PLATEFORME | ETABLISSEMENT
-│   ├── contexteId : uuid (etablissementId si ETABLISSEMENT, null si PLATEFORME)
-│   ├── role : RolePlateforme ou Role (selon contexte)
-│   └── permissionsCustom : jsonb (override RBAC)
-└── permissions_plateforme (registre ~40 permissions)
-    └── code unique (ex: platform:users:read), module, ordre
+utilisateurs                      — Source unique (email, password hash, MFA inline, estPlateforme)
+├── utilisateur_etablissements    — Pivot multi-tenant (contexteType: ETABLISSEMENT | PLATEFORME)
+├── permissions                   — Registre unifié (module: PLATEFORME pour les perms plateforme)
+└── refresh_tokens                — Sessions unifiées (plane: 'tenant' | 'platform')
 ```
 
-### 6 rôles plateforme (Modèle C)
+**Tables supprimées (ADR-005) :** `identites`, `utilisateurs_plateforme`, `memberships`, `permissions_plateforme`, `mfa_configs`, `sessions_plateforme`
 
-| Rôle | Permissions | Scope |
-|------|-------------|-------|
+### 6 rôles plateforme (ADR-005 — dans Role enum unifié, v8 nettoyé)
+
+| Rôle (Role enum) | Permissions | Scope |
+|------------------|-------------|-------|
 | `SUPER_ADMIN` | Toutes (~40) | Global |
-| `ADMIN_PLATEFORME` | CRUD établissements, users, facturation, config | Global |
-| `SUPPORT` | Lecture monitoring, audit, users (read-only) | Global |
-| `BILLING_MANAGER` | Facturation, plans, abonnements, revenus | Global |
-| `ANALYST` | Dashboard, stats, exports (read-only + export) | Global |
-| `AUDITOR` | Audit, sécurité, lecture users/sessions | Global |
+| `PLATEFORME_ADMIN` | CRUD établissements, users, facturation, config | Plateforme |
+| `PLATEFORME_SUPPORT` | Lecture monitoring, audit, users (read-only) | Plateforme |
+| `PLATEFORME_BILLING` | Facturation, plans, abonnements, revenus | Plateforme |
+| `PLATEFORME_ANALYST` | Dashboard, stats, exports (read-only + export) | Plateforme |
+| `PLATEFORME_AUDITOR` | Audit, sécurité, lecture users/sessions | Plateforme |
 
-### Règles métier identités
+### Règles métier auth unifiée
 
-1. **Identité unique par email** — Pas de doublons, migration depuis `utilisateurs`
-2. **Membership multiple** — Une identité peut avoir N memberships (PLATEFORME + ETABLISSEMENT)
-3. **Index unique composite** — `(identiteId, contexteType, contexteId)` sur memberships
-4. **Sessions LRU** — Limite 3 sessions par utilisateur plateforme (la plus ancienne supprimée)
-5. **JWT scopé** — Claims `platform` et `tenant` pour discrimination automatique par middleware
+1. **Source unique** — Table `utilisateurs` pour tous (tenant + plateforme)
+2. **1 bcrypt.compare** — Pas de fallback vers une autre table
+3. **MFA inline** — Colonnes `deuxFacteursActif`, `mfaSecret`, `mfaBackupCodes` directement dans `utilisateurs`
+4. **Pivot contexte** — `utilisateur_etablissements.contexteType` distingue ETABLISSEMENT / PLATEFORME
+5. **JWT claims** — `plane: 'platform'` ou `'tenant'` pour discrimination automatique
 
 ### Permissions plateforme par module
 

@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analyse — Pages Publiques Établissements | eLISAschool</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --dominant: #28a745;
+    --dominant-light: #e8f5e9;
+    --dominant-dark: #1b5e20;
+    --accent: #007bff;
+    --accent-light: #e3f2fd;
+    --danger: #dc3545;
+    --danger-light: #fce4ec;
+    --warning: #ff9800;
+    --warning-light: #fff3e0;
+    --success: #4caf50;
+    --surface: #ffffff;
+    --surface-alt: #f8f9fa;
+    --text: #1a1a2e;
+    --text-secondary: #555770;
+    --text-muted: #8e8ea0;
+    --border: #e2e8f0;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 24px rgba(0,0,0,0.1);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--surface-alt);
+    color: var(--text);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  /* Header */
+  .report-header {
+    background: linear-gradient(135deg, var(--dominant-dark) 0%, var(--dominant) 50%, #20c997 100%);
+    color: white;
+    padding: 64px 0 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .report-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .report-header::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .report-header .container { position: relative; z-index: 1; }
+  .report-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 20px;
+    letter-spacing: 0.5px;
+  }
+  .report-header h1 {
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 800;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+  }
+  .report-header .subtitle {
+    font-size: clamp(0.95rem, 2vw, 1.15rem);
+    opacity: 0.9;
+    max-width: 640px;
+    line-height: 1.6;
+  }
+  .header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 28px;
+    font-size: 13px;
+    opacity: 0.85;
+  }
+  .header-meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* Navigation TOC */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin: -32px auto 40px;
+    position: relative;
+    z-index: 2;
+    box-shadow: var(--shadow-lg);
+  }
+  .toc h2 {
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+  }
+  .toc a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+  .toc a:hover { background: var(--dominant-light); color: var(--dominant-dark); }
+  .toc a .num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: var(--surface-alt);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .toc a:hover .num { background: var(--dominant); color: white; }
+
+  /* Sections */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 36px 40px;
+    margin-bottom: 28px;
+    box-shadow: var(--shadow);
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--surface-alt);
+  }
+  .section-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--dominant);
+    color: white;
+    font-weight: 800;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .section h2 {
+    font-size: clamp(1.15rem, 2.5vw, 1.4rem);
+    font-weight: 700;
+    color: var(--text);
+  }
+  .section h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 24px 0 12px;
+  }
+  .section h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 18px 0 8px;
+  }
+  .section p { margin-bottom: 14px; color: var(--text-secondary); font-size: 0.95rem; }
+  .section ul, .section ol { margin: 0 0 16px 20px; color: var(--text-secondary); font-size: 0.95rem; }
+  .section li { margin-bottom: 6px; }
+
+  /* Callouts */
+  .callout {
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 18px 0;
+    font-size: 0.9rem;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .callout-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+  .callout-info { background: var(--accent-light); border-left: 4px solid var(--accent); }
+  .callout-success { background: var(--dominant-light); border-left: 4px solid var(--success); }
+  .callout-warning { background: var(--warning-light); border-left: 4px solid var(--warning); }
+  .callout-danger { background: var(--danger-light); border-left: 4px solid var(--danger); }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.88rem;
+  }
+  th {
+    background: var(--surface-alt);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text);
+    border-bottom: 2px solid var(--border);
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+  tr:hover td { background: var(--surface-alt); }
+
+  /* Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-green { background: var(--dominant-light); color: var(--dominant-dark); }
+  .badge-blue { background: var(--accent-light); color: #1565c0; }
+  .badge-red { background: var(--danger-light); color: #c62828; }
+  .badge-orange { background: var(--warning-light); color: #e65100; }
+  .badge-gray { background: #f1f5f9; color: #475569; }
+
+  /* Mermaid */
+  .mermaid-wrapper {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 20px 0;
+    overflow-x: auto;
+  }
+  .mermaid { display: flex; justify-content: center; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .diagram-caption {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 10px;
+    font-style: italic;
+  }
+
+  /* Metric cards */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .metric-card {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+  }
+  .metric-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--dominant);
+    line-height: 1;
+  }
+  .metric-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Approach cards */
+  .approach-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+  }
+  .approach-card {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  .approach-card:hover { border-color: var(--dominant); box-shadow: var(--shadow); }
+  .approach-card.recommended { border-color: var(--dominant); }
+  .approach-card.recommended::before {
+    content: 'RECOMMANDÉ';
+    position: absolute;
+    top: -10px;
+    right: 16px;
+    background: var(--dominant);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+  }
+  .approach-card h4 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .approach-card .url-example {
+    background: #1a1a2e;
+    color: #a5f3fc;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.82rem;
+    margin: 10px 0;
+    overflow-x: auto;
+  }
+  .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .pros h5 { color: var(--success); font-size: 0.82rem; margin-bottom: 6px; }
+  .cons h5 { color: var(--danger); font-size: 0.82rem; margin-bottom: 6px; }
+  .pros li, .cons li { font-size: 0.82rem; margin-bottom: 3px; }
+
+  /* Score gauge */
+  .score-section { display: flex; flex-wrap: wrap; gap: 24px; margin: 20px 0; }
+  .score-card {
+    flex: 1;
+    min-width: 200px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+  }
+  .score-ring {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 10px;
+    position: relative;
+  }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring .value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.3rem;
+    font-weight: 800;
+  }
+  .score-label { font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; }
+
+  /* Timeline */
+  .timeline { margin: 20px 0; position: relative; padding-left: 32px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-item { position: relative; margin-bottom: 24px; }
+  .timeline-dot {
+    position: absolute;
+    left: -26px;
+    top: 4px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--dominant);
+    border: 3px solid var(--dominant-light);
+  }
+  .timeline-item h4 { margin: 0 0 4px; font-size: 0.95rem; }
+  .timeline-item p { margin: 0; font-size: 0.88rem; }
+  .timeline-phase {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--dominant);
+    margin-bottom: 4px;
+  }
+
+  /* Comparison matrix */
+  .matrix-table th:first-child { width: 200px; }
+  .matrix-table td { text-align: center; }
+  .matrix-table td:first-child { text-align: left; font-weight: 600; }
+  .cell-good { background: var(--dominant-light); color: var(--dominant-dark); font-weight: 600; }
+  .cell-warn { background: var(--warning-light); color: #e65100; font-weight: 600; }
+  .cell-bad { background: var(--danger-light); color: #c62828; font-weight: 600; }
+  .cell-neutral { background: var(--accent-light); color: #1565c0; font-weight: 600; }
+
+  /* Code blocks */
+  .code-block {
+    background: #1a1a2e;
+    color: #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 14px 0;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+  .code-block .comment { color: #6b7280; }
+  .code-block .keyword { color: #c084fc; }
+  .code-block .string { color: #86efac; }
+  .code-block .function { color: #93c5fd; }
+  .code-block .type { color: #fbbf24; }
+
+  /* Footer */
+  .report-footer {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; }
+    .section { box-shadow: none; break-inside: avoid; }
+    .report-header { padding: 32px 0; }
+    .toc { box-shadow: none; }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .section { padding: 24px 20px; }
+    .pros-cons { grid-template-columns: 1fr; }
+    .header-meta { flex-direction: column; gap: 8px; }
+    .approach-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ HEADER ═══════════════════════ -->
+<header class="report-header">
+  <div class="container">
+    <div class="report-badge">&#9670; ANALYSE ARCHITECTURE &mdash; v1.0</div>
+    <h1>Pages Publiques Établissements</h1>
+    <p class="subtitle">
+      Analyse de faisabilité, évaluation des alternatives et recommandations pour la création
+      de pages d'accueil dédiées et partageables par établissement dans l'architecture multi-tenant eLISAschool.
+    </p>
+    <div class="header-meta">
+      <span>&#128197; 11 août 2026</span>
+      <span>&#128100; eLISAschool &mdash; Direction Technique</span>
+      <span>&#128204; Branche: migration_saas</span>
+      <span>&#9989; Faisabilité confirmée</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════ TOC ═══════════════════════ -->
+<div class="container">
+<nav class="toc">
+  <h2>&#128218; Table des matières</h2>
+  <div class="toc-grid">
+    <a href="#s1"><span class="num">01</span> Résumé exécutif</a>
+    <a href="#s2"><span class="num">02</span> Architecture actuelle</a>
+    <a href="#s3"><span class="num">03</span> Diagnostic & métriques</a>
+    <a href="#s4"><span class="num">04</span> Faisabilité technique</a>
+    <a href="#s5"><span class="num">05</span> Alternatives comparées</a>
+    <a href="#s6"><span class="num">06</span> Sécurité & isolation</a>
+    <a href="#s7"><span class="num">07</span> Performance & cache</a>
+    <a href="#s8"><span class="num">08</span> Recommandation cible</a>
+    <a href="#s9"><span class="num">09</span> Plan d'implémentation</a>
+    <a href="#s10"><span class="num">10</span> Risques & mitigations</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════ S1: RÉSUMÉ ═══════════════════════ -->
+<section class="section" id="s1">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <h2>Résumé exécutif</h2>
+  </div>
+
+  <p>
+    Ce rapport analyse la faisabilité d'ajouter des <strong>pages publiques dédiées par établissement</strong>
+    dans la plateforme eLISAschool. L'objectif est de permettre à chaque établissement de disposer d'un lien
+    partageable (ex: <code>elisaschool.com/e/lycee-moliere</code>) menant à une page d'accueil personnalisée
+    avec les informations publiques de l'établissement.
+  </p>
+
+  <div class="callout callout-success">
+    <span class="callout-icon">&#9989;</span>
+    <div>
+      <strong>Verdict : Faisabilité confirmée.</strong> L'architecture multi-tenant existante (ADR-005, RLS PostgreSQL,
+      isolation 5 couches) supporte nativement cette fonctionnalité. Le champ <code>codeEtablissement</code>
+      (unique) sert de slug URL naturel. Le middleware <code>optionalAuthMiddleware</code> existe déjà
+      mais est inutilisé — il est le mécanisme idéal pour enrichir les pages publiques avec le contexte utilisateur.
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric-card">
+      <div class="metric-value">~130</div>
+      <div class="metric-label">Routes frontend</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">7</div>
+      <div class="metric-label">Routes publiques</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">5</div>
+      <div class="metric-label">Couches isolation</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">40+</div>
+      <div class="metric-label">Tables avec RLS</div>
+    </div>
+  </div>
+
+  <p>
+    L'approche recommandée est le <strong>path-based routing</strong> (<code>/e/:code</code>) —
+    simple, sans configuration DNS, compatible CDN, et cohérent avec le routeur TanStack existant.
+    L'effort d'implémentation est estimé à <strong>3-5 jours de développement</strong> répartis en 4 phases.
+  </p>
+</section>
+
+<!-- ═══════════════════════ S2: ARCHITECTURE ACTUELLE ═══════════════════════ -->
+<section class="section" id="s2">
+  <div class="section-header">
+    <div class="section-num">2</div>
+    <h2>Architecture actuelle du routing</h2>
+  </div>
+
+  <h3>2.1 &mdash; Topologie des routes</h3>
+  <p>
+    Le frontend eLISAschool utilise <strong>TanStack Router</strong> avec un système de routes basé sur les fichiers.
+    L'architecture se divise en 3 groupes de layout :
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Groupe</th>
+        <th>Préfixe</th>
+        <th>Guard</th>
+        <th>Nombre routes</th>
+        <th>Usage</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-gray">Public</span></td>
+        <td><code>/</code></td>
+        <td>Aucun</td>
+        <td>7</td>
+        <td>Login, reset password, MFA, vérification email</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">_auth</span></td>
+        <td><code>/</code> (après login)</td>
+        <td><code>authGuard()</code> + <code>useEtablissementRequired()</code></td>
+        <td>~100</td>
+        <td>Dashboard, modules métier, pages établissement</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">_platform</span></td>
+        <td><code>/platform</code></td>
+        <td><code>requireRole(['SUPER_ADMIN'])</code></td>
+        <td>~15</td>
+        <td>Control Plane, administration plateforme</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+graph TD
+    subgraph PUBLIC["&#127760; Routes Publiques (7)"]
+        direction TB
+        P1["/ &mdash; Landing"]
+        P2["/login"]
+        P3["/forgot-password"]
+        P4["/reset-password"]
+        P5["/mfa-verify"]
+        P6["/verify-email"]
+        P7["__root.tsx"]
+    end
+
+    subgraph AUTH["&#128274; _auth Layout (~100 routes)"]
+        direction TB
+        A_GUARD["authGuard() + useEtablissementRequired()"]
+        A1["/dashboard"]
+        A2["/eleves"]
+        A3["/notes"]
+        A4["/emploi-du-temps"]
+        A5["... 96 autres"]
+        A_GUARD --> A1 & A2 & A3 & A4 & A5
+    end
+
+    subgraph PLATFORM["&#128737; _platform Layout (~15 routes)"]
+        direction TB
+        PL_GUARD["requireRole(SUPER_ADMIN)"]
+        PL1["/platform/dashboard"]
+        PL2["/platform/etablissements"]
+        PL3["/platform/facturation"]
+        PL4["... 12 autres"]
+        PL_GUARD --> PL1 & PL2 & PL3 & PL4
+    end
+
+    PUBLIC -->|"Login réussi"| AUTH
+    P1 -->|"SUPER_ADMIN"| PLATFORM
+    </pre>
+    <div class="diagram-caption">Figure 1 &mdash; Topologie actuelle des 3 groupes de routes</div>
+  </div>
+
+  <h3>2.2 &mdash; Chaîne d'isolation tenant (5 couches)</h3>
+  <p>
+    Chaque requête authentifiée traverse 5 couches d'isolation multi-tenant.
+    Les pages publiques devront <strong>contourner cette chaîne</strong> tout en garantissant
+    qu'aucune donnée tenant n'est exposée.
+  </p>
+
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+graph LR
+    REQ["Requête HTTP"] --> M1
+    subgraph ISOLATION["Chaîne d'isolation tenant (5 couches)"]
+        M1["&#9312; Tenant Middleware<br/><small>Résout etablissementId<br/>depuis JWT + DB</small>"]
+        M2["&#9313; RLS Middleware<br/><small>SET LOCAL app.current_tenant</small>"]
+        M3["&#9314; PostgreSQL RLS<br/><small>Policies sur 40+ tables</small>"]
+        M4["&#9315; TypeORM Subscriber<br/><small>Injection auto etablissementId</small>"]
+        M5["&#9316; AsyncLocalStorage<br/><small>Contexte thread-safe</small>"]
+        M1 --> M2 --> M3 --> M4 --> M5
+    end
+    M5 --> DATA["Données filtrées"]
+
+    style M1 fill:#e3f2fd,stroke:#1565c0
+    style M2 fill:#e3f2fd,stroke:#1565c0
+    style M3 fill:#e3f2fd,stroke:#1565c0
+    style M4 fill:#e3f2fd,stroke:#1565c0
+    style M5 fill:#e3f2fd,stroke:#1565c0
+    </pre>
+    <div class="diagram-caption">Figure 2 &mdash; Chaîne d'isolation multi-tenant (à contourner pour les pages publiques)</div>
+  </div>
+
+  <h3>2.3 &mdash; Entité Établissement &mdash; Données publiques disponibles</h3>
+  <p>
+    L'entité <code>Etablissement</code> contient déjà des données riches adaptées à une page publique :
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Champ</th><th>Type</th><th>Usage page publique</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>codeEtablissement</code></td><td>string (unique)</td><td><span class="badge badge-green">Slug URL</span></td></tr>
+      <tr><td><code>nom</code></td><td>varchar(200)</td><td>Titre de la page</td></tr>
+      <tr><td><code>slogan</code></td><td>text?</td><td>Sous-titre / accroche</td></tr>
+      <tr><td><code>logo</code></td><td>base64?</td><td>Logo affiché</td></tr>
+      <tr><td><code>couleurPrimaire</code></td><td>varchar(7)</td><td>Thème de la page</td></tr>
+      <tr><td><code>couleurSecondaire</code></td><td>varchar(7)</td><td>Accent couleur</td></tr>
+      <tr><td><code>typeEtablissement</code></td><td>enum</td><td>Badge type (Lycée, Collège...)</td></tr>
+      <tr><td><code>sousSysteme</code></td><td>enum</td><td>Badge système (Francophone...)</td></tr>
+      <tr><td><code>langueDefaut</code></td><td>varchar(5)</td><td>Locale de la page</td></tr>
+      <tr><td><code>devise</code></td><td>varchar(3)</td><td>Formatage monétaire</td></tr>
+      <tr><td><code>statut</code></td><td>enum</td><td>Filtre : seuls les ACTIF sont publics</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════════ S3: DIAGNOSTIC ═══════════════════════ -->
+<section class="section" id="s3">
+  <div class="section-header">
+    <div class="section-num">3</div>
+    <h2>Diagnostic & métriques</h2>
+  </div>
+
+  <h3>3.1 &mdash; État des lieux</h3>
+
+  <div class="callout callout-warning">
+    <span class="callout-icon">&#9888;&#65039;</span>
+    <div>
+      <strong>Aucune page publique d'établissement n'existe actuellement.</strong>
+      Le seul endpoint public résolvant un établissement est <code>POST /api/eleves/preinscription</code>,
+      qui est un endpoint métier (pas de navigation). Le middleware <code>optionalAuthMiddleware</code>
+      existe dans le code mais n'est monté sur aucune route.
+    </div>
+  </div>
+
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+graph TD
+    subgraph EXISTANT["Ce qui existe"]
+        E1["7 routes publiques<br/>(login, mfa, reset)"]
+        E2["optionalAuthMiddleware<br/>(EXISTS mais UNUSED)"]
+        E3["codeEtablissement UNIQUE<br/>(slug naturel)"]
+        E4["Données publiques riches<br/>(nom, logo, couleurs, slogan)"]
+    end
+
+    subgraph MANQUANT["Ce qui manque"]
+        M1["Route /e/:code<br/>(page publique)"]
+        M2["Endpoint GET /api/public/etablissements/:code"]
+        M3["Composant EtablissementPublicPage"]
+        M4["Cache stratégie<br/>(Redis + CDN)"]
+    end
+
+    E2 -.->|"Activer"| M2
+    E3 -.->|"Utiliser comme"| M1
+    E4 -.->|"Alimenter"| M3
+
+    style E2 fill:#fff3e0,stroke:#ff9800
+    style E3 fill:#e8f5e9,stroke:#28a745
+    </pre>
+    <div class="diagram-caption">Figure 3 &mdash; Gap analysis : existant vs manquant</div>
+  </div>
+
+  <h3>3.2 &mdash; Score de readiness</h3>
+
+  <div class="score-section">
+    <div class="score-card">
+      <div class="score-ring">
+        <svg width="80" height="80">
+          <circle cx="40" cy="40" r="34" fill="none" stroke="#e2e8f0" stroke-width="6"/>
+          <circle cx="40" cy="40" r="34" fill="none" stroke="#28a745" stroke-width="6"
+                  stroke-dasharray="192" stroke-dashoffset="19" stroke-linecap="round"/>
+        </svg>
+        <span class="value" style="color: var(--dominant)">9.2</span>
+      </div>
+      <div class="score-label">Architecture<br/>(sur 10)</div>
+    </div>
+    <div class="score-card">
+      <div class="score-ring">
+        <svg width="80" height="80">
+          <circle cx="40" cy="40" r="34" fill="none" stroke="#e2e8f0" stroke-width="6"/>
+          <circle cx="40" cy="40" r="34" fill="none" stroke="#007bff" stroke-width="6"
+                  stroke-dasharray="192" stroke-dashoffset="38" stroke-linecap="round"/>
+        </svg>
+        <span class="value" style="color: var(--accent)">8.0</span>
+      </div>
+      <div class="score-label">Données<br/>publiques</div>
+    </div>
+    <div class="score-card">
+      <div class="score-ring">
+        <svg width="80" height="80">
+          <circle cx="40" cy="40" r="34" fill="none" stroke="#e2e8f0" stroke-width="6"/>
+          <circle cx="40" cy="40" r="34" fill="none" stroke="#4caf50" stroke-width="6"
+                  stroke-dasharray="192" stroke-dashoffset="0" stroke-linecap="round"/>
+        </svg>
+        <span class="value" style="color: var(--success)">10</span>
+      </div>
+      <div class="score-label">Isolation<br/>sécurité</div>
+    </div>
+    <div class="score-card">
+      <div class="score-ring">
+        <svg width="80" height="80">
+          <circle cx="40" cy="40" r="34" fill="none" stroke="#e2e8f0" stroke-width="6"/>
+          <circle cx="40" cy="40" r="34" fill="none" stroke="#ff9800" stroke-width="6"
+                  stroke-dasharray="192" stroke-dashoffset="77" stroke-linecap="round"/>
+        </svg>
+        <span class="value" style="color: var(--warning)">6.0</span>
+      </div>
+      <div class="score-label">Effort<br/>restant</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ S4: FAISABILITÉ ═══════════════════════ -->
+<section class="section" id="s4">
+  <div class="section-header">
+    <div class="section-num">4</div>
+    <h2>Faisabilité technique</h2>
+  </div>
+
+  <h3>4.1 &mdash; Flux de données proposé</h3>
+
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+sequenceDiagram
+    participant U as Utilisateur
+    participant CDN as CDN / Cache
+    participant FE as Frontend (Vite)
+    participant BE as Backend (Express)
+    participant DB as PostgreSQL
+
+    U->>FE: GET /e/lycee-moliere
+    FE->>CDN: Cache check (page HTML)
+    alt Cache hit
+        CDN-->>U: Page HTML servie (TTL 5min)
+    else Cache miss
+        FE-->>U: Shell HTML (skeleton)
+        FE->>BE: GET /api/public/etablissements/lycee-moliere
+        Note over BE: optionalAuthMiddleware<br/>(enrichit si JWT présent)
+        BE->>DB: SELECT nom, slogan, logo, couleurs,<br/>type, statut FROM etablissements<br/>WHERE codeEtablissement = 'lycee-moliere'<br/>AND statut = 'ACTIF'
+        DB-->>BE: Données publiques uniquement
+        Note over BE: Projection publique<br/>(PAS de données tenant)
+        BE-->>FE: { nom, slogan, logo, couleurs, type,... }
+        FE->>FE: Rendu page avec thème établissement
+        FE->>CDN: Store cache (TTL 5min)
+        FE-->>U: Page complète rendue
+    end
+    </pre>
+    <div class="diagram-caption">Figure 4 &mdash; Flux de données pour une page publique établissement</div>
+  </div>
+
+  <h3>4.2 &mdash; Points d'intégration identifiés</h3>
+
+  <table>
+    <thead>
+      <tr><th>Couche</th><th>Fichier</th><th>Modification</th><th>Risque</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-blue">Frontend Route</span></td>
+        <td><code>routes/e.$code.tsx</code></td>
+        <td>NOUVEAU &mdash; Page publique hors layout _auth</td>
+        <td><span class="badge badge-green">Faible</span></td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Frontend Component</span></td>
+        <td><code>features/etablissements/EtablissementPublicPage.tsx</code></td>
+        <td>NOUVEAU &mdash; Page avec thème dynamique</td>
+        <td><span class="badge badge-green">Faible</span></td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-orange">Backend Endpoint</span></td>
+        <td><code>etablissement.controller.ts</code></td>
+        <td>AJOUT &mdash; <code>GET /api/public/etablissements/:code</code></td>
+        <td><span class="badge badge-green">Faible</span></td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">Backend Middleware</span></td>
+        <td><code>app.ts</code></td>
+        <td>MONTER route publique AVANT <code>tenantMiddleware</code></td>
+        <td><span class="badge badge-orange">Moyen</span></td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-gray">Cache</span></td>
+        <td><code>redis.service.ts</code></td>
+        <td>AJOUT &mdash; Clés <code>public:etab:{code}</code> TTL 5min</td>
+        <td><span class="badge badge-green">Faible</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>4.3 &mdash; Code backend proposé (endpoint public)</h3>
+
+  <div class="code-block">
+<span class="comment">// backend/src/modules/etablissement/controllers/etablissement-public.controller.ts</span>
+
+<span class="keyword">import</span> { Router, Request, Response } <span class="keyword">from</span> <span class="string">'express'</span>;
+<span class="keyword">import</span> { optionalAuthMiddleware } <span class="keyword">from</span> <span class="string">'@modules/auth/middlewares'</span>;
+<span class="keyword">import</span> { AppDataSource } <span class="keyword">from</span> <span class="string">'@database/data-source'</span>;
+<span class="keyword">import</span> { Etablissement } <span class="keyword">from</span> <span class="string">'../entities'</span>;
+<span class="keyword">import</span> { redisService } <span class="keyword">from</span> <span class="string">'@common/services/redis.service'</span>;
+
+<span class="keyword">const</span> router = Router();
+<span class="keyword">const</span> CACHE_TTL = <span class="type">300</span>; <span class="comment">// 5 minutes</span>
+
+<span class="comment">/**
+ * GET /api/public/etablissements/:code
+ * Montage : AVANT tenantMiddleware dans app.ts
+ * Auth : optionnelle (optionalAuthMiddleware)
+ * RLS : AUCUN (pas de contexte tenant)
+ */</span>
+router.<span class="function">get</span>(<span class="string">'/:code'</span>, optionalAuthMiddleware, <span class="keyword">async</span> (req: Request, res: Response) => {
+    <span class="keyword">const</span> { code } = req.params;
+
+    <span class="comment">// 1. Cache Redis</span>
+    <span class="keyword">const</span> cacheKey = <span class="string">`public:etab:${code}`</span>;
+    <span class="keyword">const</span> cached = <span class="keyword">await</span> redisService.<span class="function">get</span>(cacheKey);
+    <span class="keyword">if</span> (cached) <span class="keyword">return</span> res.<span class="function">json</span>({ success: <span class="type">true</span>, data: JSON.<span class="function">parse</span>(cached) });
+
+    <span class="comment">// 2. Projection publique UNIQUEMENT (pas de données tenant)</span>
+    <span class="keyword">const</span> repo = AppDataSource.<span class="function">getRepository</span>(Etablissement);
+    <span class="keyword">const</span> etab = <span class="keyword">await</span> repo.<span class="function">createQueryBuilder</span>(<span class="string">'e'</span>)
+        .<span class="function">select</span>([
+            <span class="string">'e.id'</span>, <span class="string">'e.nom'</span>, <span class="string">'e.slogan'</span>, <span class="string">'e.logo'</span>,
+            <span class="string">'e.couleurPrimaire'</span>, <span class="string">'e.couleurSecondaire'</span>,
+            <span class="string">'e.typeEtablissement'</span>, <span class="string">'e.sousSysteme'</span>,
+            <span class="string">'e.langueDefaut'</span>, <span class="string">'e.codeEtablissement'</span>
+        ])
+        .<span class="function">where</span>(<span class="string">'e.codeEtablissement = :code'</span>, { code })
+        .<span class="function">andWhere</span>(<span class="string">'e.statut = :statut'</span>, { statut: <span class="string">'ACTIF'</span> })
+        .<span class="function">getOne</span>();
+
+    <span class="keyword">if</span> (!etab) <span class="keyword">return</span> res.<span class="function">status</span>(<span class="type">404</span>).<span class="function">json</span>({
+        success: <span class="type">false</span>,
+        error: { code: <span class="string">'ETABLISSEMENT_NON_TROUVE'</span>, message: <span class="string">'Établissement non trouvé'</span> }
+    });
+
+    <span class="comment">// 3. Cache + réponse</span>
+    <span class="keyword">await</span> redisService.<span class="function">setJSON</span>(cacheKey, etab, CACHE_TTL);
+    res.<span class="function">json</span>({ success: <span class="type">true</span>, data: etab });
+});
+
+<span class="keyword">export default</span> router;
+  </div>
+</section>
+
+<!-- ═══════════════════════ S5: ALTERNATIVES ═══════════════════════ -->
+<section class="section" id="s5">
+  <div class="section-header">
+    <div class="section-num">5</div>
+    <h2>Alternatives comparées</h2>
+  </div>
+
+  <p>
+    Quatre approches architecturales ont été évaluées pour exposer des pages publiques par établissement.
+    Chaque approche a des implications différentes en termes de DNS, cache, SEO et complexité.
+  </p>
+
+  <div class="approach-grid">
+    <!-- Approach A -->
+    <div class="approach-card recommended">
+      <h4>A &mdash; Path-based routing</h4>
+      <div class="url-example">elisaschool.com/e/lycee-moliere</div>
+      <p style="font-size:0.85rem; color: var(--text-secondary);">
+        Sous-chemin <code>/e/:code</code> dans l'application TanStack existante.
+        Aucun changement DNS. Compatible CDN standard.
+      </p>
+      <div class="pros-cons">
+        <div class="pros">
+          <h5>&#10004; Avantages</h5>
+          <ul>
+            <li>Zero config DNS</li>
+            <li>CDN sans wildcard SSL</li>
+            <li>Routing TanStack natif</li>
+            <li>Partage simple (URL courte)</li>
+            <li>Cookie domain unique</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h5>&#10008; Inconvénients</h5>
+          <ul>
+            <li>Namespace partagé</li>
+            <li>Moins « premium » visuellement</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Approach B -->
+    <div class="approach-card">
+      <h4>B &mdash; Subdomain-based</h4>
+      <div class="url-example">lycee-moliere.elisaschool.com</div>
+      <p style="font-size:0.85rem; color: var(--text-secondary);">
+        Sous-domaine par établissement. Nécessite wildcard DNS + wildcard SSL.
+        Isolation cookie native.
+      </p>
+      <div class="pros-cons">
+        <div class="pros">
+          <h5>&#10004; Avantages</h5>
+          <ul>
+            <li>URL « premium »</li>
+            <li>Isolation cookie native</li>
+            <li>Meilleur SEO par établissement</li>
+            <li>Branding fort</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h5>&#10008; Inconvénients</h5>
+          <ul>
+            <li>Wildcard DNS + SSL requis</li>
+            <li>CORS complexe</li>
+            <li>Session cross-domain impossible</li>
+            <li>Infrastructure lourde</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Approach C -->
+    <div class="approach-card">
+      <h4>C &mdash; Token-based (signed URL)</h4>
+      <div class="url-example">elisaschool.com/p/abc129x?sig=...</div>
+      <p style="font-size:0.85rem; color: var(--text-secondary);">
+        URL signée avec token HMAC. Expiration configurable.
+        Pas de slug lisible.
+      </p>
+      <div class="pros-cons">
+        <div class="pros">
+          <h5>&#10004; Avantages</h5>
+          <ul>
+            <li>Sécurité maximale</li>
+            <li>Expiration automatique</li>
+            <li>Révocable</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h5>&#10008; Inconvénients</h5>
+          <ul>
+            <li>URL non-mémorable</li>
+            <li>Non-shareable long terme</li>
+            <li>Pas adapté à une landing page</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Approach D -->
+    <div class="approach-card">
+      <h4>D &mdash; Domaine custom par établissement</h4>
+      <div class="url-example">www.lycee-moliere.cm</div>
+      <p style="font-size:0.85rem; color: var(--text-secondary);">
+        Chaque établissement branche son propre domaine.
+        CNAME vers la plateforme. SSL auto (Let's Encrypt).
+      </p>
+      <div class="pros-cons">
+        <div class="pros">
+          <h5>&#10004; Avantages</h5>
+          <ul>
+            <li>Branding total</li>
+            <li>Indépendance URL</li>
+            <li>SEO propre</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h5>&#10008; Inconvénients</h5>
+          <ul>
+            <li>Complexité SSL/CNAME énorme</li>
+            <li>Coût infrastructure</li>
+            <li>Gestion certificats par tenant</li>
+            <li>Overkill pour le besoin</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>5.1 &mdash; Matrice de comparaison</h3>
+
+  <table class="matrix-table">
+    <thead>
+      <tr>
+        <th>Critère</th>
+        <th>A: Path-based</th>
+        <th>B: Subdomain</th>
+        <th>C: Token</th>
+        <th>D: Domaine custom</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Complexité implémentation</td>
+        <td class="cell-good">Faible</td>
+        <td class="cell-warn">Moyenne</td>
+        <td class="cell-good">Faible</td>
+        <td class="cell-bad">Élevée</td>
+      </tr>
+      <tr>
+        <td>Configuration DNS</td>
+        <td class="cell-good">Aucune</td>
+        <td class="cell-warn">Wildcard</td>
+        <td class="cell-good">Aucune</td>
+        <td class="cell-bad">Par tenant</td>
+      </tr>
+      <tr>
+        <td>Compatibilité CDN</td>
+        <td class="cell-good">Natif</td>
+        <td class="cell-warn">Wildcard SSL</td>
+        <td class="cell-good">Natif</td>
+        <td class="cell-bad">Complexe</td>
+      </tr>
+      <tr>
+        <td>URL partageable</td>
+        <td class="cell-good">Oui</td>
+        <td class="cell-good">Oui</td>
+        <td class="cell-bad">Limité (expir)</td>
+        <td class="cell-good">Oui</td>
+      </tr>
+      <tr>
+        <td>SEO</td>
+        <td class="cell-neutral">Moyen</td>
+        <td class="cell-good">Bon</td>
+        <td class="cell-bad">Nul</td>
+        <td class="cell-good">Excellent</td>
+      </tr>
+      <tr>
+        <td>Isolation sécurité</td>
+        <td class="cell-good">Projection</td>
+        <td class="cell-good">Cookie + Projection</td>
+        <td class="cell-good">HMAC + Expir</td>
+        <td class="cell-good">Domaine + Projection</td>
+      </tr>
+      <tr>
+        <td>Session cross-tenant</td>
+        <td class="cell-good">Natif (même domaine)</td>
+        <td class="cell-bad">Impossible</td>
+        <td class="cell-good">Natif</td>
+        <td class="cell-bad">Impossible</td>
+      </tr>
+      <tr>
+        <td>Effort estimé</td>
+        <td class="cell-good">3-5 jours</td>
+        <td class="cell-warn">8-12 jours</td>
+        <td class="cell-good">2-3 jours</td>
+        <td class="cell-bad">15-20 jours</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-success">
+    <span class="callout-icon">&#127919;</span>
+    <div>
+      <strong>Recommandation : Approche A (Path-based)</strong> &mdash;
+      Le path-based routing offre le meilleur rapport simplicité/fonctionnalité.
+      Il s'intègre naturellement dans l'architecture TanStack Router existante,
+      ne nécessite aucune modification DNS, et permet le partage de liens simples
+      et mémorables. L'approche peut être complétée ultérieurement par des sous-domaines
+      (B) pour les établissements premium sans changement d'architecture backend.
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ S6: SÉCURITÉ ═══════════════════════ -->
+<section class="section" id="s6">
+  <div class="section-header">
+    <div class="section-num">6</div>
+    <h2>Sécurité & isolation des données</h2>
+  </div>
+
+  <h3>6.1 &mdash; Principe de projection publique</h3>
+  <p>
+    La sécurité repose sur un principe fondamental : <strong>la projection publique ne contient
+    AUCUNE donnée tenant</strong>. L'endpoint backend sélectionne explicitement les champs publics
+    de l'entité <code>Etablissement</code> via un <code>createQueryBuilder().select([...])</code> restrictif.
+  </p>
+
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+graph TD
+    subgraph DONNEES["Entité Etablissement (complète)"]
+        direction TB
+        PUB["&#128994; Données publiques<br/>─────────────<br/>nom, slogan, logo<br/>couleurPrimaire, couleurSecondaire<br/>typeEtablissement, sousSysteme<br/>codeEtablissement, langueDefaut"]
+        PRIVE["&#128308; Données privées (JAMAIS exposées)<br/>─────────────<br/>etablissementId (interne)<br/>configurations, paramètres<br/>modules actifs, quotas<br/>abonnements, factures"]
+    end
+
+    subgraph PROJECTION["Projection publique (API response)"]
+        direction TB
+        SAFE["&#9989; Uniquement les champs publics<br/><br/>{ nom, slogan, logo,<br/>couleurs, type, code }"]
+    end
+
+    PUB --> SAFE
+    PRIVE -.X "BLOQUÉ par select() explicite".-> SAFE
+
+    style PUB fill:#e8f5e9,stroke:#28a745
+    style PRIVE fill:#fce4ec,stroke:#dc3545
+    style SAFE fill:#e3f2fd,stroke:#1565c0
+    </pre>
+    <div class="diagram-caption">Figure 5 &mdash; Principe de projection publique : seuls les champs explicitement sélectionnés sont exposés</div>
+  </div>
+
+  <h3>6.2 &mdash; 6 gardes de sécurité</h3>
+
+  <table>
+    <thead>
+      <tr><th>#</th><th>Garde</th><th>Mécanisme</th><th>Protection</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>G1</strong></td>
+        <td>Projection restrictive</td>
+        <td><code>createQueryBuilder().select([...])</code></td>
+        <td>Aucune donnée privée ne peut fuiter par oubli de filtre</td>
+      </tr>
+      <tr>
+        <td><strong>G2</strong></td>
+        <td>Filtre statut ACTIF</td>
+        <td><code>.andWhere('statut = ACTIF')</code></td>
+        <td>Seuls les établissements actifs ont une page publique</td>
+      </tr>
+      <tr>
+        <td><strong>G3</strong></td>
+        <td>Bypass chaîne tenant</td>
+        <td>Route montée AVANT <code>tenantMiddleware</code></td>
+        <td>Aucun contexte tenant injecté, aucun RLS activé</td>
+      </tr>
+      <tr>
+        <td><strong>G4</strong></td>
+        <td>Rate limiting</td>
+        <td><code>rateLimit({ windowMs: 60000, max: 60 })</code></td>
+        <td>Anti-scraping et anti-abus (60 req/min/IP)</td>
+      </tr>
+      <tr>
+        <td><strong>G5</strong></td>
+        <td>Cache avec TTL</td>
+        <td>Redis TTL 300s + invalidation on update</td>
+        <td>Anti-DDoS (page servie depuis cache)</td>
+      </tr>
+      <tr>
+        <td><strong>G6</strong></td>
+        <td>Auth optionnelle</td>
+        <td><code>optionalAuthMiddleware</code></td>
+        <td>Si JWT présent → enrichir (ex: bouton "Accéder") ; si absent → page publique pure</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>6.3 &mdash; Matrice de menaces</h3>
+
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+graph LR
+    subgraph MENACES["Menaces identifiées"]
+        T1["&#128308; Exposition données tenant"]
+        T2["&#128992; Scraping / enumeration"]
+        T3["&#128992; DDoS sur endpoint"]
+        T4["&#128308; Cross-tenant injection"]
+        T5["&#128992; Cache poisoning"]
+    end
+
+    subgraph MITIGATIONS["Mitigations"]
+        M1["&#9989; Projection select() explicite"]
+        M2["&#9989; Rate limiting 60 req/min"]
+        M3["&#9989; Redis cache + TTL"]
+        M4["&#9989; Pas de contexte tenant"]
+        M5["&#9989; Cache key = hash(code)"]
+    end
+
+    T1 --> M1
+    T2 --> M2
+    T3 --> M3
+    T4 --> M4
+    T5 --> M5
+
+    style T1 fill:#fce4ec,stroke:#dc3545
+    style T2 fill:#fff3e0,stroke:#ff9800
+    style T3 fill:#fff3e0,stroke:#ff9800
+    style T4 fill:#fce4ec,stroke:#dc3545
+    style T5 fill:#fff3e0,stroke:#ff9800
+    style M1 fill:#e8f5e9,stroke:#28a745
+    style M2 fill:#e8f5e9,stroke:#28a745
+    style M3 fill:#e8f5e9,stroke:#28a745
+    style M4 fill:#e8f5e9,stroke:#28a745
+    style M5 fill:#e8f5e9,stroke:#28a745
+    </pre>
+    <div class="diagram-caption">Figure 6 &mdash; Matrice menaces → mitigations</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ S7: PERFORMANCE ═══════════════════════ -->
+<section class="section" id="s7">
+  <div class="section-header">
+    <div class="section-num">7</div>
+    <h2>Performance & stratégie de cache</h2>
+  </div>
+
+  <h3>7.1 &mdash; Impact sur les performances existantes</h3>
+
+  <div class="callout callout-info">
+    <span class="callout-icon">&#8505;&#65039;</span>
+    <div>
+      <strong>Impact négligeable.</strong> Les pages publiques sont servies depuis le cache Redis (TTL 5 min).
+      En cas de cache miss, la requête est un simple <code>SELECT</code> avec index unique sur
+      <code>codeEtablissement</code> — temps de réponse estimé &lt; 2ms. Aucune jointure, aucun calcul,
+      aucun filtrage RLS.
+    </div>
+  </div>
+
+  <h3>7.2 &mdash; Stratégie de cache multi-niveaux</h3>
+
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+graph TD
+    subgraph CACHE["Stratégie de cache (3 niveaux)"]
+        direction TB
+        L1["Niveau 1 : Cache navigateur<br/>──────────────<br/>Cache-Control: public, max-age=300<br/>ETag + Last-Modified<br/>→ 0 requête serveur pendant 5 min"]
+        L2["Niveau 2 : Redis cache<br/>──────────────<br/>Clé: public:etab:{code}<br/>TTL: 300s<br/>→ Réponse < 1ms"]
+        L3["Niveau 3 : PostgreSQL<br/>──────────────<br/>Index unique sur codeEtablissement<br/>SELECT avec projection<br/>→ Réponse < 2ms"]
+    end
+
+    L1 -->|"Cache miss"| L2
+    L2 -->|"Cache miss"| L3
+    L3 -->|"Store"| L2
+    L2 -->|"Store"| L1
+
+    style L1 fill:#e8f5e9,stroke:#28a745
+    style L2 fill:#e3f2fd,stroke:#1565c0
+    style L3 fill:#fff3e0,stroke:#ff9800
+    </pre>
+    <div class="diagram-caption">Figure 7 &mdash; Stratégie de cache multi-niveaux</div>
+  </div>
+
+  <h3>7.3 &mdash; Invalidation du cache</h3>
+
+  <table>
+    <thead>
+      <tr><th>Événement</th><th>Action</th><th>Clé Redis</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Modification établissement (nom, logo, couleurs)</td>
+        <td><code>redisService.del(`public:etab:${code}`)</code></td>
+        <td><code>public:etab:{code}</code></td>
+      </tr>
+      <tr>
+        <td>Changement statut (ACTIF → SUSPENDU)</td>
+        <td><code>redisService.del(`public:etab:${code}`)</code></td>
+        <td><code>public:etab:{code}</code></td>
+      </tr>
+      <tr>
+        <td>Expiration naturelle</td>
+        <td>Auto (TTL 300s)</td>
+        <td>—</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>7.4 &mdash; Métriques de performance attendues</h3>
+
+  <div class="metrics">
+    <div class="metric-card">
+      <div class="metric-value" style="font-size:1.5rem">&lt; 50ms</div>
+      <div class="metric-label">Cache hit (L1/L2)</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" style="font-size:1.5rem">&lt; 100ms</div>
+      <div class="metric-label">Cache miss (L3)</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" style="font-size:1.5rem">~0%</div>
+      <div class="metric-label">Impact routes existantes</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" style="font-size:1.5rem">60 req/min</div>
+      <div class="metric-label">Rate limit par IP</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ S8: RECOMMANDATION ═══════════════════════ -->
+<section class="section" id="s8">
+  <div class="section-header">
+    <div class="section-num">8</div>
+    <h2>Recommandation cible &mdash; Architecture détaillée</h2>
+  </div>
+
+  <h3>8.1 &mdash; Architecture cible (path-based)</h3>
+
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+graph TD
+    subgraph FRONTEND["Frontend (TanStack Router)"]
+        direction TB
+        ROOT["__root.tsx"]
+        PUBLIC_PAGE["routes/e.$code.tsx<br/>──────────────<br/>Page publique établissement<br/>HORS layout _auth<br/>HORS layout _platform"]
+        LOGIN["routes/login.tsx"]
+        AUTH_LAYOUT["routes/_auth.tsx<br/>(layout authentifié)"]
+        PLATFORM_LAYOUT["routes/_platform.tsx<br/>(layout plateforme)"]
+
+        ROOT --> PUBLIC_PAGE
+        ROOT --> LOGIN
+        ROOT --> AUTH_LAYOUT
+        ROOT --> PLATFORM_LAYOUT
+    end
+
+    subgraph BACKEND["Backend (Express)"]
+        direction TB
+        APP_TS["app.ts"]
+
+        subgraph BEFORE_TENANT["AVANT tenantMiddleware"]
+            HEALTH["/api/health"]
+            NETWORK["/api/network/ping"]
+            PREINSCR["/api/eleves/preinscription"]
+            PUBLIC_ETAB["/api/public/etablissements/:code<br/>──────────────<br/>optionalAuthMiddleware<br/>Projection publique<br/>Rate limiting<br/>Cache Redis"]
+        end
+
+        subgraph AFTER_TENANT["APRÈS tenantMiddleware"]
+            TENANT_MW["tenantMiddleware"]
+            ALL_AUTH["Toutes routes auth"]
+        end
+
+        APP_TS --> BEFORE_TENANT
+        APP_TS --> TENANT_MW
+        TENANT_MW --> ALL_AUTH
+    end
+
+    PUBLIC_PAGE -->|"fetch"| PUBLIC_ETAB
+
+    style PUBLIC_PAGE fill:#e8f5e9,stroke:#28a745
+    style PUBLIC_ETAB fill:#e8f5e9,stroke:#28a745
+    </pre>
+    <div class="diagram-caption">Figure 8 &mdash; Architecture cible : intégration dans le routing existant</div>
+  </div>
+
+  <h3>8.2 &mdash; Page publique &mdash; Contenu proposé</h3>
+
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+graph TD
+    subgraph PAGE["EtablissementPublicPage (/e/:code)"]
+        direction TB
+        HEADER["&#127912; Header thématique<br/>──────────────<br/>Logo établissement<br/>Nom + Slogan<br/>Couleurs personnalisées (primaire/secondaire)<br/>Badges type + système"]
+        INFO["&#128218; Section Informations<br/>──────────────<br/>Type d'établissement<br/>Système éducatif<br/>Langue d'enseignement<br/>Devise"]
+        CTA["&#128640; Call-to-Action<br/>──────────────<br/>Si non authentifié → Bouton 'Connexion'<br/>Si authentifié (membre) → Bouton 'Accéder à mon espace'<br/>Si préinscription ouverte → Bouton 'Pré-inscription'"]
+        FOOTER["&#128196; Footer<br/>──────────────<br/>Propulsé par eLISAschool<br/>Lien vers elisaschool.com"]
+    end
+
+    HEADER --> INFO --> CTA --> FOOTER
+
+    style HEADER fill:#e3f2fd,stroke:#1565c0
+    style INFO fill:#e8f5e9,stroke:#28a745
+    style CTA fill:#fff3e0,stroke:#ff9800
+    style FOOTER fill:#f1f5f9,stroke:#94a3b8
+    </pre>
+    <div class="diagram-caption">Figure 9 &mdash; Structure de la page publique établissement</div>
+  </div>
+
+  <h3>8.3 &mdash; Comportements conditionnels</h3>
+
+  <table>
+    <thead>
+      <tr><th>Profil visiteur</th><th>Comportement</th><th>CTA affiché</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-gray">Anonyme</span></td>
+        <td>Page publique standard avec infos établissement</td>
+        <td>« Connexion » → /login</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Authentifié (membre)</span></td>
+        <td>Page publique + bouton d'accès rapide à l'espace membre</td>
+        <td>« Accéder à mon espace » → /dashboard</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-red">Établissement non trouvé</span></td>
+        <td>Page 404 avec branding eLISAschool</td>
+        <td>« Retour à l'accueil » → /</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-orange">Établissement suspendu</span></td>
+        <td>Page 404 (identique à non trouvé — pas de fuite d'info)</td>
+        <td>« Retour à l'accueil » → /</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════════ S9: PLAN IMPLÉMENTATION ═══════════════════════ -->
+<section class="section" id="s9">
+  <div class="section-header">
+    <div class="section-num">9</div>
+    <h2>Plan d'implémentation</h2>
+  </div>
+
+  <h3>9.1 &mdash; Timeline &mdash; 4 phases, 3-5 jours</h3>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-phase">Phase 1 &mdash; Backend (0.5 jour)</div>
+      <h4>Endpoint public + cache Redis</h4>
+      <p>
+        Créer <code>etablissement-public.controller.ts</code> avec projection restrictive.
+        Monter dans <code>app.ts</code> AVANT <code>tenantMiddleware</code>.
+        Ajouter rate limiting (60 req/min/IP). Cache Redis TTL 300s.
+        Invalidation dans <code>etablissement.service.ts</code> (update/delete).
+      </p>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-phase">Phase 2 &mdash; Frontend Route (1 jour)</div>
+      <h4>Route <code>/e/$code.tsx</code> + composant page</h4>
+      <p>
+        Créer <code>routes/e.$code.tsx</code> (hors layout _auth).
+        Composant <code>EtablissementPublicPage.tsx</code> avec header thématique
+        (couleurs dynamiques depuis l'établissement), section infos, CTA conditionnel.
+        Hook <code>useEtablissementPublic(code)</code> avec TanStack Query + staleTime 300s.
+      </p>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-phase">Phase 3 &mdash; UX & thème dynamique (1 jour)</div>
+      <h4>Thème établissement + responsive + dark mode</h4>
+      <p>
+        Application des couleurs de l'établissement sur la page (CSS variables dynamiques).
+        Ultra-responsivité (clamp(), 11 breakpoints). Dark mode respecté.
+        Animation Framer Motion (fade-in, slide-up).
+        SEO meta tags (titre, description, og:image avec logo).
+      </p>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div class="timeline-phase">Phase 4 &mdash; Tests & polish (1 jour)</div>
+      <h4>Tests E2E + invalidation cache + i18n</h4>
+      <p>
+        Tests unitaires endpoint (projection, 404, rate limit, cache).
+        Tests E2E (navigation, affichage, CTA conditionnel).
+        i18n FR/EN complet.
+        Lien depuis la page établissement platform (« Voir la page publique »).
+        Documentation et mise à jour des règles.
+      </p>
+    </div>
+  </div>
+
+  <h3>9.2 &mdash; Fichiers à créer/modifier</h3>
+
+  <table>
+    <thead>
+      <tr><th>Fichier</th><th>Action</th><th>Phase</th><th>Lignes estimées</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>backend/.../etablissement-public.controller.ts</code></td>
+        <td><span class="badge badge-green">NOUVEAU</span></td>
+        <td>1</td>
+        <td>~80</td>
+      </tr>
+      <tr>
+        <td><code>backend/src/app.ts</code></td>
+        <td><span class="badge badge-blue">MODIFIER</span></td>
+        <td>1</td>
+        <td>+3</td>
+      </tr>
+      <tr>
+        <td><code>backend/.../etablissement.service.ts</code></td>
+        <td><span class="badge badge-blue">MODIFIER</span></td>
+        <td>1</td>
+        <td>+5 (invalidation)</td>
+      </tr>
+      <tr>
+        <td><code>frontend/src/routes/e.$code.tsx</code></td>
+        <td><span class="badge badge-green">NOUVEAU</span></td>
+        <td>2</td>
+        <td>~40</td>
+      </tr>
+      <tr>
+        <td><code>frontend/.../EtablissementPublicPage.tsx</code></td>
+        <td><span class="badge badge-green">NOUVEAU</span></td>
+        <td>2-3</td>
+        <td>~300</td>
+      </tr>
+      <tr>
+        <td><code>frontend/.../use-etablissement-public.ts</code></td>
+        <td><span class="badge badge-green">NOUVEAU</span></td>
+        <td>2</td>
+        <td>~50</td>
+      </tr>
+      <tr>
+        <td><code>frontend/src/locales/fr/etablissements.json</code></td>
+        <td><span class="badge badge-blue">MODIFIER</span></td>
+        <td>4</td>
+        <td>+20 clés</td>
+      </tr>
+      <tr>
+        <td><code>frontend/src/locales/en/etablissements.json</code></td>
+        <td><span class="badge badge-blue">MODIFIER</span></td>
+        <td>4</td>
+        <td>+20 clés</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════════ S10: RISQUES ═══════════════════════ -->
+<section class="section" id="s10">
+  <div class="section-header">
+    <div class="section-num">10</div>
+    <h2>Risques & mitigations</h2>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Risque</th><th>Probabilité</th><th>Impact</th><th>Mitigation</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Fuite de données tenant via l'endpoint public</td>
+        <td><span class="badge badge-green">Très faible</span></td>
+        <td><span class="badge badge-red">Critique</span></td>
+        <td>Projection <code>select()</code> explicite + test E2E de non-exposition + revue de code obligatoire</td>
+      </tr>
+      <tr>
+        <td>DDoS sur l'endpoint public</td>
+        <td><span class="badge badge-orange">Moyenne</span></td>
+        <td><span class="badge badge-orange">Moyen</span></td>
+        <td>Rate limiting 60 req/min/IP + cache Redis (absorbe 99% du trafic) + Redis pub/sub pour invalidation</td>
+      </tr>
+      <tr>
+        <td>Enumeration des établissements (scraping)</td>
+        <td><span class="badge badge-orange">Moyenne</span></td>
+        <td><span class="badge badge-green">Faible</span></td>
+        <td>Pas d'endpoint liste public (uniquement <code>/:code</code>) + rate limiting + pas d'information sensible exposée</td>
+      </tr>
+      <tr>
+        <td>Conflit de route avec routes existantes</td>
+        <td><span class="badge badge-green">Très faible</span></td>
+        <td><span class="badge badge-orange">Moyen</span></td>
+        <td>Préfixe <code>/e/</code> réservé + test de non-collision au CI + documentation route mapping</td>
+      </tr>
+      <tr>
+        <td>Cache poisoning (données périmées)</td>
+        <td><span class="badge badge-green">Très faible</span></td>
+        <td><span class="badge badge-green">Faible</span></td>
+        <td>TTL 5 min + invalidation on update + ETag pour validation navigateur</td>
+      </tr>
+      <tr>
+        <td>Impact performance sur routes existantes</td>
+        <td><span class="badge badge-green">Négligeable</span></td>
+        <td><span class="badge badge-green">Nul</span></td>
+        <td>Endpoint monté AVANT tenantMiddleware (aucun impact sur le flux tenant)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-info">
+    <span class="callout-icon">&#128161;</span>
+    <div>
+      <strong>Évolution future (non bloquante).</strong> L'approche path-based peut être complétée
+      ultérieurement par :<br/>
+      &bull; <strong>Sous-domaines premium</strong> (<code>etab.elisaschool.com</code>) pour les établissements
+      qui souhaitent une URL dédiée — sans changement d'architecture backend<br/>
+      &bull; <strong>SEO avancé</strong> : SSR/SSG de la page publique pour le référencement<br/>
+      &bull; <strong>Page personnalisable</strong> : permettre aux établissements d'ajouter du contenu
+      (description, photos, actualités) via un éditeur dans leur dashboard<br/>
+      &bull; <strong>Analytics</strong> : tracker les visites de la page publique pour chaque établissement
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ CONCLUSION ═══════════════════════ -->
+<section class="section" style="border: 2px solid var(--dominant); background: linear-gradient(135deg, var(--dominant-light) 0%, var(--surface) 100%);">
+  <div class="section-header" style="border-bottom-color: var(--dominant);">
+    <div class="section-num" style="background: var(--dominant-dark);">&#10003;</div>
+    <h2>Conclusion</h2>
+  </div>
+
+  <p>
+    La création de pages publiques dédiées par établissement est <strong>techniquement faisable</strong>,
+    <strong>sécurisée par conception</strong> (projection restrictive, pas de contexte tenant),
+    et <strong>à faible impact</strong> sur l'existant (3-5 jours, ~500 lignes de code, 0 modification DNS).
+  </p>
+
+  <p>
+    L'approche <strong>path-based</strong> (<code>/e/:code</code>) est recommandée pour sa simplicité
+    d'implémentation, sa compatibilité avec l'infrastructure existante (CDN, TanStack Router, Redis),
+    et sa capacité d'évolution vers des sous-domaines premium sans refonte.
+  </p>
+
+  <div class="metrics" style="margin-top: 24px;">
+    <div class="metric-card" style="border-color: var(--dominant);">
+      <div class="metric-value" style="color: var(--dominant);">3-5j</div>
+      <div class="metric-label">Effort total</div>
+    </div>
+    <div class="metric-card" style="border-color: var(--accent);">
+      <div class="metric-value" style="color: var(--accent);">~500</div>
+      <div class="metric-label">Lignes de code</div>
+    </div>
+    <div class="metric-card" style="border-color: var(--success);">
+      <div class="metric-value" style="color: var(--success);">0</div>
+      <div class="metric-label">Modification DNS</div>
+    </div>
+    <div class="metric-card" style="border-color: var(--warning);">
+      <div class="metric-value" style="color: var(--warning);">0%</div>
+      <div class="metric-label">Impact existant</div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<!-- ═══════════════════════ FOOTER ═══════════════════════ -->
+<footer class="report-footer">
+  <div class="container">
+    <p><strong>eLISAschool</strong> &mdash; Analyse technique : Pages Publiques Établissements</p>
+    <p>Document généré le 11 août 2026 &mdash; Branche <code>migration_saas</code> &mdash; Version 1.0</p>
+    <p style="margin-top: 8px; font-size: 0.8rem;">
+      Auteur : Direction Technique eLISAschool &bull; Classification : Interne
+    </p>
+  </div>
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#e3f2fd',
+      primaryTextColor: '#1a1a2e',
+      primaryBorderColor: '#1565c0',
+      lineColor: '#64748b',
+      secondaryColor: '#e8f5e9',
+      tertiaryColor: '#f8f9fa',
+      fontFamily: 'Inter, -apple-system, sans-serif',
+      fontSize: '13px'
+    },
+    flowchart: { curve: 'basis', padding: 16 },
+    sequence: { mirrorActors: false, messageMargin: 40 }
+  });
+</script>
+
+</body>
+</html>

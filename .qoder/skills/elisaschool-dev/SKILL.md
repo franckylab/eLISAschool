@@ -2134,16 +2134,16 @@ Module Plateforme
 └── billing/                 — Facturation, plans, abonnements (existant)
 ```
 
-### Rôles plateforme (6 rôles)
+### Rôles plateforme (6 rôles unifiés — v8)
 
 ```typescript
 // shared/src/enums/roles.enum.ts
-SUPER_ADMIN                    // Accès total, non supprimable
-ADMINISTRATION_PLATEFORME      // Gestion quotidienne
-SECURITE_PLATEFORME            // Sécurité, RBAC, audit
-SUPPORT_PLATEFORME             // Support technique
-COMMERCIAL_PLATEFORME          // Commercial, plans, revenus
-MONITORING_PLATEFORME          // Monitoring, alertes, metrics
+SUPER_ADMIN                    // Accès total, non supprimable (admin@elisaschool.cm)
+PLATEFORME_ADMIN               // CRUD établissements, users, facturation, config
+PLATEFORME_SUPPORT             // Support technique, monitoring (read-only)
+PLATEFORME_BILLING             // Facturation, plans, abonnements, revenus
+PLATEFORME_ANALYST             // Dashboard, stats, exports (read-only + export)
+PLATEFORME_AUDITOR             // Audit, sécurité, lecture users/sessions
 ```
 
 ### Permissions plateforme
@@ -2193,58 +2193,64 @@ POST   /api/platform/parametres/cascade/:cle/propager — Appliquer global à to
 - Glossaire : `docs/guides/GLOSSAIRE-PLATEFORME-ADMIN.md`
 - Glossaire Identité : `docs/guides/GLOSSAIRE-IDENTITE-PLATEFORME.md`
 
-## Auth Dual-Plane (Modèle C — Auth0 Internalisé)
+## Auth Unifiée ADR-005 (v11) — Source unique de vérité
 
-### Architecture Identité
+### Architecture Auth (ADR-005)
 
-Le Modèle C sépare l'authentification de l'autorisation via 4 tables :
-
-```
-identites                    — Source unique de vérité (email, password hash, MFA, statut)
-├── utilisateurs_plateforme  — Admins plateforme (FK → identites, OneToOne)
-├── memberships              — Pivot identité × contexte (PLATEFORME | ETABLISSEMENT)
-└── permissions_plateforme   — Registre ~40 permissions granulaires
-```
-
-### Modules backend dual-plane
+Un seul flux d'authentification pour tous les utilisateurs. Table `utilisateurs` comme source unique :
 
 ```
-platform-auth/        — Login (bcrypt + memberships → JWT scopé), logout, getMe
-platform-sessions/    — CRUD sessions, limite LRU 3, révocation
-identites/            — Entité Identite (entités TypeORM)
-utilisateurs-plateforme/ — Entité UtilisateurPlateforme
-memberships/          — Entité Membership (pivot)
-permissions-plateforme/ — Entité PermissionPlateforme
+utilisateurs                      — Source unique (email, password hash, MFA inline, estPlateforme)
+├── utilisateur_etablissements    — Pivot multi-tenant (contexteType: ETABLISSEMENT | PLATEFORME)
+├── permissions                   — Registre unifié (module: PLATEFORME pour les perms plateforme)
+└── refresh_tokens                — Sessions unifiées (plane: 'tenant' | 'platform')
 ```
 
-### JWT scopé + Middleware discrimination
+**Tables supprimées (ADR-005) :** `identites`, `utilisateurs_plateforme`, `memberships`, `permissions_plateforme`, `mfa_configs`, `sessions_plateforme`
+
+### Modules backend auth
+
+```
+auth/                   — Login unifié (1 bcrypt.compare), MFA inline, tokens
+platform-auth/          — Compatibilité routes /api/platform/auth/* (délègue à auth.service)
+```
+
+### JWT + Middleware discrimination
 
 ```typescript
 // JWT payload
-{ sub: identiteId, email, platform: { role } | null, tenant: { etablissementId, role } | null }
+{ sub: utilisateurId, email, role, plane?: 'platform' | 'tenant', etablissementId?, roles? }
 
-// Middleware scope-discrimination.ts
-// Si route /api/platform/ → vérifier jwt.platform !== null → definePlatformAbility()
-// Sinon → vérifier jwt.tenant !== null → defineAbility() (tenant)
+// Détection plateforme au login :
+// if (utilisateur.estPlateforme && isRolePlateforme(utilisateur.role)) → tokens plateforme
+
+// Middlewares :
+// platformAuthMiddleware — vérifie JWT + plane: 'platform'
+// dualCaslMiddleware — defineAbility() unifié pour les deux contextes
+// scopeDiscriminationMiddleware — discrimination automatique
 ```
 
-### Endpoints auth & sessions plateforme
+### Endpoints auth (unifiés)
 
 ```
-POST /api/platform/auth/login     — Login plateforme (public)
-POST /api/platform/auth/logout    — Logout (auth requis)
-GET  /api/platform/auth/me        — Profil utilisateur + memberships
-GET  /api/platform/sessions       — Liste sessions actives
-DELETE /api/platform/sessions/:id — Révoquer session
-DELETE /api/platform/sessions/all — Révoquer toutes sessions
+POST /api/auth/login            — Login unifié (public) — détecte auto tenant/plATFORME
+POST /api/auth/logout           — Logout (auth requis)
+GET  /api/auth/me               — Profil utilisateur authentifié
+POST /api/auth/mfa/verify       — Vérification MFA (unifié)
+POST /api/auth/mfa/setup        — Configuration MFA
+POST /api/platform/auth/login   — Compatibilité (délègue à auth.service)
+POST /api/platform/auth/logout  — Compatibilité
+GET  /api/platform/auth/me      — Compatibilité
 ```
 
-### CASL Dual
+### CASL unifié
 
 ```typescript
-// shared/src/casl/platform-abilities.ts
-definePlatformAbility(ctx: { identiteId, role }) → PlatformAppAbility
-// 6 switch cases : SUPER_ADMIN, ADMIN_PLATEFORME, SUPPORT, BILLING_MANAGER, ANALYST, AUDITOR
+// shared/src/casl/abilities.ts
+defineAbility(ctx: { id, role, etablissementId? }) → AppAbility
+// Gère les deux contextes (tenant + plateforme) dans une seule fonction
 
-// Subjects plateforme : PlatformUser, PlatformRole, Etablissement, Facturation, Monitoring, Audit, Session, etc.
+// Rôles plateforme unifiés dans Role enum (v8 nettoyé) :
+// SUPER_ADMIN, PLATEFORME_ADMIN, PLATEFORME_SUPPORT,
+// PLATEFORME_BILLING, PLATEFORME_ANALYST, PLATEFORME_AUDITOR
 ```

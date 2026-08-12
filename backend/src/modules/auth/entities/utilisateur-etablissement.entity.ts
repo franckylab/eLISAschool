@@ -28,11 +28,12 @@ import { Etablissement } from '@modules/etablissement/entities';
 import { Role } from './role.entity';
 
 @Entity('utilisateur_etablissements')
-@Index(['utilisateurId', 'etablissementId'], { unique: true })
+@Index(['utilisateurId', 'etablissementId'], { unique: true, where: '"contexteType" = \'ETABLISSEMENT\'' })
 @Index(['utilisateurId', 'actif'])
 @Index(['etablissementId', 'actif'])
 @Index(['roleId', 'actif'])  // Pour comptage des utilisateurs par rôle
 @Index(['utilisateurId', 'etablissementId', 'actif'])  // Pour résolution des permissions
+@Index(['utilisateurId', 'contexteType', 'actif'])  // ADR-005: pivot multi-contexte
 export class UtilisateurEtablissement {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -44,7 +45,24 @@ export class UtilisateurEtablissement {
     @JoinColumn({ name: 'utilisateurId' })
     utilisateur!: Utilisateur;
 
-    @Column({ type: 'uuid' })
+    // ==================================
+    // ADR-005 (v11) — Pivot unique multi-contexte
+    // ==================================
+
+    /**
+     * Discriminateur de contexte : ETABLISSEMENT (tenant) ou PLATEFORME (control plane).
+     * - ETABLISSEMENT : affectation classique à un établissement scolaire
+     * - PLATEFORME : accès au panel d'administration SaaS (etablissementId null)
+     */
+    @Column({ type: 'varchar', length: 20, default: 'ETABLISSEMENT' })
+    contexteType!: 'ETABLISSEMENT' | 'PLATEFORME';
+
+    /**
+     * Établissement cible (nullable si contexteType=PLATEFORME).
+     * Pour les utilisateurs plateforme, ce champ est null car ils n'appartiennent
+     * pas à un établissement spécifique.
+     */
+    @Column({ type: 'uuid', nullable: true })
     etablissementId!: string;
 
     @ManyToOne(() => Etablissement, { onDelete: 'CASCADE' })

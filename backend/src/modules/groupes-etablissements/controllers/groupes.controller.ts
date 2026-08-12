@@ -22,6 +22,7 @@ import { requireGroupeAccess } from '../guards/groupe-access.guard';
 import { Role } from '@shared/enums/roles.enum';
 import { validateDto } from '@common/utils';
 import { AppError } from '@common/filters/error.filter';
+import { logger } from '@common/utils/logger.util';
 
 const router = Router();
 
@@ -62,7 +63,7 @@ function transformGroupeToDto(groupe: any, includeEtablissements: boolean = fals
             }));
     }
     
-    console.log(`[transformGroupeToDto] ${groupe.nom}: ${nbEtablissements} établissements`);
+    logger.debug(`[transformGroupeToDto] ${groupe.nom}: ${nbEtablissements} établissements`);
     
     return dto;
 }

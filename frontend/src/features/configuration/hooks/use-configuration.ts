@@ -54,6 +54,11 @@ export function useModuleRegistry() {
                     config,
                     actif: entry.actif,
                     isLoading: false,
+                    // Entitlement (migration 200)
+                    estAccessible: entry.estAccessible ?? entry.actif,
+                    estVisible: entry.estVisible ?? true,
+                    raisonBlocage: entry.raisonBlocage ?? null,
+                    messageBlocage: entry.messageBlocage ?? null,
                 });
             }
             return states;

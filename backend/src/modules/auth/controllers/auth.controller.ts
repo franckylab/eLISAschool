@@ -14,6 +14,7 @@ import { permissionResolverService } from '../services/permission-resolver.servi
 import { tokenService } from '../services/token.service';
 import { auditService, AuditAction, AuditSeverity } from '../services/audit.service';
 import { mfaService } from '../services/mfa.service';
+import { webauthnService } from '../services/webauthn.service';
 import { AppDataSource } from '@database/data-source';
 import {
     loginSchema,
@@ -24,6 +25,7 @@ import {
     changePasswordSchema,
     verifyEmailSchema,
     logoutSchema,
+    JwtPayload,
 } from '../dto';
 import { switchEtablissementSchema } from '../dto/utilisateur-etablissement.dto';
 import { AppError } from '@common/filters/error.filter';
@@ -31,7 +33,7 @@ import { validateDto } from '@common/utils';
 import { logger } from '@common/utils/logger.util';
 import { getClientIP } from '@common/utils/client-ip.util';
 import { authMiddleware, UtilisateurAuth } from '../middlewares/auth.middleware';
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { envConfig } from '@config/env.config';
 
 const router = Router();
@@ -673,6 +675,197 @@ router.post('/mfa/regenerate-backup-codes', authMiddleware, async (req: Request,
             success: true,
             data: { backupCodes: newCodes },
             message: 'Codes de secours régénérés. Conservez-les en lieu sûr.',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// ==================================
+// WebAuthn/FIDO2 — Durcissement v9
+// ==================================
+
+/**
+ * POST /api/auth/webauthn/register-options
+ * Génère les options pour l'enregistrement d'une clé de sécurité.
+ */
+router.post('/webauthn/register-options', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const utilisateurId = req.utilisateur!.id;
+        const options = await webauthnService.genererOptionsCreation(utilisateurId);
+
+        res.status(200).json({ success: true, data: options });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/auth/webauthn/register
+ * Enregistre une nouvelle credential WebAuthn après création côté client.
+ */
+router.post('/webauthn/register', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const utilisateurId = req.utilisateur!.id;
+        const { credential, label } = req.body;
+
+        if (!credential) {
+            throw new AppError('Credential requise', 400, 'MISSING_CREDENTIAL');
+        }
+
+        const result = await webauthnService.verifierCreation(utilisateurId, credential, label);
+
+        if (!result.success) {
+            throw new AppError(result.message || 'Erreur enregistrement credential', 400, 'WEBAUTHN_REGISTER_ERROR');
+        }
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.LOGIN,
+            severity: AuditSeverity.INFO,
+            description: 'WebAuthn credential enregistrée',
+            module: 'auth',
+            ipAddress: getClientIP(req),
+            userAgent: req.get('User-Agent'),
+        });
+
+        res.status(201).json({
+            success: true,
+            data: { credentialId: result.credentialId },
+            message: result.message,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/auth/webauthn/login-options
+ * Génère les options pour l'authentification par clé de sécurité.
+ * Body optionnel : { email?: string }
+ */
+router.post('/webauthn/login-options', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { email } = req.body;
+        const options = await webauthnService.genererOptionsAuthentification(email);
+
+        res.status(200).json({ success: true, data: options });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/auth/webauthn/login
+ * Authentifie un utilisateur via sa clé de sécurité (passwordless).
+ */
+router.post('/webauthn/login', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { credential } = req.body;
+
+        if (!credential) {
+            throw new AppError('Credential requise', 400, 'MISSING_CREDENTIAL');
+        }
+
+        const result = await webauthnService.verifierAuthentification(credential.id, credential);
+
+        if (!result.success || !result.utilisateur) {
+            throw new AppError(result.message || 'Authentification échouée', 401, 'WEBAUTHN_AUTH_ERROR');
+        }
+
+        const utilisateur = result.utilisateur;
+
+        // Générer les tokens JWT (même pattern que auth.service.login)
+        const payload: JwtPayload = {
+            sub: utilisateur.id,
+            email: utilisateur.email,
+            role: utilisateur.role,
+            roles: [utilisateur.role],
+        };
+
+        const accessToken = tokenService.generateAccessToken(payload);
+        const refreshToken = await tokenService.generateRefreshToken(
+            utilisateur.id,
+            getClientIP(req),
+            req.get('User-Agent'),
+        );
+
+        await auditService.log({
+            utilisateurId: utilisateur.id,
+            action: AuditAction.LOGIN,
+            severity: AuditSeverity.INFO,
+            description: 'Connexion WebAuthn (passwordless)',
+            module: 'auth',
+            ipAddress: getClientIP(req),
+            userAgent: req.get('User-Agent'),
+        });
+
+        res.status(200).json({
+            success: true,
+            data: {
+                accessToken,
+                refreshToken,
+                utilisateur: {
+                    id: utilisateur.id,
+                    email: utilisateur.email,
+                    matricule: utilisateur.matricule,
+                    role: utilisateur.role,
+                    pseudonyme: utilisateur.pseudonyme,
+                },
+            },
+            message: 'Connexion par clé de sécurité réussie',
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * GET /api/auth/webauthn/credentials
+ * Liste les credentials WebAuthn de l'utilisateur connecté.
+ */
+router.get('/webauthn/credentials', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const utilisateurId = req.utilisateur!.id;
+        const credentials = await webauthnService.listerCredentials(utilisateurId);
+
+        res.status(200).json({
+            success: true,
+            data: credentials,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * DELETE /api/auth/webauthn/credentials/:id
+ * Révoque une credential WebAuthn.
+ */
+router.delete('/webauthn/credentials/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const utilisateurId = req.utilisateur!.id;
+        const credentialId = req.params.id;
+
+        const revoked = await webauthnService.revoquerCredential(utilisateurId, credentialId);
+
+        if (!revoked) {
+            throw new AppError('Credential non trouvée', 404, 'CREDENTIAL_NOT_FOUND');
+        }
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.LOGIN,
+            severity: AuditSeverity.INFO,
+            description: `WebAuthn credential révoquée: ${credentialId}`,
+            module: 'auth',
+            ipAddress: getClientIP(req),
+            userAgent: req.get('User-Agent'),
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Clé de sécurité révoquée',
         });
     } catch (error) {
         next(error);

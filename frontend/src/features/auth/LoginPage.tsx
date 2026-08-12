@@ -29,6 +29,7 @@ import { ElisaLogo } from '@/components/branding';
 import { EtablissementSelectionModal } from '@/components/auth/EtablissementSelectionModal';
 import { LoginSlideshow } from './LoginSlideshow';
 import { FondAnime } from '@/components/layout/fond-anime';
+import { WebAuthnLogin } from './components/WebAuthnLogin';
 
 interface LoginForm {
     identifiant: string;
@@ -437,17 +438,32 @@ export function LoginPage() {
         setError(null);
         setSuccessPulse(false);
         try {
-            // Étape 1 : Login avec validation établissements
-            // Le store gère MAINTENANT la détection multi-établissements
+            // ─── Login unifié ADR-005 (v11) — auto-détection tenant/plATFORME ───
             await login(data.identifiant, data.motDePasse);
 
-            // MFA — Phase P1 v6 : Si MFA requise, rediriger vers la page de vérification
-            if (useAuthStore.getState().mfaRequired) {
+            const state = useAuthStore.getState();
+
+            // ─── MFA unifié (ADR-005) — tenant + plateforme ───
+            if (state.mfaRequired) {
                 toast.info('Vérification MFA requise');
                 router.navigate({ to: '/mfa-verify' });
                 return;
             }
-            
+
+            // ─── Utilisateur plateforme pur (sans compte tenant) ───
+            if (state.hasPlatformAccess && !state.accessToken) {
+                setTentativesRestantes(20);
+                setBloqueJusqua(null);
+                setTempsRestant(0);
+                setSuccessPulse(true);
+                toast.success('Connexion plateforme réussie');
+                setTimeout(() => {
+                    router.navigate({ to: '/platform/dashboard' });
+                }, 300);
+                return;
+            }
+
+            // ─── Flux tenant normal ───
             // CONNEXION RÉUSSIE : Réinitialiser le compteur de tentatives
             setTentativesRestantes(20);
             setBloqueJusqua(null);
@@ -455,8 +471,8 @@ export function LoginPage() {
             
             setSuccessPulse(true);
 
-            // Étape 2 : Vérifier si modal de sélection affiché par le store
-            const currentPreLoginData = useAuthStore.getState().preLoginData;
+            // Vérifier si modal de sélection affiché par le store
+            const currentPreLoginData = state.preLoginData;
             
             if (currentPreLoginData?.requiereSelection) {
                 // Multi-établissements → modal déjà affiché par le store
@@ -928,6 +944,41 @@ export function LoginPage() {
                                         style={{ height: 'clamp(16px, 2vh, 20px)', width: 'clamp(16px, 2vh, 20px)' }} />
                                 <span className="font-medium" style={{ fontSize: 'clamp(0.75rem, 1.2vh, 0.875rem)' }}>{t('login.scannerQR')}</span>
                             </motion.button>
+
+                            {/* Durcissement v9 — Connexion par clé de sécurité (WebAuthn/Passkeys) */}
+                            <WebAuthnLogin
+                                onLoginSuccess={async (data) => {
+                                    try {
+                                        // Stocker les tokens
+                                        const { setTokens } = useAuthStore.getState();
+                                        setTokens(data.accessToken, data.refreshToken);
+
+                                        // Charger les établissements disponibles
+                                        await useAuthStore.getState().fetchEtablissementsDisponibles();
+
+                                        const { etablissementsDisponibles } = useAuthStore.getState();
+
+                                        if (etablissementsDisponibles.length > 1) {
+                                            // Multi-établissement → modal de sélection
+                                            setShowEtablissementModal(true);
+                                        } else {
+                                            // Mono-établissement → compléter la connexion
+                                            const etabId = etablissementsDisponibles[0]?.id;
+                                            if (etabId) {
+                                                await completeLogin(etabId);
+                                            }
+                                            toast.success(t('login.bienvenue'));
+                                            setTimeout(() => {
+                                                router.navigate({ to: (search as any).redirect || '/dashboard' });
+                                            }, 300);
+                                        }
+                                    } catch (err) {
+                                        console.error('[WebAuthn] Erreur post-login:', err);
+                                        toast.error('Erreur lors de la finalisation de la connexion');
+                                    }
+                                }}
+                                email={identifiantValue.includes('@') ? identifiantValue : undefined}
+                            />
                         </motion.form>
 
                         {/* Pied de page */}
@@ -963,6 +1014,12 @@ export function LoginPage() {
                     onCancel={handleEtablissementCancel}
                     tokenTemporaire={preLoginData.tokenTemporaire || ''}
                     expiresIn={preLoginData.expiresIn}
+                    // Dual-plane auto-detection (v10.1)
+                    hasPlatformAccess={useAuthStore.getState().hasPlatformAccess}
+                    onPlatformAccess={() => {
+                        setShowEtablissementModal(false);
+                        router.navigate({ to: '/platform/dashboard' });
+                    }}
                 />
             )}
         </div>

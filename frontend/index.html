@@ -64,56 +64,39 @@
             })();
         </script>
         <script>
-            // Préchargement intelligent des images de fond - UNIQUEMENT sur la page de login
-            // Ce script vérifie si nous sommes sur la page de login avant de précharger
+            // Préchargement silencieux des images de fond login via JS (pas de link preload)
+            // Link preload déclenche un warning Chrome si l'image n'est pas consommée dans
+            // les ~3s après load. Le préchargement JS via new Image() met les images en
+            // cache navigateur sans ce warning.
             (function() {
                 const isLoginPage = window.location.pathname === '/login' || window.location.pathname === '/';
-                
-                if (!isLoginPage) {
-                    // Ne pas précharger les images de fond sur les autres pages
-                    return;
-                }
-                
+                if (!isLoginPage) return;
+
                 const bgImages = [
                     '/images/login-background.png',
                     '/images/login-background-2.png',
                     '/images/login-background-3.png',
                     '/images/login-background-4.png',
                     '/images/login-background-5.png',
+                    '/images/login-background-6.png',
+                    '/images/login-background-7.png',
+                    '/images/login-background-8.png',
+                    '/images/login-background-9.png',
+                    '/images/login-background-10.png',
                 ];
-                
-                // Charger les 5 premières images en priorité
+
+                // Précharger les 10 premières en cache (silencieux, pas de warning)
                 bgImages.forEach(src => {
-                    const link = document.createElement('link');
-                    link.rel = 'preload';
-                    link.as = 'image';
-                    link.href = src;
-                    document.head.appendChild(link);
+                    const img = new Image();
+                    img.src = src;
                 });
-                
-                // Charger les autres en arrière-plan après le load
+
+                // Charger le reste en arrière-plan après le load
                 window.addEventListener('load', () => {
-                    const remainingImages = [
-                        '/images/login-background-6.png',
-                        '/images/login-background-7.png',
-                        '/images/login-background-8.png',
-                        '/images/login-background-9.png',
-                        '/images/login-background-10.png',
-                        '/images/login-background-11.png',
-                        '/images/login-background-12.png',
-                        '/images/login-background-13.png',
-                        '/images/login-background-14.png',
-                        '/images/login-background-15.png',
-                        '/images/login-background-16.png',
-                        '/images/login-background-17.png',
-                        '/images/login-background-18.png',
-                        '/images/login-background-19.png',
-                        '/images/login-background-20.png',
-                    ];
-                    remainingImages.forEach(src => {
+                    for (let i = 11; i <= 20; i++) {
                         const img = new Image();
-                        img.src = src;
-                    });
+                        img.src = '/images/login-background' + (i === 1 ? '' : '-' + i) + '.png';
+                    }
                 });
             })();
         </script>

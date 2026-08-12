@@ -21,6 +21,9 @@ export { TrancheConfigService } from './tranche-config.service';
 export type { ResolvedTranche } from './tranche-config.service';
 export { ModuleResolutionService, moduleResolutionService } from './module-resolution.service';
 export type { ModuleResolu, SourceModule } from './module-resolution.service';
+// Refonte SaaS — Unification Modules (migration 200)
+export { EntitlementService, entitlementService } from './entitlement.service';
+export type { EntitlementResult, EntitlementBatchResult, EntitlementSource, EntitlementRaison } from './entitlement.service';
 // Phase 4.2 — Alertes quotas
 export { QuotaAlertService, quotaAlertService } from './quota-alert.service';
 // Phase 7 Lot F — Refonte SaaS v7 (workflow actions critiques)

@@ -423,7 +423,7 @@ export const MODULE_REGISTRY: Record<ModuleName, ModuleConfig> = {
             Permission.PARKING_ABONNEMENTS_EDIT,
             Permission.PARKING_STATISTIQUES_VIEW,
         ],
-        dependencies: [],
+        dependencies: [ModuleName.AUTH], // P1.3 v7 — Ajout dépendance auth (sécurité)
         defaultSettings: {
             tarifStandardHoraire: 500, // FCFA
             tarifPMRHoraire: 0, // Gratuit

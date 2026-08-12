@@ -190,31 +190,31 @@ describe('E2E — Platform Sidebar Navigation', () => {
 
 describe('E2E — Rôles Plateforme', () => {
     /**
-     * 6 rôles plateforme :
-     * - SUPER_ADMIN (existant)
-     * - ADMINISTRATION_PLATEFORME
-     * - SECURITE_PLATEFORME
-     * - SUPPORT_PLATEFORME
-     * - COMMERCIAL_PLATEFORME
-     * - MONITORING_PLATEFORME
+     * 6 rôles plateforme (v8 — unifiés) :
+     * - SUPER_ADMIN
+     * - PLATEFORME_ADMIN
+     * - PLATEFORME_SUPPORT
+     * - PLATEFORME_BILLING
+     * - PLATEFORME_ANALYST
+     * - PLATEFORME_AUDITOR
      */
 
     const ROLES_PLATEFORME = [
         'SUPER_ADMIN',
-        'ADMINISTRATION_PLATEFORME',
-        'SECURITE_PLATEFORME',
-        'SUPPORT_PLATEFORME',
-        'COMMERCIAL_PLATEFORME',
-        'MONITORING_PLATEFORME',
+        'PLATEFORME_ADMIN',
+        'PLATEFORME_SUPPORT',
+        'PLATEFORME_BILLING',
+        'PLATEFORME_ANALYST',
+        'PLATEFORME_AUDITOR',
     ];
 
     const ROLE_PERMISSIONS: Record<string, string[]> = {
         SUPER_ADMIN: ['platform:*'],
-        ADMINISTRATION_PLATEFORME: ['platform:administration:*'],
-        SECURITE_PLATEFORME: ['platform:securite:*'],
-        SUPPORT_PLATEFORME: ['platform:support:*'],
-        COMMERCIAL_PLATEFORME: ['platform:commercial:*'],
-        MONITORING_PLATEFORME: ['platform:monitoring:*'],
+        PLATEFORME_ADMIN: ['platform:administration:*'],
+        PLATEFORME_SUPPORT: ['platform:support:*'],
+        PLATEFORME_BILLING: ['platform:billing:*'],
+        PLATEFORME_ANALYST: ['platform:analytics:*'],
+        PLATEFORME_AUDITOR: ['platform:audit:*'],
     };
 
     it('il y a exactement 6 rôles plateforme', () => {
@@ -233,10 +233,10 @@ describe('E2E — Rôles Plateforme', () => {
         expect(uniqueScopes.size).toBe(scopes.length);
     });
 
-    it('MONITORING_PLATEFORME est read-only', () => {
-        const perms = ROLE_PERMISSIONS.MONITORING_PLATEFORME;
-        // monitoring est limité à la lecture
-        expect(perms[0]).toContain('monitoring');
+    it('PLATEFORME_AUDITOR est read-only', () => {
+        const perms = ROLE_PERMISSIONS.PLATEFORME_AUDITOR;
+        // auditor est limité à la lecture
+        expect(perms[0]).toContain('audit');
     });
 });
 
@@ -289,7 +289,7 @@ describe('E2E — CRUD Utilisateurs Plateforme', () => {
         });
 
         it('possible de désactiver un non-SUPER_ADMIN sans restriction', () => {
-            const user = { id: 'user-admin-1', role: 'ADMINISTRATION_PLATEFORME', statut: 'ACTIF' };
+            const user = { id: 'user-admin-1', role: 'PLATEFORME_ADMIN', statut: 'ACTIF' };
 
             const peutDesactiver = user.role !== 'SUPER_ADMIN';
             expect(peutDesactiver).toBe(true);
@@ -300,7 +300,7 @@ describe('E2E — CRUD Utilisateurs Plateforme', () => {
         it('un compte plateforme doit avoir MFA activé (grace period 24h)', () => {
             const user = {
                 id: 'user-1',
-                role: 'ADMINISTRATION_PLATEFORME',
+                role: 'PLATEFORME_ADMIN',
                 mfaActive: false,
                 mfaGracePeriodEnd: new Date(Date.now() + 24 * 60 * 60 * 1000), // +24h
             };
@@ -312,7 +312,7 @@ describe('E2E — CRUD Utilisateurs Plateforme', () => {
         it('compte bloqué après grace period sans MFA', () => {
             const user = {
                 id: 'user-2',
-                role: 'SECURITE_PLATEFORME',
+                role: 'PLATEFORME_SUPPORT',
                 mfaActive: false,
                 mfaGracePeriodEnd: new Date(Date.now() - 1000), // expiré
             };
@@ -361,14 +361,14 @@ describe('E2E — CRUD Utilisateurs Plateforme', () => {
         it('valide les rôles autorisés lors de la création', () => {
             const rolesAutorises = new Set([
                 'SUPER_ADMIN',
-                'ADMINISTRATION_PLATEFORME',
-                'SECURITE_PLATEFORME',
-                'SUPPORT_PLATEFORME',
-                'COMMERCIAL_PLATEFORME',
-                'MONITORING_PLATEFORME',
+                'PLATEFORME_ADMIN',
+                'PLATEFORME_SUPPORT',
+                'PLATEFORME_BILLING',
+                'PLATEFORME_ANALYST',
+                'PLATEFORME_AUDITOR',
             ]);
 
-            expect(rolesAutorises.has('ADMINISTRATION_PLATEFORME')).toBe(true);
+            expect(rolesAutorises.has('PLATEFORME_ADMIN')).toBe(true);
             expect(rolesAutorises.has('ADMIN')).toBe(false); // Rôle tenant, pas plateforme
             expect(rolesAutorises.has('ELEVE')).toBe(false);
         });
@@ -597,14 +597,14 @@ describe('E2E — Cascade Paramètres Multi-Niveaux', () => {
 describe('E2E — Guards RBAC Plateforme', () => {
     describe('5.1 — Contrôle d\'accès par rôle', () => {
         const ROUTE_GUARDS: Record<string, string[]> = {
-            '/platform/dashboard': ['SUPER_ADMIN', 'ADMINISTRATION_PLATEFORME', 'MONITORING_PLATEFORME', 'SUPPORT_PLATEFORME', 'COMMERCIAL_PLATEFORME', 'SECURITE_PLATEFORME'],
-            '/platform/etablissements': ['SUPER_ADMIN', 'ADMINISTRATION_PLATEFORME'],
-            '/platform/utilisateurs': ['SUPER_ADMIN', 'SECURITE_PLATEFORME'],
-            '/platform/permissions': ['SUPER_ADMIN', 'SECURITE_PLATEFORME'],
-            '/platform/facturation': ['SUPER_ADMIN', 'ADMINISTRATION_PLATEFORME', 'COMMERCIAL_PLATEFORME'],
-            '/platform/revenus': ['SUPER_ADMIN', 'COMMERCIAL_PLATEFORME'],
-            '/platform/monitoring': ['SUPER_ADMIN', 'SUPPORT_PLATEFORME', 'MONITORING_PLATEFORME'],
-            '/platform/audit': ['SUPER_ADMIN', 'SECURITE_PLATEFORME'],
+            '/platform/dashboard': ['SUPER_ADMIN', 'PLATEFORME_ADMIN', 'PLATEFORME_AUDITOR', 'PLATEFORME_SUPPORT', 'PLATEFORME_BILLING', 'PLATEFORME_ANALYST'],
+            '/platform/etablissements': ['SUPER_ADMIN', 'PLATEFORME_ADMIN'],
+            '/platform/utilisateurs': ['SUPER_ADMIN', 'PLATEFORME_ADMIN'],
+            '/platform/permissions': ['SUPER_ADMIN', 'PLATEFORME_ADMIN'],
+            '/platform/facturation': ['SUPER_ADMIN', 'PLATEFORME_ADMIN', 'PLATEFORME_BILLING'],
+            '/platform/revenus': ['SUPER_ADMIN', 'PLATEFORME_BILLING'],
+            '/platform/monitoring': ['SUPER_ADMIN', 'PLATEFORME_SUPPORT', 'PLATEFORME_ANALYST'],
+            '/platform/audit': ['SUPER_ADMIN', 'PLATEFORME_AUDITOR'],
         };
 
         it('SUPER_ADMIN a accès à toutes les routes', () => {
@@ -643,7 +643,7 @@ describe('E2E — Guards RBAC Plateforme', () => {
     describe('5.2 — Scope par groupe d\'établissements', () => {
         it('un admin avec scope groupe ne voit que les étab de son groupe', () => {
             const userScope = {
-                role: 'ADMINISTRATION_PLATEFORME',
+                role: 'PLATEFORME_ADMIN',
                 groupeEtablissementIds: ['groupe-1', 'groupe-2'],
             };
 

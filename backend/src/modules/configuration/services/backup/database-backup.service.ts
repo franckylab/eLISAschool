@@ -22,7 +22,8 @@ const gzipAsync = promisify(gzip);
 const gunzipAsync = promisify(gunzip);
 
 /**
- * Tables multi-tenant (avec etablissement_id)
+ * Tables multi-tenant (avec colonne "etablissementId" camelCase TypeORM)
+ * Seules les tables existantes ET scopées multi-tenant sont listées.
  */
 const TENANT_TABLES = [
     'eleves',
@@ -30,16 +31,18 @@ const TENANT_TABLES = [
     'annees_scolaires',
     'notes',
     'bulletins',
-    'absences',
-    'cantine_inscriptions',
-    'transport_inscriptions',
-    'personnel',
-    'utilisateurs',
+    'membres_personnel',
     'clubs',
-    'clubs_membres',
     'materiels',
-    'messagerie_messages',
-    'notifications',
+    'sondages',
+    'annonces',
+    'heures_cours',
+    'factures',
+    'paiements',
+    'parametres_systeme',
+    'abonnements_client',
+    'usage_meters',
+    'transactions_ledger',
 ];
 
 /**
@@ -63,7 +66,7 @@ export class DatabaseBackupService {
         for (const table of TENANT_TABLES) {
             try {
                 const rows = await AppDataSource.query(
-                    `SELECT * FROM ${table} WHERE etablissement_id = $1`,
+                    `SELECT * FROM "${table}" WHERE "etablissementId" = $1`,
                     [etablissementId]
                 );
                 exportData[table] = rows;
@@ -262,7 +265,7 @@ export class DatabaseBackupService {
                 // Supprimer les données existantes si force
                 if (force) {
                     await queryRunner.query(
-                        `DELETE FROM ${table} WHERE etablissement_id = $1`,
+                        `DELETE FROM "${table}" WHERE "etablissementId" = $1`,
                         [etablissementId]
                     );
                 }
@@ -271,11 +274,11 @@ export class DatabaseBackupService {
                 for (const row of rows) {
                     const columns = Object.keys(row).filter(k => k !== 'id');
                     const values = columns.map((k, i) => `$${i + 1}`).join(', ');
-                    const columnNames = columns.join(', ');
+                    const columnNames = columns.map(c => `"${c}"`).join(', ');
                     const columnValues = columns.map(k => row[k]);
 
                     await queryRunner.query(
-                        `INSERT INTO ${table} (${columnNames}, etablissement_id) VALUES (${values}, $${columns.length + 1})`,
+                        `INSERT INTO "${table}" (${columnNames}, "etablissementId") VALUES (${values}, $${columns.length + 1})`,
                         [...columnValues, etablissementId]
                     );
                 }

@@ -46,6 +46,7 @@ import { initClassesCronJobs } from '@modules/classes/cron-jobs';
 import { initAuditCronJobs } from '@modules/audit/cron-jobs';
 import { initEmploiDuTempsCronJobs } from '@modules/emploi-du-temps/cron-jobs';
 import { initBillingCronJobs } from '@modules/billing/cron-jobs';
+import { keyManagerService } from '@modules/configuration/services/key-manager.service';
 import { permissionResolverService } from '@modules/auth/services';
 
 // Chargement des variables d'environnement (déjà fait en haut du fichier)
@@ -60,6 +61,14 @@ async function bootstrap(): Promise<void> {
         logger.info('🔌 Connexion à la base de données PostgreSQL...');
         await initializeDatabase();
         logger.info('✅ Connexion à la base de données établie avec succès');
+
+        // Durcissement v9 — Initialiser le KeyManager (clés cryptographiques en base)
+        try {
+            await keyManagerService.init();
+            logger.info('🔐 KeyManager initialisé — clés cryptographiques vérifiées');
+        } catch (error) {
+            logger.warn('⚠️ KeyManager: initialisation ignorée (non bloquant)', error);
+        }
 
         // Backfill sécurisé des postes sans fonctionId (migration différée)
         try {

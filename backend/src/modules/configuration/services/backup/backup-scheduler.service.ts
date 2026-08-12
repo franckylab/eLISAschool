@@ -202,14 +202,16 @@ export class BackupSchedulerService {
                 // Enregistrer le backup dans la DB
                 const backup = this.backupRepo.create({
                     etablissementId,
-                    type: type === 'complet' ? BackupType.COMPLET : BackupType.DIFFERENTIEL,
-                    provider: providerName as StorageProvider,
-                    chemin: result.path || fileName,
-                    taille: result.size || 0,
-                    statut: 'SUCCESS' as any,
-                    dateBackup: new Date(),
-                    metadata: { nombreTables: Object.keys(data).length },
-                } as any);
+                    backupType: BackupType.DATABASE,
+                    version: new Date().toISOString(),
+                    checksum: '',
+                    storageProvider: StorageProvider.DATABASE,
+                    storageKey: result.path || fileName,
+                    encrypted: false,
+                    compressed: true,
+                    sizeBytes: result.size || 0,
+                    metadata: { nombreTables: Object.keys(data).length, type },
+                });
 
                 const saved = await this.backupRepo.save(backup);
 
@@ -254,15 +256,15 @@ export class BackupSchedulerService {
             } else if (options.pointInTime) {
                 backup = await this.backupRepo
                     .createQueryBuilder('b')
-                    .where('b.etablissement_id = :etablissementId', { etablissementId })
-                    .andWhere('b.date_backup <= :pointInTime', { pointInTime: options.pointInTime })
-                    .orderBy('b.date_backup', 'DESC')
+                    .where('b.etablissementId = :etablissementId', { etablissementId })
+                    .andWhere('b.createdAt <= :pointInTime', { pointInTime: options.pointInTime })
+                    .orderBy('b.createdAt', 'DESC')
                     .getOne();
             } else {
                 // Dernier backup
                 backup = await this.backupRepo.findOne({
                     where: { etablissementId } as any,
-                    order: { dateBackup: 'DESC' },
+                    order: { createdAt: 'DESC' },
                 });
             }
 
@@ -273,7 +275,7 @@ export class BackupSchedulerService {
             if (options.mode === 'dry-run') {
                 return {
                     succes: true,
-                    message: `Dry-run: backup trouvé du ${backup.dateBackup}, provider: ${backup.provider}`,
+                    message: `Dry-run: backup trouvé du ${backup.createdAt?.toISOString()}, provider: ${backup.storageProvider}`,
                 };
             }
 
@@ -283,7 +285,7 @@ export class BackupSchedulerService {
 
             return {
                 succes: true,
-                message: `Restauration initiée depuis le backup du ${backup.dateBackup?.toISOString()}`,
+                message: `Restauration initiée depuis le backup du ${backup.createdAt?.toISOString()}`,
                 duration: Date.now() - start,
             };
 
@@ -314,8 +316,8 @@ export class BackupSchedulerService {
 
         const oldBackups = await this.backupRepo
             .createQueryBuilder('b')
-            .where('b.etablissement_id = :etablissementId', { etablissementId })
-            .andWhere('b.date_backup < :cutoff', { cutoff })
+            .where('b.etablissementId = :etablissementId', { etablissementId })
+            .andWhere('b.createdAt < :cutoff', { cutoff })
             .getMany();
 
         if (oldBackups.length === 0) return;
@@ -325,7 +327,7 @@ export class BackupSchedulerService {
 
         for (const backup of oldBackups) {
             try {
-                await provider.delete(backup.chemin, credentials);
+                await provider.delete(backup.storageKey, credentials);
                 await this.backupRepo.remove(backup);
                 logger.info(`[BackupScheduler] Backup ${backup.id} supprimé (rétention ${retentionJours}j)`);
             } catch (error: any) {

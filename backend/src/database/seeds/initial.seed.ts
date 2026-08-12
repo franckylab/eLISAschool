@@ -78,8 +78,12 @@ export async function runSystemSeeds(): Promise<{
     // 8b. Catalogue modules unifié (source de vérité — Lot A v7)
     await seedModulesCatalogue();
 
-    // 9. Super admin
+    // 9. Super admin (estPlateforme=true — accès Control Plane)
     await seedSuperAdmin(etablissementPrincipalId, etablissementSecondaireId);
+
+    // 9b. ADR-005 (v11) : Les utilisateurs plateforme sont créés dans seedUtilisateursParRole (demo).
+    // Le super admin (seed ci-dessus) est le seul utilisateur plateforme créé au niveau système.
+    // Les utilisateurs PLATEFORME_* de démo ont estPlateforme=true et ne sont PAS liés à un établissement.
 
     // 10. Types de contrat
     await seedTypesContrat();

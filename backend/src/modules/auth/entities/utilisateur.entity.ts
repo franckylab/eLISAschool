@@ -40,6 +40,7 @@ export enum StatutUtilisateur {
     INACTIF = 'INACTIF',
     SUSPENDU = 'SUSPENDU',
     EN_ATTENTE_VALIDATION = 'EN_ATTENTE_VALIDATION',
+    ARCHIVE = 'ARCHIVE',
 }
 
 /**
@@ -111,6 +112,34 @@ export class Utilisateur {
      */
     @Column({ type: 'int', default: 1 })
     maxEtablissementsPersonnel!: number;
+
+    // ==================================
+    // ADR-005 (v11) — Auth unifiée source unique
+    // ==================================
+
+    /**
+     * Flag plateforme — true si cet utilisateur a accès au Control Plane.
+     * Détection rapide sans parser le rôle (isRolePlateforme()).
+     */
+    @Index()
+    @Column({ type: 'boolean', default: false })
+    estPlateforme!: boolean;
+
+    /**
+     * MFA TOTP activé (source unique — remplace mfa_configs et identites.mfaActive).
+     * Colonnes inline pour éviter une table séparée.
+     */
+    @Column({ type: 'boolean', default: false })
+    mfaActif!: boolean;
+
+    @Column({ type: 'varchar', length: 255, nullable: true, select: false })
+    mfaSecretHash?: string;
+
+    @Column({ type: 'text', nullable: true, select: false })
+    mfaBackupCodesHash?: string;
+
+    @Column({ type: 'timestamp', nullable: true })
+    mfaDerniereVerification?: Date;
 
     // NOTE: etablissementId SUPPRIMÉ en v4.0
     // Multi-établissements géré exclusivement via utilisateur_etablissements

@@ -89,19 +89,19 @@ export function EtablissementsPage() {
             ),
         },
         {
-            key: 'telephone',
+            key: 'contactTelephone',
             header: 'Téléphone',
             render: (e) => (
                 <span className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300">
                     <Phone className="h-3 w-3" />
-                    {e.telephone || '—'}
+                    {e.contactTelephone || '—'}
                 </span>
             ),
         },
         {
-            key: 'typeEtablissement',
+            key: 'type',
             header: 'Type',
-            render: (e) => <span className="text-sm">{getTypeLabel(e.typeEtablissement)}</span>,
+            render: (e) => <span className="text-sm">{getTypeLabel(e.type)}</span>,
         },
         {
             key: 'sousSysteme',
@@ -225,13 +225,13 @@ function EtablissementFormModal({ etablissement, onClose }: { etablissement: Eta
     const isEditMode = !!etablissement;
 
     const [nom, setNom] = useState(etablissement?.nom || '');
-    const [code, setCode] = useState(etablissement?.code || '');
+    const [code, setCode] = useState(etablissement?.codeEtablissement || '');
     const [slogan, setSlogan] = useState(etablissement?.slogan || '');
     const [adresse, setAdresse] = useState(etablissement?.adresse || '');
     const [ville, setVille] = useState(etablissement?.ville || '');
-    const [telephone, setTelephone] = useState(etablissement?.telephone || '');
-    const [email, setEmail] = useState(etablissement?.email || '');
-    const [typeEtablissement, setTypeEtablissement] = useState(etablissement?.typeEtablissement || 'LAIC');
+    const [telephone, setTelephone] = useState(etablissement?.contactTelephone || '');
+    const [email, setEmail] = useState(etablissement?.contactEmail || '');
+    const [typeEtablissement, setTypeEtablissement] = useState(etablissement?.type || 'LAIC');
     const [sousSysteme, setSousSysteme] = useState(etablissement?.sousSysteme || 'FRANCOPHONE');
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -255,13 +255,13 @@ function EtablissementFormModal({ etablissement, onClose }: { etablissement: Eta
 
         const dto = {
             nom,
-            code: code || undefined,
+            codeEtablissement: code || undefined,
             slogan: slogan || undefined,
             adresse: adresse || undefined,
             ville,
-            telephone: telephone || undefined,
-            email: email || undefined,
-            typeEtablissement,
+            contactTelephone: telephone || undefined,
+            contactEmail: email || undefined,
+            type: typeEtablissement,
             sousSysteme,
         };
 

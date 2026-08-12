@@ -20,7 +20,6 @@ import {
     StorageProvider,
 } from '../../entities/backup-record.entity';
 import { ParametreVersion } from '../../entities/parametre-version.entity';
-import { ConfigurationApp } from '../../entities/configuration-app.entity';
 import { ConfigurationModule } from '../../entities/configuration-module.entity';
 import { ParametreSysteme } from '../../entities/parametre-systeme.entity';
 import { EtablissementConfig } from '@modules/etablissement/entities';
@@ -71,7 +70,6 @@ export interface CloneResult {
 export class ConfigBackupService {
     private backupRepo: Repository<BackupRecord>;
     private parametreVersionRepo: Repository<ParametreVersion>;
-    private configAppRepo: Repository<ConfigurationApp>;
     private configModuleRepo: Repository<ConfigurationModule>;
     private parametreRepo: Repository<ParametreSysteme>;
     private etablissementConfigRepo: Repository<EtablissementConfig>;
@@ -80,7 +78,6 @@ export class ConfigBackupService {
     constructor() {
         this.backupRepo = AppDataSource.getRepository(BackupRecord);
         this.parametreVersionRepo = AppDataSource.getRepository(ParametreVersion);
-        this.configAppRepo = AppDataSource.getRepository(ConfigurationApp);
         this.configModuleRepo = AppDataSource.getRepository(ConfigurationModule);
         this.parametreRepo = AppDataSource.getRepository(ParametreSysteme);
         this.etablissementConfigRepo = AppDataSource.getRepository(EtablissementConfig);

@@ -10,5 +10,6 @@ export * from './configuration-history.service';
 export * from './configuration-listener';
 export * from './validateur-sous-systeme.service';
 export * from './parametres-cascade.service';
-export { ModuleRegistryService, moduleRegistry } from './module-registry.service';
-export type { ModuleDefinition, ModuleActivationStatus, ModuleActivationPreview } from './module-registry.service';
+export * from './config-consistency.service';
+// ModuleRegistryService supprimé (refonte SaaS migration 200)
+// Utiliser EntitlementService (billing) comme source unique de vérité

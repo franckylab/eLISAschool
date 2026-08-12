@@ -118,7 +118,7 @@
 
 ---
 
-### 📊 Rapports (43 documents)
+### 📊 Rapports (44 documents)
 
 **Rapports backend :**
 
@@ -159,6 +159,12 @@
 | [RAPPORT-FINAL-DEPLOIEMENT-ANNONCES.md](rapports/RAPPORT-FINAL-DEPLOIEMENT-ANNONCES.md) | Déploiement annonces | ✅ Actif |
 | [RAPPORT-FINAL-MODULES-FRONTEND.md](rapports/RAPPORT-FINAL-MODULES-FRONTEND.md) | Modules frontend | ✅ Actif |
 | [RAPPORT-FINAL-PAGINATION.md](rapports/RAPPORT-FINAL-PAGINATION.md) | Pagination improvements | ✅ Actif |
+
+**Rapports audit & analyse :**
+
+| Document | Description | Statut |
+|----------|-------------|--------|
+| [RAPPORT-GESTION-MODULES-SAAS.html](rapports/RAPPORT-GESTION-MODULES-SAAS.html) | Audit gestion modules SaaS — architecture, failles, recommandations | ✅ Actif |
 
 ---
 

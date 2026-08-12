@@ -39,7 +39,15 @@ export function AbilityProvider({ children }: { children: ReactNode }) {
         return defineAbility(ctx);
     }, [utilisateur]);
 
-    if (!ability) return null;
+    // Toujours rendre les enfants, même si ability est null (utilisateur non connecté)
+    // Cela permet au RouterProvider et aux routes publiques de fonctionner
+    if (!ability) {
+        return (
+            <AbilityContext.Provider value={null}>
+                {children}
+            </AbilityContext.Provider>
+        );
+    }
 
     return (
         <AbilityContext.Provider value={ability}>
@@ -50,6 +58,7 @@ export function AbilityProvider({ children }: { children: ReactNode }) {
 
 /**
  * Hook pour accéder à l'ability CASL courante.
+ * Retourne une ability "vide" (aucune permission) si l'utilisateur n'est pas connecté.
  * 
  * @example
  * const ability = useAbility();
@@ -57,9 +66,19 @@ export function AbilityProvider({ children }: { children: ReactNode }) {
  */
 export function useAbility(): AppAbility {
     const ability = useContext(AbilityContext);
+    
+    // Si pas d'ability (utilisateur non connecté), retourner une ability vide
+    // qui nie toutes les permissions, au lieu de throw
     if (!ability) {
-        throw new Error('useAbility doit être utilisé dans un <AbilityProvider>');
+        return useMemo(() => defineAbility({
+            id: '',
+            role: 'PUBLIC' as any,
+            etablissementId: undefined,
+            permissions: [],
+            etablissements: [],
+        }), []);
     }
+    
     return ability;
 }
 

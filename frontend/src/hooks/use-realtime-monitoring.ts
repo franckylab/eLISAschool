@@ -100,7 +100,7 @@ export function useRealtimeMonitoring(): UseRealtimeMonitoringResult {
             return;
         }
 
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:7000';
 
         // Connexion Socket.IO avec le path /monitoring (match le backend)
         const socket = io(apiUrl, {

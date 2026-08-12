@@ -2,20 +2,30 @@
  * ==================================
  * eLISAschool - Routes Plateforme (Control Plane)
  * ==================================
- * Version: 5.1.0
+ * Version: 7.0.0
  * Auteur: franck arlos chendjou
  *
- * Routes réservées au propriétaire de la plateforme (SUPER_ADMIN).
+ * Routes réservées aux utilisateurs plateforme authentifiés.
  * Séparation structurelle Control Plane / Data Plane.
- * Rapport audit SaaS 2026-08-07
+ *
+ * Durcissement v9 :
+ * - Guard global : requirePlatformAccess() + CASL (plus uniquement SUPER_ADMIN)
+ * - G2 : Guards CASL sur routes backup (requirePlatformCasl)
+ * - G3 : Validation path traversal sur restore (validateBackupPath)
+ * - G7 : Rôles plateforme avec permissions minimales en tenant
+ * - G8 : Commentaires mis à jour pour refléter la réalité des guards
+ *
+ * Audit sécurité v10 :
+ * - GAP 6 : platformAuthMiddleware dédié (rejet tokens cross-plane)
+ * - GAP 7 : dualCaslMiddleware global sur toutes les routes plateforme
  *
  * Préfixe: /api/platform/
- * Guard global: requireRole('SUPER_ADMIN') sur TOUTES les routes
+ * Guard: platformAuthMiddleware → dualCaslMiddleware → requirePlatformAccess() + requirePlatformCasl()
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { authMiddleware, requireRole } from '@modules/auth/middlewares';
-import { Role } from '@modules/auth/entities';
+import { requirePlatformAccess, requirePlatformCasl, dualCaslMiddleware } from '@common/middlewares/dual-casl.middleware';
+import { platformAuthMiddleware } from '@common/middlewares/platform-auth.middleware';
 import { platformStatsService } from '@modules/dashboard/services/platform-stats.service';
 
 // Controllers existants montés sur les routes plateforme
@@ -28,10 +38,7 @@ import { platformBillingRouter } from '@modules/billing';
 import { platformUsersController } from '@modules/platform-users';
 import { platformRolesController } from '@modules/platform-roles';
 import { platformAuthController } from '@modules/platform-auth';
-import { platformSessionsController } from '@modules/platform-sessions';
 import { parametresCascadeController } from '@modules/configuration/controllers/parametres-cascade.controller';
-import { identiteController } from '@modules/identite/controllers/identite.controller';
-import { platformPermissionsController } from '@modules/identite/controllers/platform-permissions.controller';
 
 const router = Router();
 
@@ -41,15 +48,19 @@ const router = Router();
 
 /**
  * /api/platform/auth
- * Login, logout, refresh, me — Authentification dual-plane.
+ * Login, logout, refresh, me — Auth unifiée ADR-005 (source unique).
  * POST /login est public, les autres routes nécessitent authMiddleware.
  */
 router.use('/auth', platformAuthController);
 
 // =============================================
-// Guard global — SUPER_ADMIN uniquement
+// Guard global — Accès plateforme requis
 // =============================================
-// [P5.1 Audit v6] Toutes les routes /api/platform/* nécessitent le rôle SUPER_ADMIN.
+// [ADR-005] Guard : tout utilisateur avec estPlateforme=true et rôle plateforme
+// peut accéder aux routes plateforme. Les permissions granulaires sont vérifiées
+// par CASL (req.ability) via requirePlatformCasl() sur les routes sensibles.
+//
+// [P5.1 Audit v6] Toutes les routes /api/platform/* nécessitent un accès plateforme actif.
 // [RBAC-2] Séparation plateforme/établissement v5.1.
 //
 // Routes auditables :
@@ -66,12 +77,12 @@ router.use('/auth', platformAuthController);
 // - GET  /backup/:id/history           — Historique backups
 // - POST /backup/:id/restore           — Restauration tenant
 // - GET  /backup/all                   — Tous les backups
-//
-// Aucune route platform ne bypass ce guard.
+// ADR-005 (v11) : identites, permissions, sessions supprimés (source unique).
 // Les routes data-plane (tenant) sont séparées dans app.ts.
 
-router.use(authMiddleware);
-router.use(requireRole([Role.SUPER_ADMIN]));
+router.use(platformAuthMiddleware);
+router.use(dualCaslMiddleware);
+router.use(requirePlatformAccess());
 
 // =============================================
 // STATISTIQUES PLATEFORME
@@ -228,92 +239,119 @@ router.use('/roles', platformRolesController);
 router.use('/parametres/cascade', parametresCascadeController);
 
 // =============================================
-// SESSIONS PLATEFORME — Modèle C Dual-Plane
-// =============================================
-
-/**
- * /api/platform/sessions
- * Gestion des sessions actives plateforme (CRUD, révocation, limite LRU).
- */
-router.use('/sessions', platformSessionsController);
-
-// =============================================
-// IDENTITÉS GLOBALES — Modèle C Dual-Plane
-// =============================================
-
-/**
- * /api/platform/identites
- * CRUD identités globales (source unique de vérité).
- * Création, modification, suppression, vérification email, memberships.
- */
-router.use('/identites', identiteController);
-
-// =============================================
-// PERMISSIONS PLATEFORME — Modèle C Dual-Plane
-// =============================================
-
-/**
- * /api/platform/permissions
- * Consultation des permissions plateforme, matrice permissions × rôles.
- */
-router.use('/permissions', platformPermissionsController);
-
-// =============================================
 // BACKUP PAR TENANT — Phase I.1
+// Faille G2 corrigée : guards CASL sur toutes les routes backup
+// Faille G3 corrigée : validation path traversal sur restore
 // =============================================
+
+import path from 'path';
+import { AppError } from '@common/filters/error.filter';
+
+/**
+ * Helper : valide qu'un chemin de backup est légitime (anti path traversal — G3).
+ * Rejette les chemins contenant '..', '~', ou sortant du répertoire de backup.
+ */
+function validateBackupPath(backupPath: string): string {
+    // Rejeter les caractères suspects
+    if (backupPath.includes('..') || backupPath.includes('~') || backupPath.includes('\0')) {
+        throw new AppError(
+            'Chemin de backup invalide : caractères interdits détectés',
+            400,
+            'INVALID_BACKUP_PATH'
+        );
+    }
+
+    // Résoudre le chemin absolu et vérifier qu'il reste dans le répertoire de backup
+    const backupDir = path.resolve(process.cwd(), 'backups');
+    const resolvedPath = path.resolve(backupDir, backupPath);
+
+    if (!resolvedPath.startsWith(backupDir)) {
+        throw new AppError(
+            'Chemin de backup invalide : hors du répertoire autorisé',
+            400,
+            'INVALID_BACKUP_PATH'
+        );
+    }
+
+    return resolvedPath;
+}
 
 /**
  * POST /api/platform/backup/:etablissementId
  * Export des données d'un établissement spécifique.
+ * Guard CASL : manage Backup (G2).
  */
-router.post('/backup/:etablissementId', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { tenantBackupService } = await import('@modules/configuration/services/backup/tenant-backup.service');
-        const format = (req.query.format as string) || 'json';
-        const result = await tenantBackupService.exportTenantData(req.params.etablissementId, format as any);
-        res.json({ success: true, data: result });
-    } catch (error) { next(error); }
-});
+router.post(
+    '/backup/:etablissementId',
+    requirePlatformCasl('manage', 'Backup'),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { tenantBackupService } = await import('@modules/configuration/services/backup/tenant-backup.service');
+            const format = (req.query.format as string) || 'json';
+            const result = await tenantBackupService.exportTenantData(req.params.etablissementId, format as any);
+            res.json({ success: true, data: result });
+        } catch (error) { next(error); }
+    }
+);
 
 /**
  * GET /api/platform/backup/:etablissementId/history
  * Historique des backups d'un tenant.
+ * Guard CASL : manage Backup (G2).
  */
-router.get('/backup/:etablissementId/history', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { tenantBackupService } = await import('@modules/configuration/services/backup/tenant-backup.service');
-        const history = tenantBackupService.getBackupHistory(req.params.etablissementId);
-        res.json({ success: true, data: history });
-    } catch (error) { next(error); }
-});
+router.get(
+    '/backup/:etablissementId/history',
+    requirePlatformCasl('manage', 'Backup'),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { tenantBackupService } = await import('@modules/configuration/services/backup/tenant-backup.service');
+            const history = tenantBackupService.getBackupHistory(req.params.etablissementId);
+            res.json({ success: true, data: history });
+        } catch (error) { next(error); }
+    }
+);
 
 /**
  * POST /api/platform/backup/:etablissementId/restore
  * Restauration des données d'un tenant depuis un backup.
+ * Guard CASL : manage Backup (G2) + validation path traversal (G3).
  */
-router.post('/backup/:etablissementId/restore', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { tenantBackupService } = await import('@modules/configuration/services/backup/tenant-backup.service');
-        const { backupPath } = req.body;
-        if (!backupPath) {
-            return res.status(400).json({ success: false, error: { message: 'backupPath requis', code: 'MISSING_BACKUP_PATH' } });
-        }
-        const result = await tenantBackupService.restoreTenantData(req.params.etablissementId, backupPath);
-        res.json(result);
-    } catch (error) { next(error); }
-});
+router.post(
+    '/backup/:etablissementId/restore',
+    requirePlatformCasl('manage', 'Backup'),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { tenantBackupService } = await import('@modules/configuration/services/backup/tenant-backup.service');
+            const { backupPath } = req.body;
+            if (!backupPath) {
+                return res.status(400).json({ success: false, error: { message: 'backupPath requis', code: 'MISSING_BACKUP_PATH' } });
+            }
+
+            // Validation path traversal (G3)
+            const validatedPath = validateBackupPath(backupPath);
+
+            const result = await tenantBackupService.restoreTenantData(req.params.etablissementId, validatedPath);
+            res.json(result);
+        } catch (error) { next(error); }
+    }
+);
 
 /**
  * GET /api/platform/backup/all
  * Liste tous les backups de tous les tenants.
+ * Guard CASL : manage Backup (G2).
  */
-router.get('/backup/all', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { tenantBackupService } = await import('@modules/configuration/services/backup/tenant-backup.service');
-        const backups = tenantBackupService.getAllBackups();
-        res.json({ success: true, data: backups });
-    } catch (error) { next(error); }
-});
+router.get(
+    '/backup/all',
+    requirePlatformCasl('manage', 'Backup'),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { tenantBackupService } = await import('@modules/configuration/services/backup/tenant-backup.service');
+            const backups = tenantBackupService.getAllBackups();
+            res.json({ success: true, data: backups });
+        } catch (error) { next(error); }
+    }
+);
 
 export const platformRouter = router;
 export default router;

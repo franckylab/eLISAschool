@@ -312,15 +312,22 @@ router.get('/cache/stats', async (req: Request, res: Response, next: NextFunctio
 router.get('/modules', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { getWidgetsByModule } = await import('../utils/widget-registry');
-        const { MODULE_REGISTRY } = await import('@shared/config/config.registry');
+        // P2.3 v7 — Lire les modules depuis le catalogue DB
+        const { AppDataSource } = await import('@database/data-source');
+        const { ModuleCatalogue } = await import('@modules/billing/entities/module-catalogue.entity');
+        const catalogueRepo = AppDataSource.getRepository(ModuleCatalogue);
+        const modulesCatalogue = await catalogueRepo.find({
+            where: { estActif: true },
+            order: { ordre: 'ASC', code: 'ASC' },
+        });
 
-        const modules = Object.values(MODULE_REGISTRY).map(module => ({
-            id: module.name,
-            nom: module.label,
-            description: module.description,
-            icon: module.icon,
-            widgetCount: getWidgetsByModule(module.name).length,
-            actif: module.defaultActive,
+        const modules = modulesCatalogue.map(mc => ({
+            id: mc.code,
+            nom: mc.nom,
+            description: mc.description || '',
+            icon: mc.icone,
+            widgetCount: getWidgetsByModule(mc.code).length,
+            actif: mc.actifParDefaut,
         }));
 
         res.json({

@@ -13,7 +13,14 @@ export interface ApiResponse<T = unknown> {
     success: boolean;
     data?: T;
     message?: string;
-    timestamp: string;
+    timestamp?: string;
+    /** Métadonnées de pagination (présent sur les réponses paginées) */
+    meta?: {
+        totalItems: number;
+        currentPage: number;
+        totalPages: number;
+        itemsPerPage: number;
+    };
 }
 
 /**

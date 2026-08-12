@@ -1,0 +1,108 @@
+{
+  "titre": "Public pages",
+  "description": "Manage pages visible on your public site",
+  "dashboard": {
+    "titre": "CMS Dashboard",
+    "pages": "Pages",
+    "publiees": "Published",
+    "themeActif": "Active theme",
+    "menus": "Menus",
+    "aucunePage": "No pages created",
+    "creerPremierePage": "Create your first page",
+    "nouvellePage": "New page"
+  },
+  "page": {
+    "titre": "Title",
+    "slug": "Slug (URL)",
+    "template": "Template",
+    "statut": "Status",
+    "publie": "Published",
+    "brouillon": "Draft",
+    "horsLigne": "Offline",
+    "programme": "Scheduled",
+    "accueil": "Home page",
+    "creer": "Create page",
+    "modifier": "Edit page",
+    "supprimer": "Delete page",
+    "publier": "Publish",
+    "annuler": "Cancel",
+    "confirmSuppression": "Delete this page? This action is irreversible.",
+    "creeSucces": "Page created successfully",
+    "publieSucces": "Page published successfully",
+    "supprimeSucces": "Page deleted successfully"
+  },
+  "templates": {
+    "page_vierge": "Blank page",
+    "accueil": "Home",
+    "contact": "Contact",
+    "galerie": "Gallery",
+    "actualites": "News",
+    "inscriptions": "Enrollment",
+    "mentions_legales": "Legal notice"
+  },
+  "sections": {
+    "titre": "Sections",
+    "ajouter": "Add section",
+    "types": {
+      "hero": "Hero banner",
+      "texte": "Text block",
+      "galerie": "Image gallery",
+      "carte_infos": "Info cards",
+      "temoignages": "Testimonials",
+      "chiffres_cles": "Key figures",
+      "equipe": "Team",
+      "formulaire": "Form",
+      "carte": "Map",
+      "video": "Video",
+      "telechargements": "Downloads",
+      "actualites": "News",
+      "horaires": "Opening hours",
+      "partenaires": "Partners",
+      "faq": "FAQ",
+      "appel_action": "Call to action",
+      "separateur": "Separator",
+      "html_custom": "Custom HTML"
+    },
+    "visible": "Visible",
+    "masque": "Hidden",
+    "reordonner": "Reorder",
+    "supprimer": "Delete"
+  },
+  "themes": {
+    "titre": "Themes",
+    "activer": "Activate this theme",
+    "actif": "Active",
+    "couleurs": "Colors",
+    "typographie": "Typography",
+    "systeme": "System",
+    "personnalise": "Custom"
+  },
+  "menus": {
+    "titre": "Navigation menus",
+    "principal": "Main",
+    "pied_page": "Footer",
+    "lateral": "Sidebar",
+    "ajouterElement": "Add item",
+    "label": "Label",
+    "lien": "Link",
+    "nouvelOnglet": "Open in new tab"
+  },
+  "widgets": {
+    "titre": "Widgets",
+    "sidebar": "Sidebar",
+    "pied_page": "Footer",
+    "en_tete": "Header",
+    "flottant": "Floating",
+    "actif": "Active",
+    "inactif": "Inactive"
+  },
+  "public": {
+    "chargement": "Loading...",
+    "etablissementIntrouvable": "School not found or inactive",
+    "pageIntrouvable": "Page not found",
+    "retourAccueil": "Back to home",
+    "contact": "Contact",
+    "messageEnvoye": "Message sent successfully!",
+    "reponseSousPeu": "The school will get back to you shortly."
+  }
+}

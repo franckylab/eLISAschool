@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eLISAschool — Étude de Marché Afrique &amp; Stratégie de Lancement</title>
+<style>
+  :root {
+    --primary: #28a745;
+    --primary-dark: #1e7e34;
+    --accent: #007bff;
+    --accent-dark: #0056b3;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --surface: #ffffff;
+    --surface-alt: #f8f9fa;
+    --text: #1a1a2e;
+    --text-secondary: #6c757d;
+    --border: #e5e7eb;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 6px rgba(0,0,0,0.07), 0 10px 24px rgba(0,0,0,0.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* === HEADER === */
+  .hero {
+    background: linear-gradient(135deg, var(--primary) 0%, #20c997 50%, var(--accent) 100%);
+    color: white;
+    padding: 3rem 2rem 2.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.3;
+  }
+  .hero h1 { font-size: 2.2rem; font-weight: 800; position: relative; letter-spacing: -0.02em; }
+  .hero .subtitle { font-size: 1.1rem; opacity: 0.9; margin-top: 0.5rem; position: relative; }
+  .hero .meta { display: flex; gap: 1.5rem; justify-content: center; margin-top: 1.2rem; position: relative; font-size: 0.85rem; opacity: 0.8; flex-wrap: wrap; }
+  .hero .meta span { display: flex; align-items: center; gap: 0.3rem; }
+
+  /* === NAVIGATION === */
+  .nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    overflow-x: auto;
+  }
+  .nav-inner {
+    display: flex;
+    gap: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .nav a {
+    padding: 0.85rem 1rem;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 500;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .nav a:hover, .nav a.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  /* === LAYOUT === */
+  .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+  section { margin-bottom: 3rem; scroll-margin-top: 70px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--primary);
+  }
+  .section-header .icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--primary), #20c997);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1.2rem;
+  }
+  .section-header h2 { font-size: 1.4rem; font-weight: 700; color: var(--text); }
+
+  /* === CARDS === */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    transition: box-shadow 0.2s;
+  }
+  .card:hover { box-shadow: var(--shadow-lg); }
+  .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text); }
+
+  /* === GRID === */
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.25rem; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+
+  /* === KPI === */
+  .kpi {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--primary);
+    text-align: center;
+  }
+  .kpi .value { font-size: 1.55rem; font-weight: 800; color: var(--primary); line-height: 1.2; }
+  .kpi .label { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; }
+  .kpi.blue { border-top-color: var(--accent); } .kpi.blue .value { color: var(--accent); }
+  .kpi.warn { border-top-color: var(--warning); } .kpi.warn .value { color: #d39e00; }
+  .kpi.danger { border-top-color: var(--danger); } .kpi.danger .value { color: var(--danger); }
+  .kpi.purple { border-top-color: #6f42c1; } .kpi.purple .value { color: #6f42c1; }
+
+  /* === TABLES === */
+  .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.86rem; min-width: 600px; }
+  thead th {
+    background: var(--surface-alt);
+    text-align: left;
+    padding: 0.7rem 0.9rem;
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody td { padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: rgba(40,167,69,0.03); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* === BADGES === */
+  .badge {
+    display: inline-block;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .badge.green { background: rgba(40,167,69,0.1); color: var(--primary-dark); }
+  .badge.blue { background: rgba(0,123,255,0.1); color: var(--accent-dark); }
+  .badge.warn { background: rgba(255,193,7,0.15); color: #b8860b; }
+  .badge.red { background: rgba(220,53,69,0.1); color: var(--danger); }
+  .badge.purple { background: rgba(111,66,193,0.1); color: #6f42c1; }
+  .badge.gray { background: rgba(108,117,125,0.12); color: #495057; }
+
+  /* === CALLOUTS === */
+  .callout {
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+    border-left: 4px solid;
+  }
+  .callout.info { background: rgba(0,123,255,0.06); border-left-color: var(--accent); }
+  .callout.success { background: rgba(40,167,69,0.06); border-left-color: var(--primary); }
+  .callout.warning { background: rgba(255,193,7,0.08); border-left-color: var(--warning); }
+  .callout.danger { background: rgba(220,53,69,0.06); border-left-color: var(--danger); }
+  .callout strong { display: block; margin-bottom: 0.25rem; }
+
+  /* === BARS / CHARTS === */
+  .bar-row { display: flex; align-items: center; gap: 0.6rem; margin: 0.45rem 0; font-size: 0.82rem; }
+  .bar-label { width: 190px; flex-shrink: 0; text-align: right; color: var(--text-secondary); }
+  .bar-track { flex: 1; background: var(--surface-alt); border-radius: 999px; height: 20px; overflow: hidden; border: 1px solid var(--border); }
+  .bar-fill { height: 100%; border-radius: 999px; display: flex; align-items: center; justify-content: flex-end; padding-right: 0.45rem; color: white; font-size: 0.7rem; font-weight: 700; min-width: 2rem; }
+  .bar-value { width: 90px; flex-shrink: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .legend-dots { display: flex; flex-wrap: wrap; gap: 0.9rem; margin-top: 0.6rem; font-size: 0.78rem; color: var(--text-secondary); }
+  .legend-dots span { display: flex; align-items: center; gap: 0.35rem; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+
+  /* === GAUGE === */
+  .gauge-wrap { display: flex; justify-content: center; margin: 1rem 0; }
+  .gauge { position: relative; width: 190px; height: 110px; }
+  .gauge svg { width: 190px; height: 110px; }
+  .gauge .gvalue { position: absolute; bottom: 2px; left: 0; right: 0; text-align: center; font-size: 1.4rem; font-weight: 800; color: var(--text); }
+  .gauge .glabel { position: absolute; bottom: -14px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--text-secondary); }
+
+  /* === MERMAID === */
+  .mermaid-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; overflow-x: auto; box-shadow: var(--shadow); }
+  .mermaid { font-size: 13px; }
+  .mermaid-fallback { color: var(--text-secondary); font-size: 0.85rem; }
+
+  /* === FOOTER === */
+  footer { background: var(--text); color: rgba(255,255,255,0.75); padding: 2rem; text-align: center; font-size: 0.8rem; }
+  footer strong { color: white; }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 1.5rem; }
+    .bar-label { width: 130px; font-size: 0.72rem; }
+    .grid-4 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  }
+
+  ul { padding-left: 1.2rem; margin: 0.5rem 0; }
+  li { margin: 0.3rem 0; }
+  .small { font-size: 0.78rem; color: var(--text-secondary); }
+  .muted { color: var(--text-secondary); }
+  h3.sub { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.6rem; color: var(--primary-dark); }
+  .pill { display: inline-block; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 999px; padding: 0.15rem 0.7rem; font-size: 0.72rem; margin: 0.15rem; color: var(--text-secondary); }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <h1>📊 eLISAschool — Étude de Marché Afrique</h1>
+  <div class="subtitle">Opportunités, dimensionnement &amp; stratégie de lancement du SaaS de gestion scolaire (Afrique subsaharienne)</div>
+  <div class="meta">
+    <span>📅 Août 2026</span>
+    <span>🌍 Focus : Afrique francophone &amp; anglophone</span>
+    <span>💰 Modèle : SaaS par élève / an</span>
+  </div>
+</header>
+
+<!-- ============ NAV ============ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#synthese">Synthèse</a>
+    <a href="#metho">Méthodologie</a>
+    <a href="#macro">Contexte</a>
+    <a href="#digital">Digitalisation</a>
+    <a href="#taille">Taille du marché</a>
+    <a href="#zones">Zones</a>
+    <a href="#concurrence">Concurrence</a>
+    <a href="#revenus">Revenus</a>
+    <a href="#strategie">Stratégie</a>
+    <a href="#annexes">Annexes</a>
+  </div>
+</nav>
+
+<div class="container">
+
+<!-- ============ 1. SYNTHÈSE ============ -->
+<section id="synthese">
+  <div class="section-header"><div class="icon">🎯</div><h2>1. Synthèse exécutive &amp; recommandations</h2></div>
+
+  <div class="grid-4">
+    <div class="kpi"><div class="value">≈ 260 M</div><div class="label">Élèves (éducation de base, Afrique subsaharienne)</div></div>
+    <div class="kpi blue"><div class="value">≈ 1,5 M</div><div class="label">Écoles &amp; établissements (est.)</div></div>
+    <div class="kpi warn"><div class="value">7,3 M$</div><div class="label">EdTech Africa (2025) → 19,2 M$ (2034)</div></div>
+    <div class="kpi purple"><div class="value">14–23 %</div><div class="label">Part du privé (primaire / secondaire SSA)</div></div>
+  </div>
+
+  <div class="callout success" style="margin-top:1.25rem;">
+    <strong>✅ Verdict ferme</strong>
+    <b>Top 3 prioritaires :</b>
+    1️⃣ <b>Côte d'Ivoire</b> — marché francophone le plus favorable (≈ 20 000 écoles primaires, part privée élevée au secondaire, mobile money mature, marché-pilote idéal).
+    2️⃣ <b>Cameroun</b> — marché domestique &amp; francophone (≈ 25 000 écoles, 8 M d'apprenants, TBS primaire 119 %).
+    3️⃣ <b>Sénégal</b> — francophone, bonne pénétration internet (60 %), tissu scolaire dense (≈ 14 300 établissements).
+    <br><br>
+    <b>Top 3 anglophone à moyen terme :</b> Kenya (marché validé par Zeraki, mais concurrence établie), Ouganda (88 000 écoles, faible concurrence locale), Tanzanie (20 500 écoles primaires, 11 M d'élèves).
+    <br><br>
+    <b>Prix par zone (FCFA/élève/an) :</b> voir section 8 — zone francophone 1 000–5 000 FCFA (sweet spot 2 000–2 500), zone anglophone de l'Est équivalent KES/UGX/TZS (2 000–4 000 FCFA éq.), zone australe (ZA) plus élevée (≈ 6 000 FCFA éq.).
+  </div>
+
+  <div class="callout info">
+    <strong>💡 Pourquoi maintenant ?</strong>
+    La part des élèves du privé en primaire (SSA) est passée à <b>14,5 % en 2023</b> (contre ~10 % en 2000) et <b>23 % au secondaire</b> — les écoles privées sont les acheteurs naturels d'un SaaS de gestion scolaire (autonomie de décision, besoin de différenciation, pression qualité). Combinée à une pénétration internet mobile > 55 % et au mobile money, la fenêtre d'adoption s'ouvre rapidement.
+  </div>
+
+  <div class="callout warning">
+    <strong>⚠️ Verrou principal</strong>
+    La plupart des écoles privées tiennent encore leur gestion sur papier ou Excel. Le premier obstacle n'est pas la concurrence (fragmentée) mais <b>l'évangélisation du marché</b> : démonstrations, formations, et cycles de vente longs (2–6 mois). Le plan de lancement (section 9) en tient compte : mode pilote + partenaires locaux + preuve par l'exemple.
+  </div>
+</section>
+
+<!-- ============ 2. MÉTHODOLOGIE ============ -->
+<section id="metho">
+  <div class="section-header"><div class="icon">🧭</div><h2>2. Méthodologie</h2></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Sources de données</h3>
+      <ul>
+        <li><b>Statistiques officielles</b> : annuaires statistiques ministériels (Cameroun : Annuaire MINEDUB 2021/22, SIGE/MINESEC ; Sénégal : RGPH-5 2023 ANSD ; Kenya : KNBS Economic Survey 2024/2025 ; Tanzanie : NBS Statistical Abstract 2024 ; Ouganda : UBOS Baseline Education Census 2025 ; Ghana : GSS ; RDC : SIGE/MINEDU-NC).</li>
+        <li><b>Organisations internationales</b> : UNESCO UIS (part du privé, taux bruts), Banque mondiale (IMF-UNESCO April 2024, EPDC), GSMA (mobile money).</li>
+        <li><b>Marché EdTech</b> : IMARC Group (taille du marché, projections), Statista (pénétration internet), Atlasocio (alphabétisation).</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Définitions &amp; conventions</h3>
+      <ul>
+        <li><b>Marché adressable</b> : établissements scolaires (pré-primaire à secondaire) — publics et privés — des 13 pays étudiés.</li>
+        <li><b>Marché cible</b> : écoles <b>privées</b> (acheteurs naturels, ~14–23 % des écoles selon niveau) + part réduite du public urbain modernisé (est. 15 %, scénario prudent).</li>
+        <li><b>Estimation</b> : toute valeur non sourcée officiellement est étiquetée <i>« estimation »</i> et bornée par une fourchette min–max, avec hypothèses explicites.</li>
+        <li><b>Devises</b> : FCFA (XAF/XOF), conversion indicative 1 EUR ≈ 655 FCFA.</li>
+      </ul>
+      <div class="callout info" style="margin:0.6rem 0 0;">
+        Les chiffres officiels les plus récents disponibles (2021–2025) sont privilégiés ; les années antérieures sont utilisées quand plus récentes inexistantes (ex. Cameroun : annuaire 2021/22).
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. CONTEXTE MACRO ============ -->
+<section id="macro">
+  <div class="section-header"><div class="icon">🌍</div><h2>3. Contexte macro &amp; démographie scolaire</h2></div>
+
+  <p class="muted">L'Afrique subsaharienne concentre la croissance démographique scolaire la plus rapide au monde. La demande en gestion scolaire augmente avec les effectifs — mais aussi avec les exigences de qualité (classements, exigences parentales, inspection).</p>
+
+  <div class="table-wrap" style="margin-top:1rem;">
+    <table>
+      <thead><tr><th>Pays</th><th class="num">Élèves (éducation de base)</th><th class="num">Écoles (est.)</th><th class="num">TBS primaire</th><th>Source / année</th></tr></thead>
+      <tbody>
+        <tr><td><b>Cameroun</b></td><td class="num">8,05 M (tous niveaux)</td><td class="num">≈ 25 000</td><td class="num">119,2 %</td><td>Annuaire MINEDUB 2021/22 (primaire 4,94 M ; secondaire 1,98 M)</td></tr>
+        <tr><td><b>Sénégal</b></td><td class="num">4,44 M (formel)</td><td class="num">≈ 14 300</td><td class="num">81,0 %</td><td>RGPH-5 2023 (ANSD)</td></tr>
+        <tr><td><b>Kenya</b></td><td class="num">17,24 M (base, 2024)</td><td class="num">129 463 (base, 2024)</td><td class="num">≈ 104 %*</td><td>KNBS Economic Survey 2024/25 (primaire 10,4 M ; secondaire 4,3 M)</td></tr>
+        <tr><td><b>Tanzanie</b></td><td class="num">11,39 M (primaire)</td><td class="num">≈ 26 500</td><td class="num">123,2 % (GER)</td><td>NBS Statistical Abstract 2024 (20 533 écoles primaires) ; NER 83,3 % (recens. 2022)</td></tr>
+        <tr><td><b>Ouganda</b></td><td class="num">13,58 M (2025)</td><td class="num">88 242</td><td class="num">—</td><td>UBOS Baseline Education Census 2025</td></tr>
+        <tr><td><b>Ghana</b></td><td class="num">≈ 9,7 M (primaire + JHS)</td><td class="num">≈ 35 000</td><td class="num">90 % (prim.) / 98 % (JHS)</td><td>GSS 2000–2023 ; EPDC (primaire 4,93 M ; secondaire 1,93 M en 2024)</td></tr>
+        <tr><td><b>RDC</b></td><td class="num">19,22 M</td><td class="num">81 494</td><td class="num">—</td><td>SIGE MINEDU-NC</td></tr>
+        <tr><td><b>Côte d'Ivoire</b></td><td class="num">≈ 6,5 M</td><td class="num">≈ 25 000</td><td class="num">≈ 100 %*</td><td>MENET (19 898 écoles primaires 2023-24)</td></tr>
+        <tr><td><b>Nigeria</b></td><td class="num">≈ 38 M (est.)</td><td class="num">215 033 (tous)</td><td class="num">—</td><td>EMIS national</td></tr>
+        <tr><td><b>Afrique du Sud</b></td><td class="num">13,5 M</td><td class="num">24 850</td><td class="num">—</td><td>DBE</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small">*TBS calculé par croisement effectifs/classes d'âge (estimation documentée). Source : données officielles nationales (annuaire statistiques) et UNESCO UIS — détail en annexe 2.</p>
+
+  <div class="grid-2" style="margin-top:1.25rem;">
+    <div class="card">
+      <h3>Structure du marché scolaire</h3>
+      <p class="small" style="margin-bottom:0.6rem;">Part des effectifs du <b>privé</b> (UNESCO UIS, 2023) :</p>
+      <div class="bar-row"><div class="bar-label">Primaire — Afrique subsaharienne</div><div class="bar-track"><div class="bar-fill" style="width:14.5%; background:linear-gradient(90deg,#28a745,#20c997);">14,5 %</div></div><div class="bar-value">14,5 %</div></div>
+      <div class="bar-row"><div class="bar-label">Secondaire — Afrique subsaharienne</div><div class="bar-track"><div class="bar-fill" style="width:23%; background:linear-gradient(90deg,#007bff,#20c997);">23 %</div></div><div class="bar-value">23 %</div></div>
+      <div class="bar-row"><div class="bar-label">Primaire — Afrique du Nord</div><div class="bar-track"><div class="bar-fill" style="width:8.8%; background:#6c757d;">8,8 %</div></div><div class="bar-value">8,8 %</div></div>
+      <p class="small" style="margin-top:0.6rem;">La part du privé progresse depuis 2000 (≈10 % primaire) : chaque point = écoles additionnelles ayant un pouvoir de décision d'achat direct.</p>
+    </div>
+    <div class="card">
+      <h3>Ce que cela signifie pour eLISAschool</h3>
+      <ul>
+        <li><b>≈ 1,5 M d'écoles</b> en Afrique subsaharienne (est.) dont <b>≈ 200 000 à 300 000 écoles privées</b> (primaire + secondaire) = cœur de la cible B2B.</li>
+        <li>Les écoles privées facturent des frais (500–2 000 €/an par élève dans le premium, 50–300 € dans le low-cost) → capacité de payer pour un outil à <b>3–10 €/élève/an</b>.</li>
+        <li>Les États (public) restent difficiles à pénétrer (cycles longs, appel d'offres) → stratégie « privé d'abord, public ensuite ».</li>
+        <li>Le préscolaire explose (+40 % de la demande) → module maternelle différenciant.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. DIGITALISATION ============ -->
+<section id="digital">
+  <div class="section-header"><div class="icon">📶</div><h2>4. Digitalisation &amp; levier numérique</h2></div>
+
+  <div class="grid-3">
+    <div class="kpi blue"><div class="value">55–65 %</div><div class="label">Pénétration internet mobile (fév. 2025, Statista)</div></div>
+    <div class="kpi"><div class="value">62 %</div><div class="label">Taux d'alphabétisation Afrique subsaharienne (adultes)</div></div>
+    <div class="kpi warn"><div class="value">7,3 → 19,2 M$</div><div class="label">Marché EdTech Afrique 2025 → 2034 (IMARC)</div></div>
+  </div>
+
+  <div class="grid-2" style="margin-top:1.25rem;">
+    <div class="card">
+      <h3>Feuille de route numérique par pays (2019–2025)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Pays</th><th>Stratégie / plan</th><th>Portée</th></tr></thead>
+          <tbody>
+            <tr><td><b>Kenya</b></td><td>Digital Literacy Programme (DLP) ; 100 % écoles primaires équipées en appareils</td><td>Pionnier</td></tr>
+            <tr><td><b>Côte d'Ivoire</b></td><td>« École numérique » ; Tablettes &amp; e-learning (e-MINISTÈRE)</td><td>En cours</td></tr>
+            <tr><td><b>Sénégal</b></td><td>Plan Sénégal Numérique 2025 ; connectivité écoles</td><td>En cours</td></tr>
+            <tr><td><b>Cameroun</b></td><td>Stratégie Nationale de Développement Numérique 2020-30 ; fibre + 4G</td><td>Amorce</td></tr>
+            <tr><td><b>Tanzanie</b></td><td>e-Government &amp; ICT in Education (MoEST)</td><td>Amorce</td></tr>
+            <tr><td><b>Ouganda</b></td><td>ICT in Education Policy 2023 ; connectivité districts</td><td>En cours</td></tr>
+            <tr><td><b>Ghana</b></td><td>e-Transform ; Smart Schools ; 1D1F numérique</td><td>Avancé</td></tr>
+            <tr><td><b>RDC</b></td><td>Stratégie numérique 2022-2030 (présidence)</td><td>Amorce</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Paiement mobile — clé du recouvrement</h3>
+      <p class="small">Le mobile money est l'infrastructure de paiement dominante (GSMA) :</p>
+      <ul>
+        <li><b>Kenya</b> : M-PESA (Safaricom) — taux d'adoption > 85 % des adultes.</li>
+        <li><b>Tanzanie</b> : M-PESA + Tigo Pesa + Airtel Money.</li>
+        <li><b>Ouganda</b> : MTN MoMo + Airtel Money (pénétration élevée).</li>
+        <li><b>Francophonie</b> : Orange Money, MTN MoMo, Wave (Sénégal/CI) — Wave fort en Afrique de l'Ouest.</li>
+        <li><b>Ghana</b> : MTN MoMo (dominant), Telecel Cash.</li>
+      </ul>
+      <div class="callout success" style="margin:0.8rem 0 0;">
+        <strong>Conséquence produit</strong> — intégrer le recouvrement des frais de scolarité via mobile money (paiement direct parent → école) : c'est le module « revenu » le plus demandé par les directions.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. TAILLE DU MARCHÉ ============ -->
+<section id="taille">
+  <div class="section-header"><div class="icon">📐</div><h2>5. Taille du marché (TAM / SAM / SOM)</h2></div>
+
+  <div class="grid-3">
+    <div class="kpi"><div class="value">≈ 1,5 M écoles</div><div class="label">TAM — toutes écoles SSA (est.)</div></div>
+    <div class="kpi blue"><div class="value">≈ 290 000 écoles</div><div class="label">SAM — privé + 15 % public urbain (est.)</div></div>
+    <div class="kpi warn"><div class="value">8 000 – 20 000 écoles</div><div class="label">SOM 5 ans — pénétration 3–7 % du SAM (est.)</div></div>
+  </div>
+
+  <div class="card" style="margin-top:1.25rem;">
+    <h3>Modèle de dimensionnement (13 pays suivis)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Pays</th><th class="num">Écoles totales (est.)</th><th class="num">Part privée (est.)</th><th class="num">Écoles cibles (SAM)</th><th>Justification / source</th></tr></thead>
+      <tbody>
+        <tr><td>Côte d'Ivoire</td><td class="num">≈ 25 000</td><td class="num">15–25 %</td><td class="num">≈ 6 000–8 000</td><td>19 898 écoles primaires officielles ; privé fort au secondaire</td></tr>
+        <tr><td>Cameroun</td><td class="num">≈ 25 000</td><td class="num">20–30 %</td><td class="num">≈ 6 500–8 500</td><td>8 M d'apprenants ; privé laïc + confessionnel dynamique</td></tr>
+        <tr><td>Sénégal</td><td class="num">≈ 14 300</td><td class="num">20–30 %</td><td class="num">≈ 3 500–5 000</td><td>14 325 établissements 2023-24 ; arabisation/privé en expansion</td></tr>
+        <tr><td>Kenya</td><td class="num">≈ 49 700 (P+S)</td><td class="num">20–25 %</td><td class="num">≈ 12 000–15 000</td><td>129 463 institutions base 2024 ; privé urbain très actif</td></tr>
+        <tr><td>Tanzanie</td><td class="num">≈ 26 500</td><td class="num">8–15 %</td><td class="num">≈ 3 000–4 500</td><td>20 533 écoles primaires officielles ; privé naissant</td></tr>
+        <tr><td>Ouganda</td><td class="num">88 242 (tous)</td><td class="num">15–25 %</td><td class="num">≈ 15 000–20 000</td><td>UBOS 2025 ; large parc écoles, privé dynamique</td></tr>
+        <tr><td>Ghana</td><td class="num">≈ 35 000</td><td class="num">15–25 %</td><td class="num">≈ 6 000–8 500</td><td>≈ 30 000 écoles primaires+JHS ; privé urbain</td></tr>
+        <tr><td>Nigeria</td><td class="num">215 033 (tous)</td><td class="num">25–35 %</td><td class="num">≈ 55 000–75 000</td><td>Premier marché absolu en volume ; fragmentation extrême</td></tr>
+        <tr><td>Afrique du Sud</td><td class="num">24 850</td><td class="num">≈ 5 %</td><td class="num">≈ 3 000–5 000</td><td>13,5 M d'élèves ; marché premium (RSA) distinct</td></tr>
+        <tr><td>RDC</td><td class="num">81 494</td><td class="num">≈ 10 %</td><td class="num">≈ 9 000–12 000</td><td>SIGE 2021 ; privé modeste mais urbain en croissance</td></tr>
+        <tr><td colspan="2"><b>Total 10 pays suivis</b></td><td></td><td class="num"><b>≈ 120 000–160 000</b></td><td>≈ 290 000 avec les 13 pays complets (est.)</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="small" style="margin-top:0.6rem;">Hypothèses : part privée = ratio UIS 2023 (~14 % primaire / 23 % secondaire SSA) ajusté localement ; cible = 100 % écoles privées + 15 % du public urbain (écoles pilotes modernisées). Estimation documentée — les données officielles par pays (annexe 2) sont la base des totaux.</p>
+  </div>
+
+  <div class="card" style="margin-top:1.25rem;">
+    <h3>Potentiel de revenu — simulation SOM (année 5)</h3>
+    <p class="small">Prix de référence : zone francophone ≈ 2 250 FCFA/élève/an (Premium) ; ZA ≈ 6 000 FCFA éq. ; taille moyenne école 180–550 élèves selon pays. SOM = SAM × facteur d'accès (≈ 50 % : connectivité + urbanité) × pénétration.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Scénario (pénétration SOM an 5)</th><th class="num">Écoles sous contrat</th><th class="num">Élèves couverts</th><th class="num">Revenu annuel (FCFA)</th><th class="num">Revenu annuel (€)</th></tr></thead>
+        <tbody>
+          <tr><td><b>Conservateur (2 % du SAM)</b></td><td class="num">≈ 2 400–3 200</td><td class="num">≈ 0,7 M</td><td class="num">≈ 1,3 Md</td><td class="num">≈ 2 M €</td></tr>
+          <tr><td><b>Réaliste (5 % du SAM)</b></td><td class="num">≈ 6 000–8 000</td><td class="num">≈ 1,7 M</td><td class="num">≈ 3,1 Md</td><td class="num">≈ 4,8 M €</td></tr>
+          <tr><td><b>Optimiste (10 % du SAM)</b></td><td class="num">≈ 12 000–16 000</td><td class="num">≈ 3,4 M</td><td class="num">≈ 6,3 Md</td><td class="num">≈ 9,5 M €</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warning" style="margin:0.8rem 0 0;">
+      <strong>Lecture</strong> — le scénario réaliste (≈ 5 M €/an à 5 ans, hors add-ons et paiement mobile) rend le lancement rentable avec une équipe de 10–15 personnes. Le Nigeria, à lui seul, représente ~40 % du potentiel de volume — à aborder après validation du modèle en Afrique francophone.
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6. ZONES ============ -->
+<section id="zones">
+  <div class="section-header"><div class="icon">🗺️</div><h2>6. Analyse par zone (6 fiches pays)</h2></div>
+
+  <!-- Fiche CI -->
+  <div class="card" style="margin-bottom:1.25rem;">
+    <h3>🇨🇮 Côte d'Ivoire <span class="badge green">PRIORITÉ #1</span></h3>
+    <div class="grid-2">
+      <div>
+        <p><b>Marché</b> : ≈ 19 900 écoles primaires (2023-24) + ≈ 5 000 établissements secondaires (est.) ; ≈ 6,5 M d'élèves (est.).</p>
+        <p><b>Part privée</b> : ≈ 15–25 % (primaire), ≈ 40–60 % (secondaire, privé très actif) (est. UIS locale).</p>
+        <p><b>Digital</b> : pénétration internet ≈ 52 % (2025) ; mobile money très mature (Orange Money, MTN MoMo, Wave).</p>
+      </div>
+      <div>
+        <p><b>Opportunité</b> : marché francophone le plus réceptif — programmes « École numérique » en cours, classe moyenne émergente à Abidjan, forte demande de gestion rigoureuse.</p>
+        <p><b>Risque</b> : concurrence (Logesco régional + startups locales), besoin de présence terrain à Abidjan.</p>
+        <p><b>Verdict</b> : <b>lancement pilote</b> — validation rapide du produit et des prix.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fiche CM -->
+  <div class="card" style="margin-bottom:1.25rem;">
+    <h3>🇨🇲 Cameroun <span class="badge green">PRIORITÉ #2</span></h3>
+    <div class="grid-2">
+      <div>
+        <p><b>Marché</b> : 8,05 M d'apprenants (2021/22 : préscolaire 596 K ; primaire 4,94 M ; secondaire 1,98 M) ; ≈ 25 000 écoles (est.).</p>
+        <p><b>Part privée</b> : ≈ 20–30 % (est.) — le privé laïc et confessionnel est très présent en zone urbaine (Yaoundé, Douala, Bafoussam).</p>
+        <p><b>Digital</b> : pénétration internet ≈ 30–35 % ; mobile money actif (MTN MoMo, Orange Money, Express Union).</p>
+      </div>
+      <div>
+        <p><b>Opportunité</b> : marché domestique — eLISAschool y a déjà une base installée (écoles clientes) ; francophonie + système MINESEC/MINEDUB bien normé (bulletins, notes officielles) → produit natif.</p>
+        <p><b>Risque</b> : volatilité macro (régions anglophones), pouvoir d'achat limité (prix < 2 500 FCFA/élève/an conseillé).</p>
+        <p><b>Verdict</b> : <b>marché de base</b> — consolider l'existant, références clients pour l'export.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fiche SN -->
+  <div class="card" style="margin-bottom:1.25rem;">
+    <h3>🇸🇳 Sénégal <span class="badge green">PRIORITÉ #3</span></h3>
+    <div class="grid-2">
+      <div>
+        <p><b>Marché</b> : 14 325 établissements (2023-24) ; 4,44 M d'apprenants formels (RGPH-5 2023) ; primaire 1,94 M.</p>
+        <p><b>Part privée</b> : ≈ 18 % élémentaire (1 994 écoles privées / 10 986) ; ≈ 60 % des établissements secondaires (718 privés / 1 127) — <b>privé très structuré</b>.</p>
+        <p><b>Digital</b> : internet ≈ 60 % ; Wave (fintech) très populaire ; bonne culture numérique.</p>
+      </div>
+      <div>
+        <p><b>Opportunité</b> : 2e plus grande économie UEMOA ; Dakar &amp; Touba concentrent des écoles privées haut de gamme ; politique « école numérique ».</p>
+        <p><b>Risque</b> : coût d'acquisition élevé (terrain à Dakar), langue (français + wolof/arabe).</p>
+        <p><b>Verdict</b> : <b>expansion n°1</b> après CI — même cadre UEMOA, prix identiques en FCFA.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fiche KE -->
+  <div class="card" style="margin-bottom:1.25rem;">
+    <h3>🇰🇪 Kenya <span class="badge blue">ANGLO #1 — À MOYEN TERME</span></h3>
+    <div class="grid-2">
+      <div>
+        <p><b>Marché</b> : 129 463 institutions de base (2024) ; 17,24 M d'apprenants (2024) ; primaire ≈ 10,4 M (2023) ; secondaire ≈ 4,3 M (2024).</p>
+        <p><b>Part privée</b> : ≈ 20–25 % (est.) — Nairobi, Mombasa, Kisumu très actives ; chaînes privées (Kenya's international schools) importantes.</p>
+        <p><b>Digital</b> : internet ≈ 40 % ; M-PESA leader mondial du mobile money ; gouvernement digital-first (DLP).</p>
+      </div>
+      <div>
+        <p><b>Opportunité</b> : marché le plus validé d'Afrique de l'Est (Zeraki a démontré la demande) ; paiements digitaux natifs ; product-market fit rapide à tester.</p>
+        <p><b>Risque</b> : concurrence établie (Zeraki ≈ 50 % des écoles ciblées, Edutrak, OpenEMIS) ; besoin d'une version anglaise solide.</p>
+        <p><b>Verdict</b> : <b>entrée à 12–18 mois</b> — produit anglophone + pricing en KES.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fiche UG -->
+  <div class="card" style="margin-bottom:1.25rem;">
+    <h3>🇺🇬 Ouganda <span class="badge blue">ANGLO #2 — À MOYEN TERME</span></h3>
+    <div class="grid-2">
+      <div>
+        <p><b>Marché</b> : 88 242 écoles (2025) ; 13,58 M d'apprenants (2025) ; primaire 52 948 écoles, secondaire 8 809 (+1 534 autres).</p>
+        <p><b>Part privée</b> : ≈ 15–25 % (est.) — privé urbain actif à Kampala, Jinja, Mbarara.</p>
+        <p><b>Digital</b> : internet ≈ 25 % ; MTN MoMo / Airtel Money ; gouvernement pousse l'ICT in Education.</p>
+      </div>
+      <div>
+        <p><b>Opportunité</b> : énorme parc d'écoles, concurrence locale faible (peu de SaaS établis) ; coût d'entrée bas.</p>
+        <p><b>Risque</b> : pouvoir d'achat modéré ; fragmentation (88 000 écoles à traiter par segments urbains d'abord).</p>
+        <p><b>Verdict</b> : <b>entrée à 12–18 mois</b> — après Kenya, synergies anglophones (même équipe produit/vente).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fiche TZ -->
+  <div class="card" style="margin-bottom:1.25rem;">
+    <h3>🇹🇿 Tanzanie <span class="badge blue">ANGLO #3 — POTENTIEL VOLUME</span></h3>
+    <div class="grid-2">
+      <div>
+        <p><b>Marché</b> : 20 533 écoles primaires (2024) ; 11,39 M d'élèves primaires (2024) ; secondaire ≈ 5,46 M (GER 2022).</p>
+        <p><b>Part privée</b> : ≈ 8–15 % (est.) — faible mais croissante dans les villes (Dar es Salaam, Arusha, Mwanza).</p>
+        <p><b>Digital</b> : internet ≈ 30 % ; mobile money massif (M-PESA, Tigo Pesa, Airtel).</p>
+      </div>
+      <div>
+        <p><b>Opportunité</b> : volume énorme (11,4 M d'élèves) ; faible concurrence SaaS ; M-PESA = paiements fluides.</p>
+        <p><b>Risque</b> : revenu par école faible (écoles primaires publiques nombreuses) ; langue kiswahili.</p>
+        <p><b>Verdict</b> : <b>opportunité de volume à 18–24 mois</b> — via partenaires locaux (revendeurs, associations d'écoles privées).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fiche GH + NG + ZA compactes -->
+  <div class="grid-2">
+    <div class="card">
+      <h3>🇬🇭 Ghana <span class="badge gray">MARCHÉ OPPORTUNISTE</span></h3>
+      <p class="small">≈ 35 000 écoles (est., primaire+JHS+SHS) ; ≈ 9,7 M d'élèves (primaire+JHS) ; EPDC : primaire 4,93 M, secondaire 1,93 M (2024). Part privée ≈ 15–25 % (est.). Digital : internet ≈ 35 % ; MTN MoMo dominant.</p>
+      <p class="small"><b>Verdict</b> : opportuniste — bon marché anglophone, à traiter après Kenya (synergies anglaises).</p>
+    </div>
+    <div class="card">
+      <h3>🇳🇬 Nigeria <span class="badge warn">VOLUME — CONTRE-PARTIE</span></h3>
+      <p class="small">215 033 écoles ; ≈ 38 M d'élèves (est.). Part privée ≈ 25–35 % (est.) — marché n°1 en volume mais fragmentation extrême, sécurité, coût d'acquisition élevé.</p>
+      <p class="small"><b>Verdict</b> : <b>après validation complète</b> (an 3+) — via partenariats régionaux plutôt qu'implantation directe.</p>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:1.25rem;">
+    <div class="card">
+      <h3>🇿🇦 Afrique du Sud <span class="badge purple">PREMIUM — SÉPARÉ</span></h3>
+      <p class="small">24 850 écoles ; 13,5 M d'élèves. Part privée ≈ 5 % mais à forte valeur (chaînes privées premium). Digital : internet ≈ 68 % ; prix en ZAR élevés.</p>
+      <p class="small"><b>Verdict</b> : marché distinct (pricing ×2-3) — abordable uniquement après base solide (an 3+).</p>
+    </div>
+    <div class="card">
+      <h3>🇨🇩 RDC <span class="badge gray">POTENTIEL DIFFÉRÉ</span></h3>
+      <p class="small">81 494 écoles ; 19,2 M d'élèves (SIGE 2021). Part privée ≈ 10 % (est.) mais Kinshasa/Bukavu en croissance. Digital : internet ≈ 25 % ; mobile money présent.</p>
+      <p class="small"><b>Verdict</b> : fort potentiel à 24 mois — conditionné à la connectivité et au pouvoir d'achat.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 7. CONCURRENCE ============ -->
+<section id="concurrence">
+  <div class="section-header"><div class="icon">⚔️</div><h2>7. Concurrence &amp; positionnement</h2></div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Acteur</th><th>Pays</th><th>Positionnement</th><th>Forces</th><th>Faiblesses / angles d'attaque</th></tr></thead>
+      <tbody>
+        <tr><td><b>Zeraki</b></td><td>Kenya</td><td>SaaS école + analytics + paiements</td><td>≈ 50 % des écoles ciblées ; marque forte</td><td>Anglophone uniquement ; prix élevés pour le low-cost</td></tr>
+        <tr><td><b>Logesco</b></td><td>Cameroun</td><td>Application officielle (MINESEC)</td><td>Imposée par l'État (saisie notes)</td><td>Pas un SaaS complet ; lourdeur ; opportunité d'interopérabilité</td></tr>
+        <tr><td><b>Skooly / Skola / SchoolCues</b></td><td>GH / NG / CI</td><td>Gestion scolaire mobile-first</td><td>UI simple, prix bas</td><td>Fonctionnalités limitées (notes, paie, absence)</td></tr>
+        <tr><td><b>Edutrak, OpenEMIS, SnapSchool</b></td><td>East Africa / global</td><td>Gestion scolaire + analytics</td><td>Gamme large</td><td>Support local limité ; pas de paiements mobiles intégrés</td></tr>
+        <tr><td><b>uLesson</b></td><td>Nigeria</td><td>Contenu e-learning</td><td>Contenu premium</td><td>Pas de gestion administrative → complémentaire</td></tr>
+        <tr><td><b>Excel / papier</b> ⚠️</td><td>Tous</td><td>Statut quo</td><td>Coût nul, habitudes</td><td><b>Vrai concurrent n°1</b> — l'évangélisation est le vrai combat</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:1.25rem;">
+    <h3>Positionnement recommandé — différenciation eLISAschool</h3>
+    <div class="legend-dots">
+      <span><span class="dot" style="background:#28a745;"></span> <b>eLISAschool (cible)</b></span>
+      <span><span class="dot" style="background:#007bff;"></span> SaaS locaux</span>
+      <span><span class="dot" style="background:#ffc107;"></span> Généristes (Excel)</span>
+    </div>
+    <div style="margin-top:0.9rem;">
+      <div class="bar-row"><div class="bar-label">Prix / élève / an (FCFA)</div><div class="bar-track"><div class="bar-fill" style="width:42%; background:linear-gradient(90deg,#28a745,#20c997);">2 000-2 500</div></div><div class="bar-value">moy.</div></div>
+      <div class="bar-row"><div class="bar-label">Gestion complète (notes/paie/présence)</div><div class="bar-track"><div class="bar-fill" style="width:95%; background:linear-gradient(90deg,#28a745,#20c997);">★★★★★</div></div><div class="bar-value">5/5</div></div>
+      <div class="bar-row"><div class="bar-label">Paiements mobile money intégrés</div><div class="bar-track"><div class="bar-fill" style="width:80%; background:linear-gradient(90deg,#007bff,#20c997);">★★★★☆</div></div><div class="bar-value">4/5</div></div>
+      <div class="bar-row"><div class="bar-label">Portail parents (suivi en direct)</div><div class="bar-track"><div class="bar-fill" style="width:90%; background:linear-gradient(90deg,#28a745,#20c997);">★★★★☆</div></div><div class="bar-value">4,5/5</div></div>
+      <div class="bar-row"><div class="bar-label">Conformité systèmes nationaux (notes, bulletins)</div><div class="bar-track"><div class="bar-fill" style="width:70%; background:linear-gradient(90deg,#6f42c1,#20c997);">★★★☆☆</div></div><div class="bar-value">3,5/5</div></div>
+      <div class="bar-row"><div class="bar-label">Support local (français + langues)</div><div class="bar-track"><div class="bar-fill" style="width:75%; background:linear-gradient(90deg,#28a745,#20c997);">★★★★☆</div></div><div class="bar-value">4/5</div></div>
+    </div>
+  </div>
+
+  <div class="callout success" style="margin-top:1rem;">
+    <strong>🗣️ Message clé de vente</strong>
+    « Le tableau Excel ne signale pas les élèves en difficulté, ne recouvre pas les frais, ne produit pas les bulletins conformes à la réglementation. eLISAschool le fait en une seule plateforme, accessible depuis un téléphone, avec encaissement mobile money. »
+  </div>
+</section>
+
+<!-- ============ 8. MODÈLE DE REVENUS ============ -->
+<section id="revenus">
+  <div class="section-header"><div class="icon">💰</div><h2>8. Modèle de revenus &amp; grille tarifaire</h2></div>
+
+  <div class="grid-3">
+    <div class="kpi"><div class="value">1 000 – 1 499</div><div class="label">Plan Découverte (FCFA/élève/an)</div></div>
+    <div class="kpi blue"><div class="value">1 500 – 2 999</div><div class="label">Plan Premium (FCFA/élève/an) — <b>sweet spot 2 000–2 500</b></div></div>
+    <div class="kpi warn"><div class="value">3 000 – 10 000</div><div class="label">Plan Entreprise (FCFA/élève/an)</div></div>
+  </div>
+
+  <div class="card" style="margin-top:1.25rem;">
+    <h3>Grille tarifaire par zone (recommandation ferme)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Zone</th><th>Pays</th><th class="num">Découverte</th><th class="num">Premium</th><th class="num">Entreprise</th><th>Devise / notes</th></tr></thead>
+        <tbody>
+          <tr><td><b>Francophone Ouest</b></td><td>CI, SN, BF, ML, BJ, TG, NE</td><td class="num">1 000</td><td class="num">2 000–2 500</td><td class="num">3 500–5 000</td><td>FCFA (XOF)</td></tr>
+          <tr><td><b>Francophone Centrale</b></td><td>CM, GA, CG, CD, TD, CF</td><td class="num">1 000</td><td class="num">1 500–2 500</td><td class="num">3 000–5 000</td><td>FCFA (XAF)</td></tr>
+          <tr><td><b>Anglophone Est</b></td><td>KE, UG, TZ</td><td class="num">≈ 1 300 (200 KES / 4 000 UGX / 2 000 TZS)</td><td class="num">≈ 2 200–3 000 (350–450 KES)</td><td class="num">≈ 4 000–6 000 (600–900 KES)</td><td>Devise locale ; seuils adaptés</td></tr>
+          <tr><td><b>Anglophone Ouest</b></td><td>GH, NG</td><td class="num">≈ 1 500 (GHS 20 / NGN 2 500)</td><td class="num">≈ 2 500–3 500</td><td class="num">≈ 5 000–8 000</td><td>Devise locale</td></tr>
+          <tr><td><b>Australe</b></td><td>ZA</td><td class="num">≈ 4 000 (ZAR 100)</td><td class="num">≈ 6 000 (ZAR 150)</td><td class="num">≈ 10 000 (ZAR 250)</td><td>ZAR ; marché premium</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout info" style="margin:0.8rem 0 0;">
+      <strong>💰 Revenus complémentaires</strong> — (1) module paiement mobile money : commission 1–2 % sur encaissements ; (2) add-ons : SMS automatisés aux parents, modules spécifiques (transport, cantine, stage) ; (3) formation/implémentation : 50 000–150 000 FCFA par école ; (4) édition premium de rapports pour le groupe scolaire (analyse multi-campuses).
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1.25rem;">
+    <h3>Illustration — revenu par école (Premium, zone francophone)</h3>
+    <div class="bar-row"><div class="bar-label">École 120 élèves (petite)</div><div class="bar-track"><div class="bar-fill" style="width:15%; background:linear-gradient(90deg,#28a745,#20c997);">270 000</div></div><div class="bar-value">270 000 F</div></div>
+    <div class="bar-row"><div class="bar-label">École 250 élèves (typique)</div><div class="bar-track"><div class="bar-fill" style="width:30%; background:linear-gradient(90deg,#28a745,#20c997);">562 500</div></div><div class="bar-value">562 500 F</div></div>
+    <div class="bar-row"><div class="bar-label">École 500 élèves (grande)</div><div class="bar-track"><div class="bar-fill" style="width:56%; background:linear-gradient(90deg,#007bff,#20c997);">1,125 M</div></div><div class="bar-value">1,125 M F</div></div>
+    <div class="bar-row"><div class="bar-label">Groupe 2 000 élèves (Entreprise)</div><div class="bar-track"><div class="bar-fill" style="width:100%; background:linear-gradient(90deg,#6f42c1,#20c997);">9 M</div></div><div class="bar-value">≈ 9 M F</div></div>
+    <p class="small">Coût client moyen ≈ 2 250 FCFA × 250 élèves ≈ 562 500 FCFA/an ≈ 860 €/an — soit <b>≈ 2 à 4 % des frais de scolarité perçus</b> pour une école privée moyenne (facteur de décision faible pour le directeur).</p>
+  </div>
+</section>
+
+<!-- ============ 9. STRATÉGIE DE LANCEMENT ============ -->
+<section id="strategie">
+  <div class="section-header"><div class="icon">🚀</div><h2>9. Stratégie de lancement — plan 12 mois</h2></div>
+
+  <div class="grid-4">
+    <div class="kpi"><div class="value">M1–M3</div><div class="label">Pilote Côte d'Ivoire (20 écoles)</div></div>
+    <div class="kpi blue"><div class="value">M4–M6</div><div class="label">Passe à l'échelle CI + entrée Cameroun</div></div>
+    <div class="kpi warn"><div class="value">M7–M9</div><div class="label">Expansion Sénégal</div></div>
+    <div class="kpi purple"><div class="value">M10–M12</div><div class="label">Anglophone (Kenya/Ouganda) + préparation NG</div></div>
+  </div>
+
+  <div class="mermaid-wrap" style="margin-top:1.25rem;">
+    <pre class="mermaid">
+flowchart LR
+    A["M1-M3 : Pilote CI"] --> B["M4-M6 : Scale CI + CM"]
+    B --> C["M7-M9 : Sénégal + UEMOA"]
+    C --> D["M10-M12 : KE/UG anglophone"]
+    D --> E["An 2 : NG (partenariats) + ZA"]
+    A -. "20 écoles pilotes, pricing validé" .-> F["Livrables : 3 références, NPS, taux rétention"]
+    E --> G["Objectif an 2 : 400-800 écoles, 1,5-3 Md FCFA ARR"]
+    </pre>
+    <p class="small">Diagramme : feuille de route 12 mois (en cas d'absence de rendu Mermaid, la séquence ci-dessus est la feuille de route officielle).</p>
+  </div>
+
+  <div class="grid-2" style="margin-top:1.25rem;">
+    <div class="card">
+      <h3>Phases détaillées</h3>
+      <ul>
+        <li><b>M1–M3 — Pilote (CI, Abidjan)</b> : 20 écoles signées (10 privées premium, 10 low-cost) ; déploiement accompagné ; pricing test A/B ; collecte NPS ; cas d'usage validés (notes, bulletins, recouvrement MoMo).</li>
+        <li><b>M4–M6 — Scale CI + Cameroun</b> : 60–120 écoles CI ; entrée Cameroun sur la base installée existante (référence locale) ; équipe de vente 4–6 personnes ; support WhatsApp + téléphone.</li>
+        <li><b>M7–M9 — UEMOA</b> : Sénégal (Dakar) ; même produit, prix identiques (XOF) ; partenariats associations d'écoles privées ; version française optimisée.</li>
+        <li><b>M10–M12 — Anglophone</b> : Kenya puis Ouganda (version anglaise) ; pricing KES/UGX ; recrutement d'un Country Manager local ; intégrations M-PESA.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Actions critiques &amp; KPI</h3>
+      <ul>
+        <li><b>Offline-first</b> : le produit doit fonctionner en connexion intermittente (cache local, synchro asynchrone) — condition d'adoption en Afrique.</li>
+        <li><b>Intégrations locales</b> : mobile money (Wave, Orange, MTN, M-PESA) avant tout — c'est le module « argent » qui convertit.</li>
+        <li><b>Conformité</b> : bulletins et formats officiels par pays (MINESEC, MENET, etc.).</li>
+        <li><b>KPI pilote</b> : 3 références écrites ; NPS &gt; 50 ; rétention 95 % à 12 mois ; coût d'acquisition &lt; 150 000 FCFA/école ; délai de vente &lt; 3 mois.</li>
+        <li><b>Gouvernance</b> : country managers locaux dès M4 ; pricing local ; support en langue locale.</li>
+      </ul>
+      <div class="callout warning" style="margin:0.6rem 0 0;">
+        <strong>Écueils à éviter</strong> — ne pas lancer 5 pays en même temps ; ne pas sous-estimer le support (formation terrain) ; ne pas indexer uniquement sur le volume sans qualité de service.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10. ANNEXES ============ -->
+<section id="annexes">
+  <div class="section-header"><div class="icon">📎</div><h2>10. Annexes</h2></div>
+
+  <div class="card">
+    <h3>Annexe 1 — Hypothèses &amp; limites</h3>
+    <ul>
+      <li>Les chiffres officiels les plus récents disponibles (2021–2025) ont été privilégiés ; les estimations sont marquées « est. » et bornées par une fourchette.</li>
+      <li>La part du privé par pays est dérivée du ratio UIS 2023 (14,5 % primaire / 23 % secondaire SSA) ajusté localement — vérification terrain requise avant engagement commercial.</li>
+      <li>La taille moyenne d'école est estimée à 180–550 élèves (primaire à secondaire) selon les pays, sur la base des effectifs et nombre d'écoles officiels.</li>
+      <li>La conversion EUR/FCFA est indicative (1 € ≈ 655 FCFA) et n'inclut pas les variations de change (KES, UGX, TZS, GHS, NGN, ZAR).</li>
+      <li>Les simulations SOM sont des hypothèses de planification — pas des prévisions financières garanties.</li>
+    </ul>
+  </div>
+
+  <div class="card" style="margin-top:1rem;">
+    <h3>Annexe 2 — Sources principales</h3>
+    <ul>
+      <li><b>Cameroun</b> : Annuaire statistique de l'éducation de base 2021/2022 (MINEDUB/INS) ; annuaire statistique MINESEC ; sige-sectoriel.cm.</li>
+      <li><b>Sénégal</b> : RGPH-5 2023 (ANSD) ; annuaire statistique MEN 2023-2024.</li>
+      <li><b>Kenya</b> : KNBS Economic Survey 2024/2025 ; Kenya Education Sector Report FY 2024/25–2026/27.</li>
+      <li><b>Tanzanie</b> : NBS Statistical Abstract 2024 ; recensement national 2022.</li>
+      <li><b>Ouganda</b> : UBOS Baseline Education Census 2025 ; EPDC (2024).</li>
+      <li><b>Ghana</b> : Ghana Statistical Service (2000–2023) ; EPDC (2024).</li>
+      <li><b>RDC</b> : SIGE MINEDU-NC (minepst.gouv.cd).</li>
+      <li><b>Nigeria</b> : EMIS national (2021).</li>
+      <li><b>Afrique du Sud</b> : Department of Basic Education.</li>
+      <li><b>Transversal</b> : UNESCO UIS (part du privé 2023) ; IMF-UNESCO April 2024 ; IMARC Group (EdTech Africa 2025–2034) ; Statista (internet, fév. 2025) ; Atlasocio (alphabétisation) ; GSMA (mobile money) ; recherches web ciblées (août 2026).</li>
+    </ul>
+  </div>
+
+  <div class="card" style="margin-top:1rem;">
+    <h3>Annexe 3 — Table de conversion indicative (1 € ≈ 655 FCFA)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Plan (FCFA/élève/an)</th><th class="num">EUR/élève/an</th><th class="num">KES (KE)</th><th class="num">UGX (UG)</th><th class="num">TZS (TZ)</th><th class="num">GHS (GH)</th><th class="num">ZAR (ZA)</th></tr></thead>
+        <tbody>
+          <tr><td>1 000</td><td class="num">≈ 1,5</td><td class="num">≈ 165</td><td class="num">≈ 3 900</td><td class="num">≈ 1 900</td><td class="num">≈ 14</td><td class="num">≈ 25</td></tr>
+          <tr><td>2 250</td><td class="num">≈ 3,4</td><td class="num">≈ 370</td><td class="num">≈ 8 800</td><td class="num">≈ 4 300</td><td class="num">≈ 31</td><td class="num">≈ 56</td></tr>
+          <tr><td>5 000</td><td class="num">≈ 7,6</td><td class="num">≈ 825</td><td class="num">≈ 19 600</td><td class="num">≈ 9 500</td><td class="num">≈ 69</td><td class="num">≈ 125</td></tr>
+          <tr><td>10 000</td><td class="num">≈ 15,3</td><td class="num">≈ 1 650</td><td class="num">≈ 39 200</td><td class="num">≈ 19 000</td><td class="num">≈ 138</td><td class="num">≈ 250</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small" style="margin-top:0.5rem;">Conversions indicatives (août 2026) — à actualiser lors de la mise en marché. Les prix locaux doivent être arrondis à des seuils « psychologiques » locaux (ex. 350 KES, 8 000 UGX).</p>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <strong>eLISAschool — Étude de marché Afrique</strong> · Août 2026 · Document interne de stratégie — données publiques (sources en annexe 2) &amp; estimations documentées. Toute projection financière est indicative.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  try {
+    mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { curve: 'basis' } });
+  } catch (e) { /* mermaid indisponible hors-ligne : fallback texte déjà présent */ }
+</script>
+</body>
+</html>

@@ -108,6 +108,10 @@ import adminFr from '@/locales/fr/admin.json';
 import adminEn from '@/locales/en/admin.json';
 import platformIdentityFr from '@/locales/fr/platform-identity.json';
 import platformIdentityEn from '@/locales/en/platform-identity.json';
+import cmsFr from '@/locales/fr/cms.json';
+import cmsEn from '@/locales/en/cms.json';
+import configParamsFr from '@/locales/fr/config-params.json';
+import configParamsEn from '@/locales/en/config-params.json';
 
 i18n
     .use(LanguageDetector)
@@ -164,6 +168,8 @@ i18n
                 paie: paieFr,
                 admin: adminFr,
                 'platform-identity': platformIdentityFr,
+                cms: cmsFr,
+                'config-params': configParamsFr,
             },
             en: {
                 common: commonEn,
@@ -215,6 +221,8 @@ i18n
                 paie: paieEn,
                 admin: adminEn,
                 'platform-identity': platformIdentityEn,
+                cms: cmsEn,
+                'config-params': configParamsEn,
             },
         },
         fallbackLng: 'fr',
@@ -223,7 +231,7 @@ i18n
         // pluralisation fonctionne (i18next v24 utilise sinon `_one`/`_other`).
         compatibilityJSON: 'v3' as any,
         defaultNS: 'common',
-        ns: ['common', 'auth', 'dashboard', 'configuration', 'classes', 'personnel', 'matieres', 'annees-scolaires', 'cycles', 'niveaux', 'periodes', 'utilisateurs', 'notes', 'bulletins', 'cantine', 'transport', 'messagerie', 'annonces', 'organisation', 'finances', 'evenements', 'documents', 'sondages', 'discipline', 'sante', 'absences', 'emplois', 'examens', 'bibliotheque', 'courriers', 'archives', 'inventaire', 'conges', 'statistiques', 'laboratoire', 'eleves', 'securite-config', 'securite', 'groupes-etablissements', 'programmes', 'filieres', 'specialites', 'examens-nationaux', 'diplomes-eleves', 'parametres', 'contrats', 'paie', 'admin', 'platform-identity'],
+        ns: ['common', 'auth', 'dashboard', 'configuration', 'classes', 'personnel', 'matieres', 'annees-scolaires', 'cycles', 'niveaux', 'periodes', 'utilisateurs', 'notes', 'bulletins', 'cantine', 'transport', 'messagerie', 'annonces', 'organisation', 'finances', 'evenements', 'documents', 'sondages', 'discipline', 'sante', 'absences', 'emplois', 'examens', 'bibliotheque', 'courriers', 'archives', 'inventaire', 'conges', 'statistiques', 'laboratoire', 'eleves', 'securite-config', 'securite', 'groupes-etablissements', 'programmes', 'filieres', 'specialites', 'examens-nationaux', 'diplomes-eleves', 'parametres', 'contrats', 'paie', 'admin', 'platform-identity', 'cms', 'config-params'],
         interpolation: { escapeValue: false },
         detection: {
             order: ['localStorage', 'navigator'],

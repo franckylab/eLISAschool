@@ -493,6 +493,77 @@ class RedisService {
         }
     }
 
+    // ==========================================
+    // P3.2 v7 — Pub/Sub pour invalidation cross-instance
+    // ==========================================
+
+    /**
+     * PUBLISHER — Publier un message sur un canal
+     */
+    async publish(channel: string, message: any): Promise<void> {
+        try {
+            const client = await this.getClient();
+            await client.publish(channel, JSON.stringify(message));
+        } catch (error) {
+            logger.error(`[Redis] PUBLISH ${channel} error:`, error);
+        }
+    }
+
+    /**
+     * SUBSCRIBER — S'abonner à un canal
+     * @returns handler pour se désabonner
+     */
+    subscribe(channel: string, handler: (message: any) => void): () => void {
+        const sub = this.subscriberClient;
+        if (!sub) {
+            logger.warn('[Redis] subscribe: subscriber client non disponible');
+            return () => {};
+        }
+
+        sub.subscribe(channel).catch((err) => {
+            logger.error(`[Redis] SUBSCRIBE ${channel} error:`, err);
+        });
+
+        const listener = (ch: string, raw: string) => {
+            if (ch !== channel) return;
+            try {
+                handler(JSON.parse(raw));
+            } catch (error) {
+                logger.error(`[Redis] subscriber handler error (${channel}):`, error);
+            }
+        };
+
+        sub.on('message', listener);
+
+        // Retourne une fonction de cleanup
+        return () => {
+            sub.unsubscribe(channel).catch(() => {});
+            sub.off('message', listener);
+        };
+    }
+
+    /**
+     * DEL by pattern — Supprimer toutes les clés matchant un pattern (via SCAN)
+     */
+    async delByPattern(pattern: string): Promise<number> {
+        try {
+            const client = await this.getClient();
+            let deleted = 0;
+            let cursor = '0';
+            do {
+                const [nextCursor, keys] = await client.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+                cursor = nextCursor;
+                if (keys.length > 0) {
+                    deleted += await client.del(...keys);
+                }
+            } while (cursor !== '0');
+            return deleted;
+        } catch (error) {
+            logger.error(`[Redis] delByPattern ${pattern} error:`, error);
+            return 0;
+        }
+    }
+
     /**
      * Obtenir les statistiques Redis
      */

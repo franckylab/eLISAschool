@@ -3,9 +3,12 @@
  * eLISAschool - Middleware Rate Limiting par Tenant
  * ==================================
  * 
- * Token bucket par établissementId.
+ * Token bucket par établissementId ET par IP.
  * Quotas proportionnels au plan d'abonnement.
  * Alerte à 80%, blocage à 100%.
+ * 
+ * Durcissement v9 — Cluster-safe via Redis (INCR + EXPIRE).
+ * Fallback Map en mémoire si Redis indisponible (mode dégradé).
  * 
  * Phase 3.5 — Refonte SaaS
  */
@@ -50,16 +53,29 @@ const PLAN_LIMITS: Record<string, RateLimitConfig> = {
 // =============================================
 
 class TenantRateLimiter {
+    /** Fallback in-memory si Redis indisponible (mode dégradé) */
     private buckets: Map<string, TenantBucket> = new Map();
     private readonly CLEANUP_INTERVAL = 300_000; // 5 min
+    private redisAvailable = true;
 
     constructor() {
-        // Nettoyage périodique des buckets expirés
+        // Nettoyage périodique des buckets expirés (fallback in-memory uniquement)
         setInterval(() => this.cleanup(), this.CLEANUP_INTERVAL);
+        // Vérifier Redis périodiquement
+        setInterval(() => this.checkRedis(), 30_000);
+    }
+
+    private async checkRedis(): Promise<void> {
+        try {
+            this.redisAvailable = await redisService.isAvailable();
+        } catch {
+            this.redisAvailable = false;
+        }
     }
 
     /**
-     * Middleware de rate limiting par tenant.
+     * Middleware de rate limiting par tenant (cluster-safe via Redis).
+     * Pattern : INCR rate:{etablissementId}:{window} + EXPIRE windowSeconds
      */
     middleware = (req: Request, res: Response, next: NextFunction): void => {
         const etablissementId = (req as any).etablissementId || req.utilisateur?.etablissementId;
@@ -77,11 +93,72 @@ class TenantRateLimiter {
         }
 
         // Résoudre le plan (async) puis appliquer le rate limit
-        this.getConfigForTenant(etablissementId).then((config) => {
+        this.getConfigForTenant(etablissementId).then(async (config) => {
+            const now = Date.now();
+
+            // =============================================
+            // MODE REDIS — Cluster-safe (INCR + EXPIRE)
+            // =============================================
+            if (this.redisAvailable) {
+                try {
+                    const windowKey = `rate:${etablissementId}:${Math.floor(now / (config.windowSeconds * 1000))}`;
+                    const client = await redisService.getClient();
+
+                    const count = await client.incr(windowKey);
+                    // Définir l'expiration uniquement à la première requête de la fenêtre
+                    if (count === 1) {
+                        await client.expire(windowKey, config.windowSeconds);
+                    }
+
+                    const remaining = Math.max(0, config.maxRequests - count);
+                    const percentUsed = (count / config.maxRequests) * 100;
+
+                    // Headers de rate limiting
+                    res.set?.('X-RateLimit-Limit', String(config.maxRequests));
+                    res.set?.('X-RateLimit-Remaining', String(remaining));
+
+                    if (count > config.maxRequests) {
+                        const retryAfter = Math.ceil(
+                            config.windowSeconds - ((now % (config.windowSeconds * 1000)) / 1000)
+                        );
+
+                        res.set?.('Retry-After', String(retryAfter));
+                        res.set?.('X-RateLimit-Reset', String(Math.floor(now / 1000) + retryAfter));
+
+                        logger.warn(
+                            `[RateLimit] Tenant ${etablissementId} bloqué (Redis) — ${count}/${config.maxRequests}`
+                        );
+
+                        res.status(429).json({
+                            success: false,
+                            message: 'Trop de requêtes. Veuillez réessayer dans quelques instants.',
+                            retryAfter,
+                        });
+                        return;
+                    }
+
+                    // Alerte à 80%
+                    if (percentUsed >= 80) {
+                        logger.warn(
+                            `[RateLimit] Tenant ${etablissementId} à ${Math.round(percentUsed)}% ` +
+                            `de sa quota (${remaining}/${config.maxRequests} restants)`
+                        );
+                    }
+
+                    next();
+                    return;
+                } catch (redisError) {
+                    // Redis tombé — fallback in-memory
+                    logger.warn('[RateLimit] Redis indisponible — fallback in-memory');
+                    this.redisAvailable = false;
+                }
+            }
+
+            // =============================================
+            // FALLBACK IN-MEMORY — Mode dégradé (non cluster-safe)
+            // =============================================
             const bucket = this.getBucket(etablissementId);
 
-            // Refill tokens si nécessaire
-            const now = Date.now();
             const elapsed = (now - bucket.lastRefill) / 1000;
             const refillRate = config.maxRequests / config.windowSeconds;
             bucket.tokens = Math.min(config.maxRequests, bucket.tokens + elapsed * refillRate);
@@ -89,23 +166,20 @@ class TenantRateLimiter {
 
             bucket.totalRequests++;
 
-            // Vérifier si le bucket est épuisé
             if (bucket.tokens < 1) {
                 bucket.blockedRequests++;
 
                 logger.warn(
-                    `[RateLimit] Tenant ${etablissementId} bloqué — ` +
+                    `[RateLimit] Tenant ${etablissementId} bloqué (fallback) — ` +
                     `${bucket.totalRequests} requêtes, ${bucket.blockedRequests} bloquées`
                 );
 
                 const retryAfter = Math.ceil(1 / refillRate);
 
-                res.setHeaders?.({
-                    'X-RateLimit-Limit': String(config.maxRequests),
-                    'X-RateLimit-Remaining': '0',
-                    'X-RateLimit-Reset': String(Math.ceil(now / 1000) + retryAfter),
-                    'Retry-After': String(retryAfter),
-                });
+                res.set?.('X-RateLimit-Limit', String(config.maxRequests));
+                res.set?.('X-RateLimit-Remaining', '0');
+                res.set?.('X-RateLimit-Reset', String(Math.ceil(now / 1000) + retryAfter));
+                res.set?.('Retry-After', String(retryAfter));
 
                 res.status(429).json({
                     success: false,
@@ -115,17 +189,14 @@ class TenantRateLimiter {
                 return;
             }
 
-            // Consommer un token
             bucket.tokens -= 1;
 
-            // Headers de rate limiting
             const remaining = Math.floor(bucket.tokens);
             const percentUsed = ((config.maxRequests - remaining) / config.maxRequests) * 100;
 
             res.set?.('X-RateLimit-Limit', String(config.maxRequests));
             res.set?.('X-RateLimit-Remaining', String(remaining));
 
-            // Alerte à 80%
             if (percentUsed >= 80) {
                 logger.warn(
                     `[RateLimit] Tenant ${etablissementId} à ${Math.round(percentUsed)}% ` +

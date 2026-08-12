@@ -620,7 +620,7 @@ platformBillingRouter.post('/modules/catalogue', async (req: Request, res: Respo
 
         const entree = repo.create({ code, nom, ...reste });
         const saved = await repo.save(entree);
-        moduleResolutionService.invalidate();
+        void moduleResolutionService.invalidate(); // P3.1 v7 — async fire-and-forget
         res.status(201).json({ success: true, data: saved });
     } catch (error) {
         next(error);
@@ -643,7 +643,7 @@ platformBillingRouter.put('/modules/catalogue/:id', async (req: Request, res: Re
 
         Object.assign(entree, req.body);
         const saved = await repo.save(entree);
-        moduleResolutionService.invalidate();
+        void moduleResolutionService.invalidate(); // P3.1 v7 — async fire-and-forget
         res.json({ success: true, data: saved });
     } catch (error) {
         next(error);
@@ -669,7 +669,7 @@ platformBillingRouter.delete('/modules/catalogue/:id', async (req: Request, res:
         }
 
         await repo.remove(entree);
-        moduleResolutionService.invalidate();
+        void moduleResolutionService.invalidate(); // P3.1 v7 — async fire-and-forget
         res.json({ success: true, data: { id: entree.id } });
     } catch (error) {
         next(error);
@@ -683,7 +683,7 @@ platformBillingRouter.delete('/modules/catalogue/:id', async (req: Request, res:
 platformBillingRouter.post('/modules/catalogue/sync', async (_req: Request, res: Response, next: NextFunction) => {
     try {
         const total = await seedModulesCatalogue(true);
-        moduleResolutionService.invalidate();
+        void moduleResolutionService.invalidate(); // P3.1 v7 — async fire-and-forget
         res.json({ success: true, data: { total } });
     } catch (error) {
         next(error);

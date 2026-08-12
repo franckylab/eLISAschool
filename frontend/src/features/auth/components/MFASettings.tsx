@@ -24,6 +24,7 @@ import {
     AlertTriangle,
     KeyRound,
     QrCode,
+    Fingerprint,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -44,6 +45,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { WebAuthnSetup } from './WebAuthnSetup';
 
 // ==================================
 // Hook pour le statut MFA
@@ -138,6 +140,22 @@ export function MFASettings() {
                     }}
                 />
             )}
+
+            {/* ============================================= */}
+            {/* Durcissement v9 — Clés de sécurité (WebAuthn) */}
+            {/* ============================================= */}
+            <div className="rounded-lg border p-4 mt-6">
+                <div className="flex items-center gap-3 mb-4">
+                    <Fingerprint className="h-6 w-6 text-[var(--color-dominante)]" />
+                    <div>
+                        <h4 className="font-medium">Clés de sécurité (Passkeys)</h4>
+                        <p className="text-sm text-muted-foreground">
+                            Authentification sans mot de passe via YubiKey, Touch ID, Windows Hello ou Passkeys.
+                        </p>
+                    </div>
+                </div>
+                <WebAuthnSetup />
+            </div>
         </div>
     );
 }

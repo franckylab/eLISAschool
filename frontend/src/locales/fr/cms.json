@@ -1,0 +1,108 @@
+{
+  "titre": "Pages publiques",
+  "description": "Gérez les pages visibles sur votre site public",
+  "dashboard": {
+    "titre": "Tableau de bord CMS",
+    "pages": "Pages",
+    "publiees": "Publiées",
+    "themeActif": "Thème actif",
+    "menus": "Menus",
+    "aucunePage": "Aucune page créée",
+    "creerPremierePage": "Créer votre première page",
+    "nouvellePage": "Nouvelle page"
+  },
+  "page": {
+    "titre": "Titre",
+    "slug": "Slug (URL)",
+    "template": "Template",
+    "statut": "Statut",
+    "publie": "Publié",
+    "brouillon": "Brouillon",
+    "horsLigne": "Hors ligne",
+    "programme": "Programmé",
+    "accueil": "Page d'accueil",
+    "creer": "Créer la page",
+    "modifier": "Modifier la page",
+    "supprimer": "Supprimer la page",
+    "publier": "Publier",
+    "annuler": "Annuler",
+    "confirmSuppression": "Supprimer cette page ? Cette action est irréversible.",
+    "creeSucces": "Page créée avec succès",
+    "publieSucces": "Page publiée avec succès",
+    "supprimeSucces": "Page supprimée avec succès"
+  },
+  "templates": {
+    "page_vierge": "Page vierge",
+    "accueil": "Accueil",
+    "contact": "Contact",
+    "galerie": "Galerie",
+    "actualites": "Actualités",
+    "inscriptions": "Inscriptions",
+    "mentions_legales": "Mentions légales"
+  },
+  "sections": {
+    "titre": "Sections",
+    "ajouter": "Ajouter une section",
+    "types": {
+      "hero": "Bannière héro",
+      "texte": "Bloc de texte",
+      "galerie": "Galerie d'images",
+      "carte_infos": "Cartes d'information",
+      "temoignages": "Témoignages",
+      "chiffres_cles": "Chiffres clés",
+      "equipe": "Équipe",
+      "formulaire": "Formulaire",
+      "carte": "Carte géographique",
+      "video": "Vidéo",
+      "telechargements": "Téléchargements",
+      "actualites": "Actualités",
+      "horaires": "Horaires",
+      "partenaires": "Partenaires",
+      "faq": "FAQ",
+      "appel_action": "Appel à l'action",
+      "separateur": "Séparateur",
+      "html_custom": "HTML personnalisé"
+    },
+    "visible": "Visible",
+    "masque": "Masqué",
+    "reordonner": "Réordonner",
+    "supprimer": "Supprimer"
+  },
+  "themes": {
+    "titre": "Thèmes",
+    "activer": "Activer ce thème",
+    "actif": "Actif",
+    "couleurs": "Couleurs",
+    "typographie": "Typographie",
+    "systeme": "Système",
+    "personnalise": "Personnalisé"
+  },
+  "menus": {
+    "titre": "Menus de navigation",
+    "principal": "Principal",
+    "pied_page": "Pied de page",
+    "lateral": "Latéral",
+    "ajouterElement": "Ajouter un élément",
+    "label": "Libellé",
+    "lien": "Lien",
+    "nouvelOnglet": "Ouvrir dans un nouvel onglet"
+  },
+  "widgets": {
+    "titre": "Widgets",
+    "sidebar": "Barre latérale",
+    "pied_page": "Pied de page",
+    "en_tete": "En-tête",
+    "flottant": "Flottant",
+    "actif": "Actif",
+    "inactif": "Inactif"
+  },
+  "public": {
+    "chargement": "Chargement...",
+    "etablissementIntrouvable": "Établissement introuvable ou inactif",
+    "pageIntrouvable": "Page introuvable",
+    "retourAccueil": "Retour à l'accueil",
+    "contact": "Contact",
+    "messageEnvoye": "Message envoyé avec succès !",
+    "reponseSousPeu": "L'établissement vous répondra sous peu."
+  }
+}

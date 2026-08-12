@@ -20,9 +20,9 @@ export class FeatureFlagService {
     private abonnementRepo: Repository<AbonnementClient>;
     private planRepo: Repository<PlanAbonnement>;
 
-    // Cache en mémoire (TTL 5 minutes)
+    // Cache en mémoire (TTL 60 secondes — harmonisé v10)
     private cache: Map<string, { value: boolean; expiresAt: number }> = new Map();
-    private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+    private readonly CACHE_TTL = 60 * 1000; // 60 secondes (harmonisé avec ConfigurationService)
 
     constructor() {
         this.flagRepo = AppDataSource.getRepository(FeatureFlagTenant);

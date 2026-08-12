@@ -18,8 +18,9 @@ import { Utilisateur, StatutUtilisateur } from '@modules/auth/entities/utilisate
 import { ProfilUtilisateur } from '@modules/auth/entities/profil-utilisateur.entity';
 import { UtilisateurEtablissement } from '@modules/auth/entities/utilisateur-etablissement.entity';
 import { AuditLog, AuditAction, AuditSeverity } from '@modules/auth/entities/audit-log.entity';
-import { Role } from '@shared/enums/roles.enum';
+import { Role, ROLES_PLATEFORME } from '@shared/enums/roles.enum';
 import { AppError } from '@common/filters/error.filter';
+import { logger } from '@common/utils/logger.util';
 import type {
     ListeUtilisateursDto,
     CreerUtilisateurDto,
@@ -27,14 +28,8 @@ import type {
     DeleguerDto,
 } from '../dto/platform-users.dto';
 
-const ROLES_PLATEFORME = new Set<string>([
-    Role.SUPER_ADMIN,
-    Role.ADMINISTRATION_PLATEFORME,
-    Role.SECURITE_PLATEFORME,
-    Role.SUPPORT_PLATEFORME,
-    Role.COMMERCIAL_PLATEFORME,
-    Role.MONITORING_PLATEFORME,
-]);
+// Ensemble des rôles plateforme (ADR-005 — source unique)
+const ROLES_PLATEFORME_SET = new Set<string>([...ROLES_PLATEFORME, Role.SUPER_ADMIN]);
 
 const profilRepo = AppDataSource.getRepository(ProfilUtilisateur);
 const ueRepo = AppDataSource.getRepository(UtilisateurEtablissement);
@@ -44,17 +39,23 @@ export class PlatformUsersService {
     private auditRepo = AppDataSource.getRepository(AuditLog);
 
     // =============================================
-    // LISTE PAGINÉE
+    // LISTE PAGINÉE — TOUS les utilisateurs (v8)
     // =============================================
 
     async getListeUtilisateurs(filters: ListeUtilisateursDto) {
         const qb = this.utilisateurRepo
             .createQueryBuilder('u')
             .leftJoinAndSelect('u.profil', 'profil')
-            .leftJoinAndSelect('u.utilisateurEtablissements', 'ue');
+            .leftJoinAndSelect('u.utilisateurEtablissements', 'ue')
+            .leftJoinAndSelect('ue.etablissement', 'etablissement');
 
-        // Filtre par rôles plateforme uniquement
-        qb.where('u.role IN (:...roles)', { roles: Array.from(ROLES_PLATEFORME) });
+        // Filtre par scope (plateforme/tenant/tous)
+        if (filters.scope === 'plateforme') {
+            qb.where('u.estPlateforme = :estPlateforme', { estPlateforme: true });
+        } else if (filters.scope === 'tenant') {
+            qb.where('u.estPlateforme = :estPlateforme', { estPlateforme: false });
+        }
+        // scope === 'tous' → pas de filtre
 
         if (filters.search) {
             qb.andWhere(
@@ -76,6 +77,11 @@ export class PlatformUsersService {
             qb.andWhere('u.deuxFacteursActif = :mfa', { mfa });
         }
 
+        // Filtre par établissement (via utilisateur_etablissements)
+        if (filters.etablissementId) {
+            qb.andWhere('ue.etablissementId = :etablissementId', { etablissementId: filters.etablissementId });
+        }
+
         // Tri sécurisé (whitelist des colonnes autorisées)
         const colonnesAutorisees = ['createdAt', 'email', 'role', 'statut'];
         const tri = colonnesAutorisees.includes(filters.sortBy) ? filters.sortBy : 'createdAt';
@@ -90,27 +96,35 @@ export class PlatformUsersService {
     }
 
     // =============================================
-    // KPIs
+    // KPIs — TOUS les utilisateurs (v8)
     // =============================================
 
     async getKpis() {
+        // Total tous utilisateurs
         const total = await this.utilisateurRepo
             .createQueryBuilder('u')
-            .where('u.role IN (:...roles)', { roles: Array.from(ROLES_PLATEFORME) })
             .getCount();
 
+        // Répartition par rôle
         const parRole = await this.utilisateurRepo
             .createQueryBuilder('u')
             .select('u.role', 'role')
             .addSelect('COUNT(*)', 'count')
-            .where('u.role IN (:...roles)', { roles: Array.from(ROLES_PLATEFORME) })
             .groupBy('u.role')
             .getRawMany();
 
+        // Répartition par plan de gestion (plateforme vs tenant)
+        const parPlanGestion = await this.utilisateurRepo
+            .createQueryBuilder('u')
+            .select('u.estPlateforme', 'estPlateforme')
+            .addSelect('COUNT(*)', 'count')
+            .groupBy('u.estPlateforme')
+            .getRawMany();
+
+        // MFA actif
         const mfaActif = await this.utilisateurRepo
             .createQueryBuilder('u')
-            .where('u.role IN (:...roles)', { roles: Array.from(ROLES_PLATEFORME) })
-            .andWhere('u.deuxFacteursActif = :mfa', { mfa: true })
+            .where('u.deuxFacteursActif = :mfa', { mfa: true })
             .getCount();
 
         return {
@@ -119,6 +133,10 @@ export class PlatformUsersService {
                 acc[r.role] = parseInt(r.count, 10);
                 return acc;
             }, {}),
+            parPlanGestion: {
+                plateforme: parPlanGestion.find((r: any) => r.estPlateforme === true)?.count || 0,
+                tenant: parPlanGestion.find((r: any) => r.estPlateforme === false)?.count || 0,
+            },
             mfaActif,
             mfaPourcentage: total > 0 ? Math.round((mfaActif / total) * 100) : 0,
         };
@@ -146,7 +164,9 @@ export class PlatformUsersService {
     // =============================================
 
     async creerUtilisateur(dto: CreerUtilisateurDto, operateurId: string) {
-        if (!ROLES_PLATEFORME.has(dto.role)) {
+        // Vérifier que le rôle est valide (tous les rôles de l'enum Role sont acceptés)
+        const rolesValides = Object.values(Role);
+        if (!rolesValides.includes(dto.role as Role)) {
             throw new AppError(`Rôle invalide: ${dto.role}`, 400, 'INVALID_ROLE');
         }
 
@@ -224,7 +244,10 @@ export class PlatformUsersService {
     // =============================================
 
     async modifierUtilisateur(id: string, dto: ModifierUtilisateurDto, operateurId: string) {
-        const utilisateur = await this.utilisateurRepo.findOne({ where: { id } });
+        const utilisateur = await this.utilisateurRepo.findOne({
+            where: { id },
+            relations: ['profil'],
+        });
         if (!utilisateur) {
             throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
         }
@@ -246,11 +269,20 @@ export class PlatformUsersService {
             }
         }
 
-        if (dto.role && !ROLES_PLATEFORME.has(dto.role)) {
+        if (dto.role && !ROLES_PLATEFORME_SET.has(dto.role)) {
             throw new AppError(`Rôle invalide: ${dto.role}`, 400, 'INVALID_ROLE');
         }
 
-        const anciennesValeurs = {
+        // Vérifier unicité email si modifié
+        if (dto.email && dto.email !== utilisateur.email) {
+            const existingEmail = await this.utilisateurRepo.findOne({ where: { email: dto.email } });
+            if (existingEmail) {
+                throw new AppError('Email déjà utilisé', 409, 'EMAIL_ALREADY_EXISTS');
+            }
+            utilisateur.email = dto.email;
+        }
+
+        const anciennesValeurs: Record<string, any> = {
             role: utilisateur.role,
             statut: utilisateur.statut,
         };
@@ -261,6 +293,19 @@ export class PlatformUsersService {
 
         const saved = await this.utilisateurRepo.save(utilisateur);
 
+        // Modifier le profil si prenom/nom fournis
+        if ((dto.prenom !== undefined || dto.nom !== undefined) && utilisateur.profil) {
+            if (dto.prenom !== undefined) {
+                anciennesValeurs.prenom = utilisateur.profil.prenom;
+                utilisateur.profil.prenom = dto.prenom;
+            }
+            if (dto.nom !== undefined) {
+                anciennesValeurs.nom = utilisateur.profil.nom;
+                utilisateur.profil.nom = dto.nom;
+            }
+            await profilRepo.save(utilisateur.profil);
+        }
+
         // Gérer les groupes d'établissements si modifiés
         if (dto.groupeEtablissementIds !== undefined) {
             await this.synchroniserEtablissements(id, dto.groupeEtablissementIds);
@@ -270,7 +315,7 @@ export class PlatformUsersService {
             cibleId: id,
             description: `Modification compte plateforme: ${utilisateur.email}`,
             anciennesValeurs,
-            nouvellesValeurs: { role: dto.role, statut: dto.statut },
+            nouvellesValeurs: { role: dto.role, statut: dto.statut, prenom: dto.prenom, nom: dto.nom, email: dto.email },
         });
 
         return saved;
@@ -345,7 +390,16 @@ export class PlatformUsersService {
             throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
         }
 
-        // TODO: Implémenter la révocation effective des tokens via la table refresh_tokens
+        // Révocation effective des refresh tokens
+        try {
+            await AppDataSource.getRepository('RefreshToken')
+                .createQueryBuilder()
+                .delete()
+                .where('"utilisateurId" = :id', { id })
+                .execute();
+        } catch {
+            // Non-bloquant si la table n'existe pas
+        }
 
         await this.logAudit(operateurId, AuditAction.PLATFORM_USER_REVOKE_SESSIONS, {
             cibleId: id,
@@ -356,17 +410,229 @@ export class PlatformUsersService {
     }
 
     // =============================================
-    // AUDIT TRAIL UTILISATEUR
+    // RESET MFA
     // =============================================
 
-    async getAuditUtilisateur(id: string) {
-        const logs = await this.auditRepo.find({
-            where: { cibleId: id },
-            order: { createdAt: 'DESC' },
-            take: 100,
+    async resetMfa(id: string, operateurId: string) {
+        const utilisateur = await this.utilisateurRepo.findOne({ where: { id } });
+        if (!utilisateur) {
+            throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
+        }
+
+        utilisateur.deuxFacteursActif = false;
+        utilisateur.mfaSecretHash = null;
+        utilisateur.mfaBackupCodesHash = null;
+        const saved = await this.utilisateurRepo.save(utilisateur);
+
+        await this.logAudit(operateurId, AuditAction.PLATFORM_USER_RESET_MFA, {
+            cibleId: id,
+            description: `Reset MFA: ${utilisateur.email}`,
         });
 
-        return logs;
+        return { ...saved, motDePasse: undefined };
+    }
+
+    // =============================================
+    // FORCE RESET PASSWORD
+    // =============================================
+
+    async forceResetPassword(id: string, operateurId: string) {
+        const utilisateur = await this.utilisateurRepo.findOne({ where: { id } });
+        if (!utilisateur) {
+            throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
+        }
+
+        // Générer un mot de passe temporaire
+        const mdpTemporaire = this.genererMdpTemporaire();
+        utilisateur.motDePasse = mdpTemporaire;
+        const saved = await this.utilisateurRepo.save(utilisateur);
+
+        // Révoquer les sessions actives
+        try {
+            await AppDataSource.getRepository('RefreshToken')
+                .createQueryBuilder()
+                .delete()
+                .where('"utilisateurId" = :id', { id })
+                .execute();
+        } catch {
+            // Non-bloquant
+        }
+
+        await this.logAudit(operateurId, AuditAction.PLATFORM_USER_FORCE_RESET_PASSWORD, {
+            cibleId: id,
+            description: `Force reset password: ${utilisateur.email}`,
+        });
+
+        return { success: true, mdpTemporaire, email: saved.email };
+    }
+
+    // =============================================
+    // ARCHIVAGE (statut ARCHIVE — non destructif)
+    // =============================================
+
+    async archiverUtilisateur(id: string, operateurId: string) {
+        const utilisateur = await this.utilisateurRepo.findOne({ where: { id } });
+        if (!utilisateur) {
+            throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
+        }
+
+        // Protection dernier SUPER_ADMIN
+        if (utilisateur.role === Role.SUPER_ADMIN && utilisateur.statut === StatutUtilisateur.ACTIF) {
+            const countSuperAdmin = await this.utilisateurRepo
+                .createQueryBuilder('u')
+                .where('u.role = :role', { role: Role.SUPER_ADMIN })
+                .andWhere('u.statut = :statut', { statut: StatutUtilisateur.ACTIF })
+                .getCount();
+
+            if (countSuperAdmin <= 1) {
+                throw new AppError(
+                    'Impossible d\'archiver le dernier SUPER_ADMIN actif',
+                    409,
+                    'LAST_SUPER_ADMIN',
+                );
+            }
+        }
+
+        const ancienStatut = utilisateur.statut;
+        utilisateur.statut = StatutUtilisateur.ARCHIVE;
+        const saved = await this.utilisateurRepo.save(utilisateur);
+
+        await this.logAudit(operateurId, AuditAction.PLATFORM_USER_DEACTIVATE, {
+            cibleId: id,
+            description: `Archivage compte plateforme: ${utilisateur.email} (ancien statut: ${ancienStatut})`,
+            anciennesValeurs: { statut: ancienStatut },
+            nouvellesValeurs: { statut: StatutUtilisateur.ARCHIVE },
+        });
+
+        return { success: true, message: 'Utilisateur archivé', statut: StatutUtilisateur.ARCHIVE };
+    }
+
+    // =============================================
+    // DÉSARCHIVAGE (restore depuis ARCHIVE)
+    // =============================================
+
+    async desarchiverUtilisateur(id: string, operateurId: string, nouveauStatut?: StatutUtilisateur) {
+        const utilisateur = await this.utilisateurRepo.findOne({ where: { id } });
+        if (!utilisateur) {
+            throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
+        }
+
+        if (utilisateur.statut !== StatutUtilisateur.ARCHIVE) {
+            throw new AppError(
+                'Seuls les utilisateurs archivés peuvent être désarchivés',
+                400,
+                'NOT_ARCHIVED',
+            );
+        }
+
+        const statutCible = nouveauStatut || StatutUtilisateur.INACTIF;
+        utilisateur.statut = statutCible;
+        const saved = await this.utilisateurRepo.save(utilisateur);
+
+        await this.logAudit(operateurId, AuditAction.PLATFORM_USER_REACTIVATE, {
+            cibleId: id,
+            description: `Désarchivage compte plateforme: ${utilisateur.email} → ${statutCible}`,
+            anciennesValeurs: { statut: StatutUtilisateur.ARCHIVE },
+            nouvellesValeurs: { statut: statutCible },
+        });
+
+        return { success: true, message: 'Utilisateur désarchivé', statut: statutCible };
+    }
+
+    // =============================================
+    // EXPORT CSV
+    // =============================================
+
+    async exporterCsv(filters: Partial<ListeUtilisateursDto>) {
+        const qb = this.utilisateurRepo
+            .createQueryBuilder('u')
+            .leftJoinAndSelect('u.profil', 'profil')
+            .leftJoinAndSelect('u.utilisateurEtablissements', 'ue')
+            .leftJoinAndSelect('ue.etablissement', 'etablissement');
+
+        // Appliquer les mêmes filtres que getListeUtilisateurs
+        if (filters.scope === 'plateforme') {
+            qb.where('u.estPlateforme = :estPlateforme', { estPlateforme: true });
+        } else if (filters.scope === 'tenant') {
+            qb.where('u.estPlateforme = :estPlateforme', { estPlateforme: false });
+        }
+
+        if (filters.search) {
+            qb.andWhere(
+                '(profil.prenom ILIKE :search OR profil.nom ILIKE :search OR u.email ILIKE :search)',
+                { search: `%${filters.search}%` },
+            );
+        }
+
+        if (filters.role) {
+            qb.andWhere('u.role = :role', { role: filters.role });
+        }
+
+        if (filters.statut) {
+            qb.andWhere('u.statut = :statut', { statut: filters.statut });
+        }
+
+        // Limiter à 10000 lignes pour l'export
+        const items = await qb
+            .orderBy('u.createdAt', 'DESC')
+            .take(10000)
+            .getMany();
+
+        // Construire le CSV
+        const headers = ['Email', 'Prénom', 'Nom', 'Rôle', 'Statut', 'MFA', 'Plateforme', 'Dernière connexion', 'Créé le'];
+        const rows = items.map(u => [
+            u.email,
+            u.profil?.prenom || '',
+            u.profil?.nom || '',
+            u.role,
+            u.statut,
+            u.deuxFacteursActif ? 'Oui' : 'Non',
+            u.estPlateforme ? 'Oui' : 'Non',
+            u.derniereConnexion ? new Date(u.derniereConnexion).toISOString() : '',
+            new Date(u.createdAt).toISOString(),
+        ]);
+
+        const csvContent = [
+            headers.join(';'),
+            ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';')),
+        ].join('\n');
+
+        // BOM UTF-8 pour Excel
+        const bom = '\uFEFF';
+        return bom + csvContent;
+    }
+
+    // =============================================
+    // AUDIT TRAIL UTILISATEUR (paginé + filtres)
+    // =============================================
+
+    async getAuditUtilisateur(id: string, page = 1, limit = 50, module?: string) {
+        const utilisateur = await this.utilisateurRepo.findOne({ where: { id } });
+        if (!utilisateur) {
+            throw new AppError('Utilisateur non trouvé', 404, 'USER_NOT_FOUND');
+        }
+
+        const qb = this.auditRepo
+            .createQueryBuilder('a')
+            .where('a.cibleId = :cibleId', { cibleId: id });
+
+        if (module) {
+            qb.andWhere('a.module = :module', { module });
+        }
+
+        const [items, total] = await qb
+            .orderBy('a.createdAt', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit)
+            .getManyAndCount();
+
+        return {
+            items,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        };
     }
 
     // =============================================
@@ -449,7 +715,7 @@ export class PlatformUsersService {
             await this.auditRepo.save(log);
         } catch {
             // Audit failure should not block the operation
-            console.error(`[PlatformUsers] Audit log failed for action: ${action}`);
+            logger.error(`[PlatformUsers] Audit log failed for action: ${action}`);
         }
     }
 }

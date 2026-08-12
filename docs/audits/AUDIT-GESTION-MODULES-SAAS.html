@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit Gestion des Modules — eLISAschool</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface-2: #232736;
+  --surface-3: #2a2f40;
+  --border: #2e3348;
+  --text: #e4e5ea;
+  --text-muted: #8b8fa3;
+  --accent: #7c3aed;
+  --accent-light: #a78bfa;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+  --radius: 8px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; font-size: 15px; }
+.container { max-width: 1140px; margin: 0 auto; padding: 40px 24px 80px; }
+
+/* Header */
+.header { text-align: center; padding: 60px 0 40px; position: relative; }
+.header::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 200px; height: 200px; background: radial-gradient(circle, rgba(124,58,237,0.15), transparent 70%); border-radius: 50%; pointer-events: none; }
+.header h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px; }
+.header h1 span { color: var(--accent-light); }
+.header .subtitle { font-size: 16px; color: var(--text-muted); max-width: 600px; margin: 0 auto; }
+.header .date { display: inline-block; margin-top: 16px; padding: 4px 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 20px; font-size: 12px; color: var(--text-muted); }
+
+/* Nav */
+.toc { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 28px; margin: 32px 0 48px; }
+.toc h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--accent-light); text-transform: uppercase; letter-spacing: 1px; }
+.toc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 32px; }
+.toc a { color: var(--text-muted); text-decoration: none; font-size: 14px; padding: 4px 0; display: block; transition: color 0.2s; }
+.toc a:hover { color: var(--accent-light); }
+.toc a .num { color: var(--accent); font-weight: 600; margin-right: 8px; }
+
+/* Sections */
+.section { margin-bottom: 56px; }
+.section-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 10px; }
+.section-title .icon { font-size: 20px; }
+h3 { font-size: 17px; font-weight: 600; margin: 24px 0 10px; color: var(--text); }
+p { margin: 8px 0; color: var(--text); }
+.text-muted { color: var(--text-muted); }
+.text-sm { font-size: 13px; }
+
+/* Cards */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin: 14px 0; }
+.card-title { font-weight: 600; font-size: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+@media (max-width: 768px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+/* Stat cards */
+.stat { text-align: center; padding: 24px 16px; }
+.stat-num { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Badges */
+.badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.badge-ok { background: rgba(34,197,94,0.15); color: var(--success); }
+.badge-warn { background: rgba(245,158,11,0.15); color: var(--warning); }
+.badge-err { background: rgba(239,68,68,0.15); color: var(--danger); }
+.badge-info { background: rgba(59,130,246,0.15); color: var(--info); }
+.badge-accent { background: rgba(124,58,237,0.15); color: var(--accent-light); }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+th { background: var(--surface-2); text-align: left; padding: 12px 14px; font-weight: 600; border-bottom: 2px solid var(--border); color: var(--text); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+tr:hover td { background: var(--surface-2); }
+code { font-family: 'JetBrains Mono', 'Fira Code', monospace; background: var(--surface-3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--accent-light); }
+
+/* Issue cards */
+.issue { border-left: 4px solid var(--warning); padding: 16px 20px; margin: 14px 0; background: var(--surface); border-radius: 0 var(--radius) var(--radius) 0; }
+.issue.critical { border-left-color: var(--danger); }
+.issue.good { border-left-color: var(--success); }
+.issue strong { display: block; margin-bottom: 6px; }
+
+/* Recommendation cards */
+.rec { border-left: 4px solid var(--accent); padding: 16px 20px; margin: 14px 0; background: var(--surface); border-radius: 0 var(--radius) var(--radius) 0; }
+.rec strong { color: var(--accent-light); }
+
+/* Code blocks */
+pre { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.6; color: var(--text); margin: 12px 0; }
+
+/* SVG diagrams */
+.diagram-container { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin: 16px 0; overflow-x: auto; }
+.diagram-label { font-size: 12px; color: var(--text-muted); text-align: center; margin-top: 8px; font-style: italic; }
+
+/* Flow boxes */
+.flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 16px 0; }
+.flow-box { background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 14px; font-size: 12px; text-align: center; white-space: nowrap; }
+.flow-arrow { color: var(--accent); font-weight: 700; font-size: 16px; }
+
+/* Tags */
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin: 2px; background: var(--surface-3); color: var(--text-muted); }
+.tag-critique { background: rgba(239,68,68,0.12); color: var(--danger); }
+.tag-premium { background: rgba(245,158,11,0.12); color: var(--warning); }
+.tag-addon { background: rgba(59,130,246,0.12); color: var(--info); }
+
+/* Divider */
+.divider { height: 1px; background: var(--border); margin: 40px 0; }
+
+/* Progress bar */
+.progress-bar { height: 8px; background: var(--surface-3); border-radius: 4px; overflow: hidden; margin: 6px 0; }
+.progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+
+/* Chart container */
+.chart-container { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin: 16px 0; }
+
+/* Footer */
+.footer { text-align: center; padding: 40px 0; border-top: 1px solid var(--border); margin-top: 60px; }
+.footer p { font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<div class="header">
+  <h1>Audit <span>Modules</span> eLISAschool</h1>
+  <p class="subtitle">Rapport complet d'architecture, analyse de cohérence, meilleures pratiques SaaS et recommandations pour la gestion des modules</p>
+  <span class="date">12 août 2026 — Version 1.0</span>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <h3>Sommaire</h3>
+  <div class="toc-grid">
+    <a href="#sec1"><span class="num">01</span> Architecture actuelle</a>
+    <a href="#sec2"><span class="num">02</span> Flux de résolution (Cascade)</a>
+    <a href="#sec3"><span class="num">03</span> Analyse critique — Problèmes</a>
+    <a href="#sec4"><span class="num">04</span> Meilleures pratiques SaaS</a>
+    <a href="#sec5"><span class="num">05</span> Recommandations & plan d'action</a>
+    <a href="#sec6"><span class="num">06</span> Architecture cible proposée</a>
+    <a href="#sec7"><span class="num">07</span> Comportement sans plan actif</a>
+    <a href="#sec8"><span class="num">08</span> Conclusion exécutive</a>
+  </div>
+</div>
+
+<!-- ==================== SECTION 1 ==================== -->
+<div class="section" id="sec1">
+  <h2 class="section-title"><span class="icon">🏗️</span> 1. Architecture actuelle — Vue d'ensemble</h2>
+  
+  <p>eLISAschool possède <strong>3 systèmes parallèles</strong> de gestion des modules, chacun avec sa propre logique de résolution. Cette duplication crée des risques d'incohérence et rend le débogage difficile.</p>
+
+  <div class="grid-3">
+    <div class="card stat">
+      <div class="stat-num">3</div>
+      <div class="stat-label">Registres de modules</div>
+    </div>
+    <div class="card stat">
+      <div class="stat-num">15</div>
+      <div class="stat-label">Modules définis (hardcodés)</div>
+    </div>
+    <div class="card stat">
+      <div class="stat-num">4</div>
+      <div class="stat-label">Niveaux de cascade</div>
+    </div>
+  </div>
+
+  <h3>Les 3 registres identifiés</h3>
+  <table>
+    <tr><th>Registre</th><th>Fichier</th><th>Source</th><th>Rôle</th></tr>
+    <tr>
+      <td><strong>ModuleRegistryService</strong></td>
+      <td><code>configuration/services/module-registry.service.ts</code></td>
+      <td>15 modules hardcodés</td>
+      <td>Activation par tenant (override ParametreSysteme)</td>
+    </tr>
+    <tr>
+      <td><strong>ModuleResolutionService</strong></td>
+      <td><code>billing/services/module-resolution.service.ts</code></td>
+      <td>Table DB <code>modules_catalogue</code></td>
+      <td>Résolution plan → groupe → supplément</td>
+    </tr>
+    <tr>
+      <td><strong>ConfigurationService</strong></td>
+      <td><code>configuration/services/configuration.service.ts</code></td>
+      <td>Catalogue DB + ParametreSysteme</td>
+      <td>isModuleActive() + toggleModule() + middleware</td>
+    </tr>
+  </table>
+
+  <h3>Catalogue des modules (ModuleRegistryService — hardcodé)</h3>
+  <table>
+    <tr><th>Module</th><th>Catégorie</th><th>Par défaut</th><th>Plan min.</th><th>Prix/mois</th><th>Feature Flag</th></tr>
+    <tr><td>🔐 Authentification</td><td><span class="tag tag-critique">core</span></td><td><span class="badge badge-ok">Oui</span></td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>🎓 Élèves</td><td><span class="tag tag-critique">core</span></td><td><span class="badge badge-ok">Oui</span></td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>📝 Notes & Bulletins</td><td><span class="tag tag-premium">pedagogie</span></td><td><span class="badge badge-ok">Oui</span></td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>📅 Emploi du temps</td><td><span class="tag tag-premium">pedagogie</span></td><td><span class="badge badge-ok">Oui</span></td><td>—</td><td>—</td><td><code>module_edt</code></td></tr>
+    <tr><td>🧭 Orientation</td><td><span class="tag tag-premium">pedagogie</span></td><td><span class="badge badge-err">Non</span></td><td>Pro</td><td>—</td><td><code>module_orientation</code></td></tr>
+    <tr><td>🍽️ Cantine</td><td><span class="tag tag-addon">gestion</span></td><td><span class="badge badge-err">Non</span></td><td>—</td><td>5 000 XAF</td><td><code>module_cantine</code></td></tr>
+    <tr><td>🚌 Transport</td><td><span class="tag tag-addon">gestion</span></td><td><span class="badge badge-err">Non</span></td><td>—</td><td>3 000 XAF</td><td><code>module_transport</code></td></tr>
+    <tr><td>💰 Finances</td><td><span class="tag tag-addon">gestion</span></td><td><span class="badge badge-err">Non</span></td><td>—</td><td>—</td><td><code>module_finances</code></td></tr>
+    <tr><td>📚 Bibliothèque</td><td><span class="tag tag-addon">gestion</span></td><td><span class="badge badge-err">Non</span></td><td>—</td><td>2 000 XAF</td><td><code>module_bibliotheque</code></td></tr>
+    <tr><td>💬 Messagerie</td><td><span class="tag tag-premium">communication</span></td><td><span class="badge badge-ok">Oui</span></td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>🔔 Notifications</td><td><span class="tag tag-critique">communication</span></td><td><span class="badge badge-ok">Oui</span></td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td>⚽ Clubs & Activités</td><td><span class="tag tag-addon">optionnel</span></td><td><span class="badge badge-err">Non</span></td><td>—</td><td>—</td><td><code>module_clubs</code></td></tr>
+    <tr><td>🏆 Gamification</td><td><span class="tag tag-addon">optionnel</span></td><td><span class="badge badge-err">Non</span></td><td>Pro</td><td>3 000 XAF</td><td><code>module_gamification</code></td></tr>
+    <tr><td>📊 Comptabilité</td><td><span class="tag tag-addon">optionnel</span></td><td><span class="badge badge-err">Non</span></td><td>Enterprise</td><td>10 000 XAF</td><td><code>module_comptabilite</code></td></tr>
+    <tr><td>🌐 Site Web (CMS)</td><td><span class="tag tag-addon">optionnel</span></td><td><span class="badge badge-ok">Oui</span></td><td>—</td><td>—</td><td>—</td></tr>
+  </table>
+
+  <h3>Entités en jeu</h3>
+  <table>
+    <tr><th>Entité</th><th>Rôle</th><th>Scope</th></tr>
+    <tr><td><code>ModuleCatalogue</code></td><td>Source de vérité — catalogue plateforme (table <code>modules_catalogue</code>)</td><td>Global</td></tr>
+    <tr><td><code>PlanAbonnement</code></td><td>Définit <code>modulesInclus[]</code> + <code>featureFlags{}</code></td><td>Plan</td></tr>
+    <tr><td><code>AbonnementClient</code></td><td>Lie établissement → plan (statut ACTIF/EXPIRE/SUSPENDU)</td><td>Tenant</td></tr>
+    <tr><td><code>AbonnementModule</code></td><td>Suppléments souscrits (add-ons payants)</td><td>Tenant</td></tr>
+    <tr><td><code>ModuleOptionnel</code></td><td>Catalogue des add-ons souscriptibles</td><td>Global</td></tr>
+    <tr><td><code>ModulesGroupe</code></td><td>Override groupe d'établissements</td><td>Groupe</td></tr>
+    <tr><td><code>FeatureFlagTenant</code></td><td>Override feature flags par tenant</td><td>Tenant</td></tr>
+    <tr><td><code>ParametreSysteme</code></td><td>Override <code>modules.{code}.actif</code></td><td>Tenant / Global</td></tr>
+    <tr><td><code>ConfigurationModule</code></td><td>Config spécifique (widgets, champs perso)</td><td>Tenant</td></tr>
+  </table>
+</div>
+
+<!-- ==================== SECTION 2 ==================== -->
+<div class="section" id="sec2">
+  <h2 class="section-title"><span class="icon">🔄</span> 2. Flux de résolution des modules</h2>
+
+  <h3>2.1 Cascade de résolution actuelle</h3>
+  
+  <div class="diagram-container">
+    <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#8b8fa3"/>
+        </marker>
+      </defs>
+      
+      <rect x="20" y="20" width="170" height="65" rx="8" fill="rgba(124,58,237,0.12)" stroke="#7c3aed" stroke-width="1.5"/>
+      <text x="105" y="45" text-anchor="middle" fill="#e4e5ea" font-size="13" font-weight="600">1. Catalogue DB</text>
+      <text x="105" y="65" text-anchor="middle" fill="#8b8fa3" font-size="11">actifParDefaut</text>
+      
+      <line x1="190" y1="52" x2="240" y2="52" stroke="#8b8fa3" stroke-width="1.5" marker-end="url(#arrow)"/>
+      
+      <rect x="245" y="20" width="170" height="65" rx="8" fill="rgba(59,130,246,0.1)" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="330" y="45" text-anchor="middle" fill="#e4e5ea" font-size="13" font-weight="600">2. Plan</text>
+      <text x="330" y="65" text-anchor="middle" fill="#8b8fa3" font-size="11">modulesInclus[]</text>
+      
+      <line x1="415" y1="52" x2="465" y2="52" stroke="#8b8fa3" stroke-width="1.5" marker-end="url(#arrow)"/>
+      
+      <rect x="470" y="20" width="170" height="65" rx="8" fill="rgba(34,197,94,0.1)" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="555" y="45" text-anchor="middle" fill="#e4e5ea" font-size="13" font-weight="600">3. Groupe / Supplément</text>
+      <text x="555" y="65" text-anchor="middle" fill="#8b8fa3" font-size="11">ModulesGroupe + AbonnementModule</text>
+      
+      <line x1="640" y1="52" x2="690" y2="52" stroke="#8b8fa3" stroke-width="1.5" marker-end="url(#arrow)"/>
+      
+      <rect x="695" y="20" width="170" height="65" rx="8" fill="rgba(245,158,11,0.1)" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="780" y="45" text-anchor="middle" fill="#e4e5ea" font-size="13" font-weight="600">4. Override tenant</text>
+      <text x="780" y="65" text-anchor="middle" fill="#8b8fa3" font-size="11">ParametreSysteme</text>
+      
+      <text x="450" y="115" text-anchor="middle" fill="#8b8fa3" font-size="11">Priorité croissante →</text>
+      
+      <rect x="60" y="150" width="220" height="55" rx="6" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="170" y="172" text-anchor="middle" fill="#e4e5ea" font-size="12" font-weight="600">ModuleResolutionService</text>
+      <text x="170" y="192" text-anchor="middle" fill="#8b8fa3" font-size="10">Cascade 1→2→3 (Redis 60s)</text>
+      
+      <rect x="320" y="150" width="220" height="55" rx="6" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="430" y="172" text-anchor="middle" fill="#e4e5ea" font-size="12" font-weight="600">ConfigurationService</text>
+      <text x="430" y="192" text-anchor="middle" fill="#8b8fa3" font-size="10">isModuleActive() + toggle</text>
+      
+      <rect x="580" y="150" width="220" height="55" rx="6" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="690" y="172" text-anchor="middle" fill="#e4e5ea" font-size="12" font-weight="600">ModuleRegistryService</text>
+      <text x="690" y="192" text-anchor="middle" fill="#8b8fa3" font-size="10">Hardcoded 15 modules</text>
+      
+      <rect x="150" y="240" width="260" height="45" rx="6" fill="rgba(239,68,68,0.06)" stroke="#ef4444" stroke-width="1"/>
+      <text x="280" y="260" text-anchor="middle" fill="#e4e5ea" font-size="11" font-weight="600">requireModuleActive() middleware</text>
+      <text x="280" y="275" text-anchor="middle" fill="#8b8fa3" font-size="10">configurationService.isModuleActive()</text>
+      
+      <rect x="460" y="240" width="260" height="45" rx="6" fill="rgba(239,68,68,0.06)" stroke="#ef4444" stroke-width="1"/>
+      <text x="590" y="260" text-anchor="middle" fill="#e4e5ea" font-size="11" font-weight="600">FeatureFlagService</text>
+      <text x="590" y="275" text-anchor="middle" fill="#8b8fa3" font-size="10">isEnabled() → plan → override tenant</text>
+      
+      <line x1="170" y1="205" x2="230" y2="240" stroke="#8b8fa3" stroke-width="1" stroke-dasharray="4" marker-end="url(#arrow)"/>
+      <line x1="430" y1="205" x2="350" y2="240" stroke="#8b8fa3" stroke-width="1" stroke-dasharray="4" marker-end="url(#arrow)"/>
+      <line x1="690" y1="205" x2="550" y2="240" stroke="#8b8fa3" stroke-width="1" stroke-dasharray="4" marker-end="url(#arrow)"/>
+    </svg>
+    <p class="diagram-label">Figure 1 — Cascade de résolution des modules (3 chemins divergents)</p>
+  </div>
+
+  <h3>2.2 Protection des routes backend</h3>
+  <div class="card">
+    <div class="card-title">Flux de protection middleware</div>
+    <div class="flow">
+      <div class="flow-box">Requête API</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">authMiddleware()</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box" style="border-color:var(--danger);">requireModuleActive()</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box">filterByEtablissement()</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box" style="border-color:var(--success);">Controller</div>
+    </div>
+    <pre>
+// configurationService.isModuleActive(moduleNom, etablissementId)
+// 1. Vérifier ParametreSysteme modules.{code}.actif (override tenant)
+// 2. Vérifier catalogue DB (actifParDefaut)
+// 3. Fallback: module critique → toujours actif
+
+// ⚠️ NE vérifie PAS :
+// - Si l'abonnement est ACTIF
+// - Si le plan inclut le module
+// - Si le supplément est souscrit</pre>
+  </div>
+
+  <h3>2.3 Modules critiques (toujours accessibles)</h3>
+  <div class="card">
+    <p>Le middleware définit 4 modules critiques qui contournent la vérification d'activation :</p>
+    <div style="margin-top:10px;">
+      <span class="tag tag-critique">auth</span>
+      <span class="tag tag-critique">utilisateurs</span>
+      <span class="tag tag-critique">configuration</span>
+      <span class="tag tag-critique">notifications</span>
+    </div>
+    <p class="text-sm text-muted" style="margin-top:8px;">Ces modules restent accessibles même sans abonnement actif.</p>
+  </div>
+</div>
+
+<!-- ==================== SECTION 3 ==================== -->
+<div class="section" id="sec3">
+  <h2 class="section-title"><span class="icon">🔍</span> 3. Analyse critique — Problèmes identifiés</h2>
+
+  <div class="issue critical">
+    <strong>🔴 P1 — Duplication des registres (CRITIQUE)</strong>
+    <p class="text-sm">Le <code>ModuleRegistryService</code> (15 modules hardcodés) et le <code>ModuleResolutionService</code> (catalogue DB) peuvent retourner des résultats incohérents. Le middleware <code>requireModuleActive()</code> utilise <code>configurationService.isModuleActive()</code> qui ne consulte PAS le <code>ModuleResolutionService</code>.</p>
+  </div>
+
+  <div class="issue critical">
+    <strong>🔴 P2 — Accès aux modules sans plan actif (CRITIQUE)</strong>
+    <p class="text-sm">Un établissement sans <code>AbonnementClient</code> actif peut accéder aux modules avec <code>actifParDefaut=true</code>. Il n'y a aucun gating basé sur le statut de l'abonnement. <strong>Conséquence</strong> : un établissement qui n'a jamais souscrit ou dont l'abonnement a expiré utilise gratuitement des modules qui devraient être payants.</p>
+  </div>
+
+  <div class="issue">
+    <strong>🟡 P3 — Les établissements voient la configuration de TOUS les modules</strong>
+    <p class="text-sm">L'endpoint <code>GET /configuration/modules-advanced/definitions</code> retourne toutes les définitions sans filtrage par plan. L'établissement voit des modules auxquels il n'a pas droit (ex: <code>comptabilite</code> nécessite plan <code>enterprise</code>).</p>
+  </div>
+
+  <div class="issue">
+    <strong>🟡 P4 — Pas de distinction "visible" vs "accessible"</strong>
+    <p class="text-sm">Un module devrait être soit (a) visible mais verrouillé avec upsell, soit (b) complètement masqué. Actuellement, tous les modules sont visibles et toggle-able par l'établissement, même ceux nécessitant un plan supérieur.</p>
+  </div>
+
+  <div class="issue">
+    <strong>🟡 P5 — Incohérence de cascade entre services</strong>
+    <p class="text-sm">
+      <code>ModuleRegistryService.isModuleActif()</code> : override tenant → featureFlag → défaut<br>
+      <code>ModuleResolutionService.resoudre()</code> : catalogue → plan → groupe → supplément<br>
+      <code>ConfigurationService.isModuleActive()</code> : sa propre cascade<br>
+      <strong>Ces 3 chemins donnent des résultats différents pour le même module.</strong>
+    </p>
+  </div>
+
+  <div class="issue good">
+    <strong>🟢 P6 — Points positifs de l'architecture actuelle</strong>
+    <p class="text-sm">
+      ✓ Cache Redis + Pub/Sub cross-instance (TTL 60s unifié)<br>
+      ✓ Middleware RLS avec isolation multi-tenant stricte<br>
+      ✓ Modules critiques protégés (bypass middleware + service)<br>
+      ✓ Gestion des dépendances (auto-activation à l'activation)<br>
+      ✓ Audit trail via HistoriqueConfiguration<br>
+      ✓ Impact preview avant activation/désactivation
+    </p>
+  </div>
+
+  <h3>Résumé matriciel</h3>
+  <table>
+    <tr><th>#</th><th>Problème</th><th>Sévérité</th><th>Impact business</th><th>Complexité fix</th></tr>
+    <tr><td>P1</td><td>3 registres divergents</td><td><span class="badge badge-err">Critique</span></td><td>Bugs d'activation modules</td><td>Moyenne</td></tr>
+    <tr><td>P2</td><td>Accès modules sans plan</td><td><span class="badge badge-err">Critique</span></td><td>Perte de revenus SaaS</td><td>Faible</td></tr>
+    <tr><td>P3</td><td>Visibility non filtrée</td><td><span class="badge badge-warn">Majeur</span></td><td>UX confuse + upsell manqué</td><td>Faible</td></tr>
+    <tr><td>P4</td><td>Pas visible vs accessible</td><td><span class="badge badge-warn">Majeur</span></td><td>Conversion freemium faible</td><td>Moyenne</td></tr>
+    <tr><td>P5</td><td>Cascade incohérente</td><td><span class="badge badge-err">Critique</span></td><td>Comportement imprévisible</td><td>Moyenne</td></tr>
+  </table>
+</div>
+
+<!-- ==================== SECTION 4 ==================== -->
+<div class="section" id="sec4">
+  <h2 class="section-title"><span class="icon">🌍</span> 4. Meilleures pratiques SaaS (benchmarks)</h2>
+
+  <h3>4.1 Patterns industry — Feature Gating & Entitlements</h3>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📌 Pattern 1 : Entitlement-Based Access</div>
+      <p class="text-sm">Chaque plan définit des <strong>entitlements</strong> (droits d'accès). L'entitlement est lié au cycle de vie de l'abonnement : activation → renouvellement → expiration → révocation.</p>
+      <p class="text-sm text-muted" style="margin-top:8px;">Utilisé par : Stripe Billing, Stigg, Schematic</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📌 Pattern 2 : Feature Flags + Entitlements</div>
+      <p class="text-sm">Séparer le <strong>feature flag</strong> (déploiement technique, rollout %) de l'<strong>entitlement</strong> (droit contractuel). Le flag contrôle la disponibilité technique ; l'entitlement contrôle le droit d'accès.</p>
+      <p class="text-sm text-muted" style="margin-top:8px;">Utilisé par : LaunchDarkly, Split.io</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📌 Pattern 3 : Entitlements ≠ Feature Flags</div>
+      <p class="text-sm">Les feature flags sont volatils (modifiés à la volée). Les entitlements sont <strong>permanents</strong> et liés au contrat. Ne JAMAIS utiliser un flag pour contrôler un droit payant — risque de donner/retirer un accès par erreur.</p>
+      <p class="text-sm text-muted" style="margin-top:8px;">Source : Schematic HQ, Stigg</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📌 Pattern 4 : Graceful Degradation</div>
+      <p class="text-sm">Quand un abonnement expire : (1) données préservées en lecture seule, (2) module verrouillé avec message upsell, (3) période de grâce configurable, (4) archivage après N jours.</p>
+      <p class="text-sm text-muted" style="margin-top:8px;">Utilisé par : WorkOS, HubSpot, Intercom</p>
+    </div>
+  </div>
+
+  <h3>4.2 Comparatif eLISAschool vs Best Practices</h3>
+  <table>
+    <tr><th>Dimension</th><th>eLISAschool actuel</th><th>Best Practice</th><th>Gap</th></tr>
+    <tr>
+      <td>Source de vérité</td>
+      <td>3 registres</td>
+      <td>1 seul (DB catalogue)</td>
+      <td><span class="badge badge-err">Écart majeur</span></td>
+    </tr>
+    <tr>
+      <td>Contrôle d'accès</td>
+      <td>Middleware + flags + paramètres</td>
+      <td>Entitlement service centralisé</td>
+      <td><span class="badge badge-warn">Écart modéré</span></td>
+    </tr>
+    <tr>
+      <td>Expiration abonnement</td>
+      <td>Non géré (actifParDefaut reste)</td>
+      <td>Révocation auto + lecture seule</td>
+      <td><span class="badge badge-err">Écart majeur</span></td>
+    </tr>
+    <tr>
+      <td>Visibilité frontend</td>
+      <td>Tous les modules visibles</td>
+      <td>Filtrage par plan + upsell</td>
+      <td><span class="badge badge-warn">Écart modéré</span></td>
+    </tr>
+    <tr>
+      <td>Cache & performance</td>
+      <td>Redis + Pub/Sub + TTL 60s</td>
+      <td>Identique</td>
+      <td><span class="badge badge-ok">Aligné ✓</span></td>
+    </tr>
+    <tr>
+      <td>Multi-tenancy</td>
+      <td>RLS + etablissementId</td>
+      <td>Identique</td>
+      <td><span class="badge badge-ok">Aligné ✓</span></td>
+    </tr>
+    <tr>
+      <td>Audit trail</td>
+      <td>HistoriqueConfiguration</td>
+      <td>Identique + recommandé</td>
+      <td><span class="badge badge-ok">Aligné ✓</span></td>
+    </tr>
+  </table>
+
+  <h3>4.3 Ce que font les leaders SaaS</h3>
+  <div class="card">
+    <div class="card-title">Stripe Billing + Entitlements</div>
+    <pre>
+// Stripe émet un webhook quand l'abonnement change
+customer.subscription.updated → recalculer les entitlements
+customer.subscription.deleted → révoquer tous les accès premium
+
+// L'entitlement est la SEULE source de vérité
+// Pas de feature flag pour contrôler l'accès payant
+// Le feature flag sert uniquement au rollout technique</pre>
+  </div>
+  <div class="card">
+    <div class="card-title">LaunchDarkly — Séparation des préoccupations</div>
+    <pre>
+// Feature Flag = "Est-ce que le code est déployé ?"
+// Entitlement  = "Est-ce que le client a le droit ?"
+
+// Les deux sont combinés :
+if (featureFlag.isEnabled() && entitlement.hasAccess()) {
+    // Module accessible
+} else if (!entitlement.hasAccess()) {
+    // Afficher upsell (même si le flag est ON)
+}</pre>
+  </div>
+</div>
+
+<!-- ==================== SECTION 5 ==================== -->
+<div class="section" id="sec5">
+  <h2 class="section-title"><span class="icon">💡</span> 5. Recommandations & plan d'action</h2>
+
+  <div class="rec">
+    <strong>R1 — Unifier la source de vérité (PRIORITÉ MAX — P0)</strong>
+    <p class="text-sm" style="margin-top:6px;">Supprimer le <code>ModuleRegistryService</code> (hardcoded). Le <code>ModuleResolutionService</code> (catalogue DB) devient la <strong>source unique</strong> de résolution. Le <code>ConfigurationService.isModuleActive()</code> doit déléguer au <code>ModuleResolutionService</code>.</p>
+    <p class="text-sm text-muted" style="margin-top:4px;">Fichiers : <code>module-registry.service.ts</code> (supprimer), <code>configuration.service.ts</code> (déléguer), <code>module-active.middleware.ts</code></p>
+  </div>
+
+  <div class="rec">
+    <strong>R2 — Implémenter le gating par abonnement (P0)</strong>
+    <p class="text-sm" style="margin-top:6px;">Si <code>AbonnementClient.statut !== ACTIF</code> pour un établissement :</p>
+    <ul class="text-sm" style="margin:6px 0;padding-left:20px;">
+      <li>Seuls les modules <code>CRITIQUE</code> restent accessibles</li>
+      <li>Tous les autres modules sont <strong>verrouillés</strong> (lecture seule si données existantes)</li>
+      <li>Le frontend affiche un bandeau "Abonnement requis" avec CTA facturation</li>
+    </ul>
+  </div>
+
+  <div class="rec">
+    <strong>R3 — Filtrer la visibilité par plan (P1)</strong>
+    <p class="text-sm" style="margin-top:6px;">L'endpoint <code>GET /configuration/modules-advanced/status</code> retourne pour chaque module :</p>
+    <ul class="text-sm" style="margin:6px 0;padding-left:20px;">
+      <li><code>estAccessible</code> : le module est actif ET le plan le permet</li>
+      <li><code>estVisible</code> : le module est visible dans le catalogue (pas masqué)</li>
+      <li><code>raisonBlocage</code> : "Plan Pro requis" / "Abonnement expiré" / "Module désactivé"</li>
+    </ul>
+  </div>
+
+  <div class="rec">
+    <strong>R4 — Implémenter la révocation gracieuse (P2)</strong>
+    <p class="text-sm" style="margin-top:6px;">Quand un abonnement expire (<code>statut: EXPIRE</code>) :</p>
+    <ol class="text-sm" style="margin:6px 0;padding-left:20px;">
+      <li><strong>Jour 0</strong> : Bandeau alerte + notification email/SMS</li>
+      <li><strong>Jour 1-15</strong> : Modules premium en lecture seule (données préservées)</li>
+      <li><strong>Jour 15-30</strong> : Modules premium verrouillés (message upsell)</li>
+      <li><strong>Jour 30+</strong> : Données archivées (export disponible)</li>
+    </ol>
+  </div>
+
+  <div class="rec">
+    <strong>R5 — Séparer Feature Flags et Entitlements (P2)</strong>
+    <p class="text-sm" style="margin-top:6px;">
+      • <strong>Entitlements</strong> = droits contractuels (liés au plan, automatiques)<br>
+      • <strong>Feature Flags</strong> = contrôle technique (rollout, A/B testing, kill switch)<br>
+      • Ne JAMAIS utiliser un feature flag pour contrôler un droit payant<br>
+      • Créer un <code>EntitlementService</code> dédié
+    </p>
+  </div>
+
+  <div class="rec">
+    <strong>R6 — Frontend : Upsell & Module Cards (P2)</strong>
+    <p class="text-sm" style="margin-top:6px;">Pour les modules non accessibles, afficher :</p>
+    <ul class="text-sm" style="margin:6px 0;padding-left:20px;">
+      <li>Un cadenas + label "Plan Pro requis"</li>
+      <li>Un bouton "Découvrir ce module" (preview/description)</li>
+      <li>Un bouton "Upgrader" (CTA vers page facturation)</li>
+      <li>Pas de toggle activable (grisé avec tooltip explicatif)</li>
+    </ul>
+  </div>
+
+  <h3>Plan d'action priorisé</h3>
+  <table>
+    <tr><th>Priorité</th><th>Action</th><th>Effort</th><th>Impact</th><th>Dépendances</th></tr>
+    <tr>
+      <td><span class="badge badge-err">P0</span></td>
+      <td>Unifier source de vérité</td>
+      <td>2-3 jours</td>
+      <td>Élimine incohérences</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-err">P0</span></td>
+      <td>Gating par abonnement actif</td>
+      <td>3-5 jours</td>
+      <td>Protège revenus</td>
+      <td>R1</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-warn">P1</span></td>
+      <td>EntitlementService centralisé</td>
+      <td>3-4 jours</td>
+      <td>Architecture propre</td>
+      <td>R1, R2</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-warn">P1</span></td>
+      <td>Filtrer visibilité frontend</td>
+      <td>2-3 jours</td>
+      <td>UX + upsell</td>
+      <td>R3</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-info">P2</span></td>
+      <td>Révocation gracieuse</td>
+      <td>5-7 jours</td>
+      <td>Rétention client</td>
+      <td>R2, R4</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-info">P2</span></td>
+      <td>Séparer Flags / Entitlements</td>
+      <td>2-3 jours</td>
+      <td>Cohérence</td>
+      <td>R5</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ==================== SECTION 6 ==================== -->
+<div class="section" id="sec6">
+  <h2 class="section-title"><span class="icon">🎯</span> 6. Architecture cible proposée</h2>
+
+  <div class="diagram-container">
+    <svg viewBox="0 0 900 480" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+      <defs>
+        <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#8b8fa3"/>
+        </marker>
+      </defs>
+      
+      <text x="450" y="25" text-anchor="middle" fill="#e4e5ea" font-size="15" font-weight="600">Architecture cible — EntitlementService centralisé</text>
+      
+      <!-- Frontend -->
+      <rect x="50" y="45" width="800" height="65" rx="8" fill="rgba(124,58,237,0.05)" stroke="#7c3aed" stroke-width="1" stroke-dasharray="4"/>
+      <text x="70" y="65" fill="#a78bfa" font-size="12" font-weight="600">FRONTEND</text>
+      <rect x="80" y="75" width="150" height="28" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="155" y="93" text-anchor="middle" fill="#e4e5ea" font-size="10">Sidebar (filtrée)</text>
+      <rect x="250" y="75" width="150" height="28" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="325" y="93" text-anchor="middle" fill="#e4e5ea" font-size="10">ModulePage (guard)</text>
+      <rect x="420" y="75" width="170" height="28" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="505" y="93" text-anchor="middle" fill="#e4e5ea" font-size="10">ConfigModules (visible)</text>
+      <rect x="610" y="75" width="110" height="28" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="665" y="93" text-anchor="middle" fill="#e4e5ea" font-size="10">UpsellModal</text>
+      <rect x="740" y="75" width="90" height="28" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="785" y="93" text-anchor="middle" fill="#e4e5ea" font-size="10">CASL guard</text>
+      
+      <line x1="450" y1="110" x2="450" y2="135" stroke="#8b8fa3" stroke-width="1.5" marker-end="url(#arrow2)"/>
+      
+      <!-- API Gateway -->
+      <rect x="50" y="140" width="800" height="55" rx="8" fill="rgba(59,130,246,0.05)" stroke="#3b82f6" stroke-width="1" stroke-dasharray="4"/>
+      <text x="70" y="160" fill="#3b82f6" font-size="12" font-weight="600">API GATEWAY</text>
+      <rect x="80" y="165" width="120" height="22" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="140" y="180" text-anchor="middle" fill="#e4e5ea" font-size="9">authMiddleware</text>
+      <rect x="215" y="165" width="140" height="22" rx="4" fill="rgba(34,197,94,0.08)" stroke="#22c55e"/>
+      <text x="285" y="180" text-anchor="middle" fill="#22c55e" font-size="9" font-weight="600">entitlementCheck()</text>
+      <rect x="370" y="165" width="140" height="22" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="440" y="180" text-anchor="middle" fill="#e4e5ea" font-size="9">requireModuleActive</text>
+      <rect x="525" y="165" width="120" height="22" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="585" y="180" text-anchor="middle" fill="#e4e5ea" font-size="9">rlsMiddleware</text>
+      <rect x="660" y="165" width="170" height="22" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="745" y="180" text-anchor="middle" fill="#e4e5ea" font-size="9">caslMiddleware (abilities)</text>
+      
+      <line x1="450" y1="195" x2="450" y2="220" stroke="#8b8fa3" stroke-width="1.5" marker-end="url(#arrow2)"/>
+      
+      <!-- Entitlement Service -->
+      <rect x="175" y="225" width="550" height="80" rx="10" fill="rgba(34,197,94,0.08)" stroke="#22c55e" stroke-width="2"/>
+      <text x="450" y="250" text-anchor="middle" fill="#22c55e" font-size="14" font-weight="700">EntitlementService (SOURCE UNIQUE)</text>
+      <text x="450" y="270" text-anchor="middle" fill="#e4e5ea" font-size="11">check(etablissementId, moduleCode) → { accessible, visible, raison, plan, source }</text>
+      <text x="450" y="290" text-anchor="middle" fill="#8b8fa3" font-size="10">Redis 60s | Pub/Sub | Fallback: modules_catalogue.actifParDefaut | CRITIQUE bypass</text>
+      
+      <line x1="450" y1="305" x2="450" y2="330" stroke="#8b8fa3" stroke-width="1.5" marker-end="url(#arrow2)"/>
+      
+      <!-- Data Layer -->
+      <rect x="50" y="335" width="800" height="60" rx="8" fill="rgba(245,158,11,0.05)" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4"/>
+      <text x="70" y="355" fill="#f59e0b" font-size="12" font-weight="600">DATA LAYER</text>
+      <rect x="80" y="362" width="120" height="26" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="140" y="379" text-anchor="middle" fill="#e4e5ea" font-size="9">modules_catalogue</text>
+      <rect x="215" y="362" width="120" height="26" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="275" y="379" text-anchor="middle" fill="#e4e5ea" font-size="9">plans_abonnement</text>
+      <rect x="350" y="362" width="130" height="26" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="415" y="379" text-anchor="middle" fill="#e4e5ea" font-size="9">abonnements_client</text>
+      <rect x="495" y="362" width="130" height="26" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="560" y="379" text-anchor="middle" fill="#e4e5ea" font-size="9">abonnement_modules</text>
+      <rect x="640" y="362" width="190" height="26" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="735" y="379" text-anchor="middle" fill="#e4e5ea" font-size="9">parametres_systeme (overrides)</text>
+      
+      <!-- Cron -->
+      <rect x="50" y="420" width="800" height="50" rx="8" fill="rgba(239,68,68,0.04)" stroke="#ef4444" stroke-width="1" stroke-dasharray="4"/>
+      <text x="70" y="440" fill="#ef4444" font-size="12" font-weight="600">CRON & EVENTS</text>
+      <rect x="200" y="432" width="200" height="22" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="300" y="447" text-anchor="middle" fill="#e4e5ea" font-size="9">Vérifier expiration abonnements</text>
+      <rect x="420" y="432" width="200" height="22" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="520" y="447" text-anchor="middle" fill="#e4e5ea" font-size="9">Event: abonnement.expire → révoquer</text>
+      <rect x="640" y="432" width="190" height="22" rx="4" fill="#1a1d27" stroke="#2e3348"/>
+      <text x="735" y="447" text-anchor="middle" fill="#e4e5ea" font-size="9">Event: module.revoked → notifier</text>
+    </svg>
+    <p class="diagram-label">Figure 2 — Architecture cible avec EntitlementService comme source unique de vérité</p>
+  </div>
+
+  <h3>Logique cible de l'EntitlementService</h3>
+  <div class="card">
+    <pre>
+class EntitlementService {
+  
+  async check(etablissementId: string, moduleCode: string): Promise&lt;EntitlementResult&gt; {
+    
+    // 1. Module CRITIQUE → toujours accessible (bypass total)
+    const catalogue = await this.getCatalogue(moduleCode);
+    if (catalogue.categorie === CategorieModule.CRITIQUE) {
+      return { accessible: true, visible: true, source: 'critique' };
+    }
+    
+    // 2. Abonnement ACTIF ?
+    const abonnement = await this.getAbonnement(etablissementId);
+    if (!abonnement || abonnement.statut !== StatutAbonnement.ACTIF) {
+      return { 
+        accessible: false, 
+        visible: true, 
+        raison: 'ABONNEMENT_INACTIF',
+        message: 'Un abonnement actif est requis pour accéder à ce module'
+      };
+    }
+    
+    // 3. Plan inclut le module ?
+    if (abonnement.plan.modulesInclus.includes(moduleCode)) {
+      return { accessible: true, visible: true, source: 'plan' };
+    }
+    
+    // 4. Supplément souscrit ?
+    const supplements = await this.getSupplements(etablissementId);
+    if (supplements.includes(moduleCode)) {
+      return { accessible: true, visible: true, source: 'supplement' };
+    }
+    
+    // 5. planMinimal compatible ?
+    if (catalogue.planMinimal) {
+      const planRang = this.getPlanRang(abonnement.plan.slug);
+      const requiredRang = this.getPlanRang(catalogue.planMinimal);
+      if (planRang < requiredRang) {
+        return { 
+          accessible: false, 
+          visible: true, 
+          raison: 'PLAN_INSUFFICIENT',
+          message: `Plan "${catalogue.planMinimal}" ou supérieur requis`
+        };
+      }
+    }
+    
+    // 6. Défaut catalogue (actifParDefaut)
+    return { 
+      accessible: catalogue.actifParDefaut, 
+      visible: true, 
+      source: 'catalogue' 
+    };
+  }
+}</pre>
+  </div>
+</div>
+
+<!-- ==================== SECTION 7 ==================== -->
+<div class="section" id="sec7">
+  <h2 class="section-title"><span class="icon">🚫</span> 7. Comportement sans plan actif</h2>
+
+  <h3>7.1 État actuel (problème)</h3>
+  <div class="issue critical">
+    <p class="text-sm">Aujourd'hui, un établissement sans plan actif accède aux modules <code>actifParDefaut=true</code> sans restriction. C'est une <strong>faille de monétisation</strong>.</p>
+  </div>
+
+  <h3>7.2 Comportement cible</h3>
+  <div class="diagram-container">
+    <svg viewBox="0 0 900 350" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+      <text x="450" y="25" text-anchor="middle" fill="#e4e5ea" font-size="14" font-weight="600">Matrice d'accès par statut d'abonnement</text>
+      
+      <!-- Headers -->
+      <rect x="250" y="50" width="130" height="30" rx="4" fill="rgba(34,197,94,0.15)" stroke="#22c55e"/>
+      <text x="315" y="70" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="600">Plan ACTIF</text>
+      <rect x="390" y="50" width="130" height="30" rx="4" fill="rgba(245,158,11,0.15)" stroke="#f59e0b"/>
+      <text x="455" y="70" text-anchor="middle" fill="#f59e0b" font-size="11" font-weight="600">Plan EXPIRÉ</text>
+      <rect x="530" y="50" width="130" height="30" rx="4" fill="rgba(239,68,68,0.15)" stroke="#ef4444"/>
+      <text x="595" y="70" text-anchor="middle" fill="#ef4444" font-size="11" font-weight="600">Sans plan</text>
+      <rect x="670" y="50" width="130" height="30" rx="4" fill="rgba(139,143,163,0.15)" stroke="#8b8fa3"/>
+      <text x="735" y="70" text-anchor="middle" fill="#8b8fa3" font-size="11" font-weight="600">Plan SUSPENDU</text>
+      
+      <!-- Row: Modules CRITIQUE -->
+      <text x="120" y="110" text-anchor="middle" fill="#e4e5ea" font-size="11" font-weight="600">Modules CRITIQUE</text>
+      <rect x="250" y="92" width="130" height="30" rx="4" fill="rgba(34,197,94,0.1)"/>
+      <text x="315" y="112" text-anchor="middle" fill="#22c55e" font-size="11">✓ Accessible</text>
+      <rect x="390" y="92" width="130" height="30" rx="4" fill="rgba(34,197,94,0.1)"/>
+      <text x="455" y="112" text-anchor="middle" fill="#22c55e" font-size="11">✓ Accessible</text>
+      <rect x="530" y="92" width="130" height="30" rx="4" fill="rgba(34,197,94,0.1)"/>
+      <text x="595" y="112" text-anchor="middle" fill="#22c55e" font-size="11">✓ Accessible</text>
+      <rect x="670" y="92" width="130" height="30" rx="4" fill="rgba(34,197,94,0.1)"/>
+      <text x="735" y="112" text-anchor="middle" fill="#22c55e" font-size="11">✓ Accessible</text>
+      
+      <!-- Row: Modules du plan -->
+      <text x="120" y="155" text-anchor="middle" fill="#e4e5ea" font-size="11" font-weight="600">Modules du plan</text>
+      <rect x="250" y="137" width="130" height="30" rx="4" fill="rgba(34,197,94,0.1)"/>
+      <text x="315" y="157" text-anchor="middle" fill="#22c55e" font-size="11">✓ Accessible</text>
+      <rect x="390" y="137" width="130" height="30" rx="4" fill="rgba(245,158,11,0.1)"/>
+      <text x="455" y="157" text-anchor="middle" fill="#f59e0b" font-size="11">◐ Lecture seule</text>
+      <rect x="530" y="137" width="130" height="30" rx="4" fill="rgba(239,68,68,0.1)"/>
+      <text x="595" y="157" text-anchor="middle" fill="#ef4444" font-size="11">✗ Verrouillé</text>
+      <rect x="670" y="137" width="130" height="30" rx="4" fill="rgba(245,158,11,0.1)"/>
+      <text x="735" y="157" text-anchor="middle" fill="#f59e0b" font-size="11">◐ Lecture seule</text>
+      
+      <!-- Row: Modules supplément -->
+      <text x="120" y="200" text-anchor="middle" fill="#e4e5ea" font-size="11" font-weight="600">Modules supplément</text>
+      <rect x="250" y="182" width="130" height="30" rx="4" fill="rgba(34,197,94,0.1)"/>
+      <text x="315" y="202" text-anchor="middle" fill="#22c55e" font-size="11">✓ Accessible</text>
+      <rect x="390" y="182" width="130" height="30" rx="4" fill="rgba(239,68,68,0.1)"/>
+      <text x="455" y="202" text-anchor="middle" fill="#ef4444" font-size="11">✗ Verrouillé</text>
+      <rect x="530" y="182" width="130" height="30" rx="4" fill="rgba(239,68,68,0.1)"/>
+      <text x="595" y="202" text-anchor="middle" fill="#ef4444" font-size="11">✗ Verrouillé</text>
+      <rect x="670" y="182" width="130" height="30" rx="4" fill="rgba(239,68,68,0.1)"/>
+      <text x="735" y="202" text-anchor="middle" fill="#ef4444" font-size="11">✗ Verrouillé</text>
+      
+      <!-- Row: Configuration modules -->
+      <text x="120" y="245" text-anchor="middle" fill="#e4e5ea" font-size="11" font-weight="600">Config. modules</text>
+      <rect x="250" y="227" width="130" height="30" rx="4" fill="rgba(34,197,94,0.1)"/>
+      <text x="315" y="247" text-anchor="middle" fill="#22c55e" font-size="11">✓ Modifiable</text>
+      <rect x="390" y="227" width="130" height="30" rx="4" fill="rgba(239,68,68,0.1)"/>
+      <text x="455" y="247" text-anchor="middle" fill="#ef4444" font-size="11">✗ Lecture seule</text>
+      <rect x="530" y="227" width="130" height="30" rx="4" fill="rgba(239,68,68,0.1)"/>
+      <text x="595" y="247" text-anchor="middle" fill="#ef4444" font-size="11">✗ Masquée</text>
+      <rect x="670" y="227" width="130" height="30" rx="4" fill="rgba(239,68,68,0.1)"/>
+      <text x="735" y="247" text-anchor="middle" fill="#ef4444" font-size="11">✗ Masquée</text>
+      
+      <!-- Row: API Access -->
+      <text x="120" y="290" text-anchor="middle" fill="#e4e5ea" font-size="11" font-weight="600">API endpoints</text>
+      <rect x="250" y="272" width="130" height="30" rx="4" fill="rgba(34,197,94,0.1)"/>
+      <text x="315" y="292" text-anchor="middle" fill="#22c55e" font-size="11">✓ Complet</text>
+      <rect x="390" y="272" width="130" height="30" rx="4" fill="rgba(245,158,11,0.1)"/>
+      <text x="455" y="292" text-anchor="middle" fill="#f59e0b" font-size="11">GET seulement</text>
+      <rect x="530" y="272" width="130" height="30" rx="4" fill="rgba(239,68,68,0.1)"/>
+      <text x="595" y="292" text-anchor="middle" fill="#ef4444" font-size="11">403 BLOCKED</text>
+      <rect x="670" y="272" width="130" height="30" rx="4" fill="rgba(245,158,11,0.1)"/>
+      <text x="735" y="292" text-anchor="middle" fill="#f59e0b" font-size="11">GET seulement</text>
+      
+      <!-- Timeline -->
+      <text x="450" y="335" text-anchor="middle" fill="#8b8fa3" font-size="10">J0: Expiration → J1-15: Lecture seule → J15-30: Verrouillé + upsell → J30+: Données archivées</text>
+    </svg>
+    <p class="diagram-label">Figure 3 — Matrice d'accès cible par statut d'abonnement</p>
+  </div>
+
+  <h3>7.3 Flux de révocation gracieuse</h3>
+  <div class="card">
+    <div class="flow">
+      <div class="flow-box" style="border-color:var(--success);">Abonnement ACTIF<br><span class="text-sm text-muted">Tous les modules accessibles</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box" style="border-color:var(--warning);">EXPIRÉ (J0-J15)<br><span class="text-sm text-muted">Lecture seule + alerte</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box" style="border-color:var(--danger);">EXPIRÉ (J15-J30)<br><span class="text-sm text-muted">Verrouillé + upsell</span></div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box" style="border-color:var(--text-muted);">EXPIRÉ (J30+)<br><span class="text-sm text-muted">Archivé + export</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SECTION 8 ==================== -->
+<div class="section" id="sec8">
+  <h2 class="section-title"><span class="icon">📋</span> 8. Conclusion exécutive</h2>
+
+  <div class="grid-2">
+    <div class="card" style="border-color:var(--danger);">
+      <div class="card-title" style="color:var(--danger);">❌ État actuel</div>
+      <ul class="text-sm" style="padding-left:16px;">
+        <li>3 registres de modules divergents</li>
+        <li>Pas de gating par abonnement actif</li>
+        <li>Tous les modules visibles par tous</li>
+        <li>Cascade incohérente entre services</li>
+        <li>Pas de révocation à l'expiration</li>
+        <li>Pas de distinction visible/accessible</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color:var(--success);">
+      <div class="card-title" style="color:var(--success);">✅ État cible (recommandé)</div>
+      <ul class="text-sm" style="padding-left:16px;">
+        <li>1 source unique : EntitlementService</li>
+        <li>Gating strict par abonnement actif</li>
+        <li>Visibilité filtrée par plan + upsell</li>
+        <li>Cascade unifiée et cohérente</li>
+        <li>Révocation gracieuse à l'expiration</li>
+        <li>Séparation Flags / Entitlements</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Effort total estimé</h3>
+  <div class="card">
+    <table>
+      <tr><th>Phase</th><th>Effort</th><th>Progression</th></tr>
+      <tr>
+        <td>P0 — Unification + Gating</td>
+        <td>5-8 jours</td>
+        <td><div class="progress-bar"><div class="progress-fill" style="width:40%;background:var(--danger);"></div></div></td>
+      </tr>
+      <tr>
+        <td>P1 — EntitlementService + Visibilité</td>
+        <td>5-7 jours</td>
+        <td><div class="progress-bar"><div class="progress-fill" style="width:65%;background:var(--warning);"></div></div></td>
+      </tr>
+      <tr>
+        <td>P2 — Révocation + Séparation</td>
+        <td>7-10 jours</td>
+        <td><div class="progress-bar"><div class="progress-fill" style="width:90%;background:var(--info);"></div></div></td>
+      </tr>
+      <tr>
+        <td><strong>TOTAL</strong></td>
+        <td><strong>17-25 jours</strong></td>
+        <td></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+  
+  <p class="text-sm text-muted" style="text-align:center;">
+    Rapport généré le 12 août 2026 — eLISAschool v7.1+ / Refonte SaaS v5-v7<br>
+    Sources : codebase eLISAschool, Schematic HQ, PayPro Global, LaunchDarkly, WorkOS, Stigg
+  </p>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <p>eLISAschool — Audit Gestion des Modules — Document confidentiel</p>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,22 +1,20 @@
 /**
  * ==================================
- * eLISAschool - Helper Configuration v6.0
+ * eLISAschool - Helper Configuration v10.0
  * ==================================
- * Version: 6.0.0
+ * Version: 10.0.0
  * Auteur: franck arlos chendjou
  * 
  * Fonctions utilitaires pour accéder aux paramètres
- * avec cache rapide, typage fort et support multi-tenant
+ * avec typage fort et support multi-tenant
+ * 
+ * v10 : Suppression du double cache (quickCache)
+ * Le cache du ConfigurationService (60s + pub/sub Redis) est suffisant.
+ * Cela élimine le risque de désynchronisation entre les deux caches.
  */
 
 import { configurationService } from '../services/configuration.service';
 import { CategorieParametre } from '../entities/parametre-systeme.entity';
-
-/**
- * Cache léger pour les accès très fréquents (1 minute)
- */
-const quickCache: Map<string, { value: any; expiry: number }> = new Map();
-const QUICK_CACHE_TTL = 60 * 1000;
 
 /**
  * Récupère un paramètre avec contexte d'établissement
@@ -31,17 +29,10 @@ export async function getParam<T = string>(
     options?: { etablissementId?: string; defaultValue?: T }
 ): Promise<T> {
     const { etablissementId, defaultValue } = options || {};
-    const cacheKey = etablissementId ? `${cle}:${etablissementId}` : cle;
 
-    const cached = quickCache.get(cacheKey);
-    if (cached && Date.now() < cached.expiry) {
-        return cached.value as T;
-    }
-
-    // ✅ PASSER etablissementId au service
+    // v10 — Délégation directe au service (cache 60s + pub/sub Redis)
     const value = await configurationService.getParametre<T>(cle, etablissementId);
     if (value !== null) {
-        quickCache.set(cacheKey, { value, expiry: Date.now() + QUICK_CACHE_TTL });
         return value;
     }
 
@@ -138,7 +129,7 @@ export async function getModuleParams(module: string): Promise<Map<string, any>>
  * Invalide le cache des configurations
  */
 export function invalidateConfigCache() {
-    quickCache.clear();
+    // v10 — Délégation directe au service (plus de cache local)
     configurationService.invalidateCache();
 }
 

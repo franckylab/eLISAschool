@@ -112,6 +112,9 @@ export class Etablissement {
     @Column({ type: 'text', nullable: true })
     adresse?: string;
 
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    ville?: string;
+
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
 
@@ -175,26 +178,65 @@ export class Etablissement {
     couleurSecondaire?: string;
 
     // ==================================
+    // Localisation géographique (v8.0 — pages publiques)
+    // ==================================
+
+    @Column({ type: 'varchar', length: 50, default: 'Cameroun' })
+    pays!: string;
+
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    region?: string;
+
+    @Column({ type: 'varchar', length: 150, nullable: true })
+    quartier?: string;
+
+    @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+    latitude?: number;
+
+    @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+    longitude?: number;
+
+    // ==================================
+    // Identifiants officiels (v8.0 — pages publiques)
+    // ==================================
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    numeroEnregistrement?: string;
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    numeroIdentification?: string;
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    numeroAutorisation?: string;
+
+    // ==================================
+    // Contenu public (v8.0 — pages publiques)
+    // ==================================
+
+    @Column({ type: 'text', nullable: true })
+    descriptionPublique?: string;
+
+    // ==================================
     // Paramètres régionaux (v3.0)
     // ==================================
 
     /**
      * Langue par défaut de l'établissement
-     * Fallback: ParametreSysteme → ConfigurationApp → 'fr'
+     * Fallback: ParametreSysteme → valeur défaut → 'fr'
      */
     @Column({ type: 'varchar', length: 10, default: 'fr' })
     langueDefaut!: string;
 
     /**
      * Devise monétaire de l'établissement
-     * Fallback: ParametreSysteme → ConfigurationApp → 'XAF'
+     * Fallback: ParametreSysteme → valeur défaut → 'XAF'
      */
     @Column({ type: 'varchar', length: 10, default: 'XAF' })
     devise!: string;
 
     /**
      * Fuseau horaire de l'établissement (format IANA)
-     * Fallback: ParametreSysteme → ConfigurationApp → 'Africa/Douala'
+     * Fallback: ParametreSysteme → valeur défaut → 'Africa/Douala'
      */
     @Column({ type: 'varchar', length: 50, default: 'Africa/Douala' })
     fuseauHoraire!: string;

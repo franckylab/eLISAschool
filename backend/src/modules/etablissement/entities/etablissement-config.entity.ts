@@ -89,6 +89,12 @@ export class EtablissementConfig {
     @Column({ type: 'varchar', length: 50, default: 'gratuit' })
     planAbonnement?: string; // gratuit, standard, premium, entreprise
 
+    /**
+     * Renouvellement automatique de l'abonnement
+     */
+    @Column({ type: 'boolean', default: false })
+    autoRenouvellement!: boolean;
+
     @CreateDateColumn()
     createdAt!: Date;
 

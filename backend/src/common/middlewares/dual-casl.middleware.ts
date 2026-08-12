@@ -1,22 +1,18 @@
 /**
  * ==================================
- * eLISAschool - Dual CASL Middleware
+ * eLISAschool - Dual CASL Middleware (ADR-005 v11)
  * ==================================
- * Modèle C — Auth0 Internalisé (Dual-Plane)
+ * ADR-005 : Source unique de vérité.
  *
  * Résout le bon ability CASL selon le contexte de la route :
- * - /api/platform/* → definePlatformAbility (Control Plane)
- * - /api/* (tenant) → defineAbility (Data Plane)
+ * - /api/platform/* → defineAbility (rôles plateforme via permissions unifiées)
+ * - /api/* (tenant) → defineAbility (permissions tenant)
  *
  * Attache req.ability et req.contexteType à la requête.
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { definePlatformAbility, type PlatformAbility } from '@shared/casl/platform-abilities';
 import { defineAbility, type AppAbility } from '@shared/casl/abilities';
-import { AppDataSource } from '@database/data-source';
-import { Membership } from '@modules/identite/entities/membership.entity';
-import { ContexteType } from '@shared/enums/platform-roles.enum';
 import { logger } from '@common/utils/logger.util';
 
 /**
@@ -25,24 +21,19 @@ import { logger } from '@common/utils/logger.util';
 declare global {
     namespace Express {
         interface Request {
-            ability?: PlatformAbility | AppAbility;
+            ability?: AppAbility;
             contexteType?: 'PLATEFORME' | 'TENANT';
             platformRole?: string | null;
         }
     }
 }
 
-const membershipRepo = AppDataSource.getRepository(Membership);
-
 /**
- * Middleware Dual CASL.
+ * Middleware Dual CASL (ADR-005 — unifié).
  *
- * Algorithme :
- * 1. Si la route commence par /api/platform/ → résoudre le membership PLATEFORME
- *    et construire definePlatformAbility(role).
- * 2. Sinon → utiliser les permissions tenant existantes (req.utilisateur.permissions)
- *    et construire defineAbility(permissions, contexte).
- * 3. Attacher req.ability et req.contexteType.
+ * ADR-005 : Plus de definePlatformAbility. Utilise defineAbility() pour les deux
+ * contextes. Les permissions plateforme sont stockées dans la table permissions
+ * unifiée (même schéma que les permissions tenant).
  */
 export async function dualCaslMiddleware(
     req: Request,
@@ -51,7 +42,6 @@ export async function dualCaslMiddleware(
 ): Promise<void> {
     try {
         if (!req.utilisateur) {
-            // Pas d'utilisateur authentifié → pas d'ability
             next();
             return;
         }
@@ -60,39 +50,27 @@ export async function dualCaslMiddleware(
             || req.originalUrl.startsWith('/api/platform/');
 
         if (isPlatformRoute) {
-            // =============================================
-            // CONTROL PLANE — definePlatformAbility
-            // =============================================
-
-            // Résoudre le membership plateforme de l'utilisateur
-            const membership = await membershipRepo.findOne({
-                where: {
-                    identiteId: req.utilisateur.id,
-                    contexteType: ContexteType.PLATEFORME,
-                    estActif: true,
-                },
+            // CONTROL PLANE — defineAbility avec contexte plateforme
+            req.ability = defineAbility({
+                id: req.utilisateur.id,
+                role: req.utilisateur.role,
+                etablissementId: req.utilisateur.etablissementId,
+                permissions: req.utilisateur.permissions || [],
             });
-
-            const platformRole = membership?.role || req.utilisateur.role || null;
-
-            req.ability = definePlatformAbility(platformRole);
             req.contexteType = 'PLATEFORME';
-            req.platformRole = platformRole;
+            req.platformRole = req.utilisateur.role || null;
 
             logger.debug(
-                `[DualCASL] Platform → role=${platformRole}, path=${req.path}`,
+                `[DualCASL] Platform → role=${req.utilisateur.role}, path=${req.path}`,
             );
         } else {
-            // =============================================
             // DATA PLANE — defineAbility (tenant)
-            // =============================================
-
-            const permissions = req.utilisateur.permissions || [];
-            const etablissementId = req.utilisateur.etablissementId;
-
-            req.ability = defineAbility(permissions, {
-                etablissementId,
+            req.ability = defineAbility({
+                id: req.utilisateur.id,
                 role: req.utilisateur.role,
+                etablissementId: req.utilisateur.etablissementId,
+                permissions: req.utilisateur.permissions || [],
+                etablissements: req.utilisateur.etablissements,
             });
             req.contexteType = 'TENANT';
             req.platformRole = null;
@@ -104,10 +82,64 @@ export async function dualCaslMiddleware(
 
         next();
     } catch (error) {
-        logger.error('[DualCASL] Erreur résolution ability', error);
-        // En cas d'erreur, continuer sans ability (les guards en aval décideront)
-        next();
+        logger.error('[DualCASL] Erreur résolution abilities CASL', { error });
+        next(error);
     }
 }
 
 export default dualCaslMiddleware;
+
+// =============================================
+// Guards granulaires plateforme
+// =============================================
+
+/**
+ * Guard : exige un rôle plateforme (ADR-005 : via req.platformRole).
+ */
+export function requirePlatformAccess() {
+    return (req: Request, res: Response, next: NextFunction): void => {
+        if (!req.platformRole) {
+            res.status(403).json({
+                success: false,
+                error: {
+                    code: 'PLATFORM_ACCESS_DENIED',
+                    message: 'Accès plateforme requis',
+                },
+            });
+            return;
+        }
+        next();
+    };
+}
+
+/**
+ * Guard : exige une permission CASL spécifique.
+ * Utilise req.ability (résolu par dualCaslMiddleware).
+ */
+export function requirePlatformCasl(action: string, subject: string) {
+    return (req: Request, res: Response, next: NextFunction): void => {
+        if (!req.ability) {
+            res.status(403).json({
+                success: false,
+                error: {
+                    code: 'PLATFORM_ACCESS_DENIED',
+                    message: 'Ability CASL non résolue',
+                },
+            });
+            return;
+        }
+
+        if (req.ability.can(action as any, subject as any)) {
+            next();
+            return;
+        }
+
+        res.status(403).json({
+            success: false,
+            error: {
+                code: 'PLATFORM_PERMISSION_DENIED',
+                message: `Permission refusée : ${action} ${subject} (rôle: ${req.platformRole || 'aucun'})`,
+            },
+        });
+    };
+}

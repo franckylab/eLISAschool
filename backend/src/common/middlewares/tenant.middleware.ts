@@ -1,8 +1,8 @@
 /**
  * ==================================
- * eLISAschool - Middleware Multi-Tenancy v5.1
+ * eLISAschool - Middleware Multi-Tenancy v5.3
  * ==================================
- * Version: 5.1.0
+ * Version: 5.3.0
  * 
  * Filtre automatiquement les requêtes par établissement.
  * Supporte les utilisateurs multi-établissements.
@@ -11,11 +11,19 @@
  * - Validation existence établissement pour SUPER_ADMIN
  * - Logging des tentatives cross-tenant
  * - Préfixage cache par tenant
- * Rapport audit SaaS 2026-08-07
+ * 
+ * Durcissement v9 — v5.2 :
+ * - G6 : Vérification etablissements TOUJOURS en base (pas de confiance au JWT seul)
+ * - Cache Redis TTL 5 min pour éviter un query DB à chaque requête
+ * - Invalidation du cache à chaque modification de utilisateur_etablissements
+ * 
+ * Audit sécurité v10 — v5.3 :
+ * - GAP 3 : Suppression du double next() (ligne 217 supprimée)
+ * - GAP 10 : Remplacement des string casts par Role.SUPER_ADMIN (enum)
  * 
  * Comportement :
  * - SUPER_ADMIN : accès à tous les établissements (etablissementId optionnel dans le query)
- * - Autres rôles : utilise la table utilisateur_etablissements
+ * - Autres rôles : vérification via table utilisateur_etablissements (DB + cache Redis)
  */
 
 import { Request, Response, NextFunction } from 'express';
@@ -25,6 +33,7 @@ import { Role } from '@modules/auth/entities';
 import { AppDataSource } from '@database/data-source';
 import { UtilisateurEtablissement } from '@modules/auth/entities';
 import { Etablissement } from '@modules/etablissement/entities';
+import { redisService } from '@common/services/redis.service';
 
 /**
  * Interface pour les établissements dans le JWT
@@ -37,16 +46,81 @@ interface JwtEtablissement {
 }
 
 /**
+ * Cache Redis TTL pour les affectations utilisateur (5 minutes).
+ * Évite un query DB à chaque requête tout en restant réactif.
+ */
+const TENANT_CACHE_TTL = 300; // 5 minutes
+
+/**
+ * Durcissement v9 — G6 : Vérifie les etablissements en base (pas de confiance au JWT).
+ * Utilise un cache Redis TTL 5 min pour la performance.
+ * 
+ * @returns Liste des affectations actives depuis la DB (ou cache Redis)
+ */
+async function getAffectationsFromDB(
+    utilisateurId: string,
+): Promise<{ etablissementId: string; etablissementPrincipal: boolean; actif: boolean }[]> {
+    const cacheKey = `tenant:affectations:${utilisateurId}`;
+
+    // 1. Cache Redis
+    try {
+        const cached = await redisService.getJSON<{
+            affectations: { etablissementId: string; etablissementPrincipal: boolean; actif: boolean }[];
+        }>(cacheKey);
+        if (cached?.affectations) {
+            return cached.affectations;
+        }
+    } catch {
+        // Redis indisponible, continuer vers DB
+    }
+
+    // 2. DB — Source de vérité
+    const ueRepo = AppDataSource.getRepository(UtilisateurEtablissement);
+    const affectations = await ueRepo.find({
+        where: { utilisateurId, actif: true },
+        select: ['etablissementId', 'etablissementPrincipal', 'actif'],
+        order: { etablissementPrincipal: 'DESC' },
+    });
+
+    const result = affectations.map(a => ({
+        etablissementId: a.etablissementId,
+        etablissementPrincipal: a.etablissementPrincipal,
+        actif: a.actif,
+    }));
+
+    // 3. Mettre en cache Redis (5 min)
+    try {
+        await redisService.setJSON(cacheKey, { affectations: result }, TENANT_CACHE_TTL);
+    } catch {
+        // Non bloquant
+    }
+
+    return result;
+}
+
+/**
+ * Invalide le cache tenant d'un utilisateur.
+ * À appeler lors des modifications de utilisateur_etablissements.
+ */
+export async function invalidateTenantCache(utilisateurId: string): Promise<void> {
+    try {
+        await redisService.del(`tenant:affectations:${utilisateurId}`);
+    } catch {
+        // Non bloquant
+    }
+}
+
+/**
  * Middleware multi-tenancy : attache l'etablissementId à la requête
  * 
- * NOUVEAU v4.0 :
- * - utilisateurs.etablissementId SUPPRIMÉ
- * - Résolution via utilisateur_etablissements uniquement
+ * Durcissement v9 — v5.2 :
+ * - Les affectations sont TOUJOURS vérifiées en base (cache Redis 5 min)
+ * - Le JWT n'est utilisé que comme hint initial, la DB est la source de vérité
  * 
  * Algorithme de sélection :
  * 1. SUPER_ADMIN → query param ou undefined
- * 2. Multi-établissements → query param (si autorisé) OU établissement principal
- * 3. Fallback : requête DB si JWT non mis à jour
+ * 2. Multi-établissements → vérification DB + cache Redis
+ * 3. Fallback : requête DB directe
  */
 export async function tenantMiddleware(req: Request, _res: Response, next: NextFunction): Promise<void> {
     try {
@@ -56,10 +130,11 @@ export async function tenantMiddleware(req: Request, _res: Response, next: NextF
             return;
         }
 
-        const userRole = req.utilisateur.role as unknown as Role;
+        // Audit sécurité v10 — GAP 10 : utiliser l'enum Role au lieu du string cast
+        const userRole = req.utilisateur.role;
 
         // 1. SUPER_ADMIN peut accéder à tous les établissements
-        if (userRole === 'SUPER_ADMIN' as unknown as Role) {
+        if (userRole === Role.SUPER_ADMIN) {
             const queryEtablissementId = req.query.etablissementId as string | undefined;
             
             if (queryEtablissementId) {
@@ -84,23 +159,31 @@ export async function tenantMiddleware(req: Request, _res: Response, next: NextF
             return;
         }
 
-        // 2. Support multi-établissements (v2.0)
-        const etablissements: JwtEtablissement[] = req.utilisateur.etablissements || [];
-        
-        if (etablissements.length > 0) {
-            const requestedId = req.query.etablissementId as string | undefined;
-            
-            if (requestedId) {
-                // L'utilisateur demande un établissement spécifique
-                const hasAccess = etablissements.some(
-                    e => e.etablissementId === requestedId && e.actif
+        // 2. Durcissement v9 — G6 : TOUJOURS vérifier en base (pas de confiance au JWT)
+        // Le JWT fournit un hint, mais la DB est la source de vérité
+        const requestedId = req.query.etablissementId as string | undefined;
+
+        try {
+            // Vérification DB avec cache Redis (TTL 5 min)
+            const affectations = await getAffectationsFromDB(req.utilisateur.id);
+
+            if (affectations.length === 0) {
+                throw new AppError(
+                    'Aucun établissement actif associé à votre compte',
+                    403,
+                    'NO_ETABLISSEMENT'
                 );
-                
+            }
+
+            if (requestedId) {
+                // L'utilisateur demande un établissement spécifique — vérifier en base
+                const hasAccess = affectations.some(e => e.etablissementId === requestedId && e.actif);
+
                 if (!hasAccess) {
-                    // [RBAC-3] v5.1 — Logger la tentative cross-tenant
                     logger.warn(
-                        `[Multi-tenancy] 🚨 TENTATIVE CROSS-TENANT — Utilisateur: ${req.utilisateur.id} ` +
-                        `(${req.utilisateur.role}) → Établissement: ${requestedId} — REFUSÉ`
+                        `[Multi-tenancy] TENTATIVE CROSS-TENANT (vérif DB) — ` +
+                        `Utilisateur: ${req.utilisateur.id} (${req.utilisateur.role}) → ` +
+                        `Établissement demandé: ${requestedId} — REFUSÉ`
                     );
                     throw new AppError(
                         'Accès non autorisé à cet établissement',
@@ -108,18 +191,16 @@ export async function tenantMiddleware(req: Request, _res: Response, next: NextF
                         'ACCESS_DENIED'
                     );
                 }
-                
+
                 req.etablissementId = requestedId;
-                logger.info(`[Multi-tenancy] Utilisateur ${req.utilisateur.id} switch vers ${requestedId}`);
             } else {
                 // Utiliser l'établissement principal
-                const principal = etablissements.find(e => e.etablissementPrincipal);
-                
+                const principal = affectations.find(e => e.etablissementPrincipal);
+
                 if (principal) {
                     req.etablissementId = principal.etablissementId;
-                } else if (etablissements.length > 0 && etablissements[0].actif) {
-                    // Fallback : premier établissement actif
-                    req.etablissementId = etablissements[0].etablissementId;
+                } else if (affectations.length > 0 && affectations[0].actif) {
+                    req.etablissementId = affectations[0].etablissementId;
                 } else {
                     throw new AppError(
                         'Aucun établissement actif associé à votre compte',
@@ -128,38 +209,18 @@ export async function tenantMiddleware(req: Request, _res: Response, next: NextF
                     );
                 }
             }
-            
+
             next();
-            return;
-        }
-
-        // 3. Fallback : récupérer depuis la table de jointure (si JWT non mis à jour)
-        try {
-            const ueRepo = AppDataSource.getRepository(UtilisateurEtablissement);
-            const affectations = await ueRepo.find({
-                where: { utilisateurId: req.utilisateur.id, actif: true },
-                order: { etablissementPrincipal: 'DESC' },
-            });
-            
-            if (affectations.length === 0) {
-                throw new AppError(
-                    'Aucun établissement associé à votre compte',
-                    403,
-                    'NO_ETABLISSEMENT'
-                );
-            }
-
-            // Priorité : établissement principal, sinon premier actif
-            req.etablissementId = affectations[0].etablissementId;
         } catch (error) {
             if (error instanceof AppError) throw error;
             throw new AppError(
-                'Erreur lors de la résolution de l\'établissement',
+                'Erreur lors de la vérification de l\'établissement',
                 500,
-                'TENANT_RESOLUTION_ERROR'
+                'TENANT_VERIFICATION_ERROR'
             );
         }
-        next();
+        // Audit sécurité v10 — GAP 3 : suppression du next() dupliqué qui était ici.
+        // Un seul point de sortie : le next() est dans le try (ligne précédente).
     } catch (error) {
         next(error);
     }

@@ -2,8 +2,13 @@
  * ==================================
  * eLISAschool - Entité Token de Rafraîchissement
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
+ *
+ * Durcissement v9 — Refresh Token Rotation (family-based)
+ * - familleId : identifie la famille de tokens (détection compromission)
+ * - tokenPrecedent : chaîne de rotation (chaque token pointe vers le précédent)
+ * - Détection réutilisation : si token révoqué est réutilisé → toute la famille est révoquée
  */
 
 import {
@@ -13,14 +18,18 @@ import {
     CreateDateColumn,
     ManyToOne,
     JoinColumn,
+    Index,
 } from 'typeorm';
 import { Utilisateur } from './utilisateur.entity';
 
 /**
  * Entité RefreshToken
- * Gestion des tokens de rafraîchissement pour la session
+ * Gestion des tokens de rafraîchissement avec rotation par famille.
  */
 @Entity('refresh_tokens')
+@Index(['familleId'])
+@Index(['plane'])
+@Index(['utilisateurId', 'plane'])
 export class RefreshToken {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -31,6 +40,17 @@ export class RefreshToken {
     @ManyToOne(() => Utilisateur, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'utilisateurId' })
     utilisateur!: Utilisateur;
+
+    // ==================================
+    // ADR-005 (v11) — Sessions unifiées tenant/platform
+    // ==================================
+
+    /**
+     * Discriminateur de plan : 'tenant' ou 'platform'.
+     * Permet de séparer les sessions par plan dans une table unique.
+     */
+    @Column({ type: 'varchar', length: 10, default: 'tenant' })
+    plane!: 'tenant' | 'platform';
 
     @Column({ type: 'varchar', length: 500, unique: true })
     token!: string;
@@ -49,6 +69,20 @@ export class RefreshToken {
 
     @Column({ type: 'timestamp', nullable: true })
     revoqueAt?: Date;
+
+    /**
+     * Durcissement v9 — Identifiant de famille de rotation.
+     * Tous les tokens d'une même session de rotation partagent le même familleId.
+     */
+    @Column({ type: 'uuid', nullable: true })
+    familleId?: string;
+
+    /**
+     * Durcissement v9 — Token précédent dans la chaîne de rotation.
+     * Permet de détecter la réutilisation d'un token déjà révoqué.
+     */
+    @Column({ type: 'uuid', nullable: true })
+    tokenPrecedentId?: string;
 
     @CreateDateColumn({ type: 'timestamp' })
     createdAt!: Date;

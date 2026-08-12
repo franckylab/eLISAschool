@@ -1,23 +1,20 @@
 /**
  * ==================================
- * eLISAschool - Middleware Scope Discrimination
+ * eLISAschool - Middleware Scope Discrimination (ADR-005 v11)
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0 — ADR-005 (v11)
  *
  * Discrimination automatique Control Plane / Data Plane
  * selon le préfixe de route et le scope du JWT.
  *
- * - Routes /api/platform/* → requiert jwt.platform !== null
- * - Autres routes → requiert jwt.tenant !== null
- *
- * Modèle C — Auth0 Internalisé (Dual-Plane)
+ * ADR-005 : Source unique de vérité. Plus de definePlatformAbility.
+ * Utilise defineAbility() unifié pour les deux contextes.
  */
 
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '@common/filters/error.filter';
-import { definePlatformAbility } from '@shared/casl/platform-abilities';
 import { defineAbility } from '@shared/casl/abilities';
-import { RolePlateforme } from '@shared/enums/roles.enum';
+import { isRolePlateforme } from '@shared/enums/roles.enum';
 import { logger } from '@common/utils/logger.util';
 
 /**
@@ -33,7 +30,7 @@ declare global {
 }
 
 /**
- * Middleware de discrimination de scope.
+ * Middleware de discrimination de scope (ADR-005 — unifié).
  * À placer APRÈS authMiddleware et AVANT les contrôleurs.
  */
 export function scopeDiscriminationMiddleware(
@@ -51,12 +48,10 @@ export function scopeDiscriminationMiddleware(
     }
 
     if (isPlatformRoute) {
-        // Control Plane — vérifier que l'utilisateur a un scope plateforme
-        const rolePlateforme = utilisateur.roles?.find(
-            (r: string) => Object.values(RolePlateforme).includes(r as RolePlateforme),
-        );
+        // Control Plane — vérifier que l'utilisateur a un rôle plateforme
+        const estPlateforme = isRolePlateforme(utilisateur.role);
 
-        if (!rolePlateforme && utilisateur.role !== 'SUPER_ADMIN') {
+        if (!estPlateforme && utilisateur.role !== 'SUPER_ADMIN') {
             logger.warn(`Scope mismatch: ${utilisateur.email} tente d'accéder à une route plateforme sans rôle`);
             throw new AppError(
                 'Accès plateforme refusé — rôle plateforme requis',
@@ -66,11 +61,10 @@ export function scopeDiscriminationMiddleware(
         }
 
         req.scope = 'platform';
-        req.ability = definePlatformAbility({
-            identiteId: utilisateur.id,
-            role: (utilisateur.role === 'SUPER_ADMIN'
-                ? RolePlateforme.SUPER_ADMIN
-                : rolePlateforme) as RolePlateforme,
+        req.ability = defineAbility({
+            id: utilisateur.id,
+            role: utilisateur.role,
+            etablissementId: utilisateur.etablissementId,
             permissions: utilisateur.permissions,
         });
     } else {

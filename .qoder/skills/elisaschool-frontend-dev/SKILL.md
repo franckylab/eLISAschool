@@ -2354,19 +2354,26 @@ type PlatformNavItem = {
 | `/platform/sessions` | `platform.sessions.tsx` | Sessions & activité |
 | `/platform/utilisateurs/:id` | `platform.utilisateurs.$id.tsx` | Détail utilisateur plateforme |
 
-### Pages Identité Plateforme (Modèle C — Dual-Plane)
+### Pages Plateforme ADR-005 (Auth unifiée)
 
 Composants dans `frontend/src/features/platform/components/` :
 
 | Composant | Description |
 |-----------|-------------|
-| `platform-permissions-matrix.tsx` | Grille 6 rôles × ~40 permissions, toggle checkboxes, sauvegarde inline par rôle |
-| `platform-user-detail-page.tsx` | Détail utilisateur (3 onglets : Infos, Sessions, Audit) |
-| `platform-sessions-page.tsx` | Sessions actives, révocation individuelle/totale, KPIs |
+| `platform-user-detail-page.tsx` | Détail utilisateur (onglets : Infos, Audit) — sessions supprimées (ADR-005) |
+
+**Pages supprimées (ADR-005) :**
+- `platform-permissions-matrix.tsx` — Permissions gérées via `defineAbility()` unifié
+- `platform-sessions-page.tsx` — Sessions gérées via `refresh_tokens` unifiés
+- `PlatformMFAVerifyPage.tsx` — MFA unifié via `/mfa-verify` (même flux tenant + plateforme)
 
 **Hooks TanStack Query** dans `features/platform/hooks/` :
 - `use-platform-users.ts` — `usePlatformUsers()`, `useCreatePlatformUser()`, `useSuspendUser()`, etc.
-- `use-platform-roles.ts` — `usePlatformPermissions()`, `usePlatformPermissionsMatrix()`, `useUpdateRolePermissions()`
-- `use-platform-sessions.ts` — `usePlatformSessions()`, `useRevokeSession()`, `useRevokeAllSessions()`
+- `use-platform-roles.ts` — `usePlatformRoles()` (permissions matrix supprimée)
 
-**i18n** : Namespace `platform-identity` (fichiers `locales/{fr,en}/platform-identity.json`, ~160 clés chacun)
+**Store auth** (`stores/auth.store.ts`) :
+- États `platformMfa*` supprimés (ADR-005)
+- Méthodes `platformLogin()`, `verifyPlatformMFA()` supprimées
+- Login unifié : `login()` détecte automatiquement tenant/plATFORME
+
+**i18n** : Namespace `platform-identity` (fichiers `locales/{fr,en}/platform-identity.json`)

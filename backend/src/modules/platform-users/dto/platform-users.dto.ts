@@ -16,8 +16,10 @@ import { z } from 'zod';
 export const listeUtilisateursSchema = z.object({
     search: z.string().optional(),
     role: z.string().optional(),
-    statut: z.enum(['ACTIF', 'INACTIF', 'SUSPENDU']).optional(),
+    statut: z.enum(['ACTIF', 'INACTIF', 'SUSPENDU', 'ARCHIVE']).optional(),
     mfaActive: z.enum(['true', 'false']).optional(),
+    etablissementId: z.string().uuid().optional(),
+    scope: z.enum(['plateforme', 'tenant', 'tous']).default('tous'),
     limit: z.coerce.number().min(1).max(100).default(20),
     offset: z.coerce.number().min(0).default(0),
     sortBy: z.string().default('createdAt'),
@@ -47,7 +49,10 @@ export type CreerUtilisateurDto = z.infer<typeof creerUtilisateurSchema>;
 
 export const modifierUtilisateurSchema = z.object({
     role: z.string().optional(),
-    statut: z.enum(['ACTIF', 'INACTIF', 'SUSPENDU']).optional(),
+    statut: z.enum(['ACTIF', 'INACTIF', 'SUSPENDU', 'ARCHIVE']).optional(),
+    prenom: z.string().min(1).optional(),
+    nom: z.string().min(1).optional(),
+    email: z.string().email().optional(),
     groupeEtablissementIds: z.array(z.string().uuid()).optional(),
     mfaRequired: z.boolean().optional(),
 });

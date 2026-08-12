@@ -1,0 +1,2404 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eLISAschool — Rapport d'Implémentation : Pages Publiques & CMS par Établissement</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --primary: #28a745;
+    --primary-dark: #1e7e34;
+    --accent: #007bff;
+    --accent-dark: #0056b3;
+    --danger: #dc3545;
+    --warning: #ffc107;
+    --info: #17a2b8;
+    --surface: #ffffff;
+    --surface-alt: #f8f9fa;
+    --text: #212529;
+    --text-muted: #6c757d;
+    --border: #dee2e6;
+    --radius: 12px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: var(--text);
+    background: var(--surface-alt);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 50%, #0a5c20 100%);
+    color: white;
+    padding: 60px 0 50px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero h1 { font-size: 2.4rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .hero .subtitle { font-size: 1.15rem; opacity: 0.9; margin-bottom: 20px; }
+  .hero .meta { display: flex; gap: 24px; flex-wrap: wrap; font-size: 0.85rem; opacity: 0.8; }
+  .hero .meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* Navigation */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin: -30px auto 40px;
+    position: relative;
+    z-index: 10;
+    box-shadow: var(--shadow-lg);
+  }
+  .toc h2 { font-size: 1.1rem; color: var(--primary); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+  .toc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px 32px; }
+  .toc a {
+    color: var(--text);
+    text-decoration: none;
+    padding: 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+    border-bottom: 1px solid transparent;
+  }
+  .toc a:hover { color: var(--primary); }
+  .toc a .num { color: var(--primary); font-weight: 700; font-size: 0.8rem; min-width: 28px; }
+
+  /* Sections */
+  section { margin-bottom: 48px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--primary);
+  }
+  .section-num {
+    background: var(--primary);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .section-header h2 { font-size: 1.5rem; font-weight: 700; color: var(--text); }
+
+  h3 { font-size: 1.15rem; font-weight: 700; color: var(--primary-dark); margin: 28px 0 12px; }
+  h4 { font-size: 1rem; font-weight: 600; color: var(--accent-dark); margin: 20px 0 8px; }
+
+  p { margin-bottom: 12px; }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-bottom: 20px; }
+  .card-highlight {
+    border-left: 4px solid var(--primary);
+    background: linear-gradient(135deg, #f0fff4 0%, var(--surface) 100%);
+  }
+  .card-accent { border-left: 4px solid var(--accent); }
+  .card-warning { border-left: 4px solid var(--warning); background: linear-gradient(135deg, #fffdf0 0%, var(--surface) 100%); }
+  .card-danger { border-left: 4px solid var(--danger); background: linear-gradient(135deg, #fff5f5 0%, var(--surface) 100%); }
+
+  /* Tables */
+  .table-wrapper { overflow-x: auto; margin-bottom: 20px; border-radius: var(--radius); box-shadow: var(--shadow); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    font-size: 0.88rem;
+  }
+  thead { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
+  th { padding: 12px 16px; text-align: left; font-weight: 600; white-space: nowrap; }
+  td { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: #f8fff8; }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge-new { background: #d4edda; color: #155724; }
+  .badge-exist { background: #d1ecf1; color: #0c5460; }
+  .badge-required { background: #f8d7da; color: #721c24; }
+  .badge-optional { background: #fff3cd; color: #856404; }
+  .badge-enum { background: #e2e3e5; color: #383d41; }
+  .badge-critical { background: var(--danger); color: white; }
+  .badge-high { background: var(--warning); color: #333; }
+  .badge-medium { background: var(--info); color: white; }
+
+  /* Code */
+  pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    padding: 20px 24px;
+    border-radius: var(--radius);
+    overflow-x: auto;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+  code { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.85em; }
+  .inline-code { background: #e9ecef; padding: 2px 6px; border-radius: 4px; color: #d63384; font-size: 0.85em; }
+
+  /* Mermaid */
+  .mermaid-wrapper {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+    overflow-x: auto;
+  }
+  .mermaid { display: flex; justify-content: center; }
+
+  /* Stats */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .stat-value { font-size: 2rem; font-weight: 800; color: var(--primary); }
+  .stat-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+
+  /* Phase timeline */
+  .timeline { position: relative; padding-left: 40px; margin-bottom: 24px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, var(--primary), var(--accent));
+    border-radius: 2px;
+  }
+  .timeline-item { position: relative; margin-bottom: 24px; }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -29px;
+    top: 6px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 3px solid white;
+    box-shadow: 0 0 0 2px var(--primary);
+  }
+  .timeline-item h4 { margin-top: 0; }
+  .timeline-phase {
+    display: inline-block;
+    background: var(--primary);
+    color: white;
+    padding: 2px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  /* Comparison matrix */
+  .matrix-cell { text-align: center; font-weight: 600; }
+  .matrix-yes { background: #d4edda; color: #155724; }
+  .matrix-no { background: #f8d7da; color: #721c24; }
+  .matrix-partial { background: #fff3cd; color: #856404; }
+
+  /* Alert */
+  .alert {
+    padding: 16px 20px;
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .alert-info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+  .alert-success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+  .alert-warning { background: #fff3cd; border: 1px solid #ffeeba; color: #856404; }
+  .alert-icon { font-size: 1.3rem; flex-shrink: 0; }
+
+  /* Footer */
+  footer {
+    background: #1a1a2e;
+    color: #a0a0b0;
+    padding: 40px 0;
+    margin-top: 60px;
+    text-align: center;
+    font-size: 0.85rem;
+  }
+  footer strong { color: white; }
+
+  /* Print */
+  @media print {
+    .hero { background: var(--primary) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .toc { box-shadow: none; border: 2px solid var(--primary); }
+    pre { background: #f5f5f5 !important; color: #333 !important; }
+    body { font-size: 12px; }
+  }
+
+  @media (max-width: 768px) {
+    .hero h1 { font-size: 1.6rem; }
+    .toc-grid { grid-template-columns: 1fr; }
+    .card-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════ HERO -->
+<div class="hero">
+  <div class="container">
+    <h1>Pages Publiques & CMS par Établissement</h1>
+    <p class="subtitle">Rapport d'implémentation complet — Enrichissement entité, système CMS white-label, routing path-based, et personnalisation extrême par établissement</p>
+    <div class="meta">
+      <span>eLISAschool v8.0</span>
+      <span>11 août 2026</span>
+      <span>Branche: migration_saas</span>
+      <span>Auteur: franck arlos chendjou</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ TOC -->
+<div class="container">
+<div class="toc">
+  <h2>Table des matières</h2>
+  <div class="toc-grid">
+    <a href="#s1"><span class="num">01</span> Vue d'ensemble & objectifs</a>
+    <a href="#s2"><span class="num">02</span> Architecture globale (Mermaid)</a>
+    <a href="#s3"><span class="num">03</span> Enrichissement entité Établissement</a>
+    <a href="#s4"><span class="num">04</span> Système CMS — Architecture</a>
+    <a href="#s5"><span class="num">05</span> Entités CMS (schéma complet)</a>
+    <a href="#s6"><span class="num">06</span> Thèmes & Design System</a>
+    <a href="#s7"><span class="num">07</span> Routing & API publiques</a>
+    <a href="#s8"><span class="num">08</span> Sécurité & Performance</a>
+    <a href="#s9"><span class="num">09</span> Frontend — Pages publiques</a>
+    <a href="#s10"><span class="num">10</span> Frontend — Éditeur CMS</a>
+    <a href="#s11"><span class="num">11</span> Matrice de comparaison</a>
+    <a href="#s12"><span class="num">12</span> Plan d'implémentation</a>
+    <a href="#s13"><span class="num">13</span> Migrations SQL</a>
+    <a href="#s14"><span class="num">14</span> Tests & Validation</a>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ S1 -->
+<section id="s1">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <h2>Vue d'ensemble & objectifs</h2>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value">9</div>
+      <div class="stat-label">Nouveaux champs entité</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">7</div>
+      <div class="stat-label">Nouvelles entités CMS</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">18</div>
+      <div class="stat-label">Endpoints API publiques</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">4</div>
+      <div class="stat-label">Phases d'implémentation</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">6</div>
+      <div class="stat-label">Templates de pages</div>
+    </div>
+  </div>
+
+  <div class="card-grid">
+    <div class="card card-highlight">
+      <h3>Objectif A — Enrichissement entité</h3>
+      <p>Ajouter les champs manquants à <code class="inline-code">Etablissement</code> : localisation géographique (pays, région, quartier, GPS), identifiants officiels (enregistrement, identification, autorisation), et informations complémentaires sans redondance.</p>
+    </div>
+    <div class="card card-accent">
+      <h3>Objectif B — CMS White-Label</h3>
+      <p>Permettre à chaque établissement de personnaliser intégralement sa page publique : contenu, sections, médias, thème visuel, navigation, styles. Système CMS complet intégré à la plateforme.</p>
+    </div>
+    <div class="card card-highlight">
+      <h3>Objectif C — Routing path-based</h3>
+      <p>Pages accessibles via <code class="inline-code">/e/:code</code> (codeEtablissement comme slug). Zero DNS, CDN-compatible, SEO-friendly. Middleware d'authentification optionnel pour enrichir le contexte.</p>
+    </div>
+  </div>
+
+  <div class="alert alert-info">
+    <span class="alert-icon">&#x2139;</span>
+    <div><strong>Décision architecturale validée :</strong> Le routing path-based (<code class="inline-code">/e/:code</code>) est choisi pour sa simplicité opérationnelle. Le champ <code class="inline-code">codeEtablissement</code> (varchar(50), unique) sert de slug URL naturel.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ S2 -->
+<section id="s2">
+  <div class="section-header">
+    <div class="section-num">2</div>
+    <h2>Architecture globale</h2>
+  </div>
+
+  <h3>2.1 — Vue d'ensemble du système</h3>
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+graph TB
+    subgraph "Frontend (TanStack Router)"
+        PUBLIC["Routes publiques<br/>/e/:code"]
+        EDITOR["Éditeur CMS<br/>/_auth/cms/*"]
+        ADMIN["Admin établissement<br/>/_auth/etablissement"]
+    end
+
+    subgraph "Backend (Express + TypeORM)"
+        API_PUB["API Publique<br/>GET /api/public/e/:code/*"]
+        API_CMS["API CMS<br/>/api/cms/*"]
+        API_ETAB["API Établissement<br/>/api/etablissements/*"]
+        OPT_AUTH["optionalAuthMiddleware"]
+        TENANT["tenantMiddleware"]
+    end
+
+    subgraph "Base de données (PostgreSQL)"
+        ETAB["etablissements<br/>(+ 9 champs)"]
+        CMS_PAGE["cms_pages"]
+        CMS_SECTION["cms_sections"]
+        CMS_MEDIA["cms_medias"]
+        CMS_THEME["cms_themes"]
+        CMS_MENU["cms_menus"]
+        CMS_WIDGET["cms_widgets"]
+        CMS_VERSION["cms_versions"]
+    end
+
+    subgraph "Cache (Redis)"
+        CACHE["Cache pages publiques<br/>TTL 300s"]
+    end
+
+    PUBLIC --> API_PUB
+    EDITOR --> API_CMS
+    ADMIN --> API_ETAB
+
+    API_PUB --> OPT_AUTH
+    API_CMS --> TENANT
+    API_ETAB --> TENANT
+
+    OPT_AUTH --> ETAB
+    API_PUB --> CACHE
+    CACHE --> ETAB
+
+    API_CMS --> CMS_PAGE
+    API_CMS --> CMS_SECTION
+    API_CMS --> CMS_MEDIA
+    API_CMS --> CMS_THEME
+    API_CMS --> CMS_MENU
+    API_CMS --> CMS_WIDGET
+    API_CMS --> CMS_VERSION
+
+    style PUBLIC fill:#d4edda,stroke:#28a745,color:#155724
+    style EDITOR fill:#cce5ff,stroke:#007bff,color:#004085
+    style API_PUB fill:#d4edda,stroke:#28a745
+    style CACHE fill:#fff3cd,stroke:#ffc107
+    style ETAB fill:#e2e3e5,stroke:#6c757d
+    </pre>
+  </div>
+
+  <h3>2.2 — Flux de requête page publique</h3>
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+sequenceDiagram
+    participant U as Utilisateur
+    participant F as Frontend
+    participant C as Cache Redis
+    participant A as API Backend
+    participant DB as PostgreSQL
+
+    U->>F: GET /e/CM1
+    F->>A: GET /api/public/e/CM1/page
+    A->>A: optionalAuthMiddleware
+    A->>C: Cache check: public:CM1:page
+    alt Cache hit
+        C-->>A: Page JSON cached
+    else Cache miss
+        A->>DB: SELECT (projection publique)
+        DB-->>A: Établissement + CMS data
+        A->>C: SET public:CM1:page TTL 300
+    end
+    A-->>F: PageData (public fields only)
+    F->>F: Rendu page publique
+    F-->>U: HTML rendu
+    Note over U,DB: Cache-Control: public, max-age=300
+    </pre>
+  </div>
+
+  <h3>2.3 — Flux d'édition CMS</h3>
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+sequenceDiagram
+    participant A as Admin
+    participant F as Frontend Editor
+    participant API as API CMS
+    participant DB as PostgreSQL
+    participant R as Redis
+    participant V as cms_versions
+
+    A->>F: Modifier section/page
+    F->>API: PUT /api/cms/pages/:id
+    API->>API: authMiddleware + requireRoles
+    API->>API: Multi-tenant check (etablissementId)
+    API->>V: Snapshot version précédente
+    API->>DB: UPDATE cms_pages/sections
+    DB-->>API: OK
+    API->>R: DEL public:{code}:*
+    API-->>F: Updated page
+    F-->>A: Toast succès + preview
+    </pre>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ S3 -->
+<section id="s3">
+  <div class="section-header">
+    <div class="section-num">3</div>
+    <h2>Enrichissement entité Établissement</h2>
+  </div>
+
+  <h3>3.1 — Champs existants (33 colonnes actuelles)</h3>
+  <div class="alert alert-info">
+    <span class="alert-icon">&#x2714;</span>
+    <div>L'entité <code class="inline-code">Etablissement</code> possède déjà 33 colonnes couvrant : identité, logo, type, contact, localisation (adresse/ville), direction, couleurs, paramètres régionaux.</div>
+  </div>
+
+  <h3>3.2 — Nouveaux champs proposés (9 additions)</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Champ</th>
+          <th>Type</th>
+          <th>Nullable</th>
+          <th>Description</th>
+          <th>Justification</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code class="inline-code">pays</code></td>
+          <td>varchar(50)</td>
+          <td>NON</td>
+          <td>Pays de l'établissement</td>
+          <td>Multi-pays SaaS, localisation, devises, JF</td>
+          <td><span class="badge badge-new">NOUVEAU</span></td>
+        </tr>
+        <tr>
+          <td><code class="inline-code">region</code></td>
+          <td>varchar(100)</td>
+          <td>OUI</td>
+          <td>Région / Département / État</td>
+          <td>Subdivision administrative locale</td>
+          <td><span class="badge badge-new">NOUVEAU</span></td>
+        </tr>
+        <tr>
+          <td><code class="inline-code">quartier</code></td>
+          <td>varchar(150)</td>
+          <td>OUI</td>
+          <td>Quartier / Localité</td>
+          <td>Précision adresse (distinct de ville)</td>
+          <td><span class="badge badge-new">NOUVEAU</span></td>
+        </tr>
+        <tr>
+          <td><code class="inline-code">numeroEnregistrement</code></td>
+          <td>varchar(50)</td>
+          <td>OUI</td>
+          <td>N° d'enregistrement au registre</td>
+          <td>Identification légale officielle</td>
+          <td><span class="badge badge-new">NOUVEAU</span></td>
+        </tr>
+        <tr>
+          <td><code class="inline-code">numeroIdentification</code></td>
+          <td>varchar(50)</td>
+          <td>OUI</td>
+          <td>N° d'identification nationale</td>
+          <td>ID fiscale / statistique nationale</td>
+          <td><span class="badge badge-new">NOUVEAU</span></td>
+        </tr>
+        <tr>
+          <td><code class="inline-code">numeroAutorisation</code></td>
+          <td>varchar(50)</td>
+          <td>OUI</td>
+          <td>N° d'autorisation d'ouverture</td>
+          <td>Autorisation ministérielle (distinct de numeroArrete)</td>
+          <td><span class="badge badge-new">NOUVEAU</span></td>
+        </tr>
+        <tr>
+          <td><code class="inline-code">latitude</code></td>
+          <td>decimal(10,7)</td>
+          <td>OUI</td>
+          <td>Latitude GPS</td>
+          <td>Géolocalisation, carte, calcul distance</td>
+          <td><span class="badge badge-new">NOUVEAU</span></td>
+        </tr>
+        <tr>
+          <td><code class="inline-code">longitude</code></td>
+          <td>decimal(10,7)</td>
+          <td>OUI</td>
+          <td>Longitude GPS</td>
+          <td>Géolocalisation, carte, calcul distance</td>
+          <td><span class="badge badge-new">NOUVEAU</span></td>
+        </tr>
+        <tr>
+          <td><code class="inline-code">descriptionPublique</code></td>
+          <td>text</td>
+          <td>OUI</td>
+          <td>Description longue pour page publique</td>
+          <td>Contenu riche affiché sur la page publique</td>
+          <td><span class="badge badge-new">NOUVEAU</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert alert-warning">
+    <span class="alert-icon">&#x26A0;</span>
+    <div><strong>Non-redondance vérifiée :</strong>
+    <ul style="margin-top:6px;">
+      <li><code class="inline-code">numeroArrete</code> existe déjà → <code class="inline-code">numeroAutorisation</code> est distinct (autorisation d'ouverture vs arrêté de création)</li>
+      <li><code class="inline-code">numeroContribuable</code> existe déjà → <code class="inline-code">numeroIdentification</code> est distinct (ID nationale vs N° contribuable)</li>
+      <li><code class="inline-code">adresse</code> existe déjà → <code class="inline-code">quartier</code> et <code class="inline-code">region</code> sont des subdivisions distinctes</li>
+      <li><code class="inline-code">ville</code> existe déjà → <code class="inline-code">pays</code> est un niveau supérieur</li>
+    </ul>
+    </div>
+  </div>
+
+  <h3>3.3 — Entité enrichie — Code TypeORM</h3>
+  <pre><code>// === NOUVEAUX CHAMPS — etablissement.entity.ts ===
+
+@Column({ type: 'varchar', length: 50, default: 'Cameroun' })
+pays!: string;
+
+@Column({ type: 'varchar', length: 100, nullable: true })
+region?: string;
+
+@Column({ type: 'varchar', length: 150, nullable: true })
+quartier?: string;
+
+@Column({ type: 'varchar', length: 50, nullable: true })
+numeroEnregistrement?: string;
+
+@Column({ type: 'varchar', length: 50, nullable: true })
+numeroIdentification?: string;
+
+@Column({ type: 'varchar', length: 50, nullable: true })
+numeroAutorisation?: string;
+
+@Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+latitude?: number;
+
+@Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+longitude?: number;
+
+@Column({ type: 'text', nullable: true })
+descriptionPublique?: string;
+
+// === INDEX ===
+@Index(['pays'])
+@Index(['latitude', 'longitude'])
+@Index(['codeEtablissement'], { unique: true })</code></pre>
+
+  <h3>3.4 — Diagramme entité enrichi</h3>
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+erDiagram
+    Etablissement {
+        uuid id PK
+        varchar nom "255"
+        varchar slogan "500"
+        varchar pays "50 — NOUVEAU"
+        varchar region "100 — NOUVEAU"
+        varchar ville "100"
+        varchar quartier "150 — NOUVEAU"
+        text adresse
+        decimal latitude "NOUVEAU"
+        decimal longitude "NOUVEAU"
+        varchar contactEmail "255"
+        varchar contactTelephone "255"
+        varchar codeEtablissement "50 UNIQUE"
+        varchar numeroArrete "50"
+        varchar numeroEnregistrement "50 — NOUVEAU"
+        varchar numeroIdentification "50 — NOUVEAU"
+        varchar numeroAutorisation "50 — NOUVEAU"
+        varchar numeroContribuable "50"
+        varchar numeroCompteBancaire "50"
+        varchar siteWeb "255"
+        varchar facebook "255"
+        varchar twitter "255"
+        text logoBase64 "select:false"
+        varchar logoType "10"
+        integer logoTaille
+        enum sousSysteme "FRANCOPHONE|ANGLOPHONE|BICULTUREL"
+        enum type "LAIC|CONFESSIONNEL_*"
+        varchar couleurPrimaire "20"
+        varchar couleurSecondaire "20"
+        varchar langueDefaut "10"
+        varchar devise "10"
+        varchar fuseauHoraire "50"
+        text descriptionPublique "NOUVEAU"
+        integer effectifMax
+        integer effectifActuel
+        varchar directeurNom "200"
+        varchar heuresOuverture "10"
+        varchar heuresFermeture "10"
+        boolean actif
+        varchar statut "30"
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    EtablissementConfig {
+        uuid id PK
+        uuid etablissementId FK
+        jsonb cyclesActifs
+        jsonb configurationBulletin
+        integer maxEleves
+        integer maxUtilisateurs
+        integer maxClasses
+        integer stockageMaxMB
+        date dateExpirationAbonnement
+        varchar planAbonnement
+    }
+
+    CmsTheme {
+        uuid id PK
+        uuid etablissementId FK
+        varchar nom
+        jsonb variables
+        boolean actif
+    }
+
+    Etablissement ||--o| EtablissementConfig : "1:1 config"
+    Etablissement ||--o{ CmsTheme : "1:N thèmes"
+    </pre>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ S4 -->
+<section id="s4">
+  <div class="section-header">
+    <div class="section-num">4</div>
+    <h2>Système CMS — Architecture</h2>
+  </div>
+
+  <h3>4.1 — Principes de conception</h3>
+  <div class="card-grid">
+    <div class="card">
+      <h4>Isolation multi-tenant stricte</h4>
+      <p>Chaque entité CMS porte un <code class="inline-code">etablissementId</code>. RLS PostgreSQL + middleware tenant. Aucun établissement ne peut voir ou modifier le contenu d'un autre.</p>
+    </div>
+    <div class="card">
+      <h4>Personnalisation extrême</h4>
+      <p>Sections réordonnables par drag & drop, thèmes visuels complets (couleurs, polices, espacements), widgets configurables, pages illimitées avec sous-pages.</p>
+    </div>
+    <div class="card">
+      <h4>Versioning & historique</h4>
+      <p>Chaque modification crée un snapshot dans <code class="inline-code">cms_versions</code>. Possibilité de restaurer n'importe quelle version antérieure. Brouillon → Publication.</p>
+    </div>
+    <div class="card">
+      <h4>Performance par cache</h4>
+      <p>Pages publiques servies depuis Redis (TTL 300s). Invalidation automatique à chaque modification CMS. Cache-Control HTTP pour le navigateur.</p>
+    </div>
+  </div>
+
+  <h3>4.2 — Architecture CMS — Diagramme de classes</h3>
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+classDiagram
+    class Etablissement {
+        +uuid id
+        +string nom
+        +string codeEtablissement
+    }
+
+    class CmsPage {
+        +uuid id
+        +uuid etablissementId
+        +string titre
+        +string slug
+        +string template
+        +string statut
+        +int ordre
+        +uuid pageParentId
+        +jsonb metadata
+        +jsonb seo
+    }
+
+    class CmsSection {
+        +uuid id
+        +uuid pageId
+        +string type
+        +jsonb contenu
+        +int ordre
+        +jsonb styles
+        +boolean visible
+    }
+
+    class CmsMedia {
+        +uuid id
+        +uuid etablissementId
+        +string nom
+        +string type
+        +string url
+        +string alt
+        +integer taille
+        +jsonb metadata
+    }
+
+    class CmsTheme {
+        +uuid id
+        +uuid etablissementId
+        +string nom
+        +jsonb variables
+        +boolean actif
+        +jsonb polices
+    }
+
+    class CmsMenu {
+        +uuid id
+        +uuid etablissementId
+        +string nom
+        +string emplacement
+        +jsonb items
+    }
+
+    class CmsWidget {
+        +uuid id
+        +uuid etablissementId
+        +string type
+        +string titre
+        +jsonb config
+        +string emplacement
+        +int ordre
+    }
+
+    class CmsVersion {
+        +uuid id
+        +uuid etablissementId
+        +string entiteType
+        +uuid entiteId
+        +jsonb snapshot
+        +uuid auteurId
+        +string commentaire
+    }
+
+    Etablissement "1" --> "0..*" CmsPage : pages
+    Etablissement "1" --> "0..*" CmsMedia : medias
+    Etablissement "1" --> "0..*" CmsTheme : themes
+    Etablissement "1" --> "0..*" CmsMenu : menus
+    Etablissement "1" --> "0..*" CmsWidget : widgets
+    Etablissement "1" --> "0..*" CmsVersion : versions
+    CmsPage "1" --> "0..*" CmsSection : sections
+    CmsPage "0..1" --> "0..1" CmsPage : parent/enfant
+    </pre>
+  </div>
+
+  <h3>4.3 — Flux de personnalisation</h3>
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+flowchart LR
+    subgraph "Admin Établissement"
+        A1["Choisir thème"] --> A2["Créer pages"]
+        A2 --> A3["Ajouter sections"]
+        A3 --> A4["Uploader médias"]
+        A4 --> A5["Configurer menus"]
+        A5 --> A6["Placer widgets"]
+        A6 --> A7["Prévisualiser"]
+        A7 --> A8["Publier"]
+    end
+
+    subgraph "Page publique /e/:code"
+        B1["Header + Logo"] --> B2["Menu navigation"]
+        B2 --> B3["Sections page"]
+        B3 --> B4["Widgets sidebar"]
+        B4 --> B5["Footer"]
+    end
+
+    A8 -->|"Cache invalidation"| B1
+
+    style A8 fill:#28a745,color:#fff
+    style B1 fill:#007bff,color:#fff
+    </pre>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ S5 -->
+<section id="s5">
+  <div class="section-header">
+    <div class="section-num">5</div>
+    <h2>Entités CMS — Schéma complet</h2>
+  </div>
+
+  <h3>5.1 — CmsPage (pages de l'établissement)</h3>
+  <pre><code>@Entity('cms_pages')
+@Index(['etablissementId', 'slug'], { unique: true })
+export class CmsPage {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @Column({ type: 'varchar', length: 200 })
+    titre!: string;
+
+    @Column({ type: 'varchar', length: 200 })
+    slug!: string;  // ex: 'a-propos', 'contact', 'inscriptions'
+
+    @Column({ type: 'varchar', length: 50, default: 'custom' })
+    template!: string;  // accueil | custom | galerie | actualites | contact | inscriptions
+
+    @Column({ type: 'varchar', length: 20, default: 'BROUILLON' })
+    statut!: 'BROUILLON' | 'PUBLIE' | 'ARCHIVE';
+
+    @Column({ type: 'int', default: 0 })
+    ordre!: number;
+
+    @Column({ type: 'uuid', nullable: true })
+    pageParentId?: string;  // sous-pages
+
+    @Column({ type: 'jsonb', nullable: true })
+    metadata?: Record&lt;string, unknown&gt;;  // données custom
+
+    @Column({ type: 'jsonb', nullable: true })
+    seo?: {  // SEO
+        metaTitle?: string;
+        metaDescription?: string;
+        metaKeywords?: string[];
+        ogImage?: string;
+    };
+
+    @Column({ type: 'boolean', default: false })
+    estPageAccueil!: boolean;  // une seule par établissement
+
+    @ManyToOne(() => CmsPage, { nullable: true })
+    @JoinColumn({ name: 'pageParentId' })
+    pageParent?: CmsPage;
+
+    @OneToMany(() => CmsSection, 'page', { cascade: true })
+    sections!: CmsSection[];
+
+    @CreateDateColumn() createdAt!: Date;
+    @UpdateDateColumn() updatedAt!: Date;
+}</code></pre>
+
+  <h3>5.2 — CmsSection (blocs de contenu)</h3>
+  <pre><code>@Entity('cms_sections')
+export class CmsSection {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    pageId!: string;
+
+    @Column({ type: 'varchar', length: 50 })
+    type!: SectionType;  // enum ci-dessous
+
+    @Column({ type: 'jsonb' })
+    contenu!: Record&lt;string, unknown&gt;;  // contenu structuré par type
+
+    @Column({ type: 'int', default: 0 })
+    ordre!: number;
+
+    @Column({ type: 'jsonb', nullable: true })
+    styles?: Record&lt;string, unknown&gt;;  // styles custom (padding, bg, etc.)
+
+    @Column({ type: 'boolean', default: true })
+    visible!: boolean;
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    anchorId?: string;  // pour navigation intra-page
+
+    @ManyToOne(() => CmsPage, 'sections')
+    @JoinColumn({ name: 'pageId' })
+    page!: CmsPage;
+
+    @CreateDateColumn() createdAt!: Date;
+    @UpdateDateColumn() updatedAt!: Date;
+}
+
+export enum SectionType {
+    HERO = 'HERO',                    // Bannière principale avec image/titre
+    TEXTE = 'TEXTE',                  // Bloc texte riche (HTML)
+    GALERIE = 'GALERIE',              // Galerie d'images
+    CARTE_INFOS = 'CARTE_INFOS',      // Carte d'information
+    TEMOIGNAGES = 'TEMOIGNAGES',      // Carousel témoignages
+    CHIFFRES_CLES = 'CHIFFRES_CLES',  // Compteurs animés
+    EQUIPE = 'EQUIPE',                // Grille membres équipe
+    FORMULAIRE = 'FORMULAIRE',        // Formulaire contact/inscription
+    CARTE = 'CARTE',                  // Google Maps embed
+    VIDEO = 'VIDEO',                  // Embed vidéo
+    TELECHARGEMENTS = 'TELECHARGEMENTS', // Fichiers PDF/docs
+    ACTUALITES = 'ACTUALITES',        // Liste actualités
+    HORAIRES = 'HORAIRES',            // Tableau horaires
+    PARTENAIRES = 'PARTENAIRES',      // Logos partenaires
+    FAQ = 'FAQ',                      // Accordéon FAQ
+    APPEL_ACTION = 'APPEL_ACTION',    // CTA banner
+    SEPARATEUR = 'SEPARATEUR',        // Séparateur visuel
+    HTML_CUSTOM = 'HTML_CUSTOM',      // HTML libre (admin only)
+}</code></pre>
+
+  <h3>5.3 — CmsMedia (bibliothèque médias)</h3>
+  <pre><code>@Entity('cms_medias')
+export class CmsMedia {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @Column({ type: 'varchar', length: 255 })
+    nom!: string;
+
+    @Column({ type: 'varchar', length: 20 })
+    type!: 'image' | 'video' | 'document' | 'audio';
+
+    @Column({ type: 'varchar', length: 500 })
+    url!: string;  // chemin relatif ou URL externe
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    alt?: string;  // texte alternatif (accessibilité)
+
+    @Column({ type: 'integer', nullable: true })
+    taille?: number;  // taille en octets
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    mimeType?: string;
+
+    @Column({ type: 'int', nullable: true })
+    largeur?: number;
+
+    @Column({ type: 'int', nullable: true })
+    hauteur?: number;
+
+    @Column({ type: 'jsonb', nullable: true })
+    metadata?: Record&lt;string, unknown&gt;;  // EXIF, tags, etc.
+
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    dossier?: string;  // organisation en dossiers
+
+    @CreateDateColumn() createdAt!: Date;
+}</code></pre>
+
+  <h3>5.4 — CmsTheme (thème visuel)</h3>
+  <pre><code>@Entity('cms_themes')
+export class CmsTheme {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @Column({ type: 'varchar', length: 100 })
+    nom!: string;
+
+    @Column({ type: 'jsonb' })
+    variables!: {
+        // Couleurs
+        couleurFond?: string;
+        couleurTexte?: string;
+        couleurPrimaire?: string;
+        couleurSecondaire?: string;
+        couleurAccent?: string;
+        // Typographie
+        policeTitres?: string;
+        policeCorps?: string;
+        tailleTitre?: string;
+        tailleCorps?: string;
+        // Layout
+        largeurMax?: string;
+        espacement?: string;
+        styleBordures?: string;  // 'rounded' | 'sharp' | 'pill'
+        // Header/Footer
+        headerStyle?: string;  // 'transparent' | 'solid' | 'gradient'
+        footerStyle?: string;  // 'minimal' | 'complet' | 'sombre'
+    };
+
+    @Column({ type: 'jsonb', nullable: true })
+    polices?: {
+        titres?: { famille: string; poids: string };
+        corps?: { famille: string; poids: string };
+    };
+
+    @Column({ type: 'boolean', default: false })
+    actif!: boolean;
+
+    @Column({ type: 'boolean', default: false })
+    estSysteme!: boolean;  // thèmes prédéfinis non supprimables
+
+    @CreateDateColumn() createdAt!: Date;
+    @UpdateDateColumn() updatedAt!: Date;
+}</code></pre>
+
+  <h3>5.5 — CmsMenu (navigation)</h3>
+  <pre><code>@Entity('cms_menus')
+export class CmsMenu {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @Column({ type: 'varchar', length: 100 })
+    nom!: string;
+
+    @Column({ type: 'varchar', length: 30, default: 'header' })
+    emplacement!: 'header' | 'footer' | 'sidebar';
+
+    @Column({ type: 'jsonb' })
+    items!: MenuItem[];
+
+    @CreateDateColumn() createdAt!: Date;
+    @UpdateDateColumn() updatedAt!: Date;
+}
+
+interface MenuItem {
+    id: string;
+    label: string;
+    type: 'page' | 'url' | 'ancre' | 'sous-menu';
+    pageId?: string;      // lien vers CmsPage
+    urlExterne?: string;  // lien externe
+    anchor?: string;      // ancre intra-page
+    children?: MenuItem[];
+    ordre: number;
+    visible: boolean;
+    icon?: string;
+    nouvelleTab?: boolean;
+}</code></pre>
+
+  <h3>5.6 — CmsWidget (widgets latéraux)</h3>
+  <pre><code>@Entity('cms_widgets')
+export class CmsWidget {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @Column({ type: 'varchar', length: 50 })
+    type!: WidgetType;
+
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    titre?: string;
+
+    @Column({ type: 'jsonb' })
+    config!: Record&lt;string, unknown&gt;;
+
+    @Column({ type: 'varchar', length: 30, default: 'sidebar' })
+    emplacement!: 'sidebar' | 'footer' | 'header' | 'homepage';
+
+    @Column({ type: 'int', default: 0 })
+    ordre!: number;
+
+    @Column({ type: 'boolean', default: true })
+    actif!: boolean;
+
+    @CreateDateColumn() createdAt!: Date;
+}
+
+export enum WidgetType {
+    CONTACT_RAPIDE = 'CONTACT_RAPIDE',     // Carte contact rapide
+    RESEAUX_SOCIAUX = 'RESEAUX_SOCIAUX',   // Liens réseaux sociaux
+    HORAIRES = 'HORAIRES',                 // Horaires d'ouverture
+    ACTUALITES_RECENTES = 'ACTUALITES_RECENTES',
+    INSCRIPTION_RAPIDE = 'INSCRIPTION_RAPIDE',  // Mini formulaire
+    CARTE_GPS = 'CARTE_GPS',               // Mini carte
+    EVENEMENTS = 'EVENEMENTS',             // Prochains événements
+    TEMOIGNAGE = 'TEMOIGNAGE',             // Témoignage aléatoire
+    STATISTIQUES = 'STATISTIQUES',          // Chiffres clés
+    NEWSLETTER = 'NEWSLETTER',             // Inscription newsletter
+}</code></pre>
+
+  <h3>5.7 — CmsVersion (historique & rollback)</h3>
+  <pre><code>@Entity('cms_versions')
+@Index(['etablissementId', 'entiteType', 'entiteId'])
+export class CmsVersion {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @Column({ type: 'varchar', length: 50 })
+    entiteType!: 'page' | 'section' | 'theme' | 'menu' | 'widget';
+
+    @Column({ type: 'uuid' })
+    entiteId!: string;
+
+    @Column({ type: 'jsonb' })
+    snapshot!: Record&lt;string, unknown&gt;;  // copie complète de l'entité
+
+    @Column({ type: 'uuid', nullable: true })
+    auteurId?: string;
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    commentaire?: string;
+
+    @Column({ type: 'int', default: 1 })
+    version!: number;
+
+    @CreateDateColumn() createdAt!: Date;
+}</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ S6 -->
+<section id="s6">
+  <div class="section-header">
+    <div class="section-num">6</div>
+    <h2>Thèmes & Design System</h2>
+  </div>
+
+  <h3>6.1 — Templates de pages prédéfinis</h3>
+  <div class="card-grid">
+    <div class="card">
+      <h4>🏠 Accueil (<code class="inline-code">accueil</code>)</h4>
+      <p>Hero plein écran + chiffres clés + présentation + actualités récentes + CTA inscription + partenaires. Layout: Hero → Sections → Footer.</p>
+    </div>
+    <div class="card">
+      <h4>📄 Page standard (<code class="inline-code">custom</code>)</h4>
+      <p>Header page + sections libres + sidebar widgets. Layout: Breadcrumb → Contenu → Sidebar.</p>
+    </div>
+    <div class="card">
+      <h4>🖼️ Galerie (<code class="inline-code">galerie</code>)</h4>
+      <p>Filtres par album + grille responsive + lightbox. Layout: Filtres → Grille masonry → Lightbox.</p>
+    </div>
+    <div class="card">
+      <h4>📰 Actualités (<code class="inline-code">actualites</code>)</h4>
+      <p> Liste paginée + filtres par catégorie + pagination infinite scroll.</p>
+    </div>
+    <div class="card">
+      <h4>📞 Contact (<code class="inline-code">contact</code>)</h4>
+      <p>Formulaire + carte GPS + infos contact + horaires. Layout: 2 colonnes (form + map).</p>
+    </div>
+    <div class="card">
+      <h4>📝 Inscriptions (<code class="inline-code">inscriptions</code>)</h4>
+      <p>Processus multi-étapes + documents requis + FAQ + CTA. Layout: Stepper → Détails → FAQ.</p>
+    </div>
+  </div>
+
+  <h3>6.2 — Thèmes prédéfinis (seeds système)</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Thème</th>
+          <th>Palette</th>
+          <th>Style</th>
+          <th>Usage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Classique Vert</strong></td>
+          <td>Vert #28a745 + Blanc + Gris</td>
+          <td>Bordures arrondies, police serif titres</td>
+          <td>Établissements traditionnels</td>
+        </tr>
+        <tr>
+          <td><strong> Moderne Bleu</strong></td>
+          <td>Bleu #007bff + Blanc + Gris clair</td>
+          <td>Cards ombres, police sans-serif</td>
+          <td>Écoles internationales</td>
+        </tr>
+        <tr>
+          <td><strong>Élégant Bordeaux</strong></td>
+          <td>Bordeaux #722F37 + Or #C5A55A + Crème</td>
+          <td>Typographie soignée, lignes fines</td>
+          <td>Établissements confessionnels</td>
+        </tr>
+        <tr>
+          <td><strong>Dynamique Orange</strong></td>
+          <td>Orange #fd7e14 + Noir + Blanc</td>
+          <td>Sections colorées, formes géométriques</td>
+          <td>Écoles techniques/professionnelles</td>
+        </tr>
+        <tr>
+          <td><strong>Nature Vert Forêt</strong></td>
+          <td>Vert forêt #155724 + Beige + Brun</td>
+          <td>Textured backgrounds, photos nature</td>
+          <td>Écoles agro/environment</td>
+        </tr>
+        <tr>
+          <td><strong>Minimaliste</strong></td>
+          <td>Noir #212529 + Blanc + Accent au choix</td>
+          <td>Espaces blancs, typographie large</td>
+          <td>Établissements premium</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>6.3 — Variables CSS dynamiques par établissement</h3>
+  <pre><code>/* Générées dynamiquement depuis CmsTheme.variables */
+:root[data-etablissement="CM1"] {
+    --cms-couleur-fond: #ffffff;
+    --cms-couleur-texte: #212529;
+    --cms-couleur-primaire: #28a745;
+    --cms-couleur-secondaire: #007bff;
+    --cms-couleur-accent: #ffc107;
+    --cms-police-titres: 'Playfair Display', serif;
+    --cms-police-corps: 'Inter', sans-serif;
+    --cms-taille-titre: 2.5rem;
+    --cms-taille-corps: 1rem;
+    --cms-largeur-max: 1200px;
+    --cms-espacement: 1.5rem;
+    --cms-radius: 12px;
+}</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ S7 -->
+<section id="s7">
+  <div class="section-header">
+    <div class="section-num">7</div>
+    <h2>Routing & API publiques</h2>
+  </div>
+
+  <h3>7.1 — Routes frontend (TanStack Router)</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Route</th><th>Fichier</th><th>Description</th><th>Auth</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code class="inline-code">/e/:code</code></td>
+          <td><code class="inline-code">e.$code.tsx</code></td>
+          <td>Page d'accueil établissement</td>
+          <td>Public</td>
+        </tr>
+        <tr>
+          <td><code class="inline-code">/e/:code/:slug</code></td>
+          <td><code class="inline-code">e.$code.$slug.tsx</code></td>
+          <td>Sous-page CMS</td>
+          <td>Public</td>
+        </tr>
+        <tr>
+          <td><code class="inline-code">/e/:code/galerie</code></td>
+          <td><code class="inline-code">e.$code.galerie.tsx</code></td>
+          <td>Galerie photos</td>
+          <td>Public</td>
+        </tr>
+        <tr>
+          <td><code class="inline-code">/e/:code/contact</code></td>
+          <td><code class="inline-code">e.$code.contact.tsx</code></td>
+          <td>Page contact + carte</td>
+          <td>Public</td>
+        </tr>
+        <tr>
+          <td><code class="inline-code">/e/:code/inscriptions</code></td>
+          <td><code class="inline-code">e.$code.inscriptions.tsx</code></td>
+          <td>Page inscriptions</td>
+          <td>Public</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>7.2 — API Backend publiques</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Méthode</th><th>Endpoint</th><th>Description</th><th>Cache</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>GET</td>
+          <td><code class="inline-code">/api/public/e/:code</code></td>
+          <td>Données établissement (projection publique)</td>
+          <td>Redis 300s</td>
+        </tr>
+        <tr>
+          <td>GET</td>
+          <td><code class="inline-code">/api/public/e/:code/pages</code></td>
+          <td>Liste pages publiées</td>
+          <td>Redis 300s</td>
+        </tr>
+        <tr>
+          <td>GET</td>
+          <td><code class="inline-code">/api/public/e/:code/pages/:slug</code></td>
+          <td>Détail page + sections</td>
+          <td>Redis 300s</td>
+        </tr>
+        <tr>
+          <td>GET</td>
+          <td><code class="inline-code">/api/public/e/:code/theme</code></td>
+          <td>Thème actif + variables CSS</td>
+          <td>Redis 600s</td>
+        </tr>
+        <tr>
+          <td>GET</td>
+          <td><code class="inline-code">/api/public/e/:code/menus</code></td>
+          <td>Menus de navigation</td>
+          <td>Redis 300s</td>
+        </tr>
+        <tr>
+          <td>GET</td>
+          <td><code class="inline-code">/api/public/e/:code/widgets</code></td>
+          <td>Widgets actifs</td>
+          <td>Redis 300s</td>
+        </tr>
+        <tr>
+          <td>GET</td>
+          <td><code class="inline-code">/api/public/e/:code/medias/:id</code></td>
+          <td>Fichier média (proxy)</td>
+          <td>CDN / 1h</td>
+        </tr>
+        <tr>
+          <td>POST</td>
+          <td><code class="inline-code">/api/public/e/:code/contact</code></td>
+          <td>Envoi formulaire contact</td>
+          <td>Rate limit</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>7.3 — API CMS (authentifiées, multi-tenant)</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Méthode</th><th>Endpoint</th><th>Permission</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>GET/POST</td><td><code class="inline-code">/api/cms/pages</code></td><td>cms:pages:view / cms:pages:create</td></tr>
+        <tr><td>GET/PATCH/DELETE</td><td><code class="inline-code">/api/cms/pages/:id</code></td><td>cms:pages:view / edit / delete</td></tr>
+        <tr><td>POST</td><td><code class="inline-code">/api/cms/pages/:id/publier</code></td><td>cms:pages:publish</td></tr>
+        <tr><td>GET/POST</td><td><code class="inline-code">/api/cms/pages/:id/sections</code></td><td>cms:sections:view / create</td></tr>
+        <tr><td>PATCH/DELETE</td><td><code class="inline-code">/api/cms/sections/:id</code></td><td>cms:sections:edit / delete</td></tr>
+        <tr><td>POST</td><td><code class="inline-code">/api/cms/sections/reordonner</code></td><td>cms:sections:edit</td></tr>
+        <tr><td>GET/POST</td><td><code class="inline-code">/api/cms/medias</code></td><td>cms:medias:view / upload</td></tr>
+        <tr><td>DELETE</td><td><code class="inline-code">/api/cms/medias/:id</code></td><td>cms:medias:delete</td></tr>
+        <tr><td>GET/POST/PUT</td><td><code class="inline-code">/api/cms/themes</code></td><td>cms:themes:manage</td></tr>
+        <tr><td>POST</td><td><code class="inline-code">/api/cms/themes/:id/activer</code></td><td>cms:themes:manage</td></tr>
+        <tr><td>GET/PUT</td><td><code class="inline-code">/api/cms/menus</code></td><td>cms:menus:manage</td></tr>
+        <tr><td>GET/POST/PUT</td><td><code class="inline-code">/api/cms/widgets</code></td><td>cms:widgets:manage</td></tr>
+        <tr><td>GET</td><td><code class="inline-code">/api/cms/versions?entiteType=&entiteId=</code></td><td>cms:versions:view</td></tr>
+        <tr><td>POST</td><td><code class="inline-code">/api/cms/versions/:id/restaurer</code></td><td>cms:versions:restore</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>7.4 — Enregistrement dans app.ts</h3>
+  <pre><code>// === AVANT tenantMiddleware (comme /api/health, /api/network) ===
+// Routes publiques établissement — pas d'isolation tenant
+app.use('/api/public', optionalAuthMiddleware, publicEtablissementController);
+
+// === APRÈS tenantMiddleware (routes authentifiées) ===
+app.use('/api/cms', authMiddleware, requireModuleActive('cms'), cmsController);</code></pre>
+
+  <h3>7.5 — Service public — Projection restrictive</h3>
+  <pre><code>// public-etablissement.service.ts
+async getPagePublique(code: string): Promise&lt;PagePubliqueDto&gt; {
+    const etab = await this.etabRepo.createQueryBuilder('e')
+        .select([
+            'e.id', 'e.nom', 'e.slogan', 'e.pays', 'e.region',
+            'e.ville', 'e.quartier', 'e.adresse',
+            'e.latitude', 'e.longitude',
+            'e.contactEmail', 'e.contactTelephone',
+            'e.logoBase64', 'e.logoType',
+            'e.couleurPrimaire', 'e.couleurSecondaire',
+            'e.siteWeb', 'e.facebook', 'e.twitter',
+            'e.heuresOuverture', 'e.heuresFermeture',
+            'e.descriptionPublique', 'e.codeEtablissement',
+            'e.sousSysteme', 'e.type',
+        ])
+        .where('e.codeEtablissement = :code', { code })
+        .andWhere('e.actif = true')
+        .getOne();
+
+    if (!etab) throw new AppError('Établissement introuvable', 404);
+    return etab;
+    // NOTE: numeroContribuable, numeroCompteBancaire, numeroArrete,
+    //       numeroEnregistrement, numeroAutorisation EXCLUS (données privées)
+}</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ S8 -->
+<section id="s8">
+  <div class="section-header">
+    <div class="section-num">8</div>
+    <h2>Sécurité & Performance</h2>
+  </div>
+
+  <h3>8.1 — Modèle de sécurité</h3>
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+flowchart TB
+    subgraph "Couche 1 — Routing"
+        R1["/e/:code — Public"]
+        R2["/api/cms/* — Auth + Tenant"]
+    end
+
+    subgraph "Couche 2 — Middleware"
+        M1["optionalAuthMiddleware<br/>(enrichit si token présent)"]
+        M2["Rate Limiter<br/>(60 req/min/IP)"]
+        M3["authMiddleware<br/>+ tenantMiddleware"]
+    end
+
+    subgraph "Couche 3 — Données"
+        D1["Projection restrictive<br/>(SELECT colonnes publiques)"]
+        D2["RLS PostgreSQL<br/>(etablissementId)"]
+        D3["Cache Redis<br/>(TTL 300s)"]
+    end
+
+    subgraph "Couche 4 — Validation"
+        V1["Zod schemas<br/>(input validation)"]
+        V2["Sanitize HTML<br/>(XSS prevention)"]
+        V3["CSP Headers<br/>(Content Security)"]
+    end
+
+    R1 --> M1 --> M2 --> D1 --> V1
+    R2 --> M3 --> D2 --> V2
+    D1 --> D3
+    D2 --> D3
+
+    style R1 fill:#d4edda,stroke:#28a745
+    style R2 fill:#cce5ff,stroke:#007bff
+    style D1 fill:#fff3cd,stroke:#ffc107
+    </pre>
+  </div>
+
+  <h3>8.2 — Matrice de sécurité</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Menace</th><th>Protection</th><th>Sévérité</th><th>Statut</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Exposition données privées</td>
+          <td>Projection restrictive (SELECT explicite)</td>
+          <td><span class="badge badge-critical">CRITIQUE</span></td>
+          <td><span class="badge badge-new">À implémenter</span></td>
+        </tr>
+        <tr>
+          <td>DDoS pages publiques</td>
+          <td>Rate limiter 60 req/min/IP + Redis cache</td>
+          <td><span class="badge badge-critical">CRITIQUE</span></td>
+          <td><span class="badge badge-new">À implémenter</span></td>
+        </tr>
+        <tr>
+          <td>XSS contenu CMS</td>
+          <td>Sanitize HTML (DOMPurify) + CSP headers</td>
+          <td><span class="badge badge-critical">CRITIQUE</span></td>
+          <td><span class="badge badge-new">À implémenter</span></td>
+        </tr>
+        <tr>
+          <td>Accès cross-tenant CMS</td>
+          <td>RLS + tenantMiddleware + etablissementId</td>
+          <td><span class="badge badge-critical">CRITIQUE</span></td>
+          <td><span class="badge badge-exist">Existant</span></td>
+        </tr>
+        <tr>
+          <td>Upload média malveillant</td>
+          <td>Whitelist MIME + taille max + scan</td>
+          <td><span class="badge badge-high">HAUTE</span></td>
+          <td><span class="badge badge-new">À implémenter</span></td>
+        </tr>
+        <tr>
+          <td>Injection SQL</td>
+          <td>TypeORM query builder (parameterized)</td>
+          <td><span class="badge badge-high">HAUTE</span></td>
+          <td><span class="badge badge-exist">Existant</span></td>
+        </tr>
+        <tr>
+          <td>Cache poisoning</td>
+          <td>Cache key = hash(code + lastModified)</td>
+          <td><span class="badge badge-medium">MOYENNE</span></td>
+          <td><span class="badge badge-new">À implémenter</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>8.3 — Stratégie de cache multi-niveaux</h3>
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+flowchart LR
+    A["Navigateur<br/>Cache-Control: 300s"] -->|"MISS"| B["Redis<br/>TTL 300s<br/>key: public:{code}:{resource}"]
+    B -->|"MISS"| C["PostgreSQL<br/>Projection restrictive"]
+    C -->|"Query"| B
+    B -->|"JSON"| A
+
+    D["Modification CMS"] -->|"DEL public:{code}:*"| B
+    D -->|"Invalidate"| A
+
+    style A fill:#d4edda,stroke:#28a745
+    style B fill:#fff3cd,stroke:#ffc107
+    style C fill:#cce5ff,stroke:#007bff
+    style D fill:#f8d7da,stroke:#dc3545
+    </pre>
+  </div>
+
+  <h3>8.4 — Permissions RBAC CMS</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Permission</th><th>ADMIN</th><th>CHEF_ETAB</th><th>DIRECTEUR</th><th>ENSEIGNANT</th><th>PARENT</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>cms:pages:view</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td></tr>
+        <tr><td>cms:pages:create</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td></tr>
+        <tr><td>cms:pages:edit</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-partial">&#x2718;*</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td></tr>
+        <tr><td>cms:pages:publish</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td></tr>
+        <tr><td>cms:pages:delete</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td></tr>
+        <tr><td>cms:sections:*</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td></tr>
+        <tr><td>cms:medias:*</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td></tr>
+        <tr><td>cms:themes:manage</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td></tr>
+        <tr><td>cms:menus:manage</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td></tr>
+        <tr><td>cms:widgets:manage</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td></tr>
+        <tr><td>cms:versions:view</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td></tr>
+        <tr><td>cms:versions:restore</td><td class="matrix-cell matrix-yes">&#x2714;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td><td class="matrix-cell matrix-no">&#x2718;</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><em>* DIRECTEUR peut éditer ses propres pages, pas celles des autres.</em></p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ S9 -->
+<section id="s9">
+  <div class="section-header">
+    <div class="section-num">9</div>
+    <h2>Frontend — Pages publiques</h2>
+  </div>
+
+  <h3>9.1 — Architecture des routes publiques</h3>
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+graph TD
+    subgraph "Routes publiques (sans _auth layout)"
+        E_CODE["/e/$code.tsx<br/>Layout page publique"]
+        E_CODE_SLUG["/e/$code.$slug.tsx<br/>Sous-page CMS"]
+        E_CODE_GALERIE["/e/$code.galerie.tsx"]
+        E_CODE_CONTACT["/e/$code.contact.tsx"]
+        E_CODE_INSCR["/e/$code.inscriptions.tsx"]
+    end
+
+    subgraph "Layout public"
+        PUB_LAYOUT["PublicLayout.tsx"]
+        PUB_HEADER["Header dynamique<br/>(logo + menu CMS)"]
+        PUB_FOOTER["Footer dynamique<br/>(infos + liens CMS)"]
+    end
+
+    E_CODE --> PUB_LAYOUT
+    E_CODE_SLUG --> PUB_LAYOUT
+    E_CODE_GALERIE --> PUB_LAYOUT
+    E_CODE_CONTACT --> PUB_LAYOUT
+    E_CODE_INSCR --> PUB_LAYOUT
+
+    PUB_LAYOUT --> PUB_HEADER
+    PUB_LAYOUT --> PUB_FOOTER
+
+    style E_CODE fill:#d4edda,stroke:#28a745
+    style PUB_LAYOUT fill:#e2e3e5,stroke:#6c757d
+    </pre>
+  </div>
+
+  <h3>9.2 — Composant PublicLayout</h3>
+  <pre><code>// frontend/src/components/layout/PublicLayout.tsx
+export function PublicLayout({ children, code }: { children: ReactNode; code: string }) {
+    const { data: etab } = useEtablissementPublic(code);
+    const { data: theme } = useThemePublic(code);
+    const { data: menus } = useMenusPublic(code);
+
+    // Injection variables CSS dynamiques
+    const cssVars = theme?.variables || {};
+
+    return (
+        &lt;div data-etablissement={code} style={cssVars}&gt;
+            &lt;PublicHeader etab={etab} menus={menus?.header} /&gt;
+            &lt;main&gt;{children}&lt;/main&gt;
+            &lt;PublicFooter etab={etab} menus={menus?.footer} /&gt;
+        &lt;/div&gt;
+    );
+}</code></pre>
+
+  <h3>9.3 — Rendu de page CMS</h3>
+  <pre><code>// frontend/src/features/cms/components/CmsPageRenderer.tsx
+export function CmsPageRenderer({ page }: { page: CmsPagePublic }) {
+    return (
+        &lt;&gt;
+            {page.sections
+                .filter(s => s.visible)
+                .sort((a, b) => a.ordre - b.ordre)
+                .map(section => (
+                    &lt;SectionRenderer key={section.id} section={section} /&gt;
+                ))}
+        &lt;/&gt;
+    );
+}
+
+// Rendu par type de section
+function SectionRenderer({ section }: { section: CmsSectionPublic }) {
+    switch (section.type) {
+        case 'HERO': return &lt;HeroSection data={section.contenu} styles={section.styles} /&gt;;
+        case 'TEXTE': return &lt;TextSection data={section.contenu} styles={section.styles} /&gt;;
+        case 'GALERIE': return &lt;GalerieSection data={section.contenu} /&gt;;
+        case 'CHIFFRES_CLES': return &lt;ChiffresSection data={section.contenu} /&gt;;
+        case 'EQUIPE': return &lt;EquipeSection data={section.contenu} /&gt;;
+        case 'FORMULAIRE': return &lt;FormulaireSection data={section.contenu} /&gt;;
+        case 'CARTE': return &lt;CarteSection data={section.contenu} /&gt;;
+        case 'FAQ': return &lt;FaqSection data={section.contenu} /&gt;;
+        case 'APPEL_ACTION': return &lt;CtaSection data={section.contenu} /&gt;;
+        // ... 18 types au total
+        default: return &lt;div&gt;Section non supportée&lt;/div&gt;;
+    }
+}</code></pre>
+
+  <h3>9.4 — Maquette page publique (rendu)</h3>
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div style="background: linear-gradient(135deg, #28a745, #1e7e34); padding: 40px 24px; color: white; text-align: center;">
+      <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 24px;">&#x1F3EB;</div>
+      <h3 style="font-size: 1.5rem; margin-bottom: 4px;">Collège Moderne Bilingue</h3>
+      <p style="opacity: 0.9;">« L'excellence au cœur de l'éducation »</p>
+      <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <span style="background: rgba(255,255,255,0.2); padding: 4px 16px; border-radius: 20px; font-size: 0.85rem;">Accueil</span>
+        <span style="background: rgba(255,255,255,0.2); padding: 4px 16px; border-radius: 20px; font-size: 0.85rem;">À propos</span>
+        <span style="background: rgba(255,255,255,0.2); padding: 4px 16px; border-radius: 20px; font-size: 0.85rem;">Inscriptions</span>
+        <span style="background: rgba(255,255,255,0.2); padding: 4px 16px; border-radius: 20px; font-size: 0.85rem;">Galerie</span>
+        <span style="background: rgba(255,255,255,0.2); padding: 4px 16px; border-radius: 20px; font-size: 0.85rem;">Contact</span>
+      </div>
+    </div>
+    <div style="padding: 24px;">
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: center; margin-bottom: 24px;">
+        <div><div style="font-size: 1.8rem; font-weight: 800; color: #28a745;">850</div><div style="font-size: 0.8rem; color: #6c757d;">Élèves</div></div>
+        <div><div style="font-size: 1.8rem; font-weight: 800; color: #007bff;">45</div><div style="font-size: 0.8rem; color: #6c757d;">Enseignants</div></div>
+        <div><div style="font-size: 1.8rem; font-weight: 800; color: #ffc107;">98%</div><div style="font-size: 0.8rem; color: #6c757d;">Réussite</div></div>
+        <div><div style="font-size: 1.8rem; font-weight: 800; color: #dc3545;">25</div><div style="font-size: 0.8rem; color: #6c757d;">Ans d'exp.</div></div>
+      </div>
+      <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+        <h4 style="margin-bottom: 8px;">Bienvenue dans notre établissement</h4>
+        <p style="color: #6c757d; font-size: 0.9rem;">Le Collège Moderne Bilingue est un établissement d'excellence situé au cœur de Yaoundé, offrant un enseignement bilingue de qualité...</p>
+      </div>
+      <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #007bff, #0056b3); color: white; border-radius: 12px;">
+        <h4>Inscriptions 2026-2027 ouvertes !</h4>
+        <p style="opacity: 0.9; font-size: 0.9rem; margin-top: 4px;">Rejoignez une communauté éducative d'excellence</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ S10 -->
+<section id="s10">
+  <div class="section-header">
+    <div class="section-num">10</div>
+    <h2>Frontend — Éditeur CMS</h2>
+  </div>
+
+  <h3>10.1 — Architecture de l'éditeur</h3>
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+graph TB
+    subgraph "CMS Editor — /_auth/cms/*"
+        DASHBOARD["Dashboard CMS<br/>/_auth.cms.tsx"]
+        PAGES["Gestion pages<br/>/_auth.cms.pages"]
+        EDITOR["Éditeur page<br/>/_auth.cms.pages.$id"]
+        MEDIAS["Bibliothèque médias<br/>/_auth.cms.medias"]
+        THEMES["Thèmes<br/>/_auth.cms.themes"]
+        MENUS["Navigation<br/>/_auth.cms.menus"]
+        WIDGETS["Widgets<br/>/_auth.cms.widgets"]
+        VERSIONS["Historique<br/>/_auth.cms.versions"]
+    end
+
+    subgraph "Composants éditeur"
+        DRAG["Drag & Drop sections<br/>(@dnd-kit)"]
+        RICH["Éditeur texte riche"]
+        COLOR["ColorPicker intégré"]
+        PREVIEW["Preview live"]
+        SEO["SEO panel"]
+    end
+
+    DASHBOARD --> PAGES
+    DASHBOARD --> MEDIAS
+    DASHBOARD --> THEMES
+    DASHBOARD --> MENUS
+    DASHBOARD --> WIDGETS
+    PAGES --> EDITOR
+    EDITOR --> DRAG
+    EDITOR --> RICH
+    EDITOR --> PREVIEW
+    EDITOR --> SEO
+    THEMES --> COLOR
+
+    style DASHBOARD fill:#cce5ff,stroke:#007bff
+    style EDITOR fill:#d4edda,stroke:#28a745
+    </pre>
+  </div>
+
+  <h3>10.2 — Routes frontend CMS</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Route</th><th>Fichier</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code class="inline-code">/_auth/cms</code></td><td>_auth.cms.tsx</td><td>Dashboard CMS (stats, accès rapides)</td></tr>
+        <tr><td><code class="inline-code">/_auth/cms/pages</code></td><td>_auth.cms.pages.tsx</td><td>Liste pages + création</td></tr>
+        <tr><td><code class="inline-code">/_auth/cms/pages/$id</code></td><td>_auth.cms.pages.$id.tsx</td><td>Éditeur page (sections drag & drop)</td></tr>
+        <tr><td><code class="inline-code">/_auth/cms/medias</code></td><td>_auth.cms.medias.tsx</td><td>Bibliothèque médias (upload, dossiers)</td></tr>
+        <tr><td><code class="inline-code">/_auth/cms/themes</code></td><td>_auth.cms.themes.tsx</td><td>Gestion thèmes + personnalisation</td></tr>
+        <tr><td><code class="inline-code">/_auth/cms/menus</code></td><td>_auth.cms.menus.tsx</td><td>Éditeur navigation (drag & drop)</td></tr>
+        <tr><td><code class="inline-code">/_auth/cms/widgets</code></td><td>_auth.cms.widgets.tsx</td><td>Gestion widgets</td></tr>
+        <tr><td><code class="inline-code">/_auth/cms/versions</code></td><td>_auth.cms.versions.tsx</td><td>Historique + rollback</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>10.3 — Éditeur de page — Interface</h3>
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div style="background: #f8f9fa; border-bottom: 1px solid #dee2e6; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <span style="font-weight: 700;">Éditeur de page</span>
+        <span style="background: #fff3cd; color: #856404; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem;">Brouillon</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <span style="padding: 6px 14px; background: #e9ecef; border-radius: 8px; font-size: 0.85rem; cursor: pointer;">Preview</span>
+        <span style="padding: 6px 14px; background: #28a745; color: white; border-radius: 8px; font-size: 0.85rem; cursor: pointer;">Publier</span>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 240px 1fr 280px; min-height: 300px;">
+      <div style="border-right: 1px solid #dee2e6; padding: 16px;">
+        <p style="font-weight: 600; font-size: 0.85rem; margin-bottom: 12px;">Sections disponibles</p>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="padding: 8px 12px; background: #e9ecef; border-radius: 8px; font-size: 0.8rem; cursor: grab;">&#x1F5BC; Hero Banner</div>
+          <div style="padding: 8px 12px; background: #e9ecef; border-radius: 8px; font-size: 0.8rem; cursor: grab;">&#x1F4DD; Texte riche</div>
+          <div style="padding: 8px 12px; background: #e9ecef; border-radius: 8px; font-size: 0.8rem; cursor: grab;">&#x1F4F7; Galerie</div>
+          <div style="padding: 8px 12px; background: #e9ecef; border-radius: 8px; font-size: 0.8rem; cursor: grab;">&#x1F4CA; Chiffres clés</div>
+          <div style="padding: 8px 12px; background: #e9ecef; border-radius: 8px; font-size: 0.8rem; cursor: grab;">&#x1F465; Équipe</div>
+          <div style="padding: 8px 12px; background: #e9ecef; border-radius: 8px; font-size: 0.8rem; cursor: grab;">&#x1F4AC; Témoignages</div>
+          <div style="padding: 8px 12px; background: #e9ecef; border-radius: 8px; font-size: 0.8rem; cursor: grab;">&#x2753; FAQ</div>
+          <div style="padding: 8px 12px; background: #e9ecef; border-radius: 8px; font-size: 0.8rem; cursor: grab;">&#x1F4CD; Carte GPS</div>
+          <div style="padding: 8px 12px; background: #e9ecef; border-radius: 8px; font-size: 0.8rem; cursor: grab;">&#x1F4E8; Formulaire</div>
+          <div style="padding: 8px 12px; background: #e9ecef; border-radius: 8px; font-size: 0.8rem; cursor: grab;">&#x1F680; Appel action</div>
+        </div>
+      </div>
+      <div style="padding: 16px; background: white;">
+        <div style="border: 2px dashed #28a745; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+          <div style="font-size: 0.75rem; color: #28a745; margin-bottom: 4px;">Section 1 — HERO</div>
+          <div style="background: linear-gradient(135deg, #28a745, #1e7e34); color: white; padding: 20px; border-radius: 6px; text-align: center;">
+            <div style="font-weight: 700;">Bienvenue au CMB</div>
+            <div style="font-size: 0.8rem; opacity: 0.9;">L'excellence au cœur de l'éducation</div>
+          </div>
+        </div>
+        <div style="border: 2px solid transparent; border-radius: 8px; padding: 16px; margin-bottom: 12px; background: #f8f9fa;">
+          <div style="font-size: 0.75rem; color: #6c757d; margin-bottom: 4px;">Section 2 — CHIFFRES_CLES</div>
+          <div style="display: flex; gap: 16px; justify-content: center;">
+            <div style="text-align: center;"><div style="font-weight: 800; color: #28a745;">850</div><div style="font-size: 0.7rem;">Élèves</div></div>
+            <div style="text-align: center;"><div style="font-weight: 800; color: #007bff;">45</div><div style="font-size: 0.7rem;">Enseignants</div></div>
+          </div>
+        </div>
+        <div style="border: 2px dashed #dee2e6; border-radius: 8px; padding: 24px; text-align: center; color: #6c757d; font-size: 0.85rem;">
+          + Glissez une section ici
+        </div>
+      </div>
+      <div style="border-left: 1px solid #dee2e6; padding: 16px;">
+        <p style="font-weight: 600; font-size: 0.85rem; margin-bottom: 12px;">Propriétés</p>
+        <div style="font-size: 0.8rem; color: #6c757d;">
+          <p>Type: <strong>Hero Banner</strong></p>
+          <p style="margin-top: 8px;">Titre:</p>
+          <input type="text" value="Bienvenue au CMB" style="width: 100%; padding: 6px; border: 1px solid #dee2e6; border-radius: 4px; font-size: 0.8rem; margin-top: 4px;" />
+          <p style="margin-top: 8px;">Sous-titre:</p>
+          <input type="text" value="L'excellence au cœur..." style="width: 100%; padding: 6px; border: 1px solid #dee2e6; border-radius: 4px; font-size: 0.8rem; margin-top: 4px;" />
+          <p style="margin-top: 8px;">Image de fond:</p>
+          <div style="width: 100%; height: 60px; background: #e9ecef; border-radius: 4px; display: flex; align-items: center; justify-content: center; margin-top: 4px; font-size: 0.75rem;">&#x1F5BC; Cliquez pour changer</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ S11 -->
+<section id="s11">
+  <div class="section-header">
+    <div class="section-num">11</div>
+    <h2>Matrice de comparaison</h2>
+  </div>
+
+  <h3>11.1 — Approches de routing</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Critère</th><th>Path-based (/e/:code)</th><th>Subdomain (:code.elisa)</th><th>Custom domain</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Configuration DNS</td><td class="matrix-cell matrix-yes">Aucune</td><td class="matrix-cell matrix-partial">Wildcard DNS</td><td class="matrix-cell matrix-no">Par client</td></tr>
+        <tr><td>SSL/TLS</td><td class="matrix-cell matrix-yes">1 certificat</td><td class="matrix-cell matrix-partial">Wildcard SSL</td><td class="matrix-cell matrix-no">Par domaine</td></tr>
+        <tr><td>CDN compatible</td><td class="matrix-cell matrix-yes">Natif</td><td class="matrix-cell matrix-partial">Config requise</td><td class="matrix-cell matrix-no">CNAME par client</td></tr>
+        <tr><td>SEO</td><td class="matrix-cell matrix-partial">/e/code/slug</td><td class="matrix-cell matrix-yes">Sous-domaine</td><td class="matrix-cell matrix-yes">Domaine propre</td></tr>
+        <tr><td>Complexité ops</td><td class="matrix-cell matrix-yes">Minimal</td><td class="matrix-cell matrix-partial">Moyen</td><td class="matrix-cell matrix-no">Élevé</td></tr>
+        <tr><td>Coût infrastructure</td><td class="matrix-cell matrix-yes">Faible</td><td class="matrix-cell matrix-partial">Moyen</td><td class="matrix-cell matrix-no">Élevé</td></tr>
+        <tr><td>Expérience marque</td><td class="matrix-cell matrix-partial">elisa/e/CMB</td><td class="matrix-cell matrix-yes">cmb.elisa.school</td><td class="matrix-cell matrix-yes">cmb.edu.cm</td></tr>
+        <tr><td>Scalabilité</td><td class="matrix-cell matrix-yes">Illimitée</td><td class="matrix-cell matrix-yes">Illimitée</td><td class="matrix-cell matrix-partial">Par contrat</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="alert alert-success">
+    <span class="alert-icon">&#x2714;</span>
+    <div><strong>Décision : Path-based routing</strong> — Simplicité maximale, zero config DNS, compatible CDN, 1 seul certificat SSL. Le SEO est acceptable avec des slugs descriptifs.</div>
+  </div>
+
+  <h3>11.2 — Stratégies de stockage CMS</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Critère</th><th>Tables normalisées (choisi)</th><th>JSONB monolithique</th><th>EAV (entity-attribute-value)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Requêtes SQL</td><td class="matrix-cell matrix-yes">Simples</td><td class="matrix-cell matrix-partial">JSON operators</td><td class="matrix-cell matrix-no">Jointures lourdes</td></tr>
+        <tr><td>Performance</td><td class="matrix-cell matrix-yes">Index natifs</td><td class="matrix-cell matrix-partial">GIN index</td><td class="matrix-cell matrix-no">Lente</td></tr>
+        <tr><td>TypeORM</td><td class="matrix-cell matrix-yes">100% compatible</td><td class="matrix-cell matrix-partial">jsonb columns</td><td class="matrix-cell matrix-no">Complexe</td></tr>
+        <tr><td>RLS</td><td class="matrix-cell matrix-yes">Par table</td><td class="matrix-cell matrix-yes">Par row</td><td class="matrix-cell matrix-partial">Complexe</td></tr>
+        <tr><td>Flexibilité</td><td class="matrix-cell matrix-partial">Schéma fixe</td><td class="matrix-cell matrix-yes">Totale</td><td class="matrix-cell matrix-yes">Totale</td></tr>
+        <tr><td>Maintenabilité</td><td class="matrix-cell matrix-yes">Élevée</td><td class="matrix-cell matrix-partial">Moyenne</td><td class="matrix-cell matrix-no">Faible</td></tr>
+        <tr><td>Validation</td><td class="matrix-cell matrix-yes">Contraintes SQL</td><td class="matrix-cell matrix-partial">Zod runtime</td><td class="matrix-cell matrix-partial">Zod runtime</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="alert alert-success">
+    <span class="alert-icon">&#x2714;</span>
+    <div><strong>Décision : Tables normalisées + JSONB pour contenu flexible</strong> — Structure relationnelle pour pages/sections/médias, JSONB pour le contenu des sections (flexible par type). Meilleur des deux mondes.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ S12 -->
+<section id="s12">
+  <div class="section-header">
+    <div class="section-num">12</div>
+    <h2>Plan d'implémentation</h2>
+  </div>
+
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+gantt
+    title Plan d'implémentation — Pages Publiques & CMS
+    dateFormat  YYYY-MM-DD
+    axisFormat  %d %b
+
+    section Phase 1 — Backend
+    Migration entité Etablissement     :p1a, 2026-08-11, 1d
+    Migration 7 tables CMS             :p1b, after p1a, 2d
+    Seeds thèmes + pages défaut        :p1c, after p1b, 1d
+    Service public établissement       :p1d, after p1a, 2d
+    CRUD CMS services                  :p1e, after p1b, 3d
+    Controller API publique            :p1f, after p1d, 2d
+    Controller API CMS                 :p1g, after p1e, 2d
+    Cache Redis + invalidation         :p1h, after p1f, 1d
+    Permissions RBAC + migration       :p1i, after p1g, 1d
+
+    section Phase 2 — Frontend public
+    Routes /e/:code (TanStack)         :p2a, after p1f, 2d
+    PublicLayout + Header/Footer       :p2b, after p2a, 2d
+    CmsPageRenderer (18 sections)      :p2c, after p2b, 3d
+    Page galerie + contact             :p2d, after p2c, 2d
+
+    section Phase 3 — Frontend éditeur
+    Dashboard CMS                      :p3a, after p1g, 1d
+    Gestion pages (CRUD)               :p3b, after p3a, 2d
+    Éditeur sections (drag & drop)     :p3c, after p3b, 3d
+    Bibliothèque médias                :p3d, after p3a, 2d
+    Gestion thèmes                     :p3e, after p3d, 2d
+    Navigation menus                   :p3f, after p3e, 1d
+    Widgets + historique               :p3g, after p3f, 2d
+
+    section Phase 4 — Polish
+    Tests E2E                          :p4a, after p3c, 2d
+    SEO meta + sitemap                 :p4b, after p2d, 1d
+    Performance (Lighthouse)           :p4c, after p4a, 1d
+    Documentation                      :p4d, after p4c, 1d
+    </pre>
+  </div>
+
+  <h3>Phase 1 — Backend (9 jours)</h3>
+  <div class="timeline">
+    <div class="timeline-item">
+      <span class="timeline-phase">Jour 1</span>
+      <h4>Migration entité Etablissement</h4>
+      <p>Migration SQL : 9 nouvelles colonnes + index. Mise à jour entity TypeORM. Seed pays par défaut = 'Cameroun'.</p>
+    </div>
+    <div class="timeline-item">
+      <span class="timeline-phase">Jours 2-3</span>
+      <h4>Migrations tables CMS</h4>
+      <p>7 CREATE TABLE (cms_pages, cms_sections, cms_medias, cms_themes, cms_menus, cms_widgets, cms_versions). Index + contraintes FK + RLS.</p>
+    </div>
+    <div class="timeline-item">
+      <span class="timeline-phase">Jour 4</span>
+      <h4>Seeds système</h4>
+      <p>6 thèmes prédéfinis + page accueil par défaut pour chaque établissement existant. Menu header par défaut.</p>
+    </div>
+    <div class="timeline-item">
+      <span class="timeline-phase">Jours 5-6</span>
+      <h4>Services + Controllers</h4>
+      <p>public-etablissement.service (projection restrictive), cms-page.service, cms-section.service, cms-media.service, cms-theme.service, cms-menu.service, cms-widget.service, cms-version.service.</p>
+    </div>
+    <div class="timeline-item">
+      <span class="timeline-phase">Jours 7-8</span>
+      <h4>API publique + Cache</h4>
+      <p>8 endpoints publics avec optionalAuthMiddleware. Cache Redis TTL 300s. Invalidation à chaque mutation CMS. Rate limiter.</p>
+    </div>
+    <div class="timeline-item">
+      <span class="timeline-phase">Jour 9</span>
+      <h4>Permissions RBAC</h4>
+      <p>Migration : 12 permissions CMS. Attribution DEFAULT_ROLE_PERMISSIONS. Guards sur tous les endpoints CMS.</p>
+    </div>
+  </div>
+
+  <h3>Phase 2 — Frontend public (9 jours)</h3>
+  <div class="timeline">
+    <div class="timeline-item">
+      <span class="timeline-phase">Jours 10-11</span>
+      <h4>Routes + Layout public</h4>
+      <p>5 routes TanStack Router. PublicLayout avec CSS vars dynamiques. PublicHeader + PublicFooter.</p>
+    </div>
+    <div class="timeline-item">
+      <span class="timeline-phase">Jours 12-14</span>
+      <h4>CmsPageRenderer</h4>
+      <p>18 composants de section. Drag & drop preview. Responsive 100px-2560px. Dark mode support.</p>
+    </div>
+    <div class="timeline-item">
+      <span class="timeline-phase">Jours 15-16</span>
+      <h4>Pages spécialisées</h4>
+      <p>Galerie (masonry + lightbox), Contact (formulaire + carte), Inscriptions (stepper).</p>
+    </div>
+  </div>
+
+  <h3>Phase 3 — Frontend éditeur (13 jours)</h3>
+  <div class="timeline">
+    <div class="timeline-item">
+      <span class="timeline-phase">Jours 17-22</span>
+      <h4>Éditeur CMS complet</h4>
+      <p>Dashboard, CRUD pages, éditeur sections drag & drop, preview live, bibliothèque médias, thèmes, menus, widgets, historique.</p>
+    </div>
+  </div>
+
+  <h3>Phase 4 — Polish (5 jours)</h3>
+  <div class="timeline">
+    <div class="timeline-item">
+      <span class="timeline-phase">Jours 23-27</span>
+      <h4>Tests, SEO, performance, documentation</h4>
+      <p>Tests E2E complets. SEO meta tags + sitemap.xml. Lighthouse score > 90. Documentation technique + guide utilisateur.</p>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value">~27</div>
+      <div class="stat-label">Jours ouvrés total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">~45</div>
+      <div class="stat-label">Fichiers à créer</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">~8 000</div>
+      <div class="stat-label">Lignes de code estimées</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">9</div>
+      <div class="stat-label">Migrations SQL</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ S13 -->
+<section id="s13">
+  <div class="section-header">
+    <div class="section-num">13</div>
+    <h2>Migrations SQL</h2>
+  </div>
+
+  <h3>13.1 — Migration entité Etablissement</h3>
+  <pre><code>-- backend/database/migrations/180-enrichissement-etablissement.sql
+-- Enrichissement entité Etablissement — 9 nouveaux champs
+-- Idempotent (IF NOT EXISTS)
+
+-- Localisation géographique
+ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS "pays" varchar(50) DEFAULT 'Cameroun';
+ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS "region" varchar(100);
+ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS "quartier" varchar(150);
+
+-- Identifiants officiels
+ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS "numeroEnregistrement" varchar(50);
+ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS "numeroIdentification" varchar(50);
+ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS "numeroAutorisation" varchar(50);
+
+-- Coordonnées GPS
+ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS "latitude" decimal(10,7);
+ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS "longitude" decimal(10,7);
+
+-- Contenu public
+ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS "descriptionPublique" text;
+
+-- Index
+CREATE INDEX IF NOT EXISTS "idx_etablissements_pays" ON etablissements ("pays");
+CREATE INDEX IF NOT EXISTS "idx_etablissements_gps" ON etablissements ("latitude", "longitude");</code></pre>
+
+  <h3>13.2 — Migration tables CMS (7 tables)</h3>
+  <pre><code>-- backend/database/migrations/181-cms-tables.sql
+-- Système CMS — 7 tables + RLS + index
+
+-- ═══ CMS PAGES ═══
+CREATE TABLE IF NOT EXISTS cms_pages (
+    "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    "etablissementId" uuid NOT NULL REFERENCES etablissements(id),
+    "titre" varchar(200) NOT NULL,
+    "slug" varchar(200) NOT NULL,
+    "template" varchar(50) DEFAULT 'custom',
+    "statut" varchar(20) DEFAULT 'BROUILLON',
+    "ordre" int DEFAULT 0,
+    "pageParentId" uuid REFERENCES cms_pages(id) ON DELETE SET NULL,
+    "metadata" jsonb,
+    "seo" jsonb,
+    "estPageAccueil" boolean DEFAULT false,
+    "createdAt" timestamp DEFAULT now(),
+    "updatedAt" timestamp DEFAULT now(),
+    UNIQUE ("etablissementId", "slug")
+);
+CREATE INDEX IF NOT EXISTS "idx_cms_pages_etab" ON cms_pages ("etablissementId");
+CREATE INDEX IF NOT EXISTS "idx_cms_pages_statut" ON cms_pages ("statut");
+
+-- ═══ CMS SECTIONS ═══
+CREATE TABLE IF NOT EXISTS cms_sections (
+    "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    "pageId" uuid NOT NULL REFERENCES cms_pages(id) ON DELETE CASCADE,
+    "type" varchar(50) NOT NULL,
+    "contenu" jsonb NOT NULL DEFAULT '{}',
+    "ordre" int DEFAULT 0,
+    "styles" jsonb,
+    "visible" boolean DEFAULT true,
+    "anchorId" varchar(50),
+    "createdAt" timestamp DEFAULT now(),
+    "updatedAt" timestamp DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS "idx_cms_sections_page" ON cms_sections ("pageId");
+
+-- ═══ CMS MEDIAS ═══
+CREATE TABLE IF NOT EXISTS cms_medias (
+    "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    "etablissementId" uuid NOT NULL REFERENCES etablissements(id),
+    "nom" varchar(255) NOT NULL,
+    "type" varchar(20) NOT NULL,
+    "url" varchar(500) NOT NULL,
+    "alt" varchar(255),
+    "taille" integer,
+    "mimeType" varchar(50),
+    "largeur" integer,
+    "hauteur" integer,
+    "metadata" jsonb,
+    "dossier" varchar(100),
+    "createdAt" timestamp DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS "idx_cms_medias_etab" ON cms_medias ("etablissementId");
+CREATE INDEX IF NOT EXISTS "idx_cms_medias_type" ON cms_medias ("type");
+
+-- ═══ CMS THEMES ═══
+CREATE TABLE IF NOT EXISTS cms_themes (
+    "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    "etablissementId" uuid NOT NULL REFERENCES etablissements(id),
+    "nom" varchar(100) NOT NULL,
+    "variables" jsonb NOT NULL DEFAULT '{}',
+    "polices" jsonb,
+    "actif" boolean DEFAULT false,
+    "estSysteme" boolean DEFAULT false,
+    "createdAt" timestamp DEFAULT now(),
+    "updatedAt" timestamp DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS "idx_cms_themes_etab" ON cms_themes ("etablissementId");
+
+-- ═══ CMS MENUS ═══
+CREATE TABLE IF NOT EXISTS cms_menus (
+    "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    "etablissementId" uuid NOT NULL REFERENCES etablissements(id),
+    "nom" varchar(100) NOT NULL,
+    "emplacement" varchar(30) DEFAULT 'header',
+    "items" jsonb NOT NULL DEFAULT '[]',
+    "createdAt" timestamp DEFAULT now(),
+    "updatedAt" timestamp DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS "idx_cms_menus_etab" ON cms_menus ("etablissementId");
+
+-- ═══ CMS WIDGETS ═══
+CREATE TABLE IF NOT EXISTS cms_widgets (
+    "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    "etablissementId" uuid NOT NULL REFERENCES etablissements(id),
+    "type" varchar(50) NOT NULL,
+    "titre" varchar(200),
+    "config" jsonb NOT NULL DEFAULT '{}',
+    "emplacement" varchar(30) DEFAULT 'sidebar',
+    "ordre" int DEFAULT 0,
+    "actif" boolean DEFAULT true,
+    "createdAt" timestamp DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS "idx_cms_widgets_etab" ON cms_widgets ("etablissementId");
+
+-- ═══ CMS VERSIONS ═══
+CREATE TABLE IF NOT EXISTS cms_versions (
+    "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    "etablissementId" uuid NOT NULL REFERENCES etablissements(id),
+    "entiteType" varchar(50) NOT NULL,
+    "entiteId" uuid NOT NULL,
+    "snapshot" jsonb NOT NULL,
+    "auteurId" uuid,
+    "commentaire" varchar(255),
+    "version" int DEFAULT 1,
+    "createdAt" timestamp DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS "idx_cms_versions_etab_entite"
+    ON cms_versions ("etablissementId", "entiteType", "entiteId");
+
+-- ═══ ROW-LEVEL SECURITY ═══
+DO $$
+DECLARE
+    t text;
+BEGIN
+    FOREACH t IN ARRAY ARRAY['cms_pages', 'cms_sections', 'cms_medias',
+                              'cms_themes', 'cms_menus', 'cms_widgets', 'cms_versions']
+    LOOP
+        EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
+        EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', t);
+    END LOOP;
+END $$;
+
+-- Policies (etablissementId isolation)
+-- Note: cms_sections utilise pageId → join vers cms_pages pour le RLS
+-- Les autres tables ont etablissementId direct
+
+-- ═══ SEEDS — 6 thèmes système ═══
+INSERT INTO cms_themes ("etablissementId", nom, variables, "estSysteme", actif)
+SELECT
+    e.id,
+    'Classique Vert',
+    '{"couleurFond":"#ffffff","couleurTexte":"#212529","couleurPrimaire":"#28a745","couleurSecondaire":"#007bff","couleurAccent":"#ffc107","policeTitres":"Playfair Display","policeCorps":"Inter","styleBordures":"rounded"}'::jsonb,
+    true, true
+FROM etablissements e
+WHERE e.actif = true
+ON CONFLICT DO NOTHING;</code></pre>
+
+  <h3>13.3 — Migration permissions CMS</h3>
+  <pre><code>-- backend/database/migrations/182-cms-permissions.sql
+-- Permissions RBAC pour le module CMS
+
+-- Création des permissions
+DO $$
+DECLARE
+    perms text[] := ARRAY[
+        'cms:pages:view', 'cms:pages:create', 'cms:pages:edit',
+        'cms:pages:publish', 'cms:pages:delete',
+        'cms:sections:view', 'cms:sections:create', 'cms:sections:edit',
+        'cms:sections:delete',
+        'cms:medias:view', 'cms:medias:upload', 'cms:medias:delete',
+        'cms:themes:view', 'cms:themes:manage',
+        'cms:menus:manage',
+        'cms:widgets:manage',
+        'cms:versions:view', 'cms:versions:restore'
+    ];
+    p text;
+    mod_id uuid;
+BEGIN
+    -- Module CMS dans le catalogue
+    INSERT INTO modules_catalogue (code, nom, categorie, actifParDefaut, estSysteme)
+    VALUES ('cms', 'CMS — Pages publiques', 'PREMIUM', false, true)
+    ON CONFLICT (code) DO NOTHING;
+
+    SELECT id INTO mod_id FROM modules_catalogue WHERE code = 'cms';
+
+    FOREACH p IN ARRAY perms
+    LOOP
+        INSERT INTO permissions (code, libelle, module, "moduleCatalogueId")
+        VALUES (p, initcap(split_part(p, ':', 2)) || ' — ' || split_part(p, ':', 3),
+                'cms', mod_id)
+        ON CONFLICT (code) DO NOTHING;
+    END LOOP;
+
+    -- Attribution ADMIN + CHEF_ETABLISSEMENT (toutes permissions)
+    INSERT INTO role_permissions ("roleId", "permissionId")
+    SELECT r.id, p.id
+    FROM roles r
+    CROSS JOIN permissions p
+    WHERE r.code IN ('ADMIN', 'CHEF_ETABLISSEMENT')
+      AND p.module = 'cms'
+    ON CONFLICT DO NOTHING;
+
+    -- Attribution DIRECTEUR (sauf publish, themes:manage, widgets:manage, versions:restore)
+    INSERT INTO role_permissions ("roleId", "permissionId")
+    SELECT r.id, p.id
+    FROM roles r
+    CROSS JOIN permissions p
+    WHERE r.code = 'DIRECTEUR'
+      AND p.module = 'cms'
+      AND p.code NOT IN ('cms:themes:manage', 'cms:widgets:manage', 'cms:versions:restore')
+    ON CONFLICT DO NOTHING;
+END $$;</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ S14 -->
+<section id="s14">
+  <div class="section-header">
+    <div class="section-num">14</div>
+    <h2>Tests & Validation</h2>
+  </div>
+
+  <h3>14.1 — Plan de tests</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Catégorie</th><th>Tests</th><th>Outil</th><th>Couverture</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Unitaires backend</td>
+          <td>Services CMS (CRUD, projection, cache)</td>
+          <td>Jest</td>
+          <td>> 80%</td>
+        </tr>
+        <tr>
+          <td>Intégration API</td>
+          <td>Endpoints publics + CMS (auth, RLS, cache)</td>
+          <td>Jest + supertest</td>
+          <td>> 70%</td>
+        </tr>
+        <tr>
+          <td>E2E — Pages publiques</td>
+          <td>Rendu /e/:code, navigation, responsive</td>
+          <td>Playwright</td>
+          <td>> 90%</td>
+        </tr>
+        <tr>
+          <td>E2E — Éditeur CMS</td>
+          <td>CRUD pages, drag & drop sections, upload médias</td>
+          <td>Playwright</td>
+          <td>> 80%</td>
+        </tr>
+        <tr>
+          <td>Sécurité</td>
+          <td>Projection restrictive, cross-tenant, XSS, rate limit</td>
+          <td>Manuel + automatisé</td>
+          <td>100% critiques</td>
+        </tr>
+        <tr>
+          <td>Performance</td>
+          <td>Lighthouse > 90, TTFM < 200ms, cache hit > 95%</td>
+          <td>Lighthouse CI</td>
+          <td>> 90 score</td>
+        </tr>
+        <tr>
+          <td>Accessibilité</td>
+          <td>WCAG 2.1 AA, contrastes, aria-labels</td>
+          <td>axe-core</td>
+          <td>> 95%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>14.2 — Checklist de validation</h3>
+  <div class="card-grid">
+    <div class="card card-highlight">
+      <h4>Backend</h4>
+      <ul style="list-style: none; padding: 0;">
+        <li>&#x2610; 9 champs Etablissement ajoutés + migration</li>
+        <li>&#x2610; 7 tables CMS créées + RLS activé</li>
+        <li>&#x2610; Seeds thèmes + pages défaut exécutés</li>
+        <li>&#x2610; Projection restrictive vérifiée (pas de champs privés)</li>
+        <li>&#x2610; Cache Redis TTL 300s + invalidation</li>
+        <li>&#x2610; Rate limiter sur endpoints publics</li>
+        <li>&#x2610; 18 permissions CMS attribuées</li>
+        <li>&#x2610; Multi-tenant strict (cross-tenant = 403)</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h4>Frontend public</h4>
+      <ul style="list-style: none; padding: 0;">
+        <li>&#x2610; Routes /e/:code fonctionnelles</li>
+        <li>&#x2610; PublicLayout avec CSS vars dynamiques</li>
+        <li>&#x2610; 18 types de sections rendus</li>
+        <li>&#x2610; Responsive 320px → 2560px</li>
+        <li>&#x2610; Dark mode supporté</li>
+        <li>&#x2610; SEO meta tags dynamiques</li>
+        <li>&#x2610; Lighthouse score > 90</li>
+        <li>&#x2610; i18n FR/EN complet</li>
+      </ul>
+    </div>
+    <div class="card card-highlight">
+      <h4>Frontend éditeur</h4>
+      <ul style="list-style: none; padding: 0;">
+        <li>&#x2610; CRUD pages complet</li>
+        <li>&#x2610; Drag & drop sections fonctionnel</li>
+        <li>&#x2610; Preview live avant publication</li>
+        <li>&#x2610; Upload médias (images, docs)</li>
+        <li>&#x2610; Thème personnalisable (couleurs, polices)</li>
+        <li>&#x2610; Menus éditables (drag & drop)</li>
+        <li>&#x2610; Historique versions + rollback</li>
+        <li>&#x2610; Permissions granulaires respectées</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</div><!-- /.container -->
+
+<footer>
+  <div class="container">
+    <p><strong>eLISAschool</strong> — Rapport d'implémentation : Pages Publiques & CMS par Établissement</p>
+    <p>Version 1.0 — 11 août 2026 — Auteur : franck arlos chendjou</p>
+    <p style="margin-top: 12px; opacity: 0.7;">Document généré pour implémentation directe. Toutes les spécifications sont prêtes pour le développement.</p>
+  </div>
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'default',
+    securityLevel: 'loose',
+    fontFamily: 'Segoe UI, system-ui, sans-serif',
+    flowchart: { curve: 'basis', padding: 16 },
+    sequence: { actorMargin: 60, messageMargin: 40 }
+  });
+</script>
+</body>
+</html>

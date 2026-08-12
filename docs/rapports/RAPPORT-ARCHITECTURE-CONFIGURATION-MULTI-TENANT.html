@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eLISAschool — Rapport d'Architecture : Système de Configuration Multi-Tenant</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #28a745;
+            --primary-dark: #1e7e34;
+            --secondary: #ffc107;
+            --accent: #007bff;
+            --danger: #dc3545;
+            --warning: #fd7e14;
+            --success: #20c997;
+            --bg: #f8f9fa;
+            --surface: #ffffff;
+            --text: #212529;
+            --text-muted: #6c757d;
+            --border: #dee2e6;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 15px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 3rem 2rem;
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .header h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .header .subtitle { font-size: 1.1rem; opacity: 0.9; }
+        .header .meta { margin-top: 1rem; font-size: 0.85rem; opacity: 0.7; }
+        
+        /* Sections */
+        .section {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+        .section h2 {
+            font-size: 1.5rem;
+            color: var(--primary-dark);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary);
+        }
+        .section h3 {
+            font-size: 1.2rem;
+            color: var(--text);
+            margin: 1.5rem 0 0.75rem;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            text-align: center;
+            border-left: 4px solid var(--primary);
+        }
+        .stat-card .value { font-size: 2rem; font-weight: 800; color: var(--primary-dark); }
+        .stat-card .label { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: var(--text);
+        }
+        tr:hover { background: #f8f9fa; }
+        
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-primary { background: var(--primary); color: white; }
+        .badge-secondary { background: var(--secondary); color: #212529; }
+        .badge-accent { background: var(--accent); color: white; }
+        .badge-danger { background: var(--danger); color: white; }
+        .badge-warning { background: var(--warning); color: white; }
+        .badge-success { background: var(--success); color: white; }
+        
+        /* Code blocks */
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin: 1rem 0;
+        }
+        code {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        }
+        .inline-code {
+            background: #f1f3f4;
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: #d63384;
+        }
+        
+        /* Callout */
+        .callout {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 4px solid;
+        }
+        .callout-info { background: #e7f3ff; border-color: var(--accent); }
+        .callout-warning { background: #fff8e1; border-color: var(--warning); }
+        .callout-success { background: #e8f5e9; border-color: var(--success); }
+        .callout-danger { background: #ffebee; border-color: var(--danger); }
+        .callout-title { font-weight: 600; margin-bottom: 0.5rem; }
+        
+        /* Mermaid */
+        .mermaid {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+        
+        /* Chart container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1.5rem 0;
+        }
+        
+        /* Flow diagram */
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+        .flow-step {
+            background: white;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 0.75rem 1.25rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .flow-arrow {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+        
+        /* Priority list */
+        .priority-list {
+            list-style: none;
+            counter-reset: priority;
+        }
+        .priority-list li {
+            counter-increment: priority;
+            padding: 1rem 1rem 1rem 3.5rem;
+            margin: 0.5rem 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            position: relative;
+            border-left: 4px solid var(--primary);
+        }
+        .priority-list li::before {
+            content: counter(priority);
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 2rem;
+            height: 2rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+        .priority-list li.high { border-left-color: var(--danger); }
+        .priority-list li.high::before { background: var(--danger); }
+        .priority-list li.medium { border-left-color: var(--warning); }
+        .priority-list li.medium::before { background: var(--warning); }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .header h1 { font-size: 1.5rem; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+        
+        /* Print */
+        @media print {
+            body { background: white; }
+            .section { box-shadow: none; border: 1px solid var(--border); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏗️ Architecture de Configuration Multi-Tenant</h1>
+            <div class="subtitle">Rapport d'analyse approfondi — Système de paramètres et priorités</div>
+            <div class="meta">eLISAschool v9 • Généré le 12 août 2026 • Version 1.0</div>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="section">
+            <h2>📊 Résumé Exécutif</h2>
+            <p>Ce rapport présente une analyse complète du système de configuration multi-tenant d'eLISAschool. Le système utilise une <strong>architecture en cascade à 4 niveaux</strong> permettant une flexibilité maximale tout en maintenant une cohérence globale.</p>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="value">316</div>
+                    <div class="label">Paramètres globaux</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">222</div>
+                    <div class="label">Overrides établissement</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">6</div>
+                    <div class="label">Catégories</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value">48</div>
+                    <div class="label">Modules distincts</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Overview -->
+        <div class="section">
+            <h2>🏛️ Architecture Globale</h2>
+            <p>Le système de configuration repose sur une <strong>source unique de vérité</strong> : la table <code class="inline-code">parametres_systeme</code>. Chaque paramètre peut avoir une valeur globale (partagée) et/ou des overrides par établissement.</p>
+            
+            <div class="mermaid">
+graph TB
+    subgraph "🌍 Niveau 1 : Global / Plateforme"
+        G[Paramètre Global<br/>etablissementId = NULL]
+    end
+    
+    subgraph "🏢 Niveau 2 : Établissement / Tenant"
+        E[Override Établissement<br/>etablissementId = UUID]
+    end
+    
+    subgraph "💻 Niveau 3 : Application"
+        A[Code métier<br/>getParamBoolean]
+    end
+    
+    G -->|Fallback| E
+    E -->|Résolution| A
+    
+    style G fill:#e8f5e9,stroke:#28a745,stroke-width:3px
+    style E fill:#fff8e1,stroke:#ffc107,stroke-width:3px
+    style A fill:#e7f3ff,stroke:#007bff,stroke-width:3px
+            </div>
+            
+            <div class="callout callout-info">
+                <div class="callout-title">💡 Principe fondamental</div>
+                <p>La résolution suit toujours l'ordre : <strong>Établissement → Global → Défaut</strong>. Si un override existe pour l'établissement, il est utilisé. Sinon, on fallback vers le paramètre global.</p>
+            </div>
+        </div>
+
+        <!-- Cascade Resolution -->
+        <div class="section">
+            <h2>🔄 Cascade de Résolution</h2>
+            <p>Quand un paramètre est demandé pour un établissement, le système suit cette cascade :</p>
+            
+            <ol class="priority-list">
+                <li class="high">
+                    <strong>Override Établissement</strong> — <code class="inline-code">WHERE cle = X AND etablissementId = Y</code><br/>
+                    <small>Valeur spécifique à l'établissement. Priorité maximale.</small>
+                </li>
+                <li class="medium">
+                    <strong>Paramètre Global</strong> — <code class="inline-code">WHERE cle = X AND etablissementId IS NULL</code><br/>
+                    <small>Valeur par défaut pour tous les établissements. Fallback.</small>
+                </li>
+                <li>
+                    <strong>Valeur par défaut</strong> — <code class="inline-code">defaultValue</code> passé en argument<br/>
+                    <small>Utilisé si aucun paramètre trouvé en base.</small>
+                </li>
+            </ol>
+            
+            <h3>Exemple concret</h3>
+            <pre><code class="language-typescript">// Code métier dans un service
+const requireValidation = await getParamBoolean(
+    'bulletins.require_validation', 
+    { etablissementId: 'abc-123', defaultValue: false }
+);
+
+// Cascade de résolution :
+// 1. Cherche: cle='bulletins.require_validation' AND etablissementId='abc-123'
+//    → Trouvé ? Retourne la valeur (ex: true)
+// 2. Sinon cherche: cle='bulletins.require_validation' AND etablissementId IS NULL
+//    → Trouvé ? Retourne la valeur globale (ex: false)
+// 3. Sinon retourne: defaultValue (false)</code></pre>
+        </div>
+
+        <!-- Scenario Global False / Etablissement True -->
+        <div class="section">
+            <h2>⚡ Scénario : Global=false, Établissement=true</h2>
+            <p><strong>Question :</strong> Que se passe-t-il si globalement un paramètre vaut <code class="inline-code">false</code> et que l'établissement a un override à <code class="inline-code">true</code> ?</p>
+            
+            <div class="callout callout-success">
+                <div class="callout-title">✅ Réponse : L'établissement EMPIORTE toujours</div>
+                <p>La valeur <strong>true</strong> de l'établissement sera utilisée. L'override établissement a <strong>toujours la priorité</strong> sur le paramètre global, quelle que soit la valeur.</p>
+            </div>
+            
+            <div class="mermaid">
+sequenceDiagram
+    participant Code as Code métier
+    participant Service as ConfigurationService
+    participant DB as Base de données
+    
+    Code->>Service: getParamBoolean('feature.actif', {etablissementId: 'E1'})
+    
+    Service->>DB: SELECT * FROM parametres_systeme<br/>WHERE cle='feature.actif'<br/>AND etablissementId='E1'
+    DB-->>Service: ✅ Trouvé : valeur='true'
+    
+    Note over Service: Override trouvé !<br/>Retourne 'true' immédiatement
+    
+    Service-->>Code: true
+    
+    Note over Code: L'établissement E1<br/>utilise la valeur TRUE<br/>même si global = FALSE
+            </div>
+            
+            <h3>Matrice de décision</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Valeur Global</th>
+                        <th>Valeur Établissement</th>
+                        <th>Valeur Utilisée</th>
+                        <th>Explication</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code class="inline-code">false</code></td>
+                        <td><code class="inline-code">true</code></td>
+                        <td><span class="badge badge-success">true</span></td>
+                        <td>Override établissement prioritaire</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">true</code></td>
+                        <td><code class="inline-code">false</code></td>
+                        <td><span class="badge badge-danger">false</span></td>
+                        <td>Override établissement prioritaire</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">false</code></td>
+                        <td><em>non défini</em></td>
+                        <td><span class="badge badge-secondary">false</span></td>
+                        <td>Fallback vers global</td>
+                    </tr>
+                    <tr>
+                        <td><code class="inline-code">true</code></td>
+                        <td><em>non défini</em></td>
+                        <td><span class="badge badge-primary">true</span></td>
+                        <td>Fallback vers global</td>
+                    </tr>
+                    <tr>
+                        <td><em>non défini</em></td>
+                        <td><em>non défini</em></td>
+                        <td><span class="badge badge-warning">defaultValue</span></td>
+                        <td>Valeur par défaut du code</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Multi-Level Cascade -->
+        <div class="section">
+            <h2>🏗️ Cascade Multi-Niveaux (SaaS)</h2>
+            <p>Au-delà des paramètres système, eLISAschool implémente plusieurs systèmes de cascade pour différentes fonctionnalités SaaS :</p>
+            
+            <h3>1. Feature Flags (Fonctionnalités)</h3>
+            <div class="mermaid">
+graph LR
+    A[Plan Abonnement<br/>featureFlags] -->|Défaut| D[Résultat]
+    B[Override Tenant<br/>FeatureFlagTenant] -->|Priorité max| D
+    C[Modules Inclus<br/>plan.modulesInclus] -->|Activation auto| D
+    
+    B -.->|Écrase| A
+    C -.->|Complète| A
+    
+    style B fill:#ffebee,stroke:#dc3545,stroke-width:3px
+    style A fill:#e8f5e9,stroke:#28a745,stroke-width:2px
+    style C fill:#e7f3ff,stroke:#007bff,stroke-width:2px
+            </div>
+            
+            <h3>2. Modules (Activation/Désactivation)</h3>
+            <div class="flow-diagram">
+                <div class="flow-step">Catalogue<br/><small>actifParDefaut</small></div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">Plan<br/><small>modulesInclus</small></div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">Suppléments<br/><small>AbonnementModule</small></div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">Override<br/><small>ParametreSysteme</small></div>
+            </div>
+            
+            <h3>3. Tranches de Pricing (Facturation)</h3>
+            <div class="flow-diagram">
+                <div class="flow-step">TrancheSupplement<br/><small>Établissement</small></div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">TrancheGroupe<br/><small>Groupe</small></div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">TrancheEleves<br/><small>Plan</small></div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-step">Système<br/><small>Défaut</small></div>
+            </div>
+        </div>
+
+        <!-- Database Schema -->
+        <div class="section">
+            <h2>🗄️ Schéma de Base de Données</h2>
+            <div class="mermaid">
+erDiagram
+    PARAMETRES_SYSTEME {
+        uuid id PK
+        varchar cle "Clé unique par établissement"
+        text valeur "Valeur JSON string"
+        enum typeValeur "STRING|NUMBER|BOOLEAN|JSON|ARRAY|ENCRYPTED"
+        enum categorie "SYSTEME|SECURITE|MODULE|NOTIFICATION|REGIONAL|CUSTOM"
+        varchar module "Module associé (nullable)"
+        uuid etablissementId "NULL = global, UUID = override"
+        uuid groupeEtablissementId "Cascade intermédiaire"
+        boolean modifiableRuntime "Modifiable sans restart"
+        boolean visible "Visible dans l'UI admin"
+        boolean propageable "Peut être propagé aux enfants"
+        int ordre "Ordre d'affichage"
+    }
+    
+    ETABLISSEMENTS {
+        uuid id PK
+        varchar nom
+        varchar code
+    }
+    
+    GROUPES_ETABLISSEMENTS {
+        uuid id PK
+        varchar nom
+    }
+    
+    ETABLISSEMENTS ||--o{ PARAMETRES_SYSTEME : "peut avoir des overrides"
+    GROUPES_ETABLISSEMENTS ||--o{ PARAMETRES_SYSTEME : "cascade intermédiaire"
+            </div>
+            
+            <div class="callout callout-warning">
+                <div class="callout-title">⚠️ Contrainte UNIQUE</div>
+                <p>La contrainte <code class="inline-code">UNIQUE (cle, etablissementId)</code> garantit qu'un même paramètre ne peut avoir qu'une seule valeur par établissement (ou une seule valeur globale si <code class="inline-code">etablissementId IS NULL</code>).</p>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="section">
+            <h2>📈 Statistiques Détaillées</h2>
+            
+            <h3>Répartition par Catégorie</h3>
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+            
+            <h3>Top 10 Modules (nombre de paramètres)</h3>
+            <div class="chart-container">
+                <canvas id="moduleChart"></canvas>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Catégorie</th>
+                        <th>Nombre</th>
+                        <th>Pourcentage</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge badge-primary">MODULE</span></td>
+                        <td>239</td>
+                        <td>75.6%</td>
+                        <td>Paramètres spécifiques aux modules (finances, auth, bulletins...)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-secondary">CUSTOM</span></td>
+                        <td>42</td>
+                        <td>13.3%</td>
+                        <td>Paramètres personnalisés créés par les administrateurs</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-danger">SECURITE</span></td>
+                        <td>20</td>
+                        <td>6.3%</td>
+                        <td>Paramètres de sécurité (MFA, sessions, mots de passe...)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-warning">NOTIFICATION</span></td>
+                        <td>7</td>
+                        <td>2.2%</td>
+                        <td>Paramètres de notification (emails, SMS, push...)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-accent">SYSTEME</span></td>
+                        <td>4</td>
+                        <td>1.3%</td>
+                        <td>Paramètres système (maintenance, backup, logs...)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-success">REGIONAL</span></td>
+                        <td>4</td>
+                        <td>1.3%</td>
+                        <td>Paramètres régionaux (fuseau horaire, devise, langue...)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Code Implementation -->
+        <div class="section">
+            <h2>💻 Implémentation Technique</h2>
+            
+            <h3>Service de Résolution (extrait)</h3>
+            <pre><code class="language-typescript">// backend/src/modules/configuration/services/configuration.service.ts
+
+async getParametre&lt;T = any&gt;(cle: string, etablissementId?: string): Promise&lt;T | null&gt; {
+    const cacheKey = etablissementId ? `${cle}:${etablissementId}` : cle;
+    
+    // 1. Vérifier le cache
+    if (this.cache.parametres.has(cacheKey) && this.isCacheValid()) {
+        return this.cache.parametres.get(cacheKey) as T;
+    }
+
+    // 2. Chercher d'abord le paramètre scopé à l'établissement
+    if (etablissementId) {
+        const paramScope = await this.parametreRepository.findOne({
+            where: { cle, etablissementId }
+        });
+        if (paramScope) {
+            const value = this.parseParametreValue(paramScope);
+            this.cache.parametres.set(cacheKey, value);
+            return value as T;
+        }
+    }
+
+    // 3. Fallback vers le paramètre global
+    const paramGlobal = await this.parametreRepository.findOne({
+        where: { cle, etablissementId: IsNull() }
+    });
+    
+    if (!paramGlobal) return null;
+
+    const value = this.parseParametreValue(paramGlobal);
+    this.cache.parametres.set(cacheKey, value);
+    return value as T;
+}</code></pre>
+            
+            <h3>Helper Utilitaire</h3>
+            <pre><code class="language-typescript">// backend/src/modules/configuration/utils/config.helper.ts
+
+export async function getParamBoolean(
+    cle: string, 
+    options?: { etablissementId?: string; defaultValue?: boolean }
+): Promise&lt;boolean&gt; {
+    const value = await getParam&lt;boolean | string&gt;(cle, options);
+    if (typeof value === 'boolean') return value;
+    return value === 'true' || value === '1';
+}
+
+// Usage dans un service métier
+const actif = await getParamBoolean('module.actif', { 
+    etablissementId: req.etablissementId, 
+    defaultValue: false 
+});</code></pre>
+        </div>
+
+        <!-- Cache Strategy -->
+        <div class="section">
+            <h2>⚡ Stratégie de Cache</h2>
+            <p>Le système implémente un cache multi-niveaux pour optimiser les performances :</p>
+            
+            <div class="mermaid">
+graph TB
+    subgraph "Niveau 1 : Cache In-Memory"
+        L1[QuickCache<br/>TTL: 60s]
+    end
+    
+    subgraph "Niveau 2 : Cache Service"
+        L2[ConfigurationService.cache<br/>TTL: 60s]
+    end
+    
+    subgraph "Niveau 3 : Cache Redis"
+        L3[Redis<br/>TTL: 5min]
+    end
+    
+    subgraph "Niveau 4 : Base de données"
+        L4[(PostgreSQL)]
+    end
+    
+    L1 -->|Miss| L2
+    L2 -->|Miss| L3
+    L3 -->|Miss| L4
+    L4 -->|Load| L3
+    L3 -->|Load| L2
+    L2 -->|Load| L1
+    
+    style L1 fill:#e8f5e9,stroke:#28a745,stroke-width:2px
+    style L2 fill:#fff8e1,stroke:#ffc107,stroke-width:2px
+    style L3 fill:#e7f3ff,stroke:#007bff,stroke-width:2px
+    style L4 fill:#f8f9fa,stroke:#6c757d,stroke-width:2px
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Niveau</th>
+                        <th>Type</th>
+                        <th>TTL</th>
+                        <th>Usage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>L1</td>
+                        <td>In-Memory (Map)</td>
+                        <td>60s</td>
+                        <td>Accès très fréquents (getParam helper)</td>
+                    </tr>
+                    <tr>
+                        <td>L2</td>
+                        <td>Service Cache</td>
+                        <td>60s</td>
+                        <td>ConfigurationService (parametres, modules)</td>
+                    </tr>
+                    <tr>
+                        <td>L3</td>
+                        <td>Redis</td>
+                        <td>5min</td>
+                        <td>Cache distribué cross-instance</td>
+                    </tr>
+                    <tr>
+                        <td>L4</td>
+                        <td>PostgreSQL</td>
+                        <td>∞</td>
+                        <td>Source de vérité persistante</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Improvements -->
+        <div class="section">
+            <h2>🚀 Pistes d'Amélioration</h2>
+            
+            <h3>1. Optimisations Performance</h3>
+            <ul class="priority-list">
+                <li class="high">
+                    <strong>Cache warming au démarrage</strong><br/>
+                    <small>Précharger les paramètres critiques (auth, modules) au démarrage du serveur pour éviter les cold starts.</small>
+                </li>
+                <li class="medium">
+                    <strong>Batch loading</strong><br/>
+                    <small>Charger tous les paramètres d'un module en une seule requête au lieu d'un appel par paramètre.</small>
+                </li>
+                <li>
+                    <strong>Cache invalidation sélective</strong><br/>
+                    <small>Invalidation par module/catégorie au lieu de tout invalider.</small>
+                </li>
+            </ul>
+            
+            <h3>2. Améliorations Fonctionnelles</h3>
+            <ul class="priority-list">
+                <li class="high">
+                    <strong>Héritage de groupe d'établissements</strong><br/>
+                    <small>Permettre les overrides au niveau groupe (déjà supporté par la colonne <code class="inline-code">groupeEtablissementId</code> mais pas encore exploité).</small>
+                </li>
+                <li class="medium">
+                    <strong>Audit trail amélioré</strong><br/>
+                    <small>Logger systématiquement les changements de paramètres avec avant/après et contexte utilisateur.</small>
+                </li>
+                <li>
+                    <strong>Validation schema</strong><br/>
+                    <small>Utiliser Zod pour valider les valeurs des paramètres selon leur type et leur domaine.</small>
+                </li>
+            </ul>
+            
+            <h3>3. Sécurité</h3>
+            <ul class="priority-list">
+                <li class="high">
+                    <strong>Chiffrement des valeurs sensibles</strong><br/>
+                    <small>Utiliser le type <code class="inline-code">ENCRYPTED</code> pour tous les paramètres contenant des secrets (API keys, tokens...).</small>
+                </li>
+                <li class="medium">
+                    <strong>RBAC granulaire</strong><br/>
+                    <small>Autoriser la modification de certains paramètres uniquement pour des rôles spécifiques (ex: SUPER_ADMIN uniquement pour les paramètres de sécurité).</small>
+                </li>
+                <li>
+                    <strong>Rate limiting sur les writes</strong><br/>
+                    <small>Éviter les abus de modification de paramètres en limitant le nombre de changements par minute.</small>
+                </li>
+            </ul>
+            
+            <h3>4. Observabilité</h3>
+            <ul class="priority-list">
+                <li class="medium">
+                    <strong>Métriques de résolution</strong><br/>
+                    <small>Exposer des métriques sur le taux de cache hit, le temps de résolution, les paramètres les plus demandés.</small>
+                </li>
+                <li>
+                    <strong>Debug mode</strong><br/>
+                    <small>Permettre de tracer la cascade de résolution pour un paramètre donné (utile pour le debugging).</small>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Conclusion -->
+        <div class="section">
+            <h2>✅ Conclusion</h2>
+            <p>Le système de configuration d'eLISAschool est <strong>robuste et flexible</strong>. L'architecture en cascade permet une gestion fine des paramètres tout en maintenant une cohérence globale. Les points clés :</p>
+            
+            <div class="callout callout-success">
+                <div class="callout-title">Points forts</div>
+                <ul>
+                    <li><strong>Source unique de vérité</strong> : table <code class="inline-code">parametres_systeme</code></li>
+                    <li><strong>Cascade multi-niveaux</strong> : Établissement → Global → Défaut</li>
+                    <li><strong>Cache performant</strong> : 3 niveaux (in-memory, service, Redis)</li>
+                    <li><strong>Multi-tenant natif</strong> : isolation par <code class="inline-code">etablissementId</code></li>
+                    <li><strong>Type-safe</strong> : 6 types de valeurs supportés (STRING, NUMBER, BOOLEAN, JSON, ARRAY, ENCRYPTED)</li>
+                </ul>
+            </div>
+            
+            <div class="callout callout-warning">
+                <div class="callout-title">Points d'attention</div>
+                <ul>
+                    <li><strong>Override prioritaire</strong> : un override établissement écrase TOUJOURS le global</li>
+                    <li><strong>Cache TTL</strong> : les changements mettent jusqu'à 60s pour se propager</li>
+                    <li><strong>Contrainte UNIQUE</strong> : une seule valeur par (cle, etablissementId)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem;">
+            <p>Rapport généré automatiquement • eLISAschool v9 • 2026</p>
+            <p>Architecture analysée : <code class="inline-code">configuration.service.ts</code>, <code class="inline-code">config.helper.ts</code>, <code class="inline-code">feature-flags.service.ts</code>, <code class="inline-code">module-resolution.service.ts</code>, <code class="inline-code">tranche-config.service.ts</code></p>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'default',
+            flowchart: { useMaxWidth: true }
+        });
+
+        // Category Chart
+        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+        new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['MODULE', 'CUSTOM', 'SECURITE', 'NOTIFICATION', 'SYSTEME', 'REGIONAL'],
+                datasets: [{
+                    data: [239, 42, 20, 7, 4, 4],
+                    backgroundColor: ['#28a745', '#6c757d', '#dc3545', '#fd7e14', '#007bff', '#20c997'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right' }
+                }
+            }
+        });
+
+        // Module Chart
+        const moduleCtx = document.getElementById('moduleChart').getContext('2d');
+        new Chart(moduleCtx, {
+            type: 'bar',
+            data: {
+                labels: ['finances', 'auth', 'suivi-personnel', 'bulletins', 'periodes', 'notes', 'programmes', 'cartes', 'notifications', 'gamification'],
+                datasets: [{
+                    label: 'Nombre de paramètres',
+                    data: [75, 21, 20, 11, 10, 9, 9, 8, 8, 8],
+                    backgroundColor: '#28a745',
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

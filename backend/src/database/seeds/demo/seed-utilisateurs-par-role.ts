@@ -1,6 +1,6 @@
 import { AppDataSource } from '../../data-source';
 import { Utilisateur, ProfilUtilisateur, StatutUtilisateur, UtilisateurEtablissement, RoleEntity } from '@modules/auth/entities';
-import { Role } from '@shared/enums/roles.enum';
+import { Role, isRolePlateforme } from '@shared/enums/roles.enum';
 import { logger } from '@common/utils/logger.util';
 import * as bcrypt from 'bcryptjs';
 
@@ -13,6 +13,8 @@ interface UserRoleConfig {
     nom: string;
     prenom: string;
     telephone: string;
+    /** true si cet utilisateur a accès au Control Plane (ADR-005) */
+    estPlateforme?: boolean;
 }
 
 const USERS_TO_CREATE: UserRoleConfig[] = [
@@ -57,6 +59,16 @@ const USERS_TO_CREATE: UserRoleConfig[] = [
     { role: Role.RESPONSABLE_INFRASTRUCTURE, email: 'resp.infrastructure@elisaschool.cm', matricule: 'RESPINFRA-001', nom: 'DJOUMESSI', prenom: 'Victor', telephone: '+237690000036' },
     { role: Role.PARENT, email: 'parent@elisaschool.cm', matricule: 'PAR-001', nom: 'PARENT', prenom: 'Test', telephone: '+237690000037' },
     { role: Role.ELEVE, email: 'eleve@elisaschool.cm', matricule: 'ELV-001', nom: 'ELEVE', prenom: 'Test', telephone: '+237690000038' },
+
+    // ==================================
+    // Utilisateurs plateforme (ADR-005 — Control Plane)
+    // Ces utilisateurs ont estPlateforme=true et ne sont PAS liés à un établissement.
+    // ==================================
+    { role: Role.PLATEFORME_ADMIN, email: 'platform.admin@elisaschool.cm', matricule: 'PLATAD-001', nom: 'PLATEFORME', prenom: 'Admin', telephone: '+237691000002', estPlateforme: true },
+    { role: Role.PLATEFORME_SUPPORT, email: 'platform.support@elisaschool.cm', matricule: 'PLATSP-001', nom: 'PLATEFORME', prenom: 'Support', telephone: '+237691000003', estPlateforme: true },
+    { role: Role.PLATEFORME_BILLING, email: 'platform.billing@elisaschool.cm', matricule: 'PLATBI-001', nom: 'PLATEFORME', prenom: 'Billing', telephone: '+237691000004', estPlateforme: true },
+    { role: Role.PLATEFORME_ANALYST, email: 'platform.analyst@elisaschool.cm', matricule: 'PLATAN-001', nom: 'PLATEFORME', prenom: 'Analyst', telephone: '+237691000005', estPlateforme: true },
+    { role: Role.PLATEFORME_AUDITOR, email: 'platform.auditor@elisaschool.cm', matricule: 'PLATAU-001', nom: 'PLATEFORME', prenom: 'Auditor', telephone: '+237691000006', estPlateforme: true },
 ];
 
 export async function seedUtilisateursParRole(
@@ -91,6 +103,7 @@ export async function seedUtilisateursParRole(
             statut: StatutUtilisateur.ACTIF,
             emailVerifie: true,
             langue: 'fr',
+            estPlateforme: config.estPlateforme ?? isRolePlateforme(config.role),
         });
 
         await utilisateurRepo.save(utilisateur);
@@ -104,39 +117,33 @@ export async function seedUtilisateursParRole(
 
         await profilRepo.save(profil);
 
+        // Les utilisateurs plateforme purs ne sont PAS liés à un établissement
+        // (ils opèrent au niveau Control Plane, pas dans un établissement tenant)
+        if (config.estPlateforme && isRolePlateforme(config.role) && config.role !== Role.SUPER_ADMIN) {
+            count++;
+            logger.debug(`  ✓ Utilisateur plateforme créé: ${config.email} → ${config.role} (Control Plane)`);
+            continue;
+        }
+
         const roleEntity = await roleRepo.findOne({ where: { code: config.role } });
         if (!roleEntity) {
             logger.warn(`  ⚠ Rôle non trouvé en base: ${config.role}`);
             continue;
         }
 
-        if (config.role === Role.CHEF_ETABLISSEMENT) {
-            const ue = utilisateurEtablissementRepo.create({
-                utilisateurId: utilisateur.id,
-                etablissementId: etablissementPrincipalId,
-                roleId: roleEntity.id,
-                etablissementPrincipal: true,
-                actif: true,
-                dateDebut: new Date(),
-            });
-            await utilisateurEtablissementRepo.save(ue);
-            count++;
-            logger.debug(`  ✓ Utilisateur créé: ${config.email} → ${config.role} (Établissement: ${etablissementPrincipalId})`);
-        } else {
-            const ue = utilisateurEtablissementRepo.create({
-                utilisateurId: utilisateur.id,
-                etablissementId: etablissementPrincipalId,
-                roleId: roleEntity.id,
-                etablissementPrincipal: true,
-                actif: true,
-                dateDebut: new Date(),
-            });
-            await utilisateurEtablissementRepo.save(ue);
-            count++;
-            logger.debug(`  ✓ Utilisateur créé: ${config.email} → ${config.role} (Établissement: ${etablissementPrincipalId})`);
-        }
+        const ue = utilisateurEtablissementRepo.create({
+            utilisateurId: utilisateur.id,
+            etablissementId: etablissementPrincipalId,
+            roleId: roleEntity.id,
+            etablissementPrincipal: true,
+            actif: true,
+            dateDebut: new Date(),
+        });
+        await utilisateurEtablissementRepo.save(ue);
+        count++;
+        logger.debug(`  ✓ Utilisateur créé: ${config.email} → ${config.role} (Établissement: ${etablissementPrincipalId})`);
     }
 
-    logger.info(`✅ ${count} utilisateurs créés et liés à l'établissement (mot de passe: ${DEFAULT_PASSWORD})`);
+    logger.info(`✅ ${count} utilisateurs créés (mot de passe: ${DEFAULT_PASSWORD})`);
     return count;
 }

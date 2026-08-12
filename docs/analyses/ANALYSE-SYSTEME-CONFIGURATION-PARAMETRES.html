@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyse — Système de Configuration & Paramètres | eLISAschool</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-alt: #334155;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --text-strong: #f8fafc;
+            --accent: #3b82f6;
+            --accent-light: #60a5fa;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --border: #334155;
+            --gradient-1: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            --gradient-2: linear-gradient(135deg, #22c55e, #06b6d4);
+            --gradient-3: linear-gradient(135deg, #f59e0b, #ef4444);
+            --shadow: 0 4px 24px rgba(0,0,0,0.3);
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+        /* Header */
+        .hero {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 50%, #1a1a2e 100%);
+            padding: 80px 0 60px;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .hero h1 {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 800;
+            background: var(--gradient-1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+        .hero .subtitle {
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            color: var(--text-muted);
+            max-width: 700px;
+        }
+        .hero .meta {
+            display: flex;
+            gap: 24px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+        .hero .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            background: var(--bg-card);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+        .hero .meta-item .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        /* Navigation */
+        .toc {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px 32px;
+            margin: -30px auto 40px;
+            position: relative;
+            z-index: 10;
+            box-shadow: var(--shadow);
+        }
+        .toc h2 {
+            font-size: 1.1rem;
+            color: var(--accent-light);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 8px;
+        }
+        .toc a {
+            color: var(--text);
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .toc a:hover {
+            background: var(--bg-card-alt);
+            color: var(--accent-light);
+        }
+        .toc a .num {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 0.8rem;
+            min-width: 24px;
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 48px;
+        }
+        h2 {
+            font-size: clamp(1.3rem, 3vw, 1.7rem);
+            font-weight: 700;
+            color: var(--text-strong);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        h2 .icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        h3 {
+            font-size: 1.15rem;
+            color: var(--accent-light);
+            margin: 28px 0 12px;
+            font-weight: 600;
+        }
+        h4 {
+            font-size: 1rem;
+            color: var(--text-strong);
+            margin: 20px 0 8px;
+            font-weight: 600;
+        }
+        p { margin-bottom: 14px; }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .card-header .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-blue { background: rgba(59,130,246,0.15); color: var(--accent-light); }
+        .badge-green { background: rgba(34,197,94,0.15); color: var(--success); }
+        .badge-orange { background: rgba(245,158,11,0.15); color: var(--warning); }
+        .badge-red { background: rgba(239,68,68,0.15); color: var(--danger); }
+        .badge-cyan { background: rgba(6,182,212,0.15); color: var(--info); }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+        .stat-card.blue::before { background: var(--gradient-1); }
+        .stat-card.green::before { background: var(--gradient-2); }
+        .stat-card.orange::before { background: var(--gradient-3); }
+        .stat-card.cyan::before { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-strong);
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Tables */
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 20px 0;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        thead { background: var(--bg-card-alt); }
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-strong);
+            white-space: nowrap;
+        }
+        td {
+            padding: 10px 16px;
+            border-top: 1px solid var(--border);
+            color: var(--text);
+        }
+        tr:hover td { background: rgba(59,130,246,0.04); }
+
+        /* Code blocks */
+        pre {
+            background: #0d1117;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            margin: 12px 0;
+        }
+        code {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            color: #c9d1d9;
+        }
+        .inline-code {
+            background: rgba(59,130,246,0.1);
+            color: var(--accent-light);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+
+        /* Mermaid */
+        .mermaid {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin: 20px 0;
+            text-align: center;
+            overflow-x: auto;
+        }
+
+        /* Callout boxes */
+        .callout {
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            margin: 20px 0;
+            border-left: 4px solid;
+        }
+        .callout-info {
+            background: rgba(6,182,212,0.08);
+            border-color: var(--info);
+        }
+        .callout-warning {
+            background: rgba(245,158,11,0.08);
+            border-color: var(--warning);
+        }
+        .callout-danger {
+            background: rgba(239,68,68,0.08);
+            border-color: var(--danger);
+        }
+        .callout-success {
+            background: rgba(34,197,94,0.08);
+            border-color: var(--success);
+        }
+        .callout h4 {
+            margin: 0 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .callout p:last-child { margin-bottom: 0; }
+
+        /* Cascade visual */
+        .cascade-visual {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 24px 0;
+        }
+        .cascade-level {
+            display: flex;
+            align-items: stretch;
+            gap: 16px;
+        }
+        .cascade-connector {
+            width: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .cascade-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 3px solid;
+            flex-shrink: 0;
+        }
+        .cascade-line {
+            width: 2px;
+            flex: 1;
+            min-height: 20px;
+        }
+        .cascade-content {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            margin-bottom: 12px;
+        }
+        .cascade-content h4 {
+            margin: 0 0 6px;
+            font-size: 0.95rem;
+        }
+        .cascade-content p {
+            margin: 0;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        .cascade-priority {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 6px;
+        }
+
+        /* Comparison */
+        .vs-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        @media (max-width: 768px) {
+            .vs-grid { grid-template-columns: 1fr; }
+        }
+        .vs-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+        }
+        .vs-card h4 {
+            margin: 0 0 12px;
+            font-size: 1rem;
+        }
+
+        /* Flow steps */
+        .flow-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 20px 0;
+        }
+        .flow-step {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        .flow-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--gradient-1);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .flow-content {
+            flex: 1;
+            padding-bottom: 20px;
+            border-left: 2px solid var(--border);
+            margin-left: 15px;
+            padding-left: 20px;
+        }
+        .flow-content:last-child { border-left: none; padding-bottom: 0; }
+        .flow-content h4 { margin: 0 0 4px; font-size: 0.95rem; }
+        .flow-content p { margin: 0; font-size: 0.875rem; color: var(--text-muted); }
+
+        /* Answer highlight */
+        .answer-box {
+            background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(6,182,212,0.1));
+            border: 2px solid var(--success);
+            border-radius: var(--radius);
+            padding: 28px 32px;
+            margin: 24px 0;
+            position: relative;
+        }
+        .answer-box::before {
+            content: 'R';
+            position: absolute;
+            top: -14px;
+            left: 24px;
+            background: var(--success);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.9rem;
+        }
+        .answer-box h3 {
+            color: var(--success);
+            margin: 0 0 12px;
+        }
+
+        /* Recommendation cards */
+        .rec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+        .rec-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .rec-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+        .rec-card.p0::before { background: var(--danger); }
+        .rec-card.p1::before { background: var(--warning); }
+        .rec-card.p2::before { background: var(--info); }
+        .rec-priority {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        .rec-p0 { background: rgba(239,68,68,0.15); color: var(--danger); }
+        .rec-p1 { background: rgba(245,158,11,0.15); color: var(--warning); }
+        .rec-p2 { background: rgba(6,182,212,0.15); color: var(--info); }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 40px 0;
+            margin-top: 60px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* Print */
+        @media print {
+            body { background: white; color: #1a1a1a; }
+            .hero { background: white; border-bottom: 2px solid #3b82f6; }
+            .card, .toc, .mermaid, .stat-card { border-color: #e5e7eb; box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+    <div class="container">
+        <h1>Analyse — Systeme de Configuration & Parametres</h1>
+        <p class="subtitle">
+            Inspection approfondie de l'architecture de configuration eLISAschool : cascade multi-niveaux,
+            resolution runtime vs plateforme, isolation multi-tenant, et pistes d'optimisation.
+        </p>
+        <div class="meta">
+            <span class="meta-item"><span class="dot"></span> eLISAschool v7.1</span>
+            <span class="meta-item"><span class="dot" style="background: var(--success)"></span> 12 aout 2026</span>
+            <span class="meta-item"><span class="dot" style="background: var(--warning)"></span> Architecture SaaS Multi-Tenant</span>
+            <span class="meta-item"><span class="dot" style="background: var(--info)"></span> 41 modules · 100+ parametres</span>
+        </div>
+    </div>
+</header>
+
+<!-- TABLE DES MATIERES -->
+<div class="container">
+    <nav class="toc">
+        <h2>&#128218; Table des matieres</h2>
+        <div class="toc-grid">
+            <a href="#sec-1"><span class="num">01</span> Architecture Globale</a>
+            <a href="#sec-2"><span class="num">02</span> Entite ParametreSysteme</a>
+            <a href="#sec-3"><span class="num">03</span> Cascade 4 Niveaux</a>
+            <a href="#sec-4"><span class="num">04</span> Resolution Runtime</a>
+            <a href="#sec-5"><span class="num">05</span> Resolution Plateforme</a>
+            <a href="#sec-6"><span class="num">06</span> Cascades Billing</a>
+            <a href="#sec-7"><span class="num">07</span> RLS et Isolation</a>
+            <a href="#sec-8"><span class="num">08</span> Cache et Performance</a>
+            <a href="#sec-9"><span class="num">09</span> Reponse : global=false, etab=true</a>
+            <a href="#sec-10"><span class="num">10</span> Incoherences Detectees</a>
+            <a href="#sec-11"><span class="num">11</span> Recommandations</a>
+            <a href="#sec-12"><span class="num">12</span> Synthese et Conclusion</a>
+        </div>
+    </nav>
+
+    <!-- STATS GLOBALES -->
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <div class="stat-value">1</div>
+            <div class="stat-label">Table unique (parametres_systeme)</div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-value">4</div>
+            <div class="stat-label">Niveaux de cascade</div>
+        </div>
+        <div class="stat-card orange">
+            <div class="stat-value">8</div>
+            <div class="stat-label">Categories de parametres</div>
+        </div>
+        <div class="stat-card cyan">
+            <div class="stat-value">6</div>
+            <div class="stat-label">Types de valeurs</div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 1 : ARCHITECTURE GLOBALE -->
+    <!-- ============================================================ -->
+    <section id="sec-1">
+        <h2><span class="icon" style="background: rgba(59,130,246,0.15); color: var(--accent);">&#127959;</span> 1. Architecture Globale</h2>
+
+        <p>
+            Le systeme de configuration eLISAschool repose sur un principe fondamental : <strong>une table unique</strong>
+            (<code class="inline-code">parametres_systeme</code>) comme source de verite pour <strong>tous les parametres runtime</strong>
+            de l'application. Cette approche centralise la configuration tout en permettant le multi-tenancy via un
+            discriminateur cle : <code class="inline-code">etablissementId</code>.
+        </p>
+
+        <div class="callout callout-info">
+            <h4>&#128161; Principe fondamental (ADR-005 + v7.1)</h4>
+            <p>
+                <code class="inline-code">ParametreSysteme</code> est la <strong>source unique de verite</strong> pour tous les
+                parametres runtime. <code class="inline-code">ConfigurationApp</code> a ete supprimee (v3.0).
+                Les secrets d'infrastructure restent dans <code class="inline-code">.env</code> ; tout le reste va dans
+                <code class="inline-code">ParametreSysteme</code>.
+            </p>
+        </div>
+
+        <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#3b82f6', 'primaryTextColor': '#e2e8f0', 'primaryBorderColor': '#60a5fa', 'lineColor': '#64748b', 'secondaryColor': '#1e293b', 'tertiaryColor': '#334155'}}}%%
+graph TB
+    subgraph ENV[".env (Secrets Infrastructure)"]
+        JWT[JWT_SECRET]
+        DB[DB_PASSWORD]
+        ENC[ENCRYPTION_KEY]
+        REDIS[REDIS_URL]
+    end
+
+    subgraph PS["parametres_systeme (Source Unique)"]
+        direction TB
+        GLOBAL["Parametres Globaux<br/>etablissementId = NULL"]
+        GROUPE["Parametres Groupe<br/>groupeEtablissementId = UUID"]
+        TENANT["Parametres Tenant<br/>etablissementId = UUID"]
+    end
+
+    subgraph CATALOGUE["Catalogue Modules (DB)"]
+        MC["modules_catalogue<br/>41 modules systeme"]
+    end
+
+    subgraph BILLING["Cascades Billing"]
+        FF["Feature Flags<br/>tenant → plan → false"]
+        MR["Module Resolution<br/>catalogue → plan → groupe"]
+        TC["Tranches Config<br/>etab → groupe → plan"]
+    end
+
+    subgraph APP["Application"]
+        RT["Resolution Runtime<br/>getParametre()"]
+        PL["Resolution Plateforme<br/>ParametresCascadeService"]
+    end
+
+    ENV -.->|Secrets uniquement| PS
+    GLOBAL --> RT
+    TENANT --> RT
+    GLOBAL --> PL
+    GROUPE --> PL
+    TENANT --> PL
+    CATALOGUE --> MR
+    FF --> RT
+    MR --> RT
+    TC --> RT
+
+    style ENV fill:#1a1a2e,stroke:#64748b
+    style PS fill:#1e3a5f,stroke:#3b82f6
+    style CATALOGUE fill:#1e293b,stroke:#22c55e
+    style BILLING fill:#1e293b,stroke:#f59e0b
+    style APP fill:#1e293b,stroke:#8b5cf6
+        </div>
+
+        <h3>Composants du systeme</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Composant</th>
+                        <th>Fichier</th>
+                        <th>Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>ParametreSysteme</strong></td>
+                        <td><code class="inline-code">configuration/entities/</code></td>
+                        <td>Entite TypeORM — table unique de configuration</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ConfigurationService</strong></td>
+                        <td><code class="inline-code">configuration/services/</code></td>
+                        <td>Resolution runtime (2 niveaux : etab → global)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ParametresCascadeService</strong></td>
+                        <td><code class="inline-code">configuration/services/</code></td>
+                        <td>Resolution plateforme (4 niveaux : etab → groupe → global → systeme)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Config Helpers</strong></td>
+                        <td><code class="inline-code">configuration/utils/</code></td>
+                        <td>Wrappers typed : getParamBoolean(), getParamNumber(), etc.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>FeatureFlagService</strong></td>
+                        <td><code class="inline-code">billing/services/</code></td>
+                        <td>Cascade feature flags (tenant → plan → modules inclus → false)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ModuleResolutionService</strong></td>
+                        <td><code class="inline-code">billing/services/</code></td>
+                        <td>Cascade modules (catalogue → plan → groupe → supplement)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>TrancheConfigService</strong></td>
+                        <td><code class="inline-code">billing/services/</code></td>
+                        <td>Cascade tranches pricing (etab → groupe → plan → systeme)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 2 : ENTITE PARAMETRESYSTEME -->
+    <!-- ============================================================ -->
+    <section id="sec-2">
+        <h2><span class="icon" style="background: rgba(34,197,94,0.15); color: var(--success);">&#128451;</span> 2. Entite ParametreSysteme</h2>
+
+        <p>
+            L'entite <code class="inline-code">ParametreSysteme</code> est la pierre angulaire du systeme.
+            Chaque ligne represente un parametre de configuration, avec un discriminateur de portee
+            (<code class="inline-code">etablissementId</code> / <code class="inline-code">groupeEtablissementId</code>).
+        </p>
+
+        <div class="mermaid">
+%%{init: {'theme': 'dark'}}%%
+erDiagram
+    parametres_systeme {
+        uuid id PK "Identifiant unique"
+        varchar cle "Cle du parametre (ex: notes.actif)"
+        text valeur "Valeur JSON-stringifiee"
+        enum typeValeur "STRING|NUMBER|BOOLEAN|JSON|ARRAY|ENCRYPTED"
+        varchar categorie "8 categories"
+        uuid etablissementId FK "NULL = global, UUID = tenant"
+        uuid groupeEtablissementId FK "NULL = non-groupe, UUID = groupe"
+        boolean propageable "Propagation globale vers tenants"
+        text valeurDefaut "Valeur par defaut systeme"
+        boolean modifiableRuntime "Modifiable a l'execution"
+        varchar description "Description du parametre"
+        boolean estSysteme "Parametre systeme (non supprimable)"
+        int ordre "Ordre d'affichage"
+        timestamp createdAt "Date creation"
+        timestamp updatedAt "Derniere modification"
+    }
+
+    etablissements {
+        uuid id PK
+        varchar nom
+        varchar code
+    }
+
+    groupes_etablissements {
+        uuid id PK
+        varchar nom
+        varchar code
+    }
+
+    parametres_systeme ||--o{ etablissements : "etablissementId (override tenant)"
+    parametres_systeme ||--o{ groupes_etablissements : "groupeEtablissementId (override groupe)"
+        </div>
+
+        <h3>Les 8 categories de parametres</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Categorie</th><th>Description</th><th>Exemples</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><span class="badge badge-red">CRITIQUE</span></td><td>Parametres vitaux, jamais desactivables</td><td><code class="inline-code">auth.actif</code>, <code class="inline-code">utilisateurs.actif</code></td></tr>
+                    <tr><td><span class="badge badge-blue">MODULE</span></td><td>Activation/desactivation des modules</td><td><code class="inline-code">notes.actif</code>, <code class="inline-code">cms.actif</code></td></tr>
+                    <tr><td><span class="badge badge-green">PEDAGOGIE</span></td><td>Parametres academiques</td><td><code class="inline-code">notes.validation_levels</code>, <code class="inline-code">bulletins.require_validation</code></td></tr>
+                    <tr><td><span class="badge badge-cyan">FINANCES</span></td><td>Parametres financiers</td><td><code class="inline-code">finances.tva_rate</code>, <code class="inline-code">cantine.tarif_repas</code></td></tr>
+                    <tr><td><span class="badge badge-orange">SECURITE</span></td><td>Parametres de securite</td><td><code class="inline-code">auth.mfa_required</code>, <code class="inline-code">auth.session_timeout</code></td></tr>
+                    <tr><td><span class="badge badge-blue">NOTIFICATION</span></td><td>Parametres de notification</td><td><code class="inline-code">notifications.email_enabled</code></td></tr>
+                    <tr><td><span class="badge badge-green">APPARENCE</span></td><td>Parametres visuels</td><td><code class="inline-code">app.langue_defaut</code>, <code class="inline-code">app.theme</code></td></tr>
+                    <tr><td><span class="badge badge-cyan">SYSTEME</span></td><td>Parametres techniques</td><td><code class="inline-code">system.cache_ttl</code>, <code class="inline-code">system.max_upload_size</code></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Les 6 types de valeurs</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Type</th><th>Stockage</th><th>Exemple</th><th>Particularite</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code class="inline-code">STRING</code></td><td>Texte brut</td><td><code class="inline-code">"Français"</code></td><td>—</td></tr>
+                    <tr><td><code class="inline-code">NUMBER</code></td><td>JSON number</td><td><code class="inline-code">42</code></td><td>Parse automatiquement</td></tr>
+                    <tr><td><code class="inline-code">BOOLEAN</code></td><td>"true"/"false"</td><td><code class="inline-code">true</code></td><td>Parse en boolean JS</td></tr>
+                    <tr><td><code class="inline-code">JSON</code></td><td>JSON stringifie</td><td><code class="inline-code">{"cle":"valeur"}</code></td><td>Parse en objet</td></tr>
+                    <tr><td><code class="inline-code">ARRAY</code></td><td>JSON array</td><td><code class="inline-code">["a","b","c"]</code></td><td>Parse en tableau</td></tr>
+                    <tr><td><code class="inline-code">ENCRYPTED</code></td><td>AES-256-GCM</td><td><code class="inline-code">iv:authTag:cipher</code></td><td>Dechiffrement automatique a la lecture (v7.1)</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 3 : CASCADE 4 NIVEAUX -->
+    <!-- ============================================================ -->
+    <section id="sec-3">
+        <h2><span class="icon" style="background: rgba(245,158,11,0.15); color: var(--warning);">&#128200;</span> 3. Cascade a 4 Niveaux</h2>
+
+        <p>
+            Le systeme de configuration implemente une cascade a 4 niveaux pour la resolution des valeurs.
+            Chaque niveau peut override le precedent, du plus specifique au plus general.
+        </p>
+
+        <div class="cascade-visual">
+            <!-- Niveau 1 : Établissement -->
+            <div class="cascade-level">
+                <div class="cascade-connector">
+                    <div class="cascade-dot" style="border-color: var(--danger); background: rgba(239,68,68,0.2);"></div>
+                    <div class="cascade-line" style="background: linear-gradient(to bottom, var(--danger), var(--warning));"></div>
+                </div>
+                <div class="cascade-content" style="border-color: rgba(239,68,68,0.3);">
+                    <span class="cascade-priority" style="background: rgba(239,68,68,0.15); color: var(--danger);">Priorite 1 — Plus haute</span>
+                    <h4>&#127979; Niveau Etablissement (Tenant)</h4>
+                    <p><code class="inline-code">etablissementId = UUID</code> — Override specifique a un etablissement. Cree via <code class="inline-code">setParametre(cle, valeur, etablissementId)</code>.</p>
+                </div>
+            </div>
+            <!-- Niveau 2 : Groupe -->
+            <div class="cascade-level">
+                <div class="cascade-connector">
+                    <div class="cascade-dot" style="border-color: var(--warning); background: rgba(245,158,11,0.2);"></div>
+                    <div class="cascade-line" style="background: linear-gradient(to bottom, var(--warning), var(--accent));"></div>
+                </div>
+                <div class="cascade-content" style="border-color: rgba(245,158,11,0.3);">
+                    <span class="cascade-priority" style="background: rgba(245,158,11,0.15); color: var(--warning);">Priorite 2</span>
+                    <h4>&#128101; Niveau Groupe</h4>
+                    <p><code class="inline-code">groupeEtablissementId = UUID</code> — Override pour un groupe d'etablissements (migration 167). Utilise uniquement par <code class="inline-code">ParametresCascadeService</code>.</p>
+                </div>
+            </div>
+            <!-- Niveau 3 : Global -->
+            <div class="cascade-level">
+                <div class="cascade-connector">
+                    <div class="cascade-dot" style="border-color: var(--accent); background: rgba(59,130,246,0.2);"></div>
+                    <div class="cascade-line" style="background: linear-gradient(to bottom, var(--accent), var(--info));"></div>
+                </div>
+                <div class="cascade-content" style="border-color: rgba(59,130,246,0.3);">
+                    <span class="cascade-priority" style="background: rgba(59,130,246,0.15); color: var(--accent);">Priorite 3</span>
+                    <h4>&#127760; Niveau Global (Plateforme)</h4>
+                    <p><code class="inline-code">etablissementId = NULL, groupeEtablissementId = NULL</code> — Valeur par defaut pour tous les etablissements. Cree via <code class="inline-code">setParametre(cle, valeur)</code>.</p>
+                </div>
+            </div>
+            <!-- Niveau 4 : Système -->
+            <div class="cascade-level">
+                <div class="cascade-connector">
+                    <div class="cascade-dot" style="border-color: var(--info); background: rgba(6,182,212,0.2);"></div>
+                </div>
+                <div class="cascade-content" style="border-color: rgba(6,182,212,0.3);">
+                    <span class="cascade-priority" style="background: rgba(6,182,212,0.15); color: var(--info);">Priorite 4 — Fallback ultime</span>
+                    <h4>&#128295; Niveau Systeme (valeurDefaut)</h4>
+                    <p>Colonne <code class="inline-code">valeurDefaut</code> sur l'entite — valeur codee en dur lors du seed. Dernier recours si aucune valeur n'est trouvee en base.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mermaid">
+%%{init: {'theme': 'dark'}}%%
+flowchart LR
+    A["&#127979;<br/>Etablissement<br/>(UUID)"] -->|Priorite 1| R{"Valeur<br/>trouvee?"}
+    B["&#128101;<br/>Groupe<br/>(UUID)"] -->|Priorite 2| R
+    C["&#127760;<br/>Global<br/>(NULL)"] -->|Priorite 3| R
+    D["&#128295;<br/>Systeme<br/>(valeurDefaut)"] -->|Priorite 4| R
+
+    R -->|Oui| V["Valeur retenue ✓"]
+    R -->|Non| N["null"]
+
+    style A fill:#7f1d1d,stroke:#ef4444
+    style B fill:#78350f,stroke:#f59e0b
+    style C fill:#1e3a5f,stroke:#3b82f6
+    style D fill:#164e63,stroke:#06b6d4
+    style R fill:#1e293b,stroke:#64748b
+    style V fill:#14532d,stroke:#22c55e
+    style N fill:#1e293b,stroke:#64748b
+        </div>
+
+        <div class="callout callout-warning">
+            <h4>&#9888;&#65039; Asymetrie critique : Runtime vs Plateforme</h4>
+            <p>
+                Le service runtime <code class="inline-code">getParametre()</code> ne consulte que <strong>2 niveaux</strong>
+                (etablissement → global), ignorant le niveau groupe. Seule la
+                <code class="inline-code">ParametresCascadeService</code> (interface plateforme) exploite les 4 niveaux.
+                Cette asymetrie est detaillee dans les sections 4 et 5.
+            </p>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 4 : RESOLUTION RUNTIME -->
+    <!-- ============================================================ -->
+    <section id="sec-4">
+        <h2><span class="icon" style="background: rgba(139,92,246,0.15); color: #a78bfa;">&#9889;</span> 4. Resolution Runtime (getParametre)</h2>
+
+        <p>
+            La resolution runtime est le chemin emprunte par <strong>tous les services backend</strong> lorsqu'ils
+            ont besoin d'une valeur de configuration. Elle est optimisee pour la rapidite (cache 60s).
+        </p>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="badge badge-blue">ConfigurationService</span>
+                <span class="badge badge-green">2 niveaux</span>
+            </div>
+
+            <div class="flow-steps">
+                <div class="flow-step">
+                    <div class="flow-num">1</div>
+                    <div class="flow-content">
+                        <h4>Verifier le cache memoire (TTL 60s)</h4>
+                        <p>Si la cle est en cache et non expiree → retour immediat. Cle de cache : <code class="inline-code">{cle}:{etablissementId}</code> ou <code class="inline-code">{cle}</code> (global).</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-num">2</div>
+                    <div class="flow-content">
+                        <h4>Chercher l'override etablissement</h4>
+                        <p><code class="inline-code">WHERE cle = $1 AND "etablissementId" = $2</code> — Si trouve → parse la valeur (ENCRYPTED → decrypt, BOOLEAN → parse, etc.) → mettre en cache → retourner.</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-num">3</div>
+                    <div class="flow-content">
+                        <h4>Fallback sur le global</h4>
+                        <p><code class="inline-code">WHERE cle = $1 AND "etablissementId" IS NULL</code> — Si trouve → parse → mettre en cache → retourner.</p>
+                    </div>
+                </div>
+                <div class="flow-step">
+                    <div class="flow-num">4</div>
+                    <div class="flow-content">
+                        <h4>Retourner null</h4>
+                        <p>Si aucune valeur trouvee → retourner <code class="inline-code">null</code>. Le service appelant utilise son propre fallback.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <pre><code>// Extrait simplifie de configuration.service.ts
+async getParametre&lt;T&gt;(cle: string, etablissementId?: string): Promise&lt;T | null&gt; {
+    // 1. Cache check
+    const cacheKey = etablissementId ? `${cle}:${etablissementId}` : cle;
+    const cached = this.cache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp &lt; this.CACHE_TTL) {
+        return cached.value;
+    }
+
+    // 2. Override etablissement
+    if (etablissementId) {
+        const override = await this.repo.findOne({
+            where: { cle, etablissementId }
+        });
+        if (override) {
+            const value = this.parseParametreValue(override);
+            this.cache.set(cacheKey, { value, timestamp: Date.now() });
+            return value;
+        }
+    }
+
+    // 3. Fallback global
+    const global = await this.repo.findOne({
+        where: { cle, etablissementId: IsNull() }
+    });
+    if (global) {
+        const value = this.parseParametreValue(global);
+        this.cache.set(cacheKey, { value, timestamp: Date.now() });
+        return value;
+    }
+
+    // 4. Introuvable
+    return null;
+}</code></pre>
+
+        <div class="callout callout-danger">
+            <h4>&#128680; Niveau groupe IGNORE en runtime</h4>
+            <p>
+                Le <code class="inline-code">getParametre()</code> runtime ne consulte <strong>jamais</strong> le niveau
+                <code class="inline-code">groupeEtablissementId</code>. Si un parametre est defini uniquement au niveau groupe
+                (sans override etablissement ni global), le runtime retournera <code class="inline-code">null</code> au lieu
+                de la valeur groupe. Ce comportement est une <strong>incoherence</strong> avec la cascade 4 niveaux.
+            </p>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 5 : RESOLUTION PLATEFORME -->
+    <!-- ============================================================ -->
+    <section id="sec-5">
+        <h2><span class="icon" style="background: rgba(6,182,212,0.15); color: var(--info);">&#128736;</span> 5. Resolution Plateforme (Cascade Complete)</h2>
+
+        <p>
+            Le <code class="inline-code">ParametresCascadeService</code> (789 lignes) est l'interface d'administration
+            du Control Plane. Il offre une vue complete de la cascade 4 niveaux, avec propagation, historique, et
+            detection d'incoherences.
+        </p>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="badge badge-cyan">ParametresCascadeService</span>
+                <span class="badge badge-green">4 niveaux</span>
+                <span class="badge badge-orange">789 lignes</span>
+            </div>
+
+            <h4>Methodes principales</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>Methode</th><th>Role</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code class="inline-code">getCascade(cle)</code></td><td>Retourne les 4 niveaux de valeur pour une cle donnee</td></tr>
+                        <tr><td><code class="inline-code">getCascadeForEtablissement(cle, etabId)</code></td><td>Cascade complete pour un etablissement specifique</td></tr>
+                        <tr><td><code class="inline-code">propagerValeurGlobale(cle)</code></td><td>Pousse la valeur globale vers tous les tenants sans override (respecte <code class="inline-code">propageable</code>)</td></tr>
+                        <tr><td><code class="inline-code">getIncoherences()</code></td><td>Detecte les overrides orphelins, redondants, ou avec type mismatch</td></tr>
+                        <tr><td><code class="inline-code">getHistorique(cle)</code></td><td>Historique des modifications avec versions</td></tr>
+                        <tr><td><code class="inline-code">rollback(cle, versionId)</code></td><td>Restauration a une version precedente</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mermaid">
+%%{init: {'theme': 'dark'}}%%
+sequenceDiagram
+    participant Admin as Admin Plateforme
+    participant Ctrl as CascadeController
+    participant Svc as CascadeService
+    participant DB as PostgreSQL
+
+    Admin->>Ctrl: GET /cascade/:cle
+    Ctrl->>Svc: getCascadeForEtablissement(cle, etabId)
+
+    Svc->>DB: SELECT WHERE cle=$1 AND etablissementId=$2
+    DB-->>Svc: valeurEtab (ou null)
+
+    Svc->>DB: SELECT WHERE cle=$1 AND groupeEtablissementId=$3
+    DB-->>Svc: valeurGroupe (ou null)
+
+    Svc->>DB: SELECT WHERE cle=$1 AND etablissementId IS NULL
+    DB-->>Svc: valeurGlobale (ou null)
+
+    Svc->>Svc: Resolver: etab > groupe > global > valeurDefaut
+    Svc-->>Ctrl: { niveaux: [...], valeurEffective: X }
+    Ctrl-->>Admin: Reponse JSON complete
+        </div>
+
+        <h3>API Plateforme — 11 endpoints</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Endpoint</th><th>Methode</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code class="inline-code">/cascade/:cle</code></td><td>GET</td><td>Vue cascade complete 4 niveaux</td></tr>
+                    <tr><td><code class="inline-code">/cascade/global/:cle</code></td><td>PUT</td><td>Modifier valeur globale</td></tr>
+                    <tr><td><code class="inline-code">/cascade/groupe/:groupeId/:cle</code></td><td>PUT</td><td>Modifier valeur groupe</td></tr>
+                    <tr><td><code class="inline-code">/cascade/etablissement/:etabId/:cle</code></td><td>PUT</td><td>Modifier valeur etablissement</td></tr>
+                    <tr><td><code class="inline-code">/cascade/reset/:scope/:id/:cle</code></td><td>DELETE</td><td>Supprimer un override</td></tr>
+                    <tr><td><code class="inline-code">/cascade/propager/:cle</code></td><td>POST</td><td>Propager valeur globale aux tenants</td></tr>
+                    <tr><td><code class="inline-code">/cascade/historique/:cle</code></td><td>GET</td><td>Historique des modifications</td></tr>
+                    <tr><td><code class="inline-code">/cascade/rollback/:cle/:versionId</code></td><td>POST</td><td>Restaurer une version</td></tr>
+                    <tr><td><code class="inline-code">/cascade/incoherences</code></td><td>GET</td><td>Detector d'incoherences</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 6 : CASCADES BILLING -->
+    <!-- ============================================================ -->
+    <section id="sec-6">
+        <h2><span class="icon" style="background: rgba(245,158,11,0.15); color: var(--warning);">&#128176;</span> 6. Cascades Billing (Modules, Feature Flags, Tranches)</h2>
+
+        <p>
+            En parallele de la cascade de parametres, trois cascades specialisees gerent les aspects billing/SaaS.
+            Chacune a sa propre logique de resolution et son propre cache.
+        </p>
+
+        <div class="vs-grid">
+            <div class="vs-card" style="border-top: 3px solid var(--accent);">
+                <h4 style="color: var(--accent-light);">&#128230; Resolution Modules</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+                    <code class="inline-code">ModuleResolutionService</code> — Determine quels modules sont actifs pour un etablissement.
+                </p>
+                <div class="flow-steps" style="margin: 0;">
+                    <div class="flow-step">
+                        <div class="flow-num" style="font-size: 0.7rem; width: 24px; height: 24px;">1</div>
+                        <div class="flow-content" style="padding-bottom: 8px;">
+                            <h4 style="font-size: 0.85rem;">Catalogue (actifParDefaut)</h4>
+                            <p style="font-size: 0.8rem;">Modules systeme actifs par defaut (20 modules CRITIQUE)</p>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-num" style="font-size: 0.7rem; width: 24px; height: 24px;">2</div>
+                        <div class="flow-content" style="padding-bottom: 8px;">
+                            <h4 style="font-size: 0.85rem;">Plan (modulesInclus)</h4>
+                            <p style="font-size: 0.8rem;">Modules inclus dans le plan d'abonnement</p>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-num" style="font-size: 0.7rem; width: 24px; height: 24px;">3</div>
+                        <div class="flow-content" style="padding-bottom: 8px;">
+                            <h4 style="font-size: 0.85rem;">Groupe (ModulesGroupe)</h4>
+                            <p style="font-size: 0.8rem;">Override au niveau groupe d'etablissements</p>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-num" style="font-size: 0.7rem; width: 24px; height: 24px;">4</div>
+                        <div class="flow-content" style="padding-bottom: 0; border-left: none;">
+                            <h4 style="font-size: 0.85rem;">Supplement (AbonnementModule)</h4>
+                            <p style="font-size: 0.8rem;">Modules souscrits en supplement par l'etablissement</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="vs-card" style="border-top: 3px solid var(--success);">
+                <h4 style="color: var(--success);">&#128681; Feature Flags</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+                    <code class="inline-code">FeatureFlagService</code> — Active/desactive des fonctionnalites specifiques.
+                </p>
+                <div class="flow-steps" style="margin: 0;">
+                    <div class="flow-step">
+                        <div class="flow-num" style="font-size: 0.7rem; width: 24px; height: 24px; background: var(--gradient-2);">1</div>
+                        <div class="flow-content" style="padding-bottom: 8px;">
+                            <h4 style="font-size: 0.85rem;">Override Tenant</h4>
+                            <p style="font-size: 0.8rem;">FeatureFlagTenant (explicitement active/desactive)</p>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-num" style="font-size: 0.7rem; width: 24px; height: 24px; background: var(--gradient-2);">2</div>
+                        <div class="flow-content" style="padding-bottom: 8px;">
+                            <h4 style="font-size: 0.85rem;">Plan (featureFlags JSONB)</h4>
+                            <p style="font-size: 0.8rem;">Flags definis dans le plan d'abonnement</p>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-num" style="font-size: 0.7rem; width: 24px; height: 24px; background: var(--gradient-2);">3</div>
+                        <div class="flow-content" style="padding-bottom: 8px;">
+                            <h4 style="font-size: 0.85rem;">Modules inclus</h4>
+                            <p style="font-size: 0.8rem;">Si le module correspondant est actif → flag true</p>
+                        </div>
+                    </div>
+                    <div class="flow-step">
+                        <div class="flow-num" style="font-size: 0.7rem; width: 24px; height: 24px; background: var(--gradient-2);">4</div>
+                        <div class="flow-content" style="padding-bottom: 0; border-left: none;">
+                            <h4 style="font-size: 0.85rem;">Defaut : false</h4>
+                            <p style="font-size: 0.8rem;">Si aucun niveau ne l'active → desactive</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="border-top: 3px solid var(--warning);">
+            <h4 style="color: var(--warning);">&#128178; Tranches de facturation</h4>
+            <p style="font-size: 0.9rem;">
+                <code class="inline-code">TrancheConfigService</code> resout la grille tarifaire applicable a un etablissement.
+                Cascade : <strong>TrancheSupplement</strong> (etab) → <strong>TrancheGroupe</strong> (groupe) → <strong>TrancheEleves</strong> (plan) → vide.
+            </p>
+            <p style="font-size: 0.9rem;">
+                Le calcul final inclut : montant base du plan + montant tranches (par palier d'effectif) + TVA OHADA 19.25%.
+                Le mode de facturation (<code class="inline-code">auto</code> ou <code class="inline-code">declaratif</code>) est defini au niveau du plan.
+            </p>
+        </div>
+
+        <h3>Tableau compare des 4 cascades</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cascade</th>
+                        <th>Niveaux</th>
+                        <th>Cache</th>
+                        <th>Source de verite</th>
+                        <th>Utilise par</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Parametres</strong></td>
+                        <td>etab → global (runtime)<br/>etab → groupe → global → systeme (plateforme)</td>
+                        <td>60s memoire + Redis pub/sub</td>
+                        <td><code class="inline-code">parametres_systeme</code></td>
+                        <td>Tous les services backend</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Modules</strong></td>
+                        <td>catalogue → plan → groupe → supplement</td>
+                        <td>60s Redis + memoire + pub/sub</td>
+                        <td><code class="inline-code">modules_catalogue</code> + <code class="inline-code">plans_abonnement</code></td>
+                        <td>middleware <code class="inline-code">requireModuleAccess</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Feature Flags</strong></td>
+                        <td>tenant → plan → modules → false</td>
+                        <td>5 min memoire</td>
+                        <td><code class="inline-code">feature_flags_tenant</code> + <code class="inline-code">plans_abonnement</code></td>
+                        <td>Composants UI, guards</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tranches</strong></td>
+                        <td>etab → groupe → plan → vide</td>
+                        <td>5 min memoire</td>
+                        <td><code class="inline-code">tranches_supplement</code> + <code class="inline-code">tranches_groupe</code> + <code class="inline-code">tranches_eleves</code></td>
+                        <td>facturation.service, cron-jobs</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 7 : RLS ET ISOLATION -->
+    <!-- ============================================================ -->
+    <section id="sec-7">
+        <h2><span class="icon" style="background: rgba(239,68,68,0.15); color: var(--danger);">&#128274;</span> 7. RLS et Isolation Multi-Tenant</h2>
+
+        <p>
+            La table <code class="inline-code">parametres_systeme</code> est soumise au Row-Level Security (RLS) PostgreSQL,
+            avec un comportement special du fait de la coexistence de lignes globales (NULL) et de lignes tenant (UUID).
+        </p>
+
+        <div class="mermaid">
+%%{init: {'theme': 'dark'}}%%
+flowchart TB
+    subgraph Requete["Requete HTTP entrante"]
+        REQ["JWT Token"]
+    end
+
+    subgraph MW["Middleware Chain"]
+        AUTH["authMiddleware<br/>Extrait utilisateur + role"]
+        TENANT["tenantMiddleware<br/>Resolve etablissementId"]
+        RLS["rlsMiddleware<br/>SET LOCAL app.current_tenant"]
+    end
+
+    subgraph RESOLVE["Resolution du Tenant"]
+        SA{"Role =<br/>SUPER_ADMIN?"}
+        SA_YES["UUID sentinel<br/>0000...0000<br/>(bypass RLS)"]
+        GG{"Role =<br/>GESTIONNAIRE?"}
+        GG_YES["UUID sentinel groupe<br/>0000...0001"]
+        NORMAL["etablissementId reel<br/>de l'utilisateur"]
+    end
+
+    subgraph RLS_POL["Policy RLS"]
+        P1["Lignes NULL (global)<br/>→ Visibles par TOUS"]
+        P2["Lignes UUID (tenant)<br/>→ Visibles par le tenant<br/>correspondant uniquement"]
+        P3["Bypass SUPER_ADMIN<br/>→ Voie toutes les lignes"]
+    end
+
+    REQ --> AUTH --> TENANT --> RLS
+    RLS --> RESOLVE
+    SA -->|Oui| SA_YES
+    SA -->|Non| GG
+    GG -->|Oui| GG_YES
+    GG -->|Non| NORMAL
+    SA_YES --> RLS_POL
+    GG_YES --> RLS_POL
+    NORMAL --> RLS_POL
+
+    style SA fill:#7f1d1d,stroke:#ef4444
+    style SA_YES fill:#14532d,stroke:#22c55e
+    style GG fill:#78350f,stroke:#f59e0b
+    style GG_YES fill:#164e63,stroke:#06b6d4
+    style NORMAL fill:#1e3a5f,stroke:#3b82f6
+        </div>
+
+        <div class="callout callout-info">
+            <h4>&#128161; Comportement RLS sur parametres_systeme</h4>
+            <p>
+                La policy RLS est : <code class="inline-code">"etablissementId"::text = current_setting('app.current_tenant')</code>.
+                Les lignes avec <code class="inline-code">etablissementId = NULL</code> (globales) sont visibles par <strong>tous</strong>
+                les tenants car la comparaison NULL = UUID retourne NULL (falsy), mais la policy est en mode <code class="inline-code">PERMISSIVE</code>
+                avec une seconde policy pour les lignes globales. Le SUPER_ADMIN bypass via l'UUID sentinel
+                <code class="inline-code">00000000-0000-0000-0000-000000000000</code>.
+            </p>
+        </div>
+
+        <h3>GLOBAL_ENTITIES — Exclusion du subscriber TypeORM</h3>
+        <p>
+            L'entite <code class="inline-code">ParametreSysteme</code> fait partie du set
+            <code class="inline-code">GLOBAL_ENTITIES</code> dans le <code class="inline-code">tenant-isolation.subscriber.ts</code>.
+            Cela signifie que TypeORM n'injecte <strong>pas automatiquement</strong> le
+            <code class="inline-code">etablissementId</code> lors de l'insertion — le service doit le faire explicitement.
+            C'est essentiel pour permettre la creation de lignes globales (<code class="inline-code">etablissementId = NULL</code>).
+        </p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Entite dans GLOBAL_ENTITIES</th><th>Raison</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>ParametreSysteme</strong></td><td>Peut etre global (NULL) ou tenant (UUID)</td></tr>
+                    <tr><td><strong>PlanAbonnement</strong></td><td>Plans globaux partage par tous les tenants</td></tr>
+                    <tr><td><strong>TrancheEleves</strong></td><td>Tranches definies au niveau du plan (global)</td></tr>
+                    <tr><td><strong>AbonnementClient</strong></td><td>Lie au plan global, pas a un tenant</td></tr>
+                    <tr><td><strong>ModuleCatalogue</strong></td><td>Catalogue global de modules</td></tr>
+                    <tr><td><strong>AuditLog</strong></td><td>Logs d'audit transverses</td></tr>
+                    <tr><td><strong>NotificationTemplate</strong></td><td>Templates globaux de notifications</td></tr>
+                    <tr><td><strong>NotificationProviderConfig</strong></td><td>Config globale des providers</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 8 : CACHE ET PERFORMANCE -->
+    <!-- ============================================================ -->
+    <section id="sec-8">
+        <h2><span class="icon" style="background: rgba(34,197,94,0.15); color: var(--success);">&#9889;</span> 8. Cache et Performance</h2>
+
+        <p>
+            Le systeme de cache est essentiel pour les performances : chaque appel a <code class="inline-code">getParametre()</code>
+            ne doit pas declencher une requete SQL. L'architecture utilise un cache a 2 niveaux.
+        </p>
+
+        <div class="mermaid">
+%%{init: {'theme': 'dark'}}%%
+flowchart LR
+    subgraph L1["Niveau 1 : Cache Memoire"]
+        MAP["Map&lt;string, {value, timestamp}&gt;<br/>TTL = 60 secondes<br/>(ConfigurationService)"]
+    end
+
+    subgraph L2["Niveau 2 : Redis"]
+        REDIS["Redis Cache<br/>TTL variables<br/>Cross-instance"]
+    end
+
+    subgraph INV["Invalidation"]
+        PUB["Redis Pub/Sub<br/>Canal: config:cache:invalidate"]
+    end
+
+    subgraph DB["PostgreSQL"]
+        TABLE["parametres_systeme"]
+    end
+
+    APP["Service"] -->|1. Check| L1
+    L1 -->|Miss| L2
+    L2 -->|Miss| DB
+    DB -->|Load| L2
+    L2 -->|Load| L1
+
+    WRITE["Ecriture (setParametre)"] -->|Save| DB
+    WRITE -->|Invalidate| INV
+    INV -->|Subscribe| L1
+
+    style L1 fill:#14532d,stroke:#22c55e
+    style L2 fill:#1e3a5f,stroke:#3b82f6
+    style INV fill:#78350f,stroke:#f59e0b
+    style DB fill:#1e293b,stroke:#64748b
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Service</th><th>TTL Cache</th><th>Invalidation</th><th>Cle de cache</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>ConfigurationService</td>
+                        <td>60 secondes</td>
+                        <td>Redis pub/sub <code class="inline-code">config:cache:invalidate</code></td>
+                        <td><code class="inline-code">{cle}:{etablissementId}</code></td>
+                    </tr>
+                    <tr>
+                        <td>FeatureFlagService</td>
+                        <td>5 minutes</td>
+                        <td>Manuelle (apres write)</td>
+                        <td><code class="inline-code">{etablissementId}:{flagName}</code></td>
+                    </tr>
+                    <tr>
+                        <td>ModuleResolutionService</td>
+                        <td>60 secondes (Redis)</td>
+                        <td>Redis pub/sub (meme canal)</td>
+                        <td><code class="inline-code">modules:resolved:{etablissementId}</code></td>
+                    </tr>
+                    <tr>
+                        <td>TrancheConfigService</td>
+                        <td>5 minutes</td>
+                        <td>Manuelle</td>
+                        <td><code class="inline-code">tranches:{etablissementId}</code></td>
+                    </tr>
+                    <tr>
+                        <td>Config Helpers (quick-cache)</td>
+                        <td>60 secondes</td>
+                        <td>Statique (par instance)</td>
+                        <td><code class="inline-code">{cle}:{etablissementId}</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="callout callout-success">
+            <h4>&#9989; Point fort : Redis Pub/Sub cross-instance</h4>
+            <p>
+                Depuis la v7.1 (R2), l'invalidation du cache utilise Redis Pub/Sub pour synchroniser les instances
+                multiples du backend. Quand un parametre est modifie, un message est publie sur le canal
+                <code class="inline-code">config:cache:invalidate</code>. Toutes les instances abonnees recoivent le message
+                et invalident leur cache local. En mode single-instance (sans Redis), le systeme fonctionne normalement
+                (echec silencieux du pub/sub).
+            </p>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 9 : REPONSE — global=false, etab=true -->
+    <!-- ============================================================ -->
+    <section id="sec-9">
+        <h2><span class="icon" style="background: rgba(34,197,94,0.15); color: var(--success);">&#128161;</span> 9. Reponse : global = false, etablissement = true</h2>
+
+        <div class="answer-box">
+            <h3>La valeur etablissement (true) l'emporte</h3>
+            <p>
+                Lorsque le parametre global vaut <code class="inline-code">false</code> et que l'etablissement a un override
+                a <code class="inline-code">true</code>, c'est la valeur <strong>etablissement (true)</strong> qui sera utilisee.
+            </p>
+            <p style="margin-top: 12px;">
+                La cascade de resolution est <strong>descendante en priorite</strong> :
+            </p>
+            <ol style="margin: 12px 0 0 20px; line-height: 2;">
+                <li><strong>Etablissement</strong> (priorite maximale) — override specifique</li>
+                <li><strong>Groupe</strong> — override groupe (runtime ignore ce niveau)</li>
+                <li><strong>Global</strong> — valeur par defaut plateforme</li>
+                <li><strong>Systeme</strong> — valeurDefaut codee (fallback ultime)</li>
+            </ol>
+            <p style="margin-top: 12px;">
+                Des qu'une valeur est trouvee a un niveau, <strong>la recherche s'arrete</strong>. Le runtime
+                <code class="inline-code">getParametre()</code> cherche d'abord l'override etablissement ; s'il le trouve,
+                il le retourne immediatement sans consulter le global.
+            </p>
+        </div>
+
+        <h3>Exemple concret</h3>
+        <div class="card">
+            <h4>Scenario : Module <code class="inline-code">notes.actif</code></h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr><th>Niveau</th><th>Valeur</th><th>Resultat</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Etablissement CM1</td>
+                            <td><code class="inline-code">true</code></td>
+                            <td><span style="color: var(--success); font-weight: 700;">&#10004; UTILISEE</span></td>
+                        </tr>
+                        <tr>
+                            <td>Global (plateforme)</td>
+                            <td><code class="inline-code">false</code></td>
+                            <td><span style="color: var(--text-muted);">&#10006; Ignoree (override trouve)</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p style="margin-top: 12px; font-size: 0.9rem; color: var(--text-muted);">
+                Resultat : le module Notes est <strong>actif</strong> pour l'etablissement CM1, meme si la plateforme
+                l'a desactive globalement. C'est le principe de l'override : un etablissement peut activer des modules
+                que la plateforme a desactives par defaut (et inversement).
+            </p>
+        </div>
+
+        <div class="callout callout-warning">
+            <h4>&#9888;&#65039; Cas particulier : isModuleActive()</h4>
+            <p>
+                La methode <code class="inline-code">isModuleActive()</code> a une logique legerement differente :
+                elle consulte le parametre tenant, puis le parametre global, puis le
+                <code class="inline-code">ModuleCatalogue.actifParDefaut</code>. Un module CRITIQUE (ex: <code class="inline-code">auth</code>)
+                ne peut <strong>jamais</strong> etre desactive, meme avec un override explicite — le service bloque la
+                desactivation via la categorie <code class="inline-code">CRITIQUE</code> du catalogue.
+            </p>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 10 : INCOHERENCES DETECTEES -->
+    <!-- ============================================================ -->
+    <section id="sec-10">
+        <h2><span class="icon" style="background: rgba(239,68,68,0.15); color: var(--danger);">&#128270;</span> 10. Incoherences Detectees</h2>
+
+        <p>
+            L'audit approfondi du systeme a revele plusieurs incoherences et asymetries dans l'architecture de configuration.
+        </p>
+
+        <div class="card" style="border-left: 4px solid var(--danger);">
+            <h4 style="color: var(--danger);">IC-1 : Niveau groupe ignore en runtime</h4>
+            <p>
+                <strong>Probleme</strong> : Le <code class="inline-code">getParametre()</code> runtime ne consulte que 2 niveaux
+                (etablissement → global). Le niveau <code class="inline-code">groupeEtablissementId</code> (migration 167)
+                est ignore, bien que la colonne existe dans la table.
+            </p>
+            <p>
+                <strong>Impact</strong> : Si un parametre est defini uniquement au niveau groupe (sans global), les services
+                backend retourneront <code class="inline-code">null</code> au lieu de la valeur groupe. Seule l'interface
+                plateforme (ParametresCascadeService) voit la valeur groupe.
+            </p>
+            <p>
+                <strong>Severite</strong> : <span class="badge badge-red">HAUTE</span> — Les parametres de groupe ne sont
+                pas appliques en runtime.
+            </p>
+        </div>
+
+        <div class="card" style="border-left: 4px solid var(--warning);">
+            <h4 style="color: var(--warning);">IC-2 : TTL de cache heterogenes</h4>
+            <p>
+                <strong>Probleme</strong> : Les 4 cascades billing ont des TTL de cache differents (60s, 5min, 5min)
+                sans coordination. Une modification de parametre peut mettre jusqu'a 5 minutes pour etre prise en compte
+                par les feature flags, alors que les parametres generaux sont rafraichis en 60s.
+            </p>
+            <p>
+                <strong>Severite</strong> : <span class="badge badge-orange">MOYENNE</span> — Incoherence de comportement
+                entre modules, pas de bug fonctionnel.
+            </p>
+        </div>
+
+        <div class="card" style="border-left: 4px solid var(--warning);">
+            <h4 style="color: var(--warning);">IC-3 : Double cache memoire (helpers + service)</h4>
+            <p>
+                <strong>Probleme</strong> : Les <code class="inline-code">config.helper.ts</code> ont leur propre quick-cache
+                (Map statique, 60s) en plus du cache du <code class="inline-code">ConfigurationService</code>.
+                Cela cree un double cache avec des invalidations potentiellement desynchronisees.
+            </p>
+            <p>
+                <strong>Severite</strong> : <span class="badge badge-orange">MOYENNE</span> — Risque de stale cache
+                leger entre les deux niveaux.
+            </p>
+        </div>
+
+        <div class="card" style="border-left: 4px solid var(--info);">
+            <h4 style="color: var(--info);">IC-4 : Pas de validation de coherence inter-cascades</h4>
+            <p>
+                <strong>Probleme</strong> : Les 4 cascades (parametres, modules, feature flags, tranches) sont independantes.
+                Il est possible d'avoir un module actif dans la resolution modules mais desactive via un parametre
+                <code class="inline-code">{module}.actif</code>, ou un feature flag actif alors que le module correspondant
+                est inactive.
+            </p>
+            <p>
+                <strong>Severite</strong> : <span class="badge badge-cyan">BASSE</span> — Pas de bug direct, mais risque
+                de configuration incoherente.
+            </p>
+        </div>
+
+        <h3>Types d'incoherences detectees par ParametresCascadeService</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>Type</th><th>Description</th><th>Detection</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge badge-red">ORPHAN_OVERRIDE</span></td>
+                        <td>Override tenant referencing un etablissement inexistant</td>
+                        <td>LEFT JOIN etablissements WHERE NULL</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-orange">REDUNDANT_OVERRIDE</span></td>
+                        <td>Override tenant identique a la valeur globale</td>
+                        <td>Comparaison valeur override == valeur global</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge badge-orange">TYPE_MISMATCH</span></td>
+                        <td>Type de valeur different entre global et override</td>
+                        <td>Comparaison typeValeur global vs tenant</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 11 : RECOMMANDATIONS -->
+    <!-- ============================================================ -->
+    <section id="sec-11">
+        <h2><span class="icon" style="background: rgba(139,92,246,0.15); color: #a78bfa;">&#128640;</span> 11. Recommandations d'Amelioration</h2>
+
+        <div class="rec-grid">
+            <div class="rec-card p0">
+                <span class="rec-priority rec-p0">P0 — Critique</span>
+                <h4>Unifier la cascade runtime avec la cascade plateforme</h4>
+                <p style="font-size: 0.875rem; color: var(--text-muted);">
+                    Ajouter le niveau groupe dans <code class="inline-code">getParametre()</code>. Apres la recherche
+                    de l'override etablissement, avant le fallback global, consulter
+                    <code class="inline-code">WHERE cle = $1 AND "groupeEtablissementId" = $2</code>
+                    (necessite de resolver le groupe de l'etablissement courant).
+                </p>
+            </div>
+
+            <div class="rec-card p0">
+                <span class="rec-priority rec-p0">P0 — Critique</span>
+                <h4>Supprimer le double cache des helpers</h4>
+                <p style="font-size: 0.875rem; color: var(--text-muted);">
+                    Les <code class="inline-code">config.helper.ts</code> devraient deleguer directement au
+                    <code class="inline-code">ConfigurationService</code> sans quick-cache local. Le cache du service
+                    (60s + pub/sub) est suffisant. Cela elimine le risque de desynchronisation.
+                </p>
+            </div>
+
+            <div class="rec-card p1">
+                <span class="rec-priority rec-p1">P1 — Important</span>
+                <h4>Harmoniser les TTL de cache</h4>
+                <p style="font-size: 0.875rem; color: var(--text-muted);">
+                    Standardiser tous les caches de configuration a 60s avec invalidation pub/sub.
+                    Les 5 minutes des feature flags et tranches peuvent creer des incoherences temporaires
+                    apres modification.
+                </p>
+            </div>
+
+            <div class="rec-card p1">
+                <span class="rec-priority rec-p1">P1 — Important</span>
+                <h4>Validation inter-cascades</h4>
+                <p style="font-size: 0.875rem; color: var(--text-muted);">
+                    Ajouter une verification de coherence : si un module est desactive via
+                    <code class="inline-code">{module}.actif = false</code>, ses feature flags devraient
+                    automatiquement retourner false. Creer un <code class="inline-code">ConfigConsistencyChecker</code>.
+                </p>
+            </div>
+
+            <div class="rec-card p1">
+                <span class="rec-priority rec-p1">P1 — Important</span>
+                <h4>Cache Redis pour les parametres</h4>
+                <p style="font-size: 0.875rem; color: var(--text-muted);">
+                    Actuellement, le cache du <code class="inline-code">ConfigurationService</code> est uniquement
+                    in-memory. Ajouter un cache Redis (avec TTL 60s) reduirait les requetes DB en cas de cache miss
+                    et synchroniserait les instances automatiquement.
+                </p>
+            </div>
+
+            <div class="rec-card p2">
+                <span class="rec-priority rec-p2">P2 — Amelioration</span>
+                <h4>Batch loading des parametres</h4>
+                <p style="font-size: 0.875rem; color: var(--text-muted);">
+                    Ajouter une methode <code class="inline-code">getParametresBatch(cles[], etablissementId)</code>
+                    qui charge tous les parametres demandes en une seule requete SQL. Utile pour les services
+                    qui consultent 10-20 parametres au demarrage.
+                </p>
+            </div>
+
+            <div class="rec-card p2">
+                <span class="rec-priority rec-p2">P2 — Amelioration</span>
+                <h4>Schema de validation Zod pour les valeurs</h4>
+                <p style="font-size: 0.875rem; color: var(--text-muted);">
+                    Associer un schema Zod a chaque parametre (ou categorie) pour valider les valeurs a l'ecriture.
+                    Exemple : <code class="inline-code">notes.validation_levels</code> doit etre un JSON avec
+                    des niveaux numerotes.
+                </p>
+            </div>
+
+            <div class="rec-card p2">
+                <span class="rec-priority rec-p2">P2 — Amelioration</span>
+                <h4>Dashboard de configuration temps reel</h4>
+                <p style="font-size: 0.875rem; color: var(--text-muted);">
+                    Creer une vue plateforme montrant tous les parametres avec leur valeur effective par etablissement,
+                    les incoherences detectees, et un editeur inline. S'appuyer sur le
+                    <code class="inline-code">ParametresCascadeService</code> existant.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 12 : SYNTHESE -->
+    <!-- ============================================================ -->
+    <section id="sec-12">
+        <h2><span class="icon" style="background: rgba(6,182,212,0.15); color: var(--info);">&#128202;</span> 12. Synthese et Conclusion</h2>
+
+        <div class="mermaid">
+%%{init: {'theme': 'dark'}}%%
+mindmap
+  root((Configuration<br/>eLISAschool))
+    Source unique
+      parametres_systeme
+      1 table pour tout
+      NULL = global
+      UUID = tenant
+    Cascade 4 niveaux
+      Etablissement
+      Groupe
+      Global
+      Systeme
+    4 cascades paralleles
+      Parametres generaux
+      Modules
+      Feature Flags
+      Tranches pricing
+    Securite
+      RLS PostgreSQL
+      Type ENCRYPTED
+      GLOBAL_ENTITIES
+      Sentinelles UUID
+    Performance
+      Cache memoire 60s
+      Redis pub/sub
+      TTL par service
+    Points faibles
+      Groupe ignore runtime
+      Double cache helpers
+      TTL heterogenes
+      Pas de validation croisee
+        </div>
+
+        <h3>Score de maturite</h3>
+        <div class="stats-grid">
+            <div class="stat-card green">
+                <div class="stat-value" style="color: var(--success);">8.5/10</div>
+                <div class="stat-label">Architecture globale</div>
+            </div>
+            <div class="stat-card blue">
+                <div class="stat-value" style="color: var(--accent);">7/10</div>
+                <div class="stat-label">Cohérence des cascades</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-value" style="color: var(--warning);">7.5/10</div>
+                <div class="stat-label">Performance (cache)</div>
+            </div>
+            <div class="stat-card cyan">
+                <div class="stat-value" style="color: var(--info);">9/10</div>
+                <div class="stat-label">Isolation multi-tenant</div>
+            </div>
+        </div>
+
+        <div class="callout callout-success">
+            <h4>&#9989; Conclusion</h4>
+            <p>
+                Le systeme de configuration eLISAschool est <strong>bien architecture</strong> avec une source unique de verite
+                (<code class="inline-code">ParametreSysteme</code>), une isolation multi-tenant robuste (RLS + sentinelle SUPER_ADMIN),
+                et un mecanisme de cache performant (memoire + Redis pub/sub).
+            </p>
+            <p>
+                La principale <strong>incoherence</strong> est l'asymetrie entre la cascade runtime (2 niveaux) et la cascade
+                plateforme (4 niveaux) — le niveau groupe n'est pas consulte en runtime. Cette limitation est corrigible
+                en ajoutant une etape intermediaire dans <code class="inline-code">getParametre()</code>.
+            </p>
+            <p>
+                La reponse a la question fondamentale est : <strong>quand global = false et etablissement = true,
+                la valeur etablissement (true) l'emporte</strong>, car la cascade priorise les overrides specifiques
+                sur les valeurs generales.
+            </p>
+        </div>
+    </section>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+    <div class="container">
+        <p>
+            <strong>eLISAschool</strong> — Analyse du Systeme de Configuration & Parametres<br/>
+            Document genere le 12 aout 2026 | Version SaaS v7.1 | Architecture ADR-005<br/>
+            <span style="color: var(--text-muted);">
+                Fichiers analyses : 15+ | Lignes de code examinees : ~5 000 | Cascades documentees : 4
+            </span>
+        </p>
+    </div>
+</footer>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'dark',
+        securityLevel: 'loose',
+        fontFamily: 'Inter, sans-serif',
+        flowchart: { curve: 'basis', padding: 16 },
+        sequence: { mirrorActors: false, messageMargin: 40 }
+    });
+</script>
+
+</body>
+</html>

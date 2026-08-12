@@ -19,10 +19,31 @@ const KEY_LENGTH = 32; // 256 bits
 
 /**
  * Dériver une clé de chiffrement depuis les variables d'environnement.
- * Utilise ENCRYPTION_KEY ou fallback sur JWT_SECRET.
+ * 
+ * Durcissement v9 : ENCRYPTION_KEY est obligatoire et distincte de JWT_SECRET.
+ * - Production : erreur fatale si ENCRYPTION_KEY absente
+ * - Développement : fallback aléatoire éphémère (avertissement logged)
  */
 function getEncryptionKey(): Buffer {
-    const raw = process.env.ENCRYPTION_KEY || process.env.JWT_SECRET || 'eLISAschool-default-key-change-me';
+    const raw = process.env.ENCRYPTION_KEY;
+
+    if (!raw) {
+        if (process.env.NODE_ENV === 'production') {
+            // CRITIQUE : en production, ne jamais démarrer sans clé dédiée
+            throw new Error(
+                '[Sécurité] ENCRYPTION_KEY est obligatoire en production. ' +
+                'Ne jamais réutiliser JWT_SECRET pour le chiffrement. ' +
+                'Générer avec : node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\').substring(0, 32))"'
+            );
+        }
+        // Développement : fallback éphémère avec avertissement
+        logger.warn(
+            '[Sécurité] ENCRYPTION_KEY non définie — utilisation d\'un fallback développement. ' +
+            'NE JAMAIS utiliser en production !'
+        );
+        return crypto.createHash('sha256').update('dev-encryption-key-ephemere').digest();
+    }
+
     // SHA-256 pour garantir exactement 32 bytes
     return crypto.createHash('sha256').update(raw).digest();
 }

@@ -28,5 +28,8 @@ export { PreferenceUtilisateur, CategoriePreference } from './preference-utilisa
 // Gestion de blocage authentification
 export { TentativeConnexion, TypeBlocage } from './tentative-connexion.entity';
 
-// MFA (Multi-Factor Authentication) — Phase P1 v6
-export { MfaConfig } from './mfa-config.entity';
+// MFA (Multi-Factor Authentication) — ADR-005 (v11) : colonnes inline dans Utilisateur
+// MfaConfig supprimé — table mfa_configs dropée
+
+// WebAuthn/FIDO2 — Durcissement v9
+export { WebAuthnCredential } from './webauthn-credential.entity';

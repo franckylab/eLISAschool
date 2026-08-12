@@ -10,23 +10,29 @@
  * Phase A.2 — Refonte SaaS v2 — Defense-in-Depth
  * Refonte v6 — Optimisation performance + sécurité
  * Refonte v8 — Lot E.2 : cas GESTIONNAIRE_GROUPES (sentinelle groupe)
+ * Refonte v9 — Correction faille G1 : rejet explicite si aucun tenant résolu
+ *   (plus de fallback silencieux vers SUPER_ADMIN_TENANT)
+ *
+ * Audit sécurité v10 — GAP 9 : guard défensif cross-plane.
+ *   Les tokens plateforme (plane='platform') sont REJETÉS par le middleware RLS.
+ *   Ils ne doivent JAMAIS atteindre les routes tenant (isolation structurelle).
  *
  * Fonctionnement :
  * - SUPER_ADMIN : contexte = '00000000-0000-0000-0000-000000000000' (bypass)
  * - GESTIONNAIRE_GROUPES : contexte = sentinelle groupe (bypass RLS + filtrage applicatif)
- * - Autres : contexte = etablissementId
+ * - Autres : contexte = etablissementId (erreur 403 si non résolu)
  *
- * Améliorations v8 :
- * - GESTIONNAIRE_GROUPES : bypass RLS via sentinelle groupe + audit log
- *   Le filtrage par groupe est assuré au niveau applicatif (cascade groupe→plan→étab)
- * - GroupContext header : X-Group-Tenant pour tracer le contexte groupe
- * - Compteur cross-tenant via logger direct (cluster-safe, pas d'état global)
+ * Améliorations v9 :
+ * - FAILLE G1 corrigée : resolveTenantId() rejette explicitement (403) si aucun
+ *   contexte tenant n'est trouvé pour un utilisateur non-SUPER_ADMIN
+ * - Logging CRITICAL en cas de tentative d'accès sans contexte tenant
  */
 
 import { Request, Response, NextFunction } from 'express';
 import { AppDataSource } from '@database/data-source';
 import { logger } from '@common/utils/logger.util';
 import { runInTenantContext } from '@common/async-local-storage';
+import { AppError } from '@common/filters/error.filter';
 
 /** UUID sentinelle SUPER_ADMIN — bypass RLS (doit correspondre à la migration SQL) */
 export const SUPER_ADMIN_TENANT = '00000000-0000-0000-0000-000000000000';
@@ -42,20 +48,48 @@ const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /**
  * Résout l'identifiant tenant depuis la requête.
- * v8 : Gestion du cas GESTIONNAIRE_GROUPES (sentinelle groupe).
+ * v9 : Correction faille G1 — rejet explicite au lieu du fallback SUPER_ADMIN.
+ *
+ * Algorithme :
+ * 1. SUPER_ADMIN → sentinelle bypass (légitime)
+ * 2. GESTIONNAIRE_GROUPES → sentinelle groupe (légitime)
+ * 3. etablissementId résolu → contexte tenant normal
+ * 4. Aucun contexte → REJET EXPLICITE (403) — plus de fallback silencieux
  */
 function resolveTenantId(req: Request): string {
+    // 1. SUPER_ADMIN : bypass RLS légitime
     if (req.utilisateur?.role === 'SUPER_ADMIN') {
         return SUPER_ADMIN_TENANT;
     }
-    // GESTIONNAIRE_GROUPES : bypass RLS + filtrage applicatif par groupe
+
+    // 2. GESTIONNAIRE_GROUPES : bypass RLS + filtrage applicatif par groupe
     if (req.utilisateur?.role === 'GESTIONNAIRE_GROUPES') {
         logger.info(
             `[RLS] Contexte groupe — User: ${req.utilisateur?.id} → sentinelle groupe`
         );
         return GROUP_TENANT_SENTINEL;
     }
-    return req.etablissementId || req.utilisateur?.etablissementId || SUPER_ADMIN_TENANT;
+
+    // 3. Contexte tenant résolu (middleware tenant ou JWT)
+    const resolvedTenantId = req.etablissementId || req.utilisateur?.etablissementId;
+    if (resolvedTenantId) {
+        return resolvedTenantId;
+    }
+
+    // 4. FAILLE G1 — CORRECTION : rejet explicite au lieu du fallback SUPER_ADMIN
+    // Un utilisateur non-SUPER_ADMIN sans contexte tenant est une anomalie de sécurité.
+    logger.error(
+        `[RLS] CRITIQUE — Aucun contexte tenant résolu — ` +
+        `User: ${req.utilisateur?.id} (${req.utilisateur?.role}) — ` +
+        `IP: ${req.ip} — Path: ${req.path} — ` +
+        `Requête rejetée (403)`
+    );
+
+    throw new AppError(
+        'Contexte établissement non résolu. Accès refusé.',
+        403,
+        'NO_TENANT_CONTEXT'
+    );
 }
 
 /**
@@ -76,6 +110,25 @@ function detectCrossTenantAttempt(req: Request): void {
 }
 
 /**
+ * Guard défensif — GAP 9 : rejette les tokens plateforme sur les routes tenant.
+ * Isolation structurelle : un token plane='platform' ne doit JAMAIS passer par RLS.
+ */
+function rejectCrossPlaneRequest(req: Request): void {
+    if (req.utilisateur?.plane === 'platform') {
+        logger.error(
+            `[RLS] CRITIQUE — Token plateforme sur route tenant — ` +
+            `User: ${req.utilisateur.id} (${req.utilisateur.role}), ` +
+            `path: ${req.path}, IP: ${req.ip} — Rejeté (403)`,
+        );
+        throw new AppError(
+            'Les tokens plateforme ne peuvent pas accéder aux routes établissement',
+            403,
+            'CROSS_PLANE_ACCESS_DENIED',
+        );
+    }
+}
+
+/**
  * Middleware RLS — mode READ (GET, HEAD).
  * Utilise SET (session) sans transaction → ne consomme pas de connexion pool.
  * Le RESET en fin de réponse garantit l'isolation entre requêtes.
@@ -86,6 +139,9 @@ export async function rlsReadMiddleware(req: Request, res: Response, next: NextF
             next();
             return;
         }
+
+        // GAP 9 : rejet défensif des tokens plateforme sur les routes tenant
+        rejectCrossPlaneRequest(req);
 
         const tenantId = resolveTenantId(req);
         const queryRunner = AppDataSource.createQueryRunner();
@@ -136,6 +192,9 @@ export async function rlsWriteMiddleware(req: Request, res: Response, next: Next
             next();
             return;
         }
+
+        // GAP 9 : rejet défensif des tokens plateforme sur les routes tenant
+        rejectCrossPlaneRequest(req);
 
         const tenantId = resolveTenantId(req);
         const queryRunner = AppDataSource.createQueryRunner();

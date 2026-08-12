@@ -26,13 +26,6 @@ import { AppDataSource } from '@database/data-source';
 import { AbonnementClient, StatutAbonnement } from '@modules/billing/entities/abonnement-client.entity';
 import { moduleResolutionService } from '@modules/billing/services/module-resolution.service';
 
-// Sets legacy conservés uniquement pour les helpers synchrones dépréciés
-// (isModulePremium / isModuleFree) — la logique du middleware est 100% catalogue.
-const MODULES_PREMIUM_LEGACY = new Set([
-    'transport', 'cantine', 'finances', 'gamification',
-    'recrutement', 'messagerie', 'sondages',
-]);
-
 /**
  * Middleware factory — vérifie l'accès à un module (catalogue + facturation).
  */
@@ -116,20 +109,6 @@ export function requireModuleAccess(moduleNom: string) {
             next(error);
         }
     };
-}
-
-/**
- * @deprecated — la logique passe par le catalogue. Conservé pour compat.
- */
-export function isModulePremium(moduleNom: string): boolean {
-    return MODULES_PREMIUM_LEGACY.has(moduleNom);
-}
-
-/**
- * @deprecated — la logique passe par le catalogue. Conservé pour compat.
- */
-export function isModuleFree(moduleNom: string): boolean {
-    return !MODULES_PREMIUM_LEGACY.has(moduleNom);
 }
 
 export default requireModuleAccess;

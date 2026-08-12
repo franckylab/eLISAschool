@@ -33,6 +33,8 @@ import { blocageAuthService, StatutBlocageComplet } from './blocage-auth.service
 import { mfaService } from './mfa.service';
 import jwt from 'jsonwebtoken';
 import { envConfig } from '@config/env.config';
+// ADR-005 (v11) — Auth unifiée source unique
+import { isRolePlateforme } from '@shared/enums/roles.enum';
 
 /**
  * Service d'authentification avec configuration centralisée
@@ -219,11 +221,12 @@ export class AuthService {
 
         const utilisateur = await this.utilisateurRepository.findOne({
             where: whereConditions,
-            select: ['id', 'email', 'matricule', 'pseudonyme', 'qrCodeId', 'motDePasse', 'role', 'statut'],
+            select: ['id', 'email', 'matricule', 'pseudonyme', 'qrCodeId', 'motDePasse', 'role', 'statut', 'estPlateforme', 'mfaActif'],
         });
 
         if (!utilisateur) {
-            // NOUVEAU: Enregistrer l'échec dans le système de blocage
+            // ADR-005 (v11) — Source unique : pas de fallback plateforme
+            // Tous les utilisateurs (tenant + plateforme) sont dans la table utilisateurs
             await blocageAuthService.enregistrerEchec(
                 identifiantNormalise,
                 adresseIp || 'unknown',
@@ -284,12 +287,11 @@ export class AuthService {
         );
 
         // ==========================================
-        // MFA CHECK — Phase P1 v6
+        // MFA CHECK — ADR-005 (v11) : colonnes inline dans utilisateurs
         // Si MFA activé, retourner un token temporaire
         // au lieu des tokens complets
         // ==========================================
-        const mfaEnabled = await mfaService.isMFAEnabled(utilisateur.id);
-        if (mfaEnabled) {
+        if (utilisateur.mfaActif) {
             // Générer un token MFA temporaire (valide 5 minutes)
             const mfaToken = jwt.sign(
                 {
@@ -411,6 +413,55 @@ export class AuthService {
             })
         );
 
+        // ======================================
+        // ADR-005 (v11) — Détection accès plateforme unifiée
+        // Si l'utilisateur a estPlateforme=true ET un rôle plateforme,
+        // générer aussi les tokens plateforme (source unique)
+        // ======================================
+        let platformAccessData: Partial<LoginResponseDto> = {};
+        if (utilisateur.estPlateforme && isRolePlateforme(utilisateur.role)) {
+            try {
+                const securityParams = await this.getSecurityParams();
+
+                // MFA plateforme déjà vérifié ci-dessus (même colonne mfaActif)
+                // Si MFA actif, le flux tenant retourne déjà un mfaToken
+                // Le token plateforme sera généré après vérification MFA
+
+                if (!utilisateur.mfaActif) {
+                    // Pas de MFA — générer les tokens plateforme directement
+                    const platformPayload: JwtPayload = {
+                        sub: utilisateur.id,
+                        email: utilisateur.email,
+                        role: utilisateur.role,
+                        plane: 'platform',
+                    };
+
+                    const platformAccessToken = this.tokenService.generateAccessToken(platformPayload);
+                    const platformRefreshToken = await this.tokenService.generateRefreshToken(
+                        utilisateur.id,
+                        adresseIp,
+                        userAgent,
+                        undefined, // familleIdExistante
+                        undefined, // tokenPrecedentId
+                        'platform' // ADR-005: plane discriminator
+                    );
+
+                    platformAccessData = {
+                        hasPlatformAccess: true,
+                        platformAccessToken,
+                        platformRefreshToken,
+                        platformExpiresIn: securityParams.sessionDuration * 60,
+                        platformRole: utilisateur.role,
+                    };
+
+                    logger.info(`[ADR-005] Utilisateur ${utilisateur.email} a accès plateforme (${utilisateur.role})`);
+                }
+            } catch (error) {
+                // Non-bloquant : la détection plateforme ne doit pas empêcher le login tenant
+                logger.warn('[ADR-005] Erreur génération tokens plateforme (non bloquant)', error);
+            }
+        }
+
         return {
             accessToken,
             refreshToken,
@@ -429,6 +480,7 @@ export class AuthService {
                 permissions: Array.from(resolvedPermissions),
             },
             etablissementsDisponibles: etablissementsDetails,
+            ...platformAccessData,
         };
     }
 
@@ -529,12 +581,13 @@ export class AuthService {
         adresseIp?: string,
         userAgent?: string
     ): Promise<{ accessToken: string; refreshToken: string }> {
-        const tokenEntity = await this.tokenService.validateRefreshToken(refreshToken);
+        const validationResult = await this.tokenService.validateRefreshToken(refreshToken);
 
-        if (!tokenEntity) {
+        if (!validationResult) {
             throw new AppError('Token de rafraîchissement invalide ou expiré', 401, 'INVALID_REFRESH_TOKEN');
         }
 
+        const { refreshToken: tokenEntity, rotationData } = validationResult;
         const utilisateur = await this.utilisateurRepository.findOne({
             where: { id: tokenEntity.utilisateurId },
         });
@@ -546,6 +599,35 @@ export class AuthService {
 
         await this.tokenService.revokeRefreshToken(refreshToken);
 
+        // ADR-005 : respecter le plan de gestion du refresh token
+        const plane = tokenEntity.plane || 'tenant';
+
+        if (plane === 'platform') {
+            // ─── Refresh plateforme ───
+            const platformPayload: JwtPayload = {
+                sub: utilisateur.id,
+                email: utilisateur.email,
+                role: utilisateur.role,
+                plane: 'platform',
+            };
+
+            const newAccessToken = this.tokenService.generateAccessToken(platformPayload);
+            const newRefreshToken = await this.tokenService.generateRefreshToken(
+                utilisateur.id,
+                adresseIp,
+                userAgent,
+                rotationData.familleId,
+                rotationData.tokenPrecedentId,
+                'platform',
+            );
+
+            return {
+                accessToken: newAccessToken,
+                refreshToken: newRefreshToken,
+            };
+        }
+
+        // ─── Refresh tenant (par défaut) ───
         // Récupérer l'établissement principal pour le JWT
         const affectationPrincipale = await this.utilisateurEtablissementRepo.findOne({
             where: { utilisateurId: utilisateur.id, etablissementPrincipal: true, actif: true },
@@ -842,7 +924,7 @@ export class AuthService {
 
         const utilisateur = await this.utilisateurRepository.findOne({
             where: { id: utilisateurId },
-            select: ['id', 'email', 'matricule', 'pseudonyme', 'role', 'statut'],
+            select: ['id', 'email', 'matricule', 'pseudonyme', 'role', 'statut', 'estPlateforme', 'mfaActif'],
         });
 
         if (!utilisateur || utilisateur.statut !== StatutUtilisateur.ACTIF) {
@@ -933,6 +1015,32 @@ export class AuthService {
             })
         );
 
+        // ADR-005 : générer les tokens plateforme après MFA si l'utilisateur y a accès
+        let platformAccessData: Partial<LoginResponseDto> = {};
+        if (utilisateur.estPlateforme && isRolePlateforme(utilisateur.role)) {
+            try {
+                const platformPayload: JwtPayload = {
+                    sub: utilisateur.id,
+                    email: utilisateur.email,
+                    role: utilisateur.role,
+                    plane: 'platform',
+                };
+                const platformAccessToken = this.tokenService.generateAccessToken(platformPayload);
+                const platformRefreshToken = await this.tokenService.generateRefreshToken(
+                    utilisateur.id, adresseIp, userAgent, undefined, undefined, 'platform',
+                );
+                platformAccessData = {
+                    hasPlatformAccess: true,
+                    platformAccessToken,
+                    platformRefreshToken,
+                    platformExpiresIn: securityParams.sessionDuration * 60,
+                    platformRole: utilisateur.role,
+                };
+            } catch (error) {
+                logger.warn('[MFA] Erreur génération tokens plateforme (non bloquant)', error);
+            }
+        }
+
         return {
             accessToken,
             refreshToken,
@@ -951,6 +1059,7 @@ export class AuthService {
                 permissions: Array.from(resolvedPermissions),
             },
             etablissementsDisponibles: etablissementsDetails,
+            ...platformAccessData,
         };
     }
 }

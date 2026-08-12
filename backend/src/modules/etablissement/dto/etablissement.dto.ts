@@ -35,6 +35,7 @@ export const createEtablissementSchema = z.object({
     contactEmail: z.string().email().optional().or(z.literal('')),
     contactTelephone: z.string().max(255).optional(),
     adresse: z.string().optional(),
+    ville: z.string().max(100).optional(),
     siteWeb: z.string().url().max(255).optional().or(z.literal('')),
     
     // Réseaux sociaux

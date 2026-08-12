@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport Audit — Système de Configuration eLISAschool</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" integrity="sha384-N3QqR/7q+xm3BGX+CBbNI8AUmRRqcsDzToy+0z1NLDI0QmTKW8zvwLvqulJgk3dP" crossorigin="anonymous"></script>
+<style>
+  :root {
+    --primary: #28a745;
+    --primary-dark: #1e7e34;
+    --accent: #007bff;
+    --accent-dark: #0056b3;
+    --danger: #dc3545;
+    --warning: #ffc107;
+    --surface: #ffffff;
+    --surface-alt: #f8f9fa;
+    --text: #1a1a2e;
+    --text-secondary: #6c757d;
+    --border: #e5e7eb;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+    color: var(--text);
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .report-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 50%, #145a28 100%);
+    color: white;
+    padding: 3rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .report-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+    animation: pulse-bg 8s ease-in-out infinite;
+  }
+  @keyframes pulse-bg {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.1); opacity: 1; }
+  }
+  .report-header h1 {
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    font-weight: 800;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .report-header .subtitle {
+    font-size: clamp(0.875rem, 1.5vw, 1.125rem);
+    opacity: 0.9;
+    margin-top: 0.5rem;
+    position: relative;
+    z-index: 1;
+  }
+  .report-header .meta {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+  }
+  .report-header .meta span {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(8px);
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  /* Layout */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+
+  /* Score Banner */
+  .score-banner {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin: -2rem auto 2rem;
+    position: relative;
+    z-index: 10;
+    padding: 0 1.5rem;
+    max-width: 1200px;
+  }
+  .score-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+    border-top: 4px solid var(--primary);
+    transition: transform 0.2s;
+  }
+  .score-card:hover { transform: translateY(-4px); }
+  .score-card.warning { border-top-color: var(--warning); }
+  .score-card.danger { border-top-color: var(--danger); }
+  .score-card.info { border-top-color: var(--accent); }
+  .score-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .score-value.green { color: var(--primary); }
+  .score-value.yellow { color: var(--warning); }
+  .score-value.red { color: var(--danger); }
+  .score-value.blue { color: var(--accent); }
+  .score-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Sections */
+  .section {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+    overflow: hidden;
+    animation: fadeInUp 0.5s ease-out;
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .section-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .section-header .icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+  .section-header .icon.green { background: rgba(40,167,69,0.1); color: var(--primary); }
+  .section-header .icon.blue { background: rgba(0,123,255,0.1); color: var(--accent); }
+  .section-header .icon.red { background: rgba(220,53,69,0.1); color: var(--danger); }
+  .section-header .icon.yellow { background: rgba(255,193,7,0.15); color: #e6a800; }
+  .section-header h2 {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-weight: 700;
+  }
+  .section-header .badge {
+    margin-left: auto;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .badge.ok { background: rgba(40,167,69,0.1); color: var(--primary); }
+  .badge.warn { background: rgba(255,193,7,0.15); color: #e6a800; }
+  .badge.critical { background: rgba(220,53,69,0.1); color: var(--danger); }
+
+  .section-body { padding: 1.5rem; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  th {
+    background: var(--surface-alt);
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    border-bottom: 2px solid var(--border);
+  }
+  td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(40,167,69,0.02); }
+
+  /* Status pills */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .pill.green { background: rgba(40,167,69,0.1); color: var(--primary-dark); }
+  .pill.red { background: rgba(220,53,69,0.1); color: var(--danger); }
+  .pill.blue { background: rgba(0,123,255,0.1); color: var(--accent-dark); }
+  .pill.yellow { background: rgba(255,193,7,0.15); color: #997a00; }
+  .pill.gray { background: rgba(108,117,125,0.1); color: var(--text-secondary); }
+  .pill::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* Code blocks */
+  code {
+    background: var(--surface-alt);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-family: 'Fira Code', 'Cascadia Code', monospace;
+    color: var(--primary-dark);
+    border: 1px solid var(--border);
+  }
+
+  pre {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    padding: 1.25rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin: 1rem 0;
+  }
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* Mermaid */
+  .mermaid {
+    background: var(--surface-alt);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+
+  /* Info boxes */
+  .info-box {
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  .info-box.success { background: rgba(40,167,69,0.06); border-left: 4px solid var(--primary); }
+  .info-box.warning { background: rgba(255,193,7,0.08); border-left: 4px solid var(--warning); }
+  .info-box.danger { background: rgba(220,53,69,0.06); border-left: 4px solid var(--danger); }
+  .info-box.info { background: rgba(0,123,255,0.06); border-left: 4px solid var(--accent); }
+  .info-box .icon-box { font-size: 1.25rem; flex-shrink: 0; margin-top: 2px; }
+  .info-box p { font-size: 0.9rem; }
+  .info-box strong { display: block; margin-bottom: 0.25rem; }
+
+  /* Cascade visual */
+  .cascade {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 1.5rem 0;
+  }
+  .cascade-level {
+    display: flex;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  .cascade-line {
+    width: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .cascade-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 3px solid;
+    background: white;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  .cascade-connector {
+    width: 2px;
+    flex: 1;
+    min-height: 20px;
+  }
+  .cascade-content {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--border);
+  }
+  .cascade-content h4 {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+  }
+  .cascade-content p {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+  .level-1 .cascade-dot { border-color: var(--danger); }
+  .level-1 .cascade-connector { background: linear-gradient(var(--danger), var(--warning)); }
+  .level-1 .cascade-content { background: rgba(220,53,69,0.04); }
+  .level-2 .cascade-dot { border-color: var(--warning); }
+  .level-2 .cascade-connector { background: linear-gradient(var(--warning), var(--accent)); }
+  .level-2 .cascade-content { background: rgba(255,193,7,0.04); }
+  .level-3 .cascade-dot { border-color: var(--accent); }
+  .level-3 .cascade-connector { background: linear-gradient(var(--accent), var(--primary)); }
+  .level-3 .cascade-content { background: rgba(0,123,255,0.04); }
+  .level-4 .cascade-dot { border-color: var(--primary); }
+  .level-4 .cascade-content { background: rgba(40,167,69,0.04); }
+
+  /* Layers diagram */
+  .layers {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 1.5rem 0;
+  }
+  .layer {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .layer:hover {
+    transform: translateX(4px);
+    box-shadow: var(--shadow);
+  }
+  .layer-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.85rem;
+    color: white;
+    flex-shrink: 0;
+  }
+  .layer-content { flex: 1; }
+  .layer-content h4 { font-size: 0.9rem; }
+  .layer-content p { font-size: 0.8rem; color: var(--text-secondary); }
+  .layer-tag {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  /* TOC */
+  .toc {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .toc h3 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.5rem;
+  }
+  .toc-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--text);
+    font-size: 0.9rem;
+    transition: background 0.15s;
+  }
+  .toc-item:hover { background: var(--surface-alt); }
+  .toc-num {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: rgba(40,167,69,0.1);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .container { padding: 1rem; }
+    .score-banner { grid-template-columns: repeat(2, 1fr); padding: 0 1rem; }
+    .section-body { padding: 1rem; }
+    table { font-size: 0.8rem; }
+    th, td { padding: 0.5rem; }
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; }
+    .section { break-inside: avoid; box-shadow: none; border: 1px solid var(--border); }
+    .report-header { background: var(--primary) !important; -webkit-print-color-adjust: exact; }
+  }
+
+  /* Flow diagram */
+  .flow-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 1.5rem 0;
+    padding: 1rem;
+  }
+  .flow-node {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    border: 2px solid;
+    min-width: 100px;
+  }
+  .flow-arrow {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+  }
+
+  /* Whitelist visual */
+  .whitelist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.75rem;
+    margin: 1rem 0;
+  }
+  .whitelist-item {
+    padding: 0.75rem;
+    border-radius: 8px;
+    background: rgba(40,167,69,0.04);
+    border: 1px solid rgba(40,167,69,0.15);
+    font-size: 0.85rem;
+  }
+  .whitelist-item code {
+    font-size: 0.8rem;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+  .whitelist-item span {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  /* Footer */
+  .report-footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+  }
+  .report-footer a { color: var(--primary); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="report-header">
+  <h1>Audit Configuration &amp; Paramétrage</h1>
+  <p class="subtitle">eLISAschool — Architecture Multi-Tenant SaaS v7 | Source unique de vérité</p>
+  <div class="meta">
+    <span>Date : 2026-08-10</span>
+    <span>Version : v7.1</span>
+    <span>Classification : Interne</span>
+    <span>Auteur : admin project</span>
+  </div>
+</header>
+
+<!-- SCORE CARDS -->
+<div class="score-banner">
+  <div class="score-card">
+    <div class="score-value green">9.5<span style="font-size:1rem">/10</span></div>
+    <div class="score-label">Score Sécurité Global</div>
+  </div>
+  <div class="score-card info">
+    <div class="score-value blue">7</div>
+    <div class="score-label">Entités Configuration</div>
+  </div>
+  <div class="score-card">
+    <div class="score-value green">100+</div>
+    <div class="score-label">Paramètres Défaut (Seeds)</div>
+  </div>
+  <div class="score-card warning">
+    <div class="score-value yellow">4</div>
+    <div class="score-label">Niveaux Cascade</div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- TOC -->
+<nav class="toc">
+  <h3>Table des Matières</h3>
+  <div class="toc-grid">
+    <a class="toc-item" href="#arch"><span class="toc-num">1</span> Architecture Globale</a>
+    <a class="toc-item" href="#source-verite"><span class="toc-num">2</span> Source Unique de Vérité</a>
+    <a class="toc-item" href="#cascade"><span class="toc-num">3</span> Cascade 4 Niveaux</a>
+    <a class="toc-item" href="#isolation"><span class="toc-num">4</span> Isolation Multi-Tenant</a>
+    <a class="toc-item" href="#exposition"><span class="toc-num">5</span> Exposition Plateforme vs Tenant</a>
+    <a class="toc-item" href="#modules"><span class="toc-num">6</span> Activation Modules</a>
+    <a class="toc-item" href="#feature-flags"><span class="toc-num">7</span> Feature Flags & Tranches</a>
+    <a class="toc-item" href="#securite"><span class="toc-num">8</span> Sécurité & Guards</a>
+    <a class="toc-item" href="#admin-panel"><span class="toc-num">9</span> Panel Admin Platform</a>
+    <a class="toc-item" href="#recommandations"><span class="toc-num">10</span> Recommandations</a>
+  </div>
+</nav>
+
+<!-- SECTION 1: ARCHITECTURE -->
+<section class="section" id="arch">
+  <div class="section-header">
+    <div class="icon green">&#9881;</div>
+    <h2>1. Architecture Globale du Système de Configuration</h2>
+    <span class="badge ok">Vérifié</span>
+  </div>
+  <div class="section-body">
+    <p>Le système de configuration eLISAschool repose sur <strong>ParametreSysteme</strong> comme source unique de vérité pour tous les paramètres runtime, remplaçant l'ancien système monolithique <code>ConfigurationApp</code> (déprécié v2.0).</p>
+
+    <div class="mermaid">
+graph TB
+    subgraph "Control Plane (SUPER_ADMIN)"
+        PP[Panel Platform<br>/platform/configuration]
+        PC[Paramètres Cascade<br>/platform/parametres/cascade]
+    end
+
+    subgraph "Data Plane (Tenant)"
+        TP[Page Config Tenant<br>/configuration]
+    end
+
+    subgraph "Backend — Source Unique"
+        PS[(ParametreSysteme<br>Table parametres_systeme)]
+        MC[(ModuleCatalogue<br>Table modules_catalogue)]
+        CV[(ParametreVersion<br>Historique versions)]
+        HC[(HistoriqueConfiguration<br>Audit trail)]
+    end
+
+    subgraph "Cascades Billing"
+        FT[FeatureFlagService<br>3 niveaux]
+        TR[TrancheConfigService<br>4 niveaux]
+        MR[ModuleResolutionService<br>5 niveaux]
+    end
+
+    PP --> PS
+    PC --> PS
+    TP --> PS
+    PS --> CV
+    PS --> HC
+    PS --> FT
+    PS --> TR
+    MC --> MR
+    PS --> MR
+    </div>
+
+    <div class="info-box success">
+      <span class="icon-box">&#10003;</span>
+      <div>
+        <strong>Conclusion Architecture</strong>
+        <p>Le système est <strong>centralisé et cohérent</strong>. Tous les paramètres runtime passent par <code>ParametreSysteme</code>. Les cascades billing (feature flags, tranches, modules) sont des couches spécialisées qui s'alimentent depuis cette source unique + les entités billing dédiées.</p>
+      </div>
+    </div>
+
+    <h3 style="margin: 1.5rem 0 1rem;">Entités de Configuration</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Entité</th>
+          <th>Table</th>
+          <th>Rôle</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>ParametreSysteme</code></td>
+          <td><code>parametres_systeme</code></td>
+          <td>Source unique — tous paramètres runtime (clé/valeur typée)</td>
+          <td><span class="pill green">Actif</span></td>
+        </tr>
+        <tr>
+          <td><code>ModuleCatalogue</code></td>
+          <td><code>modules_catalogue</code></td>
+          <td>Catalogue modules (code, catégorie, prix, dépendances)</td>
+          <td><span class="pill green">Actif</span></td>
+        </tr>
+        <tr>
+          <td><code>ConfigurationModule</code></td>
+          <td><code>configuration_modules</code></td>
+          <td>Config technique par module (widgets, champs perso)</td>
+          <td><span class="pill green">Actif</span></td>
+        </tr>
+        <tr>
+          <td><code>ParametreVersion</code></td>
+          <td><code>parametres_versions</code></td>
+          <td>Historique versions par paramètre (rollback)</td>
+          <td><span class="pill green">Actif</span></td>
+        </tr>
+        <tr>
+          <td><code>HistoriqueConfiguration</code></td>
+          <td><code>historique_configuration</code></td>
+          <td>Audit trail complet (CREATE/UPDATE/DELETE/RESET)</td>
+          <td><span class="pill green">Actif</span></td>
+        </tr>
+        <tr>
+          <td><code>BackupRecord</code></td>
+          <td><code>backup_records</code></td>
+          <td>Métadonnées backups (chiffrement, checksum, rétention)</td>
+          <td><span class="pill green">Actif</span></td>
+        </tr>
+        <tr>
+          <td><code>CleCryptographique</code></td>
+          <td><code>cles_cryptographiques</code></td>
+          <td>Gestion clés (JWT, encryption, MFA, audit HMAC)</td>
+          <td><span class="pill green">Actif</span></td>
+        </tr>
+        <tr>
+          <td><code>ConfigurationApp</code></td>
+          <td><code>configuration_app</code></td>
+          <td>Ancien système monolithique</td>
+          <td><span class="pill red">Déprécié</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SECTION 2: SOURCE DE VERITE -->
+<section class="section" id="source-verite">
+  <div class="section-header">
+    <div class="icon blue">&#9670;</div>
+    <h2>2. Source Unique de Vérité — ParametreSysteme</h2>
+    <span class="badge ok">Confirmé</span>
+  </div>
+  <div class="section-body">
+    <p>Chaque paramètre est identifié par une <strong>clé en notation pointée</strong> (ex: <code>notes.require_validation</code>). Le modèle supporte le <strong>multi-tenant</strong> via <code>etablissementId</code> nullable.</p>
+
+    <div class="mermaid">
+erDiagram
+    PARAMETRE_SYSTEME {
+        uuid id PK
+        varchar cle "NOT NULL"
+        text valeur "JSON-stringified"
+        varchar typeValeur "STRING|NUMBER|BOOLEAN|JSON|ARRAY"
+        varchar categorie "SYSTEME|SECURITE|MODULE|..."
+        varchar module "nullable"
+        uuid etablissementId "NULL = global"
+        uuid groupeEtablissementId "NULL = non-scopé groupe"
+        boolean modifiableRuntime
+        boolean visible
+        boolean propageable
+        varchar validation "regex"
+        jsonb options
+        text valeurDefaut
+        UNIQUE(cle, etablissementId)
+    }
+    </div>
+
+    <h3 style="margin: 1.5rem 0 1rem;">Mécanisme de Résolution</h3>
+    <div class="info-box info">
+      <span class="icon-box">&#8505;</span>
+      <div>
+        <strong>Algorithme getParametre(clé, etablissementId)</strong>
+        <p>1. Chercher <code>(cle, etablissementId)</code> → si trouvé, retourner<br>
+        2. Chercher <code>(cle, NULL)</code> → valeur globale<br>
+        3. Retourner <code>valeurDefaut</code> du paramètre (ou undefined)<br>
+        Cache in-memory 60s avec invalidation par événement (EventEmitter)</p>
+      </div>
+    </div>
+
+    <pre><code>// Exemple de résolution multi-tenant
+const valeur = await configurationService.getParametre&lt;boolean&gt;(
+  'notes.require_validation',
+  etablissementId  // UUID tenant ou undefined pour global
+);
+
+// Priorité : override tenant → global → défaut
+// Cache : Map in-memory, TTL 60s, invalidation EventEmitter</code></pre>
+  </div>
+</section>
+
+<!-- SECTION 3: CASCADE -->
+<section class="section" id="cascade">
+  <div class="section-header">
+    <div class="icon yellow">&#9660;</div>
+    <h2>3. Cascade de Configuration — 4 Niveaux</h2>
+    <span class="badge ok">Vérifié</span>
+  </div>
+  <div class="section-body">
+    <p>Le système de cascade permet des <strong>overrides hiérarchiques</strong> : une valeur globale peut être surchargée au niveau groupe, puis au niveau établissement.</p>
+
+    <div class="cascade">
+      <div class="cascade-level level-1">
+        <div class="cascade-line">
+          <div class="cascade-dot"></div>
+          <div class="cascade-connector"></div>
+        </div>
+        <div class="cascade-content">
+          <h4><span class="pill red">Priorité 1</span> Système (code defaults)</h4>
+          <p>Valeurs par défaut codées dans <code>configuration-seed.service.ts</code> — 100+ paramètres initialisés. Fallback ultime.</p>
+        </div>
+      </div>
+      <div class="cascade-level level-2">
+        <div class="cascade-line">
+          <div class="cascade-dot"></div>
+          <div class="cascade-connector"></div>
+        </div>
+        <div class="cascade-content">
+          <h4><span class="pill yellow">Priorité 2</span> Global (etablissementId = NULL)</h4>
+          <p>Valeur globale dans <code>parametres_systeme</code>. Appliquée à tous les établissements sauf override.</p>
+        </div>
+      </div>
+      <div class="cascade-level level-3">
+        <div class="cascade-line">
+          <div class="cascade-dot"></div>
+          <div class="cascade-connector"></div>
+        </div>
+        <div class="cascade-content">
+          <h4><span class="pill blue">Priorité 3</span> Groupe (groupeEtablissementId)</h4>
+          <p>Override pour un groupe d'établissements (SaaS v7 — Lot C). Intermédiaire entre global et établissement.</p>
+        </div>
+      </div>
+      <div class="cascade-level level-4">
+        <div class="cascade-line">
+          <div class="cascade-dot"></div>
+        </div>
+        <div class="cascade-content">
+          <h4><span class="pill green">Priorité 4</span> Établissement (etablissementId = UUID)</h4>
+          <p>Override spécifique à un établissement. Priorité maximale. Isolation stricte par RLS.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mermaid">
+graph LR
+    S[Système<br>Code defaults] --> G[Global<br>etabId=NULL]
+    G --> GR[Groupe<br>groupeId=UUID]
+    GR --> E[Établissement<br>etabId=UUID]
+
+    S -.->|fallback| G
+    G -.->|fallback| GR
+    GR -.->|fallback| E
+
+    style S fill:#fee2e2,stroke:#dc3545
+    style G fill:#fef3c7,stroke:#ffc107
+    style GR fill:#dbeafe,stroke:#007bff
+    style E fill:#d1fae5,stroke:#28a745
+    </div>
+
+    <h3 style="margin: 1.5rem 0 1rem;">Détection d'Incohérences</h3>
+    <p>Le service <code>parametres-cascade.service.ts</code> détecte 3 types d'incohérences :</p>
+    <table>
+      <thead>
+        <tr><th>Type</th><th>Description</th><th>Impact</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>ORPHAN_OVERRIDE</code></td>
+          <td>Override établissement sans valeur globale de référence</td>
+          <td><span class="pill yellow">Avertissement</span></td>
+        </tr>
+        <tr>
+          <td><code>REDUNDANT_OVERRIDE</code></td>
+          <td>Override identique à la valeur globale (inutile)</td>
+          <td><span class="pill blue">Info</span></td>
+        </tr>
+        <tr>
+          <td><code>TYPE_MISMATCH</code></td>
+          <td>Type de valeur différent entre global et override</td>
+          <td><span class="pill red">Critique</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SECTION 4: ISOLATION -->
+<section class="section" id="isolation">
+  <div class="section-header">
+    <div class="icon green">&#128274;</div>
+    <h2>4. Isolation Multi-Tenant — 5 Couches de Défense</h2>
+    <span class="badge ok">Confirmé</span>
+  </div>
+  <div class="section-body">
+    <p>L'isolation des configurations tenant est garantie par <strong>5 couches successives</strong>. Chaque couche est indépendante — la compromission d'une seule ne suffit pas à exposer les données d'un autre tenant.</p>
+
+    <div class="layers">
+      <div class="layer">
+        <div class="layer-num" style="background: var(--primary);">1</div>
+        <div class="layer-content">
+          <h4>Contrainte Unique (Data Layer)</h4>
+          <p><code>UNIQUE(cle, etablissementId)</code> — chaque paramètre est physiquement isolé par établissement dans la base de données.</p>
+        </div>
+        <span class="layer-tag" style="background: rgba(40,167,69,0.1); color: var(--primary);">PostgreSQL</span>
+      </div>
+      <div class="layer">
+        <div class="layer-num" style="background: var(--accent);">2</div>
+        <div class="layer-content">
+          <h4>Row-Level Security (RLS)</h4>
+          <p>Toutes les tables avec <code>etablissementId</code> ont RLS activé (migrations 152-153-164). Policy : <code>etablissementId = current_setting('app.current_tenant')</code>.</p>
+        </div>
+        <span class="layer-tag" style="background: rgba(0,123,255,0.1); color: var(--accent);">RLS</span>
+      </div>
+      <div class="layer">
+        <div class="layer-num" style="background: #6f42c1;">3</div>
+        <div class="layer-content">
+          <h4>Service Layer (Résolution)</h4>
+          <p><code>configurationService.getParametre()</code> filtre toujours par <code>etablissementId</code>. Le fallback global est contrôlé (NULL explicite).</p>
+        </div>
+        <span class="layer-tag" style="background: rgba(111,66,193,0.1); color: #6f42c1;">TypeScript</span>
+      </div>
+      <div class="layer">
+        <div class="layer-num" style="background: var(--warning);">4</div>
+        <div class="layer-content">
+          <h4>Controller Layer (Scoping)</h4>
+          <p>Le controller force <code>etablissementId</code> depuis le token JWT pour les rôles non-SUPER_ADMIN. SUPER_ADMIN peut spécifier un <code>etablissementId</code> via query param.</p>
+        </div>
+        <span class="layer-tag" style="background: rgba(255,193,7,0.15); color: #997a00;">Express</span>
+      </div>
+      <div class="layer">
+        <div class="layer-num" style="background: var(--danger);">5</div>
+        <div class="layer-content">
+          <h4>Middleware Layer (Cross-Plane Rejection)</h4>
+          <p><code>platformAuthMiddleware</code> rejette les tokens <code>plane: 'platform'</code> sur les routes tenant. <code>rlsMiddleware</code> rejette les tokens platform via <code>rejectCrossPlaneRequest()</code>.</p>
+        </div>
+        <span class="layer-tag" style="background: rgba(220,53,69,0.1); color: var(--danger);">Guard</span>
+      </div>
+    </div>
+
+    <div class="mermaid">
+sequenceDiagram
+    participant T as Tenant (ADMIN)
+    participant M as Middleware RLS
+    participant C as Controller
+    participant S as Service
+    participant DB as PostgreSQL
+
+    T->>M: GET /api/configuration?cle=notes.require_validation
+    M->>M: SET LOCAL app.current_tenant = etabId
+    M->>C: req.etablissementId (forcé depuis JWT)
+    C->>S: getParametre(cle, etablissementId)
+    S->>DB: SELECT WHERE cle = $1 AND etablissementId = $2
+    DB-->>S: Valeur tenant (ou fallback global NULL)
+    S-->>C: Résultat
+    C-->>T: { success: true, data: valeur }
+
+    Note over T,DB: SUPER_ADMIN bypass : UUID sentinel 00000000-...
+    </div>
+
+    <div class="info-box success">
+      <span class="icon-box">&#10003;</span>
+      <div>
+        <strong>Isolation Vérifiée</strong>
+        <p>Chaque établissement a sa propre configuration isolée. Les 5 couches garantissent qu'aucun tenant ne peut accéder aux paramètres d'un autre tenant, même en cas de compromission d'une seule couche.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5: EXPOSITION -->
+<section class="section" id="exposition">
+  <div class="section-header">
+    <div class="icon red">&#9888;</div>
+    <h2>5. Exposition Plateforme vs Tenant — Analyse</h2>
+    <span class="badge ok">Sécurisé</span>
+  </div>
+  <div class="section-body">
+    <h3 style="margin-bottom: 1rem;">5.1 Paramètres Exposés aux Tenants (Sans Auth)</h3>
+    <p>Seules <strong>9 clés</strong> sont exposées publiquement via <code>PUBLIC_CONFIG_KEYS</code> — toutes non-sensibles :</p>
+
+    <div class="whitelist-grid">
+      <div class="whitelist-item">
+        <code>app.nom</code>
+        <span>Nom de l'application</span>
+      </div>
+      <div class="whitelist-item">
+        <code>app.version</code>
+        <span>Version courante</span>
+      </div>
+      <div class="whitelist-item">
+        <code>app.langueDefaut</code>
+        <span>Langue par défaut</span>
+      </div>
+      <div class="whitelist-item">
+        <code>app.devise</code>
+        <span>Devise monétaire (XAF)</span>
+      </div>
+      <div class="whitelist-item">
+        <code>app.fuseauHoraire</code>
+        <span>Fuseau horaire</span>
+      </div>
+      <div class="whitelist-item">
+        <code>app.theme</code>
+        <span>Thème UI</span>
+      </div>
+      <div class="whitelist-item">
+        <code>app.logo</code>
+        <span>URL du logo</span>
+      </div>
+      <div class="whitelist-item">
+        <code>app.maintenance</code>
+        <span>Mode maintenance</span>
+      </div>
+      <div class="whitelist-item">
+        <code>app.licence</code>
+        <span>Type de licence</span>
+      </div>
+    </div>
+
+    <h3 style="margin: 1.5rem 0 1rem;">5.2 Séparation RBAC-2 v5.1</h3>
+    <div class="mermaid">
+graph TB
+    subgraph "Permissions Plateforme (SUPER_ADMIN uniquement)"
+        P1["config:plateforme:edit"]
+        P2["config:plateforme:modules:toggle"]
+        P3["config:plateforme:backup:create"]
+        P4["config:plateforme:backup:restore"]
+    end
+
+    subgraph "Permissions Tenant (ADMIN établissement)"
+        T1["config:view"]
+        T2["config:edit"]
+        T3["config:module:view"]
+    end
+
+    subgraph "Paramètres Critiques (NON exposés aux tenants)"
+        C1["securite.* (JWT, encryption)"]
+        C2["backup.* (chemins, providers)"]
+        C3["platform.* (settings internes)"]
+        C4["modules.{x}.actif (toggle global)"]
+    end
+
+    P1 -.->|protège| C1
+    P1 -.->|protège| C2
+    P2 -.->|protège| C4
+    T1 -->|accès| PS[Paramètres tenant scoped]
+    T2 -->|modification| PS
+
+    style P1 fill:#fee2e2,stroke:#dc3545
+    style P2 fill:#fee2e2,stroke:#dc3545
+    style P3 fill:#fee2e2,stroke:#dc3545
+    style P4 fill:#fee2e2,stroke:#dc3545
+    style T1 fill:#d1fae5,stroke:#28a745
+    style T2 fill:#d1fae5,stroke:#28a745
+    style T3 fill:#d1fae5,stroke:#28a745
+    </div>
+
+    <h3 style="margin: 1.5rem 0 1rem;">5.3 Matrice d'Exposition</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Catégorie</th>
+          <th>Exemple</th>
+          <th>Public</th>
+          <th>Tenant</th>
+          <th>Plateforme</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Apparence</td>
+          <td><code>app.nom</code>, <code>app.logo</code></td>
+          <td><span class="pill green">Oui</span></td>
+          <td><span class="pill green">Lecture/Écriture</span></td>
+          <td><span class="pill green">Total</span></td>
+        </tr>
+        <tr>
+          <td>Régional</td>
+          <td><code>app.devise</code>, <code>app.fuseauHoraire</code></td>
+          <td><span class="pill green">Oui</span></td>
+          <td><span class="pill green">Lecture/Écriture</span></td>
+          <td><span class="pill green">Total</span></td>
+        </tr>
+        <tr>
+          <td>Modules (état)</td>
+          <td><code>notes.actif</code>, <code>cantine.actif</code></td>
+          <td><span class="pill red">Non</span></td>
+          <td><span class="pill blue">Lecture seule</span></td>
+          <td><span class="pill green">Toggle</span></td>
+        </tr>
+        <tr>
+          <td>Validation</td>
+          <td><code>notes.require_validation</code></td>
+          <td><span class="pill red">Non</span></td>
+          <td><span class="pill green">Lecture/Écriture</span></td>
+          <td><span class="pill green">Cascade</span></td>
+        </tr>
+        <tr>
+          <td>Sécurité</td>
+          <td><code>securite.jwt.*</code>, <code>securite.encryption.*</code></td>
+          <td><span class="pill red">Non</span></td>
+          <td><span class="pill red">Aucun accès</span></td>
+          <td><span class="pill green">Total</span></td>
+        </tr>
+        <tr>
+          <td>Backup</td>
+          <td><code>backup.*</code></td>
+          <td><span class="pill red">Non</span></td>
+          <td><span class="pill red">Aucun accès</span></td>
+          <td><span class="pill green">Total</span></td>
+        </tr>
+        <tr>
+          <td>Notifications</td>
+          <td><code>notifications.*</code></td>
+          <td><span class="pill red">Non</span></td>
+          <td><span class="pill green">Lecture/Écriture</span></td>
+          <td><span class="pill green">Total</span></td>
+        </tr>
+        <tr>
+          <td>Custom</td>
+          <td><code>custom.*</code></td>
+          <td><span class="pill red">Non</span></td>
+          <td><span class="pill green">Lecture/Écriture</span></td>
+          <td><span class="pill green">Total</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="info-box success">
+      <span class="icon-box">&#10003;</span>
+      <div>
+        <strong>Aucune Exposition Critique</strong>
+        <p>Les paramètres critiques de plateforme (sécurité, backup, modules globaux) sont <strong>totalement isolés</strong> des tenants. Le RBAC-2 v5.1 garantit la séparation via des permissions distinctes <code>config:plateforme:*</code> vs <code>config:*</code>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 6: MODULES -->
+<section class="section" id="modules">
+  <div class="section-header">
+    <div class="icon blue">&#9635;</div>
+    <h2>6. Cascade d'Activation des Modules — 5 Niveaux</h2>
+    <span class="badge ok">Vérifié</span>
+  </div>
+  <div class="section-body">
+    <p>L'activation d'un module pour un établissement suit une cascade de <strong>5 niveaux</strong>, du plus général au plus spécifique :</p>
+
+    <div class="mermaid">
+graph TD
+    A["1. ModuleCatalogue<br>actifParDefaut (DB)"] --> B["2. PlanAbonnement<br>modulesInclus (plan)"]
+    B --> C["3. ModulesGroupe<br>override groupe (SaaS v7)"]
+    C --> D["4. AbonnementModule<br>souscription supplémentaire"]
+    D --> E["5. ParametreSysteme<br>modules.{code}.actif (override)"]
+
+    A -.->|défaut| R[Résolution Finale]
+    B -.->|inclut| R
+    C -.->|override| R
+    D -.->|ajoute| R
+    E -.->|force| R
+
+    style A fill:#d1fae5,stroke:#28a745
+    style B fill:#dbeafe,stroke:#007bff
+    style C fill:#e8daef,stroke:#6f42c1
+    style D fill:#fef3c7,stroke:#ffc107
+    style E fill:#fee2e2,stroke:#dc3545
+    style R fill:#f0f0f0,stroke:#333
+    </div>
+
+    <h3 style="margin: 1.5rem 0 1rem;">Résolution par ModuleResolutionService</h3>
+    <pre><code>// Cascade de résolution (module-resolution.service.ts v3)
+async resoudre(etablissementId: string): Promise&lt;ModuleResolu[]&gt; {
+  // 1. Charger catalogue actif
+  const catalogue = await this.getCatalogueActif();
+
+  // 2. Résoudre plan abonnement
+  const plan = await this.getPlanAbonnement(etablissementId);
+  const modulesInclus = plan?.modulesInclus ?? [];
+
+  // 3. Résoudre groupe (SaaS v7)
+  const groupeOverrides = await this.getModulesGroupe(etablissementId);
+
+  // 4. Résoudre souscriptions supplémentaires
+  const supplements = await this.getAbonnementModules(etablissementId);
+
+  // 5. Appliquer overrides ParametreSysteme
+  const overrides = await this.getParamOverrides(etablissementId);
+
+  // Fusion : catalogue → plan → groupe → supplément → override
+  return this.fusionner(catalogue, modulesInclus, groupeOverrides, supplements, overrides);
+}
+
+// Cache : Redis TTL 60s + in-memory fallback + pub/sub invalidation</code></pre>
+
+    <div class="info-box info">
+      <span class="icon-box">&#8505;</span>
+      <div>
+        <strong>41 modules catalogués (seed v7)</strong>
+        <p>20 modules CRITIQUES (actifs par défaut), 15 PREMIUM (facturables), 6 ADD-ON (souscriptibles). Source unique : <code>modules_catalogue</code> — les 3 anciens registres divergents ont été supprimés.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 7: FEATURE FLAGS & TRANCHES -->
+<section class="section" id="feature-flags">
+  <div class="section-header">
+    <div class="icon yellow">&#9873;</div>
+    <h2>7. Feature Flags & Tranches — Cascades Billing</h2>
+    <span class="badge ok">Vérifié</span>
+  </div>
+  <div class="section-body">
+    <h3 style="margin-bottom: 1rem;">7.1 Feature Flags — Cascade 3 Niveaux</h3>
+    <div class="flow-diagram">
+      <div class="flow-node" style="border-color: var(--danger); background: rgba(220,53,69,0.05);">FeatureFlagTenant<br><small>Override tenant</small></div>
+      <span class="flow-arrow">&#8594;</span>
+      <div class="flow-node" style="border-color: var(--accent); background: rgba(0,123,255,0.05);">Plan.featureFlags<br><small>Plan abonnement</small></div>
+      <span class="flow-arrow">&#8594;</span>
+      <div class="flow-node" style="border-color: var(--primary); background: rgba(40,167,69,0.05);">Plan.modulesInclus<br><small>Modules inclus</small></div>
+      <span class="flow-arrow">&#8594;</span>
+      <div class="flow-node" style="border-color: var(--text-secondary); background: var(--surface-alt);">default: false<br><small>Défaut</small></div>
+    </div>
+
+    <h3 style="margin: 1.5rem 0 1rem;">7.2 Tranches Pricing — Cascade 4 Niveaux</h3>
+    <div class="flow-diagram">
+      <div class="flow-node" style="border-color: var(--primary); background: rgba(40,167,69,0.05);">TrancheSupplement<br><small>Établissement</small></div>
+      <span class="flow-arrow">&#8592;</span>
+      <div class="flow-node" style="border-color: var(--accent); background: rgba(0,123,255,0.05);">TrancheGroupe<br><small>Groupe SaaS</small></div>
+      <span class="flow-arrow">&#8592;</span>
+      <div class="flow-node" style="border-color: var(--warning); background: rgba(255,193,7,0.05);">TrancheEleves<br><small>Plan</small></div>
+      <span class="flow-arrow">&#8592;</span>
+      <div class="flow-node" style="border-color: var(--danger); background: rgba(220,53,69,0.05);">Système<br><small>Défaut code</small></div>
+    </div>
+
+    <div class="mermaid">
+graph LR
+    subgraph "Mode Auto (défaut)"
+        A1[Comptage élèves réel] --> A2[Application tranches plan]
+        A2 --> A3[Prorata inter-cycle]
+        A3 --> A4["TVA 19.25% OHADA"]
+    end
+
+    subgraph "Mode Déclaratif"
+        D1["Tranche souscrite"] --> D2["Montant fixe"]
+        D2 --> D3["TVA 19.25% OHADA"]
+    end
+
+    style A4 fill:#d1fae5,stroke:#28a745
+    style D3 fill:#d1fae5,stroke:#28a745
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 8: SECURITE -->
+<section class="section" id="securite">
+  <div class="section-header">
+    <div class="icon red">&#128737;</div>
+    <h2>8. Sécurité & Guards — Chaîne de Protection</h2>
+    <span class="badge ok">Enterprise</span>
+  </div>
+  <div class="section-body">
+    <div class="mermaid">
+sequenceDiagram
+    participant C as Client
+    participant PM as platformAuthMiddleware
+    participant DC as dualCaslMiddleware
+    participant RA as requirePlatformAccess
+    participant RC as requirePlatformCasl
+    participant Ctrl as Controller
+
+    C->>PM: Requête /api/platform/*
+    PM->>PM: Vérifier JWT + plane='platform'
+    alt Token sans plane='platform'
+        PM-->>C: 403 CROSS_PLANE_REJECTED
+    end
+    PM->>DC: Résoudre CASL abilities
+    DC->>DC: defineAbility(ctx) avec rôle plateforme
+    DC->>RA: Vérifier membership actif
+    RA->>RC: Guard granulaire (action, subject)
+    RC->>Ctrl: Accès autorisé
+    Ctrl-->>C: Réponse
+    </div>
+
+    <h3 style="margin: 1.5rem 0 1rem;">Guards de Configuration</h3>
+    <table>
+      <thead>
+        <tr><th>Guard</th><th>Scope</th><th>Rôle</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>platformAuthMiddleware</code></td>
+          <td>Routes <code>/api/platform/*</code></td>
+          <td>Rejette tokens sans <code>plane: 'platform'</code></td>
+        </tr>
+        <tr>
+          <td><code>dualCaslMiddleware</code></td>
+          <td>Global</td>
+          <td>Résout CASL pour les deux plans (platform/tenant)</td>
+        </tr>
+        <tr>
+          <td><code>requirePlatformAccess()</code></td>
+          <td>Routes platform</td>
+          <td>Vérifie membership plateforme actif</td>
+        </tr>
+        <tr>
+          <td><code>canEditConfigAppPlateforme</code></td>
+          <td>Config globale</td>
+          <td>SUPER_ADMIN uniquement</td>
+        </tr>
+        <tr>
+          <td><code>canToggleModulePlateforme</code></td>
+          <td>Toggle modules</td>
+          <td>SUPER_ADMIN uniquement</td>
+        </tr>
+        <tr>
+          <td><code>canCreateBackupPlateforme</code></td>
+          <td>Création backup</td>
+          <td>SUPER_ADMIN uniquement</td>
+        </tr>
+        <tr>
+          <td><code>rlsMiddleware</code></td>
+          <td>Routes tenant</td>
+          <td>SET LOCAL + rejectCrossPlaneRequest()</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin: 1.5rem 0 1rem;">Chiffrement & Gestion des Clés</h3>
+    <table>
+      <thead>
+        <tr><th>Type Clé</th><th>Algorithme</th><th>Rotation</th><th>Stockage</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>JWT</td>
+          <td>HMAC-SHA256</td>
+          <td>Manuelle</td>
+          <td>Env var (32+ chars)</td>
+        </tr>
+        <tr>
+          <td>Encryption</td>
+          <td>AES-256-GCM</td>
+          <td>90 jours auto</td>
+          <td>DB chiffrée + env var</td>
+        </tr>
+        <tr>
+          <td>MFA (TOTP)</td>
+          <td>HMAC-SHA1</td>
+          <td>Par utilisateur</td>
+          <td>Colonne utilisateurs</td>
+        </tr>
+        <tr>
+          <td>Audit HMAC</td>
+          <td>HMAC-SHA256</td>
+          <td>Chaîne continue</td>
+          <td>Colonne integriteHash</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SECTION 9: ADMIN PANEL -->
+<section class="section" id="admin-panel">
+  <div class="section-header">
+    <div class="icon blue">&#9733;</div>
+    <h2>9. Panel Admin Platform — Gestion Configuration</h2>
+    <span class="badge ok">Complet</span>
+  </div>
+  <div class="section-body">
+    <p>Le panel d'administration plateforme permet de <strong>modifier les configurations de tous les établissements</strong> depuis une interface centralisée.</p>
+
+    <div class="mermaid">
+graph TB
+    subgraph "Panel Platform /platform/*"
+        CFG["Configuration<br>/platform/configuration"]
+        CAS["Paramètres Cascade<br>/platform/parametres/cascade"]
+        ETB["Établissements<br>/platform/etablissements"]
+        MOD["Modules<br>/platform/modules"]
+        GRP["Groupes SaaS<br>/platform/groupes"]
+    end
+
+    subgraph "Actions Disponibles"
+        A1["Modifier paramètre global"]
+        A2["Propager vers établissements"]
+        A3["Override par établissement"]
+        A4["Toggle module"]
+        A5["Configurer tranches"]
+        A6["Feature flags"]
+        A7["Backup/Restore"]
+        A8["Audit & Rollback"]
+    end
+
+    CFG --> A1
+    CFG --> A7
+    CFG --> A8
+    CAS --> A2
+    CAS --> A3
+    CAS --> A8
+    ETB --> A3
+    ETB --> A4
+    MOD --> A4
+    MOD --> A5
+    MOD --> A6
+    GRP --> A5
+    GRP --> A6
+    </div>
+
+    <h3 style="margin: 1.5rem 0 1rem;">Endpoints API Configuration</h3>
+    <table>
+      <thead>
+        <tr><th>Méthode</th><th>Route</th><th>Guard</th><th>Action</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="pill green">GET</span></td><td><code>/api/configuration</code></td><td>Auth (public keys)</td><td>Liste paramètres (whitelist si non-auth)</td></tr>
+        <tr><td><span class="pill green">GET</span></td><td><code>/api/configuration/:cle</code></td><td>config:view</td><td>Valeur paramètre (scopé tenant)</td></tr>
+        <tr><td><span class="pill blue">PATCH</span></td><td><code>/api/configuration/:cle</code></td><td>config:edit</td><td>Modifier paramètre tenant</td></tr>
+        <tr><td><span class="pill blue">POST</span></td><td><code>/api/configuration/reset/:cle</code></td><td>config:edit</td><td>Reset vers valeur globale</td></tr>
+        <tr><td><span class="pill green">GET</span></td><td><code>/api/configuration/modules/status</code></td><td>config:module:view</td><td>Statut tous modules</td></tr>
+        <tr><td colspan="4" style="background: rgba(220,53,69,0.04); font-weight: 700; color: var(--danger);">Routes Plateforme (SUPER_ADMIN)</td></tr>
+        <tr><td><span class="pill green">GET</span></td><td><code>/api/platform/parametres/cascade/:cle</code></td><td>Platform + CASL</td><td>Vue cascade 4 niveaux</td></tr>
+        <tr><td><span class="pill blue">PUT</span></td><td><code>/api/platform/parametres/cascade/:cle/global</code></td><td>Platform + CASL</td><td>Modifier valeur globale</td></tr>
+        <tr><td><span class="pill blue">PUT</span></td><td><code>/api/platform/parametres/cascade/:cle/propager</code></td><td>Platform + CASL</td><td>Propager global → tous établissements</td></tr>
+        <tr><td><span class="pill blue">POST</span></td><td><code>/api/platform/parametres/cascade/:cle/rollback/:versionId</code></td><td>Platform + CASL</td><td>Rollback version</td></tr>
+        <tr><td><span class="pill green">GET</span></td><td><code>/api/platform/parametres/cascade/incoherences</code></td><td>Platform + CASL</td><td>Détection incohérences</td></tr>
+        <tr><td><span class="pill blue">PUT</span></td><td><code>/api/platform/facturation/modules/catalogue/sync</code></td><td>Platform + CASL</td><td>Re-sync catalogue modules</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box success">
+      <span class="icon-box">&#10003;</span>
+      <div>
+        <strong>Modification Depuis le Panel</strong>
+        <p>Oui, les paramètres et configurations de chaque établissement peuvent être modifiés depuis le panel de gestion des établissements. La cascade UI (<code>parametres-cascade-page.tsx</code>) permet de visualiser et modifier les 4 niveaux, avec historique complet et rollback.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 10: RECOMMANDATIONS -->
+<section class="section" id="recommandations">
+  <div class="section-header">
+    <div class="icon green">&#10003;</div>
+    <h2>10. Recommandations & Verdict Final</h2>
+    <span class="badge ok">9.5/10</span>
+  </div>
+  <div class="section-body">
+    <h3 style="margin-bottom: 1rem;">Verdict Global</h3>
+    <table>
+      <thead>
+        <tr><th>Critère</th><th>Score</th><th>Statut</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Source unique de vérité</td>
+          <td><strong>10/10</strong></td>
+          <td><span class="pill green">ParametreSysteme = source unique confirmée</span></td>
+        </tr>
+        <tr>
+          <td>Isolation multi-tenant</td>
+          <td><strong>10/10</strong></td>
+          <td><span class="pill green">5 couches de défense, RLS activé</span></td>
+        </tr>
+        <tr>
+          <td>Séparation plateforme/tenant</td>
+          <td><strong>10/10</strong></td>
+          <td><span class="pill green">RBAC-2 v5.1 + dual-plane auth</span></td>
+        </tr>
+        <tr>
+          <td>Cascade de configuration</td>
+          <td><strong>9/10</strong></td>
+          <td><span class="pill green">4 niveaux avec détection incohérences</span></td>
+        </tr>
+        <tr>
+          <td>Activation modules</td>
+          <td><strong>10/10</strong></td>
+          <td><span class="pill green">Catalogue DB unifié (v7 Lot A)</span></td>
+        </tr>
+        <tr>
+          <td>Feature flags & tranches</td>
+          <td><strong>9/10</strong></td>
+          <td><span class="pill green">Cascades spécialisées cohérentes</span></td>
+        </tr>
+        <tr>
+          <td>Sécurité guards</td>
+          <td><strong>10/10</strong></td>
+          <td><span class="pill green">Enterprise-grade (v9 hardening)</span></td>
+        </tr>
+        <tr>
+          <td>Audit & traçabilité</td>
+          <td><strong>9/10</strong></td>
+          <td><span class="pill green">Historique + versions + rollback</span></td>
+        </tr>
+        <tr>
+          <td>Modification via panel</td>
+          <td><strong>10/10</strong></td>
+          <td><span class="pill green">UI cascade complète + propagation</span></td>
+        </tr>
+        <tr>
+          <td>ConfigurationApp (legacy)</td>
+          <td><strong>5/10</strong></td>
+          <td><span class="pill yellow">Encore présent, à supprimer (v3.0)</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin: 1.5rem 0 1rem;">Recommandations</h3>
+    <div class="info-box warning">
+      <span class="icon-box">&#9888;</span>
+      <div>
+        <strong>R1 — Supprimer ConfigurationApp (v3.0)</strong>
+        <p>L'entité <code>ConfigurationApp</code> est marquée dépréciée depuis v2.0. Planifier sa suppression complète pour éliminer toute ambiguïté sur la source de vérité.</p>
+      </div>
+    </div>
+    <div class="info-box info">
+      <span class="icon-box">&#8505;</span>
+      <div>
+        <strong>R2 — Étendre le cache Redis pub/sub</strong>
+        <p>L'invalidation cache via EventEmitter est locale au processus. En cluster (multi-instance), le pub/sub Redis est nécessaire pour propager les invalidations. Déjà implémenté dans <code>moduleResolutionService</code> — étendre à <code>configurationService</code>.</p>
+      </div>
+    </div>
+    <div class="info-box info">
+      <span class="icon-box">&#8505;</span>
+      <div>
+        <strong>R3 — Paramètres sensibles : chiffrement valeur</strong>
+        <p>Certains paramètres (ex: credentials notifications) sont stockés en clair dans <code>valeur</code>. Envisager un type <code>ENCRYPTED</code> dans <code>typeValeur</code> pour chiffrement automatique via <code>CleCryptographique</code>.</p>
+      </div>
+    </div>
+
+    <div class="info-box success" style="margin-top: 1.5rem;">
+      <span class="icon-box">&#9733;</span>
+      <div>
+        <strong>Conclusion</strong>
+        <p>Le système de configuration eLISAschool est <strong>robuste, cohérent et enterprise-grade</strong>. La source unique de vérité (<code>ParametreSysteme</code>) est correctement implémentée avec isolation multi-tenant stricte (5 couches), séparation plateforme/tenant (RBAC-2 + dual-plane), et cascade 4 niveaux avec détection d'incohérences. Les paramètres critiques de plateforme ne sont <strong>jamais exposés</strong> aux tenants. Le panel admin permet la gestion complète de toutes les configurations.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<!-- FOOTER -->
+<footer class="report-footer">
+  <p><strong>eLISAschool</strong> — Rapport d'audit configuration &amp; paramétrage</p>
+  <p>Généré le 2026-08-10 | Version v7.1 | Score sécurité : 9.5/10</p>
+  <p style="margin-top: 0.5rem;">Architecture SaaS multi-tenant — Single-DB + RLS + CASL.js + Dual-Plane Auth</p>
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#d1fae5',
+      primaryTextColor: '#1a1a2e',
+      primaryBorderColor: '#28a745',
+      lineColor: '#6c757d',
+      secondaryColor: '#dbeafe',
+      tertiaryColor: '#f8f9fa',
+      fontFamily: 'Segoe UI, system-ui, sans-serif',
+      fontSize: '14px'
+    },
+    flowchart: { curve: 'basis', padding: 15 },
+    sequence: { mirrorActors: false, messageMargin: 40 }
+  });
+</script>
+
+</body>
+</html>

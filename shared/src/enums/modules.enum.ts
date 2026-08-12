@@ -72,6 +72,9 @@ export enum ModuleName {
   // Module RH & Recrutement
   RECRUTEMENT = 'recrutement',
 
+  // Module CMS (pages publiques white-label)
+  CMS = 'cms',
+
   // Modules manquants (référencés dans app.ts mais absents du registre)
   SALLES = 'salles',
   OPTIONS = 'options',
@@ -148,6 +151,7 @@ export const MODULE_CATEGORIES: Record<ModuleName, ModuleCategory> = {
   [ModuleName.ORGANISATION]: ModuleCategory.CRITIQUES,
   [ModuleName.POSTES]: ModuleCategory.CRITIQUES,
   [ModuleName.RECRUTEMENT]: ModuleCategory.CRITIQUES,
+  [ModuleName.CMS]: ModuleCategory.COMMUNICATION,
   [ModuleName.SALLES]: ModuleCategory.LOGISTIQUES,
   [ModuleName.OPTIONS]: ModuleCategory.ACADEMIQUES,
   [ModuleName.PERSONNEL]: ModuleCategory.ACADEMIQUES,

@@ -1,0 +1,225 @@
+{
+  "titre": "Configuration Plateforme",
+  "sousTitre": "Paramètres globaux du système eLISAschool",
+  "actualiser": "Actualiser",
+  "rechercher": "Rechercher un paramètre...",
+  "chargement": "Chargement des paramètres...",
+  "aucunParametre": "Aucun paramètre trouvé",
+  "aucunResultat": "Aucun résultat pour cette recherche",
+  "sauvegardeSucces": "Paramètres enregistrés avec succès",
+  "sauvegardeErreur": "Erreur lors de l'enregistrement",
+  "resetConfirm": "Réinitialiser cette catégorie ?",
+  "resetMessage": "Tous les paramètres de cette catégorie seront restaurés à leurs valeurs par défaut.",
+  "resetSucces": "Catégorie réinitialisée",
+    "resetCategorie": "Réinitialiser",
+  "modifications": "modification(s) non enregistrée(s)",
+  "annuler": "Annuler",
+  "enregistrer": "Enregistrer",
+  "oui": "Oui",
+  "non": "Non",
+  "active": "Actif",
+  "inactive": "Inactif",
+  "featureFlags": "Feature Flags",
+  "exporter": "Exporter",
+  "importer": "Importer",
+  "reduire": "Réduire",
+  "developper": "Développer",
+  "sectionReduite": "Section réduite — cliquez pour afficher le contenu",
+  "categories": {
+    "systeme": "Système & Application",
+    "securite": "Sécurité & Authentification",
+    "modules": "Modules & Features",
+    "notifications": "Notifications",
+    "regional": "Régional & Langue",
+    "sauvegarde": "Sauvegarde & Restauration",
+    "historique": "Historique & Audit",
+    "personnalise": "Personnalisé"
+  },
+  "sections": {
+    "systeme": {
+      "titre": "Système & Application",
+      "description": "Paramètres fondamentaux du système",
+      "maintenance": {
+        "titre": "Mode Maintenance",
+        "description": "Contrôle l'accès à l'application pendant la maintenance"
+      },
+      "logs": {
+        "titre": "Journalisation",
+        "description": "Niveau de détail des logs système"
+      },
+      "backup": {
+        "titre": "Sauvegarde automatique",
+        "description": "Configuration des backups automatiques"
+      }
+    },
+    "securite": {
+      "titre": "Sécurité & Authentification",
+      "description": "Politiques de sécurité, sessions et authentification",
+      "session": {
+        "titre": "Gestion des sessions",
+        "description": "Durée et comportement des sessions utilisateur"
+      },
+      "password": {
+        "titre": "Politique de mot de passe",
+        "description": "Complexité, longueur et expiration des mots de passe"
+      },
+      "mfa": {
+        "titre": "Authentification multi-facteurs",
+        "description": "Configuration MFA/TOTP"
+      },
+      "protection": {
+        "titre": "Protections",
+        "description": "Protection anti-brute-force et rate limiting"
+      },
+      "tokens": {
+        "titre": "Tokens & JWT",
+        "description": "Durée de vie des tokens d'accès et rafraîchissement"
+      }
+    },
+    "modules": {
+      "titre": "Modules & Features",
+      "description": "Activation et configuration des modules métier",
+      "activer": "Activer",
+      "desactiver": "Désactiver",
+      "impact": "Impact de la modification",
+      "dependances": "Dépendances",
+      "confirmChange": "Confirmer le changement de statut",
+      "confirmMessage": "Cette action va {{action}} le module {{module}}."
+    },
+    "notifications": {
+      "titre": "Notifications",
+      "description": "Canaux et préférences de notification",
+      "canaux": {
+        "titre": "Canaux de diffusion",
+        "description": "Activer ou désactiver les canaux de notification"
+      },
+      "preferences": {
+        "titre": "Préférences par événement",
+        "description": "Choisir quels événements déclenchent des notifications"
+      },
+      "email": "Email",
+      "sms": "SMS",
+      "push": "Push Web",
+      "websocket": "Temps réel",
+      "emailDesc": "Notifications par courrier électronique",
+      "smsDesc": "Notifications par texto",
+      "pushDesc": "Notifications dans le navigateur",
+      "websocketDesc": "Notifications instantanées via WebSocket",
+      "nouvellesInscriptions": "Nouvelles inscriptions",
+      "notesAjoutees": "Notes ajoutées",
+      "bulletinsDisponibles": "Bulletins disponibles",
+      "paiementsRecus": "Paiements reçus",
+      "absencesSignalees": "Absences signalées",
+      "retardTransport": "Retards de transport",
+      "rappelsEcheances": "Rappels d'échéances"
+    },
+    "regional": {
+      "titre": "Régional & Langue",
+      "description": "Devise, format de date, langue et fuseau horaire",
+      "general": {
+        "titre": "Paramètres régionaux",
+        "description": "Devise, dates et langue par défaut"
+      }
+    },
+    "sauvegarde": {
+      "titre": "Sauvegarde & Restauration",
+      "description": "Gérer les backups de configuration et de base de données",
+      "vueEnsemble": "Vue d'ensemble",
+      "planification": "Planification",
+      "historiqueTab": "Historique",
+      "backupComplet": "Backup complet",
+      "backupDifferentiel": "Backup différentiel",
+      "restaurer": "Restaurer",
+      "supprimer": "Supprimer",
+      "telecharger": "Télécharger",
+      "aucunBackup": "Aucun backup enregistré",
+      "frequence": "Fréquence",
+      "heure": "Heure d'exécution",
+      "type": "Type",
+      "retention": "Rétention",
+      "statut": "Statut",
+      "dernierSucces": "Dernier succès",
+      "taille": "Taille",
+      "date": "Date",
+      "actions": "Actions",
+      "confirmRestaurer": "Confirmer la restauration",
+      "confirmRestaurerMessage": "Cette opération va restaurer la configuration à l'état du backup. Continuer ?",
+      "succes": "Succès",
+      "echec": "Échec"
+    },
+    "historique": {
+      "titre": "Historique & Audit",
+      "description": "Journal des modifications de configuration",
+      "toutesActions": "Toutes les actions",
+      "creation": "Création",
+      "modification": "Modification",
+      "suppression": "Suppression",
+      "restauration": "Restauration",
+      "chargement": "Chargement de l'historique...",
+      "aucuneModification": "Aucune modification enregistrée",
+      "restaurer": "Restaurer",
+      "precedent": "Précédent",
+      "suivant": "Suivant",
+      "pageSur": "Page {{page}} sur {{total}} — {{count}} entrées",
+      "confirmerRestauration": "Confirmer la restauration",
+      "confirmerMessage": "Restaurer {{action}} pour {{cible}} ?"
+    }
+  },
+  "diff": {
+    "titre": "Aperçu des modifications",
+    "aucuneModification": "Aucune modification en attente",
+    "modification": "modification",
+    "modifications": "modifications",
+    "avantEnregistrement": "avant enregistrement",
+    "critique": "Critique",
+    "ancienneValeur": "Ancienne",
+    "nouvelleValeur": "Nouvelle"
+  },
+  "search": {
+    "placeholder": "Rechercher un paramètre...",
+    "resultats": "{{count}} paramètre(s) affiché(s)",
+    "total": "sur {{total}}",
+    "tousModules": "Tous les modules",
+    "compteur": "{{affiche}} / {{total}} paramètre{{totalPluriel}}",
+    "filtre": " (filtré)"
+  },
+  "bulk": {
+    "paramsDansSection": "paramètre(s) dans cette section",
+    "resetConfirmMessage": "Tous les paramètres de la catégorie {{categorie}} seront restaurés à leurs valeurs par défaut.",
+    "resetIrreversible": "Cette action est irréversible. Les valeurs personnalisées seront perdues."
+  },
+  "diffView": {
+    "modificationsAvant": "modification(s) avant enregistrement",
+    "critique": "Critique",
+    "active": "Activé",
+    "desactive": "Désactivé",
+    "vide": "(vide)"
+  },
+  "saveBar": {
+    "annuler": "Annuler",
+    "enregistrer": "Enregistrer"
+  },
+  "mfa": {
+    "titre": "Vérification MFA requise",
+    "description": "Cette modification impacte des paramètres de sécurité critiques",
+    "alerteTitre": "Paramètres critiques",
+    "alerteMessage": "Les modifications en cours affectent des paramètres de sécurité sensibles. Une vérification MFA est requise pour continuer.",
+    "instruction": "Entrez le code de votre application d'authentification",
+    "verification": "Vérification en cours...",
+    "codeInvalide": "Code MFA invalide. Veuillez réessayer.",
+    "codeIncomplet": "Veuillez entrer les 6 chiffres",
+    "verifier": "Vérifier",
+    "annuler": "Annuler",
+    "succes": "Authentification MFA vérifiée"
+  },
+  "multiSelect": {
+    "placeholder": "Sélectionner...",
+    "rechercher": "Rechercher...",
+    "toutSelectionner": "Tout sélectionner",
+    "toutDeselectionner": "Désélectionner",
+    "toutEffacer": "Tout effacer",
+    "aucunResultat": "Aucun résultat",
+    "elementSelectionne": "{{count}} élément(s) sélectionné(s)",
+    "selectionne": "sélectionné(s)"
+  }
+}

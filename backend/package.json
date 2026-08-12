@@ -30,6 +30,7 @@
     },
     "dependencies": {
         "@casl/ability": "^6.8.1",
+        "@simplewebauthn/server": "^10.0.0",
         "@types/node-cron": "^3.0.11",
         "bcryptjs": "^2.4.3",
         "compression": "^1.7.4",

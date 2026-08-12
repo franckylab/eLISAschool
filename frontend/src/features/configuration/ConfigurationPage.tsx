@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Settings, Palette, Globe, Blocks, Shield, Bell as BellIcon, History } from 'lucide-react';
+import { Settings, Palette, Globe, Blocks, Shield, Bell as BellIcon, History, Package } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { PageSkeleton } from '@/components/ui/Skeleton';
@@ -16,16 +16,18 @@ import { LangueRegionTab } from './components/LangueRegionTab';
 import { ModulesTab } from './components/ModulesTab';
 import { NotificationsTab } from './components/NotificationsTab';
 import { HistoriqueTab } from './components/HistoriqueTab';
+import { CatalogueTab } from './components/CatalogueTab';
 import { useAuthStore } from '@/stores/auth.store';
 import { useEtablissement, useModifierEtablissement } from '@/features/etablissement';
 
-type TabId = 'general' | 'theme' | 'langue' | 'modules' | 'securite' | 'notifications' | 'historique';
+type TabId = 'general' | 'theme' | 'langue' | 'modules' | 'catalogue' | 'securite' | 'notifications' | 'historique';
 
 const TABS: { id: TabId; icon: React.ElementType }[] = [
     { id: 'general', icon: Settings },
     { id: 'theme', icon: Palette },
     { id: 'langue', icon: Globe },
     { id: 'modules', icon: Blocks },
+    { id: 'catalogue', icon: Package },
     { id: 'securite', icon: Shield },
     { id: 'notifications', icon: BellIcon },
     { id: 'historique', icon: History },
@@ -251,6 +253,14 @@ export function ConfigurationPage() {
                         <Card>
                             <CardContent className="p-0">
                                 <ModulesTab />
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {activeTab === 'catalogue' && (
+                        <Card>
+                            <CardContent className="p-0">
+                                <CatalogueTab />
                             </CardContent>
                         </Card>
                     )}

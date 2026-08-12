@@ -2,48 +2,69 @@
  * ==================================
  * eLISAschool - Middleware Module Actif
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  * 
- * Middleware de vérification qu'un module est activé avant d'accéder à ses endpoints
+ * Middleware de vérification qu'un module est activé et accessible
+ * (entitlement + abonnement) avant d'accéder à ses endpoints.
+ * 
+ * Refonte SaaS — Unification Modules (migration 200)
+ * Utilise EntitlementService comme source unique de vérité.
  */
 
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '@common/filters/error.filter';
-import { configurationService } from '../services/configuration.service';
+import { entitlementService } from '@modules/billing/services/entitlement.service';
 import { auditService } from '@modules/auth';
 
-// Modules critiques toujours accessibles
-const MODULES_CRITIQUES = ['auth', 'utilisateurs', 'configuration', 'notifications'];
-
 /**
- * Middleware qui vérifie si un module est activé
+ * Middleware qui vérifie si un module est activé et accessible
  * @param moduleNom Nom du module à vérifier
  */
 export function requireModuleActive(moduleNom: string) {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            // Modules critiques toujours accessibles
-            if (MODULES_CRITIQUES.includes(moduleNom)) {
+            const etablissementId = req.utilisateur?.etablissementId;
+
+            if (!etablissementId) {
+                // Pas d'établissement → vérifier quand même via le service
                 next();
                 return;
             }
 
-            const etablissementId = req.utilisateur?.etablissementId;
-            const estActif = await configurationService.isModuleActive(moduleNom, etablissementId);
+            // Source unique de vérité : EntitlementService
+            const estAccessible = await entitlementService.isAccessible(etablissementId, moduleNom);
 
-            if (!estActif) {
+            if (!estAccessible) {
+                // Récupérer la raison pour un message précis
+                const entitlement = await entitlementService.check(etablissementId, moduleNom);
+
                 await auditService.logAccessDenied(
                     req.utilisateur?.id,
-                    `Tentative d'accès au module désactivé: ${moduleNom}`,
+                    `Accès refusé au module "${moduleNom}" — raison: ${entitlement.raison}`,
                     req
                 );
 
-                throw new AppError(
-                    `Le module "${moduleNom}" est désactivé. Contactez un administrateur.`,
-                    403,
-                    'MODULE_INACTIVE'
-                );
+                // Message adapté selon la raison
+                let message: string;
+                let code: string;
+                switch (entitlement.raison) {
+                    case 'ABONNEMENT_INACTIF':
+                    case 'ABONNEMENT_EXPIRE':
+                    case 'ABONNEMENT_SUSPENDU':
+                        message = `Le module "${moduleNom}" nécessite un abonnement actif. ${entitlement.message || ''}`;
+                        code = 'ABONNEMENT_REQUIS';
+                        break;
+                    case 'PLAN_INSUFFICIENT':
+                        message = `Plan insuffisant pour accéder au module "${moduleNom}". ${entitlement.message || ''}`;
+                        code = 'PLAN_INSUFFICIENT';
+                        break;
+                    default:
+                        message = `Le module "${moduleNom}" est désactivé. Contactez un administrateur.`;
+                        code = 'MODULE_INACTIVE';
+                }
+
+                throw new AppError(message, 403, code);
             }
 
             next();

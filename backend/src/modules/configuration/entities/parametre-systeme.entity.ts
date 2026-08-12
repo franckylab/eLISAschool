@@ -49,6 +49,8 @@ export enum TypeValeurParametre {
     BOOLEAN = 'BOOLEAN',
     JSON = 'JSON',
     ARRAY = 'ARRAY',
+    /** R3 v7.1 — Valeur chiffrée AES-256-GCM (credentials, secrets, tokens) */
+    ENCRYPTED = 'ENCRYPTED',
 }
 
 /**

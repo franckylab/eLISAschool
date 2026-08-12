@@ -2,13 +2,23 @@
  * ==================================
  * eLISAschool - Service de gestion des tokens JWT
  * ==================================
- * Version: 1.0.0
+ * Version: 2.1.0
  * Auteur: franck arlos chendjou
+ *
+ * Durcissement v9 — Refresh Token Rotation (family-based)
+ * - generateRefreshToken() : assigne familleId (nouveau si premier, hérité sinon)
+ * - validateRefreshToken() : marque l'ancien comme révoqué, génère un nouveau dans la famille
+ * - Détection compromission : si token révoqué réutilisé → révocation de toute la famille
+ *
+ * Audit sécurité v10 — v2.1 : GAP 8 — JWT avec claim `plane`
+ * - generateAccessToken() : paramètre `plane` optionnel ('platform' | 'tenant')
+ * - verifyAccessToken() : rotation de secret — essaie secret principal, puis fallback
+ * - Le claim `plane` est préservé dans le JwtPayload retourné (ADR-005)
  */
 
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { RefreshToken } from '../entities';
 import { JwtPayload } from '../dto';
@@ -26,12 +36,20 @@ export class TokenService {
     }
 
     /**
-     * Génère un access token JWT
-     * @param payload - Données à inclure dans le token
-     * @param expiresIn - Durée d'expiration optionnelle (override config)
+     * Génère un access token JWT.
+     * Audit sécurité v10 — GAP 8 : le paramètre `plane` sélectionne le secret JWT.
+     * - 'platform' → secretPlatform (tokens plateforme)
+     * - 'tenant'   → secretTenant (tokens établissement)
+     * - undefined   → secret (legacy, fallback)
      */
     generateAccessToken(payload: JwtPayload, expiresIn?: string | number): string {
-        return jwt.sign(payload, envConfig.jwt.secret, {
+        const secret = payload.plane === 'platform'
+            ? envConfig.jwt.secretPlatform
+            : payload.plane === 'tenant'
+                ? envConfig.jwt.secretTenant
+                : envConfig.jwt.secret;
+
+        return jwt.sign(payload, secret, {
             expiresIn: expiresIn || (envConfig.jwt.expiresIn as any),
             issuer: 'eLISAschool',
             audience: 'elisaschool-api',
@@ -39,77 +57,101 @@ export class TokenService {
     }
 
     /**
-     * Génère un refresh token et le stocke en base
+     * Génère un refresh token et le stocke en base.
+     * Durcissement v9 : assigne un familleId pour la rotation.
+     * 
      * @param utilisateurId - ID de l'utilisateur
      * @param adresseIp - Adresse IP du client
      * @param userAgent - User-Agent du client
+     * @param familleIdExistante - familleId hérité (si rotation)
+     * @param tokenPrecedentId - ID du token précédent dans la chaîne
+     * @param plane - ADR-005 (v11) : discriminateur de plan ('tenant' | 'platform')
      */
     async generateRefreshToken(
         utilisateurId: string,
         adresseIp?: string,
-        userAgent?: string
+        userAgent?: string,
+        familleIdExistante?: string,
+        tokenPrecedentId?: string,
+        plane?: 'tenant' | 'platform',
     ): Promise<string> {
-        // Génère un token aléatoire sécurisé
         const token = crypto.randomBytes(64).toString('hex');
 
-        // Calcule la date d'expiration
         const expireAt = new Date();
         expireAt.setDate(expireAt.getDate() + 30); // 30 jours
 
-        // Crée l'entrée en base
+        // Famille : héritée si rotation, sinon nouvelle famille
+        const familleId = familleIdExistante || crypto.randomUUID();
+
         const refreshToken = this.refreshTokenRepository.create({
             utilisateurId,
             token,
             adresseIp,
             userAgent,
             expireAt,
+            familleId,
+            tokenPrecedentId: tokenPrecedentId || null,
+            plane: plane || 'tenant', // ADR-005: défaut tenant
         });
 
         await this.refreshTokenRepository.save(refreshToken);
 
-        logger.debug(`Refresh token créé pour l'utilisateur ${utilisateurId}`);
+        logger.debug(`Refresh token créé pour l'utilisateur ${utilisateurId} (famille: ${familleId.substring(0, 8)}...)`);
 
         return token;
     }
 
     /**
-     * Vérifie et décode un access token
-     * @param token - Token à vérifier
+     * Vérifie et décode un access token.
+     * Audit sécurité v10 — GAP 8 : rotation de secrets.
+     * Essaie les 3 secrets (platform, tenant, legacy) jusqu'à ce que l'un fonctionne.
+     * Permet la transition progressive vers des secrets dédiés par plane.
      */
     verifyAccessToken(token: string): JwtPayload | null {
-        try {
-            const decoded = jwt.verify(token, envConfig.jwt.secret, {
-                issuer: 'eLISAschool',
-                audience: 'elisaschool-api',
-            }) as JwtPayload;
+        // Collecter les secrets uniques à essayer (ordre : platform, tenant, legacy)
+        const secrets = [...new Set([
+            envConfig.jwt.secretPlatform,
+            envConfig.jwt.secretTenant,
+            envConfig.jwt.secret,
+        ])];
 
-            return decoded;
-        } catch (error: any) {
-            // Log détaillé pour diagnostiquer pourquoi le token est rejeté
-            logger.warn('Échec de vérification du token JWT', { 
-                error: error.message,
-                errorName: error.name,
-                tokenPrefix: token.substring(0, 20) + '...',
-            });
-            
-            // Log spécifique selon le type d'erreur
-            if (error.name === 'TokenExpiredError') {
-                logger.warn('Token expiré', { expiredAt: error.expiredAt });
-            } else if (error.name === 'JsonWebTokenError') {
-                logger.warn('Token malformé ou signature invalide', { message: error.message });
-            } else if (error.name === 'NotBeforeError') {
-                logger.warn('Token pas encore valide', { date: error.date });
+        for (const secret of secrets) {
+            try {
+                const decoded = jwt.verify(token, secret, {
+                    issuer: 'eLISAschool',
+                    audience: 'elisaschool-api',
+                }) as JwtPayload;
+
+                return decoded;
+            } catch {
+                // Essayer le secret suivant
             }
-            
-            return null;
         }
+
+        // Aucun secret n'a fonctionné → token invalide
+        logger.warn('Token JWT invalide — tous les secrets ont échoué', {
+            tokenPrefix: token.substring(0, 20) + '...',
+            tokenLength: token.length,
+            hasThreeParts: token.split('.').length === 3,
+        });
+
+        return null;
     }
 
     /**
-     * Valide un refresh token et retourne le token entity
-     * @param token - Refresh token à valider
+     * Valide un refresh token avec rotation (Durcissement v9).
+     * 
+     * Algorithme :
+     * 1. Chercher le token en base
+     * 2. Si révoqué → DÉTECTION COMPROMISSION → révoquer toute la famille
+     * 3. Si valide → marquer comme révoqué, retourner les infos pour rotation
+     * 
+     * @returns Token entity + données pour la rotation, ou null
      */
-    async validateRefreshToken(token: string): Promise<RefreshToken | null> {
+    async validateRefreshToken(token: string): Promise<{
+        refreshToken: RefreshToken;
+        rotationData: { familleId: string; tokenPrecedentId: string };
+    } | null> {
         const refreshToken = await this.refreshTokenRepository.findOne({
             where: { token },
             relations: ['utilisateur'],
@@ -120,17 +162,63 @@ export class TokenService {
             return null;
         }
 
-        if (!refreshToken.estValide()) {
-            logger.warn('Refresh token invalide ou expiré');
+        // =============================================
+        // DÉTECTION COMPROMISSION — Token révoqué réutilisé
+        // =============================================
+        if (refreshToken.revoque) {
+            logger.error(
+                `[Sécurité] COMPROMISSION DÉTECTÉE — Refresh token révoqué réutilisé : ` +
+                `user=${refreshToken.utilisateurId}, famille=${refreshToken.familleId?.substring(0, 8)}, ` +
+                `IP=${refreshToken.adresseIp}`
+            );
+
+            // Révoquer TOUTE la famille
+            if (refreshToken.familleId) {
+                await this.revokeTokenFamily(refreshToken.familleId, 'COMPROMISSION_DETECTED');
+            }
+
             return null;
         }
 
-        return refreshToken;
+        // Token expiré
+        if (refreshToken.estExpire()) {
+            logger.warn('Refresh token expiré');
+            return null;
+        }
+
+        // =============================================
+        // ROTATION — Marquer comme révoqué, retourner les données
+        // =============================================
+        const rotationData = {
+            familleId: refreshToken.familleId || crypto.randomUUID(),
+            tokenPrecedentId: refreshToken.id,
+        };
+
+        // Marquer l'ancien token comme révoqué
+        refreshToken.revoque = true;
+        refreshToken.revoqueAt = new Date();
+        await this.refreshTokenRepository.save(refreshToken);
+
+        return { refreshToken, rotationData };
     }
 
     /**
-     * Révoque un refresh token
-     * @param token - Token à révoquer
+     * Révoque tous les tokens d'une famille (compromission détectée).
+     */
+    private async revokeTokenFamily(familleId: string, raison: string): Promise<void> {
+        const result = await this.refreshTokenRepository.update(
+            { familleId, revoque: false },
+            { revoque: true, revoqueAt: new Date() }
+        );
+
+        logger.error(
+            `[Sécurité] Famille de tokens révoquée — familleId=${familleId}, ` +
+            `raison=${raison}, ${result.affected} tokens révoqués`
+        );
+    }
+
+    /**
+     * Révoque un refresh token (legacy — utilisé par logout)
      */
     async revokeRefreshToken(token: string): Promise<boolean> {
         const refreshToken = await this.refreshTokenRepository.findOne({
@@ -153,7 +241,6 @@ export class TokenService {
 
     /**
      * Révoque tous les refresh tokens d'un utilisateur
-     * @param utilisateurId - ID de l'utilisateur
      */
     async revokeAllUserTokens(utilisateurId: string): Promise<number> {
         const result = await this.refreshTokenRepository.update(

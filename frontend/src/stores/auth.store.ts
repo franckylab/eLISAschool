@@ -64,9 +64,14 @@ interface AuthState {
     preLoginData: PreLoginResponse | null;
     showEtablissementModal: boolean;
 
-    // MFA — Phase P1 v6
+    // MFA — Phase P1 v6 (unifié ADR-005 — même flow pour tenant et plateforme)
     mfaToken: string | null;
     mfaRequired: boolean;
+
+    // Accès plateforme — détecté automatiquement au login unifié (ADR-005)
+    hasPlatformAccess: boolean;
+    platformAccessToken: string | null;
+    platformRole: string | null;
 
     // Actions
     login: (identifiant: string, motDePasse: string) => Promise<void>;
@@ -98,7 +103,11 @@ const initialState = {
     showEtablissementModal: false,
     mfaToken: null,
     mfaRequired: false,
-    _initialized: false, // NOUVEAU: Pour l'initialisation unique
+    // Accès plateforme — détecté au login unifié (ADR-005)
+    hasPlatformAccess: false,
+    platformAccessToken: null,
+    platformRole: null,
+    _initialized: false,
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -124,10 +133,10 @@ export const useAuthStore = create<AuthState>()(
             login: async (identifiant: string, motDePasse: string) => {
                 set({ isLoading: true });
                 try {
-                    // Étape 1 : Login - retourne MAINTENANT requiereSelectionEtablissement
+                    // Étape 1 : Login unifié ADR-005 (v11) — auto-détection tenant/plATFORME
                     const data = await apiClient.login(identifiant, motDePasse);
 
-                    // MFA — Phase P1 v6 : Si MFA requise, stocker le token et arrêter le flux
+                    // ─── MFA — unifié ADR-005 (tenant + plateforme) ───
                     if (data.mfaRequired && data.mfaToken) {
                         set({
                             mfaToken: data.mfaToken,
@@ -136,8 +145,8 @@ export const useAuthStore = create<AuthState>()(
                         });
                         return;
                     }
-                    
-                    // Étape 2 : Stocker les infos utilisateur SANS token complet si multi-établissements
+
+                    // ─── Flux tenant normal ───
                     if (!data.utilisateur || !data.accessToken || !data.refreshToken) {
                         throw new Error('Réponse de connexion incomplète');
                     }
@@ -153,10 +162,14 @@ export const useAuthStore = create<AuthState>()(
                             prenom: data.utilisateur.prenom,
                         },
                         etablissements: data.utilisateur.etablissements || [],
-                        etablissementsDisponibles: data.etablissementsDisponibles || [], // Nouveau
+                        etablissementsDisponibles: data.etablissementsDisponibles || [],
                         etablissementId: data.utilisateur.etablissementActif || null,
                         isAuthenticated: true,
                         isLoading: false,
+                        // ADR-005 (v11) : stocker les accès plateforme si détectés
+                        hasPlatformAccess: data.hasPlatformAccess || false,
+                        platformAccessToken: data.platformAccessToken || null,
+                        platformRole: data.platformRole || null,
                     };
                     
                     const etabNom = data.etablissementsDisponibles?.find(e => e.id === newState.etablissementId)?.nom || 'Non trouvé';
@@ -169,6 +182,15 @@ export const useAuthStore = create<AuthState>()(
                         accessToken: data.accessToken,
                         refreshToken: data.refreshToken,
                     });
+
+                    // Étape 3b : ADR-005 — Synchroniser les tokens plateforme si accès détecté
+                    if (data.hasPlatformAccess && data.platformAccessToken) {
+                        apiClient.setPlatformTokens(
+                            data.platformAccessToken,
+                            data.platformRefreshToken,
+                        );
+                        console.log('[Auth Store] Tokens plateforme synchronisés (role:', data.platformRole, ')');
+                    }
 
                     // Étape 4 : Vérifier si sélection d'établissement requise
                     if (data.requiereSelectionEtablissement && data.etablissementsDisponibles) {
@@ -383,6 +405,19 @@ export const useAuthStore = create<AuthState>()(
                             accessToken: data.accessToken,
                             refreshToken: data.refreshToken,
                         });
+
+                        // ADR-005 : synchroniser les tokens plateforme si détectés après completeLogin
+                        if (data.hasPlatformAccess && data.platformAccessToken) {
+                            apiClient.setPlatformTokens(
+                                data.platformAccessToken,
+                                data.platformRefreshToken,
+                            );
+                            set({
+                                hasPlatformAccess: true,
+                                platformAccessToken: data.platformAccessToken,
+                                platformRole: data.platformRole || null,
+                            });
+                        }
                         
                         console.log('[Auth Store] Tokens synchronisés avec apiClient:', {
                             hasAccessToken: !!apiClient.getAccessToken(),
@@ -486,6 +521,19 @@ export const useAuthStore = create<AuthState>()(
                         accessToken: data.accessToken,
                         refreshToken: data.refreshToken!,
                     });
+
+                    // ADR-005 : synchroniser les tokens plateforme si détectés après MFA
+                    if (data.hasPlatformAccess && data.platformAccessToken) {
+                        apiClient.setPlatformTokens(
+                            data.platformAccessToken,
+                            data.platformRefreshToken,
+                        );
+                        set({
+                            hasPlatformAccess: true,
+                            platformAccessToken: data.platformAccessToken,
+                            platformRole: data.platformRole || null,
+                        });
+                    }
 
                     // Charger le profil complet
                     try {

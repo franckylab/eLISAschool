@@ -7,6 +7,7 @@
  */
 
 import type { ApiResponse, PaginatedResult, PaginationOptions } from '@shared/types/api.types';
+import { useAuthStore } from '@/stores/auth.store';
 
 // URL de l'API backend
 // En dev : vide pour utiliser le proxy Vite (requêtes relatives /api)
@@ -49,9 +50,15 @@ interface LoginResponseData {
     }>;
     requiereSelectionEtablissement?: boolean;
     tokenTemporaire?: boolean;
-    // MFA — Phase P1 v6
+    // MFA — unifié ADR-005 (tenant + plateforme)
     mfaRequired?: boolean;
     mfaToken?: string;
+    // Accès plateforme — détecté au login unifié (ADR-005)
+    hasPlatformAccess?: boolean;
+    platformAccessToken?: string;
+    platformRefreshToken?: string;
+    platformExpiresIn?: number;
+    platformRole?: string;
 }
 
 export interface PreLoginResponse {
@@ -82,6 +89,9 @@ type ResponseInterceptor = (response: Response) => Response | Promise<Response>;
 class ApiClient {
     private accessToken: string | null = null;
     private refreshToken: string | null = null;
+    // ADR-005 : tokens dédiés aux routes plateforme (plan de gestion séparé)
+    private platformAccessToken: string | null = null;
+    private platformRefreshToken: string | null = null;
     private isRefreshing = false;
     private refreshSubscribers: Array<(token: string) => void> = [];
     private requestInterceptors: RequestInterceptor[] = [];
@@ -91,6 +101,9 @@ class ApiClient {
         // Restaurer les tokens depuis localStorage
         this.accessToken = localStorage.getItem('accessToken');
         this.refreshToken = localStorage.getItem('refreshToken');
+        // ADR-005 : restaurer les tokens plateforme
+        this.platformAccessToken = localStorage.getItem('platformAccessToken');
+        this.platformRefreshToken = localStorage.getItem('platformRefreshToken');
         
         // Validation au démarrage
         this.validateTokenOnStartup();
@@ -107,21 +120,16 @@ class ApiClient {
                 console.warn('[API] Token stocké sans etablissementId - sélection requise');
                 
                 // Vérifier si le modal n'est pas déjà affiché (éviter boucle infinie)
-                try {
-                    const { useAuthStore } = require('@/stores/auth.store');
-                    const state = useAuthStore.getState();
-                    
-                    if (state.showEtablissementModal) {
-                        console.log('[API] Modal déjà affiché, événement ignoré');
-                        return;
-                    }
-                    
-                    if (state.etablissementId) {
-                        console.log('[API] Établissement déjà sélectionné, événement ignoré');
-                        return;
-                    }
-                } catch (error) {
-                    // Import échoué, continuer quand même
+                const state = useAuthStore.getState();
+                
+                if (state.showEtablissementModal) {
+                    console.log('[API] Modal déjà affiché, événement ignoré');
+                    return;
+                }
+                
+                if (state.etablissementId) {
+                    console.log('[API] Établissement déjà sélectionné, événement ignoré');
+                    return;
                 }
                 
                 // Déclencher événement pour afficher modal
@@ -165,21 +173,16 @@ class ApiClient {
                 console.warn('[API] Token incomplet: etablissementId manquant');
                 
                 // Vérifier si le modal n'est pas déjà affiché (éviter boucle infinie)
-                try {
-                    const { useAuthStore } = require('@/stores/auth.store');
-                    const state = useAuthStore.getState();
-                    
-                    if (state.showEtablissementModal) {
-                        console.log('[API] Modal déjà affiché, événement ignoré');
-                        return false;
-                    }
-                    
-                    if (state.etablissementId) {
-                        console.log('[API] Établissement déjà sélectionné, événement ignoré');
-                        return false;
-                    }
-                } catch (error) {
-                    // Import échoué, continuer quand même
+                const state = useAuthStore.getState();
+                
+                if (state.showEtablissementModal) {
+                    console.log('[API] Modal déjà affiché, événement ignoré');
+                    return false;
+                }
+                
+                if (state.etablissementId) {
+                    console.log('[API] Établissement déjà sélectionné, événement ignoré');
+                    return false;
                 }
                 
                 // Déclencher événement pour afficher modal sélection
@@ -209,6 +212,40 @@ class ApiClient {
         this.refreshToken = null;
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        // ADR-005 : nettoyer aussi les tokens plateforme
+        this.platformAccessToken = null;
+        this.platformRefreshToken = null;
+        localStorage.removeItem('platformAccessToken');
+        localStorage.removeItem('platformRefreshToken');
+    }
+
+    // ─── Tokens plateforme (ADR-005) ─────────────────────
+
+    /**
+     * Définir les tokens dédiés au Control Plane.
+     * Ces tokens sont utilisés exclusivement pour les routes /api/platform/*.
+     */
+    setPlatformTokens(accessToken: string, refreshToken?: string): void {
+        this.platformAccessToken = accessToken;
+        localStorage.setItem('platformAccessToken', accessToken);
+        if (refreshToken) {
+            this.platformRefreshToken = refreshToken;
+            localStorage.setItem('platformRefreshToken', refreshToken);
+        }
+    }
+
+    clearPlatformTokens(): void {
+        this.platformAccessToken = null;
+        this.platformRefreshToken = null;
+        localStorage.removeItem('platformAccessToken');
+        localStorage.removeItem('platformRefreshToken');
+    }
+
+    /**
+     * Détecter si une route appartient au Control Plane.
+     */
+    private isPlatformRoute(endpoint: string): boolean {
+        return endpoint.startsWith('/api/platform/');
     }
 
     getAccessToken(): string | null {
@@ -269,6 +306,37 @@ class ApiClient {
         return result.data.accessToken;
     }
 
+    /**
+     * ADR-005 : Rafraîchir le token d'accès plateforme via le refresh token plateforme.
+     * Le backend détecte le plane du refresh token et génère un access token plateforme.
+     */
+    private async refreshPlatformAccessToken(): Promise<string> {
+        if (!this.platformRefreshToken) {
+            this.clearPlatformTokens();
+            throw new Error('Aucun refresh token plateforme disponible');
+        }
+
+        const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: this.platformRefreshToken }),
+        });
+
+        if (!response.ok) {
+            this.clearPlatformTokens();
+            throw new Error('Session plateforme expirée');
+        }
+
+        const result: ApiResponse<TokenPair> = await response.json();
+        if (!result.success || !result.data) {
+            this.clearPlatformTokens();
+            throw new Error('Échec du rafraîchissement du token plateforme');
+        }
+
+        this.setPlatformTokens(result.data.accessToken, result.data.refreshToken);
+        return result.data.accessToken;
+    }
+
     private async processQueue(error: Error | null, token: string | null): Promise<void> {
         this.refreshSubscribers.forEach(callback => {
             if (error) {
@@ -295,11 +363,14 @@ class ApiClient {
             '/api/auth/pre-login',
             '/api/auth/complete-login',
             '/api/auth/etablissements-disponibles', // ← NOUVEAU: requis pour EtablissementSwitcher
+            '/api/public', // ← Routes publiques CMS (sans auth)
         ];
         const isAuthRoute = authRoutes.some(route => endpoint.startsWith(route));
+        const isPlatform = this.isPlatformRoute(endpoint);
         
-        // Valider le token AVANT envoi (sauf routes auth)
-        if (!isAuthRoute && !this.validateTokenBeforeRequest()) {
+        // Valider le token AVANT envoi (sauf routes auth ET routes plateforme)
+        // Les routes plateforme n'ont pas besoin d'etablissementId (ADR-005)
+        if (!isAuthRoute && !isPlatform && !this.validateTokenBeforeRequest()) {
             throw new Error('Token incomplet: veuillez sélectionner votre établissement');
         }
         
@@ -312,11 +383,14 @@ class ApiClient {
             },
         };
 
-        // Ajouter le Bearer token
-        if (this.accessToken) {
+        // ADR-005 : sélectionner le token selon le plan de gestion
+        // - Routes plateforme → platformAccessToken (claim plane: 'platform')
+        // - Routes tenant → accessToken (standard)
+        const tokenToUse = isPlatform ? this.platformAccessToken : this.accessToken;
+        if (tokenToUse) {
             config.headers = {
                 ...config.headers,
-                Authorization: `Bearer ${this.accessToken}`,
+                Authorization: `Bearer ${tokenToUse}`,
             };
         }
 
@@ -338,7 +412,9 @@ class ApiClient {
         }
 
         // Gestion du 401 → refresh token → retry
-        if (response.status === 401 && this.refreshToken && retryCount === 0) {
+        // ADR-005 : utiliser le refresh token du bon plan de gestion
+        const refreshRef = isPlatform ? this.platformRefreshToken : this.refreshToken;
+        if (response.status === 401 && refreshRef && retryCount === 0) {
             if (this.isRefreshing) {
                 // Attendre que le refresh en cours se termine
                 const newToken = await new Promise<string>((resolve) => {
@@ -352,7 +428,9 @@ class ApiClient {
             } else {
                 this.isRefreshing = true;
                 try {
-                    const newToken = await this.refreshAccessToken();
+                    const newToken = isPlatform
+                        ? await this.refreshPlatformAccessToken()
+                        : await this.refreshAccessToken();
                     await this.processQueue(null, newToken);
                     config.headers = {
                         ...config.headers,
@@ -362,7 +440,11 @@ class ApiClient {
                 } catch (refreshError) {
                     await this.processQueue(refreshError as Error, null);
                     // Refresh échoué → déconnexion (l'événement est déjà dispatché dans refreshAccessToken)
-                    this.clearTokens();
+                    if (isPlatform) {
+                        this.clearPlatformTokens();
+                    } else {
+                        this.clearTokens();
+                    }
                     throw refreshError;
                 } finally {
                     this.isRefreshing = false;
@@ -567,6 +649,13 @@ class ApiClient {
                 refreshToken: response.data.refreshToken,
             });
         }
+        // ADR-005 : synchroniser les tokens plateforme si détectés après MFA
+        if (response.data?.hasPlatformAccess && response.data.platformAccessToken) {
+            this.setPlatformTokens(
+                response.data.platformAccessToken,
+                response.data.platformRefreshToken,
+            );
+        }
         return response.data!;
     }
 
@@ -646,6 +735,67 @@ class ApiClient {
             localStorage.setItem('accessToken', response.data.accessToken);
         }
         return response.data!;
+    }
+
+    // ==================================
+    // WebAuthn / Passkeys (Durcissement v9)
+    // ==================================
+
+    /**
+     * Récupère les options d'enregistrement WebAuthn pour l'utilisateur connecté.
+     */
+    async webauthnRegisterOptions(): Promise<any> {
+        const response = await this.post<any>('/api/auth/webauthn/register-options', {});
+        return response.data!;
+    }
+
+    /**
+     * Enregistre une credential WebAuthn après vérification serveur.
+     */
+    async webauthnRegister(credential: {
+        id: string;
+        rawId: string;
+        type: string;
+        response: { clientDataJSON: string; attestationObject: string };
+        authenticatorAttachment?: string;
+    }, label?: string): Promise<any> {
+        const response = await this.post<any>('/api/auth/webauthn/register', { credential, label });
+        return response.data!;
+    }
+
+    /**
+     * Récupère les options d'authentification WebAuthn.
+     */
+    async webauthnLoginOptions(email?: string): Promise<any> {
+        const response = await this.post<any>('/api/auth/webauthn/login-options', { email });
+        return response.data!;
+    }
+
+    /**
+     * Authentifie via WebAuthn (passwordless).
+     */
+    async webauthnLogin(credential: any): Promise<{
+        accessToken: string;
+        refreshToken: string;
+        utilisateur: { id: string; email: string; matricule: string; role: string; pseudonyme?: string };
+    }> {
+        const response = await this.post<any>('/api/auth/webauthn/login', { credential });
+        return response.data!;
+    }
+
+    /**
+     * Liste les credentials WebAuthn de l'utilisateur connecté.
+     */
+    async webauthnListCredentials(): Promise<any[]> {
+        const response = await this.request<ApiResponse<any[]>>('/api/auth/webauthn/credentials', { method: 'GET' });
+        return response.data || [];
+    }
+
+    /**
+     * Révoque une credential WebAuthn.
+     */
+    async webauthnRevokeCredential(credentialId: string): Promise<void> {
+        await this.request<ApiResponse<null>>(`/api/auth/webauthn/credentials/${credentialId}`, { method: 'DELETE' });
     }
 }
 

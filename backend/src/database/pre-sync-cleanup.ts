@@ -123,6 +123,69 @@ export async function cleanOrphanHeuresCours(config: DbConnectionConfig): Promis
 }
 
 /**
+ * Nettoyage des rôles obsolètes dans la table utilisateurs.
+ * Migre les valeurs enum supprimées vers les rôles unifiés.
+ * DOIT tourner AVANT TypeORM synchronize (sinon ALTER COLUMN échoue).
+ */
+export async function cleanDeprecatedRoles(config: DbConnectionConfig): Promise<void> {
+    const client = new Client({
+        host: config.host,
+        port: config.port,
+        user: config.user,
+        password: config.password,
+        database: config.database,
+    });
+
+    try {
+        await client.connect();
+
+        // Vérifier que la table utilisateurs existe
+        const hasUtilisateurs = await tableExists(client, 'utilisateurs');
+        if (!hasUtilisateurs) {
+            logger.debug('ℹ cleanDeprecatedRoles: table utilisateurs inexistante (premier run)');
+            return;
+        }
+
+        // Mapping des rôles obsolètes → rôles unifiés
+        const roleMapping: Record<string, string> = {
+            'PLATEFORME_SUPER_ADMIN': 'SUPER_ADMIN',
+            'ADMINISTRATION_PLATEFORME': 'PLATEFORME_ADMIN',
+            'SECURITE_PLATEFORME': 'PLATEFORME_SUPPORT',
+            'SUPPORT_PLATEFORME': 'PLATEFORME_SUPPORT',
+            'COMMERCIAL_PLATEFORME': 'PLATEFORME_BILLING',
+            'MONITORING_PLATEFORME': 'PLATEFORME_AUDITOR',
+        };
+
+        for (const [oldRole, newRole] of Object.entries(roleMapping)) {
+            const result = await client.query(
+                `UPDATE utilisateurs SET role = $1, "updatedAt" = NOW() WHERE role = $2`,
+                [newRole, oldRole]
+            );
+            if (result.rowCount && result.rowCount > 0) {
+                logger.info(`🧹 Rôle obsolète ${oldRole} → ${newRole} (${result.rowCount} utilisateur(s))`);
+            }
+        }
+
+        // Supprimer l'utilisateur platform.super@elisaschool.cm s'il existe encore
+        const deleteResult = await client.query(
+            `DELETE FROM utilisateurs WHERE email = 'platform.super@elisaschool.cm'`
+        );
+        if (deleteResult.rowCount && deleteResult.rowCount > 0) {
+            logger.info(`🧹 Supprimé utilisateur platform.super@elisaschool.cm`);
+        }
+
+    } catch (err: any) {
+        if (err.code === '42P01' || err.code === '3D000') {
+            logger.debug('ℹ cleanDeprecatedRoles: ignoré (tables non créées)');
+        } else {
+            logger.warn(`⚠ cleanDeprecatedRoles: ${err.message}`);
+        }
+    } finally {
+        await client.end().catch(() => {});
+    }
+}
+
+/**
  * Raccourci qui lit la config depuis les variables d'environnement.
  */
 export function envDbConfig(): DbConnectionConfig {

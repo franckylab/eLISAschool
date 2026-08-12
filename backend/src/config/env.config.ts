@@ -57,6 +57,8 @@ const envSchema = z.object({
 
     // JWT
     JWT_SECRET: z.string().min(32, 'Le secret JWT doit faire au moins 32 caractères'),
+    JWT_SECRET_PLATFORM: z.string().min(32).optional(),
+    JWT_SECRET_TENANT: z.string().min(32).optional(),
     JWT_EXPIRES_IN: z.string().default('7d'),
     JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
 
@@ -112,12 +114,26 @@ function loadEnvConfig(): EnvConfig {
                 ? process.env.JWT_SECRET
                 : generateDevSecret(64);
             
+            // JWT secrets par plan (ADR-005) — TOUJOURS distincts
+            const jwtSecretPlatform = process.env.JWT_SECRET_PLATFORM && process.env.JWT_SECRET_PLATFORM.length >= 32
+                ? process.env.JWT_SECRET_PLATFORM
+                : generateDevSecret(64);
+            const jwtSecretTenant = process.env.JWT_SECRET_TENANT && process.env.JWT_SECRET_TENANT.length >= 32
+                ? process.env.JWT_SECRET_TENANT
+                : generateDevSecret(64);
+            
             const encryptionKey = process.env.ENCRYPTION_KEY && process.env.ENCRYPTION_KEY.length === 32
                 ? process.env.ENCRYPTION_KEY
                 : generateDevSecret(32);
             
             if (!process.env.JWT_SECRET) {
                 console.warn('⚠️ JWT_SECRET non défini, génération d\'un valeur aléatoire (tokens invalidés au prochain redémarrage)');
+            }
+            if (!process.env.JWT_SECRET_PLATFORM) {
+                console.warn('⚠️ JWT_SECRET_PLATFORM non défini, génération d\'un secret dev distinct (tokens plateforme invalidés au redémarrage)');
+            }
+            if (!process.env.JWT_SECRET_TENANT) {
+                console.warn('⚠️ JWT_SECRET_TENANT non défini, génération d\'un secret dev distinct (tokens tenant invalidés au redémarrage)');
             }
             
             return {
@@ -190,6 +206,17 @@ export const envConfig = {
     },
     jwt: {
         secret: env.JWT_SECRET,
+        // ADR-005 — secrets TOUJOURS distincts (pas de fallback sur secret legacy)
+        secretPlatform: process.env.JWT_SECRET_PLATFORM && process.env.JWT_SECRET_PLATFORM.length >= 32
+            ? process.env.JWT_SECRET_PLATFORM
+            : (env.NODE_ENV === 'production'
+                ? (() => { console.error('❌ JWT_SECRET_PLATFORM requis en production'); process.exit(1); })()
+                : env.JWT_SECRET),
+        secretTenant: process.env.JWT_SECRET_TENANT && process.env.JWT_SECRET_TENANT.length >= 32
+            ? process.env.JWT_SECRET_TENANT
+            : (env.NODE_ENV === 'production'
+                ? (() => { console.error('❌ JWT_SECRET_TENANT requis en production'); process.exit(1); })()
+                : env.JWT_SECRET),
         expiresIn: env.JWT_EXPIRES_IN,
         refreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN,
     },

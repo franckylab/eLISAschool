@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit Modules SaaS — eLISAschool</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-2: #334155;
+    --border: #475569;
+    --text: #f1f5f9;
+    --text-muted: #94a3b8;
+    --accent: #3b82f6;
+    --accent-2: #8b5cf6;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #06b6d4;
+    --gradient-1: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    --gradient-2: linear-gradient(135deg, #10b981, #06b6d4);
+    --gradient-3: linear-gradient(135deg, #f59e0b, #ef4444);
+    --glass: rgba(255,255,255,0.05);
+    --glass-border: rgba(255,255,255,0.1);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  
+  /* Hero */
+  .hero { background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); padding: 4rem 2rem; text-align: center; border-bottom: 1px solid var(--glass-border); position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 50%, rgba(59,130,246,0.08) 0%, transparent 50%), radial-gradient(circle at 70% 50%, rgba(139,92,246,0.06) 0%, transparent 50%); animation: drift 20s ease-in-out infinite; }
+  @keyframes drift { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-2%,1%); } }
+  .hero h1 { font-size: clamp(1.8rem,4vw,3rem); font-weight: 800; background: var(--gradient-1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; position: relative; }
+  .hero .subtitle { color: var(--text-muted); font-size: clamp(0.9rem,2vw,1.2rem); margin-top: 0.5rem; position: relative; }
+  .hero .meta { display: flex; gap: 2rem; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap; position: relative; }
+  .hero .meta span { background: var(--glass); border: 1px solid var(--glass-border); padding: 0.4rem 1rem; border-radius: 2rem; font-size: 0.85rem; color: var(--text-muted); }
+
+  /* Layout */
+  .container { max-width: 1280px; margin: 0 auto; padding: 2rem; }
+  
+  /* Navigation */
+  .toc { background: var(--surface); border: 1px solid var(--glass-border); border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem; }
+  .toc h2 { font-size: 1.1rem; margin-bottom: 1rem; color: var(--accent); }
+  .toc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 0.5rem; }
+  .toc a { color: var(--text-muted); text-decoration: none; font-size: 0.85rem; padding: 0.3rem 0.6rem; border-radius: 0.4rem; transition: all 0.2s; display: block; }
+  .toc a:hover { color: var(--text); background: var(--glass); }
+
+  /* Sections */
+  .section { margin-bottom: 3rem; }
+  .section-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--glass-border); }
+  .section-header .num { background: var(--gradient-1); color: white; width: 2.2rem; height: 2.2rem; border-radius: 0.6rem; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; flex-shrink: 0; }
+  .section-header h2 { font-size: clamp(1.2rem,2.5vw,1.6rem); font-weight: 700; }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--glass-border); border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 1rem; }
+  .card-glass { background: var(--glass); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 0.75rem; padding: 1.25rem; }
+
+  /* KPI Grid */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .kpi { background: var(--surface); border: 1px solid var(--glass-border); border-radius: 0.75rem; padding: 1.25rem; text-align: center; }
+  .kpi .value { font-size: 2rem; font-weight: 800; background: var(--gradient-1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: }
+  .kpi .label { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
+  .kpi.success .value { background: var(--gradient-2); -webkit-background-clip: text; background-clip: text; }
+  .kpi.danger .value { background: var(--gradient-3); -webkit-background-clip: text; background-clip: text; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; border-radius: 0.75rem; border: 1px solid var(--glass-border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { background: var(--surface-2); padding: 0.75rem 1rem; text-align: left; font-weight: 600; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+  td { padding: 0.6rem 1rem; border-top: 1px solid var(--glass-border); }
+  tr:hover td { background: var(--glass); }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 1rem; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+  .badge-critical { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+  .badge-high { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+  .badge-medium { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+  .badge-low { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+  .badge-info { background: rgba(6,182,212,0.15); color: #22d3ee; border: 1px solid rgba(6,182,212,0.3); }
+  .badge-module { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
+
+  /* Dependency Graph */
+  .graph-container { background: var(--surface); border: 1px solid var(--glass-border); border-radius: 0.75rem; padding: 1.5rem; overflow-x: auto; }
+  .graph-container svg { width: 100%; min-width: 800px; height: auto; }
+  .node rect { rx: 6; ry: 6; stroke-width: 1.5; }
+  .node text { font-size: 10px; font-weight: 600; fill: var(--text); }
+  .edge { fill: none; stroke-width: 1.5; opacity: 0.6; }
+  .edge-dep { stroke: var(--accent); }
+  .edge-req { stroke: var(--accent-2); stroke-dasharray: 4 3; }
+
+  /* Cascade diagram */
+  .cascade { display: flex; flex-direction: column; gap: 0; align-items: center; margin: 1.5rem 0; }
+  .cascade-level { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 0.75rem; padding: 1rem 1.5rem; text-align: center; width: 100%; max-width: 500px; position: relative; }
+  .cascade-level .level-num { position: absolute; top: -0.6rem; left: 50%; transform: translateX(-50%); background: var(--gradient-1); color: white; width: 1.4rem; height: 1.4rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; }
+  .cascade-level h4 { font-size: 0.9rem; margin-bottom: 0.2rem; }
+  .cascade-level p { font-size: 0.75rem; color: var(--text-muted); }
+  .cascade-arrow { width: 2px; height: 1.5rem; background: var(--accent); position: relative; }
+  .cascade-arrow::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid var(--accent); }
+
+  /* Tier cards */
+  .tier-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 1rem; }
+  .tier-card { background: var(--surface); border: 1px solid var(--glass-border); border-radius: 0.75rem; padding: 1.25rem; position: relative; overflow: hidden; }
+  .tier-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .tier-card.t1::before { background: var(--gradient-2); }
+  .tier-card.t2::before { background: var(--gradient-1); }
+  .tier-card.t3::before { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
+  .tier-card.t4::before { background: linear-gradient(135deg, #f59e0b, #f97316); }
+  .tier-card.t5::before { background: linear-gradient(135deg, #8b5cf6, #ec4899); }
+  .tier-card.t6::before { background: linear-gradient(135deg, #10b981, #14b8a6); }
+  .tier-card.t7::before { background: linear-gradient(135deg, #f472b6, #c084fc); }
+  .tier-card.t8::before { background: linear-gradient(135deg, #64748b, #94a3b8); }
+  .tier-card h4 { font-size: 0.95rem; margin-bottom: 0.3rem; }
+  .tier-card .tier-desc { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+  .tier-card .tier-modules { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .tier-card .tier-modules span { background: var(--glass); border: 1px solid var(--glass-border); padding: 0.15rem 0.5rem; border-radius: 0.3rem; font-size: 0.7rem; color: var(--text-muted); }
+  .tier-card .tier-price { margin-top: 0.75rem; font-size: 0.85rem; font-weight: 600; color: var(--success); }
+
+  /* Architecture diagram */
+  .arch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0; }
+  .arch-layer { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 0.75rem; padding: 1rem; }
+  .arch-layer h4 { font-size: 0.85rem; color: var(--accent); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .arch-layer ul { list-style: none; }
+  .arch-layer li { font-size: 0.8rem; color: var(--text-muted); padding: 0.2rem 0; padding-left: 1rem; position: relative; }
+  .arch-layer li::before { content: ''; position: absolute; left: 0; top: 0.55rem; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 2rem; }
+  .timeline::before { content: ''; position: absolute; left: 0.5rem; top: 0; bottom: 0; width: 2px; background: var(--glass-border); }
+  .timeline-item { position: relative; margin-bottom: 1.5rem; }
+  .timeline-item::before { content: ''; position: absolute; left: -1.65rem; top: 0.3rem; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 2px solid var(--bg); }
+  .timeline-item h4 { font-size: 0.9rem; margin-bottom: 0.2rem; }
+  .timeline-item p { font-size: 0.8rem; color: var(--text-muted); }
+
+  /* Comparison */
+  .compare-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 0.75rem; }
+  .compare-card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 0.6rem; padding: 1rem; text-align: center; }
+  .compare-card h5 { font-size: 0.85rem; margin-bottom: 0.3rem; }
+  .compare-card .stars { color: #fbbf24; font-size: 0.9rem; margin-bottom: 0.3rem; }
+  .compare-card p { font-size: 0.75rem; color: var(--text-muted); }
+
+  /* Alert boxes */
+  .alert { border-radius: 0.6rem; padding: 1rem 1.25rem; margin-bottom: 1rem; border-left: 4px solid; }
+  .alert-critical { background: rgba(239,68,68,0.08); border-color: var(--danger); }
+  .alert-high { background: rgba(245,158,11,0.08); border-color: var(--warning); }
+  .alert-info { background: rgba(59,130,246,0.08); border-color: var(--accent); }
+  .alert-success { background: rgba(16,185,129,0.08); border-color: var(--success); }
+  .alert h4 { font-size: 0.9rem; margin-bottom: 0.3rem; }
+  .alert p { font-size: 0.8rem; color: var(--text-muted); }
+
+  /* Print */
+  @media print {
+    body { background: white; color: #1e293b; }
+    .hero { background: white; border-bottom: 2px solid #3b82f6; }
+    .hero h1 { -webkit-text-fill-color: #3b82f6; }
+    .card, .kpi, .tier-card, .toc, .graph-container, .cascade-level, .arch-layer, .compare-card { background: #f8fafc; border-color: #e2e8f0; }
+    .section { break-inside: avoid; }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .container { padding: 1rem; }
+    .kpi-grid { grid-template-columns: repeat(2,1fr); }
+    .tier-grid { grid-template-columns: 1fr; }
+    .arch-grid { grid-template-columns: 1fr; }
+    .compare-grid { grid-template-columns: repeat(2,1fr); }
+  }
+
+  /* Score gauge */
+  .score-gauge { display: flex; align-items: center; gap: 1rem; margin: 1rem 0; }
+  .score-ring { width: 80px; height: 80px; position: relative; }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring .score-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 1.2rem; font-weight: 800; }
+  .score-label { font-size: 0.85rem; color: var(--text-muted); }
+
+  /* Flow diagram */
+  .flow { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0; }
+  .flow-step { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.8rem; }
+  .flow-arrow { color: var(--accent); font-size: 1.2rem; }
+
+  /* Pill tabs */
+  .pill-group { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .pill { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 2rem; padding: 0.3rem 0.75rem; font-size: 0.75rem; color: var(--text-muted); }
+  .pill.active { background: var(--accent); color: white; border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <h1>Audit Complet — Systeme de Modules SaaS</h1>
+  <p class="subtitle">eLISAschool — Architecture, coherence, securite et recommandations</p>
+  <div class="meta">
+    <span>Version 1.0</span>
+    <span>10 aout 2026</span>
+    <span>47 modules analyses</span>
+    <span>15 anomalies identifiees</span>
+    <span>Score securite : 7.2/10</span>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- TABLE DES MATIERES -->
+<nav class="toc">
+  <h2>Sommaire</h2>
+  <div class="toc-grid">
+    <a href="#resume">1. Resume executif</a>
+    <a href="#inventaire">2. Inventaire des modules</a>
+    <a href="#dependances">3. Graphe de dependances</a>
+    <a href="#cascade">4. Cascade d'activation</a>
+    <a href="#anomalies">5. Anomalies et incoherences</a>
+    <a href="#securite">6. Securite et isolation</a>
+    <a href="#groupements">7. Groupements recommandes</a>
+    <a href="#benchmark">8. Benchmark meilleures pratiques</a>
+    <a href="#architecture">9. Architecture ideale</a>
+    <a href="#migration">10. Plan de migration</a>
+  </div>
+</nav>
+
+<!-- 1. RESUME EXECUTIF -->
+<section class="section" id="resume">
+  <div class="section-header">
+    <div class="num">1</div>
+    <h2>Resume executif</h2>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="value">47</div><div class="label">Modules declares</div></div>
+    <div class="kpi"><div class="value">41</div><div class="label">Modules dans le registre</div></div>
+    <div class="kpi success"><div class="value">3</div><div class="label">Niveaux cascade</div></div>
+    <div class="kpi danger"><div class="value">15</div><div class="label">Anomalies detectees</div></div>
+    <div class="kpi"><div class="value">4</div><div class="label">Niveaux prix tranches</div></div>
+    <div class="kpi"><div class="value">8</div><div class="label">Packs modules proposes</div></div>
+  </div>
+
+  <div class="alert alert-critical">
+    <h4>Probleme critique : Double source de verite</h4>
+    <p>Le systeme maintient deux sources de verite divergentes : <code>MODULE_REGISTRY</code> (code, legacy) et <code>ModuleCatalogue</code> (base de donnees). Le service <code>configurationService.isModuleActive()</code> ignore totalement le catalogue DB, tandis que <code>moduleResolutionService</code> l'utilise partiellement. Cela cree des incoherences d'activation et de facturation.</p>
+  </div>
+
+  <div class="alert alert-high">
+    <h4>Fuite multi-tenant dans la resolution des modules</h4>
+    <p>La requete <code>AbonnementModule</code> dans <code>module-resolution.service.ts</code> (lignes 134-137) ne filtre pas par <code>etablissementId</code> — elle recupere les abonnements de TOUS les etablissements. Risque de cross-tenant et degradation des performances.</p>
+  </div>
+
+  <div class="alert alert-info">
+    <h4>Perimetre de l'audit</h4>
+    <p>Analyse complete du code source (shared/, backend/, frontend/), verification de coherence entre les 3 sources de definition des modules, audit de la cascade d'activation, analyse du graphe de dependances, evaluation de la securite multi-tenant, benchmark des meilleures pratiques SaaS (web research), et proposition d'architecture cible.</p>
+  </div>
+</section>
+
+<!-- 2. INVENTAIRE -->
+<section class="section" id="inventaire">
+  <div class="section-header">
+    <div class="num">2</div>
+    <h2>Inventaire complet des modules</h2>
+  </div>
+
+  <p style="color:var(--text-muted);margin-bottom:1rem;font-size:0.9rem;">
+    47 modules declares dans <code>modules.enum.ts</code>, 41 dans le registre code (<code>MODULE_REGISTRY</code>), 41 synchronises dans le catalogue DB (<code>ModuleCatalogue</code>). 6 modules plateforme absents du registre.
+  </p>
+
+  <div class="pill-group">
+    <span class="pill active">47 total</span>
+    <span class="pill">20 critiques</span>
+    <span class="pill">10 premium</span>
+    <span class="pill">11 addon</span>
+    <span class="pill">6 plateforme</span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Module</th>
+          <th>Categorie DB</th>
+          <th>Categorie Registry</th>
+          <th>Defaut</th>
+          <th>Premium</th>
+          <th>Dependencies</th>
+          <th>Facturable</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>auth</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>CRITIQUES</td><td>Oui</td><td>Non</td><td>—</td><td>Non</td></tr>
+        <tr><td><strong>utilisateurs</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>CRITIQUES</td><td>Oui</td><td>Non</td><td>auth</td><td>Non</td></tr>
+        <tr><td><strong>configuration</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>CRITIQUES</td><td>Oui</td><td>Non</td><td>—</td><td>Non</td></tr>
+        <tr><td><strong>dashboard</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>CRITIQUES</td><td>Oui</td><td>Non</td><td>—</td><td>Non</td></tr>
+        <tr><td><strong>eleves</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>CRITIQUES</td><td>Oui</td><td>Non</td><td>auth</td><td>Non</td></tr>
+        <tr><td><strong>responsables-eleves</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>CRITIQUES</td><td>Oui</td><td>Non</td><td>eleves</td><td>Non</td></tr>
+        <tr><td><strong>notes</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>CRITIQUES</td><td>Oui</td><td>Non</td><td>eleves, periodes</td><td>Non</td></tr>
+        <tr><td><strong>bulletins</strong></td><td><span class="badge badge-medium">PREMIUM</span></td><td>ACADEMIQUES</td><td>Non</td><td>Oui</td><td>notes</td><td>Oui</td></tr>
+        <tr><td><strong>periodes</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>CRITIQUES</td><td>Oui</td><td>Non</td><td>—</td><td>Non</td></tr>
+        <tr><td><strong>programmes</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>ACADEMIQUES</td><td>Oui</td><td>Non</td><td>periodes</td><td>Non</td></tr>
+        <tr><td><strong>emploi-du-temps</strong></td><td><span class="badge badge-medium">PREMIUM</span></td><td>ACADEMIQUES</td><td>Non</td><td>Oui</td><td>eleves</td><td>Oui</td></tr>
+        <tr><td><strong>orientation</strong></td><td><span class="badge badge-medium">PREMIUM</span></td><td>ACADEMIQUES</td><td>Non</td><td>Oui</td><td>notes</td><td>Oui</td></tr>
+        <tr><td><strong>organisation</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>CRITIQUES</td><td>Oui</td><td>Non</td><td>auth</td><td>Non</td></tr>
+        <tr><td><strong>postes</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>CRITIQUES</td><td>Oui</td><td>Non</td><td>organisation</td><td>Non</td></tr>
+        <tr><td><strong>notifications</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>COMMUNICATION</td><td>Oui</td><td>Non</td><td>—</td><td>Non</td></tr>
+        <tr><td><strong>messagerie</strong></td><td><span class="badge badge-info">ADDON</span></td><td>COMMUNICATION</td><td>Non</td><td>Non*</td><td>notifications</td><td>Oui</td></tr>
+        <tr><td><strong>requetes</strong></td><td><span class="badge badge-info">ADDON</span></td><td>COMMUNICATION</td><td>Non</td><td>Non</td><td>notifications</td><td>Oui</td></tr>
+        <tr><td><strong>sondages</strong></td><td><span class="badge badge-info">ADDON</span></td><td>COMMUNICATION</td><td>Non</td><td>Non*</td><td>notifications</td><td>Oui</td></tr>
+        <tr><td><strong>annonces</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>COMMUNICATION</td><td>Oui</td><td>Non</td><td>notifications</td><td>Non</td></tr>
+        <tr><td><strong>personnel</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>CRITIQUES</td><td>Oui</td><td>Non</td><td>auth</td><td>Non</td></tr>
+        <tr><td><strong>contrats</strong></td><td><span class="badge badge-medium">PREMIUM</span></td><td>LOGISTIQUES</td><td>Non</td><td>Oui</td><td>personnel</td><td>Oui</td></tr>
+        <tr><td><strong>paie</strong></td><td><span class="badge badge-medium">PREMIUM</span></td><td>LOGISTIQUES</td><td>Non</td><td>Oui</td><td>contrats</td><td>Oui</td></tr>
+        <tr><td><strong>suivi-personnel</strong></td><td><span class="badge badge-medium">PREMIUM</span></td><td>LOGISTIQUES</td><td>Non</td><td>Oui</td><td>personnel</td><td>Oui</td></tr>
+        <tr><td><strong>recrutement</strong></td><td><span class="badge badge-info">ADDON</span></td><td>CRITIQUES**</td><td>Non</td><td>Non*</td><td>suivi-personnel</td><td>Oui</td></tr>
+        <tr><td><strong>cantine</strong></td><td><span class="badge badge-medium">PREMIUM</span></td><td>LOGISTIQUES</td><td>Non</td><td>Non*</td><td>eleves</td><td>Oui</td></tr>
+        <tr><td><strong>transport</strong></td><td><span class="badge badge-medium">PREMIUM</span></td><td>LOGISTIQUES</td><td>Non</td><td>Non*</td><td>eleves</td><td>Oui</td></tr>
+        <tr><td><strong>parking</strong></td><td><span class="badge badge-info">ADDON</span></td><td>LOGISTIQUES</td><td>Non</td><td>Non</td><td>— (zero!)</td><td>Oui</td></tr>
+        <tr><td><strong>finances</strong></td><td><span class="badge badge-medium">PREMIUM</span></td><td>LOGISTIQUES</td><td>Non</td><td>Oui</td><td>eleves</td><td>Oui</td></tr>
+        <tr><td><strong>clubs</strong></td><td><span class="badge badge-info">ADDON</span></td><td>ACTIVITES</td><td>Non</td><td>Non</td><td>eleves</td><td>Oui</td></tr>
+        <tr><td><strong>gamification</strong></td><td><span class="badge badge-medium">PREMIUM</span></td><td>ACTIVITES</td><td>Non</td><td>Oui</td><td>eleves</td><td>Oui</td></tr>
+        <tr><td><strong>scoring</strong></td><td><span class="badge badge-medium">PREMIUM</span></td><td>ACTIVITES</td><td>Non</td><td>Oui</td><td>notes, gamification</td><td>Oui</td></tr>
+        <tr><td><strong>sante</strong></td><td><span class="badge badge-info">ADDON</span></td><td>ACTIVITES</td><td>Non</td><td>Non</td><td>eleves</td><td>Oui</td></tr>
+        <tr><td><strong>cartes</strong></td><td><span class="badge badge-info">ADDON</span></td><td>DOCUMENTS</td><td>Non</td><td>Non</td><td>eleves</td><td>Oui</td></tr>
+        <tr><td><strong>documents</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>DOCUMENTS</td><td>Oui</td><td>Non</td><td>—</td><td>Non</td></tr>
+        <tr><td><strong>impressions</strong></td><td><span class="badge badge-info">ADDON</span></td><td>DOCUMENTS</td><td>Non</td><td>Non</td><td>documents</td><td>Oui</td></tr>
+        <tr><td><strong>materiel</strong></td><td><span class="badge badge-info">ADDON</span></td><td>SYSTEME</td><td>Non</td><td>Non</td><td>—</td><td>Oui</td></tr>
+        <tr><td><strong>salles</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>SYSTEME</td><td>Oui</td><td>Non</td><td>—</td><td>Non</td></tr>
+        <tr><td><strong>options</strong></td><td><span class="badge badge-info">ADDON</span></td><td>SYSTEME</td><td>Non</td><td>Non</td><td>—</td><td>Oui</td></tr>
+        <tr><td><strong>monitoring</strong></td><td><span class="badge badge-low">CRITIQUE</span></td><td>SYSTEME</td><td>Oui</td><td>Non</td><td>—</td><td>Non</td></tr>
+        <tr><td><strong>peripheriques</strong></td><td><span class="badge badge-medium">PREMIUM</span></td><td>SYSTEME</td><td>Non</td><td>Oui</td><td>—</td><td>Oui</td></tr>
+        <tr><td><strong>suivi-eleves</strong></td><td><span class="badge badge-info">ADDON</span></td><td>ACTIVITES</td><td>Non</td><td>Non</td><td>eleves</td><td>Oui</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;">
+    * Marque dans <code>MODULES_PREMIUM_LEGACY</code> (middleware) mais PAS dans <code>MODULE_REGISTRY</code> — incoherence.<br>
+    ** <code>recrutement</code> categorise CRITIQUES dans le registry mais <code>defaultActive: false</code> — contradiction.
+  </p>
+</section>
+
+<!-- 3. GRAPHE DE DEPENDANCES -->
+<section class="section" id="dependances">
+  <div class="section-header">
+    <div class="num">3</div>
+    <h2>Graphe de dependances</h2>
+  </div>
+
+  <p style="color:var(--text-muted);margin-bottom:1rem;font-size:0.9rem;">
+    Visualisation des dependances entre modules. Les fleches indiquent "depend de". Un module ne peut etre actif que si toutes ses dependances le sont.
+  </p>
+
+  <div class="graph-container">
+    <svg viewBox="0 0 900 620" xmlns="http://www.w3.org/2000/svg">
+      <!-- Noeuds racine -->
+      <g class="node"><rect x="380" y="10" width="100" height="30" fill="#10b981" stroke="#059669"/><text x="430" y="30" text-anchor="middle" fill="white">auth</text></g>
+      
+      <!-- Niveau 1 -->
+      <g class="node"><rect x="50" y="80" width="110" height="28" fill="#1e40af" stroke="#3b82f6"/><text x="105" y="98" text-anchor="middle" fill="white">utilisateurs</text></g>
+      <g class="node"><rect x="200" y="80" width="80" height="28" fill="#1e40af" stroke="#3b82f6"/><text x="240" y="98" text-anchor="middle" fill="white">eleves</text></g>
+      <g class="node"><rect x="320" y="80" width="110" height="28" fill="#1e40af" stroke="#3b82f6"/><text x="375" y="98" text-anchor="middle" fill="white">configuration</text></g>
+      <g class="node"><rect x="470" y="80" width="110" height="28" fill="#1e40af" stroke="#3b82f6"/><text x="525" y="98" text-anchor="middle" fill="white">organisation</text></g>
+      <g class="node"><rect x="620" y="80" width="110" height="28" fill="#1e40af" stroke="#3b82f6"/><text x="675" y="98" text-anchor="middle" fill="white">notifications</text></g>
+      <g class="node"><rect x="770" y="80" width="80" height="28" fill="#1e40af" stroke="#3b82f6"/><text x="810" y="98" text-anchor="middle" fill="white">personnel</text></g>
+
+      <!-- Niveau 2 -->
+      <g class="node"><rect x="30" y="150" width="70" height="28" fill="#7c3aed" stroke="#8b5cf6"/><text x="65" y="168" text-anchor="middle" fill="white">notes</text></g>
+      <g class="node"><rect x="130" y="150" width="80" height="28" fill="#0e7490" stroke="#06b6d4"/><text x="170" y="168" text-anchor="middle" fill="white">periodes</text></g>
+      <g class="node"><rect x="240" y="150" width="130" height="28" fill="#0e7490" stroke="#06b6d4"/><text x="305" y="168" text-anchor="middle" fill="white">resp. eleves</text></g>
+      <g class="node"><rect x="400" y="150" width="70" height="28" fill="#1e40af" stroke="#3b82f6"/><text x="435" y="168" text-anchor="middle" fill="white">postes</text></g>
+      <g class="node"><rect x="510" y="150" width="90" height="28" fill="#0e7490" stroke="#06b6d4"/><text x="555" y="168" text-anchor="middle" fill="white">requetes</text></g>
+      <g class="node"><rect x="630" y="150" width="90" height="28" fill="#0e7490" stroke="#06b6d4"/><text x="675" y="168" text-anchor="middle" fill="white">sondages</text></g>
+      <g class="node"><rect x="750" y="150" width="90" height="28" fill="#0e7490" stroke="#06b6d4"/><text x="795" y="168" text-anchor="middle" fill="white">annonces</text></g>
+
+      <!-- Niveau 3 -->
+      <g class="node"><rect x="10" y="220" width="80" height="28" fill="#b45309" stroke="#f59e0b"/><text x="50" y="238" text-anchor="middle" fill="white">bulletins</text></g>
+      <g class="node"><rect x="110" y="220" width="100" height="28" fill="#b45309" stroke="#f59e0b"/><text x="160" y="238" text-anchor="middle" fill="white">programmes</text></g>
+      <g class="node"><rect x="240" y="220" width="120" height="28" fill="#b45309" stroke="#f59e0b"/><text x="300" y="238" text-anchor="middle" fill="white">emploi-du-tps</text></g>
+      <g class="node"><rect x="390" y="220" width="90" height="28" fill="#b45309" stroke="#f59e0b"/><text x="435" y="238" text-anchor="middle" fill="white">orientation</text></g>
+      <g class="node"><rect x="510" y="220" width="80" height="28" fill="#065f46" stroke="#10b981"/><text x="550" y="238" text-anchor="middle" fill="white">contrats</text></g>
+      <g class="node"><rect x="620" y="220" width="110" height="28" fill="#065f46" stroke="#10b981"/><text x="675" y="238" text-anchor="middle" fill="white">suivi-personnel</text></g>
+      <g class="node"><rect x="760" y="220" width="80" height="28" fill="#065f46" stroke="#10b981"/><text x="800" y="238" text-anchor="middle" fill="white">messagerie</text></g>
+
+      <!-- Niveau 4 -->
+      <g class="node"><rect x="10" y="290" width="70" height="28" fill="#991b1b" stroke="#ef4444"/><text x="45" y="308" text-anchor="middle" fill="white">scoring</text></g>
+      <g class="node"><rect x="110" y="290" width="100" height="28" fill="#991b1b" stroke="#ef4444"/><text x="160" y="308" text-anchor="middle" fill="white">gamification</text></g>
+      <g class="node"><rect x="510" y="290" width="60" height="28" fill="#065f46" stroke="#10b981"/><text x="540" y="308" text-anchor="middle" fill="white">paie</text></g>
+      <g class="node"><rect x="620" y="290" width="100" height="28" fill="#065f46" stroke="#10b981"/><text x="670" y="308" text-anchor="middle" fill="white">recrutement</text></g>
+
+      <!-- Modules logistiques -->
+      <g class="node"><rect x="50" y="370" width="80" height="28" fill="#b45309" stroke="#f59e0b"/><text x="90" y="388" text-anchor="middle" fill="white">cantine</text></g>
+      <g class="node"><rect x="160" y="370" width="80" height="28" fill="#b45309" stroke="#f59e0b"/><text x="200" y="388" text-anchor="middle" fill="white">transport</text></g>
+      <g class="node"><rect x="270" y="370" width="70" height="28" fill="#4b5563" stroke="#6b7280"/><text x="305" y="388" text-anchor="middle" fill="white">parking</text></g>
+      <g class="node"><rect x="370" y="370" width="80" height="28" fill="#b45309" stroke="#f59e0b"/><text x="410" y="388" text-anchor="middle" fill="white">finances</text></g>
+
+      <!-- Modules addon -->
+      <g class="node"><rect x="50" y="440" width="60" height="28" fill="#4b5563" stroke="#6b7280"/><text x="80" y="458" text-anchor="middle" fill="white">clubs</text></g>
+      <g class="node"><rect x="140" y="440" width="60" height="28" fill="#4b5563" stroke="#6b7280"/><text x="170" y="458" text-anchor="middle" fill="white">sante</text></g>
+      <g class="node"><rect x="230" y="440" width="60" height="28" fill="#4b5563" stroke="#6b7280"/><text x="260" y="458" text-anchor="middle" fill="white">cartes</text></g>
+      <g class="node"><rect x="320" y="440" width="90" height="28" fill="#1e40af" stroke="#3b82f6"/><text x="365" y="458" text-anchor="middle" fill="white">documents</text></g>
+      <g class="node"><rect x="440" y="440" width="90" height="28" fill="#4b5563" stroke="#6b7280"/><text x="485" y="458" text-anchor="middle" fill="white">impressions</text></g>
+      <g class="node"><rect x="560" y="440" width="100" height="28" fill="#4b5563" stroke="#6b7280"/><text x="610" y="458" text-anchor="middle" fill="white">suivi-eleves</text></g>
+
+      <!-- Infrastructure -->
+      <g class="node"><rect x="50" y="510" width="80" height="28" fill="#4b5563" stroke="#6b7280"/><text x="90" y="528" text-anchor="middle" fill="white">materiel</text></g>
+      <g class="node"><rect x="160" y="510" width="60" height="28" fill="#1e40af" stroke="#3b82f6"/><text x="190" y="528" text-anchor="middle" fill="white">salles</text></g>
+      <g class="node"><rect x="250" y="510" width="70" height="28" fill="#4b5563" stroke="#6b7280"/><text x="285" y="528" text-anchor="middle" fill="white">options</text></g>
+      <g class="node"><rect x="350" y="510" width="90" height="28" fill="#1e40af" stroke="#3b82f6"/><text x="395" y="528" text-anchor="middle" fill="white">monitoring</text></g>
+      <g class="node"><rect x="470" y="510" width="100" height="28" fill="#b45309" stroke="#f59e0b"/><text x="520" y="528" text-anchor="middle" fill="white">peripheriques</text></g>
+
+      <!-- Edges (dependances) -->
+      <line class="edge edge-dep" x1="430" y1="40" x2="105" y2="80"/>
+      <line class="edge edge-dep" x1="430" y1="40" x2="240" y2="80"/>
+      <line class="edge edge-dep" x1="430" y1="40" x2="675" y2="80"/>
+      <line class="edge edge-dep" x1="430" y1="40" x2="810" y2="80"/>
+      <line class="edge edge-dep" x1="430" y1="40" x2="525" y2="80"/>
+      
+      <line class="edge edge-dep" x1="105" y1="108" x2="65" y2="150"/>
+      <line class="edge edge-dep" x1="240" y1="108" x2="65" y2="150"/>
+      <line class="edge edge-dep" x1="240" y1="108" x2="305" y2="150"/>
+      <line class="edge edge-dep" x1="240" y1="108" x2="300" y2="220"/>
+      <line class="edge edge-dep" x1="240" y1="108" x2="90" y2="370"/>
+      <line class="edge edge-dep" x1="240" y1="108" x2="200" y2="370"/>
+      <line class="edge edge-dep" x1="240" y1="108" x2="410" y2="370"/>
+      <line class="edge edge-dep" x1="240" y1="108" x2="80" y2="440"/>
+      <line class="edge edge-dep" x1="240" y1="108" x2="170" y2="440"/>
+      <line class="edge edge-dep" x1="240" y1="108" x2="260" y2="440"/>
+      <line class="edge edge-dep" x1="240" y1="108" x2="610" y2="440"/>
+
+      <line class="edge edge-dep" x1="65" y1="178" x2="50" y2="220"/>
+      <line class="edge edge-dep" x1="170" y1="178" x2="160" y2="220"/>
+      <line class="edge edge-dep" x1="170" y1="178" x2="300" y2="220"/>
+      <line class="edge edge-dep" x1="65" y1="178" x2="435" y2="220"/>
+      <line class="edge edge-dep" x1="65" y1="178" x2="45" y2="290"/>
+
+      <line class="edge edge-dep" x1="45" y1="318" x2="160" y2="290"/>
+      <line class="edge edge-dep" x1="675" y1="108" x2="555" y2="150"/>
+      <line class="edge edge-dep" x1="675" y1="108" x2="675" y2="150"/>
+      <line class="edge edge-dep" x1="675" y1="108" x2="795" y2="150"/>
+      <line class="edge edge-dep" x1="675" y1="108" x2="800" y2="220"/>
+      <line class="edge edge-dep" x1="810" y1="108" x2="550" y2="220"/>
+      <line class="edge edge-dep" x1="810" y1="108" x2="675" y2="220"/>
+      <line class="edge edge-dep" x1="550" y1="248" x2="540" y2="290"/>
+      <line class="edge edge-dep" x1="675" y1="248" x2="670" y2="290"/>
+      <line class="edge edge-dep" x1="410" y1="468" x2="485" y2="440"/>
+    </svg>
+  </div>
+
+  <div style="display:flex;gap:1.5rem;margin-top:1rem;flex-wrap:wrap;font-size:0.8rem;">
+    <span><span style="display:inline-block;width:20px;height:3px;background:#3b82f6;vertical-align:middle;margin-right:4px;"></span> Dependance directe</span>
+    <span><span style="display:inline-block;width:12px;height:28px;background:#1e40af;border:1px solid #3b82f6;border-radius:3px;vertical-align:middle;margin-right:4px;"></span> Critique (gratuit)</span>
+    <span><span style="display:inline-block;width:12px;height:28px;background:#b45309;border:1px solid #f59e0b;border-radius:3px;vertical-align:middle;margin-right:4px;"></span> Premium (payant)</span>
+    <span><span style="display:inline-block;width:12px;height:28px;background:#4b5563;border:1px solid #6b7280;border-radius:3px;vertical-align:middle;margin-right:4px;"></span> Addon</span>
+  </div>
+
+  <div class="alert alert-high" style="margin-top:1rem;">
+    <h4>Points d'attention du graphe</h4>
+    <p><strong>parking</strong> : zero dependances — module totalement isole, pas meme auth. Anomalie.<br>
+    <strong>scoring</strong> depend de <strong>gamification</strong> (premium) — un module pourrait contourner le gate premium.<br>
+    <strong>bulletins</strong> defaultActive=false mais notes defaultActive=true — coherence OK mais le chainon programmes est critique.</p>
+  </div>
+</section>
+
+<!-- 4. CASCADE D'ACTIVATION -->
+<section class="section" id="cascade">
+  <div class="section-header">
+    <div class="num">4</div>
+    <h2>Cascade d'activation des modules</h2>
+  </div>
+
+  <p style="color:var(--text-muted);margin-bottom:1.5rem;font-size:0.9rem;">
+    L'activation d'un module pour un etablissement suit une cascade a 4 niveaux. Chaque niveau peut override le precedent.
+  </p>
+
+  <div class="cascade">
+    <div class="cascade-level">
+      <div class="level-num">1</div>
+      <h4>ModuleCatalogue (DB)</h4>
+      <p><code>actifParDefaut</code> — 20 modules CRITIQUES actifs par defaut</p>
+    </div>
+    <div class="cascade-arrow"></div>
+    <div class="cascade-level">
+      <div class="level-num">2</div>
+      <h4>PlanAbonnement.modulesInclus</h4>
+      <p>Modules inclus dans le plan souscrit (ex: Pro = 28 modules)</p>
+    </div>
+    <div class="cascade-arrow"></div>
+    <div class="cascade-level">
+      <div class="level-num">3</div>
+      <h4>ModulesGroupe (override groupe)</h4>
+      <p>Override au niveau du groupe d'etablissements</p>
+    </div>
+    <div class="cascade-arrow"></div>
+    <div class="cascade-level">
+      <div class="level-num">4</div>
+      <h4>AbonnementModule (supplement)</h4>
+      <p>Module souscrit en supplement par l'etablissement</p>
+    </div>
+    <div class="cascade-arrow"></div>
+    <div class="cascade-level" style="border-color:var(--success);">
+      <div class="level-num" style="background:var(--gradient-2);">R</div>
+      <h4>Resultat : modules actifs</h4>
+      <p><code>moduleResolutionService.resoudreModulesActifs(etablissementId)</code></p>
+    </div>
+  </div>
+
+  <div class="alert alert-critical">
+    <h4>Incoherence majeure : ConfigurationService ignore le catalogue DB</h4>
+    <p><code>configurationService.isModuleActive()</code> utilise <code>ParametreSysteme</code> → fallback <code>MODULE_REGISTRY.defaultActive</code>. Il ne lit JAMAIS <code>ModuleCatalogue</code>. Resultat : un module desactive dans le catalogue DB peut rester actif via le ParametreSysteme.</p>
+  </div>
+
+  <div class="card">
+    <h4 style="margin-bottom:0.75rem;">Flux de verification runtime (middleware)</h4>
+    <div class="flow">
+      <div class="flow-step">Requete HTTP</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">authMiddleware</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">tenantMiddleware</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step" style="border-color:var(--warning);">requireModuleAccess()</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-step">Controller</div>
+    </div>
+    <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem;">
+      <code>requireModuleAccess</code> verifie : 1) SUPER_ADMIN bypass, 2) <code>isModuleActive()</code> via ConfigurationService, 3) si facturable : abonnement ACTIF requis, 4) si premium : souscription plan/supplement.
+    </p>
+  </div>
+</section>
+
+<!-- 5. ANOMALIES -->
+<section class="section" id="anomalies">
+  <div class="section-header">
+    <div class="num">5</div>
+    <h2>Anomalies et incoherences (15)</h2>
+  </div>
+
+  <div class="kpi-grid" style="margin-bottom:1.5rem;">
+    <div class="kpi danger"><div class="value">2</div><div class="label">Critiques</div></div>
+    <div class="kpi" style="border-color:var(--warning);"><div class="value" style="background:var(--gradient-3);-webkit-background-clip:text;background-clip:text;">3</div><div class="label">Hautes</div></div>
+    <div class="kpi"><div class="value" style="background:linear-gradient(135deg,#3b82f6,#60a5fa);-webkit-background-clip:text;background-clip:text;">7</div><div class="label">Moyennes</div></div>
+    <div class="kpi success"><div class="value">3</div><div class="label">Faibles</div></div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Severite</th><th>Anomalie</th><th>Impact</th><th>Fichier</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td><span class="badge badge-critical">CRITIQUE</span></td>
+          <td><strong>MODULES_PREMIUM_LEGACY</strong> contredit MODULE_REGISTRY pour 5 modules (transport, cantine, messagerie, sondages, recrutement)</td>
+          <td>Des modules marques premium dans le middleware ne le sont pas dans le registre → facturation incoherente</td>
+          <td><code>module-access.middleware.ts</code></td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td><span class="badge badge-critical">CRITIQUE</span></td>
+          <td><strong>Double source de verite</strong> : ConfigurationService ignore ModuleCatalogue DB</td>
+          <td>Activation/desactivation incoherente entre la plateforme et le runtime</td>
+          <td><code>configuration.service.ts</code></td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td><span class="badge badge-high">HAUTE</span></td>
+          <td><strong>6 modules plateforme</strong> dans modules.enum.ts mais absents de MODULE_REGISTRY</td>
+          <td>Impossible de resoudre ces modules via le registre legacy</td>
+          <td><code>modules.enum.ts</code></td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td><span class="badge badge-high">HAUTE</span></td>
+          <td><strong>Requete AbonnementModule non scopee</strong> — pas de filtre etablissementId (lignes 134-137)</td>
+          <td>Risque cross-tenant + degradation performance (charge toutes les souscriptions)</td>
+          <td><code>module-resolution.service.ts</code></td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td><span class="badge badge-high">HAUTE</span></td>
+          <td><strong>Cache TTL mismatch</strong> : ConfigurationService 30s vs ModuleResolutionService 5min</td>
+          <td>Fenetre de 4min30 ou un module desactive reste accessible</td>
+          <td>Services respectifs</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td><span class="badge badge-medium">MOYENNE</span></td>
+          <td><strong>parking</strong> a zero dependances (pas meme auth)</td>
+          <td>Module totalement isole, peut etre actif sans authentification</td>
+          <td><code>config.registry.ts</code></td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td><span class="badge badge-medium">MOYENNE</span></td>
+          <td><strong>bulletins</strong> defaultActive:false mais depend de notes (defaultActive:true)</td>
+          <td>Coherence OK mais chainon programmes critique non verifie</td>
+          <td><code>config.registry.ts</code></td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td><span class="badge badge-medium">MOYENNE</span></td>
+          <td><strong>scoring</strong> depend de gamification (premium) — bypass premium gate possible</td>
+          <td>Un etablissement pourrait activer scoring sans gamification</td>
+          <td><code>config.registry.ts</code></td>
+        </tr>
+        <tr>
+          <td>9</td>
+          <td><span class="badge badge-medium">MOYENNE</span></td>
+          <td><strong>recrutement</strong> categorie CRITIQUES mais defaultActive:false</td>
+          <td>Contradiction : si critique, devrait etre actif par defaut</td>
+          <td><code>config.registry.ts</code></td>
+        </tr>
+        <tr>
+          <td>10</td>
+          <td><span class="badge badge-medium">MOYENNE</span></td>
+          <td><strong>sante/suivi-eleves/suivi-personnel</strong> categories incoherentes entre systemes</td>
+          <td>Classification non uniforme → confusion pour les packs</td>
+          <td>Registry vs DB</td>
+        </tr>
+        <tr>
+          <td>11</td>
+          <td><span class="badge badge-medium">MOYENNE</span></td>
+          <td><strong>messagerie, sondages, recrutement</strong> marques premium legacy mais pas dans registry</td>
+          <td>Double standard de classification</td>
+          <td><code>module-access.middleware.ts</code></td>
+        </tr>
+        <tr>
+          <td>12</td>
+          <td><span class="badge badge-medium">MOYENNE</span></td>
+          <td><strong>impressions &rarr; documents</strong> : dependance manquante dans le registry</td>
+          <td>impressions pourrait etre actif sans documents</td>
+          <td><code>config.registry.ts</code></td>
+        </tr>
+        <tr>
+          <td>13</td>
+          <td><span class="badge badge-low">FAIBLE</span></td>
+          <td><strong>isModuleFacturable()</strong> fait une requete DB non cachee a chaque appel</td>
+          <td>Performance degradee sur chaque requete module</td>
+          <td><code>module-resolution.service.ts</code></td>
+        </tr>
+        <tr>
+          <td>14</td>
+          <td><span class="badge badge-low">FAIBLE</span></td>
+          <td><strong>toggleModule()</strong> ignore ModuleCatalogue</td>
+          <td>Toggle ne met pas a jour la source de verite DB</td>
+          <td><code>configuration.service.ts</code></td>
+        </tr>
+        <tr>
+          <td>15</td>
+          <td><span class="badge badge-low">FAIBLE</span></td>
+          <td><strong>finances</strong> : permissions mismatch entre registry et DB</td>
+          <td>Controle d'acces potentiellement incorrect</td>
+          <td><code>config.registry.ts</code> vs seed</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 6. SECURITE -->
+<section class="section" id="securite">
+  <div class="section-header">
+    <div class="num">6</div>
+    <h2>Securite et isolation multi-tenant</h2>
+  </div>
+
+  <div class="score-gauge">
+    <div class="score-ring">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="34" fill="none" stroke="var(--surface-2)" stroke-width="6"/>
+        <circle cx="40" cy="40" r="34" fill="none" stroke="var(--warning)" stroke-width="6" stroke-dasharray="153 214" stroke-linecap="round"/>
+      </svg>
+      <div class="score-text" style="color:var(--warning);">7.2</div>
+    </div>
+    <div>
+      <div style="font-weight:700;font-size:1rem;">Score securite modules : 7.2/10</div>
+      <div class="score-label">9 constats (3 critiques, 3 hauts, 3 moyens). Score v10 dual-plane : 9.5/10.</div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Severite</th><th>Constat</th><th>Statut</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>S1</td><td><span class="badge badge-critical">CRITIQUE</span></td><td>Requete AbonnementModule non scopee (cross-tenant)</td><td>A corriger</td></tr>
+        <tr><td>S2</td><td><span class="badge badge-critical">CRITIQUE</span></td><td>Double source de verite → contournement possible des restrictions</td><td>A corriger</td></tr>
+        <tr><td>S3</td><td><span class="badge badge-critical">CRITIQUE</span></td><td>MODULES_PREMIUM_LEGACY incoherent → modules premium accessibles gratuitement</td><td>A corriger</td></tr>
+        <tr><td>S4</td><td><span class="badge badge-high">HAUTE</span></td><td>Cache TTL 5min → fenetre d'exposition apres desactivation</td><td>A corriger</td></tr>
+        <tr><td>S5</td><td><span class="badge badge-high">HAUTE</span></td><td>parking sans dependance auth → acces sans authentification possible</td><td>A evaluer</td></tr>
+        <tr><td>S6</td><td><span class="badge badge-high">HAUTE</span></td><td>scoring → gamification bypass premium</td><td>A corriger</td></tr>
+        <tr><td>S7</td><td><span class="badge badge-medium">MOYENNE</span></td><td>Feature flags coupling implicite (module_X = flag module)</td><td>A documenter</td></tr>
+        <tr><td>S8</td><td><span class="badge badge-medium">MOYENNE</span></td><td>Pas de validation des dependances avant activation</td><td>A ajouter</td></tr>
+        <tr><td>S9</td><td><span class="badge badge-medium">MOYENNE</span></td><td>Aucun audit log lors de l'activation/desactivation runtime</td><td>A ajouter</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert alert-success" style="margin-top:1rem;">
+    <h4>Points positifs (securite dual-plane v10)</h4>
+    <p>RLS PostgreSQL actif sur ~40 tables (migrations 152-153, 164). CASL.js dual (platform + tenant). JWT secrets separes par plan. platformAuthMiddleware rejette les tokens cross-plane. Refresh token rotation avec detection de compromission. MFA enforce sur la plateforme. IP Allowlist fail-closed en production.</p>
+  </div>
+</section>
+
+<!-- 7. GROUPEMENTS RECOMMANDES -->
+<section class="section" id="groupements">
+  <div class="section-header">
+    <div class="num">7</div>
+    <h2>Groupements de modules recommandes (8 Tiers)</h2>
+  </div>
+
+  <p style="color:var(--text-muted);margin-bottom:1.5rem;font-size:0.9rem;">
+    Proposition de packaging basee sur l'analyse des dependances, la coherence fonctionnelle et les pratiques SaaS education. Chaque tier est un bundle coherent pouvant etre propose aux etablissements.
+  </p>
+
+  <div class="tier-grid">
+    <div class="tier-card t1">
+      <h4>Tier 1 — Socle Essentiel</h4>
+      <p class="tier-desc">Modules critiques gratuits, toujours actifs. Base minimale pour tout etablissement.</p>
+      <div class="tier-modules">
+        <span>auth</span><span>utilisateurs</span><span>configuration</span><span>dashboard</span><span>eleves</span><span>responsables-eleves</span><span>notes</span><span>periodes</span><span>notifications</span><span>organisation</span><span>postes</span>
+      </div>
+      <div class="tier-price">Gratuit — 11 modules</div>
+    </div>
+
+    <div class="tier-card t2">
+      <h4>Tier 2 — Pack Pedagogique</h4>
+      <p class="tier-desc">Outils pedagogiques complets : bulletins, programmes, EDT, orientation.</p>
+      <div class="tier-modules">
+        <span>bulletins</span><span>programmes</span><span>emploi-du-temps</span><span>orientation</span>
+      </div>
+      <div class="tier-price">Inclus plan Pro — 4 modules</div>
+    </div>
+
+    <div class="tier-card t3">
+      <h4>Tier 3 — Pack Communication</h4>
+      <p class="tier-desc">Communication interne : messagerie, requetes, sondages.</p>
+      <div class="tier-modules">
+        <span>messagerie</span><span>requetes</span><span>sondages</span><span>annonces</span>
+      </div>
+      <div class="tier-price">Add-on 5 000 F/mois — 4 modules</div>
+    </div>
+
+    <div class="tier-card t4">
+      <h4>Tier 4 — Pack Logistique</h4>
+      <p class="tier-desc">Gestion logistique : cantine, transport, parking.</p>
+      <div class="tier-modules">
+        <span>cantine</span><span>transport</span><span>parking</span>
+      </div>
+      <div class="tier-price">Add-on 8 000 F/mois — 3 modules</div>
+    </div>
+
+    <div class="tier-card t5">
+      <h4>Tier 5 — Pack RH & Paie</h4>
+      <p class="tier-desc">Ressources humaines complet : personnel, contrats, paie, recrutement.</p>
+      <div class="tier-modules">
+        <span>personnel</span><span>contrats</span><span>paie</span><span>suivi-personnel</span><span>recrutement</span>
+      </div>
+      <div class="tier-price">Premium 15 000 F/mois — 5 modules</div>
+    </div>
+
+    <div class="tier-card t6">
+      <h4>Tier 6 — Pack Finances</h4>
+      <p class="tier-desc">Gestion financiere : facturation, depenses, budgets.</p>
+      <div class="tier-modules">
+        <span>finances</span>
+      </div>
+      <div class="tier-price">Premium 10 000 F/mois — 1 module</div>
+    </div>
+
+    <div class="tier-card t7">
+      <h4>Tier 7 — Pack Vie Scolaire</h4>
+      <p class="tier-desc">Activites parascolaires et suivi : clubs, gamification, sante, cartes.</p>
+      <div class="tier-modules">
+        <span>clubs</span><span>gamification</span><span>scoring</span><span>sante</span><span>cartes</span><span>documents</span><span>impressions</span><span>suivi-eleves</span>
+      </div>
+      <div class="tier-price">Add-on 7 000 F/mois — 8 modules</div>
+    </div>
+
+    <div class="tier-card t8">
+      <h4>Tier 8 — Pack Infrastructure</h4>
+      <p class="tier-desc">Infrastructure technique : materiel, salles, monitoring, peripheriques.</p>
+      <div class="tier-modules">
+        <span>materiel</span><span>salles</span><span>options</span><span>monitoring</span><span>peripheriques</span>
+      </div>
+      <div class="tier-price">Add-on 3 000 F/mois — 5 modules</div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. BENCHMARK -->
+<section class="section" id="benchmark">
+  <div class="section-header">
+    <div class="num">8</div>
+    <h2>Benchmark — Meilleures pratiques SaaS</h2>
+  </div>
+
+  <h3 style="font-size:1.1rem;margin-bottom:1rem;">Outils de Feature Flags — Comparatif</h3>
+  <div class="compare-grid" style="margin-bottom:2rem;">
+    <div class="compare-card">
+      <h5>Unleash</h5>
+      <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9734;</div>
+      <p>Open-source, self-hosted. Strategies avancees. Ideal pour <strong>grande echelle</strong>.</p>
+    </div>
+    <div class="compare-card">
+      <h5>Flagsmith</h5>
+      <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <p>Open-source + cloud. Segment targeting, A/B testing. <strong>Recommande</strong> pour eLISAschool.</p>
+    </div>
+    <div class="compare-card">
+      <h5>GrowthBook</h5>
+      <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9734;</div>
+      <p>Focalise A/B testing + feature flags. SQL-based. Bon pour <strong>analytics-driven</strong>.</p>
+    </div>
+    <div class="compare-card">
+      <h5>Flipt</h5>
+      <div class="stars">&#9733;&#9733;&#9733;&#9734;&#9734;</div>
+      <p>Go-based, leger, GitOps. Ideal pour <strong>petites equipes</strong>.</p>
+    </div>
+    <div class="compare-card">
+      <h5>GO Feature Flag</h5>
+      <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9734;</div>
+      <p>Go, fichier-based, simple. Parfait pour <strong>startup/PMF</strong>.</p>
+    </div>
+    <div class="compare-card">
+      <h5>OpenFeature</h5>
+      <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <p>Standard CNCF, vendor-neutral. <strong>Infrastructure</strong> a adopter en complement.</p>
+    </div>
+  </div>
+
+  <h3 style="font-size:1.1rem;margin-bottom:1rem;">Outils de Billing SaaS — Comparatif</h3>
+  <div class="compare-grid" style="margin-bottom:2rem;">
+    <div class="compare-card">
+      <h5>Stripe Billing</h5>
+      <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <p>Reference mondiale. Usage-based, invoices, taxes auto. <strong>Gold standard</strong>.</p>
+    </div>
+    <div class="compare-card">
+      <h5>Lago</h5>
+      <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9734;</div>
+      <p>Open-source, usage-based. Self-hosted. <strong>Alternative serieuse</strong> a Stripe.</p>
+    </div>
+    <div class="compare-card">
+      <h5>UniBee</h5>
+      <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9734;</div>
+      <p>Open-source, multi-entite. Bon pour <strong>marches emergents</strong> (Afrique).</p>
+    </div>
+    <div class="compare-card">
+      <h5>Metronome</h5>
+      <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <p>Usage-based pricing avance. Credit system. <strong>Innovant</strong> pour modeles complexes.</p>
+    </div>
+    <div class="compare-card">
+      <h5>Orb</h5>
+      <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9734;</div>
+      <p>Metering + billing. API-first. Bon pour <strong>real-time usage</strong>.</p>
+    </div>
+    <div class="compare-card">
+      <h5>Chargebee</h5>
+      <div class="stars">&#9733;&#9733;&#9733;&#9734;&#9734;</div>
+      <p>Enterprise, multi-cloud. Complexe mais complet. Pour <strong>grandes organisations</strong>.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h4 style="margin-bottom:0.75rem;">Meilleures pratiques identifiees (web research)</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Pratique</th><th>Description</th><th>Application eLISAschool</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Source unique de verite</strong></td><td>Un seul catalogue (DB ou code), jamais deux</td><td>Abandonner MODULE_REGISTRY, tout migrer vers ModuleCatalogue DB</td></tr>
+          <tr><td><strong>Dependency graph valide</strong></td><td>Validation automatique avant activation</td><td>Verifier toutes les dependances dans toggleModule()</td></tr>
+          <tr><td><strong>Feature flags decouples</strong></td><td>Separer module activation (binaire) de feature flags (graduel)</td><td>Creer un service FeatureFlag dedie, pas de coupling implicite</td></tr>
+          <tr><td><strong>Audit trail complet</strong></td><td>Logger toute activation/desactivation</td><td>Ajouter auditService.log() dans toggleModule()</td></tr>
+          <tr><td><strong>Cache coherent</strong></td><td>Meme TTL pour tous les services de resolution</td><td>Unifier a 60s avec invalidation explicite</td></tr>
+          <tr><td><strong>Module tiers</strong></td><td>Interface publique stable, evenements pub/sub</td><td>Exposer ModuleLifecycle hooks (onActivate, onDeactivate)</td></tr>
+          <tr><td><strong>Packaging par persona</strong></td><td>Bundles alignes sur les besoins utilisateurs</td><td>8 Tiers proposes (voir section 7)</td></tr>
+          <tr><td><strong>Graceful degradation</strong></td><td>Desactivation sans perte de donnees</td><td>Soft-disable + archive, jamais de hard delete</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 9. ARCHITECTURE IDEALE -->
+<section class="section" id="architecture">
+  <div class="section-header">
+    <div class="num">9</div>
+    <h2>Architecture ideale proposee</h2>
+  </div>
+
+  <div class="arch-grid">
+    <div class="arch-layer">
+      <h4>Couche Definition</h4>
+      <ul>
+        <li>ModuleCatalogue (DB) — source unique</li>
+        <li>MODULE_REGISTRY supprime (legacy)</li>
+        <li>Seed automatique depuis catalogue</li>
+        <li>Categories unifiees : CRITIQUE/PREMIUM/ADDON</li>
+        <li>Dependencies validees (acyclique)</li>
+      </ul>
+    </div>
+    <div class="arch-layer">
+      <h4>Couche Resolution</h4>
+      <ul>
+        <li>ModuleResolutionService v2</li>
+        <li>Cache Redis (TTL 60s, pas memoire)</li>
+        <li>Cascade : catalogue → plan → groupe → supplement</li>
+        <li>Invalidation event-driven (pub/sub)</li>
+        <li>Scoped par etablissementId (RLS)</li>
+      </ul>
+    </div>
+    <div class="arch-layer">
+      <h4>Couche Enforcement</h4>
+      <ul>
+        <li>requireModuleAccess() simplifie</li>
+        <li>Plus de MODULES_PREMIUM_LEGACY</li>
+        <li>Verification dependances automatique</li>
+        <li>Audit log systematique</li>
+        <li>Rate limiting par plan</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:1rem;">
+    <h4 style="margin-bottom:0.75rem;">ModuleLifecycle — Interface publique stable</h4>
+    <pre style="background:var(--bg);padding:1rem;border-radius:0.5rem;overflow-x:auto;font-size:0.8rem;color:var(--text-muted);">
+interface ModuleLifecycle {
+  onActivate(etablissementId: string): Promise&lt;void&gt;;
+  onDeactivate(etablissementId: string): Promise&lt;void&gt;;
+  onUpgrade(etablissementId: string, newPlan: Plan): Promise&lt;void&gt;;
+  getDependencies(): string[];
+  getDependents(): string[];
+  canDeactivate(): { allowed: boolean; blockedBy?: string[] };
+}
+
+// Chaque module implemente cette interface
+// Le ModuleRegistryService orchestre les evenements
+// Pub/Sub via EventEmitter pour le decouplage</pre>
+  </div>
+
+  <div class="card">
+    <h4 style="margin-bottom:0.75rem;">Schema de donnees cible</h4>
+    <pre style="background:var(--bg);padding:1rem;border-radius:0.5rem;overflow-x:auto;font-size:0.8rem;color:var(--text-muted);">
+modules_catalogue          -- Source unique (41 modules)
+  ├── code (unique)
+  ├── categorie (CRITIQUE|PREMIUM|ADDON)
+  ├── dependencies[]       -- Validated acyclic
+  ├── config (jsonb)       -- Module-specific settings
+  └── actifParDefaut       -- Override global
+
+plans_abonnement
+  ├── modulesInclus[]      -- References catalogue codes
+  └── featureFlags{}       -- Decoupled from modules
+
+modules_groupe             -- Override par groupe
+  ├── groupeEtablissementId
+  ├── moduleCatalogueId    -- FK vers catalogue
+  └── actif                -- Boolean override
+
+abonnements_modules        -- Supplements par etablissement
+  ├── etablissementId
+  ├── moduleCatalogueId    -- FK vers catalogue
+  └── actif
+
+parametres_systeme         -- Runtime overrides (trace only)
+  ├── cle: "modules.{code}.actif"
+  └── etablissementId      -- Scope</pre>
+  </div>
+</section>
+
+<!-- 10. PLAN DE MIGRATION -->
+<section class="section" id="migration">
+  <div class="section-header">
+    <div class="num">10</div>
+    <h2>Plan de migration recommande</h2>
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <h4>Phase 1 — Corrections critiques (1-2 jours)</h4>
+      <p>
+        <strong>P1.1</strong> Supprimer <code>MODULES_PREMIUM_LEGACY</code> du middleware — utiliser uniquement le catalogue DB.<br>
+        <strong>P1.2</strong> Ajouter <code>etablissementId</code> filter dans la requete AbonnementModule (module-resolution.service.ts l.134).<br>
+        <strong>P1.3</strong> Ajouter dependance <code>auth</code> au module <code>parking</code>.<br>
+        <strong>P1.4</strong> Corriger la categorie de <code>recrutement</code> : CRITIQUES → ADDON (ou defaultActive: true).
+      </p>
+    </div>
+    <div class="timeline-item">
+      <h4>Phase 2 — Unification source de verite (3-5 jours)</h4>
+      <p>
+        <strong>P2.1</strong> Migrer <code>configurationService.isModuleActive()</code> pour lire ModuleCatalogue en priorite.<br>
+        <strong>P2.2</strong> Migrer <code>toggleModule()</code> pour mettre a jour ModuleCatalogue.<br>
+        <strong>P2.3</strong> Supprimer MODULE_REGISTRY — remplacer par des lectures du catalogue DB.<br>
+        <strong>P2.4</strong> Ajouter les 6 modules plateforme au catalogue DB.
+      </p>
+    </div>
+    <div class="timeline-item">
+      <h4>Phase 3 — Cache et performance (2-3 jours)</h4>
+      <p>
+        <strong>P3.1</strong> Unifier les TTL cache a 60s (ConfigurationService + ModuleResolutionService).<br>
+        <strong>P3.2</strong> Migrer le cache memoire vers Redis (partage entre instances).<br>
+        <strong>P3.3</strong> Ajouter invalidation explicite apres toggle/activation.<br>
+        <strong>P3.4</strong> Cache <code>isModuleFacturable()</code> (actuellement uncached).
+      </p>
+    </div>
+    <div class="timeline-item">
+      <h4>Phase 4 — Validation et audit (2-3 jours)</h4>
+      <p>
+        <strong>P4.1</strong> Ajouter validation des dependances dans <code>toggleModule()</code> (verifier que les dependants sont prets).<br>
+        <strong>P4.2</strong> Ajouter audit log systematique dans toggleModule().<br>
+        <strong>P4.3</strong> Implementer <code>ModuleLifecycle</code> interface pour les modules critiques.<br>
+        <strong>P4.4</strong> Decoupler feature flags des modules (service dedie).
+      </p>
+    </div>
+    <div class="timeline-item">
+      <h4>Phase 5 — Packaging et UI (3-5 jours)</h4>
+      <p>
+        <strong>P5.1</strong> Implementer les 8 Tiers de groupement dans l'UI plateforme.<br>
+        <strong>P5.2</strong> Creer un simulateur de plan avec les packs proposes.<br>
+        <strong>P5.3</strong> Ajouter une vue "Impact de desactivation" (modules affectes).<br>
+        <strong>P5.4</strong> Documentation publique des modules pour les clients.
+      </p>
+    </div>
+  </div>
+
+  <div class="alert alert-info" style="margin-top:1.5rem;">
+    <h4>Estimation effort total</h4>
+    <p><strong>11-18 jours</strong> de developpement (1 developpeur senior). Priorite : Phases 1-2 (critiques, 4-7 jours). Les phases 3-5 sont des ameliorations progressives non-bloquantes.</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer style="text-align:center;padding:2rem;border-top:1px solid var(--glass-border);color:var(--text-muted);font-size:0.8rem;">
+  <p>Rapport genere le 10 aout 2026 — eLISAschool — Audit Module SaaS v1.0</p>
+  <p style="margin-top:0.5rem;">Analyse basee sur le code source (shared/, backend/, frontend/), recherche web meilleures pratiques SaaS, et audit de securite dual-plane v10.</p>
+</footer>
+
+</div>
+</body>
+</html>

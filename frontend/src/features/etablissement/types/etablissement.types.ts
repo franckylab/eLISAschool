@@ -54,6 +54,7 @@ export interface Etablissement {
     contactEmail?: string;
     contactTelephone?: string;
     adresse?: string;
+    ville?: string;
     siteWeb?: string;
     facebook?: string;
     twitter?: string;

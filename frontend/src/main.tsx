@@ -18,15 +18,23 @@ import { useAuthStore } from '@/stores/auth.store';
 // Root-level error recovery for React crash (error 409 = unmounted root)
 const ROOT_KEY = 'elisaschool:crash-recovery';
 const bootstrap = () => {
-    // Global error handler for React root-level errors (error 409, etc.)
+    // Global error handler — capture TOUTES les erreurs non gérées
     window.addEventListener('error', (event) => {
+        console.error('[Bootstrap] Erreur globale capturée:', event.error?.message || event.message);
+
+        // React root unmounted (error 409) — reload immédiat
         if (event.error?.message?.includes('Cannot update an unmounted root') ||
             event.error?.message?.includes('Minified React error #409')) {
             event.preventDefault();
-            console.warn('[Bootstrap] React root unmounted — reloading');
+            console.warn('[Bootstrap] React root unmounted — rechargement');
             sessionStorage.setItem(ROOT_KEY, String(Date.now()));
             location.reload();
         }
+    });
+
+    // Capture des promesses rejetées non gérées
+    window.addEventListener('unhandledrejection', (event) => {
+        console.error('[Bootstrap] Promesse rejetée non gérée:', event.reason);
     });
 
     // Detect consecutive crashes — avoid infinite reload
@@ -54,13 +62,28 @@ const bootstrap = () => {
     useAuthStore.getState().initialize();
 
     try {
-        createRoot(document.getElementById('root')!).render(
+        const rootElement = document.getElementById('root');
+        if (!rootElement) {
+            throw new Error('Element #root introuvable dans le DOM');
+        }
+
+        const root = createRoot(rootElement);
+        root.render(
             <StrictMode>
                 <Providers>
                     <App />
                 </Providers>
             </StrictMode>
         );
+
+        // Safety net : si le root est vide après 12s, forcer un rechargement
+        setTimeout(() => {
+            const rootEl = document.getElementById('root');
+            if (rootEl && rootEl.children.length === 0) {
+                console.error('[Bootstrap] Root vide après 12s — rechargement forcé');
+                location.reload();
+            }
+        }, 12000);
     } catch (err) {
         console.error('[Bootstrap] React root creation failed:', err);
         sessionStorage.setItem(ROOT_KEY, String(Date.now()));

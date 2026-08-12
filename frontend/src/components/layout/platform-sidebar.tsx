@@ -26,13 +26,13 @@ import {
     ChevronLeft,
     ChevronRight,
     Wallet,
-    KeyRound,
     Network,
     X,
     DollarSign,
     Users,
     Star,
     Layers,
+    BadgePercent,
 } from 'lucide-react';
 import { useState, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -49,7 +49,6 @@ interface PlatformNavItem {
     path: string;
     icon: typeof LayoutDashboard;
     group: 'pilotage' | 'tenants' | 'technique' | 'securite';
-    subGroup?: 'identite' | 'surveillance';
 }
 
 interface PlatformNavGroup {
@@ -73,18 +72,17 @@ const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
     { labelKey: 'navigation.groupes', descKey: 'sidebar.descGroupes', path: '/platform/groupes', icon: Network, group: 'tenants' },
     { labelKey: 'navigation.facturation', descKey: 'sidebar.descFacturation', path: '/platform/facturation', icon: CreditCard, group: 'tenants' },
     { labelKey: 'navigation.abonnements', descKey: 'sidebar.descAbonnements', path: '/platform/abonnements', icon: Star, group: 'tenants' },
+    { labelKey: 'navigation.tarifs', descKey: 'sidebar.descTarifs', path: '/platform/tarifs', icon: BadgePercent, group: 'tenants' },
     // Groupe Technique (4 items)
     { labelKey: 'navigation.modules', descKey: 'sidebar.descModules', path: '/platform/modules', icon: Package, group: 'technique' },
     { labelKey: 'navigation.configuration', descKey: 'sidebar.descConfiguration', path: '/platform/configuration', icon: Settings, group: 'technique' },
     { labelKey: 'navigation.notifications', descKey: 'sidebar.descNotifications', path: '/platform/notifications-config', icon: Bell, group: 'technique' },
     { labelKey: 'navigation.providers', descKey: 'sidebar.descProviders', path: '/platform/providers', icon: Wallet, group: 'technique' },
     { labelKey: 'navigation.parametresCascade', descKey: 'sidebar.descParametresCascade', path: '/platform/parametres-cascade', icon: Layers, group: 'technique' },
-    // Groupe Sécurité (5 items — sous-groupes Identité + Surveillance)
-    { labelKey: 'navigation.utilisateurs', descKey: 'sidebar.descUtilisateurs', path: '/platform/utilisateurs', icon: Users, group: 'securite', subGroup: 'identite' },
-    { labelKey: 'navigation.rolesPlateforme', descKey: 'sidebar.descRolesPlateforme', path: '/platform/roles', icon: Shield, group: 'securite', subGroup: 'identite' },
-    { labelKey: 'navigation.permissions', descKey: 'sidebar.descPermissions', path: '/platform/permissions', icon: KeyRound, group: 'securite', subGroup: 'identite' },
-    { labelKey: 'navigation.sessionsActivite', descKey: 'sidebar.descSessionsActivite', path: '/platform/sessions', icon: Activity, group: 'securite', subGroup: 'surveillance' },
-    { labelKey: 'navigation.audit', descKey: 'sidebar.descAudit', path: '/platform/audit', icon: FileText, group: 'securite', subGroup: 'surveillance' },
+    // Groupe Sécurité (3 items — ADR-005 : sessions/permissions supprimés)
+    { labelKey: 'navigation.utilisateurs', descKey: 'sidebar.descUtilisateurs', path: '/platform/utilisateurs', icon: Users, group: 'securite' },
+    { labelKey: 'navigation.rolesPlateforme', descKey: 'sidebar.descRolesPlateforme', path: '/platform/roles', icon: Shield, group: 'securite' },
+    { labelKey: 'navigation.audit', descKey: 'sidebar.descAudit', path: '/platform/audit', icon: FileText, group: 'securite' },
 ];
 
 const NAV_GROUPS: PlatformNavGroup[] = [
@@ -115,7 +113,6 @@ function NavItemLink({ item, collapsed, t, matchRoute, isMobile, setMobileOpen }
             onClick={() => isMobile && setMobileOpen(false)}
             className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group',
-                item.subGroup ? 'ml-2' : '',
                 isActive
                     ? 'bg-[var(--color-danger-100)] text-[var(--color-danger-700)] font-medium'
                     : 'text-[var(--color-texte-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)]'
@@ -171,44 +168,6 @@ export function PlatformSidebar({ collapsed: initialCollapsed = false }: Platfor
     const navContent: ReactNode = (
         <nav className="flex-1 py-2 px-2 overflow-y-auto scrollbar-hide">
             {NAV_GROUPS.map((group) => {
-                // Groupe Sécurité : afficher avec sous-groupes
-                if (group.key === 'securite') {
-                    const identiteItems = group.items.filter(i => i.subGroup === 'identite');
-                    const surveillanceItems = group.items.filter(i => i.subGroup === 'surveillance');
-
-                    return (
-                        <div key={group.key} className="mb-2">
-                            {!collapsed && (
-                                <p
-                                    className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-texte-muted)]"
-                                    style={{ fontSize: 'clamp(0.563rem, 0.52rem + 0.2vw, 0.625rem)' }}
-                                >
-                                    {t(group.labelKey)}
-                                </p>
-                            )}
-                            {/* Sous-groupe Identité */}
-                            {!collapsed && identiteItems.length > 0 && (
-                                <p className="px-3 pt-2 pb-0.5 text-[9px] font-medium uppercase tracking-wider text-[var(--color-texte-muted)]/70">
-                                    {t('sidebar.sousGroupeIdentite', 'Identité')}
-                                </p>
-                            )}
-                            {identiteItems.map((item) => (
-                                <NavItemLink key={item.path} item={item} collapsed={collapsed} t={t} matchRoute={matchRoute} isMobile={isMobile} setMobileOpen={setMobileOpen} />
-                            ))}
-                            {/* Sous-groupe Surveillance */}
-                            {!collapsed && surveillanceItems.length > 0 && (
-                                <p className="px-3 pt-2 pb-0.5 text-[9px] font-medium uppercase tracking-wider text-[var(--color-texte-muted)]/70">
-                                    {t('sidebar.sousGroupeSurveillance', 'Surveillance')}
-                                </p>
-                            )}
-                            {surveillanceItems.map((item) => (
-                                <NavItemLink key={item.path} item={item} collapsed={collapsed} t={t} matchRoute={matchRoute} isMobile={isMobile} setMobileOpen={setMobileOpen} />
-                            ))}
-                        </div>
-                    );
-                }
-
-                // Autres groupes : rendu standard
                 return (
                     <div key={group.key} className="mb-2">
                         {!collapsed && (

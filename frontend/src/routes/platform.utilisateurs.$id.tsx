@@ -3,22 +3,17 @@
  * eLISAschool - Route Platform Utilisateurs Détail
  * ==================================
  * Page plateforme — Détail utilisateur plateforme.
- * Modèle C — Auth0 Internalisé (Dual-Plane)
+ * ADR-005 — Auth unifiée (source unique de vérité)
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import PlatformUserDetailPage from '@/features/platform/components/platform-user-detail-page';
-
-function PlatformUtilisateurDetailRoute() {
-    return (
-        <div className="p-[var(--space-lg)]">
-            <PlatformUserDetailPage />
-        </div>
-    );
-}
+import { PlatformUserDetailPage } from '@/features/platform/components/platform-user-detail-page';
 
 export const Route = createFileRoute('/platform/utilisateurs/$id')({
-    component: PlatformUtilisateurDetailRoute,
+    validateSearch: (search: Record<string, unknown>) => ({
+        tab: (search.tab as string) || 'informations',
+    }),
+    component: PlatformUserDetailPage,
 });
 
-export default PlatformUtilisateurDetailRoute;
+export default PlatformUserDetailPage;

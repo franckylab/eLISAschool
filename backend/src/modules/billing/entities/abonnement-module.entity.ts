@@ -6,6 +6,7 @@
  * Lien entre un abonnement client et un module optionnel activé.
  * 
  * Phase 4.1 — Refonte SaaS
+ * v7 P1.1 — Ajout etablissementId pour isolation multi-tenant directe
  */
 
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
@@ -14,6 +15,7 @@ import { ModuleOptionnel } from './module-optionnel.entity';
 
 @Entity('abonnements_modules')
 @Index(['abonnementId', 'moduleOptionnelId'], { unique: true })
+@Index(['etablissementId']) // P1.1 v7 — Index multi-tenant
 export class AbonnementModule {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -31,6 +33,10 @@ export class AbonnementModule {
     @ManyToOne(() => ModuleOptionnel, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'moduleOptionnelId' })
     moduleOptionnel!: ModuleOptionnel;
+
+    /** P1.1 v7 — Isolation multi-tenant directe ( évite JOIN sur abonnements_client) */
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
 
     @Column({ type: 'boolean', default: true })
     actif!: boolean;

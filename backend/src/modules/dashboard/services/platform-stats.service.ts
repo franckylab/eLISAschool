@@ -16,6 +16,7 @@ import { AppDataSource } from '@database/data-source';
 import { logger } from '@common/utils/logger.util';
 import { StatutAbonnement } from '@modules/billing/entities/abonnement-client.entity';
 import { StatutFacture } from '@modules/billing/entities/facture.entity';
+import { santeEtablissementService } from '@modules/etablissement/services/sante-etablissement.service';
 
 // =============================================
 // Types
@@ -184,25 +185,21 @@ export class PlatformStatsService {
 
     /**
      * Santé des établissements — répartition par état + dunning.
-     * Critères : sain (abonnement actif, pas de retard), attention (retard < 15j),
-     * critique (retard >= 15j ou suspendu).
+     * Délègue le calcul santé à SanteEtablissementService (score composite 0-100).
+     * Conserve les données dunning (spécifiques à ce service).
+     * Cache TTL 60s.
      */
     async getSanteStats(): Promise<SanteStats> {
         if (this.santeCache && Date.now() - this.santeCache.timestamp < this.CACHE_TTL) {
             return this.santeCache.value;
         }
 
-        // Compter par statut d'abonnement
-        const [actifs, suspendus, expires, annules] = await Promise.all([
-            this.abonnementRepo.count({ where: { statut: StatutAbonnement.ACTIF } }),
-            this.abonnementRepo.count({ where: { statut: StatutAbonnement.SUSPENDU } }),
-            this.abonnementRepo.count({ where: { statut: StatutAbonnement.EXPIRE } }),
-            this.abonnementRepo.count({ where: { statut: StatutAbonnement.ANNULE } }),
-        ]);
+        // Délégation au service santé composite
+        const resume = await santeEtablissementService.getResumeSante();
 
-        // Factures en retard — agrégats dunning
-        const [facturesRetard, relancesTotal, montantRelanceResult] = await Promise.all([
-            this.factureRepo.count({ where: { statut: StatutFacture.EN_RETARD } }),
+        // Dunning — agrégats spécifiques (inchangés)
+        const [suspendus, relancesTotal, montantRelanceResult] = await Promise.all([
+            this.abonnementRepo.count({ where: { statut: StatutAbonnement.SUSPENDU } }),
             this.factureRepo
                 .createQueryBuilder('f')
                 .select('COALESCE(SUM(f.nombreRelances), 0)', 'total')
@@ -218,15 +215,10 @@ export class PlatformStatsService {
                 .getRawOne(),
         ]);
 
-        // Répartition santé : sains = actifs sans retard, attention = actifs avec retard léger, critiques = suspendus + expirés
-        const etablissementsCritiques = suspendus + expires;
-        const etablissementsAttention = facturesRetard; // établissements avec au moins une facture en retard
-        const etablissementsSains = Math.max(actifs - facturesRetard, 0);
-
         const stats: SanteStats = {
-            etablissementsSains,
-            etablissementsAttention,
-            etablissementsCritiques,
+            etablissementsSains: resume.sains,
+            etablissementsAttention: resume.attention,
+            etablissementsCritiques: resume.critiques,
             dunning: {
                 relancesEnvoyees: Number(relancesTotal?.total || 0),
                 suspendus,
@@ -236,7 +228,7 @@ export class PlatformStatsService {
         };
 
         this.santeCache = { value: stats, timestamp: Date.now() };
-        logger.info('[PlatformStats] Santé rafraîchie', { etablissementsSains, etablissementsCritiques });
+        logger.info('[PlatformStats] Santé rafraîchie (déléguée)', { sains: resume.sains, critiques: resume.critiques });
         return stats;
     }
 

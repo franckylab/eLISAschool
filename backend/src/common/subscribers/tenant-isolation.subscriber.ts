@@ -29,11 +29,18 @@ import { getCurrentEtablissementId, getTenantContext } from '@common/async-local
 import { logger } from '@common/utils/logger.util';
 
 /**
+ * Durcissement v9 — Mode strict d'isolation tenant.
+ * En production (ou si STRICT_TENANT_ISOLATION=true) : throw au lieu d'écraser silencieusement.
+ * En développement : logger.warn + écraser (comportement legacy).
+ */
+const STRICT_MODE = process.env.STRICT_TENANT_ISOLATION === 'true'
+    || process.env.NODE_ENV === 'production';
+
+/**
  * Liste des entités qui NE doivent PAS être scopées par tenant.
  * Ces entités sont globales (pas de colonne etablissementId).
  */
 const GLOBAL_ENTITIES = new Set([
-    'ConfigurationApp',
     'ParametreSysteme',
     'PlanAbonnement',
     'TrancheEleves',
@@ -69,12 +76,21 @@ export class TenantIsolationSubscriber implements EntitySubscriberInterface {
         // Si l'entité a déjà un etablissementId, vérifier la cohérence
         if (entity.etablissementId && currentEtablissementId) {
             if (entity.etablissementId !== currentEtablissementId) {
-                logger.warn(
-                    `[TenantIsolation] INSERT cross-tenant détecté: ` +
+                const ctx = getTenantContext();
+                const msg =
+                    `[TenantIsolation] INSERT cross-tenant: ` +
                     `entité=${entity.constructor.name}, ` +
                     `entity.etablissementId=${entity.etablissementId}, ` +
-                    `context=${currentEtablissementId}`
-                );
+                    `context=${currentEtablissementId}, ` +
+                    `utilisateur=${ctx?.utilisateurId || 'inconnu'}`;
+
+                if (STRICT_MODE) {
+                    // Durcissement v9 : rejet explicite au lieu d'écraser
+                    logger.error(`[TenantIsolation] ${msg} — REJETÉ (mode strict)`);
+                    throw new Error(`Cross-tenant détecté : l'entité appartient à un autre établissement (${entity.etablissementId.substring(0, 8)}... ≠ ${currentEtablissementId.substring(0, 8)}...)`);
+                }
+
+                logger.warn(`[TenantIsolation] ${msg} — écrasé (mode dev)`);
                 // Forcer le contexte courant (protection cross-tenant)
                 entity.etablissementId = currentEtablissementId;
             }
@@ -103,13 +119,20 @@ export class TenantIsolationSubscriber implements EntitySubscriberInterface {
         // Vérifier que l'entité appartient au tenant courant
         if (entity.etablissementId && entity.etablissementId !== currentEtablissementId) {
             const ctx = getTenantContext();
-            logger.error(
-                `[TenantIsolation] UPDATE cross-tenant BLOQUÉ: ` +
+            const msg =
+                `[TenantIsolation] UPDATE cross-tenant: ` +
                 `entité=${entity.constructor.name}, ` +
                 `entity.etablissementId=${entity.etablissementId}, ` +
                 `context=${currentEtablissementId}, ` +
-                `utilisateur=${ctx?.utilisateurId || 'inconnu'}`
-            );
+                `utilisateur=${ctx?.utilisateurId || 'inconnu'}`;
+
+            if (STRICT_MODE) {
+                // Durcissement v9 : rejet explicite
+                logger.error(`[TenantIsolation] ${msg} — REJETÉ (mode strict)`);
+                throw new Error(`Cross-tenant détecté : modification refusée (entité=${entity.etablissementId.substring(0, 8)}... ≠ contexte=${currentEtablissementId.substring(0, 8)}...)`);
+            }
+
+            logger.error(`[TenantIsolation] UPDATE cross-tenant BLOQUÉ: ${msg} — écrasé (mode dev)`);
             // Empêcher la modification en forçant le bon etablissementId
             entity.etablissementId = currentEtablissementId;
         }

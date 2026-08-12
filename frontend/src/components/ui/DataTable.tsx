@@ -197,6 +197,8 @@ interface DataTableProps<T> {
     onColumnVisibilityChange?: (visibility: Record<string, boolean>) => void;
     /** Callback quand l'épinglage des colonnes change */
     onColumnPinningChange?: (pinning: Record<string, 'left' | 'right' | false>) => void;
+    /** Callback quand une ligne est cliquée — reçoit l'item correspondant */
+    onRowClick?: (item: T) => void;
 }
 
 /* ================================================================
@@ -530,6 +532,7 @@ interface LigneTableauProps<T> {
     rowId: string;
     animer: boolean;
     paddingVertical: string;
+    onRowClick?: (item: T) => void;
 }
 
 /* ================================================================
@@ -708,9 +711,19 @@ function LigneTableauInterne<T>({
     rowId,
     animer,
     paddingVertical,
+    onRowClick,
 }: LigneTableauProps<T>) {
     const { hasPermission } = usePermissions();
     const rowRef = useRef<HTMLTableRowElement>(null);
+    
+    // Gestionnaire de clic sur la ligne
+    const handleClick = useCallback((e: React.MouseEvent) => {
+        if (!onRowClick) return;
+        // Ne pas déclencher si on clique sur un lien, bouton ou action
+        const target = e.target as HTMLElement;
+        if (target.closest('a, button, [role="button"], [data-no-row-click]')) return;
+        onRowClick(item);
+    }, [onRowClick, item]);
     
     // Trouver la colonne avec renderActions (pas utilisé)
 
@@ -785,7 +798,8 @@ function LigneTableauInterne<T>({
             <motion.tr
                 ref={rowRef as any}
                 key={rowId}
-                className="border-b border-[var(--color-border)] transition-colors last:border-b-0 hover:bg-[var(--color-dominant-50)] dark:hover:bg-[var(--color-surface-alt)]"
+                onClick={handleClick}
+                className={`border-b border-[var(--color-border)] transition-colors last:border-b-0 hover:bg-[var(--color-dominant-50)] dark:hover:bg-[var(--color-surface-alt)] ${onRowClick ? 'cursor-pointer' : ''}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(index * 0.02, 0.5) }}
@@ -799,7 +813,8 @@ function LigneTableauInterne<T>({
         <tr
             ref={rowRef}
             key={rowId}
-            className="border-b border-[var(--color-border)] transition-colors last:border-b-0 hover:bg-[var(--color-dominant-50)] dark:hover:bg-[var(--color-surface-alt)]"
+            onClick={handleClick}
+            className={`border-b border-[var(--color-border)] transition-colors last:border-b-0 hover:bg-[var(--color-dominant-50)] dark:hover:bg-[var(--color-surface-alt)] ${onRowClick ? 'cursor-pointer' : ''}`}
         >
             {cellules}
         </tr>
@@ -1177,6 +1192,7 @@ export function DataTable<T>({
     onColumnOrderChange,
     onColumnVisibilityChange,
     onColumnPinningChange,
+    onRowClick,
 }: DataTableProps<T>) {
     const { t } = useTranslation();
     const { hasPermission } = usePermissions();
@@ -1891,6 +1907,7 @@ export function DataTable<T>({
                                     rowId={getRowId?.(item, index) || String(index)}
                                     animer={animerLignes}
                                     paddingVertical={paddingVertical}
+                                    onRowClick={onRowClick}
                                 />
                             ))
                         )}
@@ -1904,7 +1921,8 @@ export function DataTable<T>({
                         {donneesFiltrees.map((item, index) => (
                             <div
                                 key={getRowId?.(item, index) || index}
-                                className="rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface-alt)] p-[clamp(0.75rem,0.6rem+0.4vw,1rem)]"
+                                onClick={() => onRowClick?.(item)}
+                                className={`rounded-[var(--radius-lg)] border border-[var(--color-bordure)] bg-[var(--color-surface-alt)] p-[clamp(0.75rem,0.6rem+0.4vw,1rem)] ${onRowClick ? 'cursor-pointer' : ''}`}
                             >
                                 {colonnesVisibles.map((col) => {
                                     // Si la colonne a renderActions, utiliser RowActions avec filtrage RBAC

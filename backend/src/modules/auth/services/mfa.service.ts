@@ -2,21 +2,19 @@
  * ==================================
  * eLISAschool - Service MFA (Multi-Factor Authentication)
  * ==================================
- * Version: 2.0.0
+ * Version: 3.0.0 — ADR-005 (v11)
  * Auteur: franck arlos chendjou
  *
  * TOTP (Time-based One-Time Password) pour authentification renforcée.
  * Compatible Google Authenticator, Authy, Microsoft Authenticator, etc.
  *
- * Stockage : table mfa_configs (secret hashé + backup codes hashés)
- *
- * Phase P1 — Refonte SaaS v6
+ * ADR-005 : Stockage inline dans utilisateurs (mfaActif, mfaSecretHash,
+ * mfaBackupCodesHash, mfaDerniereVerification). Plus de table mfa_configs.
  */
 
 import crypto from 'crypto';
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { MfaConfig } from '../entities/mfa-config.entity';
 import { Utilisateur } from '../entities';
 import { logger } from '@common/utils/logger.util';
 
@@ -48,11 +46,9 @@ export interface MFAStatusResult {
 }
 
 export class MFAService {
-    private mfaConfigRepo: Repository<MfaConfig>;
     private utilisateurRepo: Repository<Utilisateur>;
 
     constructor() {
-        this.mfaConfigRepo = AppDataSource.getRepository(MfaConfig);
         this.utilisateurRepo = AppDataSource.getRepository(Utilisateur);
     }
 
@@ -124,7 +120,7 @@ export class MFAService {
     // ==================================
 
     /**
-     * Configure le MFA pour un utilisateur.
+     * Configure le MFA pour un utilisateur (ADR-005 : colonnes inline).
      * Génère un nouveau secret, QR code et backup codes.
      * Le MFA n'est PAS encore actif — il faut vérifier le premier code pour l'activer.
      */
@@ -133,25 +129,19 @@ export class MFAService {
         const qrCodeUrl = this.genererQRCodeUrl(email, secret);
         const backupCodes = this.genererBackupCodes();
 
-        // Hasher le secret et les backup codes avant stockage
-        const secretHash = this.hashSecret(secret);
-        const backupCodesHash = this.hashBackupCodes(backupCodes);
+        // Chiffrer le secret et les backup codes avant stockage
+        const secretChiffre = this.chiffrerSecret(secret);
+        const backupCodesChiffres = this.hashBackupCodes(backupCodes);
 
-        // Upsert dans mfa_configs (écrase toute config précédente non activée)
-        await this.mfaConfigRepo.upsert(
-            {
-                utilisateurId,
-                secretHash,
-                backupCodesHash,
-                actif: false,
-            },
-            ['utilisateurId']
-        );
+        // Stocker dans les colonnes inline de utilisateurs
+        await this.utilisateurRepo.update(utilisateurId, {
+            mfaSecretHash: secretChiffre,
+            mfaBackupCodesHash: backupCodesChiffres,
+            mfaActif: false, // Pas encore activé
+        });
 
         logger.info(`[MFA] Setup initié pour utilisateur ${utilisateurId}`);
 
-        // Retourner le secret EN CLAIR (nécessaire pour le QR code côté client)
-        // Il ne sera JAMAIS stocké en clair en DB
         return {
             secret,
             qrCodeUrl,
@@ -160,47 +150,24 @@ export class MFAService {
     }
 
     /**
-     * Active le MFA après vérification du premier code TOTP.
-     * Met à jour utilisateurs.deux_facteurs_actif = true.
+     * Active le MFA après vérification du premier code TOTP (ADR-005 : inline).
      */
     async activerMFA(utilisateurId: string, code: string): Promise<MFAVerifyResult> {
-        const config = await this.mfaConfigRepo.findOne({
-            where: { utilisateurId },
+        const utilisateur = await this.utilisateurRepo.findOne({
+            where: { id: utilisateurId },
+            select: ['id', 'mfaSecretHash', 'mfaActif'],
         });
 
-        if (!config) {
+        if (!utilisateur || !utilisateur.mfaSecretHash) {
             return { success: false, message: 'Configuration MFA non trouvée. Veuillez initier le setup.' };
         }
 
-        if (config.actif) {
+        if (utilisateur.mfaActif) {
             return { success: false, message: 'MFA déjà activé.' };
         }
 
-        // Pour activer, on doit reconstituer le secret depuis le hash
-        // Problème : le hash est irréversible. On doit donc stocker le secret en clair
-        // temporairement pendant le setup, OU changer l'approche.
-        // Solution : on stocke le secret en clair dans un champ temporaire le temps du setup.
-        // APPROCHE REVISEE : le secret est retourné au client lors du setup.
-        // Le client renvoie le code TOTP. On ne peut pas vérifier sans le secret en clair.
-        // → On doit stocker le secret en clair jusqu'à activation, puis le hasher.
-
-        // Pour cette version, on utilise une approche pragmatique :
-        // Le secret est stocké hashé APRÈS activation. Pendant le setup, il est en clair
-        // dans un champ séparé (secret_temporaire).
-        // SIMPLIFICATION : on stocke le secret chiffré (réversible) jusqu'à activation.
-
-        // En pratique, pour la vérification à l'activation :
-        // Le frontend a le secret (via le setup), le client génère un code,
-        // et on vérifie ici. Mais on n'a plus le secret en clair...
-        // 
-        // Solution correcte : chiffrer le secret (AES-256-GCM, réversible) pendant le setup,
-        // puis le hasher (irréversible) après activation.
-
-        // Pour cette implémentation, on utilise le champ secretHash comme stockage
-        // du secret chiffré (réversible) pendant setup, puis hashé après activation.
-        // Voir la méthode hashSecret révisée ci-dessous.
-
-        const secretEnClair = this.dechiffrerSecret(config.secretHash);
+        // Déchiffrer le secret (chiffré réversiblement pendant le setup)
+        const secretEnClair = this.dechiffrerSecret(utilisateur.mfaSecretHash);
         if (!secretEnClair) {
             return { success: false, message: 'Erreur de déchiffrement du secret MFA.' };
         }
@@ -209,15 +176,14 @@ export class MFAService {
             return { success: false, message: 'Code TOTP invalide. Veuillez réessayer.' };
         }
 
-        // Activer le MFA : hasher définitivement le secret
+        // Activer le MFA : hasher définitivement le secret + activer le flag
         const secretHashFinal = this.hashSecretIrreversible(secretEnClair);
-        config.secretHash = secretHashFinal;
-        config.actif = true;
-        config.derniereVerification = new Date();
-        await this.mfaConfigRepo.save(config);
-
-        // Mettre à jour le flag sur l'utilisateur
-        await this.utilisateurRepo.update(utilisateurId, { deuxFacteursActif: true });
+        await this.utilisateurRepo.update(utilisateurId, {
+            mfaSecretHash: secretHashFinal,
+            mfaActif: true,
+            mfaDerniereVerification: new Date(),
+            deuxFacteursActif: true,
+        });
 
         logger.info(`[MFA] MFA activé pour utilisateur ${utilisateurId}`);
         return { success: true, message: 'MFA activé avec succès.' };
@@ -228,26 +194,19 @@ export class MFAService {
     // ==================================
 
     /**
-     * Vérifie un code MFA pour un utilisateur.
-     * Utilise le secret hashé de manière irréversible stocké en DB.
-     * 
-     * Note : Comme le hash est irréversible, on ne peut pas re-générer le code attendu.
-     * Approche alternative : on stocke le secret chiffré (réversible) en permanence
-     * avec AES-256-GCM. Le "hash" initial était une erreur de design.
-     * 
-     * Solution finale (v2) : le secret est TOUJOURS stocké chiffré (AES-256-GCM réversible).
-     * La sécurité repose sur la clé serveur dans .env + le pepper.
+     * Vérifie un code MFA pour un utilisateur (ADR-005 : colonnes inline).
      */
     async verifierMFA(utilisateurId: string, code: string): Promise<MFAVerifyResult> {
-        const config = await this.mfaConfigRepo.findOne({
-            where: { utilisateurId, actif: true },
+        const utilisateur = await this.utilisateurRepo.findOne({
+            where: { id: utilisateurId, mfaActif: true },
+            select: ['id', 'mfaSecretHash'],
         });
 
-        if (!config) {
+        if (!utilisateur || !utilisateur.mfaSecretHash) {
             return { success: false, message: 'MFA non configuré ou non activé.' };
         }
 
-        const secret = this.dechiffrerSecret(config.secretHash);
+        const secret = this.dechiffrerSecret(utilisateur.mfaSecretHash);
         if (!secret) {
             logger.error(`[MFA] Erreur déchiffrement secret pour utilisateur ${utilisateurId}`);
             return { success: false, message: 'Erreur interne MFA.' };
@@ -259,26 +218,25 @@ export class MFAService {
         }
 
         // Mettre à jour la dernière vérification
-        config.derniereVerification = new Date();
-        await this.mfaConfigRepo.save(config);
+        await this.utilisateurRepo.update(utilisateurId, { mfaDerniereVerification: new Date() });
 
         return { success: true, message: 'MFA vérifié.' };
     }
 
     /**
-     * Vérifie un code de secours.
-     * Consomme le code (usage unique).
+     * Vérifie un code de secours. Consomme le code (usage unique).
      */
     async verifierBackupCode(utilisateurId: string, code: string): Promise<MFAVerifyResult> {
-        const config = await this.mfaConfigRepo.findOne({
-            where: { utilisateurId, actif: true },
+        const utilisateur = await this.utilisateurRepo.findOne({
+            where: { id: utilisateurId, mfaActif: true },
+            select: ['id', 'mfaBackupCodesHash'],
         });
 
-        if (!config) {
+        if (!utilisateur || !utilisateur.mfaBackupCodesHash) {
             return { success: false, message: 'MFA non configuré ou non activé.' };
         }
 
-        const backupCodes = this.dechiffrerBackupCodes(config.backupCodesHash);
+        const backupCodes = this.dechiffrerBackupCodes(utilisateur.mfaBackupCodesHash);
         const codeNormalise = code.toUpperCase().replace(/\s/g, '');
 
         const index = backupCodes.findIndex(c => c === codeNormalise);
@@ -288,44 +246,52 @@ export class MFAService {
 
         // Consommer le code (le retirer de la liste)
         backupCodes.splice(index, 1);
-        config.backupCodesHash = this.hashBackupCodes(backupCodes);
-        config.derniereVerification = new Date();
-        await this.mfaConfigRepo.save(config);
+        await this.utilisateurRepo.update(utilisateurId, {
+            mfaBackupCodesHash: this.hashBackupCodes(backupCodes),
+            mfaDerniereVerification: new Date(),
+        });
 
         logger.info(`[MFA] Code de secours utilisé pour utilisateur ${utilisateurId}. Restants: ${backupCodes.length}`);
         return { success: true, message: `Code de secours vérifié. Il vous reste ${backupCodes.length} codes.` };
     }
 
     /**
-     * Vérifie si le MFA est activé pour un utilisateur.
+     * Vérifie si le MFA est activé pour un utilisateur (ADR-005 : lecture directe colonne).
      */
     async isMFAEnabled(utilisateurId: string): Promise<boolean> {
-        const config = await this.mfaConfigRepo.findOne({
-            where: { utilisateurId, actif: true },
+        const utilisateur = await this.utilisateurRepo.findOne({
+            where: { id: utilisateurId },
+            select: ['id', 'mfaActif'],
         });
-        return !!config;
+        return utilisateur?.mfaActif ?? false;
     }
 
     /**
      * Récupère le statut MFA complet d'un utilisateur.
      */
     async getMFAStatus(utilisateurId: string): Promise<MFAStatusResult> {
-        const config = await this.mfaConfigRepo.findOne({
-            where: { utilisateurId },
+        const utilisateur = await this.utilisateurRepo.findOne({
+            where: { id: utilisateurId },
+            select: ['id', 'mfaActif', 'mfaSecretHash'],
         });
 
         return {
-            enabled: config?.actif ?? false,
-            setupComplete: !!config,
+            enabled: utilisateur?.mfaActif ?? false,
+            setupComplete: !!utilisateur?.mfaSecretHash,
         };
     }
 
     /**
-     * Désactive le MFA pour un utilisateur.
+     * Désactive le MFA pour un utilisateur (ADR-005 : reset colonnes inline).
      */
     async desactiverMFA(utilisateurId: string): Promise<void> {
-        await this.mfaConfigRepo.delete({ utilisateurId });
-        await this.utilisateurRepo.update(utilisateurId, { deuxFacteursActif: false });
+        await this.utilisateurRepo.update(utilisateurId, {
+            mfaActif: false,
+            mfaSecretHash: undefined as any,
+            mfaBackupCodesHash: undefined as any,
+            mfaDerniereVerification: undefined as any,
+            deuxFacteursActif: false,
+        });
         logger.info(`[MFA] MFA désactivé pour utilisateur ${utilisateurId}`);
     }
 
@@ -333,17 +299,18 @@ export class MFAService {
      * Régénère les codes de secours.
      */
     async regenererBackupCodes(utilisateurId: string): Promise<string[]> {
-        const config = await this.mfaConfigRepo.findOne({
-            where: { utilisateurId, actif: true },
+        const utilisateur = await this.utilisateurRepo.findOne({
+            where: { id: utilisateurId, mfaActif: true },
         });
 
-        if (!config) {
+        if (!utilisateur) {
             throw new Error('MFA non activé pour cet utilisateur.');
         }
 
         const newCodes = this.genererBackupCodes();
-        config.backupCodesHash = this.hashBackupCodes(newCodes);
-        await this.mfaConfigRepo.save(config);
+        await this.utilisateurRepo.update(utilisateurId, {
+            mfaBackupCodesHash: this.hashBackupCodes(newCodes),
+        });
 
         logger.info(`[MFA] Backup codes régénérés pour utilisateur ${utilisateurId}`);
         return newCodes;
@@ -446,12 +413,24 @@ export class MFAService {
     }
 
     /**
-     * Dériver la clé de chiffrement depuis le pepper + secret JWT.
+     * Dériver la clé de chiffrement MFA depuis le pepper + ENCRYPTION_KEY.
      * 32 bytes pour AES-256.
+     * 
+     * Durcissement v9 : utilise ENCRYPTION_KEY (pas JWT_SECRET).
+     * En production, ENCRYPTION_KEY est obligatoire.
      */
     private getEncryptionKey(): Buffer {
-        const jwtSecret = process.env.JWT_SECRET || 'elisaschool-jwt-secret-default';
-        const combined = `${MFA_PEPPER}:${jwtSecret}`;
+        const encryptionKey = process.env.ENCRYPTION_KEY;
+        
+        if (!encryptionKey && process.env.NODE_ENV === 'production') {
+            throw new Error(
+                '[Sécurité MFA] ENCRYPTION_KEY est obligatoire en production pour le chiffrement des secrets MFA.'
+            );
+        }
+        
+        // Utiliser ENCRYPTION_KEY si disponible, sinon fallback développement uniquement
+        const baseKey = encryptionKey || 'dev-mfa-key-ephemere';
+        const combined = `${MFA_PEPPER}:${baseKey}`;
         return crypto.createHash('sha256').update(combined).digest();
     }
 

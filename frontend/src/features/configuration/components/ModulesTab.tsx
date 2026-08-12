@@ -43,6 +43,8 @@ import {
     LayoutDashboard,
     DoorOpen,
     GitBranch,
+    Lock,
+    Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import {
@@ -62,33 +64,21 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-    critiques: 'Critiques',
-    communication: 'Communication',
-    academiques: 'Académiques',
-    logistiques: 'Logistiques',
-    activites: 'Activités',
-    documents: 'Documents',
-    systeme: 'Système',
+    CRITIQUE: 'Critiques',
+    PREMIUM: 'Premium',
+    ADDON: 'Add-ons',
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-    critiques: 'border-red-200 bg-red-50 text-red-700',
-    communication: 'border-blue-200 bg-blue-50 text-blue-700',
-    academiques: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-    logistiques: 'border-amber-200 bg-amber-50 text-amber-700',
-    activites: 'border-purple-200 bg-purple-50 text-purple-700',
-    documents: 'border-cyan-200 bg-cyan-50 text-cyan-700',
-    systeme: 'border-slate-200 bg-slate-50 text-slate-700',
+    CRITIQUE: 'border-red-200 bg-red-50 text-red-700',
+    PREMIUM: 'border-amber-200 bg-amber-50 text-amber-700',
+    ADDON: 'border-blue-200 bg-blue-50 text-blue-700',
 };
 
 const CATEGORY_HEADER_BG: Record<string, string> = {
-    critiques: 'bg-red-50/50 border-red-100',
-    communication: 'bg-blue-50/50 border-blue-100',
-    academiques: 'bg-emerald-50/50 border-emerald-100',
-    logistiques: 'bg-amber-50/50 border-amber-100',
-    activites: 'bg-purple-50/50 border-purple-100',
-    documents: 'bg-cyan-50/50 border-cyan-100',
-    systeme: 'bg-slate-50/50 border-slate-100',
+    CRITIQUE: 'bg-red-50/50 border-red-100',
+    PREMIUM: 'bg-amber-50/50 border-amber-100',
+    ADDON: 'bg-blue-50/50 border-blue-100',
 };
 
 function getLucideIcon(iconName: string): React.ComponentType<{ className?: string }> {
@@ -98,13 +88,15 @@ function getLucideIcon(iconName: string): React.ComponentType<{ className?: stri
 function groupByCategory(states: ModuleState[]): Record<string, ModuleState[]> {
     const groups: Record<string, ModuleState[]> = {};
     for (const s of states) {
-        const cat = s.entry.category || 'systeme';
+        const cat = s.entry.category || 'ADDON';
         if (!groups[cat]) groups[cat] = [];
         groups[cat].push(s);
     }
     const sorted = Object.keys(groups).sort((a, b) => {
-        const order = ['critiques', 'communication', 'academiques', 'logistiques', 'activites', 'documents', 'systeme'];
-        return order.indexOf(a) - order.indexOf(b);
+        const order = ['CRITIQUE', 'PREMIUM', 'ADDON'];
+        const ia = order.indexOf(a);
+        const ib = order.indexOf(b);
+        return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
     });
     const result: Record<string, ModuleState[]> = {};
     for (const key of sorted) {
@@ -248,9 +240,10 @@ function ModuleCard({
     impact: ModuleImpact | undefined;
     isImpactLoading: boolean;
 }) {
-    const { entry, actif } = state;
+    const { entry, actif, estAccessible, raisonBlocage, messageBlocage } = state;
     const Icon = getLucideIcon(entry.icon);
     const hasDeps = entry.dependencies && entry.dependencies.length > 0;
+    const isLocked = !estAccessible;
 
     const hasDepsInactive = isImpactLoading
         ? false
@@ -263,33 +256,49 @@ function ModuleCard({
     const showToggleImpact = !actif && hasDepsInactive;
     const showDeactivateImpact = actif && hasReverseActive;
 
+    // Label de raison de blocage
+    const blocageLabel = raisonBlocage === 'PLAN_INSUFFICIENT' ? 'Plan requis'
+        : raisonBlocage === 'ABONNEMENT_INACTIF' || raisonBlocage === 'ABONNEMENT_EXPIRE' || raisonBlocage === 'ABONNEMENT_SUSPENDU' ? 'Abonnement requis'
+        : raisonBlocage === 'MODULE_DESACTIVE' ? 'Désactivé'
+        : raisonBlocage === 'OVERRIDE_DESACTIVE' ? 'Désactivé (groupe)'
+        : null;
+
     return (
         <div
             className={cn(
                 'flex items-start gap-4 p-4 rounded-lg border transition-all duration-200',
-                actif
-                    ? 'border-[var(--color-dominante)]/30 bg-[var(--color-dominante)]/5 shadow-sm'
-                    : 'border-[var(--color-bordure)] bg-[var(--color-surface)]',
-                !canToggle && 'opacity-80'
+                isLocked
+                    ? 'border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30 opacity-75'
+                    : actif
+                        ? 'border-[var(--color-dominante)]/30 bg-[var(--color-dominante)]/5 shadow-sm'
+                        : 'border-[var(--color-bordure)] bg-[var(--color-surface)]',
             )}
         >
             <div className={cn(
                 'flex items-center justify-center w-10 h-10 rounded-lg shrink-0',
-                actif
-                    ? 'bg-[var(--color-dominante)]/10 text-[var(--color-dominante)]'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+                isLocked
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
+                    : actif
+                        ? 'bg-[var(--color-dominante)]/10 text-[var(--color-dominante)]'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
             )}>
-                <Icon className="h-5 w-5" />
+                {isLocked ? <Lock className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
             </div>
 
             <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-semibold text-[var(--color-texte)] text-sm">
                         {entry.label}
                     </h3>
-                    {entry.premium && (
+                    {entry.premium && !isLocked && (
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 uppercase">
                             Premium
+                        </span>
+                    )}
+                    {isLocked && blocageLabel && (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 uppercase flex items-center gap-1">
+                            <Lock className="h-2.5 w-2.5" />
+                            {blocageLabel}
                         </span>
                     )}
                     {hasDeps && (
@@ -302,6 +311,27 @@ function ModuleCard({
                 <p className="text-xs text-[var(--color-texte-secondaire)] mt-0.5 line-clamp-1">
                     {entry.description}
                 </p>
+
+                {/* Message de blocage entitlement */}
+                {isLocked && messageBlocage && (
+                    <div className="mt-2 flex items-start gap-1.5 text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded px-2 py-1.5">
+                        <Lock className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                        <span>{messageBlocage}</span>
+                    </div>
+                )}
+
+                {/* CTA Upgrader pour modules verrouillés */}
+                {isLocked && (raisonBlocage === 'PLAN_INSUFFICIENT' || raisonBlocage === 'ABONNEMENT_INACTIF' || raisonBlocage === 'ABONNEMENT_EXPIRE') && (
+                    <div className="mt-2">
+                        <button
+                            onClick={() => window.location.href = '/configuration/billing'}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 transition-all"
+                        >
+                            <Sparkles className="h-3 w-3" />
+                            Upgrader le plan
+                        </button>
+                    </div>
+                )}
 
                 {showToggleImpact && impact && impact.modulesAActiver.length > 0 && (
                     <div className="mt-2 flex items-start gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-50/80 dark:bg-emerald-900/30 rounded px-2 py-1.5">
@@ -326,34 +356,43 @@ function ModuleCard({
             </div>
 
             <div className="flex items-center gap-3 shrink-0">
-                <span
-                    className={cn(
-                        'px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
-                        actif
-                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                    )}
-                >
-                    {actif ? 'Actif' : 'Inactif'}
-                </span>
+                {isLocked ? (
+                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                        Verrouillé
+                    </span>
+                ) : (
+                    <span
+                        className={cn(
+                            'px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
+                            actif
+                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                        )}
+                    >
+                        {actif ? 'Actif' : 'Inactif'}
+                    </span>
+                )}
 
                 <button
-                    onClick={() => onToggle(entry.name, !actif)}
-                    disabled={isToggling || !canToggle}
+                    onClick={() => !isLocked && onToggle(entry.name, !actif)}
+                    disabled={isToggling || !canToggle || isLocked}
                     className={cn(
                         'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-dominante)]/30',
-                        actif
-                            ? 'bg-[var(--color-dominante)]'
-                            : 'bg-gray-300 dark:bg-gray-600',
-                        (isToggling || !canToggle) && 'cursor-not-allowed opacity-50'
+                        isLocked
+                            ? 'bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
+                            : actif
+                                ? 'bg-[var(--color-dominante)]'
+                                : 'bg-gray-300 dark:bg-gray-600',
+                        (isToggling || !canToggle || isLocked) && 'cursor-not-allowed opacity-50'
                     )}
                     role="switch"
                     aria-checked={actif}
+                    title={isLocked ? messageBlocage || 'Module verrouillé' : undefined}
                 >
                     <span
                         className={cn(
                             'inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition-transform',
-                            actif ? 'translate-x-[22px]' : 'translate-x-[2px]'
+                            isLocked ? 'translate-x-[2px]' : actif ? 'translate-x-[22px]' : 'translate-x-[2px]'
                         )}
                     />
                 </button>
@@ -501,7 +540,7 @@ export function ModulesTab() {
 
     const categories = useMemo(() => {
         if (!states) return [];
-        const cats = new Set(states.map((s) => s.entry.category || 'systeme'));
+        const cats = new Set(states.map((s) => s.entry.category || 'ADDON'));
         return Array.from(cats).sort();
     }, [states]);
 
@@ -520,7 +559,7 @@ export function ModulesTab() {
                     return false;
                 }
             }
-            if (categoryFilter && (s.entry.category || 'systeme') !== categoryFilter) return false;
+            if (categoryFilter && (s.entry.category || 'ADDON') !== categoryFilter) return false;
             if (activeFilter === 'active' && !s.actif) return false;
             if (activeFilter === 'inactive' && s.actif) return false;
             return true;
@@ -563,7 +602,7 @@ export function ModulesTab() {
     const handleBulkToggle = useCallback(async (category: string, actif: boolean) => {
         if (!states) return;
         const moduleNames = states
-            .filter((s) => (s.entry.category || 'systeme') === category)
+            .filter((s) => (s.entry.category || 'ADDON') === category)
             .map((s) => s.entry.name);
         if (moduleNames.length === 0) return;
 

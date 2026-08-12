@@ -151,7 +151,7 @@
         }
     },
     "navigation": {
-        "rolesPlateforme": "Rôles plateforme",
+        "rolesPlateforme": "Rôles & Permissions",
         "sessionsActivite": "Sessions & activité",
         "utilisateursPlateforme": "Utilisateurs plateforme",
         "matricePermissions": "Matrice permissions"

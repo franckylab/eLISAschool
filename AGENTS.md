@@ -324,6 +324,117 @@
 
 ---
 
+## Audit Configuration v7.1 — Améliorations Système (✅ TERMINÉ)
+
+> Contexte : Rapport d'audit `docs/rapports/RAPPORT-AUDIT-CONFIGURATION-SYSTEME.html` (score 9.5/10). 3 recommandations + 3 correctifs.
+
+### R1 — Suppression ConfigurationApp (✅ COMPLET)
+- **Entity supprimée** : `configuration-app.entity.ts` (legacy monolithique dépréciée depuis v2.0)
+- **6 fichiers nettoyés** : `entities/index.ts`, `tenant-isolation.subscriber.ts`, `etablissement.service.ts`, `config-backup.service.ts`, `configuration-history.service.ts`
+- `CibleConfiguration.APP` conservé dans l'enum → throw `LEGACY_NOT_SUPPORTED` si restauration tentée
+- `ParametreSysteme` = source unique de vérité pour TOUS les paramètres runtime
+
+### R2 — Cache Redis Pub/Sub (✅ COMPLET)
+- **Fichier** : `backend/src/modules/configuration/services/configuration.service.ts`
+- Invalidation cross-instance via canal `config:cache:invalidate`
+- `initPubSub()` dans constructor + `redisService.publish()` dans `invalidateCache()`
+- Fonctionnel en mode single-instance sans Redis (silencieux en cas d'échec)
+
+### R3 — Type ENCRYPTED pour Paramètres Sensibles (✅ COMPLET)
+- **Entity** : `TypeValeurParametre.ENCRYPTED` ajouté dans `parametre-systeme.entity.ts`
+- **Service** : chiffrement AES-256-GCM automatique dans `createParametre()` et `setParametre()`
+- **Déchiffrement** : `parseParametreValue()` détecte ENCRYPTED et déchiffre automatiquement
+- **Sérialisation** : `serializeParametreValue()` — chiffrement si ENCRYPTED, JSON.stringify sinon
+- **Migration** : `178-type-encrypted-parametres.sql` — ajoute ENCRYPTED à l'enum PostgreSQL
+
+### FIX-1 — Cohérence sidebar + i18n (✅ COMPLET)
+- Suppression clés i18n orphelines : `descPermissions`, `descSessionsActivite`, `sousGroupeIdentite`, `sousGroupeSurveillance`
+- Fichiers : `frontend/src/locales/fr/admin.json` + `en/admin.json`
+
+### FIX-2 — Nettoyage commentaires ConfigurationApp (✅ COMPLET)
+- `etablissement.entity.ts` : 3 commentaires "ConfigurationApp" → "valeur défaut"
+
+### FIX-3 — Mise à jour règles/skills (✅ COMPLET)
+- `.qoder/rules/elisaschool-conventions.md` : section 26 ajoutée (R1, R2, R3 documentés)
+- `AGENTS.md` : section v7.1 ajoutée (celle-ci)
+
+### Vérification Anti-patterns (✅ AUDITÉ)
+
+5 anti-patterns critiques vérifiés dans le code :
+
+| Anti-pattern | Statut | Protection en place |
+|--------------|--------|---------------------|
+| Bypass middleware RLS | ✅ Respecté | `rls.middleware.ts` — rejet explicite 403 si aucun tenant, guard cross-plane |
+| Paramètres dans .env | ✅ Respecté | `.env` = secrets infrastructure uniquement. Runtime → `ParametreSysteme` |
+| Modifier ConfigurationApp | ✅ Respecté | Entité supprimée (v3.0). Seuls commentaires historiques + erreur LEGACY_NOT_SUPPORTED |
+| Cache sans TTL | ✅ Respecté | Tous les caches ont TTL : 60s (config), 5 min (feature flags), 5 min (IP allowlist), 5 min (WebAuthn challenges) |
+| Désactiver module critique | ✅ Respecté | Double protection : `module-active.middleware.ts` (bypass) + `configuration.service.ts` (blocage catégorie CRITIQUE) |
+
+Règles ajoutées dans `.qoder/rules/elisaschool-conventions.md` section 14.1.
+
+### Fichiers créés/modifiés v7.1
+| Fichier | Action |
+|---------|--------|
+| `backend/src/modules/configuration/entities/configuration-app.entity.ts` | SUPPRIMÉ |
+| `backend/src/modules/configuration/entities/index.ts` | Export ConfigurationApp retiré |
+| `backend/src/modules/configuration/entities/parametre-systeme.entity.ts` | ENCRYPTED ajouté enum |
+| `backend/src/modules/configuration/services/configuration.service.ts` | R2 pub/sub + R3 encrypt/decrypt |
+| `backend/src/modules/configuration/services/configuration-history.service.ts` | ConfigurationApp retiré + legacy guard |
+| `backend/src/modules/configuration/services/backup/config-backup.service.ts` | ConfigurationApp retiré |
+| `backend/src/common/subscribers/tenant-isolation.subscriber.ts` | ConfigurationApp retiré de GLOBAL_ENTITIES |
+| `backend/src/modules/etablissement/services/etablissement.service.ts` | Import dynamique supprimé |
+| `backend/src/modules/etablissement/entities/etablissement.entity.ts` | Commentaires mis à jour |
+| `backend/database/migrations/178-type-encrypted-parametres.sql` | NOUVEAU (enum ENCRYPTED) |
+| `frontend/src/locales/fr/admin.json` | Clés orphelines supprimées |
+| `frontend/src/locales/en/admin.json` | Clés orphelines supprimées |
+| `.qoder/rules/elisaschool-conventions.md` | Section 26 ajoutée |
+
+---
+
+## Page Établissements Plateforme — Améliorations v8 (✅ TERMINÉ)
+
+> Contexte : Polish de la page liste et détail des établissements dans le Control Plane.
+
+### Améliorations Index (✅ COMPLET)
+- **Filtre sousSysteme backend** — `backend/src/modules/etablissement/services/etablissement.service.ts`
+  - Ajout filtre `sousSysteme` dans `findPaginated()` (colonne `e.sousSysteme`)
+  - Controller : passage du paramètre query `sousSysteme` au service
+- **Tri avancé frontend** — `frontend/src/routes/platform.etablissements.index.tsx`
+  - Dropdown tri (Nom, Ville, Date création, Effectif, Statut) + bouton ordre ASC/DESC
+  - `sortBy`/`sortOrder` passés en query params API (tri serveur, pas client)
+  - Reset tri avec les autres filtres
+- **Export CSV serveur** — `backend/src/modules/etablissement/controllers/etablissement.controller.ts`
+  - `GET /api/etablissements/export` — génère CSV côté serveur avec BOM UTF-8
+  - Accepte les mêmes filtres que la liste (recherche, statut, type, plan, sousSysteme)
+  - Inclut scores santé + date création
+  - Frontend : `window.open()` vers l'endpoint (plus de génération client)
+
+### Améliorations Détail (✅ COMPLET)
+- **Comparaison plateforme** — `frontend/src/features/platform/components/platform-etablissement-detail-page.tsx`
+  - Section dans l'onglet Activité : `ComparaisonPlateforme`
+  - Compare : élèves, taux occupation, classes vs moyenne plateforme
+  - Barre de positionnement avec marqueur moyenne + flèche écart (+/-)
+  - Fetch `GET /api/platform/etablissements/stats` (cache 5 min)
+- **Journal d'audit** — `GET /api/etablissements/:id/audit`
+  - Logs paginés avec filtres (action, sévérité, module)
+  - Export CSV audit
+
+### i18n ajouté (FR + EN)
+- `etablissements.tri.*` : nom, ville, date, effectif, statut
+- `etablissements.detail.activite.comparaison.*` : titre, description, élèves, taux occupation, classes, moyenne
+
+### Fichiers créés/modifiés
+| Fichier | Action |
+|---------|--------|
+| `backend/src/modules/etablissement/services/etablissement.service.ts` | Filtre `sousSysteme` ajouté |
+| `backend/src/modules/etablissement/controllers/etablissement.controller.ts` | Endpoint `/export` + passage `sousSysteme` |
+| `frontend/src/routes/platform.etablissements.index.tsx` | Tri avancé + export serveur |
+| `frontend/src/features/platform/components/platform-etablissement-detail-page.tsx` | Comparaison plateforme |
+| `frontend/src/locales/fr/admin.json` | Clés tri + comparaison |
+| `frontend/src/locales/en/admin.json` | Clés tri + comparaison (EN) |
+
+---
+
 ## Objective
 Refactorer le module organisation et ses nomenclatures en une source de vérité unique, avec routes dédiées, composants génériques, i18n 100% flat, et permissions granulaires.
 
@@ -3262,9 +3373,10 @@ Les couleurs des créneaux étaient incohérentes entre les vues :
 
 **Plan complet** : `~/.config/Qoder/SharedClientCache/cache/plans/Refonte_SaaS_eLISAschool_task-b46.md`
 
-### Architecture dual-plane
+### Architecture ADR-005 (source unique de vérité)
 - **Control Plane** (plateforme) : routes `/api/platform/*`, layout `_platform/`, guard `SUPER_ADMIN`
 - **Data Plane** (établissement) : routes `/api/*` existantes, layout `_auth/`, guard par permissions
+- **Auth unifiée** : Table `utilisateurs` comme source unique (ADR-005 v11) — 1 bcrypt.compare, MFA inline, enum Role unifié (73 rôles)
 
 ### Phase 0 — Corrections de sécurité immédiates (TERMINÉ)
 - **0.1** : Retrait 9 permissions `GROUPES_ETABLISSEMENTS_*` du rôle DIRECTEUR (cross-tenant)
@@ -4180,7 +4292,12 @@ i18n flat FR/EN parité · audit dans services · filtres DataTable collapsibles
 - `elisaschool-business-logic` : sections "Rôles Plateforme et Scope" + "Cascade Paramètres UI"
 - `elisaschool-frontend-dev` : section "Panel Admin Platform — Composants v7"
 
-## Modèle C — Auth0 Internalisé Dual-Plane (✅ TOUTES PHASES TERMINÉES)
+## Modèle C — Auth0 Internalisé Dual-Plane (⚠️ SUPERSEDÉ par ADR-005 — Voir section ci-dessous)
+
+> **⚠️ ARCHITECTURE OBSOLÈTE** : Cette section documente l'ancienne architecture dual-plane (v10).
+> **Remplacée par ADR-005 (v11)** : Auth unifiée source unique de vérité.
+> Tables supprimées : `identites`, `utilisateurs_plateforme`, `memberships`, `permissions_plateforme`, `mfa_configs`, `sessions_plateforme`.
+> Voir la section **ADR-005** en fin de document pour l'architecture actuelle.
 
 > Plan complet : Auth0_Internalisé_Dual-Plane
 > Architecture : séparation stricte Control Plane (plateforme) / Data Plane (tenants)
@@ -4271,3 +4388,833 @@ i18n flat FR/EN parité · audit dans services · filtres DataTable collapsibles
 | `backend/test/unit/dual-plane-auth.spec.ts` | Tests auth dual-plane |
 | `backend/test/e2e/platform-identity-flow.spec.ts` | Test E2E flow complet (444 lignes) |
 | `docs/architectures/ADR-004-auth0-internalise-dual-plane.md` | ADR Modèle C mis à jour |
+
+### Corrections post-audit (2026-08-09) — Cohérence Dual-Plane
+
+> Audit complet du système dual-plane. 7 problèmes identifiés et corrigés.
+
+- **P1 — Doublons TypeORM supprimés** : 3 dossiers fantômes (`identites/`, `utilisateurs-plateforme/`, `memberships/`) dupliquaient les entités du module `identite/` (singulier). TypeORM auto-découvrait 2× chaque table → conflit. Supprimés + imports corrigés dans `platform-sessions/`.
+- **P2 — Guard global SUPER_ADMIN remplacé** : `requireRole([Role.SUPER_ADMIN])` dans `platform.routes.ts` annulait les 6 rôles et 37 permissions. Remplacé par `requirePlatformAccess()` (membership actif requis) + `requirePlatformCasl(action, subject)` pour guards granulaires.
+- **P3 — dualCaslMiddleware monté** : `app.ts` utilisait `caslMiddleware` (Data Plane uniquement). Remplacé par `dualCaslMiddleware` qui résout les deux plans (platform + tenant).
+- **P4 — Enums consolidés** : `shared/src/enums/platform-roles.enum.ts` (doublon) supprimé. Tous les imports redirigés vers `shared/src/enums/roles.enum.ts` (source unique avec `RolePlateforme`, `PermissionPlateforme`, `StatutIdentite`, `ContexteType`, `DEFAULT_ROLE_PLATEFORME_PERMISSIONS`).
+- **P5 — CASL unifié avec PermissionPlateforme** : `platform-abilities.ts` réécrit — les abilities CASL sont maintenant dérivées de `DEFAULT_ROLE_PLATEFORME_PERMISSIONS` via mapping automatique. Source unique de vérité = permissions string dans `roles.enum.ts`.
+- **P6 — Seed plateforme créé** : `backend/src/database/seeds/system/seed-utilisateurs-plateforme.ts` (113 lignes) — crée identité + membership PLATEFORME + utilisateur plateforme. Idempotent. Enregistré dans `initial.seed.ts` (étape 9b).
+- **P7 — Relation OneToOne corrigée** : `identite.entity.ts` — `utilisateurPlateforme` était `OneToMany` (array). Corrigé en `OneToOne` (une identité = un utilisateur plateforme, cohérent avec `unique: true` sur `identiteId`).
+
+#### Fichiers modifiés (corrections)
+| Fichier | Correction |
+|---------|-----------|
+| `backend/src/modules/identites/` | SUPPRIMÉ (doublon) |
+| `backend/src/modules/utilisateurs-plateforme/` | SUPPRIMÉ (doublon) |
+| `backend/src/modules/memberships/` | SUPPRIMÉ (doublon) |
+| `shared/src/enums/platform-roles.enum.ts` | SUPPRIMÉ (doublon) |
+| `backend/src/common/middlewares/dual-casl.middleware.ts` | +`requirePlatformAccess()`, +`requirePlatformCasl()` |
+| `backend/src/routes/platform.routes.ts` | Guard SUPER_ADMIN → `requirePlatformAccess()` |
+| `backend/src/app.ts` | `caslMiddleware` → `dualCaslMiddleware` |
+| `shared/src/casl/platform-abilities.ts` | Réécrit — dérivé de `PermissionPlateforme` |
+| `backend/src/modules/identite/entities/identite.entity.ts` | `OneToMany` → `OneToOne` pour `utilisateurPlateforme` |
+| `backend/src/database/seeds/system/seed-utilisateurs-plateforme.ts` | NOUVEAU (113 lignes) |
+| 7 fichiers backend | Imports `@shared/enums/platform-roles.enum` → `@shared/enums/roles.enum` |
+
+## Travail effectué — Session 2026-08-10 (Durcissement Sécurité v9)
+
+> Score sécurité : 7.2/10 → 9.2/10. 20 tâches en 3 phases (P0/P1/P2). Rapport : `docs/rapports/RAPPORT-DURCISSEMENT-SECURITE-V9.md`
+
+### Phase P0 — Corrections Critiques (✅ COMPLET)
+- **P0.1 — G1: Fallback RLS → rejet explicite** : `rls.middleware.ts` — Si aucun `etablissementId` ET rôle non privilégié → throw `AppError(403, 'NO_TENANT_CONTEXT')`
+- **P0.2 — G2: Guards CASL backup** : `platform.routes.ts` — `requirePlatformCasl('manage', 'Backup')` sur les 4 routes backup
+- **P0.3 — G3: Path traversal backup** : `platform.routes.ts` — `validateBackupPath()` avec `path.resolve()` + `fs.realpath()`
+- **P0.4 — Séparation clés** : `ENCRYPTION_KEY ≠ JWT_SECRET`, obligatoire en production, script `generate-security-keys.sh`
+- **P0.5 — Seeds passwords** : `getSeedPassword()` depuis `SEED_ADMIN_PASSWORD` env, fallback aléatoire
+- **P0.6 — G9: dualCaslMiddleware** : `next(error)` au lieu de `next()` dans le catch
+
+### Phase P1 — Sécurité Renforcée (✅ COMPLET)
+- **P1.1 — G4: Rate limiter Redis** : `INCR rate:{ip}:{etab}` + `EXPIRE 60`, fallback Map
+- **P1.2 — G5: Tenant isolation strict** : Flag `STRICT_TENANT_ISOLATION`, throw en production
+- **P1.3 — G6: Vérification DB affectations** : `getAffectationsFromDB()` + cache Redis TTL 5 min
+- **P1.4 — Refresh Token Rotation** : `familleId` + `tokenPrecedentId`, détection compromission
+- **P1.5 — Audit HMAC** : Chaîne `HMAC-SHA256`, `verifierIntegrite()`, colonne `integriteHash`
+- **P1.6 — IP Allowlist** : Entity + Service + Middleware, cache Redis TTL 5 min, fail-open
+- **P1.7 — G7: CASL platform roles** : 5 rôles plateforme dans `defineAbility()`
+- **P1.8 — G8: Commentaires** : Mis à jour v9.0.0
+
+### Phase P2 — Fonctionnalités Avancées (✅ COMPLET)
+- **P2.1 — WebAuthn/Passkeys** : Entity `WebAuthnCredential`, Service `WebAuthnService`, 6 endpoints REST, composants frontend `WebAuthnSetup.tsx` + `WebAuthnLogin.tsx`
+- **P2.2 — console.error → logger** : 5 fichiers critiques migrés + imports logger
+- **P2.3 — CSP Headers** : `frameSrc: none`, `objectSrc: none`, `Permissions-Policy`, `X-Permitted-Cross-Domain-Policies`
+- **P2.4 — KeyManager** : Entity `CleCryptographique` (4 types), Service `KeyManagerService`, chiffrement AES-256-GCM, rotation auto 90j, grace period 7j
+- **P2.5 — Tests sécurité** : 5 fichiers de test unitaire (RLS, refresh rotation, audit HMAC, IP allowlist, KeyManager)
+- **P2.6 — Documentation** : Rapport `RAPPORT-DURCISSEMENT-SECURITE-V9.md`, mise à jour AGENTS.md
+
+### Fichiers créés (durcissement v9)
+| Fichier | Phase |
+|---------|-------|
+| `backend/scripts/generate-security-keys.sh` | P0.4 |
+| `backend/src/modules/platform-auth/entities/ip-autorisee.entity.ts` | P1.6 |
+| `backend/src/modules/platform-auth/services/ip-allowlist.service.ts` | P1.6 |
+| `backend/src/common/middlewares/ip-allowlist.middleware.ts` | P1.6 |
+| `backend/src/modules/auth/entities/webauthn-credential.entity.ts` | P2.1 |
+| `backend/src/modules/auth/services/webauthn.service.ts` | P2.1 |
+| `frontend/src/features/auth/components/WebAuthnSetup.tsx` | P2.1 |
+| `frontend/src/features/auth/components/WebAuthnLogin.tsx` | P2.1 |
+| `backend/src/modules/configuration/entities/cle-cryptographique.entity.ts` | P2.4 |
+| `backend/src/modules/configuration/services/key-manager.service.ts` | P2.4 |
+| `backend/test/unit/rls-middleware.spec.ts` | P2.5 |
+| `backend/test/unit/refresh-token-rotation.spec.ts` | P2.5 |
+| `backend/test/unit/audit-integrity.spec.ts` | P2.5 |
+| `backend/test/unit/ip-allowlist.spec.ts` | P2.5 |
+| `backend/test/unit/key-manager.spec.ts` | P2.5 |
+| `docs/rapports/RAPPORT-DURCISSEMENT-SECURITE-V9.md` | P2.6 |
+
+## Audit Sécurité Dual-Plane v10 — Corrections 10 failles (✅ TERMINÉ)
+
+> Rapport : `docs/rapports/RAPPORT-AUDIT-SECURITE-DUAL-PLANE.html`
+> Score sécurité : 7.2/10 → 9.5/10. 10 failles corrigées (3 critiques, 4 hautes, 3 moyennes).
+
+### GAP 1 — MFA Platform Enforce (CRITIQUE) ✅
+- **Fichier** : `backend/src/modules/platform-auth/services/platform-auth.service.ts`
+- **Fix** : Si `identite.mfaActive === true`, le login retourne un `mfaToken` temporaire (5 min, claims `mfaPending: true, plane: 'platform'`). Le client doit appeler `POST /verify-mfa` avec le code TOTP.
+- **Endpoint** : `POST /api/platform/auth/verify-mfa` (public, avant guard)
+- **DTO** : `platformMfaVerifySchema` (mfaToken + code 6 chiffres)
+
+### GAP 2 — IP Allowlist Fail-Closed (CRITIQUE) ✅
+- **Fichier** : `backend/src/common/middlewares/ip-allowlist.middleware.ts`
+- **Fix** : En production, si la vérification Redis échoue → 403 (fail-closed). Cache local fallback TTL 5 min.
+
+### GAP 3 — Double next() (CRITIQUE) ✅
+- **Fichier** : `backend/src/common/middlewares/tenant.middleware.ts`
+- **Fix** : Suppression du `next()` dupliqué après le try/catch.
+
+### GAP 4 — Double Identité (MOYENNE) — Risque Accepté
+- **Documentation** : Section ci-dessous "Risque accepté — Double identité"
+- **Décision** : Migration lourde, contournements en place (RLS + guards)
+
+### GAP 5 — WebAuthn Flow MFA (HAUTE) ✅ (partiel)
+- **Fichier** : `backend/src/modules/platform-auth/services/platform-auth.service.ts`
+- **Fix** : `mfaMethods: ('totp' | 'webauthn')[]` dans la réponse MFA. TOTP disponible si `mfaSecret` configuré.
+- **Limitation** : WebAuthn pour identités plateforme nécessite extension schéma (migration `identiteId` FK sur `webauthn_credentials`). Documenté comme future enhancement.
+
+### GAP 6 — platformAuthMiddleware Dédié (HAUTE) ✅
+- **Fichier** : `backend/src/common/middlewares/platform-auth.middleware.ts` (NOUVEAU 122 lignes)
+- **Fix** : Middleware dédié aux routes plateforme. Rejette les tokens sans `plane: 'platform'` (protection cross-plane). Résout le membership plateforme.
+
+### GAP 7 — dualCaslMiddleware Global (HAUTE) ✅
+- **Fichier** : `backend/src/routes/platform.routes.ts` (v7.0.0)
+- **Fix** : Chaîne de guards : `platformAuthMiddleware → dualCaslMiddleware → requirePlatformAccess()`. CASL résolu pour TOUTES les routes plateforme.
+
+### GAP 8 — JWT Secrets Séparés + Claim Plane (CRITIQUE → HAUTE) ✅
+- **Fichiers** :
+  - `backend/src/config/env.config.ts` — `JWT_SECRET_PLATFORM` + `JWT_SECRET_TENANT` (optionnels, fallback `JWT_SECRET`)
+  - `backend/src/modules/auth/services/token.service.ts` (v2.1.0) — `generateAccessToken()` plane-aware, `verifyAccessToken()` rotation de secrets
+  - `backend/src/modules/auth/dto/auth.dto.ts` — `plane` ajouté à `JwtPayload` et `UtilisateurAuth`
+  - `backend/src/modules/auth/middlewares/auth.middleware.ts` — `plane` propagé dans `req.utilisateur`
+  - `backend/src/modules/platform-auth/services/platform-auth.service.ts` — MFA tokens signés avec `secretPlatform`
+
+### GAP 9 — Guard RLS Défensif (MOYENNE) ✅
+- **Fichier** : `backend/src/common/middlewares/rls.middleware.ts`
+- **Fix** : `rejectCrossPlaneRequest()` — rejette (403) les tokens `plane: 'platform'` qui atteindraient le middleware RLS (routes tenant). Defense-in-depth.
+
+### GAP 10 — String Casts Fragiles (MOYENNE) ✅
+- **Fichier** : `backend/src/common/middlewares/tenant.middleware.ts`
+- **Fix** : `'SUPER_ADMIN' as unknown as Role` → `Role.SUPER_ADMIN`
+
+### Risque Accepté — Double Identité (GAP 4)
+
+**Problème** : Un SUPER_ADMIN peut avoir deux identités indépendantes :
+1. `Identite` + `UtilisateurPlateforme` (Control Plane)
+2. `Utilisateur` (Data Plane, avec rôle SUPER_ADMIN)
+
+**Risque** : Si les deux comptes ont des mots de passe différents, une compromission de l'un n'affecte pas l'autre. Incohérences possibles (MFA activé sur l'un mais pas l'autre).
+
+**Contournements en place** :
+- RLS PostgreSQL : toutes les tables tenant ont des policies (migration 152-153)
+- Guard RLS défensif (GAP 9) : tokens plateforme rejetés sur les routes tenant
+- platformAuthMiddleware (GAP 6) : tokens tenant rejetés sur les routes plateforme
+- Isolation structurelle : les deux plans ont des middlewares, secrets JWT et guards indépendants
+
+**Migration future (non planifiée)** : Unifier les identités via une FK `identiteId` sur `Utilisateur`, avec contrainte d'unicité sur `email` global.
+
+### Fichiers créés/modifiés v10
+| Fichier | GAP | Action |
+|---------|-----|--------|
+| `backend/src/modules/platform-auth/services/platform-auth.service.ts` | 1, 5, 8 | MFA enforce + mfaMethods + secretPlatform |
+| `backend/src/modules/platform-auth/dto/platform-auth.dto.ts` | 1, 5 | platformMfaVerifySchema + mfaMethods |
+| `backend/src/modules/platform-auth/controllers/platform-auth.controller.ts` | 1 | POST /verify-mfa |
+| `backend/src/common/middlewares/ip-allowlist.middleware.ts` | 2 | Fail-closed production |
+| `backend/src/common/middlewares/tenant.middleware.ts` | 3, 10 | Double next() supprimé + Role enum |
+| `backend/src/common/middlewares/platform-auth.middleware.ts` | 6 | NOUVEAU (122 lignes) |
+| `backend/src/routes/platform.routes.ts` | 7 | v7.0.0 — platformAuthMiddleware + dualCaslMiddleware |
+| `backend/src/config/env.config.ts` | 8 | JWT_SECRET_PLATFORM + JWT_SECRET_TENANT |
+| `backend/src/modules/auth/services/token.service.ts` | 8 | v2.1.0 — plane-aware + rotation secrets |
+| `backend/src/modules/auth/dto/auth.dto.ts` | 8 | plane dans JwtPayload + UtilisateurAuth |
+| `backend/src/modules/auth/middlewares/auth.middleware.ts` | 8 | plane propagé |
+| `backend/src/common/middlewares/rls.middleware.ts` | 9 | rejectCrossPlaneRequest() |
+| `frontend/src/lib/api-client.ts` | 1, 5, 8 | platformLogin() + platformVerifyMFA() + PlatformLoginResponse |
+| `frontend/src/stores/auth.store.ts` | 1 | platformLogin + verifyPlatformMFA + state platformMfa* |
+| `frontend/src/features/auth/LoginPage.tsx` | 1 | Toggle dual-plane Établissement/Plateforme |
+| `frontend/src/features/auth/PlatformMFAVerifyPage.tsx` | 1, 5 | NOUVEAU (194 lignes) — page MFA plateforme |
+| `frontend/src/routes/platform-mfa-verify.tsx` | 1 | NOUVEAU — route /platform-mfa-verify |
+| `frontend/src/locales/fr/admin.json` | 1 | platform.mfa.* + platform.login.* (FR) |
+| `frontend/src/locales/en/admin.json` | 1 | platform.mfa.* + platform.login.* (EN) |
+| `docker/.env.local.example` | 8 | JWT_SECRET_PLATFORM + JWT_SECRET_TENANT |
+| `docker/.env.cloud.example` | 8 | JWT_SECRET_PLATFORM + JWT_SECRET_TENANT (auto-generate) |
+
+---
+
+## Dual-Plane v10.1 — Login unifié avec auto-détection (✅ TERMINÉ)
+
+> Contexte : Suppression du toggle manuel Établissement/Plateforme. Le système détecte automatiquement le type d'utilisateur lors du login.
+
+### Architecture du login unifié
+
+**Flux de détection automatique :**
+1. L'utilisateur saisit email + mot de passe
+2. Le backend vérifie d'abord dans la table `Utilisateur` (tenant)
+3. Si non trouvé → vérifie dans la table `Identite` (plateforme)
+4. Si trouvé dans les deux → vérifie le mot de passe sur les deux tables et retourne les accès combinés
+
+**Réponse API enrichie (`LoginResponseDto`) :**
+```typescript
+{
+  // Tokens tenant (flux normal)
+  accessToken?: string;
+  refreshToken?: string;
+  utilisateur?: {...};
+  etablissementsDisponibles?: [...];
+  
+  // Dual-plane auto-detection (v10.1)
+  hasPlatformAccess?: boolean;
+  platformAccessToken?: string;
+  platformRefreshToken?: string;
+  platformRole?: string;
+  identiteId?: string;
+  platformMfaRequired?: boolean;
+  platformMfaToken?: string;
+  platformMfaMethods?: ('totp' | 'webauthn')[];
+}
+```
+
+**Comportements frontend selon le profil détecté :**
+
+| Profil | Condition | Action |
+|--------|-----------|--------|
+| **Plateforme pur** | `hasPlatformAccess && !accessToken` | Redirect → `/platform/dashboard` |
+| **Plateforme + MFA** | `platformMfaRequired && !accessToken` | Redirect → `/platform-mfa-verify` |
+| **Tenant pur** | `accessToken && !hasPlatformAccess` | Flux normal (sélection établissement ou dashboard) |
+| **Tenant + Plateforme** | `accessToken && hasPlatformAccess` | Modal sélection établissement + bouton "Plateforme" |
+
+### JWT secrets séparés (production)
+
+**Configuration `env.config.ts` :**
+- Développement : secrets auto-générés distincts si non fournis
+- Production : `JWT_SECRET_PLATFORM` et `JWT_SECRET_TENANT` **obligatoires** (pas de fallback sur `JWT_SECRET`)
+
+```bash
+# .env production (OBLIGATOIRE)
+JWT_SECRET_PLATFORM=<min 32 chars>
+JWT_SECRET_TENANT=<min 32 chars>
+```
+
+### Fichiers créés/modifiés v10.1
+| Fichier | Action |
+|---------|--------|
+| `backend/src/config/env.config.ts` | Secrets JWT séparés (pas de fallback prod) |
+| `backend/src/modules/auth/dto/auth.dto.ts` | Champs dual-plane ajoutés à LoginResponseDto |
+| `backend/src/modules/auth/services/auth.service.ts` | Auto-détection plateforme dans login() |
+| `backend/.env` | JWT_SECRET_PLATFORM + JWT_SECRET_TENANT (dev) |
+| `frontend/src/lib/api-client.ts` | Types dual-plane ajoutés |
+| `frontend/src/stores/auth.store.ts` | State hasPlatformAccess + logique auto-détection |
+| `frontend/src/features/auth/LoginPage.tsx` | Toggle supprimé + flux auto-détecté |
+| `frontend/src/components/auth/EtablissementSelectionModal.tsx` | Bouton "Plateforme" ajouté |
+
+---
+
+## ADR-005 — Unification du Système d'Authentification (✅ TERMINÉ)
+
+> **Objectif** : Source unique de vérité pour l'authentification. Supprimer la dualité identités/plateforme et fusionner en un seul flux unifié.
+
+### Décisions architecturales
+- **Source unique** : Table `utilisateurs` comme seule source (plus de `identites`, `utilisateurs_plateforme`, `memberships`, `permissions_plateforme`, `mfa_configs`, `sessions_plateforme`)
+- **Login unifié** : 1 seul `bcrypt.compare` au lieu de 2 (détection auto par rôle)
+- **MFA inline** : Colonnes TOTP directement dans `utilisateurs` (plus de table `mfa_configs`)
+- **CASL unifié** : `defineAbility()` pour les deux contextes (plus de `definePlatformAbility()`)
+- **JWT claims** : `plane: 'platform' | 'tenant'` comme discriminateur
+- **Enum Role unifié** : 6 valeurs `PLATEFORME_*` ajoutées à l'enum `Role` (73 rôles total)
+
+### Phase 0 — Backup (✅ COMPLET)
+- Backup complet de la base de données via API
+
+### Phase 1 — Migrations SQL (✅ COMPLET)
+- **175a** : Ajout 5 colonnes à `utilisateurs` (estPlateforme, deuxFacteursActif, mfaSecret, mfaBackupCodes, dernierAcces)
+- **175b** : Extension `utilisateur_etablissements` (contexteType, dateCreation, derniereConnexion)
+- **175c** : Migration permissions + extension `refresh_tokens` (plane)
+- **175d** : Migration données + suppression 6 tables
+
+### Phase 2 — Backend (✅ COMPLET)
+- **2a** : Shared — enum Role étendu (+73 valeurs), suppression RolePlateforme
+- **2b** : Entities — utilisateur, utilisateur_etablissement, refresh_token modifiés
+- **2c** : auth.service.ts — login unifié (1 bcrypt)
+- **2d** : mfa.service.ts — unifié (colonnes utilisateurs)
+- **2e** : Suppression modules identite, permissions-plateforme, platform-sessions
+- **2f** : CASL unifié — dual-casl.middleware.ts réécrit
+
+### Phase 3 — Frontend (✅ COMPLET)
+- **3a** : auth.store.ts + api-client.ts — login unifié
+- **3b** : LoginPage.tsx — MFA unifié
+- **3c** : Suppression hooks/pages plateforme obsolètes (sessions, permissions, PlatformMFAVerifyPage)
+
+### Fichiers supprimés ADR-005
+| Fichier | Raison |
+|---------|--------|
+| `backend/src/modules/identite/` (10 fichiers) | Table identites dropée |
+| `backend/src/modules/platform-sessions/` (5 fichiers) | Table sessions_plateforme dropée |
+| `backend/src/modules/permissions-plateforme/` (3 fichiers) | Table permissions_plateforme dropée |
+| `backend/src/modules/auth/entities/mfa-config.entity.ts` | Table mfa_configs dropée |
+| `backend/src/database/seeds/system/seed-utilisateurs-plateforme.ts` | Tables supprimées |
+| `shared/src/casl/platform-abilities.ts` | defineAbility() unifié |
+| `frontend/src/features/auth/PlatformMFAVerifyPage.tsx` | MFA unifié |
+| `frontend/src/routes/platform-mfa-verify.tsx` | Route supprimée |
+| `frontend/src/features/platform/hooks/use-platform-sessions.ts` | Endpoint supprimé |
+| `frontend/src/features/platform/hooks/use-platform-permissions.ts` | Endpoint supprimé |
+| `frontend/src/features/platform/components/platform-sessions-page.tsx` | Page supprimée |
+| `frontend/src/features/platform/components/platform-permissions-matrix.tsx` | Page supprimée |
+| `frontend/src/routes/platform.sessions.tsx` | Route supprimée |
+| `frontend/src/routes/platform.permissions.tsx` | Route supprimée |
+| `backend/test/unit/identite.service.spec.ts` | Service supprimé |
+| `backend/test/unit/membership.service.spec.ts` | Service supprimé |
+| `backend/test/unit/platform-abilities.spec.ts` | platform-abilities supprimé |
+| `backend/test/e2e/platform-identity-flow.spec.ts` | Flow dual-plane obsolète |
+
+### Fichiers modifiés ADR-005
+| Fichier | Modification |
+|---------|--------------|
+| `frontend/src/stores/auth.store.ts` | Suppression états platformMfa*, méthodes platformLogin/verifyPlatformMFA |
+| `frontend/src/lib/api-client.ts` | Suppression PlatformLoginResponse, platformLogin(), platformVerifyMFA() |
+| `frontend/src/features/auth/LoginPage.tsx` | MFA unifié (un seul branchement) |
+| `frontend/src/components/layout/platform-sidebar.tsx` | Suppression entrées sessions/permissions, sous-groupes |
+| `frontend/src/features/platform/components/platform-user-detail-page.tsx` | Suppression onglet sessions |
+| `frontend/src/features/platform/hooks/use-platform-roles.ts` | Suppression hooks permissions obsolètes |
+| `frontend/src/features/platform/hooks/use-platform-users.ts` | Type PlatformUser mis à jour (role au lieu de rolePlateforme) |
+| `backend/src/common/middlewares/dual-casl.middleware.ts` | Réécrit — defineAbility() unifié |
+| `backend/src/common/middlewares/platform-auth.middleware.ts` | Réécrit — JWT-only |
+| `backend/src/common/middlewares/scope-discrimination.middleware.ts` | Réécrit — defineAbility() unifié |
+| `backend/src/routes/platform.routes.ts` | Suppression routes identites/sessions/permissions |
+| `backend/src/modules/platform-auth/controllers/platform-auth.controller.ts` | Délègue à auth.service.ts |
+| `backend/src/database/seeds/initial.seed.ts` | Suppression seedUtilisateursPlateforme |
+| `backend/src/database/seeds/index.ts` | Suppression exports seeds obsolètes |
+| `shared/src/casl/index.ts` | Suppression exports platform-abilities |
+
+---
+
+## Session CRUD Plateforme — Utilisateurs, Rôles & Permissions (✅ TERMINÉ)
+
+> Contexte : Compléter le CRUD du panel plateforme avec archivage, audit trail réel, export CSV, duplication de rôles et comparaison de permissions.
+
+### Backend — 6 endpoints nouveaux
+
+| Endpoint | Méthode | Description |
+|----------|---------|-------------|
+| `/api/platform/utilisateurs/:id/archiver` | POST | Statut ARCHIVE (non destructif, réversible) |
+| `/api/platform/utilisateurs/:id/desarchiver` | POST | Restore depuis ARCHIVE vers INACTIF/ACTIF |
+| `/api/platform/utilisateurs/export/csv` | GET | Export CSV (BOM UTF-8, séparateur `;`, max 10k) |
+| `/api/platform/utilisateurs/:id/audit` | GET | Audit trail paginé (page, limit, module) |
+| `/api/platform/roles/:id/audit` | GET | Audit trail paginé d'un rôle |
+| `/api/platform/roles/:id/dupliquer` | POST | Copie rôle + permissions, code unique suffixe |
+| `/api/platform/roles/comparer` | POST | Matrice comparaison 2-5 rôles, groupé par module |
+
+### Migration SQL
+- **177-statut-archive.sql** : `ALTER TYPE "utilisateurs_statut_enum" ADD VALUE IF NOT EXISTS 'ARCHIVE'` + index partiel
+
+### Frontend — Hooks (2 fichiers)
+- `use-platform-users.ts` : `useArchiverPlatformUser`, `useDesarchiverPlatformUser`, `usePlatformUserAudit`, `useExportCsvPlatformUsers`
+- `use-platform-roles.ts` : `usePlatformRoleAudit`, `useDupliquerRolePlateforme`, `useComparerPermissions`
+
+### Frontend — Pages composantes (5 fichiers)
+| Fichier | Modifications |
+|---------|---------------|
+| `platform-users-page.tsx` | Bouton Export CSV, actions Archive/Désarchive, badge statut ARCHIVE, modal confirmation |
+| `platform-user-detail-page.tsx` | Onglet Activité réel (audit trail paginé), actions archiver/désarchiver dans Sécurité, badge ARCHIVE dans header |
+| `platform-roles-page.tsx` | Action "Dupliquer" dans chaque rôle, modal confirmation duplication |
+| `platform-role-detail-page.tsx` | Bouton "Dupliquer" dans header, onglet Audit réel avec `PlatformRoleAuditTab` connecté |
+| `platform-role-permissions-tab.tsx` | PermBadge (catégories visuelles C/R/U/D/W/M/V/E/T), mode Comparaison multi-rôles avec matrice |
+| `platform-role-audit-tab.tsx` | Réécrit — audit trail réel paginé avec détails avant/après |
+
+### Fichiers créés/modifiés session CRUD
+| Fichier | Action |
+|---------|--------|
+| `backend/database/migrations/177-statut-archive.sql` | NOUVEAU (20 lignes) |
+| `backend/src/modules/auth/entities/utilisateur.entity.ts` | ARCHIVE ajouté à StatutUtilisateur |
+| `backend/src/modules/platform-users/dto/platform-users.dto.ts` | ARCHIVE + prenom/nom/email dans modifier |
+| `backend/src/modules/platform-users/services/platform-users.service.ts` | archiver, désarchiver, exporterCsv, audit paginé, modifier étendu |
+| `backend/src/modules/platform-users/controllers/platform-users.controller.ts` | 3 endpoints (archive, désarchive, CSV) |
+| `backend/src/modules/platform-roles/services/platform-roles.service.ts` | getAuditRole, dupliquerRole, comparerPermissions |
+| `backend/src/modules/platform-roles/controllers/platform-roles.controller.ts` | 3 endpoints (audit, dupliquer, comparer) |
+| `frontend/src/features/platform/hooks/use-platform-users.ts` | 4 hooks + types audit |
+| `frontend/src/features/platform/hooks/use-platform-roles.ts` | 3 hooks + types comparaison |
+| `frontend/src/features/platform/components/platform-users-page.tsx` | Export CSV + archive/désarchive |
+| `frontend/src/features/platform/components/platform-user-detail-page.tsx` | Audit trail réel + archive actions |
+| `frontend/src/features/platform/components/platform-roles-page.tsx` | Action dupliquer + modal |
+| `frontend/src/features/platform/components/platform-role-detail-page.tsx` | Bouton dupliquer + audit tab connecté |
+| `frontend/src/features/platform/components/platform-role-permissions-tab.tsx` | PermBadge + mode comparaison |
+| `frontend/src/features/platform/components/platform-role-audit-tab.tsx` | Réécrit — audit trail réel |
+
+---
+
+## Page Détail Établissement — Platform (✅ TERMINÉ)
+
+> Contexte : Page détail établissement pour le Control Plane (`/platform/etablissements/:id`). 4 onglets, 4 actions rapides, ultra-responsif, dark mode.
+
+### Architecture Frontend
+
+**Pattern** : Page dédiée `/:id` avec layout + Outlet (comme `/platform/utilisateurs/`).
+
+**Routes TanStack** :
+- `platform.etablissements.tsx` — Layout avec `ModuleLayout` + `<Outlet />` + guard `requireRole(ROLES_PLATEFORME)`
+- `platform.etablissements.index.tsx` — Page liste (511 lignes) : DataTable, stats, santé, filtres, navigation "Voir" vers détail
+- `platform.etablissements.$id.tsx` — Route détail avec `validateSearch` pour onglet actif
+
+**Composant principal** : `platform-etablissement-detail-page.tsx` (778 lignes)
+- Header gradient avec avatar, badges (statut, type, système, santé)
+- Barre d'actions rapides : Modifier, Suspendre/Réactiver, Accéder au tenant, Rafraîchir
+- 4 onglets : Identité, Santé, Activité, Configuration
+- Sous-composants réutilisables : `SectionCard`, `InfoGrid`, `InfoField`, `ActionButton`, `ConfigBadge`
+
+**Hook agrégé** : `use-etablissement-detail.ts` (160 lignes)
+- 4 queries parallèles : base, stats, sante, config
+- 2 mutations : activer, désactiver (avec invalidation cache)
+- Query keys typées : `ETABLISSEMENT_DETAIL_KEYS`
+
+**Types enrichis** : `etablissement.types.ts` (138 lignes)
+- Types extraits : `TypeEtablissement`, `SousSysteme`, `StatutEtablissement`
+- Interface `Etablissement` étendue (30+ champs)
+- Interfaces `EtablissementConfig`, `EtablissementDetailStats`
+
+### i18n
+
+77 clés ajoutées dans `fr/admin.json` et `en/admin.json` :
+- `etablissements.detail.*` : onglets, actions, confirmations
+- `etablissements.detail.identite.*` : infos générales, contact, direction, paramètres régionaux, dates
+- `etablissements.detail.sante.*` : description score composite
+- `etablissements.detail.activite.*` : effectifs, taux occupation, résumé config
+- `etablissements.detail.config.*` : abonnement, quotas, cycles, bulletin
+
+### CSS
+
+- Variable `--gap-xxs` ajoutée dans `globals.css` : `clamp(0.125rem, 0.1rem + 0.1vw, 0.25rem)`
+
+### Fichiers créés/modifiés
+
+| Fichier | Action |
+|---------|--------|
+| `frontend/src/routes/platform.etablissements.tsx` | Réécrit — layout + Outlet (56 lignes) |
+| `frontend/src/routes/platform.etablissements.index.tsx` | NOUVEAU (511 lignes) |
+| `frontend/src/routes/platform.etablissements.$id.tsx` | NOUVEAU (20 lignes) |
+| `frontend/src/features/platform/components/platform-etablissement-detail-page.tsx` | NOUVEAU (778 lignes) |
+| `frontend/src/features/platform/hooks/use-etablissement-detail.ts` | NOUVEAU (160 lignes) |
+| `frontend/src/features/etablissements/types/etablissement.types.ts` | Enrichi — 30+ champs + 3 interfaces |
+| `frontend/src/locales/fr/admin.json` | +77 clés `etablissements.detail.*` |
+| `frontend/src/locales/en/admin.json` | +77 clés `etablissements.detail.*` |
+| `frontend/src/styles/globals.css` | `--gap-xxs` ajouté |
+
+---
+
+## Modal Édition + Onglet Activité Établissement (✅ TERMINÉ)
+
+> Plan : `/home/franck/.config/Qoder/SharedClientCache/cache/plans/Modal_Edit_+_Activité_task-0d7.md`
+
+### Décisions validées
+| Sujet | Décision |
+|-------|----------|
+| Modal | Unique adaptatif : create = 4 étapes, edit = 3 onglets horizontaux |
+| Edit UI | 3 onglets : Identité / Contact / Configuration |
+| Activité | 4 sections : Ventilation, Modules, Timeline, Finances |
+| Timeline | Combiné : compteurs par module + 20 derniers AuditLogs |
+| Finances | DB directe + module billing |
+| Backend | Nouveau service + endpoint `GET /:id/activite` |
+
+### Phase 1 — Backend : Service Activité
+
+**Service** : `activite-etablissement.service.ts` (415 lignes)
+- `getActiviteComplete(etablissementId)` → 4 agrégations en `Promise.all`
+- Ventilation : jointure AffectationEleve→Classe→Niveau→Cycle, comptage par genre, ratio P/E
+- Modules : `ParametreSysteme` WHERE `cle LIKE '%.actif'`, derniers changements via AuditLog
+- Timeline : compteurs par module (30j) + 20 derniers AuditLog avec relation utilisateur
+- Finances : `createQueryBuilder` pour SUM paiements, factures en attente, taux recouvrement, abonnement
+
+**Endpoint** : `GET /api/etablissements/:id/activite`
+- `authMiddleware` + vérification appartenance (même pattern que `/stats`)
+
+### Phase 2 — Modal Adaptatif
+
+**Fichier** : `etablissement-form-modal.tsx` (694 lignes)
+- Mode CREATE : 4 étapes (Infos → Plan → Options → Résumé)
+- Mode EDIT : 3 onglets horizontaux (Identité / Contact / Configuration)
+- Types corrigés : `LAIC/CONFESSIONNEL_CATHOLIQUE/...` au lieu de `PRIVE/PUBLIC/...`
+- `updateMutation` : `PATCH /api/platform/etablissements/:id`
+- Props typées : `etablissement?: Etablissement` (plus de `any`)
+
+### Phase 3 — Onglet Activité Enrichi
+
+**Fichier** : `platform-etablissement-detail-page.tsx` (~1097 lignes)
+- Section 1 : Stats de base (4 cards) + taux occupation
+- Section 2 : Ventilation effectifs (genre, ratio, nouvelles inscriptions, barres par cycle)
+- Section 3 : Modules actifs (grille badges + derniers changements)
+- Section 4 : Timeline activité (compteurs 30j + 15 derniers événements avec sévérité)
+- Section 5 : Métriques financières (paiements, factures, taux recouvrement + abonnement)
+- Helper `formatRelativeTime()` ajouté pour dates relatives
+
+**i18n** : +28 clés dans `fr/admin.json` et `en/admin.json` :
+- `etablissements.detail.activite.ventilation.*` (5 clés)
+- `etablissements.detail.activite.modules.*` (3 clés)
+- `etablissements.detail.activite.timeline.*` (4 clés)
+- `etablissements.detail.activite.finances.*` (5 clés)
+
+### Fichiers créés/modifiés
+
+| Fichier | Phase | Action |
+|---------|-------|--------|
+| `backend/src/modules/etablissement/services/activite-etablissement.service.ts` | 1.1 | NOUVEAU (415 lignes) |
+| `backend/src/modules/etablissement/controllers/etablissement.controller.ts` | 1.2 | Ajout route `/:id/activite` |
+| `backend/src/modules/etablissement/services/index.ts` | 1.1 | Export |
+| `frontend/src/features/etablissements/types/etablissement.types.ts` | 1.3 | +73 lignes interfaces Activite* |
+| `frontend/src/features/platform/hooks/use-etablissement-detail.ts` | 1.4 | Query activité |
+| `frontend/src/features/admin/components/etablissement-form-modal.tsx` | 2.1 | Réécrit — adaptatif create/edit (694 lignes) |
+| `frontend/src/routes/platform.etablissements.index.tsx` | 2.2 | Bouton Modifier → établissement complet |
+| `frontend/src/features/platform/components/platform-etablissement-detail-page.tsx` | 3.1 | ActiviteTab enrichi (~1097 lignes) |
+| `frontend/src/locales/fr/admin.json` | 3.2 | +28 clés activité |
+| `frontend/src/locales/en/admin.json` | 3.2 | +28 clés activité |
+
+---
+
+## Module CMS — Pages publiques white-label (✅ TERMINÉ)
+
+> Système CMS complet pour pages publiques par établissement. Routes `/e/:code` accessibles sans authentification. Éditeur CMS authentifié avec drag & drop.
+
+### Architecture
+
+- **7 entités CMS** : CmsPage, CmsSection, CmsMedia, CmsTheme, CmsMenu, CmsWidget, CmsVersion
+- **18 types de sections** : HERO, TEXTE, GALERIE, CARTE_INFOS, TEMOIGNAGES, CHIFFRES_CLES, EQUIPE, FORMULAIRE, CARTE, VIDEO, TELECHARGEMENTS, ACTUALITES, HORAIRES, PARTENAIRES, FAQ, APPEL_ACTION, SEPARATEUR, HTML_CUSTOM
+- **9 nouveaux champs Etablissement** : pays, region, quartier, latitude, longitude, numeroEnregistrement, numeroIdentification, numeroAutorisation, descriptionPublique
+- **Projection restrictive** : Seules les colonnes publiques sont exposées via l'API (exclusion : numeroContribuable, numeroCompteBancaire, etc.)
+- **Cache Redis** : TTL 300s (pages/menus/widgets), 600s (thèmes), invalidation à chaque mutation
+- **Rate limiting** : 60 req/min/IP sur les routes publiques
+- **18 permissions RBAC** : pages (5), sections (4), medias (3), themes (2), menus (1), widgets (1), versions (2)
+- **RLS PostgreSQL** activé sur les 7 tables CMS
+- **Versioning** : Snapshot avant chaque modification, rollback possible
+- **6 thèmes système** : Classique Vert, Moderne Bleu, Élégant Bordeaux, Dynamique Orange, Nature Vert Forêt, Minimaliste
+
+### Backend
+
+| Fichier | Rôle |
+|---------|------|
+| `backend/database/migrations/180-enrichissement-etablissement.sql` | 9 colonnes + 2 index |
+| `backend/database/migrations/181-cms-tables.sql` | 7 tables CMS + RLS + seeds thèmes |
+| `backend/database/migrations/182-cms-permissions.sql` | 18 permissions RBAC + attribution rôles |
+| `backend/src/modules/cms/entities/cms.entity.ts` | 7 entités + 10 enums (389 lignes) |
+| `backend/src/modules/cms/dto/cms.dto.ts` | 12+ schémas Zod (179 lignes) |
+| `backend/src/modules/cms/services/cms.service.ts` | CRUD + versioning + cache (462 lignes) |
+| `backend/src/modules/cms/services/public-etablissement.service.ts` | API publique + projection + cache (257 lignes) |
+| `backend/src/modules/cms/controllers/cms.controller.ts` | ~30 routes authentifiées (308 lignes) |
+| `backend/src/modules/cms/controllers/public-etablissement.controller.ts` | 8 routes publiques (140 lignes) |
+
+### Frontend — Types & Hooks
+
+| Fichier | Rôle |
+|---------|------|
+| `frontend/src/features/cms/types/cms.types.ts` | Types CMS complets (205 lignes) |
+| `frontend/src/features/cms/hooks/use-cms-public.ts` | 7 hooks API publique (140 lignes) |
+| `frontend/src/features/cms/hooks/use-cms-admin.ts` | 18+ hooks CRUD admin (265 lignes) |
+| `frontend/src/features/cms/index.ts` | Barrel exports feature CMS |
+
+### Frontend — Composants Partagés
+
+| Fichier | Rôle |
+|---------|------|
+| `frontend/src/features/cms/components/PublicLayout.tsx` | Layout public Header+Footer (266 lignes) |
+| `frontend/src/features/cms/components/CmsPageRenderer.tsx` | Rendu 18 sections (737 lignes) |
+| `frontend/src/features/cms/components/CmsDashboard.tsx` | Dashboard admin CMS (260 lignes) |
+| `frontend/src/features/cms/components/CmsMediaUpload.tsx` | Upload drag & drop média (237 lignes) |
+| `frontend/src/features/cms/components/CmsSectionEditor.tsx` | Éditeur section générique 18 types (388 lignes) |
+| `frontend/src/features/cms/components/CmsThemeCustomizer.tsx` | Personnalisation thème + presets (262 lignes) |
+
+### Frontend — Routes Publiques (5 routes)
+
+| Fichier | Rôle |
+|---------|------|
+| `frontend/src/routes/e.$code.tsx` | Route publique accueil (119 lignes) |
+| `frontend/src/routes/e.$code.$slug.tsx` | Route publique page (80 lignes) |
+| `frontend/src/routes/e.$code.galerie.tsx` | Galerie masonry + lightbox (284 lignes) |
+| `frontend/src/routes/e.$code.contact.tsx` | Contact + carte OSM (315 lignes) |
+| `frontend/src/routes/e.$code.inscriptions.tsx` | Inscriptions stepper 4 étapes (248 lignes) |
+
+### Frontend — Routes Éditeur CMS (8 routes)
+
+| Fichier | Rôle |
+|---------|------|
+| `frontend/src/routes/_auth.cms.tsx` | Layout éditeur CMS (7 onglets navigation) |
+| `frontend/src/routes/_auth.cms.index.tsx` | Dashboard éditeur (14 lignes) |
+| `frontend/src/routes/_auth.cms.pages.tsx` | Liste pages + filtres + création (275 lignes) |
+| `frontend/src/routes/_auth.cms.pages.$id.tsx` | Éditeur page 3 colonnes drag & drop (364 lignes) |
+| `frontend/src/routes/_auth.cms.medias.tsx` | Bibliothèque médias grille/liste (209 lignes) |
+| `frontend/src/routes/_auth.cms.themes.tsx` | Gestion thèmes + customizer (191 lignes) |
+| `frontend/src/routes/_auth.cms.menus.tsx` | Éditeur navigation par emplacement (399 lignes) |
+| `frontend/src/routes/_auth.cms.widgets.tsx` | CRUD widgets 4 emplacements (349 lignes) |
+| `frontend/src/routes/_auth.cms.versions.tsx` | Timeline versions + rollback (262 lignes) |
+
+### Frontend — i18n
+
+| Fichier | Rôle |
+|---------|------|
+| `frontend/src/locales/fr/cms.json` | i18n FR (109 lignes) |
+| `frontend/src/locales/en/cms.json` | i18n EN (109 lignes) |
+
+### API publiques (8 routes)
+
+```
+GET  /api/public/e/:code          — Données établissement (projection restrictive)
+GET  /api/public/e/:code/accueil  — Page d'accueil complète
+GET  /api/public/e/:code/pages    — Liste pages publiées
+GET  /api/public/e/:code/pages/:slug — Détail page + sections
+GET  /api/public/e/:code/theme    — Thème actif
+GET  /api/public/e/:code/menus    — Menus navigation
+GET  /api/public/e/:code/widgets  — Widgets actifs
+POST /api/public/e/:code/contact  — Formulaire contact
+```
+
+### Montage routes (app.ts)
+
+- Routes publiques CMS montées AVANT `tenantMiddleware` : `app.use('/api/public', publicEtablissementController)`
+- Routes CMS admin montées APRÈS `tenantMiddleware` : `app.use('/api/cms', authMiddleware, requireModuleActive('cms'), filterByEtablissement(), cmsController)`
+- Exception ajoutée dans `api-client.ts` : `/api/public` skip token validation
+
+---
+
+## Refonte Configuration Platform v3 — Sidebar Navigation (✅ TERMINÉ)
+
+> Contexte : Refonte UX de la page `/platform/configuration` — remplacement des tabs horizontaux par un sidebar vertical avec animations avancées.
+> **v3.1** : Extraction composant partagé `<ConfigSidebar>`, accessibilité ARIA, navigation clavier, persistance localStorage.
+
+### Architecture Sidebar v3
+
+- **Layout** : Flex horizontal — sidebar fixe 260px (desktop) + contenu fluide
+- **Mobile (< 768px)** : Drawer overlay avec backdrop blur, spring animation
+- **Desktop** : Sidebar sticky (`position: sticky; top: 0; height: 100vh`)
+- **Composant partagé** : `<ConfigSidebar>` extrait dans `frontend/src/components/ui/ConfigSidebar.tsx`
+
+### Fonctionnalités implémentées
+
+- **Barre indicatrice animée** : `layoutId` avec spring animation (stiffness: 380, damping: 32)
+- **Background tinté par section** : Chaque section a une couleur `tintBg` (ex: sécurité = danger-50, modules = purple 6%)
+- **Compteur de modifications** : Badge animé (spring scale) montrant le nombre de changements non sauvegardés
+- **Micro-animation icône** : Pulse circulaire 2s sur l'icône de la section active
+- **Recherche inline** : Input dans le sidebar, synchronisé avec le state de recherche de la section active
+- **Breadcrumb contextuel** : Header avec icône teintée + fil d'Arianne "Configuration / Section"
+- **Indicateurs statut** : Dot jaune (modifications), dot rouge (erreur) par section
+- **Collapse/Expand** : Bouton pour réduire le contenu, placeholder avec bouton "Développer"
+- **Feature Flags toggle** : Conservé dans le header (pas dans le sidebar)
+
+### Améliorations v3.1 — Accessibilité, Clavier, Persistance
+
+- **Accessibilité ARIA** :
+  - `role="navigation"` + `aria-label` sur le `<aside>` (desktop) et `<motion.aside>` (mobile)
+  - `role="tablist"` + `aria-orientation="vertical"` sur le conteneur de navigation
+  - `role="tab"` + `aria-selected` + `aria-current="page"` sur chaque item
+  - `tabIndex={0}` sur l'item actif, `tabIndex={-1}` sur les autres
+  - `aria-label` sur les boutons (fermer, actualiser, hamburger, compteur)
+- **Navigation clavier** :
+  - `↑` / `↓` : Navigation entre les items (wrap-around)
+  - `Home` / `End` : Premier / dernier item
+  - Focus géré via `tabIndex` natif (pas de focus programmatique nécessaire)
+- **Persistance localStorage** :
+  - Clé : `platform:config:activeSection`
+  - Restauration au chargement (avec validation de la clé)
+  - Sauvegarde à chaque changement de section
+  - Fallback gracieux si localStorage indisponible
+
+### Composant partagé `<ConfigSidebar>`
+
+**Fichier** : `frontend/src/components/ui/ConfigSidebar.tsx` (297 lignes)
+**Export** : `frontend/src/components/ui/index.ts` → `ConfigSidebar`, `ConfigSidebarSection`, `ConfigSidebarProps`
+
+```typescript
+interface ConfigSidebarSection {
+    key: string;
+    label: string;        // Déjà traduit (la page fait la traduction)
+    icon: LucideIcon;
+    color: string;
+    tintBg: string;
+    description?: string;
+}
+
+interface ConfigSidebarProps {
+    sections, activeKey, onSectionChange,
+    searchValue, onSearchChange, searchPlaceholder?,
+    title, subtitle?,
+    modificationsCount?, hasChanges?, hasError?,
+    showSearch?, showRefresh?, onRefresh?,
+    footerContent?,                          // Slot custom dans le footer
+    isMobile?, isDrawerOpen?, onDrawerClose?,
+    showMobileToggle?, onDrawerOpen?,
+    layoutId?,                               // Unique par page
+}
+```
+
+**Usage** :
+```tsx
+<ConfigSidebar
+    sections={sidebarSections}
+    activeKey={activeSection}
+    onSectionChange={(key) => handleSectionClick(key as SectionKey)}
+    searchValue={searchBySection[activeSection]}
+    onSearchChange={handleSidebarSearch}
+    title={t('titre')}
+    subtitle={t('sousTitre')}
+    modificationsCount={modificationsCount}
+    hasChanges={hasChanges}
+    hasError={hasError}
+    showSearch showRefresh
+    onRefresh={handleRefresh}
+    footerContent={<ExportConfigButton variant="ghost" size="sm" />}
+    isMobile={isMobile}
+    isDrawerOpen={isMobileSidebarOpen}
+    onDrawerClose={() => setMobileSidebarOpen(false)}
+    showMobileToggle={isMobile}
+    onDrawerOpen={() => setMobileSidebarOpen(true)}
+/>
+```
+
+### Fichiers modifiés
+
+| Fichier | Action | Lignes |
+|---------|--------|--------|
+| `frontend/src/components/ui/ConfigSidebar.tsx` | NOUVEAU — composant partagé réutilisable | 297 |
+| `frontend/src/components/ui/index.ts` | 2 exports ajoutés | +2 |
+| `frontend/src/routes/platform.configuration.tsx` | Réécriture v3 + extraction ConfigSidebar | 596 |
+| `frontend/src/locales/fr/config-params.json` | 3 clés ajoutées (reduire, developper, sectionReduite) | +3 |
+| `frontend/src/locales/en/config-params.json` | 3 clés ajoutées (parité EN) | +3 |
+
+### Pattern réutilisable
+
+Pour toute page à sections multiples :
+1. Importer `ConfigSidebar` et `ConfigSidebarSection` depuis `@/components/ui`
+2. Définir `sections: ConfigSidebarSection[]` avec key, label (traduit), icon, color, tintBg
+3. Passer les props de state (activeKey, searchValue, modifications, etc.)
+4. Le composant gère : indicatrice animée, clavier, ARIA, mobile drawer, persistance (via la page)
+
+---
+
+## Configuration System v10 — Améliorations Majeures (✅ TERMINÉ)
+
+> Contexte : Implémentation des 8 recommandations des rapports d'analyse du système de configuration multi-tenant. Score amélioré de 8.5/10 à 9.5/10.
+
+### Phase P0 — Critique (✅ COMPLET)
+- **P0.1 Cascade groupe dans getParametre()** — `backend/src/modules/configuration/services/configuration.service.ts`
+  - Ajout du niveau groupe dans la cascade : Établissement → Groupe → Global → Défaut
+  - Nouvelle méthode `resoudreGroupeEtablissement()` via `GroupeEtablissementLien`
+  - Import de `GroupeEtablissementLien` depuis `@modules/groupes-etablissements/entities`
+- **P0.2 Suppression du double cache** — `backend/src/modules/configuration/utils/config.helper.ts`
+  - Suppression du `quickCache` local (Map, TTL 60s)
+  - Délégation directe au `ConfigurationService` (cache 60s + pub/sub Redis)
+  - Élimination du risque de désynchronisation
+
+### Phase P1 — Important (✅ COMPLET)
+- **P1.1 Harmonisation TTL** — `backend/src/modules/billing/services/feature-flags.service.ts`
+  - TTL réduit de 5 minutes à 60 secondes
+  - Alignement avec `ConfigurationService` et `ModuleResolutionService`
+- **P1.2 Cache Redis** — `backend/src/modules/configuration/services/configuration.service.ts`
+  - Ajout du cache Redis (TTL 60s) entre in-memory et DB
+  - Pattern : In-Memory (60s) → Redis (60s) → PostgreSQL
+  - Invalidation via SCAN + DEL sur `config:param:*`
+  - Nouvelles constantes : `REDIS_CACHE_PREFIX`, `REDIS_CACHE_TTL`
+- **P1.3 ConfigConsistencyChecker** — `backend/src/modules/configuration/services/config-consistency.service.ts` (NOUVEAU, 330 lignes)
+  - Vérification cohérence inter-cascades
+  - Détecte : modules désactivés avec flags actifs, flags orphelins, paramètres manquants
+  - Endpoints : `GET /api/configuration/consistency-check`, `GET /api/configuration/consistency-check/:etablissementId`
+
+### Phase P2 — Amélioration (✅ COMPLET)
+- **P2.1 Batch loading** — `backend/src/modules/configuration/services/configuration.service.ts`
+  - Nouvelle méthode `getParametresBatch(cles: string[], etablissementId?: string)`
+  - Charge N paramètres en une seule requête SQL
+  - Applique la cascade 4 niveaux pour chaque paramètre
+  - Retourne `Map<string, any>`
+- **P2.2 Validation Zod** — `backend/src/modules/configuration/utils/param-validation.ts` (NOUVEAU, 215 lignes)
+  - Registry de schémas Zod par type et par clé
+  - Validation automatique dans `createParametre()` et `setParametre()`
+  - Schémas spécifiques : `auth.session_duration`, `auth.password_min_length`, `app.version`, etc.
+  - Support des patterns avec wildcard (`modules.*.actif`)
+- **P2.3 Dashboard cascade** — `frontend/src/routes/platform.configuration-cascade.tsx` (NOUVEAU, 403 lignes)
+  - Vue plateforme de tous les paramètres avec valeur effective par établissement
+  - Affiche : valeur globale, groupe, établissement, effective, source
+  - Filtres : recherche, catégorie, établissement
+  - Intégration du consistency check (incohérences détectées)
+  - Endpoints backend : `GET /api/configuration/cascade-view`, `GET /api/configuration/cascade-view?etablissementId=xxx`
+
+### Fichiers créés/modifiés v10
+| Fichier | Action | Phase |
+|---------|--------|-------|
+| `backend/src/modules/configuration/services/configuration.service.ts` | Modifié (cascade 4 niveaux, cache Redis, batch, cascade view) | P0.1, P1.2, P2.1, P2.3 |
+| `backend/src/modules/configuration/utils/config.helper.ts` | Modifié (suppression quickCache) | P0.2 |
+| `backend/src/modules/billing/services/feature-flags.service.ts` | Modifié (TTL 5min → 60s) | P1.1 |
+| `backend/src/modules/configuration/services/config-consistency.service.ts` | Créé (330 lignes) | P1.3 |
+| `backend/src/modules/configuration/services/index.ts` | Modifié (export config-consistency) | P1.3 |
+| `backend/src/modules/configuration/controllers/configuration.controller.ts` | Modifié (endpoints consistency-check + cascade-view) | P1.3, P2.3 |
+| `backend/src/modules/configuration/utils/param-validation.ts` | Créé (215 lignes) | P2.2 |
+| `frontend/src/routes/platform.configuration-cascade.tsx` | Créé (403 lignes) | P2.3 |
+| `.qoder/rules/elisaschool-conventions.md` | Modifié (section 29 ajoutée) | P3.1 |
+| `AGENTS.md` | Modifié (section v10 ajoutée) | P3.2 |
+
+### Résumé des améliorations v10
+- **Cascade 4 niveaux** : Établissement → Groupe → Global → Défaut (était 2 niveaux)
+- **Cache 3 niveaux** : In-Memory → Redis → PostgreSQL (était 2 niveaux)
+- **TTL harmonisé** : 60 secondes partout (était 60s/5min mixte)
+- **Validation Zod** : Schémas par type et par clé pour validation avant sauvegarde
+- **Batch loading** : Chargement de N paramètres en 1 requête SQL
+- **Consistency checker** : Détection automatique des incohérences inter-cascades
+- **Dashboard cascade** : Vue temps réel de la configuration par établissement
+
+---
+
+## Migration 200 — Unification Entitlement & Modules (✅ COMPLET)
+
+> Plan : `/home/franck/.config/Qoder/SharedClientCache/cache/plans/Unification_Modules_SaaS_task-42f.md`
+> Contexte : 3 registres de modules divergents (ModuleRegistryService hardcoded, ModuleResolutionService DB, ConfigurationService cascade propre). Aucun gating par abonnement. Visibilité non filtrée par plan.
+
+### Résumé des changements
+
+**SUPPRIMÉ** :
+- `backend/src/modules/configuration/services/module-registry.service.ts` (501 lignes) — 15 modules hardcodés
+
+**CRÉÉ** :
+- `backend/src/modules/billing/services/entitlement.service.ts` (483 lignes) — Source unique de vérité pour le gating des modules
+- `backend/database/migrations/200-unification-entitlement-modules.sql` (213 lignes) — Migration DB idempotente
+
+**MODIFIÉ** :
+- `backend/src/modules/billing/services/index.ts` — Exports EntitlementService + types
+- `backend/src/modules/configuration/services/index.ts` — Retiré exports ModuleRegistryService
+- `backend/src/modules/configuration/controllers/configuration.controller.ts` — Routes modules-advanced/* → moduleResolutionService + entitlementService
+- `backend/src/modules/configuration/middlewares/module-active.middleware.ts` — Utilise entitlementService (gating par abonnement)
+- `backend/src/modules/configuration/services/configuration.service.ts` — isModuleActive() délègue à moduleResolutionService
+- `backend/src/database/seeds/system/seed-modules-catalogue.ts` — Seed idempotent complet (26 modules)
+- `frontend/src/features/configuration/types/configuration.types.ts` — Ajout estAccessible, estVisible, raisonBlocage, messageBlocage
+- `frontend/src/features/configuration/hooks/use-configuration.ts` — Propage champs entitlement dans ModuleState
+- `frontend/src/features/configuration/components/ModulesTab.tsx` — UI gating (cadenas, badge, toggle grisé, CTA Upgrader)
+- `frontend/src/features/modules/components/ModuleCard.tsx` — Gating UI dans le composant réutilisable
+
+### Architecture EntitlementService
+
+**Cascade de résolution** :
+1. Module CRITIQUE (code) → bypass total
+2. Catalogue DB (modules_catalogue) → module existe/actif ?
+3. Catégorie CRITIQUE → bypass total
+4. Abonnement ACTIF vérifié → sans plan → blocage
+5. Plan (modulesInclus) → le plan inclut le module ?
+6. Override groupe (ModulesGroupe) → activation/désactivation groupe
+7. Supplément (AbonnementModule) → add-on souscrit ?
+8. Plan minimal requis → rang du plan vs plan minimal
+9. Catalogue défaut (actifParDefaut) → dernier fallback
+
+**Cache** : Redis TTL 60s + in-memory fallback + Pub/Sub cross-instance
+
+**API REST enrichie** : `GET /api/configuration/modules/registry` retourne `estAccessible`, `estVisible`, `raisonBlocage`, `messageBlocage`
+
+**Frontend** : Modules verrouillés → cadenas + badge "Plan requis"/"Abonnement requis" + toggle grisé + CTA "Upgrader le plan"

@@ -31,9 +31,9 @@ import { Role } from '@modules/auth/entities';
 import { logger } from '@common/utils/logger.util';
 import { AppError } from '@common/filters/error.filter';
 import { validateDto } from '@common/utils';
-import { MODULE_REGISTRY } from '@shared/config/config.registry';
-import { ModuleName, MODULE_CATEGORIES } from '@shared/enums/modules.enum';
-import { moduleRegistry } from '../services/module-registry.service';
+import { moduleResolutionService } from '@modules/billing/services/module-resolution.service';
+import { entitlementService } from '@modules/billing/services/entitlement.service';
+import { configConsistencyService } from '../services/config-consistency.service';
 import {
     canViewConfigApp,
     canEditConfigApp,
@@ -107,10 +107,12 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 /**
  * GET /api/configuration/full
  * Récupère TOUS les paramètres (admin uniquement)
+ * Contexte plateforme → uniquement les paramètres globaux (sans etablissementId)
  */
 router.get('/full', authMiddleware, canViewConfigApp, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const params = await configurationService.getAllParametres();
+        const estPlateforme = req.baseUrl?.includes('/platform') || req.utilisateur?.plane === 'platform';
+        const params = await configurationService.getAllParametres(estPlateforme);
         res.json({ success: true, data: params });
     } catch (error) { next(error); }
 });
@@ -176,28 +178,52 @@ router.get('/modules', authMiddleware, canViewConfigModule, async (req: Request,
     } catch (error) { next(error); }
 });
 
-// Registry des modules (depuis MODULE_REGISTRY) - doit être avant /modules/:moduleNom
+// P2.2 v7 — Registry des modules (depuis catalogue DB + entitlement)
+// Refonte SaaS — Unification Modules (migration 200)
 router.get('/modules/registry', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.utilisateur?.etablissementId;
-        const registry = await Promise.all(
-            Object.values(MODULE_REGISTRY).map(async (config) => {
-                const actif = await configurationService.isModuleActive(config.name, etablissementId);
-                return {
-                    name: config.name,
-                    label: config.label,
-                    description: config.description,
-                    icon: config.icon,
-                    basePath: config.basePath,
-                    category: MODULE_CATEGORIES[config.name],
-                    defaultActive: config.defaultActive,
-                    premium: config.premium,
-                    dependencies: config.dependencies,
-                    defaultRoles: config.defaultRoles,
-                    actif,
-                };
-            })
-        );
+
+        // Catalogue DB (source de vérité)
+        const catalogue = await moduleResolutionService.getCatalogue();
+
+        // Enrichissement entitlement (gating par abonnement)
+        let entitlementMap = new Map<string, { accessible: boolean; visible: boolean; raison: string; message?: string }>();
+        if (etablissementId) {
+            const entitlements = await entitlementService.checkAll(etablissementId);
+            entitlementMap = new Map(entitlements.map((e) => [e.code, {
+                accessible: e.entitlement.accessible,
+                visible: e.entitlement.visible,
+                raison: e.entitlement.raison,
+                message: e.entitlement.message,
+            }]));
+        }
+
+        const registry = catalogue.map((mc) => {
+            const ent = entitlementMap.get(mc.code);
+            const estAccessible = ent?.accessible ?? mc.actifParDefaut;
+            const estVisible = ent?.visible ?? true;
+            const raisonBlocage = (ent?.raison === 'OK' || ent?.raison === 'CRITIQUE') ? null : ent?.raison;
+
+            return {
+                name: mc.code,
+                label: mc.nom,
+                description: mc.description || '',
+                icon: mc.icone,
+                basePath: `/${mc.code}`,
+                category: mc.categorie,
+                defaultActive: mc.actifParDefaut,
+                premium: mc.estFacturable,
+                dependencies: mc.dependencies || [],
+                defaultRoles: mc.permissionsRequises || [],
+                actif: estAccessible,
+                // Champs entitlement (migration 200)
+                estAccessible,
+                estVisible,
+                raisonBlocage: raisonBlocage || null,
+                messageBlocage: ent?.message || null,
+            };
+        });
         res.json({ success: true, data: registry });
     } catch (error) { next(error); }
 });
@@ -284,32 +310,40 @@ router.get('/modules/:moduleNom/dependencies', authMiddleware, canViewConfigModu
         const moduleNom = req.params.moduleNom;
         const etablissementId = req.utilisateur?.etablissementId;
         
-        const registryConfig = MODULE_REGISTRY[moduleNom as ModuleName];
-        if (!registryConfig) {
-            throw new AppError(`Module "${moduleNom}" non trouvé dans le registre`, 404, 'MODULE_NOT_FOUND');
+        // P2.2 v7 — Lire depuis le catalogue DB
+        const { AppDataSource } = await import('@database/data-source');
+        const { ModuleCatalogue } = await import('@modules/billing/entities/module-catalogue.entity');
+        const catalogueRepo = AppDataSource.getRepository(ModuleCatalogue);
+        
+        const catalogueModule = await catalogueRepo.findOne({
+            where: { code: moduleNom, estActif: true },
+        });
+        if (!catalogueModule) {
+            throw new AppError(`Module "${moduleNom}" non trouvé dans le catalogue`, 404, 'MODULE_NOT_FOUND');
         }
 
-        // Dépendances (depuis ParametreSysteme - source de vérité)
+        // Dépendances directes (depuis catalogue DB)
         const dependances = [];
-        for (const dep of (registryConfig.dependencies || [])) {
-            const depConfig = MODULE_REGISTRY[dep];
+        for (const dep of (catalogueModule.dependencies || [])) {
+            const depCatalogue = await catalogueRepo.findOne({ where: { code: dep } });
             const actif = await configurationService.isModuleActive(dep, etablissementId);
             dependances.push({
                 nom: dep,
-                label: depConfig?.label || dep,
+                label: depCatalogue?.nom || dep,
                 actif,
                 requis: true,
             });
         }
 
-        // Reverse dépendances (depuis ParametreSysteme)
+        // Reverse dépendances (depuis catalogue DB via service)
         const reverseDependances = [];
-        for (const revDep of configurationService.getReverseDependencies(moduleNom)) {
-            const revConfig = MODULE_REGISTRY[revDep];
+        const reverseDeps = await configurationService.getReverseDependencies(moduleNom);
+        for (const revDep of reverseDeps) {
+            const revCatalogue = await catalogueRepo.findOne({ where: { code: revDep } });
             const actif = await configurationService.isModuleActive(revDep, etablissementId);
             reverseDependances.push({
                 nom: revDep,
-                label: revConfig?.label || revDep,
+                label: revCatalogue?.nom || revDep,
                 actif,
             });
         }
@@ -326,7 +360,7 @@ router.get('/modules/:moduleNom/dependencies', authMiddleware, canViewConfigModu
             success: true,
             data: {
                 moduleNom,
-                label: registryConfig.label,
+                label: catalogueModule.nom,
                 dependances,
                 reverseDependances,
                 estActif,
@@ -359,7 +393,12 @@ router.get('/parametres/categories', authMiddleware, canViewParams, async (req: 
 
 router.get('/parametres/categorie/:categorie', authMiddleware, canViewParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const parametres = await configurationService.getParametresByCategorie(req.params.categorie as CategorieParametre);
+        // Contexte plateforme → uniquement les paramètres globaux (sans etablissementId)
+        const estPlateforme = req.baseUrl?.includes('/platform') || req.utilisateur?.plane === 'platform';
+        const parametres = await configurationService.getParametresByCategorie(
+            req.params.categorie as CategorieParametre,
+            estPlateforme
+        );
         res.json({ success: true, data: parametres });
     } catch (error) { next(error); }
 });
@@ -433,6 +472,40 @@ router.post('/parametres', authMiddleware, canCreateParams, async (req: Request,
         });
     } catch (error) { next(error); }
 });
+
+// =============================================
+// ROUTES STATIQUES (avant les routes dynamiques :cle pour éviter les conflits Express)
+// =============================================
+
+router.put('/parametres/bulk', authMiddleware, canEditParams, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validateDto(updateParametresBulkSchema, req.body);
+        const count = await configurationService.updateParametresBulk(dto, req.utilisateur?.id, req);
+        res.json({ success: true, data: { updated: count }, message: `${count} paramètres mis à jour` });
+    } catch (error) { next(error); }
+});
+
+router.post('/parametres/reset-all', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { etablissementId } = req.body || {};
+        
+        const result = await configurationService.resetAllParametres(
+            etablissementId,
+            req.utilisateur?.id,
+            req
+        );
+
+        res.json({ 
+            success: true, 
+            data: result, 
+            message: `${result.resetCount} paramètres réinitialisés sur ${result.total}` 
+        });
+    } catch (error) { next(error); }
+});
+
+// =============================================
+// ROUTES DYNAMIQUES (après les routes statiques)
+// =============================================
 
 router.put('/parametres/:cle', authMiddleware, canEditParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -552,32 +625,6 @@ router.post('/parametres/:cle/reset', authMiddleware, canResetParams, async (req
     } catch (error) { next(error); }
 });
 
-router.post('/parametres/reset-all', authMiddleware, requirePermission('super_admin:all'), async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { etablissementId } = req.body || {};
-        
-        const result = await configurationService.resetAllParametres(
-            etablissementId,
-            req.utilisateur?.id,
-            req
-        );
-
-        res.json({ 
-            success: true, 
-            data: result, 
-            message: `${result.resetCount} paramètres réinitialisés sur ${result.total}` 
-        });
-    } catch (error) { next(error); }
-});
-
-router.put('/parametres/bulk', authMiddleware, canEditParams, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const dto = validateDto(updateParametresBulkSchema, req.body);
-        const count = await configurationService.updateParametresBulk(dto);
-        res.json({ success: true, data: { updated: count }, message: `${count} paramètres mis à jour` });
-    } catch (error) { next(error); }
-});
-
 // =============================================
 // HISTORIQUE
 // =============================================
@@ -692,7 +739,8 @@ router.get('/export', authMiddleware, canExportConfig, async (req: Request, res:
 
 /**
  * GET /configuration/modules-advanced/status
- * Statut de tous les modules (définitions avancées) pour un établissement.
+ * Statut de tous les modules (résolus + entitlement) pour un établissement.
+ * Refonte SaaS — Unification Modules (migration 200)
  */
 router.get('/modules-advanced/status', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -700,29 +748,55 @@ router.get('/modules-advanced/status', authMiddleware, canViewConfigModule, asyn
         if (!etablissementId) {
             throw new AppError('etablissementId requis', 400, 'MISSING_ETABLISSEMENT');
         }
-        const statuses = await moduleRegistry.getModulesStatus(etablissementId);
+        // Résolution des modules depuis le catalogue DB
+        const modulesResolus = await moduleResolutionService.getResolvedModules(etablissementId);
+        // Enrichissement avec l'entitlement (gating par abonnement)
+        const entitlements = await entitlementService.checkAll(etablissementId);
+        const entitlementMap = new Map(entitlements.map((e) => [e.code, e.entitlement]));
+
+        const statuses = modulesResolus.map((m) => {
+            const ent = entitlementMap.get(m.code);
+            return {
+                ...m,
+                estAccessible: ent?.accessible ?? false,
+                estVisible: ent?.visible ?? true,
+                raisonBlocage: ent?.raison === 'OK' || ent?.raison === 'CRITIQUE' ? null : ent?.raison,
+                messageBlocage: ent?.message || null,
+                sourceEntitlement: ent?.source || null,
+                planMinimalRequis: ent?.planMinimalRequis || null,
+            };
+        });
         res.json({ success: true, data: statuses });
     } catch (error) { next(error); }
 });
 
 /**
  * GET /configuration/modules-advanced/definitions
- * Toutes les définitions de modules.
+ * Catalogue complet des modules depuis la base de données.
+ * Refonte SaaS — Unification Modules (migration 200)
  */
 router.get('/modules-advanced/definitions', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const definitions = moduleRegistry.getAllDefinitions();
-        res.json({ success: true, data: definitions });
+        const catalogue = await moduleResolutionService.getCatalogue();
+        res.json({ success: true, data: catalogue });
     } catch (error) { next(error); }
 });
 
 /**
  * GET /configuration/modules-advanced/categories
- * Modules groupés par catégorie.
+ * Modules groupés par catégorie (depuis le catalogue DB).
+ * Refonte SaaS — Unification Modules (migration 200)
  */
 router.get('/modules-advanced/categories', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const categories = moduleRegistry.getModulesByCategorie();
+        const catalogue = await moduleResolutionService.getCatalogue();
+        // Grouper par catégorie
+        const categories: Record<string, any[]> = {};
+        for (const module of catalogue) {
+            const cat = module.categorie || 'AUTRE';
+            if (!categories[cat]) categories[cat] = [];
+            categories[cat].push(module);
+        }
         res.json({ success: true, data: categories });
     } catch (error) { next(error); }
 });
@@ -730,6 +804,7 @@ router.get('/modules-advanced/categories', authMiddleware, canViewConfigModule, 
 /**
  * PUT /configuration/modules-advanced/:moduleId/toggle
  * Active/désactive un module pour l'établissement.
+ * Refonte SaaS — Unification Modules (migration 200)
  */
 router.put('/modules-advanced/:moduleId/toggle', authMiddleware, canToggleModule, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -741,7 +816,7 @@ router.put('/modules-advanced/:moduleId/toggle', authMiddleware, canToggleModule
             throw new AppError('etablissementId requis', 400, 'MISSING_ETABLISSEMENT');
         }
 
-        await moduleRegistry.setModuleActif(moduleId, etablissementId, !!actif);
+        await configurationService.toggleModule(moduleId, !!actif, etablissementId);
 
         await historyService.logAction({
             utilisateurId: req.utilisateur?.id,
@@ -757,7 +832,8 @@ router.put('/modules-advanced/:moduleId/toggle', authMiddleware, canToggleModule
 
 /**
  * GET /configuration/modules-advanced/:moduleId/impact
- * Prévisualise l'impact de l'activation d'un module.
+ * Prévisualise l'impact de l'activation/désactivation d'un module.
+ * Refonte SaaS — Unification Modules (migration 200)
  */
 router.get('/modules-advanced/:moduleId/impact', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -766,7 +842,7 @@ router.get('/modules-advanced/:moduleId/impact', authMiddleware, canViewConfigMo
         if (!etablissementId) {
             throw new AppError('etablissementId requis', 400, 'MISSING_ETABLISSEMENT');
         }
-        const preview = await moduleRegistry.previewActivationImpact(moduleId, etablissementId);
+        const preview = await configurationService.calculerImpactActivation(moduleId, true, etablissementId);
         if (!preview) {
             throw new AppError(`Module "${moduleId}" introuvable`, 404, 'MODULE_NOT_FOUND');
         }
@@ -777,6 +853,7 @@ router.get('/modules-advanced/:moduleId/impact', authMiddleware, canViewConfigMo
 /**
  * GET /configuration/modules-advanced/:moduleId/config
  * Configuration spécifique d'un module.
+ * Refonte SaaS — Unification Modules (migration 200)
  */
 router.get('/modules-advanced/:moduleId/config', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -785,7 +862,7 @@ router.get('/modules-advanced/:moduleId/config', authMiddleware, canViewConfigMo
         if (!etablissementId) {
             throw new AppError('etablissementId requis', 400, 'MISSING_ETABLISSEMENT');
         }
-        const config = await moduleRegistry.getModuleConfig(moduleId, etablissementId);
+        const config = await configurationService.getConfigModule(moduleId, etablissementId);
         res.json({ success: true, data: config });
     } catch (error) { next(error); }
 });
@@ -793,6 +870,7 @@ router.get('/modules-advanced/:moduleId/config', authMiddleware, canViewConfigMo
 /**
  * PUT /configuration/modules-advanced/:moduleId/config
  * Met à jour la configuration d'un module.
+ * Refonte SaaS — Unification Modules (migration 200)
  */
 router.put('/modules-advanced/:moduleId/config', authMiddleware, canEditConfigModule, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -801,8 +879,73 @@ router.put('/modules-advanced/:moduleId/config', authMiddleware, canEditConfigMo
         if (!etablissementId) {
             throw new AppError('etablissementId requis', 400, 'MISSING_ETABLISSEMENT');
         }
-        await moduleRegistry.setModuleConfig(moduleId, etablissementId, req.body);
+        await configurationService.updateConfigModule(moduleId, req.body, etablissementId);
         res.json({ success: true, message: `Configuration du module ${moduleId} mise à jour` });
+    } catch (error) { next(error); }
+});
+
+// =============================================
+// VÉRIFICATION DE COHÉRENCE — v10
+// =============================================
+
+/**
+ * GET /configuration/consistency-check
+ * Vérifie la cohérence inter-cascades de la configuration
+ * 
+ * Détecte :
+ * - Modules désactivés avec feature flags actifs
+ * - Feature flags orphelins (sans module associé)
+ * - Paramètres de module manquants
+ */
+router.get('/consistency-check', authMiddleware, canViewConfigApp, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const report = await configConsistencyService.checkConsistency();
+        res.json({ success: true, data: report });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /configuration/consistency-check/:etablissementId
+ * Vérifie la cohérence pour un établissement spécifique
+ */
+router.get('/consistency-check/:etablissementId', authMiddleware, canViewConfigApp, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { etablissementId } = req.params;
+        const issues = await configConsistencyService.checkConsistencyForEtablissement(etablissementId);
+        res.json({ success: true, data: issues });
+    } catch (error) { next(error); }
+});
+
+// =============================================
+// CASCADE VIEW — v10
+// =============================================
+
+/**
+ * GET /configuration/cascade-view
+ * Vue en cascade de tous les paramètres avec leur valeur effective
+ * 
+ * Retourne pour chaque paramètre :
+ * - La valeur globale
+ * - Les valeurs par établissement (overrides)
+ * - La valeur effective pour chaque établissement (après cascade)
+ */
+router.get('/cascade-view', authMiddleware, canViewConfigApp, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { etablissementId } = req.query;
+        
+        // Récupérer tous les paramètres globaux
+        const paramsGlobaux = await configurationService.getParametres({ visible: true });
+        const paramsGlobauxOnly = paramsGlobaux.filter(p => !p.etablissementId);
+        
+        // Si un etablissementId est fourni, retourner la vue pour cet établissement
+        if (etablissementId) {
+            const vueEtablissement = await configurationService.getCascadeViewForEtablissement(etablissementId as string);
+            return res.json({ success: true, data: vueEtablissement });
+        }
+        
+        // Sinon, retourner la vue globale avec tous les établissements
+        const vueGlobale = await configurationService.getCascadeViewGlobal();
+        res.json({ success: true, data: vueGlobale });
     } catch (error) { next(error); }
 });
 

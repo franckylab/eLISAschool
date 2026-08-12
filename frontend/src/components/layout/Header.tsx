@@ -32,11 +32,11 @@ import { ConnectionIndicator } from '@/features/network';
 /** Rôles plateforme ayant accès au panel d'administration */
 const ROLES_PLATEFORME = [
     'SUPER_ADMIN',
-    'ADMINISTRATION_PLATEFORME',
-    'SECURITE_PLATEFORME',
-    'SUPPORT_PLATEFORME',
-    'COMMERCIAL_PLATEFORME',
-    'MONITORING_PLATEFORME',
+    'PLATEFORME_ADMIN',
+    'PLATEFORME_SUPPORT',
+    'PLATEFORME_BILLING',
+    'PLATEFORME_ANALYST',
+    'PLATEFORME_AUDITOR',
 ] as const;
 
 function estRolePlateforme(role?: string): boolean {

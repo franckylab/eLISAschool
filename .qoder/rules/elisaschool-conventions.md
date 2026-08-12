@@ -313,11 +313,62 @@ res.json({ success: true, message: 'Ressource supprimée' });
 
 ## 11. Authentification et autorisation
 
-- **Authentification** : `authMiddleware` extrait le JWT et attache `req.utilisateur = { id, email, role, etablissementId }`
+- **Authentification** : `authMiddleware` extrait le JWT et attache `req.utilisateur = { id, email, role, etablissementId, plane }`
 - **Autorisation** : `requireRoles(Role.SUPER_ADMIN, Role.ADMIN, ...)` vérifie le rôle
 - Appliquer les deux **par route** (pas de middleware global sur le router)
 - Routes publiques : ne pas mettre `authMiddleware` (rares, ex: login, register)
 - Rôles disponibles : `SUPER_ADMIN`, `ADMIN`, `CHEF_ETABLISSEMENT`, `ENSEIGNANT`, `PERSONNEL`, `RESPONSABLE_CANTINE`, `RESPONSABLE_TRANSPORT`, `PARENT`, `ELEVE`
+
+### 11.1 Auth Unifiée ADR-005 (v11) — Source unique de vérité
+
+**Architecture** : Un seul flux d'authentification pour tous les utilisateurs (tenant + plateforme). Table `utilisateurs` comme source unique.
+
+**Flux backend (`POST /api/auth/login`) :**
+1. Recherche multi-critère dans `utilisateurs` (email, matricule, pseudonyme, QR, UUID)
+2. 1 seul `bcrypt.compare` (pas de fallback vers une autre table)
+3. Si `mfaActif=true` → retourne `mfaToken` temporaire (5 min)
+4. Si `estPlateforme && isRolePlateforme(role)` → génère aussi les tokens plateforme
+
+**Réponse (`LoginResponseDto`) :**
+```typescript
+{
+  // Tokens tenant (flux normal)
+  accessToken?: string;
+  refreshToken?: string;
+  utilisateur?: {...};
+  
+  // MFA unifié (tenant + plateforme)
+  mfaRequired?: boolean;
+  mfaToken?: string;
+  
+  // ADR-005 : Accès plateforme détecté automatiquement
+  hasPlatformAccess?: boolean;
+  platformAccessToken?: string;
+  platformRefreshToken?: string;
+  platformRole?: string;  // ex: PLATEFORME_SUPER_ADMIN
+}
+```
+
+**Comportements frontend :**
+- **MFA requis** (`mfaRequired`) → redirect `/mfa-verify` (un seul flux)
+- **Tenant pur** → flux normal (sélection établissement ou dashboard)
+- **Tenant + Plateforme** → tokens tenant + tokens plateforme dans la même réponse
+
+**Détection plateforme :**
+- `utilisateur.estPlateforme = true` ET `isRolePlateforme(utilisateur.role)` → accès Control Plane
+- Rôles plateforme : `PLATEFORME_SUPER_ADMIN`, `PLATEFORME_ADMIN`, `PLATEFORME_SUPPORT`, `PLATEFORME_BILLING`, `PLATEFORME_ANALYST`, `PLATEFORME_AUDITOR`
+
+**JWT claims :**
+- `plane: 'platform'` pour les tokens plateforme
+- `plane: 'tenant'` (ou absent) pour les tokens tenant
+- Un seul `JWT_SECRET` (configurable via env)
+
+**Middlewares :**
+- `platformAuthMiddleware` : vérifie JWT + `plane: 'platform'` dans les claims
+- `dualCaslMiddleware` : `defineAbility()` unifié pour les deux contextes
+- `scopeDiscriminationMiddleware` : discrimination automatique Control/Data Plane
+
+**Tables supprimées (ADR-005) :** `identites`, `utilisateurs_plateforme`, `memberships`, `permissions_plateforme`, `mfa_configs`, `sessions_plateforme`
 
 ---
 
@@ -354,6 +405,14 @@ Les entités sont **auto-découvertes** par TypeORM via le glob pattern `modules
 - **NE PAS** créer de migration TypeORM manuelle — utiliser `migration:generate`
 - **NE PAS** commit de secrets dans `.env` — toujours documenter dans `.env.example`
 - **NE PAS** oublier que le frontend est ultra-responsif (100px-2560px) — structurer les API responses en conséquence (pagination, select partiel, etc.)
+
+### 14.1 Anti-patterns sécurité & configuration (v7.1)
+
+- **NE JAMAIS** bypasser le middleware RLS (`rls.middleware.ts`) — aucun code ne doit contourner `SET LOCAL app.current_tenant`. Le SUPER_ADMIN bypass via UUID sentinelle `00000000-0000-0000-0000-000000000000` est le seul autorisé. Les tokens plateforme (`plane='platform'`) sont REJETÉS par le middleware RLS (isolation structurelle).
+- **NE JAMAIS** stocker des paramètres applicatifs dans `.env` — seuls les secrets d'infrastructure y sont autorisés (DB credentials, JWT secrets, Redis, encryption key, SMTP, providers paiement). Les paramètres runtime (nom app, langue, devise, thème, etc.) vont dans `ParametreSysteme`.
+- **NE JAMAIS** modifier ou recréer `ConfigurationApp` — cette entité a été supprimée (v3.0, confirmé v7.1). `ParametreSysteme` est la source unique de vérité pour tous les paramètres runtime. Toute référence active à ConfigurationApp est une erreur (seuls les commentaires historiques et migrations anciennes sont tolérés).
+- **NE JAMAIS** utiliser un cache in-memory sans TTL — chaque cache Map doit avoir un TTL (défaut : 60s pour config, 5 min pour feature flags). Vérifier `Date.now() - timestamp < CACHE_TTL` avant chaque lecture. Les caches Redis ont aussi un TTL explicite via `redisService.setJSON(key, value, ttlSec)`.
+- **NE JAMAIS** désactiver un module CRITIQUE — les modules `auth`, `utilisateurs`, `configuration`, `notifications` sont toujours accessibles (bypass dans `module-active.middleware.ts`). Le service `configuration.service.ts` bloque aussi la désactivation via `categorie === 'CRITIQUE'` du catalogue DB.
 
 ---
 
@@ -960,72 +1019,94 @@ value as unknown as Map<string, number>
 
 ---
 
-## 22. Système d'Activation des Modules (v3.0+)
+## 22. Système d'Activation des Modules (v4.0 — migration 200)
 
-### Architecture
+### Architecture — EntitlementService (source unique de vérité)
 
-Le système d'activation/désactivation des modules repose sur **3 niveaux** avec `ParametreSysteme` comme source unique :
+**Refonte SaaS — Unification Modules (migration 200)**
 
-| Niveau | Source | Usage | Priorité |
-|--------|--------|-------|----------|
-| 1 | `ParametreSysteme` (scopé établissement) | Override établissement | **Priorité 1** |
-| 2 | `ParametreSysteme` (global) | Configuration globale | Fallback |
-| 3 | `MODULE_REGISTRY.defaultActive` | Valeur par défaut | Dernier fallback |
+Le système de gating des modules est unifié autour de **EntitlementService** (`backend/src/modules/billing/services/entitlement.service.ts`).
+Il remplace les 3 registres divergents (ModuleRegistryService supprimé, ModuleResolutionService cascade propre, ConfigurationService cascade propre).
 
-**⚠️ SUPPRIMÉ** : `ConfigurationApp` et `EtablissementConfig.modulesActifs` n'existent plus.
+**Cascade de résolution EntitlementService :**
+
+| Priorité | Source | Description |
+|----------|--------|-------------|
+| 0 | Module CRITIQUE (code) | Bypass total — toujours accessible |
+| 1 | Catalogue DB (`modules_catalogue`) | Module actif ? Existe ? |
+| 2 | Catégorie CRITIQUE | Bypass total — toujours accessible |
+| 3 | Abonnement ACTIF | Sans plan ACTIF → blocage |
+| 4 | Plan (`modulesInclus`) | Le plan inclut-il le module ? |
+| 5 | Override groupe (`ModulesGroupe`) | Activation/désactivation au niveau groupe |
+| 6 | Supplément (`AbonnementModule`) | Add-on souscrit ? |
+| 7 | Plan minimal requis | Rang du plan vs plan minimal du module |
+| 8 | Catalogue défaut (`actifParDefaut`) | Dernier fallback |
+
+**Modules critiques bypass** : `auth`, `utilisateurs`, `configuration`, `notifications`
 
 ### Conventions d'Implémentation
 
-**1. Middleware de Protection**
+**1. Middleware de Protection (unifié)**
 
 ```typescript
-// TOUJOURS appliquer sur les modules optionnels
+// requireModuleActive() utilise EntitlementService (source unique)
 app.use('/api/bulletins', requireModuleActive('bulletins'), bulletinsController);
 
-// JAMAIS sur les modules critiques
-app.use('/api/auth', authController);  // Pas de middleware
+// Modules critiques → EntitlementService retourne accessible: true automatiquement
 ```
 
-**Modules critiques exemptés** : `auth`, `utilisateurs`, `configuration`, `notifications`
-
-**2. Signature des Méthodes de Service**
+**2. Utilisation directe dans le code**
 
 ```typescript
-// toggleModule() — TOUJOURS passer etablissementId
-async toggleModule(
-    moduleNom: string,
-    actif: boolean,
-    etablissementId?: string,  // ← Multi-tenant
-    utilisateurId?: string,    // ← Historique
-    req?: Request              // ← Audit
-)
+import { entitlementService } from '@modules/billing/services/entitlement.service';
 
-// isModuleActive() — TOUJOURS passer etablissementId
-async isModuleActive(moduleNom: string, etablissementId?: string): Promise<boolean>
+// Check individuel
+const result = await entitlementService.check(etablissementId, 'bulletins');
+// result: { accessible, visible, raison, message, source, planMinimalRequis, planActuel }
+
+// Check batch (tous les modules)
+const all = await entitlementService.checkAll(etablissementId);
+
+// Boolean rapide
+const ok = await entitlementService.isAccessible(etablissementId, 'bulletins');
 ```
 
-**3. Vérification des Dépendances**
+**3. configurationService.isModuleActive() — cascade unifiée**
 
-- **Activation** : Auto-active les dépendances manquantes
-- **Désactivation** : Bloque si modules dépendants actifs (erreur 400)
-- **TOUJOURS** retourner la liste des modules auto-activés dans `modulesAutoActive`
+```
+Priorité 1 : ParametreSysteme scopé établissement (override)
+Priorité 2 : ParametreSysteme global (fallback)
+Priorité 3 : moduleResolutionService.isModuleActive() (catalogue DB + cascade)
+Priorité 4 : Catalogue DB actifParDefaut (fallback global sans etablissementId)
+```
 
-**4. Paramètres Système**
+**4. API REST enrichie**
 
-Chaque module a un paramètre `{module}.actif` créé par le seed :
+`GET /api/configuration/modules/registry` retourne maintenant :
 ```typescript
-// Utilisable dans n'importe quel service
-const actif = await getParamBoolean('notes.actif');
+{
+    name, label, description, icon, category, actif,
+    estAccessible: boolean,    // gating entitlement
+    estVisible: boolean,       // visible dans le catalogue
+    raisonBlocage: string,     // ABONNEMENT_INACTIF | PLAN_INSUFFICIENT | MODULE_DESACTIVE | etc.
+    messageBlocage: string,    // message explicatif pour le frontend
+}
 ```
+
+**5. Frontend — UI gating**
+
+- `ModulesTab.tsx` : modules non accessibles → cadenas + badge "Plan requis" + toggle grisé + CTA "Upgrader"
+- `CatalogueTab.tsx` / `ModuleCard.tsx` : même logique via `estAccessible` et `raisonBlocage`
+- `ModuleState` type inclut les champs entitlement
 
 ### Bonnes Pratiques
 
-- **TOUJOURS** utiliser `ParametreSysteme` avec `etablissementId` pour le multi-tenant
-- **TOUJOURS** invalider le cache après modification
-- **TOUJOURS** logger dans l'historique
-- **JAMAIS** bypasser le middleware de protection
+- **TOUJOURS** utiliser `entitlementService.check()` pour le gating (source unique)
+- **TOUJOURS** utiliser `entitlementService.invalidate()` après modification abonnement/plan
+- **JAMAIS** réintroduire de registre hardcoded (ModuleRegistryService supprimé)
+- **TOUJOURS** ajouter les nouveaux modules dans `modules_catalogue` (table DB) + seed idempotent
 - **VÉRIFIER** les dépendances avant d'activer un module
-- **EXCLURE** les modules critiques de la vérification
+- **EXCLURE** les modules critiques du gating (bypass automatique)
 
 ### Sécurité
 
@@ -1033,23 +1114,18 @@ const actif = await getParamBoolean('notes.actif');
 - **Permission** : `config:module:toggle` requise
 - **Audit** : Toutes les actions sont loguées avec utilisateur et timestamp
 - **Multi-tenant** : Isolation stricte par `etablissementId`
+- **Cache** : Redis TTL 60s + Pub/Sub cross-instance + in-memory fallback
 
 ### Pattern d'Intégration d'un Nouveau Module
 
 ```typescript
-// 1. Ajouter au registre (shared/src/config/config.registry.ts)
-[ModuleName.MON_MODULE]: {
-    name: ModuleName.MON_MODULE,
-    label: 'Mon Module',
-    defaultActive: false,
-    dependencies: [ModuleName.AUTH],
-    // ...
-}
+// 1. Ajouter dans modules_catalogue (migration SQL ou seed)
+INSERT INTO modules_catalogue (code, nom, categorie, plan_minimal, dependencies, ...)
 
 // 2. Appliquer le middleware (app.ts)
 app.use('/api/mon-module', requireModuleActive('mon-module'), monModuleController);
 
-// 3. Le seed crée automatiquement le paramètre 'mon_module.actif'
+// 3. EntitlementService résout automatiquement via le catalogue DB
 ```
 
 ---
@@ -1321,7 +1397,243 @@ Between(dateDebut, dateFin)
 
 ---
 
-## 26. Maintenance et skills disponibles
+## 26. Système de Configuration — Améliorations v7.1 (Audit)
+
+### 26.1 Suppression de ConfigurationApp (R1)
+
+**Entity supprimée** : `ConfigurationApp` (legacy monolithique dépréciée depuis v2.0).
+
+**Fichiers nettoyés** :
+- `configuration-app.entity.ts` — SUPPRIMÉ
+- `entities/index.ts` — export retiré
+- `tenant-isolation.subscriber.ts` — retiré du Set `GLOBAL_ENTITIES`
+- `etablissement.service.ts` — import dynamique supprimé
+- `config-backup.service.ts` — repo et logique ConfigurationApp retirés
+- `configuration-history.service.ts` — `restaurerConfigApp()` supprimé, case APP throw `LEGACY_NOT_SUPPORTED`
+
+**Règle** : `ParametreSysteme` est la **source unique** de vérité pour TOUS les paramètres runtime. `CibleConfiguration.APP` est conservé dans l'enum pour l'historique d'audit mais la restauration legacy n'est pas supportée.
+
+### 26.2 Cache Redis Pub/Sub (R2)
+
+**Pattern** : Invalidation cross-instance du cache via Redis pub/sub.
+
+```typescript
+const PUBSUB_CHANNEL = 'config:cache:invalidate';
+
+// Subscription dans le constructor
+redisService.subscribe(PUBSUB_CHANNEL, (message) => {
+    if (!type || type === 'modules') this.cache.modules.clear();
+    if (!type || type === 'parametres') this.cache.parametres.clear();
+});
+
+// Publication dans invalidateCache()
+redisService.publish(PUBSUB_CHANNEL, { type });
+```
+
+**Règles** :
+- **TOUJOURS** publier sur le canal pub/sub après invalidation locale
+- **Silencieux** en cas d'échec (mode single-instance fonctionnel sans Redis)
+- **Même canal** partagé avec `moduleResolutionService` pour cohérence
+
+### 26.3 Type ENCRYPTED pour Paramètres Sensibles (R3)
+
+**Nouveau type** : `TypeValeurParametre.ENCRYPTED` — chiffrement AES-256-GCM automatique.
+
+```typescript
+// Enum
+export enum TypeValeurParametre {
+    STRING = 'STRING', NUMBER = 'NUMBER', BOOLEAN = 'BOOLEAN',
+    JSON = 'JSON', ARRAY = 'ARRAY',
+    ENCRYPTED = 'ENCRYPTED', // v7.1 — valeurs chiffrées
+}
+
+// Écriture — chiffrement automatique
+const valeurSerialisee = typeValeur === TypeValeurParametre.ENCRYPTED
+    ? encrypt(JSON.stringify(dto.valeur))
+    : JSON.stringify(dto.valeur);
+
+// Lecture — déchiffrement automatique dans parseParametreValue()
+if (param.typeValeur === TypeValeurParametre.ENCRYPTED) {
+    const decrypted = decrypt(param.valeur);
+    return JSON.parse(decrypted);
+}
+```
+
+**Usage** : Paramètres contenant des credentials, secrets, tokens, clés API.
+
+**Migration** : `178-type-encrypted-parametres.sql` — ajoute `ENCRYPTED` à l'enum PostgreSQL.
+
+**Règles** :
+- **JAMAIS** stocker des secrets en clair dans `parametres_systeme`
+- **TOUJOURS** utiliser `TypeValeurParametre.ENCRYPTED` pour les valeurs sensibles
+- **TOUJOURS** utiliser `encrypt()`/`decrypt()` de `@common/utils/encryption.util`
+- La clé de chiffrement vient de `ENCRYPTION_KEY` dans `.env` (min 32 chars)
+
+### Fichiers de Référence v7.1
+
+| Fichier | Rôle |
+|---------|------|
+| `backend/src/modules/configuration/entities/parametre-systeme.entity.ts` | Enum TypeValeurParametre + ENCRYPTED |
+| `backend/src/modules/configuration/services/configuration.service.ts` | Service principal (cache, pub/sub, encrypt/decrypt) |
+| `backend/src/modules/configuration/services/configuration-history.service.ts` | Historique (legacy non supporté) |
+| `backend/src/common/utils/encryption.util.ts` | AES-256-GCM (encrypt, decrypt) |
+| `backend/src/common/services/redis.service.ts` | Redis pub/sub (publish, subscribe) |
+| `backend/database/migrations/178-type-encrypted-parametres.sql` | Migration enum ENCRYPTED |
+
+### 26.4 Anti-patterns critiques (audit sécurité)
+
+Ces 5 règles sont **non négociables** — voir aussi section 14.1 :
+
+1. **NE JAMAIS bypasser le middleware RLS** — `rls.middleware.ts` rejette explicitement (403) si aucun contexte tenant. Tokens plateforme interdits sur routes tenant.
+2. **NE JAMAIS stocker des paramètres applicatifs dans `.env`** — `.env` = secrets infrastructure uniquement. Runtime → `ParametreSysteme`.
+3. **NE JAMAIS modifier/recréer `ConfigurationApp`** — supprimée v3.0. `ParametreSysteme` = source unique.
+4. **NE JAMAIS utiliser un cache sans TTL** — défaut 60s (config), 5 min (feature flags). Toujours vérifier `Date.now() - timestamp < CACHE_TTL`.
+5. **NE JAMAIS désactiver un module CRITIQUE** — `auth`, `utilisateurs`, `configuration`, `notifications` toujours accessibles (double protection : middleware + service).
+
+---
+
+## 27. Module CMS — Pages Publiques White-Label
+
+### Architecture
+
+Le module CMS permet à chaque établissement de gérer ses pages publiques (site vitrine white-label) :
+- **7 entités** : CmsPage, CmsSection, CmsMedia, CmsTheme, CmsMenu, CmsWidget, CmsVersion
+- **18 types de sections** : HERO, TEXTE, GALERIE, CARTE_INFOS, TEMOIGNAGES, CHIFFRES_CLES, EQUIPE, FORMULAIRE, CARTE, VIDEO, TELECHARGEMENTS, ACTUALITES, HORAIRES, PARTENAIRES, FAQ, APPEL_ACTION, SEPARATEUR, HTML_CUSTOM
+- **API publique** sans authentification (`/api/public/etablissements/:code/*`)
+- **API admin** authentifiée (`/api/cms/*`) avec RBAC + module active check
+- **Cache Redis** : TTL 300s (pages), 600s (thèmes), invalidation à chaque mutation
+- **Rate limiting** : 60 req/min/IP sur routes publiques
+- **RLS PostgreSQL** activé sur les 7 tables CMS
+- **Versioning** : Snapshot avant chaque modification, rollback possible
+
+### Routage Public — Convention `/e/:code`
+
+Les pages publiques établissement utilisent le routing path-based TanStack Router :
+- **Accueil** : `/e/$code` → `routes/e.$code.tsx`
+- **Page interne** : `/e/$code/$slug` → `routes/e.$code.$slug.tsx`
+- **Galerie** : `/e/$code/galerie` → `routes/e.$code.galerie.tsx` (masonry, lightbox, filtres)
+- **Contact** : `/e/$code/contact` → `routes/e.$code.contact.tsx` (formulaire + carte OSM)
+- **Inscriptions** : `/e/$code/inscriptions` → `routes/e.$code.inscriptions.tsx` (stepper 4 étapes)
+- **`code`** = `codeEtablissement` (champ unique sur `Etablissement`)
+
+### Pattern API Publique (Projection Restrictive)
+
+```typescript
+// ✅ CORRECT — Projection restrictive (colonnes publiques uniquement)
+const COLONNES_PUBLIQUES = [
+    'id', 'nom', 'code', 'slogan', 'description', 'logo',
+    'couleurPrincipale', 'email', 'telephone', 'adresse',
+];
+// ❌ INTERDIT — Exposer des champs sensibles
+// numeroContribuable, numeroCompteBancaire, siret, etc.
+```
+
+### Pattern Cache Redis (Singleton)
+
+```typescript
+// ✅ CORRECT — Utiliser le singleton redisService
+import { redisService } from '@common/services/redis.service';
+const cached = await redisService.get(cacheKey);
+await redisService.set(cacheKey, data, ttlSecondes);
+await redisService.del(cacheKey);
+
+// ❌ INTERDIT — Instancier RedisService directement
+import { RedisService } from ... // Non exporté
+const redis = new RedisService(); // NE FONCTIONNE PAS
+```
+
+### Exception Auth API Client (Frontend)
+
+Les routes `/api/public/*` sont exemptées d'authentification dans `api-client.ts` :
+```typescript
+const authRoutes = [
+    '/api/auth/login', '/api/auth/register', ...
+    '/api/public', // ← Routes publiques CMS (sans auth)
+];
+```
+
+### Montage Routes (app.ts)
+
+```typescript
+// AVANT tenantMiddleware (routes publiques sans auth)
+app.use('/api/public', publicEtablissementController);
+
+// APRÈS tenantMiddleware (routes admin avec auth + RBAC)
+app.use('/api/cms', authMiddleware, requireModuleActive('cms'), filterByEtablissement(), cmsController);
+```
+
+### Permissions RBAC CMS (18)
+
+- **Pages** : `cms:pages:view`, `cms:pages:create`, `cms:pages:edit`, `cms:pages:delete`, `cms:pages:publish`
+- **Sections** : `cms:sections:view`, `cms:sections:create`, `cms:sections:edit`, `cms:sections:delete`
+- **Médias** : `cms:medias:view`, `cms:medias:upload`, `cms:medias:delete`
+- **Thèmes** : `cms:themes:view`, `cms:themes:edit`
+- **Menus** : `cms:menus:edit`
+- **Widgets** : `cms:widgets:edit`
+- **Versions** : `cms:versions:view`, `cms:versions:rollback`
+
+### Frontend — Routes Éditeur CMS
+
+L'éditeur CMS utilise le layout `_auth.cms.tsx` avec navigation par onglets :
+
+| Route | Fichier | Description |
+|-------|---------|-------------|
+| `/cms` | `_auth.cms.index.tsx` | Dashboard (stats, pages récentes) |
+| `/cms/pages` | `_auth.cms.pages.tsx` | Liste pages + filtres + création |
+| `/cms/pages/:id` | `_auth.cms.pages.$id.tsx` | Éditeur 3 colonnes (palette, canvas, propriétés) |
+| `/cms/medias` | `_auth.cms.medias.tsx` | Bibliothèque médias (grille/liste, upload) |
+| `/cms/themes` | `_auth.cms.themes.tsx` | Gestion thèmes (cartes, customizer modal) |
+| `/cms/menus` | `_auth.cms.menus.tsx` | Éditeur navigation (items par emplacement) |
+| `/cms/widgets` | `_auth.cms.widgets.tsx` | CRUD widgets (4 emplacements) |
+| `/cms/versions` | `_auth.cms.versions.tsx` | Timeline versions, diff, rollback |
+
+### Frontend — Composants Partagés CMS
+
+| Composant | Rôle |
+|-----------|------|
+| `CmsMediaUpload.tsx` | Upload drag & drop (progress, preview, base64) |
+| `CmsSectionEditor.tsx` | Éditeur section générique (SECTION_CONFIG pour 18 types) |
+| `CmsThemeCustomizer.tsx` | Personnalisation thème (presets, couleurs, typo, preview live) |
+| `PublicLayout.tsx` | Layout public (CSS vars depuis thème, header, footer) |
+| `CmsPageRenderer.tsx` | Rendu 18 types de sections |
+| `CmsDashboard.tsx` | Dashboard admin basique |
+
+### Fichiers de Référence
+
+| Fichier | Rôle |
+|---------|------|
+| `backend/src/modules/cms/entities/` | 7 entités TypeORM |
+| `backend/src/modules/cms/services/cms.service.ts` | CRUD admin + versioning |
+| `backend/src/modules/cms/services/public-etablissement.service.ts` | API publique + cache |
+| `backend/src/modules/cms/controllers/cms.controller.ts` | Routes admin (15 routes) |
+| `backend/src/modules/cms/controllers/public-etablissement.controller.ts` | Routes publiques (8 routes) |
+| `frontend/src/features/cms/types/cms.types.ts` | Types/enums CMS |
+| `frontend/src/features/cms/hooks/use-cms-public.ts` | 7 hooks API publique |
+| `frontend/src/features/cms/hooks/use-cms-admin.ts` | 18+ hooks CRUD admin |
+| `frontend/src/features/cms/components/PublicLayout.tsx` | Layout public (header+footer) |
+| `frontend/src/features/cms/components/CmsPageRenderer.tsx` | Rendu 18 sections |
+| `frontend/src/features/cms/components/CmsDashboard.tsx` | Dashboard admin |
+| `frontend/src/features/cms/components/CmsMediaUpload.tsx` | Upload média drag & drop |
+| `frontend/src/features/cms/components/CmsSectionEditor.tsx` | Éditeur section générique |
+| `frontend/src/features/cms/components/CmsThemeCustomizer.tsx` | Personnalisation thème |
+| `frontend/src/routes/e.$code.tsx` | Route publique accueil |
+| `frontend/src/routes/e.$code.$slug.tsx` | Route publique page |
+| `frontend/src/routes/e.$code.galerie.tsx` | Page galerie publique |
+| `frontend/src/routes/e.$code.contact.tsx` | Page contact publique |
+| `frontend/src/routes/e.$code.inscriptions.tsx` | Page inscriptions publique |
+| `frontend/src/routes/_auth.cms.tsx` | Layout éditeur CMS (7 onglets) |
+| `frontend/src/routes/_auth.cms.index.tsx` | Dashboard CMS |
+| `frontend/src/routes/_auth.cms.pages.tsx` | Liste pages + création |
+| `frontend/src/routes/_auth.cms.pages.$id.tsx` | Éditeur page 3 colonnes |
+| `frontend/src/routes/_auth.cms.medias.tsx` | Bibliothèque médias |
+| `frontend/src/routes/_auth.cms.themes.tsx` | Gestion thèmes |
+| `frontend/src/routes/_auth.cms.menus.tsx` | Éditeur navigation |
+| `frontend/src/routes/_auth.cms.widgets.tsx` | Gestion widgets |
+| `frontend/src/routes/_auth.cms.versions.tsx` | Historique versions |
+
+---
+
+## 28. Maintenance et skills disponibles
 
 Cette règle et les skills associés sont conçus pour **évoluer avec le projet** :
 
@@ -1337,3 +1649,151 @@ Cette règle et les skills associés sont conçus pour **évoluer avec le projet
 - **Revue périodique** : Tous les 10-15 modules ajoutés
 
 > **Pour demander une mise à jour** : *« mets à jour la règle »* ou *« actualise le skill »* en précisant le changement.
+
+---
+
+## 29. Système de Configuration v10 — Améliorations Majeures
+
+### 29.1 Cascade 4 Niveaux (v10)
+
+La résolution des paramètres suit maintenant une cascade à **4 niveaux** :
+
+```
+1. Établissement (priorité maximale) — paramètre scopé à l'établissement
+2. Groupe — paramètre scopé au groupe d'établissements (via GroupeEtablissementLien)
+3. Global — paramètre sans etablissementId (etablissementId = NULL)
+4. Défaut — valeur par défaut du système
+```
+
+**Fichier** : `backend/src/modules/configuration/services/configuration.service.ts`
+
+```typescript
+// Résolution dans getParametre()
+if (etablissementId) {
+    // 1. Override établissement
+    const paramScope = await this.parametreRepository.findOne({ where: { cle, etablissementId } });
+    if (paramScope) return this.parseParametreValue(paramScope);
+    
+    // 2. v10 — Override groupe
+    const groupeId = await this.resoudreGroupeEtablissement(etablissementId);
+    if (groupeId) {
+        const paramGroupe = await this.parametreRepository.findOne({ where: { cle, groupeEtablissementId: groupeId } });
+        if (paramGroupe) return this.parseParametreValue(paramGroupe);
+    }
+}
+
+// 3. Fallback global
+const paramGlobal = await this.parametreRepository.findOne({ where: { cle, etablissementId: IsNull() } });
+```
+
+### 29.2 Cache Unifié 3 Niveaux (v10)
+
+Le cache suit maintenant un pattern à **3 niveaux** :
+
+```
+In-Memory (60s) → Redis (60s) → PostgreSQL
+```
+
+**Constants** :
+- `CACHE_TTL = 60 * 1000` (60 secondes in-memory)
+- `REDIS_CACHE_TTL = 60` (60 secondes Redis)
+- `REDIS_CACHE_PREFIX = 'config:param'`
+
+**Invalidation** :
+- Invalidation locale via `invalidateCache()`
+- Invalidation Redis via SCAN + DEL
+- Propagation cross-instance via Redis Pub/Sub (`config:cache:invalidate`)
+
+### 29.3 Suppression du Double Cache (v10)
+
+Le `quickCache` local dans `config.helper.ts` a été **supprimé**. Les helpers délèguent maintenant directement au `ConfigurationService`.
+
+**Raison** : Le double cache créait un risque de désynchronisation. Le cache du service (60s + pub/sub) est suffisant.
+
+### 29.4 Batch Loading (v10)
+
+Nouvelle méthode `getParametresBatch(cles: string[], etablissementId?: string)` pour charger plusieurs paramètres en une seule requête SQL.
+
+**Usage** :
+```typescript
+const params = await configurationService.getParametresBatch(
+    ['auth.session_duration', 'auth.max_login_attempts', 'app.nom'],
+    etablissementId
+);
+// Retourne Map<string, any>
+```
+
+### 29.5 Validation Zod des Valeurs (v10)
+
+Les valeurs des paramètres sont maintenant validées par des schémas Zod avant sauvegarde.
+
+**Fichier** : `backend/src/modules/configuration/utils/param-validation.ts`
+
+**Schémas par type** :
+- `STRING` : `z.string().min(0).max(10000)`
+- `NUMBER` : `z.number().finite()`
+- `BOOLEAN` : `z.boolean()`
+- `JSON` : `z.any()`
+- `ARRAY` : `z.array(z.any())`
+- `ENCRYPTED` : `z.string().min(1)`
+
+**Schémas par clé** (exemples) :
+- `auth.session_duration` : `z.number().int().min(60).max(86400)`
+- `auth.password_min_length` : `z.number().int().min(6).max(128)`
+- `app.version` : `z.string().regex(/^\d+\.\d+\.\d+$/)`
+
+### 29.6 ConfigConsistencyChecker (v10)
+
+Service de vérification de cohérence inter-cascades.
+
+**Fichier** : `backend/src/modules/configuration/services/config-consistency.service.ts`
+
+**Vérifications** :
+- Modules désactivés avec feature flags actifs → `error`
+- Feature flags orphelins (sans module associé) → `info`
+- Paramètres de module manquants → `warning`
+
+**Endpoints** :
+- `GET /api/configuration/consistency-check` — Rapport global
+- `GET /api/configuration/consistency-check/:etablissementId` — Rapport par établissement
+
+### 29.7 Dashboard Cascade (v10)
+
+Vue plateforme montrant tous les paramètres avec leur valeur effective par établissement.
+
+**Fichier frontend** : `frontend/src/routes/platform.configuration-cascade.tsx`
+
+**Endpoints backend** :
+- `GET /api/configuration/cascade-view` — Vue globale
+- `GET /api/configuration/cascade-view?etablissementId=xxx` — Vue par établissement
+
+**Retourne pour chaque paramètre** :
+- Valeur globale
+- Valeur groupe (si applicable)
+- Valeur établissement (override)
+- Valeur effective (après cascade)
+- Source de la valeur effective (`etablissement` | `groupe` | `global` | `defaut`)
+
+### 29.8 TTL Harmonisés (v10)
+
+Tous les caches de configuration sont maintenant harmonisés à **60 secondes** :
+
+| Service | TTL avant | TTL après |
+|---------|-----------|-----------|
+| ConfigurationService | 60s | 60s ✓ |
+| FeatureFlagService | 5 min | 60s ✓ |
+| ModuleResolutionService | 60s | 60s ✓ |
+| TrancheConfigService | N/A | N/A |
+
+### 29.9 Fichiers de Référence v10
+
+| Fichier | Rôle |
+|---------|------|
+| `backend/src/modules/configuration/services/configuration.service.ts` | Service principal (cascade 4 niveaux, cache 3 niveaux, batch) |
+| `backend/src/modules/configuration/utils/config.helper.ts` | Helpers (délégation directe au service) |
+| `backend/src/modules/configuration/utils/param-validation.ts` | Validation Zod des valeurs |
+| `backend/src/modules/configuration/services/config-consistency.service.ts` | Vérification cohérence |
+| `backend/src/modules/billing/services/feature-flags.service.ts` | Feature flags (TTL 60s) |
+| `frontend/src/routes/platform.configuration-cascade.tsx` | Dashboard cascade |
+
+---

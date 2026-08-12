@@ -2,14 +2,17 @@
  * ==================================
  * eLISAschool - Service d'Audit
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
- * 
- * Journalisation sécurisée des actions sensibles
+ *
+ * Durcissement v9 — Audit Log Integrity Signing (HMAC-SHA256)
+ * Chaque log contient le hash du précédent (chaîne blockchain-like).
+ * Détection de falsification via verifierIntegrite().
  */
 
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { Request } from 'express';
+import crypto from 'crypto';
 import UAParser from 'ua-parser-js';
 import { AppDataSource } from '@database/data-source';
 import { AuditLog, AuditAction, AuditSeverity } from '../entities/audit-log.entity';
@@ -48,13 +51,35 @@ export interface AuditOptions {
  */
 export class AuditService {
     private auditRepo: Repository<AuditLog>;
+    /** Hash du dernier log écrit (chaîne HMAC) */
+    private dernierHash: string | null = null;
 
     constructor() {
         this.auditRepo = AppDataSource.getRepository(AuditLog);
     }
 
     /**
-     * Enregistre une action dans le log d'audit
+     * Calcule la clé HMAC pour la signature des audit logs.
+     * Utilise AUDIT_HMAC_KEY si définie, sinon fallback ENCRYPTION_KEY.
+     */
+    private getHmacKey(): string {
+        return process.env.AUDIT_HMAC_KEY || process.env.ENCRYPTION_KEY || 'audit-hmac-fallback-dev';
+    }
+
+    /**
+     * Calcule le hash HMAC-SHA256 pour une entrée d'audit.
+     * Chaîne : HMAC(hash_precedent + payload, clé)
+     */
+    private calculerHash(payload: string, hashPrecedent: string | null): string {
+        const data = (hashPrecedent || 'GENESIS') + ':' + payload;
+        return crypto
+            .createHmac('sha256', this.getHmacKey())
+            .update(data)
+            .digest('hex');
+    }
+
+    /**
+     * Enregistre une action dans le log d'audit avec signature HMAC.
      */
     async log(options: AuditOptions, req?: Request): Promise<AuditLog> {
         const rawUserAgent = options.userAgent ?? req?.headers['user-agent'];
@@ -75,6 +100,21 @@ export class AuditService {
 
         const auditLog = this.auditRepo.create(sanitizedOptions);
 
+        // =============================================
+        // Durcissement v9 — Signature HMAC (chaîne blockchain-like)
+        // =============================================
+        const payload = JSON.stringify({
+            action: auditLog.action,
+            utilisateurId: auditLog.utilisateurId,
+            cibleId: auditLog.cibleId,
+            etablissementId: auditLog.etablissementId,
+            description: auditLog.description,
+            createdAt: auditLog.createdAt?.toISOString() || new Date().toISOString(),
+        });
+
+        auditLog.integriteHash = this.calculerHash(payload, this.dernierHash);
+        this.dernierHash = auditLog.integriteHash;
+
         await this.auditRepo.save(auditLog);
 
         // Log aussi dans Winston pour backup
@@ -82,6 +122,57 @@ export class AuditService {
         logger[logLevel](`[AUDIT] ${options.action}: ${options.description || ''}`);
 
         return auditLog;
+    }
+
+    /**
+     * Vérifie l'intégrité de la chaîne d'audit logs.
+     * Recalcule les hashes et compare avec ceux stockés.
+     * 
+     * @returns Liste des anomalies détectées (logs falsifiés ou manquants)
+     */
+    async verifierIntegrite(
+        etablissementId: string,
+        dateDebut: Date,
+        dateFin: Date,
+    ): Promise<{ valide: boolean; anomalies: { logId: string; raison: string }[] }> {
+        const logs = await this.auditRepo.find({
+            where: {
+                etablissementId,
+                createdAt: Between(dateDebut, dateFin),
+            },
+            order: { createdAt: 'ASC' },
+        });
+
+        const anomalies: { logId: string; raison: string }[] = [];
+        let hashPrecedent: string | null = null;
+
+        for (const log of logs) {
+            const payload = JSON.stringify({
+                action: log.action,
+                utilisateurId: log.utilisateurId,
+                cibleId: log.cibleId,
+                etablissementId: log.etablissementId,
+                description: log.description,
+                createdAt: log.createdAt?.toISOString(),
+            });
+
+            const hashAttendu = this.calculerHash(payload, hashPrecedent);
+
+            if (log.integriteHash !== hashAttendu) {
+                anomalies.push({
+                    logId: log.id,
+                    raison: `Hash attendu: ${hashAttendu.substring(0, 16)}..., hash trouvé: ${log.integriteHash?.substring(0, 16) || 'null'}...`,
+                });
+            }
+
+            hashPrecedent = log.integriteHash;
+        }
+
+        if (anomalies.length > 0) {
+            logger.error(`[Audit Intégrité] ${anomalies.length} anomalie(s) détectée(s) pour établissement ${etablissementId}`);
+        }
+
+        return { valide: anomalies.length === 0, anomalies };
     }
 
     /**

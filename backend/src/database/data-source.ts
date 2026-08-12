@@ -10,7 +10,7 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { databaseConfig } from '@config/database.config';
 import { envConfig } from '@config/env.config';
-import { cleanOrphanHeuresCours } from './pre-sync-cleanup';
+import { cleanOrphanHeuresCours, cleanDeprecatedRoles } from './pre-sync-cleanup';
 import { applyPartialIndexes } from './post-sync-indexes';
 import { logger } from '@common/utils/logger.util';
 
@@ -21,6 +21,15 @@ export async function initializeDatabase(): Promise<DataSource> {
         if (databaseConfig.synchronize) {
             logger.info('🧹 Pré-nettoyage avant synchronize...');
             await cleanOrphanHeuresCours({
+                host: envConfig.database.host,
+                port: envConfig.database.port,
+                user: envConfig.database.user,
+                password: envConfig.database.password,
+                database: envConfig.database.name,
+            });
+            // Nettoyer les rôles obsolètes (PLATEFORME_SUPER_ADMIN, etc.)
+            // avant que TypeORM ne tente d'ALTER COLUMN enum
+            await cleanDeprecatedRoles({
                 host: envConfig.database.host,
                 port: envConfig.database.port,
                 user: envConfig.database.user,

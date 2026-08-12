@@ -130,6 +130,37 @@ export function defineAbility(ctx: AbilityContext): AppAbility {
         case 'ELEVE':
             defineEleveAbility(can, ctx);
             break;
+
+        // =============================================
+        // Durcissement v9 — G7 : Rôles plateforme en contexte tenant
+        // Permissions minimales pour les utilisateurs plateforme opérant en tenant
+        // =============================================
+        case 'ADMIN_PLATEFORME':
+            // Lecture seule en tenant (support/administration plateforme)
+            can('read', 'all');
+            break;
+        case 'SUPPORT':
+            // Lecture + gestion tickets
+            can('read', 'all');
+            can('update', 'Messagerie');
+            break;
+        case 'OBSERVATEUR':
+            // Lecture seule
+            can('read', 'all');
+            break;
+        case 'GESTIONNAIRE_GROUPES':
+            // Lecture des établissements (filtrage par groupe appliqué au niveau middleware)
+            can('read', 'Etablissement');
+            can('read', 'Utilisateur');
+            break;
+        case 'FACTURATION':
+            // Lecture + gestion factures
+            can('read', 'all');
+            can('manage', 'Finances');
+            can('manage', 'Paiement');
+            can('manage', 'Cantine');
+            break;
+
         default:
             // Rôles secondaires — permissions minimales
             defineDefaultAbility(can, ctx);
