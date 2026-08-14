@@ -17,6 +17,7 @@ import { AbonnementModule } from './abonnement-module.entity';
 
 export enum StatutAbonnement {
     ACTIF = 'ACTIF',
+    ESSAI = 'ESSAI',
     EXPIRE = 'EXPIRE',
     SUSPENDU = 'SUSPENDU',
     ANNULE = 'ANNULE',
@@ -79,6 +80,14 @@ export class AbonnementClient {
 
     @Column({ type: 'text', nullable: true })
     notes?: string;
+
+    /** Date de fin de période d'essai (14 jours après création) */
+    @Column({ type: 'timestamp', nullable: true })
+    periodeEssaiFin?: Date;
+
+    /** Date réelle d'expiration (J0 dégradation) — trackée séparément de dateFin */
+    @Column({ type: 'timestamp', nullable: true })
+    dateExpirationReelle?: Date;
 
     // Relations
     @OneToMany(() => Facture, (facture) => facture.abonnement)

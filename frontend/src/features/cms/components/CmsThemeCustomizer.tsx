@@ -11,7 +11,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import type { CmsTheme } from '../types/cms.types';
-import { Check, Eye, RotateCcw } from 'lucide-react';
+import { Check, Eye, RotateCcw, Palette, Sparkles } from 'lucide-react';
+import { ColorPicker } from '@/components/ui/ColorPicker';
+import { THEME_PRESETS, CATEGORIE_LABELS, CATEGORIE_COLORS, type ThemePreset } from '../lib/theme-presets';
 
 interface CmsThemeCustomizerProps {
     theme: Partial<CmsTheme>;
@@ -62,6 +64,9 @@ export function CmsThemeCustomizer({ theme, onChange, onReset }: CmsThemeCustomi
         corps: "'Inter', sans-serif",
     });
 
+    const [categorieFiltre, setCategorieFiltre] = useState<ThemePreset['categorie'] | 'tous'>('tous');
+    const [themeActif, setThemeActif] = useState<string | null>(null);
+
     // Sync avec le parent
     useEffect(() => {
         onChange({ couleurs, typographie });
@@ -86,13 +91,101 @@ export function CmsThemeCustomizer({ theme, onChange, onReset }: CmsThemeCustomi
             secondaire: preset.secondaire,
             accent: preset.accent,
         }));
+        setThemeActif(null);
     };
+
+    /** Applique un thème complet (one-click) */
+    const appliquerThemePreset = (preset: ThemePreset) => {
+        setCouleurs({ ...preset.theme.couleurs });
+        setTypographie({ ...preset.theme.typographie });
+        setThemeActif(preset.id);
+    };
+
+    const themesFiltres = categorieFiltre === 'tous'
+        ? THEME_PRESETS
+        : THEME_PRESETS.filter(t => t.categorie === categorieFiltre);
+
+    const categories = Object.entries(CATEGORIE_LABELS) as [ThemePreset['categorie'], string][];
 
     return (
         <div className="space-y-6">
-            {/* Presets de couleurs */}
+            {/* ─── Thèmes prédéfinis one-click ─────────────────────── */}
             <div>
-                <label className="mb-2 block text-sm font-semibold">Presets de couleurs</label>
+                <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                    <Sparkles className="h-4 w-4 text-amber-500" />
+                    Thèmes prédéfinis
+                </label>
+                {/* Filtre catégories */}
+                <div className="mb-3 flex flex-wrap gap-1.5">
+                    <button
+                        onClick={() => setCategorieFiltre('tous')}
+                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                            categorieFiltre === 'tous'
+                                ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'
+                        }`}
+                    >
+                        Tous
+                    </button>
+                    {categories.map(([key, label]) => (
+                        <button
+                            key={key}
+                            onClick={() => setCategorieFiltre(key)}
+                            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                                categorieFiltre === key
+                                    ? 'text-white'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400'
+                            }`}
+                            style={categorieFiltre === key ? { backgroundColor: CATEGORIE_COLORS[key] } : undefined}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+                {/* Grille de thèmes */}
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                    {themesFiltres.map(preset => (
+                        <button
+                            key={preset.id}
+                            onClick={() => appliquerThemePreset(preset)}
+                            className={`group relative flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 transition-all hover:scale-[1.02] ${
+                                themeActif === preset.id
+                                    ? 'border-primary bg-primary/5 shadow-md'
+                                    : 'border-transparent bg-gray-50 hover:border-gray-200 hover:shadow-sm dark:bg-gray-800/50 dark:hover:border-gray-700'
+                            }`}
+                            title={preset.description}
+                        >
+                            {/* Preview miniature du thème */}
+                            <div
+                                className="h-10 w-full rounded-lg"
+                                style={{
+                                    background: `linear-gradient(135deg, ${preset.theme.couleurs.primaire}, ${preset.theme.couleurs.secondaire})`,
+                                }}
+                            >
+                                <div className="flex h-full items-center justify-center text-lg">
+                                    {preset.thumbnail}
+                                </div>
+                            </div>
+                            <span className="text-[10px] font-medium leading-tight text-center">
+                                {preset.nom}
+                            </span>
+                            {/* Badge actif */}
+                            {themeActif === preset.id && (
+                                <div className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-white">
+                                    <Check className="h-2.5 w-2.5" />
+                                </div>
+                            )}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* ─── Presets de couleurs rapides ─────────────────────── */}
+            <div>
+                <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                    <Palette className="h-4 w-4" />
+                    Presets de couleurs
+                </label>
                 <div className="grid grid-cols-4 gap-2">
                     {COULEURS_PRESETS.map(preset => (
                         <button
@@ -112,7 +205,7 @@ export function CmsThemeCustomizer({ theme, onChange, onReset }: CmsThemeCustomi
                 </div>
             </div>
 
-            {/* Couleurs individuelles */}
+            {/* ─── Couleurs individuelles ──────────────────────────── */}
             <div>
                 <label className="mb-2 block text-sm font-semibold">Couleurs personnalisées</label>
                 <div className="grid grid-cols-2 gap-3">
@@ -149,7 +242,7 @@ export function CmsThemeCustomizer({ theme, onChange, onReset }: CmsThemeCustomi
                 </div>
             </div>
 
-            {/* Typographie */}
+            {/* ─── Typographie ─────────────────────────────────────── */}
             <div>
                 <label className="mb-2 block text-sm font-semibold">Typographie</label>
                 <div className="grid grid-cols-2 gap-3">
@@ -180,7 +273,7 @@ export function CmsThemeCustomizer({ theme, onChange, onReset }: CmsThemeCustomi
                 </div>
             </div>
 
-            {/* Reset */}
+            {/* ─── Reset ──────────────────────────────────────────── */}
             {onReset && (
                 <button
                     onClick={onReset}
@@ -191,7 +284,7 @@ export function CmsThemeCustomizer({ theme, onChange, onReset }: CmsThemeCustomi
                 </button>
             )}
 
-            {/* Preview live */}
+            {/* ─── Preview live ───────────────────────────────────── */}
             <div>
                 <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
                     <Eye className="h-4 w-4" />
@@ -242,20 +335,11 @@ export function CmsThemeCustomizer({ theme, onChange, onReset }: CmsThemeCustomi
 // ==================================
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
     return (
-        <div className="flex items-center gap-2">
-            <input
-                type="color"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className="h-8 w-8 shrink-0 cursor-pointer rounded border-0 p-0"
-            />
-            <input
-                type="text"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className="flex-1 rounded-lg border px-2 py-1.5 text-xs font-mono outline-none focus:ring-2 focus:ring-primary/50"
-            />
-            <span className="text-[10px] opacity-50 w-16">{label}</span>
-        </div>
+        <ColorPicker
+            label={label}
+            value={value}
+            onChange={onChange}
+            compactColors={['#22c55e', '#3b82f6', '#ef4444', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#000000', '#ffffff']}
+        />
     );
 }

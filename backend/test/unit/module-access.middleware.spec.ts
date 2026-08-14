@@ -1,52 +1,37 @@
 /**
  * ==================================
- * eLISAschool - Tests unitaires Module Access Middleware
+ * eLISAschool - Tests unitaires Module Access Middleware v4
  * ==================================
  *
- * Teste le middleware requireModuleAccess :
- * - SUPER_ADMIN → accès total
- * - Module inactif → 403 MODULE_INACTIVE
- * - Module facturable sans abonnement → 402 SUBSCRIPTION_REQUIRED
- * - Module premium non souscrit → 403 MODULE_PREMIUM_REQUIS
- * - Module gratuit actif → accès autorisé
+ * Teste le middleware requireModuleAccess (Refonte SaaS migration 200) :
+ * - SUPER_ADMIN → accès total (bypass)
+ * - Sans etablissementId → laisser passer
+ * - Module accessible via entitlementService → next()
+ * - Module refusé (ABONNEMENT_INACTIF) → 402 ABONNEMENT_REQUIS
+ * - Module refusé (PLAN_INSUFFICIENT) → 403 PLAN_INSUFFICIENT
+ * - Module refusé (OVERRIDE_DESACTIVE) → 403 MODULE_OVERRIDE
+ * - Module refusé (autre) → 403 MODULE_INACTIVE
+ * - moduleInfo enrichi dans req
  *
- * Phase 7 — Lot A (Refonte SaaS v7)
+ * Refonte SaaS — Unification Modules (migration 200)
  */
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
 // ─── Mocks ───
 
-const mockIsModuleActive = jest.fn();
-const mockIsModuleFacturable = jest.fn();
-const mockIsModuleSouscrit = jest.fn();
+const mockCheck = jest.fn();
 const mockLogAccessDenied = jest.fn();
-const mockAbonnementFindOne = jest.fn();
 
-jest.mock('@modules/configuration/services/configuration.service', () => ({
-    configurationService: {
-        isModuleActive: mockIsModuleActive,
-    },
-}));
-
-jest.mock('@modules/billing/services/module-resolution.service', () => ({
-    moduleResolutionService: {
-        isModuleFacturable: mockIsModuleFacturable,
-        isModuleSouscrit: mockIsModuleSouscrit,
+jest.mock('@modules/billing/services/entitlement.service', () => ({
+    entitlementService: {
+        check: mockCheck,
     },
 }));
 
 jest.mock('@modules/auth', () => ({
     auditService: {
         logAccessDenied: mockLogAccessDenied,
-    },
-}));
-
-jest.mock('@database/data-source', () => ({
-    AppDataSource: {
-        getRepository: jest.fn(() => ({
-            findOne: mockAbonnementFindOne,
-        })),
     },
 }));
 
@@ -81,7 +66,7 @@ function mockRes() {
     return res;
 }
 
-describe('Middleware requireModuleAccess', () => {
+describe('Middleware requireModuleAccess v4 (entitlementService)', () => {
     let next: jest.Mock;
 
     beforeEach(() => {
@@ -93,7 +78,6 @@ describe('Middleware requireModuleAccess', () => {
     // SUPER_ADMIN — Accès total
     // =============================================
     describe('SUPER_ADMIN — Accès total', () => {
-
         it('devrait laisser passer SUPER_ADMIN sans vérification', async () => {
             const req = mockReq({ role: 'SUPER_ADMIN' });
             const res = mockRes();
@@ -102,94 +86,63 @@ describe('Middleware requireModuleAccess', () => {
             await middleware(req as any, res, next);
 
             expect(next).toHaveBeenCalledWith();
-            expect(mockIsModuleActive).not.toHaveBeenCalled();
+            expect(mockCheck).not.toHaveBeenCalled();
         });
     });
 
     // =============================================
-    // Module inactif → 403
+    // Sans etablissementId
     // =============================================
-    describe('Module inactif → 403 MODULE_INACTIVE', () => {
-
-        it('devrait rejeter si le module est inactif', async () => {
-            const req = mockReq();
+    describe('Sans etablissementId', () => {
+        it('devrait laisser passer si pas d\'établissement', async () => {
+            const req = mockReq({ etablissementId: null });
+            req.utilisateur.etablissementId = null;
             const res = mockRes();
-            mockIsModuleActive.mockResolvedValue(false);
-
             const middleware = requireModuleAccess('transport');
+
             await middleware(req as any, res, next);
 
-            expect(next).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    statusCode: 403,
-                    errorCode: 'MODULE_INACTIVE',
-                }),
-            );
-            expect(mockLogAccessDenied).toHaveBeenCalled();
+            expect(next).toHaveBeenCalledWith();
+            expect(mockCheck).not.toHaveBeenCalled();
         });
     });
 
     // =============================================
-    // Module facturable sans abonnement → 402
+    // Module accessible → next()
     // =============================================
-    describe('Module facturable sans abonnement → 402', () => {
-
-        it('devrait rejeter si module facturable et pas d\'abonnement', async () => {
+    describe('Module accessible → next()', () => {
+        it('devrait laisser passer si entitlement accessible (source: plan)', async () => {
             const req = mockReq();
             const res = mockRes();
-            mockIsModuleActive.mockResolvedValue(true);
-            mockIsModuleFacturable.mockResolvedValue(true);
-            mockAbonnementFindOne.mockResolvedValue(null);
-
-            const middleware = requireModuleAccess('transport');
-            await middleware(req as any, res, next);
-
-            expect(next).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    statusCode: 402,
-                    errorCode: 'SUBSCRIPTION_REQUIRED',
-                }),
-            );
-        });
-    });
-
-    // =============================================
-    // Module premium non souscrit → 403
-    // =============================================
-    describe('Module premium non souscrit → 403', () => {
-
-        it('devrait rejeter si abonnement actif mais module non souscrit', async () => {
-            const req = mockReq();
-            const res = mockRes();
-            mockIsModuleActive.mockResolvedValue(true);
-            mockIsModuleFacturable.mockResolvedValue(true);
-            mockAbonnementFindOne.mockResolvedValue({
-                plan: { nom: 'Standard', modulesInclus: ['auth', 'notes'] },
+            mockCheck.mockResolvedValue({
+                accessible: true,
+                visible: true,
+                raison: 'OK',
+                source: 'plan',
+                planActuel: 'starter',
             });
-            mockIsModuleSouscrit.mockResolvedValue(false);
 
-            const middleware = requireModuleAccess('transport');
+            const middleware = requireModuleAccess('eleves');
             await middleware(req as any, res, next);
 
-            expect(next).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    statusCode: 403,
-                    errorCode: 'MODULE_PREMIUM_REQUIS',
-                }),
-            );
+            expect(next).toHaveBeenCalledWith();
+            expect((req as any).moduleInfo).toEqual({
+                nom: 'eleves',
+                source: 'plan',
+                raison: 'OK',
+                planActuel: 'starter',
+            });
         });
-    });
 
-    // =============================================
-    // Module gratuit actif → accès autorisé
-    // =============================================
-    describe('Module gratuit actif → accès autorisé', () => {
-
-        it('devrait laisser passer si module actif et non facturable', async () => {
+        it('devrait laisser passer si module CRITIQUE (bypass)', async () => {
             const req = mockReq();
             const res = mockRes();
-            mockIsModuleActive.mockResolvedValue(true);
-            mockIsModuleFacturable.mockResolvedValue(false);
+            mockCheck.mockResolvedValue({
+                accessible: true,
+                visible: true,
+                raison: 'CRITIQUE',
+                source: 'critique',
+            });
 
             const middleware = requireModuleAccess('auth');
             await middleware(req as any, res, next);
@@ -199,52 +152,133 @@ describe('Middleware requireModuleAccess', () => {
     });
 
     // =============================================
-    // Module premium souscrit → accès autorisé
+    // ABONNEMENT_INACTIF → 402
     // =============================================
-    describe('Module premium souscrit → accès autorisé', () => {
-
-        it('devrait laisser passer si module premium et souscrit', async () => {
+    describe('ABONNEMENT_INACTIF → 402 ABONNEMENT_REQUIS', () => {
+        it('devrait rejeter avec 402 si abonnement inactif', async () => {
             const req = mockReq();
             const res = mockRes();
-            mockIsModuleActive.mockResolvedValue(true);
-            mockIsModuleFacturable.mockResolvedValue(true);
-            mockAbonnementFindOne.mockResolvedValue({
-                plan: { nom: 'Premium', modulesInclus: ['transport'] },
+            mockCheck.mockResolvedValue({
+                accessible: false,
+                visible: true,
+                raison: 'ABONNEMENT_INACTIF',
+                message: 'Un abonnement actif est requis',
+                source: 'catalogue',
             });
-            mockIsModuleSouscrit.mockResolvedValue(true);
 
             const middleware = requireModuleAccess('transport');
             await middleware(req as any, res, next);
 
-            expect(next).toHaveBeenCalledWith();
-            // Vérifier que moduleInfo est ajouté
-            expect((req as any).moduleInfo).toEqual({
-                nom: 'transport',
-                isPremium: true,
+            expect(next).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    statusCode: 402,
+                    errorCode: 'ABONNEMENT_REQUIS',
+                }),
+            );
+            expect(mockLogAccessDenied).toHaveBeenCalled();
+        });
+
+        it('devrait rejeter avec 402 si abonnement expiré', async () => {
+            const req = mockReq();
+            const res = mockRes();
+            mockCheck.mockResolvedValue({
+                accessible: false,
+                visible: true,
+                raison: 'ABONNEMENT_EXPIRE',
+                message: 'Votre abonnement a expiré.',
+                source: 'catalogue',
             });
+
+            const middleware = requireModuleAccess('eleves');
+            await middleware(req as any, res, next);
+
+            expect(next).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    statusCode: 402,
+                    errorCode: 'ABONNEMENT_REQUIS',
+                }),
+            );
         });
     });
 
     // =============================================
-    // Sans etablissementId
+    // PLAN_INSUFFICIENT → 403
     // =============================================
-    describe('Sans etablissementId', () => {
-
-        it('devrait rejeter si pas d\'établissement et module facturable', async () => {
-            const req = mockReq({ etablissementId: null });
-            req.utilisateur.etablissementId = null;
+    describe('PLAN_INSUFFICIENT → 403 PLAN_INSUFFICIENT', () => {
+        it('devrait rejeter avec 403 si plan insuffisant', async () => {
+            const req = mockReq();
             const res = mockRes();
-            mockIsModuleActive.mockResolvedValue(true);
-            mockIsModuleFacturable.mockResolvedValue(true);
-            mockAbonnementFindOne.mockResolvedValue(null);
+            mockCheck.mockResolvedValue({
+                accessible: false,
+                visible: true,
+                raison: 'PLAN_INSUFFICIENT',
+                message: 'Plan "pro" requis. Plan actuel : "starter"',
+                source: 'catalogue',
+                planMinimalRequis: 'pro',
+                planActuel: 'starter',
+            });
 
-            const middleware = requireModuleAccess('transport');
+            const middleware = requireModuleAccess('orientation');
             await middleware(req as any, res, next);
 
-            // Pas d'abonnement possible sans etablissementId
             expect(next).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    statusCode: 402,
+                    statusCode: 403,
+                    errorCode: 'PLAN_INSUFFICIENT',
+                }),
+            );
+        });
+    });
+
+    // =============================================
+    // OVERRIDE_DESACTIVE → 403 MODULE_OVERRIDE
+    // =============================================
+    describe('OVERRIDE_DESACTIVE → 403 MODULE_OVERRIDE', () => {
+        it('devrait rejeter avec 403 si module désactivé au niveau groupe', async () => {
+            const req = mockReq();
+            const res = mockRes();
+            mockCheck.mockResolvedValue({
+                accessible: false,
+                visible: true,
+                raison: 'OVERRIDE_DESACTIVE',
+                message: 'Module désactivé au niveau du groupe',
+                source: 'groupe',
+            });
+
+            const middleware = requireModuleAccess('messagerie');
+            await middleware(req as any, res, next);
+
+            expect(next).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    statusCode: 403,
+                    errorCode: 'MODULE_OVERRIDE',
+                }),
+            );
+        });
+    });
+
+    // =============================================
+    // Autres raisons → 403 MODULE_INACTIVE
+    // =============================================
+    describe('Autre raison → 403 MODULE_INACTIVE', () => {
+        it('devrait rejeter avec 403 MODULE_INACTIVE pour MODULE_DESACTIVE', async () => {
+            const req = mockReq();
+            const res = mockRes();
+            mockCheck.mockResolvedValue({
+                accessible: false,
+                visible: false,
+                raison: 'MODULE_DESACTIVE',
+                message: 'Module non trouvé ou désactivé',
+                source: 'catalogue',
+            });
+
+            const middleware = requireModuleAccess('unknown-module');
+            await middleware(req as any, res, next);
+
+            expect(next).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    statusCode: 403,
+                    errorCode: 'MODULE_INACTIVE',
                 }),
             );
         });

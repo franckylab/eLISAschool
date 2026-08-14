@@ -1,0 +1,50 @@
+{
+    "title": "Mes Modules",
+    "subtitle": "{{count}} module actif",
+    "subtitle_plural": "{{count}} modules actifs",
+    "error": "Impossible de charger les modules. Veuillez réessayer.",
+    "retry": "Réessayer",
+    "sections": {
+        "actifs": "Modules actifs",
+        "upgradables": "Modules disponibles"
+    },
+    "stats": {
+        "actifs": "actifs",
+        "upgradables": "disponibles"
+    },
+    "categories": {
+        "BASE": "Base",
+        "PREMIUM": "Premium",
+        "ADDON": "Supplément"
+    },
+    "statuts": {
+        "ACTIF": "Actif",
+        "ESSAI": "Période d'essai",
+        "EXPIRE": "Expiré",
+        "SUSPENDU": "Suspendu",
+        "EN_ATTENTE": "En attente"
+    },
+    "sources": {
+        "base": "Base",
+        "essai": "Essai gratuit",
+        "plan": "Inclus dans le plan",
+        "groupe": "Override groupe",
+        "supplement": "Supplément",
+        "catalogue": "Défaut catalogue",
+        "override": "Override"
+    },
+    "raisons": {
+        "ABONNEMENT_INACTIF": "Abonnement requis",
+        "ABONNEMENT_EXPIRE": "Abonnement expiré",
+        "PLAN_INSUFFICIENT": "Plan insuffisant"
+    },
+    "card": {
+        "active": "Actif",
+        "locked": "Verrouillé",
+        "upgradable": "Disponible",
+        "planRequis": "Plan {{plan}} requis",
+        "planActuel": " · Actuel : {{plan}}",
+        "ctaDecouvrir": "Découvrir",
+        "ctaContacter": "Contacter"
+    }
+}

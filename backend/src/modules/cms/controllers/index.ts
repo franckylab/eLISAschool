@@ -5,3 +5,4 @@
  */
 export * from './cms.controller';
 export * from './public-etablissement.controller';
+export * from './cms-content.controller';

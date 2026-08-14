@@ -326,6 +326,29 @@ class RedisService {
         }
     }
 
+    /**
+     * DEL PATTERN — SCAN + DEL pour supprimer toutes les clés correspondant à un pattern.
+     * Redis DEL ne supporte pas les glob patterns directement.
+     */
+    async delPattern(pattern: string): Promise<number> {
+        try {
+            const client = await this.getClient();
+            let deleted = 0;
+            let cursor = '0';
+            do {
+                const [nextCursor, keys] = await client.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+                cursor = nextCursor;
+                if (keys.length > 0) {
+                    deleted += await client.del(...keys);
+                }
+            } while (cursor !== '0');
+            return deleted;
+        } catch (error) {
+            logger.error(`[Redis] DEL PATTERN ${pattern} error:`, error);
+            return 0;
+        }
+    }
+
     // ==========================================
     // Méthodes tenant-aware — Phase P3.2 v6
     // Prefixe les clés par tenant:{etablissementId}:

@@ -148,7 +148,8 @@ export async function rlsReadMiddleware(req: Request, res: Response, next: NextF
 
         try {
             // SET (session-scoped) — pas de transaction nécessaire
-            await queryRunner.query(`SET ${TENANT_CONFIG_KEY} = $1`, [tenantId]);
+            // Note: SET n'accepte pas les paramètres $1 en PostgreSQL
+            await queryRunner.query(`SET ${TENANT_CONFIG_KEY} = '${tenantId}'`);
 
             // Stocker le queryRunner pour le RESET en fin de réponse
             (req as any).queryRunner = queryRunner;
@@ -203,7 +204,8 @@ export async function rlsWriteMiddleware(req: Request, res: Response, next: Next
             await queryRunner.startTransaction();
 
             // SET LOCAL (transaction-scoped) — isolation automatique au rollback
-            await queryRunner.query(`SET LOCAL ${TENANT_CONFIG_KEY} = $1`, [tenantId]);
+            // Note: SET LOCAL n'accepte pas les paramètres $1 en PostgreSQL
+            await queryRunner.query(`SET LOCAL ${TENANT_CONFIG_KEY} = '${tenantId}'`);
 
             // Vérification du contexte
             const verifyResult = await queryRunner.query(
@@ -316,7 +318,8 @@ export async function runWithTenant<T>(
     const queryRunner = AppDataSource.createQueryRunner();
     try {
         await queryRunner.startTransaction();
-        await queryRunner.query(`SET LOCAL ${TENANT_CONFIG_KEY} = $1`, [tenantId]);
+        // Note: SET LOCAL n'accepte pas les paramètres $1 en PostgreSQL
+        await queryRunner.query(`SET LOCAL ${TENANT_CONFIG_KEY} = '${tenantId}'`);
         
         const result = await fn(queryRunner);
         

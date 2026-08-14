@@ -5,7 +5,7 @@
 import { useState, useMemo } from 'react';
 import { cn } from '@/lib/cn';
 import { Search, SlidersHorizontal } from 'lucide-react';
-import { ModuleCard, type ModuleCardProps } from './ModuleCard';
+import { ConfigModuleCard } from './config-module-card';
 import type { ModuleRegistryEntry } from '@/features/configuration/types/configuration.types';
 
 export interface ModuleGridProps {
@@ -18,7 +18,7 @@ export interface ModuleGridProps {
     className?: string;
 }
 
-type CategorieFilter = 'ALL' | 'CRITIQUE' | 'PREMIUM' | 'ADDON';
+type CategorieFilter = 'ALL' | 'BASE' | 'PREMIUM' | 'ADDON';
 type StatusFilter = 'ALL' | 'ACTIF' | 'INACTIF';
 
 export function ModuleGrid({
@@ -58,7 +58,7 @@ export function ModuleGrid({
     const counts = useMemo(() => ({
         total: modules.length,
         actifs: modules.filter(m => m.actif).length,
-        critiques: modules.filter(m => m.entry.category === 'CRITIQUE').length,
+        base: modules.filter(m => m.entry.category === 'BASE').length,
         premium: modules.filter(m => m.entry.category === 'PREMIUM').length,
         addons: modules.filter(m => m.entry.category === 'ADDON').length,
     }), [modules]);
@@ -99,7 +99,7 @@ export function ModuleGrid({
                 <div className="flex flex-wrap gap-2">
                     {/* Catégorie */}
                     <div className="flex items-center gap-1 rounded-lg bg-zinc-100 dark:bg-zinc-800/50 p-1">
-                        {(['ALL', 'CRITIQUE', 'PREMIUM', 'ADDON'] as CategorieFilter[]).map((cat) => (
+                        {(['ALL', 'BASE', 'PREMIUM', 'ADDON'] as CategorieFilter[]).map((cat) => (
                             <button
                                 key={cat}
                                 onClick={() => setCategorieFilter(cat)}
@@ -110,7 +110,7 @@ export function ModuleGrid({
                                         : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300',
                                 )}
                             >
-                                {cat === 'ALL' ? 'Tous' : cat === 'CRITIQUE' ? 'Critiques' : cat === 'PREMIUM' ? 'Premium' : 'Addons'}
+                                {cat === 'ALL' ? 'Tous' : cat === 'BASE' ? 'Base' : cat === 'PREMIUM' ? 'Premium' : 'Addons'}
                             </button>
                         ))}
                     </div>
@@ -139,7 +139,7 @@ export function ModuleGrid({
             {filtered.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                     {filtered.map(({ entry, actif }) => (
-                        <ModuleCard
+                        <ConfigModuleCard
                             key={entry.name}
                             module={entry}
                             actif={actif}

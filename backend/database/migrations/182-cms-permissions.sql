@@ -33,10 +33,11 @@ BEGIN
     -- Création des permissions
     FOREACH p IN ARRAY perms
     LOOP
-        INSERT INTO permissions (code, libelle, module)
+        INSERT INTO permissions (code, libelle, action, module)
         VALUES (
             p,
             'CMS — ' || initcap(split_part(p, ':', 2)) || ' — ' || split_part(p, ':', 3),
+            split_part(p, ':', 3),
             'cms'
         )
         ON CONFLICT (code) DO NOTHING;

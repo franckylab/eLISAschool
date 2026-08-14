@@ -28,11 +28,10 @@ import {
     Wallet,
     Network,
     X,
-    DollarSign,
     Users,
-    Star,
     Layers,
     BadgePercent,
+    ToggleRight,
 } from 'lucide-react';
 import { useState, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -63,18 +62,17 @@ interface PlatformNavGroup {
 // =============================================
 
 const PLATFORM_NAV_ITEMS: PlatformNavItem[] = [
-    // Groupe Pilotage (3 items)
+    // Groupe Pilotage (2 items)
     { labelKey: 'navigation.dashboard', descKey: 'sidebar.descDashboard', path: '/platform/dashboard', icon: LayoutDashboard, group: 'pilotage' },
     { labelKey: 'navigation.monitoring', descKey: 'sidebar.descMonitoring', path: '/platform/monitoring', icon: Activity, group: 'pilotage' },
-    { labelKey: 'navigation.revenus', descKey: 'sidebar.descRevenus', path: '/platform/revenus', icon: DollarSign, group: 'pilotage' },
     // Groupe Tenants (4 items)
     { labelKey: 'navigation.etablissements', descKey: 'sidebar.descEtablissements', path: '/platform/etablissements', icon: Building2, group: 'tenants' },
     { labelKey: 'navigation.groupes', descKey: 'sidebar.descGroupes', path: '/platform/groupes', icon: Network, group: 'tenants' },
     { labelKey: 'navigation.facturation', descKey: 'sidebar.descFacturation', path: '/platform/facturation', icon: CreditCard, group: 'tenants' },
-    { labelKey: 'navigation.abonnements', descKey: 'sidebar.descAbonnements', path: '/platform/abonnements', icon: Star, group: 'tenants' },
     { labelKey: 'navigation.tarifs', descKey: 'sidebar.descTarifs', path: '/platform/tarifs', icon: BadgePercent, group: 'tenants' },
     // Groupe Technique (4 items)
     { labelKey: 'navigation.modules', descKey: 'sidebar.descModules', path: '/platform/modules', icon: Package, group: 'technique' },
+    { labelKey: 'navigation.featureFlags', descKey: 'sidebar.descFeatureFlags', path: '/platform/feature-flags', icon: ToggleRight, group: 'technique' },
     { labelKey: 'navigation.configuration', descKey: 'sidebar.descConfiguration', path: '/platform/configuration', icon: Settings, group: 'technique' },
     { labelKey: 'navigation.notifications', descKey: 'sidebar.descNotifications', path: '/platform/notifications-config', icon: Bell, group: 'technique' },
     { labelKey: 'navigation.providers', descKey: 'sidebar.descProviders', path: '/platform/providers', icon: Wallet, group: 'technique' },

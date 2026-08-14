@@ -13,3 +13,5 @@ export { CmsDashboard } from './components/CmsDashboard';
 export { CmsMediaUpload } from './components/CmsMediaUpload';
 export { CmsSectionEditor, SECTION_CONFIG } from './components/CmsSectionEditor';
 export { CmsThemeCustomizer } from './components/CmsThemeCustomizer';
+export { SeoHead } from './components/SeoHead';
+export { PublicPageSkeleton } from './components/PublicPageSkeleton';

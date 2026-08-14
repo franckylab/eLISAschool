@@ -11,7 +11,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { CustomModal } from '@/components/modals/CustomModal';
 import {
@@ -73,16 +73,16 @@ interface PlanFormModalProps {
 }
 
 // =============================================
-// Constants
+// Constants (fallback si API indisponible — Migration 210)
 // =============================================
 
-const MODULES_CATALOG = [
-    // Critiques (gratuits)
-    { id: 'eleves', nom: 'Gestion Élèves', categorie: 'critique' },
-    { id: 'notes', nom: 'Notes & Bulletins', categorie: 'critique' },
-    { id: 'emploi-temps', nom: 'Emploi du Temps', categorie: 'critique' },
-    { id: 'cantine', nom: 'Cantine', categorie: 'critique' },
-    { id: 'transport', nom: 'Transport', categorie: 'critique' },
+const MODULES_CATALOG_FALLBACK = [
+    // Base (gratuits)
+    { id: 'eleves', nom: 'Gestion Élèves', categorie: 'base' },
+    { id: 'notes', nom: 'Notes & Bulletins', categorie: 'base' },
+    { id: 'emploi-temps', nom: 'Emploi du Temps', categorie: 'base' },
+    { id: 'cantine', nom: 'Cantine', categorie: 'base' },
+    { id: 'transport', nom: 'Transport', categorie: 'base' },
     // Premium
     { id: 'gamification', nom: 'Gamification', categorie: 'premium' },
     { id: 'suivi-personnel', nom: 'Suivi Personnel', categorie: 'premium' },
@@ -98,7 +98,7 @@ const MODULES_CATALOG = [
     { id: 'recrutement', nom: 'Recrutement', categorie: 'addon' },
 ];
 
-const FEATURE_FLAGS_LIST = [
+const FEATURE_FLAGS_FALLBACK = [
     { key: 'multi_etablissement', label: 'Multi-établissement' },
     { key: 'export_pdf', label: 'Export PDF' },
     { key: 'api_rest', label: 'API REST publique' },
@@ -159,6 +159,42 @@ export function PlanFormModal({ open, onOpenChange, plan, mode }: PlanFormModalP
         featureFlags: plan?.featureFlags || {},
     }));
     const [error, setError] = useState<string | null>(null);
+
+    // Données dynamiques (Migration 210 — remplacement hardcodage)
+    const { data: dynamicModules } = useQuery({
+        queryKey: ['modules-catalogue'],
+        queryFn: async () => {
+            const res = await apiClient.get<{ success: boolean; data: any[] }>('/api/platform/facturation/modules/catalogue');
+            return res.data;
+        },
+        staleTime: 60 * 1000,
+    });
+
+    const { data: dynamicFlags } = useQuery({
+        queryKey: ['feature-flag-definitions'],
+        queryFn: async () => {
+            const res = await apiClient.get<{ success: boolean; data: any[] }>('/api/platform/facturation/feature-flags/definitions');
+            return res.data;
+        },
+        staleTime: 60 * 1000,
+    });
+
+    // Mapper les modules dynamiques au format du formulaire
+    const modulesCatalogue = dynamicModules && dynamicModules.length > 0
+        ? dynamicModules.map((m: any) => ({
+            id: m.code,
+            nom: m.nom,
+            categorie: m.categorie,
+        }))
+        : MODULES_CATALOG_FALLBACK;
+
+    // Mapper les flags dynamiques au format du formulaire
+    const featureFlagsList = dynamicFlags && dynamicFlags.length > 0
+        ? dynamicFlags.map((f: any) => ({
+            key: f.cle,
+            label: f.label,
+        }))
+        : FEATURE_FLAGS_FALLBACK;
 
     // Mutations
     const createMutation = useMutation({
@@ -422,7 +458,7 @@ export function PlanFormModal({ open, onOpenChange, plan, mode }: PlanFormModalP
 
     const renderStepModules = () => {
         const categories = [
-            { key: 'critique', label: t('planForm.modules.critique'), color: 'text-[var(--color-success-600)]' },
+            { key: 'base', label: t('planForm.modules.base'), color: 'text-[var(--color-success-600)]' },
             { key: 'premium', label: t('planForm.modules.premium'), color: 'text-[var(--color-info-600)]' },
             { key: 'addon', label: t('planForm.modules.addon'), color: 'text-[var(--color-accent-600)]' },
         ];
@@ -434,7 +470,7 @@ export function PlanFormModal({ open, onOpenChange, plan, mode }: PlanFormModalP
                     <div key={cat.key}>
                         <h4 className={`text-sm font-semibold mb-2 ${cat.color}`}>{cat.label}</h4>
                         <div className="grid grid-cols-2 gap-2">
-                            {MODULES_CATALOG.filter(m => m.categorie === cat.key).map(mod => {
+                            {modulesCatalogue.filter(m => m.categorie === cat.key).map(mod => {
                                 const selected = form.modulesInclus.includes(mod.id);
                                 return (
                                     <button
@@ -630,7 +666,7 @@ export function PlanFormModal({ open, onOpenChange, plan, mode }: PlanFormModalP
         <div className="space-y-4">
             <p className="text-sm text-[var(--color-texte-muted)]">{t('planForm.flags.desc')}</p>
             <div className="space-y-2">
-                {FEATURE_FLAGS_LIST.map(flag => {
+                {featureFlagsList.map(flag => {
                     const enabled = form.featureFlags[flag.key] || false;
                     return (
                         <button
@@ -688,7 +724,7 @@ export function PlanFormModal({ open, onOpenChange, plan, mode }: PlanFormModalP
                 <span className="text-sm text-[var(--color-texte-muted)]">{t('planForm.resume.modulesInclus', { count: form.modulesInclus.length })}</span>
                 <div className="flex flex-wrap gap-1 mt-2">
                     {form.modulesInclus.map(m => {
-                        const mod = MODULES_CATALOG.find(mc => mc.id === m);
+                        const mod = modulesCatalogue.find(mc => mc.id === m);
                         return <span key={m} className="text-xs bg-secondary px-2 py-0.5 rounded">{mod?.nom || m}</span>;
                     })}
                 </div>
@@ -712,7 +748,7 @@ export function PlanFormModal({ open, onOpenChange, plan, mode }: PlanFormModalP
                 <div className="border rounded-lg p-3">
                     <span className="text-sm text-[var(--color-texte-muted)]">{t('planForm.resume.flagsActifs')}</span>
                     <div className="flex flex-wrap gap-1 mt-2">
-                        {FEATURE_FLAGS_LIST.filter(f => form.featureFlags[f.key]).map(f => (
+                        {featureFlagsList.filter(f => form.featureFlags[f.key]).map(f => (
                             <span key={f.key} className="text-[var(--color-info-700)] bg-[var(--color-info-100)] px-2 py-0.5 rounded" style={{ fontSize: 'clamp(0.6875rem, 0.6rem + 0.3vw, 0.75rem)' }}>{f.label}</span>
                         ))}
                     </div>

@@ -32,3 +32,6 @@ export { ProviderPaiement, TypeProviderPaiement } from './provider-paiement.enti
 export { ProviderAssignment, ScopeAssignment } from './provider-assignment.entity';
 // Phase 7 Lot F — Refonte SaaS v7 (workflow actions critiques)
 export { ActionCritique, TypeActionCritique, StatutActionCritique, ACTION_CRITIQUE_EXPIRATION_HEURES, ACTION_CRITIQUE_MAX_TENTATIVES } from './action-critique.entity';
+// Migration 210 — Refonte Feature Flags (registre centralisé + audit)
+export { FeatureFlagDefinition, CategorieFlag, TypeFlag } from './feature-flag-definition.entity';
+export { FeatureFlagHistory, ActionFeatureFlag } from './feature-flag-history.entity';

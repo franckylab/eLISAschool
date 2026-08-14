@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eLISAschool — Rapport Complet : Feature Flags, Modules & Gestion des Fonctionnalités</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js" integrity="sha384-K+8aE+buShg5cFEVqF0iLWmE7eT0Pnq9fDgLOkEdlgOBjH+R7IhM7s1IaEBw8eyO" crossorigin="anonymous"></script>
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-light: #dbeafe;
+  --secondary: #7c3aed;
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --dark: #1e293b;
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-500: #64748b;
+  --gray-700: #334155;
+  --gray-900: #0f172a;
+  --radius: 12px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--gray-50);
+  color: var(--gray-900);
+  line-height: 1.7;
+  font-size: 15px;
+}
+.container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+/* Header */
+.report-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+  padding: 3rem 2rem;
+  border-radius: var(--radius);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+.report-header h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 0.5rem; }
+.report-header .subtitle { font-size: 1.1rem; opacity: 0.9; }
+.report-header .meta { margin-top: 1rem; font-size: 0.85rem; opacity: 0.7; }
+/* TOC */
+.toc {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+}
+.toc h2 { font-size: 1.2rem; margin-bottom: 1rem; color: var(--primary); }
+.toc ol { padding-left: 1.5rem; }
+.toc li { margin-bottom: 0.4rem; }
+.toc a { color: var(--primary); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+/* Sections */
+.section {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+}
+.section h2 {
+  font-size: 1.5rem;
+  color: var(--dark);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--primary);
+}
+.section h3 {
+  font-size: 1.15rem;
+  color: var(--gray-700);
+  margin: 1.5rem 0 0.75rem;
+}
+.section h4 {
+  font-size: 1rem;
+  color: var(--gray-700);
+  margin: 1rem 0 0.5rem;
+}
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+th {
+  background: var(--primary);
+  color: white;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+}
+td {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+tr:nth-child(even) { background: var(--gray-50); }
+tr:hover { background: var(--primary-light); }
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.badge-base { background: #dcfce7; color: #166534; }
+.badge-premium { background: #dbeafe; color: #1e40af; }
+.badge-addon { background: #fef3c7; color: #92400e; }
+.badge-ok { background: #dcfce7; color: #166534; }
+.badge-warn { background: #fef3c7; color: #92400e; }
+.badge-error { background: #fee2e2; color: #991b1b; }
+/* Code blocks */
+pre {
+  background: var(--gray-900);
+  color: #e2e8f0;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin: 1rem 0;
+}
+code { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+/* Callout */
+.callout {
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  border-left: 4px solid;
+}
+.callout-info { background: #eff6ff; border-color: var(--primary); }
+.callout-success { background: #f0fdf4; border-color: var(--success); }
+.callout-warning { background: #fffbeb; border-color: var(--warning); }
+.callout-danger { background: #fef2f2; border-color: var(--danger); }
+.callout-title { font-weight: 700; margin-bottom: 0.3rem; }
+/* Mermaid */
+.mermaid {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--gray-200);
+  margin: 1.5rem 0;
+  text-align: center;
+}
+/* Stats grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.stat-card {
+  background: linear-gradient(135deg, var(--primary-light) 0%, white 100%);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  text-align: center;
+}
+.stat-card .value { font-size: 2rem; font-weight: 800; color: var(--primary); }
+.stat-card .label { font-size: 0.85rem; color: var(--gray-500); margin-top: 0.25rem; }
+/* Flow diagram */
+.flow-step {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--gray-50);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  border-left: 3px solid var(--primary);
+}
+.flow-step .step-num {
+  width: 28px;
+  height: 28px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+/* Recommendation cards */
+.rec-card {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid var(--success);
+}
+.rec-card.priority-high { border-left-color: var(--danger); }
+.rec-card.priority-medium { border-left-color: var(--warning); }
+.rec-card h4 { margin-top: 0; color: var(--dark); }
+.rec-card .priority { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+/* Footer */
+.report-footer {
+  text-align: center;
+  padding: 2rem;
+  color: var(--gray-500);
+  font-size: 0.85rem;
+}
+/* Responsive */
+@media (max-width: 768px) {
+  .container { padding: 1rem; }
+  .report-header h1 { font-size: 1.5rem; }
+  .section { padding: 1.25rem; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 0.4rem 0.6rem; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<div class="report-header">
+  <h1>🏫 eLISAschool — Rapport d'Architecture</h1>
+  <div class="subtitle">Feature Flags, Gestion des Modules & Fonctionnalités</div>
+  <div class="subtitle">Analyse approfondie, recommandations & meilleures pratiques</div>
+  <div class="meta">Version 1.0 — Août 2026 | Analyse complète du codebase v10+</div>
+</div>
+
+<!-- TABLE DES MATIÈRES -->
+<div class="toc">
+  <h2>📋 Table des Matières</h2>
+  <ol>
+    <li><a href="#resume">Résumé Exécutif</a></li>
+    <li><a href="#architecture">Architecture Globale du Système de Fonctionnalités</a></li>
+    <li><a href="#featureflags">Feature Flags — Définition, Rôle et Implementation</a></li>
+    <li><a href="#modules">Catalogue des Modules — 26 Modules Analysés</a></li>
+    <li><a href="#entitlement">EntitlementService — Source Unique de Vérité</a></li>
+    <li><a href="#cascade">Cascade de Résolution — 8 Niveaux</a></li>
+    <li><a href="#stockage">Stockage et Identification des Fonctionnalités</a></li>
+    <li><a href="#activation">Activation/Désactivation par Établissement</a></li>
+    <li><a href="#plans">Intégration aux Plans d'Abonnement</a></li>
+    <li><a href="#frontend">Frontend — Consommation et UX</a></li>
+    <li><a href="#fonctionnalites">Inventaire Complet des Fonctionnalités (60 modules)</a></li>
+    <li><a href="#recommandations">Recommandations et Améliorations</a></li>
+    <li><a href="#meilleures-pratiques">Meilleures Pratiques Industrielles</a></li>
+    <li><a href="#conclusion">Conclusion</a></li>
+  </ol>
+</div>
+
+<!-- 1. RÉSUMÉ EXÉCUTIF -->
+<div class="section" id="resume">
+  <h2>1. Résumé Exécutif</h2>
+  <p>eLISAschool est une plateforme SaaS multi-tenant de gestion scolaire qui dispose d'un système de gestion des fonctionnalités <strong>sophistiqué et mature</strong>, articulé autour de trois piliers :</p>
+  
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="value">26</div>
+      <div class="label">Modules au catalogue</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">8</div>
+      <div class="label">Feature flags configurables</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">8</div>
+      <div class="label">Niveaux de cascade</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">60+</div>
+      <div class="label">Modules backend implémentés</div>
+    </div>
+  </div>
+
+  <div class="callout callout-success">
+    <div class="callout-title">✅ Points Forts Identifiés</div>
+    <ul>
+      <li><strong>Source unique de vérité</strong> : <code>EntitlementService</code> centralise tout le gating (migration 200)</li>
+      <li><strong>Cascade multi-niveaux</strong> : 8 niveaux de résolution (base → essai → catalogue → abonnement → plan → groupe → supplément → défaut)</li>
+      <li><strong>Dégradation gracieuse</strong> : 3 phases (lecture seule J0-J15, verrouillé J15-J30, archivé J30+)</li>
+      <li><strong>Période d'essai</strong> : 14 jours avec tous modules accessibles</li>
+      <li><strong>Cache performant</strong> : Redis TTL 60s + in-memory + Pub/Sub cross-instance</li>
+      <li><strong>Multi-tenant strict</strong> : Isolation RLS + discrimination par établissement</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 2. ARCHITECTURE GLOBALE -->
+<div class="section" id="architecture">
+  <h2>2. Architecture Globale du Système de Fonctionnalités</h2>
+  
+  <div class="mermaid">
+graph TB
+    subgraph "🎯 Frontend React"
+        UI[Interface Utilisateur]
+        PFM[Plan Form Modal]
+        MMP[Mes Modules Page]
+        HOOK[Hooks API]
+    end
+    
+    subgraph "🔌 API REST"
+        MW[Module Access Middleware]
+        CTRL[Controllers]
+        ENT[EntitlementService]
+        FF[FeatureFlagService]
+    end
+    
+    subgraph "💾 Base de Données"
+        MC[(modules_catalogue)]
+        PA[(plans_abonnement)]
+        AC[(abonnements_client)]
+        AM[(abonnements_modules)]
+        FFT[(feature_flags_tenant)]
+        MG[(modules_groupe)]
+    end
+    
+    subgraph "⚡ Cache"
+        REDIS[(Redis)]
+        MEM[In-Memory Cache]
+    end
+    
+    UI --> HOOK
+    PFM --> HOOK
+    MMP --> HOOK
+    HOOK --> MW
+    MW --> ENT
+    MW --> FF
+    ENT --> MC
+    ENT --> PA
+    ENT --> AC
+    ENT --> AM
+    ENT --> MG
+    FF --> FFT
+    FF --> PA
+    ENT --> REDIS
+    ENT --> MEM
+    FF --> MEM
+  </div>
+
+  <h3>Composants Clés</h3>
+  <table>
+    <thead>
+      <tr><th>Composant</th><th>Rôle</th><th>Fichier</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>EntitlementService</strong></td><td>Source unique de vérité pour le gating des modules</td><td><code>billing/services/entitlement.service.ts</code></td></tr>
+      <tr><td><strong>FeatureFlagService</strong></td><td>Gestion des feature flags avec cascade</td><td><code>billing/services/feature-flags.service.ts</code></td></tr>
+      <tr><td><strong>ModuleCatalogue</strong></td><td>Catalogue complet des 26 modules (entité)</td><td><code>billing/entities/module-catalogue.entity.ts</code></td></tr>
+      <tr><td><strong>requireModuleAccess()</strong></td><td>Middleware d'application du gating</td><td><code>middlewares/module-access.middleware.ts</code></td></tr>
+      <tr><td><strong>PlanAbonnement</strong></td><td>Définit les plans avec modulesInclus + featureFlags</td><td><code>billing/entities/plan-abonnement.entity.ts</code></td></tr>
+      <tr><td><strong>FeatureFlagTenant</strong></td><td>Overrides de feature flags par établissement</td><td><code>billing/entities/feature-flag-tenant.entity.ts</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 3. FEATURE FLAGS -->
+<div class="section" id="featureflags">
+  <h2>3. Feature Flags — Définition, Rôle et Implémentation</h2>
+  
+  <h3>3.1 Qu'est-ce qu'un Feature Flag ?</h3>
+  <p>Un <strong>feature flag</strong> (ou « bascule de fonctionnalité ») est un mécanisme permettant d'activer ou désactiver une fonctionnalité spécifique sans déployer de nouveau code. Dans eLISAschool, les feature flags servent à :</p>
+  
+  <div class="flow-step"><div class="step-num">1</div><div><strong>Contrôler l'accès à des capacités transverses</strong> — export PDF, API publique, SSO, webhooks, etc.</div></div>
+  <div class="flow-step"><div class="step-num">2</div><div><strong>Différencier les plans</strong> — certaines features ne sont disponibles qu'à partir du plan Pro/Enterprise</div></div>
+  <div class="flow-step"><div class="step-num">3</div><div><strong>Permettre des overrides par établissement</strong> — activer une feature spécifique pour un client premium</div></div>
+  <div class="flow-step"><div class="step-num">4</div><div><strong>Faciliter les rollouts progressifs</strong> — activer une feature pour un sous-ensemble d'établissements</div></div>
+
+  <h3>3.2 Feature Flags Disponibles dans eLISAschool</h3>
+  <table>
+    <thead>
+      <tr><th>Clé</th><th>Label</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>multi_etablissement</code></td><td>Multi-établissement</td><td>Permet la gestion de plusieurs établissements depuis un compte</td></tr>
+      <tr><td><code>export_pdf</code></td><td>Export PDF</td><td>Active la génération de PDF (bulletins, factures, rapports)</td></tr>
+      <tr><td><code>api_rest</code></td><td>API REST publique</td><td>Exposure d'une API publique pour intégrations tierces</td></tr>
+      <tr><td><code>webhooks</code></td><td>Webhooks</td><td>Notifications webhook vers des systèmes externes</td></tr>
+      <tr><td><code>sso</code></td><td>Single Sign-On</td><td>Authentification unifiée (Google, Microsoft, etc.)</td></tr>
+      <tr><td><code>white_label</code></td><td>White Label</td><td>Personnalisation complète de la marque (domaine, logo)</td></tr>
+      <tr><td><code>backup_auto</code></td><td>Backup automatique</td><td>Sauvegardes automatiques planifiées</td></tr>
+      <tr><td><code>monitoring_advanced</code></td><td>Monitoring avancé</td><td>Métriques détaillées et alertes personnalisées</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.3 Cascade de Résolution des Feature Flags</h3>
+  <div class="mermaid">
+graph LR
+    A["🏢 Override Tenant<br/>(feature_flags_tenant)"] -->|Priorité max| R["Résultat Final"]
+    B["📋 Plan Abonnement<br/>(plan.featureFlags)"] -->|Priorité 2| R
+    C["📦 Modules Inclus<br/>(plan.modulesInclus)"] -->|Priorité 3| R
+    D["❌ Défaut: false"] -->|Fallback| R
+    
+    style A fill:#dcfce7,stroke:#166534
+    style B fill:#dbeafe,stroke:#1e40af
+    style C fill:#fef3c7,stroke:#92400e
+    style D fill:#fee2e2,stroke:#991b1b
+  </div>
+
+  <h3>3.4 Implémentation Technique</h3>
+  <pre><code>// FeatureFlagService — Méthode isEnabled()
+async isEnabled(flagName: string, etablissementId: string): Promise&lt;boolean&gt; {
+    // 1. Cache check (TTL 60s)
+    const cached = this.cache.get(`${etablissementId}:${flagName}`);
+    if (cached && cached.expiresAt > Date.now()) return cached.value;
+
+    // 2. Override tenant (priorité maximale)
+    const override = await this.flagRepo.findOne({
+        where: { etablissementId, flagName }
+    });
+    if (override) return override.enabled;
+
+    // 3. Flags du plan d'abonnement
+    const abonnement = await this.abonnementRepo.findOne({
+        where: { etablissementId, statut: 'ACTIF' },
+        relations: ['plan']
+    });
+    if (abonnement?.plan?.featureFlags?.[flagName] !== undefined) {
+        return abonnement.plan.featureFlags[flagName];
+    }
+
+    // 4. Modules inclus → auto-active les flags associés
+    // Ex: 'transport' dans modulesInclus → module_transport = true
+    
+    // Défaut: désactivé
+    return false;
+}</code></pre>
+</div>
+
+<!-- 4. CATALOGUE DES MODULES -->
+<div class="section" id="modules">
+  <h2>4. Catalogue des Modules — 26 Modules</h2>
+  
+  <h3>4.1 Répartition par Catégorie</h3>
+  <div class="mermaid">
+pie title Modules par Catégorie
+    "BASE (toujours accessibles)" : 8
+    "PREMIUM (abonnement requis)" : 11
+    "ADDON (supplément)" : 7
+  </div>
+
+  <h3>4.2 Modules BASE — Toujours Accessibles</h3>
+  <table>
+    <thead>
+      <tr><th>Code</th><th>Nom</th><th>Icône</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>auth</code></td><td>Authentification</td><td>🔒</td><td>JWT, RBAC, sessions, MFA</td></tr>
+      <tr><td><code>utilisateurs</code></td><td>Utilisateurs</td><td>👥</td><td>Gestion des utilisateurs et rôles</td></tr>
+      <tr><td><code>configuration</code></td><td>Configuration</td><td>⚙️</td><td>Paramètres système, apparence</td></tr>
+      <tr><td><code>notifications</code></td><td>Notifications</td><td>🔔</td><td>Multi-canal : email, SMS, push, in-app</td></tr>
+      <tr><td><code>monitoring</code></td><td>Monitoring</td><td>📊</td><td>Métriques, alertes, health checks</td></tr>
+      <tr><td><code>audit</code></td><td>Audit</td><td>📝</td><td>Journal d'audit complet</td></tr>
+      <tr><td><code>facturation</code></td><td>Facturation</td><td>🧾</td><td>Abonnements, paiements, relances</td></tr>
+      <tr><td><code>groupes-etablissements</code></td><td>Groupes</td><td>🌐</td><td>Groupes d'établissements multi-tenant</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.3 Modules PREMIUM — Abonnement Requis</h3>
+  <table>
+    <thead>
+      <tr><th>Code</th><th>Nom</th><th>Plan Minimal</th><th>Dépendances</th><th>Souscriptible</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>eleves</code></td><td>Élèves</td><td>Starter</td><td>—</td><td>Non</td></tr>
+      <tr><td><code>notes</code></td><td>Notes & Évaluations</td><td>Starter</td><td>eleves</td><td>Non</td></tr>
+      <tr><td><code>bulletins</code></td><td>Bulletins Scolaires</td><td>Starter</td><td>notes</td><td>Non</td></tr>
+      <tr><td><code>messagerie</code></td><td>Messagerie</td><td>Starter</td><td>notifications</td><td>Non</td></tr>
+      <tr><td><code>emploi-du-temps</code></td><td>Emploi du Temps</td><td>Standard</td><td>eleves</td><td>Non</td></tr>
+      <tr><td><code>orientation</code></td><td>Orientation</td><td>Pro</td><td>notes</td><td>Non</td></tr>
+      <tr><td><code>cantine</code></td><td>Cantine</td><td>Standard</td><td>eleves</td><td>Oui</td></tr>
+      <tr><td><code>transport</code></td><td>Transport Scolaire</td><td>Standard</td><td>eleves</td><td>Oui</td></tr>
+      <tr><td><code>finances</code></td><td>Finances Scolaires</td><td>Starter</td><td>eleves</td><td>Oui</td></tr>
+      <tr><td><code>comptabilite</code></td><td>Comptabilité</td><td>Pro</td><td>finances</td><td>Oui</td></tr>
+      <tr><td><code>personnel</code></td><td>Personnel RH</td><td>Standard</td><td>auth</td><td>Non</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.4 Modules ADDON — Suppléments</h3>
+  <table>
+    <thead>
+      <tr><th>Code</th><th>Nom</th><th>Plan Minimal</th><th>Dépendances</th><th>Souscriptible</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>cms</code></td><td>Site Web (CMS)</td><td>—</td><td>—</td><td>Non</td></tr>
+      <tr><td><code>clubs</code></td><td>Clubs & Activités</td><td>—</td><td>eleves</td><td>Oui</td></tr>
+      <tr><td><code>gamification</code></td><td>Gamification</td><td>—</td><td>eleves</td><td>Oui</td></tr>
+      <tr><td><code>bibliotheque</code></td><td>Bibliothèque</td><td>—</td><td>eleves</td><td>Oui</td></tr>
+      <tr><td><code>cartes</code></td><td>Cartes & Badges</td><td>—</td><td>eleves</td><td>Oui</td></tr>
+      <tr><td><code>scoring</code></td><td>Scoring & KPI</td><td>Pro</td><td>notes, gamification</td><td>Non</td></tr>
+      <tr><td><code>sondages</code></td><td>Sondages</td><td>—</td><td>—</td><td>Oui</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 5. ENTITLEMENT SERVICE -->
+<div class="section" id="entitlement">
+  <h2>5. EntitlementService — Source Unique de Vérité</h2>
+  
+  <p>L'<code>EntitlementService</code> (855 lignes) est le composant central qui remplace les 3 anciens registres divergents depuis la migration 200. Il fournit une réponse déterministe à la question : <em>« Cet établissement a-t-il accès à ce module ? »</em></p>
+
+  <h3>5.1 Interface de Résultat</h3>
+  <pre><code>interface EntitlementResult {
+    accessible: boolean;          // Le module est-il accessible ?
+    visible: boolean;             // Visible dans le catalogue ?
+    raison: EntitlementRaison;    // Pourquoi ? (OK, BASE, ABONNEMENT_INACTIF...)
+    message?: string;             // Message explicatif pour le frontend
+    source: EntitlementSource;    // D'où vient la décision ? (base, plan, groupe...)
+    planMinimalRequis?: string;   // Plan requis si applicable
+    planActuel?: string;          // Plan actuel de l'établissement
+    lectureSeule?: boolean;       // Mode dégradé J0-J15
+}</code></pre>
+
+  <h3>5.2 Raisons de Blocage</h3>
+  <table>
+    <thead><tr><th>Raison</th><th>Signification</th><th>HTTP</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge badge-ok">BASE</span></td><td>Module de base, toujours accessible</td><td>—</td></tr>
+      <tr><td><span class="badge badge-ok">ESSAI_ACTIF</span></td><td>Période d'essai de 14 jours en cours</td><td>—</td></tr>
+      <tr><td><span class="badge badge-ok">OK</span></td><td>Module accessible (plan/groupe/supplément)</td><td>—</td></tr>
+      <tr><td><span class="badge badge-error">ABONNEMENT_INACTIF</span></td><td>Aucun abonnement actif</td><td>402</td></tr>
+      <tr><td><span class="badge badge-error">ABONNEMENT_EXPIRE</span></td><td>Abonnement expiré</td><td>402</td></tr>
+      <tr><td><span class="badge badge-error">ABONNEMENT_SUSPENDU</span></td><td>Abonnement suspendu</td><td>402</td></tr>
+      <tr><td><span class="badge badge-warn">DEGRADATION_LECTURE_SEULE</span></td><td>J0-J15 : lecture seule</td><td>403 (write)</td></tr>
+      <tr><td><span class="badge badge-error">DEGRADATION_VERROUILLE</span></td><td>J15-J30 : verrouillé</td><td>403</td></tr>
+      <tr><td><span class="badge badge-error">DEGRADATION_ARCHIVE</span></td><td>J30+ : archivé</td><td>403</td></tr>
+      <tr><td><span class="badge badge-error">PLAN_INSUFFICIENT</span></td><td>Plan actuel insuffisant</td><td>403</td></tr>
+      <tr><td><span class="badge badge-warn">OVERRIDE_DESACTIVE</span></td><td>Désactivé au niveau groupe</td><td>403</td></tr>
+      <tr><td><span class="badge badge-error">MODULE_DESACTIVE</span></td><td>Module non trouvé/inactif</td><td>403</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 6. CASCADE -->
+<div class="section" id="cascade">
+  <h2>6. Cascade de Résolution — 8 Niveaux</h2>
+  
+  <div class="mermaid">
+flowchart TD
+    A["Niveau 0 : Module BASE ?<br/>(auth, utilisateurs, config, notifications)"] -->|Oui| R1["✅ BYPASS TOTAL"]
+    A -->|Non| B["Niveau 0.5 : Période d'essai ?<br/>(statut ESSAI, 14 jours)"]
+    B -->|Oui, en cours| R2["✅ TOUS MODULES ACCESSIBLES"]
+    B -->|Non| C["Niveau 1 : Module dans catalogue ?<br/>(estActif = true)"]
+    C -->|Non| R3["❌ MODULE_DÉSACTIVÉ"]
+    C -->|Oui, catégorie BASE| R4["✅ BASE (catégorie)"]
+    C -->|Oui| D["Niveau 2 : Abonnement ACTIF/ESSAI ?"]
+    D -->|Non + actifParDefaut| R5["✅ OK (catalogue défaut)"]
+    D -->|Non| R6["❌ ABONNEMENT_INACTIF"]
+    D -->|Oui| E["Niveau 3 : Plan inclut le module ?<br/>(modulesInclus)"]
+    E -->|Oui| R7["✅ OK (plan)"]
+    E -->|Non| F["Niveau 4 : Override groupe ?<br/>(ModulesGroupe)"]
+    F -->|Actif| R8["✅ OK (groupe)"]
+    F -->|Inactif| R9["❌ OVERRIDE_DÉSACTIVÉ"]
+    F -->|Aucun| G["Niveau 5 : Supplément souscrit ?<br/>(AbonnementModule)"]
+    G -->|Oui| R10["✅ OK (supplément)"]
+    G -->|Non| H["Niveau 6 : Plan minimal requis ?"]
+    H -->|Plan actuel < requis| R11["❌ PLAN_INSUFFICIENT"]
+    H -->|OK ou aucun| I["Niveau 7 : actifParDefaut ?"]
+    I -->|Oui| R12["✅ OK (catalogue défaut)"]
+    I -->|Non| R13["❌ MODULE_DÉSACTIVÉ"]
+
+    style R1 fill:#dcfce7
+    style R2 fill:#dcfce7
+    style R4 fill:#dcfce7
+    style R5 fill:#dcfce7
+    style R7 fill:#dcfce7
+    style R8 fill:#dcfce7
+    style R10 fill:#dcfce7
+    style R12 fill:#dcfce7
+    style R3 fill:#fee2e2
+    style R6 fill:#fee2e2
+    style R9 fill:#fee2e2
+    style R11 fill:#fee2e2
+    style R13 fill:#fee2e2
+  </div>
+</div>
+
+<!-- 7. STOCKAGE -->
+<div class="section" id="stockage">
+  <h2>7. Stockage et Identification des Fonctionnalités</h2>
+  
+  <h3>7.1 Modèle de Données Relationnel</h3>
+  <div class="mermaid">
+erDiagram
+    plans_abonnement ||--o{ abonnements_client : "souscrit"
+    abonnements_client ||--o{ abonnements_modules : "inclut"
+    abonnements_client }o--|| etablissements : "concerne"
+    modules_catalogue ||--o{ modules_groupe : "override"
+    modules_catalogue ||--o{ abonnements_modules : "optionnel"
+    feature_flags_tenant }o--|| etablissements : "override"
+    
+    plans_abonnement {
+        uuid id PK
+        varchar nom
+        varchar slug UK
+        decimal prixBase
+        json modulesInclus "['eleves','notes','transport']"
+        json featureFlags "{'export_pdf':true,'sso':false}"
+        int maxEleves
+        int maxUtilisateurs
+    }
+    
+    modules_catalogue {
+        uuid id PK
+        varchar code UK "ex: 'transport'"
+        varchar nom
+        varchar categorie "BASE|PREMIUM|ADDON"
+        boolean estFacturable
+        boolean estSouscriptible
+        boolean actifParDefaut
+        varchar planMinimal
+        json config
+        json dependencies
+    }
+    
+    abonnements_client {
+        uuid id PK
+        uuid etablissementId FK
+        uuid planId FK
+        varchar statut "ACTIF|ESSAI|EXPIRE|SUSPENDU"
+        timestamp periodeEssaiFin
+        timestamp dateExpirationReelle
+    }
+    
+    feature_flags_tenant {
+        uuid id PK
+        uuid etablissementId FK
+        varchar flagName "ex: 'export_pdf'"
+        boolean enabled
+        varchar source "MANUAL|PLAN|GLOBAL"
+    }
+    
+    modules_groupe {
+        uuid id PK
+        uuid groupeEtablissementId FK
+        uuid moduleCatalogueId FK
+        boolean actif
+    }
+  </div>
+
+  <h3>7.2 Comment les Fonctionnalités sont Identifiées</h3>
+  <div class="callout callout-info">
+    <div class="callout-title">📌 Triple Système d'Identification</div>
+    <p>Chaque fonctionnalité est identifiée par <strong>3 mécanismes complémentaires</strong> :</p>
+    <ol>
+      <li><strong>Code module</strong> (<code>modules_catalogue.code</code>) — identifiant unique du module métier (ex: <code>transport</code>, <code>gamification</code>)</li>
+      <li><strong>Feature flag</strong> (<code>feature_flags_tenant.flagName</code>) — capacité transverse (ex: <code>export_pdf</code>, <code>sso</code>)</li>
+      <li><strong>Permission RBAC</strong> (<code>roles.enum.ts</code>) — granularité fine (ex: <code>transport:lignes:view</code>, <code>gamification:badges:manage</code>)</li>
+    </ol>
+  </div>
+</div>
+
+<!-- 8. ACTIVATION PAR ÉTABLISSEMENT -->
+<div class="section" id="activation">
+  <h2>8. Activation/Désactivation par Établissement</h2>
+  
+  <h3>8.1 Mécanismes Disponibles</h3>
+  <table>
+    <thead><tr><th>Mécanisme</th><th>Portée</th><th>Priorité</th><th>Comment</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Feature Flag Tenant</strong></td>
+        <td>1 feature, 1 établissement</td>
+        <td>Maximale</td>
+        <td><code>featureFlagService.toggleFlag('export_pdf', etabId, true)</code></td>
+      </tr>
+      <tr>
+        <td><strong>Override Groupe</strong></td>
+        <td>1 module, 1 groupe d'établissements</td>
+        <td>Haute</td>
+        <td>Table <code>modules_groupe</code> avec <code>actif: true/false</code></td>
+      </tr>
+      <tr>
+        <td><strong>Supplément Module</strong></td>
+        <td>1 module, 1 établissement</td>
+        <td>Moyenne</td>
+        <td>Table <code>abonnements_modules</code> avec <code>actif: true</code></td>
+      </tr>
+      <tr>
+        <td><strong>Paramètre Système</strong></td>
+        <td>Config globale ou par établissement</td>
+        <td>Basse</td>
+        <td><code>ParametreSysteme</code> avec cascade 4 niveaux</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>8.2 Flux d'Activation Typique</h3>
+  <div class="mermaid">
+sequenceDiagram
+    participant ADMIN as Admin Plateforme
+    participant API as API REST
+    participant ENT as EntitlementService
+    participant DB as Base de Données
+    participant CACHE as Cache Redis
+
+    ADMIN->>API: POST /api/billing/feature-flags/toggle
+    API->>ENT: toggleFlag('export_pdf', etabId, true)
+    ENT->>DB: UPSERT feature_flags_tenant
+    ENT->>CACHE: invalidate(etabId)
+    ENT->>CACHE: publish('entitlement:invalidate')
+    ENT-->>API: FeatureFlagTenant saved
+    API-->>ADMIN: 200 { success: true }
+    
+    Note over ADMIN,CACHE: Prochaine requête de l'établissement
+    ADMIN->>API: GET /api/transport/...
+    API->>ENT: check(etabId, 'transport')
+    ENT->>CACHE: GET entitlement:etabId (HIT)
+    ENT-->>API: { accessible: true, source: 'plan' }
+  </div>
+</div>
+
+<!-- 9. PLANS D'ABONNEMENT -->
+<div class="section" id="plans">
+  <h2>9. Intégration aux Plans d'Abonnement</h2>
+  
+  <h3>9.1 Structure des Plans</h3>
+  <div class="mermaid">
+graph TB
+    subgraph "Plans Disponibles"
+        GRATUIT["🆓 Gratuit<br/>Rang 0"]
+        STARTER["⭐ Starter<br/>Rang 1"]
+        STANDARD["🏆 Standard<br/>Rang 2"]
+        PRO["💎 Pro<br/>Rang 3"]
+        ENTERPRISE["🏢 Enterprise<br/>Rang 4"]
+    end
+    
+    GRATUIT -->|"Upgrade"| STARTER
+    STARTER -->|"Upgrade"| STANDARD
+    STANDARD -->|"Upgrade"| PRO
+    PRO -->|"Upgrade"| ENTERPRISE
+    
+    subgraph "Modules par Plan"
+        STARTER -.- S1["eleves, notes, finances, bulletins, messagerie"]
+        STANDARD -.- S2["+ emploi-du-temps, cantine, transport, personnel"]
+        PRO -.- S3["+ orientation, comptabilite, scoring"]
+    end
+  </div>
+
+  <h3>9.2 Feature Flags par Plan</h3>
+  <p>Chaque plan définit un objet <code>featureFlags: Record&lt;string, boolean&gt;</code> qui active/désactive des capacités transverses :</p>
+  <table>
+    <thead><tr><th>Feature Flag</th><th>Gratuit</th><th>Starter</th><th>Standard</th><th>Pro</th><th>Enterprise</th></tr></thead>
+    <tbody>
+      <tr><td>multi_etablissement</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td></tr>
+      <tr><td>export_pdf</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+      <tr><td>api_rest</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+      <tr><td>webhooks</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td></tr>
+      <tr><td>sso</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+      <tr><td>white_label</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+      <tr><td>backup_auto</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+      <tr><td>monitoring_advanced</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td></tr>
+    </tbody>
+  </table>
+  <p><em>Note : Cette matrice est configurable via le Plan Form Modal dans le Control Plane.</em></p>
+
+  <h3>9.3 Modules Souscriptibles en Supplément</h3>
+  <p>Certains modules peuvent être activés individuellement sans changer de plan, via <code>AbonnementModule</code> :</p>
+  <div class="callout callout-info">
+    <div class="callout-title">Modules éligibles au supplément</div>
+    <code>cantine</code>, <code>transport</code>, <code>finances</code>, <code>comptabilite</code>, <code>clubs</code>, <code>gamification</code>, <code>bibliotheque</code>, <code>cartes</code>, <code>sondages</code>
+  </div>
+</div>
+
+<!-- 10. FRONTEND -->
+<div class="section" id="frontend">
+  <h2>10. Frontend — Consommation et UX</h2>
+  
+  <h3>10.1 Composants Frontend Clés</h3>
+  <table>
+    <thead><tr><th>Composant</th><th>Rôle</th></tr></thead>
+    <tbody>
+      <tr><td><code>plan-form-modal.tsx</code></td><td>Création/édition de plans avec modules + feature flags (6 étapes)</td></tr>
+      <tr><td><code>mes-modules-page.tsx</code></td><td>Catalogue client avec statut accessible/verrouillé</td></tr>
+      <tr><td><code>module-card.tsx</code></td><td>Carte module avec cadenas + badge "Plan requis" + CTA upgrade</td></tr>
+      <tr><td><code>usage-meters-dashboard.tsx</code></td><td>Dashboard usage meters (quotas, jauges)</td></tr>
+      <tr><td><code>abonnement-detail.tsx</code></td><td>Détail abonnement avec actions (suspendre, changer plan)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>10.2 UX Gating dans le Frontend</h3>
+  <div class="flow-step"><div class="step-num">1</div><div><strong>Module accessible</strong> → Toggle actif, accès normal aux fonctionnalités</div></div>
+  <div class="flow-step"><div class="step-num">2</div><div><strong>Module verrouillé</strong> → Toggle grisé + cadenas + badge "Plan requis" + bouton "Upgrader"</div></div>
+  <div class="flow-step"><div class="step-num">3</div><div><strong>Module en supplément</strong> → Visible, accessible si souscrit, sinon message "Contactez-nous"</div></div>
+  <div class="flow-step"><div class="step-num">4</div><div><strong>Période d'essai</strong> → Tous les modules accessibles avec bannière "Essai gratuit (X jours restants)"</div></div>
+</div>
+
+<!-- 11. INVENTAIRE COMPLET -->
+<div class="section" id="fonctionnalites">
+  <h2>11. Inventaire Complet des Fonctionnalités (60+ modules backend)</h2>
+  
+  <h3>11.1 Modules Métier Implémentés</h3>
+  <table>
+    <thead><tr><th>#</th><th>Module</th><th>Domaine</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>🔐 auth</td><td>Sécurité</td><td>Authentification JWT, MFA, sessions</td></tr>
+      <tr><td>2</td><td>👥 utilisateurs</td><td>Sécurité</td><td>Gestion utilisateurs et rôles</td></tr>
+      <tr><td>3</td><td>🎓 eleves</td><td>Pédagogie</td><td>Gestion complète des élèves</td></tr>
+      <tr><td>4</td><td>📝 notes</td><td>Pédagogie</td><td>Saisie et gestion des notes</td></tr>
+      <tr><td>5</td><td>📄 bulletins</td><td>Pédagogie</td><td>Génération des bulletins scolaires</td></tr>
+      <tr><td>6</td><td>📅 emploi-du-temps</td><td>Organisation</td><td>Planification des cours et créneaux</td></tr>
+      <tr><td>7</td><td>🍽️ cantine</td><td>Vie scolaire</td><td>Menus, inscriptions, solde</td></tr>
+      <tr><td>8</td><td>🚌 transport</td><td>Vie scolaire</td><td>Lignes, présences QR code</td></tr>
+      <tr><td>9</td><td>💰 finances</td><td>Administration</td><td>Frais scolaires, paiements, avoirs</td></tr>
+      <tr><td>10</td><td>🧮 comptabilite</td><td>Administration</td><td>Comptabilité générale OHADA</td></tr>
+      <tr><td>11</td><td>💼 personnel</td><td>RH</td><td>Dossiers, contrats, postes</td></tr>
+      <tr><td>12</td><td>💳 paie</td><td>RH</td><td>Bulletins de paie, cotisations</td></tr>
+      <tr><td>13</td><td>💬 messagerie</td><td>Communication</td><td>Conversations, pièces jointes</td></tr>
+      <tr><td>14</td><td>📢 annonces</td><td>Communication</td><td>Annonces internes</td></tr>
+      <tr><td>15</td><td>🔔 notifications</td><td>Communication</td><td>Multi-canal (email, SMS, push)</td></tr>
+      <tr><td>16</td><td>📊 sondages</td><td>Communication</td><td>Sondages, templates, analyses</td></tr>
+      <tr><td>17</td><td>🏆 gamification</td><td>Pédagogie</td><td>Points, badges, classement</td></tr>
+      <tr><td>18</td><td>📈 scoring</td><td>Analytique</td><td>Indicateurs de performance</td></tr>
+      <tr><td>19</td><td>🧭 orientation</td><td>Pédagogie</td><td>Orientation et profil élève</td></tr>
+      <tr><td>20</td><td>📚 bibliotheque</td><td>Ressources</td><td>Ouvrages, prêts, retours</td></tr>
+      <tr><td>21</td><td>🏫 classes</td><td>Organisation</td><td>Gestion des classes</td></tr>
+      <tr><td>22</td><td>📖 matieres</td><td>Organisation</td><td>Matières et programmes</td></tr>
+      <tr><td>23</td><td>📆 periodes</td><td>Organisation</td><td>Périodes scolaires</td></tr>
+      <tr><td>24</td><td>📅 annees-scolaires</td><td>Organisation</td><td>Années scolaires</td></tr>
+      <tr><td>25</td><td>🏢 etablissement</td><td>Administration</td><td>Données établissement</td></tr>
+      <tr><td>26</td><td>🏗️ organisation</td><td>Administration</td><td>Structure organisationnelle</td></tr>
+      <tr><td>27</td><td>🌐 cms</td><td>Communication</td><td>Site web white-label</td></tr>
+      <tr><td>28</td><td>💳 cartes</td><td>Vie scolaire</td><td>Cartes d'identité, badges QR</td></tr>
+      <tr><td>29</td><td>❤️ clubs</td><td>Vie scolaire</td><td>Clubs et activités</td></tr>
+      <tr><td>30</td><td>🔧 configuration</td><td>Système</td><td>Paramètres, apparence</td></tr>
+      <tr><td>31</td><td>📋 audit</td><td>Sécurité</td><td>Journal d'audit</td></tr>
+      <tr><td>32</td><td>🔑 rbac</td><td>Sécurité</td><td>Contrôle d'accès basé sur les rôles</td></tr>
+      <tr><td>33</td><td>✅ validation-workflow</td><td>Système</td><td>Workflow de validation multi-niveaux</td></tr>
+      <tr><td>34</td><td>🖨️ impressions</td><td>Utilitaire</td><td>Génération de documents imprimés</td></tr>
+      <tr><td>35</td><td>💳 paiement</td><td>Finance</td><td>Intégration providers paiement</td></tr>
+      <tr><td>36</td><td>🧾 billing</td><td>SaaS</td><td>Facturation SaaS, abonnements</td></tr>
+      <tr><td>37</td><td>📊 monitoring</td><td>Système</td><td>Supervision technique</td></tr>
+      <tr><td>38</td><td>🏥 sante</td><td>Vie scolaire</td><td>Infirmerie, suivi santé</td></tr>
+      <tr><td>39</td><td>🅿️ parking</td><td>Organisation</td><td>Gestion du parking</td></tr>
+      <tr><td>40</td><td>🏠 salles</td><td>Organisation</td><td>Gestion des salles</td></tr>
+      <tr><td>41</td><td>📝 recrutement</td><td>RH</td><td>Processus de recrutement</td></tr>
+      <tr><td>42</td><td>📋 suivi-eleves</td><td>Pédagogie</td><td>Suivi personnalisé des élèves</td></tr>
+      <tr><td>43</td><td>📋 suivi-personnel</td><td>RH</td><td>Suivi et évaluation du personnel</td></tr>
+      <tr><td>44</td><td>🎓 competences</td><td>Pédagogie</td><td>Référentiel de compétences</td></tr>
+      <tr><td>45</td><td>🎓 programmes</td><td>Pédagogie</td><td>Programmes scolaires</td></tr>
+      <tr><td>46</td><td>🎓 cycles</td><td>Pédagogie</td><td>Cycles d'enseignement</td></tr>
+      <tr><td>47</td><td>🎓 niveaux</td><td>Pédagogie</td><td>Niveaux de classe</td></tr>
+      <tr><td>48</td><td>🎓 filieres</td><td>Pédagogie</td><td>Filières de formation</td></tr>
+      <tr><td>49</td><td>🎓 specialites</td><td>Pédagogie</td><td>Spécialités</td></tr>
+      <tr><td>50</td><td>📜 diplomes-eleves</td><td>Pédagogie</td><td>Diplômes obtenus par les élèves</td></tr>
+      <tr><td>51</td><td>📝 examens-nationaux</td><td>Pédagogie</td><td>Inscription et suivi examens officiels</td></tr>
+      <tr><td>52</td><td>🏢 groupes-etablissements</td><td>Administration</td><td>Groupes multi-tenant</td></tr>
+      <tr><td>53</td><td>👨‍👩‍👧 responsables-eleves</td><td>Vie scolaire</td><td>Responsables légaux des élèves</td></tr>
+      <tr><td>54</td><td>🔢 types-enum</td><td>Système</td><td>Types et énumérations partagés</td></tr>
+      <tr><td>55</td><td>🎯 options</td><td>Système</td><td>Options et préférences</td></tr>
+      <tr><td>56</td><td>📊 dashboard</td><td>Analytique</td><td>Tableaux de bord</td></tr>
+      <tr><td>57</td><td>🌐 network</td><td>Système</td><td>Gestion réseau et connectivité</td></tr>
+      <tr><td>58</td><td>🔐 platform-auth</td><td>SaaS</td><td>Authentification plateforme</td></tr>
+      <tr><td>59</td><td>👥 platform-users</td><td>SaaS</td><td>Utilisateurs plateforme</td></tr>
+      <tr><td>60</td><td>🔑 platform-roles</td><td>SaaS</td><td>Rôles plateforme</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 12. RECOMMANDATIONS -->
+<div class="section" id="recommandations">
+  <h2>12. Recommandations et Améliorations</h2>
+  
+  <div class="rec-card priority-high">
+    <span class="priority" style="color:var(--danger)">🔴 Priorité Haute</span>
+    <h4>R1 — Unifier Feature Flags et Module Gating</h4>
+    <p><strong>Constat</strong> : Actuellement, les feature flags et les modules sont gérés par 2 services distincts (<code>FeatureFlagService</code> et <code>EntitlementService</code>). Cette séparation crée une duplication logique (les modules inclus activent automatiquement les flags <code>module_*</code>).</p>
+    <p><strong>Recommandation</strong> : Fusionner la résolution dans <code>EntitlementService</code> qui devient l'unique point d'entrée. Les feature flags deviennent un type particulier de capability dans le catalogue.</p>
+    <pre><code>// Proposition : EntitlementService.checkCapability()
+async checkCapability(
+    etablissementId: string, 
+    capability: string  // peut être un module OU un feature flag
+): Promise&lt;EntitlementResult&gt;</code></pre>
+  </div>
+
+  <div class="rec-card priority-high">
+    <span class="priority" style="color:var(--danger)">🔴 Priorité Haute</span>
+    <h4>R2 — Catalogue de Feature Flags Dynamique</h4>
+    <p><strong>Constat</strong> : La liste <code>FEATURE_FLAGS_LIST</code> est hardcodée dans le frontend (8 flags). Ajouter un nouveau flag nécessite une modification code + déploiement.</p>
+    <p><strong>Recommandation</strong> : Créer une entité <code>FeatureFlagDefinition</code> en base avec metadata (label, description, catégorie, defaultValue). Le frontend charge la liste dynamiquement via API.</p>
+    <pre><code>-- Nouvelle table
+CREATE TABLE feature_flag_definitions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    key VARCHAR(100) UNIQUE NOT NULL,
+    label VARCHAR(150) NOT NULL,
+    description TEXT,
+    categorie VARCHAR(50), -- 'billing', 'integration', 'security', 'ux'
+    default_value BOOLEAN DEFAULT false,
+    plan_minimal VARCHAR(50),
+    est_systeme BOOLEAN DEFAULT false
+);</code></pre>
+  </div>
+
+  <div class="rec-card priority-medium">
+    <span class="priority" style="color:var(--warning)">🟡 Priorité Moyenne</span>
+    <h4>R3 — Feature Flags Scopés par Utilisateur</h4>
+    <p><strong>Constat</strong> : Les feature flags sont uniquement scopés par établissement. Pas de possibilité d'activer une feature pour un rôle spécifique (ex: <code>export_pdf</code> seulement pour les ADMIN).</p>
+    <p><strong>Recommandation</strong> : Ajouter une dimension <code>roleId</code> ou <code>userId</code> dans <code>feature_flags_tenant</code> pour permettre des overrides granulaires.</p>
+  </div>
+
+  <div class="rec-card priority-medium">
+    <span class="priority" style="color:var(--warning)">🟡 Priorité Moyenne</span>
+    <h4>R4 — Dashboard Feature Flags Unifié</h4>
+    <p><strong>Constat</strong> : Pas de vue centralisée montrant tous les feature flags avec leur état par établissement dans le Control Plane.</p>
+    <p><strong>Recommandation</strong> : Créer une page <code>/platform/feature-flags</code> avec :
+    </p>
+    <ul>
+      <li>Matrice établissements × flags (toggle rapide)</li>
+      <li>Filtres par plan, statut, groupe</li>
+      <li>Audit trail des modifications</li>
+      <li>Import/export en masse (CSV)</li>
+    </ul>
+  </div>
+
+  <div class="rec-card priority-medium">
+    <span class="priority" style="color:var(--warning)">🟡 Priorité Moyenne</span>
+    <h4>R5 — Versioning et Rollback des Feature Flags</h4>
+    <p><strong>Constat</strong> : Pas d'historique des changements de feature flags. Impossible de savoir qui a activé/désactivé quoi et quand.</p>
+    <p><strong>Recommandation</strong> : Créer une table <code>feature_flags_history</code> avec audit complet et possibilité de rollback.</p>
+  </div>
+
+  <div class="rec-card">
+    <span class="priority" style="color:var(--success)">🟢 Priorité Basse</span>
+    <h4>R6 — Feature Flags Conditionnels (Rules Engine)</h4>
+    <p><strong>Constat</strong> : Les flags sont binaires (true/false). Pas de conditions contextuelles (ex: <code>export_pdf</code> activé seulement si effectif > 500).</p>
+    <p><strong>Recommandation</strong> : Implémenter un rules engine léger pour des conditions composées :</p>
+    <pre><code>// Proposition : Feature flag avec règles
+{
+    "key": "export_pdf",
+    "rules": [
+        { "condition": "plan.rank >= 2", "value": true },
+        { "condition": "etablissement.effectif > 500", "value": true },
+        { "condition": "default", "value": false }
+    ]
+}</code></pre>
+  </div>
+
+  <div class="rec-card">
+    <span class="priority" style="color:var(--success)">🟢 Priorité Basse</span>
+    <h4>R7 — A/B Testing et Progressive Rollout</h4>
+    <p><strong>Constat</strong> : Pas de mécanisme de rollout progressif (activer pour 10% des établissements puis augmenter).</p>
+    <p><strong>Recommandation</strong> : Ajouter un champ <code>rolloutPercentage</code> dans <code>FeatureFlagDefinition</code>. Le service calcule de manière déterministe si un établissement est dans le pourcentage.</p>
+  </div>
+
+  <div class="rec-card">
+    <span class="priority" style="color:var(--success)">🟢 Amélioration Continue</span>
+    <h4>R8 — Synchroniser le Frontend MODULES_CATALOG avec le Backend</h4>
+    <p><strong>Constat</strong> : Le frontend a <code>MODULES_CATALOG</code> (19 modules) hardcodé, tandis que le backend en a 26 dans le seed. Désynchronisation inévitable.</p>
+    <p><strong>Recommandation</strong> : Charger le catalogue dynamiquement via <code>GET /api/billing/modules/catalogue</code> au lieu de hardcoder.</p>
+  </div>
+</div>
+
+<!-- 13. MEILLEURES PRATIQUES -->
+<div class="section" id="meilleures-pratiques">
+  <h2>13. Meilleures Pratiques Industrielles</h2>
+  
+  <h3>13.1 Ce que eLISAschool Fait Bien ✅</h3>
+  <table>
+    <thead><tr><th>Pratique</th><th>Statut</th><th>Détails</th></tr></thead>
+    <tbody>
+      <tr><td>Source unique de vérité</td><td><span class="badge badge-ok">✅ Implémenté</span></td><td>EntitlementService remplace 3 registres divergents</td></tr>
+      <tr><td>Cache avec TTL</td><td><span class="badge badge-ok">✅ Implémenté</span></td><td>Redis 60s + in-memory + Pub/Sub cross-instance</td></tr>
+      <tr><td>Dégradation gracieuse</td><td><span class="badge badge-ok">✅ Implémenté</span></td><td>3 phases sur 30 jours avant archivage</td></tr>
+      <tr><td>Période d'essai</td><td><span class="badge badge-ok">✅ Implémenté</span></td><td>14 jours, tous modules accessibles</td></tr>
+      <tr><td>Multi-tenant isolation</td><td><span class="badge badge-ok">✅ Implémenté</span></td><td>RLS PostgreSQL + middleware AsyncLocalStorage</td></tr>
+      <tr><td>Middleware gating</td><td><span class="badge badge-ok">✅ Implémenté</span></td><td>requireModuleAccess() sur chaque route</td></tr>
+      <tr><td>Override par tenant</td><td><span class="badge badge-ok">✅ Implémenté</span></td><td>feature_flags_tenant + modules_groupe</td></tr>
+      <tr><td>Audit trail</td><td><span class="badge badge-ok">✅ Implémenté</span></td><td>Log des toggles + accès refusés</td></tr>
+    </tbody>
+  </table>
+
+  <h3>13.2 Ce qui Manque par Rapport aux Standards Industriels 🔧</h3>
+  <table>
+    <thead><tr><th>Pratique (LaunchDarkly, Split, etc.)</th><th>Statut</th><th>Effort</th></tr></thead>
+    <tbody>
+      <tr><td>Catalogue de flags dynamique (DB)</td><td><span class="badge badge-warn">⚠️ Partiel</span></td><td>Moyen</td></tr>
+      <tr><td>UI de gestion centralisée</td><td><span class="badge badge-error">❌ Manquant</span></td><td>Moyen</td></tr>
+      <tr><td>Versioning / rollback</td><td><span class="badge badge-error">❌ Manquant</span></td><td>Faible</td></tr>
+      <tr><td>Progressive rollout (%)</td><td><span class="badge badge-error">❌ Manquant</span></td><td>Moyen</td></tr>
+      <tr><td>Rules engine (conditions)</td><td><span class="badge badge-error">❌ Manquant</span></td><td>Élevé</td></tr>
+      <tr><td>Segmentation utilisateurs</td><td><span class="badge badge-warn">⚠️ Via RBAC</span></td><td>Faible</td></tr>
+      <tr><td>Analytics d'usage des flags</td><td><span class="badge badge-error">❌ Manquant</span></td><td>Moyen</td></tr>
+      <tr><td>SDK client-side evaluation</td><td><span class="badge badge-error">❌ Manquant</span></td><td>Élevé</td></tr>
+      <tr><td>Feature flags par environnement</td><td><span class="badge badge-warn">⚠️ Via .env</span></td><td>Faible</td></tr>
+      <tr><td>Kill switch global</td><td><span class="badge badge-error">❌ Manquant</span></td><td>Faible</td></tr>
+    </tbody>
+  </table>
+
+  <h3>13.3 Comparaison avec les Leaders du Marché</h3>
+  <div class="mermaid">
+quadrantChart
+    title Maturité Feature Flags — eLISAschool vs Standards
+    x-axis "Basique" --> "Avancé"
+    y-axis "Réactif" --> "Proactif"
+    quadrant-1 "Leaders (LaunchDarkly)"
+    quadrant-2 "Visionnaires"
+    quadrant-3 "Niche Players"
+    quadrant-4 "Pragmatiques"
+    "eLISAschool actuel": [0.55, 0.60]
+    "eLISAschool cible (R1-R5)": [0.75, 0.78]
+    "LaunchDarkly": [0.92, 0.88]
+    "Split.io": [0.85, 0.82]
+    "Unleash": [0.78, 0.70]
+  </div>
+</div>
+
+<!-- 14. CONCLUSION -->
+<div class="section" id="conclusion">
+  <h2>14. Conclusion</h2>
+  
+  <div class="callout callout-success">
+    <div class="callout-title">🎯 Verdict Global</div>
+    <p>eLISAschool dispose d'un système de gestion des fonctionnalités <strong>robuste et bien architecturé</strong> (note : <strong>8/10</strong>). L'EntitlementService unifié (migration 200) est un excellent choix architectural. Les 8 niveaux de cascade couvrent tous les cas d'usage SaaS standards.</p>
+  </div>
+
+  <h3>Roadmap Recommandée</h3>
+  <table>
+    <thead><tr><th>Phase</th><th>Actions</th><th>Effort</th><th>Impact</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Phase 1</strong> (2 semaines)</td><td>R2 (catalogue dynamique) + R8 (sync frontend)</td><td>Faible</td><td>Élevé</td></tr>
+      <tr><td><strong>Phase 2</strong> (3 semaines)</td><td>R4 (dashboard unifié) + R5 (versioning)</td><td>Moyen</td><td>Élevé</td></tr>
+      <tr><td><strong>Phase 3</strong> (4 semaines)</td><td>R1 (unification) + R3 (scope utilisateur)</td><td>Élevé</td><td>Très élevé</td></tr>
+      <tr><td><strong>Phase 4</strong> (6 semaines)</td><td>R6 (rules engine) + R7 (progressive rollout)</td><td>Élevé</td><td>Moyen</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-info">
+    <div class="callout-title">💡 Point Clé</div>
+    <p>La différence principale entre eLISAschool et les solutions enterprise (LaunchDarkly, Split) réside dans l'<strong>absence d'UI de gestion centralisée</strong> et de <strong>moteur de règles conditionnelles</strong>. Ces deux ajouts feraient passer le système de « pragmatique » à « visionnaire » dans la matrice de maturité.</p>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="report-footer">
+  <p><strong>eLISAschool</strong> — Rapport d'Architecture Feature Flags & Modules</p>
+  <p>Généré le 14 août 2026 | Analyse basée sur le codebase v10+ (migration 200+)</p>
+  <p>Auteur : Analyse automatisée | Réviseur : Équipe eLISAschool</p>
+</div>
+
+</div><!-- /.container -->
+
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'base',
+  themeVariables: {
+    primaryColor: '#dbeafe',
+    primaryTextColor: '#1e293b',
+    primaryBorderColor: '#2563eb',
+    lineColor: '#64748b',
+    secondaryColor: '#f3e8ff',
+    tertiaryColor: '#f0fdf4',
+    fontSize: '14px'
+  },
+  flowchart: { curve: 'basis', padding: 15 },
+  pie: { textPosition: 0.85 }
+});
+</script>
+</body>
+</html>

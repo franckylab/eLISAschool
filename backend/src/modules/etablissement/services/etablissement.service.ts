@@ -17,6 +17,9 @@ import { StatutPersonnel } from '@modules/personnel/entities';
 import { redimensionnerLogo } from '@common/utils/image-processor.util';
 import { auditService, AuditAction } from '@modules/auth';
 import { santeEtablissementService } from './sante-etablissement.service';
+import { cmsTemplateService } from '@modules/cms/services/cms-template.service';
+import { AbonnementClient, StatutAbonnement, CycleFacturation } from '@modules/billing/entities/abonnement-client.entity';
+import { PlanAbonnement } from '@modules/billing/entities/plan-abonnement.entity';
 
 export interface EtablissementStats {
     totalEtablissements: number;
@@ -78,6 +81,35 @@ export class EtablissementService {
             });
             await queryRunner.manager.save(config);
 
+            // --- P1.1 — Auto-création abonnement période d'essai (14 jours) ---
+            try {
+                const planRepo = queryRunner.manager.getRepository(PlanAbonnement);
+                const planStarter = await planRepo.findOne({ where: { slug: 'starter' } });
+                if (planStarter) {
+                    const maintenant = new Date();
+                    const periodeEssaiFin = new Date(maintenant);
+                    periodeEssaiFin.setDate(periodeEssaiFin.getDate() + 14);
+
+                    const abonnementEssai = queryRunner.manager.create(AbonnementClient, {
+                        etablissementId: etablissement.id,
+                        planId: planStarter.id,
+                        dateDebut: maintenant,
+                        dateFin: periodeEssaiFin,
+                        statut: StatutAbonnement.ESSAI,
+                        cycleFacturation: CycleFacturation.MENSUEL,
+                        autoRenouvellement: false,
+                        montantMensuel: 0,
+                        nombreElevesActuel: 0,
+                        periodeEssaiFin,
+                    });
+                    await queryRunner.manager.save(abonnementEssai);
+                    logger.info(`[Essai] Abonnement 14 jours créé pour ${dto.nom} (jusqu'au ${periodeEssaiFin.toISOString().split('T')[0]})`);
+                }
+            } catch (essaiError) {
+                // Non-bloquant : l'essai est un best-effort
+                logger.warn(`[Essai] Auto-création échouée pour ${dto.nom}: ${(essaiError as Error).message}`);
+            }
+
             await queryRunner.commitTransaction();
 
             // Créer le workflow de validation si requis
@@ -106,6 +138,12 @@ export class EtablissementService {
             });
 
             logger.info(`Établissement créé: ${dto.nom} (${etablissement.id})`);
+
+            // Auto-initialisation CMS (thème + pages + menus par défaut) — best effort
+            cmsTemplateService.initialiserCmsEtablissement(etablissement.id).catch(err => {
+                logger.warn(`[CMS] Auto-initialisation échouée pour ${dto.nom}: ${err.message}`);
+            });
+
             return etablissement;
         } catch (error: any) {
             await queryRunner.rollbackTransaction();

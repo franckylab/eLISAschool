@@ -31,8 +31,8 @@ import { Role } from '@modules/auth/entities';
 import { logger } from '@common/utils/logger.util';
 import { AppError } from '@common/filters/error.filter';
 import { validateDto } from '@common/utils';
-import { moduleResolutionService } from '@modules/billing/services/module-resolution.service';
 import { entitlementService } from '@modules/billing/services/entitlement.service';
+// ModuleResolutionService supprimé (fusion P0.1) — utiliser entitlementService
 import { configConsistencyService } from '../services/config-consistency.service';
 import {
     canViewConfigApp,
@@ -184,8 +184,8 @@ router.get('/modules/registry', authMiddleware, canViewConfigModule, async (req:
     try {
         const etablissementId = req.utilisateur?.etablissementId;
 
-        // Catalogue DB (source de vérité)
-        const catalogue = await moduleResolutionService.getCatalogue();
+        // Catalogue DB (source de vérité) — via entitlementService (fusion P0.1)
+        const catalogue = await entitlementService.getCatalogue();
 
         // Enrichissement entitlement (gating par abonnement)
         let entitlementMap = new Map<string, { accessible: boolean; visible: boolean; raison: string; message?: string }>();
@@ -203,7 +203,7 @@ router.get('/modules/registry', authMiddleware, canViewConfigModule, async (req:
             const ent = entitlementMap.get(mc.code);
             const estAccessible = ent?.accessible ?? mc.actifParDefaut;
             const estVisible = ent?.visible ?? true;
-            const raisonBlocage = (ent?.raison === 'OK' || ent?.raison === 'CRITIQUE') ? null : ent?.raison;
+            const raisonBlocage = (ent?.raison === 'OK' || ent?.raison === 'BASE') ? null : ent?.raison;
 
             return {
                 name: mc.code,
@@ -748,8 +748,8 @@ router.get('/modules-advanced/status', authMiddleware, canViewConfigModule, asyn
         if (!etablissementId) {
             throw new AppError('etablissementId requis', 400, 'MISSING_ETABLISSEMENT');
         }
-        // Résolution des modules depuis le catalogue DB
-        const modulesResolus = await moduleResolutionService.getResolvedModules(etablissementId);
+        // Résolution des modules depuis entitlementService (source unique, fusion P0.1)
+        const modulesResolus = await entitlementService.getResolvedModules(etablissementId);
         // Enrichissement avec l'entitlement (gating par abonnement)
         const entitlements = await entitlementService.checkAll(etablissementId);
         const entitlementMap = new Map(entitlements.map((e) => [e.code, e.entitlement]));
@@ -760,7 +760,7 @@ router.get('/modules-advanced/status', authMiddleware, canViewConfigModule, asyn
                 ...m,
                 estAccessible: ent?.accessible ?? false,
                 estVisible: ent?.visible ?? true,
-                raisonBlocage: ent?.raison === 'OK' || ent?.raison === 'CRITIQUE' ? null : ent?.raison,
+                raisonBlocage: ent?.raison === 'OK' || ent?.raison === 'BASE' ? null : ent?.raison,
                 messageBlocage: ent?.message || null,
                 sourceEntitlement: ent?.source || null,
                 planMinimalRequis: ent?.planMinimalRequis || null,
@@ -777,7 +777,7 @@ router.get('/modules-advanced/status', authMiddleware, canViewConfigModule, asyn
  */
 router.get('/modules-advanced/definitions', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const catalogue = await moduleResolutionService.getCatalogue();
+        const catalogue = await entitlementService.getCatalogue();
         res.json({ success: true, data: catalogue });
     } catch (error) { next(error); }
 });
@@ -789,7 +789,7 @@ router.get('/modules-advanced/definitions', authMiddleware, canViewConfigModule,
  */
 router.get('/modules-advanced/categories', authMiddleware, canViewConfigModule, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const catalogue = await moduleResolutionService.getCatalogue();
+        const catalogue = await entitlementService.getCatalogue();
         // Grouper par catégorie
         const categories: Record<string, any[]> = {};
         for (const module of catalogue) {

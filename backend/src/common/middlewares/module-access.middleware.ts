@@ -1,17 +1,18 @@
 /**
  * ==================================
- * eLISAschool - Middleware Module Access v3 (Premium Gating — catalogue unifié)
+ * eLISAschool - Middleware Module Access v4 (Entitlement unifié)
  * ==================================
- * Version: 3.0.0
+ * Version: 4.0.0
  *
- * Remplace les sets hardcodés MODULES_GRATUITS/MODULES_PREMIUM par le
- * catalogue unique `modules_catalogue` (Lot A — Refonte SaaS v7).
+ * Refonte SaaS — Unification Modules (migration 200)
+ *
+ * Délègue entièrement à entitlementService (source unique de vérité).
+ * Remplace l'ancienne logique configurationService + moduleResolutionService.
  *
  * Vérifie :
- *   1. Activation du module (ParametreSysteme → MODULE_REGISTRY fallback)
- *   2. Si module facturable (catalogue : PREMIUM/ADDON) :
- *      a. Abonnement actif requis → 402 SUBSCRIPTION_REQUIRED
- *      b. Module souscrit (plan.modulesInclus ou AbonnementModule) → 403 MODULE_PREMIUM_REQUIS
+ *   1. Module BASE → bypass total
+ *   2. Entitlement via cascade complète (plan → groupe → supplément → catalogue)
+ *   3. Messages d'erreur adaptés selon la raison (402/403)
  *
  * @example
  * router.use('/api/transport', authMiddleware, requireModuleAccess('transport'), transportController);
@@ -19,15 +20,13 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '@common/filters/error.filter';
-import { configurationService } from '@modules/configuration/services/configuration.service';
+import { entitlementService } from '@modules/billing/services/entitlement.service';
 import { auditService } from '@modules/auth';
 import { logger } from '@common/utils/logger.util';
-import { AppDataSource } from '@database/data-source';
-import { AbonnementClient, StatutAbonnement } from '@modules/billing/entities/abonnement-client.entity';
-import { moduleResolutionService } from '@modules/billing/services/module-resolution.service';
 
 /**
- * Middleware factory — vérifie l'accès à un module (catalogue + facturation).
+ * Middleware factory — vérifie l'accès à un module via entitlementService.
+ * Wrapper de compatibilité autour de la source unique de vérité.
  */
 export function requireModuleAccess(moduleNom: string) {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -40,69 +39,77 @@ export function requireModuleAccess(moduleNom: string) {
 
             const etablissementId = req.utilisateur?.etablissementId;
 
-            // 1. Vérifier que le module est activé (paramètre → registre fallback)
-            const estActif = await configurationService.isModuleActive(moduleNom, etablissementId);
+            if (!etablissementId) {
+                // Pas d'établissement identifié → laisser passer (comme avant)
+                next();
+                return;
+            }
 
-            if (!estActif) {
-                await auditService.logAccessDenied(
-                    req.utilisateur?.id,
-                    `Tentative d'accès au module désactivé: ${moduleNom}`,
-                    req
-                );
+            // Source unique de vérité : EntitlementService
+            const entitlement = await entitlementService.check(etablissementId, moduleNom);
 
+            // P1.2 — Dégradation gracieuse : mode lecture seule (J0–J15)
+            // Accessible pour GET, bloqué pour POST/PUT/DELETE/PATCH
+            if (entitlement.lectureSeule && req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS') {
                 throw new AppError(
-                    `Le module "${moduleNom}" est désactivé. Contactez un administrateur.`,
+                    `Mode lecture seule actif — les modifications sont temporairement désactivées. ` +
+                    `Renouvelez votre abonnement pour retrouver l'accès complet.`,
                     403,
-                    'MODULE_INACTIVE'
+                    'DEGRADATION_LECTURE_SEULE',
                 );
             }
 
-            // 2. Gating facturation via le catalogue unifié
-            const estFacturable = await moduleResolutionService.isModuleFacturable(moduleNom);
-
-            if (estFacturable) {
-                const abonnementRepo = AppDataSource.getRepository(AbonnementClient);
-                const abonnement = await abonnementRepo.findOne({
-                    where: {
-                        etablissementId,
-                        statut: StatutAbonnement.ACTIF,
-                    },
-                    relations: ['plan'],
-                });
-
-                if (!abonnement) {
-                    throw new AppError(
-                        `Le module "${moduleNom}" nécessite un abonnement actif. ` +
-                        `Veuillez souscrire à un plan pour y accéder.`,
-                        402,
-                        'SUBSCRIPTION_REQUIRED'
-                    );
-                }
-
-                const souscrit = etablissementId
-                    ? await moduleResolutionService.isModuleSouscrit(etablissementId, moduleNom)
-                    : false;
-
-                if (!souscrit) {
-                    throw new AppError(
-                        `Le module "${moduleNom}" n'est pas inclus dans votre plan. ` +
-                        `Souscrivez-le en supplément pour y accéder.`,
-                        403,
-                        'MODULE_PREMIUM_REQUIS'
-                    );
-                }
-
-                logger.info(
-                    `[ModuleAccess] Accès premium — Module: ${moduleNom} — ` +
-                    `Établissement: ${etablissementId} — Plan: ${abonnement.plan?.nom || 'N/A'}`
+            if (!entitlement.accessible) {
+                await auditService.logAccessDenied(
+                    req.utilisateur?.id,
+                    `Accès refusé au module "${moduleNom}" — raison: ${entitlement.raison}`,
+                    req
                 );
+
+                // Message et code HTTP adaptés selon la raison
+                let message: string;
+                let code: string;
+                let httpStatus: number;
+
+                switch (entitlement.raison) {
+                    case 'ABONNEMENT_INACTIF':
+                    case 'ABONNEMENT_EXPIRE':
+                    case 'ABONNEMENT_SUSPENDU':
+                        message = `Le module "${moduleNom}" nécessite un abonnement actif. ${entitlement.message || ''}`;
+                        code = 'ABONNEMENT_REQUIS';
+                        httpStatus = 402;
+                        break;
+                    case 'PLAN_INSUFFICIENT':
+                        message = `Plan insuffisant pour accéder au module "${moduleNom}". ${entitlement.message || ''}`;
+                        code = 'PLAN_INSUFFICIENT';
+                        httpStatus = 403;
+                        break;
+                    case 'OVERRIDE_DESACTIVE':
+                        message = `Le module "${moduleNom}" est désactivé au niveau du groupe. ${entitlement.message || ''}`;
+                        code = 'MODULE_OVERRIDE';
+                        httpStatus = 403;
+                        break;
+                    default:
+                        message = `Le module "${moduleNom}" est désactivé. Contactez un administrateur.`;
+                        code = 'MODULE_INACTIVE';
+                        httpStatus = 403;
+                }
+
+                throw new AppError(message, httpStatus, code);
             }
 
             // Ajouter les infos module dans la requête
             (req as any).moduleInfo = {
                 nom: moduleNom,
-                isPremium: estFacturable,
+                source: entitlement.source,
+                raison: entitlement.raison,
+                planActuel: entitlement.planActuel,
             };
+
+            logger.debug(
+                `[ModuleAccess] Accès OK — Module: ${moduleNom} — ` +
+                `Source: ${entitlement.source} — Établissement: ${etablissementId}`
+            );
 
             next();
         } catch (error) {

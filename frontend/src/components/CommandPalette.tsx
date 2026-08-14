@@ -31,12 +31,11 @@ import {
     Bell,
     ShieldCheck,
     BarChart3,
-    DollarSign,
-    Star,
     Network,
     KeyRound,
     Wallet,
     Layers,
+    Store,
 } from 'lucide-react';
 
 interface CommandItem {
@@ -54,14 +53,12 @@ const ALL_COMMANDS: CommandItem[] = [
     // Platform — v5.2: préfixe /platform/* corrigé
     { id: 'p-dashboard', label: 'Dashboard Plateforme', description: 'KPIs globaux', path: '/platform/dashboard', icon: LayoutDashboard, category: 'Plateforme', keywords: ['dashboard', 'kpi', 'stats'], requireSuperAdmin: true },
     { id: 'p-etablissements', label: 'Établissements', description: 'Gestion CRUD', path: '/platform/etablissements', icon: Building2, category: 'Plateforme', keywords: ['etablissements', 'ecoles', 'clients'], requireSuperAdmin: true },
-    { id: 'p-facturation', label: 'Facturation', description: 'Plans, abonnements, factures', path: '/platform/facturation', icon: CreditCard, category: 'Plateforme', keywords: ['facturation', 'billing', 'abonnement', 'plan', 'facture'], requireSuperAdmin: true },
+    { id: 'p-facturation', label: 'Facturation', description: 'Plans, abonnements, factures, revenus', path: '/platform/facturation', icon: CreditCard, category: 'Plateforme', keywords: ['facturation', 'billing', 'abonnement', 'plan', 'facture', 'revenus', 'mrr', 'arr'], requireSuperAdmin: true },
     { id: 'p-configuration', label: 'Configuration', description: 'Paramètres système', path: '/platform/configuration', icon: Settings, category: 'Plateforme', keywords: ['configuration', 'config', 'parametres'], requireSuperAdmin: true },
     { id: 'p-monitoring', label: 'Monitoring', description: 'Infrastructure', path: '/platform/monitoring', icon: Activity, category: 'Plateforme', keywords: ['monitoring', 'infrastructure', 'health'], requireSuperAdmin: true },
     { id: 'p-audit', label: 'Audit Global', description: 'Logs tous établissements', path: '/platform/audit', icon: ScrollText, category: 'Plateforme', keywords: ['audit', 'logs', 'historique'], requireSuperAdmin: true },
     { id: 'p-modules', label: 'Modules', description: 'Registre & activation modules', path: '/platform/modules', icon: Puzzle, category: 'Plateforme', keywords: ['modules', 'activation', 'registry', 'premium'], requireSuperAdmin: true },
     { id: 'p-approbations', label: 'Approbations', description: 'Actions critiques 2F', path: '/platform/approbations', icon: ShieldCheck, category: 'Plateforme', keywords: ['approbations', 'actions critiques', 'mfa'], requireSuperAdmin: true },
-    { id: 'p-revenus', label: 'Revenus', description: 'MRR, ARR & revenus', path: '/platform/revenus', icon: DollarSign, category: 'Plateforme', keywords: ['revenus', 'mrr', 'arr', 'revenue', 'argent'], requireSuperAdmin: true },
-    { id: 'p-abonnements', label: 'Abonnements', description: 'Abonnements actifs', path: '/platform/abonnements', icon: Star, category: 'Plateforme', keywords: ['abonnements', 'subscriptions', 'plans', 'souscriptions'], requireSuperAdmin: true },
     { id: 'p-utilisateurs', label: 'Utilisateurs Plateforme', description: 'Comptes plateforme', path: '/platform/utilisateurs', icon: Users, category: 'Plateforme', keywords: ['utilisateurs', 'comptes', 'admin', 'platform users'], requireSuperAdmin: true },
     { id: 'p-groupes', label: 'Groupes', description: 'Groupes d\'établissements', path: '/platform/groupes', icon: Network, category: 'Plateforme', keywords: ['groupes', 'groupes etablissements', 'saas groups'], requireSuperAdmin: true },
     { id: 'p-permissions', label: 'Permissions', description: 'Matrice des permissions', path: '/platform/permissions', icon: KeyRound, category: 'Plateforme', keywords: ['permissions', 'rbac', 'roles', 'acces', 'matrice'], requireSuperAdmin: true },
@@ -80,6 +77,9 @@ const ALL_COMMANDS: CommandItem[] = [
     { id: 'e-personnel', label: 'Personnel', description: 'RH et personnel', path: '/personnel', icon: Users, category: 'Établissement', keywords: ['personnel', 'rh', 'employes'] },
     { id: 'e-paiements', label: 'Paiements', description: 'Configuration providers', path: '/paiements', icon: CreditCard, category: 'Établissement', keywords: ['paiements', 'providers', 'momo', 'stripe'] },
     { id: 'e-abonnement', label: 'Mon Abonnement', description: 'Abonnement plateforme', path: '/mon-abonnement', icon: CreditCard, category: 'Établissement', keywords: ['abonnement', 'subscription', 'plan', 'factures'] },
+    { id: 'e-factures', label: 'Factures', description: 'Historique et paiement des factures', path: '/factures', icon: FileText, category: 'Établissement', keywords: ['factures', 'invoices', 'paiement', 'billing', 'avoir'] },
+    { id: 'e-plans', label: "Plans d'abonnement", description: 'Catalogue, comparaison et simulateur', path: '/plans', icon: Layers, category: 'Établissement', keywords: ['plans', 'tarification', 'simulateur', 'pricing', 'comparaison', 'upgrade'] },
+    { id: 'e-marketplace', label: 'Marché', description: 'Catalogue modules et activation', path: '/marketplace', icon: Store, category: 'Établissement', keywords: ['marketplace', 'marché', 'modules', 'catalogue', 'activation', 'addons'] },
     { id: 'e-notifications-config', label: 'Notifications', description: 'Configuration canaux', path: '/notifications-config', icon: Bell, category: 'Établissement', keywords: ['notifications', 'email', 'sms', 'push', 'canaux'] },
     { id: 'e-sondages', label: 'Sondages', description: 'Enquêtes et sondages', path: '/sondages', icon: BarChart3, category: 'Établissement', keywords: ['sondages', 'enquetes', 'questionnaires'] },
 ];

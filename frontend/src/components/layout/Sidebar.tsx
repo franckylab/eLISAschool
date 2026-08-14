@@ -39,6 +39,7 @@ import {
     FileBadge2,
     GitBranch,
     Route,
+    Store,
     LayoutGrid,
     ChevronDown,
     ChevronRight,
@@ -231,8 +232,6 @@ const NAV_SECTIONS: NavSection[] = [
     {
         title: 'Organisation Académique',
         items: [
-            { label: 'Établissements', path: '/etablissements', icon: Building2, module: 'etablissements' },
-            { label: 'Groupes Étab.', path: '/groupes-etablissements', icon: FolderTree, module: 'groupes-etablissements' },
             {
                 label: 'Organisation',
                 path: '/organisation',
@@ -347,6 +346,17 @@ const NAV_SECTIONS: NavSection[] = [
                     { label: 'Versions', path: '/cms/versions', icon: GitBranch },
                 ],
             },
+        ],
+    },
+    {
+        title: 'Mon Établissement',
+        items: [
+            { label: 'Établissements', path: '/etablissements', icon: Building2, module: 'etablissements' },
+            { label: 'Groupes', path: '/groupes-etablissements', icon: FolderTree, module: 'groupes-etablissements' },
+            { label: 'Abonnements', path: '/mon-abonnement', icon: CreditCard },
+            { label: 'Factures', path: '/factures', icon: FileText },
+            { label: "Plans d'abonnement", path: '/plans', icon: LayoutGrid },
+            { label: 'Marché', path: '/marketplace', icon: Store },
         ],
     },
     {

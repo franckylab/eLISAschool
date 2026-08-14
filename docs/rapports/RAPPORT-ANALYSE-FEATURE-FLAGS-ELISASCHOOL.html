@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport d'Analyse — Feature Flags & Gestion des Fonctionnalités | eLISAschool</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --primary: #28a745;
+    --primary-dark: #1e7e34;
+    --secondary: #007bff;
+    --accent: #fd7e14;
+    --danger: #dc3545;
+    --warning: #ffc107;
+    --info: #17a2b8;
+    --dark: #1a1a2e;
+    --darker: #16213e;
+    --surface: #ffffff;
+    --surface-alt: #f8f9fa;
+    --text: #212529;
+    --text-muted: #6c757d;
+    --border: #dee2e6;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 48px rgba(0,0,0,0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--surface-alt);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+  /* Hero Header */
+  .hero {
+    background: linear-gradient(135deg, var(--dark) 0%, var(--darker) 50%, #0a3d62 100%);
+    color: white;
+    padding: 64px 0 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(40,167,69,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(0,123,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero h1 {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+  }
+  .hero .subtitle {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    opacity: 0.85;
+    max-width: 700px;
+    position: relative;
+    z-index: 1;
+  }
+  .hero .meta {
+    display: flex;
+    gap: 24px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+  }
+  .hero .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    opacity: 0.75;
+  }
+  .badge-hero {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(40,167,69,0.2);
+    border: 1px solid rgba(40,167,69,0.3);
+    color: #7dff9a;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Score Banner */
+  .score-banner {
+    background: linear-gradient(135deg, var(--primary), #20c997);
+    color: white;
+    border-radius: var(--radius);
+    padding: 32px;
+    margin: -32px auto 40px;
+    max-width: 900px;
+    position: relative;
+    z-index: 2;
+    box-shadow: var(--shadow-lg);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 32px;
+    align-items: center;
+  }
+  .score-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255,255,255,0.4);
+  }
+  .score-circle .number { font-size: 2.2rem; font-weight: 800; line-height: 1; }
+  .score-circle .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; }
+  .score-details h3 { font-size: 1.2rem; margin-bottom: 8px; }
+  .score-details p { opacity: 0.9; font-size: 0.9rem; }
+
+  /* Navigation TOC */
+  .toc {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin-bottom: 40px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--primary);
+  }
+  .toc h2 { font-size: 1.3rem; margin-bottom: 16px; color: var(--dark); }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 8px;
+  }
+  .toc a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text);
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+  .toc a:hover { background: var(--surface-alt); color: var(--primary); }
+  .toc .num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface-alt);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--primary);
+    flex-shrink: 0;
+  }
+
+  /* Sections */
+  .section {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 40px;
+    margin-bottom: 32px;
+    box-shadow: var(--shadow);
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--surface-alt);
+  }
+  .section-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+  .section-header h2 { font-size: 1.5rem; color: var(--dark); }
+  .section-header p { color: var(--text-muted); font-size: 0.9rem; margin-top: 2px; }
+
+  h3 { font-size: 1.15rem; color: var(--dark); margin: 24px 0 12px; }
+  h4 { font-size: 1rem; color: var(--text); margin: 16px 0 8px; }
+  p { margin-bottom: 12px; }
+
+  /* Cards Grid */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .card {
+    background: var(--surface-alt);
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+  .card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(40,167,69,0.1); }
+  .card-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .card-desc { font-size: 0.85rem; color: var(--text-muted); }
+
+  /* System Cards */
+  .system-card {
+    background: linear-gradient(135deg, var(--surface), var(--surface-alt));
+    border-radius: var(--radius);
+    padding: 28px;
+    border: 1px solid var(--border);
+    margin: 16px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .system-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+  }
+  .system-card.flag::before { background: var(--info); }
+  .system-card.module::before { background: var(--primary); }
+  .system-card.config::before { background: var(--accent); }
+  .system-card h4 { margin-top: 0; display: flex; align-items: center; gap: 10px; }
+  .system-tag {
+    display: inline-flex;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .tag-info { background: rgba(23,162,184,0.1); color: var(--info); }
+  .tag-success { background: rgba(40,167,69,0.1); color: var(--primary); }
+  .tag-warning { background: rgba(253,126,20,0.1); color: var(--accent); }
+  .tag-danger { background: rgba(220,53,69,0.1); color: var(--danger); }
+
+  /* Tables */
+  .table-wrapper { overflow-x: auto; margin: 16px 0; border-radius: 10px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  thead { background: var(--dark); color: white; }
+  th { padding: 14px 16px; text-align: left; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  tbody tr:hover { background: rgba(40,167,69,0.03); }
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* Module Badges */
+  .module-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .badge-base { background: rgba(40,167,69,0.1); color: var(--primary); }
+  .badge-premium { background: rgba(0,123,255,0.1); color: var(--secondary); }
+  .badge-addon { background: rgba(253,126,20,0.1); color: var(--accent); }
+
+  /* Mermaid */
+  .mermaid-wrapper {
+    background: var(--surface-alt);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .mermaid { display: flex; justify-content: center; }
+
+  /* Callout */
+  .callout {
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .callout-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 2px; }
+  .callout.info { background: rgba(23,162,184,0.08); border: 1px solid rgba(23,162,184,0.2); }
+  .callout.success { background: rgba(40,167,69,0.08); border: 1px solid rgba(40,167,69,0.2); }
+  .callout.warning { background: rgba(255,193,7,0.08); border: 1px solid rgba(255,193,7,0.2); }
+  .callout.danger { background: rgba(220,53,69,0.08); border: 1px solid rgba(220,53,69,0.2); }
+  .callout h4 { margin: 0 0 4px; font-size: 0.95rem; }
+  .callout p { margin: 0; font-size: 0.875rem; }
+
+  /* Code */
+  code {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    color: var(--danger);
+  }
+  pre {
+    background: var(--dark);
+    color: #e0e0e0;
+    padding: 20px;
+    border-radius: 10px;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    margin: 16px 0;
+  }
+  pre code { background: none; border: none; color: inherit; padding: 0; }
+
+  /* Stats */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .stat-card {
+    text-align: center;
+    padding: 24px 16px;
+    background: var(--surface-alt);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  .stat-value { font-size: 2rem; font-weight: 800; color: var(--primary); }
+  .stat-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+
+  /* Cascade Visual */
+  .cascade-visual {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 20px 0;
+  }
+  .cascade-step {
+    display: flex;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .cascade-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 40px;
+    flex-shrink: 0;
+  }
+  .cascade-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+  }
+  .cascade-connector {
+    width: 2px;
+    flex: 1;
+    min-height: 16px;
+  }
+  .cascade-content {
+    flex: 1;
+    padding: 8px 0 20px;
+  }
+  .cascade-content h5 { font-size: 0.9rem; margin-bottom: 4px; }
+  .cascade-content p { font-size: 0.825rem; color: var(--text-muted); margin: 0; }
+
+  /* Recommendation Cards */
+  .rec-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 16px 0;
+    position: relative;
+  }
+  .rec-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 10px 10px 0 0;
+  }
+  .rec-card.high::before { background: var(--danger); }
+  .rec-card.medium::before { background: var(--warning); }
+  .rec-card.low::before { background: var(--info); }
+  .rec-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+  .rec-title { font-weight: 700; font-size: 1rem; }
+  .priority-badge {
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .priority-high { background: rgba(220,53,69,0.1); color: var(--danger); }
+  .priority-medium { background: rgba(255,193,7,0.1); color: #856404; }
+  .priority-low { background: rgba(23,162,184,0.1); color: var(--info); }
+
+  /* Flow Diagram */
+  .flow-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 16px 0;
+    padding: 20px;
+    background: var(--surface-alt);
+    border-radius: 10px;
+  }
+  .flow-node {
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 0.825rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .flow-arrow { color: var(--text-muted); font-size: 1.2rem; }
+
+  /* Footer */
+  .report-footer {
+    background: var(--dark);
+    color: rgba(255,255,255,0.7);
+    padding: 40px 0;
+    margin-top: 60px;
+    text-align: center;
+    font-size: 0.85rem;
+  }
+  .report-footer a { color: var(--primary); text-decoration: none; }
+
+  /* Print */
+  @media print {
+    .hero { padding: 32px 0; }
+    .section { break-inside: avoid; box-shadow: none; border: 1px solid var(--border); }
+    .score-banner { margin-top: 0; }
+  }
+  @media (max-width: 768px) {
+    .section { padding: 24px; }
+    .score-banner { grid-template-columns: 1fr; text-align: center; }
+    .hero .meta { flex-direction: column; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== HERO ==================== -->
+<header class="hero">
+  <div class="container">
+    <div class="badge-hero">&#9889; Analyse Architecture</div>
+    <h1>Feature Flags & Gestion des Fonctionnalit&#233;s</h1>
+    <p class="subtitle">Rapport d'analyse approfondi du syst&#232;me de gestion des fonctionnalit&#233;s, modules et configurations d'eLISAschool &mdash; architecture multi-tenant SaaS avec cascades de r&#233;solution, entitlement et bonnes pratiques.</p>
+    <div class="meta">
+      <span class="meta-item">&#128197; 14 ao&#251;t 2026</span>
+      <span class="meta-item">&#128187; eLISAschool v7 SaaS</span>
+      <span class="meta-item">&#128202; 25 modules &bull; 3 syst&#232;mes &bull; 8 niveaux cascade</span>
+      <span class="meta-item">&#128274; Multi-tenant RLS</span>
+    </div>
+  </div>
+</header>
+
+<!-- ==================== SCORE ==================== -->
+<div class="container">
+  <div class="score-banner">
+    <div class="score-circle">
+      <span class="number">8.5</span>
+      <span class="label">/10</span>
+    </div>
+    <div class="score-details">
+      <h3>Score de Maturit&#233; Feature Management</h3>
+      <p>Architecture avanc&#233;e avec 3 syst&#232;mes interconnect&#233;s, cascades multi-niveaux, cache Redis Pub/Sub, et p&#233;riode d'essai automatique. Des am&#233;liorations sont possibles en termes de centralisation, d'observabilit&#233; et de self-service.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TOC ==================== -->
+<div class="container">
+  <nav class="toc">
+    <h2>&#128218; Table des Mati&#232;res</h2>
+    <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span> Qu'est-ce qu'un Feature Flag ?</a>
+      <a href="#s2"><span class="num">2</span> Architecture des 3 Syst&#232;mes</a>
+      <a href="#s3"><span class="num">3</span> Inventaire Complet des 25 Modules</a>
+      <a href="#s4"><span class="num">4</span> Cascade FeatureFlagService</a>
+      <a href="#s5"><span class="num">5</span> Cascade EntitlementService</a>
+      <a href="#s6"><span class="num">6</span> Cascade ConfigurationService</a>
+      <a href="#s7"><span class="num">7</span> Coh&#233;rence &amp; Consistency Checker</a>
+      <a href="#s8"><span class="num">8</span> Cycle de Vie &amp; P&#233;riode d'Essai</a>
+      <a href="#s9"><span class="num">9</span> API &amp; Int&#233;gration Frontend</a>
+      <a href="#s10"><span class="num">10</span> Bonnes Pratiques Industrielles</a>
+      <a href="#s11"><span class="num">11</span> Recommandations</a>
+      <a href="#s12"><span class="num">12</span> Synth&#232;se &amp; Roadmap</a>
+    </div>
+  </nav>
+</div>
+
+<!-- ==================== SECTION 1 ==================== -->
+<div class="container">
+  <section class="section" id="s1">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(23,162,184,0.1);color:var(--info);">&#128161;</div>
+      <div>
+        <h2>1. Qu'est-ce qu'un Feature Flag ?</h2>
+        <p>D&#233;finition, objectifs et contexte dans eLISAschool</p>
+      </div>
+    </div>
+
+    <p>Un <strong>Feature Flag</strong> (ou &laquo; interrupteur de fonctionnalit&#233; &raquo;) est un m&#233;canisme logiciel qui permet d'activer ou d&#233;sactiver une fonctionnalit&#233; <strong>sans modifier le code source</strong> ni red&#233;ployer l'application. Dans eLISAschool, ce concept est &#233;tendu &#224; 3 niveaux compl&#233;mentaires :</p>
+
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-title">&#128640; Feature Flags</div>
+        <div class="card-desc">Interrupteurs bool&#233;ens par tenant pour activer/d&#233;sactiver des micro-fonctionnalit&#233;s (ex: <code>notes.evaluation_continue</code>, <code>cantine.reservation_en_ligne</code>)</div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128230; Module Gating</div>
+        <div class="card-desc">Contr&#244;le d'acc&#232;s aux modules complets via l'EntitlementService, li&#233; aux abonnements et plans SaaS</div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#9881; Param&#232;tres Runtime</div>
+        <div class="card-desc">Configuration dynamique multi-niveaux via ParametreSysteme (cascade &#233;tablissement &rarr; groupe &rarr; global &rarr; d&#233;faut)</div>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">&#128161;</span>
+      <div>
+        <h4>Pourquoi 3 syst&#232;mes ?</h4>
+        <p>Chaque syst&#232;me r&#233;pond &#224; un besoin distinct : <strong>FeatureFlagService</strong> g&#232;re les micro-fonctionnalit&#233;s transverses, <strong>EntitlementService</strong> g&#232;re le gating des modules par abonnement (business), et <strong>ConfigurationService</strong> g&#232;re les param&#232;tres applicatifs dynamiques. Le <code>ConfigConsistencyService</code> assure la coh&#233;rence entre les trois.</p>
+      </div>
+    </div>
+
+    <h3>Objectifs Strat&#233;giques</h3>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value">25</div>
+        <div class="stat-label">Modules g&#233;r&#233;s</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">4</div>
+        <div class="stat-label">Niveaux de cascade</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">60s</div>
+        <div class="stat-label">TTL Cache Redis</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">14j</div>
+        <div class="stat-label">P&#233;riode d'essai</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SECTION 2 ==================== -->
+  <section class="section" id="s2">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(40,167,69,0.1);color:var(--primary);">&#127959;</div>
+      <div>
+        <h2>2. Architecture des 3 Syst&#232;mes</h2>
+        <p>Vue d'ensemble des syst&#232;mes interconnect&#233;s</p>
+      </div>
+    </div>
+
+    <div class="mermaid-wrapper">
+      <pre class="mermaid">
+graph TB
+    subgraph "Syst&#232;me 1 : FeatureFlagService"
+        FF[Feature Flags Tenant<br/>feature_flags_tenant]
+        FFG[Feature Flags Groupe<br/>feature_flags_groupe]
+        FFP[Plan Feature Flags<br/>JSON plan_abonnement]
+    end
+
+    subgraph "Syst&#232;me 2 : EntitlementService"
+        MC[Module Catalogue<br/>modules_catalogue]
+        AC[Abonnement Client<br/>abonnements_client]
+        MG[Modules Groupe<br/>modules_groupe]
+        AM[Abonnement Module<br/>abonnement_modules]
+        PA[Plan Abonnement<br/>plans_abonnement]
+    end
+
+    subgraph "Syst&#232;me 3 : ConfigurationService"
+        PS[Param&#232;tre Syst&#232;me<br/>parametres_systeme]
+    end
+
+    subgraph "Coh&#233;rence"
+        CCS[ConfigConsistencyChecker<br/>3 v&#233;rifications]
+    end
+
+    FF --> CCS
+    MC --> CCS
+    PS --> CCS
+
+    MC --> AC
+    PA --> MC
+    MG --> MC
+    AM --> MC
+    FFP --> FF
+    FFG --> FF
+
+    PS -.->|modules.X.actif| MC
+
+    style FF fill:#e3f2fd,stroke:#17a2b8
+    style MC fill:#e8f5e9,stroke:#28a745
+    style PS fill:#fff3e0,stroke:#fd7e14
+    style CCS fill:#fce4ec,stroke:#dc3545
+      </pre>
+    </div>
+
+    <div class="system-card flag">
+      <h4><span class="system-tag tag-info">Bool&#233;en</span> FeatureFlagService</h4>
+      <p><strong>R&#244;le</strong> : Interrupteurs micro-fonctionnalit&#233;s par &#233;tablissement</p>
+      <p><strong>Cascade</strong> : Override tenant &rarr; Plan flags &rarr; Modules inclus &rarr; D&#233;faut false</p>
+      <p><strong>Stockage</strong> : Table <code>feature_flags_tenant</code> + JSON <code>featureFlags</code> dans <code>plans_abonnement</code></p>
+      <p><strong>Cache</strong> : In-memory 60s, cl&#233; <code>${etablissementId}:${flagName}</code></p>
+    </div>
+
+    <div class="system-card module">
+      <h4><span class="system-tag tag-success">Gating</span> EntitlementService</h4>
+      <p><strong>R&#244;le</strong> : Source unique de v&#233;rit&#233; pour l'acc&#232;s aux modules (remplace ModuleRegistryService)</p>
+      <p><strong>Cascade</strong> : 8 niveaux (BASE &rarr; essai &rarr; catalogue &rarr; plan &rarr; groupe &rarr; suppl&#233;ment &rarr; planMinimal &rarr; actifParD&#233;faut)</p>
+      <p><strong>Stockage</strong> : <code>modules_catalogue</code> + <code>abonnements_client</code> + <code>modules_groupe</code> + <code>abonnement_modules</code></p>
+      <p><strong>Cache</strong> : Redis TTL 60s + in-memory fallback + Pub/Sub cross-instance</p>
+    </div>
+
+    <div class="system-card config">
+      <h4><span class="system-tag tag-warning">Param&#232;tres</span> ConfigurationService</h4>
+      <p><strong>R&#244;le</strong> : Source unique pour tous les param&#232;tres runtime applicatifs</p>
+      <p><strong>Cascade</strong> : 4 niveaux (&#233;tablissement &rarr; groupe &rarr; global &rarr; d&#233;faut)</p>
+      <p><strong>Stockage</strong> : Table <code>parametres_systeme</code> (cle, valeur, typeValeur, categorie)</p>
+      <p><strong>Cache</strong> : 3 niveaux (in-memory 60s &rarr; Redis 60s &rarr; PostgreSQL) + Pub/Sub</p>
+    </div>
+  </section>
+
+  <!-- ==================== SECTION 3 ==================== -->
+  <section class="section" id="s3">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(0,123,255,0.1);color:var(--secondary);">&#128230;</div>
+      <div>
+        <h2>3. Inventaire Complet des 25 Modules</h2>
+        <p>Catalogue unifi&#233; &mdash; source unique de v&#233;rit&#233;</p>
+      </div>
+    </div>
+
+    <p>Tous les modules sont enregistr&#233;s dans la table <code>modules_catalogue</code> via le seed idempotent <code>seed-modules-catalogue.ts</code>. Chaque module poss&#232;de : code unique, cat&#233;gorie (BASE/PREMIUM/ADDON), prix XAF, d&#233;pendances, et configuration JSONB.</p>
+
+    <h3>R&#233;partition par Cat&#233;gorie</h3>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" style="color:var(--primary);">8</div>
+        <div class="stat-label">Modules BASE<br/><span class="module-badge badge-base">Toujours inclus</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:var(--secondary);">11</div>
+        <div class="stat-label">Modules PREMIUM<br/><span class="module-badge badge-premium">Plan requis</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:var(--accent);">6</div>
+        <div class="stat-label">Modules ADDON<br/><span class="module-badge badge-addon">Suppl&#233;ment</span></div>
+      </div>
+    </div>
+
+    <h3>Catalogue Complet</h3>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Nom</th>
+            <th>Cat&#233;gorie</th>
+            <th>Prix/mois</th>
+            <th>D&#233;pendances</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>auth</code></td><td>Authentification</td><td><span class="module-badge badge-base">BASE</span></td><td>0 F</td><td>&mdash;</td><td>Login, MFA, sessions, JWT</td></tr>
+          <tr><td><code>utilisateurs</code></td><td>Utilisateurs</td><td><span class="module-badge badge-base">BASE</span></td><td>0 F</td><td>auth</td><td>Gestion des comptes et r&#244;les</td></tr>
+          <tr><td><code>configuration</code></td><td>Configuration</td><td><span class="module-badge badge-base">BASE</span></td><td>0 F</td><td>&mdash;</td><td>Param&#232;tres syst&#232;me, cache</td></tr>
+          <tr><td><code>notifications</code></td><td>Notifications</td><td><span class="module-badge badge-base">BASE</span></td><td>0 F</td><td>&mdash;</td><td>Email, SMS, push, in-app</td></tr>
+          <tr><td><code>monitoring</code></td><td>Monitoring</td><td><span class="module-badge badge-base">BASE</span></td><td>0 F</td><td>&mdash;</td><td>Golden signals, alerting</td></tr>
+          <tr><td><code>audit</code></td><td>Audit Trail</td><td><span class="module-badge badge-base">BASE</span></td><td>0 F</td><td>&mdash;</td><td>Logs d'audit, tra&#231;abilit&#233;</td></tr>
+          <tr><td><code>facturation</code></td><td>Facturation</td><td><span class="module-badge badge-base">BASE</span></td><td>0 F</td><td>&mdash;</td><td>Abonnements, tranches, TVA OHADA</td></tr>
+          <tr><td><code>groupes-etablissements</code></td><td>Groupes</td><td><span class="module-badge badge-base">BASE</span></td><td>0 F</td><td>&mdash;</td><td>Groupes d'&#233;tablissements</td></tr>
+          <tr><td><code>eleves</code></td><td>&#201;l&#232;ves</td><td><span class="module-badge badge-premium">PREMIUM</span></td><td>5 000 F</td><td>&mdash;</td><td>Inscriptions, dossiers &#233;l&#232;ves</td></tr>
+          <tr><td><code>notes</code></td><td>Notes</td><td><span class="module-badge badge-premium">PREMIUM</span></td><td>5 000 F</td><td>eleves</td><td>Saisie, validation, moyennes</td></tr>
+          <tr><td><code>bulletins</code></td><td>Bulletins</td><td><span class="module-badge badge-premium">PREMIUM</span></td><td>5 000 F</td><td>notes</td><td>G&#233;n&#233;ration, publication, PDF</td></tr>
+          <tr><td><code>messagerie</code></td><td>Messagerie</td><td><span class="module-badge badge-premium">PREMIUM</span></td><td>3 000 F</td><td>&mdash;</td><td>Communication interne</td></tr>
+          <tr><td><code>emploi-du-temps</code></td><td>Emploi du Temps</td><td><span class="module-badge badge-premium">PREMIUM</span></td><td>8 000 F</td><td>eleves</td><td>Planning, cr&#233;neaux, conflits</td></tr>
+          <tr><td><code>orientation</code></td><td>Orientation</td><td><span class="module-badge badge-premium">PREMIUM</span></td><td>3 000 F</td><td>eleves</td><td>Suivi orientation &#233;l&#232;ves</td></tr>
+          <tr><td><code>cantine</code></td><td>Cantine</td><td><span class="module-badge badge-premium">PREMIUM</span></td><td>5 000 F</td><td>eleves</td><td>Repas, menus, r&#233;servations</td></tr>
+          <tr><td><code>transport</code></td><td>Transport</td><td><span class="module-badge badge-premium">PREMIUM</span></td><td>5 000 F</td><td>eleves</td><td>Lignes, arr&#234;ts, suivi</td></tr>
+          <tr><td><code>finances</code></td><td>Finances</td><td><span class="module-badge badge-premium">PREMIUM</span></td><td>10 000 F</td><td>&mdash;</td><td>Paiements, d&#233;penses, budgets</td></tr>
+          <tr><td><code>comptabilite</code></td><td>Comptabilit&#233;</td><td><span class="module-badge badge-premium">PREMIUM</span></td><td>10 000 F</td><td>finances</td><td>OHADA, grand livre, bilan</td></tr>
+          <tr><td><code>personnel</code></td><td>Ressources Humaines</td><td><span class="module-badge badge-premium">PREMIUM</span></td><td>8 000 F</td><td>&mdash;</td><td>Contrats, paie, &#233;valuations</td></tr>
+          <tr><td><code>cms</code></td><td>CMS White-Label</td><td><span class="module-badge badge-addon">ADDON</span></td><td>15 000 F</td><td>&mdash;</td><td>Pages publiques, th&#232;mes</td></tr>
+          <tr><td><code>clubs</code></td><td>Clubs &amp; Activit&#233;s</td><td><span class="module-badge badge-addon">ADDON</span></td><td>3 000 F</td><td>eleves</td><td>Clubs, inscriptions</td></tr>
+          <tr><td><code>gamification</code></td><td>Gamification</td><td><span class="module-badge badge-addon">ADDON</span></td><td>5 000 F</td><td>eleves, notes</td><td>Badges, classements, qu&#234;tes</td></tr>
+          <tr><td><code>bibliotheque</code></td><td>Biblioth&#232;que</td><td><span class="module-badge badge-addon">ADDON</span></td><td>5 000 F</td><td>&mdash;</td><td>Ouvrages, emprunts</td></tr>
+          <tr><td><code>cartes</code></td><td>Cartes QR</td><td><span class="module-badge badge-addon">ADDON</span></td><td>2 000 F</td><td>eleves</td><td>Cartes identit&#233; QR code</td></tr>
+          <tr><td><code>scoring</code></td><td>Scoring</td><td><span class="module-badge badge-addon">ADDON</span></td><td>5 000 F</td><td>eleves, notes</td><td>&#201;valuation comp&#233;tences</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mermaid-wrapper">
+      <pre class="mermaid">
+pie title R&#233;partition des Modules par Cat&#233;gorie
+    "BASE (8)" : 8
+    "PREMIUM (11)" : 11
+    "ADDON (6)" : 6
+      </pre>
+    </div>
+  </section>
+
+  <!-- ==================== SECTION 4 ==================== -->
+  <section class="section" id="s4">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(23,162,184,0.1);color:var(--info);">&#128260;</div>
+      <div>
+        <h2>4. Cascade FeatureFlagService</h2>
+        <p>R&#233;solution en 3 niveaux avec override tenant</p>
+      </div>
+    </div>
+
+    <p>Le <code>FeatureFlagService</code> r&#233;sout l'&#233;tat d'un flag bool&#233;en pour un &#233;tablissement donn&#233; en suivant une cascade de priorit&#233;s. Chaque niveau peut &#234;tre surcharg&#233; par le niveau inf&#233;rieur.</p>
+
+    <div class="cascade-visual">
+      <div class="cascade-step">
+        <div class="cascade-line">
+          <div class="cascade-dot" style="background:var(--danger);">1</div>
+          <div class="cascade-connector" style="background:var(--danger);"></div>
+        </div>
+        <div class="cascade-content">
+          <h5>Override &#201;tablissement <span class="system-tag tag-danger">Priorit&#233; max</span></h5>
+          <p>Table <code>feature_flags_tenant</code> &mdash; valeur explicite par &#233;tablissement. Source : <code>MANUAL</code> ou <code>GLOBAL_OVERRIDE</code></p>
+        </div>
+      </div>
+      <div class="cascade-step">
+        <div class="cascade-line">
+          <div class="cascade-dot" style="background:var(--accent);">2</div>
+          <div class="cascade-connector" style="background:var(--accent);"></div>
+        </div>
+        <div class="cascade-content">
+          <h5>Plan Feature Flags</h5>
+          <p>Colonne JSON <code>featureFlags</code> dans <code>plans_abonnement</code> &mdash; d&#233;fini par le plan d'abonnement souscrit</p>
+        </div>
+      </div>
+      <div class="cascade-step">
+        <div class="cascade-line">
+          <div class="cascade-dot" style="background:var(--secondary);">3</div>
+          <div class="cascade-connector" style="background:var(--secondary);"></div>
+        </div>
+        <div class="cascade-content">
+          <h5>Modules Inclus (auto)</h5>
+          <p>Pour chaque module dans <code>modulesInclus</code> du plan, un flag implicite <code>module_{code}=true</code> est cr&#233;&#233;</p>
+        </div>
+      </div>
+      <div class="cascade-step">
+        <div class="cascade-line">
+          <div class="cascade-dot" style="background:var(--text-muted);">4</div>
+        </div>
+        <div class="cascade-content">
+          <h5>D&#233;faut <span class="system-tag tag-info">Fallback</span></h5>
+          <p><code>false</code> &mdash; si aucun override trouv&#233;, le flag est d&#233;sactiv&#233; par d&#233;faut</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Code Source &mdash; M&#233;thode <code>isEnabled()</code></h3>
+    <pre><code>async isEnabled(etablissementId: string, flagName: string): Promise&lt;boolean&gt; {
+  // 1. V&#233;rifier le cache
+  const cacheKey = `${etablissementId}:${flagName}`;
+  const cached = this.cache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+    return cached.value;
+  }
+
+  // 2. Override &#233;tablissement (priorit&#233; max)
+  const tenantFlag = await this.repo.findOne({
+    where: { etablissementId, flagName }
+  });
+  if (tenantFlag) return tenantFlag.enabled;
+
+  // 3. Flags du plan
+  const abonnement = await this.getAbonnement(etablissementId);
+  if (abonnement?.plan?.featureFlags?.[flagName] !== undefined) {
+    return abonnement.plan.featureFlags[flagName];
+  }
+
+  // 4. Modules inclus (auto-flag)
+  if (abonnement?.plan?.modulesInclus) {
+    const moduleCode = flagName.replace('module_', '');
+    if (abonnement.plan.modulesInclus.includes(moduleCode)) {
+      return true;
+    }
+  }
+
+  // 5. D&#233;faut
+  return false;
+}</code></pre>
+  </section>
+
+  <!-- ==================== SECTION 5 ==================== -->
+  <section class="section" id="s5">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(40,167,69,0.1);color:var(--primary);">&#128274;</div>
+      <div>
+        <h2>5. Cascade EntitlementService</h2>
+        <p>Source unique de v&#233;rit&#233; &mdash; 8 niveaux de r&#233;solution</p>
+      </div>
+    </div>
+
+    <p>L'<code>EntitlementService</code> est le composant central du gating des modules. Il remplace les 3 anciens registres divergents (ModuleRegistryService, ModuleResolutionService, ConfigurationService) par une cascade unifi&#233;e de 8 niveaux.</p>
+
+    <div class="mermaid-wrapper">
+      <pre class="mermaid">
+flowchart TD
+    START["check(etablissementId, moduleCode)"] --> L1
+    L1{"Module BASE ?<br/>(auth, config...)"} -->|Oui| R1["accessible: true<br/>source: 'base'"]
+    L1 -->|Non| L2{"P&#233;riode ESSAI ?<br/>statut=ESSAI<br/>&& jour < 14"}
+    L2 -->|Oui| R2["accessible: true<br/>source: 'essai'"]
+    L2 -->|Non| L3{"Catalogue DB ?<br/>module existe"}
+    L3 -->|Non| R3["accessible: false<br/>source: 'inexistant'"]
+    L3 -->|Oui| L4{"Cat&#233;gorie CRITIQUE ?"}
+    L4 -->|Oui| R1
+    L4 -->|Non| L5{"Abonnement ACTIF<br/>ou ESSAI ?"}
+    L5 -->|Non| R5["accessible: false<br/>source: 'sans_abonnement'<br/>lectureSeule: true"]
+    L5 -->|Oui| L6{"Plan.modulesInclus<br/>contient le module ?"}
+    L6 -->|Oui| R6["accessible: true<br/>source: 'plan'"]
+    L6 -->|Non| L7{"Override Groupe ?<br/>ModulesGroupe"}
+    L7 -->|actif=true| R7["accessible: true<br/>source: 'groupe'"]
+    L7 -->|actif=false| R7b["accessible: false<br/>source: 'groupe_override'"]
+    L7 -->|non d&#233;fini| L8{"Suppl&#233;ment souscrit ?<br/>AbonnementModule"}
+    L8 -->|Oui| R8["accessible: true<br/>source: 'supplement'"]
+    L8 -->|Non| L9{"planMinimal <=<br/>rang plan actuel ?"}
+    L9 -->|Oui| R9["accessible: true<br/>source: 'plan_minimal'"]
+    L9 -->|Non| L10{"actifParDefaut ?"}
+    L10 -->|Oui| R10["accessible: true<br/>source: 'defaut_catalogue'"]
+    L10 -->|Non| R11["accessible: false<br/>source: 'non_autorise'"]
+
+    style R1 fill:#d4edda,stroke:#28a745
+    style R2 fill:#d4edda,stroke:#28a745
+    style R6 fill:#d4edda,stroke:#28a745
+    style R7 fill:#d4edda,stroke:#28a745
+    style R8 fill:#d4edda,stroke:#28a745
+    style R9 fill:#d4edda,stroke:#28a745
+    style R10 fill:#d4edda,stroke:#28a745
+    style R3 fill:#f8d7da,stroke:#dc3545
+    style R5 fill:#f8d7da,stroke:#dc3545
+    style R7b fill:#f8d7da,stroke:#dc3545
+    style R11 fill:#f8d7da,stroke:#dc3545
+      </pre>
+    </div>
+
+    <h3>R&#233;sultat de la R&#233;solution</h3>
+    <pre><code>interface EntitlementResult {
+  accessible: boolean;       // Le module est-il accessible ?
+  visible: boolean;          // Visible dans le catalogue ?
+  raison: EntitlementRaison; // 'base' | 'essai' | 'plan' | 'groupe' | 'supplement' | ...
+  message: string;           // Message explicatif pour le frontend
+  source: string;            // Source de la d&#233;cision
+  planMinimalRequis?: string; // Plan minimum n&#233;cessaire
+  planActuel?: string;       // Plan actuellement souscrit
+  lectureSeule?: boolean;    // Mode d&#233;grad&#233; (abonnement expir&#233; < 30j)
+}</code></pre>
+
+    <div class="callout success">
+      <span class="callout-icon">&#9989;</span>
+      <div>
+        <h4>Avantage cl&#233; : Source Unique</h4>
+        <p>Avant l'unification, 3 registres divergents pouvaient donner des r&#233;sultats contradictoires. L'EntitlementService garantit qu'un module a exactement le m&#234;me &#233;tat d'acc&#232;s, qu'il soit v&#233;rifi&#233; par le middleware, le frontend ou un service backend.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SECTION 6 ==================== -->
+  <section class="section" id="s6">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(253,126,20,0.1);color:var(--accent);">&#9881;</div>
+      <div>
+        <h2>6. Cascade ConfigurationService</h2>
+        <p>Param&#232;tres runtime &mdash; 4 niveaux + types multiples</p>
+      </div>
+    </div>
+
+    <p>Le <code>ConfigurationService</code> g&#232;re tous les param&#232;tres applicatifs via la table <code>parametres_systeme</code>. C'est la source unique de v&#233;rit&#233; pour les param&#232;tres runtime (jamais dans <code>.env</code>).</p>
+
+    <div class="cascade-visual">
+      <div class="cascade-step">
+        <div class="cascade-line">
+          <div class="cascade-dot" style="background:var(--primary);">1</div>
+          <div class="cascade-connector" style="background:var(--primary);"></div>
+        </div>
+        <div class="cascade-content">
+          <h5>&#201;tablissement <span class="system-tag tag-success">Priorit&#233; max</span></h5>
+          <p><code>ParametreSysteme</code> avec <code>etablissementId</code> &mdash; override local de l'&#233;tablissement</p>
+        </div>
+      </div>
+      <div class="cascade-step">
+        <div class="cascade-line">
+          <div class="cascade-dot" style="background:var(--secondary);">2</div>
+          <div class="cascade-connector" style="background:var(--secondary);"></div>
+        </div>
+        <div class="cascade-content">
+          <h5>Groupe</h5>
+          <p><code>ParametreSysteme</code> avec <code>groupeEtablissementId</code> &mdash; h&#233;ritage via <code>GroupeEtablissementLien</code></p>
+        </div>
+      </div>
+      <div class="cascade-step">
+        <div class="cascade-line">
+          <div class="cascade-dot" style="background:var(--accent);">3</div>
+          <div class="cascade-connector" style="background:var(--accent);"></div>
+        </div>
+        <div class="cascade-content">
+          <h5>Global</h5>
+          <p><code>ParametreSysteme</code> avec <code>etablissementId = NULL</code> &mdash; param&#232;tre global syst&#232;me</p>
+        </div>
+      </div>
+      <div class="cascade-step">
+        <div class="cascade-line">
+          <div class="cascade-dot" style="background:var(--text-muted);">4</div>
+        </div>
+        <div class="cascade-content">
+          <h5>D&#233;faut <span class="system-tag tag-info">Fallback</span></h5>
+          <p>Valeur par d&#233;faut d&#233;finie dans le code ou le seed syst&#232;me</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Types de Valeurs Support&#233;s</h3>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-title">STRING</div>
+        <div class="card-desc">Cha&#238;ne de caract&#232;res (nom app, langue, etc.)</div>
+      </div>
+      <div class="card">
+        <div class="card-title">NUMBER</div>
+        <div class="card-desc">Num&#233;rique (dur&#233;e session, max essais, etc.)</div>
+      </div>
+      <div class="card">
+        <div class="card-title">BOOLEAN</div>
+        <div class="card-desc">Bool&#233;en (module actif, feature activ&#233;e)</div>
+      </div>
+      <div class="card">
+        <div class="card-title">JSON</div>
+        <div class="card-desc">Objet JSON (configuration complexe)</div>
+      </div>
+      <div class="card">
+        <div class="card-title">ARRAY</div>
+        <div class="card-desc">Tableau (liste de valeurs)</div>
+      </div>
+      <div class="card">
+        <div class="card-title">ENCRYPTED</div>
+        <div class="card-desc">Valeur chiffr&#233;e AES-256-GCM (secrets)</div>
+      </div>
+    </div>
+
+    <h3>Activation des Modules via Param&#232;tres</h3>
+    <p>Les modules peuvent &#234;tre activ&#233;s/d&#233;sactiv&#233;s via des param&#232;tres de cl&#233; <code>modules.{code}.actif</code>. Cette activation s'inscrit dans la cascade :</p>
+    <div class="flow-container">
+      <div class="flow-node" style="background:rgba(40,167,69,0.1);color:var(--primary);">ParametreSysteme scop&#233;</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-node" style="background:rgba(253,126,20,0.1);color:var(--accent);">ParametreSysteme global</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-node" style="background:rgba(0,123,255,0.1);color:var(--secondary);">EntitlementService</div>
+      <span class="flow-arrow">&rarr;</span>
+      <div class="flow-node" style="background:rgba(108,117,125,0.1);color:var(--text-muted);">Catalogue d&#233;faut</div>
+    </div>
+  </section>
+
+  <!-- ==================== SECTION 7 ==================== -->
+  <section class="section" id="s7">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(220,53,69,0.1);color:var(--danger);">&#128737;</div>
+      <div>
+        <h2>7. Coh&#233;rence &amp; Consistency Checker</h2>
+        <p>D&#233;tection automatique des incoh&#233;rences inter-syst&#232;mes</p>
+      </div>
+    </div>
+
+    <p>Le <code>ConfigConsistencyChecker</code> effectue 3 v&#233;rifications pour garantir la coh&#233;rence entre les 3 syst&#232;mes :</p>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>V&#233;rification</th><th>S&#233;v&#233;rit&#233;</th><th>D&#233;tection</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Module d&#233;sactiv&#233; + flags actifs</strong></td>
+            <td><span class="system-tag tag-danger">ERROR</span></td>
+            <td>Un module est d&#233;sactiv&#233; mais des feature flags associ&#233;s sont actifs</td>
+            <td>Alerte + suggestion de d&#233;sactiver les flags</td>
+          </tr>
+          <tr>
+            <td><strong>Param&#232;tre module manquant</strong></td>
+            <td><span class="system-tag tag-warning">WARNING</span></td>
+            <td>Un module du catalogue n'a pas de param&#232;tre <code>modules.{code}.actif</code></td>
+            <td>Cr&#233;ation automatique sugg&#233;r&#233;e</td>
+          </tr>
+          <tr>
+            <td><strong>Feature flag orphelin</strong></td>
+            <td><span class="system-tag tag-info">INFO</span></td>
+            <td>Un flag existe en base mais n'est associ&#233; &#224; aucun module connu</td>
+            <td>Information &mdash; nettoyage possible</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mermaid-wrapper">
+      <pre class="mermaid">
+graph LR
+    subgraph "V&#233;rifications"
+        V1[Module d&#233;sactiv&#233;<br/>+ flags actifs] -->|ERROR| A1[Alerte critique]
+        V2[Param&#232;tre<br/>manquant] -->|WARNING| A2[Cr&#233;ation sugg&#233;r&#233;e]
+        V3[Flag orphelin] -->|INFO| A3[Nettoyage possible]
+    end
+
+    subgraph "Sources"
+        FF[FeatureFlagService] --> V1
+        FF --> V3
+        ES[EntitlementService] --> V2
+        CS[ConfigurationService] --> V2
+    end
+
+    subgraph "Endpoints"
+        E1["GET /configuration/consistency-check"]
+        E2["GET /configuration/consistency-check/:etablissementId"]
+    end
+
+    A1 --> E1
+    A2 --> E1
+    A3 --> E1
+    E1 --> E2
+      </pre>
+    </div>
+  </section>
+
+  <!-- ==================== SECTION 8 ==================== -->
+  <section class="section" id="s8">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(255,193,7,0.1);color:var(--warning);">&#9200;</div>
+      <div>
+        <h2>8. Cycle de Vie &amp; P&#233;riode d'Essai</h2>
+        <p>De l'inscription &#224; la d&#233;gradation gracieuse</p>
+      </div>
+    </div>
+
+    <div class="mermaid-wrapper">
+      <pre class="mermaid">
+stateDiagram-v2
+    [*] --> Inscription: Cr&#233;ation &#233;tablissement
+    Inscription --> ESSAI: Auto-cr&#233;ation abonnement<br/>14 jours, tous modules
+    ESSAI --> ACTIF: Souscription plan
+    ESSAI --> EXPIRE: 14 jours &#233;coul&#233;s
+    ACTIF --> EXPIRE: Fin de p&#233;riode
+    ACTIF --> SUSPENDU: Impay&#233;
+    EXPIRE --> J0_J15: Lecture seule<br/>GET OK, POST/PUT/DELETE 403
+    J0_J15 --> J15_J30: Verrouill&#233;<br/>Tous modules bloqu&#233;s + upsell
+    J15_J30 --> J30_plus: Archiv&#233;<br/>Donn&#233;es archiv&#233;es
+    SUSPENDU --> ACTIF: R&#233;activation paiement
+    EXPIRE --> ACTIF: Renouvellement
+    J0_J15 --> ACTIF: Souscription
+    J15_J30 --> ACTIF: Souscription
+      </pre>
+    </div>
+
+    <h3>D&#233;tail des Phases</h3>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>Phase</th><th>Dur&#233;e</th><th>Comportement</th><th>Modules</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Essai</strong></td><td>14 jours</td><td>Acc&#232;s complet, tous modules d&#233;bloqu&#233;s</td><td><span class="module-badge badge-base">Tous</span></td></tr>
+          <tr><td><strong>Lecture seule</strong></td><td>J0 &ndash; J15</td><td>GET OK, POST/PUT/DELETE bloqu&#233;s (403)</td><td><span class="module-badge badge-base">Lecture</span></td></tr>
+          <tr><td><strong>Verrouill&#233;</strong></td><td>J15 &ndash; J30</td><td>Tous modules bloqu&#233;s + message upsell</td><td><span class="module-badge badge-addon">Aucun</span></td></tr>
+          <tr><td><strong>Archiv&#233;</strong></td><td>J30+</td><td>Donn&#233;es archiv&#233;es, modules invisibles</td><td>&mdash;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warning">
+      <span class="callout-icon">&#9888;</span>
+      <div>
+        <h4>Cron Jobs Associ&#233;s</h4>
+        <p>5 cron jobs dans <code>cron-jobs.ts</code> g&#232;rent le cycle de vie : <code>renouvellementAuto</code>, <code>generationFactures</code>, <code>dunning</code> (relances), <code>alerteQuota</code>, <code>expirationEssai</code>. Tous ex&#233;cut&#233;s en timezone <code>Africa/Douala</code>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SECTION 9 ==================== -->
+  <section class="section" id="s9">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(0,123,255,0.1);color:var(--secondary);">&#128268;</div>
+      <div>
+        <h2>9. API &amp; Int&#233;gration Frontend</h2>
+        <p>Endpoints REST et composants UI</p>
+      </div>
+    </div>
+
+    <h3>Endpoints API</h3>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>M&#233;thode</th><th>Route</th><th>R&#244;le</th><th>Auth</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>GET</code></td><td><code>/api/billing/modules/resolved</code></td><td>Modules r&#233;solus (legacy)</td><td>Tenant</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/billing/modules/mes-modules</code></td><td>Catalogue filtr&#233; client</td><td>Tenant</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/billing/marketplace</code></td><td>Marketplace (App Store)</td><td>Tenant</td></tr>
+          <tr><td><code>PUT</code></td><td><code>/api/billing/marketplace/:code/toggle</code></td><td>Activer/d&#233;sactiver module</td><td>Tenant</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/billing/marketplace/essayer</code></td><td>Essai 7 jours</td><td>Tenant</td></tr>
+          <tr><td><code>POST</code></td><td><code>/api/billing/marketplace/souscrire</code></td><td>Souscription module</td><td>Tenant</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/configuration/modules/registry</code></td><td>Registre enrichi (estAccessible, raisonBlocage)</td><td>Tenant</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/configuration/consistency-check</code></td><td>Rapport coh&#233;rence</td><td>Admin</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/configuration/cascade-view</code></td><td>Vue cascade par &#233;tablissement</td><td>Platform</td></tr>
+          <tr><td><code>GET</code></td><td><code>/api/platform/facturation/modules/catalogue</code></td><td>Catalogue complet CRUD</td><td>Platform</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Composants Frontend</h3>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-title">&#127978; Marketplace</div>
+        <div class="card-desc"><code>_auth.marketplace.tsx</code> &mdash; 3 onglets : Catalogue (App Store), Mes Modules (toggle ON/OFF), Aper&#231;u (analytics)</div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128261; ModuleToggleCard</div>
+        <div class="card-desc"><code>module-toggle-card.tsx</code> &mdash; Toggle ON/OFF par module, BASE non-d&#233;sactivable, CTA upgrade pour PREMIUM</div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128737; FeatureFlag</div>
+        <div class="card-desc"><code>FeatureFlag.tsx</code> &mdash; Rendu conditionnel <code>&lt;FeatureFlag flag="..."&gt;</code> + <code>&lt;PremiumGate&gt;</code> avec CTA verrouill&#233;</div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128202; Feature Flags Manager</div>
+        <div class="card-desc"><code>feature-flags-manager.tsx</code> &mdash; UI plateforme pour voir/toggle les flags par &#233;tablissement</div>
+      </div>
+    </div>
+
+    <h3>Pattern d'Utilisation Frontend</h3>
+    <pre><code>// 1. Hook pour v&#233;rifier un flag
+const { isEnabled } = useFeatureFlag();
+if (isEnabled('notes.evaluation_continue')) {
+  // Afficher la fonctionnalit&#233;
+}
+
+// 2. Composant conditionnel
+&lt;FeatureFlag flag="cantine.reservation_en_ligne"&gt;
+  &lt;ReservationForm /&gt;
+&lt;/FeatureFlag&gt;
+
+// 3. Gate premium (module non souscrit)
+&lt;PremiumGate module="cms" fallback={&lt;UpgradeCTA /&gt;}&gt;
+  &lt;CmsEditor /&gt;
+&lt;/PremiumGate&gt;
+
+// 4. V&#233;rification entitlement
+const { accessible, raison, message } = await entitlementService.check(etabId, 'bulletins');
+if (!accessible) {
+  // Afficher messageBlocage + CTA upgrade
+}</code></pre>
+  </section>
+
+  <!-- ==================== SECTION 10 ==================== -->
+  <section class="section" id="s10">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(40,167,69,0.1);color:var(--primary);">&#127891;</div>
+      <div>
+        <h2>10. Bonnes Pratiques Industrielles</h2>
+        <p>Synth&#232;se des standards 2025-2026 (ConfigCat, Unleash, GrowthBook, Google Cloud)</p>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>Pratique</th><th>Description</th><th>eLISAschool</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Nommage conventionnel</strong></td>
+            <td>Namespace + feature + action (ex: <code>module.notes.evaluation_continue</code>)</td>
+            <td><span class="system-tag tag-success">Appliqu&#233;</span></td>
+          </tr>
+          <tr>
+            <td><strong>Default-off</strong></td>
+            <td>Nouveau flag = d&#233;sactiv&#233; par d&#233;faut, activation explicite</td>
+            <td><span class="system-tag tag-success">Appliqu&#233;</span></td>
+          </tr>
+          <tr>
+            <td><strong>Cache avec TTL</strong></td>
+            <td>Tout cache doit avoir un TTL explicite + invalidation</td>
+            <td><span class="system-tag tag-success">Appliqu&#233;</span> (60s Redis)</td>
+          </tr>
+          <tr>
+            <td><strong>Audit trail</strong></td>
+            <td>Logger chaque toggle (qui, quand, quoi)</td>
+            <td><span class="system-tag tag-warning">Partiel</span> (logs mais pas d'UI d&#233;di&#233;e)</td>
+          </tr>
+          <tr>
+            <td><strong>Segmentation</strong></td>
+            <td>Targeting par attributs (r&#244;le, plan, g&#233;ographie)</td>
+            <td><span class="system-tag tag-warning">Limit&#233;</span> (par plan uniquement)</td>
+          </tr>
+          <tr>
+            <td><strong>Progressive rollout</strong></td>
+            <td>D&#233;ploiement progressif (% d'utilisateurs)</td>
+            <td><span class="system-tag tag-danger">Absent</span></td>
+          </tr>
+          <tr>
+            <td><strong>Kill switch</strong></td>
+            <td>D&#233;sactivation d'urgence en 1 clic</td>
+            <td><span class="system-tag tag-success">Via marketplace toggle</span></td>
+          </tr>
+          <tr>
+            <td><strong>Feature flag debt</strong></td>
+            <td>Nettoyage r&#233;gulier des flags obsol&#232;tes</td>
+            <td><span class="system-tag tag-danger">Absent</span> (pas de processus)</td>
+          </tr>
+          <tr>
+            <td><strong>Documentation</strong></td>
+            <td>Registre document&#233; de tous les flags</td>
+            <td><span class="system-tag tag-warning">Catalogue modules oui, flags non</span></td>
+          </tr>
+          <tr>
+            <td><strong>A/B Testing</strong></td>
+            <td>Exp&#233;rimentation multi-variant</td>
+            <td><span class="system-tag tag-danger">Absent</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">&#128218;</span>
+      <div>
+        <h4>R&#233;f&#233;rences Industrielles</h4>
+        <p>Sources consult&#233;es : ConfigCat Best Practices (2025), Unleash Feature Toggle Guide, GrowthBook Feature Flags 101, Google Cloud Feature Flags Documentation, Dev.to SaaS Feature Management Patterns, BugFree Feature Flag Anti-Patterns.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SECTION 11 ==================== -->
+  <section class="section" id="s11">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(253,126,20,0.1);color:var(--accent);">&#128161;</div>
+      <div>
+        <h2>11. Recommandations</h2>
+        <p>Am&#233;liorations propos&#233;es par ordre de priorit&#233;</p>
+      </div>
+    </div>
+
+    <div class="rec-card high">
+      <div class="rec-header">
+        <span class="rec-title">R1 &mdash; Registre Centralis&#233; des Feature Flags</span>
+        <span class="priority-badge priority-high">Priorit&#233; Haute</span>
+      </div>
+      <p>Cr&#233;er une table <code>feature_flag_definitions</code> qui liste <strong>tous les flags d&#233;clar&#233;s</strong> avec : nom, description, propri&#233;taire, date de cr&#233;ation, date d'expiration pr&#233;vue, type (release/ops/experiment/permission). Actuellement, les flags existent uniquement comme donn&#233;es dans <code>feature_flags_tenant</code> sans m&#233;tadonn&#233;es.</p>
+      <pre><code>-- Table propos&#233;e
+CREATE TABLE feature_flag_definitions (
+  id uuid PRIMARY KEY,
+  name varchar(200) UNIQUE NOT NULL,
+  description text,
+  owner varchar(100),        -- &#233;quipe/module responsable
+  type varchar(30),          -- release|ops|experiment|permission
+  created_at timestamptz DEFAULT now(),
+  expires_at timestamptz,    -- alerte si d&#233;pass&#233;
+  est_systeme boolean DEFAULT false
+);</code></pre>
+    </div>
+
+    <div class="rec-card high">
+      <div class="rec-header">
+        <span class="rec-title">R2 &mdash; Progressive Rollout (% Rollout)</span>
+        <span class="priority-badge priority-high">Priorit&#233; Haute</span>
+      </div>
+      <p>Ajouter la capacit&#233; d'activer un flag pour un <strong>pourcentage d'&#233;tablissements</strong> (hash stable sur <code>etablissementId</code>). Pattern standard : <code>hash(etabId) % 100 &lt; rolloutPercent</code>. Permet le d&#233;ploiement progressif sans risque.</p>
+    </div>
+
+    <div class="rec-card medium">
+      <div class="rec-header">
+        <span class="rec-title">R3 &mdash; UI d'Audit des Toggles</span>
+        <span class="priority-badge priority-medium">Priorit&#233; Moyenne</span>
+      </div>
+      <p>Cr&#233;er un onglet &laquo; Historique &raquo; dans le Feature Flags Manager montrant : qui a toggled quoi, quand, ancienne/nouvelle valeur. Utiliser l'<code>AuditLog</code> existant avec <code>cible='FeatureFlag'</code>.</p>
+    </div>
+
+    <div class="rec-card medium">
+      <div class="rec-header">
+        <span class="rec-title">R4 &mdash; Expiration Automatique des Flags</span>
+        <span class="priority-badge priority-medium">Priorit&#233; Moyenne</span>
+      </div>
+      <p>Les flags de type &laquo; release &raquo; doivent avoir une date d'expiration. Apr&#232;s expiration : alerte dans le consistency checker + suggestion de suppression. Le cron <code>cleanup-flags-expired</code> peut &#234;tre ajout&#233;.</p>
+    </div>
+
+    <div class="rec-card medium">
+      <div class="rec-header">
+        <span class="rec-title">R5 &mdash; Targeting par Segments</span>
+        <span class="priority-badge priority-medium">Priorit&#233; Moyenne</span>
+      </div>
+      <p>Ajouter la capacit&#233; de cibler des segments d'&#233;tablissements : par type (&laquo; tous les lyc&#233;es &raquo;), par plan, par groupe, par taille. Pattern : <code>segments</code> JSONB dans <code>feature_flag_definitions</code> avec r&#232;gles d'&#233;valuation.</p>
+    </div>
+
+    <div class="rec-card low">
+      <div class="rec-header">
+        <span class="rec-title">R6 &mdash; A/B Testing Multi-Variant</span>
+        <span class="priority-badge priority-low">Priorit&#233; Basse</span>
+      </div>
+      <p>Pour les exp&#233;rimentations : supporter des variants (A/B/C) avec pond&#233;ration. Mod&#232;le : <code>variants: [{name: 'control', weight: 50}, {name: 'treatment', weight: 50}]</code>. Hash stable pour assignation coh&#233;rente.</p>
+    </div>
+
+    <div class="rec-card low">
+      <div class="rec-header">
+        <span class="rec-title">R7 &mdash; Feature Flag Debt Dashboard</span>
+        <span class="priority-badge priority-low">Priorit&#233; Basse</span>
+      </div>
+      <p>Dashboard montrant les flags &laquo; endett&#233;s &raquo; : actifs depuis > 90 jours, sans description, sans propri&#233;taire, ou expir&#233;s. R&#232;gle industrielle : tout flag de type &laquo; release &raquo; doit &#234;tre nettoy&#233; dans les 30 jours apr&#232;s d&#233;ploiement complet.</p>
+    </div>
+
+    <div class="rec-card low">
+      <div class="rec-header">
+        <span class="rec-title">R8 &mdash; SDK Client Unifi&#233;</span>
+        <span class="priority-badge priority-low">Priorit&#233; Basse</span>
+      </div>
+      <p>Cr&#233;er un hook React unifi&#233; <code>useFeatureManagement()</code> qui combine : flags (FeatureFlagService), modules (EntitlementService), et param&#232;tres (ConfigurationService) en un seul point d'entr&#233;e avec cache partag&#233;.</p>
+    </div>
+  </section>
+
+  <!-- ==================== SECTION 12 ==================== -->
+  <section class="section" id="s12">
+    <div class="section-header">
+      <div class="section-icon" style="background:rgba(40,167,69,0.1);color:var(--primary);">&#127919;</div>
+      <div>
+        <h2>12. Synth&#232;se &amp; Roadmap</h2>
+        <p>Vision globale et prochaines &#233;tapes</p>
+      </div>
+    </div>
+
+    <h3>Matrice de Maturit&#233;</h3>
+    <div class="mermaid-wrapper">
+      <pre class="mermaid">
+quadrantChart
+    title Matrice de Maturit&#233; Feature Management
+    x-axis "Basique" --> "Avanc&#233;"
+    y-axis "R&#233;actif" --> "Proactif"
+    quadrant-1 "Objectif"
+    quadrant-2 "Leader"
+    quadrant-3 "Suiveur"
+    quadrant-4 "D&#233;butant"
+    "Module Gating": [0.75, 0.70]
+    "Cache Redis": [0.80, 0.60]
+    "Cascade Config": [0.70, 0.65]
+    "Consistency Check": [0.60, 0.75]
+    "Progressive Rollout": [0.20, 0.30]
+    "A/B Testing": [0.15, 0.20]
+    "Flag Registry": [0.30, 0.50]
+    "Audit UI": [0.35, 0.45]
+      </pre>
+    </div>
+
+    <h3>Roadmap Propos&#233;e</h3>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>Phase</th><th>Horizon</th><th>Livrables</th><th>Impact</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>V1</strong></td>
+            <td>Imm&#233;diat</td>
+            <td>R1 (registre flags) + R3 (audit UI)</td>
+            <td>Visibilit&#233; + tra&#231;abilit&#233;</td>
+          </tr>
+          <tr>
+            <td><strong>V2</strong></td>
+            <td>Court terme</td>
+            <td>R2 (progressive rollout) + R4 (expiration)</td>
+            <td>D&#233;ploiement s&#233;curis&#233;</td>
+          </tr>
+          <tr>
+            <td><strong>V3</strong></td>
+            <td>Moyen terme</td>
+            <td>R5 (segments) + R7 (debt dashboard)</td>
+            <td>Ciblage avanc&#233; + hygi&#232;ne</td>
+          </tr>
+          <tr>
+            <td><strong>V4</strong></td>
+            <td>Long terme</td>
+            <td>R6 (A/B testing) + R8 (SDK unifi&#233;)</td>
+            <td>Exp&#233;rimentation + DX</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout success">
+      <span class="callout-icon">&#127942;</span>
+      <div>
+        <h3>Points Forts d'eLISAschool</h3>
+        <p style="margin-top:8px;">
+          &#9989; Architecture 3 syst&#232;mes compl&#233;mentaire et bien s&#233;par&#233;e<br>
+          &#9989; EntitlementService avec cascade 8 niveaux (tr&#232;s avanc&#233; pour un SaaS)<br>
+          &#9989; Cache Redis multi-niveaux avec Pub/Sub cross-instance<br>
+          &#9989; P&#233;riode d'essai automatique + d&#233;gradation gracieuse<br>
+          &#9989; Catalogue modules en DB (pas de registre hardcod&#233;)<br>
+          &#9989; Consistency checker inter-syst&#232;mes<br>
+          &#9989; Multi-tenant strict avec RLS PostgreSQL
+        </p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ==================== FOOTER ==================== -->
+<footer class="report-footer">
+  <div class="container">
+    <p><strong>eLISAschool</strong> &mdash; Rapport d'Analyse Feature Flags &amp; Gestion des Fonctionnalit&eacute;s</p>
+    <p>G&eacute;n&eacute;r&eacute; le 14 ao&ucirc;t 2026 &bull; Version 1.0 &bull; Architecture SaaS v7</p>
+    <p style="margin-top:12px;opacity:0.5;">Document g&eacute;n&eacute;r&eacute; automatiquement par analyse du codebase et recherche industrielle</p>
+  </div>
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#e8f5e9',
+      primaryTextColor: '#1a1a2e',
+      primaryBorderColor: '#28a745',
+      lineColor: '#6c757d',
+      secondaryColor: '#e3f2fd',
+      tertiaryColor: '#fff3e0',
+      fontFamily: 'Inter, -apple-system, sans-serif',
+      fontSize: '13px'
+    },
+    flowchart: { curve: 'basis', padding: 16 },
+    securityLevel: 'loose'
+  });
+</script>
+</body>
+</html>

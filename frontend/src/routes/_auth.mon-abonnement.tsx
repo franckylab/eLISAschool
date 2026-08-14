@@ -2,10 +2,11 @@
  * ==================================
  * eLISAschool - Mon Abonnement (Client)
  * ==================================
- * Page établissement — abonnement actuel, factures, quotas, feature flags.
+ * Page établissement — abonnement actuel, factures, quotas, simulateur.
  * Phase 4.7 — Refonte SaaS
  * Phase K.1 — Enrichissement : upgrade/downgrade, graphique consommation,
  * historique des plans, simulateur intégré.
+ * v9 — Consolidation : onglet "Modules actifs" supprimé (→ marketplace).
  */
 
 import { createFileRoute } from '@tanstack/react-router';
@@ -102,39 +103,26 @@ function useMesFactures() {
     });
 }
 
-function useFeatureFlags() {
-    return useQuery<Record<string, boolean> | undefined>({
-        queryKey: ['mes-feature-flags'],
-        queryFn: async () => {
-            const res = await apiClient.get<Record<string, boolean>>('/api/billing/feature-flags');
-            return res.data;
-        },
-    });
-}
-
 // =============================================
 // Main Page
 // =============================================
 
-type TabKey = 'abonnement' | 'factures' | 'quotas' | 'modules' | 'simulateur' | 'historique';
+type TabKey = 'abonnement' | 'quotas' | 'historique';
 
 function MonAbonnementPage() {
     const [activeTab, setActiveTab] = useState<TabKey>('abonnement');
 
     const tabs: { key: TabKey; label: string; icon: typeof CreditCard }[] = [
         { key: 'abonnement', label: 'Mon abonnement', icon: Package },
-        { key: 'factures', label: 'Factures', icon: FileText },
-        { key: 'quotas', label: 'Quotas', icon: BarChart3 },
-        { key: 'modules', label: 'Modules actifs', icon: CheckCircle },
-        { key: 'simulateur', label: 'Simulateur', icon: Sparkles },
+        { key: 'quotas', label: 'Usage & Quotas', icon: BarChart3 },
         { key: 'historique', label: 'Historique', icon: History },
     ];
 
     return (
         <div className="p-6 space-y-6">
             <div>
-                <h1 className="text-2xl font-bold text-foreground">Mon Abonnement</h1>
-                <p className="text-muted-foreground">Gérez votre abonnement, consultez vos factures et suivez vos quotas</p>
+                <h1 className="text-2xl font-bold text-foreground">Abonnements</h1>
+                <p className="text-muted-foreground">Vue d'ensemble de votre abonnement, consommation et historique</p>
             </div>
 
             {/* Tabs */}
@@ -159,10 +147,7 @@ function MonAbonnementPage() {
             </div>
 
             {activeTab === 'abonnement' && <AbonnementTab />}
-            {activeTab === 'factures' && <FacturesTab />}
             {activeTab === 'quotas' && <QuotasTab />}
-            {activeTab === 'modules' && <ModulesTab />}
-            {activeTab === 'simulateur' && <SimulateurTab />}
             {activeTab === 'historique' && <HistoriqueTab />}
         </div>
     );
@@ -227,7 +212,7 @@ function AbonnementTab() {
                         <div>
                             <h2 className="text-xl font-bold">{abonnement.plan?.nom || 'Plan'}</h2>
                             <span className={`text-xs px-2 py-1 rounded-full ${
-                                abonnement.statut === 'ACTIF' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                abonnement.statut === 'ACTIF' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'
                             }`}>
                                 {abonnement.statut}
                             </span>
@@ -263,11 +248,11 @@ function AbonnementTab() {
                 <div className="flex items-center gap-2 pt-2">
                     <span className="text-sm text-muted-foreground">Auto-renouvellement:</span>
                     {abonnement.autoRenouvellement ? (
-                        <span className="flex items-center gap-1 text-green-600 text-sm">
+                        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-sm">
                             <CheckCircle className="w-4 h-4" /> Activé
                         </span>
                     ) : (
-                        <span className="flex items-center gap-1 text-gray-500 text-sm">
+                        <span className="flex items-center gap-1 text-muted-foreground text-sm">
                             <XCircle className="w-4 h-4" /> Désactivé
                         </span>
                     )}
@@ -384,9 +369,9 @@ function FacturesTab() {
                             </td>
                             <td className="p-3">
                                 <span className={`text-xs px-2 py-1 rounded-full ${
-                                    f.statut === 'PAYEE' ? 'bg-green-100 text-green-700' :
-                                    f.statut === 'EN_RETARD' ? 'bg-red-100 text-red-700' :
-                                    'bg-blue-100 text-blue-700'
+                                    f.statut === 'PAYEE' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+                                    f.statut === 'EN_RETARD' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
+                                    'bg-blue-500/10 text-blue-600 dark:text-blue-400'
                                 }`}>
                                     {f.statut}
                                 </span>
@@ -484,10 +469,6 @@ function QuotasTab() {
 }
 
 // =============================================
-// Modules Tab
-// =============================================
-
-// =============================================
 // Simulateur Tab — Phase K.1
 // =============================================
 
@@ -552,9 +533,9 @@ function HistoriqueTab() {
                                     </td>
                                     <td className="p-3">
                                         <span className={`text-xs px-2 py-1 rounded-full ${
-                                            entry.statut === 'ACTIF' ? 'bg-green-100 text-green-700' :
-                                            entry.statut === 'SUSPENDU' ? 'bg-red-100 text-red-700' :
-                                            'bg-gray-100 text-gray-700'
+                                            entry.statut === 'ACTIF' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+                                            entry.statut === 'SUSPENDU' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
+                                            'bg-muted text-muted-foreground'
                                         }`}>
                                             {entry.statut}
                                         </span>
@@ -565,45 +546,6 @@ function HistoriqueTab() {
                     </table>
                 </div>
             )}
-        </div>
-    );
-}
-
-// =============================================
-// Modules Tab
-// =============================================
-
-function ModulesTab() {
-    const { data: flags, isLoading } = useFeatureFlags();
-
-    if (isLoading) return <div className="animate-pulse">Chargement...</div>;
-
-    const moduleFlags = flags ? Object.entries(flags).filter(([k]) => k.startsWith('module_')) : [];
-
-    return (
-        <div className="space-y-4">
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {moduleFlags.map(([flag, enabled]) => {
-                    const moduleName = flag.replace('module_', '').replace(/_/g, ' ');
-                    return (
-                        <div key={flag} className={`border rounded-lg p-4 flex items-center justify-between ${
-                            enabled ? 'border-green-200 bg-green-50/50' : 'border-gray-200 opacity-60'
-                        }`}>
-                            <span className="font-medium capitalize">{moduleName}</span>
-                            {enabled ? (
-                                <CheckCircle className="w-5 h-5 text-green-600" />
-                            ) : (
-                                <XCircle className="w-5 h-5 text-gray-400" />
-                            )}
-                        </div>
-                    );
-                })}
-                {moduleFlags.length === 0 && (
-                    <div className="col-span-full text-center text-muted-foreground py-8">
-                        Aucun module actif
-                    </div>
-                )}
-            </div>
         </div>
     );
 }

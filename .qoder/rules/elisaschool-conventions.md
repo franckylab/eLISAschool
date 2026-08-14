@@ -1498,13 +1498,19 @@ Ces 5 règles sont **non négociables** — voir aussi section 14.1 :
 
 Le module CMS permet à chaque établissement de gérer ses pages publiques (site vitrine white-label) :
 - **7 entités** : CmsPage, CmsSection, CmsMedia, CmsTheme, CmsMenu, CmsWidget, CmsVersion
+- **+1 CmsTemplate** (entité séparée) — 8 templates système
 - **18 types de sections** : HERO, TEXTE, GALERIE, CARTE_INFOS, TEMOIGNAGES, CHIFFRES_CLES, EQUIPE, FORMULAIRE, CARTE, VIDEO, TELECHARGEMENTS, ACTUALITES, HORAIRES, PARTENAIRES, FAQ, APPEL_ACTION, SEPARATEUR, HTML_CUSTOM
-- **API publique** sans authentification (`/api/public/etablissements/:code/*`)
+- **API publique** sans authentification (`/api/public/e/:code/*`)
 - **API admin** authentifiée (`/api/cms/*`) avec RBAC + module active check
 - **Cache Redis** : TTL 300s (pages), 600s (thèmes), invalidation à chaque mutation
 - **Rate limiting** : 60 req/min/IP sur routes publiques
 - **RLS PostgreSQL** activé sur les 7 tables CMS
 - **Versioning** : Snapshot avant chaque modification, rollback possible
+- **Seed démo** : `POST /api/cms/seed-demo` — peuple l'établissement avec contenu riche (médias, actualités, équipe, témoignages). Idempotent.
+- **Réinitialisation CMS** : `POST /api/cms/reinitialiser` — supprime tout le contenu CMS (pages, sections, thèmes, menus, widgets) et ré-initialise avec les données de base. Options : `conserverMedias` (défaut: true), `inclureDemo` (défaut: true). Retourne `{ pagesRecreees, sectionsRecreees, mediasCrees }`.
+- **Widgets CMS** : 5 types par défaut (RESEAUX_SOCIAUX, CONTACT_RAPIDE, HORAIRES, NEWSLETTER, LIENS_UTILES). Champ données : `contenu` (JSONB, ex-`config`, migration 206).
+- **Footer dynamique** : Rend tous les widgets `pied_page` actifs, grille adaptative (2→6 colonnes). Fallback statique si aucun widget.
+- **Personnalisation templates** : `personnaliserSections()` remplace les textes génériques par les données réelles de l'établissement lors de l'initialisation.
 
 ### Routage Public — Convention `/e/:code`
 
@@ -1594,9 +1600,57 @@ L'éditeur CMS utilise le layout `_auth.cms.tsx` avec navigation par onglets :
 | `CmsMediaUpload.tsx` | Upload drag & drop (progress, preview, base64) |
 | `CmsSectionEditor.tsx` | Éditeur section générique (SECTION_CONFIG pour 18 types) |
 | `CmsThemeCustomizer.tsx` | Personnalisation thème (presets, couleurs, typo, preview live) |
-| `PublicLayout.tsx` | Layout public (CSS vars depuis thème, header, footer) |
-| `CmsPageRenderer.tsx` | Rendu 18 types de sections |
+| `PublicLayout.tsx` | Layout public (dark mode, mobile hamburger, breadcrumbs, CSS vars) |
+| `CmsPageRenderer.tsx` | Rendu 18 types de sections (animations, dark mode, lightbox) |
 | `CmsDashboard.tsx` | Dashboard admin basique |
+| `SeoHead.tsx` | Composant SEO réutilisable (title, meta, OG, Twitter Card) |
+| `PublicPageSkeleton.tsx` | Skeleton loading pour pages publiques |
+
+### Système de Templates CMS
+
+**8 entités** : CmsPage, CmsSection, CmsMedia, CmsTheme, CmsMenu, CmsWidget, CmsVersion, **CmsTemplate**
+
+6 templates système seedés dans la migration `184-cms-templates.sql` :
+1. **ACCUEIL_CLASSIQUE** — Hero + Présentation + Chiffres clés + Cartes + CTA
+2. **PAGE_CONTACT** — Hero + Formulaire + Cartes infos + Carte
+3. **PAGE_GALERIE** — Hero + Galerie masonry
+4. **PAGE_INSCRIPTIONS** — Hero + Étapes + Téléchargements + FAQ
+5. **PAGE_ACTUALITES** — Hero + Liste actualités
+6. **PAGE_VIERGE** — Hero minimal (template de base)
+
++2 templates ajoutés via migration `205-cms-consolidation.sql` :
+7. **PAGE_A_PROPOS** — Hero + Texte + Chiffres + Équipe + Témoignages + CTA
+8. **PAGE_MENTIONS_LEGALES** — Texte juridique + Téléchargements
+
+**Service** : `cms-template.service.ts` — `findTemplates()`, `instancierTemplate()`, `appliquerThemeParDefaut()`, `initialiserCmsEtablissement()`, `reinitialiserCms()`
+
+**Auto-initialisation** : Lors de la création d'un établissement, `initialiserCmsEtablissement()` crée :
+- 1 thème par défaut (structure nested : `couleurs` + `typographie`)
+- 6 pages : Accueil, À propos, Galerie, Inscriptions, Contact, Mentions légales
+- 2 menus : Principal (6 items) + Pied de page (4 items) — avec `pageSlug`
+- 3 widgets : Réseaux sociaux + Contact rapide + Horaires (tous en pied de page)
+
+**Enums alignés** : `EmplacementMenu` = `principal | pied_page | lateral` (backend = frontend)
+
+**Theme mapping** : Backend stocke `variables: { couleurs: { primaire, secondaire, accent, fond, texte, texteClair }, typographie: { titre, corps } }`. Le service `mapThemeToPublic()` gère la compatibilité legacy (flat → nested).
+
+### Preview Mode (Pages Brouillon)
+
+Flux de preview pour visualiser les pages non publiées :
+1. **Backend** : `GET /api/cms/pages/:id/preview` → génère un token UUID (Redis, TTL 10 min)
+2. **Frontend éditeur** : Bouton "Aperçu" → `window.open('/e/${code}/${slug}?preview=${token}')`
+3. **Frontend public** : `e.$code.$slug.tsx` détecte `?preview=TOKEN` → appelle l'API publique avec le token
+4. **Backend public** : Si `?preview=TOKEN` → valide le token Redis → retourne la page même si BROUILLON
+
+### Cache Redis — Invalidation par Pattern
+
+```typescript
+// ✅ CORRECT — Utiliser delPattern pour les glob patterns
+await redisService.delPattern(`public:${etablissementId}:*`);
+
+// ❌ INTERDIT — Redis DEL ne supporte pas les glob
+await redisService.del('public:${etabId}:*'); // NE FONCTIONNE PAS
+```
 
 ### Fichiers de Référence
 
@@ -1630,6 +1684,70 @@ L'éditeur CMS utilise le layout `_auth.cms.tsx` avec navigation par onglets :
 | `frontend/src/routes/_auth.cms.menus.tsx` | Éditeur navigation |
 | `frontend/src/routes/_auth.cms.widgets.tsx` | Gestion widgets |
 | `frontend/src/routes/_auth.cms.versions.tsx` | Historique versions |
+| `frontend/src/routes/_auth.cms.templates.tsx` | Liste templates + instanciation |
+| `backend/src/modules/cms/entities/cms-template.entity.ts` | Entité CmsTemplate |
+| `backend/src/modules/cms/services/cms-template.service.ts` | Service templates + auto-init |
+| `backend/database/migrations/184-cms-templates.sql` | Table + seed 6 templates |
+| `frontend/src/features/cms/components/SeoHead.tsx` | SEO réutilisable (title, meta, OG) |
+| `frontend/src/features/cms/components/PublicPageSkeleton.tsx` | Skeleton loading pages publiques |
+
+### CMS V2 — Refonte Visuelle (v2.0)
+
+**28 composants Puck** (18 initiaux + 10 nouveaux) dans 6 catégories :
+- **Hero** : Hero, HeroVideo
+- **Content** : Texte, Galerie, Video, Telechargements, Actualites, Horaires, Carousel, Timeline, Tabs, CompteursAnimes, IconeFeatures, GalerieMasonry
+- **Social** : Temoignages, TemoignageCarousel, Equipe, Partenaires, PrixTab
+- **Info** : CarteInfos, Carte, Faq
+- **Action** : Formulaire, AppelAction, Newsletter
+- **Structure** : Separateur, HtmlCustom
+
+**Animations avancées** (`lib/animations.ts`) :
+- 15 variants (fade-in, slide-*, zoom-*, flip-*, rotate, blur, scale-up, bounce, elastic)
+- 7 easings (easeOut, easeIn, easeInOut, linear, spring, bounce, elastic)
+- 6 hover effects (lift, glow, scale, tilt, shadow, border-glow)
+- Presets : hero, card, testimonial, stats, timeline, gallery, partner, cta
+
+**Personnalisation avancée** (`puck/shared-styles.ts`) :
+- Types : ButtonStyle, TypographyStyle, BackgroundStyle, SpacingStyle, BorderStyle, ShadowStyle
+- 4 presets : heroClassic, contentStandard, darkElegant, cardSoft
+- Helpers CSS : typographyToCSS, backgroundToCSS, spacingToCSS, borderToCSS, shadowToCSS
+
+**Contenu dynamique** (5 entités + API publique) :
+- CmsActualite, CmsTemoignage, CmsEvenement, CmsPartenaire, CmsAbonnementNewsletter
+- 7 routes publiques : actualites, temoignages, evenements, partenaires, newsletter
+- DataBinding enrichi : variables `{{actualites.0.titre}}`, `{{temoignages.0.nom}}`, etc.
+
+**Outils éditeur** :
+- **SeoPanel** : Score SEO 0-100, aperçu Google, meta title/description, OG, noindex
+- **ResponsivePreview** : 6 presets devices (320px→pleine largeur), zoom 25-200%
+- **ExportImportPanel** : Export JSON/Puck, import drag&drop avec preview
+- **Honeypot anti-spam** : Contact + Newsletter (champ `_honeypot` caché)
+
+**Fichiers CMS V2 supplémentaires** :
+| Fichier | Rôle |
+|---------|------|
+| `frontend/src/features/cms/lib/animations.ts` | Bibliothèque animations (363 lignes) |
+| `frontend/src/features/cms/puck/shared-styles.ts` | Styles partagés + presets (379 lignes) |
+| `frontend/src/features/cms/components/SeoPanel.tsx` | Panneau SEO éditeur (212 lignes) |
+| `frontend/src/features/cms/components/ResponsivePreview.tsx` | Preview multi-devices (123 lignes) |
+| `frontend/src/features/cms/components/ExportImportPanel.tsx` | Export/Import JSON (346 lignes) |
+| `backend/src/modules/cms/entities/cms-content.entity.ts` | 5 entités contenu dynamique |
+| `backend/src/modules/cms/services/cms-content.service.ts` | CRUD contenu + méthodes publiques |
+| `backend/src/modules/cms/controllers/cms-content.controller.ts` | 21 routes CRUD avec RBAC |
+| `backend/database/migrations/211-cms-content-entities.sql` | 5 tables + RLS + 19 permissions |
+
+**Outils éditeur avancés (Phase 7)** :
+- **StyleEditorPanel** : Accordéon 6 sections (typo, background, spacing, border, shadow, bouton), 4 presets, preview live, copie CSS
+- **SectionClipboard** : Copier/coller sections entre pages, localStorage (max 10), import/export JSON
+- **VisibilityEditor** : Conditions d’affichage (breakpoints responsive, rôles, dates), `evaluerVisibilite()` + `genererCSSVisibilite()`
+- **AnchorNav** : Sommaire auto-généré (IntersectionObserver scroll-spy), 3 modes (sidebar/floating/top)
+- **ContentMetrics** : Score qualité 0-100 (lisibilité, SEO, richesse, structure), compteur mots/caractères, recommandations
+- **FocusMode** : Mode plein écran sans distractions, fond personnalisable, raccourcis F11/Échap
+- **CommandPalette** : Ctrl+K, recherche fuzzy 20+ commandes, navigation clavier, insertion rapide sections
+
+**Migration Phase 7** : `backend/database/migrations/212-cms-phase7-avance.sql`
+- `cms_sections` : +`conditionsVisibilite` (jsonb), +`styleConfig` (jsonb)
+- `cms_pages` : +`focusPreferences` (jsonb), +`qualiteScore` (int), +`analytics` (jsonb)
 
 ---
 
@@ -1797,3 +1915,74 @@ Tous les caches de configuration sont maintenant harmonisés à **60 secondes** 
 | `frontend/src/routes/platform.configuration-cascade.tsx` | Dashboard cascade |
 
 ---
+
+## 30. Module Management SaaS v8 — Refonte Unification (migration 200)
+
+### 30.1 Architecture cible
+
+**EntitlementService** = source unique de vérité pour le gating des modules.
+Remplace les 3 anciens registres (MODULE_REGISTRY, ModuleRegistryService, MODULES_GRATUITS/PREMIUM).
+
+| Composant | Rôle |
+|-----------|------|
+| `entitlement.service.ts` | Source unique — check(), checkAll(), isAccessible() |
+| `module-access.middleware.ts` | Wrapper v4 vers entitlementService (compatibilité) |
+| `module-active.middleware.ts` | Gating par abonnement (utilise entitlementService) |
+| `modules_catalogue` (DB) | Catalogue avec config JSONB (defaultSettings migrés) |
+
+### 30.2 Cascade de résolution (9 niveaux)
+
+1. Module CRITIQUE (code: auth, utilisateurs, configuration, notifications) → bypass total
+2. Période d'essai (statut ESSAI, 14 jours) → tous modules accessibles
+3. Catalogue DB → module existe + catégorie CRITIQUE
+4. Abonnement ACTIF ou ESSAI
+5. Plan (modulesInclus)
+6. Override groupe (ModulesGroupe)
+7. Supplément souscrit (AbonnementModule)
+8. Plan minimal requis (rang)
+9. Défaut catalogue (actifParDefaut)
+
+### 30.3 Période d'essai automatique (14 jours)
+
+- À la création d'un établissement → auto-création `AbonnementClient` statut=ESSAI, 14 jours
+- `entitlementService.check()` : si statut=ESSAI et `periodeEssaiFin > now()` → tous modules accessibles
+- Colonne `periodeEssaiFin` sur `abonnements_client`
+
+### 30.4 Dégradation gracieuse (30 jours)
+
+| Phase | Jours | Comportement |
+|-------|-------|-------------|
+| Lecture seule | J0–J15 | GET OK, POST/PUT/DELETE bloqués (403) |
+| Verrouillé | J15–J30 | Tous modules bloqués + message upsell |
+| Archivé | J30+ | Données archivées, modules invisibles |
+
+Colonne `dateExpirationReelle` sur `abonnements_client` pour tracker J0.
+
+### 30.5 Cache invalidation synchrone
+
+- `invalidate()` : in-memory SYNCHRONE + Redis async (fire-and-forget)
+- Header `X-Cache-Status: HIT|MISS|STALE` dans les réponses API
+- `entitlementService.lastCacheStatus` exposé pour les controllers
+
+### 30.6 Endpoints API
+
+| Endpoint | Rôle |
+|----------|------|
+| `GET /api/billing/modules/mes-modules` | Catalogue filtré client (actifs + upgradables sans prix) |
+| `GET /api/billing/modules/resolved` | Modules résolus (legacy) |
+| `GET /api/billing/modules/catalogue` | Catalogue complet (legacy) |
+
+### 30.7 Fichiers de Référence
+
+| Fichier | Rôle |
+|---------|------|
+| `backend/src/modules/billing/services/entitlement.service.ts` | Source unique de vérité |
+| `backend/src/common/middlewares/module-access.middleware.ts` | Middleware v4 (entitlementService) |
+| `backend/src/modules/configuration/middlewares/module-active.middleware.ts` | Gating abonnement |
+| `backend/src/modules/billing/entities/abonnement-client.entity.ts` | Enum ESSAI + colonnes essai/dégradation |
+| `backend/src/database/seeds/system/seed-modules-catalogue.ts` | Seed 26 modules avec config JSONB |
+| `backend/database/migrations/201-essai-degradation.sql` | Migration essai + dégradation |
+| `frontend/src/features/modules/components/mes-modules-page.tsx` | Page Mes Modules |
+| `frontend/src/features/modules/components/module-card.tsx` | Carte module réutilisable |
+| `frontend/src/features/modules/hooks/use-mes-modules.ts` | Hook TanStack Query |
+| `frontend/src/locales/fr/modules.json` + `en/modules.json` | i18n modules |

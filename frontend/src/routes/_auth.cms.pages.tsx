@@ -6,13 +6,15 @@
  * Gestion CRUD des pages CMS avec filtres.
  */
 
-import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useCmsPages, useCreerPage, useSupprimerPage, usePublierPage, useModifierPage } from '@/features/cms/hooks/use-cms-admin';
+import { useCmsPages, useCreerPage, useSupprimerPage, usePublierPage, useModifierPage, useCmsTemplates, useInstancierTemplate } from '@/features/cms/hooks/use-cms-admin';
 import { StatutPage, TemplatePage } from '@/features/cms/types/cms.types';
-import type { CmsPage } from '@/features/cms/types/cms.types';
-import { Plus, FileText, Globe, Edit3, Trash2, Eye, Search, Filter, Copy, ExternalLink } from 'lucide-react';
+import type { CmsPage, CmsTemplate } from '@/features/cms/types/cms.types';
+import { Plus, FileText, Globe, Edit3, Trash2, Eye, Search, Filter, Copy, ExternalLink, Layers, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { CustomModal } from '@/components/modals';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 
 export const Route = createFileRoute('/_auth/cms/pages')({
     component: CmsPagesListe,
@@ -27,9 +29,21 @@ function CmsPagesListe() {
     const modifierPage = useModifierPage();
 
     const [showCreer, setShowCreer] = useState(false);
+    const [showTemplates, setShowTemplates] = useState(false);
     const [recherche, setRecherche] = useState('');
     const [filtreStatut, setFiltreStatut] = useState<string>('');
     const [filtreTemplate, setFiltreTemplate] = useState<string>('');
+    const [pageASupprimer, setPageASupprimer] = useState<string | null>(null);
+
+    const { data: templates } = useCmsTemplates();
+    const instancierTemplate = useInstancierTemplate();
+
+    const pathname = useRouterState({ select: (s) => s.location.pathname });
+    const estRouteEnfant = pathname !== '/cms/pages';
+
+    if (estRouteEnfant) {
+        return <Outlet />;
+    }
 
     const pagesFiltrees = (pages || []).filter(p => {
         if (recherche && !p.titre.toLowerCase().includes(recherche.toLowerCase())) return false;
@@ -69,12 +83,18 @@ function CmsPagesListe() {
     };
 
     const handleSupprimer = async (id: string) => {
-        if (!confirm('Supprimer cette page ? Cette action est irréversible.')) return;
+        setPageASupprimer(id);
+    };
+
+    const confirmerSuppression = async () => {
+        if (!pageASupprimer) return;
         try {
-            await supprimerPage.mutateAsync(id);
+            await supprimerPage.mutateAsync(pageASupprimer);
             toast.success('Page supprimée');
         } catch {
             toast.error('Erreur lors de la suppression');
+        } finally {
+            setPageASupprimer(null);
         }
     };
 
@@ -82,8 +102,7 @@ function CmsPagesListe() {
         const config: Record<string, { label: string; cls: string }> = {
             [StatutPage.PUBLIE]: { label: 'Publié', cls: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
             [StatutPage.BROUILLON]: { label: 'Brouillon', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
-            [StatutPage.HORS_LIGNE]: { label: 'Hors ligne', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-            [StatutPage.PROGRAMME]: { label: 'Programmé', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+            [StatutPage.ARCHIVE]: { label: 'Archivé', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
         };
         const c = config[statut] || config[StatutPage.BROUILLON];
         return <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${c.cls}`}>{c.label}</span>;
@@ -110,13 +129,22 @@ function CmsPagesListe() {
                     <h1 className="text-2xl font-bold">Pages</h1>
                     <p className="text-sm text-muted-foreground">Gérez les pages de votre site public</p>
                 </div>
-                <button
-                    onClick={() => setShowCreer(true)}
-                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                >
-                    <Plus className="h-4 w-4" />
-                    Nouvelle page
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowTemplates(true)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10"
+                    >
+                        <Sparkles className="h-4 w-4" />
+                        Depuis template
+                    </button>
+                    <button
+                        onClick={() => setShowCreer(true)}
+                        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Nouvelle page
+                    </button>
+                </div>
             </div>
 
             {/* Filtres */}
@@ -139,8 +167,7 @@ function CmsPagesListe() {
                     <option value="">Tous les statuts</option>
                     <option value={StatutPage.PUBLIE}>Publié</option>
                     <option value={StatutPage.BROUILLON}>Brouillon</option>
-                    <option value={StatutPage.HORS_LIGNE}>Hors ligne</option>
-                    <option value={StatutPage.PROGRAMME}>Programmé</option>
+                    <option value={StatutPage.ARCHIVE}>Archivé</option>
                 </select>
                 <select
                     value={filtreTemplate}
@@ -194,7 +221,7 @@ function CmsPagesListe() {
                                                         <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">Accueil</span>
                                                     )}
                                                 </div>
-                                                <p className="text-xs text-muted-foreground">/e/code/{page.slug}</p>
+                                                <p className="text-xs text-muted-foreground">/{page.slug}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -237,38 +264,105 @@ function CmsPagesListe() {
             )}
 
             {/* Modal création */}
-            {showCreer && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowCreer(false)}>
-                    <div className="w-full max-w-md rounded-xl bg-card p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-                        <h2 className="mb-4 text-lg font-bold">Nouvelle page</h2>
-                        <form onSubmit={handleCreer} className="space-y-4">
-                            <div>
-                                <label className="mb-1 block text-sm font-medium">Titre *</label>
-                                <input name="titre" required className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50" placeholder="Ex: À propos de nous" />
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-sm font-medium">Slug (URL) *</label>
-                                <input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50" placeholder="a-propos-de-nous" />
-                                <p className="mt-1 text-xs text-muted-foreground">Minuscules, chiffres et tirets uniquement</p>
-                            </div>
-                            <div>
-                                <label className="mb-1 block text-sm font-medium">Template</label>
-                                <select name="template" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50">
-                                    {Object.values(TemplatePage).map(t => (
-                                        <option key={t} value={t}>{templateLabel(t)}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="flex justify-end gap-3 pt-2">
-                                <button type="button" onClick={() => setShowCreer(false)} className="rounded-lg border px-4 py-2 text-sm hover:bg-muted">Annuler</button>
-                                <button type="submit" disabled={creerPage.isPending} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
-                                    {creerPage.isPending ? 'Création...' : 'Créer'}
-                                </button>
-                            </div>
-                        </form>
+            <CustomModal
+                open={showCreer}
+                onOpenChange={(v) => { if (!v) setShowCreer(false); }}
+                title="Nouvelle page"
+                description="Créez une nouvelle page pour votre site public"
+                size="md"
+                footer={<>
+                    <button type="button" onClick={() => setShowCreer(false)} className="rounded-lg border px-4 py-2 text-sm hover:bg-muted">Annuler</button>
+                    <button type="submit" form="form-creer-page" disabled={creerPage.isPending} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                        {creerPage.isPending ? 'Création...' : 'Créer'}
+                    </button>
+                </>}
+            >
+                <form id="form-creer-page" onSubmit={handleCreer} className="space-y-4">
+                    <div>
+                        <label className="mb-1 block text-sm font-medium">Titre *</label>
+                        <input name="titre" required className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50" placeholder="Ex: À propos de nous" />
                     </div>
+                    <div>
+                        <label className="mb-1 block text-sm font-medium">Slug (URL) *</label>
+                        <input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50" placeholder="a-propos-de-nous" />
+                        <p className="mt-1 text-xs text-muted-foreground">Minuscules, chiffres et tirets uniquement</p>
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-sm font-medium">Template</label>
+                        <select name="template" className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50">
+                            {Object.values(TemplatePage).map(t => (
+                                <option key={t} value={t}>{templateLabel(t)}</option>
+                            ))}
+                        </select>
+                    </div>
+                </form>
+            </CustomModal>
+
+            {/* Modal templates */}
+            <CustomModal
+                open={showTemplates}
+                onOpenChange={(v) => { if (!v) setShowTemplates(false); }}
+                title="Créer depuis un template"
+                description="Choisissez un modèle pour démarrer rapidement"
+                size="3xl"
+            >
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {(templates || []).map((tpl: CmsTemplate) => (
+                        <button
+                            key={tpl.id}
+                            onClick={async () => {
+                                try {
+                                    const result = await instancierTemplate.mutateAsync({
+                                        code: tpl.code,
+                                        titre: tpl.nom,
+                                    });
+                                    toast.success('Page créée depuis le template');
+                                    setShowTemplates(false);
+                                    if (result?.data?.id) {
+                                        navigate({ to: '/cms/pages/$id', params: { id: result.data.id } });
+                                    }
+                                } catch {
+                                    toast.error('Erreur lors de la création');
+                                }
+                            }}
+                            disabled={instancierTemplate.isPending}
+                            className="group rounded-xl border p-4 text-left transition-all hover:border-primary/50 hover:shadow-md disabled:opacity-50"
+                        >
+                            <div className="mb-3 flex items-center gap-2">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                                    <Layers className="h-4 w-4 text-primary" />
+                                </div>
+                                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium">
+                                    {tpl.categorie}
+                                </span>
+                            </div>
+                            <h3 className="mb-1 font-semibold group-hover:text-primary">{tpl.nom}</h3>
+                            <p className="text-xs text-muted-foreground line-clamp-2">{tpl.description}</p>
+                            <p className="mt-2 text-[10px] text-muted-foreground">
+                                {tpl.sectionsDef?.length || 0} sections
+                            </p>
+                        </button>
+                    ))}
                 </div>
-            )}
+
+                {!(templates || []).length && (
+                    <div className="py-12 text-center">
+                        <Layers className="mx-auto h-10 w-10 text-gray-300" />
+                        <p className="mt-3 text-sm text-muted-foreground">Aucun template disponible</p>
+                    </div>
+                )}
+            </CustomModal>
+
+            {/* Confirmation suppression */}
+            <ConfirmationModal
+                isOpen={!!pageASupprimer}
+                title="Supprimer cette page"
+                message="Êtes-vous sûr de vouloir supprimer cette page ? Cette action est irréversible."
+                confirmLabel="Supprimer"
+                variant="danger"
+                onConfirm={confirmerSuppression}
+                onCancel={() => setPageASupprimer(null)}
+            />
         </div>
     );
 }

@@ -17,7 +17,7 @@ import {
     updateEtablissementSchema,
     updateEtablissementConfigSchema,
 } from '../dto';
-import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
+import { requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -38,7 +38,6 @@ const etablissementService = new EtablissementService();
  */
 router.get(
     '/',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -76,7 +75,6 @@ router.get(
  */
 router.get(
     '/export',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -165,7 +163,6 @@ router.get(
  */
 router.get(
     '/stats',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (_req: Request, res: Response, next: NextFunction) => {
         try {
@@ -183,7 +180,6 @@ router.get(
  */
 router.get(
     '/sante',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -208,7 +204,6 @@ router.get(
  */
 router.get(
     '/sante/tendances',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -260,7 +255,6 @@ router.get(
  */
 router.get(
     '/:id',
-    authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const etablissement = await etablissementService.findOne(req.params.id, true);
@@ -275,7 +269,6 @@ router.get(
  */
 router.post(
     '/',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -292,7 +285,6 @@ router.post(
  */
 router.patch(
     '/:id',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -309,7 +301,6 @@ router.patch(
  */
 router.patch(
     '/:id/desactiver',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -325,7 +316,6 @@ router.patch(
  */
 router.patch(
     '/:id/activer',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -343,7 +333,6 @@ router.patch(
  */
 router.patch(
     '/:id/plan',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -368,7 +357,6 @@ router.patch(
  */
 router.post(
     '/bulk/activer',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -383,7 +371,7 @@ router.post(
             res.json({
                 success: true,
                 data: results,
-                message: `${results.length} établissement(s) réactivé(s)`,
+                message: `${results.count} établissement(s) réactivé(s)`,
             });
         } catch (error) { next(error); }
     }
@@ -396,7 +384,6 @@ router.post(
  */
 router.post(
     '/bulk/desactiver',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -411,7 +398,7 @@ router.post(
             res.json({
                 success: true,
                 data: results,
-                message: `${results.length} établissement(s) désactivé(s)`,
+                message: `${results.count} établissement(s) désactivé(s)`,
             });
         } catch (error) { next(error); }
     }
@@ -427,7 +414,6 @@ router.post(
  */
 router.get(
     '/:id/config',
-    authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const config = await etablissementService.getConfig(req.params.id);
@@ -442,7 +428,6 @@ router.get(
  */
 router.get(
     '/:id/config-complete',
-    authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const data = await etablissementService.getConfigComplete(req.params.id);
@@ -457,7 +442,6 @@ router.get(
  */
 router.patch(
     '/:id/config',
-    authMiddleware,
     requirePermission('config:edit'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -480,7 +464,6 @@ router.patch(
  */
 router.get(
     '/:id/sante',
-    authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const targetId = req.params.id;
@@ -513,7 +496,6 @@ router.get(
  */
 router.post(
     '/sante/recalculer-tous',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -552,7 +534,6 @@ router.post(
  */
 router.post(
     '/:id/sante/recalculer',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -602,7 +583,6 @@ router.post(
  */
 router.get(
     '/:id/sante/historique',
-    authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const targetId = req.params.id;
@@ -635,7 +615,6 @@ router.get(
  */
 router.get(
     '/:id/finances/evolution',
-    authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const targetId = req.params.id;
@@ -680,7 +659,6 @@ router.get(
  */
 router.get(
     '/:id/resume',
-    authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const targetId = req.params.id;
@@ -740,7 +718,6 @@ router.get(
  */
 router.get(
     '/:id/comparaison',
-    authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const targetId = req.params.id;
@@ -820,7 +797,6 @@ router.get(
  */
 router.get(
     '/:id/stats',
-    authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const targetId = req.params.id;
@@ -853,7 +829,6 @@ router.get(
  */
 router.get(
     '/:id/activite',
-    authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const targetId = req.params.id;
@@ -885,7 +860,6 @@ router.get(
  */
 router.get(
     '/:id/utilisateurs',
-    authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const targetId = req.params.id;
@@ -916,7 +890,6 @@ router.get(
  */
 router.get(
     '/:id/logo',
-    authMiddleware,
     requirePermission('config:edit'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -940,7 +913,6 @@ router.get(
  */
 router.post(
     '/:id/logo',
-    authMiddleware,
     requirePermission('config:edit'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -963,7 +935,6 @@ router.post(
  */
 router.delete(
     '/:id/logo',
-    authMiddleware,
     requirePermission('config:edit'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -985,7 +956,6 @@ router.delete(
  */
 router.get(
     '/:id/connexions',
-    authMiddleware,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const targetId = req.params.id;
@@ -1019,7 +989,6 @@ router.get(
  */
 router.get(
     '/:id/audit',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -1080,7 +1049,6 @@ router.get(
  */
 router.post(
     '/:id/sync-config',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -1139,7 +1107,6 @@ router.post(
  */
 router.post(
     '/:id/reset-config',
-    authMiddleware,
     requirePermission('super_admin:all'),
     async (req: Request, res: Response, next: NextFunction) => {
         try {

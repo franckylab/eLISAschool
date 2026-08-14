@@ -94,9 +94,11 @@ import { caslMiddleware } from '@casl/casl.middleware';
 import { dualCaslMiddleware } from '@common/middlewares/dual-casl.middleware';
 import { rlsMiddleware, rlsTransactionEnd } from '@common/middlewares/rls.middleware';
 import { clientBillingRouter } from '@modules/billing';
+import { marketplaceRouter } from '@modules/billing/controllers/marketplace.controller';
 import { paiementController } from '@modules/paiement';
 import { publicEtablissementController } from '@modules/cms/controllers/public-etablissement.controller';
 import { cmsController } from '@modules/cms/controllers/cms.controller';
+import { cmsContentController } from '@modules/cms/controllers/cms-content.controller';
 
 /**
  * Crée et configure l'application Express
@@ -486,7 +488,9 @@ export function createApp(): Application {
     app.use('/api/organisation', authMiddleware, filterByEtablissement(), organisationController);
 
     // Modules académiques multi-établissements avec filtrage
-    app.use('/api/etablissements', authMiddleware, filterByEtablissement({ allowSuperAdminOverride: true }), etablissementController);
+    // Note: rlsMiddleware est ajouté APRÈS authMiddleware car le RLS global
+    // s'exécute AVANT l'auth (req.utilisateur est undefined à ce stade).
+    app.use('/api/etablissements', authMiddleware, rlsMiddleware, filterByEtablissement({ allowSuperAdminOverride: true }), etablissementController);
     app.use('/api/cycles', authMiddleware, filterByEtablissement(), cyclesController);
     app.use('/api/niveaux', authMiddleware, filterByEtablissement(), niveauxController);
     app.use('/api/filieres', authMiddleware, filterByEtablissement(), filieresController);
@@ -528,6 +532,8 @@ export function createApp(): Application {
 
     // Module CMS (pages publiques white-label) — authentifié + module actif + multi-tenant
     app.use('/api/cms', authMiddleware, requireModuleActive('cms'), filterByEtablissement(), cmsController);
+    // CMS Contenu dynamique (actualités, témoignages, événements, partenaires, newsletter)
+    app.use('/api/cms/contenu', authMiddleware, requireModuleActive('cms'), filterByEtablissement(), cmsContentController);
 
     // Module audit (doit être après tenantMiddleware)
     app.use('/api/audit', auditController);
@@ -537,6 +543,7 @@ export function createApp(): Application {
     // [Phase 4] Framework Abonnements & Facturation
     // ==================================
     app.use('/api/billing', clientBillingRouter);
+    app.use('/api/billing/marketplace', marketplaceRouter);
 
     // ==================================
     // Routes PLATEFORME (Control Plane) — SUPER_ADMIN uniquement

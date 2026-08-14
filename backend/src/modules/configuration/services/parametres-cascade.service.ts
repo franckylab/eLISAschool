@@ -96,7 +96,7 @@ export class ParametresCascadeService {
             niveau: 'systeme',
             label: 'Système',
             valeur: global?.valeurDefaut ? this.parseValeur(global.valeurDefaut) : null,
-            source: 'Code source / MODULE_REGISTRY',
+            source: 'Catalogue DB (défaut système)',
             hasOverride: !!global?.valeurDefaut,
         });
 

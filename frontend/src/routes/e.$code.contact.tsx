@@ -6,10 +6,10 @@
  * Formulaire de contact + carte GPS + infos établissement.
  */
 
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useEtablissementPublic, useThemePublic, useMenusPublic, usePagesPubliques, envoyerContactPublic } from '@/features/cms/hooks/use-cms-public';
-import { PublicLayout } from '@/features/cms/components/PublicLayout';
+import { usePagesPubliques, envoyerContactPublic } from '@/features/cms/hooks/use-cms-public';
+import { usePublicPage } from '@/features/cms/components/PublicPageContext';
 import { CmsPageRenderer } from '@/features/cms/components/CmsPageRenderer';
 import { Mail, Phone, MapPin, Clock, Globe, Facebook, Twitter, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { SectionType } from '@/features/cms/types/cms.types';
@@ -20,9 +20,7 @@ export const Route = createFileRoute('/e/$code/contact')({
 
 function PageContactPublique() {
     const { code } = Route.useParams();
-    const { data: etab } = useEtablissementPublic(code);
-    const { data: theme } = useThemePublic(code);
-    const { data: menus } = useMenusPublic(code);
+    const { etab, theme, code: codeEtab } = usePublicPage();
     const { data: pages } = usePagesPubliques(code);
 
     const pageContact = pages?.find(p => p.template === 'contact' || p.slug === 'contact');
@@ -35,6 +33,8 @@ function PageContactPublique() {
     const [formMessage, setFormMessage] = useState('');
     const [envoiEtat, setEnvoiEtat] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [erreurMsg, setErreurMsg] = useState('');
+    // Honeypot anti-spam
+    const [honeypot, setHoneypot] = useState('');
 
     const primaryColor = theme?.couleurs?.primaire || '#28a745';
 
@@ -48,6 +48,7 @@ function PageContactPublique() {
                 email: formEmail,
                 sujet: formSujet,
                 message: formMessage,
+                _honeypot: honeypot,
             });
             setEnvoiEtat('success');
             setFormNom('');
@@ -61,11 +62,7 @@ function PageContactPublique() {
     };
 
     if (!etab) {
-        return (
-            <div className="flex min-h-screen items-center justify-center">
-                <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-green-600" />
-            </div>
-        );
+        return null;
     }
 
     const inputStyle = {
@@ -76,14 +73,14 @@ function PageContactPublique() {
     };
 
     return (
-        <PublicLayout etablissement={etab} theme={theme} menus={menus || []}>
+        <>
             {/* Sections CMS hors formulaire (hero, texte, etc.) */}
             {sectionsContact.filter(s => s.type !== SectionType.FORMULAIRE).length > 0 && (
                 <CmsPageRenderer
                     sections={sectionsContact.filter(s => s.type !== SectionType.FORMULAIRE)}
                     theme={theme}
                     etablissement={etab}
-                    codeEtablissement={code}
+                    codeEtablissement={codeEtab}
                 />
             )}
 
@@ -230,6 +227,20 @@ function PageContactPublique() {
                             </div>
                         ) : (
                             <form onSubmit={handleSubmit} className="space-y-5">
+                                {/* Honeypot anti-spam — caché pour les humains */}
+                                <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }}>
+                                    <label>
+                                        Ne pas remplir ce champ
+                                        <input
+                                            type="text"
+                                            name="website"
+                                            value={honeypot}
+                                            onChange={(e) => setHoneypot(e.target.value)}
+                                            tabIndex={-1}
+                                            autoComplete="off"
+                                        />
+                                    </label>
+                                </div>
                                 <div>
                                     <label className="mb-1.5 block text-sm font-medium">Nom complet *</label>
                                     <input
@@ -309,6 +320,6 @@ function PageContactPublique() {
                     </div>
                 </div>
             </div>
-        </PublicLayout>
+        </>
     );
 }

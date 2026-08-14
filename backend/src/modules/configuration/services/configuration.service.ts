@@ -34,7 +34,7 @@ import { configurationListener, ConfigChangeEvent } from './configuration-listen
 import { auditService } from '@modules/auth/services/audit.service';
 import { AuditAction } from '@modules/auth/entities/audit-log.entity';
 import { ModuleCatalogue } from '@modules/billing/entities/module-catalogue.entity'; // P2.1 v7
-import { moduleResolutionService } from '@modules/billing/services/module-resolution.service'; // migration 200 — unification modules
+import { entitlementService } from '@modules/billing/services/entitlement.service'; // fusion P0.1 — source unique
 import { redisService } from '@common/services/redis.service'; // R2 v7.1 — pub/sub cross-instance
 import { encrypt, decrypt } from '@common/utils/encryption.util'; // R3 v7.1 — chiffrement paramètres sensibles
 import { GroupeEtablissementLien } from '@modules/groupes-etablissements/entities'; // v10 — cascade groupe
@@ -298,8 +298,8 @@ export class ConfigurationService {
         this.invalidateModuleCache(moduleNom, etablissementId);
         modulesAutoActivés.forEach(dep => this.invalidateModuleCache(dep, etablissementId));
 
-        // P2.2 v7 — Invalidation du cache module-resolution (cross-service)
-        // Le moduleResolutionService a son propre cache qui doit être invalidé
+        // P2.2 v7 — Invalidation du cache entitlement (fusion P0.1)
+        entitlementService.invalidate(etablissementId);
 
         // 6. Événement
         this.emitChange(
@@ -363,8 +363,8 @@ export class ConfigurationService {
             return { valide: true, erreurs: [], modulesAutoActivés: [] };
         }
 
-        // P4.1 v7 — Protection modules CRITIQUE : non désactivables
-        if (!actif && catalogueModule.categorie === 'CRITIQUE') {
+        // P4.1 v7 — Protection modules BASE : non désactivables
+        if (!actif && catalogueModule.categorie === 'BASE') {
             return {
                 valide: false,
                 erreurs: [`Le module "${catalogueModule.nom}" est critique et ne peut pas être désactivé`],
@@ -389,7 +389,7 @@ export class ConfigurationService {
                         await this.toggleModuleParametre(dep, true, etablissementId);
                         modulesAutoActivés.push(dep);
                     } catch (error) {
-                        // P2.2 v7 — Lire le nom depuis le catalogue au lieu de MODULE_REGISTRY
+                        // Lire le nom depuis le catalogue DB
                         const depCatalogue = await this.catalogueRepository.findOne({ where: { code: dep } });
                         erreurs.push(`Dépendance requise: ${depCatalogue?.nom || dep} (auto-activation échouée)`);
                     }
@@ -537,10 +537,9 @@ export class ConfigurationService {
             }
         }
 
-        // Niveau 3: Délégation à ModuleResolutionService (catalogue DB + cascade plan/groupe/supplément)
-        // Refonte SaaS — Unification Modules (migration 200)
+        // Niveau 3: Délégation à entitlementService (source unique de vérité — fusion P0.1)
         if (result === null && etablissementId) {
-            result = await moduleResolutionService.isModuleActive(etablissementId, moduleNom);
+            result = await entitlementService.isAccessible(etablissementId, moduleNom);
         }
 
         // Niveau 4 (fallback global sans etablissementId): Catalogue DB défaut

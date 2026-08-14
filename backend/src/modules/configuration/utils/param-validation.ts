@@ -18,12 +18,40 @@ import { z } from 'zod';
 import { CategorieParametre, TypeValeurParametre } from '../entities/parametre-systeme.entity';
 
 /**
+ * Schema boolean avec coerce — accepte "true"/"false" (strings) et true/false (booléens).
+ * Utilisé dans les schémas par clé pour les paramètres booléens.
+ */
+const booleanCoerce = z.preprocess((val) => {
+    if (typeof val === 'string') {
+        if (val.toLowerCase() === 'true') return true;
+        if (val.toLowerCase() === 'false') return false;
+    }
+    return val;
+}, z.boolean());
+
+/**
  * Schémas de validation par type de valeur
+ * 
+ * Note : Les schémas BOOLEAN et NUMBER utilisent un pre-process (coerce)
+ * pour accepter les strings "true"/"false" et les strings numériques
+ * provenant des formulaires HTTP (JSON.stringify côté frontend).
  */
 export const typeValidationSchemas: Record<TypeValeurParametre, z.ZodSchema> = {
     [TypeValeurParametre.STRING]: z.string().min(0).max(10000),
-    [TypeValeurParametre.NUMBER]: z.number().finite(),
-    [TypeValeurParametre.BOOLEAN]: z.boolean(),
+    [TypeValeurParametre.NUMBER]: z.preprocess((val) => {
+        if (typeof val === 'string' && val.trim() !== '') {
+            const num = Number(val);
+            if (!isNaN(num)) return num;
+        }
+        return val;
+    }, z.number().finite()),
+    [TypeValeurParametre.BOOLEAN]: z.preprocess((val) => {
+        if (typeof val === 'string') {
+            if (val.toLowerCase() === 'true') return true;
+            if (val.toLowerCase() === 'false') return false;
+        }
+        return val;
+    }, z.boolean()),
     [TypeValeurParametre.JSON]: z.any(), // JSON valide (objet, tableau, etc.)
     [TypeValeurParametre.ARRAY]: z.array(z.any()),
     [TypeValeurParametre.ENCRYPTED]: z.string().min(1), // Chaîne chiffrée non vide
@@ -40,11 +68,12 @@ export const keyValidationSchemas: Record<string, z.ZodSchema> = {
     'auth.max_login_attempts': z.number().int().min(1).max(100),
     'auth.lockout_duration': z.number().int().min(60).max(86400), // 1 min à 24h
     'auth.password_min_length': z.number().int().min(6).max(128),
-    'auth.require_uppercase': z.boolean(),
-    'auth.require_lowercase': z.boolean(),
-    'auth.require_numbers': z.boolean(),
-    'auth.require_special_chars': z.boolean(),
-    'auth.mfa_required': z.boolean(),
+    'auth.require_uppercase': booleanCoerce,
+    'auth.require_lowercase': booleanCoerce,
+    'auth.require_numbers': booleanCoerce,
+    'auth.require_special_chars': booleanCoerce,
+    'auth.mfa_required': booleanCoerce,
+    'auth.allow_self_registration': booleanCoerce,
     
     // Validation workflow
     'notes.validation_levels': z.object({
@@ -74,7 +103,7 @@ export const keyValidationSchemas: Record<string, z.ZodSchema> = {
     'app.fuseauHoraire': z.string().min(1).max(50),
     
     // Modules
-    'modules.*.actif': z.boolean(), // Pattern matching pour tous les modules
+    'modules.*.actif': booleanCoerce, // Pattern matching pour tous les modules
 };
 
 /**

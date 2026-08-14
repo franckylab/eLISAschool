@@ -89,8 +89,8 @@ export function EtablissementSwitcher() {
         setIsOpen(false);
 
         try {
-            await apiClient.switchEtablissement(nouveauId);
-            
+            // Un seul appel via le store (qui appelle déjà apiClient.switchEtablissement en interne)
+            // Éviter le double appel qui provoquait un 400 Bad Request
             const { switchEtablissement: switchEtabStore } = useAuthStore.getState();
             await switchEtabStore(nouveauId);
             

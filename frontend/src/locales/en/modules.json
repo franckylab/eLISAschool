@@ -1,0 +1,50 @@
+{
+    "title": "My Modules",
+    "subtitle": "{{count}} active module",
+    "subtitle_plural": "{{count}} active modules",
+    "error": "Unable to load modules. Please try again.",
+    "retry": "Retry",
+    "sections": {
+        "actifs": "Active Modules",
+        "upgradables": "Available Modules"
+    },
+    "stats": {
+        "actifs": "active",
+        "upgradables": "available"
+    },
+    "categories": {
+        "BASE": "Base",
+        "PREMIUM": "Premium",
+        "ADDON": "Add-on"
+    },
+    "statuts": {
+        "ACTIF": "Active",
+        "ESSAI": "Trial period",
+        "EXPIRE": "Expired",
+        "SUSPENDU": "Suspended",
+        "EN_ATTENTE": "Pending"
+    },
+    "sources": {
+        "base": "Base",
+        "essai": "Free trial",
+        "plan": "Included in plan",
+        "groupe": "Group override",
+        "supplement": "Add-on",
+        "catalogue": "Catalog default",
+        "override": "Override"
+    },
+    "raisons": {
+        "ABONNEMENT_INACTIF": "Subscription required",
+        "ABONNEMENT_EXPIRE": "Subscription expired",
+        "PLAN_INSUFFICIENT": "Insufficient plan"
+    },
+    "card": {
+        "active": "Active",
+        "locked": "Locked",
+        "upgradable": "Available",
+        "planRequis": "Plan {{plan}} required",
+        "planActuel": " · Current: {{plan}}",
+        "ctaDecouvrir": "Discover",
+        "ctaContacter": "Contact us"
+    }
+}

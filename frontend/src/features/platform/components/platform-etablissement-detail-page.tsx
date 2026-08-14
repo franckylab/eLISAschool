@@ -2490,9 +2490,9 @@ function ConfigurationTab({ config, etablissement, configComplete, stats, utilis
         return grouped;
     }, [modules]);
 
-    // Labels catégories (alignées sur CategorieModule backend : CRITIQUE | PREMIUM | ADDON)
+    // Labels catégories (alignées sur CategorieModule backend : BASE | PREMIUM | ADDON)
     const CATEGORIE_LABELS: Record<string, string> = {
-        CRITIQUE: t('etablissements.detail.config.catCritique', 'Système'),
+        BASE: t('etablissements.detail.config.catBase', 'Base'),
         PREMIUM: t('etablissements.detail.config.catPremium', 'Premium'),
         ADDON: t('etablissements.detail.config.catAddon', 'Add-on'),
     };

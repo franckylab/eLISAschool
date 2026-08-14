@@ -19,8 +19,7 @@ export { ModeleFacturationGroupe } from './facturation-groupe.service';
 // Phase 3.1 — Refonte SaaS v5
 export { TrancheConfigService } from './tranche-config.service';
 export type { ResolvedTranche } from './tranche-config.service';
-export { ModuleResolutionService, moduleResolutionService } from './module-resolution.service';
-export type { ModuleResolu, SourceModule } from './module-resolution.service';
+// ModuleResolutionService supprimé (fusion P0.1) — utiliser EntitlementService
 // Refonte SaaS — Unification Modules (migration 200)
 export { EntitlementService, entitlementService } from './entitlement.service';
 export type { EntitlementResult, EntitlementBatchResult, EntitlementSource, EntitlementRaison } from './entitlement.service';
@@ -35,3 +34,6 @@ export type {
     ListerActionsCritiquesFilters,
     ActionsCritiquesListeResult,
 } from './action-critique.service';
+// Migration 210 — Refonte Feature Flags (registre centralisé)
+export { FeatureFlagDefinitionService, featureFlagDefinitionService } from './feature-flag-definition.service';
+export type { CreerDefinitionDto, ModifierDefinitionDto, DefinitionAvecMetadata } from './feature-flag-definition.service';

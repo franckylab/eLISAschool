@@ -12,7 +12,7 @@
  * Modules disponibles dans l'application
  */
 export enum ModuleName {
-  // Modules critiques
+  // Modules de base
   AUTH = 'auth',
   UTILISATEURS = 'utilisateurs',
   CONFIGURATION = 'configuration',
@@ -96,7 +96,7 @@ export enum ModuleName {
  * Catégories de modules
  */
 export enum ModuleCategory {
-  CRITIQUES = 'critiques',
+  BASE = 'base',
   COMMUNICATION = 'communication',
   ACADEMIQUES = 'academiques',
   LOGISTIQUES = 'logistiques',
@@ -109,9 +109,9 @@ export enum ModuleCategory {
  * Mapping modules -> catégories
  */
 export const MODULE_CATEGORIES: Record<ModuleName, ModuleCategory> = {
-  [ModuleName.AUTH]: ModuleCategory.CRITIQUES,
-  [ModuleName.UTILISATEURS]: ModuleCategory.CRITIQUES,
-  [ModuleName.CONFIGURATION]: ModuleCategory.CRITIQUES,
+  [ModuleName.AUTH]: ModuleCategory.BASE,
+  [ModuleName.UTILISATEURS]: ModuleCategory.BASE,
+  [ModuleName.CONFIGURATION]: ModuleCategory.BASE,
   
   [ModuleName.NOTIFICATIONS]: ModuleCategory.COMMUNICATION,
   [ModuleName.MESSAGERIE]: ModuleCategory.COMMUNICATION,
@@ -148,21 +148,21 @@ export const MODULE_CATEGORIES: Record<ModuleName, ModuleCategory> = {
   [ModuleName.MONITORING]: ModuleCategory.SYSTEME,
   [ModuleName.DASHBOARD]: ModuleCategory.SYSTEME,
   [ModuleName.PERIPHERIQUES]: ModuleCategory.SYSTEME,
-  [ModuleName.ORGANISATION]: ModuleCategory.CRITIQUES,
-  [ModuleName.POSTES]: ModuleCategory.CRITIQUES,
-  [ModuleName.RECRUTEMENT]: ModuleCategory.CRITIQUES,
+  [ModuleName.ORGANISATION]: ModuleCategory.BASE,
+  [ModuleName.POSTES]: ModuleCategory.BASE,
+  [ModuleName.RECRUTEMENT]: ModuleCategory.BASE,
   [ModuleName.CMS]: ModuleCategory.COMMUNICATION,
   [ModuleName.SALLES]: ModuleCategory.LOGISTIQUES,
   [ModuleName.OPTIONS]: ModuleCategory.ACADEMIQUES,
   [ModuleName.PERSONNEL]: ModuleCategory.ACADEMIQUES,
   [ModuleName.CONTRATS]: ModuleCategory.ACADEMIQUES,
   [ModuleName.PAIE]: ModuleCategory.ACADEMIQUES,
-  [ModuleName.IDENTITES]: ModuleCategory.CRITIQUES,
-  [ModuleName.MEMBERSHIPS]: ModuleCategory.CRITIQUES,
-  [ModuleName.PLATFORM_AUTH]: ModuleCategory.CRITIQUES,
-  [ModuleName.PLATFORM_SESSIONS]: ModuleCategory.CRITIQUES,
-  [ModuleName.PLATFORM_USERS]: ModuleCategory.CRITIQUES,
-  [ModuleName.PLATFORM_ROLES]: ModuleCategory.CRITIQUES,
+  [ModuleName.IDENTITES]: ModuleCategory.BASE,
+  [ModuleName.MEMBERSHIPS]: ModuleCategory.BASE,
+  [ModuleName.PLATFORM_AUTH]: ModuleCategory.BASE,
+  [ModuleName.PLATFORM_SESSIONS]: ModuleCategory.BASE,
+  [ModuleName.PLATFORM_USERS]: ModuleCategory.BASE,
+  [ModuleName.PLATFORM_ROLES]: ModuleCategory.BASE,
 };
 
 export default { ModuleName, ModuleCategory, MODULE_CATEGORIES };

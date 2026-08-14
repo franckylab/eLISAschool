@@ -14,6 +14,7 @@ import { SectionType } from '../types/cms.types';
 import type { CmsSection } from '../types/cms.types';
 import { TypeMedia } from '../types/cms.types';
 import { CmsMediaUpload } from './CmsMediaUpload';
+import { ColorPicker } from '@/components/ui/ColorPicker';
 import { Image, Type, BarChart3, Users, MessageSquare, MapPin, HelpCircle, Rocket, Download, Clock, Link2, Code, Columns, Minus, Play, FileText, ShoppingBag, Newspaper } from 'lucide-react';
 
 interface CmsSectionEditorProps {
@@ -260,21 +261,11 @@ export function CmsSectionEditor({ section, onSave, onCancel }: CmsSectionEditor
                 );
             case 'color':
                 return (
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="color"
-                            value={value || '#28a745'}
-                            onChange={(e) => handleChange(champ.key, e.target.value)}
-                            className="h-9 w-9 cursor-pointer rounded border-0"
-                        />
-                        <input
-                            type="text"
-                            value={value || ''}
-                            onChange={(e) => handleChange(champ.key, e.target.value)}
-                            className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
-                            placeholder="#28a745"
-                        />
-                    </div>
+                    <ColorPicker
+                        label={champ.label}
+                        value={value || '#28a745'}
+                        onChange={(v) => handleChange(champ.key, v)}
+                    />
                 );
             case 'richtext':
                 return (

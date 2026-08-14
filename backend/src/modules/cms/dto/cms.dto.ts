@@ -31,7 +31,12 @@ export const createPageSchema = z.object({
     estPageAccueil: z.boolean().default(false),
 });
 
-export const updatePageSchema = createPageSchema.partial().omit({ slug: true });
+export const updatePageSchema = createPageSchema.partial().omit({ slug: true }).extend({
+    version: z.number().int().min(0).optional(),
+    focusPreferences: z.record(z.unknown()).optional(),
+    qualiteScore: z.number().int().min(0).max(100).optional(),
+    analytics: z.record(z.unknown()).optional(),
+});
 
 export const publierPageSchema = z.object({
     commentaire: z.string().max(255).optional(),
@@ -55,9 +60,20 @@ export const createSectionSchema = z.object({
     styles: z.record(z.unknown()).optional(),
     visible: z.boolean().default(true),
     anchorId: z.string().max(50).optional(),
+    conditionsVisibilite: z.object({
+        breakpoints: z.object({ mobile: z.boolean(), tablet: z.boolean(), desktop: z.boolean(), wide: z.boolean() }).optional(),
+        rolesAutorises: z.array(z.string()).optional(),
+        rolesExclus: z.array(z.string()).optional(),
+        dateDebut: z.string().optional(),
+        dateFin: z.string().optional(),
+        masquerComplet: z.boolean().optional(),
+    }).optional(),
+    styleConfig: z.record(z.unknown()).optional(),
 });
 
-export const updateSectionSchema = createSectionSchema.partial();
+export const updateSectionSchema = createSectionSchema.partial().extend({
+    version: z.number().int().min(0).optional(),
+});
 
 // ==================================
 // Schémas CMS Medias
@@ -126,7 +142,7 @@ export const menuItemSchema = z.object({
 
 export const createMenuSchema = z.object({
     nom: z.string().min(1).max(100),
-    emplacement: z.enum(['header', 'footer', 'sidebar']).default('header'),
+    emplacement: z.enum(['principal', 'pied_page', 'lateral']).default('principal'),
     items: z.array(menuItemSchema).default([]),
 });
 
@@ -139,8 +155,8 @@ export const updateMenuSchema = createMenuSchema.partial();
 export const createWidgetSchema = z.object({
     type: z.string().min(1).max(50),
     titre: z.string().max(200).optional(),
-    config: z.record(z.unknown()).default({}),
-    emplacement: z.enum(['sidebar', 'footer', 'header', 'homepage']).default('sidebar'),
+    contenu: z.record(z.unknown()).default({}),
+    emplacement: z.enum(['sidebar', 'pied_page', 'en_tete', 'flottant']).default('sidebar'),
     ordre: z.number().int().min(0).default(0),
     actif: z.boolean().default(true),
 });
@@ -157,6 +173,52 @@ export const contactPublicSchema = z.object({
     sujet: z.string().min(2).max(200),
     message: z.string().min(10).max(5000),
     telephone: z.string().optional(),
+    // Honeypot anti-spam — doit être vide
+    _honeypot: z.string().max(0).optional(),
+});
+
+// ==================================
+// Schémas CMS Templates
+// ==================================
+
+export const instancierTemplateSchema = z.object({
+    titre: z.string().min(1).max(200).optional(),
+    slug: z.string().max(200).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
+    publier: z.boolean().default(false),
+});
+
+// ==================================
+// Schémas CMS Réinitialisation
+// ==================================
+
+export const reinitialiserCmsSchema = z.object({
+    conserverMedias: z.boolean().default(true),
+    inclureDemo: z.boolean().default(false),
+});
+
+// ==================================
+// Schémas CMS Export/Import
+// ==================================
+
+export const exportPageSchema = z.object({
+    inclureSections: z.boolean().default(true),
+    inclureMetadata: z.boolean().default(true),
+    format: z.enum(['json', 'puck']).default('json'),
+});
+
+export const importPageSchema = z.object({
+    titre: z.string().min(1).max(200),
+    slug: z.string().max(200).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
+    sections: z.array(z.object({
+        type: z.string(),
+        contenu: z.record(z.unknown()).default({}),
+        ordre: z.number().int().min(0).default(0),
+        visible: z.boolean().default(true),
+        styles: z.record(z.unknown()).optional(),
+    })).default([]),
+    metadata: z.record(z.unknown()).optional(),
+    statut: z.enum(['BROUILLON', 'PUBLIE']).default('BROUILLON'),
+    ecraserExistante: z.boolean().default(false),
 });
 
 // ==================================
@@ -176,3 +238,7 @@ export type CreateWidgetDto = z.infer<typeof createWidgetSchema>;
 export type UpdateWidgetDto = z.infer<typeof updateWidgetSchema>;
 export type ContactPublicDto = z.infer<typeof contactPublicSchema>;
 export type ReordonnerSectionsDto = z.infer<typeof reordonnerSectionsSchema>;
+export type InstancierTemplateDto = z.infer<typeof instancierTemplateSchema>;
+export type ReinitialiserCmsDto = z.infer<typeof reinitialiserCmsSchema>;
+export type ExportPageDto = z.infer<typeof exportPageSchema>;
+export type ImportPageDto = z.infer<typeof importPageSchema>;

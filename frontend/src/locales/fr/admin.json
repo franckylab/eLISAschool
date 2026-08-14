@@ -19,7 +19,9 @@
         "utilisateurs": "Utilisateurs",
         "parametresCascade": "Paramètres cascade",
         "rolesPlateforme": "Rôles & Permissions",
-        "sessionsActivite": "Sessions & activité"
+        "sessionsActivite": "Sessions & activité",
+        "moduleBuilder": "Module Builder",
+        "featureFlags": "Feature Flags"
     },
     "sidebar": {
         "titre": "Plateforme",
@@ -33,6 +35,8 @@
         "descEtablissements": "Gestion des tenants",
         "descFacturation": "Plans & abonnements",
         "descModules": "Modules optionnels",
+        "descFeatureFlags": "Gestion centralisée des flags",
+        "descModuleBuilder": "Créer & importer modules",
         "descMonitoring": "Santé & métriques",
         "descAudit": "Journal d'audit",
         "descNotifications": "Config. notifications",
@@ -118,7 +122,7 @@
         },
         "modules": {
             "titre": "Modules inclus",
-            "critiques": "Modules critiques",
+            "base": "Modules de base",
             "premium": "Modules premium",
             "addons": "Modules add-on",
             "selectionner": "Sélectionner les modules"
@@ -413,7 +417,7 @@
                 "modulesActifs": "Modules actifs",
                 "modulesSur": "actifs sur",
                 "aucunModule": "Aucun module configuré",
-                "catCritique": "Système",
+                "catBase": "Base",
                 "catPremium": "Premium",
                 "catAddon": "Add-on",
                 "quotas": {
@@ -1292,7 +1296,7 @@
         },
         "modules": {
             "desc": "Sélectionnez les modules inclus dans ce plan.",
-            "critique": "Critiques (gratuits)",
+            "base": "Base (gratuits)",
             "premium": "Premium (inclus dans le plan)",
             "addon": "Add-on (supplément)"
         },
@@ -1507,7 +1511,7 @@
         "synchroniser": "Synchroniser",
         "nouveauModule": "Nouveau module",
         "totalModules": "Total modules",
-        "critiquesGratuits": "Critiques (gratuits)",
+        "baseGratuits": "Base (gratuits)",
         "facturables": "Facturables (Premium/Add-on)",
         "actifsDefaut": "Actifs par défaut",
         "rechercher": "Rechercher un module (nom, code)...",
@@ -1527,12 +1531,12 @@
         "desactiver": "Désactiver",
         "categories": {
             "toutes": "Toutes les catégories",
-            "critiques": "Critiques (gratuits)",
+            "base": "Base (gratuits)",
             "premium": "Premium (plans)",
             "addons": "Add-ons (suppléments)"
         },
         "badge": {
-            "critique": "Critique",
+            "base": "Base",
             "premium": "Premium",
             "addon": "Add-on"
         },
@@ -1559,7 +1563,7 @@
             "actifDefaut": "Actif par défaut",
             "visibleCatalogue": "Visible dans le catalogue",
             "codeProtege": "Code protégé (module système)",
-            "categorieCritique": "Critique (gratuit)",
+            "categorieBase": "Base (gratuit)",
             "categoriePremium": "Premium (plan)",
             "categorieAddon": "Add-on (supplément)",
             "planAucun": "Aucun"
@@ -1584,6 +1588,7 @@
     },
     "featureFlags": {
         "titre": "Feature Flags",
+        "subtitle": "Registre centralisé des feature flags — gestion, rollout et audit",
         "overrideTenant": "Override tenant",
         "selectionnerEtab": "Sélectionner un établissement",
         "selectionnerEtabMessage": "Sélectionnez un établissement pour voir ses feature flags",
@@ -1594,7 +1599,54 @@
         "defaut": "Défaut",
         "aucunFlag": "Aucun feature flag trouvé",
         "toastToggleSuccess": "Flag mis à jour",
-        "toastToggleError": "Erreur lors de la mise à jour du flag"
+        "toastToggleError": "Erreur lors de la mise à jour du flag",
+        "systeme": "Système",
+        "createDefinition": "Nouveau flag",
+        "confirmDelete": "Supprimer cette définition ?",
+        "deactivate": "Désactiver",
+        "expiredFlags": "Flags expirés",
+        "orphanFlags": "Flags orphelins",
+        "orphanDesc": "Flags présents dans les overrides tenant mais sans définition centralisée",
+        "noExpired": "Aucun flag expiré",
+        "tabs": {
+            "definitions": "Définitions",
+            "matrix": "Matrice",
+            "audit": "Audit",
+            "expired": "Expirés"
+        },
+        "form": {
+            "createTitle": "Nouveau feature flag",
+            "editTitle": "Modifier le flag",
+            "cle": "Clé",
+            "label": "Label",
+            "description": "Description",
+            "descriptionPlaceholder": "Description du flag...",
+            "categorie": "Catégorie",
+            "type": "Type",
+            "planMinimal": "Plan minimal",
+            "rollout": "Rollout",
+            "valeurDefaut": "Valeur par défaut activée",
+            "expiresAt": "Expiration",
+            "estSysteme": "Flag système (non supprimable)",
+            "requiredFields": "Clé et label requis"
+        },
+        "matrix": {
+            "searchEtab": "Rechercher un établissement...",
+            "allCategories": "Toutes catégories",
+            "etablissement": "Établissement",
+            "selected": "sélectionné(s)"
+        },
+        "audit": {
+            "searchFlag": "Rechercher un flag...",
+            "date": "Date",
+            "action": "Action",
+            "flag": "Flag",
+            "etablissement": "Établissement",
+            "commentaire": "Commentaire",
+            "par": "Par",
+            "entries": "entrées",
+            "noEntries": "Aucune entrée dans l'historique"
+        }
     },
     "platformUsers": {
         "creer": "Nouveau compte",

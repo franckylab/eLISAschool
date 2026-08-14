@@ -4,13 +4,11 @@
  * ==================================
  *
  * Source de vérité unique du catalogue de modules plateforme.
- * Remplace les 3 registres divergents :
- *   - MODULE_REGISTRY (shared/src/config/config.registry.ts)
- *   - ModuleRegistryService (configuration, 14 modules)
- *   - hardcodes MODULES_GRATUITS/MODULES_PREMIUM (module-access.middleware.ts)
+ * Les 3 anciens registres (MODULE_REGISTRY, ModuleRegistryService,
+ * MODULES_GRATUITS/PREMIUM) ont été supprimés (migration 200).
  *
  * Cascade de résolution (Lot A — Refonte SaaS v7) :
- *   1. Catalogue (cette table) → actif par défaut (actifParDefaut / CRITIQUE)
+ *   1. Catalogue (cette table) → actif par défaut (actifParDefaut / BASE)
  *   2. Plan (PlanAbonnement.modulesInclus par code) → activation
  *   3. AbonnementModule (suppléments souscrits, moduleOptionnel.slug)
  *   4. ParametreSysteme modules.{code}.actif (override établissement/global)
@@ -28,8 +26,8 @@ import {
 } from 'typeorm';
 
 export enum CategorieModule {
-    /** Module critique — toujours disponible, non facturable */
-    CRITIQUE = 'CRITIQUE',
+    /** Module de base — toujours disponible, non facturable */
+    BASE = 'BASE',
     /** Module premium — inclus dans les plans payants, facturable */
     PREMIUM = 'PREMIUM',
     /** Module addon — souscriptible séparément, facturé en supplément */
@@ -64,7 +62,7 @@ export class ModuleCatalogue {
     @Column({ type: 'text', nullable: true })
     descriptionEn?: string;
 
-    /** Catégorie commerciale : CRITIQUE | PREMIUM | ADDON */
+    /** Catégorie commerciale : BASE | PREMIUM | ADDON */
     @Column({ type: 'varchar', length: 20, default: CategorieModule.ADDON })
     categorie!: CategorieModule;
 
@@ -80,7 +78,7 @@ export class ModuleCatalogue {
     @Column({ type: 'int', default: 0 })
     prixAnnuel!: number;
 
-    /** Le module est-il facturé ? (CRITIQUE → false) */
+    /** Le module est-il facturable ? (BASE → false) */
     @Column({ type: 'boolean', default: false })
     estFacturable!: boolean;
 
@@ -88,7 +86,7 @@ export class ModuleCatalogue {
     @Column({ type: 'boolean', default: false })
     estSouscriptible!: boolean;
 
-    /** Actif par défaut pour tout établissement (CRITIQUE → true) */
+    /** Actif par défaut pour tout établissement (BASE → true) */
     @Column({ type: 'boolean', default: false })
     actifParDefaut!: boolean;
 

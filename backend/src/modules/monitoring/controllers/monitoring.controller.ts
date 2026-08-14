@@ -17,6 +17,7 @@ import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { Role } from '@modules/auth/entities';
 import { validateDto } from '@common/utils';
 import { maintenanceSchema, queryLogsSchema } from '../dto';
+import { moduleAnalyticsService } from '../services/module-analytics.service';
 
 const router = Router();
 const monitoringService = new MonitoringService();
@@ -356,6 +357,36 @@ router.post('/tenants/alerts/:id/resolve', authMiddleware, requirePermission('co
     try {
         const resolved = noisyNeighborService.resolveAlert(req.params.id);
         res.json({ success: resolved, message: resolved ? 'Alerte résolue' : 'Alerte non trouvée' });
+    } catch (error) { next(error); }
+});
+
+// =============================================
+// ANALYTICS MODULES (P6.1)
+// =============================================
+
+/**
+ * GET /monitoring/analytics/modules
+ * Analytics globales des modules (SUPER_ADMIN / ADMIN avec config:read)
+ */
+router.get('/analytics/modules', authMiddleware, requirePermission('config:read'), async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+        const analytics = await moduleAnalyticsService.getGlobalAnalytics();
+        res.json({ success: true, data: analytics });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /monitoring/analytics/modules/:code/usage
+ * Détail d'usage pour un module spécifique
+ */
+router.get('/analytics/modules/:code/usage', authMiddleware, requirePermission('config:read'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const detail = await moduleAnalyticsService.getModuleUsageDetail(req.params.code);
+        if (!detail) {
+            res.status(404).json({ success: false, message: 'Module non trouvé' });
+            return;
+        }
+        res.json({ success: true, data: detail });
     } catch (error) { next(error); }
 });
 

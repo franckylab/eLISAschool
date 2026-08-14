@@ -64,19 +64,19 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-    CRITIQUE: 'Critiques',
+    BASE: 'Base',
     PREMIUM: 'Premium',
     ADDON: 'Add-ons',
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-    CRITIQUE: 'border-red-200 bg-red-50 text-red-700',
+    BASE: 'border-emerald-200 bg-emerald-50 text-emerald-700',
     PREMIUM: 'border-amber-200 bg-amber-50 text-amber-700',
     ADDON: 'border-blue-200 bg-blue-50 text-blue-700',
 };
 
 const CATEGORY_HEADER_BG: Record<string, string> = {
-    CRITIQUE: 'bg-red-50/50 border-red-100',
+    BASE: 'bg-emerald-50/50 border-emerald-100',
     PREMIUM: 'bg-amber-50/50 border-amber-100',
     ADDON: 'bg-blue-50/50 border-blue-100',
 };
@@ -93,7 +93,7 @@ function groupByCategory(states: ModuleState[]): Record<string, ModuleState[]> {
         groups[cat].push(s);
     }
     const sorted = Object.keys(groups).sort((a, b) => {
-        const order = ['CRITIQUE', 'PREMIUM', 'ADDON'];
+        const order = ['BASE', 'PREMIUM', 'ADDON'];
         const ia = order.indexOf(a);
         const ib = order.indexOf(b);
         return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);

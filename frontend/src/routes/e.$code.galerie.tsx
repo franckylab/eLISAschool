@@ -6,13 +6,12 @@
  * Galerie photos/vidéos publique avec filtres et lightbox.
  */
 
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { useState, useMemo } from 'react';
-import { useEtablissementPublic, useThemePublic, useMenusPublic, usePagesPubliques } from '@/features/cms/hooks/use-cms-public';
-import { PublicLayout } from '@/features/cms/components/PublicLayout';
+import { usePagesPubliques } from '@/features/cms/hooks/use-cms-public';
+import { usePublicPage } from '@/features/cms/components/PublicPageContext';
 import { CmsPageRenderer } from '@/features/cms/components/CmsPageRenderer';
 import { X, ChevronLeft, ChevronRight, Image, Video, Grid, LayoutGrid } from 'lucide-react';
-import type { CmsSection, CmsMedia } from '@/features/cms/types/cms.types';
 import { SectionType } from '@/features/cms/types/cms.types';
 
 export const Route = createFileRoute('/e/$code/galerie')({
@@ -21,9 +20,7 @@ export const Route = createFileRoute('/e/$code/galerie')({
 
 function PageGaleriePublique() {
     const { code } = Route.useParams();
-    const { data: etab } = useEtablissementPublic(code);
-    const { data: theme } = useThemePublic(code);
-    const { data: menus } = useMenusPublic(code);
+    const { etab, theme, code: codeEtab } = usePublicPage();
     const { data: pages } = usePagesPubliques(code);
 
     // Trouver la page galerie
@@ -82,24 +79,20 @@ function PageGaleriePublique() {
     };
 
     if (!etab) {
-        return (
-            <div className="flex min-h-screen items-center justify-center">
-                <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-green-600" />
-            </div>
-        );
+        return null;
     }
 
     const primaryColor = theme?.couleurs?.primaire || '#28a745';
 
     return (
-        <PublicLayout etablissement={etab} theme={theme} menus={menus || []}>
+        <>
             {/* Sections CMS de la page galerie (hero, texte, etc.) */}
             {sectionsGalerie.filter(s => s.type !== SectionType.GALERIE).length > 0 && (
                 <CmsPageRenderer
                     sections={sectionsGalerie.filter(s => s.type !== SectionType.GALERIE)}
                     theme={theme}
                     etablissement={etab}
-                    codeEtablissement={code}
+                    codeEtablissement={codeEtab}
                 />
             )}
 
@@ -278,6 +271,6 @@ function PageGaleriePublique() {
                     </div>
                 </div>
             )}
-        </PublicLayout>
+        </>
     );
 }

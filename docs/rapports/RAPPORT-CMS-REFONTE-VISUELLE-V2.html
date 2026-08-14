@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport CMS eLISAschool — Refonte Visuelle & Data Binding</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface-2: #242836;
+    --border: #2e3345;
+    --text: #e4e6ef;
+    --text-muted: #8b8fa3;
+    --accent: #6366f1;
+    --accent-light: #818cf8;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+  .hero {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 30%, #4338ca 60%, #6366f1 100%);
+    padding: 80px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 20% 50%, rgba(99,102,241,0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(139,92,246,0.2) 0%, transparent 40%);
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    position: relative;
+    background: linear-gradient(to right, #fff, #c7d2fe);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero .subtitle {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    color: rgba(255,255,255,0.7);
+    margin-top: 16px;
+    position: relative;
+  }
+  .hero .meta {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    margin-top: 32px;
+    flex-wrap: wrap;
+    position: relative;
+  }
+  .hero .meta span {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.15);
+    padding: 8px 20px;
+    border-radius: 100px;
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.9);
+  }
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  nav.toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin: -40px auto 60px;
+    max-width: 900px;
+    position: relative;
+    z-index: 10;
+  }
+  nav.toc h2 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+    color: var(--accent-light);
+  }
+  nav.toc ol {
+    columns: 2;
+    column-gap: 40px;
+    padding-left: 20px;
+  }
+  nav.toc li {
+    margin-bottom: 8px;
+    color: var(--text-muted);
+  }
+  nav.toc a {
+    color: var(--text);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  nav.toc a:hover { color: var(--accent-light); }
+  section {
+    margin-bottom: 80px;
+    scroll-margin-top: 20px;
+  }
+  h2.section-title {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  h2.section-title .num {
+    background: var(--accent);
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .section-desc {
+    color: var(--text-muted);
+    margin-bottom: 32px;
+    font-size: 1.05rem;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 24px;
+    transition: border-color 0.3s;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card h3 {
+    font-size: 1.15rem;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+
+  /* Severity badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .badge-critical { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+  .badge-major { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }
+  .badge-minor { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+  .badge-success { background: rgba(34,197,94,0.15); color: #86efac; border: 1px solid rgba(34,197,94,0.3); }
+  .badge-info { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.9rem;
+  }
+  th, td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    background: var(--surface-2);
+    font-weight: 600;
+    color: var(--accent-light);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  tr:hover td { background: rgba(99,102,241,0.04); }
+
+  /* Mermaid */
+  .mermaid-wrapper {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin: 24px 0;
+    overflow-x: auto;
+  }
+  .mermaid { text-align: center; }
+  .mermaid svg { max-width: 100%; height: auto; }
+
+  /* Stats */
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    text-align: center;
+  }
+  .stat-card .value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-light), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .stat-card .label {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 4px;
+  }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 32px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--accent), var(--border));
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 32px;
+    padding-left: 24px;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -26px;
+    top: 6px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid var(--bg);
+  }
+  .timeline-item .phase {
+    font-weight: 700;
+    color: var(--accent-light);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .timeline-item h4 {
+    font-size: 1.1rem;
+    margin: 4px 0 8px;
+  }
+  .timeline-item p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  /* Comparison cards */
+  .compare-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .compare-card.recommended {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 8px 32px rgba(99,102,241,0.15);
+  }
+  .compare-card.recommended::after {
+    content: 'RECOMMANDE';
+    position: absolute;
+    top: 12px;
+    right: -30px;
+    background: var(--accent);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 4px 40px;
+    transform: rotate(45deg);
+    letter-spacing: 0.1em;
+  }
+  .compare-card h4 {
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+  }
+  .compare-card .license {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-bottom: 16px;
+  }
+  .compare-card ul {
+    list-style: none;
+    padding: 0;
+  }
+  .compare-card li {
+    padding: 6px 0;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .compare-card li::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+  .compare-card li.con::before { background: var(--danger); }
+
+  /* Score gauge */
+  .score-gauge {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 16px 0;
+  }
+  .gauge-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--surface-2);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+  .gauge-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 1s ease;
+  }
+  .gauge-label { font-size: 0.85rem; color: var(--text-muted); min-width: 120px; }
+  .gauge-value { font-weight: 700; min-width: 40px; text-align: right; }
+
+  /* Code blocks */
+  pre {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    margin: 12px 0;
+  }
+  code { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+
+  /* Callout */
+  .callout {
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin: 20px 0;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .callout-danger { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+  .callout-warning { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+  .callout-info { background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); }
+  .callout-success { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); }
+  .callout-icon { font-size: 1.25rem; flex-shrink: 0; margin-top: 2px; }
+  .callout p { font-size: 0.9rem; }
+  .callout strong { color: var(--text); }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--surface-2); padding: 4px; border-radius: 10px; flex-wrap: wrap; }
+  .tab {
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    border: none;
+    background: none;
+  }
+  .tab.active { background: var(--accent); color: white; }
+  .tab:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.05); }
+
+  /* Architecture diagram */
+  .arch-layer {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .arch-layer .layer-label {
+    position: absolute;
+    top: -10px;
+    left: 20px;
+    background: var(--accent);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 12px;
+    border-radius: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .arch-items { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .arch-item {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  .arch-item.highlight { border-color: var(--accent); background: rgba(99,102,241,0.1); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero { padding: 48px 20px; }
+    nav.toc { margin: -30px 16px 40px; padding: 20px; }
+    nav.toc ol { columns: 1; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .container { padding: 0 16px; }
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; color: #1a1a1a; }
+    .hero { background: #4338ca; }
+    .card, .compare-card, .mermaid-wrapper { border-color: #e5e7eb; }
+  }
+
+  /* Animations */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  section { animation: fadeInUp 0.6s ease both; }
+  section:nth-child(2) { animation-delay: 0.1s; }
+  section:nth-child(3) { animation-delay: 0.15s; }
+
+  /* Progress bar */
+  .progress-container { margin: 20px 0; }
+  .progress-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.85rem; }
+  .progress-bar { height: 6px; background: var(--surface-2); border-radius: 100px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 100px; }
+
+  /* Entity diagram */
+  .entity-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.8rem;
+    text-align: center;
+    font-weight: 600;
+  }
+  .entity-box.primary { border-color: var(--accent); background: rgba(99,102,241,0.1); }
+  .entity-box.new { border-color: var(--success); background: rgba(34,197,94,0.1); border-style: dashed; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <h1>Refonte CMS eLISAschool</h1>
+  <p class="subtitle">Edition visuelle, drag & drop, data binding & performance</p>
+  <div class="meta">
+    <span>Version 2.0</span>
+    <span>14 aout 2026</span>
+    <span>8 entites &middot; 18 sections &middot; 8 templates</span>
+    <span>Audit complet + Roadmap</span>
+  </div>
+</header>
+
+<!-- TOC -->
+<div class="container">
+<nav class="toc" id="toc">
+  <h2>Sommaire</h2>
+  <ol>
+    <li><a href="#s1">Etat des lieux & audit</a></li>
+    <li><a href="#s2">Architecture actuelle</a></li>
+    <li><a href="#s3">Benchmark editeurs visuels</a></li>
+    <li><a href="#s4">Architecture cible</a></li>
+    <li><a href="#s5">Data Binding & donnees reelles</a></li>
+    <li><a href="#s6">Securite & correctifs critiques</a></li>
+    <li><a href="#s7">Performance & cache</a></li>
+    <li><a href="#s8">Roadmap d'implementation</a></li>
+    <li><a href="#s9">Estimation & efforts</a></li>
+  </ol>
+</nav>
+
+<!-- SECTION 1 — ETAT DES LIEUX -->
+<section id="s1">
+  <h2 class="section-title"><span class="num">1</span> Etat des lieux & audit</h2>
+  <p class="section-desc">Analyse complete du module CMS actuel : backend (7 entites, 18 types de sections, 8 templates) et frontend (editeur 3 colonnes, rendu public, dashboard admin).</p>
+
+  <div class="grid-4" style="margin-bottom: 32px;">
+    <div class="stat-card"><div class="value">8</div><div class="label">Entites TypeORM</div></div>
+    <div class="stat-card"><div class="value">18</div><div class="label">Types de sections</div></div>
+    <div class="stat-card"><div class="value">8</div><div class="label">Templates systeme</div></div>
+    <div class="stat-card"><div class="value">15</div><div class="label">Faiblesses identifiees</div></div>
+  </div>
+
+  <h3 style="margin-bottom: 16px;">Score qualite actuel</h3>
+  <div class="card">
+    <div class="score-gauge">
+      <span class="gauge-label">Securite</span>
+      <div class="gauge-bar"><div class="gauge-fill" style="width:35%; background: var(--danger);"></div></div>
+      <span class="gauge-value" style="color: var(--danger);">3.5/10</span>
+    </div>
+    <div class="score-gauge">
+      <span class="gauge-label">Drag & Drop</span>
+      <div class="gauge-bar"><div class="gauge-fill" style="width:15%; background: var(--danger);"></div></div>
+      <span class="gauge-value" style="color: var(--danger);">1.5/10</span>
+    </div>
+    <div class="score-gauge">
+      <span class="gauge-label">Data Binding</span>
+      <div class="gauge-bar"><div class="gauge-fill" style="width:10%; background: var(--danger);"></div></div>
+      <span class="gauge-value" style="color: var(--danger);">1/10</span>
+    </div>
+    <div class="score-gauge">
+      <span class="gauge-label">i18n</span>
+      <div class="gauge-bar"><div class="gauge-fill" style="width:30%; background: var(--warning);"></div></div>
+      <span class="gauge-value" style="color: var(--warning);">3/10</span>
+    </div>
+    <div class="score-gauge">
+      <span class="gauge-label">Cache & Perf</span>
+      <div class="gauge-bar"><div class="gauge-fill" style="width:70%; background: var(--success);"></div></div>
+      <span class="gauge-value" style="color: var(--success);">7/10</span>
+    </div>
+    <div class="score-gauge">
+      <span class="gauge-label">Architecture</span>
+      <div class="gauge-bar"><div class="gauge-fill" style="width:60%; background: var(--warning);"></div></div>
+      <span class="gauge-value" style="color: var(--warning);">6/10</span>
+    </div>
+  </div>
+
+  <h3 style="margin: 32px 0 16px;">Faiblesses identifiees par severite</h3>
+  <table>
+    <thead>
+      <tr><th>Severite</th><th>Probleme</th><th>Fichier</th><th>Impact</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-critical">CRITIQUE</span></td>
+        <td>XSS via dangerouslySetInnerHTML sans DOMPurify</td>
+        <td>CmsPageRenderer.tsx</td>
+        <td>Injection de script dans les pages publiques</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-critical">CRITIQUE</span></td>
+        <td>18 permissions RBAC definies mais JAMAIS enforcees</td>
+        <td>cms.controller.ts</td>
+        <td>Tout utilisateur authentifie peut tout faire</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-critical">CRITIQUE</span></td>
+        <td>Pas de vrai drag & drop — seulement boutons up/down</td>
+        <td>_auth.cms.pages.$id.tsx</td>
+        <td>UX editeur non professionnelle</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-major">MAJEUR</span></td>
+        <td>Aucun data binding aux donnees etablissement</td>
+        <td>—</td>
+        <td>Pages statiques, pas de donnees dynamiques</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-major">MAJEUR</span></td>
+        <td>Pas d'i18n dans CmsDashboard (FR en dur)</td>
+        <td>CmsDashboard.tsx</td>
+        <td>Incoherent avec le reste de l'app</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-major">MAJEUR</span></td>
+        <td>Input color natif (viole convention ColorPicker)</td>
+        <td>CmsSectionEditor + ThemeCustomizer</td>
+        <td>Dialogue OS bloque par focus trap Radix</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-major">MAJEUR</span></td>
+        <td>confirm() navigateur au lieu de CustomModal</td>
+        <td>CmsDashboard.tsx</td>
+        <td>Incoherence UX + pas i18n</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-major">MAJEUR</span></td>
+        <td>Record&lt;string, any&gt; et casts as any partout</td>
+        <td>6+ fichiers</td>
+        <td>Pas de type safety sur le contenu des sections</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-minor">MINEUR</span></td>
+        <td>Pas de CAPTCHA sur le formulaire contact</td>
+        <td>e.$code.contact.tsx</td>
+        <td>Spam possible</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-minor">MINEUR</span></td>
+        <td>Newsletter non fonctionnelle (e.preventDefault() vide)</td>
+        <td>PublicLayout.tsx</td>
+        <td>Faux positif pour l'utilisateur</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-minor">MINEUR</span></td>
+        <td>Pas de verrouillage optimiste (edits concurrents)</td>
+        <td>cms.service.ts</td>
+        <td>Ecrasement silencieux des modifications</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- SECTION 2 — ARCHITECTURE ACTUELLE -->
+<section id="s2">
+  <h2 class="section-title"><span class="num">2</span> Architecture actuelle</h2>
+  <p class="section-desc">Diagramme de l'architecture CMS actuelle : entites backend, services, controleurs, et composants frontend.</p>
+
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+graph TB
+    subgraph "Backend — Modules CMS"
+        E1[CmsPage]
+        E2[CmsSection]
+        E3[CmsMedia]
+        E4[CmsTheme]
+        E5[CmsMenu]
+        E6[CmsWidget]
+        E7[CmsVersion]
+        E8[CmsTemplate]
+    end
+
+    subgraph "Services"
+        S1[cms.service.ts<br/>508 lignes]
+        S2[cms-template.service.ts<br/>900 lignes]
+        S3[public-etablissement.service.ts<br/>450 lignes]
+    end
+
+    subgraph "Controllers"
+        C1[cms.controller.ts<br/>33 routes<br/>⚠️ Pas de RBAC]
+        C2[public-etablissement.controller.ts<br/>8 routes<br/>✅ Rate limit]
+    end
+
+    subgraph "Frontend — Editeur"
+        F1[_auth.cms.pages.$id.tsx<br/>Editeur 3 colonnes<br/>⚠️ Pas de DnD reel]
+        F2[CmsSectionEditor.tsx<br/>18 types de sections]
+        F3[CmsThemeCustomizer.tsx]
+        F4[CmsDashboard.tsx<br/>⚠️ Pas i18n]
+    end
+
+    subgraph "Frontend — Public"
+        P1[e.$code.tsx]
+        P2[e.$code.$slug.tsx]
+        P3[CmsPageRenderer.tsx<br/>1166 lignes<br/>⚠️ XSS risk]
+        P4[PublicLayout.tsx<br/>716 lignes]
+    end
+
+    subgraph "Cache Redis"
+        R1[TTL 300s pages<br/>TTL 600s themes]
+    end
+
+    E1 --> E2
+    E1 --> E7
+    S1 --> E1
+    S1 --> E2
+    S1 --> E3
+    S2 --> E8
+    S3 --> R1
+    C1 --> S1
+    C2 --> S3
+    F1 --> C1
+    F1 --> F2
+    P1 --> C2
+    P2 --> C2
+    P2 --> P3
+    P3 --> P4
+    </pre>
+  </div>
+
+  <div class="callout callout-danger">
+    <span class="callout-icon">&#9888;</span>
+    <div>
+      <p><strong>Probleme architectural majeur :</strong> L'editeur actuel (_auth.cms.pages.$id.tsx) utilise des boutons up/down pour reordonner les sections. Les icones GripVertical sont presentes mais purement decoratives — aucun handler drag n'est attache. Le drag & drop, fonctionnalite core d'un CMS moderne, est <strong>totalement absent</strong>.</p>
+    </div>
+  </div>
+
+  <h3 style="margin: 24px 0 16px;">Flux de donnees actuel</h3>
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+sequenceDiagram
+    participant Admin as Admin CMS
+    participant API as API /api/cms/*
+    participant DB as PostgreSQL
+    participant Cache as Redis Cache
+    participant Public as Page publique /e/:code
+
+    Admin->>API: PATCH /pages/:id/sections (ordre)
+    API->>DB: UPDATE cms_sections SET ordre = ...
+    DB-->>API: OK
+    API->>Cache: DEL public:{etabId}:pages:*
+    API-->>Admin: 200
+
+    Note over Public: Visite publique
+    Public->>Cache: GET public:{etabId}:pages:accueil
+    alt Cache HIT
+        Cache-->>Public: Page JSON (300s TTL)
+    else Cache MISS
+        Public->>API: GET /api/public/e/:code/accueil
+        API->>DB: SELECT pages + sections + theme
+        DB-->>API: Data
+        API->>Cache: SET (TTL 300s)
+        API-->>Public: Page JSON
+    end
+    Public->>Public: CmsPageRenderer (18 sections)
+    </pre>
+  </div>
+</section>
+
+<!-- SECTION 3 — BENCHMARK EDITEURS -->
+<section id="s3">
+  <h2 class="section-title"><span class="num">3</span> Benchmark editeurs visuels</h2>
+  <p class="section-desc">Comparaison approfondie des 3 principaux editeurs open source compatibles React 19, avec analyse d'integration dans l'architecture eLISAschool.</p>
+
+  <div class="grid-3" style="margin-bottom: 32px;">
+    <div class="compare-card recommended">
+      <h4>Puck Editor</h4>
+      <p class="license">MIT &middot; @puckeditor/core v0.23.0 &middot; ~117K downloads/sem</p>
+      <ul>
+        <li>React-native — composants = composants React</li>
+        <li>API fields/render elegante et typee</li>
+        <li>Plugin rail system (insertion zones)</li>
+        <li>JSON serializable (compatible CmsSection.contenu)</li>
+        <li>Utilise @dnd-kit en interne (deja dans eLISAschool)</li>
+        <li>AI Copilot integre (optionnel)</li>
+        <li>Active development (v0.23, release frequente)</li>
+        <li class="con">Vertical-only layouts (pas de grid 2D libre)</li>
+        <li class="con">Client-side rendering uniquement</li>
+        <li class="con">CSS scoping necessaire pour eviter les conflits</li>
+      </ul>
+    </div>
+    <div class="compare-card">
+      <h4>GrapesJS</h4>
+      <p class="license">BSD-3 &middot; v0.23.5 &middot; ~251K downloads/sem</p>
+      <ul>
+        <li>Framework-agnostic (pas React-native)</li>
+        <li>UI complete out-of-the-box</li>
+        <li>Style editor + Layer manager + Code editor</li>
+        <li>Export HTML/CSS propre</li>
+        <li>Wrapper @grapesjs/react v2.x (React 19)</li>
+        <li class="con">NE PEUT PAS render React components dans le canvas</li>
+        <li class="con">Modele de donnees proprietaire (migration complexe)</li>
+        <li class="con">Integration frontend lourde (2 modeles de donnees)</li>
+        <li class="con">DOM manipulation directe (conflits avec React)</li>
+      </ul>
+    </div>
+    <div class="compare-card">
+      <h4>Craft.js</h4>
+      <p class="license">MIT &middot; v0.2.12 &middot; ~8K downloads/sem</p>
+      <ul>
+        <li>Fully React-native (hooks useNode, useEditor)</li>
+        <li>JSON state serialization</li>
+        <li>100% custom — controle total sur l'UI</li>
+        <li>Flexible — pas de contraintes de layout</li>
+        <li class="con">Pre-1.0 — stabilite incertaine</li>
+        <li class="con">AUCUNE UI pre-construite (tout a construire)</li>
+        <li class="con">Documentation incomplete</li>
+        <li class="con">Communaute petite (8K vs 117K/251K)</li>
+        <li class="con">Effort d'implementation 3-5x superieur</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 style="margin-bottom: 16px;">Matrice de comparaison detaillee</h3>
+  <div class="card" style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Critere</th>
+          <th>Puck</th>
+          <th>GrapesJS</th>
+          <th>Craft.js</th>
+          <th>Poids</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Compatibilite React 19</td>
+          <td style="color: var(--success);">&#9733;&#9733;&#9733;&#9733;&#9733;</td>
+          <td style="color: var(--warning);">&#9733;&#9733;&#9733;</td>
+          <td style="color: var(--warning);">&#9733;&#9733;&#9733;</td>
+          <td>Haute</td>
+        </tr>
+        <tr>
+          <td>Composants React natifs</td>
+          <td style="color: var(--success);">&#9733;&#9733;&#9733;&#9733;&#9733;</td>
+          <td style="color: var(--danger);">&#9733;</td>
+          <td style="color: var(--success);">&#9733;&#9733;&#9733;&#9733;&#9733;</td>
+          <td>Critique</td>
+        </tr>
+        <tr>
+          <td>Drag & Drop fluide</td>
+          <td style="color: var(--success);">&#9733;&#9733;&#9733;&#9733;</td>
+          <td style="color: var(--success);">&#9733;&#9733;&#9733;&#9733;&#9733;</td>
+          <td style="color: var(--success);">&#9733;&#9733;&#9733;</td>
+          <td>Critique</td>
+        </tr>
+        <tr>
+          <td>Serialisation JSON</td>
+          <td style="color: var(--success);">&#9733;&#9733;&#9733;&#9733;&#9733;</td>
+          <td style="color: var(--warning);">&#9733;&#9733;</td>
+          <td style="color: var(--success);">&#9733;&#9733;&#9733;&#9733;</td>
+          <td>Haute</td>
+        </tr>
+        <tr>
+          <td>Effort d'integration</td>
+          <td style="color: var(--success);">Faible (2-3 sem)</td>
+          <td style="color: var(--warning);">Moyen (4-6 sem)</td>
+          <td style="color: var(--danger);">Eleve (8-12 sem)</td>
+          <td>Haute</td>
+        </tr>
+        <tr>
+          <td>Edition de code</td>
+          <td style="color: var(--warning);">Via plugin</td>
+          <td style="color: var(--success);">Integre natif</td>
+          <td style="color: var(--danger);">A construire</td>
+          <td>Moyenne</td>
+        </tr>
+        <tr>
+          <td>Communaute & support</td>
+          <td style="color: var(--success);">117K/sem, actif</td>
+          <td style="color: var(--success);">251K/sem, mature</td>
+          <td style="color: var(--warning);">8K/sem, lent</td>
+          <td>Moyenne</td>
+        </tr>
+        <tr>
+          <td>Licence</td>
+          <td style="color: var(--success);">MIT</td>
+          <td style="color: var(--success);">BSD-3</td>
+          <td style="color: var(--success);">MIT</td>
+          <td>—</td>
+        </tr>
+        <tr style="background: rgba(99,102,241,0.05); font-weight: 700;">
+          <td>SCORE GLOBAL</td>
+          <td style="color: var(--accent-light); font-size: 1.2rem;">8.5/10</td>
+          <td style="color: var(--warning); font-size: 1.2rem;">6.5/10</td>
+          <td style="color: var(--warning); font-size: 1.2rem;">5.5/10</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-success">
+    <span class="callout-icon">&#10003;</span>
+    <div>
+      <p><strong>Recommandation : Puck Editor.</strong> C'est le seul editeur qui permet d'utiliser les composants React existants d'eLISAschool (ColorPicker, CustomModal, ElisaButton, etc.) directement dans le canvas. Son modele JSON s'integre naturellement avec CmsSection.contenu (JSONB). Il utilise @dnd-kit en interne — une dependance deja presente dans le projet pour l'EDT.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4 — ARCHITECTURE CIBLE -->
+<section id="s4">
+  <h2 class="section-title"><span class="num">4</span> Architecture cible</h2>
+  <p class="section-desc">Architecture du CMS refonde avec Puck Editor, data binding, et edition visuelle professionnelle.</p>
+
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+graph TB
+    subgraph "Frontend — Editeur Visuel Puck"
+        PE[Puck Editor<br/>@puckeditor/core]
+        CP[Composants Puck<br/>18 sections + widgets]
+        DB[Data Binding Layer<br/>Props depuis API]
+        TB[Toolbar editeur<br/>Undo/Redo/Preview/Publish]
+        CE[Code Editor<br/>Monaco editor<br/>HTML/CSS custom]
+    end
+
+    subgraph "Frontend — Composants existants"
+        CM[ColorPicker]
+        CU[CustomModal]
+        EB[ElisaButton]
+        SS[SectionSeparator]
+    end
+
+    subgraph "Backend — API CMS v2"
+        AC[cms.controller.ts<br/>+ RBAC enforce]
+        AS[cms.service.ts<br/>+ optimistic locking]
+        DBS[DataBindingService<br/>NOUVEAU]
+        RES[Resolver de donnees<br/>etablissement → sections]
+    end
+
+    subgraph "Sources de donnees etablissement"
+        ETAB[Etablissement<br/>nom, slogan, logo, contact]
+        ELEVES[Eleves<br/>effectifs, stats]
+        MAT[Matieres<br/>catalogue]
+        PERS[Personnel<br/>enseignants, direction]
+        NOTES[Notes/Bulletins<br/>statistiques]
+        EDT[Emploi du temps<br/>planning]
+        CFG[Configuration<br/>parametres]
+    end
+
+    subgraph "Stockage"
+        PG[(PostgreSQL<br/>cms_sections JSONB)]
+        RD[(Redis Cache<br/>TTL 300s)]
+    end
+
+    PE --> CP
+    CP --> CM
+    CP --> CU
+    CP --> EB
+    DB --> RES
+    RES --> ETAB
+    RES --> ELEVES
+    RES --> MAT
+    RES --> PERS
+    RES --> NOTES
+    RES --> EDT
+    RES --> CFG
+    PE --> AC
+    AC --> AS
+    AS --> PG
+    AS --> RD
+    DBS --> AS
+    TB --> PE
+    CE --> PE
+    </pre>
+  </div>
+
+  <h3 style="margin: 32px 0 16px;">Architecture en couches</h3>
+
+  <div class="arch-layer">
+    <span class="layer-label">Presentation</span>
+    <div class="arch-items">
+      <div class="arch-item highlight">Puck Editor</div>
+      <div class="arch-item">CmsPageRenderer v2</div>
+      <div class="arch-item">PublicLayout</div>
+      <div class="arch-item">SeoHead</div>
+      <div class="arch-item">Monaco Editor</div>
+    </div>
+  </div>
+  <div class="arch-layer">
+    <span class="layer-label">Data Binding</span>
+    <div class="arch-items">
+      <div class="arch-item highlight">DataBindingService</div>
+      <div class="arch-item">Expression Resolver</div>
+      <div class="arch-item">Cache donnees</div>
+      <div class="arch-item">Template Variables</div>
+    </div>
+  </div>
+  <div class="arch-layer">
+    <span class="layer-label">API & Securite</span>
+    <div class="arch-items">
+      <div class="arch-item highlight">RBAC enforce (18 perms)</div>
+      <div class="arch-item">DOMPurify</div>
+      <div class="arch-item">Optimistic Locking</div>
+      <div class="arch-item">Rate Limiting</div>
+      <div class="arch-item">Audit Trail</div>
+    </div>
+  </div>
+  <div class="arch-layer">
+    <span class="layer-label">Stockage</span>
+    <div class="arch-items">
+      <div class="arch-item">PostgreSQL + RLS</div>
+      <div class="arch-item">Redis Cache (TTL 300s)</div>
+      <div class="arch-item">CmsVersion (snapshots)</div>
+    </div>
+  </div>
+
+  <h3 style="margin: 32px 0 16px;">Integration Puck — Mapping avec les entites existantes</h3>
+  <div class="card">
+    <pre><code>// frontend/src/features/cms/puck/config.tsx
+import { Config } from '@puckeditor/core';
+
+// Chaque section CMS devient un composant Puck
+export const puckConfig: Config = {
+  categories: {
+    hero: { title: 'Hero', components: ['HeroSection'] },
+    content: { title: 'Contenu', components: ['TexteSection', 'GalerieSection', 'CarteSection'] },
+    social: { title: 'Social', components: ['TemoignagesSection', 'EquipeSection', 'PartenairesSection'] },
+    info: { title: 'Information', components: ['CarteInfosSection', 'ChiffresClesSection', 'HorairesSection'] },
+    action: { title: 'Action', components: ['FormulaireSection', 'AppelActionSection', 'ActualitesSection'] },
+    structure: { title: 'Structure', components: ['SeparateurSection', 'HtmlCustomSection', 'TelechargementsSection', 'FaqSection'] },
+  },
+  components: {
+    HeroSection: {
+      fields: {
+        titre: { type: 'text' },
+        sousTitre: { type: 'text' },
+        imageFond: { type: 'image' },
+        // Data binding : reference vers les donnees etablissement
+        etablissement_nom: { type: 'text', bindTo: 'etablissement.nom' },
+      },
+      render: ({ titre, sousTitre, imageFond }) => (
+        &lt;section style={{ backgroundImage: `url(${imageFond})` }}&gt;
+          &lt;h1&gt;{titre}&lt;/h1&gt;
+          &lt;p&gt;{sousTitre}&lt;/p&gt;
+        &lt;/section&gt;
+      ),
+    },
+    // ... 17 autres composants
+  },
+};</code></pre>
+  </div>
+</section>
+
+<!-- SECTION 5 — DATA BINDING -->
+<section id="s5">
+  <h2 class="section-title"><span class="num">5</span> Data Binding & donnees reelles</h2>
+  <p class="section-desc">Strategy pour connecter les donnees reelles de l'etablissement aux pages, sections et objets CMS.</p>
+
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+flowchart LR
+    subgraph "Sources de donnees"
+        A[Etablissement]
+        B[Eleves & Classes]
+        C[Personnel]
+        D[Matieres]
+        E[Notes & Bulletins]
+        F[Emploi du temps]
+        G[Configuration]
+    end
+
+    subgraph "DataBindingService"
+        R[Resolver]
+        Ctx[Contexte<br/>etablissementId]
+        Cache[Cache 60s]
+    end
+
+    subgraph "Sections CMS"
+        S1["{{etablissement.nom}}"]
+        S2["{{eleves.count}}"]
+        S3["{{personnel.enseignants}}"]
+        S4["{{stats.reussite}}"]
+    end
+
+    A --> R
+    B --> R
+    C --> R
+    D --> R
+    E --> R
+    F --> R
+    G --> R
+    R --> Ctx
+    R --> Cache
+    Cache --> S1
+    Cache --> S2
+    Cache --> S3
+    Cache --> S4
+    </pre>
+  </div>
+
+  <h3 style="margin: 24px 0 16px;">Syntaxe de data binding proposee</h3>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Variable</th><th>Source</th><th>Exemple de rendu</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>{{etablissement.nom}}</code></td><td>Etablissement.nom</td><td>Lycée Bilingue de Douala</td></tr>
+        <tr><td><code>{{etablissement.slogan}}</code></td><td>Etablissement.slogan</td><td>Excellence et Innovation</td></tr>
+        <tr><td><code>{{etablissement.logo}}</code></td><td>Etablissement.logo</td><td>URL image logo</td></tr>
+        <tr><td><code>{{etablissement.contact.*}}</code></td><td>Email, tel, adresse</td><td>contact@lycee.cm</td></tr>
+        <tr><td><code>{{eleves.total}}</code></td><td>Count eleves actifs</td><td>1 247</td></tr>
+        <tr><td><code>{{eleves.parNiveau}}</code></td><td>Group by niveau</td><td>{Sixieme: 210, ...}</td></tr>
+        <tr><td><code>{{personnel.enseignants}}</code></td><td>Membres categorie ENSEIGNANT</td><td>Array de noms</td></tr>
+        <tr><td><code>{{personnel.direction}}</code></td><td>Membres categorie DIRECTION</td><td>{nom, fonction, photo}</td></tr>
+        <tr><td><code>{{matieres.catalogue}}</code></td><td>Liste matieres actives</td><td>Array {nom, code, couleur}</td></tr>
+        <tr><td><code>{{stats.tauxReussite}}</code></td><td>Calcul bulletins notes</td><td>87.3%</td></tr>
+        <tr><td><code>{{stats.moyenneGenerale}}</code></td><td>Moyenne tous eleves</td><td>13.45/20</td></tr>
+        <tr><td><code>{{edt.planning}}</code></td><td>Creneaux du jour</td><td>Array planning</td></tr>
+        <tr><td><code>{{actualites.dernieres}}</code></td><td>CmsPage type ACTUALITES</td><td>5 dernieres pages</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin: 24px 0 16px;">Implementation du resolver</h3>
+  <div class="card">
+    <pre><code>// backend/src/modules/cms/services/data-binding.service.ts
+
+export class DataBindingService {
+  private cache = new Map&lt;string, { value: any; ts: number }&gt;();
+  private readonly TTL = 60_000; // 60 secondes
+
+  /**
+   * Resout toutes les variables {{}} dans le contenu d'une section
+   * Ex: "Bienvenue a {{etablissement.nom}}" → "Bienvenue a Lycée Bilingue"
+   */
+  async resoudreContenu(
+    contenu: Record&lt;string, any&gt;,
+    etablissementId: string
+  ): Promise&lt;Record&lt;string, any&gt;&gt; {
+    const contexte = await this.getContexte(etablissementId);
+    return this.resoudreRecursive(contenu, contexte);
+  }
+
+  /**
+   * Construit le contexte de donnees pour un etablissement
+   * Cache 60s pour eviter de surcharger la DB
+   */
+  private async getContexte(etabId: string): Promise&lt;BindingContexte&gt; {
+    const cacheKey = `cms:binding:${etabId}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached && Date.now() - cached.ts &lt; this.TTL) return cached.value;
+
+    const [etablissement, statsEleves, personnel, statsNotes] = await Promise.all([
+      this.getEtablissement(etabId),
+      this.getStatsEleves(etabId),
+      this.getPersonnel(etabId),
+      this.getStatsNotes(etabId),
+    ]);
+
+    const contexte = { etablissement, eleves: statsEleves, personnel, stats: statsNotes };
+    this.cache.set(cacheKey, { value: contexte, ts: Date.now() });
+    return contexte;
+  }
+
+  /**
+   * Resolution recursive — parcourt tous les niveaux du JSON
+   * Detecte les patterns {{variable.chemin}} et les remplace
+   */
+  private resoudreRecursive(obj: any, ctx: BindingContexte): any {
+    if (typeof obj === 'string') return this.resoudreString(obj, ctx);
+    if (Array.isArray(obj)) return obj.map(item => this.resoudreRecursive(item, ctx));
+    if (typeof obj === 'object' && obj !== null) {
+      const result: any = {};
+      for (const [key, value] of Object.entries(obj)) {
+        result[key] = this.resoudreRecursive(value, ctx);
+      }
+      return result;
+    }
+    return obj;
+  }
+}</code></pre>
+  </div>
+
+  <div class="callout callout-info">
+    <span class="callout-icon">&#9432;</span>
+    <div>
+      <p><strong>Flux de resolution :</strong> Le data binding s'execute cote <strong>backend</strong> lors du rendu public (API <code>/api/public/e/:code/*</code>). Les pages sont servies deja resolues au frontend. Le cache Redis (TTL 300s) evite de recalculer a chaque requete. Cote editeur, les variables sont affichees en l'etat (<code>{{etablissement.nom}}</code>) avec un apercu en temps reel via un endpoint dedie <code>GET /api/cms/pages/:id/preview-binding</code>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 6 — SECURITE -->
+<section id="s6">
+  <h2 class="section-title"><span class="num">6</span> Securite & correctifs critiques</h2>
+  <p class="section-desc">Plan de correction des 3 failles critiques et 4 failles majeures identifiees dans l'audit.</p>
+
+  <h3 style="margin-bottom: 16px;">P0 — Failles critiques (a corriger AVANT toute nouvelle fonctionnalite)</h3>
+
+  <div class="card" style="border-left: 3px solid var(--danger);">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+      <span class="badge badge-critical">CRITIQUE</span>
+      <h3 style="margin: 0;">XSS via dangerouslySetInnerHTML</h3>
+    </div>
+    <p style="color: var(--text-muted); margin-bottom: 12px;">
+      <strong>Fichier :</strong> CmsPageRenderer.tsx (lignes ~420 et ~980)<br/>
+      <strong>Probleme :</strong> Les sections TexteSection et HtmlCustomSection utilisent <code>dangerouslySetInnerHTML</code> sans aucune sanitization. Un admin malveillant (ou un compte compromis) peut injecter du JavaScript qui s'execute sur tous les visiteurs de la page publique.
+    </p>
+    <pre><code>// FIX — Ajouter DOMPurify
+import DOMPurify from 'dompurify';
+
+// Avant (vulnerable) :
+&lt;div dangerouslySetInnerHTML={{ __html: contenu.html }} /&gt;
+
+// Apres (securise) :
+&lt;div dangerouslySetInnerHTML={{
+  __html: DOMPurify.sanitize(contenu.html, {
+    ALLOWED_TAGS: ['p','br','strong','em','u','h1','h2','h3','h4','ul','ol','li','a','img','blockquote','pre','code'],
+    ALLOWED_ATTR: ['href','src','alt','class','target','rel'],
+  })
+}} /&gt;</code></pre>
+  </div>
+
+  <div class="card" style="border-left: 3px solid var(--danger);">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+      <span class="badge badge-critical">CRITIQUE</span>
+      <h3 style="margin: 0;">RBAC non enforce — 18 permissions ignorees</h3>
+    </div>
+    <p style="color: var(--text-muted); margin-bottom: 12px;">
+      <strong>Fichier :</strong> cms.controller.ts (33 routes)<br/>
+      <strong>Probleme :</strong> Seules les permissions <code>authMiddleware</code> sont appliquees. Les 18 permissions RBAC definies dans la migration 182 (<code>cms:pages:create</code>, <code>cms:sections:delete</code>, etc.) ne sont JAMAIS verifiees.
+    </p>
+    <pre><code>// FIX — Ajouter requirePermission sur chaque route
+router.post('/pages',
+  authMiddleware,
+  requirePermission('cms:pages:create'),  // AJOUTER
+  requireModuleActive('cms'),
+  async (req, res, next) =&gt; { ... }
+);
+
+// Matrice des permissions a appliquer :
+// GET    /pages         → cms:pages:view
+// POST   /pages         → cms:pages:create
+// PATCH  /pages/:id     → cms:pages:edit
+// DELETE /pages/:id     → cms:pages:delete
+// POST   /pages/:id/publish → cms:pages:publish
+// POST   /sections      → cms:sections:create
+// PATCH  /sections/:id  → cms:sections:edit
+// DELETE /sections/:id  → cms:sections:delete
+// POST   /medias/upload → cms:medias:upload
+// ... etc (18 routes au total)</code></pre>
+  </div>
+
+  <div class="card" style="border-left: 3px solid var(--danger);">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+      <span class="badge badge-critical">CRITIQUE</span>
+      <h3 style="margin: 0;">Pas de vrai drag & drop (boutons up/down uniquement)</h3>
+    </div>
+    <p style="color: var(--text-muted); margin-bottom: 12px;">
+      <strong>Fichier :</strong> _auth.cms.pages.$id.tsx<br/>
+      <strong>Probleme :</strong> L'editeur affiche des icones GripVertical mais elles sont purement decoratives. Le reordonnement se fait via des boutons fleche up/down. Aucun handler DnD n'est attache.
+    </p>
+    <p style="color: var(--text-muted);">
+      <strong>Solution :</strong> Integration de Puck Editor qui fournit nativement le DnD via @dnd-kit (dependance deja presente dans le projet pour l'EDT). Voir section 4 pour l'architecture cible.
+    </p>
+  </div>
+
+  <h3 style="margin: 32px 0 16px;">P1 — Failles majeures</h3>
+  <div class="grid-2">
+    <div class="card" style="border-left: 3px solid var(--warning);">
+      <span class="badge badge-major">MAJEUR</span>
+      <h3 style="margin-top: 8px;">Input color natif</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        <strong>Fichiers :</strong> CmsSectionEditor.tsx, CmsThemeCustomizer.tsx<br/>
+        <strong>Fix :</strong> Remplacer par le ColorPicker partage (components/ui/ColorPicker.tsx) — 54 couleurs, dark mode, HEX input, ultra-responsif. Convention eLISAschool obligatoire.
+      </p>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--warning);">
+      <span class="badge badge-major">MAJEUR</span>
+      <h3 style="margin-top: 8px;">Pas d'i18n dans CmsDashboard</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        <strong>Fichier :</strong> CmsDashboard.tsx (542 lignes)<br/>
+        <strong>Fix :</strong> Ajouter <code>useTranslation('cms')</code> + creer les cles FR/EN dans cms.json. Remplacer toutes les chaines FR en dur.
+      </p>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--warning);">
+      <span class="badge badge-major">MAJEUR</span>
+      <h3 style="margin-top: 8px;">confirm() au lieu de CustomModal</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        <strong>Fichier :</strong> CmsDashboard.tsx<br/>
+        <strong>Fix :</strong> Remplacer par ConfirmationModal (composant partage) — i18n, theming, accessibilite.
+      </p>
+    </div>
+    <div class="card" style="border-left: 3px solid var(--warning);">
+      <span class="badge badge-major">MAJEUR</span>
+      <h3 style="margin-top: 8px;">Record&lt;string, any&gt; partout</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        <strong>Fichiers :</strong> 6+ fichiers (hooks, renderer, editor)<br/>
+        <strong>Fix :</strong> Creer des interfaces typees par section : <code>HeroSectionContent</code>, <code>TexteSectionContent</code>, etc. (18 interfaces). Type-safe depuis la DB jusqu'au rendu.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 7 — PERFORMANCE -->
+<section id="s7">
+  <h2 class="section-title"><span class="num">7</span> Performance & cache</h2>
+  <p class="section-desc">Strategies d'optimisation pour les pages publiques (TTFB cible &lt; 100ms) et l'editeur (fluidite 60fps).</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Strategie de cache actuelle (bonne)</h3>
+      <div class="progress-container">
+        <div class="progress-header">
+          <span>Cache Redis pages</span><span style="color: var(--success);">TTL 300s</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 80%; background: var(--success);"></div></div>
+      </div>
+      <div class="progress-container">
+        <div class="progress-header">
+          <span>Cache Redis themes</span><span style="color: var(--success);">TTL 600s</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 90%; background: var(--success);"></div></div>
+      </div>
+      <div class="progress-container">
+        <div class="progress-header">
+          <span>Invalidation pub/sub</span><span style="color: var(--success);">Actif</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 100%; background: var(--success);"></div></div>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 12px;">
+        Le cache Redis est bien implemente. L'invalidation via <code>delPattern()</code> fonctionne correctement.
+      </p>
+    </div>
+    <div class="card">
+      <h3>Optimisations a ajouter</h3>
+      <div class="progress-container">
+        <div class="progress-header">
+          <span>ISR (Incremental Static Regeneration)</span><span style="color: var(--warning);">A faire</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 20%; background: var(--warning);"></div></div>
+      </div>
+      <div class="progress-container">
+        <div class="progress-header">
+          <span>Lazy loading sections</span><span style="color: var(--warning);">A faire</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 10%; background: var(--danger);"></div></div>
+      </div>
+      <div class="progress-container">
+        <div class="progress-header">
+          <span>Image optimization (WebP/AVIF)</span><span style="color: var(--warning);">A faire</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 15%; background: var(--danger);"></div></div>
+      </div>
+      <div class="progress-container">
+        <div class="progress-header">
+          <span>Data binding cache (60s)</span><span style="color: var(--warning);">A faire</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width: 0%; background: var(--danger);"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin: 32px 0 16px;">Cible de performance</h3>
+  <div class="grid-4">
+    <div class="stat-card">
+      <div class="value" style="font-size: 1.8rem;">&lt;100ms</div>
+      <div class="label">TTFB pages publiques</div>
+    </div>
+    <div class="stat-card">
+      <div class="value" style="font-size: 1.8rem;">60fps</div>
+      <div class="label">Fluidite editeur DnD</div>
+    </div>
+    <div class="stat-card">
+      <div class="value" style="font-size: 1.8rem;">&lt;2s</div>
+      <div class="label">LCP (Largest Contentful Paint)</div>
+    </div>
+    <div class="stat-card">
+      <div class="value" style="font-size: 1.8rem;">&lt;50KB</div>
+      <div class="label">JS bundle editeur (gzip)</div>
+    </div>
+  </div>
+
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+flowchart TD
+    A[Requete publique<br/>GET /e/:code/:slug] --> B{Redis Cache<br/>TTL 300s}
+    B -->|HIT| C[Retourner page<br/>JSON resolue]
+    B -->|MISS| D[API publique<br/>public-etablissement.service]
+    D --> E[Charger page + sections<br/>+ theme + menus]
+    E --> F[DataBindingService<br/>Resoudre variables {{}}]
+    F --> G[Projection restrictive<br/>28 champs whiteliste]
+    G --> H[Store Redis<br/>TTL 300s]
+    H --> C
+    C --> I[CmsPageRenderer<br/>18 sections React]
+    I --> J[HTML final<br/>+ SeoHead + PublicLayout]
+
+    style B fill:#22c55e,color:#fff
+    style F fill:#6366f1,color:#fff
+    </pre>
+  </div>
+</section>
+
+<!-- SECTION 8 — ROADMAP -->
+<section id="s8">
+  <h2 class="section-title"><span class="num">8</span> Roadmap d'implementation</h2>
+  <p class="section-desc">Plan en 5 phases, des correctifs critiques aux fonctionnalites avancees. Chaque phase est independante et livrable.</p>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <span class="phase">Phase P0 — 1 semaine</span>
+      <h4>Correctifs de securite critiques</h4>
+      <p>
+        &bull; Ajouter DOMPurify sur dangerouslySetInnerHTML (TexteSection + HtmlCustomSection)<br/>
+        &bull; Enforcer les 18 permissions RBAC dans cms.controller.ts (requirePermission par route)<br/>
+        &bull; Remplacer confirm() par ConfirmationModal<br/>
+        &bull; Remplacer input color natif par ColorPicker partage<br/>
+        &bull; Ajouter i18n dans CmsDashboard (cms.json FR+EN)
+      </p>
+    </div>
+    <div class="timeline-item">
+      <span class="phase">Phase P1 — 2 semaines</span>
+      <h4>Integration Puck Editor</h4>
+      <p>
+        &bull; Installer @puckeditor/core + creer la config (18 composants Puck)<br/>
+        &bull; Mapper les 18 types de sections existants vers des composants Puck<br/>
+        &bull; Remplacer l'editeur 3 colonnes par Puck dans _auth.cms.pages.$id.tsx<br/>
+        &bull; Sauvegarde : serialiser l'etat Puck en JSON → CmsSection.contenu<br/>
+        &bull; Chargement : deserialiser CmsSection.contenu → etat Puck<br/>
+        &bull; Preview mode : integration avec le token Redis existant
+      </p>
+    </div>
+    <div class="timeline-item">
+      <span class="phase">Phase P2 — 2 semaines</span>
+      <h4>Data Binding & donnees dynamiques</h4>
+      <p>
+        &bull; Creer DataBindingService (backend) avec resolver de variables {{}}<br/>
+        &bull; Connecter aux sources : Etablissement, Eleves, Personnel, Matieres, Stats<br/>
+        &bull; UI data binding dans Puck : panneau "Donnees" avec variables draggables<br/>
+        &bull; Cache Redis 60s pour le contexte de binding<br/>
+        &bull; Integration dans public-etablissement.service (resolution cote serveur)
+      </p>
+    </div>
+    <div class="timeline-item">
+      <span class="phase">Phase P3 — 1 semaine</span>
+      <h4>Edition de code & fonctionnalites avancees</h4>
+      <p>
+        &bull; Integrer Monaco Editor (onglet "Code" dans l'editeur)<br/>
+        &bull; Edition HTML/CSS custom pour HtmlCustomSection<br/>
+        &bull; Animations Framer Motion : fade-in, slide-up, count-up sur les sections<br/>
+        &bull; Optimistic locking (version field) pour edits concurrents<br/>
+        &bull; Formulaire contact : notification email + CAPTCHA (honeypot)
+      </p>
+    </div>
+    <div class="timeline-item">
+      <span class="phase">Phase P4 — 1 semaine</span>
+      <h4>Polish, type safety & performance</h4>
+      <p>
+        &bull; Creer 18 interfaces typees (HeroSectionContent, TexteSectionContent, ...)<br/>
+        &bull; Eliminer tous les Record&lt;string, any&gt; et as any<br/>
+        &bull; Lazy loading des sections lourdes (Galerie, Carte, Video)<br/>
+        &bull; Image optimization : compression WebP a l'upload, srcset responsive<br/>
+        &bull; Newsletter : connecter a un endpoint backend (ou retirer le formulaire)
+      </p>
+    </div>
+  </div>
+
+  <div class="mermaid-wrapper">
+    <pre class="mermaid">
+gantt
+    title Roadmap CMS eLISAschool v2
+    dateFormat YYYY-MM-DD
+    section P0 Securite
+    DOMPurify + RBAC           :p0a, 2026-08-11, 3d
+    i18n + ColorPicker + Modal :p0b, 2026-08-11, 3d
+    Verification tests         :p0c, after p0a, 2d
+    section P1 Puck Editor
+    Installation + config      :p1a, after p0c, 4d
+    Mapping 18 sections        :p1b, after p1a, 4d
+    Integration editeur        :p1c, after p1b, 3d
+    Preview mode               :p1d, after p1c, 3d
+    section P2 Data Binding
+    DataBindingService         :p2a, after p1d, 4d
+    Sources de donnees         :p2b, after p2a, 3d
+    UI binding Puck            :p2c, after p2b, 4d
+    Cache + integration        :p2d, after p2c, 3d
+    section P3 Code + Avance
+    Monaco Editor              :p3a, after p2d, 3d
+    Animations + locking       :p3b, after p3a, 4d
+    section P4 Polish
+    Type safety + perf         :p4a, after p3b, 5d
+    </pre>
+  </div>
+</section>
+
+<!-- SECTION 9 — ESTIMATION -->
+<section id="s9">
+  <h2 class="section-title"><span class="num">9</span> Estimation & efforts</h2>
+  <p class="section-desc">Estimation detaillee par phase, en nombre de fichiers modifies et complexite.</p>
+
+  <table>
+    <thead>
+      <tr><th>Phase</th><th>Duree</th><th>Fichiers</th><th>Complexite</th><th>Dependances</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>P0</strong> Securite</td>
+        <td>1 semaine</td>
+        <td>~8 fichiers</td>
+        <td><span class="badge badge-success">Faible</span></td>
+        <td>Aucune — peut demarrer immediatement</td>
+      </tr>
+      <tr>
+        <td><strong>P1</strong> Puck Editor</td>
+        <td>2 semaines</td>
+        <td>~12 fichiers</td>
+        <td><span class="badge badge-major">Moyenne</span></td>
+        <td>P0 complete (RBAC + XSS fixes)</td>
+      </tr>
+      <tr>
+        <td><strong>P2</strong> Data Binding</td>
+        <td>2 semaines</td>
+        <td>~10 fichiers</td>
+        <td><span class="badge badge-major">Moyenne-Haute</span></td>
+        <td>P1 complete (Puck en place)</td>
+      </tr>
+      <tr>
+        <td><strong>P3</strong> Code + Avance</td>
+        <td>1 semaine</td>
+        <td>~6 fichiers</td>
+        <td><span class="badge badge-major">Moyenne</span></td>
+        <td>P2 complete (binding en place)</td>
+      </tr>
+      <tr>
+        <td><strong>P4</strong> Polish</td>
+        <td>1 semaine</td>
+        <td>~15 fichiers</td>
+        <td><span class="badge badge-success">Faible</span></td>
+        <td>P3 complete</td>
+      </tr>
+      <tr style="background: rgba(99,102,241,0.05); font-weight: 600;">
+        <td>TOTAL</td>
+        <td>7 semaines</td>
+        <td>~51 fichiers</td>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin: 32px 0 16px;">Resume des gains attendus</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Avant refonte</h3>
+      <div class="score-gauge">
+        <span class="gauge-label">Score global</span>
+        <div class="gauge-bar"><div class="gauge-fill" style="width: 35%; background: var(--danger);"></div></div>
+        <span class="gauge-value" style="color: var(--danger);">3.5/10</span>
+      </div>
+      <ul style="list-style: none; padding: 0; margin-top: 12px;">
+        <li style="padding: 4px 0; font-size: 0.9rem; color: var(--text-muted);">&#10007; Pas de drag & drop</li>
+        <li style="padding: 4px 0; font-size: 0.9rem; color: var(--text-muted);">&#10007; Pas de data binding</li>
+        <li style="padding: 4px 0; font-size: 0.9rem; color: var(--text-muted);">&#10007; Failles XSS</li>
+        <li style="padding: 4px 0; font-size: 0.9rem; color: var(--text-muted);">&#10007; RBAC ignore</li>
+        <li style="padding: 4px 0; font-size: 0.9rem; color: var(--text-muted);">&#10007; Pas d'edition de code</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Apres refonte</h3>
+      <div class="score-gauge">
+        <span class="gauge-label">Score global</span>
+        <div class="gauge-bar"><div class="gauge-fill" style="width: 90%; background: var(--success);"></div></div>
+        <span class="gauge-value" style="color: var(--success);">9/10</span>
+      </div>
+      <ul style="list-style: none; padding: 0; margin-top: 12px;">
+        <li style="padding: 4px 0; font-size: 0.9rem; color: var(--text);">&#10003; Drag & drop Puck fluide</li>
+        <li style="padding: 4px 0; font-size: 0.9rem; color: var(--text);">&#10003; Data binding temps reel</li>
+        <li style="padding: 4px 0; font-size: 0.9rem; color: var(--text);">&#10003; XSS neutralise (DOMPurify)</li>
+        <li style="padding: 4px 0; font-size: 0.9rem; color: var(--text);">&#10003; RBAC enforce (18 perms)</li>
+        <li style="padding: 4px 0; font-size: 0.9rem; color: var(--text);">&#10003; Monaco editor integre</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout callout-info" style="margin-top: 40px;">
+    <span class="callout-icon">&#128218;</span>
+    <div>
+      <p><strong>Prochaine etape recommandee :</strong> Commencer par la Phase P0 (correctifs de securite). Ces corrections sont independantes, rapides, et ne bloquent pas les autres modules. Elles peuvent etre livrees en une seule PR. Ensuite, l'integration Puck (P1) transformera radicalement l'experience d'edition CMS.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer style="text-align: center; padding: 60px 20px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem;">
+  <p>Rapport CMS eLISAschool v2.0 — 14 aout 2026</p>
+  <p style="margin-top: 4px;">Prepare par Qoder (admin project) — Analyse approfondie + recherches web</p>
+  <p style="margin-top: 8px; font-size: 0.75rem; color: var(--text-muted);">
+    Sources : audit codebase, documentation Puck Editor (puckeditor.com), GrapesJS (grapesjs.com),
+    Craft.js (craft.js.org), OWASP XSS Prevention, Redis caching patterns, multi-tenant SaaS architecture
+  </p>
+</footer>
+
+</div><!-- /container -->
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#4338ca',
+      primaryTextColor: '#e4e6ef',
+      primaryBorderColor: '#6366f1',
+      lineColor: '#6366f1',
+      secondaryColor: '#1e1b4b',
+      tertiaryColor: '#242836',
+      background: '#1a1d27',
+      mainBkg: '#242836',
+      nodeBorder: '#6366f1',
+      clusterBkg: '#1a1d27',
+      clusterBorder: '#2e3345',
+      titleColor: '#e4e6ef',
+      edgeLabelBackground: '#242836',
+      nodeTextColor: '#e4e6ef',
+    },
+    flowchart: { curve: 'basis', padding: 16 },
+    gantt: { fontSize: 12, sectionFontSize: 13, numberSectionStyles: 5 },
+  });
+</script>
+</body>
+</html>

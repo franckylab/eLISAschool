@@ -29,6 +29,9 @@ import { seedCotisations } from './system/seed-cotisations';
 import { seedTypesPrimes } from './system/seed-types-primes';
 import { seedTypesRetenues } from './system/seed-types-retenues';
 import { seedModulesCatalogue } from './system/seed-modules-catalogue';
+import { seedCmsTemplates } from './system/seed-cms-templates';
+import { seedCmsWidgets } from './system/seed-cms-widgets';
+import { seedFeatureFlags } from './system/seed-feature-flags';
 import { logger } from '@common/utils/logger.util';
 
 export async function runSystemSeeds(): Promise<{
@@ -122,6 +125,15 @@ export async function runSystemSeeds(): Promise<{
     // 18. Types de retenues
     await seedTypesRetenues(etablissementPrincipalId);
     await seedTypesRetenues(etablissementSecondaireId);
+
+    // 19. Templates CMS système (8 templates)
+    await seedCmsTemplates();
+
+    // 20. Widgets CMS par défaut (5 types × tous établissements)
+    await seedCmsWidgets();
+
+    // 21. Feature flags système (8 flags transverses — migration 210)
+    await seedFeatureFlags();
 
     logger.info('✅ Seeds système exécutés avec succès');
 

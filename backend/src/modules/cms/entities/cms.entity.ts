@@ -59,6 +59,17 @@ export enum SectionType {
     APPEL_ACTION = 'APPEL_ACTION',
     SEPARATEUR = 'SEPARATEUR',
     HTML_CUSTOM = 'HTML_CUSTOM',
+    // v2 — nouvelles sections
+    CAROUSEL = 'CAROUSEL',
+    TIMELINE = 'TIMELINE',
+    TABS = 'TABS',
+    NEWSLETTER = 'NEWSLETTER',
+    HERO_VIDEO = 'HERO_VIDEO',
+    COMPTEURS_ANIMES = 'COMPTEURS_ANIMES',
+    TEMOIGNAGE_CAROUSEL = 'TEMOIGNAGE_CAROUSEL',
+    PRIX_TAB = 'PRIX_TAB',
+    ICONE_FEATURES = 'ICONE_FEATURES',
+    GALERIE_MASONRY = 'GALERIE_MASONRY',
 }
 
 export enum TypeMedia {
@@ -69,16 +80,16 @@ export enum TypeMedia {
 }
 
 export enum EmplacementMenu {
-    HEADER = 'header',
-    FOOTER = 'footer',
-    SIDEBAR = 'sidebar',
+    PRINCIPAL = 'principal',
+    PIED_PAGE = 'pied_page',
+    LATERAL = 'lateral',
 }
 
 export enum EmplacementWidget {
     SIDEBAR = 'sidebar',
-    FOOTER = 'footer',
-    HEADER = 'header',
-    HOMEPAGE = 'homepage',
+    PIED_PAGE = 'pied_page',
+    EN_TETE = 'en_tete',
+    FLOTTANT = 'flottant',
 }
 
 export enum WidgetType {
@@ -92,6 +103,7 @@ export enum WidgetType {
     TEMOIGNAGE = 'TEMOIGNAGE',
     STATISTIQUES = 'STATISTIQUES',
     NEWSLETTER = 'NEWSLETTER',
+    LIENS_UTILES = 'LIENS_UTILES',
 }
 
 export enum EntiteTypeVersion {
@@ -149,6 +161,18 @@ export class CmsPage {
     @Column({ type: 'boolean', default: false })
     estPageAccueil!: boolean;
 
+    @Column({ type: 'int', default: 0 })
+    version!: number;
+
+    @Column({ type: 'jsonb', nullable: true })
+    focusPreferences?: Record<string, unknown>;
+
+    @Column({ type: 'int', default: 0 })
+    qualiteScore!: number;
+
+    @Column({ type: 'jsonb', nullable: true })
+    analytics?: Record<string, unknown>;
+
     @ManyToOne(() => CmsPage, { nullable: true })
     @JoinColumn({ name: 'pageParentId' })
     pageParent?: CmsPage;
@@ -193,6 +217,29 @@ export class CmsSection {
 
     @Column({ type: 'varchar', length: 50, nullable: true })
     anchorId?: string;
+
+    @Column({ type: 'jsonb', nullable: true })
+    animations?: {
+        type?: 'fade-in' | 'slide-up' | 'slide-left' | 'slide-right' | 'zoom' | 'none';
+        duration?: number;
+        delay?: number;
+    };
+
+    @Column({ type: 'int', default: 0 })
+    version!: number;
+
+    @Column({ type: 'jsonb', nullable: true })
+    conditionsVisibilite?: {
+        breakpoints?: { mobile: boolean; tablet: boolean; desktop: boolean; wide: boolean };
+        rolesAutorises?: string[];
+        rolesExclus?: string[];
+        dateDebut?: string;
+        dateFin?: string;
+        masquerComplet?: boolean;
+    };
+
+    @Column({ type: 'jsonb', nullable: true })
+    styleConfig?: Record<string, unknown>;
 
     @ManyToOne(() => CmsPage, 'sections')
     @JoinColumn({ name: 'pageId' })
@@ -304,7 +351,7 @@ export class CmsMenu {
     @Column({ type: 'varchar', length: 100 })
     nom!: string;
 
-    @Column({ type: 'varchar', length: 30, default: EmplacementMenu.HEADER })
+    @Column({ type: 'varchar', length: 30, default: EmplacementMenu.PRINCIPAL })
     emplacement!: string;
 
     @Column({ type: 'jsonb', default: [] })
@@ -337,7 +384,7 @@ export class CmsWidget {
     titre?: string;
 
     @Column({ type: 'jsonb', default: {} })
-    config!: Record<string, unknown>;
+    contenu!: Record<string, unknown>;
 
     @Column({ type: 'varchar', length: 30, default: EmplacementWidget.SIDEBAR })
     emplacement!: string;

@@ -4886,14 +4886,25 @@ JWT_SECRET_TENANT=<min 32 chars>
 
 ---
 
-## Module CMS — Pages publiques white-label (✅ TERMINÉ)
+## Module CMS — Pages publiques white-label + Templates (✅ CONSOLIDÉ)
 
-> Système CMS complet pour pages publiques par établissement. Routes `/e/:code` accessibles sans authentification. Éditeur CMS authentifié avec drag & drop.
+> Système CMS complet pour pages publiques par établissement. Routes `/e/:code` accessibles sans authentification. Éditeur CMS authentifié avec drag & drop. Templates pré-conçus avec instanciation. Preview mode pour pages brouillon. Réinitialisation CMS complète.
 
 ### Architecture
 
-- **7 entités CMS** : CmsPage, CmsSection, CmsMedia, CmsTheme, CmsMenu, CmsWidget, CmsVersion
+- **8 entités CMS** : CmsPage, CmsSection, CmsMedia, CmsTheme, CmsMenu, CmsWidget, CmsVersion, **CmsTemplate**
 - **18 types de sections** : HERO, TEXTE, GALERIE, CARTE_INFOS, TEMOIGNAGES, CHIFFRES_CLES, EQUIPE, FORMULAIRE, CARTE, VIDEO, TELECHARGEMENTS, ACTUALITES, HORAIRES, PARTENAIRES, FAQ, APPEL_ACTION, SEPARATEUR, HTML_CUSTOM
+- **8 templates système** (6 initiaux + 2 consolidation : PAGE_A_PROPOS, PAGE_MENTIONS_LEGALES)
+- **Enums alignés** : `EmplacementMenu` = `principal | pied_page | lateral` (backend = frontend)
+- **Theme mapping** : Structure nested `{ couleurs, typographie }` + mapper legacy `mapThemeToPublic()`
+- **Auto-init enrichie** : 6 pages + 2 menus + 5 widgets (RESEAUX_SOCIAUX, CONTACT_RAPIDE, HORAIRES, NEWSLETTER, LIENS_UTILES) à la création d'un établissement
+- **Personnalisation templates** : `personnaliserSections()` remplace les textes génériques par les données réelles de l'établissement (nom, slogan, description, devise, code)
+- **Seed démo** : `POST /api/cms/seed-demo` + hook `useSeedDemoCms()` — peuple avec contenu riche (médias SVG placeholder, actualités, équipe, témoignages). Idempotent.
+- **Réinitialisation CMS** : `POST /api/cms/reinitialiser` + modal multi-étapes (3 étapes : aperçu → options → confirmation). Options : `conserverMedias` (défaut: true), `inclureDemo` (défaut: true). Après reset : ré-initialisation complète + seed démo automatique.
+- **Correction bug publication** : Enum `StatutPage` aligné frontend↔backend (`BROUILLON`, `PUBLIE`, `ARCHIVE` en majuscules). Le badge de statut affiche maintenant correctement l'état de la page.
+- **Seed widgets opérationnel** : `seedCmsWidgets()` dans `initial.seed.ts` — crée 5 widgets pour tous les établissements existants (idempotent)
+- **Widget `contenu`** : Champ JSONB renommé de `config` → `contenu` (migration 206, cohérence avec CmsSection.contenu)
+- **Footer dynamique** : Rend tous les widgets `pied_page` actifs, grille adaptative, fallback statique
 - **9 nouveaux champs Etablissement** : pays, region, quartier, latitude, longitude, numeroEnregistrement, numeroIdentification, numeroAutorisation, descriptionPublique
 - **Projection restrictive** : Seules les colonnes publiques sont exposées via l'API (exclusion : numeroContribuable, numeroCompteBancaire, etc.)
 - **Cache Redis** : TTL 300s (pages/menus/widgets), 600s (thèmes), invalidation à chaque mutation
@@ -4912,10 +4923,17 @@ JWT_SECRET_TENANT=<min 32 chars>
 | `backend/database/migrations/182-cms-permissions.sql` | 18 permissions RBAC + attribution rôles |
 | `backend/src/modules/cms/entities/cms.entity.ts` | 7 entités + 10 enums (389 lignes) |
 | `backend/src/modules/cms/dto/cms.dto.ts` | 12+ schémas Zod (179 lignes) |
-| `backend/src/modules/cms/services/cms.service.ts` | CRUD + versioning + cache (462 lignes) |
-| `backend/src/modules/cms/services/public-etablissement.service.ts` | API publique + projection + cache (257 lignes) |
-| `backend/src/modules/cms/controllers/cms.controller.ts` | ~30 routes authentifiées (308 lignes) |
-| `backend/src/modules/cms/controllers/public-etablissement.controller.ts` | 8 routes publiques (140 lignes) |
+| `backend/src/modules/cms/services/cms.service.ts` | CRUD + versioning + cache + preview tokens (504 lignes) |
+| `backend/src/modules/cms/services/public-etablissement.service.ts` | API publique + projection + cache + preview (300 lignes) |
+| `backend/src/modules/cms/controllers/cms.controller.ts` | ~33 routes authentifiées (353 lignes) |
+| `backend/src/modules/cms/controllers/public-etablissement.controller.ts` | 8 routes publiques + preview (154 lignes) |
+| `backend/src/modules/cms/entities/cms-template.entity.ts` | Entité CmsTemplate (JSONB sectionsDef) |
+| `backend/src/modules/cms/services/cms-template.service.ts` | Templates + instanciation + auto-init 6 pages + reset (503 lignes) |
+| `backend/database/migrations/184-cms-templates.sql` | Table cms_templates + seed 6 templates |
+| `backend/database/migrations/205-cms-consolidation.sql` | Correction enums + structure thèmes + 2 templates + migration items |
+| `backend/database/seeds/system/seed-cms-templates.ts` | Seed TypeScript idempotent 8 templates |
+| `backend/database/seeds/system/seed-cms-widgets.ts` | Documentation types widgets par défaut |
+| `backend/src/modules/etablissement/services/etablissement.service.ts` | Auto-init CMS à la création (hook) |
 
 ### Frontend — Types & Hooks
 
@@ -4923,26 +4941,28 @@ JWT_SECRET_TENANT=<min 32 chars>
 |---------|------|
 | `frontend/src/features/cms/types/cms.types.ts` | Types CMS complets (205 lignes) |
 | `frontend/src/features/cms/hooks/use-cms-public.ts` | 7 hooks API publique (140 lignes) |
-| `frontend/src/features/cms/hooks/use-cms-admin.ts` | 18+ hooks CRUD admin (265 lignes) |
+| `frontend/src/features/cms/hooks/use-cms-admin.ts` | 22+ hooks CRUD admin + templates + preview + reset (337 lignes) |
 | `frontend/src/features/cms/index.ts` | Barrel exports feature CMS |
 
 ### Frontend — Composants Partagés
 
 | Fichier | Rôle |
 |---------|------|
-| `frontend/src/features/cms/components/PublicLayout.tsx` | Layout public Header+Footer (266 lignes) |
-| `frontend/src/features/cms/components/CmsPageRenderer.tsx` | Rendu 18 sections (737 lignes) |
+| `frontend/src/features/cms/components/PublicLayout.tsx` | Layout public (dark mode, mobile, breadcrumbs, active menu) (416 lignes) |
+| `frontend/src/features/cms/components/CmsPageRenderer.tsx` | Rendu 18 sections + animations + count-up + lightbox (~980 lignes) |
 | `frontend/src/features/cms/components/CmsDashboard.tsx` | Dashboard admin CMS (260 lignes) |
 | `frontend/src/features/cms/components/CmsMediaUpload.tsx` | Upload drag & drop média (237 lignes) |
 | `frontend/src/features/cms/components/CmsSectionEditor.tsx` | Éditeur section générique 18 types (388 lignes) |
 | `frontend/src/features/cms/components/CmsThemeCustomizer.tsx` | Personnalisation thème + presets (262 lignes) |
+| `frontend/src/features/cms/components/SeoHead.tsx` | SEO réutilisable (title, meta, OG, Twitter) (77 lignes) |
+| `frontend/src/features/cms/components/PublicPageSkeleton.tsx` | Skeleton loading pages publiques (81 lignes) |
 
 ### Frontend — Routes Publiques (5 routes)
 
 | Fichier | Rôle |
 |---------|------|
-| `frontend/src/routes/e.$code.tsx` | Route publique accueil (119 lignes) |
-| `frontend/src/routes/e.$code.$slug.tsx` | Route publique page (80 lignes) |
+| `frontend/src/routes/e.$code.tsx` | Route publique accueil + fallback riche (194 lignes) |
+| `frontend/src/routes/e.$code.$slug.tsx` | Route publique page + preview mode (109 lignes) |
 | `frontend/src/routes/e.$code.galerie.tsx` | Galerie masonry + lightbox (284 lignes) |
 | `frontend/src/routes/e.$code.contact.tsx` | Contact + carte OSM (315 lignes) |
 | `frontend/src/routes/e.$code.inscriptions.tsx` | Inscriptions stepper 4 étapes (248 lignes) |
@@ -4951,22 +4971,23 @@ JWT_SECRET_TENANT=<min 32 chars>
 
 | Fichier | Rôle |
 |---------|------|
-| `frontend/src/routes/_auth.cms.tsx` | Layout éditeur CMS (7 onglets navigation) |
+| `frontend/src/routes/_auth.cms.tsx` | Layout éditeur CMS (8 onglets navigation) |
 | `frontend/src/routes/_auth.cms.index.tsx` | Dashboard éditeur (14 lignes) |
-| `frontend/src/routes/_auth.cms.pages.tsx` | Liste pages + filtres + création (275 lignes) |
-| `frontend/src/routes/_auth.cms.pages.$id.tsx` | Éditeur page 3 colonnes drag & drop (364 lignes) |
+| `frontend/src/routes/_auth.cms.pages.tsx` | Liste pages + filtres + création + modal templates (~349 lignes) |
+| `frontend/src/routes/_auth.cms.pages.$id.tsx` | Éditeur page 3 colonnes + bouton Aperçu (~380 lignes) |
 | `frontend/src/routes/_auth.cms.medias.tsx` | Bibliothèque médias grille/liste (209 lignes) |
 | `frontend/src/routes/_auth.cms.themes.tsx` | Gestion thèmes + customizer (191 lignes) |
 | `frontend/src/routes/_auth.cms.menus.tsx` | Éditeur navigation par emplacement (399 lignes) |
 | `frontend/src/routes/_auth.cms.widgets.tsx` | CRUD widgets 4 emplacements (349 lignes) |
 | `frontend/src/routes/_auth.cms.versions.tsx` | Timeline versions + rollback (262 lignes) |
+| `frontend/src/routes/_auth.cms.templates.tsx` | Liste templates + instanciation (136 lignes) |
 
 ### Frontend — i18n
 
 | Fichier | Rôle |
 |---------|------|
-| `frontend/src/locales/fr/cms.json` | i18n FR (109 lignes) |
-| `frontend/src/locales/en/cms.json` | i18n EN (109 lignes) |
+| `frontend/src/locales/fr/cms.json` | i18n FR (155 lignes) — public, contact, reset, widgets |
+| `frontend/src/locales/en/cms.json` | i18n EN (155 lignes) — public, contact, reset, widgets |
 
 ### API publiques (8 routes)
 
@@ -4974,11 +4995,21 @@ JWT_SECRET_TENANT=<min 32 chars>
 GET  /api/public/e/:code          — Données établissement (projection restrictive)
 GET  /api/public/e/:code/accueil  — Page d'accueil complète
 GET  /api/public/e/:code/pages    — Liste pages publiées
-GET  /api/public/e/:code/pages/:slug — Détail page + sections
+GET  /api/public/e/:code/pages/:slug — Détail page + sections (supporte ?preview=TOKEN)
 GET  /api/public/e/:code/theme    — Thème actif
 GET  /api/public/e/:code/menus    — Menus navigation
 GET  /api/public/e/:code/widgets  — Widgets actifs
 POST /api/public/e/:code/contact  — Formulaire contact
+```
+
+### API admin templates (3 routes supplémentaires)
+
+```
+GET  /api/cms/templates              — Liste templates (filtre ?categorie=)
+GET  /api/cms/templates/:code        — Détail template
+POST /api/cms/templates/:code/instancier — Créer page depuis template
+POST /api/cms/reinitialiser          — Réinitialiser CMS complet (supprime + recrée)
+GET  /api/cms/pages/:id/preview      — Générer token preview (UUID, TTL 10 min)
 ```
 
 ### Montage routes (app.ts)
@@ -5218,3 +5249,538 @@ Pour toute page à sections multiples :
 **API REST enrichie** : `GET /api/configuration/modules/registry` retourne `estAccessible`, `estVisible`, `raisonBlocage`, `messageBlocage`
 
 **Frontend** : Modules verrouillés → cadenas + badge "Plan requis"/"Abonnement requis" + toggle grisé + CTA "Upgrader le plan"
+
+---
+
+## Refonte Module Management SaaS — Unification v8 (migration 200) ✅
+
+### Contexte
+Score audit : 5.5/10 → Score cible : 8.5/10. 5 failles critiques (G1-G5), 3 registres divergents.
+
+### Phases implémentées
+
+**Phase P0 — Corrections Critiques (4 tâches)** :
+- P0.1 : Endpoint `GET /api/billing/modules/mes-modules` — catalogue filtré client (actifs + upgradables SANS prix)
+- P0.2 : Middleware `module-access.middleware.ts` v4 — délégation totale à entitlementService
+- P0.3 : Suppression `shared/src/config/config.registry.ts` (MODULE_REGISTRY) — config migrée vers JSONB `modules_catalogue.config`
+- P0.4 : Tests unitaires entitlement-service + module-access middleware
+
+**Phase P1 — Améliorations Majeures (5 tâches)** :
+- P1.1 : Période d'essai automatique 14 jours (auto-création à l'inscription, statut ESSAI)
+- P1.2 : Dégradation gracieuse 30 jours (J0-J15 lecture seule → J15-J30 verrouillé → J30+ archivé)
+- P1.3 : Cache invalidation synchrone in-memory + header `X-Cache-Status: HIT|MISS|STALE`
+- P1.4 : Page "Mes Modules" frontend (hook TanStack Query, ModuleCard, dark mode, responsive, i18n FR/EN)
+- P1.5 : Migration SQL 201 (periodeEssaiFin, dateExpirationReelle, enum ESSAI) + seeds mis à jour
+
+### Fichiers créés (7)
+- `backend/database/migrations/201-essai-degradation.sql` — Migration idempotente
+- `backend/test/unit/entitlement-service.spec.ts` — 20+ tests cascade
+- `frontend/src/features/modules/hooks/use-mes-modules.ts` — Hook TanStack Query
+- `frontend/src/features/modules/components/mes-modules-page.tsx` — Page complète
+- `frontend/src/features/modules/components/module-card.tsx` — Carte réutilisable (3 états)
+- `frontend/src/routes/_auth.mes-modules.tsx` — Route TanStack Router
+- `frontend/src/locales/{fr,en}/modules.json` — i18n modules
+
+### Fichiers modifiés (7)
+- `backend/src/modules/billing/controllers/billing.controller.ts` — Endpoint mes-modules + X-Cache-Status
+- `backend/src/modules/billing/services/entitlement.service.ts` — Essai + dégradation + cache synchrone + types
+- `backend/src/common/middlewares/module-access.middleware.ts` — v4 entitlementService (lecture seule)
+- `backend/src/modules/billing/entities/abonnement-client.entity.ts` — Enum ESSAI + colonnes
+- `backend/src/modules/etablissement/services/etablissement.service.ts` — Auto-création essai
+- `backend/src/database/seeds/system/seed-modules-catalogue.ts` — Config JSONB pour 26 modules
+- `shared/src/config/index.ts` — Suppression export registry
+
+### Fichiers supprimés (1)
+- `shared/src/config/config.registry.ts` — MODULE_REGISTRY (815 lignes) supprimé
+
+### Documentation mise à jour
+- `.qoder/rules/elisaschool-conventions.md` — Section 30 (Module Management SaaS v8)
+
+---
+
+## Refonte Modules SaaS v9 — Consolidation & Déduplication (✅ TERMINÉ)
+
+> Contexte : Audit frontend ayant identifié 3 redondances majeures :
+> 1. 6 routes vides (`modules-complementaires`, `modules-organisationnels`, `modules-pedagogiques`, `modules-administratifs`, `modules-pedagogique-avance`) + `mes-modules` doublon
+> 2. `_auth.facturation.tsx` affichait des modules actifs (redondant)
+> 3. `platform.modules.tsx` et `platform.modules.builder.tsx` séparés
+
+### Architecture cible atteinte
+```
+Côté Tenant :
+  /marketplace → Page UNIQUE (3 onglets : Catalogue, Mes Modules, Aperçu)
+  /facturation → Uniquement factures/abonnement/simulateur
+
+Côté Plateforme :
+  /platform/modules → Page unifiée (3 onglets : Catalogue CRUD, Builder, Résolution)
+```
+
+### Phases exécutées
+
+**P1 — Backend endpoints**
+- `PUT /api/billing/marketplace/:code/toggle` — Active/désactive un module via `configurationService.toggleModule()`
+- `GET /api/billing/marketplace/mes-modules` — Modules résolus + statut abonnement
+
+**P2 — Suppression routes vides + nettoyage**
+- 6 fichiers routes supprimés + 3 composants/hooks (`mes-modules-page`, `mes-module-card`, `use-mes-modules`)
+- `_auth.facturation.tsx` nettoyé (ModulesActifs + UsageMeters retirés)
+
+**P3 — Marketplace refondue**
+- `_auth.marketplace.tsx` réécrit (898 lignes, 3 onglets)
+- `module-toggle-card.tsx` créé (253 lignes, toggle ON/OFF avec mutation API)
+
+**P4 — Fusion platform.modules + builder**
+- `platform.modules.tsx` réécrit avec 3 onglets (Catalogue CRUD, Builder import/export, Résolution)
+- `platform.modules.builder.tsx` supprimé
+
+**P5 — Navigation**
+- `Sidebar.tsx` : "Mes Modules" + "Marketplace" → "Modules" (pointe vers `/marketplace`)
+- `platform-sidebar.tsx` : entrée "Module Builder" supprimée
+
+**P6 — Migration + finalisation**
+- Migration `207-consolidation-modules.sql` (nettoyage ParametreSysteme, index performance)
+- Barrel exports mis à jour, route tree vérifié
+
+### Fichiers créés (3)
+- `frontend/src/features/modules/components/module-toggle-card.tsx`
+- `backend/database/migrations/207-consolidation-modules.sql`
+- (plan markdown)
+
+### Fichiers modifiés (5)
+- `backend/src/modules/billing/controllers/marketplace.controller.ts` — 2 endpoints ajoutés
+- `frontend/src/routes/_auth.marketplace.tsx` — Réécrit (3 onglets)
+- `frontend/src/routes/_auth.facturation.tsx` — Nettoyé
+- `frontend/src/routes/platform.modules.tsx` — Réécrit (3 onglets)
+- `frontend/src/components/layout/Sidebar.tsx` — "Mes Modules" → "Modules"
+- `frontend/src/components/layout/platform-sidebar.tsx` — Builder supprimé
+- `frontend/src/features/modules/components/index.ts` — Exports mis à jour
+
+### Fichiers supprimés (10)
+- `frontend/src/routes/_auth.modules-complementaires.tsx`
+- `frontend/src/routes/_auth.modules-organisationnels.tsx`
+- `frontend/src/routes/_auth.modules-pedagogiques.tsx`
+- `frontend/src/routes/_auth.modules-administratifs.tsx`
+- `frontend/src/routes/_auth.modules-pedagogique-avance.tsx`
+- `frontend/src/routes/_auth.mes-modules.tsx`
+- `frontend/src/routes/platform.modules.builder.tsx`
+- `frontend/src/features/modules/components/mes-modules-page.tsx`
+- `frontend/src/features/modules/components/mes-module-card.tsx`
+- `frontend/src/features/modules/hooks/use-mes-modules.ts`
+
+---
+
+## Refonte Modules SaaS v9.1 — Déduplication Routes & Navigation (✅ TERMINÉ)
+
+> Contexte : Suite v9 — élimination des dernières redondances entre pages tenant et plateforme.
+> 3 problèmes identifiés : `_auth.facturation.tsx` doublonnait `mon-abonnement.tsx`, `platform.abonnements.tsx` était un placeholder vide, onglet "Modules actifs" dans `mon-abonnement.tsx` chevauchait "Mes Modules" dans `marketplace.tsx`.
+
+### Décisions architecturales
+- **Tenant** : 2 pages distinctes — `marketplace.tsx` (modules) + `mon-abonnement.tsx` (abonnement/factures/quotas)
+- **Platform** : 2 pages spécialisées — `modules.tsx` (catalogue/builder) + `facturation.tsx` (plans/abonnements/revenus)
+- **Nettoyage** : Complet (redirections, sidebar, CommandPalette, imports, composants morts, dark mode)
+
+### Modifications exécutées
+
+**T1 — Nettoyage mon-abonnement.tsx**
+- Onglet "Modules actifs" supprimé (redondant avec marketplace "Mes Modules")
+- Hook `useFeatureFlags` retiré (non utilisé)
+- Composant `ModulesTab` supprimé
+- Commentaire orphelin "// Modules Tab" retiré
+
+**T2 — Redirection _auth.facturation.tsx**
+- Remplacé par `redirect({ to: '/mon-abonnement' })` (16 lignes)
+
+**T3 — Redirection platform.abonnements.tsx**
+- Remplacé par `redirect({ to: '/platform/facturation' })` (16 lignes)
+
+**T4 — Redirection platform.revenus.tsx**
+- Remplacé par `redirect({ to: '/platform/facturation' })` (16 lignes)
+- Placeholder vide (KPIs à "—") → doublon avec onglet Revenus de `platform.facturation.tsx`
+
+**T5 — Suppression composants billing morts (4)**
+- `abonnement-info.tsx` (94 lignes) — jamais importé
+- `facture-list.tsx` (154 lignes) — jamais importé
+- `tranche-simulateur.tsx` (129 lignes) — jamais importé
+- `ui-billing.tsx` (224 lignes) — jamais importé
+- Total : 601 lignes de code mort supprimées
+
+**T6 — Navigation mise à jour**
+- `Sidebar.tsx` : "Mon Abonnement" ajouté dans section Système
+- `platform-sidebar.tsx` : entrées "abonnements" + "revenus" supprimées, imports `Star` + `DollarSign` retirés
+- `CommandPalette.tsx` : entrées `p-revenus` + `p-abonnements` supprimées, `p-facturation` enrichi (keywords: revenus, mrr, arr), imports `DollarSign` + `Star` retirés
+
+**T7 — Dark mode — couleurs hardcodées corrigées**
+- `mon-abonnement.tsx` : `bg-green-100` → `bg-emerald-500/10`, `text-gray-500` → `text-muted-foreground`, `bg-gray-100` → `bg-muted`
+- `marketplace.tsx` : `bg-zinc-800` → `bg-muted`, `text-zinc-500` → `text-muted-foreground`
+
+### Fichiers modifiés (8)
+- `frontend/src/routes/_auth.mon-abonnement.tsx` — Onglet modules + commentaire supprimés, dark mode
+- `frontend/src/routes/_auth.facturation.tsx` → redirection
+- `frontend/src/routes/platform.abonnements.tsx` → redirection
+- `frontend/src/routes/platform.revenus.tsx` → redirection
+- `frontend/src/routes/_auth.marketplace.tsx` — Dark mode corrigé
+- `frontend/src/components/layout/Sidebar.tsx` — Mon Abonnement ajouté
+- `frontend/src/components/layout/platform-sidebar.tsx` — abonnements + revenus retirés
+- `frontend/src/components/CommandPalette.tsx` — p-revenus + p-abonnements supprimés
+
+### Fichiers supprimés (4)
+- `frontend/src/features/billing/components/abonnement-info.tsx`
+- `frontend/src/features/billing/components/facture-list.tsx`
+- `frontend/src/features/billing/components/tranche-simulateur.tsx`
+- `frontend/src/features/billing/components/ui-billing.tsx`
+
+---
+
+## Refonte Modules SaaS v10 — Reorganisation Navigation & Terminologie (✅ EN COURS)
+
+> Contexte : Refonte complète de la navigation billing tenant et de la terminologie des modules.
+> 1. Remplacer 'CRITIQUE' par 'BASE' (meilleures pratiques SaaS)
+> 2. Renommer 'Modules' en 'Marché' (FR) / 'Marketplace' (EN)
+> 3. Créer un menu 'Mon Établissement' avec 7 sous-menus
+> 4. Séparer les responsabilités (abonnements, factures, plans, usage, marché)
+
+### Phase P1 — CRITIQUE → BASE (✅ COMPLET)
+
+**Justification** : Dans l'industrie SaaS, les modules fondamentaux toujours inclus sont appelés "Base" / "Core" / "Foundation" — jamais "Critique" (connotation négative).
+
+**Backend** :
+- `module-catalogue.entity.ts` : enum `CategorieModule.BASE` (was CRITIQUE)
+- `entitlement.service.ts` : `MODULES_BASE_BYPASS`, type `EntitlementRaison: 'BASE'`, source `'base'`
+- `configuration.service.ts` : protection modules BASE
+- `marketplace.controller.ts` : `MODULE_BASE_NON_DESACTIVABLE`
+- `seed-modules-catalogue.ts` : 8 modules BASE
+- Migration `208-categorie-critique-vers-base.sql` (idempotente)
+
+**Shared** :
+- `modules.enum.ts` : `ModuleCategory.BASE` + 14 mappings
+
+**Frontend** :
+- `_auth.marketplace.tsx`, `platform.modules.tsx`, `module-toggle-card.tsx`, `ModuleGrid.tsx`, `config-module-card.tsx`, `ModulesTab.tsx`, `configuration.types.ts`, `module-analytics-dashboard.tsx`, `platform.tarifs.tsx`
+- i18n : `fr/admin.json`, `en/admin.json`, `fr/modules.json`, `en/modules.json`
+
+### Phase P2 — Modules → Marché/Marketplace (✅ COMPLET)
+
+- `Sidebar.tsx` : label "Modules" → "Marché" dans section Système
+- Séparation Control Plane / Data Plane : plateforme = "Catalogue modules" (technique), tenant = "Marché" (commercial)
+
+### Phase P3 — Menu "Mon Établissement" (✅ COMPLET)
+
+**Sidebar restructurée** — Nouvelle section "Mon Établissement" avec 6 items :
+```
+Mon Établissement
+├── Établissements        (depuis Organisation Académique)
+├── Groupes               (depuis Organisation Académique)
+├── Abonnements           → /mon-abonnement (3 tabs: aperçu, usage/quotas, historique)
+├── Factures              → /factures (page dédiée)
+├── Plans d'abonnement    → /plans (NOUVEAU — catalogue + comparaison + simulateur)
+└── Marché                → /marketplace
+
+Système (réduit)
+├── Configuration
+└── Paramètres
+```
+
+**Nouvelle page `/plans`** — `_auth.plans.tsx` (545 lignes) :
+- 3 modes de vue : Catalogue (cartes), Comparer (matrice), Simulateur
+- Cartes de plans avec couleurs/icônes dynamiques (slug-based)
+- Matrice de comparaison : modules, capacités, tranches
+- Simulateur tarifaire intégré (composant `PlanSimulator` existant)
+- Actions upgrade/downgrade avec mutation
+
+**`mon-abonnement.tsx` simplifié** :
+- Onglets réduits de 5 → 3 (aperçu, usage/quotas, historique)
+- Tabs "Factures" et "Simulateur" retirés (redondants avec `/factures` et `/plans`)
+- Titre mis à jour : "Abonnements" — "Vue d'ensemble de votre abonnement, consommation et historique"
+
+### Fichiers créés/modifiés v10
+
+| Fichier | Phase | Action |
+|---------|-------|--------|
+| `backend/src/modules/billing/entities/module-catalogue.entity.ts` | P1 | Enum CRITIQUE → BASE |
+| `shared/src/enums/modules.enum.ts` | P1 | ModuleCategory.CRITIQUES → BASE |
+| `backend/src/modules/billing/services/entitlement.service.ts` | P1 | Types, constante, cascade |
+| `backend/src/modules/configuration/services/configuration.service.ts` | P1 | Protection modules BASE |
+| `backend/src/modules/configuration/controllers/configuration.controller.ts` | P1 | raisonBlocage |
+| `backend/src/modules/billing/controllers/marketplace.controller.ts` | P1 | MODULE_BASE_NON_DESACTIVABLE |
+| `backend/src/common/middlewares/module-access.middleware.ts` | P1 | Commentaire |
+| `backend/src/database/seeds/system/seed-modules-catalogue.ts` | P1 | 8 modules BASE |
+| `backend/database/migrations/208-categorie-critique-vers-base.sql` | P1 | Migration idempotente |
+| `frontend/src/routes/_auth.marketplace.tsx` | P1 | Filtres, labels BASE |
+| `frontend/src/routes/platform.modules.tsx` | P1 | 16+ occurrences BASE |
+| `frontend/src/features/modules/components/module-toggle-card.tsx` | P1 | isBase, labels |
+| `frontend/src/features/modules/components/ModuleGrid.tsx` | P1 | Type, filtres |
+| `frontend/src/features/modules/components/config-module-card.tsx` | P1 | isBase, label |
+| `frontend/src/features/configuration/components/ModulesTab.tsx` | P1 | Order array |
+| `frontend/src/features/configuration/types/configuration.types.ts` | P1 | Type ModuleCategory |
+| `frontend/src/features/admin/components/module-analytics-dashboard.tsx` | P1 | Icon, condition |
+| `frontend/src/routes/platform.tarifs.tsx` | P1 | Type categorie |
+| `frontend/src/locales/{fr,en}/admin.json` | P1 | Clés catBase |
+| `frontend/src/locales/{fr,en}/modules.json` | P1 | BASE key |
+| `frontend/src/components/layout/Sidebar.tsx` | P2+P3 | Label Marché + section Mon Établissement |
+| `frontend/src/routes/_auth.plans.tsx` | P3 | NOUVEAU (545 lignes) |
+| `frontend/src/routes/_auth.mon-abonnement.tsx` | P3 | 5 tabs → 3 tabs, titre |
+
+---
+
+## Migration 210 — Refonte Feature Flags (✅ COMPLET)
+
+> Plan : `/home/franck/.config/Qoder/SharedClientCache/cache/plans/Refonte_Feature_Flags_Complet_task-0f7.md`
+> Sources : 2 rapports d'analyse (`docs/rapports/RAPPORT-ANALYSE-FEATURE-FLAGS-ELISASCHOOL.html`, `_output/RAPPORT-FEATURE-FLAGS-ANALYSE-COMPLETE.html`)
+> Contexte : 8 recommandations R1-R8 consolidées. Feature flags hardcodés dans le frontend, pas de registre centralisé, pas d'audit trail, pas de rollout progressif.
+
+### Architecture
+
+**Registre centralisé** : Table `feature_flag_definitions` — 8 flags système seedés + flags custom.
+**Audit trail** : Table `feature_flags_history` — traçabilité complète (qui, quoi, quand, ancienne/nouvelle valeur).
+**Progressive rollout** : Hash stable sur UUID établissement → activation pour N% des établissements.
+**Segments** : Règles JSONB de ciblage avancé (plan, taille, groupe).
+**Unification** : `EntitlementService.checkCapability()` — point d'entrée unique pour modules ET feature flags.
+
+### Phases implémentées (7)
+
+**Phase 1 — Migration SQL + Entités** :
+- `backend/database/migrations/210-feature-flag-definitions.sql` (224 lignes) — Tables, seed 8 flags, index, trigger, vue expired
+- `backend/src/modules/billing/entities/feature-flag-definition.entity.ts` (90 lignes) — Enums CategorieFlag, TypeFlag
+- `backend/src/modules/billing/entities/feature-flag-history.entity.ts` (72 lignes) — Enum ActionFeatureFlag
+
+**Phase 2 — Services + Unification** :
+- `backend/src/modules/billing/services/feature-flag-definition.service.ts` (357 lignes) — CRUD, cache 60s, historique, expiration, orphelins
+- `backend/src/modules/billing/services/feature-flags.service.ts` — +194 lignes : isEnabledWithRollout(), getAllFlagsWithMetadata(), evaluateSegments(), logHistory()
+- `backend/src/modules/billing/services/entitlement.service.ts` — +105 lignes : checkCapability() unification R1
+- `backend/src/modules/billing/controllers/billing.controller.ts` — +148 lignes : 7 endpoints API (definitions CRUD, expired, by-category, history, metadata)
+
+**Phase 3 — Frontend dynamique** :
+- `frontend/src/hooks/use-feature-management.ts` (178 lignes) — Hook unifié R8 (definitions, flags, modules, isEnabled, checkModuleAccess)
+- `frontend/src/features/admin/components/plan-form-modal.tsx` — MODULES_CATALOG + FEATURE_FLAGS_LIST hardcodés → API dynamique (fallback si API échoue)
+
+**Phase 4 — Dashboard Platform** :
+- `frontend/src/routes/platform.feature-flags.tsx` (432 lignes) — Page 4 onglets (Définitions, Matrice, Audit, Expirés)
+- `frontend/src/features/admin/components/feature-flag-definition-form.tsx` (317 lignes) — Modal CRUD
+- `frontend/src/features/admin/components/feature-flags-matrix.tsx` (308 lignes) — Matrice établissements × flags
+- `frontend/src/features/admin/components/feature-flags-audit-log.tsx` (245 lignes) — Historique paginé
+- `frontend/src/components/layout/platform-sidebar.tsx` — Navigation Feature Flags ajoutée (icône ToggleRight)
+
+**Phase 5 — Cron + ConsistencyChecker** :
+- `backend/src/modules/billing/cron-jobs.ts` — +80 lignes : cronExpiredFlags() (détection, log, désactivation auto)
+- `backend/src/modules/configuration/services/config-consistency.service.ts` — +58 lignes : checkExpiredFeatureFlags() (WARNING) + checkOrphanDefinitionFlags() (INFO)
+
+**Phase 6 — Nettoyage** :
+- `frontend/src/features/admin/components/feature-flags-manager.tsx` — Utilise endpoint /metadata (labels/descriptions dynamiques), humanizeFlagName() + getFlagDescription() conservés comme fallback
+
+**Phase 7 — i18n** :
+- `frontend/src/locales/{fr,en}/admin.json` — Namespace featureFlags complet (tabs, form, matrix, audit) + navigation sidebar
+
+### Endpoints API ajoutés
+
+```
+GET    /api/platform/facturation/feature-flags/definitions           — Liste toutes les définitions
+POST   /api/platform/facturation/feature-flags/definitions           — Créer définition
+PATCH  /api/platform/facturation/feature-flags/definitions/:id       — Modifier
+DELETE /api/platform/facturation/feature-flags/definitions/:id       — Supprimer
+GET    /api/platform/facturation/feature-flags/definitions/expired   — Flags expirés + orphelins
+GET    /api/platform/facturation/feature-flags/definitions/by-category — Groupés par catégorie
+GET    /api/platform/facturation/feature-flags/history               — Historique audit (paginé)
+GET    /api/platform/facturation/feature-flags/:etab/metadata        — Flags + metadata
+```
+
+### Fichiers créés (9)
+
+| Fichier | Lignes | Phase |
+|---------|--------|-------|
+| `backend/database/migrations/210-feature-flag-definitions.sql` | 224 | 1.1 |
+| `backend/src/modules/billing/entities/feature-flag-definition.entity.ts` | 90 | 1.2 |
+| `backend/src/modules/billing/entities/feature-flag-history.entity.ts` | 72 | 1.2 |
+| `backend/src/modules/billing/services/feature-flag-definition.service.ts` | 357 | 2.1 |
+| `frontend/src/hooks/use-feature-management.ts` | 178 | 3.2 |
+| `frontend/src/routes/platform.feature-flags.tsx` | 432 | 4.1 |
+| `frontend/src/features/admin/components/feature-flag-definition-form.tsx` | 317 | 4.2 |
+| `frontend/src/features/admin/components/feature-flags-matrix.tsx` | 308 | 4.3 |
+| `frontend/src/features/admin/components/feature-flags-audit-log.tsx` | 245 | 4.4 |
+
+### Fichiers modifiés (10)
+
+| Fichier | Modification |
+|---------|-------------|
+| `backend/src/modules/billing/entities/index.ts` | +exports FeatureFlagDefinition, FeatureFlagHistory |
+| `backend/src/modules/billing/services/index.ts` | +exports FeatureFlagDefinitionService |
+| `backend/src/modules/billing/services/feature-flags.service.ts` | +rollout, +metadata, +segments, +history |
+| `backend/src/modules/billing/services/entitlement.service.ts` | +checkCapability() unification |
+| `backend/src/modules/billing/controllers/billing.controller.ts` | +7 endpoints definitions/history |
+| `backend/src/modules/billing/cron-jobs.ts` | +cronExpiredFlags() |
+| `backend/src/modules/configuration/services/config-consistency.service.ts` | +2 vérifications flags |
+| `frontend/src/features/admin/components/plan-form-modal.tsx` | Hardcodage → API dynamique |
+| `frontend/src/features/admin/components/feature-flags-manager.tsx` | Metadata API + fallback |
+| `frontend/src/components/layout/platform-sidebar.tsx` | +nav Feature Flags |
+| `frontend/src/hooks/index.ts` | +export useFeatureManagement |
+| `frontend/src/locales/{fr,en}/admin.json` | +clés featureFlags complètes |
+
+---
+
+## CMS V2 — Refonte Visuelle Complète (✅ TERMINÉ)
+
+> Contexte : Refonte complète du CMS white-label avec Puck Editor, animations avancées, SEO, export/import, et contenu dynamique.
+
+### Phase 5A — Contenu Dynamique CMS (✅ COMPLET)
+- **5 nouvelles entités** : CmsActualite, CmsTemoignage, CmsEvenement, CmsPartenaire, CmsAbonnementNewsletter
+- **Migration 211** : 5 tables + RLS + 19 permissions RBAC
+- **CRUD complet** : `cms-content.service.ts` (430 lignes), `cms-content.controller.ts` (280 lignes, 21 routes)
+- **API publique** : 7 nouvelles routes sous `/api/public/e/:code/` (actualités, témoignages, événements, partenaires, newsletter)
+- **DataBinding enrichi** : Sources actualités, témoignages, événements, partenaires ajoutées
+
+### Phase 5B — Animations Avancées (✅ COMPLET)
+- **Bibliothèque** : `frontend/src/features/cms/lib/animations.ts` (363 lignes)
+- **15 variants** : fade-in, slide-up/down/left/right, zoom, zoom-out, flip-x/y, rotate, blur, scale-up, bounce, elastic, none
+- **7 easings** : easeOut, easeIn, easeInOut, linear, spring, bounce, elastic
+- **6 hover effects** : none, lift, glow, scale, tilt, shadow, border-glow
+- **Presets** : hero, card, testimonial, stats, timeline, gallery, partner, cta, standard
+
+### Phase 5C — 10 Nouvelles Sections Puck (✅ COMPLET)
+- **28 composants Puck** au total (18 existants + 10 nouveaux) dans 6 catégories
+- **Nouveaux** : Carousel, Timeline, Tabs, Newsletter, HeroVideo, CompteursAnimes, TemoignageCarousel, PrixTab, IconeFeatures, GalerieMasonry
+- **10 nouveaux SectionType** ajoutés aux entities backend et types frontend
+
+### Phase 5D — Personnalisation Avancée (✅ COMPLET)
+- **Styles partagés** : `puck/shared-styles.ts` (379 lignes)
+- **Types** : ButtonStyle, TypographyStyle, BackgroundStyle, SpacingStyle, BorderStyle, ShadowStyle
+- **4 presets** : heroClassic, contentStandard, darkElegant, cardSoft
+- **Helpers CSS** : typographyToCSS, backgroundToCSS, spacingToCSS, borderToCSS, shadowToCSS, mergeSectionStyles
+- **Options UI** : BUTTON_VARIANTS, BUTTON_SIZES, GRADIENT_DIRECTIONS
+
+### Phase 5E — SEO + Responsive Preview (✅ COMPLET)
+- **SeoPanel** (212 lignes) : Score SEO temps réel (0-100), aperçu Google, meta title/description, slug, OG, noindex
+- **ResponsivePreview** (123 lignes) : 6 presets devices (320px→pleine largeur), zoom 25-200%
+- **Intégration éditeur** : 3 boutons toggle dans la barre d'outils (Responsive, SEO, JSON)
+
+### Phase 5F — Export/Import + Sécurité (✅ COMPLET)
+- **Export JSON** : `GET /api/cms/pages/:id/export?format=json|puck` — téléchargement fichier
+- **Import JSON** : `POST /api/cms/pages/import` — création page depuis JSON (slug unique auto)
+- **Composant frontend** : `ExportImportPanel.tsx` (346 lignes) — export 2 formats, import drag&drop, preview
+- **Honeypot anti-spam** : Contact + Newsletter (champ `_honeypot` caché, réponse 201 silencieuse)
+- **Panneau latéral éditeur** : SEO, Export/Import, Responsive intégrés dans `_auth.cms.pages.$id.tsx`
+
+### Fichiers créés CMS V2 (25+ nouveaux)
+| Fichier | Lignes | Phase |
+|---------|--------|-------|
+| `backend/src/modules/cms/entities/cms-content.entity.ts` | 298 | 5A |
+| `backend/database/migrations/211-cms-content-entities.sql` | 204 | 5A |
+| `backend/src/modules/cms/dto/cms-content.dto.ts` | 138 | 5A |
+| `backend/src/modules/cms/services/cms-content.service.ts` | 430 | 5A |
+| `backend/src/modules/cms/controllers/cms-content.controller.ts` | 280 | 5A |
+| `frontend/src/features/cms/lib/animations.ts` | 363 | 5B |
+| `frontend/src/features/cms/puck/components/CarouselPuck.tsx` | 107 | 5C |
+| `frontend/src/features/cms/puck/components/TimelinePuck.tsx` | 68 | 5C |
+| `frontend/src/features/cms/puck/components/TabsPuck.tsx` | 71 | 5C |
+| `frontend/src/features/cms/puck/components/NewsletterPuck.tsx` | 56 | 5C |
+| `frontend/src/features/cms/puck/components/HeroVideoPuck.tsx` | 71 | 5C |
+| `frontend/src/features/cms/puck/components/CompteursAnimesPuck.tsx` | 69 | 5C |
+| `frontend/src/features/cms/puck/components/TemoignageCarouselPuck.tsx` | 78 | 5C |
+| `frontend/src/features/cms/puck/components/PrixTabPuck.tsx` | 76 | 5C |
+| `frontend/src/features/cms/puck/components/IconeFeaturesPuck.tsx` | 58 | 5C |
+| `frontend/src/features/cms/puck/components/GalerieMasonryPuck.tsx` | 89 | 5C |
+| `frontend/src/features/cms/puck/shared-styles.ts` | 379 | 5D |
+| `frontend/src/features/cms/components/SeoPanel.tsx` | 212 | 5E |
+| `frontend/src/features/cms/components/ResponsivePreview.tsx` | 123 | 5E |
+| `frontend/src/features/cms/components/ExportImportPanel.tsx` | 346 | 5F |
+
+### Fichiers modifiés CMS V2 (10+)
+| Fichier | Modification |
+|---------|-------------|
+| `backend/src/modules/cms/entities/cms.entity.ts` | +10 SectionType |
+| `backend/src/modules/cms/services/cms.service.ts` | +exporterPage(), +importerPage() |
+| `backend/src/modules/cms/controllers/cms.controller.ts` | +2 routes export/import |
+| `backend/src/modules/cms/controllers/public-etablissement.controller.ts` | +honeypot contact/newsletter |
+| `backend/src/modules/cms/dto/cms.dto.ts` | +exportPageSchema, importPageSchema, honeypot |
+| `backend/src/modules/cms/dto/cms-content.dto.ts` | +honeypot newsletter |
+| `backend/src/modules/cms/services/data-binding.service.ts` | +sources CMS (actualités, témoignages, etc.) |
+| `backend/src/app.ts` | +route /api/cms/contenu |
+| `frontend/src/features/cms/types/cms.types.ts` | +10 SectionType, AnimationType, HoverEffect |
+| `frontend/src/features/cms/puck/config.tsx` | 28 composants, mappings complets |
+| `frontend/src/routes/_auth.cms.pages.$id.tsx` | +panneaux SEO/Export/Responsive |
+| `frontend/src/routes/e.$code.contact.tsx` | +honeypot anti-spam |
+
+---
+
+## Phase 7 — CMS V2 Outils Avancés (✅ TERMINÉ)
+
+> Contexte : Outils d'édition avancés pour l'éditeur CMS Puck — personnalisation visuelle, conditions d'affichage, métriques, navigation, mode focus, command palette.
+
+### 7A — Style Editor Panel (✅ COMPLET)
+- **Fichier** : `frontend/src/features/cms/components/StyleEditorPanel.tsx` (569 lignes)
+- Accordéon 6 sections : Typographie, Arrière-plan, Espacement, Bordure, Ombre, Bouton
+- 4 presets rapides : heroClassic, contentStandard, darkElegant, cardSoft
+- Preview live, copie CSS, réinitialisation, application globale
+- Utilise les types de `shared-styles.ts` (ButtonStyle, TypographyStyle, etc.)
+
+### 7B — Section Clipboard (✅ COMPLET)
+- **Fichier** : `frontend/src/features/cms/components/SectionClipboard.tsx` (319 lignes)
+- Hook `useSectionClipboard` : copier, coller, supprimer, exporter/importer JSON
+- Stockage localStorage (max 10 items, clé `cms:section-clipboard`)
+- Panneau UI avec recherche, sections courantes pour copier, clipboard pour coller
+
+### 7C — Visibility Conditions (✅ COMPLET)
+- **Fichier** : `frontend/src/features/cms/components/VisibilityEditor.tsx` (320 lignes)
+- Type `VisibilityCondition` : breakpoints responsive, rôles autorisés/exclus, plage de dates
+- Fonction `evaluerVisibilite()` pour évaluation runtime
+- Fonction `genererCSSVisibilite()` pour media queries CSS
+- 3 onglets : Écrans, Rôles, Dates
+
+### 7D — Anchor Navigation (✅ COMPLET)
+- **Fichier** : `frontend/src/features/cms/components/AnchorNav.tsx` (258 lignes)
+- Hook `useScrollSpy` (IntersectionObserver), hook `useAutoAnchors` (scan DOM)
+- 3 modes : sidebar sticky, floating bouton, top barre
+- Smooth scroll, sommaire auto-généré depuis les titres
+
+### 7E — Content Metrics (✅ COMPLET)
+- **Fichier** : `frontend/src/features/cms/components/ContentMetrics.tsx` (369 lignes)
+- Hook `useContentMetrics` : extraction texte depuis props Puck, comptage mots/caractères/phrases
+- Fonction `calculerScoreQualite()` : score 0-100 (lisibilité, SEO, richesse, structure)
+- Recommandations contextuelles (error/warning/info/success)
+- Détail par section avec temps de lecture
+
+### 7F — Focus Mode (✅ COMPLET)
+- **Fichier** : `frontend/src/features/cms/components/FocusMode.tsx` (246 lignes)
+- Hook `useFocusMode` : toggle, exit, settings persistés localStorage
+- Overlay plein écran, fond personnalisable (white/dark/sepia/custom)
+- Raccourcis : Échap (quitter), F11 (toggle)
+- 4 largeurs : étroit, normal, large, pleine
+
+### 7G — Command Palette (✅ COMPLET)
+- **Fichier** : `frontend/src/features/cms/components/CommandPalette.tsx` (364 lignes)
+- Recherche fuzzy dans 20+ commandes (actions, panneaux, insertions, outils)
+- Navigation clavier (flèches + Entrée + Échap)
+- Raccourci Ctrl+K / Cmd+K
+- Insertion rapide de sections (Hero, Texte, Galerie, Vidéo, FAQ, CTA, Timeline, Carousel)
+
+### 7H — Migration Backend (✅ COMPLET)
+- **Migration** : `backend/database/migrations/212-cms-phase7-avance.sql` (51 lignes)
+- Nouvelles colonnes `cms_sections` : `conditionsVisibilite` (jsonb), `styleConfig` (jsonb)
+- Nouvelles colonnes `cms_pages` : `focusPreferences` (jsonb), `qualiteScore` (int), `analytics` (jsonb)
+- Index GIN sur `conditionsVisibilite`, index sur `qualiteScore`
+- **Entités** : `cms.entity.ts` mis à jour avec les nouvelles colonnes
+- **DTOs** : `cms.dto.ts` — `createSectionSchema` + `updatePageSchema` étendus
+
+### Intégration éditeur (✅ COMPLET)
+- `_auth.cms.pages.$id.tsx` : 10 boutons toolbar ajoutés (Style, Clipboard, Visibilité, Qualité, Focus, Command Palette)
+- Panneau latéral étendu pour les 4 nouveaux panneaux
+- Command Palette intégrée avec navigation vers tous les panneaux
+- Raccourcis mis à jour : Ctrl+K (Command Palette), F11/Échap (Focus)
+
+### Fichiers créés/modifiés Phase 7
+| Fichier | Lignes | Action |
+|---------|--------|--------|
+| `frontend/src/features/cms/components/StyleEditorPanel.tsx` | 569 | NOUVEAU |
+| `frontend/src/features/cms/components/SectionClipboard.tsx` | 319 | NOUVEAU |
+| `frontend/src/features/cms/components/VisibilityEditor.tsx` | 320 | NOUVEAU |
+| `frontend/src/features/cms/components/AnchorNav.tsx` | 258 | NOUVEAU |
+| `frontend/src/features/cms/components/ContentMetrics.tsx` | 369 | NOUVEAU |
+| `frontend/src/features/cms/components/FocusMode.tsx` | 246 | NOUVEAU |
+| `frontend/src/features/cms/components/CommandPalette.tsx` | 364 | NOUVEAU |
+| `backend/database/migrations/212-cms-phase7-avance.sql` | 51 | NOUVEAU |
+| `backend/src/modules/cms/entities/cms.entity.ts` | +22 | Modifié (colonnes) |
+| `backend/src/modules/cms/dto/cms.dto.ts` | +12 | Modifié (schémas) |
+| `frontend/src/routes/_auth.cms.pages.$id.tsx` | +149 | Modifié (intégration) |
+
+### Vérification
+- Frontend TypeScript : 0 erreurs CMS
+- Backend TypeScript : 0 erreurs CMS
+- 66 fichiers CMS frontend

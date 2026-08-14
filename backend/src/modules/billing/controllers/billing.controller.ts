@@ -42,7 +42,7 @@ import { FacturePdfService } from '../services/facture-pdf.service';
 import { TrancheConfigService } from '../services/tranche-config.service';
 import { ModeFacturationTranches } from '../entities/plan-abonnement.entity';
 // Phase 7 Lot A — Refonte SaaS v7 (catalogue modules unifié)
-import { moduleResolutionService } from '../services/module-resolution.service';
+// ModuleResolutionService supprimé (fusion P0.1) — utiliser entitlementService
 import { seedModulesCatalogue } from '@database/seeds/system/seed-modules-catalogue';
 // Phase 7 Lot C — Refonte SaaS v7 (groupes SaaS)
 import { groupeSaaSService } from '../services/groupe-saas.service';
@@ -54,6 +54,12 @@ import { ScopeAssignment } from '../entities/provider-assignment.entity';
 // Phase 7 Lot F — Refonte SaaS v7 (workflow actions critiques)
 import { actionCritiqueService } from '../services/action-critique.service';
 import { TypeActionCritique, StatutActionCritique } from '../entities/action-critique.entity';
+// Refonte SaaS — Unification Modules (migration 200)
+import { entitlementService } from '../services/entitlement.service';
+// Migration 210 — Refonte Feature Flags (registre centralisé)
+import { featureFlagDefinitionService } from '../services/feature-flag-definition.service';
+import { CategorieFlag, TypeFlag } from '../entities/feature-flag-definition.entity';
+import { ActionFeatureFlag } from '../entities/feature-flag-history.entity';
 
 // =============================================
 // Router PLATFORME (SUPER_ADMIN)
@@ -620,7 +626,7 @@ platformBillingRouter.post('/modules/catalogue', async (req: Request, res: Respo
 
         const entree = repo.create({ code, nom, ...reste });
         const saved = await repo.save(entree);
-        void moduleResolutionService.invalidate(); // P3.1 v7 — async fire-and-forget
+        void entitlementService.invalidate(); // fusion P0.1 — entitlementService remplace moduleResolutionService
         res.status(201).json({ success: true, data: saved });
     } catch (error) {
         next(error);
@@ -643,7 +649,7 @@ platformBillingRouter.put('/modules/catalogue/:id', async (req: Request, res: Re
 
         Object.assign(entree, req.body);
         const saved = await repo.save(entree);
-        void moduleResolutionService.invalidate(); // P3.1 v7 — async fire-and-forget
+        void entitlementService.invalidate(); // fusion P0.1
         res.json({ success: true, data: saved });
     } catch (error) {
         next(error);
@@ -669,7 +675,7 @@ platformBillingRouter.delete('/modules/catalogue/:id', async (req: Request, res:
         }
 
         await repo.remove(entree);
-        void moduleResolutionService.invalidate(); // P3.1 v7 — async fire-and-forget
+        void entitlementService.invalidate(); // fusion P0.1
         res.json({ success: true, data: { id: entree.id } });
     } catch (error) {
         next(error);
@@ -678,12 +684,12 @@ platformBillingRouter.delete('/modules/catalogue/:id', async (req: Request, res:
 
 /**
  * POST /api/platform/facturation/modules/catalogue/sync
- * Re-synchronise le catalogue depuis MODULE_REGISTRY (upsert idempotent)
+ * Re-synchronise le catalogue depuis les seeds (upsert idempotent)
  */
 platformBillingRouter.post('/modules/catalogue/sync', async (_req: Request, res: Response, next: NextFunction) => {
     try {
         const total = await seedModulesCatalogue(true);
-        void moduleResolutionService.invalidate(); // P3.1 v7 — async fire-and-forget
+        void entitlementService.invalidate(); // fusion P0.1
         res.json({ success: true, data: { total } });
     } catch (error) {
         next(error);
@@ -692,7 +698,7 @@ platformBillingRouter.post('/modules/catalogue/sync', async (_req: Request, res:
 
 /**
  * GET /api/platform/facturation/modules/catalogue/resolution
- * Résolution des modules activés pour un établissement (cascade catalogue → plan → supplément)
+ * Résolution des modules activés pour un établissement (cascade entitlement complète)
  */
 platformBillingRouter.get('/modules/catalogue/resolution', async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -700,14 +706,241 @@ platformBillingRouter.get('/modules/catalogue/resolution', async (req: Request, 
         if (!etablissementId) {
             throw new AppError('Paramètre etablissementId requis', 400, 'VALIDATION_ERROR');
         }
-        const modules = await moduleResolutionService.getResolvedModules(etablissementId);
+        const modules = await entitlementService.getResolvedModules(etablissementId);
         res.json({ success: true, data: modules });
     } catch (error) {
         next(error);
     }
 });
 
+// =============================================
+// MODULE BUILDER (Plateforme — SUPER_ADMIN)
+// =============================================
+
+/**
+ * POST /api/platform/facturation/modules/builder/:id/duplicate
+ * Dupliquer un module du catalogue
+ */
+platformBillingRouter.post('/modules/builder/:id/duplicate', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const repo = AppDataSource.getRepository(ModuleCatalogue);
+        const original = await repo.findOne({ where: { id: req.params.id } });
+        if (!original) throw new AppError('Module introuvable', 404, 'MODULE_NOT_FOUND');
+
+        const { code, nom } = req.body;
+        const nouveauCode = code || `${original.code}_copy`;
+        const existant = await repo.findOne({ where: { code: nouveauCode } });
+        if (existant) throw new AppError(`Un module avec le code "${nouveauCode}" existe déjà`, 409, 'MODULE_EXISTS');
+
+        const duplique = repo.create({
+            ...original,
+            id: undefined,
+            code: nouveauCode,
+            nom: nom || `${original.nom} (copie)`,
+            estSysteme: false,
+            createdAt: undefined,
+            updatedAt: undefined,
+        });
+        const saved = await repo.save(duplique);
+        void entitlementService.invalidate();
+        res.status(201).json({ success: true, data: saved });
+    } catch (error) { next(error); }
+});
+
+/**
+ * POST /api/platform/facturation/modules/builder/import
+ * Importer un module depuis un JSON
+ */
+platformBillingRouter.post('/modules/builder/import', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const repo = AppDataSource.getRepository(ModuleCatalogue);
+        const data = req.body;
+
+        if (!data.code || !data.nom) {
+            throw new AppError('Les champs "code" et "nom" sont requis', 400, 'VALIDATION_ERROR');
+        }
+
+        const existant = await repo.findOne({ where: { code: data.code } });
+        if (existant) {
+            throw new AppError(`Un module avec le code "${data.code}" existe déjà`, 409, 'MODULE_EXISTS');
+        }
+
+        const entree = repo.create({
+            ...data,
+            estSysteme: false,
+        });
+        const saved = await repo.save(entree);
+        void entitlementService.invalidate();
+        res.status(201).json({ success: true, data: saved });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /api/platform/facturation/modules/builder/:id/export
+ * Exporter un module en JSON
+ */
+platformBillingRouter.get('/modules/builder/:id/export', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const repo = AppDataSource.getRepository(ModuleCatalogue);
+        const module = await repo.findOne({ where: { id: req.params.id } });
+        if (!module) throw new AppError('Module introuvable', 404, 'MODULE_NOT_FOUND');
+
+        const exportData = {
+            code: module.code,
+            nom: module.nom,
+            nomEn: module.nomEn,
+            description: module.description,
+            descriptionEn: module.descriptionEn,
+            categorie: module.categorie,
+            icone: module.icone,
+            prixMensuel: module.prixMensuel,
+            prixAnnuel: module.prixAnnuel,
+            estFacturable: module.estFacturable,
+            estSouscriptible: module.estSouscriptible,
+            actifParDefaut: module.actifParDefaut,
+            planMinimal: module.planMinimal,
+            dependencies: module.dependencies,
+            permissionsRequises: module.permissionsRequises,
+            config: module.config,
+            ordre: module.ordre,
+        };
+
+        res.json({ success: true, data: exportData });
+    } catch (error) { next(error); }
+});
+
 // --- FEATURE FLAGS (plateforme) ---
+
+// --- DÉFINITIONS (registre centralisé — Migration 210) ---
+
+/**
+ * GET /api/platform/facturation/feature-flags/definitions
+ * Liste toutes les définitions de feature flags
+ */
+platformBillingRouter.get('/feature-flags/definitions', async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+        const definitions = await featureFlagDefinitionService.findAllDefinitions();
+        res.json({ success: true, data: definitions });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * GET /api/platform/facturation/feature-flags/definitions/expired
+ * Flags avec expiration dépassée
+ */
+platformBillingRouter.get('/feature-flags/definitions/expired', async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+        const expired = await featureFlagDefinitionService.findExpiredFlags();
+        const orphans = await featureFlagDefinitionService.findOrphanFlags();
+        res.json({ success: true, data: { expired, orphans } });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * GET /api/platform/facturation/feature-flags/definitions/by-category
+ * Flags groupés par catégorie
+ */
+platformBillingRouter.get('/feature-flags/definitions/by-category', async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+        const grouped = await featureFlagDefinitionService.getFlagsByCategorie();
+        res.json({ success: true, data: grouped });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * POST /api/platform/facturation/feature-flags/definitions
+ * Créer une nouvelle définition de feature flag
+ */
+platformBillingRouter.post('/feature-flags/definitions', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { cle, label, description, categorie, type, valeurDefaut, planMinimal, rolloutPercentage, segments, estSysteme, expiresAt } = req.body;
+        if (!cle || !label) {
+            throw new AppError('cle et label requis', 400, 'MISSING_FIELDS');
+        }
+
+        const definition = await featureFlagDefinitionService.createDefinition(
+            { cle, label, description, categorie, type, valeurDefaut, planMinimal, rolloutPercentage, segments, estSysteme, expiresAt: expiresAt ? new Date(expiresAt) : undefined },
+            req.utilisateur?.id
+        );
+
+        res.status(201).json({ success: true, data: definition });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * PATCH /api/platform/facturation/feature-flags/definitions/:id
+ * Modifier une définition
+ */
+platformBillingRouter.patch('/feature-flags/definitions/:id', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { id } = req.params;
+        const dto = req.body;
+
+        if (dto.expiresAt) {
+            dto.expiresAt = new Date(dto.expiresAt);
+        }
+
+        const definition = await featureFlagDefinitionService.updateDefinition(id, dto, req.utilisateur?.id);
+        res.json({ success: true, data: definition });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * DELETE /api/platform/facturation/feature-flags/definitions/:id
+ * Supprimer une définition (sauf est_systeme=true)
+ */
+platformBillingRouter.delete('/feature-flags/definitions/:id', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await featureFlagDefinitionService.deleteDefinition(req.params.id, req.utilisateur?.id);
+        res.json({ success: true, message: 'Définition supprimée' });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * GET /api/platform/facturation/feature-flags/history
+ * Historique d'audit des feature flags (paginé)
+ */
+platformBillingRouter.get('/feature-flags/history', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { page, limit, flagDefinitionId, etablissementId, action } = req.query;
+        const history = await featureFlagDefinitionService.getHistory({
+            page: page ? parseInt(page as string, 10) : undefined,
+            limit: limit ? parseInt(limit as string, 10) : undefined,
+            flagDefinitionId: flagDefinitionId as string,
+            etablissementId: etablissementId as string,
+            action: action as ActionFeatureFlag,
+        });
+        res.json({ success: true, data: { data: history.data, total: history.total } });
+    } catch (error) {
+        next(error);
+    }
+});
+
+/**
+ * GET /api/platform/facturation/feature-flags/:etablissementId/metadata
+ * Flags + métadonnées pour un établissement
+ */
+platformBillingRouter.get('/feature-flags/:etablissementId/metadata', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const featureFlagService = new FeatureFlagService();
+        const flags = await featureFlagService.getAllFlagsWithMetadata(req.params.etablissementId);
+        res.json({ success: true, data: flags });
+    } catch (error) {
+        next(error);
+    }
+});
 
 /**
  * GET /api/platform/facturation/feature-flags/:etablissementId
@@ -741,6 +974,19 @@ platformBillingRouter.put('/feature-flags', async (req: Request, res: Response, 
             enabled,
             req.utilisateur?.id
         );
+
+        // Log dans l'historique
+        const definition = await featureFlagDefinitionService.findDefinitionByCle(flagName);
+        if (definition) {
+            await featureFlagDefinitionService.logHistory({
+                flagDefinitionId: definition.id,
+                etablissementId,
+                action: enabled ? ActionFeatureFlag.TOGGLE_ON : ActionFeatureFlag.TOGGLE_OFF,
+                ancienneValeur: String(!enabled),
+                nouvelleValeur: String(enabled),
+                modifiePar: req.utilisateur?.id,
+            });
+        }
 
         res.json({ success: true, data: result });
     } catch (error) {
@@ -1209,26 +1455,136 @@ clientBillingRouter.delete('/tranches/:id', authMiddleware, async (req: Request,
 
 /**
  * GET /api/billing/modules/resolved
- * Résout les modules activés pour l'établissement
+ * Résout les modules activés pour l'établissement (via entitlementService — source unique)
  */
 clientBillingRouter.get('/modules/resolved', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const etablissementId = req.etablissementId;
         if (!etablissementId) throw new AppError('Établissement non identifié', 400);
 
-        const modules = await moduleResolutionService.getResolvedModules(etablissementId);
+        const modules = await entitlementService.getResolvedModules(etablissementId);
         res.json({ success: true, data: modules });
     } catch (error) { next(error); }
 });
 
 /**
  * GET /api/billing/modules/catalogue
- * Liste tous les modules optionnels disponibles
+ * Catalogue filtré : modules accessibles + upgradables (teasing sans prix).
+ * Source unique : entitlementService (fusion P0.1 — Faille G1 corrigée)
  */
 clientBillingRouter.get('/modules/catalogue', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const modules = await moduleResolutionService.getCatalogue();
-        res.json({ success: true, data: modules });
+        const etablissementId = req.etablissementId;
+        if (!etablissementId) throw new AppError('Établissement non identifié', 400);
+
+        const allModules = await entitlementService.checkAll(etablissementId);
+
+        // Filtrer : accessibles + upgradables (visibles mais non accessibles, SANS prix)
+        const accessibles = allModules
+            .filter((m) => m.entitlement.accessible)
+            .map((m) => ({
+                code: m.code,
+                nom: m.nom,
+                icone: m.icone,
+                categorie: m.categorie,
+                accessible: true,
+                source: m.entitlement.source,
+                raison: m.entitlement.raison,
+            }));
+
+        const upgradables = allModules
+            .filter((m) => !m.entitlement.accessible && m.entitlement.visible)
+            .map((m) => ({
+                code: m.code,
+                nom: m.nom,
+                icone: m.icone,
+                categorie: m.categorie,
+                accessible: false,
+                raison: m.entitlement.raison,
+                planMinimalRequis: m.entitlement.planMinimalRequis,
+                planActuel: m.entitlement.planActuel,
+            }));
+
+        res.setHeader('X-Cache-Status', entitlementService.lastCacheStatus);
+        res.json({ success: true, data: { accessibles, upgradables } });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /api/billing/modules/mes-modules
+ * Catalogue filtré pour l'établissement : modules actifs + upgradables (teasing sans prix).
+ * Source unique de vérité : entitlementService.
+ *
+ * Réponse : {
+ *   actifs: ModuleResolu[],       — modules accessibles (avec raison, source)
+ *   upgradables: ModuleTeasing[],  — modules non accessibles mais visibles (SANS prix)
+ *   abonnement: { statut, plan, dateFin } | null
+ * }
+ *
+ * Refonte SaaS — Unification Modules (migration 200) — Faille G1
+ */
+clientBillingRouter.get('/modules/mes-modules', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.etablissementId || req.utilisateur?.etablissementId;
+        if (!etablissementId) throw new AppError('Établissement non identifié', 400);
+
+        // Résolution complète via entitlementService (source unique de vérité)
+        const allModules = await entitlementService.checkAll(etablissementId);
+
+        // Séparer actifs / upgradables
+        const actifs = allModules
+            .filter((m) => m.entitlement.accessible)
+            .map((m) => ({
+                code: m.code,
+                nom: m.nom,
+                categorie: m.categorie,
+                accessible: true,
+                raison: m.entitlement.raison,
+                source: m.entitlement.source,
+                planActuel: m.entitlement.planActuel,
+            }));
+
+        const upgradables = allModules
+            .filter((m) => !m.entitlement.accessible && m.entitlement.visible)
+            .map((m) => ({
+                code: m.code,
+                nom: m.nom,
+                icone: m.icone || '',
+                description: m.entitlement.message || null,
+                categorie: m.categorie,
+                accessible: false,
+                raison: m.entitlement.raison,
+                planMinimalRequis: m.entitlement.planMinimalRequis,
+                planActuel: m.entitlement.planActuel,
+            }));
+
+        // Info abonnement
+        const statutAbo = await entitlementService.getStatutAbonnement(etablissementId);
+
+        // Date fin abonnement (si actif)
+        let dateFin: string | null = null;
+        if (statutAbo.actif) {
+            const aboRepo = AppDataSource.getRepository(AbonnementClient);
+            const abo = await aboRepo.findOne({
+                where: { etablissementId, statut: StatutAbonnement.ACTIF },
+                select: ['dateFin'],
+            });
+            dateFin = abo?.dateFin?.toISOString() || null;
+        }
+
+        // P1.3 — Header X-Cache-Status (HIT|MISS|STALE) — doit être avant res.json()
+        res.setHeader('X-Cache-Status', entitlementService.lastCacheStatus);
+
+        res.json({
+            success: true,
+            data: {
+                actifs,
+                upgradables,
+                abonnement: statutAbo.statut !== 'AUCUN'
+                    ? { ...statutAbo, dateFin }
+                    : null,
+            },
+        });
     } catch (error) { next(error); }
 });
 
@@ -1735,6 +2091,88 @@ platformBillingRouter.post('/actions-critiques/:id/executer', async (req: Reques
             req,
         );
         res.json({ success: true, data: action });
+    } catch (error) { next(error); }
+});
+
+// =============================================
+// ANALYTICS MODULES (P6.1 — client)
+// =============================================
+
+/**
+ * GET /api/billing/analytics/mes-modules
+ * Usage des modules pour l'établissement authentifié
+ */
+clientBillingRouter.get('/analytics/mes-modules', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.etablissementId || req.utilisateur?.etablissementId;
+        if (!etablissementId) throw new AppError('Établissement non identifié', 400);
+
+        const { moduleAnalyticsService } = await import('@modules/monitoring/services/module-analytics.service');
+        const usage = await moduleAnalyticsService.getEtablissementUsage(etablissementId);
+        res.json({ success: true, data: usage });
+    } catch (error) { next(error); }
+});
+
+// =============================================
+// WEBHOOKS MODULES (P7.1 — plateforme)
+// =============================================
+
+/**
+ * GET /api/platform/facturation/webhooks/modules
+ * Liste les webhooks configurés
+ */
+platformBillingRouter.get('/webhooks/modules', async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { webhookDeliveryService } = await import('../services/webhook-delivery.service');
+        const webhooks = await webhookDeliveryService.listWebhooks();
+        res.json({ success: true, data: webhooks });
+    } catch (error) { next(error); }
+});
+
+/**
+ * POST /api/platform/facturation/webhooks/modules
+ * Configurer un nouveau webhook
+ */
+platformBillingRouter.post('/webhooks/modules', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { url, secret, events, description } = req.body;
+        if (!url || !secret) throw new AppError('URL et secret requis', 400, 'VALIDATION_ERROR');
+
+        const { webhookDeliveryService } = await import('../services/webhook-delivery.service');
+        const webhook = await webhookDeliveryService.addWebhook({
+            url,
+            secret,
+            events: events || ['*'],
+            actif: true,
+            description,
+        });
+        res.status(201).json({ success: true, data: webhook });
+    } catch (error) { next(error); }
+});
+
+/**
+ * DELETE /api/platform/facturation/webhooks/modules/:id
+ * Supprimer un webhook
+ */
+platformBillingRouter.delete('/webhooks/modules/:id', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { webhookDeliveryService } = await import('../services/webhook-delivery.service');
+        const removed = await webhookDeliveryService.removeWebhook(req.params.id);
+        if (!removed) throw new AppError('Webhook non trouvé', 404, 'WEBHOOK_NOT_FOUND');
+        res.json({ success: true, message: 'Webhook supprimé' });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /api/platform/facturation/webhooks/modules/logs
+ * Logs de delivery des webhooks
+ */
+platformBillingRouter.get('/webhooks/modules/logs', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const limit = parseInt(req.query.limit as string) || 50;
+        const { webhookDeliveryService } = await import('../services/webhook-delivery.service');
+        const logs = await webhookDeliveryService.getLogs(limit);
+        res.json({ success: true, data: logs });
     } catch (error) { next(error); }
 });
 

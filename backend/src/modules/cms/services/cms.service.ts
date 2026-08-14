@@ -30,6 +30,7 @@ import {
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { redisService } from '@common/services/redis.service';
+import { randomUUID } from 'crypto';
 
 export class CmsService {
     private pageRepo: Repository<CmsPage>;
@@ -114,18 +115,29 @@ export class CmsService {
     async updatePage(id: string, dto: UpdatePageDto, etablissementId: string, auteurId?: string): Promise<CmsPage> {
         const page = await this.findPageById(id, etablissementId);
 
+        // Optimistic Locking — vérifier la version
+        const { version, ...restDto } = dto as UpdatePageDto & { version?: number };
+        if (version !== undefined && version !== page.version) {
+            throw new AppError(
+                'Cette page a été modifiée par un autre utilisateur. Veuillez recharger et réessayer.',
+                409,
+                'CONCURRENT_EDIT',
+            );
+        }
+
         // Snapshot avant modification
         await this.creerVersion('page', page.id, page, etablissementId, auteurId);
 
         // Si page accueil, désactiver l'ancienne
-        if (dto.estPageAccueil) {
+        if (restDto.estPageAccueil) {
             await this.pageRepo.update(
                 { etablissementId, estPageAccueil: true },
                 { estPageAccueil: false }
             );
         }
 
-        Object.assign(page, dto);
+        Object.assign(page, restDto);
+        page.version = (page.version || 0) + 1;
         const saved = await this.pageRepo.save(page);
 
         logger.info('[CMS] Page mise à jour', { pageId: id, etablissementId });
@@ -135,6 +147,10 @@ export class CmsService {
 
     async deletePage(id: string, etablissementId: string): Promise<void> {
         const page = await this.findPageById(id, etablissementId);
+
+        // Supprimer d'abord les sections associées (cascade manuelle)
+        await this.sectionRepo.delete({ pageId: page.id });
+
         await this.pageRepo.remove(page);
         logger.info('[CMS] Page supprimée', { pageId: id, etablissementId });
         await this.invaliderCache(etablissementId);
@@ -186,9 +202,20 @@ export class CmsService {
             throw new AppError('Section introuvable', 404, 'CMS_SECTION_NOT_FOUND');
         }
 
+        // Optimistic Locking — vérifier la version
+        const { version, ...restDto } = dto as UpdateSectionDto & { version?: number };
+        if (version !== undefined && version !== section.version) {
+            throw new AppError(
+                'Cette section a été modifiée par un autre utilisateur. Veuillez recharger et réessayer.',
+                409,
+                'CONCURRENT_EDIT',
+            );
+        }
+
         await this.creerVersion('section', section.id, section, etablissementId);
 
-        Object.assign(section, dto);
+        Object.assign(section, restDto);
+        section.version = (section.version || 0) + 1;
         const saved = await this.sectionRepo.save(section);
 
         logger.info('[CMS] Section mise à jour', { sectionId: id });
@@ -445,13 +472,189 @@ export class CmsService {
     }
 
     // ==================================
+    // PREVIEW — Token pour pages brouillon
+    // ==================================
+
+    /**
+     * Génère un token de preview temporaire (10 min) pour visualiser une page brouillon.
+     */
+    async genererPreviewToken(pageId: string, etablissementId: string): Promise<{ token: string; slug: string; codeEtablissement: string }> {
+        const page = await this.pageRepo.findOne({
+            where: { id: pageId, etablissementId },
+            relations: ['pageParent'],
+        });
+        if (!page) {
+            throw new AppError('Page introuvable', 404, 'CMS_PAGE_NOT_FOUND');
+        }
+
+        const token = randomUUID();
+        const payload = JSON.stringify({ pageId, etablissementId, slug: page.slug });
+
+        // Stocker le token dans Redis avec TTL 10 minutes
+        try {
+            await redisService.set(`preview:${token}`, payload, 600);
+        } catch {
+            // Redis non disponible — fallback sans cache (token non persisté)
+            logger.warn('[CMS] Redis indisponible, preview token non persisté');
+        }
+
+        // Récupérer le code établissement
+        const etabRepo = AppDataSource.getRepository('Etablissement');
+        const etab = await etabRepo.findOne({
+            where: { id: etablissementId },
+            select: ['codeEtablissement'],
+        });
+
+        return {
+            token,
+            slug: page.slug,
+            codeEtablissement: (etab as any)?.codeEtablissement || '',
+        };
+    }
+
+    // ==================================
+    // EXPORT / IMPORT — Sauvegarde et restauration JSON
+    // ==================================
+
+    /**
+     * Exporte une page CMS complète en JSON (page + sections + thème actif).
+     * Format compatible avec l'import ou avec Puck Editor.
+     */
+    async exporterPage(pageId: string, etablissementId: string, options?: { format?: 'json' | 'puck' }): Promise<Record<string, unknown>> {
+        const page = await this.findPageById(pageId, etablissementId);
+        const sections = await this.findSectionsByPage(pageId, etablissementId);
+
+        // Charger le thème actif
+        const themeActif = await this.findThemeActif(etablissementId);
+
+        const sectionsExport = sections
+            .filter(s => s.visible)
+            .sort((a, b) => a.ordre - b.ordre)
+            .map(s => ({
+                type: s.type,
+                contenu: s.contenu,
+                ordre: s.ordre,
+                visible: s.visible,
+                styles: s.styles,
+                anchorId: s.anchorId,
+            }));
+
+        if (options?.format === 'puck') {
+            // Format Puck Editor — compatible import direct
+            return {
+                version: '1.0',
+                exportedAt: new Date().toISOString(),
+                etablissementId,
+                format: 'puck',
+                puckData: {
+                    content: sectionsExport.map(s => ({
+                        type: s.type,
+                        props: { ...s.contenu },
+                    })),
+                    root: {},
+                },
+            };
+        }
+
+        // Format JSON complet
+        return {
+            version: '1.0',
+            exportedAt: new Date().toISOString(),
+            etablissementId,
+            format: 'json',
+            page: {
+                titre: page.titre,
+                slug: page.slug,
+                template: page.template,
+                statut: page.statut,
+                ordre: page.ordre,
+                seo: page.seo,
+                metadata: page.metadata,
+                estPageAccueil: page.estPageAccueil,
+            },
+            sections: sectionsExport,
+            theme: themeActif ? {
+                nom: themeActif.nom,
+                variables: themeActif.variables,
+                polices: themeActif.polices,
+            } : null,
+        };
+    }
+
+    /**
+     * Importe une page CMS depuis un JSON exporté.
+     * Crée une nouvelle page ou écrase une existante.
+     */
+    async importerPage(
+        dto: { titre: string; slug?: string; sections: any[]; metadata?: any; statut?: string; ecraserExistante?: boolean },
+        etablissementId: string,
+        auteurId?: string,
+    ): Promise<CmsPage> {
+        // Générer un slug unique si non fourni
+        let slug = dto.slug || dto.titre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+        // Vérifier l'unicité du slug
+        const existant = await this.pageRepo.findOne({ where: { slug, etablissementId } });
+
+        if (existant && !dto.ecraserExistante) {
+            // Ajouter un suffixe numérique
+            let suffix = 1;
+            let newSlug = `${slug}-${suffix}`;
+            while (await this.pageRepo.findOne({ where: { slug: newSlug, etablissementId } })) {
+                suffix++;
+                newSlug = `${slug}-${suffix}`;
+            }
+            slug = newSlug;
+        }
+
+        if (existant && dto.ecraserExistante) {
+            // Écraser la page existante
+            await this.deletePage(existant.id, etablissementId);
+        }
+
+        // Créer la nouvelle page
+        const page = this.pageRepo.create({
+            titre: dto.titre,
+            slug,
+            template: 'custom',
+            statut: (dto.statut as any) || 'BROUILLON',
+            ordre: 0,
+            metadata: dto.metadata,
+            etablissementId,
+        });
+        const savedPage = await this.pageRepo.save(page);
+
+        // Créer les sections
+        if (dto.sections && dto.sections.length > 0) {
+            for (let i = 0; i < dto.sections.length; i++) {
+                const s = dto.sections[i];
+                const section = this.sectionRepo.create({
+                    type: s.type,
+                    contenu: s.contenu || {},
+                    ordre: s.ordre ?? i,
+                    visible: s.visible ?? true,
+                    styles: s.styles,
+                    pageId: savedPage.id,
+                });
+                await this.sectionRepo.save(section);
+            }
+        }
+
+        logger.info('[CMS] Page importée', { pageId: savedPage.id, slug, sectionsCount: dto.sections?.length || 0, etablissementId });
+        await this.invaliderCache(etablissementId);
+
+        // Recharger avec les sections
+        return this.findPageById(savedPage.id, etablissementId);
+    }
+
+    // ==================================
     // CACHE — Invalidation
     // ==================================
 
     private async invaliderCache(etablissementId: string): Promise<void> {
         try {
-            // Invalider toutes les clés publiques liées à cet établissement
-            await redisService.del(`public:${etablissementId}:*`);
+            // SCAN + DEL — Redis DEL ne supporte pas les glob patterns
+            await redisService.delPattern(`public:${etablissementId}:*`);
         } catch {
             // Redis non disponible — mode silencieux
         }

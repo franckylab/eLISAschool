@@ -22,6 +22,9 @@ import {
     StatutAbonnement,
     CycleFacturation,
 } from './entities/abonnement-client.entity';
+// Migration 210 — Refonte Feature Flags (cron expiration)
+import { featureFlagDefinitionService } from './services/feature-flag-definition.service';
+import { ActionFeatureFlag } from './entities/feature-flag-history.entity';
 import { Facture, StatutFacture } from './entities/facture.entity';
 import { PlanAbonnement, StatutPlan, ModeFacturationTranches } from './entities/plan-abonnement.entity';
 import { FacturationService } from './services/facturation.service';
@@ -453,6 +456,80 @@ export async function cronExpirationEssai(): Promise<CronResult> {
 }
 
 // =============================================
+// Migration 210 — Expiration des feature flags
+// =============================================
+
+/**
+ * Vérification des feature flags expirés.
+ * Schedule : quotidien à 03h00
+ * 
+ * Détecte les flags avec expires_at < now(),
+ * log dans l'historique et émet un warning.
+ */
+export async function cronExpiredFlags(): Promise<CronResult> {
+    const start = Date.now();
+    logger.info('[Cron Flags] 🕐 Vérification des feature flags expirés...');
+
+    const results = { flagsExpires: 0, orphans: 0, erreurs: 0 };
+
+    try {
+        // 1. Flags expirés
+        const expired = await featureFlagDefinitionService.findExpiredFlags();
+        results.flagsExpires = expired.length;
+
+        for (const flag of expired) {
+            try {
+                // Log dans l'historique
+                await featureFlagDefinitionService.logHistory({
+                    flagDefinitionId: flag.id,
+                    action: ActionFeatureFlag.EXPIRE,
+                    ancienneValeur: 'actif',
+                    nouvelleValeur: 'expire',
+                    commentaire: `Flag expiré le ${flag.expiresAt?.toISOString()}`,
+                });
+
+                // Désactiver le flag
+                flag.estActif = false;
+                logger.warn(
+                    `[Cron Flags] ⚠️ Flag expiré : ${flag.cle} (${flag.label}) — expiré le ${flag.expiresAt?.toISOString()}`
+                );
+            } catch (err) {
+                results.erreurs++;
+                logger.error(`[Cron Flags] Erreur traitement flag expiré ${flag.cle}:`, err);
+            }
+        }
+
+        // 2. Flags orphelins
+        const orphans = await featureFlagDefinitionService.findOrphanFlags();
+        results.orphans = orphans.length;
+
+        if (orphans.length > 0) {
+            logger.warn(
+                `[Cron Flags] ⚠️ ${orphans.length} flag(s) orphelin(s) détecté(s) dans feature_flags_tenant sans définition`
+            );
+        }
+
+    } catch (error) {
+        logger.error('[Cron Flags] Erreur globale:', error);
+        results.erreurs++;
+    }
+
+    const duration = Date.now() - start;
+    logger.info(
+        `[Cron Flags] ✅ Terminé en ${duration}ms — ` +
+        `${results.flagsExpires} expirés, ${results.orphans} orphelins, ${results.erreurs} erreurs`
+    );
+
+    return {
+        job: 'expired-flags',
+        executed: true,
+        results: results as any,
+        duration,
+        timestamp: new Date(),
+    };
+}
+
+// =============================================
 // REGISTRATION — Appelées depuis app.ts ou un scheduler
 // =============================================
 
@@ -466,6 +543,7 @@ export async function executerJobsQuotidiens(): Promise<CronResult[]> {
     results.push(await cronRenouvellementAuto());
     results.push(await cronDunning());
     results.push(await cronExpirationEssai());
+    results.push(await cronExpiredFlags());
 
     logger.info(`[Cron] ✅ Jobs quotidiens terminés — ${results.length} jobs exécutés`);
     return results;
@@ -508,6 +586,7 @@ export function initBillingCronJobs(): void {
             await cronRenouvellementAuto();
             await cronDunning();
             await cronExpirationEssai();
+            await cronExpiredFlags();
         } catch (error) {
             logger.error('[Cron] Erreur jobs quotidiens billing:', error);
         }
@@ -540,7 +619,7 @@ export function initBillingCronJobs(): void {
         }
     }, { timezone: 'Africa/Douala' });
 
-    logger.info('[Cron] ✅ Cron jobs billing enregistrés (quotidien 00h, mensuel 1er, quota 6h, tranches 02h)');
+    logger.info('[Cron] ✅ Cron jobs billing enregistrés (quotidien 00h, mensuel 1er, quota 6h, tranches 02h, flags 03h)');
 }
 
 // =============================================

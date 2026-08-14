@@ -315,8 +315,7 @@ router.post('/switch-etablissement', authMiddleware, async (req: Request, res: R
             throw new AppError('Établissement non trouvé dans vos affectations', 404, 'NOT_FOUND');
         }
 
-        // Re-résoudre les permissions pour le nouvel établissement
-        const resolvedPermissions = await permissionResolverService.resolvePermissions(utilisateurId, etablissementId);
+        // Résoudre les rôles pour le nouvel établissement
         const userRoles = await permissionResolverService.getUserRoles(utilisateurId, etablissementId);
 
         // Logger le changement pour audit
@@ -336,12 +335,13 @@ router.post('/switch-etablissement', authMiddleware, async (req: Request, res: R
         );
 
         // Générer un nouveau JWT avec le nouvel établissement
+        // Note: permissions absentes du JWT (résolues côté serveur par authMiddleware)
+        // pour éviter les tokens trop volumineux (HTTP 431)
         const payload = {
             sub: utilisateurId,
             email: req.utilisateur?.email,
             role: utilisateurEtablissement.role.code,
             roles: userRoles.map(r => r.code),
-            permissions: Array.from(resolvedPermissions),
             etablissementId: etablissementId,
             etablissements: req.utilisateur?.etablissements || [],
         };

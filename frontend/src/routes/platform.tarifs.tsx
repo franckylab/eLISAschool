@@ -65,7 +65,7 @@ interface ModuleCatalogue {
     id: string;
     code: string;
     nom: string;
-    categorie: 'CRITIQUE' | 'PREMIUM' | 'ADDON';
+    categorie: 'BASE' | 'PREMIUM' | 'ADDON';
     prixMensuel?: number;
     description?: string;
     estFacturable: boolean;

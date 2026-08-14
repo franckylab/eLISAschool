@@ -19,7 +19,9 @@
         "utilisateurs": "Users",
         "parametresCascade": "Cascade parameters",
 "rolesPlateforme": "Roles & Permissions",
-"sessionsActivite": "Sessions & Activity"
+"sessionsActivite": "Sessions & Activity",
+        "moduleBuilder": "Module Builder",
+        "featureFlags": "Feature Flags"
     },
     "sidebar": {
         "titre": "Platform",
@@ -33,6 +35,8 @@
         "descEtablissements": "Tenant management",
         "descFacturation": "Plans & subscriptions",
         "descModules": "Optional modules",
+        "descFeatureFlags": "Centralized flags management",
+        "descModuleBuilder": "Create & import modules",
         "descMonitoring": "Health & metrics",
         "descAudit": "Audit log",
         "descNotifications": "Notification config",
@@ -118,7 +122,7 @@
         },
         "modules": {
             "titre": "Included Modules",
-            "critiques": "Critical Modules",
+            "base": "Base Modules",
             "premium": "Premium Modules",
             "addons": "Add-on Modules",
             "selectionner": "Select Modules"
@@ -413,7 +417,7 @@
                 "modulesActifs": "Active modules",
                 "modulesSur": "active out of",
                 "aucunModule": "No modules configured",
-                "catCritique": "System",
+                "catBase": "Base",
                 "catPremium": "Premium",
                 "catAddon": "Add-on",
                 "quotas": {
@@ -1292,7 +1296,7 @@
         },
         "modules": {
             "desc": "Select modules included in this plan.",
-            "critique": "Critical (free)",
+            "base": "Base (free)",
             "premium": "Premium (included in plan)",
             "addon": "Add-on (extra)"
         },
@@ -1507,7 +1511,7 @@
         "synchroniser": "Synchronize",
         "nouveauModule": "New module",
         "totalModules": "Total modules",
-        "critiquesGratuits": "Critical (free)",
+        "baseGratuits": "Base (free)",
         "facturables": "Billable (Premium/Add-on)",
         "actifsDefaut": "Active by default",
         "rechercher": "Search module (name, code)...",
@@ -1527,12 +1531,12 @@
         "desactiver": "Deactivate",
         "categories": {
             "toutes": "All categories",
-            "critiques": "Critical (free)",
+            "base": "Base (free)",
             "premium": "Premium (plans)",
             "addons": "Add-ons (extras)"
         },
         "badge": {
-            "critique": "Critical",
+            "base": "Base",
             "premium": "Premium",
             "addon": "Add-on"
         },
@@ -1559,7 +1563,7 @@
             "actifDefaut": "Active by default",
             "visibleCatalogue": "Visible in catalogue",
             "codeProtege": "Protected code (system module)",
-            "categorieCritique": "Critical (free)",
+            "categorieBase": "Base (free)",
             "categoriePremium": "Premium (plan)",
             "categorieAddon": "Add-on (extra)",
             "planAucun": "None"
@@ -1584,6 +1588,7 @@
     },
     "featureFlags": {
         "titre": "Feature Flags",
+        "subtitle": "Centralized feature flags registry — management, rollout and audit",
         "overrideTenant": "Tenant override",
         "selectionnerEtab": "Select a school",
         "selectionnerEtabMessage": "Select a school to view its feature flags",
@@ -1594,7 +1599,54 @@
         "defaut": "Default",
         "aucunFlag": "No feature flag found",
         "toastToggleSuccess": "Flag updated",
-        "toastToggleError": "Error updating flag"
+        "toastToggleError": "Error updating flag",
+        "systeme": "System",
+        "createDefinition": "New flag",
+        "confirmDelete": "Delete this definition?",
+        "deactivate": "Deactivate",
+        "expiredFlags": "Expired flags",
+        "orphanFlags": "Orphan flags",
+        "orphanDesc": "Flags present in tenant overrides but without centralized definition",
+        "noExpired": "No expired flags",
+        "tabs": {
+            "definitions": "Definitions",
+            "matrix": "Matrix",
+            "audit": "Audit",
+            "expired": "Expired"
+        },
+        "form": {
+            "createTitle": "New feature flag",
+            "editTitle": "Edit flag",
+            "cle": "Key",
+            "label": "Label",
+            "description": "Description",
+            "descriptionPlaceholder": "Flag description...",
+            "categorie": "Category",
+            "type": "Type",
+            "planMinimal": "Minimum plan",
+            "rollout": "Rollout",
+            "valeurDefaut": "Default value enabled",
+            "expiresAt": "Expiration",
+            "estSysteme": "System flag (non-deletable)",
+            "requiredFields": "Key and label required"
+        },
+        "matrix": {
+            "searchEtab": "Search for a school...",
+            "allCategories": "All categories",
+            "etablissement": "School",
+            "selected": "selected"
+        },
+        "audit": {
+            "searchFlag": "Search for a flag...",
+            "date": "Date",
+            "action": "Action",
+            "flag": "Flag",
+            "etablissement": "School",
+            "commentaire": "Comment",
+            "par": "By",
+            "entries": "entries",
+            "noEntries": "No history entries"
+        }
     },
     "platformUsers": {
         "creer": "New account",

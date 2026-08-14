@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport — Refactoring Billing & Navigation SaaS | eLISAschool</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --primary: #28a745;
+            --primary-dark: #1e7e34;
+            --secondary: #007bff;
+            --accent: #fd7e14;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --success: #28a745;
+            --info: #17a2b8;
+            --surface: #ffffff;
+            --surface-alt: #f8f9fa;
+            --text: #212529;
+            --text-secondary: #6c757d;
+            --border: #dee2e6;
+            --radius: 12px;
+            --shadow: 0 2px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--surface-alt);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+        }
+
+        /* Header */
+        .report-header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary), #20c997);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .report-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 60%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .report-header h1 {
+            font-size: clamp(1.5rem, 3vw, 2.5rem);
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+
+        .report-header .subtitle {
+            font-size: clamp(0.9rem, 1.5vw, 1.2rem);
+            opacity: 0.9;
+            position: relative;
+        }
+
+        .report-header .meta {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+            opacity: 0.85;
+            position: relative;
+        }
+
+        .report-header .meta span {
+            background: rgba(255,255,255,0.15);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Navigation TOC */
+        .toc {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem 2rem;
+            margin: 2rem auto;
+            max-width: 900px;
+            box-shadow: var(--shadow);
+        }
+
+        .toc h2 {
+            font-size: 1.1rem;
+            color: var(--primary-dark);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toc ol {
+            columns: 2;
+            column-gap: 2rem;
+            padding-left: 1.5rem;
+        }
+
+        .toc li {
+            margin-bottom: 0.4rem;
+            font-size: 0.9rem;
+        }
+
+        .toc a {
+            color: var(--secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .toc a:hover { color: var(--primary-dark); text-decoration: underline; }
+
+        @media (max-width: 640px) { .toc ol { columns: 1; } }
+
+        /* Main content */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 1.5rem 4rem;
+        }
+
+        section {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: clamp(1.5rem, 3vw, 2.5rem);
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        h2 {
+            font-size: clamp(1.2rem, 2vw, 1.6rem);
+            color: var(--primary-dark);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        h3 {
+            font-size: 1.1rem;
+            color: var(--text);
+            margin: 1.5rem 0 0.75rem;
+        }
+
+        h4 {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin: 1rem 0 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        p { margin-bottom: 1rem; }
+
+        /* Alert boxes */
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 4px solid;
+            font-size: 0.9rem;
+        }
+
+        .alert-danger { background: #fff5f5; border-color: var(--danger); color: #721c24; }
+        .alert-warning { background: #fffbeb; border-color: var(--warning); color: #856404; }
+        .alert-success { background: #f0fff4; border-color: var(--success); color: #155724; }
+        .alert-info { background: #e8f4fd; border-color: var(--info); color: #0c5460; }
+
+        .alert strong { display: block; margin-bottom: 0.25rem; }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.88rem;
+        }
+
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 0.6rem 0.8rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:nth-child(even) { background: var(--surface-alt); }
+        tr:hover { background: #e8f5e9; }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-base { background: #e8f5e9; color: #2e7d32; }
+        .badge-premium { background: #e3f2fd; color: #1565c0; }
+        .badge-addon { background: #fff3e0; color: #e65100; }
+        .badge-critique { background: #ffebee; color: #c62828; text-decoration: line-through; }
+        .badge-new { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        .badge-stale { background: #fff3e0; color: #e65100; border: 1px solid #ffcc02; }
+        .badge-done { background: #e8f5e9; color: #2e7d32; }
+        .badge-todo { background: #fff3e0; color: #e65100; }
+
+        /* Mermaid */
+        .mermaid {
+            background: var(--surface-alt);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+        }
+
+        /* Score gauge */
+        .score-gauge {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+
+        .gauge-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .gauge-current { background: conic-gradient(var(--warning) 0% 55%, #e0e0e0 55% 100%); }
+        .gauge-target { background: conic-gradient(var(--success) 0% 92%, #e0e0e0 92% 100%); }
+
+        .gauge-label { font-size: 0.85rem; color: var(--text-secondary); }
+        .gauge-value { font-size: 1.5rem; font-weight: 700; }
+
+        /* Cards grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .card {
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .card h4 { margin: 0.25rem 0; text-transform: none; letter-spacing: 0; color: var(--text); font-size: 1rem; }
+        .card p { font-size: 0.85rem; color: var(--text-secondary); margin: 0; }
+
+        /* Navigation mockup */
+        .nav-mockup {
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.2rem;
+            transition: background 0.2s;
+        }
+
+        .nav-item:hover { background: rgba(40, 167, 69, 0.08); }
+        .nav-item.active { background: var(--primary); color: white; }
+        .nav-item .icon { width: 18px; text-align: center; }
+        .nav-group { font-weight: 600; color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; padding: 0.5rem 0.75rem 0.25rem; }
+        .nav-sub { padding-left: 2rem; }
+
+        /* Comparison */
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        @media (max-width: 768px) { .comparison { grid-template-columns: 1fr; } }
+
+        .comparison-col {
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .comparison-col.before { background: #fff5f5; border-color: #ffcdd2; }
+        .comparison-col.after { background: #f0fff4; border-color: #a5d6a7; }
+
+        .comparison-col h4 {
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .comparison-col.before h4 { color: var(--danger); }
+        .comparison-col.after h4 { color: var(--success); }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+            margin: 1.5rem 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+            padding-left: 1rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.65rem;
+            top: 0.4rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        .timeline-item.phase-done::before { background: var(--success); box-shadow: 0 0 0 2px var(--success); }
+        .timeline-item.phase-current::before { background: var(--warning); box-shadow: 0 0 0 2px var(--warning); animation: pulse 2s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 2px var(--warning); }
+            50% { box-shadow: 0 0 0 5px rgba(255, 193, 7, 0.3); }
+        }
+
+        .timeline-phase { font-weight: 700; font-size: 0.95rem; }
+        .timeline-desc { font-size: 0.85rem; color: var(--text-secondary); }
+
+        /* File tree */
+        .file-tree {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            line-height: 1.8;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        .file-tree .added { color: #4ec9b0; }
+        .file-tree .modified { color: #dcdcaa; }
+        .file-tree .deleted { color: #f44747; }
+        .file-tree .comment { color: #6a9955; }
+
+        /* Progress bars */
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        /* Stats row */
+        .stats-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+
+        .stat-item {
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+            padding: 1rem;
+            background: var(--surface-alt);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-value { font-size: 1.5rem; font-weight: 800; color: var(--primary-dark); }
+        .stat-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; }
+
+        /* Code block */
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            line-height: 1.6;
+        }
+
+        code { font-family: 'JetBrains Mono', monospace; }
+        p code, li code, td code {
+            background: #f0f0f0;
+            color: #c7254e;
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+            font-size: 0.85em;
+        }
+
+        /* Footer */
+        .report-footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+
+        /* Print */
+        @media print {
+            body { background: white; }
+            section { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; }
+            .report-header { background: var(--primary-dark) !important; -webkit-print-color-adjust: exact; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .report-header { padding: 2rem 1rem; }
+            .container { padding: 0 1rem 3rem; }
+            section { padding: 1.25rem; }
+            .score-gauge { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- HEADER -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<header class="report-header">
+    <h1>Refactoring Billing & Navigation SaaS</h1>
+    <p class="subtitle">Audit complet, architecture cible et plan d'implementation pour le systeme de facturation eLISAschool</p>
+    <div class="meta">
+        <span>Version 1.0</span>
+        <span>13 aout 2026</span>
+        <span>Auteur: Qoder (admin project)</span>
+        <span>Statut: Rapport d'audit + plan d'action</span>
+    </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- TABLE DES MATIERES -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<nav class="toc">
+    <h2>Table des matieres</h2>
+    <ol>
+        <li><a href="#resume">Resume executif</a></li>
+        <li><a href="#audit">Audit de l'existant</a></li>
+        <li><a href="#terminologie">Refonte terminologique</a></li>
+        <li><a href="#architecture">Architecture cible</a></li>
+        <li><a href="#navigation">Navigation & menus</a></li>
+        <li><a href="#pages">Refactoring des pages</a></li>
+        <li><a href="#migration">Migration CRITIQUE vers BASE</a></li>
+        <li><a href="#benchmark">Benchmark SaaS industry</a></li>
+        <li><a href="#roadmap">Roadmap d'implementation</a></li>
+        <li><a href="#fichiers">Inventaire des fichiers</a></li>
+        <li><a href="#risques">Risques & mitigations</a></li>
+    </ol>
+</nav>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 1. RESUME EXECUTIF -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="resume">
+    <h2>1. Resume executif</h2>
+
+    <div class="score-gauge">
+        <div>
+            <div class="gauge-circle gauge-current" style="background: conic-gradient(#ffc107 0% 55%, #e0e0e0 55% 100%);">5.5</div>
+            <div class="gauge-label">Score actuel /10</div>
+        </div>
+        <div style="font-size: 2rem; color: var(--text-secondary);">→</div>
+        <div>
+            <div class="gauge-circle gauge-target" style="background: conic-gradient(#28a745 0% 92%, #e0e0e0 92% 100%);">9.2</div>
+            <div class="gauge-label">Score cible /10</div>
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+            <p style="font-size: 0.9rem; margin: 0;">Le systeme de facturation et navigation actuel presente des incoherences terminologiques (CRITIQUE vs BASE), une redondance de pages (6 routes vides, doublons marketplace/facturation), et une absence de separation des responsabilites. Ce rapport propose une refonte complete alignee sur les meilleures pratiques SaaS (Stripe, Schematic, Orb).</p>
+        </div>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-item">
+            <div class="stat-value">7</div>
+            <div class="stat-label">Sous-menus proposes</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">23</div>
+            <div class="stat-label">Fichiers a modifier</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">10</div>
+            <div class="stat-label">Routes a supprimer</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">3</div>
+            <div class="stat-label">Phases d'implementation</div>
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <strong>Perimetre du rapport</strong>
+        Ce document couvre : (1) l'audit complet du systeme billing actuel, (2) la refonte terminologique CRITIQUE → BASE/Core, (3) la restructuration de la navigation tenant et plateforme, (4) le plan d'implementation detaille avec inventaire des fichiers.
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 2. AUDIT DE L'EXISTANT -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="audit">
+    <h2>2. Audit de l'existant</h2>
+
+    <h3>2.1 Architecture actuelle — Cascade de resolution des modules</h3>
+
+    <div class="mermaid">
+    flowchart TD
+        subgraph "EntitlementService (source unique)"
+            A["1. Module BASE (code)"] -->|bypass total| Z["Accessible"]
+            B["2. Catalogue DB<br/>(modules_catalogue)"] -->|module existe?| C
+            C["3. Categorie BASE"] -->|bypass| Z
+            D["4. Abonnement ACTIF<br/>ou ESSAI (14j)"] -->|sans plan| Y["Bloque"]
+            E["5. Plan (modulesInclus)"] -->|inclus?| Z
+            F["6. Override groupe<br/>(ModulesGroupe)"] -->|active?| Z
+            G["7. Supplement<br/>(AbonnementModule)"] -->|souscrit?| Z
+            H["8. Plan minimal requis"] -->|rang suffisant?| Z
+            I["9. Defaut catalogue<br/>(actifParDefaut)"] -->|dernier fallback| Z
+        end
+
+        style A fill:#e8f5e9,stroke:#2e7d32
+        style C fill:#e8f5e9,stroke:#2e7d32
+        style Z fill:#c8e6c9,stroke:#2e7d32,color:#1b5e20
+        style Y fill:#ffcdd2,stroke:#c62828,color:#b71c1c
+    </div>
+
+    <h3>2.2 Navigation actuelle — Cote Tenant</h3>
+
+    <div class="comparison">
+        <div class="comparison-col before">
+            <h4>Problemes identifies</h4>
+            <table>
+                <tr><td><span class="badge badge-stale">Stale</span></td><td>CRITIQUE reference dans le frontend alors que le backend utilise BASE</td></tr>
+                <tr><td><span class="badge badge-stale">Doublon</span></td><td>6 routes vides (modules-complementaires, -organisationnels, etc.)</td></tr>
+                <tr><td><span class="badge badge-stale">Confus</span></td><td>"Mon Abonnement" melange factures, quotas, simulateur, modules</td></tr>
+                <tr><td><span class="badge badge-stale">Redondant</span></td><td>_auth.facturation.tsx redirige vers mon-abonnement</td></tr>
+                <tr><td><span class="badge badge-stale">Incoherent</span></td><td>Marketplace = 3 onglets dont "analytics" (hors sujet)</td></tr>
+            </table>
+        </div>
+        <div class="comparison-col after">
+            <h4>Cible proposee</h4>
+            <table>
+                <tr><td><span class="badge badge-done">Clean</span></td><td>Terminologie BASE/PREMIUM/ADDON coherente</td></tr>
+                <tr><td><span class="badge badge-done">Organise</span></td><td>"Mon etablissement" = 7 sous-menus clairs</td></tr>
+                <tr><td><span class="badge badge-done">Separe</span></td><td>Chaque page = 1 responsabilite unique</td></tr>
+                <tr><td><span class="badge badge-done">Fluide</span></td><td>Marketplace = catalogue + souscription</td></tr>
+                <tr><td><span class="badge badge-done">Pro</span></td><td>Aligne sur Stripe/Schematic/Orb</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <h3>2.3 Pages billing actuelles — Inventaire</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Route</th>
+                <th>Fichier</th>
+                <th>Onglets</th>
+                <th>Probleme</th>
+                <th>Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>/mon-abonnement</code></td>
+                <td>_auth.mon-abonnement.tsx (561l)</td>
+                <td>Abonnement, Factures, Quotas, Simulateur, Historique</td>
+                <td>Trop large — 5 responsabilites differentes</td>
+                <td><span class="badge badge-stale">A refondre</span></td>
+            </tr>
+            <tr>
+                <td><code>/marketplace</code></td>
+                <td>_auth.marketplace.tsx (898l)</td>
+                <td>Catalogue, Mes modules, Analytics</td>
+                <td>"Analytics" hors sujet ici</td>
+                <td><span class="badge badge-stale">A nettoyer</span></td>
+            </tr>
+            <tr>
+                <td><code>/facturation</code></td>
+                <td>_auth.facturation.tsx (11l)</td>
+                <td>—</td>
+                <td>Redirect stub vers /mon-abonnement</td>
+                <td><span class="badge badge-stale">A supprimer</span></td>
+            </tr>
+            <tr>
+                <td><code>/tarifs</code></td>
+                <td>platform.tarifs.tsx (561l)</td>
+                <td>—</td>
+                <td>Existe uniquement cote plateforme</td>
+                <td><span class="badge badge-todo">A deplacer</span></td>
+            </tr>
+            <tr>
+                <td><code>/platform/facturation</code></td>
+                <td>platform.facturation.tsx (821l)</td>
+                <td>Plans, Abonnements, Factures, Usage, Revenus, Modules, Flags, Groupes</td>
+                <td>8 onglets — surcharge cognitive</td>
+                <td><span class="badge badge-stale">A reorganiser</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>2.4 Incoherence terminologique CRITIQUE → BASE</h3>
+
+    <div class="alert alert-danger">
+        <strong>Migration incomplete detectee</strong>
+        Le backend a deja migre l'enum <code>CategorieModule</code> de <code>CRITIQUE</code> vers <code>BASE</code> (fichier <code>module-catalogue.entity.ts</code>). Cependant, le frontend reference encore <code>"CRITIQUE"</code> dans les fichiers i18n, les filtres marketplace, et les labels admin. De plus, <code>entitlement.service.ts</code> ligne 767 contient <code>source !== 'critique'</code> — une reference a une valeur inexistante dans le type <code>EntitlementSource</code>.
+    </div>
+
+    <div class="mermaid">
+    flowchart LR
+        subgraph "Backend (OK)"
+            B1["CategorieModule.BASE"]
+            B2["MODULES_BASE_BYPASS"]
+            B3["source: 'base'"]
+        end
+        subgraph "Frontend (STALE)"
+            F1["categories.CRITIQUE"]
+            F2["sources.critique"]
+            F3["catalogue.categories.critiques"]
+        end
+
+        B1 -.->|devrait etre| F1
+        B3 -.->|devrait etre| F2
+
+        style B1 fill:#c8e6c9,stroke:#2e7d32
+        style B2 fill:#c8e6c9,stroke:#2e7d32
+        style B3 fill:#c8e6c9,stroke:#2e7d32
+        style F1 fill:#ffcdd2,stroke:#c62828
+        style F2 fill:#ffcdd2,stroke:#c62828
+        style F3 fill:#ffcdd2,stroke:#c62828
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 3. REFONTE TERMINOLOGIQUE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="terminologie">
+    <h2>3. Refonte terminologique</h2>
+
+    <h3>3.1 Benchmark industrie — Terminologie SaaS</h3>
+
+    <p>Recherche approfondie aupres des leaders du SaaS billing (Stripe, Schematic, Orb, Maxio, Chargebee, Paddle) :</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Concept</th>
+                <th>eLISAschool actuel</th>
+                <th>Stripe</th>
+                <th>Schematic</th>
+                <th>Orb</th>
+                <th>Recommandation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Modules toujours inclus</td>
+                <td><span class="badge badge-critique">CRITIQUE</span></td>
+                <td>Core features</td>
+                <td>Base entitlements</td>
+                <td>Core features</td>
+                <td><span class="badge badge-base">BASE</span> (deja fait backend)</td>
+            </tr>
+            <tr>
+                <td>Modules inclus dans un plan</td>
+                <td>PREMIUM</td>
+                <td>Plan features</td>
+                <td>Plan entitlements</td>
+                <td>Included features</td>
+                <td><span class="badge badge-premium">PREMIUM</span> (conserver)</td>
+            </tr>
+            <tr>
+                <td>Modules en supplement</td>
+                <td>ADDON</td>
+                <td>Add-ons</td>
+                <td>Entitlements</td>
+                <td>Add-ons</td>
+                <td><span class="badge badge-addon">ADDON</span> (conserver)</td>
+            </tr>
+            <tr>
+                <td>Verification d'acces</td>
+                <td>Module resolution</td>
+                <td>Entitlements check</td>
+                <td>Feature gates</td>
+                <td>Entitlements</td>
+                <td>Entitlements (terme technique)</td>
+            </tr>
+            <tr>
+                <td>Section facturation</td>
+                <td>Mon Abonnement</td>
+                <td>Billing</td>
+                <td>Billing & Subscription</td>
+                <td>Billing</td>
+                <td><strong>Mon etablissement</strong></td>
+            </tr>
+            <tr>
+                <td>Catalogue modules</td>
+                <td>Marketplace / Modules</td>
+                <td>App Marketplace</td>
+                <td>Feature catalog</td>
+                <td>Add-on store</td>
+                <td><strong>Marche</strong> (FR) / <strong>Marketplace</strong> (EN)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>3.2 Decisions terminologiques validées</h3>
+
+    <div class="cards-grid">
+        <div class="card">
+            <div class="card-icon" style="background: #e8f5e9;">🟢</div>
+            <h4>BASE (etait CRITIQUE)</h4>
+            <p>Modules fondamentaux toujours disponibles, non facturables. Le backend a deja migre. Le frontend doit suivre.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: #e3f2fd;">🔵</div>
+            <h4>PREMIUM (conserve)</h4>
+            <p>Modules inclus dans les plans payants. Le terme est universellement compris dans l'industrie SaaS.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: #fff3e0;">🟠</div>
+            <h4>ADDON (conserve)</h4>
+            <p>Modules souscriptibles separement. Correspond au concept Stripe "Add-ons" et Orb "Add-ons".</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: #f3e5f5;">🟣</div>
+            <h4>Marche / Marketplace</h4>
+            <p>Remplace "Modules" comme label de menu. Evoque un lieu d'exploration et de souscription, pas une liste technique.</p>
+        </div>
+    </div>
+
+    <h3>3.3 EntitlementSource — Nettoyage des valeurs</h3>
+
+    <pre><code>// backend/src/modules/billing/services/entitlement.service.ts
+// Type actuel (correct) :
+type EntitlementSource = 'base' | 'essai' | 'plan' | 'groupe' | 'supplement' | 'catalogue' | 'override';
+
+// Ligne 767 — BUG A CORRIGER :
+// AVANT (stale) :
+source !== 'critique'   // 'critique' n'existe pas dans EntitlementSource !
+
+// APRES (correct) :
+source !== 'base'       // Les modules BASE sont toujours accessibles, pas "souscrits"</code></pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 4. ARCHITECTURE CIBLE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="architecture">
+    <h2>4. Architecture cible</h2>
+
+    <h3>4.1 Separation des responsabilites</h3>
+
+    <div class="mermaid">
+    flowchart TD
+        subgraph "Mon etablissement (Tenant)"
+            ME["Mon etablissement"]
+            ME --> ET["Etablissements<br/>(si groupe)"]
+            ME --> GR["Groupes<br/>(si gestionnaire)"]
+            ME --> AB["Abonnements<br/>Vue d'ensemble"]
+            ME --> FA["Factures<br/>Historique + actions"]
+            ME --> PL["Plan d'abonnement<br/>Plans disponibles + simulateur"]
+            ME --> UQ["Usages & Quotas<br/>Consommation temps reel"]
+            ME --> MK["Marche<br/>Catalogue + souscription"]
+        end
+
+        subgraph "Plateforme (Control Plane)"
+            PLAT["Administration"]
+            PLAT --> PF["Facturation<br/>Plans + Abonnements + Revenus"]
+            PLAT --> PM["Modules<br/>Catalogue CRUD + Builder"]
+            PLAT --> PV["Providers<br/>Configuration paiement"]
+            PLAT --> PC["Config cascade<br/>Parametres multi-niveaux"]
+        end
+
+        style ME fill:#e8f5e9,stroke:#2e7d32
+        style PLAT fill:#e3f2fd,stroke:#1565c0
+        style AB fill:#c8e6c9,stroke:#2e7d32
+        style FA fill:#c8e6c9,stroke:#2e7d32
+        style PL fill:#c8e6c9,stroke:#2e7d32
+        style UQ fill:#c8e6c9,stroke:#2e7d32
+        style MK fill:#c8e6c9,stroke:#2e7d32
+    </div>
+
+    <h3>4.2 Flux de souscription module</h3>
+
+    <div class="mermaid">
+    sequenceDiagram
+        participant U as Utilisateur ADMIN
+        participant MK as Marche (Marketplace)
+        participant API as API Billing
+        participant ENT as EntitlementService
+        participant AB as AbonnementClient
+
+        U->>MK: Parcourt le catalogue
+        MK->>API: GET /api/billing/marketplace
+        API->>ENT: checkAll(etablissementId)
+        ENT-->>API: Modules accessibles + upgradeables
+        API-->>MK: Catalogue filtre (actifs + souscriptibles)
+
+        U->>MK: Active module ADDON
+        MK->>API: PUT /api/billing/marketplace/:code/toggle
+        API->>AB: Verifier plan actif
+        alt Plan inclut le module
+            API->>ENT: invalidate()
+            API-->>MK: Module active (inclus dans plan)
+        else Supplament requis
+            API->>AB: Creer AbonnementModule
+            API->>ENT: invalidate()
+            API-->>MK: Module active (supplement facture)
+        end
+    </div>
+
+    <h3>4.3 Cycle de vie d'un abonnement</h3>
+
+    <div class="mermaid">
+    stateDiagram-v2
+        [*] --> ESSAI: Creation etablissement
+        ESSAI --> ACTIF: Souscription plan (14j max)
+        ESSAI --> EXPIRE: 14 jours ecoules
+        EXPIRE --> SUSPENDU: J+15 (lecture seule)
+        SUSPENDU --> ANNULE: J+30 (verrouille)
+        ACTIF --> SUSPENDU: Impaye / Resiliation
+        SUSPENDU --> ACTIF: Regularisation
+        ANNULE --> ACTIF: Nouvelle souscription
+
+        note right of ESSAI: Tous modules accessibles\nperiodeEssaiFin = now() + 14j
+        note right of SUSPENDU: Degradation gracieuse\nGET OK, POST/PUT/DELETE bloques
+        note right of ANNULE: Donnees archivees\nModules invisibles
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 5. NAVIGATION & MENUS -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="navigation">
+    <h2>5. Navigation & menus</h2>
+
+    <h3>5.1 Sidebar Tenant — Structure proposee</h3>
+
+    <div class="comparison">
+        <div class="comparison-col before">
+            <h4>Avant (fragmente)</h4>
+            <div class="nav-mockup">
+                <div class="nav-item"><span class="icon">🏠</span> Tableau de bord</div>
+                <div class="nav-item"><span class="icon">👥</span> Eleves</div>
+                <div class="nav-item"><span class="icon">📝</span> Notes</div>
+                <div class="nav-item"><span class="icon">📊</span> Bulletins</div>
+                <div class="nav-group">── Systeme ──</div>
+                <div class="nav-item"><span class="icon">📦</span> Modules</div>
+                <div class="nav-item"><span class="icon">💳</span> Mon Abonnement</div>
+                <div class="nav-item"><span class="icon">⚙️</span> Configuration</div>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--danger);">Problemes : "Modules" et "Mon Abonnement" sont des menus plats sans hierarchie. Pas de distinction entre gestion etablissement et facturation.</p>
+        </div>
+        <div class="comparison-col after">
+            <h4>Apres (organise)</h4>
+            <div class="nav-mockup">
+                <div class="nav-item"><span class="icon">🏠</span> Tableau de bord</div>
+                <div class="nav-item"><span class="icon">👥</span> Eleves</div>
+                <div class="nav-item"><span class="icon">📝</span> Notes</div>
+                <div class="nav-group">── Mon etablissement ──</div>
+                <div class="nav-item nav-sub"><span class="icon">🏫</span> Etablissements</div>
+                <div class="nav-item nav-sub"><span class="icon">🔗</span> Groupes</div>
+                <div class="nav-item nav-sub"><span class="icon">📋</span> Abonnements</div>
+                <div class="nav-item nav-sub"><span class="icon">🧾</span> Factures</div>
+                <div class="nav-item nav-sub"><span class="icon">📊</span> Plans & Tarifs</div>
+                <div class="nav-item nav-sub"><span class="icon">📈</span> Usages & Quotas</div>
+                <div class="nav-item nav-sub"><span class="icon">🛒</span> Marche</div>
+                <div class="nav-group">── Systeme ──</div>
+                <div class="nav-item"><span class="icon">⚙️</span> Configuration</div>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--success);">Groupe "Mon etablissement" = 7 sous-menus clairs. Chaque element = 1 responsabilite unique. Navigation hierarchique intuitive.</p>
+        </div>
+    </div>
+
+    <h3>5.2 Detail des 7 sous-menus "Mon etablissement"</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Sous-menu</th>
+                <th>Route</th>
+                <th>Icone</th>
+                <th>Responsabilite</th>
+                <th>Contenu principal</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Etablissements</strong></td>
+                <td><code>/etablissements</code></td>
+                <td>Building2</td>
+                <td>Gestion etablissement (si groupe)</td>
+                <td>Liste/fiche etablissements du groupe, modification infos</td>
+            </tr>
+            <tr>
+                <td><strong>Groupes</strong></td>
+                <td><code>/groupes</code></td>
+                <td>Network</td>
+                <td>Gestion groupes (si gestionnaire)</td>
+                <td>Membres du groupe, configuration groupe</td>
+            </tr>
+            <tr>
+                <td><strong>Abonnements</strong></td>
+                <td><code>/abonnements</code></td>
+                <td>FileCheck</td>
+                <td>Vue d'ensemble abonnement</td>
+                <td>Plan actuel, statut, periode essai, degradation, historique des plans</td>
+            </tr>
+            <tr>
+                <td><strong>Factures</strong></td>
+                <td><code>/factures</code></td>
+                <td>Receipt</td>
+                <td>Historique facturation</td>
+                <td>Liste factures, telechargement PDF, statut paiement, demande avoir</td>
+            </tr>
+            <tr>
+                <td><strong>Plans & Tarifs</strong></td>
+                <td><code>/plans</code></td>
+                <td>BadgePercent</td>
+                <td>Comparaison et simulation</td>
+                <td>Grille plans disponibles, comparateur, simulateur cout, upgrade/downgrade</td>
+            </tr>
+            <tr>
+                <td><strong>Usages & Quotas</strong></td>
+                <td><code>/usages</code></td>
+                <td>Gauge</td>
+                <td>Consommation temps reel</td>
+                <td>Compteurs par ressource, jauges, alertes seuils (80/90/100%), historique</td>
+            </tr>
+            <tr>
+                <td><strong>Marche</strong></td>
+                <td><code>/marketplace</code></td>
+                <td>Store</td>
+                <td>Catalogue et souscription</td>
+                <td>Tous modules (descriptions, prix), toggle activation, mes modules actifs</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>5.3 Sidebar Plateforme — Reorganisation</h3>
+
+    <div class="mermaid">
+    flowchart LR
+        subgraph "Pilotage"
+            D["Dashboard"]
+            F["Facturation<br/>(8 onglets → 4)"]
+        end
+        subgraph "Tenants"
+            E["Etablissements"]
+            G["Groupes SaaS"]
+            P["Providers"]
+        end
+        subgraph "Technique"
+            M["Modules<br/>(Catalogue + Builder)"]
+            C["Config cascade"]
+        end
+        subgraph "Securite"
+            U["Utilisateurs"]
+            R["Roles"]
+            A["Approbations"]
+        end
+
+        style F fill:#fff3e0,stroke:#e65100
+    </div>
+
+    <div class="alert alert-warning">
+        <strong>Reorganisation plateforme</strong>
+        La page <code>/platform/facturation</code> actuelle a 8 onglets. Proposition : reduire a 4 onglets专
+        <ul style="margin-top: 0.5rem;">
+            <li><strong>Plans</strong> : CRUD plans + tranches + feature flags</li>
+            <li><strong>Abonnements</strong> : liste abonnements clients + actions (suspendre, resilier)</li>
+            <li><strong>Revenus</strong> : MRR, ARR, churn, LTV, ARPU + graphiques</li>
+            <li><strong>Factures</strong> : emission, avoirs, relances (dunning)</li>
+        </ul>
+        Les onglets "Modules", "Flags", "Groupes" sont deplaces vers leurs propres pages dediees.
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 6. REFACTORING DES PAGES -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="pages">
+    <h2>6. Refactoring des pages</h2>
+
+    <h3>6.1 Decomposition "Mon Abonnement" → 5 pages dediees</h3>
+
+    <div class="mermaid">
+    flowchart TD
+        MA["/mon-abonnement<br/>(561 lignes, 5 onglets)"] -->|DECOMPOSE| A["/abonnements<br/>Vue d'ensemble"]
+        MA -->|DECOMPOSE| B["/factures<br/>Historique"]
+        MA -->|DECOMPOSE| C["/plans<br/>Plans + Simulateur"]
+        MA -->|DECOMPOSE| D["/usages<br/>Quotas temps reel"]
+        MA -->|DECOMPOSE| E["/marketplace<br/>Catalogue modules"]
+
+        A --> A1["Plan actuel, statut"]
+        A --> A2["Periode essai"]
+        A --> A3["Historique plans"]
+        A --> A4["Actions : upgrade/downgrade"]
+
+        B --> B1["Liste factures paginee"]
+        B --> B2["Telechargement PDF"]
+        B --> B3["Statut paiement"]
+        B --> B4["Demande avoir"]
+
+        C --> C1["Grille plans disponibles"]
+        C --> C2["Comparateur cote-a-cote"]
+        C --> C3["Simulateur cout"]
+        C --> C4["Upgrade immediat"]
+
+        D --> D1["Jauges par ressource"]
+        D --> D2["Alertes seuils"]
+        D --> D3["Historique consommation"]
+        D --> D4["Projection fin de periode"]
+
+        E --> E1["Catalogue complet"]
+        E --> E2["Filtres categorie"]
+        E --> E3["Mes modules actifs"]
+        E --> E4["Toggle activation"]
+
+        style MA fill:#ffcdd2,stroke:#c62828
+        style A fill:#c8e6c9,stroke:#2e7d32
+        style B fill:#c8e6c9,stroke:#2e7d32
+        style C fill:#c8e6c9,stroke:#2e7d32
+        style D fill:#c8e6c9,stroke:#2e7d32
+        style E fill:#c8e6c9,stroke:#2e7d32
+    </div>
+
+    <h3>6.2 Marketplace — Nettoyage</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Onglet actuel</th>
+                <th>Decision</th>
+                <th>Justification</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Catalogue</td>
+                <td><span class="badge badge-done">Conserver</span></td>
+                <td>App Store pattern — parcours des modules disponibles</td>
+            </tr>
+            <tr>
+                <td>Mes modules</td>
+                <td><span class="badge badge-done">Conserver</span></td>
+                <td>Vue des modules actifs de l'etablissement</td>
+            </tr>
+            <tr>
+                <td>Analytics</td>
+                <td><span class="badge badge-critique">Supprimer</span></td>
+                <td>Hors sujet — deplace vers /usages (quotas) ou dashboard</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>6.3 Page "Plans & Tarifs" — Contenu</h3>
+
+    <div class="cards-grid">
+        <div class="card">
+            <div class="card-icon" style="background: #e8f5e9;">📊</div>
+            <h4>Grille de plans</h4>
+            <p>3-4 plans max (Gratuit, Standard, Premium, Enterprise) avec pricing, limites, modules inclus. Cycle mensuel/annuel toggle.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: #e3f2fd;">🔍</div>
+            <h4>Comparateur</h4>
+            <p>Tableau comparatif feature par feature. Highlight differences. Check/cross pour inclusion. Tooltip pour details.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: #fff3e0;">🧮</div>
+            <h4>Simulateur</h4>
+            <p>Slider nombre d'eleves → calcul tranches + TVA OHADA 19.25%. Affichage breakdown : base + tranches + addons.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: #f3e5f5;">⬆️</div>
+            <h4>Upgrade/Downgrade</h4>
+            <p>Changement de plan avec prorata immediat. Confirmation avec resume impact (nouveau prix, modules gagnes/perdus).</p>
+        </div>
+    </div>
+
+    <h3>6.4 Page "Usages & Quotas" — Design</h3>
+
+    <div class="mermaid">
+    flowchart LR
+        subgraph "Jauges par ressource"
+            J1["Eleves<br/>███░░ 450/500"]
+            J2["Stockage<br/>██░░░ 2.1/5 Go"]
+            J3["API calls<br/>█░░░░ 12k/100k"]
+        end
+
+        subgraph "Seuils d'alerte"
+            S1["🟢 0-79% Normal"]
+            S2["🟡 80-89% Attention"]
+            S3["🔴 90-100% Critique"]
+        end
+
+        subgraph "Actions"
+            A1["Voir historique"]
+            A2["Upgrade plan"]
+            A3["Acheter credits"]
+        end
+
+        J1 --> S2
+        J2 --> S1
+        J3 --> S1
+
+        style J1 fill:#fff3e0,stroke:#e65100
+        style J2 fill:#e8f5e9,stroke:#2e7d32
+        style J3 fill:#e8f5e9,stroke:#2e7d32
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 7. MIGRATION CRITIQUE → BASE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="migration">
+    <h2>7. Migration CRITIQUE → BASE — Plan complet</h2>
+
+    <h3>7.1 Fichiers impactes — Inventaire exhaustif</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Fichier</th>
+                <th>Ligne(s)</th>
+                <th>Reference stale</th>
+                <th>Correction</th>
+                <th>Priorite</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>entitlement.service.ts</code></td>
+                <td>767</td>
+                <td><code>source !== 'critique'</code></td>
+                <td><code>source !== 'base'</code></td>
+                <td><span class="badge" style="background:#ffcdd2;color:#c62828;">P0</span></td>
+            </tr>
+            <tr>
+                <td><code>fr/modules.json</code></td>
+                <td>categories</td>
+                <td><code>"CRITIQUE": "Systeme"</code></td>
+                <td><code>"BASE": "Base"</code></td>
+                <td><span class="badge" style="background:#ffcdd2;color:#c62828;">P0</span></td>
+            </tr>
+            <tr>
+                <td><code>fr/modules.json</code></td>
+                <td>sources</td>
+                <td><code>"critique": "Systeme"</code></td>
+                <td><code>"base": "Base"</code></td>
+                <td><span class="badge" style="background:#ffcdd2;color:#c62828;">P0</span></td>
+            </tr>
+            <tr>
+                <td><code>en/modules.json</code></td>
+                <td>categories</td>
+                <td><code>"CRITIQUE": "System"</code></td>
+                <td><code>"BASE": "Core"</code></td>
+                <td><span class="badge" style="background:#ffcdd2;color:#c62828;">P0</span></td>
+            </tr>
+            <tr>
+                <td><code>en/modules.json</code></td>
+                <td>sources</td>
+                <td><code>"critique": "System"</code></td>
+                <td><code>"base": "Core"</code></td>
+                <td><span class="badge" style="background:#ffcdd2;color:#c62828;">P0</span></td>
+            </tr>
+            <tr>
+                <td><code>fr/admin.json</code></td>
+                <td>~11 occ.</td>
+                <td><code>catalogue.categories.critiques</code></td>
+                <td><code>catalogue.categories.base</code></td>
+                <td><span class="badge" style="background:#fff3e0;color:#e65100;">P1</span></td>
+            </tr>
+            <tr>
+                <td><code>en/admin.json</code></td>
+                <td>~11 occ.</td>
+                <td><code>catalogue.categories.criticals</code></td>
+                <td><code>catalogue.categories.base</code></td>
+                <td><span class="badge" style="background:#fff3e0;color:#e65100;">P1</span></td>
+            </tr>
+            <tr>
+                <td><code>_auth.marketplace.tsx</code></td>
+                <td>filtres</td>
+                <td><code>value: 'CRITIQUE'</code></td>
+                <td><code>value: 'BASE'</code></td>
+                <td><span class="badge" style="background:#fff3e0;color:#e65100;">P1</span></td>
+            </tr>
+            <tr>
+                <td><code>module-toggle-card.tsx</code></td>
+                <td>badge</td>
+                <td><code>'CRITIQUE'</code></td>
+                <td><code>'BASE'</code></td>
+                <td><span class="badge" style="background:#fff3e0;color:#e65100;">P1</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="alert alert-success">
+        <strong>Note : references legitimes conservees</strong>
+        Le terme "critique" reste valable dans les contextes suivants (non lies a la categorie de module) :
+        <ul style="margin-top: 0.5rem;">
+            <li><code>action-critique.entity.ts</code> — Actions sensibles necessitant approbation MFA</li>
+            <li><code>alerting.service.ts</code> — Severite "critique" pour les alertes</li>
+            <li><code>health score</code> — Score de sante critique (rouge)</li>
+            <li><code>quota alert</code> — Alerte quota critique (90%+)</li>
+        </ul>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 8. BENCHMARK SaaS INDUSTRY -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="benchmark">
+    <h2>8. Benchmark SaaS industry</h2>
+
+    <h3>8.1 Patterns de navigation — Leaders SaaS</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Editeur</th>
+                <th>Section Billing</th>
+                <th>Sous-menus</th>
+                <th>Points cles</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Stripe</strong></td>
+                <td>Billing</td>
+                <td>Overview, Subscriptions, Customers, Invoices, Products, Pricing, Discounts</td>
+                <td>Separation stricte subscription/invoice/product. Pricing dedie.</td>
+            </tr>
+            <tr>
+                <td><strong>Schematic</strong></td>
+                <td>Billing & Subscription</td>
+                <td>Plans, Entitlements, Usage, Invoices, Components</td>
+                <td>"Entitlements" pour les features. "Components" pour les modules.</td>
+            </tr>
+            <tr>
+                <td><strong>Orb</strong></td>
+                <td>Billing</td>
+                <td>Plans, Subscriptions, Usage, Invoices, Credits, Add-ons</td>
+                <td>"Credits" pour la consommation prepaid. "Add-ons" pour supplements.</td>
+            </tr>
+            <tr>
+                <td><strong>Maxio</strong></td>
+                <td>Revenue & Billing</td>
+                <td>Subscriptions, Invoices, Revenue, Metrics, Settings</td>
+                <td>Focus revenue recognition. Metrics = dashboards financiers.</td>
+            </tr>
+            <tr>
+                <td><strong>Chargebee</strong></td>
+                <td>Subscriptions</td>
+                <td>Plans, Add-ons, Coupons, Customers, Invoices, Reports</td>
+                <td>"Add-ons" comme entite premiere. Coupons pour promotions.</td>
+            </tr>
+            <tr>
+                <td><strong>Paddle</strong></td>
+                <td>Billing</td>
+                <td>Products, Prices, Customers, Subscriptions, Invoices, Transactions</td>
+                <td>Separation Products/Prices. "Transactions" pour paiements unitaires.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>8.2 Recommandations pour eLISAschool</h3>
+
+    <div class="cards-grid">
+        <div class="card">
+            <div class="card-icon" style="background: #e8f5e9;">📐</div>
+            <h4>3-4 plans maximum</h4>
+            <p>Eviter la fatigue de decision. Stripe recommande 3 plans (Starter/Growth/Enterprise). eLISAschool : Gratuit/Standard/Premium/Enterprise.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: #e3f2fd;">📊</div>
+            <h4>Usage dashboards temps reel</h4>
+            <p>Schematic et Orb montrent des jauges en temps reel avec seuils colores. Implementer des progress bars animees avec alertes visuelles.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: #fff3e0;">🧮</div>
+            <h4>Simulateur integre</h4>
+            <p>Paddle et Chargebee ont des calculateurs de prix interactifs. Le slider "nombre d'eleves" → prix est deja implemente, le rendre plus visible.</p>
+        </div>
+        <div class="card">
+            <div class="card-icon" style="background: #f3e5f5;">🛒</div>
+            <h4>Marketplace = App Store</h4>
+            <p>Stripe App Marketplace : cards avec descriptions, screenshots, pricing. Chaque module = une "app" avec fiche detaillee.</p>
+        </div>
+    </div>
+
+    <h3>8.3 Graphique — Maturite billing eLISAschool vs Industry</h3>
+
+    <div style="margin: 1.5rem 0;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <span style="width: 140px; font-size: 0.85rem; font-weight: 600;">Multi-tenancy</span>
+            <div style="flex: 1; background: #e0e0e0; border-radius: 4px; height: 20px; position: relative;">
+                <div style="width: 90%; height: 100%; background: var(--primary); border-radius: 4px;"></div>
+                <span style="position: absolute; right: 8px; top: 2px; font-size: 0.75rem; font-weight: 600;">9/10</span>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <span style="width: 140px; font-size: 0.85rem; font-weight: 600;">Module gating</span>
+            <div style="flex: 1; background: #e0e0e0; border-radius: 4px; height: 20px; position: relative;">
+                <div style="width: 85%; height: 100%; background: var(--primary); border-radius: 4px;"></div>
+                <span style="position: absolute; right: 8px; top: 2px; font-size: 0.75rem; font-weight: 600;">8.5/10</span>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <span style="width: 140px; font-size: 0.85rem; font-weight: 600;">Facturation OHADA</span>
+            <div style="flex: 1; background: #e0e0e0; border-radius: 4px; height: 20px; position: relative;">
+                <div style="width: 95%; height: 100%; background: var(--primary); border-radius: 4px;"></div>
+                <span style="position: absolute; right: 8px; top: 2px; font-size: 0.75rem; font-weight: 600;">9.5/10</span>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <span style="width: 140px; font-size: 0.85rem; font-weight: 600;">Usage meters</span>
+            <div style="flex: 1; background: #e0e0e0; border-radius: 4px; height: 20px; position: relative;">
+                <div style="width: 70%; height: 100%; background: var(--warning); border-radius: 4px;"></div>
+                <span style="position: absolute; right: 8px; top: 2px; font-size: 0.75rem; font-weight: 600;">7/10</span>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <span style="width: 140px; font-size: 0.85rem; font-weight: 600;">Self-service</span>
+            <div style="flex: 1; background: #e0e0e0; border-radius: 4px; height: 20px; position: relative;">
+                <div style="width: 50%; height: 100%; background: var(--danger); border-radius: 4px;"></div>
+                <span style="position: absolute; right: 8px; top: 2px; font-size: 0.75rem; font-weight: 600;">5/10</span>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <span style="width: 140px; font-size: 0.85rem; font-weight: 600;">Navigation UX</span>
+            <div style="flex: 1; background: #e0e0e0; border-radius: 4px; height: 20px; position: relative;">
+                <div style="width: 40%; height: 100%; background: var(--danger); border-radius: 4px;"></div>
+                <span style="position: absolute; right: 8px; top: 2px; font-size: 0.75rem; font-weight: 600;">4/10</span>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <span style="width: 140px; font-size: 0.85rem; font-weight: 600;">Terminologie</span>
+            <div style="flex: 1; background: #e0e0e0; border-radius: 4px; height: 20px; position: relative;">
+                <div style="width: 45%; height: 100%; background: var(--danger); border-radius: 4px;"></div>
+                <span style="position: absolute; right: 8px; top: 2px; font-size: 0.75rem; font-weight: 600;">4.5/10</span>
+            </div>
+        </div>
+    </div>
+
+    <p style="font-size: 0.85rem; color: var(--text-secondary);">
+        <strong>Constat :</strong> Le backend est solide (multi-tenancy 9/10, facturation OHADA 9.5/10). Le frontend accuse un retard significatif en navigation UX (4/10) et terminologie (4.5/10). Ce refactoring cible directement ces deux axes.
+    </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 9. ROADMAP D'IMPLEMENTATION -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="roadmap">
+    <h2>9. Roadmap d'implementation</h2>
+
+    <h3>9.1 Vue d'ensemble — 3 phases</h3>
+
+    <div class="mermaid">
+    gantt
+        title Plan d'implementation — Refactoring Billing & Navigation
+        dateFormat  YYYY-MM-DD
+        axisFormat  %d/%m
+
+        section Phase 1 — Quick Wins
+        Fix entitlement.service.ts (ligne 767)        :done, p1a, 2026-08-13, 1d
+        Migration i18n CRITIQUE→BASE (modules.json)   :done, p1b, 2026-08-13, 1d
+        Migration i18n CRITIQUE→BASE (admin.json)     :p1c, 2026-08-13, 1d
+        Fix marketplace filters + module-toggle-card  :p1d, 2026-08-13, 1d
+
+        section Phase 2 — Navigation
+        Creer groupe "Mon etablissement" (Sidebar)    :p2a, after p1d, 1d
+        Creer pages dediees (abonnements, factures)   :p2b, after p2a, 2d
+        Deplacer/refondre plans & tarifs (tenant)     :p2c, after p2a, 2d
+        Creer page Usages & Quotas                    :p2d, after p2a, 1d
+        Renommer "Modules" → "Marche" partout         :p2e, after p2a, 1d
+        Supprimer routes vides + redirects            :p2f, after p2b, 1d
+
+        section Phase 3 — Polish
+        Reorganiser platform.facturation (8→4 tabs)   :p3a, after p2f, 2d
+        Enrichir fiches modules marketplace           :p3b, after p2f, 2d
+        i18n complet nouvelles pages FR+EN            :p3c, after p3a, 1d
+        Tests + verification compilation              :p3d, after p3c, 1d
+    </div>
+
+    <h3>9.2 Phase 1 — Quick Wins (corrections immediates)</h3>
+
+    <div class="timeline">
+        <div class="timeline-item phase-current">
+            <div class="timeline-phase">1.1 — Fix <code>entitlement.service.ts</code> ligne 767</div>
+            <div class="timeline-desc"><code>source !== 'critique'</code> → <code>source !== 'base'</code>. Bug silencieux : la condition est toujours vraie car 'critique' n'existe pas dans EntitlementSource.</div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-phase">1.2 — Migration i18n modules.json (FR + EN)</div>
+            <div class="timeline-desc">Remplacer "CRITIQUE" → "BASE" dans categories et sources. Aligner labels : "Systeme" → "Base" (FR), "System" → "Core" (EN).</div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-phase">1.3 — Migration i18n admin.json (FR + EN)</div>
+            <div class="timeline-desc">~11 occurrences de 'critique' liees a la categorie module. Conserver les usages legitimes (actions critiques, alertes).</div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-phase">1.4 — Fix marketplace + module-toggle-card</div>
+            <div class="timeline-desc">Filtres categorie : <code>value: 'CRITIQUE'</code> → <code>value: 'BASE'</code>. Badge composant : aligner sur l'enum backend.</div>
+        </div>
+    </div>
+
+    <h3>9.3 Phase 2 — Restructuration Navigation</h3>
+
+    <div class="timeline">
+        <div class="timeline-item">
+            <div class="timeline-phase">2.1 — Sidebar : groupe "Mon etablissement"</div>
+            <div class="timeline-desc">Ajouter section expandable avec 7 sous-menus. Icone : Building2. Permission : <code>billing:view</code>.</div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-phase">2.2 — Nouvelles pages tenant</div>
+            <div class="timeline-desc"><code>/abonnements</code> (vue d'ensemble), <code>/factures</code> (historique), <code>/plans</code> (comparateur + simulateur), <code>/usages</code> (quotas temps reel).</div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-phase">2.3 — Renommage "Modules" → "Marche"</div>
+            <div class="timeline-desc">Sidebar.tsx, CommandPalette.tsx, i18n. Label FR : "Marche". Label EN : "Marketplace". Icone : Store.</div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-phase">2.4 — Nettoyage routes mortes</div>
+            <div class="timeline-desc">Supprimer <code>_auth.facturation.tsx</code> (redirect stub). Verifier qu'aucune route vide ne subsiste.</div>
+        </div>
+    </div>
+
+    <h3>9.4 Phase 3 — Polish & Platforme</h3>
+
+    <div class="timeline">
+        <div class="timeline-item">
+            <div class="timeline-phase">3.1 — Reorganiser platform.facturation</div>
+            <div class="timeline-desc">8 onglets → 4 : Plans, Abonnements, Revenus, Factures. Deplacer "Modules" vers sa page dediee existante.</div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-phase">3.2 — Enrichir fiches modules</div>
+            <div class="timeline-desc">Marketplace : ajouter descriptions detaillees, screenshots, pricing par plan pour chaque module ADDON.</div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-phase">3.3 — i18n complet + tests</div>
+            <div class="timeline-desc">Parite FR/EN sur toutes les nouvelles pages. Verification <code>tsc --noEmit</code>. Tests navigation.</div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 10. INVENTAIRE DES FICHIERS -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="fichiers">
+    <h2>10. Inventaire des fichiers</h2>
+
+    <h3>10.1 Fichiers a modifier</h3>
+
+    <div class="file-tree">
+<span class="comment"># ═══ Backend ═══</span>
+<span class="modified">M</span> backend/src/modules/billing/services/entitlement.service.ts    <span class="comment"># Fix ligne 767</span>
+
+<span class="comment"># ═══ Frontend — i18n ═══</span>
+<span class="modified">M</span> frontend/src/locales/fr/modules.json                      <span class="comment"># CRITIQUE → BASE</span>
+<span class="modified">M</span> frontend/src/locales/en/modules.json                      <span class="comment"># CRITIQUE → BASE</span>
+<span class="modified">M</span> frontend/src/locales/fr/admin.json                        <span class="comment"># ~11 occ. categorie</span>
+<span class="modified">M</span> frontend/src/locales/en/admin.json                        <span class="comment"># ~11 occ. categorie</span>
+
+<span class="comment"># ═══ Frontend — Navigation ═══</span>
+<span class="modified">M</span> frontend/src/components/layout/Sidebar.tsx                 <span class="comment"># +groupe "Mon etablissement"</span>
+<span class="modified">M</span> frontend/src/components/CommandPalette.tsx                 <span class="comment"># Renommer Modules → Marche</span>
+
+<span class="comment"># ═══ Frontend — Pages billing ═══</span>
+<span class="modified">M</span> frontend/src/routes/_auth.marketplace.tsx                  <span class="comment"># Fix filtres + supprimer Analytics</span>
+<span class="modified">M</span> frontend/src/routes/_auth.mon-abonnement.tsx               <span class="comment"># Decomposer ou rediriger</span>
+<span class="modified">M</span> frontend/src/features/modules/components/module-toggle-card.tsx  <span class="comment"># Fix badge categorie</span>
+
+<span class="comment"># ═══ Frontend — NOUVEAUX fichiers ═══</span>
+<span class="added">A</span> frontend/src/routes/_auth.abonnements.tsx                  <span class="comment"># Vue d'ensemble abonnement</span>
+<span class="added">A</span> frontend/src/routes/_auth.factures.tsx                     <span class="comment"># Historique factures</span>
+<span class="added">A</span> frontend/src/routes/_auth.plans.tsx                        <span class="comment"># Plans + comparateur + simulateur</span>
+<span class="added">A</span> frontend/src/routes/_auth.usages.tsx                       <span class="comment"># Quotas temps reel</span>
+
+<span class="comment"># ═══ Frontend — SUPPRESSIONS ═══</span>
+<span class="deleted">D</span> frontend/src/routes/_auth.facturation.tsx                  <span class="comment"># Redirect stub inutile</span>
+
+<span class="comment"># ═══ Frontend — Platforme ═══</span>
+<span class="modified">M</span> frontend/src/routes/platform.facturation.tsx               <span class="comment"># 8 onglets → 4</span>
+<span class="modified">M</span> frontend/src/components/layout/platform-sidebar.tsx        <span class="comment"># Ajuster navigation</span>
+    </div>
+
+    <h3>10.2 Resume des changements</h3>
+
+    <div class="stats-row">
+        <div class="stat-item">
+            <div class="stat-value" style="color: var(--success);">4</div>
+            <div class="stat-label">Fichiers ajoutes</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" style="color: var(--warning);">15</div>
+            <div class="stat-label">Fichiers modifies</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" style="color: var(--danger);">1</div>
+            <div class="stat-label">Fichiers supprimes</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">~2000</div>
+            <div class="stat-label">Lignes estimees</div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 11. RISQUES & MITIGATIONS -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="risques">
+    <h2>11. Risques & mitigations</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Risque</th>
+                <th>Impact</th>
+                <th>Probabilite</th>
+                <th>Mitigation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Breaking change i18n (cles renommees)</td>
+                <td><span class="badge" style="background:#fff3e0;color:#e65100;">Moyen</span></td>
+                <td><span class="badge" style="background:#ffcdd2;color:#c62828;">Elevee</span></td>
+                <td>Conserver les anciennes cles en alias pendant 1 sprint. Recherche grep exhaustive avant suppression.</td>
+            </tr>
+            <tr>
+                <td>Routes supprimees → bookmarks casses</td>
+                <td><span class="badge" style="background:#fff3e0;color:#e65100;">Moyen</span></td>
+                <td><span class="badge" style="background:#e8f5e9;color:#2e7d32;">Faible</span></td>
+                <td>Ajouter des redirects temporaires (301) depuis les anciennes routes vers les nouvelles.</td>
+            </tr>
+            <tr>
+                <td>Confusion utilisateur (nouvelle navigation)</td>
+                <td><span class="badge" style="background:#fff3e0;color:#e65100;">Moyen</span></td>
+                <td><span class="badge" style="background:#fff3e0;color:#e65100;">Moyen</span></td>
+                <td>Tooltip "Nouveau" sur les menus reorganises pendant 2 semaines. Onboarding guide.</td>
+            </tr>
+            <tr>
+                <td>Regression tests (pages deplacees)</td>
+                <td><span class="badge" style="background:#ffcdd2;color:#c62828;">Eleve</span></td>
+                <td><span class="badge" style="background:#fff3e0;color:#e65100;">Moyen</span></td>
+                <td>Checklist de verification manuelle + <code>tsc --noEmit</code> + smoke test sur chaque route.</td>
+            </tr>
+            <tr>
+                <td>Scope creep (ajouter des fonctionnalites)</td>
+                <td><span class="badge" style="background:#fff3e0;color:#e65100;">Moyen</span></td>
+                <td><span class="badge" style="background:#fff3e0;color:#e65100;">Moyen</span></td>
+                <td>Phases strictes. Phase 1 = fixes uniquement. Phase 2 = navigation. Phase 3 = polish. Pas de melange.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="alert alert-info">
+        <strong>Prochaines etapes immediates</strong>
+        <ol style="margin-top: 0.5rem;">
+            <li><strong>Phase 1</strong> — Corriger le bug <code>entitlement.service.ts:767</code> et migrer les references i18n CRITIQUE → BASE (estimé : 1 session)</li>
+            <li><strong>Phase 2</strong> — Creer le groupe "Mon etablissement" dans la sidebar et les 4 nouvelles pages dediees (estime : 2-3 sessions)</li>
+            <li><strong>Phase 3</strong> — Reorganiser la page plateforme facturation et enrichir le marketplace (estime : 2 sessions)</li>
+        </ol>
+    </div>
+</section>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- FOOTER -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<footer class="report-footer">
+    <p><strong>eLISAschool</strong> — Rapport de refactoring Billing & Navigation SaaS</p>
+    <p>Genere le 13 aout 2026 par Qoder (admin project) | Version 1.0</p>
+    <p style="margin-top: 0.5rem; font-size: 0.8rem;">Sources : Stripe Billing Docs, Schematic Docs, Orb Billing, Maxio/Chargebee/Paddle documentation, audit codebase interne</p>
+</footer>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#e8f5e9',
+            primaryTextColor: '#1b5e20',
+            primaryBorderColor: '#2e7d32',
+            lineColor: '#66bb6a',
+            secondaryColor: '#e3f2fd',
+            tertiaryColor: '#fff3e0',
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '14px'
+        },
+        flowchart: { curve: 'basis', padding: 15 },
+        gantt: { fontSize: 12 }
+    });
+</script>
+
+</body>
+</html>

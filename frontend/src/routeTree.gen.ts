@@ -27,6 +27,7 @@ import { Route as PlatformNotificationsConfigRouteImport } from './routes/platfo
 import { Route as PlatformMonitoringRouteImport } from './routes/platform.monitoring'
 import { Route as PlatformModulesRouteImport } from './routes/platform.modules'
 import { Route as PlatformGroupesRouteImport } from './routes/platform.groupes'
+import { Route as PlatformFeatureFlagsRouteImport } from './routes/platform.feature-flags'
 import { Route as PlatformFacturationRouteImport } from './routes/platform.facturation'
 import { Route as PlatformEtablissementsRouteImport } from './routes/platform.etablissements'
 import { Route as PlatformDashboardRouteImport } from './routes/platform.dashboard'
@@ -34,7 +35,6 @@ import { Route as PlatformConfigurationCascadeRouteImport } from './routes/platf
 import { Route as PlatformConfigurationRouteImport } from './routes/platform.configuration'
 import { Route as PlatformAuditRouteImport } from './routes/platform.audit'
 import { Route as PlatformApprobationsRouteImport } from './routes/platform.approbations'
-import { Route as PlatformAbonnementsRouteImport } from './routes/platform.abonnements'
 import { Route as ECodeRouteImport } from './routes/e.$code'
 import { Route as AuthVieScolaireAvanceeRouteImport } from './routes/_auth.vie-scolaire-avancee'
 import { Route as AuthVieScolaireRouteImport } from './routes/_auth.vie-scolaire'
@@ -44,6 +44,7 @@ import { Route as AuthSpecialitesRouteImport } from './routes/_auth.specialites'
 import { Route as AuthSallesRouteImport } from './routes/_auth.salles'
 import { Route as AuthResponsablesElevesRouteImport } from './routes/_auth.responsables-eleves'
 import { Route as AuthProgrammesRouteImport } from './routes/_auth.programmes'
+import { Route as AuthPlansRouteImport } from './routes/_auth.plans'
 import { Route as AuthPersonnelRouteImport } from './routes/_auth.personnel'
 import { Route as AuthPeriodesRouteImport } from './routes/_auth.periodes'
 import { Route as AuthParametresRouteImport } from './routes/_auth.parametres'
@@ -56,19 +57,14 @@ import { Route as AuthNiveauxRouteImport } from './routes/_auth.niveaux'
 import { Route as AuthMonAbonnementRouteImport } from './routes/_auth.mon-abonnement'
 import { Route as AuthModulesRhRouteImport } from './routes/_auth.modules-rh'
 import { Route as AuthModulesReportingRouteImport } from './routes/_auth.modules-reporting'
-import { Route as AuthModulesPedagogiquesRouteImport } from './routes/_auth.modules-pedagogiques'
-import { Route as AuthModulesPedagogiqueAvanceRouteImport } from './routes/_auth.modules-pedagogique-avance'
-import { Route as AuthModulesOrganisationnelsRouteImport } from './routes/_auth.modules-organisationnels'
-import { Route as AuthModulesComplementairesRouteImport } from './routes/_auth.modules-complementaires'
-import { Route as AuthModulesAdministratifsRouteImport } from './routes/_auth.modules-administratifs'
 import { Route as AuthMatieresRouteImport } from './routes/_auth.matieres'
+import { Route as AuthMarketplaceRouteImport } from './routes/_auth.marketplace'
 import { Route as AuthInfrastructureRouteImport } from './routes/_auth.infrastructure'
 import { Route as AuthHeuresCoursRouteImport } from './routes/_auth.heures-cours'
 import { Route as AuthGroupesEtablissementsRouteImport } from './routes/_auth.groupes-etablissements'
 import { Route as AuthFinancesRouteImport } from './routes/_auth.finances'
 import { Route as AuthFilieresRouteImport } from './routes/_auth.filieres'
 import { Route as AuthFacturesRouteImport } from './routes/_auth.factures'
-import { Route as AuthFacturationRouteImport } from './routes/_auth.facturation'
 import { Route as AuthExamensNationauxRouteImport } from './routes/_auth.examens-nationaux'
 import { Route as AuthEtablissementsRouteImport } from './routes/_auth.etablissements'
 import { Route as AuthEnseignantsRouteImport } from './routes/_auth/enseignants'
@@ -89,6 +85,7 @@ import { Route as AuthAnneesScolairesRouteImport } from './routes/_auth.annees-s
 import { Route as PlatformUtilisateursIndexRouteImport } from './routes/platform.utilisateurs.index'
 import { Route as PlatformRolesIndexRouteImport } from './routes/platform.roles.index'
 import { Route as PlatformEtablissementsIndexRouteImport } from './routes/platform.etablissements.index'
+import { Route as ECodeIndexRouteImport } from './routes/e.$code.index'
 import { Route as AuthUtilisateursIndexRouteImport } from './routes/_auth.utilisateurs.index'
 import { Route as AuthSpecialitesIndexRouteImport } from './routes/_auth.specialites.index'
 import { Route as AuthSallesIndexRouteImport } from './routes/_auth.salles.index'
@@ -153,9 +150,11 @@ import { Route as AuthCompetencesIdRouteImport } from './routes/_auth.competence
 import { Route as AuthCmsWidgetsRouteImport } from './routes/_auth.cms.widgets'
 import { Route as AuthCmsVersionsRouteImport } from './routes/_auth.cms.versions'
 import { Route as AuthCmsThemesRouteImport } from './routes/_auth.cms.themes'
+import { Route as AuthCmsTemplatesRouteImport } from './routes/_auth.cms.templates'
 import { Route as AuthCmsPagesRouteImport } from './routes/_auth.cms.pages'
 import { Route as AuthCmsMenusRouteImport } from './routes/_auth.cms.menus'
 import { Route as AuthCmsMediasRouteImport } from './routes/_auth.cms.medias'
+import { Route as AuthCmsContenuRouteImport } from './routes/_auth.cms.contenu'
 import { Route as AuthClassesIdRouteImport } from './routes/_auth.classes.$id'
 import { Route as AuthBulletinsIdRouteImport } from './routes/_auth.bulletins.$id'
 import { Route as AuthAnneesScolairesIdRouteImport } from './routes/_auth.annees-scolaires.$id'
@@ -272,6 +271,11 @@ const PlatformGroupesRoute = PlatformGroupesRouteImport.update({
   path: '/groupes',
   getParentRoute: () => PlatformRoute,
 } as any)
+const PlatformFeatureFlagsRoute = PlatformFeatureFlagsRouteImport.update({
+  id: '/feature-flags',
+  path: '/feature-flags',
+  getParentRoute: () => PlatformRoute,
+} as any)
 const PlatformFacturationRoute = PlatformFacturationRouteImport.update({
   id: '/facturation',
   path: '/facturation',
@@ -306,11 +310,6 @@ const PlatformAuditRoute = PlatformAuditRouteImport.update({
 const PlatformApprobationsRoute = PlatformApprobationsRouteImport.update({
   id: '/approbations',
   path: '/approbations',
-  getParentRoute: () => PlatformRoute,
-} as any)
-const PlatformAbonnementsRoute = PlatformAbonnementsRouteImport.update({
-  id: '/abonnements',
-  path: '/abonnements',
   getParentRoute: () => PlatformRoute,
 } as any)
 const ECodeRoute = ECodeRouteImport.update({
@@ -356,6 +355,11 @@ const AuthResponsablesElevesRoute = AuthResponsablesElevesRouteImport.update({
 const AuthProgrammesRoute = AuthProgrammesRouteImport.update({
   id: '/programmes',
   path: '/programmes',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthPlansRoute = AuthPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthPersonnelRoute = AuthPersonnelRouteImport.update({
@@ -418,38 +422,14 @@ const AuthModulesReportingRoute = AuthModulesReportingRouteImport.update({
   path: '/modules-reporting',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthModulesPedagogiquesRoute = AuthModulesPedagogiquesRouteImport.update({
-  id: '/modules-pedagogiques',
-  path: '/modules-pedagogiques',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthModulesPedagogiqueAvanceRoute =
-  AuthModulesPedagogiqueAvanceRouteImport.update({
-    id: '/modules-pedagogique-avance',
-    path: '/modules-pedagogique-avance',
-    getParentRoute: () => AuthRoute,
-  } as any)
-const AuthModulesOrganisationnelsRoute =
-  AuthModulesOrganisationnelsRouteImport.update({
-    id: '/modules-organisationnels',
-    path: '/modules-organisationnels',
-    getParentRoute: () => AuthRoute,
-  } as any)
-const AuthModulesComplementairesRoute =
-  AuthModulesComplementairesRouteImport.update({
-    id: '/modules-complementaires',
-    path: '/modules-complementaires',
-    getParentRoute: () => AuthRoute,
-  } as any)
-const AuthModulesAdministratifsRoute =
-  AuthModulesAdministratifsRouteImport.update({
-    id: '/modules-administratifs',
-    path: '/modules-administratifs',
-    getParentRoute: () => AuthRoute,
-  } as any)
 const AuthMatieresRoute = AuthMatieresRouteImport.update({
   id: '/matieres',
   path: '/matieres',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthMarketplaceRoute = AuthMarketplaceRouteImport.update({
+  id: '/marketplace',
+  path: '/marketplace',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthInfrastructureRoute = AuthInfrastructureRouteImport.update({
@@ -481,11 +461,6 @@ const AuthFilieresRoute = AuthFilieresRouteImport.update({
 const AuthFacturesRoute = AuthFacturesRouteImport.update({
   id: '/factures',
   path: '/factures',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthFacturationRoute = AuthFacturationRouteImport.update({
-  id: '/facturation',
-  path: '/facturation',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthExamensNationauxRoute = AuthExamensNationauxRouteImport.update({
@@ -590,6 +565,11 @@ const PlatformEtablissementsIndexRoute =
     path: '/',
     getParentRoute: () => PlatformEtablissementsRoute,
   } as any)
+const ECodeIndexRoute = ECodeIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ECodeRoute,
+} as any)
 const AuthUtilisateursIndexRoute = AuthUtilisateursIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -918,6 +898,11 @@ const AuthCmsThemesRoute = AuthCmsThemesRouteImport.update({
   path: '/themes',
   getParentRoute: () => AuthCmsRoute,
 } as any)
+const AuthCmsTemplatesRoute = AuthCmsTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => AuthCmsRoute,
+} as any)
 const AuthCmsPagesRoute = AuthCmsPagesRouteImport.update({
   id: '/pages',
   path: '/pages',
@@ -931,6 +916,11 @@ const AuthCmsMenusRoute = AuthCmsMenusRouteImport.update({
 const AuthCmsMediasRoute = AuthCmsMediasRouteImport.update({
   id: '/medias',
   path: '/medias',
+  getParentRoute: () => AuthCmsRoute,
+} as any)
+const AuthCmsContenuRoute = AuthCmsContenuRouteImport.update({
+  id: '/contenu',
+  path: '/contenu',
   getParentRoute: () => AuthCmsRoute,
 } as any)
 const AuthClassesIdRoute = AuthClassesIdRouteImport.update({
@@ -1093,19 +1083,14 @@ export interface FileRoutesByFullPath {
   '/enseignants': typeof AuthEnseignantsRouteWithChildren
   '/etablissements': typeof AuthEtablissementsRouteWithChildren
   '/examens-nationaux': typeof AuthExamensNationauxRouteWithChildren
-  '/facturation': typeof AuthFacturationRoute
   '/factures': typeof AuthFacturesRoute
   '/filieres': typeof AuthFilieresRouteWithChildren
   '/finances': typeof AuthFinancesRoute
   '/groupes-etablissements': typeof AuthGroupesEtablissementsRoute
   '/heures-cours': typeof AuthHeuresCoursRouteWithChildren
   '/infrastructure': typeof AuthInfrastructureRoute
+  '/marketplace': typeof AuthMarketplaceRoute
   '/matieres': typeof AuthMatieresRouteWithChildren
-  '/modules-administratifs': typeof AuthModulesAdministratifsRoute
-  '/modules-complementaires': typeof AuthModulesComplementairesRoute
-  '/modules-organisationnels': typeof AuthModulesOrganisationnelsRoute
-  '/modules-pedagogique-avance': typeof AuthModulesPedagogiqueAvanceRoute
-  '/modules-pedagogiques': typeof AuthModulesPedagogiquesRoute
   '/modules-reporting': typeof AuthModulesReportingRoute
   '/modules-rh': typeof AuthModulesRhRoute
   '/mon-abonnement': typeof AuthMonAbonnementRoute
@@ -1118,6 +1103,7 @@ export interface FileRoutesByFullPath {
   '/parametres': typeof AuthParametresRoute
   '/periodes': typeof AuthPeriodesRouteWithChildren
   '/personnel': typeof AuthPersonnelRouteWithChildren
+  '/plans': typeof AuthPlansRoute
   '/programmes': typeof AuthProgrammesRouteWithChildren
   '/responsables-eleves': typeof AuthResponsablesElevesRouteWithChildren
   '/salles': typeof AuthSallesRouteWithChildren
@@ -1127,7 +1113,6 @@ export interface FileRoutesByFullPath {
   '/vie-scolaire': typeof AuthVieScolaireRoute
   '/vie-scolaire-avancee': typeof AuthVieScolaireAvanceeRoute
   '/e/$code': typeof ECodeRouteWithChildren
-  '/platform/abonnements': typeof PlatformAbonnementsRoute
   '/platform/approbations': typeof PlatformApprobationsRoute
   '/platform/audit': typeof PlatformAuditRoute
   '/platform/configuration': typeof PlatformConfigurationRoute
@@ -1135,6 +1120,7 @@ export interface FileRoutesByFullPath {
   '/platform/dashboard': typeof PlatformDashboardRoute
   '/platform/etablissements': typeof PlatformEtablissementsRouteWithChildren
   '/platform/facturation': typeof PlatformFacturationRoute
+  '/platform/feature-flags': typeof PlatformFeatureFlagsRoute
   '/platform/groupes': typeof PlatformGroupesRoute
   '/platform/modules': typeof PlatformModulesRoute
   '/platform/monitoring': typeof PlatformMonitoringRoute
@@ -1152,9 +1138,11 @@ export interface FileRoutesByFullPath {
   '/annees-scolaires/$id': typeof AuthAnneesScolairesIdRoute
   '/bulletins/$id': typeof AuthBulletinsIdRoute
   '/classes/$id': typeof AuthClassesIdRoute
+  '/cms/contenu': typeof AuthCmsContenuRoute
   '/cms/medias': typeof AuthCmsMediasRoute
   '/cms/menus': typeof AuthCmsMenusRoute
   '/cms/pages': typeof AuthCmsPagesRouteWithChildren
+  '/cms/templates': typeof AuthCmsTemplatesRoute
   '/cms/themes': typeof AuthCmsThemesRoute
   '/cms/versions': typeof AuthCmsVersionsRoute
   '/cms/widgets': typeof AuthCmsWidgetsRoute
@@ -1219,6 +1207,7 @@ export interface FileRoutesByFullPath {
   '/salles/': typeof AuthSallesIndexRoute
   '/specialites/': typeof AuthSpecialitesIndexRoute
   '/utilisateurs/': typeof AuthUtilisateursIndexRoute
+  '/e/$code/': typeof ECodeIndexRoute
   '/platform/etablissements/': typeof PlatformEtablissementsIndexRoute
   '/platform/roles/': typeof PlatformRolesIndexRoute
   '/platform/utilisateurs/': typeof PlatformUtilisateursIndexRoute
@@ -1253,35 +1242,30 @@ export interface FileRoutesByTo {
   '/configuration': typeof AuthConfigurationRoute
   '/dashboard': typeof AuthDashboardRoute
   '/emploi-du-temps': typeof AuthEmploiDuTempsRoute
-  '/facturation': typeof AuthFacturationRoute
   '/factures': typeof AuthFacturesRoute
   '/finances': typeof AuthFinancesRoute
   '/groupes-etablissements': typeof AuthGroupesEtablissementsRoute
   '/heures-cours': typeof AuthHeuresCoursRouteWithChildren
   '/infrastructure': typeof AuthInfrastructureRoute
-  '/modules-administratifs': typeof AuthModulesAdministratifsRoute
-  '/modules-complementaires': typeof AuthModulesComplementairesRoute
-  '/modules-organisationnels': typeof AuthModulesOrganisationnelsRoute
-  '/modules-pedagogique-avance': typeof AuthModulesPedagogiqueAvanceRoute
-  '/modules-pedagogiques': typeof AuthModulesPedagogiquesRoute
+  '/marketplace': typeof AuthMarketplaceRoute
   '/modules-reporting': typeof AuthModulesReportingRoute
   '/modules-rh': typeof AuthModulesRhRoute
   '/mon-abonnement': typeof AuthMonAbonnementRoute
   '/notifications-config': typeof AuthNotificationsConfigRoute
   '/paiements': typeof AuthPaiementsRoute
   '/parametres': typeof AuthParametresRoute
+  '/plans': typeof AuthPlansRoute
   '/responsables-eleves': typeof AuthResponsablesElevesRouteWithChildren
   '/transport': typeof AuthTransportRoute
   '/vie-scolaire': typeof AuthVieScolaireRoute
   '/vie-scolaire-avancee': typeof AuthVieScolaireAvanceeRoute
-  '/e/$code': typeof ECodeRouteWithChildren
-  '/platform/abonnements': typeof PlatformAbonnementsRoute
   '/platform/approbations': typeof PlatformApprobationsRoute
   '/platform/audit': typeof PlatformAuditRoute
   '/platform/configuration': typeof PlatformConfigurationRoute
   '/platform/configuration-cascade': typeof PlatformConfigurationCascadeRoute
   '/platform/dashboard': typeof PlatformDashboardRoute
   '/platform/facturation': typeof PlatformFacturationRoute
+  '/platform/feature-flags': typeof PlatformFeatureFlagsRoute
   '/platform/groupes': typeof PlatformGroupesRoute
   '/platform/modules': typeof PlatformModulesRoute
   '/platform/monitoring': typeof PlatformMonitoringRoute
@@ -1296,9 +1280,11 @@ export interface FileRoutesByTo {
   '/annees-scolaires/$id': typeof AuthAnneesScolairesIdRoute
   '/bulletins/$id': typeof AuthBulletinsIdRoute
   '/classes/$id': typeof AuthClassesIdRoute
+  '/cms/contenu': typeof AuthCmsContenuRoute
   '/cms/medias': typeof AuthCmsMediasRoute
   '/cms/menus': typeof AuthCmsMenusRoute
   '/cms/pages': typeof AuthCmsPagesRouteWithChildren
+  '/cms/templates': typeof AuthCmsTemplatesRoute
   '/cms/themes': typeof AuthCmsThemesRoute
   '/cms/versions': typeof AuthCmsVersionsRoute
   '/cms/widgets': typeof AuthCmsWidgetsRoute
@@ -1358,6 +1344,7 @@ export interface FileRoutesByTo {
   '/salles': typeof AuthSallesIndexRoute
   '/specialites': typeof AuthSpecialitesIndexRoute
   '/utilisateurs': typeof AuthUtilisateursIndexRoute
+  '/e/$code': typeof ECodeIndexRoute
   '/platform/etablissements': typeof PlatformEtablissementsIndexRoute
   '/platform/roles': typeof PlatformRolesIndexRoute
   '/platform/utilisateurs': typeof PlatformUtilisateursIndexRoute
@@ -1406,19 +1393,14 @@ export interface FileRoutesById {
   '/_auth/enseignants': typeof AuthEnseignantsRouteWithChildren
   '/_auth/etablissements': typeof AuthEtablissementsRouteWithChildren
   '/_auth/examens-nationaux': typeof AuthExamensNationauxRouteWithChildren
-  '/_auth/facturation': typeof AuthFacturationRoute
   '/_auth/factures': typeof AuthFacturesRoute
   '/_auth/filieres': typeof AuthFilieresRouteWithChildren
   '/_auth/finances': typeof AuthFinancesRoute
   '/_auth/groupes-etablissements': typeof AuthGroupesEtablissementsRoute
   '/_auth/heures-cours': typeof AuthHeuresCoursRouteWithChildren
   '/_auth/infrastructure': typeof AuthInfrastructureRoute
+  '/_auth/marketplace': typeof AuthMarketplaceRoute
   '/_auth/matieres': typeof AuthMatieresRouteWithChildren
-  '/_auth/modules-administratifs': typeof AuthModulesAdministratifsRoute
-  '/_auth/modules-complementaires': typeof AuthModulesComplementairesRoute
-  '/_auth/modules-organisationnels': typeof AuthModulesOrganisationnelsRoute
-  '/_auth/modules-pedagogique-avance': typeof AuthModulesPedagogiqueAvanceRoute
-  '/_auth/modules-pedagogiques': typeof AuthModulesPedagogiquesRoute
   '/_auth/modules-reporting': typeof AuthModulesReportingRoute
   '/_auth/modules-rh': typeof AuthModulesRhRoute
   '/_auth/mon-abonnement': typeof AuthMonAbonnementRoute
@@ -1431,6 +1413,7 @@ export interface FileRoutesById {
   '/_auth/parametres': typeof AuthParametresRoute
   '/_auth/periodes': typeof AuthPeriodesRouteWithChildren
   '/_auth/personnel': typeof AuthPersonnelRouteWithChildren
+  '/_auth/plans': typeof AuthPlansRoute
   '/_auth/programmes': typeof AuthProgrammesRouteWithChildren
   '/_auth/responsables-eleves': typeof AuthResponsablesElevesRouteWithChildren
   '/_auth/salles': typeof AuthSallesRouteWithChildren
@@ -1440,7 +1423,6 @@ export interface FileRoutesById {
   '/_auth/vie-scolaire': typeof AuthVieScolaireRoute
   '/_auth/vie-scolaire-avancee': typeof AuthVieScolaireAvanceeRoute
   '/e/$code': typeof ECodeRouteWithChildren
-  '/platform/abonnements': typeof PlatformAbonnementsRoute
   '/platform/approbations': typeof PlatformApprobationsRoute
   '/platform/audit': typeof PlatformAuditRoute
   '/platform/configuration': typeof PlatformConfigurationRoute
@@ -1448,6 +1430,7 @@ export interface FileRoutesById {
   '/platform/dashboard': typeof PlatformDashboardRoute
   '/platform/etablissements': typeof PlatformEtablissementsRouteWithChildren
   '/platform/facturation': typeof PlatformFacturationRoute
+  '/platform/feature-flags': typeof PlatformFeatureFlagsRoute
   '/platform/groupes': typeof PlatformGroupesRoute
   '/platform/modules': typeof PlatformModulesRoute
   '/platform/monitoring': typeof PlatformMonitoringRoute
@@ -1465,9 +1448,11 @@ export interface FileRoutesById {
   '/_auth/annees-scolaires/$id': typeof AuthAnneesScolairesIdRoute
   '/_auth/bulletins/$id': typeof AuthBulletinsIdRoute
   '/_auth/classes/$id': typeof AuthClassesIdRoute
+  '/_auth/cms/contenu': typeof AuthCmsContenuRoute
   '/_auth/cms/medias': typeof AuthCmsMediasRoute
   '/_auth/cms/menus': typeof AuthCmsMenusRoute
   '/_auth/cms/pages': typeof AuthCmsPagesRouteWithChildren
+  '/_auth/cms/templates': typeof AuthCmsTemplatesRoute
   '/_auth/cms/themes': typeof AuthCmsThemesRoute
   '/_auth/cms/versions': typeof AuthCmsVersionsRoute
   '/_auth/cms/widgets': typeof AuthCmsWidgetsRoute
@@ -1532,6 +1517,7 @@ export interface FileRoutesById {
   '/_auth/salles/': typeof AuthSallesIndexRoute
   '/_auth/specialites/': typeof AuthSpecialitesIndexRoute
   '/_auth/utilisateurs/': typeof AuthUtilisateursIndexRoute
+  '/e/$code/': typeof ECodeIndexRoute
   '/platform/etablissements/': typeof PlatformEtablissementsIndexRoute
   '/platform/roles/': typeof PlatformRolesIndexRoute
   '/platform/utilisateurs/': typeof PlatformUtilisateursIndexRoute
@@ -1580,19 +1566,14 @@ export interface FileRouteTypes {
     | '/enseignants'
     | '/etablissements'
     | '/examens-nationaux'
-    | '/facturation'
     | '/factures'
     | '/filieres'
     | '/finances'
     | '/groupes-etablissements'
     | '/heures-cours'
     | '/infrastructure'
+    | '/marketplace'
     | '/matieres'
-    | '/modules-administratifs'
-    | '/modules-complementaires'
-    | '/modules-organisationnels'
-    | '/modules-pedagogique-avance'
-    | '/modules-pedagogiques'
     | '/modules-reporting'
     | '/modules-rh'
     | '/mon-abonnement'
@@ -1605,6 +1586,7 @@ export interface FileRouteTypes {
     | '/parametres'
     | '/periodes'
     | '/personnel'
+    | '/plans'
     | '/programmes'
     | '/responsables-eleves'
     | '/salles'
@@ -1614,7 +1596,6 @@ export interface FileRouteTypes {
     | '/vie-scolaire'
     | '/vie-scolaire-avancee'
     | '/e/$code'
-    | '/platform/abonnements'
     | '/platform/approbations'
     | '/platform/audit'
     | '/platform/configuration'
@@ -1622,6 +1603,7 @@ export interface FileRouteTypes {
     | '/platform/dashboard'
     | '/platform/etablissements'
     | '/platform/facturation'
+    | '/platform/feature-flags'
     | '/platform/groupes'
     | '/platform/modules'
     | '/platform/monitoring'
@@ -1639,9 +1621,11 @@ export interface FileRouteTypes {
     | '/annees-scolaires/$id'
     | '/bulletins/$id'
     | '/classes/$id'
+    | '/cms/contenu'
     | '/cms/medias'
     | '/cms/menus'
     | '/cms/pages'
+    | '/cms/templates'
     | '/cms/themes'
     | '/cms/versions'
     | '/cms/widgets'
@@ -1706,6 +1690,7 @@ export interface FileRouteTypes {
     | '/salles/'
     | '/specialites/'
     | '/utilisateurs/'
+    | '/e/$code/'
     | '/platform/etablissements/'
     | '/platform/roles/'
     | '/platform/utilisateurs/'
@@ -1740,35 +1725,30 @@ export interface FileRouteTypes {
     | '/configuration'
     | '/dashboard'
     | '/emploi-du-temps'
-    | '/facturation'
     | '/factures'
     | '/finances'
     | '/groupes-etablissements'
     | '/heures-cours'
     | '/infrastructure'
-    | '/modules-administratifs'
-    | '/modules-complementaires'
-    | '/modules-organisationnels'
-    | '/modules-pedagogique-avance'
-    | '/modules-pedagogiques'
+    | '/marketplace'
     | '/modules-reporting'
     | '/modules-rh'
     | '/mon-abonnement'
     | '/notifications-config'
     | '/paiements'
     | '/parametres'
+    | '/plans'
     | '/responsables-eleves'
     | '/transport'
     | '/vie-scolaire'
     | '/vie-scolaire-avancee'
-    | '/e/$code'
-    | '/platform/abonnements'
     | '/platform/approbations'
     | '/platform/audit'
     | '/platform/configuration'
     | '/platform/configuration-cascade'
     | '/platform/dashboard'
     | '/platform/facturation'
+    | '/platform/feature-flags'
     | '/platform/groupes'
     | '/platform/modules'
     | '/platform/monitoring'
@@ -1783,9 +1763,11 @@ export interface FileRouteTypes {
     | '/annees-scolaires/$id'
     | '/bulletins/$id'
     | '/classes/$id'
+    | '/cms/contenu'
     | '/cms/medias'
     | '/cms/menus'
     | '/cms/pages'
+    | '/cms/templates'
     | '/cms/themes'
     | '/cms/versions'
     | '/cms/widgets'
@@ -1845,6 +1827,7 @@ export interface FileRouteTypes {
     | '/salles'
     | '/specialites'
     | '/utilisateurs'
+    | '/e/$code'
     | '/platform/etablissements'
     | '/platform/roles'
     | '/platform/utilisateurs'
@@ -1892,19 +1875,14 @@ export interface FileRouteTypes {
     | '/_auth/enseignants'
     | '/_auth/etablissements'
     | '/_auth/examens-nationaux'
-    | '/_auth/facturation'
     | '/_auth/factures'
     | '/_auth/filieres'
     | '/_auth/finances'
     | '/_auth/groupes-etablissements'
     | '/_auth/heures-cours'
     | '/_auth/infrastructure'
+    | '/_auth/marketplace'
     | '/_auth/matieres'
-    | '/_auth/modules-administratifs'
-    | '/_auth/modules-complementaires'
-    | '/_auth/modules-organisationnels'
-    | '/_auth/modules-pedagogique-avance'
-    | '/_auth/modules-pedagogiques'
     | '/_auth/modules-reporting'
     | '/_auth/modules-rh'
     | '/_auth/mon-abonnement'
@@ -1917,6 +1895,7 @@ export interface FileRouteTypes {
     | '/_auth/parametres'
     | '/_auth/periodes'
     | '/_auth/personnel'
+    | '/_auth/plans'
     | '/_auth/programmes'
     | '/_auth/responsables-eleves'
     | '/_auth/salles'
@@ -1926,7 +1905,6 @@ export interface FileRouteTypes {
     | '/_auth/vie-scolaire'
     | '/_auth/vie-scolaire-avancee'
     | '/e/$code'
-    | '/platform/abonnements'
     | '/platform/approbations'
     | '/platform/audit'
     | '/platform/configuration'
@@ -1934,6 +1912,7 @@ export interface FileRouteTypes {
     | '/platform/dashboard'
     | '/platform/etablissements'
     | '/platform/facturation'
+    | '/platform/feature-flags'
     | '/platform/groupes'
     | '/platform/modules'
     | '/platform/monitoring'
@@ -1951,9 +1930,11 @@ export interface FileRouteTypes {
     | '/_auth/annees-scolaires/$id'
     | '/_auth/bulletins/$id'
     | '/_auth/classes/$id'
+    | '/_auth/cms/contenu'
     | '/_auth/cms/medias'
     | '/_auth/cms/menus'
     | '/_auth/cms/pages'
+    | '/_auth/cms/templates'
     | '/_auth/cms/themes'
     | '/_auth/cms/versions'
     | '/_auth/cms/widgets'
@@ -2018,6 +1999,7 @@ export interface FileRouteTypes {
     | '/_auth/salles/'
     | '/_auth/specialites/'
     | '/_auth/utilisateurs/'
+    | '/e/$code/'
     | '/platform/etablissements/'
     | '/platform/roles/'
     | '/platform/utilisateurs/'
@@ -2181,6 +2163,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlatformGroupesRouteImport
       parentRoute: typeof PlatformRoute
     }
+    '/platform/feature-flags': {
+      id: '/platform/feature-flags'
+      path: '/feature-flags'
+      fullPath: '/platform/feature-flags'
+      preLoaderRoute: typeof PlatformFeatureFlagsRouteImport
+      parentRoute: typeof PlatformRoute
+    }
     '/platform/facturation': {
       id: '/platform/facturation'
       path: '/facturation'
@@ -2228,13 +2217,6 @@ declare module '@tanstack/react-router' {
       path: '/approbations'
       fullPath: '/platform/approbations'
       preLoaderRoute: typeof PlatformApprobationsRouteImport
-      parentRoute: typeof PlatformRoute
-    }
-    '/platform/abonnements': {
-      id: '/platform/abonnements'
-      path: '/abonnements'
-      fullPath: '/platform/abonnements'
-      preLoaderRoute: typeof PlatformAbonnementsRouteImport
       parentRoute: typeof PlatformRoute
     }
     '/e/$code': {
@@ -2298,6 +2280,13 @@ declare module '@tanstack/react-router' {
       path: '/programmes'
       fullPath: '/programmes'
       preLoaderRoute: typeof AuthProgrammesRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/plans': {
+      id: '/_auth/plans'
+      path: '/plans'
+      fullPath: '/plans'
+      preLoaderRoute: typeof AuthPlansRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/personnel': {
@@ -2384,46 +2373,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthModulesReportingRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_auth/modules-pedagogiques': {
-      id: '/_auth/modules-pedagogiques'
-      path: '/modules-pedagogiques'
-      fullPath: '/modules-pedagogiques'
-      preLoaderRoute: typeof AuthModulesPedagogiquesRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/modules-pedagogique-avance': {
-      id: '/_auth/modules-pedagogique-avance'
-      path: '/modules-pedagogique-avance'
-      fullPath: '/modules-pedagogique-avance'
-      preLoaderRoute: typeof AuthModulesPedagogiqueAvanceRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/modules-organisationnels': {
-      id: '/_auth/modules-organisationnels'
-      path: '/modules-organisationnels'
-      fullPath: '/modules-organisationnels'
-      preLoaderRoute: typeof AuthModulesOrganisationnelsRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/modules-complementaires': {
-      id: '/_auth/modules-complementaires'
-      path: '/modules-complementaires'
-      fullPath: '/modules-complementaires'
-      preLoaderRoute: typeof AuthModulesComplementairesRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/modules-administratifs': {
-      id: '/_auth/modules-administratifs'
-      path: '/modules-administratifs'
-      fullPath: '/modules-administratifs'
-      preLoaderRoute: typeof AuthModulesAdministratifsRouteImport
-      parentRoute: typeof AuthRoute
-    }
     '/_auth/matieres': {
       id: '/_auth/matieres'
       path: '/matieres'
       fullPath: '/matieres'
       preLoaderRoute: typeof AuthMatieresRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/marketplace': {
+      id: '/_auth/marketplace'
+      path: '/marketplace'
+      fullPath: '/marketplace'
+      preLoaderRoute: typeof AuthMarketplaceRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/infrastructure': {
@@ -2466,13 +2427,6 @@ declare module '@tanstack/react-router' {
       path: '/factures'
       fullPath: '/factures'
       preLoaderRoute: typeof AuthFacturesRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/facturation': {
-      id: '/_auth/facturation'
-      path: '/facturation'
-      fullPath: '/facturation'
-      preLoaderRoute: typeof AuthFacturationRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/examens-nationaux': {
@@ -2614,6 +2568,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/platform/etablissements/'
       preLoaderRoute: typeof PlatformEtablissementsIndexRouteImport
       parentRoute: typeof PlatformEtablissementsRoute
+    }
+    '/e/$code/': {
+      id: '/e/$code/'
+      path: '/'
+      fullPath: '/e/$code/'
+      preLoaderRoute: typeof ECodeIndexRouteImport
+      parentRoute: typeof ECodeRoute
     }
     '/_auth/utilisateurs/': {
       id: '/_auth/utilisateurs/'
@@ -3063,6 +3024,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCmsThemesRouteImport
       parentRoute: typeof AuthCmsRoute
     }
+    '/_auth/cms/templates': {
+      id: '/_auth/cms/templates'
+      path: '/templates'
+      fullPath: '/cms/templates'
+      preLoaderRoute: typeof AuthCmsTemplatesRouteImport
+      parentRoute: typeof AuthCmsRoute
+    }
     '/_auth/cms/pages': {
       id: '/_auth/cms/pages'
       path: '/pages'
@@ -3082,6 +3050,13 @@ declare module '@tanstack/react-router' {
       path: '/medias'
       fullPath: '/cms/medias'
       preLoaderRoute: typeof AuthCmsMediasRouteImport
+      parentRoute: typeof AuthCmsRoute
+    }
+    '/_auth/cms/contenu': {
+      id: '/_auth/cms/contenu'
+      path: '/contenu'
+      fullPath: '/cms/contenu'
+      preLoaderRoute: typeof AuthCmsContenuRouteImport
       parentRoute: typeof AuthCmsRoute
     }
     '/_auth/classes/$id': {
@@ -3309,9 +3284,11 @@ const AuthCmsPagesRouteWithChildren = AuthCmsPagesRoute._addFileChildren(
 )
 
 interface AuthCmsRouteChildren {
+  AuthCmsContenuRoute: typeof AuthCmsContenuRoute
   AuthCmsMediasRoute: typeof AuthCmsMediasRoute
   AuthCmsMenusRoute: typeof AuthCmsMenusRoute
   AuthCmsPagesRoute: typeof AuthCmsPagesRouteWithChildren
+  AuthCmsTemplatesRoute: typeof AuthCmsTemplatesRoute
   AuthCmsThemesRoute: typeof AuthCmsThemesRoute
   AuthCmsVersionsRoute: typeof AuthCmsVersionsRoute
   AuthCmsWidgetsRoute: typeof AuthCmsWidgetsRoute
@@ -3319,9 +3296,11 @@ interface AuthCmsRouteChildren {
 }
 
 const AuthCmsRouteChildren: AuthCmsRouteChildren = {
+  AuthCmsContenuRoute: AuthCmsContenuRoute,
   AuthCmsMediasRoute: AuthCmsMediasRoute,
   AuthCmsMenusRoute: AuthCmsMenusRoute,
   AuthCmsPagesRoute: AuthCmsPagesRouteWithChildren,
+  AuthCmsTemplatesRoute: AuthCmsTemplatesRoute,
   AuthCmsThemesRoute: AuthCmsThemesRoute,
   AuthCmsVersionsRoute: AuthCmsVersionsRoute,
   AuthCmsWidgetsRoute: AuthCmsWidgetsRoute,
@@ -3760,19 +3739,14 @@ interface AuthRouteChildren {
   AuthEnseignantsRoute: typeof AuthEnseignantsRouteWithChildren
   AuthEtablissementsRoute: typeof AuthEtablissementsRouteWithChildren
   AuthExamensNationauxRoute: typeof AuthExamensNationauxRouteWithChildren
-  AuthFacturationRoute: typeof AuthFacturationRoute
   AuthFacturesRoute: typeof AuthFacturesRoute
   AuthFilieresRoute: typeof AuthFilieresRouteWithChildren
   AuthFinancesRoute: typeof AuthFinancesRoute
   AuthGroupesEtablissementsRoute: typeof AuthGroupesEtablissementsRoute
   AuthHeuresCoursRoute: typeof AuthHeuresCoursRouteWithChildren
   AuthInfrastructureRoute: typeof AuthInfrastructureRoute
+  AuthMarketplaceRoute: typeof AuthMarketplaceRoute
   AuthMatieresRoute: typeof AuthMatieresRouteWithChildren
-  AuthModulesAdministratifsRoute: typeof AuthModulesAdministratifsRoute
-  AuthModulesComplementairesRoute: typeof AuthModulesComplementairesRoute
-  AuthModulesOrganisationnelsRoute: typeof AuthModulesOrganisationnelsRoute
-  AuthModulesPedagogiqueAvanceRoute: typeof AuthModulesPedagogiqueAvanceRoute
-  AuthModulesPedagogiquesRoute: typeof AuthModulesPedagogiquesRoute
   AuthModulesReportingRoute: typeof AuthModulesReportingRoute
   AuthModulesRhRoute: typeof AuthModulesRhRoute
   AuthMonAbonnementRoute: typeof AuthMonAbonnementRoute
@@ -3785,6 +3759,7 @@ interface AuthRouteChildren {
   AuthParametresRoute: typeof AuthParametresRoute
   AuthPeriodesRoute: typeof AuthPeriodesRouteWithChildren
   AuthPersonnelRoute: typeof AuthPersonnelRouteWithChildren
+  AuthPlansRoute: typeof AuthPlansRoute
   AuthProgrammesRoute: typeof AuthProgrammesRouteWithChildren
   AuthResponsablesElevesRoute: typeof AuthResponsablesElevesRouteWithChildren
   AuthSallesRoute: typeof AuthSallesRouteWithChildren
@@ -3816,19 +3791,14 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthEnseignantsRoute: AuthEnseignantsRouteWithChildren,
   AuthEtablissementsRoute: AuthEtablissementsRouteWithChildren,
   AuthExamensNationauxRoute: AuthExamensNationauxRouteWithChildren,
-  AuthFacturationRoute: AuthFacturationRoute,
   AuthFacturesRoute: AuthFacturesRoute,
   AuthFilieresRoute: AuthFilieresRouteWithChildren,
   AuthFinancesRoute: AuthFinancesRoute,
   AuthGroupesEtablissementsRoute: AuthGroupesEtablissementsRoute,
   AuthHeuresCoursRoute: AuthHeuresCoursRouteWithChildren,
   AuthInfrastructureRoute: AuthInfrastructureRoute,
+  AuthMarketplaceRoute: AuthMarketplaceRoute,
   AuthMatieresRoute: AuthMatieresRouteWithChildren,
-  AuthModulesAdministratifsRoute: AuthModulesAdministratifsRoute,
-  AuthModulesComplementairesRoute: AuthModulesComplementairesRoute,
-  AuthModulesOrganisationnelsRoute: AuthModulesOrganisationnelsRoute,
-  AuthModulesPedagogiqueAvanceRoute: AuthModulesPedagogiqueAvanceRoute,
-  AuthModulesPedagogiquesRoute: AuthModulesPedagogiquesRoute,
   AuthModulesReportingRoute: AuthModulesReportingRoute,
   AuthModulesRhRoute: AuthModulesRhRoute,
   AuthMonAbonnementRoute: AuthMonAbonnementRoute,
@@ -3841,6 +3811,7 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthParametresRoute: AuthParametresRoute,
   AuthPeriodesRoute: AuthPeriodesRouteWithChildren,
   AuthPersonnelRoute: AuthPersonnelRouteWithChildren,
+  AuthPlansRoute: AuthPlansRoute,
   AuthProgrammesRoute: AuthProgrammesRouteWithChildren,
   AuthResponsablesElevesRoute: AuthResponsablesElevesRouteWithChildren,
   AuthSallesRoute: AuthSallesRouteWithChildren,
@@ -3900,7 +3871,6 @@ const PlatformUtilisateursRouteWithChildren =
   PlatformUtilisateursRoute._addFileChildren(PlatformUtilisateursRouteChildren)
 
 interface PlatformRouteChildren {
-  PlatformAbonnementsRoute: typeof PlatformAbonnementsRoute
   PlatformApprobationsRoute: typeof PlatformApprobationsRoute
   PlatformAuditRoute: typeof PlatformAuditRoute
   PlatformConfigurationRoute: typeof PlatformConfigurationRoute
@@ -3908,6 +3878,7 @@ interface PlatformRouteChildren {
   PlatformDashboardRoute: typeof PlatformDashboardRoute
   PlatformEtablissementsRoute: typeof PlatformEtablissementsRouteWithChildren
   PlatformFacturationRoute: typeof PlatformFacturationRoute
+  PlatformFeatureFlagsRoute: typeof PlatformFeatureFlagsRoute
   PlatformGroupesRoute: typeof PlatformGroupesRoute
   PlatformModulesRoute: typeof PlatformModulesRoute
   PlatformMonitoringRoute: typeof PlatformMonitoringRoute
@@ -3921,7 +3892,6 @@ interface PlatformRouteChildren {
 }
 
 const PlatformRouteChildren: PlatformRouteChildren = {
-  PlatformAbonnementsRoute: PlatformAbonnementsRoute,
   PlatformApprobationsRoute: PlatformApprobationsRoute,
   PlatformAuditRoute: PlatformAuditRoute,
   PlatformConfigurationRoute: PlatformConfigurationRoute,
@@ -3929,6 +3899,7 @@ const PlatformRouteChildren: PlatformRouteChildren = {
   PlatformDashboardRoute: PlatformDashboardRoute,
   PlatformEtablissementsRoute: PlatformEtablissementsRouteWithChildren,
   PlatformFacturationRoute: PlatformFacturationRoute,
+  PlatformFeatureFlagsRoute: PlatformFeatureFlagsRoute,
   PlatformGroupesRoute: PlatformGroupesRoute,
   PlatformModulesRoute: PlatformModulesRoute,
   PlatformMonitoringRoute: PlatformMonitoringRoute,
@@ -3950,6 +3921,7 @@ interface ECodeRouteChildren {
   ECodeContactRoute: typeof ECodeContactRoute
   ECodeGalerieRoute: typeof ECodeGalerieRoute
   ECodeInscriptionsRoute: typeof ECodeInscriptionsRoute
+  ECodeIndexRoute: typeof ECodeIndexRoute
 }
 
 const ECodeRouteChildren: ECodeRouteChildren = {
@@ -3957,6 +3929,7 @@ const ECodeRouteChildren: ECodeRouteChildren = {
   ECodeContactRoute: ECodeContactRoute,
   ECodeGalerieRoute: ECodeGalerieRoute,
   ECodeInscriptionsRoute: ECodeInscriptionsRoute,
+  ECodeIndexRoute: ECodeIndexRoute,
 }
 
 const ECodeRouteWithChildren = ECodeRoute._addFileChildren(ECodeRouteChildren)

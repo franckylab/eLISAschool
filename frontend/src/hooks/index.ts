@@ -80,3 +80,11 @@ export { useAbility } from './use-ability';
 
 // Monitoring temps réel (Refonte SaaS v5 — Socket.IO)
 export { useRealtimeMonitoring } from './use-realtime-monitoring';
+
+// Feature Management unifié (Migration 210 — Refonte Feature Flags R8)
+export { useFeatureManagement } from './use-feature-management';
+export type {
+    FeatureFlagWithMetadata,
+    FeatureFlagDefinition,
+    ModuleCatalogueItem,
+} from './use-feature-management';

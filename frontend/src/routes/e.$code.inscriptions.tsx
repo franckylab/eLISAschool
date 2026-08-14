@@ -8,8 +8,8 @@
 
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useEtablissementPublic, useThemePublic, useMenusPublic, usePagesPubliques } from '@/features/cms/hooks/use-cms-public';
-import { PublicLayout } from '@/features/cms/components/PublicLayout';
+import { usePagesPubliques } from '@/features/cms/hooks/use-cms-public';
+import { usePublicPage } from '@/features/cms/components/PublicPageContext';
 import { CmsPageRenderer } from '@/features/cms/components/CmsPageRenderer';
 import { GraduationCap, Calendar, FileText, Users, CheckCircle, ArrowRight, Clock, BookOpen, Award, Phone } from 'lucide-react';
 import { SectionType } from '@/features/cms/types/cms.types';
@@ -20,9 +20,7 @@ export const Route = createFileRoute('/e/$code/inscriptions')({
 
 function PageInscriptionsPublique() {
     const { code } = Route.useParams();
-    const { data: etab } = useEtablissementPublic(code);
-    const { data: theme } = useThemePublic(code);
-    const { data: menus } = useMenusPublic(code);
+    const { etab, theme, code: codeEtab } = usePublicPage();
     const { data: pages } = usePagesPubliques(code);
 
     const pageInscriptions = pages?.find(p => p.template === 'inscriptions' || p.slug === 'inscriptions');
@@ -34,11 +32,7 @@ function PageInscriptionsPublique() {
     const primaryColor = theme?.couleurs?.primaire || '#28a745';
 
     if (!etab) {
-        return (
-            <div className="flex min-h-screen items-center justify-center">
-                <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-green-600" />
-            </div>
-        );
+        return null;
     }
 
     // Étapes d'inscription par défaut
@@ -74,14 +68,14 @@ function PageInscriptionsPublique() {
     ];
 
     return (
-        <PublicLayout etablissement={etab} theme={theme} menus={menus || []}>
+        <>
             {/* Sections CMS de la page inscriptions (hero, texte, CTA, etc.) */}
             {sectionsInscriptions.filter(s => s.type !== SectionType.FORMULAIRE).length > 0 && (
                 <CmsPageRenderer
                     sections={sectionsInscriptions.filter(s => s.type !== SectionType.FORMULAIRE)}
                     theme={theme}
                     etablissement={etab}
-                    codeEtablissement={code}
+                    codeEtablissement={codeEtab}
                 />
             )}
 
@@ -242,6 +236,6 @@ function PageInscriptionsPublique() {
                     </div>
                 </div>
             </div>
-        </PublicLayout>
+        </>
     );
 }

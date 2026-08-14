@@ -81,7 +81,7 @@ export interface ParametreFiltres {
 }
 
 /** Catégorie module — source unique : ModuleCatalogue DB */
-export type ModuleCategory = 'CRITIQUE' | 'PREMIUM' | 'ADDON';
+export type ModuleCategory = 'BASE' | 'PREMIUM' | 'ADDON';
 
 export interface ModuleRegistryEntry {
     name: string;

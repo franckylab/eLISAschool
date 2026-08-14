@@ -11,20 +11,22 @@
  * - Détecter les incohérences de configuration
  */
 
-import { Repository, In } from 'typeorm';
+import { Repository, In, LessThan } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { ParametreSysteme } from '../entities/parametre-systeme.entity';
 import { ModuleCatalogue } from '@modules/billing/entities/module-catalogue.entity';
 import { FeatureFlagTenant } from '@modules/billing/entities/feature-flag-tenant.entity';
 import { AbonnementClient, StatutAbonnement } from '@modules/billing/entities';
 import { logger } from '@common/utils/logger.util';
+// Migration 210 — Refonte Feature Flags (vérification cohérence)
+import { FeatureFlagDefinition } from '@modules/billing/entities/feature-flag-definition.entity';
 
 /**
  * Résultat d'une vérification de cohérence
  */
 export interface ConsistencyCheckResult {
     /** Type d'incohérence détectée */
-    type: 'module_disabled_but_flags_active' | 'module_enabled_but_flags_inactive' | 'orphan_feature_flag' | 'missing_module_param';
+    type: 'module_disabled_but_flags_active' | 'module_enabled_but_flags_inactive' | 'orphan_feature_flag' | 'missing_module_param' | 'expired_feature_flag' | 'orphan_tenant_flag';
     /** Sévérité */
     severity: 'error' | 'warning' | 'info';
     /** Message descriptif */
@@ -91,6 +93,14 @@ export class ConfigConsistencyService {
         // 3. Vérifier feature flags orphelins
         const orphanIssues = await this.checkOrphanFeatureFlags();
         issues.push(...orphanIssues);
+
+        // 4. Vérifier flags expirés (Migration 210)
+        const expiredIssues = await this.checkExpiredFeatureFlags();
+        issues.push(...expiredIssues);
+
+        // 5. Vérifier flags orphelins dans definitions (Migration 210)
+        const orphanDefIssues = await this.checkOrphanDefinitionFlags();
+        issues.push(...orphanDefIssues);
 
         // Calculer les statistiques
         const bySeverity = {
@@ -239,6 +249,64 @@ export class ConfigConsistencyService {
                         key: flag.flagName,
                     });
                 }
+            }
+        }
+
+        return issues;
+    }
+
+    /**
+     * Vérifie les feature flags avec expiration dépassée (Migration 210)
+     */
+    private async checkExpiredFeatureFlags(): Promise<ConsistencyCheckResult[]> {
+        const issues: ConsistencyCheckResult[] = [];
+        const definitionRepo = AppDataSource.getRepository(FeatureFlagDefinition);
+
+        const expired = await definitionRepo.find({
+            where: {
+                estActif: true,
+                expiresAt: LessThan(new Date()),
+            },
+        });
+
+        for (const flag of expired) {
+            issues.push({
+                type: 'expired_feature_flag',
+                severity: 'warning',
+                message: `Feature flag '${flag.cle}' (${flag.label}) est actif mais a expiré le ${flag.expiresAt?.toISOString()}`,
+                key: flag.cle,
+                currentValue: flag.estActif,
+                expectedValue: false,
+            });
+        }
+
+        return issues;
+    }
+
+    /**
+     * Vérifie les flags orphelins dans feature_flags_tenant sans définition (Migration 210)
+     */
+    private async checkOrphanDefinitionFlags(): Promise<ConsistencyCheckResult[]> {
+        const issues: ConsistencyCheckResult[] = [];
+        const definitionRepo = AppDataSource.getRepository(FeatureFlagDefinition);
+
+        const definitions = await definitionRepo.find({ select: ['cle'] });
+        const knownCles = new Set(definitions.map(d => d.cle));
+
+        const allFlags = await this.featureFlagRepository.find({ select: ['flagName'] });
+        const distinctFlags = [...new Set(allFlags.map(f => f.flagName))];
+
+        for (const flagName of distinctFlags) {
+            // Ignorer les flags module_ (gérés par le catalogue)
+            if (flagName.startsWith('module_')) continue;
+
+            if (!knownCles.has(flagName)) {
+                issues.push({
+                    type: 'orphan_tenant_flag',
+                    severity: 'info',
+                    message: `Flag '${flagName}' présent dans les overrides tenant mais sans définition centralisée`,
+                    key: flagName,
+                });
             }
         }
 

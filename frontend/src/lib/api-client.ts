@@ -12,7 +12,7 @@ import { useAuthStore } from '@/stores/auth.store';
 // URL de l'API backend
 // En dev : vide pour utiliser le proxy Vite (requêtes relatives /api)
 // En prod : définir VITE_API_URL dans .env (ex: http://10.0.0.1:7000)
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? '';
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? '';
 
 interface TokenPair {
     accessToken: string;
@@ -362,7 +362,8 @@ class ApiClient {
             '/api/auth/refresh',
             '/api/auth/pre-login',
             '/api/auth/complete-login',
-            '/api/auth/etablissements-disponibles', // ← NOUVEAU: requis pour EtablissementSwitcher
+            '/api/auth/etablissements-disponibles',
+            '/api/auth/switch-etablissement', // Multi-établissements: token sans etablissementId
             '/api/public', // ← Routes publiques CMS (sans auth)
         ];
         const isAuthRoute = authRoutes.some(route => endpoint.startsWith(route));

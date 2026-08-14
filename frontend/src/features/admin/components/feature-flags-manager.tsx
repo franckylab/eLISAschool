@@ -92,16 +92,37 @@ export function FeatureFlagsManager({ etablissementId: propEtabId }: FeatureFlag
         { value: 'default', label: t('admin:featureFlags.defaut', 'Défaut') },
     ], [t]);
 
-    // Charger les flags — l'API retourne Record<string, boolean> qu'on transforme en FeatureFlag[]
+    // Charger les flags avec métadonnées (Migration 210 — données dynamiques)
     const { data: flags, isLoading } = useQuery<FeatureFlag[]>({
         queryKey: ['feature-flags', effectiveEtabId],
         queryFn: async () => {
             if (!effectiveEtabId) return [];
-            const res = await apiClient.get<Record<string, boolean>>(
+            // Utiliser l'endpoint metadata pour les labels/descriptions dynamiques
+            const res = await apiClient.get<Array<{
+                name: string;
+                label: string;
+                description: string | null;
+                enabled: boolean;
+                source: string;
+                categorie: string;
+            }>>(
+                `/api/platform/facturation/feature-flags/${effectiveEtabId}/metadata`
+            );
+            const metadata = res.data ?? [];
+            if (metadata.length > 0) {
+                return metadata.map(m => ({
+                    name: m.name,
+                    label: m.label,
+                    enabled: m.enabled,
+                    source: m.source as FeatureFlag['source'],
+                    description: m.description || undefined,
+                }));
+            }
+            // Fallback : ancien endpoint si metadata indisponible
+            const fallbackRes = await apiClient.get<Record<string, boolean>>(
                 `/api/platform/facturation/feature-flags/${effectiveEtabId}`
             );
-            // Transformer Record<string, boolean> → FeatureFlag[]
-            const record = res.data ?? {};
+            const record = fallbackRes.data ?? {};
             return Object.entries(record).map(([name, enabled]) => ({
                 name,
                 label: humanizeFlagName(name),
@@ -311,7 +332,7 @@ export function FeatureFlagsManager({ etablissementId: propEtabId }: FeatureFlag
 
 /**
  * Humanize un nom de flag en label lisible.
- * Ex: 'module_notes' → 'Module Notes', 'feature_dark_mode' → 'Dark Mode'
+ * Fallback — utilise les labels de feature_flag_definitions en priorité.
  */
 function humanizeFlagName(name: string): string {
     return name
@@ -323,6 +344,7 @@ function humanizeFlagName(name: string): string {
 
 /**
  * Description par défaut pour les flags connus.
+ * Fallback — utilise les descriptions de feature_flag_definitions en priorité.
  */
 function getFlagDescription(name: string): string {
     const descriptions: Record<string, string> = {

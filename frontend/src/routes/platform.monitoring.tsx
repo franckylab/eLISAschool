@@ -32,6 +32,7 @@ import {
     type Alert,
     type GoldenSignals,
 } from '@/features/admin/components/monitoring-sections';
+import { ModuleAnalyticsDashboard } from '@/features/admin/components/module-analytics-dashboard';
 
 // =============================================
 // PAGE
@@ -167,6 +168,9 @@ function PlatformMonitoringPage() {
 
             {/* Noisy Neighbor Detection */}
             <NoisyNeighborSection />
+
+            {/* Analytics Modules */}
+            <ModuleAnalyticsDashboard />
 
             {/* Temps réel */}
             <RealtimeSection />
