@@ -5,6 +5,7 @@
  * Statistiques avec animation de compteur.
  */
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
 type CompteurItem = { valeur: number; label: string; prefix?: string; suffix?: string; icone?: string };
 
@@ -12,6 +13,7 @@ type CompteursAnimesProps = {
     items: CompteurItem[];
     columns: number;
     background: 'light' | 'primary' | 'dark';
+    styleConfig?: any;
 };
 
 export const CompteursAnimesPuck: ComponentConfig<CompteursAnimesProps> = {
@@ -20,7 +22,7 @@ export const CompteursAnimesPuck: ComponentConfig<CompteursAnimesProps> = {
             type: 'array',
             arrayFields: {
                 valeur: { type: 'number', label: 'Valeur' },
-                label: { type: 'text', label: 'Libellé' },
+                label: { type: 'text', label: 'Libellé', contentEditable: true },
                 prefix: { type: 'text', label: 'Préfixe' },
                 suffix: { type: 'text', label: 'Suffixe (%, +, etc.)' },
                 icone: { type: 'text', label: 'Icône (emoji)' },
@@ -47,9 +49,10 @@ export const CompteursAnimesPuck: ComponentConfig<CompteursAnimesProps> = {
         columns: 4,
         background: 'primary',
     },
-    render: ({ items, columns, background }) => {
+    render: ({ items, columns, background, styleConfig }) => {
         const bgClass = background === 'dark' ? 'bg-gray-900 text-white' : background === 'primary' ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-900';
         return (
+            <SectionWrapper styleConfig={styleConfig}>
             <div className={`rounded-xl p-8 ${bgClass}`}>
                 <div className={`grid gap-6`} style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
                     {items.map((item, i) => (
@@ -63,6 +66,7 @@ export const CompteursAnimesPuck: ComponentConfig<CompteursAnimesProps> = {
                     ))}
                 </div>
             </div>
+            </SectionWrapper>
         );
     },
 };

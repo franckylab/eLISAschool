@@ -5,6 +5,7 @@
  * Grille tarifaire avec plans et features.
  */
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
 type PlanItem = { nom: string; prix: string; periode?: string; features: string[]; highlight: boolean; boutonTexte: string };
 
@@ -12,21 +13,22 @@ type PrixTabProps = {
     plans: PlanItem[];
     titre: string;
     sousTitre: string;
+    styleConfig?: any;
 };
 
 export const PrixTabPuck: ComponentConfig<PrixTabProps> = {
     fields: {
-        titre: { type: 'text', label: 'Titre' },
-        sousTitre: { type: 'text', label: 'Sous-titre' },
+        titre: { type: 'text', label: 'Titre', contentEditable: true },
+        sousTitre: { type: 'text', label: 'Sous-titre', contentEditable: true },
         plans: {
             type: 'array',
             arrayFields: {
-                nom: { type: 'text', label: 'Nom du plan' },
-                prix: { type: 'text', label: 'Prix' },
+                nom: { type: 'text', label: 'Nom du plan', contentEditable: true },
+                prix: { type: 'text', label: 'Prix', contentEditable: true },
                 periode: { type: 'text', label: 'Période (/mois, /an)' },
                 features: { type: 'text', label: 'Features (séparées par virgule)' },
                 highlight: { type: 'radio', label: 'Mis en avant', options: [{ label: 'Oui', value: true }, { label: 'Non', value: false }] },
-                boutonTexte: { type: 'text', label: 'Texte bouton' },
+                boutonTexte: { type: 'text', label: 'Texte bouton', contentEditable: true },
             },
             defaultItemProps: { nom: 'Plan', prix: '0', periode: '/mois', features: '', highlight: false, boutonTexte: 'Choisir' },
             label: 'Plans',
@@ -41,7 +43,8 @@ export const PrixTabPuck: ComponentConfig<PrixTabProps> = {
             { nom: 'Excellence', prix: '120 000', periode: '/trimestre', features: 'Tout Premium,Tutorat,Sorties,Club', highlight: false, boutonTexte: 'Choisir' },
         ],
     },
-    render: ({ titre, sousTitre, plans }) => (
+    render: ({ titre, sousTitre, plans, styleConfig }) => (
+        <SectionWrapper styleConfig={styleConfig}>
         <div className="w-full py-8">
             <div className="text-center mb-8">
                 <h2 className="text-3xl font-bold text-gray-900">{titre}</h2>
@@ -71,5 +74,6 @@ export const PrixTabPuck: ComponentConfig<PrixTabProps> = {
                 ))}
             </div>
         </div>
+        </SectionWrapper>
     ),
 };

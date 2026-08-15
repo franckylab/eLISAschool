@@ -5,6 +5,7 @@
  * Galerie en disposition masonry (Pinterest-style).
  */
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
 type ImageItem = { url: string; alt?: string; span?: 'small' | 'medium' | 'large' };
 
@@ -13,6 +14,7 @@ type GalerieMasonryProps = {
     columns: number;
     gap: string;
     borderRadius: string;
+    styleConfig?: any;
 };
 
 export const GalerieMasonryPuck: ComponentConfig<GalerieMasonryProps> = {
@@ -59,9 +61,10 @@ export const GalerieMasonryPuck: ComponentConfig<GalerieMasonryProps> = {
         gap: '8px',
         borderRadius: '12px',
     },
-    render: ({ images, columns, gap, borderRadius }) => {
+    render: ({ images, columns, gap, borderRadius, styleConfig }) => {
         const heightMap = { small: '200px', medium: '280px', large: '360px' };
         return (
+            <SectionWrapper styleConfig={styleConfig}>
             <div className="w-full" style={{ columnCount: columns, columnGap: gap }}>
                 {images.map((img, i) => (
                     <div
@@ -83,6 +86,7 @@ export const GalerieMasonryPuck: ComponentConfig<GalerieMasonryProps> = {
                     </div>
                 ))}
             </div>
+            </SectionWrapper>
         );
     },
 };

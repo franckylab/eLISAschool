@@ -1,7 +1,9 @@
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
 export type FaqProps = {
     faqs: { _id: string; question: string; reponse: string }[];
+    styleConfig?: any;
 };
 
 export const FaqPuck: ComponentConfig<FaqProps> = {
@@ -9,14 +11,15 @@ export const FaqPuck: ComponentConfig<FaqProps> = {
         faqs: {
             type: 'array',
             arrayFields: {
-                question: { type: 'text' },
-                reponse: { type: 'textarea' },
+                question: { type: 'text', contentEditable: true },
+                reponse: { type: 'textarea', contentEditable: true },
             },
         },
     },
     defaultProps: { faqs: [] },
-    render({ faqs }) {
+    render({ faqs, styleConfig }) {
         return (
+            <SectionWrapper styleConfig={styleConfig}>
             <div className="mx-auto max-w-3xl space-y-3">
                 {faqs.length === 0 && <p className="text-center text-sm opacity-50">Ajoutez des questions fréquentes</p>}
                 {faqs.map((faq, i) => (
@@ -31,6 +34,7 @@ export const FaqPuck: ComponentConfig<FaqProps> = {
                     </div>
                 ))}
             </div>
+            </SectionWrapper>
         );
     },
 };

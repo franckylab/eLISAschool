@@ -1,7 +1,9 @@
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
 export type EquipeProps = {
     membres: { _id: string; nom: string; photo: string; fonction: string; bio: string; email: string; linkedin: string; twitter: string }[];
+    styleConfig?: any;
 };
 
 export const EquipePuck: ComponentConfig<EquipeProps> = {
@@ -9,10 +11,10 @@ export const EquipePuck: ComponentConfig<EquipeProps> = {
         membres: {
             type: 'array',
             arrayFields: {
-                nom: { type: 'text' },
+                nom: { type: 'text', contentEditable: true },
                 photo: { type: 'text' },
-                fonction: { type: 'text' },
-                bio: { type: 'textarea' },
+                fonction: { type: 'text', contentEditable: true },
+                bio: { type: 'textarea', contentEditable: true },
                 email: { type: 'text' },
                 linkedin: { type: 'text' },
                 twitter: { type: 'text' },
@@ -20,8 +22,9 @@ export const EquipePuck: ComponentConfig<EquipeProps> = {
         },
     },
     defaultProps: { membres: [] },
-    render({ membres }) {
+    render({ membres, styleConfig }) {
         return (
+            <SectionWrapper styleConfig={styleConfig}>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {membres.map((m, i) => (
                     <div key={i} className="text-center space-y-3 rounded-xl p-4">
@@ -42,6 +45,7 @@ export const EquipePuck: ComponentConfig<EquipeProps> = {
                     </div>
                 ))}
             </div>
+            </SectionWrapper>
         );
     },
 };

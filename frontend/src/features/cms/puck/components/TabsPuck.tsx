@@ -6,12 +6,14 @@
  */
 
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
 type TabItem = { label: string; contenu: string; icone?: string };
 
 type TabsProps = {
     tabs: TabItem[];
     style: 'underline' | 'pills' | 'boxed';
+    styleConfig?: any;
 };
 
 export const TabsPuck: ComponentConfig<TabsProps> = {
@@ -19,8 +21,8 @@ export const TabsPuck: ComponentConfig<TabsProps> = {
         tabs: {
             type: 'array',
             arrayFields: {
-                label: { type: 'text', label: 'Libellé' },
-                contenu: { type: 'text', label: 'Contenu (HTML supporté)' },
+                label: { type: 'text', label: 'Libellé', contentEditable: true },
+                contenu: { type: 'text', label: 'Contenu (HTML supporté)', contentEditable: true },
                 icone: { type: 'text', label: 'Icône (emoji)' },
             },
             defaultItemProps: { label: 'Onglet', contenu: 'Contenu de l\'onglet', icone: '' },
@@ -40,9 +42,10 @@ export const TabsPuck: ComponentConfig<TabsProps> = {
         ],
         style: 'underline',
     },
-    render: ({ tabs, style }) => {
+    render: ({ tabs, style, styleConfig }) => {
         const activeTab = 0; // Static preview — premier onglet actif
         return (
+            <SectionWrapper styleConfig={styleConfig}>
             <div className="w-full">
                 <div className={`flex gap-1 border-b ${style === 'pills' ? 'gap-2 border-none' : ''} ${style === 'boxed' ? 'border rounded-t-lg bg-gray-50 p-1' : ''}`}>
                     {tabs.map((tab, i) => (
@@ -65,6 +68,7 @@ export const TabsPuck: ComponentConfig<TabsProps> = {
                     {tabs[activeTab]?.contenu || 'Contenu de l\'onglet'}
                 </div>
             </div>
+            </SectionWrapper>
         );
     },
 };

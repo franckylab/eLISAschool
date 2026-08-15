@@ -6,6 +6,7 @@
  */
 
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
 type TimelineProps = {
     items: Array<{
@@ -16,6 +17,7 @@ type TimelineProps = {
     }>;
     orientation: 'vertical' | 'horizontal';
     showLine: boolean;
+    styleConfig?: any;
 };
 
 export const TimelinePuck: ComponentConfig<TimelineProps> = {
@@ -23,9 +25,9 @@ export const TimelinePuck: ComponentConfig<TimelineProps> = {
         items: {
             type: 'array',
             arrayFields: {
-                date: { type: 'text', label: 'Date' },
-                titre: { type: 'text', label: 'Titre' },
-                description: { type: 'text', label: 'Description' },
+                date: { type: 'text', label: 'Date', contentEditable: true },
+                titre: { type: 'text', label: 'Titre', contentEditable: true },
+                description: { type: 'text', label: 'Description', contentEditable: true },
                 icone: { type: 'text', label: 'Icône (emoji ou URL)' },
             },
             defaultItemProps: { date: '', titre: '', description: '', icone: '' },
@@ -43,7 +45,8 @@ export const TimelinePuck: ComponentConfig<TimelineProps> = {
         orientation: 'vertical',
         showLine: true,
     },
-    render: ({ items, orientation, showLine }) => (
+    render: ({ items, orientation, showLine, styleConfig }) => (
+        <SectionWrapper styleConfig={styleConfig}>
         <div className={`w-full ${orientation === 'horizontal' ? 'overflow-x-auto' : ''}`}>
             <div className={orientation === 'horizontal' ? 'flex gap-6 min-w-max px-4' : 'relative'}>
                 {showLine && orientation === 'vertical' && (
@@ -63,5 +66,6 @@ export const TimelinePuck: ComponentConfig<TimelineProps> = {
                 ))}
             </div>
         </div>
+        </SectionWrapper>
     ),
 };

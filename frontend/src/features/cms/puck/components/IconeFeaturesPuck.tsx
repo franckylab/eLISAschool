@@ -5,6 +5,7 @@
  * Grille de fonctionnalités avec icônes.
  */
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
 type Feature = { icone: string; titre: string; description: string };
 
@@ -12,6 +13,7 @@ type IconeFeaturesProps = {
     features: Feature[];
     columns: number;
     centered: boolean;
+    styleConfig?: any;
 };
 
 export const IconeFeaturesPuck: ComponentConfig<IconeFeaturesProps> = {
@@ -20,8 +22,8 @@ export const IconeFeaturesPuck: ComponentConfig<IconeFeaturesProps> = {
             type: 'array',
             arrayFields: {
                 icone: { type: 'text', label: 'Icône (emoji ou URL)' },
-                titre: { type: 'text', label: 'Titre' },
-                description: { type: 'text', label: 'Description' },
+                titre: { type: 'text', label: 'Titre', contentEditable: true },
+                description: { type: 'text', label: 'Description', contentEditable: true },
             },
             defaultItemProps: { icone: '✨', titre: 'Feature', description: 'Description de la fonctionnalité' },
             label: 'Fonctionnalités',
@@ -43,7 +45,8 @@ export const IconeFeaturesPuck: ComponentConfig<IconeFeaturesProps> = {
         columns: 3,
         centered: true,
     },
-    render: ({ features, columns, centered }) => (
+    render: ({ features, columns, centered, styleConfig }) => (
+        <SectionWrapper styleConfig={styleConfig}>
         <div className="grid gap-8" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
             {features.map((f, i) => (
                 <div key={i} className={`rounded-xl p-6 ${centered ? 'text-center' : ''}`}>
@@ -53,5 +56,6 @@ export const IconeFeaturesPuck: ComponentConfig<IconeFeaturesProps> = {
                 </div>
             ))}
         </div>
+        </SectionWrapper>
     ),
 };

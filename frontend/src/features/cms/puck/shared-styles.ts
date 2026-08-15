@@ -51,6 +51,8 @@ export interface BackgroundStyle {
     gradientDirection?: 'to-r' | 'to-l' | 'to-t' | 'to-b' | 'to-br' | 'to-tr';
     imageUrl?: string;
     imagePosition: 'cover' | 'contain' | 'center' | 'repeat';
+    imageAttachment?: 'scroll' | 'fixed' | 'local';
+    imageRepeat?: 'no-repeat' | 'repeat' | 'repeat-x' | 'repeat-y';
     overlay: boolean;
     overlayColor: string;
     overlayOpacity: number;
@@ -64,6 +66,8 @@ export interface SpacingStyle {
     paddingRight: string;
     marginTop: string;
     marginBottom: string;
+    marginLeft?: string;
+    marginRight?: string;
     gap: string;
 }
 
@@ -77,8 +81,63 @@ export interface BorderStyle {
 
 /** Configuration d'ombre */
 export interface ShadowStyle {
-    type: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'inner' | 'glow';
+    type: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'inner' | 'glow' | 'custom';
     color?: string;
+    customX?: number;      // px, décalage horizontal
+    customY?: number;      // px, décalage vertical
+    customBlur?: number;   // px, rayon de flou
+    customSpread?: number; // px, rayon d'étalement
+    customInset?: boolean; // ombre intérieure
+}
+
+/** Configuration transform & effets visuels */
+export interface TransformStyle {
+    opacity?: number;           // 0-1
+    blur?: number;              // px
+    brightness?: number;        // 0-2 (1 = normal)
+    contrast?: number;          // 0-2 (1 = normal)
+    saturate?: number;          // 0-2 (1 = normal)
+    hueRotate?: number;         // 0-360 deg
+    grayscale?: number;         // 0-1
+    sepia?: number;             // 0-1
+    invert?: number;            // 0-1
+    rotate?: number;            // deg
+    scaleX?: number;            // 0.5-2 (1 = normal)
+    scaleY?: number;            // 0.5-2 (1 = normal)
+    translateX?: string;        // CSS value
+    translateY?: string;        // CSS value
+    skewX?: number;             // deg
+    skewY?: number;             // deg
+    transformOrigin?: string;   // e.g. 'center', 'top-left'
+    overflow?: 'visible' | 'hidden' | 'scroll' | 'auto';
+    mixBlendMode?: 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten';
+    cursor?: 'auto' | 'pointer' | 'default' | 'not-allowed';
+    zIndex?: number;
+    position?: 'static' | 'relative' | 'absolute' | 'sticky';
+    display?: 'block' | 'flex' | 'grid' | 'inline' | 'none' | 'contents';
+    /* Backdrop filter (glassmorphism) */
+    backdropBlur?: number;      // px
+    backdropBrightness?: number; // 0-2
+    backdropSaturate?: number;  // 0-2
+    backdropOpacity?: number;   // 0-1
+}
+
+/** Configuration de disposition (Flexbox/Grid) */
+export interface LayoutStyle {
+    display?: 'block' | 'flex' | 'grid' | 'inline-flex';
+    flexDirection?: 'row' | 'column' | 'row-reverse' | 'column-reverse';
+    flexWrap?: 'nowrap' | 'wrap' | 'wrap-reverse';
+    alignItems?: 'start' | 'center' | 'end' | 'stretch' | 'baseline';
+    justifyContent?: 'start' | 'center' | 'end' | 'between' | 'around' | 'evenly';
+    gap?: string;
+    rowGap?: string;
+    columnGap?: string;
+    /** Visibilité par device */
+    visibleDesktop?: boolean;
+    visibleTablet?: boolean;
+    visibleMobile?: boolean;
+    /** Max-width du contenu interne */
+    contentWidth?: 'narrow' | 'normal' | 'wide' | 'full';
 }
 
 /** Style complet d'une section */
@@ -90,6 +149,8 @@ export interface SectionStyleConfig {
     shadow?: ShadowStyle;
     button?: ButtonStyle;
     animations?: AnimationConfig;
+    transform?: TransformStyle;
+    layout?: LayoutStyle;
 }
 
 // ==================================
@@ -262,6 +323,52 @@ const SHADOW_MAP: Record<string, string> = {
 };
 
 /**
+ * Convertit un TransformStyle en CSS inline.
+ */
+export function transformToCSS(t: TransformStyle): Record<string, string> {
+    const css: Record<string, string> = {};
+    // Opacité
+    if (t.opacity !== undefined && t.opacity !== 1) css.opacity = String(t.opacity);
+    // Filtres CSS (combinés)
+    const filters: string[] = [];
+    if (t.blur) filters.push(`blur(${t.blur}px)`);
+    if (t.brightness !== undefined && t.brightness !== 1) filters.push(`brightness(${t.brightness})`);
+    if (t.contrast !== undefined && t.contrast !== 1) filters.push(`contrast(${t.contrast})`);
+    if (t.saturate !== undefined && t.saturate !== 1) filters.push(`saturate(${t.saturate})`);
+    if (t.hueRotate) filters.push(`hue-rotate(${t.hueRotate}deg)`);
+    if (t.grayscale) filters.push(`grayscale(${t.grayscale})`);
+    if (t.sepia) filters.push(`sepia(${t.sepia})`);
+    if (t.invert) filters.push(`invert(${t.invert})`);
+    if (filters.length > 0) css.filter = filters.join(' ');
+    // Transform (combiné)
+    const transforms: string[] = [];
+    if (t.rotate) transforms.push(`rotate(${t.rotate}deg)`);
+    if (t.scaleX !== undefined && t.scaleX !== 1) transforms.push(`scaleX(${t.scaleX})`);
+    if (t.scaleY !== undefined && t.scaleY !== 1) transforms.push(`scaleY(${t.scaleY})`);
+    if (t.translateX) transforms.push(`translateX(${t.translateX})`);
+    if (t.translateY) transforms.push(`translateY(${t.translateY})`);
+    if (t.skewX) transforms.push(`skewX(${t.skewX}deg)`);
+    if (t.skewY) transforms.push(`skewY(${t.skewY}deg)`);
+    if (transforms.length > 0) css.transform = transforms.join(' ');
+    // Transform origin
+    if (t.transformOrigin) css.transformOrigin = t.transformOrigin.replace('-', ' ');
+    // Backdrop filters (glassmorphism)
+    const backdropFilters: string[] = [];
+    if (t.backdropBlur) backdropFilters.push(`blur(${t.backdropBlur}px)`);
+    if (t.backdropBrightness !== undefined && t.backdropBrightness !== 1) backdropFilters.push(`brightness(${t.backdropBrightness})`);
+    if (t.backdropSaturate !== undefined && t.backdropSaturate !== 1) backdropFilters.push(`saturate(${t.backdropSaturate})`);
+    if (backdropFilters.length > 0) css.backdropFilter = backdropFilters.join(' ');
+    // Overflow, blend mode, cursor, position, z-index, display
+    if (t.display && t.display !== 'block') css.display = t.display;
+    if (t.overflow && t.overflow !== 'visible') css.overflow = t.overflow;
+    if (t.mixBlendMode && t.mixBlendMode !== 'normal') css.mixBlendMode = t.mixBlendMode;
+    if (t.cursor && t.cursor !== 'auto') css.cursor = t.cursor;
+    if (t.position && t.position !== 'static') css.position = t.position;
+    if (t.zIndex !== undefined) css.zIndex = String(t.zIndex);
+    return css;
+}
+
+/**
  * Convertit un TypographyStyle en CSS inline.
  */
 export function typographyToCSS(typo: TypographyStyle): Record<string, string> {
@@ -291,6 +398,8 @@ export function backgroundToCSS(bg: BackgroundStyle): Record<string, string> {
         css.backgroundImage = `url(${bg.imageUrl})`;
         css.backgroundSize = bg.imagePosition || 'cover';
         css.backgroundPosition = 'center';
+        if (bg.imageAttachment && bg.imageAttachment !== 'scroll') css.backgroundAttachment = bg.imageAttachment;
+        if (bg.imageRepeat && bg.imageRepeat !== 'no-repeat') css.backgroundRepeat = bg.imageRepeat;
     }
     return css;
 }
@@ -330,6 +439,16 @@ export function borderToCSS(border: BorderStyle): Record<string, string> {
  */
 export function shadowToCSS(shadow: ShadowStyle): Record<string, string> {
     if (!shadow.type || shadow.type === 'none') return {};
+    // Ombre personnalisée
+    if (shadow.type === 'custom') {
+        const x = shadow.customX ?? 0;
+        const y = shadow.customY ?? 4;
+        const blur = shadow.customBlur ?? 8;
+        const spread = shadow.customSpread ?? 0;
+        const color = shadow.color || 'rgba(0,0,0,0.1)';
+        const inset = shadow.customInset ? 'inset ' : '';
+        return { boxShadow: `${inset}${x}px ${y}px ${blur}px ${spread}px ${color}` };
+    }
     return { boxShadow: SHADOW_MAP[shadow.type] || 'none' };
 }
 
@@ -343,6 +462,8 @@ export function mergeSectionStyles(config: SectionStyleConfig): Record<string, s
     if (config.border) styles.push(borderToCSS(config.border));
     if (config.shadow) styles.push(shadowToCSS(config.shadow));
     if (config.typography) styles.push(typographyToCSS(config.typography));
+    if (config.transform) styles.push(transformToCSS(config.transform));
+    if (config.layout) styles.push(layoutToCSS(config.layout));
     return Object.assign({}, ...styles);
 }
 
@@ -374,5 +495,37 @@ export const GRADIENT_DIRECTIONS = [
     { label: '↗ Diagonale', value: 'to-tr' },
 ] as const;
 
+/** Content width map */
+export const CONTENT_WIDTH_MAP: Record<string, string> = {
+    narrow: '640px',
+    normal: '960px',
+    wide: '1200px',
+    full: '100%',
+};
+
+/**
+ * Convertit un LayoutStyle en CSS inline.
+ */
+export function layoutToCSS(layout: LayoutStyle): Record<string, string> {
+    const css: Record<string, string> = {};
+    if (layout.display && layout.display !== 'block') css.display = layout.display;
+    if (layout.flexDirection && layout.display === 'flex') css.flexDirection = layout.flexDirection;
+    if (layout.flexWrap && layout.display === 'flex') css.flexWrap = layout.flexWrap;
+    if (layout.alignItems) css.alignItems = layout.alignItems === 'start' ? 'flex-start' : layout.alignItems === 'end' ? 'flex-end' : layout.alignItems;
+    if (layout.justifyContent) {
+        const jc = layout.justifyContent;
+        css.justifyContent = jc === 'start' ? 'flex-start' : jc === 'end' ? 'flex-end' : jc === 'between' ? 'space-between' : jc === 'around' ? 'space-around' : jc === 'evenly' ? 'space-evenly' : jc;
+    }
+    if (layout.gap) css.gap = layout.gap;
+    if (layout.rowGap) css.rowGap = layout.rowGap;
+    if (layout.columnGap) css.columnGap = layout.columnGap;
+    if (layout.contentWidth && layout.contentWidth !== 'full') {
+        css.maxWidth = CONTENT_WIDTH_MAP[layout.contentWidth] || '100%';
+        css.marginLeft = 'auto';
+        css.marginRight = 'auto';
+    }
+    return css;
+}
+
 export { ANIMATION_LABELS, EASING_LABELS, HOVER_LABELS };
-export type { AnimationType, AnimationEasing, HoverEffect };
+export type { AnimationType, AnimationEasing, HoverEffect, AnimationConfig };

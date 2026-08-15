@@ -6,6 +6,7 @@
  */
 
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
 type CarouselProps = {
     slides: Array<{
@@ -19,6 +20,7 @@ type CarouselProps = {
     showDots: boolean;
     showArrows: boolean;
     hauteur: string;
+    styleConfig?: any;
 };
 
 export const CarouselPuck: ComponentConfig<CarouselProps> = {
@@ -27,8 +29,8 @@ export const CarouselPuck: ComponentConfig<CarouselProps> = {
             type: 'array',
             arrayFields: {
                 imageUrl: { type: 'text', label: 'URL Image' },
-                titre: { type: 'text', label: 'Titre' },
-                description: { type: 'text', label: 'Description' },
+                titre: { type: 'text', label: 'Titre', contentEditable: true },
+                description: { type: 'text', label: 'Description', contentEditable: true },
                 lien: { type: 'text', label: 'Lien (optionnel)' },
             },
             defaultItemProps: { imageUrl: '', titre: '', description: '', lien: '' },
@@ -57,7 +59,8 @@ export const CarouselPuck: ComponentConfig<CarouselProps> = {
         showArrows: true,
         hauteur: '450px',
     },
-    render: ({ slides, autoplay, interval, showDots, showArrows, hauteur }) => (
+    render: ({ slides, autoplay, interval, showDots, showArrows, hauteur, styleConfig }) => (
+        <SectionWrapper styleConfig={styleConfig}>
         <div className="relative w-full overflow-hidden rounded-lg" style={{ height: hauteur }}>
             {slides.length === 0 ? (
                 <div className="flex h-full items-center justify-center bg-gray-100 text-gray-400">
@@ -102,5 +105,6 @@ export const CarouselPuck: ComponentConfig<CarouselProps> = {
                 </div>
             )}
         </div>
+        </SectionWrapper>
     ),
 };

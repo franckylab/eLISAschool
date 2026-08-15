@@ -1,6 +1,7 @@
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
-export type CarteProps = { latitude: string; longitude: string; adresse: string };
+export type CarteProps = { latitude: string; longitude: string; adresse: string; styleConfig?: any };
 
 export const CartePuck: ComponentConfig<CarteProps> = {
     fields: {
@@ -9,10 +10,11 @@ export const CartePuck: ComponentConfig<CarteProps> = {
         adresse: { type: 'text' },
     },
     defaultProps: { latitude: '', longitude: '', adresse: '' },
-    render({ latitude, longitude, adresse }) {
+    render({ latitude, longitude, adresse, styleConfig }) {
         const lat = parseFloat(latitude);
         const lng = parseFloat(longitude);
         return (
+            <SectionWrapper styleConfig={styleConfig}>
             <div className="overflow-hidden rounded-xl border">
                 {lat && lng ? (
                     <iframe
@@ -27,6 +29,7 @@ export const CartePuck: ComponentConfig<CarteProps> = {
                 )}
                 {adresse && <div className="p-4 text-center text-sm opacity-70">{adresse}</div>}
             </div>
+            </SectionWrapper>
         );
     },
 };

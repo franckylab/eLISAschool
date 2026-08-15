@@ -1,7 +1,9 @@
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
 export type HorairesProps = {
     horaires: { _id: string; jour: string; horaires: string }[];
+    styleConfig?: any;
 };
 
 export const HorairesPuck: ComponentConfig<HorairesProps> = {
@@ -15,8 +17,9 @@ export const HorairesPuck: ComponentConfig<HorairesProps> = {
         },
     },
     defaultProps: { horaires: [] },
-    render({ horaires }) {
+    render({ horaires, styleConfig }) {
         return (
+            <SectionWrapper styleConfig={styleConfig}>
             <div className="mx-auto max-w-2xl overflow-hidden rounded-xl border">
                 <table className="w-full text-sm">
                     <thead>
@@ -35,6 +38,7 @@ export const HorairesPuck: ComponentConfig<HorairesProps> = {
                     </tbody>
                 </table>
             </div>
+            </SectionWrapper>
         );
     },
 };

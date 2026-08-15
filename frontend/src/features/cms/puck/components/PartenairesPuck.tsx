@@ -1,7 +1,9 @@
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
 export type PartenairesProps = {
     partenaires: { _id: string; nom: string; logo: string; url: string }[];
+    styleConfig?: any;
 };
 
 export const PartenairesPuck: ComponentConfig<PartenairesProps> = {
@@ -16,8 +18,9 @@ export const PartenairesPuck: ComponentConfig<PartenairesProps> = {
         },
     },
     defaultProps: { partenaires: [] },
-    render({ partenaires }) {
+    render({ partenaires, styleConfig }) {
         return (
+            <SectionWrapper styleConfig={styleConfig}>
             <div className="flex flex-wrap items-center justify-center gap-8">
                 {partenaires.length === 0 && <p className="text-center text-sm opacity-50">Ajoutez des partenaires</p>}
                 {partenaires.map((p, i) => (
@@ -30,6 +33,7 @@ export const PartenairesPuck: ComponentConfig<PartenairesProps> = {
                     </div>
                 ))}
             </div>
+            </SectionWrapper>
         );
     },
 };

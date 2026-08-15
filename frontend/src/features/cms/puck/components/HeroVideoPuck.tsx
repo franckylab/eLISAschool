@@ -5,6 +5,7 @@
  * Hero avec vidéo en arrière-plan.
  */
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
 type HeroVideoProps = {
     videoUrl: string;
@@ -15,6 +16,7 @@ type HeroVideoProps = {
     overlay: boolean;
     overlayOpacity: string;
     hauteur: string;
+    styleConfig?: any;
 };
 
 export const HeroVideoPuck: ComponentConfig<HeroVideoProps> = {
@@ -46,7 +48,8 @@ export const HeroVideoPuck: ComponentConfig<HeroVideoProps> = {
         overlayOpacity: '0.5',
         hauteur: '700px',
     },
-    render: ({ videoUrl, titre, sousTitre, boutonTexte, overlay, overlayOpacity, hauteur }) => (
+    render: ({ videoUrl, titre, sousTitre, boutonTexte, overlay, overlayOpacity, hauteur, styleConfig }) => (
+        <SectionWrapper styleConfig={styleConfig}>
         <div className="relative flex items-center justify-center overflow-hidden" style={{ height: hauteur }}>
             {videoUrl ? (
                 <video autoPlay muted loop playsInline className="absolute inset-0 h-full w-full object-cover">
@@ -66,5 +69,6 @@ export const HeroVideoPuck: ComponentConfig<HeroVideoProps> = {
                 )}
             </div>
         </div>
+        </SectionWrapper>
     ),
 };

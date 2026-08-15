@@ -1,6 +1,7 @@
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
-export type VideoProps = { youtubeId: string; videoUrl: string; poster: string; titre: string; description: string };
+export type VideoProps = { youtubeId: string; videoUrl: string; poster: string; titre: string; description: string; styleConfig?: any };
 
 export const VideoPuck: ComponentConfig<VideoProps> = {
     fields: {
@@ -11,8 +12,9 @@ export const VideoPuck: ComponentConfig<VideoProps> = {
         description: { type: 'text' },
     },
     defaultProps: { youtubeId: '', videoUrl: '', poster: '', titre: '', description: '' },
-    render({ youtubeId, videoUrl, poster, titre, description }) {
+    render({ youtubeId, videoUrl, poster, titre, description, styleConfig }) {
         return (
+            <SectionWrapper styleConfig={styleConfig}>
             <div className="mx-auto max-w-4xl">
                 {youtubeId ? (
                     <div className="aspect-video overflow-hidden rounded-xl">
@@ -35,6 +37,7 @@ export const VideoPuck: ComponentConfig<VideoProps> = {
                 )}
                 {description && <p className="mt-3 text-center text-sm opacity-60">{description}</p>}
             </div>
+            </SectionWrapper>
         );
     },
 };

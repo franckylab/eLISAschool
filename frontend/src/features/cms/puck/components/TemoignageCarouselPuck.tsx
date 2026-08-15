@@ -5,6 +5,7 @@
  * Carrousel de témoignages avec rotation automatique.
  */
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
 type Temoignage = { nom: string; fonction: string; contenu: string; note: number; avatar?: string };
 
@@ -12,6 +13,7 @@ type TemoignageCarouselProps = {
     temoignages: Temoignage[];
     autoplay: boolean;
     showNavigation: boolean;
+    styleConfig?: any;
 };
 
 export const TemoignageCarouselPuck: ComponentConfig<TemoignageCarouselProps> = {
@@ -39,10 +41,11 @@ export const TemoignageCarouselPuck: ComponentConfig<TemoignageCarouselProps> = 
         autoplay: true,
         showNavigation: true,
     },
-    render: ({ temoignages, showNavigation }) => {
+    render: ({ temoignages, showNavigation, styleConfig }) => {
         const t = temoignages[0]; // Preview — premier témoignage
         if (!t) return <div className="p-8 text-center text-gray-400">Aucun témoignage</div>;
         return (
+            <SectionWrapper styleConfig={styleConfig}>
             <div className="mx-auto max-w-2xl text-center py-8">
                 <div className="text-4xl text-blue-200 mb-4">"</div>
                 <p className="text-lg italic text-gray-700">{t.contenu}</p>
@@ -72,6 +75,7 @@ export const TemoignageCarouselPuck: ComponentConfig<TemoignageCarouselProps> = 
                     </div>
                 )}
             </div>
+            </SectionWrapper>
         );
     },
 };

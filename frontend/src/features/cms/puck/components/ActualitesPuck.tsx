@@ -1,7 +1,9 @@
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
 export type ActualitesProps = {
     actualites: { _id: string; titre: string; date: string; image: string; resume: string; lien: string }[];
+    styleConfig?: any;
 };
 
 export const ActualitesPuck: ComponentConfig<ActualitesProps> = {
@@ -18,8 +20,9 @@ export const ActualitesPuck: ComponentConfig<ActualitesProps> = {
         },
     },
     defaultProps: { actualites: [] },
-    render({ actualites }) {
+    render({ actualites, styleConfig }) {
         return (
+            <SectionWrapper styleConfig={styleConfig}>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {actualites.length === 0 && <p className="col-span-full text-center text-sm opacity-50">Ajoutez des actualités</p>}
                 {actualites.map((a, i) => (
@@ -34,6 +37,7 @@ export const ActualitesPuck: ComponentConfig<ActualitesProps> = {
                     </article>
                 ))}
             </div>
+            </SectionWrapper>
         );
     },
 };

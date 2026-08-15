@@ -169,7 +169,7 @@ export default defineConfig(({ mode }) => {
         },
         },
         optimizeDeps: {
-            include: ['react', 'react-dom', '@tanstack/react-query', 'zustand', 'i18next', 'html-to-image', '@casl/ability'],
+            include: ['react', 'react-dom', '@tanstack/react-query', 'zustand', 'i18next', 'html-to-image', '@casl/ability', '@puckeditor/core'],
         },
     };
 });

@@ -1,7 +1,9 @@
 import type { ComponentConfig } from '@puckeditor/core';
+import { SectionWrapper } from '../section-wrapper';
 
 export type TelechargementsProps = {
     fichiers: { _id: string; nom: string; url: string; description: string; taille: string }[];
+    styleConfig?: any;
 };
 
 export const TelechargementsPuck: ComponentConfig<TelechargementsProps> = {
@@ -17,8 +19,9 @@ export const TelechargementsPuck: ComponentConfig<TelechargementsProps> = {
         },
     },
     defaultProps: { fichiers: [] },
-    render({ fichiers }) {
+    render({ fichiers, styleConfig }) {
         return (
+            <SectionWrapper styleConfig={styleConfig}>
             <div className="space-y-3">
                 {fichiers.length === 0 && <p className="text-center text-sm opacity-50">Ajoutez des fichiers à télécharger</p>}
                 {fichiers.map((f, i) => (
@@ -32,6 +35,7 @@ export const TelechargementsPuck: ComponentConfig<TelechargementsProps> = {
                     </div>
                 ))}
             </div>
+            </SectionWrapper>
         );
     },
 };
