@@ -8,6 +8,7 @@
  */
 
 import { createFileRoute, Outlet, Link } from '@tanstack/react-router';
+import { useEffect, useRef } from 'react';
 import {
     FileText, Layout, Palette, Menu, Settings, ArrowLeft,
     Image, GitBranch, Layers, Newspaper, Sparkles,
@@ -18,8 +19,45 @@ export const Route = createFileRoute('/_auth/cms')({
 });
 
 function CmsLayout() {
+    const contentRef = useRef<HTMLDivElement>(null);
+
+    /**
+     * Mesure dynamique de la hauteur disponible pour l'éditeur CMS.
+     * Compense le padding de <main> (PageLayout) et la sub-nav CMS.
+     */
+    useEffect(() => {
+        const updateEditorHeight = () => {
+            const el = contentRef.current;
+            if (!el) return;
+
+            // Remonter jusqu'au <main> de PageLayout (overflow-y-auto + padding)
+            let mainEl: HTMLElement | null = el;
+            while (mainEl && mainEl.tagName !== 'MAIN') {
+                mainEl = mainEl.parentElement;
+            }
+            if (!mainEl) return;
+
+            // Sub-nav CMS (premier enfant = la barre de navigation)
+            const subNav = el.firstElementChild as HTMLElement | null;
+            if (!subNav) return;
+
+            // Hauteur disponible = zone contenu de main − position bas de sub-nav − padding bas main
+            const mainBottomPad = parseFloat(getComputedStyle(mainEl).paddingBottom) || 0;
+            const subNavBottom = subNav.getBoundingClientRect().bottom - mainEl.getBoundingClientRect().top;
+            const available = mainEl.clientHeight - subNavBottom - mainBottomPad;
+
+            if (available > 200) {
+                el.style.setProperty('--cms-editor-h', `${Math.floor(available)}px`);
+            }
+        };
+
+        updateEditorHeight();
+        window.addEventListener('resize', updateEditorHeight);
+        return () => window.removeEventListener('resize', updateEditorHeight);
+    }, []);
+
     return (
-        <div className="flex h-full flex-col">
+        <div ref={contentRef} className="flex h-full flex-col">
             {/* Sous-navigation CMS */}
             <div className="shrink-0 border-b bg-card/50 px-6 py-2">
                 <div className="flex items-center gap-6 overflow-x-auto">

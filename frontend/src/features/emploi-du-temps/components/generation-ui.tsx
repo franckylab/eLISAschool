@@ -164,12 +164,13 @@ export function MiniBarChart({ data, maxBars = 7 }: {
     maxBars?: number;
 }) {
     const sliced = data.slice(0, maxBars);
-    const max = Math.max(...sliced.map(d => d.value), 1);
+    const max = Math.max(...sliced.map(d => Number.isFinite(d.value) ? d.value : 0), 1);
 
     return (
         <div className="flex items-end gap-[var(--gap-xxs)] h-12">
             {sliced.map((d, i) => {
-                const height = Math.max((d.value / max) * 100, 8);
+                const rawHeight = (d.value / max) * 100;
+                const height = Number.isFinite(rawHeight) ? Math.max(rawHeight, 8) : 8;
                 return (
                     <div key={i} className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
                         <div

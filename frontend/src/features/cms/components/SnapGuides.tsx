@@ -224,9 +224,11 @@ export function DistanceIndicators({
 }) {
     if (!visible || !sourceRect || !targetRect) return null;
 
-    // Calculer les distances
-    const horizontalGap = Math.max(0, Math.max(targetRect.left - sourceRect.right, sourceRect.left - targetRect.right));
-    const verticalGap = Math.max(0, Math.max(targetRect.top - sourceRect.bottom, sourceRect.top - targetRect.bottom));
+    // Calculer les distances — protection NaN si les rects contiennent des valeurs invalides
+    const rawHGap = Math.max(0, Math.max(targetRect.left - sourceRect.right, sourceRect.left - targetRect.right));
+    const rawVGap = Math.max(0, Math.max(targetRect.top - sourceRect.bottom, sourceRect.top - targetRect.bottom));
+    const horizontalGap = Number.isFinite(rawHGap) ? rawHGap : 0;
+    const verticalGap = Number.isFinite(rawVGap) ? rawVGap : 0;
 
     return (
         <div 

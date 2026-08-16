@@ -80,14 +80,17 @@ export function ScrollbarNavigator({
     const [isDragging, setIsDragging] = useState(false);
     const [hoveredMarker, setHoveredMarker] = useState<string | null>(null);
 
+    // Protection NaN : s'assurer que contentSize.height est un nombre valide
+    const safeHeight = Number.isFinite(contentSize.height) ? contentSize.height : 0;
+
     // Calculer les marqueurs de sections
     const markers = useMemo<SectionMarker[]>(() => {
-        if (!puckData.content.length || contentSize.height <= 0) return [];
+        if (!puckData.content.length || safeHeight <= 0) return [];
 
         const totalSections = puckData.content.length;
         // Estimation : chaque section occupe une portion égale du contenu
         // (en pratique, les sections ont des hauteurs variables)
-        const sectionHeight = contentSize.height / totalSections;
+        const sectionHeight = safeHeight / totalSections;
 
         return puckData.content.map((item, index) => {
             const props = item.props as Record<string, any>;
@@ -96,34 +99,39 @@ export function ScrollbarNavigator({
             const label = props?.titre || props?.surtitre || type.replace(/Section$/, '');
             const color = SECTION_COLORS[type] || DEFAULT_COLOR;
             // Position en pourcentage
-            const position = (index * sectionHeight) / contentSize.height * 100;
+            const position = (index * sectionHeight) / safeHeight * 100;
 
             return { id, type, label, color, position };
         });
-    }, [puckData.content, contentSize.height]);
+    }, [puckData.content, safeHeight]);
 
     // Calculer la position et taille du thumb
     const thumbStyle = useMemo(() => {
-        if (contentSize.height <= 0) return { top: '0%', height: '100%' };
+        if (safeHeight <= 0) return { top: '0%', height: '100%' };
 
-        const scrollPercent = scrollPos.y / Math.max(1, contentSize.height - viewportHeight);
-        const thumbHeightPercent = Math.min(100, Math.max(8, (viewportHeight / contentSize.height) * 100));
+        const scrollPercent = scrollPos.y / Math.max(1, safeHeight - viewportHeight);
+        const thumbHeightPercent = Math.min(100, Math.max(8, (viewportHeight / safeHeight) * 100));
         const thumbTopPercent = scrollPercent * (100 - thumbHeightPercent);
+
+        // Protection NaN finale
+        if (!Number.isFinite(thumbHeightPercent) || !Number.isFinite(thumbTopPercent)) {
+            return { top: '0%', height: '100%' };
+        }
 
         return {
             top: `${thumbTopPercent}%`,
             height: `${thumbHeightPercent}%`,
         };
-    }, [scrollPos.y, contentSize.height, viewportHeight]);
+    }, [scrollPos.y, safeHeight, viewportHeight]);
 
     // Clic sur le track → navigation directe
     const handleTrackClick = useCallback((e: React.MouseEvent) => {
         if (!trackRef.current) return;
         const rect = trackRef.current.getBoundingClientRect();
         const clickPercent = (e.clientY - rect.top) / rect.height;
-        const targetY = clickPercent * (contentSize.height - viewportHeight);
-        onScrollTo(Math.max(0, Math.min(contentSize.height - viewportHeight, targetY)));
-    }, [contentSize.height, viewportHeight, onScrollTo]);
+        const targetY = clickPercent * (safeHeight - viewportHeight);
+        onScrollTo(Math.max(0, Math.min(safeHeight - viewportHeight, targetY)));
+    }, [safeHeight, viewportHeight, onScrollTo]);
 
     // Drag du thumb
     const handleThumbMouseDown = useCallback((e: React.MouseEvent) => {
@@ -139,7 +147,7 @@ export function ScrollbarNavigator({
             if (!trackRef.current) return;
             const rect = trackRef.current.getBoundingClientRect();
             const dragPercent = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
-            const targetY = dragPercent * (contentSize.height - viewportHeight);
+            const targetY = dragPercent * (safeHeight - viewportHeight);
             onScrollTo(targetY);
         };
 
@@ -153,17 +161,17 @@ export function ScrollbarNavigator({
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isDragging, contentSize.height, viewportHeight, onScrollTo]);
+    }, [isDragging, safeHeight, viewportHeight, onScrollTo]);
 
     // Clic sur un marqueur → scroll vers la section
     const handleMarkerClick = useCallback((marker: SectionMarker) => {
         const index = markers.indexOf(marker);
         if (index >= 0) {
-            const sectionHeight = contentSize.height / markers.length;
+            const sectionHeight = safeHeight / markers.length;
             const targetY = index * sectionHeight;
             onScrollTo(targetY);
         }
-    }, [markers, contentSize.height, onScrollTo]);
+    }, [markers, safeHeight, onScrollTo]);
 
     // Ne pas afficher si pas de sections
     if (markers.length === 0) return null;
@@ -175,7 +183,7 @@ export function ScrollbarNavigator({
             aria-orientation="vertical"
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-valuenow={Math.round((scrollPos.y / Math.max(1, contentSize.height - viewportHeight)) * 100)}
+            aria-valuenow={safeHeight > 0 ? Math.round((scrollPos.y / Math.max(1, safeHeight - viewportHeight)) * 100) : 0}
             aria-label="Navigation des sections"
         >
             <div

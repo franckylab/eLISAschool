@@ -26669,7 +26669,7 @@ input[type="range"].cms-range::-webkit-slider-thumb:hover {
 .cms-editor-container {
     position: relative;
     display: flex;
-    height: calc(100dvh - 9rem);
+    height: var(--cms-editor-h, calc(100dvh - 10.75rem));
     flex-direction: column;
     overflow: hidden;
     border-radius: 0.5rem;

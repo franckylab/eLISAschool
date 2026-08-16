@@ -18,18 +18,17 @@ import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import {
     Type, Image as ImageIcon, Link2, MousePointerClick, X, Check,
     AlignLeft, AlignCenter, AlignRight, Heading1, Heading2, Heading3,
-    Sparkles, GripVertical, Undo2, Redo2,
+    Sparkles, Undo2, Redo2,
     Eye, Maximize2, Minimize2,
     Underline, Strikethrough,
     Palette, Pipette, Square,
-    Upload, ExternalLink, Globe, Lock, LinkIcon,
+    Upload, ExternalLink, Globe, LinkIcon,
     Crop, StretchHorizontal, StretchVertical,
     RefreshCw, Trash2, Clipboard, ClipboardPaste,
-    Bold, Italic, Code, List, ListOrdered, Quote,
-    Move, Pin, MoreHorizontal, Wand2, Layers,
+    List, Quote, Wand2, Layers,
     RotateCw, FlipHorizontal, FlipVertical, Sliders,
     Sun, Contrast, Droplets, Brush,
-    Search, Keyboard,
+    Search,
     Plus, Minus, ChevronDown,
     Zap, MousePointer, Grid3x3, Minus as MinusIcon,
     CornerUpRight, Scissors,
@@ -60,6 +59,12 @@ export interface InlineContentEditorProps {
 
 type EditTab = 'contenu' | 'typographie' | 'style' | 'bouton' | 'preview' | 'effets' | 'transform' | null;
 type FieldType = 'texte' | 'bouton' | 'image' | 'lien' | 'nombre' | 'select';
+
+/** ParseInt sécurisé — retourne fallback si le résultat est NaN */
+function safeParseInt(value: unknown, fallback = 0): number {
+    const n = typeof value === 'number' ? value : parseInt(String(value ?? ''), 10);
+    return Number.isFinite(n) ? n : fallback;
+}
 
 /** Effets visuels rapides (combinent texte + fond + ombre) */
 const VISUAL_EFFECTS = [
@@ -101,8 +106,9 @@ const URL_PROTOCOLS = [
     { value: '/', label: 'Relatif' },
 ];
 
-/** Ratios d'aspect pour images */
-const IMAGE_ASPECT_RATIOS = [
+/** Ratios d'aspect pour images (utilisés dans le builder de sections) */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _IMAGE_ASPECT_RATIOS = [
     { value: 'auto', label: 'Auto', icon: <Crop className="cms-field-icon" /> },
     { value: '16/9', label: '16:9', icon: <StretchHorizontal className="cms-field-icon" /> },
     { value: '4/3', label: '4:3', icon: <StretchHorizontal className="cms-field-icon" /> },
@@ -307,12 +313,12 @@ export function InlineContentEditor({
     sectionType,
     position,
     zoom,
-    scrollPos,
+    scrollPos: _scrollPos,
     onClose,
 }: InlineContentEditorProps) {
     const [activeTab, setActiveTab] = useState<EditTab>('contenu');
     const [expandedField, setExpandedField] = useState<string | null>(null);
-    const [isMinimized, setIsMinimized] = useState(false);
+    const [, ] = useState(false); // isMinimized — réservé pour usage futur
     const [isCollapsed, setIsCollapsed] = useState(false);
     const editorRef = useRef<HTMLDivElement>(null);
     const [history, setHistory] = useState<Record<string, any>[]>([sectionProps]);
@@ -1321,7 +1327,7 @@ export function InlineContentEditor({
                                                 {/* Border layer */}
                                                 <div className="cms-box-model__layer--border" style={{
                                                     borderColor: sectionProps.borderWidth ? (sectionProps.borderColor || '#3b82f6') : '#e2e8f0',
-                                                    borderStyle: (sectionProps.borderWidth && parseInt(sectionProps.borderWidth) > 0) ? 'solid' : 'dashed',
+                                                    borderStyle: (sectionProps.borderWidth && safeParseInt(sectionProps.borderWidth, 0) > 0) ? 'solid' : 'dashed',
                                                     background: 'transparent',
                                                 }}>
                                                     <span className="cms-box-model__label--border">border</span>
@@ -1336,7 +1342,7 @@ export function InlineContentEditor({
                                                 <div className="cms-box-model__layer--content" style={{
                                                     inset: 30,
                                                     background: sectionProps.bgColor && sectionProps.bgColor !== 'transparent' ? sectionProps.bgColor : '#eff6ff',
-                                                    borderRadius: `${Math.min(parseInt(sectionProps.borderRadius || '0'), 20)}px`,
+                                                    borderRadius: `${Math.min(safeParseInt(sectionProps.borderRadius, 0), 20)}px`,
                                                 }}>
                                                     <span className="cms-box-model__label--content" style={{ color: sectionProps.textColor || '#3b82f6' }}>contenu</span>
                                                 </div>
@@ -1358,7 +1364,6 @@ export function InlineContentEditor({
                                         colors={BG_COLORS}
                                         value={sectionProps.bgColor || sectionProps.couleurFond || 'transparent'}
                                         onChange={(v) => updateField('bgColor', v)}
-                                        isGradient
                                         recentColors={recentColors}
                                     />
                                     {/* Gradient Builder — visible si fond est un dégradé ou toujours accessible */}
@@ -1511,7 +1516,7 @@ export function InlineContentEditor({
                                                         <span className="cms-spacing-visual-editor__slider-label">{ctrl.label}</span>
                                                         <input
                                                             type="range" min={0} max={120} step={4}
-                                                            value={sectionProps[ctrl.key] ?? sectionProps.paddingY ?? 16}
+                                                            value={safeParseInt(sectionProps[ctrl.key], sectionProps.paddingY ?? 16)}
                                                             onChange={(e) => updateField(ctrl.key, parseInt(e.target.value))}
                                                             className="cms-range-pro-slider"
                                                             style={{ flex: 1 }}
@@ -1526,7 +1531,7 @@ export function InlineContentEditor({
                                                 <div className="cms-spacing-visual-editor__gap-row">
                                                     <input
                                                         type="range" min={0} max={80} step={4}
-                                                        value={sectionProps.gap || 16}
+                                                        value={safeParseInt(sectionProps.gap, 16)}
                                                         onChange={(e) => updateField('gap', parseInt(e.target.value))}
                                                         className="cms-range-pro-slider"
                                                         style={{ flex: 1 }}
@@ -1548,7 +1553,7 @@ export function InlineContentEditor({
                                                             <span className="cms-spacing-visual-editor__margin-item-label">{ctrl.label}</span>
                                                             <input
                                                                 type="range" min={0} max={120} step={4}
-                                                                value={sectionProps[ctrl.key] ?? 0}
+                                                                value={safeParseInt(sectionProps[ctrl.key], 0)}
                                                                 onChange={(e) => updateField(ctrl.key, parseInt(e.target.value))}
                                                                 className="cms-range-pro-slider"
                                                                 style={{ flex: 1 }}
@@ -1614,7 +1619,7 @@ export function InlineContentEditor({
                                                     border: (sectionProps.borderWidth && sectionProps.borderWidth !== '0')
                                                         ? `${sectionProps.borderWidth}px solid ${sectionProps.borderColor || '#e5e7eb'}`
                                                         : '1px dashed #d1d5db',
-                                                    borderRadius: `${Math.min(parseInt(sectionProps.borderRadius || '0'), 12)}px`,
+                                                    borderRadius: `${Math.min(safeParseInt(sectionProps.borderRadius, 0), 12)}px`,
                                                 }}
                                             />
                                         </div>
@@ -1693,10 +1698,10 @@ export function InlineContentEditor({
                                                             <span className="cms-shadow-editor__label">{ctrl.label}</span>
                                                             <input
                                                                 type="range" min={ctrl.min} max={ctrl.max} step={1}
-                                                                value={parseInt(sectionProps[ctrl.key] || ctrl.def)}
+                                                                value={safeParseInt(sectionProps[ctrl.key], safeParseInt(ctrl.def, 0))}
                                                                 onChange={(e) => updateField(ctrl.key, e.target.value)}
                                                                 className="cms-shadow-editor__slider"
-                                                                style={{ '--shadow-pct': `${((parseInt(sectionProps[ctrl.key] || ctrl.def) - ctrl.min) / (ctrl.max - ctrl.min)) * 100}%` } as React.CSSProperties}
+                                                                style={{ '--shadow-pct': `${((safeParseInt(sectionProps[ctrl.key], safeParseInt(ctrl.def, 0)) - ctrl.min) / (ctrl.max - ctrl.min)) * 100}%` } as React.CSSProperties}
                                                             />
                                                             <span className="cms-shadow-editor__value">{sectionProps[ctrl.key] || ctrl.def}px</span>
                                                         </div>
@@ -3360,6 +3365,7 @@ export function InlineContentEditor({
                                                 </div>
                                             </div>
                                         </div>
+                                        </div>
                                     </div>
 
                                     {/* Filtres CSS — cms-prop-group */}
@@ -3427,6 +3433,7 @@ export function InlineContentEditor({
                                                     <span className="cms-inline-opacity-value">{sectionProps[filter.key] ?? filter.defaultVal}{filter.unit}</span>
                                                 </div>
                                             ))}
+                                        </div>
                                         </div>
                                     </div>
 
@@ -3869,7 +3876,7 @@ function InlineEditableField({
     field,
     value,
     onChange,
-    isExpanded,
+    isExpanded: _isExpanded,
     onToggle,
 }: {
     field: EditableField;
@@ -3882,9 +3889,9 @@ function InlineEditableField({
     const [isEditing, setIsEditing] = useState(false);
     const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
     const [isDragOverImage, setIsDragOverImage] = useState(false);
-    const [imageLoading, setImageLoading] = useState(false);
-    const [imageError, setImageError] = useState(false);
-    const [linkTarget, setLinkTarget] = useState('_self');
+    const [, setImageLoading] = useState(false);
+    const [, setImageError] = useState(false);
+    const [linkTarget] = useState('_self');
 
     useEffect(() => { setLocalValue(value); }, [value]);
 
@@ -3917,7 +3924,8 @@ function InlineEditableField({
     };
 
     // Preview image pour les champs image
-    const imageUrl = field.type === 'image' ? localValue : '';
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _imageUrl = field.type === 'image' ? localValue : '';
     const isLinkField = field.type === 'lien';
     const isImageField = field.type === 'image';
     const linkValid = isLinkField ? isValidUrl(localValue) : false;
@@ -4353,7 +4361,7 @@ function GradientBuilder({ value, onChange }: { value: string; onChange: (v: str
                     {GRADIENT_DIRECTIONS.map(d => (
                         <button
                             key={d.angle}
-                            onClick={() => { setDir(d.angle); applyGradient(from, to, d.angle); }}
+                            onClick={() => { setDir(d.angle); applyGradient(from, to, d.angle, gradType); }}
                             className={`flex items-center justify-center rounded-md py-1 text-[10px] transition-all ${
                                 dir === d.angle
                                     ? 'bg-indigo-100 text-indigo-600 ring-1 ring-indigo-300'
@@ -4375,7 +4383,7 @@ function GradientBuilder({ value, onChange }: { value: string; onChange: (v: str
                         onClick={() => {
                             const input = document.createElement('input');
                             input.type = 'color'; input.value = from;
-                            input.onchange = (e) => { setFrom((e.target as HTMLInputElement).value); applyGradient((e.target as HTMLInputElement).value, to, dir); };
+                            input.onchange = (e) => { setFrom((e.target as HTMLInputElement).value); applyGradient((e.target as HTMLInputElement).value, to, dir, gradType); };
                             input.click();
                         }}
                     />
@@ -4390,7 +4398,7 @@ function GradientBuilder({ value, onChange }: { value: string; onChange: (v: str
                         onClick={() => {
                             const input = document.createElement('input');
                             input.type = 'color'; input.value = to;
-                            input.onchange = (e) => { setTo((e.target as HTMLInputElement).value); applyGradient(from, (e.target as HTMLInputElement).value, dir); };
+                            input.onchange = (e) => { setTo((e.target as HTMLInputElement).value); applyGradient(from, (e.target as HTMLInputElement).value, dir, gradType); };
                             input.click();
                         }}
                     />
@@ -4545,13 +4553,13 @@ function RotationDial({ value, onChange }: { value: number; onChange: (v: number
 
 import { ColorHarmonyPicker } from './ColorHarmonyPicker';
 
-function ColorPickerField({ label, colors, value, onChange, isGradient, recentColors }: {
+function ColorPickerField({ label, colors, value, onChange, recentColors, trackColor }: {
     label: string;
     colors: { label: string; value: string }[];
     value: string;
     onChange: (v: string) => void;
-    isGradient?: boolean;
     recentColors?: string[];
+    trackColor?: (c: string) => void;
 }) {
     const [showAll, setShowAll] = useState(false);
     const [showHarmony, setShowHarmony] = useState(false);
@@ -4626,7 +4634,7 @@ function ColorPickerField({ label, colors, value, onChange, isGradient, recentCo
             {showHarmony && (
                 <ColorHarmonyPicker
                     value={value.startsWith('#') ? value : '#000000'}
-                    onChange={(c) => { onChange(c); trackColor(c); }}
+                    onChange={(c) => { onChange(c); trackColor?.(c); }}
                     label={label}
                     recentColors={recentColors}
                     compact
@@ -4636,7 +4644,7 @@ function ColorPickerField({ label, colors, value, onChange, isGradient, recentCo
                 {displayColors.map(color => (
                     <button
                         key={color.value}
-                        onClick={() => { onChange(color.value); trackColor(color.value); }}
+                        onClick={() => { onChange(color.value); trackColor?.(color.value); }}
                         className={`cms-swatch cms-swatch--md rounded-sm border transition-all ${
                             value === color.value ? 'ring-2 ring-purple-400 ring-offset-1' : 'border-gray-200'
                         }`}
@@ -4712,10 +4720,10 @@ function ButtonStyleSelector({ value, onChange, buttonText, buttonBgColor, butto
                     </button>
                 ))}
             </div>
-            {/* Quick button colors */}
+            {/* Quick button colors — fond */}
             {onBgColorChange && (
                 <div className="cms-btn-color-quick">
-                    <span className="cms-btn-color-quick__label">Couleur</span>
+                    <span className="cms-btn-color-quick__label">Couleur fond</span>
                     <div className="cms-btn-color-quick__swatches">
                         {['#2563eb', '#16a34a', '#dc2626', '#d97706', '#7c3aed', '#db2777', '#0d9488', '#111827'].map(color => (
                             <button
@@ -4723,7 +4731,24 @@ function ButtonStyleSelector({ value, onChange, buttonText, buttonBgColor, butto
                                 className={`cms-btn-color-swatch ${buttonBgColor === color ? 'cms-btn-color-swatch--active' : ''}`}
                                 style={{ backgroundColor: color }}
                                 onClick={() => onBgColorChange(color)}
-                                title={color}
+                                title={`Fond: ${color}`}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+            {/* Quick button colors — texte */}
+            {onTextColorChange && (
+                <div className="cms-btn-color-quick">
+                    <span className="cms-btn-color-quick__label">Couleur texte</span>
+                    <div className="cms-btn-color-quick__swatches">
+                        {['#ffffff', '#f8fafc', '#1e293b', '#0f172a', '#fef3c7', '#dcfce7', '#dbeafe', '#fce7f3'].map(color => (
+                            <button
+                                key={color}
+                                className={`cms-btn-color-swatch ${buttonTextColor === color ? 'cms-btn-color-swatch--active' : ''}`}
+                                style={{ backgroundColor: color, border: color === '#ffffff' || color === '#f8fafc' || color === '#fef3c7' || color === '#dcfce7' || color === '#dbeafe' || color === '#fce7f3' ? '1px solid #d1d5db' : undefined }}
+                                onClick={() => onTextColorChange(color)}
+                                title={`Texte: ${color}`}
                             />
                         ))}
                     </div>

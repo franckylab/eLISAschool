@@ -145,7 +145,9 @@ export function TrendChart({
 }: TrendChartProps) {
     if (!data.length) return null;
 
-    const max = maxValue || Math.max(...data, 1);
+    const safeData = data.filter(v => Number.isFinite(v));
+    const max = maxValue || Math.max(...safeData, 1);
+    const safeMax = Number.isFinite(max) && max > 0 ? max : 1;
     const barWidth = 100 / data.length;
 
     return (
@@ -157,9 +159,10 @@ export function TrendChart({
                 className="flex items-end gap-px w-full"
                 style={{ height: `${height}px` }}
             >
-                {data.map((value, i) => {
-                    const barHeight = Math.max(2, (value / max) * height);
-                    const opacity = 0.4 + (i / data.length) * 0.6; // Gradient d'opacité
+                {safeData.map((value, i) => {
+                    const rawBarHeight = (value / safeMax) * height;
+                    const barHeight = Number.isFinite(rawBarHeight) ? Math.max(2, rawBarHeight) : 2;
+                    const opacity = 0.4 + (i / safeData.length) * 0.6; // Gradient d'opacité
                     return (
                         <div
                             key={i}

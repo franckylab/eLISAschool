@@ -16,7 +16,7 @@
 
 import { useCallback, useMemo, useState, useRef } from 'react';
 import { useParams, useNavigate, useSearch } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api-client';
 import { motion } from 'framer-motion';
@@ -32,7 +32,7 @@ import {
     DollarSign, Receipt, Percent, AlertCircle,
     UserCircle, LogIn, Upload, Trash2, BarChart3, Lightbulb,
     ScrollText, ShieldAlert, Info, MoreHorizontal,
-    ArrowLeft, ArrowRight, ChevronLeft, ChevronRight,
+    ChevronLeft, ChevronRight,
     Download,
     type LucideIcon,
 } from 'lucide-react';
@@ -47,14 +47,15 @@ import {
 } from '../hooks/use-etablissement-detail';
 import { SanteEtablissement } from '@/features/admin/components/sante-etablissement';
 import { EtablissementFormModal } from '@/features/admin/components/etablissement-form-modal';
-import type { Etablissement, EtablissementDetailStats, EtablissementConfig, ConfigCompleteResult, ActiviteEtablissementResult, UtilisateursResumeResult, FactureEtablissement, HistoriqueConnexionsResult, AuditLogResponse } from '@/features/etablissements/types/etablissement.types';
+import type { Etablissement, EtablissementDetailStats, EtablissementConfig, ConfigCompleteResult, ActiviteEtablissementResult, UtilisateursResumeResult, FactureEtablissement, HistoriqueConnexionsResult, AuditLogResponse, AuditLogEntry } from '@/features/etablissements/types/etablissement.types';
 import {
     TYPE_LABELS,
     SOUS_SYSTEME_LABELS,
     STATUT_CONFIG,
+    STATUT_STYLES,
     PLAN_LABELS,
 } from '@/features/etablissements/types/etablissement.types';
-import type { SanteEtablissementResult, RecommandationSante } from '@/features/admin/components/sante-etablissement';
+import type { SanteEtablissementResult } from '@/features/admin/components/sante-etablissement';
 import type { HistoriqueScoreSante, EvolutionPaiementMois } from '@/features/etablissements/types/etablissement.types';
 import { PageSkeleton } from '@/components/ui/Skeleton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -187,7 +188,7 @@ export function PlatformEtablissementDetailPage() {
         if (!audit?.data?.length) return;
         setActionsMenuOpen(false);
         const headers = ['Date', 'Action', 'Sévérité', 'Module', 'Utilisateur', 'Rôle', 'Description', 'Cible', 'IP', 'Échec'];
-        const rows = audit.data.map((l) => [
+        const rows = audit.data.map((l: AuditLogEntry) => [
             new Date(l.createdAt).toLocaleString('fr-FR'),
             l.action?.replace(/_/g, ' ') || '',
             l.severity,
@@ -199,7 +200,7 @@ export function PlatformEtablissementDetailPage() {
             l.ipAddress || '',
             l.estEchec ? 'Oui' : 'Non',
         ]);
-        const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\n');
+        const csv = [headers, ...rows].map((r: (string | number)[]) => r.map((c: string | number) => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\n');
         const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -731,7 +732,7 @@ function IdentiteTab({ etablissement, utilisateurs, connexions }: { etablissemen
                                     {etablissement.codeEtablissement || '—'}
                                 </span>
                                 {/* Statut */}
-                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUT_CONFIG[statut]?.style || 'bg-gray-100 text-gray-800'}`}>
+                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUT_STYLES[statut] || 'bg-gray-100 text-gray-800'}`}>
                                     {statutLabel}
                                 </span>
                                 {/* Plan */}
@@ -807,7 +808,8 @@ function IdentiteTab({ etablissement, utilisateurs, connexions }: { etablissemen
                         <div className="flex-1 space-y-[var(--space-xxs)]">
                             <div className="flex items-end gap-[1px] h-20" role="img" aria-label="Graphique connexions 30 jours">
                                 {connexions.serie.map((day) => {
-                                    const heightPct = maxConnexions > 0 ? (day.connexions / maxConnexions) * 100 : 0;
+                                    const rawPct = maxConnexions > 0 ? ((day.connexions ?? 0) / maxConnexions) * 100 : 0;
+                                    const heightPct = Number.isFinite(rawPct) ? rawPct : 0;
                                     return (
                                         <div
                                             key={day.date}
@@ -1804,16 +1806,16 @@ function ComparaisonPlateforme({
     stats: EtablissementDetailStats;
     etablissement: Etablissement;
     platformStats: { total: number; totalEleves: number; totalUtilisateurs: number; scoreMoyen: number };
-    t: (key: string, fallback: string) => string;
+    t: (key: string, fallback: string, options?: Record<string, unknown>) => string;
 }) {
     // Données de comparaison enrichies depuis le backend
     const { data: comparaison } = useQuery({
         queryKey: ['etablissement-comparaison', etablissement.id],
         queryFn: async () => {
-            const res = await apiClient.get<{ data: {
+            const res = await apiClient.get<{
                 local: { eleves: number; personnel: number; classes: number; tauxOccupation: number; scoreSante: number | null; modulesActifs: number | null; inscriptionsMois: number };
                 plateforme: { totalEtablissements: number; moyenneEleves: number; moyenneCapacite: number; moyenneTauxOccupation: number; moyenneScoreSante: number; moyenneClasses: number; moyennePersonnel: number };
-            } }>(`/api/platform/etablissements/${etablissement.id}/comparaison`);
+            }>(`/api/platform/etablissements/${etablissement.id}/comparaison`);
             return res.data;
         },
         staleTime: 5 * 60_000,
@@ -2231,9 +2233,10 @@ function FinancesTab({ factures, config, activite, evolutionPaiements }: {
 
             {/* ===== Section — Évolution mensuelle des paiements ===== */}
             {evolutionPaiements && evolutionPaiements.length > 0 && (() => {
-                const maxMontant = Math.max(...evolutionPaiements.map(m => m.montantTotal), 1);
-                const totalEvo = evolutionPaiements.reduce((s, m) => s + m.montantTotal, 0);
-                const totalPayeEvo = evolutionPaiements.reduce((s, m) => s + m.montantPaye, 0);
+                const rawMax = Math.max(...evolutionPaiements.map(m => Number.isFinite(m.montantTotal) ? m.montantTotal : 0), 1);
+                const maxMontant = Number.isFinite(rawMax) ? rawMax : 1;
+                const totalEvo = evolutionPaiements.reduce((s, m) => s + (Number.isFinite(m.montantTotal) ? m.montantTotal : 0), 0);
+                const totalPayeEvo = evolutionPaiements.reduce((s, m) => s + (Number.isFinite(m.montantPaye) ? m.montantPaye : 0), 0);
                 const tauxEvo = totalEvo > 0 ? Math.round((totalPayeEvo / totalEvo) * 100) : 0;
                 return (
                 <SectionCard title={t('etablissements.detail.finances.evolutionMensuelle', 'Évolution mensuelle (12 mois)')} icon={BarChart3} fullWidth>
@@ -2242,8 +2245,12 @@ function FinancesTab({ factures, config, activite, evolutionPaiements }: {
                         <div className="w-full overflow-x-auto">
                             <div className="flex items-end gap-[clamp(2px,0.3vw,6px)]" style={{ minHeight: 'clamp(80px, 12vw, 160px)' }}>
                                 {evolutionPaiements.map((mois, idx) => {
-                                    const hauteurTotal = (mois.montantTotal / maxMontant) * 100;
-                                    const hauteurPaye = (mois.montantPaye / maxMontant) * 100;
+                                    const safeTotal = Number.isFinite(mois.montantTotal) ? mois.montantTotal : 0;
+                                    const safePaye = Number.isFinite(mois.montantPaye) ? mois.montantPaye : 0;
+                                    const rawHauteurTotal = (safeTotal / maxMontant) * 100;
+                                    const rawHauteurPaye = (safePaye / maxMontant) * 100;
+                                    const hauteurTotal = Number.isFinite(rawHauteurTotal) ? rawHauteurTotal : 0;
+                                    const hauteurPaye = Number.isFinite(rawHauteurPaye) ? rawHauteurPaye : 0;
                                     const moisLabel = new Date(mois.mois + '-01').toLocaleDateString('fr-FR', { month: 'short' });
                                     const moisComplet = new Date(mois.mois + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
                                     const reste = mois.montantTotal - mois.montantPaye;
@@ -2735,7 +2742,9 @@ function ConfigurationTab({ config, etablissement, configComplete, stats, utilis
                                             ? t('etablissements.detail.config.expireDepuis', 'Expiré depuis {{jours}} jour(s)', { jours: Math.abs(joursRestants) })
                                             : joursRestants <= 30
                                                 ? t('etablissements.detail.config.joursRestants', '{{jours}} jour(s) restant(s)', { jours: joursRestants })
-                                                : t('etablissements.detail.config.expireLe', 'Expire le {{date}}', { date: expiration.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) })
+                                                : expiration
+                                                    ? t('etablissements.detail.config.expireLe', 'Expire le {{date}}', { date: expiration.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) })
+                                                    : null
                                         }
                                     </span>
                                 )}
@@ -3293,25 +3302,26 @@ function JournalTab({ etablissementId }: { etablissementId: string }) {
             const params: Record<string, string> = { page: String(page), limit: String(limit) };
             if (filtreSeverity) params.severity = filtreSeverity;
             if (filtreModule) params.module = filtreModule;
-            const res = await apiClient.get<AuditLogResponse>(`/api/platform/etablissements/${etablissementId}/audit`, params);
-            return res.data;
+            const res = await apiClient.get<AuditLogEntry[]>(`/api/platform/etablissements/${etablissementId}/audit`, params);
+            if (!res.data) throw new Error('Réponse audit invalide');
+            return { data: res.data, meta: res.meta ?? { totalItems: 0, currentPage: 1, totalPages: 1, itemsPerPage: limit } };
         },
         staleTime: 30_000,
-        keepPreviousData: true,
+        placeholderData: keepPreviousData,
     });
 
     // Modules uniques pour le filtre (chargés une fois depuis les données disponibles)
     const { data: modulesUniques = [] } = useQuery<string[]>({
         queryKey: ['platform-etablissement-detail', 'audit-modules', etablissementId],
         queryFn: async () => {
-            const res = await apiClient.get<AuditLogResponse>(`/api/platform/etablissements/${etablissementId}/audit`, { page: '1', limit: '100' });
+            const res = await apiClient.get<AuditLogEntry[]>(`/api/platform/etablissements/${etablissementId}/audit`, { page: '1', limit: '100' });
             const mods = new Set(res.data?.map((l) => l.module).filter(Boolean) as string[]);
             return Array.from(mods).sort();
         },
         staleTime: 5 * 60_000,
     });
 
-    const logsPage = audit?.data || [];
+    const logsPage: AuditLogEntry[] = audit?.data || [];
     const total = audit?.meta?.totalItems ?? 0;
     const totalPages = Math.ceil(total / limit) || 1;
 

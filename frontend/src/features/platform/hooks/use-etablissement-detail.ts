@@ -30,6 +30,22 @@ import type {
 } from '@/features/admin/components/sante-etablissement';
 
 // =============================================
+// Helper — Extraction sûre de la donnée API
+// =============================================
+
+/**
+ * Extrait `data` d'une réponse API et lève une erreur si absente.
+ * Garantit que queryFn retourne T (et non T | undefined),
+ * ce qui permet à TanStack Query de correctement inférer les types.
+ */
+function unwrap<T>(res: { data?: T; success?: boolean }, endpoint: string): T {
+    if (res.data === undefined || res.data === null) {
+        throw new Error(`Réponse API vide pour ${endpoint}`);
+    }
+    return res.data;
+}
+
+// =============================================
 // Query Keys
 // =============================================
 
@@ -58,7 +74,7 @@ export function useEtablissementDetail(id: string) {
         queryKey: ETABLISSEMENT_DETAIL_KEYS.base(id),
         queryFn: async () => {
             const res = await apiClient.get<Etablissement>(`/api/platform/etablissements/${id}`);
-            return res.data;
+            return unwrap(res, `etablissement/${id}`);
         },
         enabled: !!id,
         staleTime: 2 * 60_000,
@@ -69,7 +85,7 @@ export function useEtablissementDetail(id: string) {
         queryKey: ETABLISSEMENT_DETAIL_KEYS.stats(id),
         queryFn: async () => {
             const res = await apiClient.get<EtablissementDetailStats>(`/api/platform/etablissements/${id}/stats`);
-            return res.data;
+            return unwrap(res, `etablissement/${id}/stats`);
         },
         enabled: !!id,
         staleTime: 60_000,
@@ -80,7 +96,7 @@ export function useEtablissementDetail(id: string) {
         queryKey: ETABLISSEMENT_DETAIL_KEYS.sante(id),
         queryFn: async () => {
             const res = await apiClient.get<SanteEtablissementResult>(`/api/platform/etablissements/${id}/sante`);
-            return res.data;
+            return unwrap(res, `etablissement/${id}/sante`);
         },
         enabled: !!id,
         staleTime: 5 * 60_000,
@@ -91,7 +107,7 @@ export function useEtablissementDetail(id: string) {
         queryKey: ETABLISSEMENT_DETAIL_KEYS.config(id),
         queryFn: async () => {
             const res = await apiClient.get<EtablissementConfig>(`/api/platform/etablissements/${id}/config`);
-            return res.data;
+            return unwrap(res, `etablissement/${id}/config`);
         },
         enabled: !!id,
         staleTime: 2 * 60_000,
@@ -102,7 +118,7 @@ export function useEtablissementDetail(id: string) {
         queryKey: ETABLISSEMENT_DETAIL_KEYS.configComplete(id),
         queryFn: async () => {
             const res = await apiClient.get<ConfigCompleteResult>(`/api/platform/etablissements/${id}/config-complete`);
-            return res.data;
+            return unwrap(res, `etablissement/${id}/config-complete`);
         },
         enabled: !!id,
         staleTime: 2 * 60_000,
@@ -113,7 +129,7 @@ export function useEtablissementDetail(id: string) {
         queryKey: ETABLISSEMENT_DETAIL_KEYS.activite(id),
         queryFn: async () => {
             const res = await apiClient.get<ActiviteEtablissementResult>(`/api/platform/etablissements/${id}/activite`);
-            return res.data;
+            return unwrap(res, `etablissement/${id}/activite`);
         },
         enabled: !!id,
         staleTime: 60_000,
@@ -124,7 +140,7 @@ export function useEtablissementDetail(id: string) {
         queryKey: ETABLISSEMENT_DETAIL_KEYS.utilisateurs(id),
         queryFn: async () => {
             const res = await apiClient.get<UtilisateursResumeResult>(`/api/platform/etablissements/${id}/utilisateurs`);
-            return res.data;
+            return unwrap(res, `etablissement/${id}/utilisateurs`);
         },
         enabled: !!id,
         staleTime: 2 * 60_000,
@@ -138,7 +154,7 @@ export function useEtablissementDetail(id: string) {
                 '/api/platform/facturation/factures',
                 { etablissementId: id }
             );
-            return res.data || [];
+            return unwrap(res, 'facturation/factures').data || [];
         },
         enabled: !!id,
         staleTime: 2 * 60_000,
@@ -149,7 +165,7 @@ export function useEtablissementDetail(id: string) {
         queryKey: ETABLISSEMENT_DETAIL_KEYS.connexions(id),
         queryFn: async () => {
             const res = await apiClient.get<HistoriqueConnexionsResult>(`/api/platform/etablissements/${id}/connexions`);
-            return res.data;
+            return unwrap(res, `etablissement/${id}/connexions`);
         },
         enabled: !!id,
         staleTime: 5 * 60_000,
@@ -163,7 +179,7 @@ export function useEtablissementDetail(id: string) {
                 page: '1',
                 limit: '50',
             });
-            return res.data;
+            return unwrap(res, `etablissement/${id}/audit`);
         },
         enabled: !!id,
         staleTime: 2 * 60_000,
@@ -175,7 +191,7 @@ export function useEtablissementDetail(id: string) {
         queryKey: ETABLISSEMENT_DETAIL_KEYS.historiqueSante(id),
         queryFn: async () => {
             const res = await apiClient.get<{ data: HistoriqueScoreSante[] }>(`/api/platform/etablissements/${id}/sante/historique`);
-            return res.data;
+            return unwrap(res, `etablissement/${id}/sante/historique`).data;
         },
         enabled: !!id,
         staleTime: 5 * 60_000,
@@ -187,7 +203,7 @@ export function useEtablissementDetail(id: string) {
         queryKey: ETABLISSEMENT_DETAIL_KEYS.evolutionPaiements(id),
         queryFn: async () => {
             const res = await apiClient.get<{ data: EvolutionPaiementMois[] }>(`/api/platform/etablissements/${id}/finances/evolution`);
-            return res.data;
+            return unwrap(res, `etablissement/${id}/finances/evolution`).data;
         },
         enabled: !!id,
         staleTime: 5 * 60_000,
@@ -445,7 +461,7 @@ export function useEtablissementResume(id: string) {
         queryKey: [...ETABLISSEMENT_DETAIL_KEYS.all, 'resume', id] as const,
         queryFn: async () => {
             const res = await apiClient.get<{ data: EtablissementResume }>(`/api/platform/etablissements/${id}/resume`);
-            return res.data;
+            return unwrap(res, `etablissement/${id}/resume`).data;
         },
         enabled: !!id,
         staleTime: 2 * 60_000,

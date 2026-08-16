@@ -97,16 +97,19 @@ export function CanvasMinimap({
     // Dimensions minimap
     const MINIMAP_WIDTH = 160;
     const MINIMAP_HEIGHT = 120;
-    const SCALE_X = MINIMAP_WIDTH / Math.max(contentSize.width, 1);
-    const SCALE_Y = MINIMAP_HEIGHT / Math.max(contentSize.height, 1);
-    const scale = Math.min(SCALE_X, SCALE_Y);
+    // Protection NaN : si contentSize contient NaN, utiliser 0 pour éviter la propagation
+    const safeWidth = Number.isFinite(contentSize.width) ? contentSize.width : 0;
+    const safeHeight = Number.isFinite(contentSize.height) ? contentSize.height : 0;
+    const SCALE_X = MINIMAP_WIDTH / Math.max(safeWidth, 1);
+    const SCALE_Y = MINIMAP_HEIGHT / Math.max(safeHeight, 1);
+    const scale = Number.isFinite(Math.min(SCALE_X, SCALE_Y)) ? Math.min(SCALE_X, SCALE_Y) : 1;
 
     // Viewport rectangle dans le minimap
     const vpRect = {
-        x: scrollPos.x * scale,
-        y: scrollPos.y * scale,
-        width: Math.min(viewportSize.width * scale, MINIMAP_WIDTH),
-        height: Math.min(viewportSize.height * scale, MINIMAP_HEIGHT),
+        x: Number.isFinite(scrollPos.x * scale) ? scrollPos.x * scale : 0,
+        y: Number.isFinite(scrollPos.y * scale) ? scrollPos.y * scale : 0,
+        width: Number.isFinite(viewportSize.width * scale) ? Math.min(viewportSize.width * scale, MINIMAP_WIDTH) : MINIMAP_WIDTH,
+        height: Number.isFinite(viewportSize.height * scale) ? Math.min(viewportSize.height * scale, MINIMAP_HEIGHT) : MINIMAP_HEIGHT,
     };
 
     // Drag viewport dans le minimap
@@ -151,6 +154,7 @@ export function CanvasMinimap({
 
     // Calculer la position et hauteur de chaque section dans le minimap
     const sectionHeight = Math.max(2, MINIMAP_HEIGHT / Math.max(sections.length, 1));
+    const safeSectionHeight = Number.isFinite(sectionHeight) ? sectionHeight : 2;
 
     if (!isExpanded) {
         return (
@@ -228,8 +232,8 @@ export function CanvasMinimap({
                             key={id}
                             className={`cms-minimap__section ${isSelected ? 'cms-minimap__section--selected' : ''} ${isHovered ? 'cms-minimap__section--hovered' : ''}`}
                             style={{
-                                top: idx * (sectionHeight + 1),
-                                height: sectionHeight,
+                                top: idx * (safeSectionHeight + 1),
+                                height: safeSectionHeight,
                                 backgroundColor: color,
                                 opacity: isSelected ? 1 : 0.6,
                             }}

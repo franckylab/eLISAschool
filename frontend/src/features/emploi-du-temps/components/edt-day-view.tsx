@@ -65,7 +65,7 @@ export function EDTDayView({
 
     const debutMin = heureDebut * 60;
     const finMin = heureFin * 60;
-    const dureeTotal = finMin - debutMin;
+    const dureeTotal = Math.max(finMin - debutMin, 1); // min 1 minute pour éviter division par zéro
 
     /** Hauteur de la timeline : ~50px/heure, min/max contraints */
     const hauteurTimeline = Math.max(400, Math.min(dureeTotal * 0.83, 900));
@@ -83,11 +83,11 @@ export function EDTDayView({
     const positionner = (heureDebut: string, heureFin: string) => {
         const debut = heureToMinutes(heureDebut);
         const fin = heureToMinutes(heureFin);
-        const top = ((debut - debutMin) / dureeTotal) * 100;
-        const height = ((fin - debut) / dureeTotal) * 100;
+        const rawTop = ((debut - debutMin) / dureeTotal) * 100;
+        const rawHeight = ((fin - debut) / dureeTotal) * 100;
         return {
-            top: `${Math.max(0, top)}%`,
-            height: `${Math.max(2, height)}%`,
+            top: `${Math.max(0, Number.isFinite(rawTop) ? rawTop : 0)}%`,
+            height: `${Math.max(2, Number.isFinite(rawHeight) ? rawHeight : 2)}%`,
         };
     };
 

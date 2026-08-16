@@ -187,7 +187,7 @@ function CmsPageEditor() {
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
     // Panneau latéral actif (tabs — un seul panneau ouvert à la fois)
-    type PanelId = 'library' | 'patterns' | 'seo' | 'metrics' | 'responsive' | 'style' | 'clipboard' | 'visibility' | 'export' | 'shortcuts' | 'sections' | null;
+    type PanelId = 'library' | 'patterns' | 'seo' | 'metrics' | 'responsive' | 'style' | 'clipboard' | 'visibility' | 'export' | 'shortcuts' | 'sections' | 'history' | null;
     const [activePanel, setActivePanel] = useState<PanelId>(null);
     const [showCommandPalette, setShowCommandPalette] = useState(false);
     // Inline editor flottant dans le canvas
@@ -409,7 +409,13 @@ function CmsPageEditor() {
         if (!el) return;
         const handleScroll = () => {
             setCanvasScrollPos({ x: el.scrollLeft, y: el.scrollTop });
-            setCanvasContentSize({ width: el.scrollWidth, height: el.scrollHeight });
+            // Protection NaN : s'assurer que scrollWidth/scrollHeight sont des nombres valides
+            const w = el.scrollWidth;
+            const h = el.scrollHeight;
+            setCanvasContentSize({
+                width: Number.isFinite(w) ? w : 0,
+                height: Number.isFinite(h) ? h : 0,
+            });
         };
         el.addEventListener('scroll', handleScroll, { passive: true });
         return () => el.removeEventListener('scroll', handleScroll);
@@ -672,124 +678,7 @@ function CmsPageEditor() {
         }
     }, [id, genererPreview]);
 
-    // Keyboard shortcut Ctrl+S / Ctrl+Z / Ctrl+Y / Ctrl+Shift+P / Ctrl+K / Ctrl+G / Ctrl+M
-    useEffect(() => {
-        const handler = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                e.preventDefault();
-                handleSave();
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-                e.preventDefault();
-                handleUndo();
-            } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-                e.preventDefault();
-                handleRedo();
-            } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'P') {
-                e.preventDefault();
-                setActivePanel(p => p === 'patterns' ? null : 'patterns');
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                setShowCommandPalette(p => !p);
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
-                e.preventDefault();
-                setShowGrid(g => !g);
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
-                e.preventDefault();
-                // Cycle device preview : desktop → tablet → mobile → desktop
-                setDevicePreview(d => d === 'desktop' ? 'tablet' : d === 'tablet' ? 'mobile' : 'desktop');
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
-                e.preventDefault();
-                setDarkModePreview(d => !d);
-            } else if ((e.ctrlKey || e.metaKey) && e.key === '0') {
-                e.preventDefault();
-                setCanvasZoom(100);
-                setDevicePreview('desktop');
-            } else if ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+')) {
-                // Ctrl+= / Ctrl++ : Zoom in
-                e.preventDefault();
-                setCanvasZoom(z => Math.min(200, z + 10));
-            } else if ((e.ctrlKey || e.metaKey) && e.key === '-') {
-                // Ctrl+- : Zoom out
-                e.preventDefault();
-                setCanvasZoom(z => Math.max(25, z - 10));
-            } else if (e.key === 'Escape') {
-                setZoomDropdownOpen(false);
-                setShowContentEditor(false);
-                setShowInlineEditor(false);
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
-                // Ctrl+B : Toggle panneau gauche (bibliothèque)
-                e.preventDefault();
-                setLeftPanelCollapsed(c => !c);
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-                // Ctrl+P : Toggle panneau droit (propriétés)
-                e.preventDefault();
-                setActivePanel(p => p ? null : 'style');
-            } else if (e.key === 'c' && !e.ctrlKey && !e.metaKey && !e.altKey && selectedPuckItem && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
-                // Touche C pour ouvrir l'éditeur de contenu (quand une section est sélectionnée)
-                const el = document.querySelector(`[data-puck-component-id="${selectedItemId}"]`);
-                if (el) {
-                    const rect = el.getBoundingClientRect();
-                    const scrollEl = canvasScrollRef.current;
-                    const scrollRect = scrollEl?.getBoundingClientRect();
-                    if (scrollRect) {
-                        setContentEditorPosition({
-                            top: rect.top - scrollRect.top + (scrollEl?.scrollTop || 0),
-                            left: rect.left - scrollRect.left + (scrollEl?.scrollLeft || 0),
-                            width: rect.width,
-                        });
-                    }
-                }
-                setShowContentEditor(prev => !prev);
-            } else if (e.key === 's' && !e.ctrlKey && !e.metaKey && selectedPuckItem && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
-                // Touche S pour ouvrir l'éditeur de style inline
-                setShowInlineEditor(prev => !prev);
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
-                // Ctrl+E : Export rapide (ouvre le panneau export/import)
-                e.preventDefault();
-                setActivePanel(p => p === 'export' ? null : 'export');
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
-                // Ctrl+H : Toggle historique des versions
-                e.preventDefault();
-                setActivePanel(p => p === 'history' ? null : 'history');
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'j') {
-                // Ctrl+J : Toggle mode focus (masque tous les panneaux sauf canvas)
-                e.preventDefault();
-                setLeftPanelCollapsed(true);
-                setActivePanel(null);
-                setShowInlineEditor(false);
-                setShowContentEditor(false);
-                toast.success('Mode focus activé');
-            } else if (e.key === 'Delete' && selectedPuckItem && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
-                // Touche Delete : Supprimer la section sélectionnée
-                e.preventDefault();
-                if (selectedItemId) {
-                    deleteSection(selectedItemId);
-                }
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowUp' && selectedPuckItem) {
-                // Ctrl+↑ : Déplacer la section vers le haut
-                e.preventDefault();
-                if (selectedItemId) {
-                    moveSectionUp(selectedItemId);
-                    toast.success('Section déplacée vers le haut');
-                }
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowDown' && selectedPuckItem) {
-                // Ctrl+↓ : Déplacer la section vers le bas
-                e.preventDefault();
-                if (selectedItemId) {
-                    moveSectionDown(selectedItemId);
-                    toast.success('Section déplacée vers le bas');
-                }
-            } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
-                // Ctrl+Shift+D : Dupliquer la section sélectionnée
-                e.preventDefault();
-                if (selectedItemId) {
-                    duplicateSection(selectedItemId);
-                }
-            }
-        };
-        window.addEventListener('keydown', handler);
-        return () => window.removeEventListener('keydown', handler);
-    }, [handleSave, handleUndo, handleRedo, selectedPuckItem, selectedItemId, deleteSection, moveSectionUp, moveSectionDown, duplicateSection]);
+
 
     // Cleanup timeout
     useEffect(() => {
@@ -953,6 +842,125 @@ function CmsPageEditor() {
             toast.success('Section supprimée', { icon: '🗑️', duration: 2000 });
         }
     }, [puckData, bumpPuckEpoch]);
+
+    // Keyboard shortcut Ctrl+S / Ctrl+Z / Ctrl+Y / Ctrl+Shift+P / Ctrl+K / Ctrl+G / Ctrl+M
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                handleSave();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                handleUndo();
+            } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+                e.preventDefault();
+                handleRedo();
+            } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'P') {
+                e.preventDefault();
+                setActivePanel(p => p === 'patterns' ? null : 'patterns');
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                setShowCommandPalette(p => !p);
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+                e.preventDefault();
+                setShowGrid(g => !g);
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+                e.preventDefault();
+                // Cycle device preview : desktop → tablet → mobile → desktop
+                setDevicePreview(d => d === 'desktop' ? 'tablet' : d === 'tablet' ? 'mobile' : 'desktop');
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
+                e.preventDefault();
+                setDarkModePreview(d => !d);
+            } else if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+                e.preventDefault();
+                setCanvasZoom(100);
+                setDevicePreview('desktop');
+            } else if ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+')) {
+                // Ctrl+= / Ctrl++ : Zoom in
+                e.preventDefault();
+                setCanvasZoom(z => Math.min(200, z + 10));
+            } else if ((e.ctrlKey || e.metaKey) && e.key === '-') {
+                // Ctrl+- : Zoom out
+                e.preventDefault();
+                setCanvasZoom(z => Math.max(25, z - 10));
+            } else if (e.key === 'Escape') {
+                setZoomDropdownOpen(false);
+                setShowContentEditor(false);
+                setShowInlineEditor(false);
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                // Ctrl+B : Toggle panneau gauche (bibliothèque)
+                e.preventDefault();
+                setLeftPanelCollapsed(c => !c);
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                // Ctrl+P : Toggle panneau droit (propriétés)
+                e.preventDefault();
+                setActivePanel(p => p ? null : 'style');
+            } else if (e.key === 'c' && !e.ctrlKey && !e.metaKey && !e.altKey && selectedPuckItem && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+                // Touche C pour ouvrir l'éditeur de contenu (quand une section est sélectionnée)
+                const el = document.querySelector(`[data-puck-component-id="${selectedItemId}"]`);
+                if (el) {
+                    const rect = el.getBoundingClientRect();
+                    const scrollEl = canvasScrollRef.current;
+                    const scrollRect = scrollEl?.getBoundingClientRect();
+                    if (scrollRect) {
+                        setContentEditorPosition({
+                            top: rect.top - scrollRect.top + (scrollEl?.scrollTop || 0),
+                            left: rect.left - scrollRect.left + (scrollEl?.scrollLeft || 0),
+                            width: rect.width,
+                        });
+                    }
+                }
+                setShowContentEditor(prev => !prev);
+            } else if (e.key === 's' && !e.ctrlKey && !e.metaKey && selectedPuckItem && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+                // Touche S pour ouvrir l'éditeur de style inline
+                setShowInlineEditor(prev => !prev);
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+                // Ctrl+E : Export rapide (ouvre le panneau export/import)
+                e.preventDefault();
+                setActivePanel(p => p === 'export' ? null : 'export');
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+                // Ctrl+H : Toggle historique des versions
+                e.preventDefault();
+                setActivePanel(p => p === 'history' ? null : 'history');
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'j') {
+                // Ctrl+J : Toggle mode focus (masque tous les panneaux sauf canvas)
+                e.preventDefault();
+                setLeftPanelCollapsed(true);
+                setActivePanel(null);
+                setShowInlineEditor(false);
+                setShowContentEditor(false);
+                toast.success('Mode focus activé');
+            } else if (e.key === 'Delete' && selectedPuckItem && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+                // Touche Delete : Supprimer la section sélectionnée
+                e.preventDefault();
+                if (selectedItemId) {
+                    deleteSection(selectedItemId);
+                }
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowUp' && selectedPuckItem) {
+                // Ctrl+↑ : Déplacer la section vers le haut
+                e.preventDefault();
+                if (selectedItemId) {
+                    moveSectionUp(selectedItemId);
+                    toast.success('Section déplacée vers le haut');
+                }
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'ArrowDown' && selectedPuckItem) {
+                // Ctrl+↓ : Déplacer la section vers le bas
+                e.preventDefault();
+                if (selectedItemId) {
+                    moveSectionDown(selectedItemId);
+                    toast.success('Section déplacée vers le bas');
+                }
+            } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
+                // Ctrl+Shift+D : Dupliquer la section sélectionnée
+                e.preventDefault();
+                if (selectedItemId) {
+                    duplicateSection(selectedItemId);
+                }
+            }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [handleSave, handleUndo, handleRedo, selectedPuckItem, selectedItemId, deleteSection, moveSectionUp, moveSectionDown, duplicateSection]);
 
     const moveToTop = useCallback((itemId: string) => {
         const idx = puckData.content.findIndex(i => (i.props as any)?.id === itemId);
@@ -1688,7 +1696,7 @@ function CmsPageEditor() {
                 <div className="cms-scroll-fade-enhanced cms-scroll-fade-enhanced--top"
                     style={{ opacity: canvasScrollPos.y > 10 ? 1 : 0 }} />
                 {/* Scroll progress bars — professional gradient indicators */}
-                {canvasContentSize.height > 0 && (
+                {Number.isFinite(canvasContentSize.height) && canvasContentSize.height > 0 && (
                     <>
                         {/* Vertical scroll progress (right edge) */}
                         <div className="cms-scroll-marker cms-scroll-marker--v pointer-events-none absolute right-0.5 top-2 bottom-2 z-20 overflow-hidden transition-opacity duration-300"
@@ -1696,13 +1704,13 @@ function CmsPageEditor() {
                             <div
                                 className="cms-scroll-progress-bar-v w-full rounded-full"
                                 style={{
-                                    height: `${Math.min(100, Math.max(5, ((canvasScrollPos.y) / Math.max(1, canvasContentSize.height - 400)) * 100))}%`,
+                                    height: `${Number.isFinite(canvasScrollPos.y / Math.max(1, canvasContentSize.height - 400) * 100) ? Math.min(100, Math.max(5, ((canvasScrollPos.y) / Math.max(1, canvasContentSize.height - 400)) * 100)) : 5}%`,
                                     maxHeight: '100%',
                                 }}
                             />
                         </div>
                         {/* Horizontal scroll progress (bottom edge) */}
-                        {canvasContentSize.width > 800 && (
+                        {Number.isFinite(canvasContentSize.width) && canvasContentSize.width > 800 && (
                             <div className="cms-scroll-marker cms-scroll-marker--h pointer-events-none absolute bottom-0.5 left-2 right-2 z-20 overflow-hidden transition-opacity duration-300"
                                 style={{ opacity: 0.6 }}>
                                 <div
@@ -2659,7 +2667,11 @@ function CmsPageEditor() {
                                 return item;
                             }),
                         };
-                        onPuckChange(newData);
+                        setUndoStack(prev => [...prev.slice(-19), puckData]);
+                        setRedoStack([]);
+                        setPuckData(newData);
+                        bumpPuckEpoch();
+                        setHasChanges(true);
                     }
                 }}
                 target={linkEditorTarget}
