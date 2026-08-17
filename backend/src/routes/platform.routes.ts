@@ -24,9 +24,91 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
 import { requirePlatformAccess, requirePlatformCasl, dualCaslMiddleware } from '@common/middlewares/dual-casl.middleware';
 import { platformAuthMiddleware } from '@common/middlewares/platform-auth.middleware';
 import { platformStatsService } from '@modules/dashboard/services/platform-stats.service';
+import { AppError } from '@common/filters/error.filter';
+
+// =============================================
+// Schémas Zod — Validation bodies (B2 — Audit V3)
+// =============================================
+
+const createRemiseSchema = z.object({
+    code: z.string().min(1).max(100),
+    nom: z.string().min(1).max(150),
+    typeRemise: z.enum(['POURCENTAGE', 'MONTANT_FIXE']).optional(),
+    valeur: z.number().min(0),
+    dureeApplication: z.enum(['PREMIERE_FACTURE', 'N_CYCLES', 'PERMANENTE']).optional(),
+    nbCycles: z.number().int().positive().optional(),
+    cible: z.enum(['GLOBAL', 'PLAN', 'TENANT', 'CYCLE']).optional(),
+    cibleId: z.string().uuid().optional(),
+    cibleCycle: z.string().max(30).optional(),
+    dateDebut: z.coerce.date().optional(),
+    dateFin: z.coerce.date().optional(),
+    maxUtilisations: z.number().int().min(0).optional(),
+    cumulable: z.boolean().optional(),
+    priorite: z.number().int().min(0).optional(),
+    codeCoupon: z.string().max(100).optional(),
+    actif: z.boolean().optional(),
+});
+
+const createPackQuotaSchema = z.object({
+    code: z.string().min(1).max(100),
+    nom: z.string().min(1).max(150),
+    ressource: z.string().min(1).max(100),
+    quantite: z.number().int().positive(),
+    prix: z.number().min(0).optional(),
+    devise: z.string().max(10).optional(),
+    dureeValidite: z.enum(['CYCLE_COURANT', 'ILLIMITE']).optional(),
+    description: z.string().optional(),
+    actif: z.boolean().optional(),
+    ordre: z.number().int().min(0).optional(),
+});
+
+const createCycleFacturationSchema = z.object({
+    code: z.string().min(1).max(30),
+    nom: z.string().min(1).max(100),
+    nomEn: z.string().max(100).optional(),
+    dureeMois: z.number().int().positive().optional(),
+    remisePourcent: z.number().min(0).max(100).optional(),
+    actif: z.boolean().optional(),
+    ordre: z.number().int().min(0).optional(),
+});
+
+const phaseExpirationSchema = z.object({
+    nom: z.string().min(1),
+    jours: z.number().int().positive().nullable(),
+    comportement: z.enum(['READ_ONLY', 'LOCKED', 'ARCHIVED']),
+});
+
+const createStrategieExpirationSchema = z.object({
+    code: z.string().min(1).max(100),
+    nom: z.string().min(1).max(150),
+    phases: z.array(phaseExpirationSchema).min(1),
+    planSlug: z.string().max(100).optional(),
+    estDefaut: z.boolean().optional(),
+    actif: z.boolean().optional(),
+});
+
+const restoreBackupSchema = z.object({
+    backupPath: z.string().min(1),
+});
+
+/** Helper de validation Zod — throw AppError 400 si invalide */
+function validate<T>(schema: z.ZodSchema<T>, data: unknown): T {
+    const result = schema.safeParse(data);
+    if (!result.success) {
+        throw new AppError(
+            'Erreur de validation',
+            400,
+            'VALIDATION_ERROR',
+            false,
+            result.error.errors.map(e => ({ field: e.path.join('.'), message: e.message }))
+        );
+    }
+    return result.data;
+}
 
 // Controllers existants montés sur les routes plateforme
 import { configurationController } from '@modules/configuration';
@@ -39,6 +121,13 @@ import { platformUsersController } from '@modules/platform-users';
 import { platformRolesController } from '@modules/platform-roles';
 import { platformAuthController } from '@modules/platform-auth';
 import { parametresCascadeController } from '@modules/configuration/controllers/parametres-cascade.controller';
+// Refonte v3 — Commerce : remises, packs quota, cycles, stratégies d'expiration
+import {
+    remiseService,
+    packQuotaService,
+    cycleFacturationService,
+    strategieExpirationService,
+} from '@modules/billing/services';
 
 const router = Router();
 
@@ -239,13 +328,160 @@ router.use('/roles', platformRolesController);
 router.use('/parametres/cascade', parametresCascadeController);
 
 // =============================================
+// COMMERCE v3 — REMISES, PACKS QUOTA, CYCLES, STRATÉGIES
+// Refonte entitlements v3 (migration 213)
+// =============================================
+
+/**
+ * /api/platform/remises
+ * CRUD des remises d'abonnement (cibles GLOBAL/PLAN/TENANT/CYCLE,
+ * priorité, cumul, durée d'application).
+ */
+router.get('/remises', requirePlatformCasl('read', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const data = await remiseService.findAll({
+            cible: req.query.cible as never,
+            actif: req.query.actif !== undefined ? req.query.actif === 'true' : undefined,
+        });
+        res.json({ success: true, data });
+    } catch (error) { next(error); }
+});
+
+router.post('/remises', requirePlatformCasl('manage', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validate(createRemiseSchema, req.body);
+        const data = await remiseService.create(dto);
+        res.status(201).json({ success: true, data });
+    } catch (error) { next(error); }
+});
+
+router.put('/remises/:id', requirePlatformCasl('manage', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validate(createRemiseSchema.partial(), req.body);
+        const data = await remiseService.update(req.params.id, dto);
+        res.json({ success: true, data });
+    } catch (error) { next(error); }
+});
+
+router.delete('/remises/:id', requirePlatformCasl('manage', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await remiseService.delete(req.params.id);
+        res.json({ success: true, message: 'Remise supprimée' });
+    } catch (error) { next(error); }
+});
+
+/**
+ * /api/platform/packs-quota
+ * CRUD des packs de quota supplémentaires (achat au dépassement).
+ */
+router.get('/packs-quota', requirePlatformCasl('read', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const data = await packQuotaService.findAllPacks({
+            ressource: req.query.ressource as string | undefined,
+            actif: req.query.actif !== undefined ? req.query.actif === 'true' : undefined,
+        });
+        res.json({ success: true, data });
+    } catch (error) { next(error); }
+});
+
+router.post('/packs-quota', requirePlatformCasl('manage', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validate(createPackQuotaSchema, req.body);
+        const data = await packQuotaService.createPack(dto);
+        res.status(201).json({ success: true, data });
+    } catch (error) { next(error); }
+});
+
+router.put('/packs-quota/:id', requirePlatformCasl('manage', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validate(createPackQuotaSchema.partial(), req.body);
+        const data = await packQuotaService.updatePack(req.params.id, dto);
+        res.json({ success: true, data });
+    } catch (error) { next(error); }
+});
+
+router.delete('/packs-quota/:id', requirePlatformCasl('manage', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await packQuotaService.deletePack(req.params.id);
+        res.json({ success: true, message: 'Pack supprimé' });
+    } catch (error) { next(error); }
+});
+
+/**
+ * /api/platform/cycles-facturation
+ * CRUD des cycles de facturation configurables (ex-enum dur).
+ */
+router.get('/cycles-facturation', requirePlatformCasl('read', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const data = await cycleFacturationService.findAll(req.query.actifs === 'true');
+        res.json({ success: true, data });
+    } catch (error) { next(error); }
+});
+
+router.post('/cycles-facturation', requirePlatformCasl('manage', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validate(createCycleFacturationSchema, req.body);
+        const data = await cycleFacturationService.create(dto);
+        res.status(201).json({ success: true, data });
+    } catch (error) { next(error); }
+});
+
+router.put('/cycles-facturation/:id', requirePlatformCasl('manage', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validate(createCycleFacturationSchema.partial(), req.body);
+        const data = await cycleFacturationService.update(req.params.id, dto);
+        res.json({ success: true, data });
+    } catch (error) { next(error); }
+});
+
+router.delete('/cycles-facturation/:id', requirePlatformCasl('manage', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await cycleFacturationService.delete(req.params.id);
+        res.json({ success: true, message: 'Cycle supprimé' });
+    } catch (error) { next(error); }
+});
+
+/**
+ * /api/platform/strategies-expiration
+ * CRUD des stratégies d'expiration (phases de dégradation gracieuse).
+ */
+router.get('/strategies-expiration', requirePlatformCasl('read', 'Billing'), async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+        const data = await strategieExpirationService.findAll();
+        res.json({ success: true, data });
+    } catch (error) { next(error); }
+});
+
+router.post('/strategies-expiration', requirePlatformCasl('manage', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validate(createStrategieExpirationSchema, req.body);
+        const data = await strategieExpirationService.create(dto);
+        res.status(201).json({ success: true, data });
+    } catch (error) { next(error); }
+});
+
+router.put('/strategies-expiration/:id', requirePlatformCasl('manage', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const dto = validate(createStrategieExpirationSchema.partial(), req.body);
+        const data = await strategieExpirationService.update(req.params.id, dto);
+        res.json({ success: true, data });
+    } catch (error) { next(error); }
+});
+
+router.delete('/strategies-expiration/:id', requirePlatformCasl('manage', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await strategieExpirationService.delete(req.params.id);
+        res.json({ success: true, message: 'Stratégie supprimée' });
+    } catch (error) { next(error); }
+});
+
+// =============================================
 // BACKUP PAR TENANT — Phase I.1
 // Faille G2 corrigée : guards CASL sur toutes les routes backup
 // Faille G3 corrigée : validation path traversal sur restore
 // =============================================
 
 import path from 'path';
-import { AppError } from '@common/filters/error.filter';
 
 /**
  * Helper : valide qu'un chemin de backup est légitime (anti path traversal — G3).
@@ -322,10 +558,7 @@ router.post(
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { tenantBackupService } = await import('@modules/configuration/services/backup/tenant-backup.service');
-            const { backupPath } = req.body;
-            if (!backupPath) {
-                return res.status(400).json({ success: false, error: { message: 'backupPath requis', code: 'MISSING_BACKUP_PATH' } });
-            }
+            const { backupPath } = validate(restoreBackupSchema, req.body);
 
             // Validation path traversal (G3)
             const validatedPath = validateBackupPath(backupPath);

@@ -80,8 +80,8 @@ export interface ParametreFiltres {
     etablissementId?: string;
 }
 
-/** Catégorie module — source unique : ModuleCatalogue DB */
-export type ModuleCategory = 'BASE' | 'PREMIUM' | 'ADDON';
+/** Catégorie module — source unique : ModuleCatalogue DB (Refonte v3 — binaire) */
+export type ModuleCategory = 'GRATUIT' | 'PAYANT';
 
 export interface ModuleRegistryEntry {
     name: string;

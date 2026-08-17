@@ -2,13 +2,12 @@
  * ==================================
  * eLISAschool - ModuleToggleCard
  * ==================================
- * Refonte SaaS v9 — Composant réutilisable
+ * Refonte v3 — Composant réutilisable
  *
  * Carte de module avec toggle ON/OFF pour la marketplace.
  * - Modules critiques : toggle désactivé (toujours ON)
  * - Modules du plan : toggle activable/désactivable
- * - Modules supplément : toggle + badge "Supplément"
- * - Bouton "Configurer" → modal config rapide
+ * - Modules inclus par plan / supplément : badge dédié
  *
  * Dark mode, responsive, CSS vars.
  */
@@ -40,6 +39,10 @@ export interface ModuleToggleCardProps {
     categorie: string;
     source: string;
     actif: boolean;
+    /** Module critique (toujours actif — ex auth, utilisateurs) */
+    estCritique?: boolean;
+    /** Statut marché v3 : inclus par le plan actif */
+    inclusParPlan?: boolean;
     /** Le module peut-il être désactivé ? (critique = non) */
     desactivable: boolean;
     /** Message de raison si non accessible */
@@ -57,17 +60,17 @@ export interface ModuleToggleCardProps {
 
 const categorieIcon = (cat: string) => {
     switch (cat) {
-        case 'BASE': return Shield;
-        case 'PREMIUM': return Star;
+        case 'GRATUIT': return Shield;
+        case 'PAYANT': return Star;
         default: return Puzzle;
     }
 };
 
 const categorieColor = (cat: string) => {
     switch (cat) {
-        case 'BASE':
-            return { bg: 'bg-red-500/10', text: 'text-red-500', border: 'border-red-500/20' };
-        case 'PREMIUM':
+        case 'GRATUIT':
+            return { bg: 'bg-emerald-500/10', text: 'text-emerald-500', border: 'border-emerald-500/20' };
+        case 'PAYANT':
             return { bg: 'bg-amber-500/10', text: 'text-amber-500', border: 'border-amber-500/20' };
         default:
             return { bg: 'bg-blue-500/10', text: 'text-blue-500', border: 'border-blue-500/20' };
@@ -76,7 +79,7 @@ const categorieColor = (cat: string) => {
 
 const sourceLabel = (source: string) => {
     switch (source) {
-        case 'base': return 'Base';
+        case 'critique': return 'Critique';
         case 'plan': return 'Inclus plan';
         case 'groupe': return 'Groupe';
         case 'supplement': return 'Supplément';
@@ -98,6 +101,8 @@ export function ModuleToggleCard({
     categorie,
     source,
     actif,
+    estCritique,
+    inclusParPlan,
     desactivable,
     raisonBlocage,
     onToggleSuccess,
@@ -140,7 +145,7 @@ export function ModuleToggleCard({
     };
 
     const isPending = toggleMutation.isPending;
-    const isBase = categorie === 'BASE' || source === 'base';
+    const isCritique = !!estCritique || categorie === 'GRATUIT' && source === 'critique';
 
     return (
         <div
@@ -176,10 +181,16 @@ export function ModuleToggleCard({
                             )}>
                                 {sourceLabel(source)}
                             </span>
-                            {isBase && (
-                                <span className="inline-flex items-center gap-0.5 text-[10px] text-red-500">
+                            {isCritique && (
+                                <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400">
                                     <Lock size={8} />
-                                    Base
+                                    Critique
+                                </span>
+                            )}
+                            {!isCritique && inclusParPlan && (
+                                <span className="inline-flex items-center gap-0.5 text-[10px] text-[var(--color-dominant-600)]">
+                                    <CheckCircle size={8} />
+                                    Inclus plan
                                 </span>
                             )}
                         </div>
@@ -189,13 +200,13 @@ export function ModuleToggleCard({
                 {/* Toggle switch */}
                 <button
                     onClick={handleToggle}
-                    disabled={isPending || (isBase && isOn)}
+                    disabled={isPending || (isCritique && isOn)}
                     className={cn(
                         'relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-dominant-500)]/30',
                         isOn ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700',
-                        (isPending || (isBase && isOn)) && 'opacity-50 cursor-not-allowed',
+                        (isPending || (isCritique && isOn)) && 'opacity-50 cursor-not-allowed',
                     )}
-                    title={!desactivable && isOn ? 'Module de base — toujours actif' : undefined}
+                    title={!desactivable && isOn ? 'Module critique — toujours actif' : undefined}
                 >
                     {isPending ? (
                         <Loader2 size={12} className="animate-spin text-white mx-auto" />

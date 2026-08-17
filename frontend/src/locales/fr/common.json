@@ -113,7 +113,11 @@
         "administration": "Administration",
         "plateforme": "PLATEFORME",
         "retourEspaceTenant": "Retour à l'espace établissement",
-        "santeSysteme": "Santé du système"
+        "santeSysteme": "Santé du système",
+        "rechercherPlateforme": "Rechercher...",
+        "santeOk": "Système opérationnel",
+        "santeWarning": "Alertes actives",
+        "santeCritical": "Incidents critiques"
     },
     "pagination": {
         "pageSur": "Page {{page}} sur {{total}}",

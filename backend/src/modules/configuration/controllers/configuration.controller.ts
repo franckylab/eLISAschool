@@ -203,7 +203,7 @@ router.get('/modules/registry', authMiddleware, canViewConfigModule, async (req:
             const ent = entitlementMap.get(mc.code);
             const estAccessible = ent?.accessible ?? mc.actifParDefaut;
             const estVisible = ent?.visible ?? true;
-            const raisonBlocage = (ent?.raison === 'OK' || ent?.raison === 'BASE') ? null : ent?.raison;
+            const raisonBlocage = (ent?.raison === 'OK' || ent?.raison === 'CRITIQUE') ? null : ent?.raison;
 
             return {
                 name: mc.code,
@@ -760,7 +760,7 @@ router.get('/modules-advanced/status', authMiddleware, canViewConfigModule, asyn
                 ...m,
                 estAccessible: ent?.accessible ?? false,
                 estVisible: ent?.visible ?? true,
-                raisonBlocage: ent?.raison === 'OK' || ent?.raison === 'BASE' ? null : ent?.raison,
+                raisonBlocage: ent?.raison === 'OK' || ent?.raison === 'CRITIQUE' ? null : ent?.raison,
                 messageBlocage: ent?.message || null,
                 sourceEntitlement: ent?.source || null,
                 planMinimalRequis: ent?.planMinimalRequis || null,

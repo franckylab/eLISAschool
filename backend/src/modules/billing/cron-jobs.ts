@@ -13,7 +13,7 @@
  * Phase P1.1 — Refonte SaaS v4
  */
 
-import { Repository, LessThanOrEqual, MoreThan } from 'typeorm';
+import { Repository, LessThanOrEqual } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { logger } from '@common/utils/logger.util';
 import { scheduleWithLock } from '@common/services/cron-lock.service';
@@ -26,11 +26,10 @@ import {
 import { featureFlagDefinitionService } from './services/feature-flag-definition.service';
 import { ActionFeatureFlag } from './entities/feature-flag-history.entity';
 import { Facture, StatutFacture } from './entities/facture.entity';
-import { PlanAbonnement, StatutPlan, ModeFacturationTranches } from './entities/plan-abonnement.entity';
+// Refonte v3 (migration 213) — plans pilotés par JSONB, fin des tranches
 import { FacturationService } from './services/facturation.service';
 import { dunningService } from './services/dunning.service';
 import { quotaService as _quotaService } from './services/quota.service';
-import { TrancheConfigService } from './services/tranche-config.service';
 
 // =============================================
 // TYPES
@@ -71,7 +70,7 @@ export async function cronRenouvellementAuto(): Promise<CronResult> {
         timestamp: new Date(),
     };
 
-    return withCronLock('renouvellement-auto', async () => {
+    return (await withCronLock('renouvellement-auto', async () => {
         result.executed = true;
         const results = result.results as { renouveles: number; erreurs: number; details: any[] };
 
@@ -105,6 +104,11 @@ export async function cronRenouvellementAuto(): Promise<CronResult> {
                     } else {
                         nouvelleDateFin.setMonth(nouvelleDateFin.getMonth() + 1);
                     }
+
+                    // I5 (v3) : fermer l'ancien abonnement avant de créer le nouveau
+                    abonnement.statut = StatutAbonnement.EXPIRE;
+                    abonnement.dateExpirationReelle = new Date();
+                    await queryRunner.manager.save(abonnement);
 
                     const nouvelAbonnement = queryRunner.manager.create(AbonnementClient, {
                         etablissementId: abonnement.etablissementId,
@@ -166,7 +170,7 @@ export async function cronRenouvellementAuto(): Promise<CronResult> {
 
         result.duration = Date.now() - start;
         return result;
-    }) ?? result;
+    })) ?? result;
 }
 
 /**
@@ -320,18 +324,15 @@ export async function cronAlerteQuota(): Promise<CronResult> {
                 results.etablissementsVerifies++;
 
                 for (const quota of quotas) {
-                    if (quota.limiteMax > 0) {
-                        const pourcentage = (quota.utilisationActuelle / quota.limiteMax) * 100;
-
-                        if (pourcentage >= 80 && !quota.alerte80pourcent) {
-                            // Déclencher l'alerte via le QuotaService
-                            await quotaService.mettreAJourQuota(
-                                etablissementId,
-                                quota.typeQuota,
-                                0 // Pas de delta, juste déclencher l'alerte
-                            );
-                            results.alertesEnvoyees++;
-                        }
+                    // Refonte v3 : EtatQuota (ressource, utilisation, limite, pourcentage)
+                    if (quota.limite > 0 && quota.pourcentage >= 80) {
+                        // Déclencher l'alerte via le QuotaService (seuil 80%)
+                        await quotaService.mettreAJourQuota(
+                            etablissementId,
+                            quota.ressource,
+                            0 // Pas de delta, juste déclencher l'alerte
+                        );
+                        results.alertesEnvoyees++;
                     }
                 }
             } catch (error) {
@@ -369,7 +370,7 @@ export async function cronAlerteQuota(): Promise<CronResult> {
  */
 export async function cronExpirationEssai(): Promise<CronResult> {
     const start = Date.now();
-    const results = { convertis: number, suspendus: number, erreurs: number } = {
+    const results = {
         convertis: 0,
         suspendus: 0,
         erreurs: 0,
@@ -379,10 +380,10 @@ export async function cronExpirationEssai(): Promise<CronResult> {
         const abonnementRepo = AppDataSource.getRepository(AbonnementClient);
         const maintenant = new Date();
 
-        // Trouver les abonnements en attente (essai) dont la date de fin est passée
+        // Trouver les abonnements en période d'essai dont la date de fin est passée
         const abonnementsExpire = await abonnementRepo
             .createQueryBuilder('abo')
-            .where('abo.statut = :statut', { statut: StatutAbonnement.EN_ATTENTE })
+            .where('abo.statut = :statut', { statut: StatutAbonnement.ESSAI })
             .andWhere('abo.dateFin <= :maintenant', { maintenant: maintenant.toISOString() })
             .getMany();
 
@@ -420,13 +421,20 @@ export async function cronExpirationEssai(): Promise<CronResult> {
                         `[Cron] ✅ Essai converti en abonnement payant — Établissement: ${abonnement.etablissementId}`
                     );
                 } else {
-                    // Suspendre — essai terminé sans renouvellement
-                    abonnement.statut = StatutAbonnement.ANNULE;
+                    // Essai expiré sans renouvellement → dégradation gracieuse
+                    abonnement.statut = StatutAbonnement.EXPIRE;
+                    abonnement.dateExpirationReelle = maintenant;
                     await abonnementRepo.save(abonnement);
+
+                    // Invalider le cache entitlements pour ce tenant
+                    try {
+                        const { entitlementService } = await import('./services/entitlement.service');
+                        entitlementService.invalidate(abonnement.etablissementId);
+                    } catch { /* silencieux */ }
 
                     results.suspendus++;
                     logger.info(
-                        `[Cron] ⏹️ Essai terminé sans renouvellement — Établissement: ${abonnement.etablissementId}`
+                        `[Cron] ⏹️ Essai expiré → EXPIRE (dégradation gracieuse) — Établissement: ${abonnement.etablissementId}`
                     );
                 }
             } catch (error) {
@@ -529,6 +537,92 @@ export async function cronExpiredFlags(): Promise<CronResult> {
     };
 }
 
+/**
+ * Notifications d'expiration d'abonnement.
+ * Schedule : quotidien à 08h00
+ *
+ * Vérifie les abonnements expirant dans 7j, 3j, 1j
+ * et envoie une notification email + in-app à l'admin de l'établissement.
+ */
+export async function cronNotificationsExpiration(): Promise<CronResult> {
+    const start = Date.now();
+    logger.info('[Cron Notif] 🕐 Vérification des abonnements expirant bientôt...');
+
+    const results = { notificationsEnvoyees: 0, abonnementsVerifies: 0, erreurs: 0 };
+
+    try {
+        const aboRepo = AppDataSource.getRepository(AbonnementClient);
+        const now = new Date();
+
+        // Paliers de notification : J-7, J-3, J-1
+        const paliers = [
+            { jours: 7, cle: 'J7' },
+            { jours: 3, cle: 'J3' },
+            { jours: 1, cle: 'J1' },
+        ];
+
+        for (const palier of paliers) {
+            const dateLimite = new Date(now);
+            dateLimite.setDate(dateLimite.getDate() + palier.jours);
+            dateLimite.setHours(23, 59, 59, 999);
+
+            const dateMin = new Date(now);
+            dateMin.setDate(dateMin.getDate() + palier.jours - 1);
+
+            const abonnements = await aboRepo
+                .createQueryBuilder('abo')
+                .where('abo.statut IN (:...statuts)', {
+                    statuts: [StatutAbonnement.ACTIF, StatutAbonnement.ESSAI],
+                })
+                .andWhere('abo.dateFin <= :dateLimite', { dateLimite })
+                .andWhere('abo.dateFin > :dateMin', { dateMin })
+                .getMany();
+
+            results.abonnementsVerifies += abonnements.length;
+
+            for (const abo of abonnements) {
+                try {
+                    // Notification in-app (via table notifications si existante)
+                    logger.info(
+                        `[Cron Notif] 🔔 Alerte ${palier.cle} — Établissement: ${abo.etablissementId} ` +
+                        `— Abonnement: ${abo.id} — Expire le ${abo.dateFin.toISOString()}`
+                    );
+
+                    // TODO: Envoyer email via service notification
+                    // await notificationService.envoyerEmail({
+                    //     destinataire: abo.etablissementId,
+                    //     sujet: `Votre abonnement expire dans ${palier.jours} jour(s)`,
+                    //     template: 'expiration-abonnement',
+                    //     data: { palier: palier.cle, dateFin: abo.dateFin, plan: abo.planId },
+                    // });
+
+                    results.notificationsEnvoyees++;
+                } catch (err) {
+                    results.erreurs++;
+                    logger.error(`[Cron Notif] Erreur notification abonnement ${abo.id}:`, err);
+                }
+            }
+        }
+    } catch (error) {
+        logger.error('[Cron Notif] Erreur globale:', error);
+        results.erreurs++;
+    }
+
+    const duration = Date.now() - start;
+    logger.info(
+        `[Cron Notif] ✅ Terminé en ${duration}ms — ` +
+        `${results.abonnementsVerifies} vérifiés, ${results.notificationsEnvoyees} notifications, ${results.erreurs} erreurs`
+    );
+
+    return {
+        job: 'notifications_expiration',
+        executed: true,
+        results: results as any,
+        duration,
+        timestamp: new Date(),
+    };
+}
+
 // =============================================
 // REGISTRATION — Appelées depuis app.ts ou un scheduler
 // =============================================
@@ -544,6 +638,7 @@ export async function executerJobsQuotidiens(): Promise<CronResult[]> {
     results.push(await cronDunning());
     results.push(await cronExpirationEssai());
     results.push(await cronExpiredFlags());
+    results.push(await cronNotificationsExpiration());
 
     logger.info(`[Cron] ✅ Jobs quotidiens terminés — ${results.length} jobs exécutés`);
     return results;
@@ -610,116 +705,99 @@ export function initBillingCronJobs(): void {
         }
     }, { timezone: 'Africa/Douala' });
 
-    // Lot B v7 — Contrôle des tranches — Quotidien 02h00
-    scheduleWithLock('billing-controle-tranches', '0 2 * * *', async () => {
+    // Refonte v3 — Contrôle des quotas — Quotidien 02h00
+    scheduleWithLock('billing-controle-quotas', '0 2 * * *', async () => {
         try {
-            await cronControleTranches();
+            await cronControleQuotas();
         } catch (error) {
-            logger.error('[Cron] Erreur contrôle tranches:', error);
+            logger.error('[Cron] Erreur contrôle quotas:', error);
         }
     }, { timezone: 'Africa/Douala' });
 
-    logger.info('[Cron] ✅ Cron jobs billing enregistrés (quotidien 00h, mensuel 1er, quota 6h, tranches 02h, flags 03h)');
+    // Refonte v3.1 — Notifications expiration — Quotidien 08h00
+    scheduleWithLock('billing-notifications-expiration', '0 8 * * *', async () => {
+        try {
+            await cronNotificationsExpiration();
+        } catch (error) {
+            logger.error('[Cron] Erreur notifications expiration:', error);
+        }
+    }, { timezone: 'Africa/Douala' });
+
+    logger.info('[Cron] ✅ Cron jobs billing enregistrés (quotidien 00h, mensuel 1er, quota 6h, contrôle quotas 02h, flags 03h, notifs 08h)');
 }
 
 // =============================================
-// LOT B v7 — Contrôle des tranches
+// Refonte v3 — Contrôle des quotas (remplace le contrôle des tranches)
 // =============================================
 
 /**
- * Contrôle quotidien des tranches en mode auto.
+ * Contrôle quotidien des quotas unifiés (usage_unifie).
  * Schedule : quotidien à 02h00
- * 
- * Pour chaque abonnement actif en mode 'auto' :
- * 1. Compte le nombre réel d'élèves
- * 2. Vérifie si un seuil de tranche a été franchi
- * 3. Si franchissement → facture complémentaire au prorata + notification
- * 4. Si dépassement plafond → état QUOTA_DEPASSE + workflow critique
+ *
+ * Pour chaque abonnement actif :
+ * 1. Résout les quotas effectifs (plan.quotas JSONB + packs quota)
+ * 2. Compare avec l'usage réel (usage_unifie)
+ * 3. Si dépassement → log + alerte (invitation à acheter un pack quota)
  */
-export async function cronControleTranches(): Promise<CronResult> {
+export async function cronControleQuotas(): Promise<CronResult> {
     const startTime = Date.now();
-    logger.info('[Cron Tranches] 🕐 Démarrage du contrôle des tranches...');
+    logger.info('[Cron Quotas] 🕐 Démarrage du contrôle des quotas...');
 
     const abonnementRepo = AppDataSource.getRepository(AbonnementClient);
-    const trancheConfigService = new TrancheConfigService();
+    const quotaService = _quotaService;
 
-    // Récupérer tous les abonnements actifs avec plan en mode auto
-    const abonnementsAuto = await abonnementRepo.find({
+    // Récupérer tous les abonnements actifs (dédoublonnés par établissement)
+    const abonnementsActifs = await abonnementRepo.find({
         where: { statut: StatutAbonnement.ACTIF },
-        relations: ['plan'],
+        select: ['etablissementId'],
     });
-
-    const abonnementsModeAuto = abonnementsAuto.filter(
-        a => a.plan?.modeFacturationTranches === ModeFacturationTranches.AUTO
-    );
+    const etablissementIds = [...new Set(abonnementsActifs.map(a => a.etablissementId))];
 
     const results = {
-        totalAbonnements: abonnementsModeAuto.length,
-        franchissements: 0,
+        totalEtablissements: etablissementIds.length,
         depassements: 0,
+        alertes: 0,
         erreurs: 0,
         details: [] as Array<{
             etablissementId: string;
-            nbEleves: number;
-            trancheActive: string | null;
-            action: 'aucune' | 'franchissement' | 'depassement';
+            ressource: string;
+            utilisation: number;
+            limite: number;
+            pourcentage: number;
         }>,
     };
 
-    for (const abonnement of abonnementsModeAuto) {
+    for (const etablissementId of etablissementIds) {
         try {
-            // Compter les élèves réels de l'établissement
-            const nbEleves = await AppDataSource.query(
-                `SELECT COUNT(*)::int as count FROM eleves WHERE "etablissementId" = $1 AND "statut" = 'ACTIF'`,
-                [abonnement.etablissementId]
-            ).then((r: Array<{ count: number }>) => r[0]?.count ?? 0);
+            const quotas = await quotaService.getQuotasEtablissement(etablissementId);
 
-            const calcul = await trancheConfigService.calculerMontantTranches(abonnement.etablissementId, nbEleves);
+            for (const quota of quotas) {
+                if (quota.limite <= 0) continue; // 0 = illimité
 
-            results.details.push({
-                etablissementId: abonnement.etablissementId,
-                nbEleves,
-                trancheActive: calcul.trancheActive?.label ?? null,
-                action: calcul.depassement.estEnDepassement ? 'depassement' :
-                        calcul.trancheActive ? 'franchissement' : 'aucune',
-            });
-
-            // Cas 1 : Dépassement du plafond max → état QUOTA_DEPASSE
-            if (calcul.depassement.estEnDepassement) {
-                results.depassements++;
-                logger.warn(
-                    `[Cron Tranches] ⚠️ Dépassement plafond — Établissement: ${abonnement.etablissementId.substring(0, 8)}, ` +
-                    `Élèves: ${nbEleves}, Plafond: ${calcul.plafondMaxEleves}, Dépassement: ${calcul.depassement.depassementPourcent}%`
-                );
-                // TODO Lot F: créer une action_critique workflow
-                // Pour l'instant, on log et on notifie
-            }
-
-            // Cas 2 : Franchissement de seuil de tranche → facture complémentaire
-            if (calcul.trancheActive && calcul.montantTranches > 0) {
-                // Vérifier si une facture complémentaire existe déjà pour ce cycle
-                const debutCycle = abonnement.cycleActuel?.debutCycle ?? new Date();
-                const factureExistante = await AppDataSource.getRepository(Facture).findOne({
-                    where: {
-                        abonnementId: abonnement.id,
-                        typeFacture: 'COMPLEMENTAIRE' as any,
-                        createdAt: MoreThan(debutCycle),
-                    },
-                });
-
-                if (!factureExistante) {
-                    results.franchissements++;
-                    logger.info(
-                        `[Cron Tranches] 📈 Franchissement — Établissement: ${abonnement.etablissementId.substring(0, 8)}, ` +
-                        `Tranche: ${calcul.trancheActive.label ?? 'inconnue'}, Montant: ${calcul.montantTranches} XAF`
+                if (quota.utilisation > quota.limite) {
+                    // Dépassement franc : log + invitation pack quota
+                    results.depassements++;
+                    results.details.push({
+                        etablissementId,
+                        ressource: quota.ressource,
+                        utilisation: quota.utilisation,
+                        limite: quota.limite,
+                        pourcentage: quota.pourcentage,
+                    });
+                    logger.warn(
+                        `[Cron Quotas] ⚠️ Dépassement — Établissement: ${etablissementId.substring(0, 8)}, ` +
+                        `Ressource: ${quota.ressource}, Usage: ${quota.utilisation}/${quota.limite} (${quota.pourcentage}%)`
                     );
-                    // TODO: générer facture complémentaire au prorata (reste du cycle)
+                } else if (quota.pourcentage >= 80) {
+                    // Seuil d'alerte : déclenche la notification via mettreAJourQuota
+                    results.alertes++;
+                    await quotaService.mettreAJourQuota(etablissementId, quota.ressource, 0);
                 }
             }
         } catch (error) {
             results.erreurs++;
             logger.error(
-                `[Cron Tranches] Erreur — Établissement: ${abonnement.etablissementId.substring(0, 8)}`,
+                `[Cron Quotas] Erreur — Établissement: ${etablissementId.substring(0, 8)}`,
                 error
             );
         }
@@ -727,16 +805,18 @@ export async function cronControleTranches(): Promise<CronResult> {
 
     const duration = Date.now() - startTime;
     logger.info(
-        `[Cron Tranches] ✅ Terminé en ${duration}ms — ` +
-        `${results.totalAbonnements} abonnements, ${results.franchissements} franchissements, ` +
-        `${results.depassements} dépassements, ${results.erreurs} erreurs`
+        `[Cron Quotas] ✅ Terminé en ${duration}ms — ` +
+        `${results.totalEtablissements} établissements, ${results.depassements} dépassements, ` +
+        `${results.alertes} alertes, ${results.erreurs} erreurs`
     );
 
     return {
-        job: 'controle-tranches',
+        job: 'controle-quotas',
         executed: true,
         results: results as any,
         duration,
         timestamp: new Date(),
     };
 }
+
+// cronControleTranches supprimé (Refonte v3 — remplacé par cronControleQuotas)

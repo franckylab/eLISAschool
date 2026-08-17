@@ -1,16 +1,20 @@
 /**
  * ==================================
- * eLISAschool - Entité PlanAbonnement
+ * eLISAschool - Entité PlanAbonnement (v3)
  * ==================================
- * 
- * Définit un plan d'abonnement plateforme (ex: Starter, Pro, Enterprise).
- * Chaque plan a un prix de base, des quotas max et des modules inclus.
- * 
- * Phase 4.1 — Refonte SaaS
+ *
+ * Plan d'abonnement plateforme 100% piloté par données JSONB.
+ * Refonte v3 (migration 213) : les colonnes dures (maxEleves, maxClasses,
+ * tolérance, blocage…) sont remplacées par 3 blocs configurables :
+ *   - tarification : prixBase, prixParEleve, elevesInclusGratuits, paliers
+ *   - quotas       : eleves, utilisateurs, classes, stockageGo, sms, …
+ *   - entitlements : modules[] et fonctionnalites[] inclus
+ *
+ * Version: 3.0.0
+ * Auteur: franck arlos chendjou
  */
 
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-import { TrancheEleves } from './tranche-eleves.entity';
 import { AbonnementClient } from './abonnement-client.entity';
 
 export enum StatutPlan {
@@ -19,12 +23,52 @@ export enum StatutPlan {
     ARRETE = 'ARRETE',
 }
 
-/** Mode de facturation des tranches — Lot B v7 */
-export enum ModeFacturationTranches {
-    /** Recomputation par nb élèves réel + prorata inter-cycle */
-    AUTO = 'auto',
-    /** Tranche souscrite manuellement, facturation fixe */
-    DECLARATIF = 'declarative',
+/** Palier de prix unitaire dégressif (remplace les tranches plates) */
+export interface PalierTarification {
+    /** Seuil d'élèves à partir duquel le prix unitaire s'applique */
+    seuilEleves: number;
+    /** Prix par élève au-delà du seuil */
+    prixParEleve: number;
+}
+
+/** Bloc tarification — formule : prixBase + max(0, nbÉlèves − franchise) × prixParEleve */
+export interface TarificationPlan {
+    /** Forfait socle mensuel */
+    prixBase: number;
+    /** Montant unitaire par élève au-delà de la franchise */
+    prixParEleve: number;
+    /** Nombre d'élèves gratuits (franchise) */
+    elevesInclusGratuits: number;
+    /** Paliers dégressifs optionnels (triés par seuilEleves croissant) */
+    paliers?: PalierTarification[];
+}
+
+/** Bloc quotas — clés libres, extensibles sans migration */
+export interface QuotasPlan {
+    /** 0 = illimité */
+    eleves?: number;
+    utilisateurs?: number;
+    classes?: number;
+    stockageGo?: number;
+    sms?: number;
+    [ressource: string]: number | undefined;
+}
+
+/** Bloc droits d'accès inclus dans le plan */
+export interface EntitlementsPlan {
+    /** Codes modules inclus (alignés modules_catalogue.code) */
+    modules: string[];
+    /** Codes fonctionnalités incluses (feature_flag_definitions.cle) */
+    fonctionnalites: string[];
+}
+
+/** Configuration d'essai propre au plan */
+export interface EssaiPlan {
+    autorise: boolean;
+    /** Override de la durée plateforme (jours) */
+    dureeJours?: number;
+    /** Quotas réduits pendant l'essai */
+    quotasReduits?: boolean;
 }
 
 @Entity('plans_abonnement')
@@ -42,37 +86,48 @@ export class PlanAbonnement {
     description?: string;
 
     @Column({ type: 'decimal', precision: 12, scale: 2 })
-    prixBase!: number; // Prix mensuel de base en devise locale
+    prixBase!: number; // Prix mensuel de base (miroir de tarification.prixBase)
 
     @Column({ type: 'varchar', length: 10, default: 'XAF' })
     devise!: string;
 
-    @Column({ type: 'int' })
-    maxEleves!: number; // Nombre max d'élèves inclus dans le prix de base
-
+    /** Rang ordinal du plan — remplace les rangs hardcodés du moteur v2 */
     @Column({ type: 'int', default: 0 })
-    maxUtilisateurs!: number; // 0 = illimité
+    rang!: number;
 
-    @Column({ type: 'int', default: 0 })
-    maxClasses!: number; // 0 = illimité
+    /** Plan attribué automatiquement en mode d'onboarding PLAN_DEFAUT (un seul à true) */
+    @Column({ type: 'boolean', default: false })
+    estParDefaut!: boolean;
 
-    @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-    stockageMaxGo!: number; // Stockage max en Go
+    /** Visible dans la grille publique de souscription tenant */
+    @Column({ type: 'boolean', default: true })
+    visiblePubliquement!: boolean;
 
-    @Column({ type: 'int', default: 0 })
-    smsInclus!: number; // Nombre de SMS inclus par mois
+    /** Bloc tarification v3 (prix/élève + franchise + paliers) */
+    @Column({ type: 'jsonb', default: {} })
+    tarification!: TarificationPlan;
 
-    @Column({ type: 'simple-json', nullable: true })
-    modulesInclus!: string[]; // Liste des slugs de modules inclus
+    /** Bloc quotas v3 — métriques libres et extensibles */
+    @Column({ type: 'jsonb', default: {} })
+    quotas!: QuotasPlan;
 
-    @Column({ type: 'simple-json', nullable: true })
-    featureFlags!: Record<string, boolean>; // Feature flags activés par ce plan
+    /** Bloc droits inclus v3 (modules + fonctionnalités) */
+    @Column({ type: 'jsonb', default: {} })
+    entitlements!: EntitlementsPlan;
+
+    /** Codes de cycles de facturation autorisés (réf. cycles_facturation.code) */
+    @Column({ type: 'jsonb', default: ['MENSUEL', 'ANNUEL'] })
+    cyclesAutorises!: string[];
+
+    /** Configuration d'essai du plan */
+    @Column({ type: 'jsonb', default: { autorise: false } })
+    essai!: EssaiPlan;
 
     @Column({ type: 'enum', enum: StatutPlan, default: StatutPlan.ACTIF })
     statut!: StatutPlan;
 
     @Column({ type: 'boolean', default: true })
-    visible!: boolean; // Visible dans le catalogue
+    visible!: boolean; // Visible dans le catalogue plateforme
 
     @Column({ type: 'int', default: 0 })
     ordre!: number; // Ordre d'affichage
@@ -83,38 +138,7 @@ export class PlanAbonnement {
     @Column({ type: 'boolean', default: true })
     actif!: boolean;
 
-    /** [v5] Active la customisation des tranches par établissement */
-    @Column({ type: 'boolean', default: true })
-    tranchesConfigurables!: boolean;
-
-    // ==========================================
-    // Lot B v7 — Tranches hybride
-    // ==========================================
-
-    /** Mode de facturation des tranches : auto (recomputation) ou declaratif (souscription) */
-    @Column({ type: 'varchar', length: 20, default: ModeFacturationTranches.AUTO })
-    modeFacturationTranches!: ModeFacturationTranches;
-
-    /** Tolérance de dépassement en % (ex: 10 = alerte à 110% du plafond) */
-    @Column({ type: 'int', default: 10 })
-    toleranceDepassement!: number;
-
-    /** Prorata immédiat lors d'un changement de tranche en cours de cycle */
-    @Column({ type: 'boolean', default: true })
-    prorataImmediat!: boolean;
-
-    /** Blocage au-delà du plafond (true = bloque, false = facture complémentaire) */
-    @Column({ type: 'boolean', default: false })
-    blocageAuDela!: boolean;
-
-    /** Plafond max d'élèves (null = illimité). Au-delà → workflow critique. */
-    @Column({ type: 'int', nullable: true, default: null })
-    plafondMaxEleves?: number | null;
-
     // Relations
-    @OneToMany(() => TrancheEleves, (tranche) => tranche.plan)
-    tranches!: TrancheEleves[];
-
     @OneToMany(() => AbonnementClient, (abo) => abo.plan)
     abonnements!: AbonnementClient[];
 

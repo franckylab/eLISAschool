@@ -13,9 +13,9 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DataTable } from '@/components/ui/DataTable';
 import type { Column } from '@/components/ui/DataTable';
-import { EtablissementFormModal } from '@/features/admin/components/etablissement-form-modal';
-import { SanteEtablissement } from '@/features/admin/components/sante-etablissement';
-import type { SanteEtablissementResult, CategorieSante } from '@/features/admin/components/sante-etablissement';
+import { EtablissementFormModal } from '@/features/platform/components/etablissement-form-modal';
+import { SanteEtablissement } from '@/features/platform/components/sante-etablissement';
+import type { SanteEtablissementResult, CategorieSante } from '@/features/platform/components/sante-etablissement';
 import type { Etablissement } from '@/features/etablissements/types/etablissement.types';
 import {
     TYPE_LABELS,

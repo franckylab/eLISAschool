@@ -58,6 +58,14 @@ export class FeatureFlagDefinition {
     @Column({ type: 'varchar', length: 50, default: CategorieFlag.GENERAL })
     categorie!: CategorieFlag;
 
+    /**
+     * Catégorie commerciale binaire (Refonte v3, migration 213) —
+     * les fonctionnalités sont des citoyens de 1er rang du marché,
+     * au même titre que les modules (GRATUIT | PAYANT).
+     */
+    @Column({ type: 'varchar', length: 10, default: 'PAYANT' })
+    categorieCommerciale!: 'GRATUIT' | 'PAYANT';
+
     @Column({ type: 'varchar', length: 30, default: TypeFlag.RELEASE })
     type!: TypeFlag;
 

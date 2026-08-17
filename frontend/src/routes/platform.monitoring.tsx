@@ -1,23 +1,28 @@
 /**
  * ==================================
- * eLISAschool - Platform Monitoring Dashboard
+ * eLISAschool - Platform Monitoring Dashboard v2
  * ==================================
  *
- * Métriques temps réel, health checks, alertes actives.
- * Charts avec agrégation par période (1h, 24h, 7d).
+ * Refonte v4.1 : 9 sections séquentielles → 4 onglets organisés.
+ * Onglets : Health, Signaux, Alertes, Export.
+ * Lazy loading des sections lourdes.
  *
  * Phase 7.3 — Refonte SaaS
  * Phase F.1 — Golden Signals (p50/p95/p99, saturation)
  * Phase F.3 — Export rapports CSV/JSON
  * Phase v6 — Refactor sous-composants + CSS vars + i18n
+ *
+ * Version: 2.0.0
+ * Auteur: franck arlos chendjou
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api-client';
-import { Activity, Download } from 'lucide-react';
+import { Activity, Heart, BarChart3, Bell, Download } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import {
     HealthChecksSection,
     MetricsCards,
@@ -31,8 +36,33 @@ import {
     type AggregatedMetrics,
     type Alert,
     type GoldenSignals,
-} from '@/features/admin/components/monitoring-sections';
-import { ModuleAnalyticsDashboard } from '@/features/admin/components/module-analytics-dashboard';
+} from '@/features/platform/components/monitoring-sections';
+
+// Lazy load : ModuleAnalyticsDashboard (lourd, utilisé uniquement dans Signaux)
+const ModuleAnalyticsDashboard = lazy(() =>
+    import('@/features/platform/components/module-analytics-dashboard').then(m => ({
+        default: m.ModuleAnalyticsDashboard,
+    }))
+);
+
+// =============================================
+// Types
+// =============================================
+
+type MonitoringTab = 'health' | 'signaux' | 'alertes' | 'export';
+
+interface TabDef {
+    key: MonitoringTab;
+    labelKey: string;
+    icon: typeof Activity;
+}
+
+const TABS: TabDef[] = [
+    { key: 'health', labelKey: 'monitoring.tabs.health', icon: Heart },
+    { key: 'signaux', labelKey: 'monitoring.tabs.signaux', icon: BarChart3 },
+    { key: 'alertes', labelKey: 'monitoring.tabs.alertes', icon: Bell },
+    { key: 'export', labelKey: 'monitoring.tabs.export', icon: Download },
+];
 
 // =============================================
 // PAGE
@@ -41,6 +71,7 @@ import { ModuleAnalyticsDashboard } from '@/features/admin/components/module-ana
 function PlatformMonitoringPage() {
     const { t } = useTranslation('admin');
     const queryClient = useQueryClient();
+    const [activeTab, setActiveTab] = useState<MonitoringTab>('health');
     const [period, setPeriod] = useState<'1h' | '24h' | '7d'>('24h');
 
     // Health checks détaillés
@@ -101,7 +132,7 @@ function PlatformMonitoringPage() {
     return (
         <div className="p-[var(--space-lg)] space-y-[var(--space-lg)]">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-[var(--gap-md)]">
                 <div className="flex items-center gap-[var(--gap-sm)]">
                     <Activity className="h-[var(--icon-md)] w-[var(--icon-md)] text-[var(--color-texte-muted)]" />
                     <div>
@@ -131,49 +162,88 @@ function PlatformMonitoringPage() {
                 </div>
             </div>
 
-            {/* Health Checks */}
-            <HealthChecksSection healthData={healthData} loading={loadingHealth} />
-
-            {/* Métriques plateforme */}
-            <MetricsCards metrics={metrics} loading={loadingMetrics} />
-
-            {/* Golden Signals */}
-            <GoldenSignalsSection data={goldenSignals} loading={loadingGolden} />
-
-            {/* Export Rapports */}
-            <div className="rounded-xl border border-[var(--color-bordure)] p-[var(--space-lg)] space-y-[var(--space-sm)] bg-[var(--color-surface)]">
-                <h2 className="font-semibold flex items-center gap-[var(--gap-sm)] text-[var(--color-texte)]" style={{ fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.125rem)' }}>
-                    <Download className="h-[var(--icon-md)] w-[var(--icon-md)] text-[var(--color-texte-muted)]" />
-                    {t('monitoring.export.titre')}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-[var(--gap-sm)]">
-                    <ExportButton label={t('monitoring.export.activiteCsv')} type="activite" format="csv" />
-                    <ExportButton label={t('monitoring.export.facturationCsv')} type="facturation" format="csv" />
-                    <ExportButton label={t('monitoring.export.securiteCsv')} type="securite" format="csv" />
-                    <ExportButton label={t('monitoring.export.completJson')} type="complet" format="json" />
-                    <ExportButton label={t('monitoring.export.completPdf')} type="complet" format="pdf" />
-                </div>
+            {/* Onglets */}
+            <div className="flex items-center gap-[var(--gap-xs)] border-b border-[var(--color-bordure)] overflow-x-auto scrollbar-hide">
+                {TABS.map((tab) => {
+                    const isActive = activeTab === tab.key;
+                    const Icon = tab.icon;
+                    return (
+                        <button
+                            key={tab.key}
+                            onClick={() => setActiveTab(tab.key)}
+                            className={cn(
+                                'flex items-center gap-[var(--gap-xs)] px-[var(--space-md)] py-[var(--space-sm)] border-b-2 transition-colors whitespace-nowrap',
+                                isActive
+                                    ? 'border-[var(--color-dominant-600)] text-[var(--color-dominant-600)] font-medium'
+                                    : 'border-transparent text-[var(--color-texte-muted)] hover:text-[var(--color-texte)] hover:border-[var(--color-bordure)]'
+                            )}
+                            style={{ fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.875rem)' }}
+                        >
+                            <Icon className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
+                            {t(tab.labelKey)}
+                        </button>
+                    );
+                })}
             </div>
 
-            {/* Alertes actives */}
-            <AlertesSection
-                alerts={alerts}
-                loading={loadingAlerts}
-                onAcknowledge={(id) => acknowledgeMutation.mutate(id)}
-                acknowledging={acknowledgeMutation.isPending}
-            />
+            {/* Contenu des onglets */}
+            <div className="space-y-[var(--space-lg)]">
+                {/* ─── Health : HealthChecks + Métriques ─── */}
+                {activeTab === 'health' && (
+                    <>
+                        <HealthChecksSection healthData={healthData} loading={loadingHealth} />
+                        <MetricsCards metrics={metrics} loading={loadingMetrics} />
+                    </>
+                )}
 
-            {/* Règles d'alerte */}
-            <AlertRulesSection />
+                {/* ─── Signaux : Golden Signals + Module Analytics ─── */}
+                {activeTab === 'signaux' && (
+                    <>
+                        <GoldenSignalsSection data={goldenSignals} loading={loadingGolden} />
+                        <Suspense fallback={
+                            <div className="animate-pulse text-[var(--color-texte-muted)] text-center py-8">
+                                {t('monitoring.chargementAnalytics', 'Chargement des analytics modules...')}
+                            </div>
+                        }>
+                            <ModuleAnalyticsDashboard />
+                        </Suspense>
+                    </>
+                )}
 
-            {/* Noisy Neighbor Detection */}
-            <NoisyNeighborSection />
+                {/* ─── Alertes : Alertes + Règles + Noisy Neighbor ─── */}
+                {activeTab === 'alertes' && (
+                    <>
+                        <AlertesSection
+                            alerts={alerts}
+                            loading={loadingAlerts}
+                            onAcknowledge={(id) => acknowledgeMutation.mutate(id)}
+                            acknowledging={acknowledgeMutation.isPending}
+                        />
+                        <AlertRulesSection />
+                        <NoisyNeighborSection />
+                    </>
+                )}
 
-            {/* Analytics Modules */}
-            <ModuleAnalyticsDashboard />
-
-            {/* Temps réel */}
-            <RealtimeSection />
+                {/* ─── Export : Rapports + Temps réel ─── */}
+                {activeTab === 'export' && (
+                    <>
+                        <div className="rounded-xl border border-[var(--color-bordure)] p-[var(--space-lg)] space-y-[var(--space-sm)] bg-[var(--color-surface)]">
+                            <h2 className="font-semibold flex items-center gap-[var(--gap-sm)] text-[var(--color-texte)]" style={{ fontSize: 'clamp(1rem, 0.9rem + 0.4vw, 1.125rem)' }}>
+                                <Download className="h-[var(--icon-md)] w-[var(--icon-md)] text-[var(--color-texte-muted)]" />
+                                {t('monitoring.export.titre')}
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-[var(--gap-sm)]">
+                                <ExportButton label={t('monitoring.export.activiteCsv')} type="activite" format="csv" />
+                                <ExportButton label={t('monitoring.export.facturationCsv')} type="facturation" format="csv" />
+                                <ExportButton label={t('monitoring.export.securiteCsv')} type="securite" format="csv" />
+                                <ExportButton label={t('monitoring.export.completJson')} type="complet" format="json" />
+                                <ExportButton label={t('monitoring.export.completPdf')} type="complet" format="pdf" />
+                            </div>
+                        </div>
+                        <RealtimeSection />
+                    </>
+                )}
+            </div>
 
             {/* Timestamp */}
             {healthData && (
@@ -188,3 +258,5 @@ function PlatformMonitoringPage() {
 export const Route = createFileRoute('/platform/monitoring')({
     component: PlatformMonitoringPage,
 });
+
+export default PlatformMonitoringPage;

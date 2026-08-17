@@ -8,7 +8,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import ApprobationsPage from '@/features/admin/components/approbations-page';
+import ApprobationsPage from '@/features/platform/components/approbations-page';
 
 function PlatformApprobationsPage() {
     return (

@@ -12,10 +12,10 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api-client';
-import { PlatformHealth } from '@/features/admin/components/platform-health';
-import { TenantActivity } from '@/features/admin/components/tenant-activity';
-import { PlatformSection, PlatformKeyValue } from '@/features/admin/components/ui-platform';
-import { PlatformDashboardSkeleton } from '@/features/admin/components/platform-skeleton';
+import { PlatformHealth } from '@/features/platform/components/platform-health';
+import { TenantActivity } from '@/features/platform/components/tenant-activity';
+import { PlatformSection, PlatformKeyValue } from '@/components/ui/platform';
+import { PlatformDashboardSkeleton } from '@/features/platform/components/platform-skeleton';
 import {
     Building2,
     Users,
@@ -486,7 +486,7 @@ function PlatformDashboardPage() {
                     <QuickLink to="/platform/utilisateurs" label={t('navigation.utilisateurs')} icon={Shield} />
                     <QuickLink to="/platform/facturation" label={t('navigation.facturation')} icon={CreditCard} />
                     <QuickLink to="/platform/parametres-cascade" label={t('navigation.parametresCascade')} icon={Layers} />
-                    <QuickLink to="/platform/permissions" label={t('navigation.permissions')} icon={KeyRound} />
+                    <QuickLink to="/platform/roles" label={t('navigation.rolesPlateforme')} icon={KeyRound} />
                 </div>
             </PlatformSection>
         </div>

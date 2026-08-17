@@ -16,7 +16,7 @@
  *  POST /api/platform/facturation/modules/builder/import
  */
 
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -62,14 +62,14 @@ import {
     StatusBadge,
     ConfirmAction,
     EmptyState,
-} from '@/features/admin/components/ui-platform';
+} from '@/components/ui/platform';
 import { cn } from '@/lib/cn';
 
 // =============================================
 // TYPES
 // =============================================
 
-type CategorieModule = 'BASE' | 'PREMIUM' | 'ADDON';
+type CategorieModule = 'GRATUIT' | 'PAYANT';
 type TabId = 'catalogue' | 'builder' | 'resolution';
 type BuilderStep = 1 | 2 | 3 | 4;
 
@@ -135,15 +135,13 @@ interface ModuleFormData {
 
 const CATEGORIES: { value: 'TOUTES' | CategorieModule; labelKey: string }[] = [
     { value: 'TOUTES', labelKey: 'catalogue.categories.toutes' },
-    { value: 'BASE', labelKey: 'catalogue.categories.base' },
-    { value: 'PREMIUM', labelKey: 'catalogue.categories.premium' },
-    { value: 'ADDON', labelKey: 'catalogue.categories.addons' },
+    { value: 'GRATUIT', labelKey: 'catalogue.categories.gratuit' },
+    { value: 'PAYANT', labelKey: 'catalogue.categories.payant' },
 ];
 
 const CATEGORIE_BADGE: { [K in CategorieModule]: { labelKey: string; tone: 'info' | 'neutral' | 'warning' } } = {
-    BASE: { labelKey: 'catalogue.badge.base', tone: 'info' },
-    PREMIUM: { labelKey: 'catalogue.badge.premium', tone: 'neutral' },
-    ADDON: { labelKey: 'catalogue.badge.addon', tone: 'warning' },
+    GRATUIT: { labelKey: 'catalogue.badge.gratuit', tone: 'info' },
+    PAYANT: { labelKey: 'catalogue.badge.payant', tone: 'neutral' },
 };
 
 const SOURCE_LABEL_KEYS: Record<ModuleResolu['source'], string> = {
@@ -154,7 +152,7 @@ const SOURCE_LABEL_KEYS: Record<ModuleResolu['source'], string> = {
 
 const BUILDER_INITIAL: ModuleFormData = {
     code: '', nom: '', nomEn: '', description: '', descriptionEn: '',
-    categorie: 'ADDON', icone: 'Package', prixMensuel: 0, prixAnnuel: 0,
+    categorie: 'PAYANT', icone: 'Package', prixMensuel: 0, prixAnnuel: 0,
     estFacturable: false, estSouscriptible: true, actifParDefaut: false,
     planMinimal: '', dependencies: '', config: '{}', ordre: 99,
 };
@@ -198,7 +196,7 @@ function CatalogueFormModal({ open, onOpenChange, entree, onSubmit }: CatalogueM
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
-        if (open) setForm(entree ? { ...entree } : { categorie: 'ADDON', estActif: true });
+        if (open) setForm(entree ? { ...entree } : { categorie: 'PAYANT', estActif: true });
     }, [open, entree]);
 
     const set = <K extends keyof Partial<ModuleCatalogue>>(key: K, valeur: Partial<ModuleCatalogue>[K]) =>
@@ -256,7 +254,7 @@ function CatalogueFormModal({ open, onOpenChange, entree, onSubmit }: CatalogueM
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-[var(--gap-md)]">
                     <div>
                         <label className={labelClass} style={{ fontSize: fs }}>{t('catalogue.modal.categorie')}</label>
-                        <ElisaSelect value={form.categorie ?? 'ADDON'} onValueChange={(v) => set('categorie', v as CategorieModule)} options={([['BASE', t('catalogue.modal.categorieBase')], ['PREMIUM', t('catalogue.modal.categoriePremium')], ['ADDON', t('catalogue.modal.categorieAddon')]] as [CategorieModule, string][]).map(([value, label]) => ({ value, label }))} className="w-full" searchable={false} aria-label="Module category" />
+                        <ElisaSelect value={form.categorie ?? 'PAYANT'} onValueChange={(v) => set('categorie', v as CategorieModule)} options={([['GRATUIT', t('catalogue.modal.categorieGratuit')], ['PAYANT', t('catalogue.modal.categoriePayant')]] as [CategorieModule, string][]).map(([value, label]) => ({ value, label }))} className="w-full" searchable={false} aria-label="Module category" />
                     </div>
                     <div>
                         <label className={labelClass} style={{ fontSize: fs }}>{t('catalogue.modal.prixMensuel')}</label>
@@ -296,7 +294,7 @@ function CatalogueFormModal({ open, onOpenChange, entree, onSubmit }: CatalogueM
 // ONGLET CATALOGUE (CRUD)
 // =============================================
 
-function CatalogueTab({ catalogue, isLoading, expanded, setExpanded, recherche, setRecherche, filtreCategorie, setFiltreCategorie, modalOuvert, setModalOuvert, edition, setEdition, suppression, setSuppression, invalidate, toggleMutation, deleteMutation }: {
+function CatalogueTab({ catalogue, isLoading, expanded, setExpanded, recherche, setRecherche, filtreCategorie, setFiltreCategorie, modalOuvert: _modalOuvert, setModalOuvert, edition: _edition, setEdition, suppression: _suppression, setSuppression, invalidate: _invalidate, toggleMutation, deleteMutation: _deleteMutation }: {
     catalogue: ModuleCatalogue[] | undefined;
     isLoading: boolean;
     expanded: CategorieModule | null;
@@ -317,7 +315,7 @@ function CatalogueTab({ catalogue, isLoading, expanded, setExpanded, recherche, 
 }) {
     const { t } = useTranslation('admin');
 
-    const parCategorie: Record<CategorieModule, ModuleCatalogue[]> = { BASE: [], PREMIUM: [], ADDON: [] };
+    const parCategorie: Record<CategorieModule, ModuleCatalogue[]> = { GRATUIT: [], PAYANT: [] };
     for (const m of catalogue ?? []) parCategorie[m.categorie]?.push(m);
 
     if (catalogue && expanded && !parCategorie[expanded as CategorieModule]?.length) {
@@ -326,7 +324,7 @@ function CatalogueTab({ catalogue, isLoading, expanded, setExpanded, recherche, 
     }
 
     const total = catalogue?.length ?? 0;
-    const base = parCategorie.BASE.length;
+    const base = parCategorie.GRATUIT.length;
     const payants = (catalogue ?? []).filter((m) => m.estFacturable).length;
     const actifsDefaut = (catalogue ?? []).filter((m) => m.actifParDefaut).length;
     const badgeVariant = (m: ModuleCatalogue) => m.estActif ? 'success' as const : 'warning' as const;
@@ -357,7 +355,7 @@ function CatalogueTab({ catalogue, isLoading, expanded, setExpanded, recherche, 
                 <EmptyState icon={<Boxes className="h-10 w-10" />} title={t('catalogue.aucunModule')} description={t('catalogue.aucunModuleDesc')} />
             ) : (
                 <div className="space-y-[var(--gap-md)]">
-                    {(['BASE', 'PREMIUM', 'ADDON'] as CategorieModule[]).map((cat) => {
+                    {(['GRATUIT', 'PAYANT'] as CategorieModule[]).map((cat) => {
                         const mods = parCategorie[cat];
                         if (!mods.length) return null;
                         const badge = CATEGORIE_BADGE[cat];
@@ -455,7 +453,7 @@ function BuilderTab() {
 
     const handleCategorieChange = (cat: CategorieModule) => {
         updateForm('categorie', cat);
-        if (cat === 'BASE') { updateForm('estFacturable', false); updateForm('actifParDefaut', true); }
+        if (cat === 'GRATUIT') { updateForm('estFacturable', false); updateForm('actifParDefaut', true); }
     };
 
     const validateStep = (s: BuilderStep): boolean => {
@@ -485,7 +483,7 @@ function BuilderTab() {
                 setForm({
                     code: json.code || '', nom: json.nom || '', nomEn: json.nomEn || '',
                     description: json.description || '', descriptionEn: json.descriptionEn || '',
-                    categorie: json.categorie || 'ADDON', icone: json.icone || 'Package',
+                    categorie: json.categorie || 'PAYANT', icone: json.icone || 'Package',
                     prixMensuel: json.prixMensuel || 0, prixAnnuel: json.prixAnnuel || 0,
                     estFacturable: json.estFacturable ?? false, estSouscriptible: json.estSouscriptible ?? true,
                     actifParDefaut: json.actifParDefaut ?? false, planMinimal: json.planMinimal || '',
@@ -515,7 +513,7 @@ function BuilderTab() {
 
     const handleSubmit = () => { if (validateStep(1) && validateStep(2) && validateStep(3)) createMutation.mutate(form); };
 
-    const categorieIcon = { BASE: Shield, PREMIUM: Star, ADDON: Puzzle };
+    const categorieIcon = { GRATUIT: Shield, PAYANT: Star };
     const CatIcon = categorieIcon[form.categorie] || Package;
     const inputCls = 'w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-zinc-500 focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-1 focus:ring-[var(--color-dominant-500)]';
 
@@ -592,10 +590,10 @@ function BuilderTab() {
                         <div>
                             <label className="mb-2 block text-sm font-medium text-[var(--color-text-secondary)]">Catégorie</label>
                             <div className="flex gap-3">
-                                {(['BASE', 'PREMIUM', 'ADDON'] as CategorieModule[]).map((cat) => {
+                                {(['GRATUIT', 'PAYANT'] as CategorieModule[]).map((cat) => {
                                     const Icon = categorieIcon[cat];
                                     return (
-                                        <button key={cat} onClick={() => handleCategorieChange(cat)} className={cn('flex flex-1 items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-all', form.categorie === cat ? cat === 'BASE' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : cat === 'PREMIUM' ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'border-sky-500 bg-sky-500/10 text-sky-600 dark:text-sky-400' : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-zinc-500')}>
+                                        <button key={cat} onClick={() => handleCategorieChange(cat)} className={cn('flex flex-1 items-center justify-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-all', form.categorie === cat ? cat === 'GRATUIT' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : cat === 'PAYANT' ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'border-sky-500 bg-sky-500/10 text-sky-600 dark:text-sky-400' : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-zinc-500')}>
                                             <Icon size={16} />{cat}
                                         </button>
                                     );
@@ -613,7 +611,7 @@ function BuilderTab() {
                             </div>
                         </div>
                         <div className="flex flex-wrap gap-4">
-                            <label className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]"><input type="checkbox" checked={form.estFacturable} onChange={(e) => updateForm('estFacturable', e.target.checked)} disabled={form.categorie === 'BASE'} className="rounded border-[var(--color-border)]" />Facturable</label>
+                            <label className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]"><input type="checkbox" checked={form.estFacturable} onChange={(e) => updateForm('estFacturable', e.target.checked)} disabled={form.categorie === 'GRATUIT'} className="rounded border-[var(--color-border)]" />Facturable</label>
                             <label className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]"><input type="checkbox" checked={form.estSouscriptible} onChange={(e) => updateForm('estSouscriptible', e.target.checked)} className="rounded border-[var(--color-border)]" />Souscriptible</label>
                             <label className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]"><input type="checkbox" checked={form.actifParDefaut} onChange={(e) => updateForm('actifParDefaut', e.target.checked)} className="rounded border-[var(--color-border)]" />Actif par défaut</label>
                         </div>
@@ -653,15 +651,15 @@ function BuilderTab() {
                         <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Preview & Validation</h2>
                         <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
                             <div className="flex items-start gap-4">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-lg" style={{ backgroundColor: form.categorie === 'BASE' ? 'rgba(16,185,129,0.1)' : form.categorie === 'PREMIUM' ? 'rgba(245,158,11,0.1)' : 'rgba(59,130,246,0.1)' }}>
-                                    <CatIcon size={24} style={{ color: form.categorie === 'BASE' ? '#10b981' : form.categorie === 'PREMIUM' ? '#f59e0b' : '#3b82f6' }} />
+                                <div className="flex h-12 w-12 items-center justify-center rounded-lg" style={{ backgroundColor: form.categorie === 'GRATUIT' ? 'rgba(16,185,129,0.1)' : form.categorie === 'PAYANT' ? 'rgba(245,158,11,0.1)' : 'rgba(59,130,246,0.1)' }}>
+                                    <CatIcon size={24} style={{ color: form.categorie === 'GRATUIT' ? '#10b981' : form.categorie === 'PAYANT' ? '#f59e0b' : '#3b82f6' }} />
                                 </div>
                                 <div className="flex-1">
                                     <h3 className="font-semibold text-[var(--color-text-primary)]">{form.nom || '—'}</h3>
                                     <p className="text-xs text-[var(--color-text-muted)]">Code: {form.code || '—'}</p>
                                     <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{form.description || 'Pas de description'}</p>
                                     <div className="mt-2 flex flex-wrap gap-2">
-                                        <span className={cn('rounded-full border px-2 py-0.5 text-xs font-medium', form.categorie === 'BASE' ? 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400' : form.categorie === 'PREMIUM' ? 'border-amber-500/30 text-amber-600 dark:text-amber-400' : 'border-sky-500/30 text-sky-600 dark:text-sky-400')}>{form.categorie}</span>
+                                        <span className={cn('rounded-full border px-2 py-0.5 text-xs font-medium', form.categorie === 'GRATUIT' ? 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400' : form.categorie === 'PAYANT' ? 'border-amber-500/30 text-amber-600 dark:text-amber-400' : 'border-sky-500/30 text-sky-600 dark:text-sky-400')}>{form.categorie}</span>
                                         {form.estFacturable && <span className="rounded-full border border-zinc-600 px-2 py-0.5 text-xs text-zinc-400">{form.prixMensuel} XAF/mois</span>}
                                         {form.actifParDefaut && <span className="rounded-full border border-emerald-500/30 px-2 py-0.5 text-xs text-emerald-500">Actif par défaut</span>}
                                         {form.planMinimal && <span className="rounded-full border border-amber-500/30 px-2 py-0.5 text-xs text-amber-500">Plan min: {form.planMinimal}</span>}
@@ -764,11 +762,10 @@ function ResolutionTab({ etabResolution, setEtabResolution }: { etabResolution: 
 function PlatformModulesPage() {
     const { t } = useTranslation('admin');
     const queryClient = useQueryClient();
-    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<TabId>('catalogue');
 
     // Catalogue state
-    const [expanded, setExpanded] = useState<CategorieModule | null>('BASE');
+    const [expanded, setExpanded] = useState<CategorieModule | null>('GRATUIT');
     const [recherche, setRecherche] = useState('');
     const [filtreCategorie, setFiltreCategorie] = useState<'TOUTES' | CategorieModule>('TOUTES');
     const [modalOuvert, setModalOuvert] = useState(false);

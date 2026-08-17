@@ -1,26 +1,16 @@
 /**
  * ==================================
- * eLISAschool - Tests unitaires EntitlementService
+ * eLISAschool - Tests unitaires EntitlementService v3
  * ==================================
  *
- * Teste le service EntitlementService (source unique de vérité) :
- * - Module CRITIQUE → bypass total (accessible=true, source='critique')
- * - Module inexistant/désactivé → accessible=false, visible=false
- * - Abonnement ACTIF + plan inclus → accessible=true, source='plan'
- * - Pas d'abonnement + actifParDefaut → accessible=true, source='catalogue'
- * - Pas d'abonnement + pas actifParDefaut → ABONNEMENT_INACTIF
- * - Abonnement EXPIRE → ABONNEMENT_EXPIRE
- * - Abonnement SUSPENDU → ABONNEMENT_SUSPENDU
- * - Override groupe actif → source='groupe'
- * - Override groupe inactif → OVERRIDE_DESACTIVE
- * - Supplément souscrit → source='supplement'
- * - Plan insufficient → PLAN_INSUFFICIENT
- * - Défaut catalogue (actifParDefaut) → source='catalogue'
- * - checkAll() → résultat batch
- * - isAccessible() → boolean shortcut
- * - Cache in-memory → hit après premier appel
+ * Teste la cascade 4 questions (Refonte v3, migration 213) :
+ * - Q1. Module critique (estCritique=true) → bypass total
+ * - Q2. Abonnement ACTIF/ESSAI ? → sinon AUCUN_PLAN
+ * - Q3. Inclus par le plan (entitlements.modules) → accessible
+ * - Q4. Override groupe/supplément → accessible
+ * - Sinon → PLAN_INSUFFICIENT / MODULE_DESACTIVE
  *
- * Refonte SaaS — Unification Modules (migration 200)
+ * Mocks : catalogue avec estCritique + categorie GRATUIT|PAYANT.
  */
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
@@ -30,9 +20,11 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 const mockCatalogueFindOne = jest.fn();
 const mockCatalogueFind = jest.fn();
 const mockAbonnementFindOne = jest.fn();
+const mockAbonnementFind = jest.fn();
 const mockAbonnementModuleFind = jest.fn();
 const mockModulesGroupeFind = jest.fn();
 const mockGroupeLienFindOne = jest.fn();
+const mockStrategieFind = jest.fn();
 
 const mockRedisGetJSON = jest.fn();
 const mockRedisSetJSON = jest.fn();
@@ -49,7 +41,7 @@ jest.mock('@database/data-source', () => ({
                 return { findOne: mockCatalogueFindOne, find: mockCatalogueFind };
             }
             if (name.includes('AbonnementClient') || name === 'AbonnementClient') {
-                return { findOne: mockAbonnementFindOne };
+                return { findOne: mockAbonnementFindOne, find: mockAbonnementFind };
             }
             if (name.includes('AbonnementModule') || name === 'AbonnementModule') {
                 return { find: mockAbonnementModuleFind };
@@ -57,8 +49,11 @@ jest.mock('@database/data-source', () => ({
             if (name.includes('ModulesGroupe') || name === 'ModulesGroupe') {
                 return { find: mockModulesGroupeFind };
             }
-            if (name.includes('GroupeEtablissementLien') || name === 'GroupeEtablissementLien') {
+            if (name.includes('GroupeEtablissementLien') || name.includes('groupe_etablissement')) {
                 return { findOne: mockGroupeLienFindOne };
+            }
+            if (name.includes('StrategieExpiration')) {
+                return { find: mockStrategieFind };
             }
             return { findOne: jest.fn(), find: jest.fn() };
         }),
@@ -108,7 +103,8 @@ describe('EntitlementService', () => {
         return {
             code: 'test-module',
             nom: 'Test Module',
-            categorie: 'PREMIUM',
+            categorie: 'PAYANT',
+            estCritique: false,
             estActif: true,
             actifParDefaut: false,
             planMinimal: null,
@@ -124,7 +120,7 @@ describe('EntitlementService', () => {
             plan: {
                 slug: 'starter',
                 nom: 'Starter',
-                modulesInclus: ['eleves', 'notes'],
+                entitlements: { modules: ['eleves', 'notes'] },
             },
             ...overrides,
         };
@@ -135,26 +131,31 @@ describe('EntitlementService', () => {
     // =============================================
     describe('Module CRITIQUE — Bypass total', () => {
         it('devrait toujours retourner accessible=true pour les modules critiques (code)', async () => {
+            mockCatalogueFindOne.mockResolvedValue(
+                mockCatalogueModule({ code: 'auth', estCritique: true, categorie: 'GRATUIT' }),
+            );
+
             const result = await service.check('etab-1', 'auth');
 
             expect(result.accessible).toBe(true);
             expect(result.raison).toBe('CRITIQUE');
             expect(result.source).toBe('critique');
-            // Ne doit PAS accéder à la DB
-            expect(mockCatalogueFindOne).not.toHaveBeenCalled();
         });
 
         it('devrait bypasser pour utilisateurs, configuration, notifications', async () => {
             for (const code of ['utilisateurs', 'configuration', 'notifications']) {
+                mockCatalogueFindOne.mockResolvedValue(
+                    mockCatalogueModule({ code, estCritique: true, categorie: 'GRATUIT' }),
+                );
                 const result = await service.check('etab-1', code);
                 expect(result.accessible).toBe(true);
                 expect(result.source).toBe('critique');
             }
         });
 
-        it('devrait bypasser même sans abonnement pour CRITIQUE (catégorie)', async () => {
+        it('devrait bypasser même sans abonnement pour les modules critiques (estCritique)', async () => {
             mockCatalogueFindOne.mockResolvedValue(
-                mockCatalogueModule({ code: 'monitoring', categorie: 'CRITIQUE' }),
+                mockCatalogueModule({ code: 'monitoring', categorie: 'GRATUIT', estCritique: true }),
             );
 
             const result = await service.check('etab-1', 'monitoring');
@@ -192,9 +193,9 @@ describe('EntitlementService', () => {
     // Abonnement ACTIF + plan inclus
     // =============================================
     describe('Abonnement ACTIF + plan inclus', () => {
-        it('devrait retourner accessible=true si module dans plan.modulesInclus', async () => {
+        it('devrait retourner accessible=true si module dans plan.entitlements.modules', async () => {
             mockCatalogueFindOne.mockResolvedValue(mockCatalogueModule({ code: 'eleves' }));
-            mockAbonnementFindOne.mockResolvedValue(mockAbonnement());
+            mockAbonnementFind.mockResolvedValue([mockAbonnement()]);
 
             const result = await service.check('etab-1', 'eleves');
 
@@ -208,53 +209,55 @@ describe('EntitlementService', () => {
     // =============================================
     // Pas d'abonnement
     // =============================================
-    describe('Pas d\'abonnement', () => {
-        it('devrait retourner OK si actifParDefaut et pas d\'abonnement', async () => {
+    describe('Pas d\'abonnement — v3 : aucun accès sans plan', () => {
+        it('devrait retourner AUCUN_PLAN même si actifParDefaut (faille fermée v3)', async () => {
             mockCatalogueFindOne.mockResolvedValue(
                 mockCatalogueModule({ code: 'cms', actifParDefaut: true }),
             );
-            mockAbonnementFindOne.mockResolvedValue(null);
+            mockAbonnementFind.mockResolvedValue([]);
 
             const result = await service.check('etab-1', 'cms');
 
-            expect(result.accessible).toBe(true);
+            expect(result.accessible).toBe(false);
+            expect(result.raison).toBe('AUCUN_PLAN');
             expect(result.source).toBe('catalogue');
         });
 
-        it('devrait retourner ABONNEMENT_INACTIF si pas actifParDefaut et pas d\'abonnement', async () => {
+        it('devrait retourner AUCUN_PLAN si pas d\'abonnement', async () => {
             mockCatalogueFindOne.mockResolvedValue(
                 mockCatalogueModule({ code: 'cantine', actifParDefaut: false }),
             );
-            mockAbonnementFindOne.mockResolvedValue(null);
+            mockAbonnementFind.mockResolvedValue([]);
 
             const result = await service.check('etab-1', 'cantine');
 
             expect(result.accessible).toBe(false);
-            expect(result.raison).toBe('ABONNEMENT_INACTIF');
+            expect(result.raison).toBe('AUCUN_PLAN');
         });
     });
 
     // =============================================
     // Abonnement EXPIRE / SUSPENDU
     // =============================================
-    describe('Abonnement EXPIRE / SUSPENDU', () => {
-        it('devrait retourner ABONNEMENT_EXPIRE', async () => {
+    describe('Abonnement EXPIRE — dégradation (v3)', () => {
+        it('devrait retourner DEGRADATION_ARCHIVE si EXPIRE sans dateExpirationReelle', async () => {
             mockCatalogueFindOne.mockResolvedValue(mockCatalogueModule());
-            mockAbonnementFindOne.mockResolvedValue(
+            mockAbonnementFind.mockResolvedValue([
                 mockAbonnement({ statut: 'EXPIRE' }),
-            );
+            ]);
+            mockStrategieFind.mockResolvedValue([]);
 
             const result = await service.check('etab-1', 'test-module');
 
             expect(result.accessible).toBe(false);
-            expect(result.raison).toBe('ABONNEMENT_EXPIRE');
+            expect(result.raison).toBe('DEGRADATION_ARCHIVE');
         });
 
         it('devrait retourner ABONNEMENT_SUSPENDU', async () => {
             mockCatalogueFindOne.mockResolvedValue(mockCatalogueModule());
-            mockAbonnementFindOne.mockResolvedValue(
+            mockAbonnementFind.mockResolvedValue([
                 mockAbonnement({ statut: 'SUSPENDU' }),
-            );
+            ]);
 
             const result = await service.check('etab-1', 'test-module');
 
@@ -269,7 +272,7 @@ describe('EntitlementService', () => {
     describe('Override groupe', () => {
         it('devrait retourner source=groupe si module actif via groupe', async () => {
             mockCatalogueFindOne.mockResolvedValue(mockCatalogueModule({ code: 'transport' }));
-            mockAbonnementFindOne.mockResolvedValue(mockAbonnement());
+            mockAbonnementFind.mockResolvedValue([mockAbonnement()]);
             mockGroupeLienFindOne.mockResolvedValue({ groupeId: 'groupe-1' });
             mockModulesGroupeFind.mockResolvedValue([
                 { module: { code: 'transport' }, actif: true },
@@ -283,7 +286,7 @@ describe('EntitlementService', () => {
 
         it('devrait retourner OVERRIDE_DESACTIVE si groupe désactive le module', async () => {
             mockCatalogueFindOne.mockResolvedValue(mockCatalogueModule({ code: 'transport' }));
-            mockAbonnementFindOne.mockResolvedValue(mockAbonnement());
+            mockAbonnementFind.mockResolvedValue([mockAbonnement()]);
             mockGroupeLienFindOne.mockResolvedValue({ groupeId: 'groupe-1' });
             mockModulesGroupeFind.mockResolvedValue([
                 { module: { code: 'transport' }, actif: false },
@@ -305,10 +308,10 @@ describe('EntitlementService', () => {
             mockCatalogueFindOne.mockResolvedValue(
                 mockCatalogueModule({ code: 'clubs' }),
             );
-            mockAbonnementFindOne.mockResolvedValue(mockAbonnement());
+            mockAbonnementFind.mockResolvedValue([mockAbonnement()]);
             mockGroupeLienFindOne.mockResolvedValue(null);
             mockAbonnementModuleFind.mockResolvedValue([
-                { moduleOptionnel: { slug: 'clubs' }, actif: true },
+                { module: { code: 'clubs' }, actif: true },
             ]);
 
             const result = await service.check('etab-1', 'clubs');
@@ -326,9 +329,9 @@ describe('EntitlementService', () => {
             mockCatalogueFindOne.mockResolvedValue(
                 mockCatalogueModule({ code: 'orientation', planMinimal: 'pro' }),
             );
-            mockAbonnementFindOne.mockResolvedValue(
-                mockAbonnement({ plan: { slug: 'starter', nom: 'Starter', modulesInclus: [] } }),
-            );
+            mockAbonnementFind.mockResolvedValue([
+                mockAbonnement({ plan: { slug: 'starter', nom: 'Starter', entitlements: { modules: [] } } }),
+            ]);
             mockGroupeLienFindOne.mockResolvedValue(null);
             mockAbonnementModuleFind.mockResolvedValue([]);
 
@@ -345,7 +348,10 @@ describe('EntitlementService', () => {
     // isAccessible — boolean shortcut
     // =============================================
     describe('isAccessible — boolean shortcut', () => {
-        it('devrait retourner true pour module accessible', async () => {
+        it('devrait retourner true pour module critique', async () => {
+            mockCatalogueFindOne.mockResolvedValue(
+                mockCatalogueModule({ code: 'auth', estCritique: true, categorie: 'GRATUIT' }),
+            );
             const result = await service.isAccessible('etab-1', 'auth');
             expect(result).toBe(true);
         });
@@ -356,7 +362,7 @@ describe('EntitlementService', () => {
     // =============================================
     describe('getStatutAbonnement', () => {
         it('devrait retourner AUCUN si pas d\'abonnement', async () => {
-            mockAbonnementFindOne.mockResolvedValue(null);
+            mockAbonnementFind.mockResolvedValue([]);
 
             const result = await service.getStatutAbonnement('etab-1');
 
@@ -365,9 +371,9 @@ describe('EntitlementService', () => {
         });
 
         it('devrait retourner les infos si abonnement actif', async () => {
-            mockAbonnementFindOne.mockResolvedValue(
+            mockAbonnementFind.mockResolvedValue([
                 mockAbonnement({ statut: 'ACTIF' }),
-            );
+            ]);
 
             const result = await service.getStatutAbonnement('etab-1');
 

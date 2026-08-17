@@ -20,16 +20,14 @@ import { AppError } from '@common/filters/error.filter';
 import {
     PlanAbonnement,
     StatutPlan,
-    TrancheEleves,
     AbonnementClient,
     StatutAbonnement,
     CycleFacturation,
     Facture,
     StatutFacture,
     LigneFacture,
-    ModuleOptionnel,
+    TypeLigneFacture,
     AbonnementModule,
-    QuotaUtilisation,
     FeatureFlagTenant,
     ModuleCatalogue,
     CategorieModule,
@@ -38,9 +36,7 @@ import { FacturationService } from '../services/facturation.service';
 import { FeatureFlagService } from '../services/feature-flags.service';
 import { quotaService } from '../services/quota.service';
 import { FacturePdfService } from '../services/facture-pdf.service';
-// Phase 3 — Refonte SaaS v5
-import { TrancheConfigService } from '../services/tranche-config.service';
-import { ModeFacturationTranches } from '../entities/plan-abonnement.entity';
+// TrancheConfigService supprimé (Refonte v3 — tarification prix/élève + franchise)
 // Phase 7 Lot A — Refonte SaaS v7 (catalogue modules unifié)
 // ModuleResolutionService supprimé (fusion P0.1) — utiliser entitlementService
 import { seedModulesCatalogue } from '@database/seeds/system/seed-modules-catalogue';
@@ -77,8 +73,7 @@ platformBillingRouter.get('/plans', async (_req: Request, res: Response, next: N
     try {
         const planRepo = AppDataSource.getRepository(PlanAbonnement);
         const plans = await planRepo.find({
-            relations: ['tranches'],
-            order: { ordre: 'ASC' },
+            order: { rang: 'ASC', ordre: 'ASC' },
         });
         res.json({ success: true, data: plans });
     } catch (error) {
@@ -95,7 +90,7 @@ platformBillingRouter.get('/plans/:id', async (req: Request, res: Response, next
         const planRepo = AppDataSource.getRepository(PlanAbonnement);
         const plan = await planRepo.findOne({
             where: { id: req.params.id },
-            relations: ['tranches', 'abonnements'],
+            relations: ['abonnements'],
         });
         if (!plan) throw new AppError('Plan introuvable', 404, 'PLAN_NOT_FOUND');
         res.json({ success: true, data: plan });
@@ -111,24 +106,41 @@ platformBillingRouter.get('/plans/:id', async (req: Request, res: Response, next
 platformBillingRouter.post('/plans', async (req: Request, res: Response, next: NextFunction) => {
     try {
         const planRepo = AppDataSource.getRepository(PlanAbonnement);
-        const { nom, slug, description, prixBase, devise, maxEleves, maxUtilisateurs, maxClasses, stockageMaxGo, smsInclus, modulesInclus, featureFlags, ordre, badge } = req.body;
+        const {
+            nom, slug, description, prixBase, devise,
+            rang, estParDefaut, visiblePubliquement,
+            tarification, quotas, entitlements, cyclesAutorises, essai,
+            ordre, badge,
+        } = req.body;
+
+        if (!nom || !slug) {
+            throw new AppError('nom et slug requis', 400, 'MISSING_FIELDS');
+        }
+
+        // Un seul plan par défaut
+        if (estParDefaut === true) {
+            await planRepo.update({ estParDefaut: true }, { estParDefaut: false });
+        }
 
         const plan = planRepo.create({
-            nom, slug, description, prixBase,
+            nom, slug, description,
+            prixBase: prixBase ?? tarification?.prixBase ?? 0,
             devise: devise || 'XAF',
-            maxEleves: maxEleves || 300,
-            maxUtilisateurs: maxUtilisateurs || 0,
-            maxClasses: maxClasses || 0,
-            stockageMaxGo: stockageMaxGo || 0,
-            smsInclus: smsInclus || 0,
-            modulesInclus: modulesInclus || [],
-            featureFlags: featureFlags || {},
+            rang: rang || 0,
+            estParDefaut: estParDefaut || false,
+            visiblePubliquement: visiblePubliquement ?? true,
+            tarification: tarification || { prixBase: prixBase || 0, prixParEleve: 0, elevesInclusGratuits: 0 },
+            quotas: quotas || {},
+            entitlements: entitlements || { modules: [], fonctionnalites: [] },
+            cyclesAutorises: cyclesAutorises || ['MENSUEL', 'ANNUEL'],
+            essai: essai || { autorise: false },
             statut: StatutPlan.ACTIF,
             ordre: ordre || 0,
             badge,
         });
 
         const saved = await planRepo.save(plan);
+        void entitlementService.invalidate();
         res.status(201).json({ success: true, data: saved, message: 'Plan créé avec succès' });
     } catch (error) {
         next(error);
@@ -145,8 +157,14 @@ platformBillingRouter.put('/plans/:id', async (req: Request, res: Response, next
         const plan = await planRepo.findOne({ where: { id: req.params.id } });
         if (!plan) throw new AppError('Plan introuvable', 404, 'PLAN_NOT_FOUND');
 
+        // Un seul plan par défaut
+        if (req.body.estParDefaut === true) {
+            await planRepo.update({ estParDefaut: true }, { estParDefaut: false });
+        }
+
         Object.assign(plan, req.body);
         const saved = await planRepo.save(plan);
+        void entitlementService.invalidate();
         res.json({ success: true, data: saved, message: 'Plan mis à jour' });
     } catch (error) {
         next(error);
@@ -173,122 +191,7 @@ platformBillingRouter.delete('/plans/:id', async (req: Request, res: Response, n
     }
 });
 
-// --- TRANCHES ---
-
-/**
- * POST /api/platform/facturation/plans/:planId/tranches
- * Ajouter une tranche à un plan
- */
-platformBillingRouter.post('/plans/:planId/tranches', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const trancheRepo = AppDataSource.getRepository(TrancheEleves);
-        const { minEleves, maxEleves, montantSupplementaire, label } = req.body;
-
-        const tranche = trancheRepo.create({
-            planId: req.params.planId,
-            minEleves,
-            maxEleves: maxEleves ?? null,
-            montantSupplementaire,
-            label,
-        });
-
-        const saved = await trancheRepo.save(tranche);
-        res.status(201).json({ success: true, data: saved });
-    } catch (error) {
-        next(error);
-    }
-});
-
-/**
- * PUT /api/platform/facturation/tranches/:id
- * Modifier une tranche
- */
-platformBillingRouter.put('/tranches/:id', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const trancheRepo = AppDataSource.getRepository(TrancheEleves);
-        const tranche = await trancheRepo.findOne({ where: { id: req.params.id } });
-        if (!tranche) throw new AppError('Tranche introuvable', 404, 'TRANCHE_NOT_FOUND');
-
-        Object.assign(tranche, req.body);
-        const saved = await trancheRepo.save(tranche);
-        res.json({ success: true, data: saved });
-    } catch (error) {
-        next(error);
-    }
-});
-
-/**
- * DELETE /api/platform/facturation/tranches/:id
- * Supprimer une tranche
- */
-platformBillingRouter.delete('/tranches/:id', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const trancheRepo = AppDataSource.getRepository(TrancheEleves);
-        const tranche = await trancheRepo.findOne({ where: { id: req.params.id } });
-        if (!tranche) throw new AppError('Tranche introuvable', 404, 'TRANCHE_NOT_FOUND');
-
-        await trancheRepo.remove(tranche);
-        res.json({ success: true, message: 'Tranche supprimée' });
-    } catch (error) {
-        next(error);
-    }
-});
-
-/**
- * DELETE /api/platform/facturation/plans/:planId/tranches
- * Supprimer toutes les tranches d'un plan (pour synchronisation)
- */
-platformBillingRouter.delete('/plans/:planId/tranches', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const trancheRepo = AppDataSource.getRepository(TrancheEleves);
-        const tranches = await trancheRepo.find({ where: { planId: req.params.planId } });
-        if (tranches.length > 0) {
-            await trancheRepo.remove(tranches);
-        }
-        res.json({ success: true, data: { deleted: tranches.length } });
-    } catch (error) {
-        next(error);
-    }
-});
-
-/**
- * GET /api/platform/facturation/tranches/simulate?planId=...&nbEleves=500
- * Simule l'impact des tranches pour un plan donné (Lot B v7)
- */
-platformBillingRouter.get('/tranches/simulate', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const planId = req.query.planId as string;
-        const nbEleves = parseInt(req.query.nbEleves as string, 10);
-        if (!planId || isNaN(nbEleves)) throw new AppError('planId et nbEleves requis', 400);
-
-        const planRepo = AppDataSource.getRepository(PlanAbonnement);
-        const plan = await planRepo.findOne({
-            where: { id: planId },
-            relations: ['tranches'],
-        });
-        if (!plan) throw new AppError('Plan introuvable', 404, 'PLAN_NOT_FOUND');
-
-        const tranchesPlan = (plan.tranches ?? [])
-            .filter(t => t.actif)
-            .sort((a, b) => a.ordre - b.ordre)
-            .map(t => ({
-                id: t.id,
-                ordre: t.ordre,
-                minEleves: t.minEleves,
-                maxEleves: t.maxEleves,
-                montantSupplementaire: t.montantSupplementaire,
-                label: t.label,
-                source: 'plan' as const,
-            }));
-
-        const trancheConfigService = new TrancheConfigService();
-        const result = trancheConfigService.simulerMontantTranches(plan, tranchesPlan, nbEleves);
-
-        res.json({ success: true, data: result });
-    } catch (error) {
-        next(error);
-    }
-});
+// --- TRANCHES supprimées (Refonte v3 — tarification prix/élève + franchise) ---
 
 // --- ABONNEMENTS CLIENTS ---
 
@@ -337,9 +240,6 @@ platformBillingRouter.post('/abonnements', async (req: Request, res: Response, n
             cycleFacturation || CycleFacturation.MENSUEL
         );
 
-        // Synchroniser les quotas
-        await quotaService.synchroniserQuotas(etablissementId);
-
         res.status(201).json({ success: true, data: abonnement, message: 'Abonnement souscrit' });
     } catch (error) {
         next(error);
@@ -357,9 +257,6 @@ platformBillingRouter.put('/abonnements/:id/upgrade', async (req: Request, res: 
 
         const facturationService = new FacturationService();
         const abonnement = await facturationService.changerPlan(req.params.id, nouveauPlanId);
-
-        // Resynchroniser les quotas
-        await quotaService.synchroniserQuotas(abonnement.etablissementId);
 
         res.json({ success: true, data: abonnement, message: 'Abonnement mis à jour' });
     } catch (error) {
@@ -506,71 +403,7 @@ platformBillingRouter.get('/factures/:id/pdf-data', async (req: Request, res: Re
     }
 });
 
-// --- MODULES OPTIONNELS ---
-
-/**
- * GET /api/platform/facturation/modules
- * Liste les modules optionnels
- */
-platformBillingRouter.get('/modules', async (_req: Request, res: Response, next: NextFunction) => {
-    try {
-        const moduleRepo = AppDataSource.getRepository(ModuleOptionnel);
-        const modules = await moduleRepo.find({ order: { ordre: 'ASC' } });
-        res.json({ success: true, data: modules });
-    } catch (error) {
-        next(error);
-    }
-});
-
-/**
- * POST /api/platform/facturation/modules
- * Créer un module optionnel
- */
-platformBillingRouter.post('/modules', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const moduleRepo = AppDataSource.getRepository(ModuleOptionnel);
-        const module = moduleRepo.create(req.body);
-        const saved = await moduleRepo.save(module);
-        res.status(201).json({ success: true, data: saved });
-    } catch (error) {
-        next(error);
-    }
-});
-
-/**
- * PUT /api/platform/facturation/modules/:id
- * Modifier un module optionnel
- */
-platformBillingRouter.put('/modules/:id', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const moduleRepo = AppDataSource.getRepository(ModuleOptionnel);
-        const module = await moduleRepo.findOne({ where: { id: req.params.id } });
-        if (!module) throw new AppError('Module introuvable', 404, 'MODULE_NOT_FOUND');
-
-        Object.assign(module, req.body);
-        const saved = await moduleRepo.save(module);
-        res.json({ success: true, data: saved });
-    } catch (error) {
-        next(error);
-    }
-});
-
-/**
- * DELETE /api/platform/facturation/modules/:id
- * Supprimer un module optionnel
- */
-platformBillingRouter.delete('/modules/:id', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const moduleRepo = AppDataSource.getRepository(ModuleOptionnel);
-        const module = await moduleRepo.findOne({ where: { id: req.params.id } });
-        if (!module) throw new AppError('Module introuvable', 404, 'MODULE_NOT_FOUND');
-
-        await moduleRepo.remove(module);
-        res.json({ success: true, message: 'Module supprimé' });
-    } catch (error) {
-        next(error);
-    }
-});
+// --- MODULES OPTIONNELS supprimés (Refonte v3 — catalogue unique modules_catalogue) ---
 
 // --- CATALOGUE MODULES UNIFIÉ (Lot A — Refonte SaaS v7) ---
 // Source de vérité unique : modules_catalogue (remplace les 3 registres divergents)
@@ -1027,7 +860,7 @@ clientBillingRouter.get('/mon-abonnement', authMiddleware, async (req: Request, 
         const aboRepo = AppDataSource.getRepository(AbonnementClient);
         const abonnement = await aboRepo.findOne({
             where: { etablissementId, statut: StatutAbonnement.ACTIF },
-            relations: ['plan', 'plan.tranches'],
+            relations: ['plan'],
         });
 
         if (!abonnement) {
@@ -1115,9 +948,8 @@ clientBillingRouter.get('/plans', authMiddleware, async (_req: Request, res: Res
     try {
         const planRepo = AppDataSource.getRepository(PlanAbonnement);
         const plans = await planRepo.find({
-            where: { actif: true, visible: true },
-            relations: ['tranches'],
-            order: { ordre: 'ASC' },
+            where: { actif: true, visible: true, visiblePubliquement: true },
+            order: { rang: 'ASC', ordre: 'ASC' },
         });
         res.json({ success: true, data: plans });
     } catch (error) {
@@ -1131,7 +963,8 @@ clientBillingRouter.get('/plans', authMiddleware, async (_req: Request, res: Res
 
 /**
  * POST /api/billing/simuler
- * Simuler un plan avec un nombre d'élèves donné
+ * Simuler un plan avec un nombre d'élèves donné (formule v3 :
+ * prixBase + max(0, nbÉlèves − franchise) × prixParEleve, coef cycle).
  */
 clientBillingRouter.post('/simuler', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -1141,42 +974,32 @@ clientBillingRouter.post('/simuler', authMiddleware, async (req: Request, res: R
         }
 
         const planRepo = AppDataSource.getRepository(PlanAbonnement);
-        const plan = await planRepo.findOne({
-            where: { id: planId, actif: true },
-            relations: ['tranches'],
-        });
+        const plan = await planRepo.findOne({ where: { id: planId, actif: true } });
         if (!plan) throw new AppError('Plan introuvable', 404, 'PLAN_NOT_FOUND');
 
-        // Calcul du montant selon les tranches
-        let montantSupplementaire = 0;
-        if (plan.tranches && nombreEleves > plan.maxEleves) {
-            const elevesSupplementaires = nombreEleves - plan.maxEleves;
-            for (const tranche of plan.tranches.sort((a, b) => a.minEleves - b.minEleves)) {
-                if (elevesSupplementaires >= tranche.minEleves) {
-                    const elevesDansTranche = tranche.maxEleves
-                        ? Math.min(elevesSupplementaires - tranche.minEleves + 1, tranche.maxEleves - tranche.minEleves + 1)
-                        : elevesSupplementaires - tranche.minEleves + 1;
-                    if (elevesDansTranche > 0) {
-                        montantSupplementaire += elevesDansTranche * tranche.montantSupplementaire;
-                    }
-                }
-            }
-        }
-
-        const montantTotal = plan.prixBase + montantSupplementaire;
-        const cycle = cycleFacturation || 'MENSUEL';
+        const facturationService = new FacturationService();
+        const calcul = await facturationService.calculerMontantMensuel(
+            planId,
+            nombreEleves,
+            undefined,
+            cycleFacturation || 'MENSUEL'
+        );
 
         res.json({
             success: true,
             data: {
                 plan: { id: plan.id, nom: plan.nom, slug: plan.slug },
                 nombreEleves,
-                prixBase: plan.prixBase,
-                montantSupplementaire,
-                montantTotal,
+                prixBase: calcul.montantBase,
+                montantElevesSupplementaires: calcul.montantElevesSupplementaires,
+                coefCycle: calcul.coefCycle,
+                montantHT: calcul.montantHT,
+                montantTVA: calcul.montantTVA,
+                montantTotal: calcul.montantTotal,
                 devise: plan.devise,
-                cycleFacturation: cycle,
-                modulesInclus: plan.modulesInclus,
+                cycleFacturation: calcul.cycleCode,
+                modulesInclus: plan.entitlements?.modules ?? [],
+                fonctionnalitesIncluses: plan.entitlements?.fonctionnalites ?? [],
             },
         });
     } catch (error) {
@@ -1204,9 +1027,6 @@ clientBillingRouter.patch('/abonnement/upgrade', authMiddleware, async (req: Req
 
         const facturationService = new FacturationService();
         const updated = await facturationService.changerPlan(abonnement.id, nouveauPlanId);
-
-        // Resynchroniser les quotas
-        await quotaService.synchroniserQuotas(etablissementId);
 
         res.json({ success: true, data: updated, message: 'Plan mis à jour avec succès' });
     } catch (error) {
@@ -1299,9 +1119,10 @@ clientBillingRouter.post('/factures/:id/avoir', authMiddleware, async (req: Requ
             devise: facture.devise,
             lignes: [{
                 description: `Avoir sur facture ${facture.numero} — Motif: ${motif}`,
+                type: TypeLigneFacture.REMISE,
                 quantite: 1,
-                montantUnitaire: -montantAvoir,
-                montantTotal: -montantAvoir,
+                montant: -montantAvoir,
+                total: -montantAvoir,
             }],
         });
 
@@ -1347,111 +1168,9 @@ clientBillingRouter.get('/historique-plans', authMiddleware, async (req: Request
 });
 
 // =============================================
-// TRANCHE CONFIG & MODULES — Routes client (ADMIN)
+// MODULES — Routes client (ADMIN)
+// Routes tranches supprimées (Refonte v3 — tarification prix/élève + franchise)
 // =============================================
-
-const trancheConfigService = new TrancheConfigService();
-
-/**
- * GET /api/billing/tranches/resolved
- * Résout les tranches applicables (cascade : établissement → plan → système)
- */
-clientBillingRouter.get('/tranches/resolved', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const etablissementId = req.etablissementId;
-        if (!etablissementId) throw new AppError('Établissement non identifié', 400);
-
-        const tranches = await trancheConfigService.getResolvedTranches(etablissementId);
-        res.json({ success: true, data: tranches });
-    } catch (error) { next(error); }
-});
-
-/**
- * GET /api/billing/tranches/simulate?nbEleves=500
- * Simule le calcul complet des tranches (Lot B v7)
- */
-clientBillingRouter.get('/tranches/simulate', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const etablissementId = req.etablissementId;
-        const nbEleves = parseInt(req.query.nbEleves as string, 10);
-        if (!etablissementId || isNaN(nbEleves)) throw new AppError('Paramètres invalides', 400);
-
-        const result = await trancheConfigService.calculerMontantTranches(etablissementId, nbEleves);
-        res.json({ success: true, data: result });
-    } catch (error) { next(error); }
-});
-
-/**
- * POST /api/billing/simuler
- * Simulation complète : prix base + tranches + TVA (Lot B v7)
- * Body: { nombreEleves: number }
- */
-clientBillingRouter.post('/simuler', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const etablissementId = req.etablissementId;
-        const { nombreEleves } = req.body;
-        if (!etablissementId || !nombreEleves) throw new AppError('Établissement et nombreEleves requis', 400);
-
-        const calcul = await trancheConfigService.calculerMontantTranches(etablissementId, nombreEleves);
-
-        // Calcul TVA OHADA (19.25%)
-        const TAUX_TVA = 1925; // centièmes
-        const montantHT = calcul.montantBase + calcul.montantTranches;
-        const montantTVA = Math.round(montantHT * TAUX_TVA / 10000);
-        const montantTotal = montantHT + montantTVA;
-
-        res.json({
-            success: true,
-            data: {
-                montantBase: calcul.montantBase,
-                montantTranches: calcul.montantTranches,
-                montantHT,
-                tauxTVA: TAUX_TVA / 100,
-                montantTVA,
-                montantTotal,
-                nbEleves: calcul.nbEleves,
-                trancheActive: calcul.trancheActive,
-                mode: calcul.mode,
-                depassement: calcul.depassement,
-            },
-        });
-    } catch (error) { next(error); }
-});
-
-/**
- * PUT /api/billing/tranches
- * Crée ou met à jour un override de tranche pour l'établissement
- */
-clientBillingRouter.put('/tranches', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const etablissementId = req.etablissementId;
-        if (!etablissementId) throw new AppError('Établissement non identifié', 400);
-
-        const { ordre, minEleves, maxEleves, montantSupplementaire, label, trancheOriginaleId } = req.body;
-        if (ordre === undefined || minEleves === undefined || montantSupplementaire === undefined) {
-            throw new AppError('Champs requis : ordre, minEleves, montantSupplementaire', 400);
-        }
-
-        const saved = await trancheConfigService.upsertEtablissementTranche(etablissementId, {
-            ordre, minEleves, maxEleves, montantSupplementaire, label, trancheOriginaleId,
-        });
-        res.json({ success: true, data: saved, message: 'Tranche enregistrée' });
-    } catch (error) { next(error); }
-});
-
-/**
- * DELETE /api/billing/tranches/:id
- * Supprime un override de tranche
- */
-clientBillingRouter.delete('/tranches/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const etablissementId = req.etablissementId;
-        if (!etablissementId) throw new AppError('Établissement non identifié', 400);
-
-        await trancheConfigService.deleteEtablissementTranche(etablissementId, req.params.id);
-        res.json({ success: true, message: 'Tranche supprimée' });
-    } catch (error) { next(error); }
-});
 
 /**
  * GET /api/billing/modules/resolved
@@ -1464,6 +1183,35 @@ clientBillingRouter.get('/modules/resolved', authMiddleware, async (req: Request
 
         const modules = await entitlementService.getResolvedModules(etablissementId);
         res.json({ success: true, data: modules });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /api/billing/entitlement/resolve?codes=a,b,c
+ * Refonte v3 — résolution batch des entitlements pour une liste de modules.
+ * Retourne le verdict complet par code (accessible, raison, source, plan…).
+ */
+clientBillingRouter.get('/entitlement/resolve', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.etablissementId;
+        if (!etablissementId) throw new AppError('Établissement non identifié', 400);
+
+        const codesParam = (req.query.codes as string) || '';
+        const codes = codesParam.split(',').map((c) => c.trim()).filter(Boolean);
+
+        const [resultats, statutAbo] = await Promise.all([
+            codes.length ? entitlementService.resolveBatch(etablissementId, codes) : entitlementService.checkAll(etablissementId),
+            entitlementService.getStatutAbonnement(etablissementId),
+        ]);
+
+        res.setHeader('X-Cache-Status', entitlementService.lastCacheStatus);
+        res.json({
+            success: true,
+            data: {
+                modules: resultats,
+                abonnement: statutAbo,
+            },
+        });
     } catch (error) { next(error); }
 });
 
@@ -1588,6 +1336,193 @@ clientBillingRouter.get('/modules/mes-modules', authMiddleware, async (req: Requ
     } catch (error) { next(error); }
 });
 
+// --- REMISES (client — lecture) ---
+
+/**
+ * GET /api/billing/remises
+ * Liste les remises actives applicables au tenant
+ */
+clientBillingRouter.get('/remises', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { remiseService } = await import('../services/remise.service');
+        const remises = await remiseService.findAll({ actif: true });
+        res.json({ success: true, data: remises });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /api/billing/remises/verify?code=XXX
+ * Vérifie la validité d'un code coupon/promo
+ */
+clientBillingRouter.get('/remises/verify', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const code = (req.query.code as string || '').trim();
+        if (!code) {
+            res.json({ success: true, data: { valide: false, message: 'Code requis' } });
+            return;
+        }
+        const { remiseService } = await import('../services/remise.service');
+        const remise = await remiseService.findByCoupon(code);
+        if (!remise) {
+            res.json({ success: true, data: { valide: false, message: 'Code promo invalide ou expiré' } });
+            return;
+        }
+        // Vérifier les conditions supplémentaires
+        const now = new Date();
+        if (remise.dateFin && now > new Date(remise.dateFin)) {
+            res.json({ success: true, data: { valide: false, message: 'Code promo expiré' } });
+            return;
+        }
+        if (remise.maxUtilisations !== null && remise.maxUtilisations !== undefined && remise.utilisations >= remise.maxUtilisations) {
+            res.json({ success: true, data: { valide: false, message: 'Code promo épuisé' } });
+            return;
+        }
+        res.json({
+            success: true,
+            data: {
+                valide: true,
+                code: remise.code,
+                nom: remise.nom,
+                typeRemise: remise.typeRemise,
+                valeur: Number(remise.valeur),
+            },
+        });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /api/billing/mon-abonnement/detail
+ * Détail complet de l'abonnement : plan + packs + remises + quotas effectifs
+ */
+clientBillingRouter.get('/mon-abonnement/detail', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.etablissementId || req.utilisateur?.etablissementId;
+        if (!etablissementId) throw new AppError('Établissement non identifié', 400);
+
+        const aboRepo = AppDataSource.getRepository(AbonnementClient);
+        const abonnement = await aboRepo.findOne({
+            where: [
+                { etablissementId, statut: StatutAbonnement.ACTIF },
+                { etablissementId, statut: StatutAbonnement.ESSAI },
+            ],
+            relations: ['plan'],
+            order: { createdAt: 'DESC' },
+        });
+
+        if (!abonnement) {
+            res.json({ success: true, data: null });
+            return;
+        }
+
+        // Packs souscrits
+        const { packQuotaService } = await import('../services/pack-quota.service');
+        const packsSouscrits = await packQuotaService.getPacksSouscrits(abonnement.id);
+
+        // Remises actives
+        const { remiseService } = await import('../services/remise.service');
+        const toutesRemises = await remiseService.findAll({ actif: true });
+        const remisesActives = toutesRemises.filter((r) => {
+            if (r.cible === 'GLOBAL') return true;
+            if (r.cible === 'PLAN') return r.cibleId === abonnement.planId;
+            if (r.cible === 'TENANT') return r.cibleId === etablissementId;
+            if (r.cible === 'CYCLE') return r.cibleCycle === abonnement.cycleFacturation;
+            return false;
+        });
+
+        // Quotas effectifs par ressource
+        const ressources = ['eleves', 'utilisateurs', 'classes', 'stockageGo', 'sms'];
+        const quotasEffectifs: Record<string, any> = {};
+        for (const ressource of ressources) {
+            const qe = await packQuotaService.quotaEffectif(etablissementId, ressource);
+            // Utilisation actuelle
+            const { UsageUnifie } = await import('../entities/usage-unifie.entity');
+            const usageRepo = AppDataSource.getRepository(UsageUnifie);
+            const utilisation = await usageRepo.count({
+                where: { etablissementId, ressource } as any,
+            });
+            quotasEffectifs[ressource] = { ...qe, utilisation };
+        }
+
+        res.json({
+            success: true,
+            data: {
+                ...abonnement,
+                packsSouscrits,
+                remisesActives,
+                quotasEffectifs,
+            },
+        });
+    } catch (error) { next(error); }
+});
+
+// --- PACKS QUOTA (client — catalogue + souscription) ---
+
+/**
+ * GET /api/billing/packs
+ * Catalogue des packs quota disponibles
+ */
+clientBillingRouter.get('/packs', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { packQuotaService } = await import('../services/pack-quota.service');
+        const packs = await packQuotaService.findAllPacks({ actif: true });
+        res.json({ success: true, data: packs });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /api/billing/packs/souscrits
+ * Packs souscrits par le tenant
+ */
+clientBillingRouter.get('/packs/souscrits', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.etablissementId || req.utilisateur?.etablissementId;
+        const aboRepo = AppDataSource.getRepository(AbonnementClient);
+        const abonnement = await aboRepo.findOne({
+            where: [
+                { etablissementId, statut: StatutAbonnement.ACTIF },
+                { etablissementId, statut: StatutAbonnement.ESSAI },
+            ],
+            order: { createdAt: 'DESC' },
+        });
+        if (!abonnement) {
+            res.json({ success: true, data: [] });
+            return;
+        }
+        const { packQuotaService } = await import('../services/pack-quota.service');
+        const souscrits = await packQuotaService.getPacksSouscrits(abonnement.id);
+        res.json({ success: true, data: souscrits });
+    } catch (error) { next(error); }
+});
+
+/**
+ * POST /api/billing/packs/:id/souscrire
+ * Souscrire un pack quota (facturation prorata)
+ */
+clientBillingRouter.post('/packs/:id/souscrire', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const etablissementId = req.etablissementId || req.utilisateur?.etablissementId;
+        if (!etablissementId) throw new AppError('Établissement non identifié', 400);
+        const { packQuotaService } = await import('../services/pack-quota.service');
+        const souscription = await packQuotaService.souscrirePack(etablissementId, req.params.id);
+        res.status(201).json({ success: true, data: souscription });
+    } catch (error) { next(error); }
+});
+
+// --- CYCLES DE FACTURATION (client — lecture) ---
+
+/**
+ * GET /api/billing/cycles
+ * Cycles de facturation disponibles
+ */
+clientBillingRouter.get('/cycles', authMiddleware, async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { CycleFacturationConfig } = await import('../entities/cycle-facturation-config.entity');
+        const cycleRepo = AppDataSource.getRepository(CycleFacturationConfig);
+        const cycles = await cycleRepo.find({ where: { actif: true }, order: { ordre: 'ASC' } });
+        res.json({ success: true, data: cycles });
+    } catch (error) { next(error); }
+});
+
 // =============================================
 // Routes GROUPES SAAS (Plateforme — SUPER_ADMIN)
 // =============================================
@@ -1709,30 +1644,7 @@ platformBillingRouter.put('/groupes/:id/modules/:moduleId', async (req: Request,
     } catch (error) { next(error); }
 });
 
-/**
- * GET /api/platform/facturation/groupes/:id/tranches
- * Liste les tranches configurées pour le groupe
- */
-platformBillingRouter.get('/groupes/:id/tranches', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const tranches = await groupeSaaSService.getTranchesGroupe(req.params.id);
-        res.json({ success: true, data: tranches });
-    } catch (error) { next(error); }
-});
-
-/**
- * PUT /api/platform/facturation/groupes/:id/tranches
- * Configure les tranches pour le groupe (remplace l'existant)
- */
-platformBillingRouter.put('/groupes/:id/tranches', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const { tranches } = req.body;
-        if (!Array.isArray(tranches)) throw new AppError('tranches (array) requis', 400, 'VALIDATION_ERROR');
-
-        const result = await groupeSaaSService.setTranchesGroupe(req.params.id, tranches);
-        res.json({ success: true, data: result });
-    } catch (error) { next(error); }
-});
+// Routes tranches groupe supprimées (Refonte v3 — tarification prix/élève + franchise)
 
 /**
  * GET /api/platform/facturation/groupes/:id/abonnement
@@ -2175,6 +2087,10 @@ platformBillingRouter.get('/webhooks/modules/logs', async (req: Request, res: Re
         res.json({ success: true, data: logs });
     } catch (error) { next(error); }
 });
+
+// Routes COMMERCE v3 (remises, packs, cycles) — voir platform.routes.ts
+// Ces routes sont montées directement sur le router plateforme (/api/platform/*)
+// et ne doivent PAS être dupliquées ici dans platformBillingRouter.
 
 // =============================================
 // Exports

@@ -1,40 +1,28 @@
 /**
  * ==================================
- * eLISAschool - Platform Configuration v3 — Sidebar Navigation
+ * eLISAschool - Platform Configuration v4 — Paramètres Système
  * ==================================
- * Refonte v3 : navigation sidebar verticale avec indicatrice animée,
- * backgrounds tintés par section, recherche inline, breadcrumb contextuel,
- * indicateurs statut, collapse/expand, et drawer mobile.
+ * Refonte v4 : nettoyage audit panel admin (Phase 6).
+ * Sections réduites à 3 : Système, Sécurité, Régional.
+ * Sauvegardes/Historique → /platform/backups (page dédiée).
+ * Notifications → /platform/notifications-config (page dédiée).
  *
- * Sections :
- *   1. Système & Application (SYSTEME)
- *   2. Sécurité & Authentification (SECURITE)
- *   3. Modules & Features
- *   4. Notifications (NOTIFICATION)
- *   5. Régional & Langue (REGIONAL)
- *   6. Sauvegarde & Restauration
- *   7. Historique & Audit
- *
- * Version: 3.0.0
+ * Version: 4.0.0
  * Auteur: franck arlos chendjou
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { useState, useCallback, useMemo, lazy, Suspense } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Globe, Shield, Bell, RefreshCw,
-    Server, ToggleLeft, History, HardDrive,
-    Loader2, ChevronDown, Search,
+    Globe, Shield, RefreshCw,
+    Server, Loader2, ChevronDown, Search,
 } from 'lucide-react';
 import { useMediaQuery } from '@/hooks';
 import { ConfigSidebar } from '@/components/ui/ConfigSidebar';
 import type { ConfigSidebarSection } from '@/components/ui/ConfigSidebar';
-import { FeatureFlagsManager } from '@/features/admin/components/feature-flags-manager';
-import { ModulesTab } from '@/features/configuration/components/ModulesTab';
-import { HistoriqueTab } from '@/features/configuration/components/HistoriqueTab';
 import type { CategorieParametre } from '@/features/configuration/types/configuration.types';
 import {
     ParameterField,
@@ -49,17 +37,11 @@ import {
     hasCriticalChanges,
 } from '@/features/platform/configuration';
 
-// Lazy load BackupManagement (lourd, utilisé uniquement dans la section sauvegarde)
-const BackupManagementLazy = lazy(() =>
-    import('@/features/configuration/components/BackupManagement').then(m => ({
-        default: m.BackupManagement,
-    }))
-);
 
 // ==================================
 // Types
 // ==================================
-type SectionKey = 'systeme' | 'securite' | 'modules' | 'notifications' | 'regional' | 'sauvegarde' | 'historique';
+type SectionKey = 'systeme' | 'securite' | 'regional';
 
 interface SectionDef {
     key: SectionKey;
@@ -88,39 +70,15 @@ const SECTIONS: SectionDef[] = [
         tintBg: 'var(--color-danger-50)',
     },
     {
-        key: 'modules', labelKey: 'categories.modules', descriptionKey: 'sections.modules.description',
-        icon: ToggleLeft,
-        color: '#9333ea',
-        tintBg: 'rgba(147, 51, 234, 0.06)',
-    },
-    {
-        key: 'notifications', labelKey: 'categories.notifications', descriptionKey: 'sections.notifications.description',
-        icon: Bell, categorie: 'NOTIFICATION',
-        color: 'var(--color-warning-600)',
-        tintBg: 'var(--color-warning-50)',
-    },
-    {
         key: 'regional', labelKey: 'categories.regional', descriptionKey: 'sections.regional.description',
         icon: Globe, categorie: 'REGIONAL',
         color: 'var(--color-success-600)',
         tintBg: 'var(--color-success-50)',
     },
-    {
-        key: 'sauvegarde', labelKey: 'categories.sauvegarde', descriptionKey: 'sections.sauvegarde.description',
-        icon: HardDrive,
-        color: 'var(--color-text-secondary)',
-        tintBg: 'var(--color-surface-hover)',
-    },
-    {
-        key: 'historique', labelKey: 'categories.historique', descriptionKey: 'sections.historique.description',
-        icon: History,
-        color: 'var(--color-text-muted)',
-        tintBg: 'var(--color-surface-alt)',
-    },
 ];
 
 // Sections qui utilisent les paramètres (avec ParameterField)
-const PARAM_SECTIONS: SectionKey[] = ['systeme', 'securite', 'notifications', 'regional'];
+const PARAM_SECTIONS: SectionKey[] = ['systeme', 'securite', 'regional'];
 
 // ==================================
 // Animation variants (locaux à la page)
@@ -162,17 +120,15 @@ function PlatformConfigurationPage() {
         setActiveSectionState(key);
         try { localStorage.setItem(LS_ACTIVE_SECTION, key); } catch { /* ignore */ }
     }, []);
-    const [showFeatureFlags, setShowFeatureFlags] = useState(false);
     const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     const [isContentCollapsed, setIsContentCollapsed] = useState(false);
 
     // État recherche par section
     const [searchBySection, setSearchBySection] = useState<Record<SectionKey, string>>({
-        systeme: '', securite: '', modules: '', notifications: '', regional: '', sauvegarde: '', historique: '',
+        systeme: '', securite: '', regional: '',
     });
     const [moduleFilterBySection, setModuleFilterBySection] = useState<Record<SectionKey, string | undefined>>({
-        systeme: undefined, securite: undefined, modules: undefined, notifications: undefined,
-        regional: undefined, sauvegarde: undefined, historique: undefined,
+        systeme: undefined, securite: undefined, regional: undefined,
     });
 
     // État MFA
@@ -362,21 +318,6 @@ function PlatformConfigurationPage() {
                         </div>
                         {/* Actions header */}
                         <div className="flex items-center gap-[var(--gap-xs)]">
-                            {/* Toggle Feature Flags */}
-                            <button
-                                onClick={() => setShowFeatureFlags(v => !v)}
-                                className={`flex items-center gap-[var(--gap-xs)] rounded-lg px-[var(--space-sm)] py-[clamp(0.25rem,0.2rem+0.15vw,0.375rem)] text-xs font-medium transition-colors ${
-                                    showFeatureFlags ? '' : 'border border-[var(--color-bordure)] hover:bg-[var(--color-surface-hover)]'
-                                }`}
-                                style={{ fontSize: 'clamp(0.6875rem, 0.64rem + 0.2vw, 0.8125rem)', ...(showFeatureFlags
-                                    ? { backgroundColor: 'var(--color-dominant-600)', color: '#fff' }
-                                    : { color: 'var(--color-text-primary)' }
-                                ) }}
-                                aria-pressed={showFeatureFlags}
-                            >
-                                <ToggleLeft className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">{t('featureFlags')}</span>
-                            </button>
                             {/* Actualiser (desktop) */}
                             {!isMobile && (
                                 <button
@@ -392,13 +333,9 @@ function PlatformConfigurationPage() {
                         </div>
                     </div>
 
-                    {/* ─── Feature Flags (toggle global) ─── */}
-                    {showFeatureFlags && <FeatureFlagsManager />}
-
                     {/* ─── Contenu des sections ─── */}
-                    {!showFeatureFlags && (
-                        <div className="space-y-[var(--space-md)]">
-                            {/* Bouton collapse/expand */}
+                    <div className="space-y-[var(--space-md)]">
+                        {/* Bouton collapse/expand */}
                             <div className="flex items-center justify-end">
                                 <button
                                     onClick={() => setIsContentCollapsed(prev => !prev)}
@@ -530,23 +467,7 @@ function PlatformConfigurationPage() {
                                             </div>
                                         )}
 
-                                        {/* ─── Section Modules ─── */}
-                                        {activeSection === 'modules' && <ModulesTab />}
 
-                                        {/* ─── Section Sauvegarde ─── */}
-                                        {activeSection === 'sauvegarde' && (
-                                            <Suspense fallback={
-                                                <div className="flex items-center justify-center py-12">
-                                                    <Loader2 className="h-6 w-6 animate-spin" style={{ color: activeSectionDef.color }} />
-                                                    <span className="ml-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{t('chargement')}</span>
-                                                </div>
-                                            }>
-                                                <BackupManagementLazy etablissementId="platform" />
-                                            </Suspense>
-                                        )}
-
-                                        {/* ─── Section Historique ─── */}
-                                        {activeSection === 'historique' && <HistoriqueTab />}
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -572,9 +493,8 @@ function PlatformConfigurationPage() {
                                 </motion.div>
                             )}
                         </div>
-                    )}
+                    </div>
                 </div>
-            </div>
 
             {/* ═══ MFA Confirm Modal ═══ */}
             <MFAConfirmModal

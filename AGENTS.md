@@ -435,6 +435,50 @@ Règles ajoutées dans `.qoder/rules/elisaschool-conventions.md` section 14.1.
 
 ---
 
+## Sidebar Plateforme v4.4 — Améliorations UX (✅ TERMINÉ)
+
+> Contexte : Refonte du menu latéral platform avec améliorations UX, accessibilité, et nettoyage i18n.
+
+### Structure navigation (7 groupes, 23 items)
+1. **Pilotage** (3) : Dashboard, Monitoring, Revenus & MRR
+2. **Établissement** (4) : Établissements, Groupes, Abonnements, Factures
+3. **Plans & abonnements** (4) : Plans, Cycles & Stratégies, Quotas & Packs, Tarifs
+4. **Commerce** (2) : Providers paiement, Remises & Promotions
+5. **Modules et fonctions** (2) : Modules, Fonctionnalités
+6. **Sécurité & Audit** (5) : Audit & Logs, Actions critiques (2FA), Sessions & Activité, Utilisateurs, Rôles & Permissions
+7. **Configuration** (3) : Paramètres système, Sauvegardes, Notifications
+
+### Améliorations v4.4
+- **Auto-expand groupe actif** : le groupe contenant un sous-menu actif s’ouvre automatiquement (route matching via `useMatchRoute`)
+- **Persist collapsed** : l’état collapsed/expanded de la sidebar est sauvé en `localStorage` (`platform-sidebar-collapsed`)
+- **Persist expanded groups** : les groupes ouverts sont également persistés (`platform-sidebar-expanded`)
+- **Mobile slide animation** : drawer mobile animé avec `framer-motion` (spring physics, backdrop fade) au lieu de mount/unmount brutal
+- **Indicateur actif** : barre gauche `w-0.5 bg-danger-500` sur le groupe contenant un item actif (desktop + collapsed)
+- **Séparateurs visuels** : dividers subtils (`border-t border-bordure/50`) entre chaque groupe de menu
+- **Navigation clavier** : ↑↓ pour naviguer entre items, Esc pour fermer le drawer mobile, refs via `registerItemRef`
+- **Badges compteurs** : pastille avec nombre de sous-items par groupe (s’adapte au contexte actif/inactif)
+- **Collapsed click** : en mode collapsed, cliquer sur l’icône de groupe ouvre/ferme le groupe (toggleGroup)
+
+### Nettoyage i18n (9 clés supprimées FR + EN)
+- `navigation.permissions` (inutilisé)
+- `navigation.sessionsActivite` (doublon de `navigation.sessions`)
+- `navigation.moduleBuilder` (inutilisé)
+- `navigation.packsQuota` (doublon de `navigation.quotasPacks`)
+- `navigation.fonctionnalites` (doublon de `navigation.featureFlags`)
+- `navigation.cascadeMultiNiveaux` (doublon de `navigation.parametresCascade`)
+- `sidebar.groupeTenants` (inutilisé)
+- `sidebar.groupeFacturation` (inutilisé)
+- `sidebar.groupeCatalogue` (inutilisé)
+
+### Fichiers créés/modifiés
+| Fichier | Action |
+|---------|--------|
+| `frontend/src/components/layout/platform-sidebar.tsx` | v4.4 : auto-expand, persist, mobile slide, keyboard nav, séparateurs, badges, indicateurs actifs |
+| `frontend/src/locales/fr/admin.json` | 9 clés i18n orphelines/dupliquées supprimées |
+| `frontend/src/locales/en/admin.json` | 9 clés i18n orphelines/dupliquées supprimées |
+
+---
+
 ## Objective
 Refactorer le module organisation et ses nomenclatures en une source de vérité unique, avec routes dédiées, composants génériques, i18n 100% flat, et permissions granulaires.
 
@@ -5784,3 +5828,630 @@ GET    /api/platform/facturation/feature-flags/:etab/metadata        — Flags +
 - Frontend TypeScript : 0 erreurs CMS
 - Backend TypeScript : 0 erreurs CMS
 - 66 fichiers CMS frontend
+
+---
+
+## Corrections Invariants V3 — Audit Rapport (2026-08-16)
+
+> Source : `docs/rapports/RAPPORT-REFONTE-PLANS-MODULES-QUOTAS-ENTITLEMENTS-V3.html`
+> 12 problèmes identifiés (I1-I12), 6 corrigés cette session.
+
+### I1 — statut=EXPIRE + dateExpirationReelle (CRITIQUE)
+- **Fichier** : `backend/src/modules/billing/cron-jobs.ts` — `cronExpirationEssai()`
+- **Correction** : `EN_ATTENTE` → `ESSAI` (le bon statut créé par onboarding), `ANNULE` → `EXPIRE` + `dateExpirationReelle = maintenant`
+- **Impact** : Déclenche la dégradation gracieuse (READ_ONLY → LOCKED → ARCHIVED) via `entitlementService.resoudrePhaseExpiration()`
+
+### I2 — Middleware requirePlanActif monté globalement (CRITIQUE)
+- **Fichier** : `backend/src/app.ts`
+- **Correction** : `app.use('/api/', requirePlanActif([...exemptPaths]))` monté après `rlsTransactionEnd`
+- **Exemptions** : `/auth`, `/configuration`, `/notifications`, `/utilisateurs`, `/billing`, `/platform`, etc.
+- **Impact** : Hard-gate — 402 `AUCUN_PLAN_ACTIF` si aucun abonnement ACTIF/ESSAI
+
+### I3 — requireQuota 403 → 429 + headers X-Quota
+- **Fichier** : `backend/src/modules/billing/services/quota.service.ts`
+- **Correction** : HTTP 403 → 429 (Too Many Requests), headers `X-Quota-Resource/Usage/Limit/Percentage`
+- **Impact** : Sémantique HTTP correcte + observabilité quota dans les réponses
+
+### I4 — FeatureFlagService considère statut ESSAI
+- **Fichier** : `backend/src/modules/billing/services/feature-flags.service.ts`
+- **Correction** : `statut: ACTIF` → `statut: In([ACTIF, ESSAI])` dans `isEnabled()`, `getAllFlags()`, `evaluateSegments()`
+- **Impact** : Les fonctionnalités du plan sont accessibles pendant la période d'essai
+
+### I5 — cronRenouvellementAuto ferme l'ancien abonnement
+- **Fichier** : `backend/src/modules/billing/cron-jobs.ts`
+- **Correction** : Avant de créer le nouveau, l'ancien reçoit `statut=EXPIRE` + `dateExpirationReelle=now()`
+- **Impact** : Plus d'accumulation d'abonnements ACTIF avec dateFin dépassée
+
+### I10 — i18n modules.json BASE/PREMIUM/ADDON → GRATUIT/PAYANT
+- **Fichiers** : `frontend/src/locales/{fr,en}/modules.json`
+- **Correction** : Catégories remplacées, raisons alignées v3 (`AUCUN_PLAN`, `MODULE_DESACTIVE`, `DEGRADATION_ARCHIVE`)
+
+### Corrections annexes
+- `param-validation.ts` : `billing.tranche_eleves/tranche_montant` remplacés par 14 paramètres v3 (onboarding, essai, facturation, expiration, dunning)
+- `tenant-backup.service.ts` + `database-backup.service.ts` : `usage_meters` → `usage_unifie`
+- `seed-parametres-billing.ts` : `mapType('ENUM')` explicité (fallback STRING)
+
+### Problèmes déjà résolus (sessions antérieures)
+- I6 (lien mort `/platform/permissions`) ✅
+- I7 (guards incohérents) ✅ — `requirePlatformAccess()` + CASL
+- I9 (code mort onboarding-wizard, provider-config-modal) ✅
+- I11 (inscription self-service) ✅ — `creerAbonnementInitial()` + marketplace
+- I12 (paramètre `billing.plan_par_defaut`) ✅ — seedé
+
+### Fichiers modifiés cette session
+| Fichier | Correction |
+|---------|------------|
+| `backend/src/modules/billing/cron-jobs.ts` | I1 + I5 |
+| `backend/src/app.ts` | I2 |
+| `backend/src/modules/billing/services/quota.service.ts` | I3 |
+| `backend/src/modules/billing/services/feature-flags.service.ts` | I4 |
+| `frontend/src/locales/fr/modules.json` | I10 |
+| `frontend/src/locales/en/modules.json` | I10 |
+| `backend/src/modules/configuration/utils/param-validation.ts` | Annexe |
+| `backend/src/modules/configuration/services/backup/tenant-backup.service.ts` | Annexe |
+| `backend/src/modules/configuration/services/backup/database-backup.service.ts` | Annexe |
+| `backend/src/database/seeds/system/seed-parametres-billing.ts` | Annexe |
+
+---
+
+## Exécution Migration 213 + Seeds v3 — 2026-08-16
+
+### Migration 213 (`213-refonte-entitlements-v3.sql`)
+- **Backup DB** avant exécution : 27957 lignes
+- **Correction migration** : INSERT conditionnels (`DO $$ IF EXISTS`) pour `quotas_utilisation` et `usage_meters` (tables déjà supprimées par TypeORM synchronize)
+- **Résultat** : COMMIT réussi — toutes les opérations idempotentes
+- **Données vérifiées** :
+  - 4 modules critiques (auth, configuration, notifications, utilisateurs) → GRATUIT + estCritique=true
+  - 5 plans avec rang (0→4) et tarification JSONB
+  - 4 cycles de facturation, 4 packs quota, 2 stratégies expiration
+  - 18 paramètres billing, 8 feature flags, 10 remises
+
+### Corrections Frontend (alignement v3)
+- **`groupes-saas-page.tsx`** : Onglet "Tranches" (obsolète) → "Remises" (v3 `RemisesTab` avec API `/api/billing/remises`)
+- **`ModulesTab.tsx`** : Badge "Premium" → "Payant" + ajout raisons blocage v3 (`AUCUN_PLAN`, `DEGRADATION_ARCHIVE`)
+- **`platform.debug.entitlements.tsx`** : Suppression import inutilisé (`useTranslation`)
+
+### Corrections Backend (tsc)
+- **`cron-jobs.ts`** : Import dynamique corrigé `'./entitlement.service'` → `'./services/entitlement.service'`
+
+### Vérification TypeScript
+- **Backend** : 0 erreur v3 (126 erreurs préexistantes dans paiement/platform — non liées)
+- **Frontend** : 0 erreur sur fichiers modifiés
+
+### Fichiers modifiés (exécution)
+| Fichier | Changement |
+|---------|-----------|
+| `backend/database/migrations/213-refonte-entitlements-v3.sql` | INSERT conditionnels (IF EXISTS) |
+| `backend/src/modules/billing/cron-jobs.ts` | Import path corrigé |
+| `frontend/src/features/admin/components/groupes-saas-page.tsx` | TranchesTab → RemisesTab |
+| `frontend/src/features/configuration/components/ModulesTab.tsx` | Badge Payant + raisons v3 |
+| `frontend/src/routes/platform.debug.entitlements.tsx` | Import inutilisé supprimé |
+
+---
+
+## Audit Roadmap V3 — Phases 2 à 5 — 2026-08-16
+
+### Phase 2 — Hard-gate middleware (✅ COMPLET)
+- `requirePlanActif` monté globalement dans `app.ts` (exemptions : auth, config, billing, platform)
+- `requireModuleAccess` avec dégradation gracieuse (LECTURE_SEULE → VERROUILLÉ → ARCHIVÉ)
+- `requireQuota` middleware via `usage_unifie` (429 si dépassé)
+- `packQuotaService` : quota effectif = plan.quotas + Σ packs actifs
+
+### Phase 3 — Facturation v3 (✅ COMPLET)
+- Formule : `(prixBase + max(0, nbÉlèves − franchise) × prixParEleve) × coefCycle − remises + modules + packs`
+- OHADA : TVA 19.25% centièmes, numérotation FAC-OHADA-YYYY-NNNNNN
+- Remises : moteur d'application (priorité DESC, non-cumulable exclusive, plancher 0)
+- Packs : souscription prorata + quotaEffectif
+- 16 endpoints client ajoutés (`/api/billing/remises|packs|cycles`)
+
+### Phase 4 — Panel admin réorganisé (✅ COMPLET)
+- Sidebar 10 groupes / 38 sous-items (conforme rapport V3)
+- Pages dédiées : remises, packs-quota, cycles-strategies, fonctionnalites
+- Routes backend : `platform.routes.ts` (directes) + `billing.controller.ts` (client)
+- i18n FR/EN aligné (clés navigation.*, sidebar.groupe*)
+- **Nettoyage** : 168 lignes de routes dupliquées supprimées dans `billing.controller.ts`
+- **Correction** : `/packs/souscrits` inclut maintenant ESSAI + ACTIF
+
+### Phase 5 — Onboarding self-service (⏭️ REPORTÉ)
+- Backend fonctionnel : `billing.onboarding_mode`, `billing.plan_par_defaut`, essai 14j
+- Frontend manquant : page publique inscription, sélection plan, wizard
+- `onboarding-wizard.tsx` existe (293 lignes) mais non intégré (code mort I9)
+
+### Recommandations identifiées
+1. **Validation Zod** : Ajouter schémas Zod dans `platform.routes.ts` POST/PUT (convention §5)
+2. **Route `/remises` client** : Filtrer par plan tenant + cible (GLOBAL + plan matching)
+3. **RBAC granulaire** : Ajouter `requirePlatformCasl('manage', 'Remise')` sur routes commerce
+4. **Page tenant** : `_auth.mon-abonnement.tsx` pourrait afficher remises/packs disponibles
+
+### Fichiers modifiés (audit)
+| Fichier | Changement |
+|---------|-----------|
+| `backend/src/modules/billing/controllers/billing.controller.ts` | −168 lignes doublons + fix ESSAI packs souscrits |
+
+---
+
+## Restructuration Sidebar Plateforme — Dédoublonnage v3.1 — 2026-08-16
+
+> Contexte : Audit approfondi du menu latéral plateforme. 9 redondances identifiées (3 critiques, 3 hautes, 2 moyennes, 1 basse).
+
+### Changements appliqués
+
+**Sidebar (`platform-sidebar.tsx`)** : 10 groupes → 7 groupes, 37 items → 25 items (−32%)
+
+| Action | Détail |
+|--------|--------|
+| Supprimé groupe **Analytics** | 4 items → 0. Tout le contenu était déjà dans `/platform/monitoring` |
+| Supprimé groupe **Notifications** | 3 items → 0. Page `/notifications-config` absorbée dans Configuration |
+| Supprimé groupe **Sauvegardes** | 3 items → 0. Redirigeait tous vers `/platform/configuration?tab=*` |
+| Retiré **Paramètres cascade** de Sécurité | Doublon avec Configuration → Cascade multi-niveaux |
+| Renommé **Sécurité** → **Sécurité & Audit** | Reflète mieux le contenu (audit, approbations, sessions) |
+| Configuration : **Templates emails** → **Notifications** | Label plus clair, même page `/notifications-config` |
+| Nettoyage imports | Supprimé Bell, BarChart3, HardDrive, History, RotateCcw, Globe |
+
+**i18n (`admin.json` FR + EN)** :
+- Supprimé clés sidebar orphelines : `groupeNotifications`, `groupeAnalytics`, `groupeSauvegardes`, `groupeTechnique`
+- Supprimé clés navigation orphelines : `providersNotif`, `templates`, `testEnvoi`, `usageMetriques`, `alertes`, `exportRapports`, `planification`, `historique`, `restauration`, `templatesEmails`
+- Mis à jour `groupeSecurite` : "Sécurité" → "Sécurité & Audit" / "Security" → "Security & Audit"
+
+### Structure cible (7 groupes, 25 items)
+
+```
+📊 Pilotage (3) : Dashboard, Revenus, Monitoring
+🏢 Tenants (4) : Établissements, Groupes, Utilisateurs, Rôles
+💳 Facturation (5) : Plans, Abonnements, Factures, Providers, Remises
+📦 Catalogue (4) : Modules, Fonctionnalités, Packs Quota, Cycles
+🛡️ Sécurité & Audit (3) : Audit, Approbations, Sessions
+⚙️ Configuration (4) : Paramètres, Cascade, Notifications, Tarifs
+🐛 Debug (3) : Entitlements, API Console, Feature Toggles
+```
+
+### Principes appliqués
+
+1. **1 entrée = 1 URL unique** — Jamais de redirect dans la sidebar
+2. **Max 5 items/groupe** — Limite cognitive (Miller's law)
+3. **Groupage par domaine fonctionnel** — Pas par type technique
+4. **Labels par intent utilisateur** — Pas par nom de composant interne
+5. **Command palette (Cmd+K)** — Accélérateur, pas substitut
+
+### Fichiers modifiés
+| Fichier | Changement |
+|---------|-----------|
+| `frontend/src/components/layout/platform-sidebar.tsx` | v2.0.0 → v3.1.0 : −43 lignes (3 groupes + 1 item supprimés), imports nettoyés |
+| `frontend/src/locales/fr/admin.json` | −18 lignes (clés orphelines supprimées, groupeSecurite mis à jour) |
+| `frontend/src/locales/en/admin.json` | −15 lignes (clés orphelines supprimées, groupeSecurite mis à jour) |
+
+---
+
+## Refonte Panel Admin v4.1 — Correction Structure Sidebar (✅ TERMINÉ)
+
+> Contexte : Rapport d'audit `RAPPORT-AUDIT-PANEL-ADMIN-PLATFORM.html`. Corrections structure sidebar + refonte monitoring + barrel exports.
+
+### Sidebar v4.1 — 6 groupes corrigés
+
+```
+📊 Pilotage (4) : Dashboard, Plans, Abonnements, Factures
+🏢 Établissement (6) : Établissements, Groupes, Utilisateurs, Rôles, Clubs, Matériel
+💰 Commerce (2) : Providers, Remises
+📦 Catalogue (4) : Modules, Fonctionnalités, Quotas, Cycles
+🛡️ Sécurité & Audit (3) : Audit, Approbations, Sessions
+⚙️ Configuration (4) : Paramètres, Cascade, Notifications, Tarifs
+```
+
+**Corrections v4.1** :
+- Groupe "Tenants" → "Établissement" (6 items : +Clubs, +Matériel)
+- Groupe "Pilotage" : Dashboard + Facturation (Plans/Abonnements/Factures regroupés)
+- Suppression doublons : Plans/Abonnements/Factures retirés de "Facturation & Commerce" → renommé "Commerce" (2 items)
+- Routes placeholder créées : `/platform/clubs`, `/platform/materiel`
+
+### Monitoring v2 — 4 onglets
+
+9 sections séquentielles → 4 onglets organisés :
+
+| Onglet | Contenu | Composants |
+|--------|---------|------------|
+| Santé | Health checks + Métriques | `HealthChecksSection`, `MetricsCards` |
+| Signaux | Golden Signals + Analytics | `GoldenSignalsSection`, `ModuleAnalyticsDashboard` (lazy) |
+| Alertes | Alertes + Règles + Noisy Neighbor | `AlertesSection`, `AlertRulesSection`, `NoisyNeighborSection` |
+| Export | Rapports + Temps réel | `ExportButton` (5 formats), `RealtimeSection` |
+
+### Barrel exports créés
+
+| Fichier | Rôle |
+|---------|------|
+| `features/admin/index.ts` | Barrel export : 20+ composants, 10+ hooks, types, utilitaires |
+| `features/admin/hooks/index.ts` | Barrel hooks : billing + actions critiques |
+| `features/admin/hooks/use-billing.ts` | Hooks centralisés : `usePlans`, `useAbonnements`, `useFactures`, `useAcknowledgeAlert` |
+
+### Fichiers créés/modifiés v4.1
+
+| Fichier | Action |
+|---------|--------|
+| `frontend/src/components/layout/platform-sidebar.tsx` | v4.0.0 → v4.1.0 : groupes corrigés (Pilotage 2, Établissement 6, Commerce 2) |
+| `frontend/src/routes/platform.monitoring.tsx` | v1 → v2 : 9 sections → 4 onglets (Health, Signaux, Alertes, Export) |
+| `frontend/src/routes/platform.clubs.tsx` | NOUVEAU (53 lignes) — Placeholder clubs plateforme |
+| `frontend/src/routes/platform.materiel.tsx` | NOUVEAU (53 lignes) — Placeholder matériel plateforme |
+| `frontend/src/features/admin/hooks/use-billing.ts` | NOUVEAU (141 lignes) — Hooks TanStack Query centralisés |
+| `frontend/src/features/admin/hooks/index.ts` | NOUVEAU (38 lignes) — Barrel hooks |
+| `frontend/src/features/admin/index.ts` | NOUVEAU (98 lignes) — Barrel export composants + hooks + types |
+| `frontend/src/locales/fr/admin.json` | +12 clés (groupeEtablissement, groupeCommerce, clubs, materiel, monitoring.tabs) |
+| `frontend/src/locales/en/admin.json` | +12 clés (mêmes clés, traductions EN) |
+
+## Travail effectué — Session 2026-08-10 (Refonte Plans & Abonnements v4.3)
+
+### Contexte
+4 pages platform (Plans, Cycles & Stratégies, Packs Quota, Tarifs) + 1 page tenant (_auth.plans.tsx) + 1 simulateur partagé.
+Problèmes identifiés : types dupliqués 4x, modals anti-pattern (overlay custom), i18n absent, Tarifs déconnecté de l'API, CTA mort.
+
+### Phase 1 — Fondations (types + i18n)
+- **Types partagés billing** — `frontend/src/features/billing/types/plan.types.ts` (223 lignes)
+  - Interface `Plan` unifiée (fusion des 4 définitions)
+  - Interfaces `CycleFacturation`, `StrategieExpiration`, `PackQuota`, `SimulationResult`
+  - Constantes `PLAN_ICONS`, `RESSOURCES_PACK`, `COMPORTEMENTS_PHASE`, `CYCLE_LABELS`
+  - Helpers : `formatPrix()`, `prixCycle()`, `modulesInclus()`, `formatQuotaEleves()`, `getPlanIcon()`
+- **Namespace i18n `plans`** — `frontend/src/locales/fr/plans.json` + `en/plans.json` (124 lignes chacun)
+  - Clés pour les 4 pages : `plans.*`, `cycles.*`, `packs.*`, `tarifs.*`, `commun.*`
+  - Enregistré dans `frontend/src/lib/i18n.ts`
+
+### Phase 2 — Modals CustomModal (composants feature)
+- **CycleFormModal** — `frontend/src/features/platform/components/cycle-form-modal.tsx` (189 lignes)
+  - Wrapper dans `<CustomModal size="lg">`, props `open`/`onOpenChange`
+- **StrategieFormModal** — `frontend/src/features/platform/components/strategie-form-modal.tsx` (252 lignes)
+  - Wrapper dans `<CustomModal size="2xl">`, gestion dynamique des phases
+- **PackFormModal** — `frontend/src/features/platform/components/pack-form-modal.tsx` (243 lignes)
+  - Wrapper dans `<CustomModal size="xl">`
+- **Barrel export** — `frontend/src/features/platform/index.ts` mis à jour (+3 exports)
+
+### Phase 3 — Refactorisation des pages
+- **`platform.plans.tsx`** — Types partagés + i18n + bouton supprimer + ElisaButton
+- **`platform.cycles-strategies.tsx`** — Types partagés + modals externes (CycleFormModal/StrategieFormModal) + i18n
+- **`platform.packs-quota.tsx`** — Types partagés + modal externe (PackFormModal) + i18n
+- **`platform.tarifs.tsx`** — Refonte majeure : CTA retiré, remises depuis API, TarifsPreview
+- **`tarifs-preview.tsx`** — `frontend/src/features/billing/components/tarifs-preview.tsx` (398 lignes)
+  - Composant partagé réutilisable (mode admin/tenant)
+  - Chargement remises depuis `GET /api/platform/cycles-facturation`
+- **`_auth.plans.tsx`** — Types partagés + TarifsPreview mode="tenant"
+- **`plan-simulator.tsx`** — Types partagés (import depuis plan.types.ts)
+
+### Phase 5 — Nettoyage
+- Suppression `platform.clubs.tsx` + `platform.materiel.tsx` (routes mortes v4.2)
+- Suppression clés i18n orphelines `clubs`/`materiel` dans admin.json FR/EN
+
+### Fichiers créés (6)
+
+| Fichier | Description |
+|---------|-------------|
+| `frontend/src/features/billing/types/plan.types.ts` | Types partagés billing (223 lignes) |
+| `frontend/src/features/platform/components/cycle-form-modal.tsx` | Modal cycle CustomModal (189 lignes) |
+| `frontend/src/features/platform/components/strategie-form-modal.tsx` | Modal stratégie CustomModal (252 lignes) |
+| `frontend/src/features/platform/components/pack-form-modal.tsx` | Modal pack CustomModal (243 lignes) |
+| `frontend/src/features/billing/components/tarifs-preview.tsx` | Composant prévisualisation tarifs (398 lignes) |
+| `frontend/src/locales/fr/plans.json` + `en/plans.json` | i18n namespace plans (124 lignes chacun) |
+
+### Fichiers modifiés (8)
+
+| Fichier | Modification |
+|---------|-------------|
+| `frontend/src/routes/platform.plans.tsx` | Types partagés + i18n + bouton supprimer |
+| `frontend/src/routes/platform.cycles-strategies.tsx` | Types + modals externes + i18n |
+| `frontend/src/routes/platform.packs-quota.tsx` | Types + modal externe + i18n |
+| `frontend/src/routes/platform.tarifs.tsx` | Refonte : API remises, CTA retiré, TarifsPreview |
+| `frontend/src/routes/_auth.plans.tsx` | Types partagés + TarifsPreview |
+| `frontend/src/features/billing/components/plan-simulator.tsx` | Types partagés |
+| `frontend/src/features/platform/index.ts` | Export 3 modals |
+| `frontend/src/lib/i18n.ts` | Enregistrement namespace `plans` |
+
+### Fichiers supprimés (2)
+
+| Fichier | Raison |
+|---------|--------|
+| `frontend/src/routes/platform.clubs.tsx` | Route morte (menu supprimé v4.2) |
+| `frontend/src/routes/platform.materiel.tsx` | Route morte (menu supprimé v4.2) |
+
+---
+
+## Corrections continuation — Session 2026-08-10 (suite)
+
+### Fix critique : Export `useUpdatePlatformRole`
+- **Fichier** : `frontend/src/features/platform/hooks/use-platform-roles.ts`
+- Ajout aliases : `useModifierRolePlateforme as useUpdatePlatformRole`, `useSupprimerRolePlateforme as useDeletePlatformRole`
+- Résout : `Uncaught SyntaxError: The requested module does not provide an export named 'useUpdatePlatformRole'`
+
+### Fix : Simulateur de plan (`plan-simulator.tsx`)
+- Cycles dynamiques depuis `GET /api/platform/cycles-facturation` (remplacé MENSUEL/ANNUEL hardcodé)
+- Remises affichées depuis données API (remplacé "-15%" hardcodé)
+- i18n complet : 25+ clés `simulateur.*` (FR + EN)
+- Style cohérent : CSS variables `var(--color-*)` partout (plus de classes Tailwind theme)
+- `formatPrix` partagé importé depuis `plan.types.ts` (suppression fonction locale dupliquée)
+
+### Fix : Page tenant `_auth.plans.tsx`
+- i18n complet : 12 clés `auth.*` (FR + EN) — tous textes français hardcodés traduits
+- Style cohérent : CSS variables partout (plus de `bg-muted`, `text-muted-foreground`)
+
+### Fix : i18n — clés dupliquées et manquantes
+- Clé `description` dupliquée dans section `packs` → renommée `descriptionLabel`
+- Ajout clés `ordre` (cycles + packs), `classes`, `smsParMois`, `illimite` (tarifs)
+- Total : ~170 clés FR/EN dans `plans.json`
+
+### Fix : Nettoyage imports inutilisés
+- `platform.tarifs.tsx` : `Calculator`, `useMemo` retirés
+- `_auth.plans.tsx` : `useMemo` retiré
+
+### Audit backend confirmé
+Tous les 8 endpoints API connectés : facturation/plans (CRUD), cycles-facturation (CRUD), strategies-expiration (CRUD), packs-quota (CRUD), billing/plans (GET), billing/simuler (POST), billing/mon-abonnement (GET), billing/abonnement/upgrade (PATCH)
+
+---
+
+## Refonte Billing v3.1 — Corrections moteur remises + page plans (✅ TERMINÉ)
+
+### Bugs corrigés (Phase 1 — Backend)
+
+| Bug | Correction | Fichier |
+|-----|------------|----------|
+| Volume sans vérification seuil | `conditionElevesMin` sur entité + filtrage `estValide()` | `remise.service.ts` |
+| Fidélité sans vérification ancienneté | `conditionAncienneteMois` + `calculerAncienneteMois()` | `remise.service.ts` |
+| Pas de plafond global cumul | `PLAFOND_REMISE_POURCENT = 40` + écrêtage progressif | `remise.service.ts` |
+| Prorata pack sur 30 jours fixe | Calcul réel `dateDebut → dateFin` | `pack-quota.service.ts` |
+| RemiseService sans contexte élèves | Enrichissement `ContexteApplicationRemise` | `remise.service.ts` |
+| Double application remise cycle | Neutralisé par filtrage conditionnel | `remise.service.ts` |
+
+**Migration 214** : `backend/database/migrations/214-remise-conditions-plafond.sql`
+- Colonnes `condition_eleves_min` + `condition_anciennete_mois` sur `remises_abonnement`
+- Backfill VOL-500/1000 et FID-12M/24M
+
+**Tests** : `backend/test/unit/remise-plafond.spec.ts` (cumul plafond, filtrage volume, filtrage fidélité)
+
+### Page plans restructurée (Phase 2 — Frontend)
+
+**Nouveaux composants** :
+- `PacksSection` — achat packs quota avec prorata affiché
+- `CodePromoInput` — saisie + validation API code promo
+- `FaqSection` — FAQ accordéon 10 questions
+- `TrustBadges` — signaux confiance (sécurité, support, sans engagement)
+- `MonAbonnement` — dashboard tenant (jauges quotas, remises actives, packs souscrits)
+
+**Page `_auth.plans.tsx`** restructurée : Hero → Toggle cycle → Plans grid → Packs → Code Promo → FAQ → Trust Badges
+
+**Hooks centralisés** : `use-billing.ts` (usePlans, usePacks, useSouscrirePack, useVerifierCoupon, useMonAbonnementDetail)
+
+### Fonctionnalités ajoutées (Phase 3)
+
+- **Endpoints** : `GET /remises/verify?code=XXX`, `GET /mon-abonnement/detail`
+- **Cron** : `cronNotificationsExpiration()` — paliers J-7, J-3, J-1 (quotidien 08h00)
+- **i18n** : ~80 nouvelles clés FR/EN (packs, FAQ, trust, code promo, comparatif)
+
+### Alignement seeds (Phase 4)
+
+- `seed-plans-abonnement.ts` : MODULES_DECOUVERTE aligné migration 213
+- `seed-remises.ts` : conditions ajoutées aux remises volume/fidélité
+
+---
+
+## Refonte Billing v3.2 — Cohérence seeds, stratégies expiration, UX frontend (✅ TERMINÉ)
+
+> Contexte : Session de grilling (/grill-me) pour inspecter la cohérence du système billing complet (quotas, packs, remises, cycles, stratégies d'expiration) et corriger les problèmes identifiés.
+
+### Corrections Backend — Seeds et logique métier
+
+| Problème | Correction | Fichier |
+|-----------|------------|----------|
+| Double remise cycle (CYCLE-ANNUEL/SEMESTRIEL dupliquait CycleFacturationConfig.remisePourcent) | Suppression remises CYCLE du seed — source unique = CycleFacturationConfig | `seed-remises.ts` |
+| Promos sans dateDebut/dateFin (PROMO-RENTREE, PROMO-LANCEMENT, PROMO-BF) | Ajout dates réalistes (2025-2026) + interface RemiseSeed étendue | `seed-remises.ts` |
+| GRP-3ETAB actif sans condition groupe implémentée | Désactivé (`actif: false`) avec commentaire explicatif | `seed-remises.ts` |
+| Pas de stratégie d'expiration par plan | 5 stratégies créées (decouverte=7j, starter=20j, standard=30j, pro=55j, enterprise=90j) | `seed-strategies-expiration.ts` |
+
+### Refactorisations Frontend
+
+| Amélioration | Détail | Fichier |
+|--------------|--------|----------|
+| Refonte platform.remises.tsx | i18n complet, CustomModal, ElisaButton, CSS vars, champs conditions | `platform.remises.tsx` |
+| Tableau comparatif avancé (mode Comparer) | ComparisonTable avec 10 features + 3 booléennes (✓/✗), tri par rang | `_auth.plans.tsx` |
+| Flux achat packs corrigé | Sélection → modal confirmation → mutation API (plus l'inverse) | `packs-section.tsx` |
+| Modal confirmation packs → ConfirmationModal | Suppression overlay custom (règle 23) → ConfirmationModal variant="info" | `packs-section.tsx` |
+| window.confirm() → ConfirmationModal (×4) | Suppression tous les window.confirm des pages billing plateforme | `platform.plans.tsx`, `platform.remises.tsx`, `platform.packs-quota.tsx`, `platform.cycles-strategies.tsx` |
+| PlanUpgradeCTA → ElisaButton | Bouton custom remplacé par ElisaButton (variant outline/primary, isLoading) | `_auth.plans.tsx` |
+| formatPrix(quantité) → toLocaleString | formatPrix réservé aux prix, quantités → toLocaleString('fr-FR') | `tarifs-preview.tsx`, `platform.packs-quota.tsx` |
+| Redondance PlanComparison/ComparisonTable | Prop `showComparison` ajoutée à TarifsPreview, masqué en mode tenant | `tarifs-preview.tsx`, `_auth.plans.tsx` |
+| "modules" hardcodé → i18n | `tarifs.modulesInclus` utilisé au lieu de string hardcodée | `tarifs-preview.tsx` |
+
+### i18n ajouté (FR + EN)
+
+- `billing.json` : 16 nouvelles clés (plans.pageTitle, plans.cards, plans.compare.*, packs.succes/erreur)
+- `plans.json` : 46 nouvelles clés (section remises complète : type, dureeApp, cibles, conditions)
+
+### Fichiers créés/modifiés v3.2
+
+| Fichier | Action |
+|---------|--------|
+| `backend/src/database/seeds/system/seed-remises.ts` | Suppression CYCLE, dateFin promos, GRP-3ETAB désactivé |
+| `backend/src/database/seeds/system/seed-strategies-expiration.ts` | 5 stratégies (une par plan) |
+| `frontend/src/routes/platform.remises.tsx` | Refonte complète (i18n, CustomModal, CSS vars) |
+| `frontend/src/routes/_auth.plans.tsx` | ComparisonTable ajouté (mode Comparer) |
+| `frontend/src/features/billing/components/packs-section.tsx` | Flux confirmation corrigé + ConfirmationModal |
+| `frontend/src/routes/platform.plans.tsx` | window.confirm → ConfirmationModal |
+| `frontend/src/routes/platform.remises.tsx` | window.confirm → ConfirmationModal + import |
+| `frontend/src/routes/platform.packs-quota.tsx` | window.confirm → ConfirmationModal |
+| `frontend/src/routes/platform.cycles-strategies.tsx` | window.confirm → ConfirmationModal (×2) |
+| `frontend/src/locales/fr/billing.json` | 16 clés ajoutées (compare, packs, plans) |
+| `frontend/src/locales/en/billing.json` | 16 clés ajoutées (compare, packs, plans) |
+| `frontend/src/locales/fr/plans.json` | 46 clés ajoutées (section remises) |
+| `frontend/src/locales/en/plans.json` | 46 clés ajoutées (section remises) |
+
+---
+
+## Refonte Billing v3.3 — Extraction composants, i18n FAQ, hooks partagés (✅ TERMINÉ)
+
+> Contexte : Suite du grilling v3.2. Améliorations de cohérence frontend : extraction de modals inline, élimination de chaînes hardcodées, remplacement de boutons raw par ElisaButton, FAQ bilingue, hooks partagés.
+
+### Améliorations Frontend
+
+| Amélioration | Détail | Fichier |
+|--------------|--------|----------|
+| RemiseFormModal extrait | Modal inline (160 lignes) → composant partagé dans `features/platform/components/` (cohérence avec PackFormModal, CycleFormModal, StrategieFormModal) | `remise-form-modal.tsx` (235 lignes), `platform.remises.tsx` (424→211 lignes) |
+| Export barrel RemiseFormModal | Ajout export composant + types dans barrel `features/platform/index.ts` | `features/platform/index.ts` |
+| 4 chaînes FR hardcodées → i18n | "Nombre de cycles", "ID cible (UUID)", "Cycle visé", "Conditions" → clés i18n avec parité FR/EN | `platform.remises.tsx` |
+| formatCondition i18n | `≥{{count}} élèves`, `≥{{count}} mois` → template i18n avec interpolation | `platform.remises.tsx`, `plans.json` FR+EN |
+| FAQ bilingue | FAQ_DATA hardcodé (42 lignes FR) → 10 items Q&R dans i18n `billing.json` FR+EN | `faq-section.tsx`, `billing.json` FR+EN |
+| ElisaButton dans code-promo-input | Bouton raw "Appliquer" → ElisaButton avec isLoading + size="sm" | `code-promo-input.tsx` |
+| ElisaButton dans packs-section | Bouton raw "Acheter" → ElisaButton avec icon ShoppingCart + isLoading | `packs-section.tsx` |
+| PlanUpgradeCTA → useUpgradePlan | Mutation locale dupliquée → hook partagé `useUpgradePlan` (invalidation auto queries) | `_auth.plans.tsx` |
+| ComportementPhase.PRE_ARCHIVE vérifié | Cohérent : `nom='PRE_ARCHIVE'` (label) + `comportement=ARCHIVED` (action) — 3 valeurs enum uniquement | `strategie-expiration.entity.ts`, `seed-strategies-expiration.ts` |
+
+### i18n ajouté (FR + EN)
+
+- `billing.json` : +13 lignes (faq.items : 10 items Q&R bilingues)
+- `plans.json` : +7 clés (conditions.colonne, elevesFormat, ancienneteFormat, nbCyclesLabel, idCibleLabel, cycleCibleLabel, supprimerTitre)
+
+### Fichiers créés/modifiés v3.3
+
+| Fichier | Action |
+|---------|--------|
+| `frontend/src/features/platform/components/remise-form-modal.tsx` | NOUVEAU (235 lignes) — RemiseFormModal extrait |
+| `frontend/src/features/platform/index.ts` | Export RemiseFormModal + types Remise/RemiseForm ajoutés |
+| `frontend/src/routes/platform.remises.tsx` | Suppression modal inline (−213 lignes), import depuis `@/features/platform` |
+| `frontend/src/features/billing/components/faq-section.tsx` | FAQ_DATA supprimé, chargement dynamique i18n |
+| `frontend/src/features/billing/components/code-promo-input.tsx` | Bouton raw → ElisaButton |
+| `frontend/src/features/billing/components/packs-section.tsx` | Bouton raw → ElisaButton + icon |
+| `frontend/src/routes/_auth.plans.tsx` | PlanUpgradeCTA → useUpgradePlan hook partagé, imports nettoyés |
+| `frontend/src/locales/fr/billing.json` | +13 lignes (faq.items FR) |
+| `frontend/src/locales/en/billing.json` | +13 lignes (faq.items EN) |
+| `frontend/src/locales/fr/plans.json` | +7 clés (conditions, labels remises) |
+| `frontend/src/locales/en/plans.json` | +7 clés (conditions, labels remises) |
+
+### Corrections i18n — Types partagés et composants
+
+| Amélioration | Détail | Fichier |
+|--------------|--------|----------|
+| COMPORTEMENTS_PHASE supprimé | Constante avec labels FR en dur → remplacée par `PHASE_VALUES` (valeurs seules) + i18n `cycles.phase.*` | `plan.types.ts`, `strategie-form-modal.tsx`, `platform.cycles-strategies.tsx` |
+| CYCLE_LABELS supprimé | Code mort (0 usage externe) → supprimé + remplacé par `CYCLE_FACTURATION_CODES` | `plan.types.ts` |
+| formatQuotaEleves i18n | `'illimité'` hardcodé → paramètre optionnel `illimiteLabel` | `plan.types.ts`, `plan-simulator.tsx` |
+| "plan {slug}" hardcodé | `plan ${s.planSlug}` → `t('cycles.planSlugLabel', { slug })` | `platform.cycles-strategies.tsx` |
+| "Jusqu'à X élèves" hardcodé | Strings FR → `t('simulateur.jusqua')` + `t('simulateur.eleves')` | `plan-simulator.tsx` |
+| Clés phase i18n ajoutées | `cycles.phase.READ_ONLY/LOCKED/ARCHIVED` FR+EN + `cycles.planSlugLabel` | `plans.json` FR+EN |
+| Clés simulateur ajoutées | `simulateur.jusqua`, `simulateur.eleves` FR+EN | `plans.json` FR+EN |
+
+### Corrections seeds — Descriptions obsolètes
+
+| Seed | Correction | Fichier |
+|------|------------|----------|
+| seedStrategiesExpiration | Description "standard + decouverte" → "5 stratégies (une par plan)" + version 3.2.0 | `seeds/index.ts` |
+| seedRemises | Description "10 règles" → "8 règles" (v3.2 a supprimé 2 CYCLE) + version 3.2.0 | `seeds/index.ts` |
+
+### Fichiers supplémentaires modifiés
+
+| Fichier | Action |
+|---------|--------|
+| `frontend/src/features/billing/types/plan.types.ts` | COMPORTEMENTS_PHASE → PHASE_VALUES, CYCLE_LABELS supprimé, formatQuotaEleves i18n |
+| `frontend/src/features/platform/components/strategie-form-modal.tsx` | Import PHASE_VALUES, dropdown i18n |
+| `frontend/src/routes/platform.cycles-strategies.tsx` | Suppression COMPORTEMENTS_PHASE, "plan" → i18n, phases → i18n |
+| `frontend/src/features/billing/components/plan-simulator.tsx` | "Jusqu'à X élèves" → i18n, formatQuotaEleves avec label |
+| `backend/src/database/seeds/index.ts` | Descriptions seeds corrigées (strategies 5, remises 8) |
+| `frontend/src/locales/fr/plans.json` | +6 clés (phase.*, planSlugLabel, simulateur.jusqua/eleves) |
+| `frontend/src/locales/en/plans.json` | +6 clés (phase.*, planSlugLabel, simulateur.jusqua/eleves) |
+
+---
+
+## Refonte Billing v3.4 — UX Billing Pages Complet (✅ TERMINÉ)
+
+> Contexte : Améliorations UX/design de toutes les pages billing plateforme et composant de présentation des plans, inspirées des meilleures pratiques SaaS (hiérarchie visuelle, plan recommandé, CTA, empty states, responsive, dark mode).
+
+### Améliorations TarifsPreview (composant central)
+
+| Amélioration | Détail |
+|--------------|--------|
+| CTA div custom → ElisaButton | Bouton fullWidth variant primary/outline selon contexte (recommandé vs normal) |
+| Plan recommandé mis en avant | Bordure dominante/60, badge centré avec icône Star, shadow-md, hover:shadow-lg |
+| Badge centré en haut | `left-1/2 -translate-x-1/2` au lieu de `right-4` — meilleure hiérarchie visuelle |
+| Cards rounded-2xl + border-2 | Design plus moderne, distinction visuelle renforcée |
+| Animation hover | `motion.div whileHover={{ y: -2 }}` en mode tenant |
+| Cycle toggle amélioré | flex-wrap responsive, bg surface-hover/30, badges remise colorés (blanc sur actif, vert sur inactif) |
+| i18n cycle names | `t('tarifs.mensuel')` au lieu de capitalize manuel |
+| i18n periode | "mois" / "3 mois" → `t('tarifs.periode.mois')` / `t('tarifs.periode.periodes', { count })` |
+| Responsive grilles | `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5` |
+| Icons shrink-0 | Icônes features ne se compressent pas sur petits écrans |
+| PlanComparison hover rows | Lignes avec hover bg pour meilleure lisibilité |
+| PlanComparison i18n cycles | Noms de cycles traduits au lieu de capitalize |
+
+### Améliorations Platform Plans (CRUD plateforme)
+
+| Amélioration | Détail |
+|--------------|--------|
+| Empty state | Affichage avec icône + CTA quand aucun plan |
+| Layout carte amélioré | Statut + badge en haut (flex justify-between), nom, prix, quotas, modules, actions |
+| Badge avec icône Sparkles | Badge plan avec icône pour cohérence visuelle |
+| Modules limités à 6 | Affiche max 6 tags + "...+N" pour éviter overflow |
+| Boutons action → ElisaButton | Edit2/Trash2 avec variant outline/ghost, size xs |
+| Formatage nombres | Quotas avec `toLocaleString('fr-FR')` pour lisibilité |
+| Responsive grilles | `md:grid-cols-2 xl:grid-cols-3` (au lieu de lg) |
+| Description line-clamp-2 | Évite cartes trop hautes avec descriptions longues |
+
+### Améliorations Platform Cycles & Stratégies
+
+| Amélioration | Détail |
+|--------------|--------|
+| Onglets responsive | rounded-xl, bg surface-hover/30, labels cachés sur mobile (`hidden sm:inline`) |
+| Table cycles responsive | Colonnes durée/statut cachées mobile (`hidden sm:table-cell`), hover rows |
+| Badges remise en pill | `rounded-full bg-success-100 text-success-700` |
+| Statut avec dot indicator | `h-1.5 w-1.5 rounded-full` + texte |
+| Actions → ElisaButton ghost | variant ghost, size xs, icônes 3.5, labels cachés mobile |
+| Empty state cycles | Icône CalendarClock + texte + CTA ElisaButton |
+| Empty state stratégies | border-dashed + icône Hourglass + CTA |
+| Timeline verticale phases | Cercles numérotés (h-7 w-7) + connecteur vertical + couleurs contextuelles |
+| Stratégies cards | rounded-2xl, actions ElisaButton ghost |
+
+### Améliorations Platform Packs Quota
+
+| Amélioration | Détail |
+|--------------|--------|
+| Icône ressource contextuelle | Users (élèves), HardDrive (stockage), MessageSquare (SMS), PackagePlus (fallback) |
+| Header avec icône | rounded-xl bg-dominante/10, icône ressource 4.5 |
+| Statut avec dot indicator | Même pattern que cycles (dot + texte) |
+| Description affichée | `line-clamp-2` si `pack.description` définie |
+| Détails en flex rows | Label/value alignés avec justify-between |
+| Quantité mise en avant | `font-semibold text-dominante` pour le +quota |
+| Prix séparé par border-t | `border-t border-bordure/50 pt-3` — section prix/actions distincte |
+| Actions → ElisaButton ghost | variant ghost, size xs, labels cachés mobile |
+| Empty state avec CTA | border-dashed + icône PackagePlus + bouton créer pack |
+| Cards rounded-2xl + hover:shadow-md | Transition shadow au survol |
+| Responsive grilles | `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` |
+
+### Améliorations Platform Remises
+
+| Amélioration | Détail |
+|--------------|--------|
+| Table responsive | Colonnes conditions/priorité cachées mobile (`hidden sm:table-cell`), usage caché lg (`hidden lg:table-cell`) |
+| Hover rows | `transition-colors hover:bg-[var(--color-surface-hover)]/50` |
+| Statut avec dot indicator | Même pattern que cycles/packs (dot + texte) |
+| Actions → ElisaButton ghost | variant ghost, size xs, icônes 3.5, labels cachés mobile |
+| Empty state avec CTA | Icône BadgePercent + texte + bouton créer remise |
+| Container rounded-2xl | `rounded-2xl` au lieu de `rounded-xl` (cohérence) |
+
+### Nettoyage
+
+- Import `ArrowDown` supprimé de `platform.cycles-strategies.tsx` (import mort)
+- Clé `packs.supprimerTitre` ajoutée FR+EN (utilisée par ConfirmationModal)
+
+### Audit Dark Mode + Responsive
+
+- ✅ Aucune couleur hardcodée (bg-white, text-gray, etc.) dans les pages billing
+- ✅ Tous les fichiers utilisent des variables CSS (`--color-*`)
+- ✅ Grilles adaptatives avec breakpoints progressifs
+- ✅ Cycle toggle avec flex-wrap pour petits écrans
+- ✅ Tables avec overflow-x-auto
+- ✅ Composants responsive de 320px à 2560px
+
+### i18n ajouté (FR + EN)
+
+- `plans.json` : +5 clés (tarifs.recommande, tarifs.periode.mois, tarifs.periode.periodes, plans.supprimerTitre, packs.supprimerTitre)
+
+### Fichiers créés/modifiés v3.4
+
+| Fichier | Action |
+|---------|--------|
+| `frontend/src/features/billing/components/tarifs-preview.tsx` | Refonte UX (ElisaButton CTA, plan recommandé, animations, i18n, responsive) |
+| `frontend/src/routes/platform.plans.tsx` | Refonte cartes (empty state, ElisaButton actions, modules limités, responsive) |
+| `frontend/src/routes/platform.cycles-strategies.tsx` | Refonte UX (ElisaButton, empty states, timeline phases, onglets responsive) |
+| `frontend/src/routes/platform.packs-quota.tsx` | Refonte cartes (icônes ressource, ElisaButton, empty state, descriptions) |
+| `frontend/src/routes/platform.remises.tsx` | Refonte table (ElisaButton, empty state CTA, responsive colonnes, dot indicator) |
+| `frontend/src/locales/fr/plans.json` | +5 clés (recommande, periode.*, supprimerTitre, packs.supprimerTitre) |
+| `frontend/src/locales/en/plans.json` | +5 clés (recommande, periode.*, supprimerTitre, packs.supprimerTitre) |
+

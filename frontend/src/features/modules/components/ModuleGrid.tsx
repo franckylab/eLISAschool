@@ -18,7 +18,7 @@ export interface ModuleGridProps {
     className?: string;
 }
 
-type CategorieFilter = 'ALL' | 'BASE' | 'PREMIUM' | 'ADDON';
+type CategorieFilter = 'ALL' | 'GRATUIT' | 'PAYANT';
 type StatusFilter = 'ALL' | 'ACTIF' | 'INACTIF';
 
 export function ModuleGrid({
@@ -58,9 +58,8 @@ export function ModuleGrid({
     const counts = useMemo(() => ({
         total: modules.length,
         actifs: modules.filter(m => m.actif).length,
-        base: modules.filter(m => m.entry.category === 'BASE').length,
-        premium: modules.filter(m => m.entry.category === 'PREMIUM').length,
-        addons: modules.filter(m => m.entry.category === 'ADDON').length,
+        gratuit: modules.filter(m => m.entry.category === 'GRATUIT').length,
+        payant: modules.filter(m => m.entry.category === 'PAYANT').length,
     }), [modules]);
 
     return (
@@ -99,7 +98,7 @@ export function ModuleGrid({
                 <div className="flex flex-wrap gap-2">
                     {/* Catégorie */}
                     <div className="flex items-center gap-1 rounded-lg bg-zinc-100 dark:bg-zinc-800/50 p-1">
-                        {(['ALL', 'BASE', 'PREMIUM', 'ADDON'] as CategorieFilter[]).map((cat) => (
+                        {(['ALL', 'GRATUIT', 'PAYANT'] as CategorieFilter[]).map((cat) => (
                             <button
                                 key={cat}
                                 onClick={() => setCategorieFilter(cat)}
@@ -110,7 +109,7 @@ export function ModuleGrid({
                                         : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300',
                                 )}
                             >
-                                {cat === 'ALL' ? 'Tous' : cat === 'BASE' ? 'Base' : cat === 'PREMIUM' ? 'Premium' : 'Addons'}
+                                {cat === 'ALL' ? 'Tous' : cat === 'GRATUIT' ? 'Gratuits' : 'Payants'}
                             </button>
                         ))}
                     </div>

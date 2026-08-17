@@ -22,6 +22,12 @@ export { seedSuperAdmin } from './system/seed-super-admin';
 export { seedParametresFinances } from './system/seed-parametres-finances';
 export { seedEmploiDuTemps } from './system/seed-emploi-du-temps';
 export { seedModeleRecu } from './system/seed-modele-recu';
+export { seedPlansAbonnement } from './system/seed-plans-abonnement';
+export { seedCyclesFacturation } from './system/seed-cycles-facturation';
+export { seedPacksQuota } from './system/seed-packs-quota';
+export { seedStrategiesExpiration } from './system/seed-strategies-expiration';
+export { seedRemises } from './system/seed-remises';
+export { seedParametresBilling } from './system/seed-parametres-billing';
 export { RBACSeedService } from './system/rbac.seed';
 
 // Demo seeds
@@ -54,6 +60,12 @@ export const SEEDS_INFO = [
     { name: 'seedParametresFinances', file: 'system/seed-parametres-finances.ts', description: 'Crée 74 paramètres de configuration finances', version: '2.0.0', multiTenant: false, idempotent: true },
     { name: 'seedEmploiDuTemps', file: 'system/seed-emploi-du-temps.ts', description: 'Crée 2 paramètres système EDT', version: '1.0.0', multiTenant: false, idempotent: true },
     { name: 'seedModeleRecu', file: 'system/seed-modele-recu.ts', description: 'Crée le modèle de reçu de paiement', version: '1.0.0', multiTenant: false, idempotent: true },
+    { name: 'seedPlansAbonnement', file: 'system/seed-plans-abonnement.ts', description: 'Crée les 5 plans v3 pilotés par JSONB (decouverte, starter, standard, pro, enterprise)', version: '3.0.0', multiTenant: false, idempotent: true },
+    { name: 'seedCyclesFacturation', file: 'system/seed-cycles-facturation.ts', description: 'Crée les 4 cycles de facturation (MENSUEL, TRIMESTRIEL, SEMESTRIEL, ANNUEL)', version: '3.0.0', multiTenant: false, idempotent: true },
+    { name: 'seedPacksQuota', file: 'system/seed-packs-quota.ts', description: 'Crée les 4 packs de quota supplémentaires (élèves, stockage, SMS)', version: '3.0.0', multiTenant: false, idempotent: true },
+    { name: 'seedStrategiesExpiration', file: 'system/seed-strategies-expiration.ts', description: 'Crée 5 stratégies d\'expiration (une par plan : decouverte 7j, starter 20j, standard 30j, pro 55j, enterprise 90j)', version: '3.2.0', multiTenant: false, idempotent: true },
+    { name: 'seedRemises', file: 'system/seed-remises.ts', description: 'Crée 8 règles de remise commerciale (2 volume, 2 fidélité, 1 groupe désactivée, 3 promotions coupon)', version: '3.2.0', multiTenant: false, idempotent: true },
+    { name: 'seedParametresBilling', file: 'system/seed-parametres-billing.ts', description: 'Crée les 16 paramètres système billing (onboarding, essai, facturation, expiration, dunning)', version: '3.0.0', multiTenant: false, idempotent: true },
     // Demo
     { name: 'seedUtilisateursParRole', file: 'demo/seed-utilisateurs-par-role.ts', description: 'Crée 44 utilisateurs de test (38 tenant + 6 plateforme)', version: '3.0.0', multiTenant: true, idempotent: true, requires: ['etablissementPrincipalId', 'etablissementSecondaireId (optionnel)'], defaultPassword: 'Test123456!' },
     { name: 'seedElevesExemples', file: 'demo/seed-eleves-exemples.ts', description: 'Crée 34 élèves exemples', version: '1.0.0', multiTenant: true, idempotent: true, requires: ['etablissementId', 'anneeScolaireId'], defaultPassword: 'Test123456!' },
@@ -65,6 +77,8 @@ export const SEEDS_INFO = [
 export const RECOMMENDED_ORDER = [
     'seedEtablissementsParDefaut', 'seedStructureAcademique', 'seedAnneesScolaires',
     'seedClassesParDefaut', 'seedMatieres', 'seedMatieresNiveaux',
+    'seedPlansAbonnement', 'seedCyclesFacturation', 'seedPacksQuota', 'seedStrategiesExpiration',
+    'seedRemises', 'seedParametresBilling',
     'seedSuperAdmin', 'seedParametresFinances', 'seedEmploiDuTemps', 'seedModeleRecu',
     'seedUtilisateursParRole', 'seedElevesExemples', 'seedGroupesEtablissements',
 ];

@@ -33,7 +33,7 @@ const TENANT_TABLES = [
     'matieres', 'periodes', 'annees_scolaires', 'membres_personnel',
     'parametres_systeme',
     'sondages', 'annonces',
-    'usage_meters', 'abonnements_client', 'transactions_ledger',
+    'usage_unifie', 'abonnements_client', 'transactions_ledger',
 ] as const;
 
 /**

@@ -363,8 +363,8 @@ export class ConfigurationService {
             return { valide: true, erreurs: [], modulesAutoActivés: [] };
         }
 
-        // P4.1 v7 — Protection modules BASE : non désactivables
-        if (!actif && catalogueModule.categorie === 'BASE') {
+        // Refonte v3 — Protection modules critiques : non désactivables
+        if (!actif && catalogueModule.estCritique) {
             return {
                 valide: false,
                 erreurs: [`Le module "${catalogueModule.nom}" est critique et ne peut pas être désactivé`],

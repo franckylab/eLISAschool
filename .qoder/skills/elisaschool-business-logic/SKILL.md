@@ -2035,3 +2035,130 @@ Système (défaut code) → Global (tous établissements) → Groupe → Établi
 2. **Override explicite** : Si un établissement a un override, la propagation globale ne l'affecte pas
 3. **Détection incohérences** : Alertes quand des overrides contradictoires sont détectés
 4. **Historique** : Timeline des modifications avec rollback possible
+
+---
+
+## Domaine 16 — Billing & Abonnements SaaS (v3.1)
+
+### Architecture générale
+
+Le module billing gère les plans d'abonnement, la facturation récurrente, les remises, les packs quota et les feature flags tenant.
+
+```
+PlanAbonnement → AbonnementClient → Facture → LigneFacture
+                    ↓                          ↓
+            FeatureFlagTenant          PacksQuotaSouscrit
+                    ↓
+            RemiseAbonnement (appliquées via RemiseService)
+```
+
+### Moteur de remises v3.1
+
+**Fichier** : `backend/src/modules/billing/services/remise.service.ts`
+
+**Stratégie d'application** (`appliquer()`) :
+1. Filtrer les remises valides : actives, dates OK, maxUtilisations non atteint, cible matching, **conditions remplies**
+2. Trier par `priorite` DESC
+3. Si une remise non cumulable existe → elle gagne seule
+4. Sinon cumul des remises cumulables (plancher : montant >= 0)
+5. **Plafond global 40%** : la déduction totale ne peut dépasser 40% du montant initial
+
+**Filtrage conditionnel** (`estValide()`) :
+- `conditionElevesMin` : `ctx.nombreEleves >= conditionElevesMin` requis
+- `conditionAncienneteMois` : ancienneté calculée depuis `ctx.dateDebutAbonnement` >= `conditionAncienneteMois`
+
+**ContexteApplicationRemise** (interface complète) :
+```typescript
+{
+  planId, etablissementId, cycleCode, numeroCycle, codeCoupon,
+  nombreEleves,          // ← v3.1 : filtrage volume
+  dateDebutAbonnement,   // ← v3.1 : calcul ancienneté
+  dateFinAbonnement      // ← v3.1 : calcul cycle réel
+}
+```
+
+**Types de remises** :
+| Type | Description |
+|------|-------------|
+| `POURCENTAGE` | Pourcentage du montant |
+| `MONTANT_FIXE` | Réduction fixe en FCFA |
+| `CYCLE_GRATUIT` | X cycles offerts |
+
+**Cibles** :
+| Cible | Portée |
+|-------|--------|
+| `GLOBAL` | Tous les établissements |
+| `PLAN` | Abonnés d'un plan spécifique |
+| `TENANT` | Un établissement particulier |
+| `CYCLE` | Cycle de facturation spécifique |
+
+### Remises conditionnées (seed)
+
+| Code | Type | Valeur | Condition |
+|------|------|--------|-----------|
+| VOL-500 | POURCENTAGE | 5% | `conditionElevesMin = 500` |
+| VOL-1000 | POURCENTAGE | 10% | `conditionElevesMin = 1000` |
+| FID-12M | POURCENTAGE | 3% | `conditionAncienneteMois = 12` |
+| FID-24M | POURCENTAGE | 7% | `conditionAncienneteMois = 24` |
+
+### Prorata packs quota
+
+**Fichier** : `backend/src/modules/billing/services/pack-quota.service.ts`
+
+Le prorata est calculé sur la **durée réelle du cycle** :
+```typescript
+dureeCycleJours = Math.max(1, ceil((dateFin - dateDebut) / 86400000))
+prixProrata = prixPack * (joursRestants / dureeCycleJours)
+```
+
+### Plans d'abonnement (5 plans v3)
+
+| Plan | Prix base | Éléves inclus | Modules | Badge |
+|------|-----------|---------------|---------|-------|
+| Découverte | 0 FCFA | 50 | 6 modules cœur | — |
+| Starter | 15 000 FCFA | 100 | 8 modules | — |
+| Standard | 25 000 FCFA | 200 | 16 modules | RECOMMANDÉ |
+| Pro | 60 000 FCFA | 400 | 17 modules | — |
+| Enterprise | 150 000 FCFA | illimité | 17 modules + SSO/WL | — |
+
+### Facturation — Flux complet
+
+1. `FacturationService.genererFacture()` → calcule montant de base (prix plan + élèves supplémentaires)
+2. Enrichit le `ContexteApplicationRemise` (nombreEleves, dates abonnement)
+3. `RemiseService.appliquer()` → filtre + cumul + plafond 40%
+4. Génération des `LigneFacture` (abonnement + packs + remises)
+5. Mise à jour quotas et feature flags
+
+### Notifications expiration
+
+**Fichier** : `backend/src/modules/billing/cron-jobs.ts` — `cronNotificationsExpiration()`
+
+- Cron quotidien à 08h00
+- Paliers : J-7, J-3, J-1 avant expiration
+- Notification in-app + email (TODO: service email)
+- Filtre : abonnements ACTIF ou ESSAI dont `dateFin` est dans la fenêtre
+
+### Endpoints API billing (client)
+
+| Endpoint | Rôle |
+|----------|------|
+| `GET /api/billing/plans` | Liste plans actifs |
+| `POST /api/billing/simuler` | Simulation facturation |
+| `GET /api/billing/mon-abonnement` | Abonnement actuel |
+| `GET /api/billing/mon-abonnement/detail` | Abonnement complet (packs + remises + quotas) |
+| `PATCH /api/billing/abonnement/upgrade` | Changement de plan |
+| `GET /api/billing/remises/verify?code=XXX` | Validation code promo |
+| `GET /api/billing/packs` | Packs disponibles |
+| `POST /api/billing/packs/:id/souscrire` | Achat pack |
+
+### Fichiers clés
+
+| Fichier | Rôle |
+|---------|------|
+| `remise.service.ts` | Moteur remises v3.1 |
+| `facturation.service.ts` | Orchestration facturation |
+| `pack-quota.service.ts` | Gestion packs quota + prorata |
+| `billing.controller.ts` | Routes REST (plateforme + client) |
+| `cron-jobs.ts` | Jobs quotidiens (expiration, flags) |
+| `seed-plans-abonnement.ts` | Seed 5 plans v3 |
+| `seed-remises.ts` | Seed remises avec conditions |

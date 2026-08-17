@@ -1,16 +1,21 @@
 /**
  * ==================================
- * eLISAschool - Marketplace (Page Unique Gestion Modules)
+ * eLISAschool - Marketplace (Page Unique — Refonte v3)
  * ==================================
- * Refonte SaaS v9 — Consolidation & Déduplication
+ * Refonte v3 (migration 213) — marché unifié modules + fonctionnalités.
  *
- * Point d'entrée UNIQUE côté tenant pour la gestion des modules.
- * 3 onglets :
- *   - Catalogue : Découvrir/souscrire des add-ons (App Store)
- *   - Mes Modules : Toggles ON/OFF + statut abonnement
- *   - Analytics : Résumé rapide d'utilisation
+ * Point d'entrée UNIQUE côté tenant pour la gestion du marché :
+ * 4 onglets :
+ *   - Inclus    : modules inclus par le plan (toggles ON/OFF) + fonctionnalités du plan
+ *   - Gratuits  : modules & fonctionnalités gratuits (toujours accessibles)
+ *   - Payants   : modules & fonctionnalités payants (inclus / à débloquer)
+ *   - Usage     : consommation des quotas + achat de packs supplémentaires
  *
+ * Classification binaire GRATUIT | PAYANT (fin BASE/PREMIUM/ADDON).
  * Dark mode, responsive, animations Framer Motion.
+ *
+ * Version: 3.0.0
+ * Auteur: franck arlos chendjou
  */
 
 import { createFileRoute } from '@tanstack/react-router';
@@ -26,17 +31,14 @@ import {
     Star,
     Puzzle,
     CheckCircle,
-    ArrowUpCircle,
     Loader2,
     Sparkles,
     X,
     ShoppingCart,
-    Clock,
     LayoutGrid,
-    ToggleLeft,
-    BarChart3,
-    Calendar,
-    Filter,
+    Gauge,
+    Lock,
+    Zap,
 } from 'lucide-react';
 import { ModuleToggleCard } from '@/features/modules/components/module-toggle-card';
 import { cn } from '@/lib/cn';
@@ -49,51 +51,28 @@ export const Route = createFileRoute('/_auth/marketplace')({
 // TYPES
 // =============================================
 
-type TabId = 'catalogue' | 'mes-modules' | 'analytics';
+type TabId = 'inclus' | 'gratuits' | 'payants' | 'usage';
 
-interface AddonItem {
-    id: string;
-    code: string;
-    nom: string;
-    description?: string;
-    icone?: string;
-    categorie: string;
-    accessible: boolean;
-    estSouscriptible: boolean;
-    aPrix: boolean;
-    planMinimal?: string;
-}
-
-interface AddonDetail {
+interface ResolvedModule {
     id: string;
     code: string;
     nom: string;
     nomEn?: string;
     description?: string;
-    descriptionEn?: string;
-    icone?: string;
     categorie: string;
-    prixMensuel: number;
-    prixAnnuel: number;
-    estFacturable: boolean;
-    dependencies: string[];
-    accessible: boolean;
-    entitlementMessage?: string;
-    config: Record<string, unknown>;
-}
-
-interface ResolvedModule {
-    code: string;
-    nom: string;
+    estCritique?: boolean;
     icone?: string;
-    categorie: string;
+    prixMensuel?: number;
+    prixAnnuel?: number;
+    estFacturable?: boolean;
+    estSouscriptible?: boolean;
+    planMinimal?: string;
+    inclusParPlan: boolean;
     actif: boolean;
     source: string;
-    description?: string;
-    prixMensuel?: number;
     entitlement?: {
         accessible: boolean;
-        visible: boolean;
+        visible?: boolean;
         raison: string;
         message?: string;
         source: string;
@@ -101,24 +80,93 @@ interface ResolvedModule {
     };
 }
 
+interface FonctionnaliteItem {
+    cle: string;
+    nom: string;
+    description?: string;
+    categorie: string;
+    categorieCommerciale: 'GRATUIT' | 'PAYANT';
+    incluseParPlan: boolean;
+}
+
 interface AbonnementStatut {
     actif: boolean;
     statut: string;
     planSlug?: string;
     planNom?: string;
+    phaseExpiration?: string;
 }
+
+interface EtatQuota {
+    ressource: string;
+    utilisation: number;
+    limite: number;
+    quotaPlan: number;
+    quotaPacks: number;
+    pourcentage: number;
+}
+
+interface PackItem {
+    id: string;
+    code: string;
+    nom: string;
+    ressource: string;
+    quantite: number;
+    prix: number;
+    devise: string;
+    dureeValidite: 'CYCLE_COURANT' | 'ILLIMITE';
+    description?: string;
+    ordre: number;
+}
+
+/** Enveloppe standard des réponses API ({ success, data }) */
+interface ApiEnvelope<T> {
+    success: boolean;
+    data: T;
+    message?: string;
+}
+
+// =============================================
+// HOOKS
+// =============================================
+
+function useMarketplace() {
+    return useQuery({
+        queryKey: ['marketplace-v3'],
+        queryFn: async () => {
+            const res = await apiClient.get<ApiEnvelope<{
+                modules: ResolvedModule[];
+                fonctionnalites: FonctionnaliteItem[];
+                abonnement: AbonnementStatut;
+            }>>('/api/billing/marketplace');
+            return res.data?.data ?? { modules: [], fonctionnalites: [], abonnement: undefined };
+        },
+        staleTime: 30_000,
+    });
+}
+
+const RESSOURCE_LABELS: Record<string, string> = {
+    eleves: 'Élèves',
+    utilisateurs: 'Utilisateurs',
+    classes: 'Classes',
+    stockageGo: 'Stockage (Go)',
+    sms: 'SMS',
+};
+
+const ressourceLabel = (r: string) => RESSOURCE_LABELS[r] || r;
 
 // =============================================
 // COMPONENT
 // =============================================
 
 function MarketplacePage() {
-    const [activeTab, setActiveTab] = useState<TabId>('catalogue');
+    const [activeTab, setActiveTab] = useState<TabId>('inclus');
 
     const tabs: { id: TabId; label: string; icon: typeof LayoutGrid }[] = [
-        { id: 'catalogue', label: 'Catalogue', icon: LayoutGrid },
-        { id: 'mes-modules', label: 'Mes Modules', icon: ToggleLeft },
-        { id: 'analytics', label: 'Aperçu', icon: BarChart3 },
+        { id: 'inclus', label: 'Inclus', icon: CheckCircle },
+        { id: 'gratuits', label: 'Gratuits', icon: Shield },
+        { id: 'payants', label: 'Payants', icon: Star },
+        { id: 'usage', label: 'Usage', icon: Gauge },
     ];
 
     return (
@@ -135,10 +183,10 @@ function MarketplacePage() {
                     </div>
                 </div>
                 <h1 className="text-2xl font-bold text-[var(--color-text-primary)] sm:text-3xl">
-                    Modules
+                    Marché des modules
                 </h1>
                 <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                    Gérez les modules de votre établissement
+                    Modules, fonctionnalités et quotas de votre établissement
                 </p>
             </motion.div>
 
@@ -175,9 +223,10 @@ function MarketplacePage() {
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.15 }}
                 >
-                    {activeTab === 'catalogue' && <CatalogueTab />}
-                    {activeTab === 'mes-modules' && <MesModulesTab />}
-                    {activeTab === 'analytics' && <AnalyticsTab />}
+                    {activeTab === 'inclus' && <InclusTab />}
+                    {activeTab === 'gratuits' && <GratuitsTab />}
+                    {activeTab === 'payants' && <PayantsTab />}
+                    {activeTab === 'usage' && <UsageTab />}
                 </motion.div>
             </AnimatePresence>
         </div>
@@ -185,498 +234,165 @@ function MarketplacePage() {
 }
 
 // =============================================
-// ONGLET CATALOGUE (Add-ons)
+// BANNIÈRE ABONNEMENT (partagée)
 // =============================================
 
-function CatalogueTab() {
-    const queryClient = useQueryClient();
+function AbonnementBanner({ abonnement, nbActifs, nbTotal }: {
+    abonnement?: AbonnementStatut;
+    nbActifs?: number;
+    nbTotal?: number;
+}) {
+    if (!abonnement) return null;
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
+        >
+            <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-dominant-100)]">
+                    <Shield size={20} className="text-[var(--color-dominant-700)]" />
+                </div>
+                <div>
+                    <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                        {abonnement.planNom || abonnement.planSlug || 'Aucun plan'}
+                    </p>
+                    <p className="text-xs text-[var(--color-text-muted)]">
+                        {abonnement.actif ? 'Abonnement actif' : `Statut : ${abonnement.statut}`}
+                        {abonnement.phaseExpiration ? ` — phase : ${abonnement.phaseExpiration}` : ''}
+                    </p>
+                </div>
+            </div>
+            {nbTotal !== undefined && (
+                <span className="rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                    {nbActifs}/{nbTotal} modules actifs
+                </span>
+            )}
+        </motion.div>
+    );
+}
+
+// =============================================
+// ONGLET INCLUS (modules du plan + fonctionnalités du plan)
+// =============================================
+
+function InclusTab() {
     const [search, setSearch] = useState('');
-    const [selectedAddon, setSelectedAddon] = useState<string | null>(null);
-    const [categorieFilter, setCategorieFilter] = useState<string>('ALL');
+    const [configModule, setConfigModule] = useState<string | null>(null);
+    const { data, isLoading } = useMarketplace();
 
-    const { data: addons, isLoading } = useQuery({
-        queryKey: ['marketplace-addons'],
-        queryFn: async () => {
-            const res = await apiClient.get<AddonItem[]>('/api/billing/marketplace');
-            return res.data ?? [];
-        },
-        staleTime: 60_000,
-    });
+    const modules = data?.modules ?? [];
+    const fonctionnalites = data?.fonctionnalites ?? [];
+    const abonnement = data?.abonnement;
 
-    const { data: detail } = useQuery({
-        queryKey: ['marketplace-addon-detail', selectedAddon],
-        queryFn: async () => {
-            if (!selectedAddon) return null;
-            const res = await apiClient.get<AddonDetail>(`/api/billing/marketplace/${selectedAddon}`);
-            return res.data;
-        },
-        enabled: !!selectedAddon,
-    });
-
-    const essaiMutation = useMutation({
-        mutationFn: (code: string) => apiClient.post<{ message: string }>(`/api/billing/marketplace/${code}/essayer`),
-        onSuccess: (res) => {
-            toast.success(res.data?.message || 'Succès');
-            queryClient.invalidateQueries({ queryKey: ['marketplace-addons'] });
-            queryClient.invalidateQueries({ queryKey: ['marketplace-mes-modules'] });
-            setSelectedAddon(null);
-        },
-        onError: (err: any) => toast.error(err?.message || 'Erreur'),
-    });
-
-    const souscrireMutation = useMutation({
-        mutationFn: (code: string) => apiClient.post<{ message: string }>(`/api/billing/marketplace/${code}/souscrire`),
-        onSuccess: (res) => {
-            toast.success(res.data?.message || 'Succès');
-            queryClient.invalidateQueries({ queryKey: ['marketplace-addons'] });
-            queryClient.invalidateQueries({ queryKey: ['marketplace-mes-modules'] });
-            setSelectedAddon(null);
-        },
-        onError: (err: any) => toast.error(err?.message || 'Erreur'),
-    });
-
-    const filtered = useMemo(() => {
-        if (!addons) return [];
-        let result = addons;
-        if (categorieFilter !== 'ALL') {
-            result = result.filter(a => a.categorie === categorieFilter);
-        }
+    const inclus = useMemo(() => {
+        let result = modules.filter(m => m.actif);
         if (search.trim()) {
             const q = search.toLowerCase();
-            result = result.filter(a =>
-                a.nom.toLowerCase().includes(q) ||
-                a.code.toLowerCase().includes(q) ||
-                (a.description || '').toLowerCase().includes(q)
+            result = result.filter(m =>
+                m.nom.toLowerCase().includes(q) || m.code.toLowerCase().includes(q)
             );
         }
         return result;
-    }, [addons, search, categorieFilter]);
+    }, [modules, search]);
 
-    const actifs = filtered.filter(a => a.accessible);
-    const disponibles = filtered.filter(a => !a.accessible && a.estSouscriptible);
+    const fonctionnalitesIncluses = fonctionnalites.filter(f => f.incluseParPlan);
 
-    const categorieIcon = (cat: string) => {
-        switch (cat) {
-            case 'BASE': return Shield;
-            case 'PREMIUM': return Star;
-            default: return Puzzle;
-        }
-    };
+    if (isLoading) {
+        return (
+            <div className="flex h-48 items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-[var(--color-dominant-600)]" />
+            </div>
+        );
+    }
 
     return (
         <div>
-            {/* Barre de recherche + filtres */}
-            <div className="mb-6 flex flex-col sm:flex-row items-center gap-3 justify-center">
+            <AbonnementBanner
+                abonnement={abonnement}
+                nbActifs={modules.filter(m => m.actif).length}
+                nbTotal={modules.length}
+            />
+
+            {/* Recherche */}
+            <div className="mb-4 flex justify-center">
                 <div className="relative w-full max-w-md">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
                     <input
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Rechercher un module..."
+                        placeholder="Rechercher un module inclus..."
                         className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-2.5 pl-10 pr-4 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-dominant-500)] focus:outline-none focus:ring-1 focus:ring-[var(--color-dominant-500)]"
                     />
                 </div>
-                <div className="flex items-center gap-1 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] p-1">
-                    {(['ALL', 'BASE', 'PREMIUM', 'ADDON'] as const).map((cat) => (
-                        <button
-                            key={cat}
-                            onClick={() => setCategorieFilter(cat)}
-                            className={cn(
-                                'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
-                                categorieFilter === cat
-                                    ? 'bg-[var(--color-dominant-600)] text-white'
-                                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
-                            )}
-                        >
-                            {cat === 'ALL' ? 'Tous' : cat === 'BASE' ? 'Base' : cat === 'PREMIUM' ? 'Premium' : 'Add-ons'}
-                        </button>
-                    ))}
-                </div>
             </div>
 
-            {isLoading ? (
-                <div className="flex h-48 items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-[var(--color-dominant-600)]" />
-                </div>
-            ) : (
-                <>
-                    {/* Modules actifs */}
-                    {actifs.length > 0 && (
-                        <section className="mb-8">
-                            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text-primary)]">
-                                <CheckCircle size={18} className="text-emerald-500" />
-                                Modules actifs
-                            </h2>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                {actifs.map((addon) => {
-                                    const Icon = categorieIcon(addon.categorie);
-                                    return (
-                                        <motion.div
-                                            key={addon.code}
-                                            layout
-                                            initial={{ opacity: 0, scale: 0.95 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            className="group relative rounded-xl border border-emerald-500/20 bg-[var(--color-surface)] p-4 transition-all hover:border-emerald-500/40 hover:shadow-lg"
-                                        >
-                                            <div className="mb-3 flex items-start justify-between">
-                                                <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', 'bg-emerald-500/10')}>
-                                                    <Icon size={20} className="text-emerald-600 dark:text-emerald-400" />
-                                                </div>
-                                                <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                                                    <CheckCircle size={10} />
-                                                    Actif
-                                                </span>
-                                            </div>
-                                            <h3 className="font-semibold text-[var(--color-text-primary)]">{addon.nom}</h3>
-                                            <p className="mt-1 line-clamp-2 text-xs text-[var(--color-text-secondary)]">
-                                                {addon.description || 'Module complémentaire'}
-                                            </p>
-                                            <button
-                                                onClick={() => setSelectedAddon(addon.code)}
-                                                className="mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
-                                            >
-                                                Détails →
-                                            </button>
-                                        </motion.div>
-                                    );
-                                })}
-                            </div>
-                        </section>
-                    )}
-
-                    {/* Modules disponibles */}
-                    {disponibles.length > 0 && (
-                        <section>
-                            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text-primary)]">
-                                <ArrowUpCircle size={18} className="text-[var(--color-secondary-600)]" />
-                                Modules disponibles
-                            </h2>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                {disponibles.map((addon) => {
-                                    const Icon = categorieIcon(addon.categorie);
-                                    return (
-                                        <motion.div
-                                            key={addon.code}
-                                            layout
-                                            initial={{ opacity: 0, scale: 0.95 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            className="group relative cursor-pointer rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-all hover:border-[var(--color-secondary-500)]/40 hover:shadow-lg"
-                                            onClick={() => setSelectedAddon(addon.code)}
-                                        >
-                                            <div className="mb-3 flex items-start justify-between">
-                                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-secondary-600)]/10">
-                                                    <Icon size={20} className="text-[var(--color-secondary-600)]" />
-                                                </div>
-                                                {addon.aPrix && (
-                                                    <span className="flex items-center gap-1 rounded-full bg-[var(--color-secondary-600)]/10 px-2 py-0.5 text-xs font-medium text-[var(--color-secondary-600)]">
-                                                        <ShoppingCart size={10} />
-                                                        Premium
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <h3 className="font-semibold text-[var(--color-text-primary)]">{addon.nom}</h3>
-                                            <p className="mt-1 line-clamp-2 text-xs text-[var(--color-text-secondary)]">
-                                                {addon.description || 'Module complémentaire'}
-                                            </p>
-                                            <button
-                                                className="mt-3 w-full rounded-lg bg-[var(--color-secondary-600)] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[var(--color-secondary-700)]"
-                                                onClick={(e) => { e.stopPropagation(); setSelectedAddon(addon.code); }}
-                                            >
-                                                Découvrir
-                                            </button>
-                                        </motion.div>
-                                    );
-                                })}
-                            </div>
-                        </section>
-                    )}
-
-                    {filtered.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-16 text-center">
-                            <Package className="mb-4 h-12 w-12 text-[var(--color-text-muted)]" />
-                            <p className="text-sm text-[var(--color-text-secondary)]">
-                                Aucun module ne correspond à votre recherche
-                            </p>
-                        </div>
-                    )}
-                </>
-            )}
-
-            {/* Modal détail */}
-            <AnimatePresence>
-                {selectedAddon && detail && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-                        onClick={() => setSelectedAddon(null)}
-                    >
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
-                            className="w-full max-w-lg rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-2xl"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="mb-4 flex items-start justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-secondary-600)]/10">
-                                        {(() => { const Icon = categorieIcon(detail.categorie); return <Icon size={24} className="text-[var(--color-secondary-600)]" />; })()}
-                                    </div>
-                                    <div>
-                                        <h2 className="text-lg font-bold text-[var(--color-text-primary)]">{detail.nom}</h2>
-                                        <span className="text-xs text-[var(--color-text-muted)]">{detail.code}</span>
-                                    </div>
+            {/* Fonctionnalités incluses par le plan */}
+            <section className="mb-8">
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text-primary)]">
+                    <Zap size={18} className="text-[var(--color-dominant-600)]" />
+                    Fonctionnalités incluses ({fonctionnalitesIncluses.length})
+                </h2>
+                {fonctionnalitesIncluses.length === 0 ? (
+                    <p className="text-sm text-[var(--color-text-muted)]">
+                        Aucune fonctionnalité supplémentaire incluse par votre plan.
+                    </p>
+                ) : (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {fonctionnalitesIncluses.map((f) => (
+                            <div
+                                key={f.cle}
+                                className="flex items-start gap-3 rounded-xl border border-[var(--color-dominant-500)]/20 bg-[var(--color-surface)] p-4"
+                            >
+                                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-[var(--color-dominant-600)]/10">
+                                    <Zap size={16} className="text-[var(--color-dominant-600)]" />
                                 </div>
-                                <button onClick={() => setSelectedAddon(null)} className="rounded-lg p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text-primary)]">
-                                    <X size={18} />
-                                </button>
-                            </div>
-
-                            <p className="mb-4 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-                                {detail.description || 'Pas de description disponible.'}
-                            </p>
-
-                            {detail.estFacturable && (
-                                <div className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-[var(--color-text-muted)]">Mensuel</span>
-                                        <span className="font-semibold">{detail.prixMensuel > 0 ? `${detail.prixMensuel.toLocaleString('fr-FR')} XAF` : 'Gratuit'}</span>
-                                    </div>
-                                    <div className="mt-1 flex items-center justify-between text-sm">
-                                        <span className="text-[var(--color-text-muted)]">Annuel</span>
-                                        <span className="font-semibold">{detail.prixAnnuel > 0 ? `${detail.prixAnnuel.toLocaleString('fr-FR')} XAF` : 'Gratuit'}</span>
-                                    </div>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-[var(--color-text-primary)]">{f.nom}</p>
+                                    {f.description && (
+                                        <p className="mt-0.5 line-clamp-2 text-xs text-[var(--color-text-secondary)]">{f.description}</p>
+                                    )}
                                 </div>
-                            )}
-
-                            {detail.dependencies.length > 0 && (
-                                <div className="mb-4">
-                                    <p className="mb-1 text-xs font-medium text-[var(--color-text-muted)]">Dépendances :</p>
-                                    <div className="flex flex-wrap gap-1">
-                                        {detail.dependencies.map((dep) => (
-                                            <span key={dep} className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">{dep}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {detail.entitlementMessage && (
-                                <p className="mb-4 text-xs text-[var(--color-text-muted)] italic">{detail.entitlementMessage}</p>
-                            )}
-
-                            <div className="flex gap-3">
-                                {!detail.accessible && (
-                                    <button
-                                        onClick={() => essaiMutation.mutate(detail.code)}
-                                        disabled={essaiMutation.isPending}
-                                        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[var(--color-secondary-500)] px-4 py-2.5 text-sm font-medium text-[var(--color-secondary-600)] transition-colors hover:bg-[var(--color-secondary-600)]/10 disabled:opacity-50"
-                                    >
-                                        {essaiMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Clock size={16} />}
-                                        Essayer 7 jours
-                                    </button>
-                                )}
-                                {!detail.accessible && detail.estFacturable && (
-                                    <button
-                                        onClick={() => souscrireMutation.mutate(detail.code)}
-                                        disabled={souscrireMutation.isPending}
-                                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--color-secondary-600)] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[var(--color-secondary-700)] disabled:opacity-50"
-                                    >
-                                        {souscrireMutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <ShoppingCart size={16} />}
-                                        Souscrire
-                                    </button>
-                                )}
-                                {detail.accessible && (
-                                    <div className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                                        <CheckCircle size={16} />
-                                        Module actif
-                                    </div>
-                                )}
+                                <CheckCircle size={16} className="ml-auto flex-shrink-0 text-emerald-500" />
                             </div>
-                        </motion.div>
-                    </motion.div>
+                        ))}
+                    </div>
                 )}
-            </AnimatePresence>
-        </div>
-    );
-}
+            </section>
 
-// =============================================
-// ONGLET MES MODULES (Toggles ON/OFF)
-// =============================================
-
-function MesModulesTab() {
-    const queryClient = useQueryClient();
-    const [search, setSearch] = useState('');
-    const [categorieFilter, setCategorieFilter] = useState<string>('ALL');
-    const [configModule, setConfigModule] = useState<string | null>(null);
-
-    const { data, isLoading } = useQuery({
-        queryKey: ['marketplace-mes-modules'],
-        queryFn: async () => {
-            const res = await apiClient.get<{ modules: ResolvedModule[]; abonnement: AbonnementStatut }>('/api/billing/marketplace/mes-modules');
-            return res.data;
-        },
-        staleTime: 30_000,
-    });
-
-    const modules = data?.modules ?? [];
-    const abonnement = data?.abonnement;
-
-    const filtered = useMemo(() => {
-        let result = modules;
-        if (categorieFilter !== 'ALL') {
-            result = result.filter(m => m.categorie === categorieFilter);
-        }
-        if (search.trim()) {
-            const q = search.toLowerCase();
-            result = result.filter(m =>
-                m.nom.toLowerCase().includes(q) ||
-                m.code.toLowerCase().includes(q)
-            );
-        }
-        return result;
-    }, [modules, search, categorieFilter]);
-
-    const actifs = filtered.filter(m => m.actif);
-    const inactifs = filtered.filter(m => !m.actif);
-    const totalActifs = modules.filter(m => m.actif).length;
-
-    // Modules de base non désactivables
-    const isDesactivable = (m: ResolvedModule) => {
-        return m.categorie !== 'BASE' && m.source !== 'base';
-    };
-
-    return (
-        <div>
-            {/* Info abonnement */}
-            {abonnement && (
-                <motion.div
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
-                >
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-dominant-100)]">
-                            <Shield size={20} className="text-[var(--color-dominant-700)]" />
-                        </div>
-                        <div>
-                            <p className="text-sm font-semibold text-[var(--color-text-primary)]">
-                                {abonnement.planNom || abonnement.planSlug || 'Aucun plan'}
-                            </p>
-                            <p className="text-xs text-[var(--color-text-muted)]">
-                                {abonnement.actif ? 'Abonnement actif' : `Statut: ${abonnement.statut}`}
-                            </p>
-                        </div>
+            {/* Modules actifs (toggles) */}
+            <section>
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text-primary)]">
+                    <CheckCircle size={18} className="text-emerald-500" />
+                    Modules actifs ({inclus.length})
+                </h2>
+                {inclus.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                        <Package className="mb-4 h-12 w-12 text-[var(--color-text-muted)]" />
+                        <p className="text-sm text-[var(--color-text-secondary)]">Aucun module actif</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <span className="rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                            {totalActifs}/{modules.length} modules actifs
-                        </span>
+                ) : (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {inclus.map((module) => (
+                            <ModuleToggleCard
+                                key={module.code}
+                                code={module.code}
+                                nom={module.nom}
+                                icone={module.icone}
+                                categorie={module.categorie}
+                                source={module.source}
+                                actif={module.actif}
+                                estCritique={module.estCritique}
+                                inclusParPlan={module.inclusParPlan}
+                                desactivable={!module.estCritique}
+                                onConfigure={(code) => setConfigModule(code)}
+                            />
+                        ))}
                     </div>
-                </motion.div>
-            )}
+                )}
+            </section>
 
-            {/* Recherche + filtres */}
-            <div className="mb-4 flex flex-col sm:flex-row items-center gap-3">
-                <div className="relative w-full max-w-sm">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Rechercher..."
-                        className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-2 pl-9 pr-3 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-dominant-500)] focus:outline-none"
-                    />
-                </div>
-                <div className="flex items-center gap-1 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] p-1">
-                    {(['ALL', 'BASE', 'PREMIUM', 'ADDON'] as const).map((cat) => (
-                        <button
-                            key={cat}
-                            onClick={() => setCategorieFilter(cat)}
-                            className={cn(
-                                'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
-                                categorieFilter === cat
-                                    ? 'bg-[var(--color-dominant-600)] text-white'
-                                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]',
-                            )}
-                        >
-                            {cat === 'ALL' ? 'Tous' : cat === 'BASE' ? 'Base' : cat === 'PREMIUM' ? 'Premium' : 'Add-ons'}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {isLoading ? (
-                <div className="flex h-48 items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-[var(--color-dominant-600)]" />
-                </div>
-            ) : (
-                <>
-                    {/* Modules actifs */}
-                    {actifs.length > 0 && (
-                        <section className="mb-6">
-                            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
-                                <CheckCircle size={14} className="text-emerald-500" />
-                                Actifs ({actifs.length})
-                            </h3>
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                {actifs.map((module) => (
-                                    <ModuleToggleCard
-                                        key={module.code}
-                                        code={module.code}
-                                        nom={module.nom}
-                                        icone={module.icone}
-                                        categorie={module.categorie}
-                                        source={module.source}
-                                        actif={module.actif}
-                                        desactivable={isDesactivable(module)}
-                                        onConfigure={(code) => setConfigModule(code)}
-                                    />
-                                ))}
-                            </div>
-                        </section>
-                    )}
-
-                    {/* Modules inactifs */}
-                    {inactifs.length > 0 && (
-                        <section>
-                            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-text-muted)]">
-                                <Filter size={14} />
-                                Inactifs ({inactifs.length})
-                            </h3>
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                {inactifs.map((module) => (
-                                    <ModuleToggleCard
-                                        key={module.code}
-                                        code={module.code}
-                                        nom={module.nom}
-                                        icone={module.icone}
-                                        categorie={module.categorie}
-                                        source={module.source}
-                                        actif={module.actif}
-                                        desactivable={false}
-                                        raisonBlocage={module.entitlement?.message}
-                                    />
-                                ))}
-                            </div>
-                        </section>
-                    )}
-
-                    {filtered.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-16 text-center">
-                            <Package className="mb-4 h-12 w-12 text-[var(--color-text-muted)]" />
-                            <p className="text-sm text-[var(--color-text-secondary)]">
-                                Aucun module trouvé
-                            </p>
-                        </div>
-                    )}
-                </>
-            )}
-
-            {/* Modal configuration rapide */}
             <AnimatePresence>
                 {configModule && (
                     <ModuleConfigModal
@@ -686,6 +402,371 @@ function MesModulesTab() {
                     />
                 )}
             </AnimatePresence>
+        </div>
+    );
+}
+
+// =============================================
+// ONGLET GRATUITS (modules + fonctionnalités GRATUIT)
+// =============================================
+
+function GratuitsTab() {
+    const { data, isLoading } = useMarketplace();
+    const modules = data?.modules ?? [];
+    const fonctionnalites = data?.fonctionnalites ?? [];
+
+    const gratuits = modules.filter(m => m.categorie === 'GRATUIT');
+    const foncGratuites = fonctionnalites.filter(f => f.categorieCommerciale === 'GRATUIT');
+
+    if (isLoading) {
+        return (
+            <div className="flex h-48 items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-[var(--color-dominant-600)]" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-8">
+            <p className="text-center text-sm text-[var(--color-text-secondary)]">
+                Le socle gratuit d'eLISAschool — accessible quel que soit votre plan.
+            </p>
+
+            {/* Modules gratuits */}
+            <section>
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text-primary)]">
+                    <Shield size={18} className="text-emerald-500" />
+                    Modules gratuits ({gratuits.length})
+                </h2>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {gratuits.map((m) => (
+                        <div
+                            key={m.code}
+                            className="rounded-xl border border-emerald-500/20 bg-[var(--color-surface)] p-4"
+                        >
+                            <div className="mb-3 flex items-start justify-between">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+                                    <Puzzle size={20} className="text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                                <span className={cn(
+                                    'flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+                                    m.actif
+                                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                        : 'bg-zinc-500/10 text-[var(--color-text-muted)]',
+                                )}>
+                                    {m.actif ? <CheckCircle size={10} /> : <Lock size={10} />}
+                                    {m.actif ? 'Actif' : 'Inactif'}
+                                </span>
+                            </div>
+                            <h3 className="font-semibold text-[var(--color-text-primary)]">{m.nom}</h3>
+                            <p className="mt-1 line-clamp-2 text-xs text-[var(--color-text-secondary)]">
+                                {m.description || 'Module gratuit'}
+                            </p>
+                            {m.estCritique && (
+                                <p className="mt-2 flex items-center gap-1 text-[10px] text-[var(--color-text-muted)]">
+                                    <Lock size={10} /> Module critique — toujours actif
+                                </p>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* Fonctionnalités gratuites */}
+            <section>
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text-primary)]">
+                    <Zap size={18} className="text-emerald-500" />
+                    Fonctionnalités gratuites ({foncGratuites.length})
+                </h2>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {foncGratuites.map((f) => (
+                        <div key={f.cle} className="flex items-start gap-3 rounded-xl border border-emerald-500/20 bg-[var(--color-surface)] p-4">
+                            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+                                <Zap size={16} className="text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-sm font-semibold text-[var(--color-text-primary)]">{f.nom}</p>
+                                {f.description && (
+                                    <p className="mt-0.5 line-clamp-2 text-xs text-[var(--color-text-secondary)]">{f.description}</p>
+                                )}
+                            </div>
+                            <CheckCircle size={16} className="ml-auto flex-shrink-0 text-emerald-500" />
+                        </div>
+                    ))}
+                    {foncGratuites.length === 0 && (
+                        <p className="text-sm text-[var(--color-text-muted)]">Aucune fonctionnalité gratuite référencée.</p>
+                    )}
+                </div>
+            </section>
+        </div>
+    );
+}
+
+// =============================================
+// ONGLET PAYANTS (modules + fonctionnalités PAYANT)
+// =============================================
+
+function PayantsTab() {
+    const { data, isLoading } = useMarketplace();
+    const modules = data?.modules ?? [];
+    const fonctionnalites = data?.fonctionnalites ?? [];
+
+    const payants = modules.filter(m => m.categorie === 'PAYANT');
+    const foncPayantes = fonctionnalites.filter(f => f.categorieCommerciale === 'PAYANT');
+
+    if (isLoading) {
+        return (
+            <div className="flex h-48 items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-[var(--color-dominant-600)]" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-8">
+            <p className="text-center text-sm text-[var(--color-text-secondary)]">
+                Modules et fonctionnalités disponibles selon votre plan ou en supplément.
+            </p>
+
+            {/* Modules payants */}
+            <section>
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text-primary)]">
+                    <Star size={18} className="text-amber-500" />
+                    Modules ({payants.length})
+                </h2>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {payants.map((m) => (
+                        <div
+                            key={m.code}
+                            className={cn(
+                                'rounded-xl border bg-[var(--color-surface)] p-4',
+                                m.actif ? 'border-emerald-500/30' : 'border-[var(--color-border)]',
+                            )}
+                        >
+                            <div className="mb-3 flex items-start justify-between">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
+                                    <Star size={20} className="text-amber-500" />
+                                </div>
+                                {m.actif ? (
+                                    <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                                        <CheckCircle size={10} />
+                                        {m.inclusParPlan ? 'Inclus plan' : 'Actif'}
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                                        <Lock size={10} />
+                                        {m.planMinimal ? `Plan ${m.planMinimal}` : 'À débloquer'}
+                                    </span>
+                                )}
+                            </div>
+                            <h3 className="font-semibold text-[var(--color-text-primary)]">{m.nom}</h3>
+                            <p className="mt-1 line-clamp-2 text-xs text-[var(--color-text-secondary)]">
+                                {m.description || 'Module payant'}
+                            </p>
+                            {!m.actif && m.entitlement?.message && (
+                                <p className="mt-2 text-[10px] italic text-[var(--color-text-muted)]">
+                                    {m.entitlement.message}
+                                </p>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* Fonctionnalités payantes */}
+            <section>
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text-primary)]">
+                    <Zap size={18} className="text-amber-500" />
+                    Fonctionnalités ({foncPayantes.length})
+                </h2>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {foncPayantes.map((f) => (
+                        <div
+                            key={f.cle}
+                            className={cn(
+                                'flex items-start gap-3 rounded-xl border bg-[var(--color-surface)] p-4',
+                                f.incluseParPlan ? 'border-emerald-500/30' : 'border-[var(--color-border)]',
+                            )}
+                        >
+                            <div className={cn(
+                                'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg',
+                                f.incluseParPlan ? 'bg-emerald-500/10' : 'bg-amber-500/10',
+                            )}>
+                                {f.incluseParPlan
+                                    ? <Zap size={16} className="text-emerald-600 dark:text-emerald-400" />
+                                    : <Lock size={16} className="text-amber-600 dark:text-amber-400" />}
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-sm font-semibold text-[var(--color-text-primary)]">{f.nom}</p>
+                                {f.description && (
+                                    <p className="mt-0.5 line-clamp-2 text-xs text-[var(--color-text-secondary)]">{f.description}</p>
+                                )}
+                                <p className="mt-1 text-[10px] font-medium">
+                                    {f.incluseParPlan
+                                        ? <span className="text-emerald-600 dark:text-emerald-400">Incluse dans votre plan</span>
+                                        : <span className="text-[var(--color-text-muted)]">Disponible sur un plan supérieur</span>}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                    {foncPayantes.length === 0 && (
+                        <p className="text-sm text-[var(--color-text-muted)]">Aucune fonctionnalité payante référencée.</p>
+                    )}
+                </div>
+            </section>
+        </div>
+    );
+}
+
+// =============================================
+// ONGLET USAGE (quotas + packs)
+// =============================================
+
+function UsageTab() {
+    const queryClient = useQueryClient();
+
+    const { data: usageData, isLoading } = useQuery({
+        queryKey: ['marketplace-usage'],
+        queryFn: async () => {
+            const res = await apiClient.get<ApiEnvelope<{ quotas: EtatQuota[]; abonnement: AbonnementStatut }>>(
+                '/api/billing/marketplace/usage',
+            );
+            return res.data?.data;
+        },
+        staleTime: 30_000,
+    });
+
+    const { data: packs = [] } = useQuery({
+        queryKey: ['marketplace-packs'],
+        queryFn: async () => {
+            const res = await apiClient.get<ApiEnvelope<PackItem[]>>('/api/billing/marketplace/packs');
+            return res.data?.data ?? [];
+        },
+        staleTime: 60_000,
+    });
+
+    const souscrirePack = useMutation({
+        mutationFn: (packId: string) =>
+            apiClient.post<ApiEnvelope<unknown>>(`/api/billing/marketplace/packs/${packId}/souscrire`),
+        onSuccess: (res) => {
+            toast.success(res.data?.message || 'Pack souscrit avec succès');
+            queryClient.invalidateQueries({ queryKey: ['marketplace-usage'] });
+            queryClient.invalidateQueries({ queryKey: ['marketplace-v3'] });
+        },
+        onError: (err: any) => toast.error(err?.message || 'Erreur lors de la souscription du pack'),
+    });
+
+    const quotas = usageData?.quotas ?? [];
+    const abonnement = usageData?.abonnement;
+
+    const couleurPourcentage = (p: number) => {
+        if (p >= 100) return 'bg-red-500';
+        if (p >= 80) return 'bg-amber-500';
+        return 'bg-emerald-500';
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex h-48 items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-[var(--color-dominant-600)]" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-8">
+            <AbonnementBanner abonnement={abonnement} />
+
+            {/* Quotas */}
+            <section>
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text-primary)]">
+                    <Gauge size={18} className="text-[var(--color-dominant-600)]" />
+                    Consommation des quotas
+                </h2>
+                {quotas.length === 0 ? (
+                    <p className="text-sm text-[var(--color-text-muted)]">Aucun quota suivi.</p>
+                ) : (
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {quotas.map((q) => (
+                            <div key={q.ressource} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+                                <div className="mb-2 flex items-center justify-between">
+                                    <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                                        {ressourceLabel(q.ressource)}
+                                    </span>
+                                    <span className={cn(
+                                        'text-xs font-bold',
+                                        q.pourcentage >= 100 ? 'text-red-500' : q.pourcentage >= 80 ? 'text-amber-500' : 'text-emerald-500',
+                                    )}>
+                                        {q.pourcentage >= 100 ? 'Quota dépassé' : `${q.pourcentage.toFixed(0)} %`}
+                                    </span>
+                                </div>
+                                <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface-hover)]">
+                                    <div
+                                        className={cn('h-full rounded-full transition-all', couleurPourcentage(q.pourcentage))}
+                                        style={{ width: `${Math.min(q.pourcentage, 100)}%` }}
+                                    />
+                                </div>
+                                <div className="mt-2 flex items-center justify-between text-xs text-[var(--color-text-muted)]">
+                                    <span>
+                                        {q.utilisation.toLocaleString('fr-FR')}
+                                        {' / '}
+                                        {q.limite === 0 ? 'Illimité' : q.limite.toLocaleString('fr-FR')}
+                                    </span>
+                                    {q.quotaPacks > 0 && (
+                                        <span className="text-[var(--color-dominant-600)]">
+                                            +{q.quotaPacks.toLocaleString('fr-FR')} (packs)
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </section>
+
+            {/* Packs quota */}
+            <section>
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[var(--color-text-primary)]">
+                    <ShoppingCart size={18} className="text-[var(--color-secondary-600)]" />
+                    Packs supplémentaires
+                </h2>
+                {packs.length === 0 ? (
+                    <p className="text-sm text-[var(--color-text-muted)]">Aucun pack disponible à l'achat.</p>
+                ) : (
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {packs.map((pack) => (
+                            <div key={pack.id} className="flex flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-all hover:border-[var(--color-secondary-500)]/40 hover:shadow-lg">
+                                <div className="mb-2 flex items-center justify-between">
+                                    <span className="rounded-full bg-[var(--color-secondary-600)]/10 px-2 py-0.5 text-[10px] font-medium text-[var(--color-secondary-600)]">
+                                        {ressourceLabel(pack.ressource)}
+                                    </span>
+                                    <span className="text-[10px] text-[var(--color-text-muted)]">
+                                        {pack.dureeValidite === 'ILLIMITE' ? 'Permanent' : 'Cycle courant'}
+                                    </span>
+                                </div>
+                                <h3 className="font-semibold text-[var(--color-text-primary)]">{pack.nom}</h3>
+                                {pack.description && (
+                                    <p className="mt-1 line-clamp-2 text-xs text-[var(--color-text-secondary)]">{pack.description}</p>
+                                )}
+                                <div className="mt-3 flex items-end justify-between">
+                                    <span className="text-lg font-bold text-[var(--color-text-primary)]">
+                                        {Number(pack.prix).toLocaleString('fr-FR')}
+                                        <span className="ml-1 text-xs font-normal text-[var(--color-text-muted)]">{pack.devise}</span>
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => souscrirePack.mutate(pack.id)}
+                                    disabled={souscrirePack.isPending}
+                                    className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-[var(--color-secondary-600)] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-[var(--color-secondary-700)] disabled:opacity-50"
+                                >
+                                    {souscrirePack.isPending ? <Loader2 size={14} className="animate-spin" /> : <ShoppingCart size={14} />}
+                                    Acheter
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </section>
         </div>
     );
 }
@@ -732,18 +813,18 @@ function ModuleConfigModal({ code, module, onClose }: {
                     <p className="mb-4 text-sm text-[var(--color-text-secondary)]">{module.description}</p>
                 )}
 
-                <div className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3 space-y-2">
+                <div className="mb-4 space-y-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
                     <div className="flex justify-between text-sm">
                         <span className="text-[var(--color-text-muted)]">Code</span>
                         <span className="font-mono text-xs">{code}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                         <span className="text-[var(--color-text-muted)]">Catégorie</span>
-                        <span>{module?.categorie || '—'}</span>
+                        <span>{module?.categorie === 'GRATUIT' ? 'Gratuit' : 'Payant'}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                         <span className="text-[var(--color-text-muted)]">Source</span>
-                        <span>{module?.source || '—'}</span>
+                        <span>{module?.inclusParPlan ? 'Inclus par le plan' : module?.source || '—'}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                         <span className="text-[var(--color-text-muted)]">État</span>
@@ -768,129 +849,6 @@ function ModuleConfigModal({ code, module, onClose }: {
                 </button>
             </motion.div>
         </motion.div>
-    );
-}
-
-// =============================================
-// ONGLET ANALYTICS (Aperçu rapide)
-// =============================================
-
-function AnalyticsTab() {
-    const { data, isLoading } = useQuery({
-        queryKey: ['marketplace-mes-modules'],
-        queryFn: async () => {
-            const res = await apiClient.get<{ modules: ResolvedModule[]; abonnement: AbonnementStatut }>('/api/billing/marketplace/mes-modules');
-            return res.data;
-        },
-        staleTime: 30_000,
-    });
-
-    const modules = data?.modules ?? [];
-    const abonnement = data?.abonnement;
-
-    const parCategorie = useMemo(() => {
-        const counts: Record<string, { total: number; actifs: number }> = {};
-        for (const m of modules) {
-            if (!counts[m.categorie]) counts[m.categorie] = { total: 0, actifs: 0 };
-            counts[m.categorie].total++;
-            if (m.actif) counts[m.categorie].actifs++;
-        }
-        return counts;
-    }, [modules]);
-
-    const parSource = useMemo(() => {
-        const counts: Record<string, number> = {};
-        for (const m of modules) {
-            if (m.actif) {
-                const src = m.source || 'autre';
-                counts[src] = (counts[src] || 0) + 1;
-            }
-        }
-        return Object.entries(counts).sort((a, b) => b[1] - a[1]);
-    }, [modules]);
-
-    if (isLoading) {
-        return (
-            <div className="flex h-48 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-[var(--color-dominant-600)]" />
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-6">
-            {/* Résumé abonnement */}
-            {abonnement && (
-                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-                    <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Abonnement</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <div>
-                            <p className="text-xs text-[var(--color-text-muted)]">Plan</p>
-                            <p className="text-lg font-bold text-[var(--color-text-primary)]">{abonnement.planNom || '—'}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-[var(--color-text-muted)]">Statut</p>
-                            <p className={cn('text-lg font-bold', abonnement.actif ? 'text-emerald-500' : 'text-red-500')}>
-                                {abonnement.actif ? 'Actif' : abonnement.statut}
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-[var(--color-text-muted)]">Modules actifs</p>
-                            <p className="text-lg font-bold text-[var(--color-text-primary)]">
-                                {modules.filter(m => m.actif).length}/{modules.length}
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-[var(--color-text-muted)]">Couverture</p>
-                            <p className="text-lg font-bold text-[var(--color-dominant-600)]">
-                                {modules.length > 0 ? Math.round((modules.filter(m => m.actif).length / modules.length) * 100) : 0}%
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Par catégorie */}
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-                <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Par catégorie</h3>
-                <div className="space-y-2">
-                    {Object.entries(parCategorie).map(([cat, data]) => (
-                        <div key={cat} className="flex items-center justify-between">
-                            <span className="text-sm text-[var(--color-text-primary)]">{cat}</span>
-                            <div className="flex items-center gap-3">
-                                <div className="h-2 w-24 rounded-full bg-[var(--color-surface-hover)] overflow-hidden">
-                                    <div
-                                        className="h-full rounded-full bg-emerald-500 transition-all"
-                                        style={{ width: `${data.total > 0 ? (data.actifs / data.total) * 100 : 0}%` }}
-                                    />
-                                </div>
-                                <span className="text-xs text-[var(--color-text-muted)] w-12 text-right">
-                                    {data.actifs}/{data.total}
-                                </span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Par source */}
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-                <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Par source d'activation</h3>
-                <div className="flex flex-wrap gap-2">
-                    {parSource.map(([source, count]) => (
-                        <span
-                            key={source}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-surface-hover)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-primary)]"
-                        >
-                            {source}
-                            <span className="rounded-full bg-[var(--color-dominant-100)] px-1.5 py-0.5 text-[10px] text-[var(--color-dominant-700)]">
-                                {count}
-                            </span>
-                        </span>
-                    ))}
-                </div>
-            </div>
-        </div>
     );
 }
 

@@ -2757,7 +2757,7 @@ const handleToggleFullscreen = useCallback(() => {
 ### Architecture Routes
 - **Layout** : `frontend/src/routes/platform.tsx` — guard `requireRole(['SUPER_ADMIN'])` dans `beforeLoad`, hérité par TOUTES les sous-routes
 - **11 fichiers de routes** : `platform.{dashboard,etablissements,facturation,modules,monitoring,audit,approbations,notifications-config,configuration,providers}.tsx`
-- **Sidebar dédiée** : `frontend/src/components/layout/platform-sidebar.tsx` — 10 items répartis en 3 groupes (Principal, Gestion, Système)
+- **Sidebar dédiée** : `frontend/src/components/layout/platform-sidebar.tsx` (v4.4) — 23 items répartis en 7 groupes (Pilotage, Établissement, Plans & abonnements, Commerce, Modules et fonctions, Sécurité & Audit, Configuration). Auto-expand groupe actif, persist collapsed/expanded (localStorage), mobile slide animation (framer-motion), navigation clavier (↑↓ Esc), indicateurs actifs, badges compteurs, séparateurs visuels.
 - **Composants** : `frontend/src/features/admin/components/` — tous les sous-composants du panel
 
 ### Conventions CSS — Zéro classe shadcn

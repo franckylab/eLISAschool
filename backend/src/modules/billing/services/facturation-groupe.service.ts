@@ -106,24 +106,33 @@ export class FacturationGroupeService {
                     etablissementId: lien.etablissementId,
                     statut: StatutAbonnement.ACTIF,
                 },
-                relations: ['plan', 'plan.tranches'],
+                relations: ['plan'],
             });
 
             if (!abonnement?.plan) continue;
 
-            // Calculer le montant pour cet établissement
+            // Compter les élèves réels de l'établissement (Refonte v3)
+            const nbEleves = await AppDataSource.query(
+                `SELECT COUNT(*)::int as count FROM eleves WHERE "etablissementId" = $1 AND "statut" = 'ACTIF'`,
+                [lien.etablissementId]
+            ).then((r: Array<{ count: number }>) => r[0]?.count ?? 0);
+
+            // Calculer le montant pour cet établissement (formule v3)
             const calcul = await this.facturationService.calculerMontantMensuel(
-                lien.etablissementId,
                 abonnement.planId,
+                nbEleves,
+                abonnement.id,
+                undefined,
+                lien.etablissementId,
             );
 
             membres.push({
                 etablissementId: lien.etablissementId,
                 nomEtablissement: lien.etablissement?.nom || lien.etablissementId.substring(0, 8),
-                nombreEleves: calcul.nombreEleves || 0,
+                nombreEleves: nbEleves,
                 montantBase: Number(abonnement.plan.prixBase),
-                montantTranches: calcul.montantTranches || 0,
-                montantOptions: 0, // À calculer selon les modules souscrits
+                montantTranches: calcul.montantElevesSupplementaires || 0,
+                montantOptions: calcul.montantOptions || 0,
                 montantTotal: calcul.montantTotal || Number(abonnement.plan.prixBase),
             });
         }
@@ -309,23 +318,23 @@ export class FacturationGroupeService {
         const lignes: Partial<LigneFacture>[] = membres.map(membre => ({
             description: `${membre.nomEtablissement} — ${membre.nombreEleves} élèves`,
             quantite: 1,
-            montantUnitaire: totalConsommation > 0
+            montant: totalConsommation > 0
                 ? Math.round((membre.montantTotal / totalConsommation) * montantApresReduction)
                 : 0,
-            montantTotal: totalConsommation > 0
+            total: totalConsommation > 0
                 ? Math.round((membre.montantTotal / totalConsommation) * montantApresReduction)
                 : 0,
             type: TypeLigneFacture.BASE,
         }));
 
-        // Ajouter la ligne de réduction si applicable
+        // Ajouter la ligne de réduction si applicable (Refonte v3 : type REMISE)
         if (degressivite > 0) {
             lignes.push({
                 description: `Réduction groupe (${degressivite}%) — ${groupe.nom}`,
                 quantite: 1,
-                montantUnitaire: -(montantAvantReduction - montantApresReduction),
-                montantTotal: -(montantAvantReduction - montantApresReduction),
-                type: TypeLigneFacture.REDUCTION,
+                montant: -(montantAvantReduction - montantApresReduction),
+                total: -(montantAvantReduction - montantApresReduction),
+                type: TypeLigneFacture.REMISE,
             });
         }
 

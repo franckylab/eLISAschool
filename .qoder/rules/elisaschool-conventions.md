@@ -1986,3 +1986,118 @@ Colonne `dateExpirationReelle` sur `abonnements_client` pour tracker J0.
 | `frontend/src/features/modules/components/module-card.tsx` | Carte module réutilisable |
 | `frontend/src/features/modules/hooks/use-mes-modules.ts` | Hook TanStack Query |
 | `frontend/src/locales/fr/modules.json` + `en/modules.json` | i18n modules |
+
+---
+
+## 31. Billing v3.1 — Corrections moteur remises, prorata et page plans
+
+### 31.1 Contexte
+
+La refonte Billing v3 a introduit des bugs dans le moteur de remises et le calcul prorata des packs. Cette section documente les corrections apportées (migration 214) et les nouveaux composants frontend.
+
+### 31.2 RemiseService v3.1 — Filtrage conditionnel + plafond 40%
+
+**Fichier** : `backend/src/modules/billing/services/remise.service.ts`
+
+**Interface `ContexteApplicationRemise` étendue** :
+```typescript
+export interface ContexteApplicationRemise {
+    planId?: string;
+    etablissementId?: string;
+    cycleCode?: string;
+    numeroCycle?: number;
+    codeCoupon?: string;
+    nombreEleves?: number;          // ← v3.1
+    dateDebutAbonnement?: Date;     // ← v3.1
+    dateFinAbonnement?: Date;       // ← v3.1
+}
+```
+
+**Filtrage conditionnel** (méthode `estValide()`) :
+- `conditionElevesMin` : la remise ne s'applique que si `ctx.nombreEleves >= conditionElevesMin`
+- `conditionAncienneteMois` : la remise ne s'applique que si l'ancienneté (calculée depuis `ctx.dateDebutAbonnement`) >= `conditionAncienneteMois` mois
+
+**Plafond global 40%** :
+- Constante `PLAFOND_REMISE_POURCENT = 40`
+- Après cumul des remises, la déduction totale ne peut dépasser 40% du montant initial
+- Écrêtage progressif : si le cumul dépasse, chaque remise est réduite proportionnellement
+
+**Remises conditionnées** (seed) :
+| Code | Condition |
+|------|-----------|
+| VOL-500 | `conditionElevesMin = 500` |
+| VOL-1000 | `conditionElevesMin = 1000` |
+| FID-12M | `conditionAncienneteMois = 12` |
+| FID-24M | `conditionAncienneteMois = 24` |
+
+### 31.3 PackQuotaService — Prorata cycle réel
+
+**Fichier** : `backend/src/modules/billing/services/pack-quota.service.ts`
+
+Remplacement de `dureeCycleJours = 30` (hardcodé) par le calcul réel :
+```typescript
+const dureeCycleJours = Math.max(1, Math.ceil(
+    (dateFin.getTime() - dateDebut.getTime()) / (1000 * 60 * 60 * 24)
+));
+```
+
+### 31.4 FacturationService — Contexte enrichi
+
+**Fichier** : `backend/src/modules/billing/services/facturation.service.ts`
+
+Le contexte remise transmis au `RemiseService.appliquer()` inclut désormais :
+- `nombreEleves` : compté depuis les inscriptions actives de l'établissement
+- `dateDebutAbonnement` / `dateFinAbonnement` : lus depuis l'`AbonnementClient`
+
+### 31.5 Migration 214
+
+**Fichier** : `backend/database/migrations/214-remise-conditions-plafond.sql`
+
+- Ajout colonnes `condition_eleves_min` (integer) et `condition_anciennete_mois` (integer) sur `remises_abonnement`
+- Backfill des remises VOL-500/1000 et FID-12M/24M
+- Index partiels pour les requêtes de filtrage
+
+### 31.6 Nouveaux endpoints API
+
+| Endpoint | Méthode | Rôle |
+|----------|---------|------|
+| `/api/billing/remises/verify?code=XXX` | GET | Vérifie validité code coupon (dates, maxUtilisations) |
+| `/api/billing/mon-abonnement/detail` | GET | Abonnement complet : plan + packs souscrits + remises actives + quotas effectifs |
+
+### 31.7 Notifications expiration (cron)
+
+**Fichier** : `backend/src/modules/billing/cron-jobs.ts`
+
+- Fonction `cronNotificationsExpiration()` : vérification quotidienne à 08h00
+- Paliers : J-7, J-3, J-1 avant expiration
+- Notification in-app + email (TODO: intégration service email)
+
+### 31.8 Composants frontend (page plans)
+
+| Composant | Fichier | Rôle |
+|-----------|---------|------|
+| `TarifsPreview` v2 | `frontend/src/features/billing/components/tarifs-preview.tsx` | Grille plans dynamique avec toggle cycle |
+| `PacksSection` | `frontend/src/features/billing/components/packs-section.tsx` | Achat packs quota (prorata affiché) |
+| `CodePromoInput` | `frontend/src/features/billing/components/code-promo-input.tsx` | Saisie et validation code promo |
+| `FaqSection` | `frontend/src/features/billing/components/faq-section.tsx` | FAQ accordéon (10 questions) |
+| `TrustBadges` | `frontend/src/features/billing/components/trust-badges.tsx` | Signaux confiance (sécurité, support, sans engagement) |
+| `MonAbonnement` | `frontend/src/features/billing/components/mon-abonnement.tsx` | Dashboard tenant (quotas, remises, packs) |
+| `use-billing.ts` | `frontend/src/features/billing/hooks/use-billing.ts` | Hooks centralisés (plans, packs, coupons, abonnement) |
+
+### 31.9 Alignement seeds
+
+- `seed-plans-abonnement.ts` : `MODULES_DECOUVERTE` aligné avec migration 213 (`['eleves', 'classes', 'notes', 'bulletins', 'annees-scolaires', 'messagerie']`)
+- `seed-remises.ts` : conditions `conditionElevesMin` / `conditionAncienneteMois` ajoutées aux remises volume/fidélité
+
+### 31.10 Fichiers de référence
+
+| Fichier | Rôle |
+|---------|------|
+| `backend/src/modules/billing/services/remise.service.ts` | Moteur remises v3.1 (filtrage + plafond) |
+| `backend/src/modules/billing/services/pack-quota.service.ts` | Prorata cycle réel |
+| `backend/src/modules/billing/services/facturation.service.ts` | Orchestration facturation + contexte remise |
+| `backend/database/migrations/214-remise-conditions-plafond.sql` | Migration colonnes conditionnelles |
+| `backend/src/database/seeds/system/seed-remises.ts` | Seeds remises avec conditions |
+| `backend/test/unit/remise-plafond.spec.ts` | Tests unitaires plafond + filtrage |
+| `frontend/src/routes/_auth.plans.tsx` | Page plans restructurée |
+| `frontend/src/features/billing/hooks/use-billing.ts` | Hooks API billing |

@@ -13,6 +13,7 @@
 
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api-client';
 import {
     Calculator,
@@ -21,41 +22,9 @@ import {
     Users,
     Sparkles,
 } from 'lucide-react';
-
-// =============================================
-// Types
-// =============================================
-
-interface Tranche {
-    id: string;
-    minEleves: number;
-    maxEleves: number | null;
-    montantSupplementaire: number;
-    label?: string;
-}
-
-interface Plan {
-    id: string;
-    nom: string;
-    slug: string;
-    description?: string;
-    prixBase: number;
-    devise: string;
-    maxEleves: number;
-    modulesInclus: string[];
-    tranches?: Tranche[];
-    badge?: string;
-}
-
-interface SimulationResult {
-    plan: { id: string; nom: string; slug: string };
-    nombreEleves: number;
-    prixBase: number;
-    montantSupplementaire: number;
-    montantTotal: number;
-    devise: string;
-    modulesInclus: string[];
-}
+import { cn } from '@/lib/cn';
+import type { Plan, SimulationResult, CycleFacturation } from '@/features/billing/types/plan.types';
+import { modulesInclus, formatQuotaEleves, formatPrix } from '@/features/billing/types/plan.types';
 
 // =============================================
 // Hooks
@@ -66,16 +35,29 @@ function usePlansDisponibles() {
         queryKey: ['plans-catalogue'],
         queryFn: async () => {
             const res = await apiClient.get<Plan[]>('/api/billing/plans');
-            return res.data;
+            const payload = res.data as any;
+            const liste: Plan[] = Array.isArray(payload) ? payload : payload?.data ?? [];
+            return [...liste].sort((a, b) => (a.rang ?? 0) - (b.rang ?? 0));
+        },
+    });
+}
+
+function useCyclesFacturation() {
+    return useQuery<CycleFacturation[]>({
+        queryKey: ['cycles-facturation-simulateur'],
+        queryFn: async () => {
+            const res = await apiClient.get<{ success: boolean; data: CycleFacturation[] }>('/api/platform/cycles-facturation');
+            return res.data?.data ?? [];
         },
     });
 }
 
 function useSimulerPlan() {
-    return useMutation<{ data: SimulationResult } | undefined, Error, { planId: string; nombreEleves: number; cycleFacturation: string }>({
+    return useMutation<SimulationResult | undefined, Error, { planId: string; nombreEleves: number; cycleFacturation: string }>({
         mutationFn: async (params) => {
             const res = await apiClient.post<SimulationResult>('/api/billing/simuler', params);
-            return res.data ? { data: res.data } : undefined;
+            const payload = res.data as any;
+            return payload?.data ?? (payload?.montantTotal !== undefined ? payload : undefined);
         },
     });
 }
@@ -85,13 +67,23 @@ function useSimulerPlan() {
 // =============================================
 
 export function PlanSimulator() {
+    const { t } = useTranslation('plans');
     const { data: plans, isLoading } = usePlansDisponibles();
+    const { data: cyclesApi } = useCyclesFacturation();
     const simulerMutation = useSimulerPlan();
 
     const [planSelectionne, setPlanSelectionne] = useState<string | null>(null);
     const [nombreEleves, setNombreEleves] = useState<number>(100);
-    const [cycle, setCycle] = useState<'MENSUEL' | 'ANNUEL'>('MENSUEL');
     const [resultat, setResultat] = useState<SimulationResult | null>(null);
+
+    // Cycles dynamiques depuis l'API
+    const cyclesDisponibles = useMemo(() => {
+        const actifs = (cyclesApi ?? []).filter(c => c.actif).sort((a, b) => a.ordre - b.ordre);
+        if (actifs.length === 0) return [{ code: 'MENSUEL', remisePourcent: 0 }, { code: 'ANNUEL', remisePourcent: 10 }];
+        return actifs;
+    }, [cyclesApi]);
+
+    const [cycle, setCycle] = useState<string>(cyclesDisponibles[0]?.code ?? 'MENSUEL');
 
     const planActif = useMemo(() => plans?.find(p => p.id === planSelectionne), [plans, planSelectionne]);
 
@@ -100,20 +92,17 @@ export function PlanSimulator() {
         simulerMutation.mutate(
             { planId: planSelectionne, nombreEleves, cycleFacturation: cycle },
             {
-                onSuccess: (res) => setResultat(res?.data ?? null),
+                onSuccess: (res) => setResultat(res ?? null),
             }
         );
     };
 
-    const formatPrix = (montant: number, devise = 'XAF') =>
-        new Intl.NumberFormat('fr-FR').format(montant) + ' ' + devise;
-
     if (isLoading) {
         return (
             <div className="animate-pulse space-y-4">
-                <div className="h-8 bg-muted rounded w-1/3" />
+                <div className="h-8 bg-[var(--color-surface-hover)] rounded w-1/3" />
                 <div className="grid grid-cols-3 gap-4">
-                    {[1, 2, 3].map(i => <div key={i} className="h-48 bg-muted rounded-xl" />)}
+                    {[1, 2, 3].map(i => <div key={i} className="h-48 bg-[var(--color-surface-hover)] rounded-xl" />)}
                 </div>
             </div>
         );
@@ -123,11 +112,11 @@ export function PlanSimulator() {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center gap-3">
-                <Calculator className="w-6 h-6 text-primary" />
+                <Calculator className="w-6 h-6 text-[var(--color-dominante)]" />
                 <div>
-                    <h2 className="text-xl font-bold">Simulateur de plan</h2>
-                    <p className="text-sm text-muted-foreground">
-                        Estimez le coût mensuel selon votre nombre d'élèves
+                    <h2 className="text-xl font-bold text-[var(--color-texte)]">{t('simulateur.titre')}</h2>
+                    <p className="text-sm text-[var(--color-texte-muted)]">
+                        {t('simulateur.sousTitre')}
                     </p>
                 </div>
             </div>
@@ -136,9 +125,9 @@ export function PlanSimulator() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Nombre d'élèves */}
                 <div className="space-y-2">
-                    <label className="text-sm font-medium flex items-center gap-2">
-                        <Users className="w-4 h-4 text-muted-foreground" />
-                        Nombre d'élèves
+                    <label className="text-sm font-medium flex items-center gap-2 text-[var(--color-texte)]">
+                        <Users className="w-4 h-4 text-[var(--color-texte-muted)]" />
+                        {t('simulateur.nombreEleves')}
                     </label>
                     <input
                         type="range"
@@ -147,12 +136,12 @@ export function PlanSimulator() {
                         step={10}
                         value={nombreEleves}
                         onChange={(e) => setNombreEleves(Number(e.target.value))}
-                        className="w-full accent-primary"
+                        className="w-full accent-[var(--color-dominante)]"
                     />
                     <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">10</span>
-                        <span className="font-bold text-lg text-primary">{nombreEleves}</span>
-                        <span className="text-muted-foreground">2000</span>
+                        <span className="text-[var(--color-texte-muted)]">10</span>
+                        <span className="font-bold text-lg text-[var(--color-dominante)]">{nombreEleves}</span>
+                        <span className="text-[var(--color-texte-muted)]">2000</span>
                     </div>
                     <input
                         type="number"
@@ -160,64 +149,62 @@ export function PlanSimulator() {
                         max={5000}
                         value={nombreEleves}
                         onChange={(e) => setNombreEleves(Math.max(10, Number(e.target.value)))}
-                        className="w-full border rounded-lg px-3 py-2 text-sm"
+                        className="w-full border border-[var(--color-bordure)] rounded-lg px-3 py-2 text-sm bg-[var(--color-surface)] text-[var(--color-texte)]"
                     />
                 </div>
 
                 {/* Cycle de facturation */}
                 <div className="space-y-2">
-                    <label className="text-sm font-medium">Cycle de facturation</label>
-                    <div className="grid grid-cols-2 gap-2">
-                        <button
-                            onClick={() => setCycle('MENSUEL')}
-                            className={`px-4 py-3 rounded-lg border text-sm font-medium transition-colors ${
-                                cycle === 'MENSUEL'
-                                    ? 'border-primary bg-primary/10 text-primary'
-                                    : 'border-border hover:bg-muted'
-                            }`}
-                        >
-                            Mensuel
-                        </button>
-                        <button
-                            onClick={() => setCycle('ANNUEL')}
-                            className={`px-4 py-3 rounded-lg border text-sm font-medium transition-colors ${
-                                cycle === 'ANNUEL'
-                                    ? 'border-primary bg-primary/10 text-primary'
-                                    : 'border-border hover:bg-muted'
-                            }`}
-                        >
-                            Annuel
-                            <span className="block text-xs text-green-600 mt-0.5">-15%</span>
-                        </button>
+                    <label className="text-sm font-medium text-[var(--color-texte)]">{t('simulateur.cycleFacturation')}</label>
+                    <div className={cn('grid gap-2', cyclesDisponibles.length > 2 ? 'grid-cols-2' : 'grid-cols-2')}>
+                        {cyclesDisponibles.map((c) => (
+                            <button
+                                key={c.code}
+                                onClick={() => setCycle(c.code)}
+                                className={cn(
+                                    'px-4 py-3 rounded-lg border text-sm font-medium transition-colors',
+                                    cycle === c.code
+                                        ? 'border-[var(--color-dominante)] bg-[var(--color-dominante)]/10 text-[var(--color-dominante)]'
+                                        : 'border-[var(--color-bordure)] hover:bg-[var(--color-surface-hover)]',
+                                )}
+                            >
+                                {c.code.charAt(0) + c.code.slice(1).toLowerCase()}
+                                {Number(c.remisePourcent) > 0 && (
+                                    <span className="block text-xs text-[var(--color-success-600)] mt-0.5">−{Number(c.remisePourcent)} %</span>
+                                )}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
                 {/* Simuler */}
                 <div className="space-y-2">
-                    <label className="text-sm font-medium">Action</label>
+                    <label className="text-sm font-medium text-[var(--color-texte)]">{t('simulateur.action')}</label>
                     <button
                         onClick={handleSimuler}
                         disabled={!planSelectionne || simulerMutation.isPending}
-                        className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
+                        className="w-full px-4 py-3 bg-[var(--color-dominante)] text-white rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
                     >
                         {simulerMutation.isPending ? (
                             <span className="animate-spin">⏳</span>
                         ) : (
                             <>
                                 <Sparkles className="w-4 h-4" />
-                                Simuler
+                                {t('simulateur.simuler')}
                             </>
                         )}
                     </button>
                     {resultat && (
-                        <div className="text-center p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
-                            <div className="text-xs text-muted-foreground">Estimation {cycle === 'MENSUEL' ? '/mois' : '/an'}</div>
-                            <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+                        <div className="text-center p-3 rounded-lg border border-[var(--color-success-200)] bg-[var(--color-success-50)]">
+                            <div className="text-xs text-[var(--color-texte-muted)]">
+                                {t('simulateur.estimation')} {cycle === 'MENSUEL' ? t('simulateur.parMois') : t('simulateur.parAn')}
+                            </div>
+                            <div className="text-2xl font-bold text-[var(--color-success-700)]">
                                 {formatPrix(resultat.montantTotal, resultat.devise)}
                             </div>
-                            {resultat.montantSupplementaire > 0 && (
-                                <div className="text-xs text-muted-foreground mt-1">
-                                    + {formatPrix(resultat.montantSupplementaire, resultat.devise)} (élèves sup.)
+                            {resultat.montantElevesSupplementaires > 0 && (
+                                <div className="text-xs text-[var(--color-texte-muted)] mt-1">
+                                    + {formatPrix(resultat.montantElevesSupplementaires, resultat.devise)} ({t('simulateur.elevesSup')})
                                 </div>
                             )}
                         </div>
@@ -229,55 +216,56 @@ export function PlanSimulator() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {plans?.map((plan) => {
                     const isSelected = planSelectionne === plan.id;
-                    const modulesCount = plan.modulesInclus?.length || 0;
+                    const modulesCount = modulesInclus(plan).length;
 
                     return (
                         <div
                             key={plan.id}
                             onClick={() => setPlanSelectionne(plan.id)}
-                            className={`relative border rounded-xl p-5 cursor-pointer transition-all ${
+                            className={cn(
+                                'relative border rounded-xl p-5 cursor-pointer transition-all',
                                 isSelected
-                                    ? 'border-primary ring-2 ring-primary/20 shadow-md'
-                                    : 'border-border hover:border-primary/50 hover:shadow-sm'
-                            }`}
+                                    ? 'border-[var(--color-dominante)] ring-2 ring-[var(--color-dominante)]/20 shadow-md'
+                                    : 'border-[var(--color-bordure)] hover:border-[var(--color-dominante)]/50 hover:shadow-sm',
+                            )}
                         >
                             {plan.badge && (
-                                <span className="absolute -top-2 right-4 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                                <span className="absolute -top-2 right-4 text-xs bg-[var(--color-dominante)] text-white px-2 py-0.5 rounded-full">
                                     {plan.badge}
                                 </span>
                             )}
 
-                            <h3 className="text-lg font-bold">{plan.nom}</h3>
+                            <h3 className="text-lg font-bold text-[var(--color-texte)]">{plan.nom}</h3>
                             {plan.description && (
-                                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{plan.description}</p>
+                                <p className="text-sm text-[var(--color-texte-muted)] mt-1 line-clamp-2">{plan.description}</p>
                             )}
 
                             <div className="mt-4 flex items-baseline gap-1">
-                                <span className="text-3xl font-bold">{new Intl.NumberFormat('fr-FR').format(plan.prixBase)}</span>
-                                <span className="text-sm text-muted-foreground">{plan.devise}/mois</span>
+                                <span className="text-3xl font-bold text-[var(--color-texte)]">{new Intl.NumberFormat('fr-FR').format(plan.prixBase)}</span>
+                                <span className="text-sm text-[var(--color-texte-muted)]">{plan.devise}/mois</span>
                             </div>
 
                             <div className="mt-3 space-y-2 text-sm">
                                 <div className="flex items-center gap-2">
-                                    <Users className="w-4 h-4 text-muted-foreground" />
-                                    <span>Jusqu'à <strong>{plan.maxEleves}</strong> élèves</span>
+                                    <Users className="w-4 h-4 text-[var(--color-texte-muted)]" />
+                                    <span>{t('simulateur.jusqua', 'Jusqu\'à')} <strong>{formatQuotaEleves(plan, t('plans.illimite', 'illimité'))}</strong> {t('simulateur.eleves', 'élèves')}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Check className="w-4 h-4 text-green-600" />
-                                    <span><strong>{modulesCount}</strong> modules inclus</span>
+                                    <Check className="w-4 h-4 text-[var(--color-success-600)]" />
+                                    <span><strong>{modulesCount}</strong> {t('simulateur.modulesInclus')}</span>
                                 </div>
                             </div>
 
                             {/* Modules inclus */}
-                            {plan.modulesInclus && plan.modulesInclus.length > 0 && (
+                            {modulesInclus(plan).length > 0 && (
                                 <div className="mt-3 flex flex-wrap gap-1">
-                                    {plan.modulesInclus.slice(0, 5).map((mod) => (
-                                        <span key={mod} className="text-xs bg-muted px-2 py-0.5 rounded">
+                                    {modulesInclus(plan).slice(0, 5).map((mod) => (
+                                        <span key={mod} className="text-xs bg-[var(--color-surface-hover)] px-2 py-0.5 rounded text-[var(--color-texte)]">
                                             {mod.replace(/_/g, ' ')}
                                         </span>
                                     ))}
                                     {modulesCount > 5 && (
-                                        <span className="text-xs text-muted-foreground">+{modulesCount - 5}</span>
+                                        <span className="text-xs text-[var(--color-texte-muted)]">+{modulesCount - 5}</span>
                                     )}
                                 </div>
                             )}
@@ -288,19 +276,20 @@ export function PlanSimulator() {
                                     e.stopPropagation();
                                     setPlanSelectionne(plan.id);
                                 }}
-                                className={`mt-4 w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
+                                className={cn(
+                                    'mt-4 w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors',
                                     isSelected
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'bg-muted hover:bg-primary/10 text-foreground'
-                                }`}
+                                        ? 'bg-[var(--color-dominante)] text-white'
+                                        : 'bg-[var(--color-surface-hover)] hover:bg-[var(--color-dominante)]/10 text-[var(--color-texte)]',
+                                )}
                             >
                                 {isSelected ? (
                                     <>
-                                        <Check className="w-4 h-4" /> Sélectionné
+                                        <Check className="w-4 h-4" /> {t('simulateur.selectionne')}
                                     </>
                                 ) : (
                                     <>
-                                        <ArrowRight className="w-4 h-4" /> Choisir
+                                        <ArrowRight className="w-4 h-4" /> {t('simulateur.choisir')}
                                     </>
                                 )}
                             </button>
@@ -311,41 +300,41 @@ export function PlanSimulator() {
 
             {/* Détail du plan sélectionné */}
             {planActif && resultat && (
-                <div className="border rounded-xl p-6 space-y-4 bg-card">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-primary" />
-                        Détail de l'estimation — {planActif.nom}
+                <div className="border border-[var(--color-bordure)] rounded-xl p-6 space-y-4 bg-[var(--color-surface)]">
+                    <h3 className="text-lg font-semibold flex items-center gap-2 text-[var(--color-texte)]">
+                        <Sparkles className="w-5 h-5 text-[var(--color-dominante)]" />
+                        {t('simulateur.detailEstimation', { nom: planActif.nom })}
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
-                            <div className="text-sm text-muted-foreground">Prix de base</div>
-                            <div className="font-semibold">{formatPrix(resultat.prixBase, resultat.devise)}</div>
+                            <div className="text-sm text-[var(--color-texte-muted)]">{t('simulateur.prixBase')}</div>
+                            <div className="font-semibold text-[var(--color-texte)]">{formatPrix(resultat.prixBase, resultat.devise)}</div>
                         </div>
                         <div>
-                            <div className="text-sm text-muted-foreground">Supplément élèves</div>
-                            <div className="font-semibold">
-                                {resultat.montantSupplementaire > 0
-                                    ? '+ ' + formatPrix(resultat.montantSupplementaire, resultat.devise)
-                                    : 'Inclus'}
+                            <div className="text-sm text-[var(--color-texte-muted)]">{t('simulateur.supplementEleves')}</div>
+                            <div className="font-semibold text-[var(--color-texte)]">
+                                {resultat.montantElevesSupplementaires > 0
+                                    ? '+ ' + formatPrix(resultat.montantElevesSupplementaires, resultat.devise)
+                                    : t('simulateur.inclus')}
                             </div>
                         </div>
                         <div>
-                            <div className="text-sm text-muted-foreground">Élèves</div>
-                            <div className="font-semibold">{resultat.nombreEleves}</div>
+                            <div className="text-sm text-[var(--color-texte-muted)]">{t('simulateur.nombreEleves')}</div>
+                            <div className="font-semibold text-[var(--color-texte)]">{resultat.nombreEleves}</div>
                         </div>
                         <div>
-                            <div className="text-sm text-muted-foreground">Total {cycle === 'MENSUEL' ? '/mois' : '/an'}</div>
-                            <div className="text-xl font-bold text-primary">{formatPrix(resultat.montantTotal, resultat.devise)}</div>
+                            <div className="text-sm text-[var(--color-texte-muted)]">{t('simulateur.total')} {cycle === 'MENSUEL' ? t('simulateur.parMois') : t('simulateur.parAn')}</div>
+                            <div className="text-xl font-bold text-[var(--color-dominante)]">{formatPrix(resultat.montantTotal, resultat.devise)}</div>
                         </div>
                     </div>
 
                     {/* Modules inclus */}
-                    <div className="pt-3 border-t">
-                        <h4 className="text-sm font-medium mb-2">Modules inclus dans ce plan</h4>
+                    <div className="pt-3 border-t border-[var(--color-bordure)]">
+                        <h4 className="text-sm font-medium mb-2 text-[var(--color-texte)]">{t('simulateur.modulesInclus')}</h4>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                            {resultat.modulesInclus.map((mod) => (
-                                <div key={mod} className="flex items-center gap-2 text-sm">
-                                    <Check className="w-3 h-3 text-green-600" />
+                            {(resultat.modulesInclus ?? []).map((mod) => (
+                                <div key={mod} className="flex items-center gap-2 text-sm text-[var(--color-texte)]">
+                                    <Check className="w-3 h-3 text-[var(--color-success-600)]" />
                                     <span>{mod.replace(/_/g, ' ')}</span>
                                 </div>
                             ))}
@@ -354,11 +343,11 @@ export function PlanSimulator() {
 
                     {/* CTA */}
                     <div className="pt-3 flex items-center gap-3">
-                        <button className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 font-medium flex items-center gap-2">
-                            S'abonner <ArrowRight className="w-4 h-4" />
+                        <button className="px-6 py-2.5 bg-[var(--color-dominante)] text-white rounded-lg hover:opacity-90 font-medium flex items-center gap-2">
+                            {t('simulateur.sabonner')} <ArrowRight className="w-4 h-4" />
                         </button>
-                        <span className="text-xs text-muted-foreground">
-                            Vous pourrez modifier votre plan à tout moment
+                        <span className="text-xs text-[var(--color-texte-muted)]">
+                            {t('simulateur.modifierPlan')}
                         </span>
                     </div>
                 </div>

@@ -1,22 +1,29 @@
 /**
  * ==================================
- * eLISAschool - Service Facturation
+ * eLISAschool - Service Facturation (Refonte v3)
  * ==================================
- * 
- * Calcul automatique des tranches, génération de factures,
- * prorata temporis pour upgrade/downgrade mid-cycle.
+ *
+ * Formule v3 (migration 213, plans pilotés par JSONB) :
+ *   montant = (prixBase + max(0, nbÉlèves − franchise) × prixParEleve) × coefCycle
+ *             − remises + modules supplément + packs quota
+ *
+ * - tarification : plan.tarification (prixBase, prixParEleve, elevesInclusGratuits, paliers)
+ * - coefCycle    : cycles_facturation.remisePourcent (ex-enum dur supprimé)
+ * - remises      : remises_abonnement via RemiseService.appliquer()
+ * - packs        : abonnements_packs (facturés au prorata à la souscription)
+ *
  * Conformité OHADA : TVA 19.25%, numéro séquentiel, mentions légales.
- * 
- * Phase 4.2 — Refonte SaaS
- * Phase B.2 — Refonte SaaS v2 (OHADA, TVA, avoirs)
+ *
+ * Version: 3.0.0
+ * Auteur: franck arlos chendjou
  */
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { logger } from '@common/utils/logger.util';
+import { AppError } from '@common/filters/error.filter';
 import {
     PlanAbonnement,
-    TrancheEleves,
     AbonnementClient,
     StatutAbonnement,
     CycleFacturation,
@@ -24,17 +31,19 @@ import {
     StatutFacture,
     LigneFacture,
     TypeLigneFacture,
-    ModuleOptionnel,
     AbonnementModule,
     CreditNote,
     StatutCreditNote,
 } from '../entities';
+import { CycleFacturationConfig } from '../entities/cycle-facturation-config.entity';
+import { AbonnementPack } from '../entities/abonnement-pack.entity';
+import { remiseService } from './remise.service';
 
 /** Taux TVA Cameroun : 19.25% stocké en centièmes (1925 = 19.25%) */
 const TAUX_TVA_CENTIERES = 1925;
 
 /** Mentions légales OHADA par défaut */
-const MENTIONS_LEGALES_OHADA = 
+const MENTIONS_LEGALES_OHADA =
     'Facture établie conformément aux dispositions OHADA. ' +
     'TVA conforme à la législation en vigueur. ' +
     'En cas de retard de paiement, des pénalités pourront être appliquées. ' +
@@ -42,12 +51,18 @@ const MENTIONS_LEGALES_OHADA =
 
 export interface CalculFactureResult {
     montantBase: number;
-    montantTranches: number;
+    /** Élèves supplémentaires au-delà de la franchise (ex-montantTranches) */
+    montantElevesSupplementaires: number;
+    /** Modules en supplément + packs quota (ex-montantOptions) */
     montantOptions: number;
+    montantRemises: number;
+    coefCycle: number;
+    cycleCode: string;
     montantHT: number;
     montantTVA: number;
     tauxTVA: number;
     montantTotal: number;
+    remisesAppliquees: Array<{ remiseId: string; code: string; montantDeduit: number }>;
     lignes: Array<{
         description: string;
         type: TypeLigneFacture;
@@ -60,103 +75,115 @@ export interface CalculFactureResult {
 
 export class FacturationService {
     private planRepo: Repository<PlanAbonnement>;
-    private trancheRepo: Repository<TrancheEleves>;
     private abonnementRepo: Repository<AbonnementClient>;
     private factureRepo: Repository<Facture>;
     private ligneFactureRepo: Repository<LigneFacture>;
-    private moduleOptionnelRepo: Repository<ModuleOptionnel>;
     private abonnementModuleRepo: Repository<AbonnementModule>;
+    private abonnementPackRepo: Repository<AbonnementPack>;
+    private cycleRepo: Repository<CycleFacturationConfig>;
     private creditNoteRepo: Repository<CreditNote>;
 
     constructor() {
         this.planRepo = AppDataSource.getRepository(PlanAbonnement);
-        this.trancheRepo = AppDataSource.getRepository(TrancheEleves);
         this.abonnementRepo = AppDataSource.getRepository(AbonnementClient);
         this.factureRepo = AppDataSource.getRepository(Facture);
         this.ligneFactureRepo = AppDataSource.getRepository(LigneFacture);
-        this.moduleOptionnelRepo = AppDataSource.getRepository(ModuleOptionnel);
         this.abonnementModuleRepo = AppDataSource.getRepository(AbonnementModule);
+        this.abonnementPackRepo = AppDataSource.getRepository(AbonnementPack);
+        this.cycleRepo = AppDataSource.getRepository(CycleFacturationConfig);
         this.creditNoteRepo = AppDataSource.getRepository(CreditNote);
     }
 
     // =============================================
-    // CALCUL DU MONTANT MENSUEL (base + tranches + options)
+    // CALCUL DU MONTANT (formule v3)
     // =============================================
 
     /**
-     * Calcule le montant mensuel pour un établissement donné
-     * en fonction du plan, du nombre d'élèves et des modules optionnels.
+     * Calcule le montant pour un plan donné selon la formule v3 :
+     * (prixBase + max(0, nbÉlèves − franchise) × prixParEleve) × coefCycle
+     * − remises + modules supplément + packs.
      */
-    async calculerMontantMensuel(planId: string, nombreEleves: number, abonnementId?: string): Promise<CalculFactureResult> {
-        const plan = await this.planRepo.findOne({
-            where: { id: planId },
-            relations: ['tranches'],
-        });
-
+    async calculerMontantMensuel(
+        planId: string,
+        nombreEleves: number,
+        abonnementId?: string,
+        cycleCode: string = CycleFacturation.MENSUEL,
+        etablissementId?: string
+    ): Promise<CalculFactureResult> {
+        const plan = await this.planRepo.findOne({ where: { id: planId } });
         if (!plan) {
-            throw new Error(`Plan ${planId} introuvable`);
+            throw new AppError(`Plan ${planId} introuvable`, 404, 'PLAN_NOT_FOUND');
         }
+
+        // Bloc tarification JSONB (repli sur la colonne prixBase legacy)
+        const tarification = plan.tarification ?? {
+            prixBase: Number(plan.prixBase),
+            prixParEleve: 0,
+            elevesInclusGratuits: 0,
+        };
+        const prixBase = Number(tarification.prixBase ?? plan.prixBase);
+        const franchise = tarification.elevesInclusGratuits ?? 0;
 
         const lignes: CalculFactureResult['lignes'] = [];
-        let montantBase = plan.prixBase;
-        let montantTranches = 0;
-        let montantOptions = 0;
 
-        // 1. Ligne de base
+        // 1. Forfait socle
         lignes.push({
-            description: `Plan ${plan.nom} — jusqu'à ${plan.maxEleves} élèves`,
+            description: `Plan ${plan.nom} — ${franchise} élèves inclus`,
             type: TypeLigneFacture.BASE,
-            montant: Number(plan.prixBase),
+            montant: prixBase,
             quantite: 1,
-            total: Number(plan.prixBase),
+            total: prixBase,
         });
 
-        // 2. Calcul des tranches applicables
-        if (nombreEleves > plan.maxEleves) {
-            const tranches = plan.tranches
-                ?.filter((t) => t.actif)
-                .sort((a, b) => a.minEleves - b.minEleves) || [];
-
-            for (const tranche of tranches) {
-                // La tranche s'applique si le nombre d'élèves dépasse minEleves
-                if (nombreEleves > tranche.minEleves) {
-                    // Calcul combien d'élèves sont dans cette tranche
-                    const elevesDansTranche = tranche.maxEleves
-                        ? Math.min(nombreEleves, tranche.maxEleves) - tranche.minEleves
-                        : nombreEleves - tranche.minEleves;
-
-                    if (elevesDansTranche > 0) {
-                        // Le montant est fixe par tranche (pas par élève)
-                        const montantTranche = Number(tranche.montantSupplementaire);
-                        montantTranches += montantTranche;
-
-                        const label = tranche.label || `Tranche ${tranche.minEleves + 1}-${tranche.maxEleves || '∞'} élèves`;
-                        lignes.push({
-                            description: label,
-                            type: TypeLigneFacture.TRANCHE,
-                            montant: montantTranche,
-                            quantite: 1,
-                            total: montantTranche,
-                            referenceId: tranche.id,
-                        });
-                    }
-                }
-            }
+        // 2. Élèves supplémentaires (paliers dégressifs éventuels)
+        const elevesFacturables = Math.max(0, nombreEleves - franchise);
+        let prixUnitaire = Number(tarification.prixParEleve ?? 0);
+        if (elevesFacturables > 0 && Array.isArray(tarification.paliers) && tarification.paliers.length > 0) {
+            const palier = [...tarification.paliers]
+                .sort((a, b) => b.seuilEleves - a.seuilEleves)
+                .find((p) => nombreEleves >= p.seuilEleves);
+            if (palier) prixUnitaire = Number(palier.prixParEleve);
+        }
+        const montantEleves = Math.round(elevesFacturables * prixUnitaire * 100) / 100;
+        if (elevesFacturables > 0 && montantEleves > 0) {
+            lignes.push({
+                description: `Élèves supplémentaires (${elevesFacturables} × ${prixUnitaire})`,
+                type: TypeLigneFacture.TRANCHE,
+                montant: prixUnitaire,
+                quantite: elevesFacturables,
+                total: montantEleves,
+            });
         }
 
-        // 3. Modules optionnels
+        // 3. Coefficient de cycle (remise du cycle depuis cycles_facturation)
+        const cycle = await this.cycleRepo.findOne({ where: { code: cycleCode, actif: true } });
+        const remiseCycle = cycle ? Number(cycle.remisePourcent) : 0;
+        const coefCycle = 1 - remiseCycle / 100;
+        const montantForfaitCycle = Math.round((prixBase + montantEleves) * coefCycle * 100) / 100;
+        if (remiseCycle > 0) {
+            lignes.push({
+                description: `Cycle ${cycle?.nom ?? cycleCode} (−${remiseCycle}%)`,
+                type: TypeLigneFacture.REMISE,
+                montant: -Math.round((prixBase + montantEleves) * (remiseCycle / 100) * 100) / 100,
+                quantite: 1,
+                total: -Math.round((prixBase + montantEleves) * (remiseCycle / 100) * 100) / 100,
+            });
+        }
+
+        let montantOptions = 0;
+
+        // 4. Modules souscrits en supplément (catalogue unifié)
         if (abonnementId) {
             const modulesActifs = await this.abonnementModuleRepo.find({
                 where: { abonnementId, actif: true },
-                relations: ['moduleOptionnel'],
+                relations: ['module'],
             });
-
             for (const am of modulesActifs) {
-                if (am.moduleOptionnel?.actif) {
-                    const prix = Number(am.moduleOptionnel.prixMensuel);
+                if (am.module?.estActif && am.module.prixMensuel > 0) {
+                    const prix = Number(am.module.prixMensuel);
                     montantOptions += prix;
                     lignes.push({
-                        description: `Module: ${am.moduleOptionnel.nom}`,
+                        description: `Module: ${am.module.nom}`,
                         type: TypeLigneFacture.OPTION,
                         montant: prix,
                         quantite: 1,
@@ -165,16 +192,83 @@ export class FacturationService {
                     });
                 }
             }
+
+            // 5. Packs quota souscrits actifs (montant proratisé du cycle courant)
+            const now = new Date();
+            const packs = await this.abonnementPackRepo.find({
+                where: { abonnementId, actif: true },
+                relations: ['pack'],
+            });
+            for (const souscription of packs) {
+                if (souscription.dateFin && new Date(souscription.dateFin) < now) continue;
+                const montantPack = Number(souscription.montantFacture ?? 0);
+                if (montantPack <= 0) continue;
+                montantOptions += montantPack;
+                lignes.push({
+                    description: `Pack quota: ${souscription.pack?.nom ?? 'quota supplémentaire'}`,
+                    type: TypeLigneFacture.OPTION,
+                    montant: montantPack,
+                    quantite: 1,
+                    total: montantPack,
+                    referenceId: souscription.packId,
+                });
+            }
         }
 
+        const sousTotal = Math.round((montantForfaitCycle + montantOptions) * 100) / 100;
+
+        // 6. Remises commerciales (priorité, cumul, plancher 0, plafond 40%)
+        // Enrichir le contexte avec le nombre d'élèves et les dates d'abonnement
+        // pour le filtrage conditionnel (conditionElevesMin, conditionAncienneteMois)
+        const contexteRemise: import('./remise.service').ContexteApplicationRemise = {
+            planId,
+            etablissementId,
+            cycleCode,
+        };
+
+        // Enrichir avec les données d'abonnement si disponibles
+        if (abonnementId) {
+            const aboCtx = await this.abonnementRepo.findOne({ where: { id: abonnementId } });
+            if (aboCtx) {
+                contexteRemise.dateDebutAbonnement = aboCtx.dateDebut;
+                contexteRemise.dateFinAbonnement = aboCtx.dateFin;
+            }
+        }
+        // Le nombre d'élèves est déjà connu (passé en paramètre)
+        contexteRemise.nombreEleves = nombreEleves;
+
+        const resultatRemises = await remiseService.appliquer(sousTotal, contexteRemise);
+        const montantRemises = Math.round((sousTotal - resultatRemises.montantFinal) * 100) / 100;
+        for (const appliquee of resultatRemises.remisesAppliquees) {
+            lignes.push({
+                description: `Remise: ${appliquee.code}`,
+                type: TypeLigneFacture.REMISE,
+                montant: -appliquee.montantDeduit,
+                quantite: 1,
+                total: -appliquee.montantDeduit,
+                referenceId: appliquee.remiseId,
+            });
+        }
+
+        const montantHT = Math.max(0, Math.round(resultatRemises.montantFinal));
+        const montantTVA = this.calculerTVA(montantHT);
+
         return {
-            montantBase,
-            montantTranches,
-            montantOptions,
-            montantHT: montantBase + montantTranches + montantOptions,
-            montantTVA: this.calculerTVA(montantBase + montantTranches + montantOptions),
+            montantBase: Math.round(montantForfaitCycle - montantEleves * coefCycle),
+            montantElevesSupplementaires: Math.round(montantEleves * coefCycle),
+            montantOptions: Math.round(montantOptions),
+            montantRemises,
+            coefCycle,
+            cycleCode,
+            montantHT,
+            montantTVA,
             tauxTVA: TAUX_TVA_CENTIERES,
-            montantTotal: montantBase + montantTranches + montantOptions + this.calculerTVA(montantBase + montantTranches + montantOptions),
+            montantTotal: montantHT + montantTVA,
+            remisesAppliquees: resultatRemises.remisesAppliquees.map((r) => ({
+                remiseId: r.remiseId,
+                code: r.code,
+                montantDeduit: r.montantDeduit,
+            })),
             lignes,
         };
     }
@@ -193,7 +287,7 @@ export class FacturationService {
         });
 
         if (!abonnement) {
-            throw new Error(`Abonnement ${abonnementId} introuvable`);
+            throw new AppError(`Abonnement ${abonnementId} introuvable`, 404, 'ABONNEMENT_NOT_FOUND');
         }
 
         // Calculer le nombre d'élèves actuel
@@ -203,14 +297,16 @@ export class FacturationService {
             where: { etablissementId: abonnement.etablissementId } as any,
         });
 
-        // Calculer le montant
+        // Calculer le montant (formule v3 avec cycle et remises)
         const calcul = await this.calculerMontantMensuel(
             abonnement.planId,
             nombreEleves,
-            abonnementId
+            abonnementId,
+            abonnement.cycleFacturation as unknown as string,
+            abonnement.etablissementId
         );
 
-        // Générer le numéro de facture
+        // Générer les numéros de facture
         const numero = await this.genererNumeroFacture();
         const numeroOHADA = await this.genererNumeroFactureOHADA();
 
@@ -228,7 +324,7 @@ export class FacturationService {
             dateEmission: now,
             dateEcheance,
             montantBase: calcul.montantBase,
-            montantTranches: calcul.montantTranches,
+            montantTranches: calcul.montantElevesSupplementaires,
             montantOptions: calcul.montantOptions,
             montantPenalites: 0,
             montantHT: calcul.montantHT,
@@ -259,18 +355,31 @@ export class FacturationService {
             await this.ligneFactureRepo.save(ligne);
         }
 
+        // Incrémenter les compteurs d'utilisation des remises appliquées
+        if (calcul.remisesAppliquees.length > 0) {
+            await remiseService.enregistrerUtilisation(calcul.remisesAppliquees.map((r) => r.remiseId));
+        }
+
         // Mettre à jour l'abonnement
         abonnement.nombreElevesActuel = nombreEleves;
         abonnement.montantMensuel = calcul.montantTotal;
-        abonnement.prochaineFacturation = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        abonnement.prochaineFacturation = await this.prochaineDateFacturation(abonnement.cycleFacturation as unknown as string, now);
         await this.abonnementRepo.save(abonnement);
 
         logger.info(
             `[Billing] Facture ${numero} générée — Établissement: ${abonnement.etablissementId} ` +
-            `— Montant: ${calcul.montantTotal} ${calcul.montantTotal ? 'XAF' : ''} — ${nombreEleves} élèves`
+            `— Montant: ${calcul.montantTotal} ${abonnement.plan.devise || 'XAF'} — ${nombreEleves} élèves`
         );
 
         return savedFacture;
+    }
+
+    /**
+     * Alias de genererFacture() pour compatibilité
+     * (cron factures mensuelles, facturation groupe).
+     */
+    async genererFactureMensuelle(abonnementId: string): Promise<Facture> {
+        return this.genererFacture(abonnementId);
     }
 
     // =============================================
@@ -290,12 +399,12 @@ export class FacturationService {
         });
 
         if (!abonnement) {
-            throw new Error(`Abonnement ${abonnementId} introuvable`);
+            throw new AppError(`Abonnement ${abonnementId} introuvable`, 404, 'ABONNEMENT_NOT_FOUND');
         }
 
         const nouveauPlan = await this.planRepo.findOne({ where: { id: nouveauPlanId } });
         if (!nouveauPlan) {
-            throw new Error(`Plan ${nouveauPlanId} introuvable`);
+            throw new AppError(`Plan ${nouveauPlanId} introuvable`, 404, 'PLAN_NOT_FOUND');
         }
 
         const now = new Date();
@@ -312,7 +421,10 @@ export class FacturationService {
         // Débit = coût du nouveau plan pour la période restante
         const calculNouveau = await this.calculerMontantMensuel(
             nouveauPlanId,
-            abonnement.nombreElevesActuel
+            abonnement.nombreElevesActuel,
+            undefined,
+            abonnement.cycleFacturation as unknown as string,
+            abonnement.etablissementId
         );
         const montantJourNouveau = calculNouveau.montantTotal / joursTotal;
         const debit = montantJourNouveau * joursRestants;
@@ -329,12 +441,12 @@ export class FacturationService {
     // =============================================
 
     /**
-     * Souscrit un établissement à un plan.
+     * Souscrit un établissement à un plan (cycle configurable v3).
      */
     async souscrireAbonnement(
         etablissementId: string,
         planId: string,
-        cycleFacturation: CycleFacturation = CycleFacturation.MENSUEL
+        cycleFacturation: CycleFacturation | string = CycleFacturation.MENSUEL
     ): Promise<AbonnementClient> {
         // Vérifier qu'il n'y a pas déjà un abonnement actif
         const existing = await this.abonnementRepo.findOne({
@@ -345,12 +457,23 @@ export class FacturationService {
         });
 
         if (existing) {
-            throw new Error(`L'établissement a déjà un abonnement actif (${existing.id})`);
+            throw new AppError(`L'établissement a déjà un abonnement actif (${existing.id})`, 409, 'ABONNEMENT_EXISTANT');
         }
 
         const plan = await this.planRepo.findOne({ where: { id: planId } });
         if (!plan) {
-            throw new Error(`Plan ${planId} introuvable`);
+            throw new AppError(`Plan ${planId} introuvable`, 404, 'PLAN_NOT_FOUND');
+        }
+
+        const cycleCode = cycleFacturation as string;
+
+        // Le cycle doit être autorisé par le plan et actif en base
+        if (Array.isArray(plan.cyclesAutorises) && plan.cyclesAutorises.length > 0 && !plan.cyclesAutorises.includes(cycleCode)) {
+            throw new AppError(`Le cycle ${cycleCode} n'est pas autorisé pour le plan ${plan.nom}`, 400, 'CYCLE_NON_AUTORISE');
+        }
+        const cycle = await this.cycleRepo.findOne({ where: { code: cycleCode } });
+        if (cycle && !cycle.actif) {
+            throw new AppError(`Le cycle ${cycleCode} n'est plus disponible`, 400, 'CYCLE_INACTIF');
         }
 
         // Calculer le montant initial
@@ -360,15 +483,10 @@ export class FacturationService {
             where: { etablissementId } as any,
         });
 
-        const calcul = await this.calculerMontantMensuel(planId, nombreEleves);
+        const calcul = await this.calculerMontantMensuel(planId, nombreEleves, undefined, cycleCode, etablissementId);
 
         const now = new Date();
-        const dateFin = new Date(now);
-        if (cycleFacturation === CycleFacturation.MENSUEL) {
-            dateFin.setMonth(dateFin.getMonth() + 1);
-        } else {
-            dateFin.setFullYear(dateFin.getFullYear() + 1);
-        }
+        const dateFin = await this.prochaineDateFacturation(cycleCode, now);
 
         const abonnement = this.abonnementRepo.create({
             etablissementId,
@@ -376,7 +494,7 @@ export class FacturationService {
             dateDebut: now,
             dateFin,
             statut: StatutAbonnement.ACTIF,
-            cycleFacturation,
+            cycleFacturation: cycleCode as unknown as CycleFacturation,
             autoRenouvellement: true,
             montantMensuel: calcul.montantTotal,
             nombreElevesActuel: nombreEleves,
@@ -390,7 +508,7 @@ export class FacturationService {
 
         logger.info(
             `[Billing] Abonnement souscrit — Établissement: ${etablissementId} ` +
-            `— Plan: ${plan.nom} — Montant: ${calcul.montantTotal}`
+            `— Plan: ${plan.nom} — Cycle: ${cycleCode} — Montant: ${calcul.montantTotal}`
         );
 
         return saved;
@@ -409,12 +527,17 @@ export class FacturationService {
         });
 
         if (!abonnement) {
-            throw new Error(`Abonnement ${abonnementId} introuvable`);
+            throw new AppError(`Abonnement ${abonnementId} introuvable`, 404, 'ABONNEMENT_NOT_FOUND');
         }
 
         const nouveauPlan = await this.planRepo.findOne({ where: { id: nouveauPlanId } });
         if (!nouveauPlan) {
-            throw new Error(`Plan ${nouveauPlanId} introuvable`);
+            throw new AppError(`Plan ${nouveauPlanId} introuvable`, 404, 'PLAN_NOT_FOUND');
+        }
+
+        const cycleCode = abonnement.cycleFacturation as unknown as string;
+        if (Array.isArray(nouveauPlan.cyclesAutorises) && nouveauPlan.cyclesAutorises.length > 0 && !nouveauPlan.cyclesAutorises.includes(cycleCode)) {
+            throw new AppError(`Le cycle ${cycleCode} n'est pas autorisé pour le plan ${nouveauPlan.nom}`, 400, 'CYCLE_NON_AUTORISE');
         }
 
         // Calculer le prorata
@@ -427,7 +550,9 @@ export class FacturationService {
         const calcul = await this.calculerMontantMensuel(
             nouveauPlanId,
             abonnement.nombreElevesActuel,
-            abonnementId
+            abonnementId,
+            cycleCode,
+            abonnement.etablissementId
         );
         abonnement.montantMensuel = calcul.montantTotal;
 
@@ -445,6 +570,8 @@ export class FacturationService {
                 montantTranches: 0,
                 montantOptions: 0,
                 montantPenalites: 0,
+                montantHT: prorata.solde,
+                montantTVA: 0,
                 montantTotal: prorata.solde,
                 montantPaye: 0,
                 statut: StatutFacture.EMISE,
@@ -476,11 +603,11 @@ export class FacturationService {
         });
 
         if (!abonnement) {
-            throw new Error(`Abonnement ${abonnementId} introuvable`);
+            throw new AppError(`Abonnement ${abonnementId} introuvable`, 404, 'ABONNEMENT_NOT_FOUND');
         }
 
         if (abonnement.statut === StatutAbonnement.ANNULE) {
-            throw new Error('Cet abonnement est déjà résilié');
+            throw new AppError('Cet abonnement est déjà résilié', 409, 'DEJA_RESILIE');
         }
 
         // Désactiver l'abonnement
@@ -513,6 +640,18 @@ export class FacturationService {
      */
     calculerTVA(montantHT: number): number {
         return Math.round((montantHT * TAUX_TVA_CENTIERES) / 10000);
+    }
+
+    /**
+     * Date de fin de cycle : now + dureeMois du cycle configuré
+     * (repli MENSUEL si le cycle est absent de cycles_facturation).
+     */
+    private async prochaineDateFacturation(cycleCode: string, depuis: Date): Promise<Date> {
+        const cycle = await this.cycleRepo.findOne({ where: { code: cycleCode } });
+        const dureeMois = cycle?.dureeMois ?? (cycleCode === CycleFacturation.ANNUEL ? 12 : 1);
+        const dateFin = new Date(depuis);
+        dateFin.setMonth(dateFin.getMonth() + dureeMois);
+        return dateFin;
     }
 
     /**
@@ -571,7 +710,7 @@ export class FacturationService {
     /**
      * Crée un avoir (credit note) lié à une facture.
      * Conforme OHADA : numéro séquentiel, TVA séparée, mentions légales.
-     * 
+     *
      * @param factureId — ID de la facture d'origine
      * @param montantHT — Montant HT de l'avoir (en XAF/XOF entiers)
      * @param raison — Raison de l'avoir
@@ -586,11 +725,11 @@ export class FacturationService {
         });
 
         if (!facture) {
-            throw new Error(`Facture ${factureId} introuvable`);
+            throw new AppError(`Facture ${factureId} introuvable`, 404, 'FACTURE_NOT_FOUND');
         }
 
         if (facture.statut === StatutFacture.ANNULEE) {
-            throw new Error(`Impossible de créer un avoir sur une facture annulée`);
+            throw new AppError(`Impossible de créer un avoir sur une facture annulée`, 409, 'FACTURE_ANNULEE');
         }
 
         // Calcul TVA

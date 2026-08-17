@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Rapport V3 — Refonte Plans, Modules, Quotas &amp; Entitlements</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0b1020;--bg2:#111836;--surface:#161d3a;--surface2:#1c2548;--border:#2a3560;--text:#e2e8f0;--text2:#94a3b8;--green:#34d399;--blue:#60a5fa;--amber:#fbbf24;--red:#f87171;--purple:#a78bfa;--pink:#f472b6;--radius:12px;--shadow:0 4px 24px rgba(0,0,0,.35)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;font-size:15px}
+code,pre{font-family:'JetBrains Mono',monospace}
+.layout{display:flex;min-height:100vh}
+nav.toc{position:sticky;top:0;width:272px;min-width:272px;height:100vh;overflow-y:auto;background:var(--bg2);border-right:1px solid var(--border);padding:24px 16px;flex-shrink:0}
+nav.toc h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:12px}
+nav.toc a{display:block;padding:6px 10px;border-radius:6px;color:var(--text2);text-decoration:none;font-size:13px;margin-bottom:2px;transition:all .15s}
+nav.toc a:hover{background:var(--surface);color:var(--text)}
+nav.toc a.active{background:var(--surface2);color:var(--green);font-weight:600}
+main{flex:1;padding:40px 48px;max-width:1100px}
+h1{font-size:32px;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg,var(--green),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+h2{font-size:24px;font-weight:700;margin:48px 0 16px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+h3{font-size:18px;font-weight:600;margin:24px 0 12px;color:var(--blue)}
+h4{font-size:15px;font-weight:600;margin:16px 0 8px;color:var(--amber)}
+p{margin-bottom:12px;color:var(--text2)}
+.subtitle{font-size:17px;color:var(--text2);margin-bottom:32px}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.badge-green{background:rgba(52,211,153,.15);color:var(--green)}
+.badge-red{background:rgba(248,113,113,.15);color:var(--red)}
+.badge-amber{background:rgba(251,191,36,.15);color:var(--amber)}
+.badge-blue{background:rgba(96,165,250,.15);color:var(--blue)}
+.badge-purple{background:rgba(167,139,250,.15);color:var(--purple)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;box-shadow:var(--shadow)}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center}
+.kpi .value{font-size:28px;font-weight:800;color:var(--green)}
+.kpi .label{font-size:12px;color:var(--text2);margin-top:4px;text-transform:uppercase;letter-spacing:.05em}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+th{background:var(--surface2);padding:10px 12px;text-align:left;font-weight:600;color:var(--text);border-bottom:2px solid var(--border)}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text2)}
+tr:hover td{background:rgba(255,255,255,.02)}
+.figure{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin:20px 0;overflow-x:auto}
+.figure .caption{font-size:12px;color:var(--text2);margin-top:12px;text-align:center;font-style:italic}
+.formula{background:var(--surface2);border-left:4px solid var(--green);padding:16px 20px;border-radius:0 var(--radius) var(--radius) 0;margin:16px 0;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--green)}
+.callout{border-radius:var(--radius);padding:16px 20px;margin:16px 0;border-left:4px solid}
+.callout-info{background:rgba(96,165,250,.08);border-color:var(--blue)}
+.callout-warn{background:rgba(251,191,36,.08);border-color:var(--amber)}
+.callout-danger{background:rgba(248,113,113,.08);border-color:var(--red)}
+.callout-success{background:rgba(52,211,153,.08);border-color:var(--green)}
+.callout strong{display:block;margin-bottom:4px;color:var(--text)}
+.plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:20px 0}
+.plan-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:24px;text-align:center;position:relative;transition:transform .2s}
+.plan-card:hover{transform:translateY(-4px)}
+.plan-card.recommended{border-color:var(--green);box-shadow:0 0 30px rgba(52,211,153,.2)}
+.plan-card .plan-name{font-size:18px;font-weight:700;margin-bottom:4px}
+.plan-card .plan-price{font-size:32px;font-weight:800;color:var(--green);margin:12px 0}
+.plan-card .plan-price small{font-size:14px;color:var(--text2);font-weight:400}
+.plan-card ul{list-style:none;text-align:left;margin-top:16px}
+.plan-card li{padding:4px 0;font-size:13px;color:var(--text2)}
+.plan-card li::before{content:"✓ ";color:var(--green);font-weight:700}
+.plan-card .rec-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:2px 12px;border-radius:12px;font-size:11px;font-weight:700}
+.step{display:flex;gap:16px;margin:12px 0;align-items:flex-start}
+.step .num{width:32px;height:32px;border-radius:50%;background:var(--green);color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+.step .content{flex:1}
+.timeline{position:relative;padding-left:32px;margin:20px 0}
+.timeline::before{content:'';position:absolute;left:12px;top:0;bottom:0;width:2px;background:var(--border)}
+.timeline-item{position:relative;margin-bottom:24px}
+.timeline-item::before{content:'';position:absolute;left:-26px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--green);border:2px solid var(--bg)}
+.timeline-item .date{font-size:12px;color:var(--green);font-weight:600}
+.timeline-item .title{font-weight:600;margin:2px 0}
+.timeline-item .desc{font-size:13px;color:var(--text2)}
+.menu-tree{font-family:'JetBrains Mono',monospace;font-size:13px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;line-height:1.8}
+.grid{display:grid;gap:16px}
+.grid.cols-2{grid-template-columns:1fr 1fr}
+.grid.cols-3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:900px){nav.toc{display:none}main{padding:20px}.grid.cols-2,.grid.cols-3{grid-template-columns:1fr}}
+.mermaid{display:flex;justify-content:center}
+.mermaid svg{max-width:100%}
+.risk-high{color:var(--red);font-weight:700}
+.risk-med{color:var(--amber);font-weight:700}
+.risk-low{color:var(--green);font-weight:700}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc" id="toc">
+<h2>Sommaire</h2>
+<a href="#s1">1. Contexte &amp; Objectifs</a>
+<a href="#s2">2. État des Lieux</a>
+<a href="#s3">3. Architecture Cible</a>
+<a href="#s4">4. Plans d'Abonnement v3</a>
+<a href="#s5">5. Tarification par Élève</a>
+<a href="#s6">6. Modules &amp; Classification</a>
+<a href="#s7">7. Fonctionnalités (ex-Feature Flags)</a>
+<a href="#s8">8. Quotas &amp; Usage Unifié</a>
+<a href="#s9">9. EntitlementService v3</a>
+<a href="#s10">10. Facturation &amp; Remises</a>
+<a href="#s11">11. Onboarding &amp; Inscription</a>
+<a href="#s12">12. Panel Admin Réorganisé</a>
+<a href="#s13">13. Migration 213</a>
+<a href="#s14">14. Risques &amp; Roadmap</a>
+<a href="#sources">Sources</a>
+</nav>
+<main>
+<h1>Refonte Plans, Modules, Quotas &amp; Entitlements — V3</h1>
+<p class="subtitle">Rapport d'architecture et de refonte complète du système de facturation SaaS eLISAschool. Migration directe et brutale, sans compatibilité ascendante.</p>
+<p><span class="badge badge-blue">Branche</span> migration_saas &nbsp; <span class="badge badge-green">Date</span> 2026-08-16 &nbsp; <span class="badge badge-purple">Version</span> 3.0 &nbsp; <span class="badge badge-amber">Statut</span> Rapport — implémentation en attente</p>
+
+<!-- ====== SECTION 1 ====== -->
+<h2 id="s1">1. Contexte &amp; Objectifs</h2>
+
+<div class="callout callout-info">
+<strong>Objectif fondamental</strong>
+Tout accès aux modules, quotas/usage et fonctionnalités DOIT transiter par les plans d'abonnement. Un tenant sans plan actif ne peut PAS accéder à eLISAschool (hard-gate). Les plans de base sont seedés, entièrement éditables et configurables en profondeur.
+</div>
+
+<h3>Principes directeurs de la refonte</h3>
+<div class="grid cols-2">
+<div class="card">
+<h4>Hard-gate plan actif</h4>
+<p>Aucun établissement ne peut utiliser la plateforme sans au moins un abonnement ACTIF ou ESSAI. Le middleware <code>requirePlanActif</code> est monté globalement sur toutes les routes tenant.</p>
+</div>
+<div class="card">
+<h4>Tarification par élève</h4>
+<p>Abandon du système de tranches. Chaque plan définit un <strong>prix de base</strong>, un nombre d'<strong>élèves gratuits</strong> (franchise) et un <strong>prix par élève supplémentaire</strong>.</p>
+</div>
+<div class="card">
+<h4>Classification simplifiée</h4>
+<p>Suppression BASE/PREMIUM/ADDON → uniquement <strong>GRATUIT</strong> et <strong>PAYANT</strong>. Les modules inclus dans un plan ne sont pas désactivables par le tenant.</p>
+</div>
+<div class="card">
+<h4>Migration brutale</h4>
+<p>Pas de shim de compatibilité. La migration 213 transforme directement les données existantes et supprime les anciennes structures.</p>
+</div>
+</div>
+
+<div class="kpi-grid">
+<div class="kpi"><div class="value">5</div><div class="label">Plans seedés</div></div>
+<div class="kpi"><div class="value">25</div><div class="label">Modules catalogue</div></div>
+<div class="kpi"><div class="value">8</div><div class="label">Fonctionnalités</div></div>
+<div class="kpi"><div class="value">7</div><div class="label">Cron jobs</div></div>
+<div class="kpi"><div class="value">12</div><div class="label">Entités billing</div></div>
+</div>
+
+<!-- ====== SECTION 2 ====== -->
+<h2 id="s2">2. État des Lieux — Problèmes Identifiés</h2>
+
+<h3>2.1 Failles fonctionnelles critiques</h3>
+<table>
+<thead><tr><th>ID</th><th>Problème</th><th>Sévérité</th><th>Localisation</th></tr></thead>
+<tbody>
+<tr><td>I1</td><td>Aucun code ne écrit <code>statut=EXPIRE</code> ni <code>dateExpirationReelle</code></td><td class="risk-high">CRITIQUE</td><td>facturation.service.ts</td></tr>
+<tr><td>I2</td><td>Middleware <code>requirePlanActif</code> exporté mais jamais monté</td><td class="risk-high">CRITIQUE</td><td>app.ts</td></tr>
+<tr><td>I3</td><td>Double middleware quotas (403 vs 429) incohérent</td><td class="risk-med">HAUTE</td><td>quota.service.ts</td></tr>
+<tr><td>I4</td><td>FeatureFlagService.isEnabled ne considère pas le statut ESSAI</td><td class="risk-med">HAUTE</td><td>feature-flags.service.ts</td></tr>
+<tr><td>I5</td><td>cronRenouvellementAuto crée sans changer le statut ancien</td><td class="risk-med">HAUTE</td><td>cron-jobs.ts</td></tr>
+<tr><td>I6</td><td>Lien mort /platform/permissions dans la sidebar</td><td class="risk-low">BASSE</td><td>platform-sidebar.tsx</td></tr>
+<tr><td>I7</td><td>Incohérence guards (root SUPER_ADMIN vs sous-layouts 6 rôles)</td><td class="risk-med">HAUTE</td><td>platform.routes.ts</td></tr>
+<tr><td>I8</td><td>7 redondances dans le panel admin</td><td class="risk-low">BASSE</td><td>Plusieurs routes</td></tr>
+<tr><td>I9</td><td>Code mort (onboarding-wizard, provider-config-modal)</td><td class="risk-low">BASSE</td><td>features/admin/</td></tr>
+<tr><td>I10</td><td>i18n modules.json contient encore BASE/PREMIUM/ADDON</td><td class="risk-low">BASSE</td><td>locales/fr/modules.json</td></tr>
+<tr><td>I11</td><td>Aucun flux d'inscription self-service</td><td class="risk-med">HAUTE</td><td>—</td></tr>
+<tr><td>I12</td><td>Pas de paramètre <code>billing.plan_par_defaut</code></td><td class="risk-med">HAUTE</td><td>parametres_systeme</td></tr>
+</tbody>
+</table>
+
+<canvas id="chart-severite" width="400" height="200" style="max-width:500px;margin:20px auto;display:block"></canvas>
+
+<!-- ====== SECTION 3 ====== -->
+<h2 id="s3">3. Architecture Cible</h2>
+
+<div class="figure">
+<pre class="mermaid">
+flowchart TD
+    A["🏫 Établissement"] --> B["💳 AbonnementClient"]
+    B --> C["📋 PlanAbonnement"]
+    C --> D["📦 entitlements (JSONB)"]
+    C --> E["📊 quotas (JSONB)"]
+    C --> F["💰 tarification (JSONB)"]
+    C --> G["🧪 essai (JSONB)"]
+    C --> H["🔄 cyclesAutorises (JSONB)"]
+    D --> I["EntitlementService v3"]
+    E --> I
+    F --> J["FacturationService"]
+    I --> K["✅ Accès module"]
+    I --> L["✅ Accès fonctionnalité"]
+    I --> M["✅ Quota disponible"]
+    style A fill:#1c2548,stroke:#60a5fa
+    style C fill:#1c2548,stroke:#34d399
+    style I fill:#1c2548,stroke:#fbbf24
+    style K fill:#064e3b,stroke:#34d399
+    style L fill:#064e3b,stroke:#34d399
+    style M fill:#064e3b,stroke:#34d399
+</pre>
+<div class="caption">Figure 1 — Flux de résolution des droits d'accès via le plan d'abonnement</div>
+</div>
+
+<h3>3.1 Cascade EntitlementService v3 — 4 questions</h3>
+<div class="figure">
+<pre class="mermaid">
+flowchart TD
+    Q0{"Q0: Module existe<br/>dans catalogue ?"}
+    Q1{"Q1: estCritique = true ?"}
+    Q2{"Q2: Plan ACTIF<br/>ou ESSAI ?"}
+    Q3{"Q3: entitlements[module]<br/>= accessible ?"}
+    Q4{"Q4: Override groupe<br/>ou supplément ?"}
+    R_NO["❌ BLOCAGE<br/>MODULE_INCONNU"]
+    R_BYPASS["✅ BYPASS<br/>estCritique"]
+    R_GATE["❌ BLOCAGE<br/>AUCUN_PLAN_ACTIF"]
+    R_PLAN["✅ ACCORDÉ<br/>par le plan"]
+    R_OVERRIDE["✅ ACCORDÉ<br/>par override/supplément"]
+    R_REFUS["❌ BLOCAGE<br/>PLAN_NON_AUTORISE"]
+    Q0 -->|Non| R_NO
+    Q0 -->|Oui| Q1
+    Q1 -->|Oui| R_BYPASS
+    Q1 -->|Non| Q2
+    Q2 -->|Non| R_GATE
+    Q2 -->|Oui| Q3
+    Q3 -->|Oui| R_PLAN
+    Q3 -->|Non| Q4
+    Q4 -->|Oui| R_OVERRIDE
+    Q4 -->|Non| R_REFUS
+    style R_NO fill:#450a0a,stroke:#f87171
+    style R_GATE fill:#450a0a,stroke:#f87171
+    style R_REFUS fill:#450a0a,stroke:#f87171
+    style R_BYPASS fill:#064e3b,stroke:#34d399
+    style R_PLAN fill:#064e3b,stroke:#34d399
+    style R_OVERRIDE fill:#064e3b,stroke:#34d399
+</pre>
+<div class="caption">Figure 2 — Cascade de décision EntitlementService v3 (4 questions séquentielles)</div>
+</div>
+
+<!-- ====== SECTION 4 ====== -->
+<h2 id="s4">4. Plans d'Abonnement v3</h2>
+
+<h3>4.1 Structure JSONB du plan</h3>
+<div class="card">
+<h4>PlanAbonnement — Colonnes JSONB</h4>
+<table>
+<thead><tr><th>Colonne</th><th>Type</th><th>Contenu</th></tr></thead>
+<tbody>
+<tr><td><code>tarification</code></td><td>JSONB</td><td>prixBase (int, XAF), prixParEleve (int), elevesGratuits (int), cyclesAutorises[]</td></tr>
+<tr><td><code>quotas</code></td><td>JSONB</td><td>{eleves: N, membres: N, stockage: N, ...} — 0 = illimité</td></tr>
+<tr><td><code>entitlements</code></td><td>JSONB</td><td>{moduleCode: true/false, ...} — modules inclus dans le plan</td></tr>
+<tr><td><code>essai</code></td><td>JSONB</td><td>{dureeJours: 14, modulesComplets: true}</td></tr>
+<tr><td><code>cyclesAutorises</code></td><td>JSONB</td><td>["MENSUEL", "TRIMESTRIEL", "ANNUEL"]</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>4.2 Les 5 plans seedés</h3>
+<div class="plan-grid">
+<div class="plan-card">
+<div class="plan-name">Découverte</div>
+<div class="plan-price">0 <small>F/mois</small></div>
+<p style="font-size:12px;color:var(--text2)">Idéal pour tester</p>
+<ul>
+<li>10 élèves gratuits</li>
+<li>5 modules base</li>
+<li>1 utilisateur admin</li>
+<li>Support communauté</li>
+</ul>
+</div>
+<div class="plan-card">
+<div class="plan-name">Starter</div>
+<div class="plan-price">15 000 <small>F/mois</small></div>
+<p style="font-size:12px;color:var(--text2)">Petits établissements</p>
+<ul>
+<li>50 élèves inclus</li>
+<li>12 modules</li>
+<li>5 utilisateurs admin</li>
+<li>Support email</li>
+<li>500 Mo stockage</li>
+</ul>
+</div>
+<div class="plan-card recommended">
+<span class="rec-badge">RECOMMANDÉ</span>
+<div class="plan-name">Standard</div>
+<div class="plan-price">25 000 <small>F/mois</small></div>
+<p style="font-size:12px;color:var(--text2)">Établissements moyens</p>
+<ul>
+<li>150 élèves inclus</li>
+<li>18 modules</li>
+<li>15 utilisateurs admin</li>
+<li>Support prioritaire</li>
+<li>2 Go stockage</li>
+<li>API accès</li>
+</ul>
+</div>
+<div class="plan-card">
+<div class="plan-name">Pro</div>
+<div class="plan-price">60 000 <small>F/mois</small></div>
+<p style="font-size:12px;color:var(--text2)">Grands établissements</p>
+<ul>
+<li>500 élèves inclus</li>
+<li>Tous les modules</li>
+<li>Utilisateurs illimités</li>
+<li>Support dédié</li>
+<li>10 Go stockage</li>
+<li>API + Webhooks</li>
+</ul>
+</div>
+<div class="plan-card">
+<div class="plan-name">Enterprise</div>
+<div class="plan-price">150 000 <small>F/mois</small></div>
+<p style="font-size:12px;color:var(--text2)">Groupes &amp; réseaux</p>
+<ul>
+<li>Élèves illimités</li>
+<li>Tous les modules</li>
+<li>Multi-établissements</li>
+<li>SLA garanti</li>
+<li>Stockage illimité</li>
+<li>Account manager</li>
+</ul>
+</div>
+</div>
+
+<h3>4.3 Comparatif détaillé des entitlements</h3>
+<table>
+<thead><tr><th>Module</th><th>Découverte</th><th>Starter</th><th>Standard</th><th>Pro</th><th>Enterprise</th></tr></thead>
+<tbody>
+<tr><td>auth, utilisateurs, configuration, notifications</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>élèves, classes, matières, notes</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>bulletins, programmes</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>emploi du temps</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>cms, sondages</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>finances, paiements</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>transport, cantine</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td></tr>
+<tr><td>bibliothèque, laboratoire</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td></tr>
+<tr><td>groupes, multi-sites</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+</tbody>
+</table>
+
+<!-- ====== SECTION 5 ====== -->
+<h2 id="s5">5. Tarification par Élève</h2>
+
+<div class="callout callout-success">
+<strong>Nouveau modèle : prix par élève + franchise</strong>
+Chaque plan définit un nombre d'élèves gratuits (franchise). Au-delà, chaque élève supplémentaire est facturé au prix unitaire défini dans le plan.
+</div>
+
+<div class="formula">
+montant = (prixBase + max(0, nbEleves − elevesGratuits) × prixParEleve) × coefCycle − remises + modules_supplémentaires + packs_quota
+</div>
+
+<h3>5.1 Coefficients de cycle</h3>
+<table>
+<thead><tr><th>Cycle</th><th>Coefficient</th><th>Exemple Standard (200 élèves)</th></tr></thead>
+<tbody>
+<tr><td>MENSUEL</td><td>×1.0</td><td>25 000 + 50×100 = 30 000 F</td></tr>
+<tr><td>TRIMESTRIEL</td><td>×2.8 (−6.7%)</td><td>84 000 F</td></tr>
+<tr><td>SEMESTRIEL</td><td>×5.5 (−8.3%)</td><td>165 000 F</td></tr>
+<tr><td>ANNUEL</td><td>×10.0 (−16.7%)</td><td>300 000 F</td></tr>
+</tbody>
+</table>
+
+<canvas id="chart-pricing" width="600" height="280" style="max-width:700px;margin:20px auto;display:block"></canvas>
+
+<h3>5.2 Packs de quotas supplémentaires</h3>
+<table>
+<thead><tr><th>Pack</th><th>Contenu</th><th>Prix mensuel</th></tr></thead>
+<tbody>
+<tr><td>Pack +50 élèves</td><td>+50 élèves au quota</td><td>3 000 F</td></tr>
+<tr><td>Pack +200 élèves</td><td>+200 élèves au quota</td><td>10 000 F</td></tr>
+<tr><td>Pack stockage 5 Go</td><td>+5 Go espace disque</td><td>2 000 F</td></tr>
+<tr><td>Pack stockage 20 Go</td><td>+20 Go espace disque</td><td>6 000 F</td></tr>
+<tr><td>Pack API</td><td>Accès API + webhooks</td><td>5 000 F</td></tr>
+</tbody>
+</table>
+
+<!-- ====== SECTION 6 ====== -->
+<h2 id="s6">6. Modules &amp; Classification</h2>
+
+<div class="callout callout-warn">
+<strong>Changement de classification</strong>
+Suppression de BASE / PREMIUM / ADDON. Nouvelle classification binaire : <strong>GRATUIT</strong> (inclus dans tous les plans) et <strong>PAYANT</strong> (inclus dans certains plans uniquement). Les modules critiques (estCritique=true) contournent tout gating.
+</div>
+
+<h3>6.1 Répartition des 25 modules</h3>
+<div class="grid cols-2">
+<div class="card">
+<h4>8 modules GRATUITS (toujours accessibles)</h4>
+<table>
+<tbody>
+<tr><td>auth</td><td>utilisateurs</td></tr>
+<tr><td>configuration</td><td>notifications</td></tr>
+<tr><td>eleves</td><td>classes</td></tr>
+<tr><td>matieres</td><td>periodes</td></tr>
+</tbody>
+</table>
+</div>
+<div class="card">
+<h4>17 modules PAYANTS (selon plan)</h4>
+<table>
+<tbody>
+<tr><td>notes</td><td>bulletins</td></tr>
+<tr><td>emploi-du-temps</td><td>cms</td></tr>
+<tr><td>sondages</td><td>finances</td></tr>
+<tr><td>transport</td><td>cantine</td></tr>
+<tr><td>bibliotheque</td><td>laboratoire</td></tr>
+<tr><td>examens</td><td>discipline</td></tr>
+<tr><td>comptabilite</td><td>ressources-humaines</td></tr>
+<tr><td>groupes-etablissements</td><td>marketing</td></tr>
+<tr><td>stage</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<h3>6.2 Entité ModuleCatalogue v3</h3>
+<table>
+<thead><tr><th>Champ</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>code</td><td>varchar(50) UNIQUE</td><td>Identifiant unique du module</td></tr>
+<tr><td>nom</td><td>varchar(100)</td><td>Nom affichable</td></tr>
+<tr><td>categorie</td><td>enum GRATUIT|PAYANT</td><td>Classification commerciale</td></tr>
+<tr><td>estCritique</td><td>boolean DEFAULT false</td><td>Bypass total du gating</td></tr>
+<tr><td>planMinimal</td><td>varchar(30) nullable</td><td>Plan minimum requis (starter, standard, pro, enterprise)</td></tr>
+<tr><td>prixMensuel</td><td>int DEFAULT 0</td><td>Prix en XAF si souscrit séparément</td></tr>
+<tr><td>estActif</td><td>boolean DEFAULT true</td><td>Visible dans le catalogue</td></tr>
+<tr><td>actifParDefaut</td><td>boolean DEFAULT false</td><td>Activé sans abonnement (GRATUIT uniquement)</td></tr>
+<tr><td>dependencies</td><td>simple-array</td><td>Codes des modules prérequis</td></tr>
+<tr><td>config</td><td>jsonb</td><td>Configuration spécifique (defaultSettings)</td></tr>
+</tbody>
+</table>
+
+<!-- ====== SECTION 7 ====== -->
+<h2 id="s7">7. Fonctionnalités (ex-Feature Flags)</h2>
+
+<div class="callout callout-info">
+<strong>Renommage terminologique</strong>
+« Feature flag » → <strong>« Fonctionnalité »</strong> (FR) / <strong>« Feature »</strong> (EN). Le terme est plus compréhensible pour les utilisateurs finaux et reflète mieux la nature commerciale du mécanisme.
+</div>
+
+<h3>7.1 Entité FeatureFlagDefinition v3</h3>
+<table>
+<thead><tr><th>Champ</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>cle</td><td>varchar(100) UNIQUE</td><td>Identifiant technique (ex: marketing.sms_active)</td></tr>
+<tr><td>labelFr</td><td>varchar(200)</td><td>Nom affiché en français</td></tr>
+<tr><td>labelEn</td><td>varchar(200)</td><td>Nom affiché en anglais</td></tr>
+<tr><td>categorieCommerciale</td><td>enum GRATUIT|PAYANT</td><td>Classification commerciale</td></tr>
+<tr><td>type</td><td>enum BOOLEAN|LIMIT|WHITELIST</td><td>Type de fonctionnalité</td></tr>
+<tr><td>rolloutPercentage</td><td>int DEFAULT 100</td><td>Pourcentage de déploiement (0-100)</td></tr>
+<tr><td>segments</td><td>jsonb</td><td>Règles de ciblage avancé</td></tr>
+<tr><td>dateExpiration</td><td>timestamp nullable</td><td>Expiration automatique</td></tr>
+</tbody>
+</table>
+
+<h3>7.2 Cascade de résolution</h3>
+<div class="figure">
+<pre class="mermaid">
+flowchart LR
+    A["Plan<br/>(entitlements)"] --> D["Résultat"]
+    B["Override<br/>établissement"] --> D
+    C["Rollout %<br/>(hash UUID)"] --> D
+    E["Segments<br/>(JSONB rules)"] --> D
+    F["Expiration<br/>date"] --> D
+    style D fill:#064e3b,stroke:#34d399
+</pre>
+<div class="caption">Figure 3 — Sources de résolution d'une fonctionnalité</div>
+</div>
+
+<h3>7.3 Les 8 fonctionnalités seedées</h3>
+<table>
+<thead><tr><th>Clé</th><th>Label FR</th><th>Catégorie</th><th>Type</th></tr></thead>
+<tbody>
+<tr><td>marketing.sms_active</td><td>Envoi SMS marketing</td><td>PAYANT</td><td>BOOLEAN</td></tr>
+<tr><td>marketing.email_mass</td><td>Emailing en masse</td><td>PAYANT</td><td>BOOLEAN</td></tr>
+<tr><td>finances.export_comptable</td><td>Export comptable avancé</td><td>PAYANT</td><td>BOOLEAN</td></tr>
+<tr><td>bulletins.template_custom</td><td>Templates personnalisés</td><td>PAYANT</td><td>BOOLEAN</td></tr>
+<tr><td>api.acces_externe</td><td>API externe</td><td>PAYANT</td><td>BOOLEAN</td></tr>
+<tr><td>stockage.ilimite</td><td>Stockage illimité</td><td>PAYANT</td><td>BOOLEAN</td></tr>
+<tr><td>multi_langue.active</td><td>Multi-langue</td><td>GRATUIT</td><td>BOOLEAN</td></tr>
+<tr><td>export.pdf_marque</td><td>PDF white-label</td><td>PAYANT</td><td>BOOLEAN</td></tr>
+</tbody>
+</table>
+
+<!-- ====== SECTION 8 ====== -->
+<h2 id="s8">8. Quotas &amp; Usage Unifié</h2>
+
+<h3>8.1 Stockage unifié — Table <code>usage_unifie</code></h3>
+<div class="card">
+<p>Abandon des tables multiples (quota_utilisation, tranche_eleves, etc.) au profit d'une table unique <code>usage_unifie</code> avec discriminateur <code>typeRessource</code>.</p>
+<table>
+<thead><tr><th>Champ</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>etablissementId</td><td>uuid FK</td><td>Tenant propriétaire</td></tr>
+<tr><td>typeRessource</td><td>varchar(50)</td><td>eleves, membres, stockage, sms, emails...</td></tr>
+<tr><td>consommation</td><td>int DEFAULT 0</td><td>Quantité consommée</td></tr>
+<tr><td>periode</td><td>varchar(7)</td><td>Format YYYY-MM</td></tr>
+</tbody>
+</table>
+<p style="margin-top:12px"><strong>Index unique</strong> : <code>(etablissementId, typeRessource, periode)</code></p>
+</div>
+
+<h3>8.2 Quota effectif</h3>
+<div class="formula">
+quotaEffectif = plan.quotas[ressource] + Σ(packsSouscrits[ressource])
+<br/>si quotaEffectif = 0 → illimité
+</div>
+
+<h3>8.3 Middleware de contrôle</h3>
+<div class="card">
+<p>Un seul middleware <code>requireQuota(typeRessource, quantite)</code> qui :</p>
+<ol style="margin-left:20px;color:var(--text2)">
+<li>Vérifie le plan actif (hard-gate)</li>
+<li>Calcule le quota effectif (plan + packs)</li>
+<li>Compare consommation vs quota</li>
+<li>Si dépassement → 429 + header <code>X-Quota-*</code></li>
+<li>Si alerte 80% → notification proactive</li>
+</ol>
+</div>
+
+<!-- ====== SECTION 9 ====== -->
+<h2 id="s9">9. EntitlementService v3 — Source Unique</h2>
+
+<div class="card">
+<h4>Méthodes publiques</h4>
+<table>
+<thead><tr><th>Méthode</th><th>Signature</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>check()</code></td><td>(etabId, moduleCode) → EntitlementResult</td><td>Vérification unitaire avec cascade complète</td></tr>
+<tr><td><code>checkAll()</code></td><td>(etabId) → Map&lt;string, Result&gt;</td><td>Tous les modules d'un coup</td></tr>
+<tr><td><code>checkCapability()</code></td><td>(etabId, featureKey) → boolean</td><td>Vérification fonctionnalité (ex-feature flag)</td></tr>
+<tr><td><code>hasPlanActif()</code></td><td>(etabId) → boolean</td><td>Hard-gate : au moins 1 plan ACTIF ou ESSAI</td></tr>
+<tr><td><code>resolveBatch()</code></td><td>(etabIds[], moduleCode) → Map</td><td>Résolution batch pour la plateforme</td></tr>
+<tr><td><code>invalidate()</code></td><td>(etabId?) → void</td><td>Cache in-memory synchrone + Redis async</td></tr>
+<tr><td><code>resoudrePhaseExpiration()</code></td><td>(etabId) → Phase</td><td>READ_ONLY / LOCKED / ARCHIVED</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>9.1 Hard-gate — Séquence d'accès</h3>
+<div class="figure">
+<pre class="mermaid">
+sequenceDiagram
+    participant C as Client
+    participant M as Middleware requirePlanActif
+    participant E as EntitlementService
+    participant DB as PostgreSQL
+    participant R as Redis Cache
+
+    C->>M: Requête API tenant
+    M->>R: Cache check (TTL 60s)
+    alt Cache HIT
+        R-->>M: {hasPlan: true}
+    else Cache MISS
+        M->>E: hasPlanActif(etabId)
+        E->>DB: SELECT FROM abonnements_client WHERE statut IN ('ACTIF','ESSAI')
+        DB-->>E: count
+        E->>R: Set cache
+        E-->>M: true/false
+    end
+    alt Plan actif
+        M->>C: 200 OK → suite du traitement
+    else Aucun plan
+        M-->>C: 402 PAYMENT_REQUIRED + message
+    end
+</pre>
+<div class="caption">Figure 4 — Séquence hard-gate : vérification plan actif avant tout accès tenant</div>
+</div>
+
+<h3>9.2 Dégradation gracieuse</h3>
+<table>
+<thead><tr><th>Phase</th><th>Jours</th><th>Comportement</th></tr></thead>
+<tbody>
+<tr><td><span class="badge badge-amber">READ_ONLY</span></td><td>J0 → J15</td><td>GET OK, POST/PUT/DELETE bloqués (403). Message upsell.</td></tr>
+<tr><td><span class="badge badge-red">LOCKED</span></td><td>J15 → J30</td><td>Tous modules bloqués. Page redirection vers abonnement.</td></tr>
+<tr><td><span class="badge badge-purple">ARCHIVED</span></td><td>J30+</td><td>Données archivées. Modules invisibles. Export uniquement.</td></tr>
+</tbody>
+</table>
+
+<!-- ====== SECTION 10 ====== -->
+<h2 id="s10">10. Facturation &amp; Remises</h2>
+
+<h3>10.1 Système de remises</h3>
+<table>
+<thead><tr><th>Type</th><th>Condition</th><th>Remise</th><th>Exemple</th></tr></thead>
+<tbody>
+<tr><td>Volume élèves</td><td>&gt; 500 élèves</td><td>10%</td><td>−3 000 F</td></tr>
+<tr><td>Volume élèves</td><td>&gt; 1000 élèves</td><td>20%</td><td>−6 000 F</td></tr>
+<tr><td>Fidélité</td><td>12 mois consécutifs</td><td>5%</td><td>−1 500 F</td></tr>
+<tr><td>Fidélité</td><td>24 mois consécutifs</td><td>10%</td><td>−3 000 F</td></tr>
+<tr><td>Prépaiement annuel</td><td>Cycle ANNUEL</td><td>16.7%</td><td>Inclus dans coef ×10</td></tr>
+<tr><td>Groupe</td><td>&gt; 3 établissements</td><td>15%</td><td>Dégressivité groupe</td></tr>
+<tr><td>Promotion</td><td>Campagne temporaire</td><td>Variable</td><td>Rentrée scolaire −20%</td></tr>
+</tbody>
+</table>
+
+<div class="callout callout-info">
+<strong>Stratégie d'application des remises</strong>
+Les remises sont cumulables dans la limite de 35% du montant total. L'ordre d'application : volume → fidélité → groupe → promotion. Chaque remise est tracée en ligne de facture séparée.
+</div>
+
+<h3>10.2 Cycles de facturation</h3>
+<table>
+<thead><tr><th>Cycle</th><th>Fréquence</th><th>Coefficient</th><th>Avantage</th></tr></thead>
+<tbody>
+<tr><td>MENSUEL</td><td>Chaque mois</td><td>×1.0</td><td>Flexibilité maximale</td></tr>
+<tr><td>TRIMESTRIEL</td><td>Tous les 3 mois</td><td>×2.8</td><td>−6.7% vs mensuel</td></tr>
+<tr><td>SEMESTRIEL</td><td>Tous les 6 mois</td><td>×5.5</td><td>−8.3% vs mensuel</td></tr>
+<tr><td>ANNUEL</td><td>1 fois par an</td><td>×10.0</td><td>−16.7% vs mensuel</td></tr>
+</tbody>
+</table>
+
+<h3>10.3 Numérotation OHADA</h3>
+<div class="formula">
+FAC-OHADA-2026-000001 &nbsp; ← Format: FAC-OHADA-{YYYY}-{NNNNNN}<br/>
+TVA: 19.25% (1925 centièmes) &nbsp; ← Calcul en centièmes pour précision
+</div>
+
+<!-- ====== SECTION 11 ====== -->
+<h2 id="s11">11. Onboarding &amp; Inscription</h2>
+
+<h3>11.1 Flux d'inscription self-service</h3>
+<div class="figure">
+<pre class="mermaid">
+flowchart TD
+    A["🌐 Page publique<br/>elisaschool.com/inscription"] --> B["📝 Formulaire<br/>établissement"]
+    B --> C["💳 Choix du plan<br/>ou plan par défaut"]
+    C --> D["🧪 Période d'essai<br/>14 jours automatiques"]
+    D --> E["📧 Vérification email"]
+    E --> F["🏫 Création établissement<br/>+ abonnement ACTIF/ESSAI"]
+    F --> G["👤 Création compte admin"]
+    G --> H["🎯 Dashboard<br/>+ guide démarrage"]
+    H --> I{"Paiement<br/>avant J14 ?"}
+    I -->|Oui| J["💰 Abonnement ACTIF"]
+    I -->|Non| K["📉 Dégradation gracieuse<br/>READ_ONLY → LOCKED → ARCHIVED"]
+    style A fill:#1c2548,stroke:#60a5fa
+    style D fill:#1c2548,stroke:#34d399
+    style J fill:#064e3b,stroke:#34d399
+    style K fill:#450a0a,stroke:#f87171
+</pre>
+<div class="caption">Figure 5 — Flux d'inscription self-service avec essai automatique</div>
+</div>
+
+<h3>11.2 Plan par défaut</h3>
+<div class="card">
+<p>Le paramètre système <code>billing.plan_par_defaut</code> (type STRING, valeur par défaut : <code>'decouverte'</code>) détermine le plan attribué automatiquement lors de l'inscription si l'utilisateur ne fait pas de choix explicite.</p>
+<p><strong>Cascade de résolution</strong> :</p>
+<ol style="margin-left:20px;color:var(--text2)">
+<li>Choix explicite de l'utilisateur lors de l'inscription</li>
+<li>Paramètre <code>billing.plan_par_defaut</code> (configurable plateforme)</li>
+<li>Fallback hardcodé : plan <code>decouverte</code> (0 F/mois)</li>
+</ol>
+</div>
+
+<h3>11.3 Période d'essai</h3>
+<table>
+<thead><tr><th>Paramètre</th><th>Valeur</th><th>Configurable</th></tr></thead>
+<tbody>
+<tr><td>Durée</td><td>14 jours</td><td>Oui (plan.essai.dureeJours)</td></tr>
+<tr><td>Modules complets</td><td>true (tous modules accessibles)</td><td>Oui (plan.essai.modulesComplets)</td></tr>
+<tr><td>Quotas</td><td>Identiques au plan choisi</td><td>—</td></tr>
+<tr><td>Notification J-3</td><td>Email + in-app</td><td>Oui</td></tr>
+<tr><td>Conversion auto</td><td>ESSAI → ACTIF si paiement</td><td>—</td></tr>
+</tbody>
+</table>
+
+<!-- ====== SECTION 12 ====== -->
+<h2 id="s12">12. Panel Admin Réorganisé</h2>
+
+<div class="callout callout-success">
+<strong>10 menus, 38 sous-items</strong>
+Réorganisation complète du panneau d'administration avec sous-menus dépliables, regroupement thématique et suppression des redondances.
+</div>
+
+<div class="menu-tree">
+<strong>📊 Pilotage</strong>
+├── Tableau de bord &nbsp;<span class="badge badge-blue">/platform/dashboard</span>
+├── Revenus &amp; MRR &nbsp;<span class="badge badge-blue">/platform/revenus</span>
+└── Monitoring &amp; Santé &nbsp;<span class="badge badge-blue">/platform/monitoring</span>
+<br/><br/>
+<strong>🏫 Tenants</strong>
+├── Établissements &nbsp;<span class="badge badge-blue">/platform/etablissements</span>
+├── Groupes SaaS &nbsp;<span class="badge badge-blue">/platform/groupes</span>
+├── Utilisateurs &nbsp;<span class="badge badge-blue">/platform/utilisateurs</span>
+└── Rôles &amp; Permissions &nbsp;<span class="badge badge-blue">/platform/roles</span>
+<br/><br/>
+<strong>💰 Facturation</strong>
+├── Plans d'abonnement &nbsp;<span class="badge badge-blue">/platform/facturation?tab=plans</span>
+├── Abonnements &nbsp;<span class="badge badge-blue">/platform/facturation?tab=abonnements</span>
+├── Factures &nbsp;<span class="badge badge-blue">/platform/facturation?tab=factures</span>
+├── Providers paiement &nbsp;<span class="badge badge-blue">/platform/providers</span>
+└── Remises &amp; Promotions &nbsp;<span class="badge badge-blue">/platform/facturation?tab=remises</span>
+<br/><br/>
+<strong>📦 Catalogue</strong>
+├── Modules &nbsp;<span class="badge badge-blue">/platform/modules?tab=catalogue</span>
+├── Fonctionnalités &nbsp;<span class="badge badge-blue">/platform/feature-flags</span>
+├── Quotas &amp; Packs &nbsp;<span class="badge badge-blue">/platform/facturation?tab=quotas</span>
+└── Builder (Import/Export) &nbsp;<span class="badge badge-blue">/platform/modules?tab=builder</span>
+<br/><br/>
+<strong>🔐 Sécurité</strong>
+├── Audit &amp; Logs &nbsp;<span class="badge badge-blue">/platform/audit</span>
+├── Actions critiques (2FA) &nbsp;<span class="badge badge-blue">/platform/approbations</span>
+├── Sessions &amp; Activité &nbsp;<span class="badge badge-blue">/platform/sessions</span>
+└── IP Allowlist &nbsp;<span class="badge badge-blue">/platform/securite/ip</span>
+<br/><br/>
+<strong>⚙️ Configuration</strong>
+├── Paramètres système &nbsp;<span class="badge badge-blue">/platform/configuration?tab=parametres</span>
+├── Cascade multi-niveaux &nbsp;<span class="badge badge-blue">/platform/parametres-cascade</span>
+├── Plan par défaut &nbsp;<span class="badge badge-blue">/platform/configuration?tab=defauts</span>
+└── Templates emails &nbsp;<span class="badge badge-blue">/platform/notifications-config</span>
+<br/><br/>
+<strong>🔔 Notifications</strong>
+├── Providers &nbsp;<span class="badge badge-blue">/platform/notifications-config?tab=providers</span>
+├── Templates &nbsp;<span class="badge badge-blue">/platform/notifications-config?tab=templates</span>
+└── Test d'envoi &nbsp;<span class="badge badge-blue">/platform/notifications-config?tab=test</span>
+<br/><br/>
+<strong>📈 Analytics</strong>
+├── Usage &amp; Métriques &nbsp;<span class="badge badge-blue">/platform/monitoring?tab=usage</span>
+├── Noisy Neighbor &nbsp;<span class="badge badge-blue">/platform/monitoring?tab=noisy</span>
+├── Alertes &nbsp;<span class="badge badge-blue">/platform/monitoring?tab=alertes</span>
+└── Export rapports &nbsp;<span class="badge badge-blue">/platform/monitoring?tab=export</span>
+<br/><br/>
+<strong>💾 Sauvegardes</strong>
+├── Planification &nbsp;<span class="badge badge-blue">/platform/configuration?tab=backup</span>
+├── Historique &nbsp;<span class="badge badge-blue">/platform/configuration?tab=historique</span>
+└── Restauration &nbsp;<span class="badge badge-blue">/platform/configuration?tab=restore</span>
+<br/><br/>
+<strong>🧪 Tests &amp; Debug</strong>
+├── Résolution entitlements &nbsp;<span class="badge badge-blue">/platform/debug/entitlements</span>
+├── Console API &nbsp;<span class="badge badge-blue">/platform/debug/api</span>
+└── Feature toggles &nbsp;<span class="badge badge-blue">/platform/debug/features</span>
+</div>
+
+<!-- ====== SECTION 13 ====== -->
+<h2 id="s13">13. Migration 213 — Refonte Entitlements V3</h2>
+
+<div class="callout callout-danger">
+<strong>Migration brutale — pas de compatibilité ascendante</strong>
+La migration 213 transforme directement les données. Aucune table de transition, aucun shim. Les anciennes colonnes sont supprimées, les nouvelles créées et peuplées.
+</div>
+
+<h3>13.1 Opérations de la migration</h3>
+<table>
+<thead><tr><th>#</th><th>Opération</th><th>Type</th><th>Détail</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Enum categorie_module</td><td>ALTER</td><td>CRITIQUE→GRATUIT, PREMIUM/PAYANT→PAYANT, ADDON supprimé</td></tr>
+<tr><td>2</td><td>Colonne estCritique</td><td>ADD</td><td>boolean DEFAULT false sur modules_catalogue</td></tr>
+<tr><td>3</td><td>JSONB tarification</td><td>ADD</td><td>Sur plans_abonnement (prixBase, prixParEleve, elevesGratuits)</td></tr>
+<tr><td>4</td><td>JSONB quotas</td><td>ADD</td><td>Sur plans_abonnement</td></tr>
+<tr><td>5</td><td>JSONB entitlements</td><td>ADD</td><td>Sur plans_abonnement</td></tr>
+<tr><td>6</td><td>JSONB essai</td><td>ADD</td><td>Sur plans_abonnement</td></tr>
+<tr><td>7</td><td>JSONB cyclesAutorises</td><td>ADD</td><td>Sur plans_abonnement</td></tr>
+<tr><td>8</td><td>Table usage_unifie</td><td>CREATE</td><td>Remplace quota_utilisation + tranches</td></tr>
+<tr><td>9</td><td>Colonne categorieCommerciale</td><td>ADD</td><td>Sur feature_flag_definitions (GRATUIT|PAYANT)</td></tr>
+<tr><td>10</td><td>Colonnes labelFr/labelEn</td><td>ADD</td><td>Sur feature_flag_definitions</td></tr>
+<tr><td>11</td><td>Backfill plans JSONB</td><td>UPDATE</td><td>Peuple tarification/quotas/entitlements pour les 5 plans</td></tr>
+<tr><td>12</td><td>Drop anciennes tables</td><td>DROP</td><td>tranche_eleves, tranche_supplement, quota_utilisation</td></tr>
+</tbody>
+</table>
+
+<h3>13.2 Seeds mis à jour</h3>
+<table>
+<thead><tr><th>Seed</th><th>Contenu</th><th>Lignes</th></tr></thead>
+<tbody>
+<tr><td>seed-plans-abonnement.ts</td><td>5 plans avec JSONB complets</td><td>194</td></tr>
+<tr><td>seed-modules-catalogue.ts</td><td>25 modules (8 GRATUIT + 17 PAYANT)</td><td>321</td></tr>
+<tr><td>seed-feature-flags.ts</td><td>8 fonctionnalités avec labels FR/EN</td><td>98</td></tr>
+<tr><td>seed-remises.ts</td><td>7 règles de remise + 3 promotions</td><td>112</td></tr>
+<tr><td>seed-cycles.ts</td><td>4 cycles de facturation</td><td>45</td></tr>
+<tr><td>seed-packs-quotas.ts</td><td>5 packs de quotas supplémentaires</td><td>67</td></tr>
+<tr><td>seed-parametres-billing.ts</td><td>12 paramètres système billing</td><td>89</td></tr>
+</tbody>
+</table>
+
+<h3>13.3 Cron jobs</h3>
+<table>
+<thead><tr><th>Job</th><th>Schedule</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td>renouvellementAuto</td><td>0 1 * * *</td><td>Renouvelle les abonnements arrivant à échéance</td></tr>
+<tr><td>generationFactures</td><td>0 2 1 * *</td><td>Génère les factures mensuelles automatiques</td></tr>
+<tr><td>dunning</td><td>0 3 * * *</td><td>Relances paiement (4 niveaux)</td></tr>
+<tr><td>alerteQuota</td><td>0 */6 * * *</td><td>Alertes 80%/90%/100% quotas</td></tr>
+<tr><td>expirationEssai</td><td>0 4 * * *</td><td>Gère fin de période d'essai → dégradation</td></tr>
+<tr><td>controleTranches</td><td>0 2 * * *</td><td>Vérifie dépassement quotas + propose packs</td></tr>
+<tr><td>expirationFlags</td><td>0 5 * * *</td><td>Désactive fonctionnalités expirées</td></tr>
+</tbody>
+</table>
+
+<!-- ====== SECTION 14 ====== -->
+<h2 id="s14">14. Risques &amp; Roadmap</h2>
+
+<h3>14.1 Matrice des risques</h3>
+<table>
+<thead><tr><th>Risque</th><th>Impact</th><th>Probabilité</th><th>Mitigation</th></tr></thead>
+<tbody>
+<tr><td>Perte de données lors migration 213</td><td class="risk-high">CRITIQUE</td><td class="risk-med">MOYENNE</td><td>Backup complet avant migration + test sur staging</td></tr>
+<tr><td>Rupture service pendant migration</td><td class="risk-high">CRITIQUE</td><td class="risk-low">FAIBLE</td><td>Maintenance window + page statut</td></tr>
+<tr><td>Plans seedés incohérents</td><td class="risk-med">HAUT</td><td class="risk-low">FAIBLE</td><td>Tests unitaires cascade + walkthrough API</td></tr>
+<tr><td>Frontend non aligné (i18n BASE/PREMIUM)</td><td class="risk-med">HAUT</td><td class="risk-high">ÉLEVÉE</td><td>Audit grep + migration i18n systématique</td></tr>
+<tr><td>Middleware requirePlanActif oublié</td><td class="risk-high">CRITIQUE</td><td class="risk-low">FAIBLE</td><td>Test E2E accès sans plan → 402</td></tr>
+<tr><td>Dégradation gracieuse non testée</td><td class="risk-med">HAUT</td><td class="risk-med">MOYENNE</td><td>Tests integration expiration + phases</td></tr>
+<tr><td>Performance EntitlementService</td><td class="risk-low">BAS</td><td class="risk-low">FAIBLE</td><td>Cache Redis TTL 60s + in-memory fallback</td></tr>
+<tr><td>Régression seeds après migration</td><td class="risk-med">HAUT</td><td class="risk-med">MOYENNE</td><td>Seeds idempotents + vérification post-migration</td></tr>
+</tbody>
+</table>
+
+<h3>14.2 Roadmap d'implémentation</h3>
+<div class="timeline">
+<div class="timeline-item">
+<div class="date">Phase 1 — Semaine 1-2</div>
+<div class="title">Fondations backend</div>
+<div class="desc">Migration 213 + entités v3 + EntitlementService v3 + seeds. Tests unitaires cascade.</div>
+</div>
+<div class="timeline-item">
+<div class="date">Phase 2 — Semaine 2-3</div>
+<div class="title">Hard-gate + middleware</div>
+<div class="desc">Monter requirePlanActif globalement. Middleware quota unifié. Dégradation gracieuse.</div>
+</div>
+<div class="timeline-item">
+<div class="date">Phase 3 — Semaine 3-4</div>
+<div class="title">Facturation v3</div>
+<div class="desc">Tarification par élève. Remises. Cycles. Packs. Numérotation OHADA.</div>
+</div>
+<div class="timeline-item">
+<div class="date">Phase 4 — Semaine 4-5</div>
+<div class="title">Frontend panel admin</div>
+<div class="desc">Réorganisation sidebar 10 menus. Pages CRUD remises/promotions. Renommage feature→fonctionnalité.</div>
+</div>
+<div class="timeline-item">
+<div class="date">Phase 5 — Semaine 5-6</div>
+<div class="title">Onboarding self-service</div>
+<div class="desc">Page inscription publique. Choix plan. Essai automatique. Plan par défaut.</div>
+</div>
+<div class="timeline-item">
+<div class="date">Phase 6 — Semaine 6-7</div>
+<div class="title">Frontend tenant</div>
+<div class="desc">Marketplace v3. Mon-abonnement v3. Gating UI (cadenas, badges, CTA upgrade).</div>
+</div>
+<div class="timeline-item">
+<div class="date">Phase 7 — Semaine 7-8</div>
+<div class="title">Tests &amp; déploiement</div>
+<div class="desc">Tests E2E complets. Walkthrough API réel. Migration staging. Déploiement production.</div>
+</div>
+</div>
+
+<div class="figure" style="margin-top:32px">
+<pre class="mermaid">
+gantt
+    title Planning d'implémentation — Refonte V3
+    dateFormat  YYYY-MM-DD
+    axisFormat  %S%e %b
+
+    section Backend
+    Migration 213          :a1, 2026-08-18, 3d
+    Entités + Seeds        :a2, after a1, 3d
+    EntitlementService v3  :a3, after a2, 4d
+    Hard-gate middleware   :a4, after a3, 2d
+    Facturation v3         :a5, after a4, 5d
+
+    section Frontend
+    Panel admin réorganisé :b1, after a4, 5d
+    Marketplace v3         :b2, after b1, 4d
+    Onboarding             :b3, after b2, 4d
+
+    section QA
+    Tests unitaires        :c1, after a3, 3d
+    Tests E2E              :c2, after b2, 3d
+    Staging                :c3, after c2, 2d
+    Production             :milestone, after c3, 0d
+</pre>
+<div class="caption">Figure 6 — Diagramme de Gantt — Planning prévisionnel 8 semaines</div>
+</div>
+
+<!-- ====== SOURCES ====== -->
+<h2 id="sources">Sources &amp; Références</h2>
+<div class="card">
+<ol style="margin-left:20px;color:var(--text2);font-size:13px">
+<li><a href="https://stripe.com/guides/subscription-best-practices" style="color:var(--blue)">Stripe — Subscription Best Practices</a></li>
+<li><a href="https://www.chargebee.com/blog/saas-pricing-models/" style="color:var(--blue)">Chargebee — SaaS Pricing Models</a></li>
+<li><a href="https://docs.casl.js.org/" style="color:var(--blue)">CASL.js — Authorization Framework</a></li>
+<li><a href="https://www.postgresql.org/docs/current/ddl-rowsecurity.html" style="color:var(--blue)">PostgreSQL — Row Level Security</a></li>
+<li><a href="https://ohada.org/actes-uniformes/" style="color:var(--blue)">OHADA — Actes Uniformes (TVA, facturation)</a></li>
+<li><a href="https://aws.amazon.com/architecture/well-architected/" style="color:var(--blue)">AWS Well-Architected Framework — Multi-tenant</a></li>
+<li><a href="https://microservices.io/patterns/data/database-per-service.html" style="color:var(--blue)">Microservices.io — Data Patterns</a></li>
+<li><a href="https://www.grantthornton.global/insights/articles/digital/ohada-accounting/" style="color:var(--blue)">Grant Thornton — OHADA Accounting Standards</a></li>
+<li><a href="https://www.atlassian.com/microservices/microservices-architecture/multi-tenancy" style="color:var(--blue)">Atlassian — Multi-tenancy Architecture</a></li>
+<li><a href="https://kubernetes.io/docs/concepts/security/multi-tenancy/" style="color:var(--blue)">Kubernetes — Multi-tenant Isolation</a></li>
+<li><a href="https://www.bvp.com/atlas/technical-primer-on-saas-metering" style="color:var(--blue)">BVP — SaaS Metering &amp; Quotas</a></li>
+<li><a href="https://craft.io/saas-pricing-page-examples" style="color:var(--blue)">Craft — SaaS Pricing Page Examples</a></li>
+</ol>
+</div>
+
+<footer style="margin-top:48px;padding-top:24px;border-top:1px solid var(--border);text-align:center;color:var(--text2);font-size:13px">
+<p>Rapport généré le 2026-08-16 — eLISAschool Refonte SaaS V3</p>
+<p>Branche <code>migration_saas</code> · 62+ fichiers modifiés · Migration 213 (354 lignes)</p>
+</footer>
+
+</main>
+</div>
+
+<script>
+mermaid.initialize({startOnLoad:true,theme:'dark',themeVariables:{primaryColor:'#1c2548',primaryTextColor:'#e2e8f0',primaryBorderColor:'#2a3560',lineColor:'#60a5fa',secondaryColor:'#161d3a',tertiaryColor:'#0b1020',fontSize:'14px'}});
+
+// Chart — Sévérité des problèmes
+new Chart(document.getElementById('chart-severite'),{
+    type:'doughnut',
+    data:{
+        labels:['CRITIQUE (2)','HAUTE (5)','BASSE (5)'],
+        datasets:[{data:[2,5,5],backgroundColor:['#f87171','#fbbf24','#34d399'],borderWidth:0}]
+    },
+    options:{
+        responsive:true,
+        plugins:{
+            legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:12}}},
+            title:{display:true,text:'Répartition des problèmes par sévérité',color:'#e2e8f0',font:{size:14}}
+        }
+    }
+});
+
+// Chart — Pricing par plan (200 élèves)
+new Chart(document.getElementById('chart-pricing'),{
+    type:'bar',
+    data:{
+        labels:['Découverte','Starter','Standard','Pro','Enterprise'],
+        datasets:[
+            {label:'Prix base (F)',data:[0,15000,25000,60000,150000],backgroundColor:'#34d399'},
+            {label:'Élèves suppl. (50)',data:[0,0,5000,0,0],backgroundColor:'#60a5fa'},
+            {label:'Total mensuel (F)',data:[0,15000,30000,60000,150000],backgroundColor:'#a78bfa'}
+        ]
+    },
+    options:{
+        responsive:true,
+        scales:{
+            x:{stacked:true,ticks:{color:'#94a3b8'},grid:{color:'#2a356033'}},
+            y:{stacked:true,ticks:{color:'#94a3b8',callback:v=>v.toLocaleString('fr-FR')+' F'},grid:{color:'#2a356033'}}
+        },
+        plugins:{
+            legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:12}}},
+            title:{display:true,text:'Tarification mensuelle — 200 élèves (Standard: 150 inclus + 50 suppl. × 100F)',color:'#e2e8f0',font:{size:14}}
+        }
+    }
+});
+
+// TOC active state
+const links=document.querySelectorAll('nav.toc a');
+const sections=document.querySelectorAll('h2[id]');
+window.addEventListener('scroll',()=>{
+    let current='';
+    sections.forEach(s=>{if(window.scrollY>=s.offsetTop-100)current=s.id});
+    links.forEach(l=>{l.classList.toggle('active',l.getAttribute('href')==='#'+current)});
+});
+</script>
+</body>
+</html>

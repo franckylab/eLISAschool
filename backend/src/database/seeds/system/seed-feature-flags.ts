@@ -7,6 +7,9 @@
  * ON CONFLICT (cle) DO NOTHING pour re-exécution sûre.
  *
  * Refonte Feature Flags — Registre centralisé (migration 210)
+ * Refonte v3 (migration 213) : les fonctionnalités reçoivent une
+ * catégorie commerciale binaire GRATUIT | PAYANT — elles deviennent
+ * des citoyens de 1er rang du marché (rapport §5.8).
  * ==========================================
  */
 
@@ -17,6 +20,8 @@ import { logger } from '@common/utils/logger.util';
 /**
  * 8 flags système transverses seedés par défaut.
  *(est_systeme=true → non supprimables via l'API)
+ * categorieCommerciale : GRATUIT = disponible sur tous les plans,
+ * PAYANT = réservé aux plans qui l'incluent dans entitlements.fonctionnalites.
  */
 const SYSTEM_FLAGS = [
     {
@@ -24,6 +29,7 @@ const SYSTEM_FLAGS = [
         label: 'Multi-établissement',
         description: 'Permet la gestion de plusieurs établissements depuis un compte administrateur',
         categorie: CategorieFlag.GENERAL,
+        categorieCommerciale: 'PAYANT' as const,
         type: TypeFlag.PERMISSION,
         valeurDefaut: false,
         planMinimal: 'pro',
@@ -35,9 +41,10 @@ const SYSTEM_FLAGS = [
         label: 'Export PDF',
         description: 'Active la génération de PDF pour les bulletins, factures, rapports et certificats',
         categorie: CategorieFlag.GENERAL,
+        categorieCommerciale: 'GRATUIT' as const,
         type: TypeFlag.RELEASE,
         valeurDefaut: false,
-        planMinimal: 'starter',
+        planMinimal: 'decouverte',
         rolloutPercentage: 100,
         estSysteme: true,
     },
@@ -46,6 +53,7 @@ const SYSTEM_FLAGS = [
         label: 'API REST publique',
         description: 'Expose une API publique pour les intégrations avec des systèmes tiers',
         categorie: CategorieFlag.INTEGRATION,
+        categorieCommerciale: 'PAYANT' as const,
         type: TypeFlag.PERMISSION,
         valeurDefaut: false,
         planMinimal: 'standard',
@@ -57,6 +65,7 @@ const SYSTEM_FLAGS = [
         label: 'Webhooks',
         description: 'Envoi de notifications webhook vers des systèmes externes (CRM, ERP, etc.)',
         categorie: CategorieFlag.INTEGRATION,
+        categorieCommerciale: 'PAYANT' as const,
         type: TypeFlag.PERMISSION,
         valeurDefaut: false,
         planMinimal: 'pro',
@@ -68,6 +77,7 @@ const SYSTEM_FLAGS = [
         label: 'Single Sign-On',
         description: 'Authentification unifiée via Google Workspace, Microsoft Azure AD ou SAML',
         categorie: CategorieFlag.SECURITY,
+        categorieCommerciale: 'PAYANT' as const,
         type: TypeFlag.PERMISSION,
         valeurDefaut: false,
         planMinimal: 'enterprise',
@@ -79,6 +89,7 @@ const SYSTEM_FLAGS = [
         label: 'Backup automatique',
         description: 'Sauvegardes automatiques planifiées quotidiennement avec rétention configurable',
         categorie: CategorieFlag.SECURITY,
+        categorieCommerciale: 'PAYANT' as const,
         type: TypeFlag.RELEASE,
         valeurDefaut: false,
         planMinimal: 'standard',
@@ -90,6 +101,7 @@ const SYSTEM_FLAGS = [
         label: 'White Label',
         description: 'Personnalisation complète de la marque : domaine personnalisé, logo, couleurs',
         categorie: CategorieFlag.UX,
+        categorieCommerciale: 'PAYANT' as const,
         type: TypeFlag.PERMISSION,
         valeurDefaut: false,
         planMinimal: 'enterprise',
@@ -101,6 +113,7 @@ const SYSTEM_FLAGS = [
         label: 'Monitoring avancé',
         description: 'Métriques détaillées, alertes personnalisées et tableaux de bord temps réel',
         categorie: CategorieFlag.GENERAL,
+        categorieCommerciale: 'PAYANT' as const,
         type: TypeFlag.RELEASE,
         valeurDefaut: false,
         planMinimal: 'pro',

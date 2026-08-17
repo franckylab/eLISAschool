@@ -10,7 +10,7 @@
  * Cascade de résolution (Lot A — Refonte SaaS v7) :
  *   1. Catalogue (cette table) → actif par défaut (actifParDefaut / BASE)
  *   2. Plan (PlanAbonnement.modulesInclus par code) → activation
- *   3. AbonnementModule (suppléments souscrits, moduleOptionnel.slug)
+ *   3. AbonnementModule (suppléments souscrits, module.code)
  *   4. ParametreSysteme modules.{code}.actif (override établissement/global)
  *
  * Phase 7 — Lot A (Refonte SaaS v7)
@@ -25,13 +25,17 @@ import {
     Index,
 } from 'typeorm';
 
+/**
+ * Classification commerciale binaire — Refonte v3 (migration 213).
+ * Remplace intégralement BASE / PREMIUM / ADDON.
+ * Note : un module activé par le plan du tenant est affiché « inclus/gratuit »
+ * dans le marché, indépendamment de cette catégorie.
+ */
 export enum CategorieModule {
-    /** Module de base — toujours disponible, non facturable */
-    BASE = 'BASE',
-    /** Module premium — inclus dans les plans payants, facturable */
-    PREMIUM = 'PREMIUM',
-    /** Module addon — souscriptible séparément, facturé en supplément */
-    ADDON = 'ADDON',
+    /** Module gratuit — activable sans paiement */
+    GRATUIT = 'GRATUIT',
+    /** Module payant — inclus dans un plan ou souscriptible */
+    PAYANT = 'PAYANT',
 }
 
 @Entity('modules_catalogue')
@@ -62,9 +66,13 @@ export class ModuleCatalogue {
     @Column({ type: 'text', nullable: true })
     descriptionEn?: string;
 
-    /** Catégorie commerciale : BASE | PREMIUM | ADDON */
-    @Column({ type: 'varchar', length: 20, default: CategorieModule.ADDON })
+    /** Catégorie commerciale binaire : GRATUIT | PAYANT (v3) */
+    @Column({ type: 'varchar', length: 20, default: CategorieModule.PAYANT })
     categorie!: CategorieModule;
+
+    /** Module critique — toujours accessible quel que soit l'abonnement (v3, ex-bypass hardcodé) */
+    @Column({ type: 'boolean', default: false })
+    estCritique!: boolean;
 
     /** Icône Lucide (nom du composant) */
     @Column({ type: 'varchar', length: 60, default: 'Package' })
@@ -78,7 +86,7 @@ export class ModuleCatalogue {
     @Column({ type: 'int', default: 0 })
     prixAnnuel!: number;
 
-    /** Le module est-il facturable ? (BASE → false) */
+    /** Le module est-il facturable ? (GRATUIT → false) */
     @Column({ type: 'boolean', default: false })
     estFacturable!: boolean;
 
@@ -86,7 +94,7 @@ export class ModuleCatalogue {
     @Column({ type: 'boolean', default: false })
     estSouscriptible!: boolean;
 
-    /** Actif par défaut pour tout établissement (BASE → true) */
+    /** Actif par défaut pour tout établissement (ne court-circuite plus l'absence de plan — v3) */
     @Column({ type: 'boolean', default: false })
     actifParDefaut!: boolean;
 

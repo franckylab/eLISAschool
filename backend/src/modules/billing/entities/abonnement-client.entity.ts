@@ -24,8 +24,11 @@ export enum StatutAbonnement {
     EN_ATTENTE = 'EN_ATTENTE',
 }
 
+/** Cycles de facturation — Refonte v3 : codes pilotés par la table cycles_facturation */
 export enum CycleFacturation {
     MENSUEL = 'MENSUEL',
+    TRIMESTRIEL = 'TRIMESTRIEL',
+    SEMESTRIEL = 'SEMESTRIEL',
     ANNUEL = 'ANNUEL',
 }
 
@@ -60,14 +63,15 @@ export class AbonnementClient {
     @Column({ type: 'enum', enum: StatutAbonnement, default: StatutAbonnement.EN_ATTENTE })
     statut!: StatutAbonnement;
 
-    @Column({ type: 'enum', enum: CycleFacturation, default: CycleFacturation.MENSUEL })
+    /** Cycle de facturation — varchar pour supporter les cycles DB configurables (v3) */
+    @Column({ type: 'varchar', length: 30, default: CycleFacturation.MENSUEL })
     cycleFacturation!: CycleFacturation;
 
     @Column({ type: 'boolean', default: true })
     autoRenouvellement!: boolean;
 
     @Column({ type: 'decimal', precision: 12, scale: 2 })
-    montantMensuel!: number; // Montant mensuel effectif (base + tranches)
+    montantMensuel!: number; // Montant mensuel effectif (formule v3 : base + prix/élève + packs − remises)
 
     @Column({ type: 'int', default: 0 })
     nombreElevesActuel!: number; // Nombre d'élèves au dernier calcul

@@ -5,14 +5,14 @@
  * Version: 2.0.0
  */
 
-import { Repository } from 'typeorm';
+import { Repository, QueryRunner } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { Etablissement, EtablissementConfig, StatutEtablissement } from '../entities';
 import { CreateEtablissementDto, UpdateEtablissementDto, UpdateEtablissementConfigDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 import { validationWorkflowService } from '@modules/validation-workflow/services';
-import { getParamBoolean } from '@modules/configuration/utils/config.helper';
+import { getParamBoolean, getParam, getParamNumber } from '@modules/configuration/utils/config.helper';
 import { StatutPersonnel } from '@modules/personnel/entities';
 import { redimensionnerLogo } from '@common/utils/image-processor.util';
 import { auditService, AuditAction } from '@modules/auth';
@@ -81,33 +81,12 @@ export class EtablissementService {
             });
             await queryRunner.manager.save(config);
 
-            // --- P1.1 — Auto-création abonnement période d'essai (14 jours) ---
+            // --- Refonte v3 — Onboarding configurable (invariant : un abonnement actif minimum) ---
             try {
-                const planRepo = queryRunner.manager.getRepository(PlanAbonnement);
-                const planStarter = await planRepo.findOne({ where: { slug: 'starter' } });
-                if (planStarter) {
-                    const maintenant = new Date();
-                    const periodeEssaiFin = new Date(maintenant);
-                    periodeEssaiFin.setDate(periodeEssaiFin.getDate() + 14);
-
-                    const abonnementEssai = queryRunner.manager.create(AbonnementClient, {
-                        etablissementId: etablissement.id,
-                        planId: planStarter.id,
-                        dateDebut: maintenant,
-                        dateFin: periodeEssaiFin,
-                        statut: StatutAbonnement.ESSAI,
-                        cycleFacturation: CycleFacturation.MENSUEL,
-                        autoRenouvellement: false,
-                        montantMensuel: 0,
-                        nombreElevesActuel: 0,
-                        periodeEssaiFin,
-                    });
-                    await queryRunner.manager.save(abonnementEssai);
-                    logger.info(`[Essai] Abonnement 14 jours créé pour ${dto.nom} (jusqu'au ${periodeEssaiFin.toISOString().split('T')[0]})`);
-                }
+                await this.creerAbonnementInitial(queryRunner, etablissement.id, dto.nom);
             } catch (essaiError) {
-                // Non-bloquant : l'essai est un best-effort
-                logger.warn(`[Essai] Auto-création échouée pour ${dto.nom}: ${(essaiError as Error).message}`);
+                // Non-bloquant : l'onboarding est un best-effort
+                logger.warn(`[Onboarding] Auto-création échouée pour ${dto.nom}: ${(essaiError as Error).message}`);
             }
 
             await queryRunner.commitTransaction();
@@ -152,6 +131,70 @@ export class EtablissementService {
         } finally {
             await queryRunner.release();
         }
+    }
+
+    /**
+     * Refonte v3 — Onboarding billing configurable.
+     * Mode lu depuis billing.onboarding_mode :
+     *   - CHOIX_PLAN  : plan Découverte ACTIF (le tenant choisira son plan ensuite)
+     *   - PLAN_DEFAUT : plan marqué estParDefaut (repli 'decouverte')
+     *   - ESSAI_AUTO  : essai du plan par défaut (durée plan.essai.dureeJours
+     *                   ou paramètre billing.essai.duree_jours)
+     * Invariant v3 : tout établissement possède au moins un abonnement actif.
+     */
+    private async creerAbonnementInitial(
+        queryRunner: QueryRunner,
+        etablissementId: string,
+        nomEtablissement: string
+    ): Promise<void> {
+        const mode = await getParam<string>('billing.onboarding_mode', { defaultValue: 'CHOIX_PLAN' });
+        const planRepo = queryRunner.manager.getRepository(PlanAbonnement);
+
+        // Résolution du plan cible selon le mode
+        let plan: PlanAbonnement | null = null;
+        if (mode === 'ESSAI_AUTO' || mode === 'PLAN_DEFAUT') {
+            plan = await planRepo.findOne({ where: { estParDefaut: true, actif: true } });
+        }
+        if (!plan) {
+            plan = await planRepo.findOne({ where: { slug: 'decouverte', actif: true } });
+        }
+        if (!plan) {
+            logger.warn('[Onboarding] Aucun plan disponible (ni estParDefaut, ni decouverte) — abonnement initial non créé');
+            return;
+        }
+
+        const maintenant = new Date();
+        const dateFin = new Date(maintenant);
+        let statut: StatutAbonnement = StatutAbonnement.ACTIF;
+        let periodeEssaiFin: Date | undefined;
+
+        if (mode === 'ESSAI_AUTO' && plan.essai?.autorise !== false) {
+            const dureeEssai = plan.essai?.dureeJours
+                ?? await getParamNumber('billing.essai.duree_jours', { defaultValue: 14 });
+            statut = StatutAbonnement.ESSAI;
+            dateFin.setDate(dateFin.getDate() + dureeEssai);
+            periodeEssaiFin = new Date(dateFin);
+        } else {
+            dateFin.setMonth(dateFin.getMonth() + 1);
+        }
+
+        const abonnement = queryRunner.manager.create(AbonnementClient, {
+            etablissementId,
+            planId: plan.id,
+            dateDebut: maintenant,
+            dateFin,
+            statut,
+            cycleFacturation: CycleFacturation.MENSUEL,
+            autoRenouvellement: statut === StatutAbonnement.ACTIF,
+            montantMensuel: Number(plan.prixBase) || 0,
+            nombreElevesActuel: 0,
+            periodeEssaiFin,
+        });
+        await queryRunner.manager.save(abonnement);
+        logger.info(
+            `[Onboarding] Mode ${mode} — abonnement ${statut} (plan ${plan.slug}) créé pour ${nomEtablissement}` +
+            (periodeEssaiFin ? ` (essai jusqu'au ${periodeEssaiFin.toISOString().split('T')[0]})` : '')
+        );
     }
 
     /**

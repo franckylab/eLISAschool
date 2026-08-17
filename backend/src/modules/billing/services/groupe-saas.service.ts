@@ -6,9 +6,10 @@
  * Gestion des groupes d'établissements SaaS :
  *   - CRUD groupes (nom, description, code, actif)
  *   - Gestion des membres (ajout/retrait établissements)
- *   - Configuration SaaS par groupe (modules, tranches, abonnement)
+ *   - Configuration SaaS par groupe (modules, abonnement)
  * 
  * Lot C v7 — Refonte SaaS
+ * Refonte v3 (migration 213) : tranches groupe supprimées (tarification prix/élève + franchise)
  */
 
 import { Repository } from 'typeorm';
@@ -16,7 +17,6 @@ import { AppDataSource } from '@database/data-source';
 import { GroupeEtablissement } from '@modules/groupes-etablissements/entities';
 import { GroupeEtablissementLien } from '@modules/groupes-etablissements/entities';
 import { ModulesGroupe } from '../entities/modules-groupe.entity';
-import { TrancheGroupe } from '../entities/tranche-groupe.entity';
 import { AbonnementGroupe, StatutAbonnementGroupe, ModeFacturationGroupe, RepartitionFacturation } from '../entities/abonnement-groupe.entity';
 import { ModuleCatalogue } from '../entities/module-catalogue.entity';
 import { PlanAbonnement } from '../entities/plan-abonnement.entity';
@@ -27,7 +27,6 @@ export class GroupeSaaSService {
     private groupeRepo: Repository<GroupeEtablissement>;
     private lienRepo: Repository<GroupeEtablissementLien>;
     private modulesGroupeRepo: Repository<ModulesGroupe>;
-    private trancheGroupeRepo: Repository<TrancheGroupe>;
     private abonnementGroupeRepo: Repository<AbonnementGroupe>;
     private moduleCatalogueRepo: Repository<ModuleCatalogue>;
     private planRepo: Repository<PlanAbonnement>;
@@ -36,7 +35,6 @@ export class GroupeSaaSService {
         this.groupeRepo = AppDataSource.getRepository(GroupeEtablissement);
         this.lienRepo = AppDataSource.getRepository(GroupeEtablissementLien);
         this.modulesGroupeRepo = AppDataSource.getRepository(ModulesGroupe);
-        this.trancheGroupeRepo = AppDataSource.getRepository(TrancheGroupe);
         this.abonnementGroupeRepo = AppDataSource.getRepository(AbonnementGroupe);
         this.moduleCatalogueRepo = AppDataSource.getRepository(ModuleCatalogue);
         this.planRepo = AppDataSource.getRepository(PlanAbonnement);
@@ -178,38 +176,8 @@ export class GroupeSaaSService {
 
     // ─── Tranches groupe ───────────────────────────────────────────
 
-    async getTranchesGroupe(groupeId: string): Promise<TrancheGroupe[]> {
-        return this.trancheGroupeRepo.find({
-            where: { groupeEtablissementId: groupeId, actif: true },
-            order: { ordre: 'ASC' },
-        });
-    }
-
-    async setTranchesGroupe(groupeId: string, tranches: Array<{
-        ordre: number;
-        minEleves: number;
-        maxEleves?: number;
-        montantSupplementaire: number;
-        label?: string;
-    }>): Promise<TrancheGroupe[]> {
-        // Supprimer les tranches existantes
-        await this.trancheGroupeRepo.delete({ groupeEtablissementId: groupeId });
-
-        // Créer les nouvelles
-        const entities = tranches.map(t => this.trancheGroupeRepo.create({
-            groupeEtablissementId: groupeId,
-            ordre: t.ordre,
-            minEleves: t.minEleves,
-            maxEleves: t.maxEleves ?? null,
-            montantSupplementaire: t.montantSupplementaire,
-            label: t.label,
-            actif: true,
-        }));
-
-        await this.trancheGroupeRepo.save(entities);
-        logger.info(`[GroupeSaaS] Tranches groupe mises à jour: ${groupeId} (${tranches.length} tranches)`);
-        return entities;
-    }
+    // Méthodes getTranchesGroupe/setTranchesGroupe supprimées
+    // (Refonte v3 — tarification prix/élève + franchise)
 
     // ─── Abonnement groupe ─────────────────────────────────────────
 

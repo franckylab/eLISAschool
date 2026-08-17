@@ -1,31 +1,52 @@
 /**
  * ==================================
- * eLISAschool - Service Quotas
+ * eLISAschool - Service Quotas (Refonte v3)
  * ==================================
- * 
+ *
  * Vérification et enforcement des quotas par établissement.
+ * Refonte v3 (migration 213) :
+ *   - Stock d'usage unique : table usage_unifie (ex quotas_utilisation + usage_meters)
+ *   - Quota effectif = plan.quotas[ressource] + Σ packs souscrits actifs
+ *   - Suppression de synchroniserQuotas (colonnes dures → JSONB plan.quotas)
  * Alerte à 80%, blocage à 100%.
- * 
- * Phase 4.3 — Refonte SaaS
+ *
+ * Version: 3.0.0
+ * Auteur: franck arlos chendjou
  */
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { logger } from '@common/utils/logger.util';
-import { QuotaUtilisation, AbonnementClient, StatutAbonnement } from '../entities';
+import { UsageUnifie, SourceUsage } from '../entities/usage-unifie.entity';
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '@common/filters/error.filter';
 import { NotificationOrchestratorService } from '@modules/notifications/services/notification-orchestrator.service';
+import { packQuotaService, QuotaEffectifResult } from './pack-quota.service';
+
+export interface EtatQuota {
+    ressource: string;
+    utilisation: number;
+    limite: number;
+    quotaPlan: number;
+    quotaPacks: number;
+    pourcentage: number;
+}
 
 export class QuotaService {
-    private quotaRepo: Repository<QuotaUtilisation>;
-    private abonnementRepo: Repository<AbonnementClient>;
+    private usageRepo: Repository<UsageUnifie>;
     private orchestrator: NotificationOrchestratorService;
 
     constructor(orchestrator?: NotificationOrchestratorService) {
-        this.quotaRepo = AppDataSource.getRepository(QuotaUtilisation);
-        this.abonnementRepo = AppDataSource.getRepository(AbonnementClient);
+        this.usageRepo = AppDataSource.getRepository(UsageUnifie);
         this.orchestrator = orchestrator ?? new NotificationOrchestratorService();
+    }
+
+    /**
+     * Quota effectif d'une ressource : plan.quotas + Σ packs actifs.
+     * Retourne limite 0 = illimité.
+     */
+    async quotaEffectif(etablissementId: string, ressource: string): Promise<QuotaEffectifResult> {
+        return packQuotaService.quotaEffectif(etablissementId, ressource);
     }
 
     /**
@@ -38,59 +59,62 @@ export class QuotaService {
         limite: number;
         pourcentage: number;
     }> {
-        const quota = await this.quotaRepo.findOne({
-            where: { etablissementId, typeQuota },
-        });
+        const effectif = await this.quotaEffectif(etablissementId, typeQuota);
 
-        if (!quota) {
-            // Pas de quota défini = pas de limite
-            return { autorise: true, utilisation: 0, limite: 0, pourcentage: 0 };
-        }
-
-        if (quota.limiteMax === 0) {
+        if (effectif.quotaEffectif === 0) {
             // Limite 0 = illimité
-            return { autorise: true, utilisation: quota.utilisationActuelle, limite: 0, pourcentage: 0 };
+            const usage = await this.getConsommation(etablissementId, typeQuota);
+            return { autorise: true, utilisation: usage, limite: 0, pourcentage: 0 };
         }
 
-        const nouvelleUtilisation = quota.utilisationActuelle + consommation;
-        const pourcentage = (nouvelleUtilisation / quota.limiteMax) * 100;
+        const utilisation = await this.getConsommation(etablissementId, typeQuota);
+        const nouvelleUtilisation = utilisation + consommation;
+        const pourcentage = (nouvelleUtilisation / effectif.quotaEffectif) * 100;
 
         return {
-            autorise: !quota.bloquer || nouvelleUtilisation <= quota.limiteMax,
-            utilisation: quota.utilisationActuelle,
-            limite: quota.limiteMax,
+            autorise: nouvelleUtilisation <= effectif.quotaEffectif,
+            utilisation,
+            limite: effectif.quotaEffectif,
             pourcentage: Math.round(pourcentage * 100) / 100,
         };
     }
 
     /**
-     * Met à jour l'utilisation d'un quota.
+     * Met à jour l'utilisation d'un quota (delta positif ou négatif).
+     * Les compteurs mensuels (ressources 'sms', 'export'…) utilisent la
+     * période courante, les stocks structurels utilisent 'GLOBAL'.
      */
     async mettreAJourQuota(etablissementId: string, typeQuota: string, delta: number): Promise<void> {
-        let quota = await this.quotaRepo.findOne({
-            where: { etablissementId, typeQuota },
+        const periode = this.estCompteurPeriodique(typeQuota)
+            ? new Date().toISOString().slice(0, 7)
+            : 'GLOBAL';
+
+        let usage = await this.usageRepo.findOne({
+            where: { etablissementId, ressource: typeQuota, periode },
         });
 
-        if (!quota) {
-            quota = this.quotaRepo.create({
+        if (!usage) {
+            usage = this.usageRepo.create({
                 etablissementId,
-                typeQuota,
-                utilisationActuelle: 0,
-                limiteMax: 0,
+                ressource: typeQuota,
+                periode,
+                consommation: 0,
+                source: this.estCompteurPeriodique(typeQuota) ? SourceUsage.METER : SourceUsage.QUOTA,
             });
         }
 
-        quota.utilisationActuelle = Math.max(0, quota.utilisationActuelle + delta);
+        usage.consommation = Math.max(0, usage.consommation + delta);
+        await this.usageRepo.save(usage);
 
-        // Vérifier les seuils d'alerte
-        if (quota.limiteMax > 0) {
-            const pourcentage = (quota.utilisationActuelle / quota.limiteMax) * 100;
+        // Vérifier les seuils d'alerte sur le quota effectif
+        const effectif = await this.quotaEffectif(etablissementId, typeQuota);
+        if (effectif.quotaEffectif > 0) {
+            const pourcentage = (usage.consommation / effectif.quotaEffectif) * 100;
 
-            if (pourcentage >= 80 && !quota.alerte80pourcent) {
-                quota.alerte80pourcent = true;
+            if (pourcentage >= 80 && pourcentage < 100) {
                 logger.warn(
                     `[Quotas] ⚠️ Alerte 80% — Établissement: ${etablissementId} ` +
-                    `— Quota: ${typeQuota} — ${quota.utilisationActuelle}/${quota.limiteMax} (${pourcentage.toFixed(1)}%)`
+                    `— Quota: ${typeQuota} — ${usage.consommation}/${effectif.quotaEffectif} (${pourcentage.toFixed(1)}%)`
                 );
 
                 // Envoyer notification à l'admin de l'établissement (non-bloquant)
@@ -110,84 +134,73 @@ export class QuotaService {
             }
 
             if (pourcentage >= 100) {
-                quota.bloquer = true;
-            } else {
-                quota.bloquer = false;
+                logger.warn(
+                    `[Quotas] 🚫 Quota atteint — Établissement: ${etablissementId} ` +
+                    `— ${typeQuota}: ${usage.consommation}/${effectif.quotaEffectif}`
+                );
             }
         }
-
-        await this.quotaRepo.save(quota);
     }
 
     /**
-     * Synchronise les quotas d'un établissement avec son plan.
-     * Appelé après un changement de plan.
+     * Récupère l'état de tous les quotas d'un établissement :
+     * consommation issue d'usage_unifie + limites effectives (plan + packs).
      */
-    async synchroniserQuotas(etablissementId: string): Promise<void> {
-        const abonnement = await this.abonnementRepo.findOne({
-            where: {
-                etablissementId,
-                statut: StatutAbonnement.ACTIF,
-            },
-            relations: ['plan'],
-        });
-
-        if (!abonnement?.plan) {
-            return;
-        }
-
-        const plan = abonnement.plan;
-
-        // Synchroniser les quotas principaux
-        const quotasToSync = [
-            { type: 'eleves', limite: plan.maxEleves },
-            { type: 'utilisateurs', limite: plan.maxUtilisateurs },
-            { type: 'classes', limite: plan.maxClasses },
-            { type: 'stockage_go', limite: plan.stockageMaxGo },
-            { type: 'sms_mensuel', limite: plan.smsInclus },
-        ];
-
-        for (const { type, limite } of quotasToSync) {
-            let quota = await this.quotaRepo.findOne({
-                where: { etablissementId, typeQuota: type },
-            });
-
-            if (!quota) {
-                quota = this.quotaRepo.create({
-                    etablissementId,
-                    typeQuota: type,
-                    utilisationActuelle: 0,
-                    limiteMax: limite,
-                });
-            } else {
-                quota.limiteMax = limite;
-            }
-
-            await this.quotaRepo.save(quota);
-        }
-
-        logger.info(`[Quotas] Synchronisés pour établissement ${etablissementId}`);
-    }
-
-    /**
-     * Récupère l'état de tous les quotas d'un établissement.
-     */
-    async getQuotasEtablissement(etablissementId: string): Promise<QuotaUtilisation[]> {
-        return this.quotaRepo.find({
+    async getQuotasEtablissement(etablissementId: string): Promise<EtatQuota[]> {
+        const usages = await this.usageRepo.find({
             where: { etablissementId },
-            order: { typeQuota: 'ASC' },
+            order: { ressource: 'ASC' },
         });
+
+        const etats: EtatQuota[] = [];
+        const dejaVus = new Set<string>();
+
+        for (const usage of usages) {
+            if (usage.periode !== 'GLOBAL' && usage.periode !== new Date().toISOString().slice(0, 7)) {
+                continue; // Ignorer les périodes passées
+            }
+            dejaVus.add(usage.ressource);
+            const effectif = await this.quotaEffectif(etablissementId, usage.ressource);
+            etats.push({
+                ressource: usage.ressource,
+                utilisation: usage.consommation,
+                limite: effectif.quotaEffectif,
+                quotaPlan: effectif.quotaPlan,
+                quotaPacks: effectif.quotaPacks,
+                pourcentage: effectif.quotaEffectif > 0
+                    ? Math.round((usage.consommation / effectif.quotaEffectif) * 10000) / 100
+                    : 0,
+            });
+        }
+
+        return etats;
+    }
+
+    /** Consommation courante d'une ressource (stock GLOBAL ou compteur du mois) */
+    private async getConsommation(etablissementId: string, ressource: string): Promise<number> {
+        const periode = this.estCompteurPeriodique(ressource)
+            ? new Date().toISOString().slice(0, 7)
+            : 'GLOBAL';
+        const usage = await this.usageRepo.findOne({
+            where: { etablissementId, ressource, periode },
+        });
+        return usage?.consommation ?? 0;
+    }
+
+    /** Compteurs remis à zéro chaque mois vs stocks structurels */
+    private estCompteurPeriodique(ressource: string): boolean {
+        return ['sms', 'export_pdf', 'exports'].includes(ressource);
     }
 }
 
 /**
  * Middleware requireQuota — Vérifie le quota avant une action.
- * 
+ *
  * @example
  * router.post('/eleves', authMiddleware, requireQuota('eleves', 1), createEleve);
  */
 export function requireQuota(typeQuota: string, consommation: number = 1) {
-    return async (req: Request, _res: Response, next: NextFunction) => {
+    return async (req: Request, res: Response, next: NextFunction) => {
         try {
             const etablissementId = req.etablissementId || req.utilisateur?.etablissementId;
 
@@ -204,16 +217,22 @@ export function requireQuota(typeQuota: string, consommation: number = 1) {
 
             const result = await quotaService.verifierQuota(etablissementId, typeQuota, consommation);
 
+            // Headers d'observabilité quota (I3 v3)
+            res.setHeader('X-Quota-Resource', typeQuota);
+            res.setHeader('X-Quota-Usage', String(result.utilisation));
+            res.setHeader('X-Quota-Limit', String(result.limite));
+            res.setHeader('X-Quota-Percentage', String(result.pourcentage));
+
             if (!result.autorise) {
                 throw new AppError(
                     `Quota dépassé: ${typeQuota} (${result.utilisation}/${result.limite}). ` +
-                    `Veuillez upgrader votre plan pour continuer.`,
-                    403,
+                    `Veuillez upgrader votre plan ou acheter un pack quota pour continuer.`,
+                    429,
                     'QUOTA_EXCEEDED'
                 );
             }
 
-            // Ajouter les infos de quota dans la requête pour le controller
+            // Injecter les infos quota dans la requête pour le controller
             (req as any).quotaInfo = result;
 
             next();

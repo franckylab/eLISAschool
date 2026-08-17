@@ -3,10 +3,11 @@
  * eLISAschool - Seed : Catalogue modules unifié (migration 200)
  * ==========================================
  *
- * Seed idempotent complet — tous les modules (BASE, PREMIUM, ADDON).
+ * Seed idempotent complet — tous les modules (GRATUIT | PAYANT).
  * Utilise ON CONFLICT DO NOTHING pour être sûr en re-exécution.
  *
- * Refonte SaaS — Unification Modules (migration 200)
+ * Refonte v3 (migration 213) : classification binaire GRATUIT/PAYANT
+ * (fin BASE/PREMIUM/ADDON) + colonne estCritique.
  * EntitlementService = source unique de vérité.
  * ==========================================
  */
@@ -21,88 +22,88 @@ import { logger } from '@common/utils/logger.util';
  */
 const MODULES_CATALOGUE_COMPLET = [
     // =============================================
-    // MODULES BASE — toujours accessibles, bypass entitlement
+    // MODULES GRATUITS — sans paiement (critiques = toujours accessibles)
     // =============================================
     {
         code: 'auth', nom: 'Authentification', nomEn: 'Authentication',
         description: 'Gestion de l\'authentification, JWT, RBAC, sessions',
-        categorie: CategorieModule.BASE, icone: 'Lock',
+        categorie: CategorieModule.GRATUIT, icone: 'Lock', estCritique: true,
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: true,
-        planMinimal: null, dependencies: [], ordre: 1, estSysteme: true,
+        planMinimal: undefined, dependencies: [], ordre: 1, estSysteme: true,
         config: { sessionDuration: 1440, maxLoginAttempts: 5, lockoutDuration: 15, require2FA: false, passwordMinLength: 8 },
     },
     {
         code: 'utilisateurs', nom: 'Utilisateurs', nomEn: 'Users',
         description: 'Gestion des utilisateurs et des rôles établissement',
-        categorie: CategorieModule.BASE, icone: 'Users',
+        categorie: CategorieModule.GRATUIT, icone: 'Users', estCritique: true,
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: true,
-        planMinimal: null, dependencies: ['auth'], ordre: 2, estSysteme: true,
+        planMinimal: undefined, dependencies: ['auth'], ordre: 2, estSysteme: true,
         config: { allowSelfRegistration: false, requireEmailVerification: true, defaultRole: 'ELEVE' },
     },
     {
         code: 'configuration', nom: 'Configuration', nomEn: 'Settings',
         description: 'Configuration système, paramètres, apparence',
-        categorie: CategorieModule.BASE, icone: 'Settings',
+        categorie: CategorieModule.GRATUIT, icone: 'Settings', estCritique: true,
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: true,
-        planMinimal: null, dependencies: [], ordre: 3, estSysteme: true,
+        planMinimal: undefined, dependencies: [], ordre: 3, estSysteme: true,
         config: {},
     },
     {
         code: 'notifications', nom: 'Notifications', nomEn: 'Notifications',
         description: 'Notifications multi-canal : email, SMS, push, in-app',
-        categorie: CategorieModule.BASE, icone: 'Bell',
+        categorie: CategorieModule.GRATUIT, icone: 'Bell', estCritique: true,
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: true,
-        planMinimal: null, dependencies: [], ordre: 4, estSysteme: true,
+        planMinimal: undefined, dependencies: [], ordre: 4, estSysteme: true,
         config: { enablePush: true, enableEmail: true, enableSMS: false, defaultChannel: 'IN_APP' },
     },
     {
         code: 'monitoring', nom: 'Monitoring', nomEn: 'Monitoring',
         description: 'Supervision technique : métriques, alertes, health checks',
-        categorie: CategorieModule.BASE, icone: 'Activity',
+        categorie: CategorieModule.GRATUIT, icone: 'Activity',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: true,
-        planMinimal: null, dependencies: [], ordre: 5, estSysteme: true,
+        planMinimal: undefined, dependencies: [], ordre: 5, estSysteme: true,
         config: { retentionDays: 30 },
     },
     {
         code: 'audit', nom: 'Audit', nomEn: 'Audit',
         description: 'Journal d\'audit complet : actions, modifications, accès',
-        categorie: CategorieModule.BASE, icone: 'FileText',
+        categorie: CategorieModule.GRATUIT, icone: 'FileText',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: true,
-        planMinimal: null, dependencies: [], ordre: 6, estSysteme: true,
+        planMinimal: undefined, dependencies: [], ordre: 6, estSysteme: true,
         config: {},
     },
     {
         code: 'facturation', nom: 'Facturation', nomEn: 'Billing',
         description: 'Facturation SaaS : abonnements, paiements, relances',
-        categorie: CategorieModule.BASE, icone: 'Receipt',
+        categorie: CategorieModule.GRATUIT, icone: 'Receipt',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: true,
-        planMinimal: null, dependencies: [], ordre: 7, estSysteme: true,
+        planMinimal: undefined, dependencies: [], ordre: 7, estSysteme: true,
         config: {},
     },
     {
         code: 'groupes-etablissements', nom: 'Groupes Établissements', nomEn: 'School Groups',
         description: 'Gestion des groupes d\'établissements multi-tenant',
-        categorie: CategorieModule.BASE, icone: 'Network',
+        categorie: CategorieModule.GRATUIT, icone: 'Network',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: true,
-        planMinimal: null, dependencies: [], ordre: 8, estSysteme: true,
+        planMinimal: undefined, dependencies: [], ordre: 8, estSysteme: true,
         config: {},
     },
 
     // =============================================
-    // MODULES PREMIUM — nécessitent abonnement actif
+    // MODULES PAYANTS — inclus par plan ou souscriptibles
     // =============================================
     {
         code: 'eleves', nom: 'Élèves', nomEn: 'Students',
         description: 'Gestion complète des élèves : inscriptions, dossiers, suivi',
-        categorie: CategorieModule.PREMIUM, icone: 'GraduationCap',
+        categorie: CategorieModule.PAYANT, icone: 'GraduationCap',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: true,
         planMinimal: 'starter', dependencies: [], ordre: 10, estSysteme: false,
@@ -111,7 +112,7 @@ const MODULES_CATALOGUE_COMPLET = [
     {
         code: 'notes', nom: 'Notes & Évaluations', nomEn: 'Grades',
         description: 'Saisie des notes, évaluations, coefficients, barèmes',
-        categorie: CategorieModule.PREMIUM, icone: 'Edit',
+        categorie: CategorieModule.PAYANT, icone: 'Edit',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: true,
         planMinimal: 'starter', dependencies: ['eleves'], ordre: 11, estSysteme: false,
@@ -120,7 +121,7 @@ const MODULES_CATALOGUE_COMPLET = [
     {
         code: 'bulletins', nom: 'Bulletins Scolaires', nomEn: 'Report Cards',
         description: 'Génération et publication des bulletins scolaires',
-        categorie: CategorieModule.PREMIUM, icone: 'FileText',
+        categorie: CategorieModule.PAYANT, icone: 'FileText',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: false,
         planMinimal: 'starter', dependencies: ['notes'], ordre: 12, estSysteme: false,
@@ -129,7 +130,7 @@ const MODULES_CATALOGUE_COMPLET = [
     {
         code: 'messagerie', nom: 'Messagerie', nomEn: 'Messaging',
         description: 'Messagerie interne : conversations, messages, pièces jointes',
-        categorie: CategorieModule.PREMIUM, icone: 'MessageSquare',
+        categorie: CategorieModule.PAYANT, icone: 'MessageSquare',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: true,
         planMinimal: 'starter', dependencies: ['notifications'], ordre: 20, estSysteme: false,
@@ -138,7 +139,7 @@ const MODULES_CATALOGUE_COMPLET = [
     {
         code: 'emploi-du-temps', nom: 'Emploi du Temps', nomEn: 'Timetable',
         description: 'Planification des cours, créneaux horaires, salles',
-        categorie: CategorieModule.PREMIUM, icone: 'Calendar',
+        categorie: CategorieModule.PAYANT, icone: 'Calendar',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: false,
         planMinimal: 'standard', dependencies: ['eleves'], ordre: 21, estSysteme: false,
@@ -147,7 +148,7 @@ const MODULES_CATALOGUE_COMPLET = [
     {
         code: 'orientation', nom: 'Orientation', nomEn: 'Guidance',
         description: 'Orientation des élèves : profil, suggestions, RDV',
-        categorie: CategorieModule.PREMIUM, icone: 'Compass',
+        categorie: CategorieModule.PAYANT, icone: 'Compass',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: false,
         planMinimal: 'pro', dependencies: ['notes'], ordre: 22, estSysteme: false,
@@ -156,7 +157,7 @@ const MODULES_CATALOGUE_COMPLET = [
     {
         code: 'cantine', nom: 'Cantine', nomEn: 'Cafeteria',
         description: 'Menus, inscriptions, solde, consommation',
-        categorie: CategorieModule.PREMIUM, icone: 'Utensils',
+        categorie: CategorieModule.PAYANT, icone: 'Utensils',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: true, actifParDefaut: false,
         planMinimal: 'standard', dependencies: ['eleves'], ordre: 30, estSysteme: false,
@@ -165,7 +166,7 @@ const MODULES_CATALOGUE_COMPLET = [
     {
         code: 'transport', nom: 'Transport Scolaire', nomEn: 'School Transport',
         description: 'Lignes, inscriptions, présences QR code',
-        categorie: CategorieModule.PREMIUM, icone: 'Bus',
+        categorie: CategorieModule.PAYANT, icone: 'Bus',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: true, actifParDefaut: false,
         planMinimal: 'standard', dependencies: ['eleves'], ordre: 31, estSysteme: false,
@@ -174,7 +175,7 @@ const MODULES_CATALOGUE_COMPLET = [
     {
         code: 'finances', nom: 'Finances Scolaires', nomEn: 'School Finances',
         description: 'Frais scolaires, paiements, relances, avoirs',
-        categorie: CategorieModule.PREMIUM, icone: 'DollarSign',
+        categorie: CategorieModule.PAYANT, icone: 'DollarSign',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: true, actifParDefaut: false,
         planMinimal: 'starter', dependencies: ['eleves'], ordre: 32, estSysteme: false,
@@ -183,7 +184,7 @@ const MODULES_CATALOGUE_COMPLET = [
     {
         code: 'comptabilite', nom: 'Comptabilité', nomEn: 'Accounting',
         description: 'Comptabilité générale : journal, grand livre, bilan',
-        categorie: CategorieModule.PREMIUM, icone: 'Calculator',
+        categorie: CategorieModule.PAYANT, icone: 'Calculator',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: true, actifParDefaut: false,
         planMinimal: 'pro', dependencies: ['finances'], ordre: 33, estSysteme: false,
@@ -192,7 +193,7 @@ const MODULES_CATALOGUE_COMPLET = [
     {
         code: 'personnel', nom: 'Personnel RH', nomEn: 'HR Staff',
         description: 'Gestion du personnel : dossiers, contrats, postes',
-        categorie: CategorieModule.PREMIUM, icone: 'UserCheck',
+        categorie: CategorieModule.PAYANT, icone: 'UserCheck',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: false,
         planMinimal: 'standard', dependencies: ['auth'], ordre: 50, estSysteme: false,
@@ -200,57 +201,57 @@ const MODULES_CATALOGUE_COMPLET = [
     },
 
     // =============================================
-    // MODULES ADDON — souscriptibles en supplément
+    // MODULES PAYANTS — souscriptibles en supplément
     // =============================================
     {
         code: 'cms', nom: 'Site Web (CMS)', nomEn: 'Website (CMS)',
         description: 'Pages publiques white-label : galerie, contact, inscriptions',
-        categorie: CategorieModule.ADDON, icone: 'Globe',
+        categorie: CategorieModule.PAYANT, icone: 'Globe',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: true,
-        planMinimal: null, dependencies: [], ordre: 40, estSysteme: false,
+        planMinimal: undefined, dependencies: [], ordre: 40, estSysteme: false,
         config: {},
     },
     {
         code: 'clubs', nom: 'Clubs & Activités', nomEn: 'Clubs',
         description: 'Inscription aux clubs, limites, approbations',
-        categorie: CategorieModule.ADDON, icone: 'Heart',
+        categorie: CategorieModule.PAYANT, icone: 'Heart',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: true, actifParDefaut: false,
-        planMinimal: null, dependencies: ['eleves'], ordre: 41, estSysteme: false,
+        planMinimal: undefined, dependencies: ['eleves'], ordre: 41, estSysteme: false,
         config: { maxClubsPerStudent: 3 },
     },
     {
         code: 'gamification', nom: 'Gamification', nomEn: 'Gamification',
         description: 'Points, badges, classement, récompenses',
-        categorie: CategorieModule.ADDON, icone: 'Trophy',
+        categorie: CategorieModule.PAYANT, icone: 'Trophy',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: true, actifParDefaut: false,
-        planMinimal: null, dependencies: ['eleves'], ordre: 42, estSysteme: false,
+        planMinimal: undefined, dependencies: ['eleves'], ordre: 42, estSysteme: false,
         config: { pointsPerAttendance: 5, pointsPerGoodGrade: 10, enableLeaderboard: true, anonymizeRanking: false },
     },
     {
         code: 'bibliotheque', nom: 'Bibliothèque', nomEn: 'Library',
         description: 'Gestion de la bibliothèque : ouvrages, prêts, retours',
-        categorie: CategorieModule.ADDON, icone: 'BookOpen',
+        categorie: CategorieModule.PAYANT, icone: 'BookOpen',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: true, actifParDefaut: false,
-        planMinimal: null, dependencies: ['eleves'], ordre: 43, estSysteme: false,
+        planMinimal: undefined, dependencies: ['eleves'], ordre: 43, estSysteme: false,
         config: {},
     },
     {
         code: 'cartes', nom: 'Cartes & Badges', nomEn: 'Cards',
         description: 'Cartes d\'identité, badges QR, expiration, renouvellement',
-        categorie: CategorieModule.ADDON, icone: 'CreditCard',
+        categorie: CategorieModule.PAYANT, icone: 'CreditCard',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: true, actifParDefaut: false,
-        planMinimal: null, dependencies: ['eleves'], ordre: 60, estSysteme: false,
+        planMinimal: undefined, dependencies: ['eleves'], ordre: 60, estSysteme: false,
         config: { enableQRCode: true, cardValidityMonths: 12 },
     },
     {
         code: 'scoring', nom: 'Scoring & KPI', nomEn: 'Scoring',
         description: 'Indicateurs de performance, scoring multi-critères',
-        categorie: CategorieModule.ADDON, icone: 'BarChart2',
+        categorie: CategorieModule.PAYANT, icone: 'BarChart2',
         prixMensuel: 0, prixAnnuel: 0,
         estFacturable: false, estSouscriptible: false, actifParDefaut: false,
         planMinimal: 'pro', dependencies: ['notes', 'gamification'], ordre: 70, estSysteme: false,
@@ -259,24 +260,22 @@ const MODULES_CATALOGUE_COMPLET = [
 ];
 
 /**
- * Seed idempotent complet — tous les modules (BASE, PREMIUM, ADDON).
+ * Seed idempotent complet — tous les modules (GRATUIT | PAYANT).
+ * Crée les modules manquants et réconcilie categorie / estCritique
+ * sur les modules existants (ex-valeurs CRITIQUE/PREMIUM/ADDON).
  * @param force Si true, réinitialise le catalogue (supprime puis réinsère)
  */
 export async function seedModulesCatalogue(force: boolean = false): Promise<number> {
     const repo = AppDataSource.getRepository(ModuleCatalogue);
     const count = await repo.count();
 
-    if (count > 0 && !force) {
-        logger.info(`📦 Catalogue modules : ${count} entrées existantes (seed ignoré, utiliser force=true pour réinitialiser)`);
-        return count;
-    }
-
-    if (force && count > 0) {
+    if (count > 0 && force) {
         logger.info(`🔄 Réinitialisation du catalogue modules (${count} entrées supprimées)`);
         await repo.clear();
     }
 
     let inserted = 0;
+    let reconciled = 0;
     for (const mod of MODULES_CATALOGUE_COMPLET) {
         const existing = await repo.findOne({ where: { code: mod.code } });
         if (!existing) {
@@ -286,6 +285,7 @@ export async function seedModulesCatalogue(force: boolean = false): Promise<numb
                 nomEn: mod.nomEn,
                 description: mod.description,
                 categorie: mod.categorie,
+                estCritique: mod.estCritique ?? false,
                 icone: mod.icone,
                 prixMensuel: mod.prixMensuel,
                 prixAnnuel: mod.prixAnnuel,
@@ -301,11 +301,20 @@ export async function seedModulesCatalogue(force: boolean = false): Promise<numb
             });
             await repo.save(entity);
             inserted++;
+        } else if (
+            existing.categorie !== mod.categorie ||
+            existing.estCritique !== (mod.estCritique ?? false)
+        ) {
+            // Réconciliation silencieuse : classification binaire v3 de référence
+            existing.categorie = mod.categorie;
+            existing.estCritique = mod.estCritique ?? false;
+            await repo.save(existing);
+            reconciled++;
         }
     }
 
     const total = await repo.count();
-    logger.info(`✅ Seed catalogue modules terminé : ${inserted} ajoutés, ${total} total`);
+    logger.info(`✅ Seed catalogue modules terminé : ${inserted} ajoutés, ${reconciled} réconciliés, ${total} total`);
     return total;
 }
 

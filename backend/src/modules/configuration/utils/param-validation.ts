@@ -86,10 +86,20 @@ export const keyValidationSchemas: Record<string, z.ZodSchema> = {
         '2': z.string().optional(),
     }).passthrough(),
     
-    // Billing
-    'billing.tranche_eleves': z.number().int().min(1).max(100000),
-    'billing.tranche_montant': z.number().min(0).max(10000000),
-    'billing.taux_tva': z.number().min(0).max(100),
+    // Billing (v3 — refonte entitlements)
+    'billing.onboarding_mode': z.enum(['CHOIX_PLAN', 'PLAN_DEFAUT', 'ESSAI_AUTO']),
+    'billing.plan_par_defaut': z.string().min(1).max(50),
+    'billing.essai.duree_jours': z.number().int().min(1).max(365),
+    'billing.essai.modules_complets': z.boolean(),
+    'billing.essai.cb_avant_paiement': z.boolean(),
+    'billing.tva_pct': z.number().min(0).max(100),
+    'billing.devise': z.string().min(2).max(10),
+    'billing.numerotation_prefix': z.string().min(1).max(50),
+    'billing.cycle_par_defaut': z.enum(['MENSUEL', 'TRIMESTRIEL', 'SEMESTRIEL', 'ANNUEL']),
+    'billing.expiration.strategie_defaut': z.string().min(1).max(50),
+    'billing.expiration.jours_grace': z.number().int().min(0).max(90),
+    'billing.dunning.max_relances': z.number().int().min(0).max(10),
+    'billing.dunning.intervalle_jours': z.number().int().min(1).max(30),
     
     // Notifications
     'notifications.max_recipients': z.number().int().min(1).max(10000),

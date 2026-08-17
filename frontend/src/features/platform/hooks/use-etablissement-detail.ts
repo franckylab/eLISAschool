@@ -27,7 +27,7 @@ import type {
 } from '@/features/etablissements/types/etablissement.types';
 import type {
     SanteEtablissementResult,
-} from '@/features/admin/components/sante-etablissement';
+} from '@/features/platform/components/sante-etablissement';
 
 // =============================================
 // Helper — Extraction sûre de la donnée API

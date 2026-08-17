@@ -33,15 +33,14 @@ export interface ConfigModuleCardProps {
 }
 
 const CATEGORIE_STYLES: Record<string, string> = {
-    BASE: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-    PREMIUM: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-    ADDON: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
+    GRATUIT: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+    PAYANT: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
 };
 
+// Refonte v3 — catégories binaires
 const CATEGORIE_LABELS: Record<string, string> = {
-    BASE: 'Base',
-    PREMIUM: 'Premium',
-    ADDON: 'Addon',
+    GRATUIT: 'Gratuit',
+    PAYANT: 'Payant',
 };
 
 export function ConfigModuleCard({
@@ -54,7 +53,7 @@ export function ConfigModuleCard({
     className,
 }: ConfigModuleCardProps) {
     const Icon = ICON_MAP[module.icon] || Package;
-    const isBase = module.category === 'BASE';
+    const isBase = module.category === 'GRATUIT';
     const isLocked = module.estAccessible === false;
 
     return (
@@ -107,7 +106,7 @@ export function ConfigModuleCard({
                                 <span
                                     className={cn(
                                         'inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded border',
-                                        CATEGORIE_STYLES[module.category] || CATEGORIE_STYLES.ADDON,
+                                        CATEGORIE_STYLES[module.category] || CATEGORIE_STYLES.PAYANT,
                                     )}
                                 >
                                     {CATEGORIE_LABELS[module.category] || module.category}

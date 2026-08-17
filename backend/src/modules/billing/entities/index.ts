@@ -3,29 +3,26 @@
  * eLISAschool - Module Billing — Index des entités
  * ==================================
  * Phase 4.1 — Refonte SaaS
- * Phase B.1 — Refonte SaaS v2 (UsageMeter, TransactionLedger, CreditNote)
+ * Phase B.1 — Refonte SaaS v2 (TransactionLedger, CreditNote)
+ * Migration 213 — Refonte Entitlements v3 (plans JSONB, GRATUIT/PAYANT,
+ * remises, packs quota, cycles, stratégies expiration, usage unifié)
  */
 
-export { PlanAbonnement, StatutPlan, ModeFacturationTranches } from './plan-abonnement.entity';
-export { TrancheEleves } from './tranche-eleves.entity';
-export { TrancheSupplement } from './tranche-supplement.entity';
+export { PlanAbonnement, StatutPlan } from './plan-abonnement.entity';
+export type { TarificationPlan, QuotasPlan, EntitlementsPlan, EssaiPlan, PalierTarification } from './plan-abonnement.entity';
 export { AbonnementClient, StatutAbonnement, CycleFacturation } from './abonnement-client.entity';
 export { Facture, StatutFacture } from './facture.entity';
 export { LigneFacture, TypeLigneFacture } from './ligne-facture.entity';
-export { ModuleOptionnel } from './module-optionnel.entity';
 export { AbonnementModule } from './abonnement-module.entity';
 export { PaiementAbonnement, StatutPaiementAbonnement } from './paiement-abonnement.entity';
-export { QuotaUtilisation } from './quota-utilisation.entity';
 export { FeatureFlagTenant } from './feature-flag-tenant.entity';
 // Phase B — Refonte SaaS v2
-export { UsageMeter } from './usage-meter.entity';
 export { TransactionLedger, TypeTransactionLedger, SensEcriture } from './transaction-ledger.entity';
 export { CreditNote, StatutCreditNote } from './credit-note.entity';
 // Phase 7 Lot A — Refonte SaaS v7 (catalogue modules unifié)
 export { ModuleCatalogue, CategorieModule } from './module-catalogue.entity';
 // Phase 7 Lot C — Refonte SaaS v7 (groupes SaaS)
 export { ModulesGroupe } from './modules-groupe.entity';
-export { TrancheGroupe } from './tranche-groupe.entity';
 export { AbonnementGroupe, StatutAbonnementGroupe, ModeFacturationGroupe, RepartitionFacturation } from './abonnement-groupe.entity';
 // Phase 7 Lot D — Refonte SaaS v7 (providers paiement dynamiques)
 export { ProviderPaiement, TypeProviderPaiement } from './provider-paiement.entity';
@@ -35,3 +32,11 @@ export { ActionCritique, TypeActionCritique, StatutActionCritique, ACTION_CRITIQ
 // Migration 210 — Refonte Feature Flags (registre centralisé + audit)
 export { FeatureFlagDefinition, CategorieFlag, TypeFlag } from './feature-flag-definition.entity';
 export { FeatureFlagHistory, ActionFeatureFlag } from './feature-flag-history.entity';
+// Migration 213 — Refonte Entitlements v3
+export { CycleFacturationConfig } from './cycle-facturation-config.entity';
+export { RemiseAbonnement, TypeRemise, DureeApplicationRemise, CibleRemise } from './remise-abonnement.entity';
+export { PackQuota, DureeValiditePack } from './pack-quota.entity';
+export { AbonnementPack } from './abonnement-pack.entity';
+export { StrategieExpiration, ComportementPhase } from './strategie-expiration.entity';
+export type { PhaseExpiration } from './strategie-expiration.entity';
+export { UsageUnifie, SourceUsage } from './usage-unifie.entity';

@@ -13,9 +13,8 @@
         "upgradables": "available"
     },
     "categories": {
-        "BASE": "Base",
-        "PREMIUM": "Premium",
-        "ADDON": "Add-on"
+        "GRATUIT": "Free",
+        "PAYANT": "Paid"
     },
     "statuts": {
         "ACTIF": "Active",
@@ -25,7 +24,7 @@
         "EN_ATTENTE": "Pending"
     },
     "sources": {
-        "base": "Base",
+        "gratuit": "Free",
         "essai": "Free trial",
         "plan": "Included in plan",
         "groupe": "Group override",
@@ -34,9 +33,11 @@
         "override": "Override"
     },
     "raisons": {
-        "ABONNEMENT_INACTIF": "Subscription required",
+        "AUCUN_PLAN": "No active plan",
         "ABONNEMENT_EXPIRE": "Subscription expired",
-        "PLAN_INSUFFICIENT": "Insufficient plan"
+        "PLAN_INSUFFICIENT": "Insufficient plan",
+        "MODULE_DESACTIVE": "Module disabled",
+        "DEGRADATION_ARCHIVE": "Data archived"
     },
     "card": {
         "active": "Active",

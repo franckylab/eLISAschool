@@ -2,16 +2,19 @@
  * ==================================
  * eLISAschool - Entité AbonnementModule
  * ==================================
- * 
- * Lien entre un abonnement client et un module optionnel activé.
- * 
- * Phase 4.1 — Refonte SaaS
- * v7 P1.1 — Ajout etablissementId pour isolation multi-tenant directe
+ *
+ * Souscription d'un module en supplément (hors plan) par un tenant.
+ * Refonte v3 (migration 213) : la relation pointait sur l'ex-table
+ * modules_optionnels (supprimée) ; elle référence désormais le
+ * catalogue unique modules_catalogue.
+ *
+ * Version: 3.0.0
+ * Auteur: franck arlos chendjou
  */
 
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { AbonnementClient } from './abonnement-client.entity';
-import { ModuleOptionnel } from './module-optionnel.entity';
+import { ModuleCatalogue } from './module-catalogue.entity';
 
 @Entity('abonnements_modules')
 @Index(['abonnementId', 'moduleOptionnelId'], { unique: true })
@@ -27,14 +30,15 @@ export class AbonnementModule {
     @JoinColumn({ name: 'abonnementId' })
     abonnement!: AbonnementClient;
 
+    /** ID du module dans modules_catalogue (ex-moduleOptionnelId, colonne conservée) */
     @Column({ type: 'uuid' })
     moduleOptionnelId!: string;
 
-    @ManyToOne(() => ModuleOptionnel, { onDelete: 'CASCADE' })
+    @ManyToOne(() => ModuleCatalogue, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'moduleOptionnelId' })
-    moduleOptionnel!: ModuleOptionnel;
+    module!: ModuleCatalogue;
 
-    /** P1.1 v7 — Isolation multi-tenant directe ( évite JOIN sur abonnements_client) */
+    /** P1.1 v7 — Isolation multi-tenant directe (évite JOIN sur abonnements_client) */
     @Column({ type: 'uuid' })
     etablissementId!: string;
 

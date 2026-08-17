@@ -1,33 +1,37 @@
 /**
  * ==================================
- * eLISAschool - EntitlementService (Source unique de vérité)
+ * eLISAschool - EntitlementService v3 (Source unique de vérité)
  * ==================================
- * Version: 1.0.0
+ * Version: 3.0.0
  * Auteur: franck arlos chendjou
  *
- * Service centralisé de contrôle d'accès aux modules.
- * Remplace les 3 registres divergents (ModuleRegistryService, ModuleResolutionService
- * cascade propre, ConfigurationService cascade propre).
+ * Moteur plan-centrique de contrôle d'accès (Refonte v3, migration 213).
+ * Invariant : TOUT tenant possède au moins un plan actif ; aucun accès
+ * sans abonnement (faille actifParDefaut fermée — ex-problème P9).
  *
- * Cascade de résolution :
- *   1. Module BASE → toujours accessible (bypass total)
- *   2. Abonnement ACTIF vérifié (sinon → blocage)
- *   3. Plan (modulesInclus) → activation
- *   4. Override groupe (ModulesGroupe)
- *   5. Supplément souscrit (AbonnementModule) → activation
- *   6. Catalogue défaut (actifParDefaut)
+ * Cascade 4 questions déterministes :
+ *   Q1. Module critique (modules_catalogue.estCritique) → bypass total
+ *   Q2. Abonnement ACTIF / ESSAI ? (EXPIRE → phases de la stratégie)
+ *   Q3. Inclus par le plan (plan.entitlements.modules) ?
+ *   Q4. Override ou souscription (groupe, supplément AbonnementModule) ?
+ *   Sinon → PLAN_INSUFFICIENT / MODULE_DESACTIVE
+ *
+ * Corrections v3 :
+ *   - P1 : EXPIRE réellement chargé (dégradation plus code mort)
+ *   - P2 : rangs lus depuis plans_abonnement.rang (plus de hardcode ×3)
+ *   - P10 : bypass critique piloté par la donnée estCritique
  *
  * Cache Redis TTL 60s + in-memory fallback + Pub/Sub cross-instance.
- *
- * Refonte SaaS — Unification Modules (migration 200)
  */
 
 import { Repository, In } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
-import { ModuleCatalogue, CategorieModule } from '../entities/module-catalogue.entity';
+import { ModuleCatalogue } from '../entities/module-catalogue.entity';
 import { AbonnementClient, StatutAbonnement } from '../entities/abonnement-client.entity';
+import { PlanAbonnement } from '../entities/plan-abonnement.entity';
 import { AbonnementModule } from '../entities/abonnement-module.entity';
 import { ModulesGroupe } from '../entities/modules-groupe.entity';
+import { StrategieExpiration, ComportementPhase } from '../entities/strategie-expiration.entity';
 import { GroupeEtablissementLien } from '@modules/groupes-etablissements/entities';
 import { redisService } from '@common/services/redis.service';
 import { logger } from '@common/utils/logger.util';
@@ -38,12 +42,13 @@ import { FeatureFlagDefinition } from '../entities/feature-flag-definition.entit
 // TYPES
 // =============================================
 
-export type EntitlementSource = 'base' | 'essai' | 'plan' | 'groupe' | 'supplement' | 'catalogue' | 'override';
+export type EntitlementSource = 'critique' | 'essai' | 'plan' | 'groupe' | 'supplement' | 'catalogue' | 'override';
 
 export type EntitlementRaison =
     | 'OK'
-    | 'BASE'
+    | 'CRITIQUE'
     | 'ESSAI_ACTIF'
+    | 'AUCUN_PLAN'
     | 'ABONNEMENT_INACTIF'
     | 'ABONNEMENT_EXPIRE'
     | 'ABONNEMENT_SUSPENDU'
@@ -59,7 +64,7 @@ export interface EntitlementResult {
     accessible: boolean;
     /** Le module est-il visible dans le catalogue (même si verrouillé) ? */
     visible: boolean;
-    /** Raison du blocage (ou OK/BASE si accessible) */
+    /** Raison du blocage (ou OK/CRITIQUE si accessible) */
     raison: EntitlementRaison;
     /** Message explicatif pour le frontend */
     message?: string;
@@ -69,7 +74,7 @@ export interface EntitlementResult {
     planMinimalRequis?: string;
     /** Slug du plan actuel de l'établissement (si applicable) */
     planActuel?: string;
-    /** Mode lecture seule (dégradation J0-J15) — accessible pour GET, bloqué pour POST/PUT/DELETE */
+    /** Mode lecture seule (phase de dégradation) — GET OK, mutations bloquées */
     lectureSeule?: boolean;
 }
 
@@ -77,8 +82,15 @@ export interface EntitlementBatchResult {
     code: string;
     nom: string;
     icone: string;
-    categorie: CategorieModule;
+    categorie: string;
     entitlement: EntitlementResult;
+}
+
+/** Résultat de résolution d'expiration d'abonnement */
+export interface ResolutionExpiration {
+    phase: 'ACTIVE' | 'LECTURE_SEULE' | 'VERROUILLE' | 'ARCHIVE';
+    joursDepuisExpiration: number;
+    nomPhase?: string;
 }
 
 // =============================================
@@ -91,22 +103,12 @@ const CACHE_PREFIX = 'entitlement';
 const CACHE_BATCH_PREFIX = 'entitlement:batch';
 const PUBSUB_CHANNEL = 'entitlement:invalidate';
 
-/** Durée période d'essai : 14 jours */
-const ESSAI_DUREE_JOURS = 14;
-
-/** Phases de dégradation gracieuse (en jours après dateExpirationReelle) */
-const DEGRADATION_PHASES = {
-    /** J0–J15 : lecture seule (GET OK, POST/PUT/DELETE bloqués) */
-    LECTURE_SEULE_JOURS: 15,
-    /** J15–J30 : modules verrouillés + message upsell */
-    VERROUILLE_JOURS: 30,
-    /** J30+ : données archivées */
-};
-
-/** Modules de base — toujours accessibles, contournent tout gating */
-const MODULES_BASE_BYPASS = new Set([
-    'auth', 'utilisateurs', 'configuration', 'notifications',
-]);
+/** Phases de dégradation par défaut si aucune stratégie en base */
+const PHASES_FALLBACK = [
+    { nom: 'LECTURE_SEULE', jours: 15, comportement: ComportementPhase.READ_ONLY },
+    { nom: 'VERROUILLE', jours: 15, comportement: ComportementPhase.LOCKED },
+    { nom: 'ARCHIVE', jours: null, comportement: ComportementPhase.ARCHIVED },
+];
 
 // =============================================
 // CACHE
@@ -129,9 +131,11 @@ interface BatchCacheEntree {
 export class EntitlementService {
     private catalogueRepo: Repository<ModuleCatalogue>;
     private abonnementRepo: Repository<AbonnementClient>;
+    private planRepo: Repository<PlanAbonnement>;
     private abonnementModuleRepo: Repository<AbonnementModule>;
     private modulesGroupeRepo: Repository<ModulesGroupe>;
     private groupeLienRepo: Repository<GroupeEtablissementLien>;
+    private strategieRepo: Repository<StrategieExpiration>;
     private definitionRepo: Repository<FeatureFlagDefinition>;
     private featureFlagService: FeatureFlagService;
 
@@ -139,6 +143,10 @@ export class EntitlementService {
     private cache = new Map<string, CacheEntree>();
     private batchCache = new Map<string, BatchCacheEntree>();
     private redisAvailable = true;
+
+    /** Cache des métadonnées plateforme (rangs plans, stratégies) — TTL 60s */
+    private rangsPlansCache: { valeur: Map<string, number>; expiry: number } | null = null;
+    private strategiesCache: { valeur: StrategieExpiration[]; expiry: number } | null = null;
 
     /** P1.3 — Dernier statut cache (HIT/MISS/STALE) pour header X-Cache-Status */
     private _lastCacheStatus: 'HIT' | 'MISS' | 'STALE' = 'MISS';
@@ -151,9 +159,11 @@ export class EntitlementService {
     constructor() {
         this.catalogueRepo = AppDataSource.getRepository(ModuleCatalogue);
         this.abonnementRepo = AppDataSource.getRepository(AbonnementClient);
+        this.planRepo = AppDataSource.getRepository(PlanAbonnement);
         this.abonnementModuleRepo = AppDataSource.getRepository(AbonnementModule);
         this.modulesGroupeRepo = AppDataSource.getRepository(ModulesGroupe);
         this.groupeLienRepo = AppDataSource.getRepository(GroupeEtablissementLien);
+        this.strategieRepo = AppDataSource.getRepository(StrategieExpiration);
         this.definitionRepo = AppDataSource.getRepository(FeatureFlagDefinition);
         this.featureFlagService = new FeatureFlagService();
 
@@ -171,6 +181,8 @@ export class EntitlementService {
                 } else {
                     this.cache.clear();
                     this.batchCache.clear();
+                    this.rangsPlansCache = null;
+                    this.strategiesCache = null;
                 }
                 logger.debug(`[Entitlement] Invalidation cross-instance${etablissementId ? ` pour ${etablissementId}` : ' (global)'}`);
             });
@@ -188,6 +200,8 @@ export class EntitlementService {
         } else {
             this.cache.clear();
             this.batchCache.clear();
+            this.rangsPlansCache = null;
+            this.strategiesCache = null;
         }
 
         // 2. Invalidation Redis async (fire-and-forget)
@@ -216,36 +230,85 @@ export class EntitlementService {
     }
 
     // =============================================
-    // CHECK INDIVIDUEL
+    // MÉTADONNÉES PLATEFORME (rangs, stratégies)
+    // =============================================
+
+    /** Rangs des plans — lus depuis la donnée (ex-P2 : plus de hardcode) */
+    private async getRangsPlans(): Promise<Map<string, number>> {
+        if (this.rangsPlansCache && Date.now() < this.rangsPlansCache.expiry) {
+            return this.rangsPlansCache.valeur;
+        }
+        const plans = await this.planRepo.find({ select: ['slug', 'rang'] });
+        const map = new Map<string, number>();
+        for (const plan of plans) {
+            map.set(plan.slug, plan.rang ?? 0);
+        }
+        this.rangsPlansCache = { valeur: map, expiry: Date.now() + CACHE_TTL_MS };
+        return map;
+    }
+
+    /** Stratégies d'expiration — cache 60s */
+    private async getStrategies(): Promise<StrategieExpiration[]> {
+        if (this.strategiesCache && Date.now() < this.strategiesCache.expiry) {
+            return this.strategiesCache.valeur;
+        }
+        const strategies = await this.strategieRepo.find({ where: { actif: true } });
+        this.strategiesCache = { valeur: strategies, expiry: Date.now() + CACHE_TTL_MS };
+        return strategies;
+    }
+
+    /**
+     * Résout la phase d'expiration d'un abonnement selon la stratégie applicable.
+     * Stratégie : celle du plan de l'abonnement, sinon estDefaut, sinon fallback 15/15/archive.
+     */
+    async resoudrePhaseExpiration(abonnement: AbonnementClient): Promise<ResolutionExpiration> {
+        if (!abonnement.dateExpirationReelle) {
+            return { phase: 'ARCHIVE', joursDepuisExpiration: Number.MAX_SAFE_INTEGER };
+        }
+
+        const joursDepuisExpiration = Math.floor(
+            (Date.now() - new Date(abonnement.dateExpirationReelle).getTime()) / (1000 * 60 * 60 * 24),
+        );
+
+        const strategies = await this.getStrategies();
+        const planSlug = abonnement.plan?.slug;
+        const strategie =
+            strategies.find((s) => s.planSlug === planSlug) ||
+            strategies.find((s) => s.estDefaut) ||
+            null;
+
+        const phases = strategie?.phases?.length ? strategie.phases : PHASES_FALLBACK;
+
+        let cumul = 0;
+        for (const phase of phases) {
+            const dureePhase = phase.jours ?? Number.MAX_SAFE_INTEGER;
+            if (joursDepuisExpiration < cumul + dureePhase) {
+                switch (phase.comportement) {
+                    case ComportementPhase.READ_ONLY:
+                        return { phase: 'LECTURE_SEULE', joursDepuisExpiration, nomPhase: phase.nom };
+                    case ComportementPhase.LOCKED:
+                        return { phase: 'VERROUILLE', joursDepuisExpiration, nomPhase: phase.nom };
+                    default:
+                        return { phase: 'ARCHIVE', joursDepuisExpiration, nomPhase: phase.nom };
+                }
+            }
+            cumul += dureePhase === Number.MAX_SAFE_INTEGER ? 0 : dureePhase;
+            if (phase.jours === null || phase.jours === undefined) break;
+        }
+
+        return { phase: 'ARCHIVE', joursDepuisExpiration };
+    }
+
+    // =============================================
+    // CHECK INDIVIDUEL — cascade 4 questions
     // =============================================
 
     /**
      * Vérifie l'entitlement d'un module pour un établissement.
      * Source unique de vérité pour le gating des modules.
-     *
-     * Cascade :
-     *   0. Module BASE (code) → bypass total
-     *   0.5 Période d'essai (statut ESSAI, 14 jours) → tous modules accessibles
-     *   1. Catalogue (module existe + catégorie BASE)
-     *   2. Abonnement (ACTIF ou ESSAI) + dégradation gracieuse
-     *   3. Plan (modulesInclus)
-     *   4. Override groupe
-     *   5. Supplément souscrit
-     *   6. Plan minimal requis
-     *   7. Défaut catalogue (actifParDefaut)
      */
     async check(etablissementId: string, moduleCode: string): Promise<EntitlementResult> {
-        // 0. Module base bypass (toujours accessible)
-        if (MODULES_BASE_BYPASS.has(moduleCode)) {
-            return {
-                accessible: true,
-                visible: true,
-                raison: 'BASE',
-                source: 'base',
-            };
-        }
-
-        // 1. Vérifier si le module existe dans le catalogue
+        // Q0. Le module existe-t-il dans le catalogue ?
         const catalogueModule = await this.catalogueRepo.findOne({
             where: { code: moduleCode, estActif: true },
         });
@@ -260,30 +323,35 @@ export class EntitlementService {
             };
         }
 
-        // Module BASE (catégorie) → toujours accessible
-        if (catalogueModule.categorie === CategorieModule.BASE) {
+        // Q1. Module critique (donnée estCritique, ex-bypass hardcodé P10)
+        if (catalogueModule.estCritique) {
             return {
                 accessible: true,
                 visible: true,
-                raison: 'BASE',
-                source: 'base',
+                raison: 'CRITIQUE',
+                source: 'critique',
             };
         }
 
-        // 2. Vérifier l'abonnement (ACTIF ou ESSAI)
-        const abonnement = await this.abonnementRepo.findOne({
-            where: {
-                etablissementId,
-                statut: In([StatutAbonnement.ACTIF, StatutAbonnement.ESSAI]),
-            },
-            relations: ['plan'],
-        });
+        // Q2. Abonnement — ACTIF/ESSAI/EXPIRE chargés (fix P1 : EXPIRE réellement traité)
+        const abonnement = await this.getAbonnementCourant(etablissementId);
 
-        // --- P1.1 — Période d'essai automatique (14 jours) ---
-        if (abonnement?.statut === StatutAbonnement.ESSAI) {
+        if (!abonnement) {
+            // Invariant v3 : aucun accès sans plan (faille actifParDefaut fermée)
+            return {
+                accessible: false,
+                visible: true,
+                raison: 'AUCUN_PLAN',
+                message: 'Un plan d\'abonnement actif est requis pour accéder à eLISAschool',
+                source: 'catalogue',
+                planMinimalRequis: catalogueModule.planMinimal || undefined,
+            };
+        }
+
+        // Période d'essai active → tous modules inclus accessibles
+        if (abonnement.statut === StatutAbonnement.ESSAI) {
             const now = new Date();
             if (abonnement.periodeEssaiFin && now < abonnement.periodeEssaiFin) {
-                // En période d'essai → tous modules accessibles
                 return {
                     accessible: true,
                     visible: true,
@@ -293,67 +361,33 @@ export class EntitlementService {
                     planActuel: abonnement.plan?.slug,
                 };
             }
-            // Essai expiré → traiter comme expiré
-            return {
-                accessible: false,
-                visible: true,
-                raison: 'ABONNEMENT_EXPIRE',
-                message: 'Votre période d\'essai est terminée. Souscrivez à un plan pour continuer.',
-                source: 'catalogue',
-                planActuel: abonnement.plan?.slug,
-            };
+            // Essai terminé → bascule sur la phase d'expiration de la stratégie
         }
 
-        if (!abonnement) {
-            // Pas d'abonnement actif → vérifier si le module est actif par défaut
-            if (catalogueModule.actifParDefaut) {
-                return {
-                    accessible: true,
-                    visible: true,
-                    raison: 'OK',
-                    source: 'catalogue',
-                };
-            }
-            return {
-                accessible: false,
-                visible: true,
-                raison: 'ABONNEMENT_INACTIF',
-                message: 'Un abonnement actif est requis pour accéder à ce module',
-                source: 'catalogue',
-                planMinimalRequis: catalogueModule.planMinimal || undefined,
-            };
-        }
-
-        // --- P1.2 — Dégradation gracieuse (30 jours) ---
-        if (abonnement.statut === StatutAbonnement.EXPIRE && abonnement.dateExpirationReelle) {
-            const joursDepuisExpiration = Math.floor(
-                (Date.now() - new Date(abonnement.dateExpirationReelle).getTime()) / (1000 * 60 * 60 * 24),
-            );
-
-            if (joursDepuisExpiration <= DEGRADATION_PHASES.LECTURE_SEULE_JOURS) {
-                // J0–J15 : lecture seule (accessible pour GET, bloqué pour mutations)
+        // EXPIRE (ou essai terminé) → phases de dégradation configurables
+        if (abonnement.statut === StatutAbonnement.EXPIRE || abonnement.statut === StatutAbonnement.ESSAI) {
+            const resolution = await this.resoudrePhaseExpiration(abonnement);
+            if (resolution.phase === 'LECTURE_SEULE') {
                 return {
                     accessible: true,
                     visible: true,
                     raison: 'DEGRADATION_LECTURE_SEULE',
-                    message: `Mode lecture seule (${joursDepuisExpiration}/15 jours). Renouvelez pour retrouver l'accès complet.`,
+                    message: `Mode lecture seule (J${resolution.joursDepuisExpiration}). Renouvelez pour retrouver l'accès complet.`,
                     source: 'catalogue',
                     planActuel: abonnement.plan?.slug,
                     lectureSeule: true,
                 };
             }
-            if (joursDepuisExpiration <= DEGRADATION_PHASES.VERROUILLE_JOURS) {
-                // J15–J30 : modules verrouillés + message upsell
+            if (resolution.phase === 'VERROUILLE') {
                 return {
                     accessible: false,
                     visible: true,
                     raison: 'DEGRADATION_VERROUILLE',
-                    message: `Accès verrouillé depuis ${joursDepuisExpiration} jours. Renouvelez avant J30 pour éviter l'archivage.`,
+                    message: `Accès verrouillé depuis ${resolution.joursDepuisExpiration} jours. Renouvelez votre abonnement.`,
                     source: 'catalogue',
                     planActuel: abonnement.plan?.slug,
                 };
             }
-            // J30+ : données archivées
             return {
                 accessible: false,
                 visible: false,
@@ -364,18 +398,7 @@ export class EntitlementService {
             };
         }
 
-        // Abonnement expiré (sans dateExpirationReelle) ou suspendu
-        if (abonnement.statut === StatutAbonnement.EXPIRE) {
-            return {
-                accessible: false,
-                visible: true,
-                raison: 'ABONNEMENT_EXPIRE',
-                message: 'Votre abonnement a expiré. Renouvelez pour accéder aux modules premium.',
-                source: 'catalogue',
-                planActuel: abonnement.plan?.slug,
-            };
-        }
-        if (abonnement.statut === StatutAbonnement.SUSPENDU) {
+        if (abonnement.statut === StatutAbonnement.SUSPENDU || abonnement.statut === StatutAbonnement.ANNULE) {
             return {
                 accessible: false,
                 visible: true,
@@ -386,9 +409,9 @@ export class EntitlementService {
             };
         }
 
-        // 3. Vérifier si le plan inclut le module
-        const planInclus = new Set<string>(abonnement.plan?.modulesInclus || []);
-        if (planInclus.has(moduleCode)) {
+        // Q3. Inclus par le plan ?
+        const modulesInclus = abonnement.plan?.entitlements?.modules || [];
+        if (modulesInclus.includes(moduleCode)) {
             return {
                 accessible: true,
                 visible: true,
@@ -398,7 +421,7 @@ export class EntitlementService {
             };
         }
 
-        // 4. Vérifier l'override groupe
+        // Q4. Override groupe
         const groupeLien = await this.groupeLienRepo.findOne({
             where: { etablissementId },
         });
@@ -432,14 +455,14 @@ export class EntitlementService {
             }
         }
 
-        // 5. Vérifier les suppléments souscrits
+        // Q4b. Supplément souscrit (AbonnementModule)
         const supplements = await this.abonnementModuleRepo.find({
             where: { actif: true, etablissementId },
-            relations: ['moduleOptionnel'],
+            relations: ['module'],
         });
 
         for (const sup of supplements) {
-            if (sup.moduleOptionnel?.slug === moduleCode) {
+            if (sup.module?.code === moduleCode) {
                 return {
                     accessible: true,
                     visible: true,
@@ -450,13 +473,11 @@ export class EntitlementService {
             }
         }
 
-        // 6. Vérifier le plan minimal requis
+        // Plan minimal requis — rangs lus depuis la donnée
         if (catalogueModule.planMinimal) {
-            const planRangs: Record<string, number> = {
-                'gratuit': 0, 'starter': 1, 'standard': 2, 'pro': 3, 'enterprise': 4,
-            };
-            const planActuelRang = planRangs[abonnement.plan?.slug || 'gratuit'] ?? 0;
-            const planRequisRang = planRangs[catalogueModule.planMinimal] ?? 0;
+            const rangsPlans = await this.getRangsPlans();
+            const planActuelRang = rangsPlans.get(abonnement.plan?.slug || '') ?? -1;
+            const planRequisRang = rangsPlans.get(catalogueModule.planMinimal) ?? 0;
 
             if (planActuelRang < planRequisRang) {
                 return {
@@ -471,29 +492,56 @@ export class EntitlementService {
             }
         }
 
-        // 7. Défaut catalogue (actifParDefaut)
-        if (catalogueModule.actifParDefaut) {
-            return {
-                accessible: true,
-                visible: true,
-                raison: 'OK',
-                source: 'catalogue',
-                planActuel: abonnement.plan?.slug,
-            };
-        }
-
-        // 8. Module non accessible
+        // Non inclus → proposer la souscription
         return {
             accessible: false,
             visible: true,
             raison: 'MODULE_DESACTIVE',
             message: catalogueModule.estSouscriptible
-                ? 'Module disponible en supplément. Contactez-nous pour y accéder.'
-                : 'Module non disponible pour votre plan actuel.',
+                ? 'Module disponible en supplément depuis le marché.'
+                : 'Module non inclus dans votre plan actuel.',
             source: 'catalogue',
             planMinimalRequis: catalogueModule.planMinimal || undefined,
             planActuel: abonnement.plan?.slug,
         };
+    }
+
+    /** Abonnement courant du tenant — ACTIF/ESSAI en priorité, sinon EXPIRE (le plus récent) */
+    private async getAbonnementCourant(etablissementId: string): Promise<AbonnementClient | null> {
+        const abonnements = await this.abonnementRepo.find({
+            where: {
+                etablissementId,
+                statut: In([StatutAbonnement.ACTIF, StatutAbonnement.ESSAI, StatutAbonnement.EXPIRE, StatutAbonnement.SUSPENDU, StatutAbonnement.ANNULE]),
+            },
+            relations: ['plan'],
+            order: { createdAt: 'DESC' },
+        });
+
+        if (!abonnements.length) return null;
+
+        return (
+            abonnements.find((a) => a.statut === StatutAbonnement.ACTIF) ||
+            abonnements.find((a) => a.statut === StatutAbonnement.ESSAI) ||
+            abonnements[0]
+        );
+    }
+
+    /**
+     * Invariant v3 : le tenant possède-t-il un plan actif (ACTIF ou ESSAI en cours) ?
+     * Utilisé par le middleware requirePlanActif.
+     */
+    async hasPlanActif(etablissementId: string): Promise<boolean> {
+        const abonnement = await this.abonnementRepo.findOne({
+            where: {
+                etablissementId,
+                statut: In([StatutAbonnement.ACTIF, StatutAbonnement.ESSAI]),
+            },
+        });
+        if (!abonnement) return false;
+        if (abonnement.statut === StatutAbonnement.ESSAI) {
+            return Boolean(abonnement.periodeEssaiFin && new Date() < abonnement.periodeEssaiFin);
+        }
+        return true;
     }
 
     // =============================================
@@ -503,7 +551,6 @@ export class EntitlementService {
     /**
      * Vérifie l'entitlement de tous les modules pour un établissement.
      * Résultat enrichi avec les données du catalogue.
-     * Optimisé P3.2 : charge toutes les données en une seule requête batch (évite N+1).
      */
     async checkAll(etablissementId: string): Promise<EntitlementBatchResult[]> {
         // Cache Redis
@@ -527,29 +574,19 @@ export class EntitlementService {
             return memCache.valeur;
         }
 
-        // Vérifier si le cache in-memory est expiré (STALE)
-        if (memCache && Date.now() >= memCache.expiry) {
-            this._lastCacheStatus = 'STALE';
-        } else {
-            this._lastCacheStatus = 'MISS';
-        }
+        this._lastCacheStatus = memCache ? 'STALE' : 'MISS';
 
-        // P3.2 — Précharger toutes les données en parallèle (1 requête chacune)
-        const [catalogue, abonnement, groupeLien, supplements, modulesGroupe] = await Promise.all([
+        // Précharger toutes les données en parallèle (1 requête chacune)
+        const [catalogue, abonnement, groupeLien, supplements] = await Promise.all([
             this.catalogueRepo.find({ where: { estActif: true }, order: { ordre: 'ASC' } }),
-            this.abonnementRepo.findOne({
-                where: { etablissementId, statut: In([StatutAbonnement.ACTIF, StatutAbonnement.ESSAI]) },
-                relations: ['plan'],
-            }),
+            this.getAbonnementCourant(etablissementId),
             this.groupeLienRepo.findOne({ where: { etablissementId } }),
             this.abonnementModuleRepo.find({
                 where: { actif: true, etablissementId },
-                relations: ['moduleOptionnel'],
+                relations: ['module'],
             }),
-            null as any, // modulesGroupe chargé conditionnellement ci-dessous
         ]);
 
-        // Charger les modules groupe seulement si l'établissement appartient à un groupe
         let modulesGroupeData: ModulesGroupe[] = [];
         if (groupeLien?.groupeId) {
             modulesGroupeData = await this.modulesGroupeRepo.find({
@@ -557,22 +594,26 @@ export class EntitlementService {
             });
         }
 
-        // Construire les sets de résolution une seule fois
-        const planInclus = new Set<string>(abonnement?.plan?.modulesInclus || []);
+        const planInclus = new Set<string>(abonnement?.plan?.entitlements?.modules || []);
         const supplementsSouscrits = new Set<string>();
         for (const sup of supplements) {
-            if (sup.moduleOptionnel?.slug) supplementsSouscrits.add(sup.moduleOptionnel.slug);
+            if (sup.module?.code) supplementsSouscrits.add(sup.module.code);
         }
         const groupeOverrides = new Map<string, boolean>();
         for (const mg of modulesGroupeData) {
             if (mg.module?.code) groupeOverrides.set(mg.module.code, mg.actif);
         }
 
-        // Résoudre chaque module en mémoire (pas de requête DB supplémentaire)
+        // Phase d'expiration résolue une seule fois pour le batch
+        const resolutionExpiration =
+            abonnement && (abonnement.statut === StatutAbonnement.EXPIRE || abonnement.statut === StatutAbonnement.ESSAI)
+                ? await this.resoudrePhaseExpiration(abonnement)
+                : null;
+
         const results: EntitlementBatchResult[] = catalogue.map((module) => {
             const entitlement = this.resolveInMemory(
-                module, etablissementId, abonnement, planInclus,
-                groupeOverrides, supplementsSouscrits,
+                module, abonnement, planInclus,
+                groupeOverrides, supplementsSouscrits, resolutionExpiration,
             );
             return {
                 code: module.code,
@@ -599,30 +640,41 @@ export class EntitlementService {
         return results;
     }
 
+    /** Résolution batch pour une liste de codes (endpoint /entitlement/resolve) */
+    async resolveBatch(etablissementId: string, codes: string[]): Promise<EntitlementBatchResult[]> {
+        const tous = await this.checkAll(etablissementId);
+        const wanted = new Set(codes);
+        return tous.filter((r) => wanted.has(r.code));
+    }
+
     /**
      * Résolution en mémoire pour un module (utilisé par checkAll batch).
      * Pas de requête DB — utilise les données préchargées.
      */
     private resolveInMemory(
         module: ModuleCatalogue,
-        etablissementId: string,
         abonnement: AbonnementClient | null,
         planInclus: Set<string>,
         groupeOverrides: Map<string, boolean>,
         supplementsSouscrits: Set<string>,
+        resolutionExpiration: ResolutionExpiration | null,
     ): EntitlementResult {
-        // 0. Module base bypass
-        if (MODULES_BASE_BYPASS.has(module.code)) {
-            return { accessible: true, visible: true, raison: 'BASE', source: 'base' };
+        // Q1. Module critique
+        if (module.estCritique) {
+            return { accessible: true, visible: true, raison: 'CRITIQUE', source: 'critique' };
         }
 
-        // Module BASE (catégorie)
-        if (module.categorie === CategorieModule.BASE) {
-            return { accessible: true, visible: true, raison: 'BASE', source: 'base' };
+        // Q2. Abonnement requis
+        if (!abonnement) {
+            return {
+                accessible: false, visible: true, raison: 'AUCUN_PLAN',
+                message: 'Un plan d\'abonnement actif est requis pour accéder à eLISAschool',
+                source: 'catalogue', planMinimalRequis: module.planMinimal || undefined,
+            };
         }
 
-        // Période d'essai
-        if (abonnement?.statut === StatutAbonnement.ESSAI) {
+        // Essai actif
+        if (abonnement.statut === StatutAbonnement.ESSAI) {
             const now = new Date();
             if (abonnement.periodeEssaiFin && now < abonnement.periodeEssaiFin) {
                 return {
@@ -631,38 +683,21 @@ export class EntitlementService {
                     source: 'essai', planActuel: abonnement.plan?.slug,
                 };
             }
-            return {
-                accessible: false, visible: true, raison: 'ABONNEMENT_EXPIRE',
-                message: 'Votre période d\'essai est terminée. Souscrivez à un plan pour continuer.',
-                source: 'catalogue', planActuel: abonnement.plan?.slug,
-            };
         }
 
-        if (!abonnement) {
-            if (module.actifParDefaut) {
-                return { accessible: true, visible: true, raison: 'OK', source: 'catalogue' };
-            }
-            return {
-                accessible: false, visible: true, raison: 'ABONNEMENT_INACTIF',
-                message: 'Un abonnement actif est requis pour accéder à ce module',
-                source: 'catalogue', planMinimalRequis: module.planMinimal || undefined,
-            };
-        }
-
-        // Dégradation gracieuse
-        if (abonnement.statut === StatutAbonnement.EXPIRE && abonnement.dateExpirationReelle) {
-            const jours = Math.floor((Date.now() - new Date(abonnement.dateExpirationReelle).getTime()) / (1000 * 60 * 60 * 24));
-            if (jours <= DEGRADATION_PHASES.LECTURE_SEULE_JOURS) {
+        // Dégradation gracieuse (EXPIRE ou essai terminé) — phases configurables
+        if ((abonnement.statut === StatutAbonnement.EXPIRE || abonnement.statut === StatutAbonnement.ESSAI) && resolutionExpiration) {
+            if (resolutionExpiration.phase === 'LECTURE_SEULE') {
                 return {
                     accessible: true, visible: true, raison: 'DEGRADATION_LECTURE_SEULE',
-                    message: `Mode lecture seule (${jours}/15 jours). Renouvelez pour retrouver l'accès complet.`,
+                    message: `Mode lecture seule (J${resolutionExpiration.joursDepuisExpiration}). Renouvelez votre abonnement.`,
                     source: 'catalogue', planActuel: abonnement.plan?.slug, lectureSeule: true,
                 };
             }
-            if (jours <= DEGRADATION_PHASES.VERROUILLE_JOURS) {
+            if (resolutionExpiration.phase === 'VERROUILLE') {
                 return {
                     accessible: false, visible: true, raison: 'DEGRADATION_VERROUILLE',
-                    message: `Accès verrouillé depuis ${jours} jours. Renouvelez avant J30 pour éviter l'archivage.`,
+                    message: `Accès verrouillé depuis ${resolutionExpiration.joursDepuisExpiration} jours. Renouvelez votre abonnement.`,
                     source: 'catalogue', planActuel: abonnement.plan?.slug,
                 };
             }
@@ -673,14 +708,7 @@ export class EntitlementService {
             };
         }
 
-        if (abonnement.statut === StatutAbonnement.EXPIRE) {
-            return {
-                accessible: false, visible: true, raison: 'ABONNEMENT_EXPIRE',
-                message: 'Votre abonnement a expiré. Renouvelez pour accéder aux modules premium.',
-                source: 'catalogue', planActuel: abonnement.plan?.slug,
-            };
-        }
-        if (abonnement.statut === StatutAbonnement.SUSPENDU) {
+        if (abonnement.statut === StatutAbonnement.SUSPENDU || abonnement.statut === StatutAbonnement.ANNULE) {
             return {
                 accessible: false, visible: true, raison: 'ABONNEMENT_SUSPENDU',
                 message: 'Votre abonnement est suspendu. Contactez le support.',
@@ -688,12 +716,12 @@ export class EntitlementService {
             };
         }
 
-        // Plan
+        // Q3. Plan
         if (planInclus.has(module.code)) {
             return { accessible: true, visible: true, raison: 'OK', source: 'plan', planActuel: abonnement.plan?.slug };
         }
 
-        // Override groupe
+        // Q4. Override groupe
         if (groupeOverrides.has(module.code)) {
             if (groupeOverrides.get(module.code)!) {
                 return { accessible: true, visible: true, raison: 'OK', source: 'groupe', planActuel: abonnement.plan?.slug };
@@ -705,48 +733,26 @@ export class EntitlementService {
             };
         }
 
-        // Supplément
+        // Q4b. Supplément
         if (supplementsSouscrits.has(module.code)) {
             return { accessible: true, visible: true, raison: 'OK', source: 'supplement', planActuel: abonnement.plan?.slug };
         }
 
-        // Plan minimal
-        if (module.planMinimal) {
-            const planRangs: Record<string, number> = { 'gratuit': 0, 'starter': 1, 'standard': 2, 'pro': 3, 'enterprise': 4 };
-            const rangActuel = planRangs[abonnement.plan?.slug || 'gratuit'] ?? 0;
-            const rangRequis = planRangs[module.planMinimal] ?? 0;
-            if (rangActuel < rangRequis) {
-                return {
-                    accessible: false, visible: true, raison: 'PLAN_INSUFFICIENT',
-                    message: `Plan "${module.planMinimal}" ou supérieur requis. Plan actuel : "${abonnement.plan?.nom || 'N/A'}"`,
-                    source: 'catalogue', planMinimalRequis: module.planMinimal, planActuel: abonnement.plan?.slug,
-                };
-            }
-        }
-
-        // Défaut catalogue
-        if (module.actifParDefaut) {
-            return { accessible: true, visible: true, raison: 'OK', source: 'catalogue', planActuel: abonnement.plan?.slug };
-        }
-
-        // Non accessible
+        // Non inclus
         return {
             accessible: false, visible: true, raison: 'MODULE_DESACTIVE',
             message: module.estSouscriptible
-                ? 'Module disponible en supplément. Contactez-nous pour y accéder.'
-                : 'Module non disponible pour votre plan actuel.',
+                ? 'Module disponible en supplément depuis le marché.'
+                : 'Module non inclus dans votre plan actuel.',
             source: 'catalogue', planMinimalRequis: module.planMinimal || undefined, planActuel: abonnement.plan?.slug,
         };
     }
 
     // =============================================
-    // CATALOGUE (transféré depuis ModuleResolutionService)
+    // CATALOGUE
     // =============================================
 
-    /**
-     * Catalogue complet des modules actifs (plateforme).
-     * Transféré depuis ModuleResolutionService (fusion P0.1).
-     */
+    /** Catalogue complet des modules actifs (plateforme) */
     async getCatalogue(): Promise<ModuleCatalogue[]> {
         return this.catalogueRepo.find({
             where: { estActif: true },
@@ -754,29 +760,23 @@ export class EntitlementService {
         });
     }
 
-    /**
-     * Vérifie si un module est facturable (PREMIUM/ADDON).
-     * Transféré depuis ModuleResolutionService (fusion P0.1).
-     */
+    /** Vérifie si un module est facturable (PAYANT) */
     async isModuleFacturable(code: string): Promise<boolean> {
         const entree = await this.catalogueRepo.findOne({ where: { code, estActif: true } });
         return entree?.estFacturable ?? false;
     }
 
     /**
-     * Vérifie si un module est réellement souscrit (source !== 'catalogue').
-     * Un module actifParDefaut n'est pas "souscrit" — il est offert par défaut.
-     * Transféré depuis ModuleResolutionService (fusion P0.1).
+     * Vérifie si un module est réellement souscrit via un plan ou un supplément.
      */
     async isModuleSouscrit(etablissementId: string, code: string): Promise<boolean> {
         const result = await this.check(etablissementId, code);
-        return result.accessible && result.source !== 'catalogue' && result.source !== 'base';
+        return result.accessible && result.source !== 'catalogue' && result.source !== 'critique';
     }
 
     /**
      * Résout tous les modules d'un établissement avec les données complètes du catalogue.
      * Enrichit checkAll() avec les métadonnées catalogue (prix, description, etc.).
-     * Remplace moduleResolutionService.getResolvedModules() (fusion P0.1).
      */
     async getResolvedModules(etablissementId: string): Promise<any[]> {
         const [catalogue, entitlements] = await Promise.all([
@@ -795,17 +795,19 @@ export class EntitlementService {
                 nomEn: m.nomEn,
                 description: m.description,
                 categorie: m.categorie,
+                estCritique: m.estCritique,
                 icone: m.icone,
                 prixMensuel: m.prixMensuel,
                 prixAnnuel: m.prixAnnuel,
                 estFacturable: m.estFacturable,
                 estSouscriptible: m.estSouscriptible,
-                actifParDefaut: m.actifParDefaut,
                 planMinimal: m.planMinimal,
                 dependencies: m.dependencies,
                 ordre: m.ordre,
                 estActif: m.estActif,
-                actif: ent?.accessible ?? m.actifParDefaut,
+                /** Statut marché v3 : inclus par le plan → gratuit pour ce tenant */
+                inclusParPlan: ent?.source === 'plan' || ent?.source === 'essai' || false,
+                actif: ent?.accessible ?? false,
                 source: ent?.source || 'catalogue',
                 entitlement: ent,
             };
@@ -813,17 +815,15 @@ export class EntitlementService {
     }
 
     // =============================================
-    // CHECK CAPABILITY (unification modules + feature flags)
+    // CHECK CAPABILITY (unification modules + fonctionnalités)
     // =============================================
 
     /**
-     * Point d'entrée unifié pour vérifier une capacité (module OU feature flag).
-     * 
+     * Point d'entrée unifié pour vérifier une capacité (module OU fonctionnalité).
+     *
      * - Si `capability` correspond à un code module du catalogue → utilise check()
-     * - Si `capability` correspond à une clé de feature flag → résolution via FeatureFlagService
-     * - Retourne un EntitlementResult dans les deux cas
-     * 
-     * Migration 210 — Refonte Feature Flags (R1 unification)
+     * - Si `capability` correspond à une clé de fonctionnalité (ex-feature flag)
+     *   → incluse par plan.entitlements.fonctionnalites + rollout/overrides
      */
     async checkCapability(etablissementId: string, capability: string): Promise<EntitlementResult> {
         // 1. Vérifier si c'est un module du catalogue
@@ -836,57 +836,51 @@ export class EntitlementService {
             return this.check(etablissementId, capability);
         }
 
-        // 2. Vérifier si c'est un feature flag défini
+        // 2. Vérifier si c'est une fonctionnalité définie
         const definition = await this.definitionRepo.findOne({
             where: { cle: capability },
         });
 
         if (definition) {
-            // Vérifier le flag via FeatureFlagService (avec rollout + segments)
-            const enabled = await this.featureFlagService.isEnabledWithRollout(capability, etablissementId);
-
-            if (enabled) {
-                return {
-                    accessible: true,
-                    visible: true,
-                    raison: 'OK',
-                    source: 'plan',
-                    message: `Feature flag '${definition.label}' activé`,
-                };
-            }
-
-            // Flag désactivé — déterminer la raison
             if (!definition.estActif) {
                 return {
                     accessible: false,
                     visible: true,
                     raison: 'MODULE_DESACTIVE',
-                    message: `Feature flag '${definition.label}' désactivé au niveau plateforme`,
+                    message: `Fonctionnalité '${definition.label}' désactivée au niveau plateforme`,
                     source: 'catalogue',
                 };
             }
 
-            // Vérifier le plan minimal
-            if (definition.planMinimal) {
-                const abonnement = await this.abonnementRepo.findOne({
-                    where: { etablissementId, statut: StatutAbonnement.ACTIF },
-                    relations: ['plan'],
-                });
-                const planRangs: Record<string, number> = {
-                    'gratuit': 0, 'starter': 1, 'standard': 2, 'pro': 3, 'enterprise': 4,
+            const abonnement = await this.getAbonnementCourant(etablissementId);
+            if (!abonnement) {
+                return {
+                    accessible: false,
+                    visible: true,
+                    raison: 'AUCUN_PLAN',
+                    message: 'Un plan d\'abonnement actif est requis',
+                    source: 'catalogue',
                 };
-                const planActuelRang = planRangs[abonnement?.plan?.slug || 'gratuit'] ?? 0;
-                const planRequisRang = planRangs[definition.planMinimal] ?? 0;
+            }
 
-                if (planActuelRang < planRequisRang) {
+            // Essai actif → fonctionnalités du plan d'essai accessibles
+            const essaiActif = abonnement.statut === StatutAbonnement.ESSAI
+                && abonnement.periodeEssaiFin && new Date() < abonnement.periodeEssaiFin;
+
+            const inclusesParPlan = abonnement.plan?.entitlements?.fonctionnalites || [];
+            const incluseParPlan = inclusesParPlan.includes(capability);
+
+            if ((abonnement.statut === StatutAbonnement.ACTIF || essaiActif) && incluseParPlan) {
+                // Rollout + overrides tenant appliqués par le FeatureFlagService
+                const enabled = await this.featureFlagService.isEnabledWithRollout(capability, etablissementId);
+                if (enabled) {
                     return {
-                        accessible: false,
+                        accessible: true,
                         visible: true,
-                        raison: 'PLAN_INSUFFICIENT',
-                        message: `Plan "${definition.planMinimal}" ou supérieur requis pour '${definition.label}'`,
-                        source: 'catalogue',
-                        planMinimalRequis: definition.planMinimal,
-                        planActuel: abonnement?.plan?.slug,
+                        raison: 'OK',
+                        source: 'plan',
+                        message: `Fonctionnalité '${definition.label}' activée`,
+                        planActuel: abonnement.plan?.slug,
                     };
                 }
             }
@@ -894,14 +888,17 @@ export class EntitlementService {
             return {
                 accessible: false,
                 visible: true,
-                raison: 'MODULE_DESACTIVE',
-                message: `Feature flag '${definition.label}' non activé pour cet établissement`,
+                raison: incluseParPlan ? 'MODULE_DESACTIVE' : 'PLAN_INSUFFICIENT',
+                message: incluseParPlan
+                    ? `Fonctionnalité '${definition.label}' non activée pour cet établissement`
+                    : `Fonctionnalité '${definition.label}' non incluse dans votre plan`,
                 source: 'catalogue',
                 planMinimalRequis: definition.planMinimal || undefined,
+                planActuel: abonnement.plan?.slug,
             };
         }
 
-        // 3. Ni module ni flag connu → inaccessible
+        // 3. Ni module ni fonctionnalité connue → inaccessible
         return {
             accessible: false,
             visible: false,
@@ -915,28 +912,20 @@ export class EntitlementService {
     // HELPERS
     // =============================================
 
-    /**
-     * Vérifie rapidement si un module est accessible (boolean).
-     */
+    /** Vérifie rapidement si un module est accessible (boolean) */
     async isAccessible(etablissementId: string, moduleCode: string): Promise<boolean> {
         const result = await this.check(etablissementId, moduleCode);
         return result.accessible;
     }
 
-    /**
-     * Récupère le statut d'abonnement d'un établissement.
-     */
+    /** Récupère le statut d'abonnement d'un établissement */
     async getStatutAbonnement(etablissementId: string): Promise<{
         actif: boolean;
         statut: StatutAbonnement | 'AUCUN';
         planSlug?: string;
         planNom?: string;
     }> {
-        const abonnement = await this.abonnementRepo.findOne({
-            where: { etablissementId },
-            relations: ['plan'],
-            order: { createdAt: 'DESC' },
-        });
+        const abonnement = await this.getAbonnementCourant(etablissementId);
 
         if (!abonnement) {
             return { actif: false, statut: 'AUCUN' };

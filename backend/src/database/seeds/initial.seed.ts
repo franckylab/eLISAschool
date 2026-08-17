@@ -29,6 +29,12 @@ import { seedCotisations } from './system/seed-cotisations';
 import { seedTypesPrimes } from './system/seed-types-primes';
 import { seedTypesRetenues } from './system/seed-types-retenues';
 import { seedModulesCatalogue } from './system/seed-modules-catalogue';
+import { seedPlansAbonnement } from './system/seed-plans-abonnement';
+import { seedCyclesFacturation } from './system/seed-cycles-facturation';
+import { seedPacksQuota } from './system/seed-packs-quota';
+import { seedStrategiesExpiration } from './system/seed-strategies-expiration';
+import { seedRemises } from './system/seed-remises';
+import { seedParametresBilling } from './system/seed-parametres-billing';
 import { seedCmsTemplates } from './system/seed-cms-templates';
 import { seedCmsWidgets } from './system/seed-cms-widgets';
 import { seedFeatureFlags } from './system/seed-feature-flags';
@@ -81,6 +87,24 @@ export async function runSystemSeeds(): Promise<{
     // 8b. Catalogue modules unifié (source de vérité — Lot A v7)
     await seedModulesCatalogue();
 
+    // 8c. Plans d'abonnement v3 pilotés par JSONB (migration 213)
+    await seedPlansAbonnement();
+
+    // 8d. Cycles de facturation configurables (migration 213)
+    await seedCyclesFacturation();
+
+    // 8e. Packs de quota supplémentaires (migration 213)
+    await seedPacksQuota();
+
+    // 8f. Stratégies d'expiration d'abonnement (migration 213)
+    await seedStrategiesExpiration();
+
+    // 8g. Remises abonnement commerciales (migration 213)
+    await seedRemises();
+
+    // 8h. Paramètres système billing (onboarding, essai, facturation)
+    await seedParametresBilling();
+
     // 9. Super admin (estPlateforme=true — accès Control Plane)
     await seedSuperAdmin(etablissementPrincipalId, etablissementSecondaireId);
 
@@ -132,7 +156,7 @@ export async function runSystemSeeds(): Promise<{
     // 20. Widgets CMS par défaut (5 types × tous établissements)
     await seedCmsWidgets();
 
-    // 21. Feature flags système (8 flags transverses — migration 210)
+    // 21. Feature flags système (8 flags transverses — migration 210, catégorie commerciale v3)
     await seedFeatureFlags();
 
     logger.info('✅ Seeds système exécutés avec succès');

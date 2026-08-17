@@ -83,5 +83,93 @@
         "changerPlan": "Change plan",
         "contacterSupport": "Contact support",
         "simuler": "Simulate"
+    },
+    "packs": {
+        "titre": "Boost your subscription",
+        "description": "Add extra quotas to your current plan",
+        "populaire": "Popular",
+        "cycleCourant": "Current cycle",
+        "illimite": "Unlimited duration",
+        "acheter": "Buy",
+        "succes": "Pack activated successfully",
+        "erreur": "Error while purchasing pack",
+        "confirmation": {
+            "titre": "Confirm purchase",
+            "message": "Your pack will be activated immediately and billed pro-rata for the current cycle.",
+            "annuler": "Cancel",
+            "confirmer": "Confirm"
+        }
+    },
+    "promo": {
+        "titre": "Promo code",
+        "placeholder": "Enter your code",
+        "appliquer": "Apply",
+        "codeInvalide": "Invalid or expired promo code",
+        "erreurVerification": "Verification error"
+    },
+    "faq": {
+        "titre": "Frequently asked questions",
+        "description": "Everything you need to know about our plans and billing",
+        "items": [
+            { "q": "Can I try for free before subscribing?", "r": "Yes, most of our plans offer a 14 to 30-day free trial with no commitment. You can explore all features before deciding." },
+            { "q": "How do billing cycles work?", "r": "We offer 4 cycles: monthly, quarterly, semi-annual and annual. The longer the cycle, the greater the discount. You can change your cycle at any time." },
+            { "q": "What is a quota pack?", "r": "A quota pack allows you to add extra resources (students, storage, SMS) to your plan without changing your subscription. The price is calculated pro-rata for the remaining cycle." },
+            { "q": "How do discounts and promo codes work?", "r": "Discounts can be automatic (volume, loyalty) or applied via a promo code. They are stackable up to a maximum of 40% of the total amount." },
+            { "q": "Can I change my plan midway?", "r": "Yes, you can upgrade or downgrade your plan at any time. A pro-rata temporis calculation is automatically performed to adjust billing." },
+            { "q": "What happens if I exceed my quota?", "r": "You will receive a notification at 80% and 90% consumption. Beyond the limit, you can purchase an additional quota pack or upgrade your plan." },
+            { "q": "How do I cancel my subscription?", "r": "You can cancel at any time from your admin area. No commitment or cancellation fees. Your data remains accessible during the paid period." },
+            { "q": "Is my data secure?", "r": "Absolutely. Your data is hosted on secure servers with end-to-end encryption. We perform daily backups and comply with data protection standards." },
+            { "q": "What payment methods do you accept?", "r": "We accept Mobile Money (MTN, Orange), bank transfers, and major credit cards. Payments are secure and PCI DSS compliant." },
+            { "q": "Do you offer special pricing for large groups?", "r": "Yes, from 3 schools onwards, group discounts are available. Contact our sales team for a personalized quote." }
+        ]
+    },
+    "trust": {
+        "securise": "Secure payment",
+        "securiseDesc": "Encrypted transactions, PCI DSS compliant",
+        "heberge": "Hosted data",
+        "hebergeDesc": "Daily backups and end-to-end encryption",
+        "support": "Responsive support",
+        "supportDesc": "Technical assistance available 6 days/week",
+        "sansEngagement": "No commitment",
+        "sansEngagementDesc": "Cancel anytime, no fees"
+    },
+    "plans": {
+        "pageTitle": "Our Plans",
+        "cards": "Plans",
+        "compare": "Compare",
+        "simulator": "Simulate",
+        "hero": {
+            "titre": "Choose the plan that fits your school",
+            "sousTitre": "Flexible solutions for every school size. No commitment."
+        },
+        "sansEngagement": "No commitment — cancel anytime",
+        "gratuit": "FREE",
+        "populaire": "Popular",
+        "meilleurRapport": "Best value",
+        "commencerGratuitement": "Start for free",
+        "choisirCePlan": "Choose this plan",
+        "contacter": "Contact us",
+        "planActuel": "Current plan",
+        "chargement": "Loading...",
+        "modulesInclus": "modules included",
+        "essaiJours": "{{count}}-day trial",
+        "upgradeSucces": "Plan updated successfully",
+        "upgradeErreur": "Error while changing plan",
+        "compare": {
+            "caracteristique": "Feature",
+            "eleves": "Students included",
+            "utilisateurs": "Users",
+            "classes": "Classes",
+            "stockage": "Storage (GB)",
+            "sms": "SMS/month",
+            "modules": "Modules included",
+            "fonctionnalites": "Features",
+            "prixEleve": "Price / extra student",
+            "essai": "Free trial",
+            "cycles": "Allowed cycles",
+            "exportPdf": "PDF Export",
+            "apiRest": "REST API",
+            "sso": "SSO / White Label"
+        }
     }
 }

@@ -2,34 +2,30 @@
  * ==================================
  * eLISAschool - Platform Header
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0
  * Auteur: franck arlos chendjou
  *
  * Header dédié à l'espace plateforme (Control Plane).
- * Remplace la bannière statique par un header complet :
- * - Logo + badge ADMIN
- * - Recherche globale (Cmd+K)
- * - Notifications plateforme
- * - Alertes santé système
- * - Dropdown profil admin (MFA, retour tenant, déconnexion)
+ * v2.0 : Ajout ThemeSwitcher (dark/light), LanguageSwitcher (FR/EN),
+ *        ConnectionIndicator (5 états animés). Recherche inline remplacée
+ *        par ouverture CommandPalette (événement custom `open-command-palette`).
+ * v1.0 : Logo + badge ADMIN, recherche Cmd+K, notifications WebSocket,
+ *        santé système, dropdown profil admin.
  *
- * Plan v7.1 — Panel Admin Enterprise
+ * Plan v8.0 — Panel Admin Enterprise
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRouter, Link } from '@tanstack/react-router';
 import {
     Search,
     Bell,
-    Shield,
     ArrowLeft,
     LogOut,
     KeyRound,
     Settings,
-    X,
     Activity,
-    User,
     Wifi,
     WifiOff,
     AlertTriangle,
@@ -37,11 +33,14 @@ import {
     XCircle,
 } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAuthStore } from '@/stores/auth.store';
 import { ElisaLogo } from '@/components/branding';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useRealtimeMonitoring } from '@/hooks/use-realtime-monitoring';
+import { ThemeSwitcher } from '@/components/navigation/ThemeSwitcher';
+import { LanguageSwitcher } from '@/components/navigation/LanguageSwitcher';
+import { ConnectionIndicator } from '@/features/network';
 
 // =============================================
 // Types
@@ -75,8 +74,6 @@ export function PlatformHeader({ santeSysteme = 'ok' }: Omit<PlatformHeaderProps
     const router = useRouter();
     const { utilisateur } = useAuthStore();
     const isMobile = useMediaQuery('(max-width: 767px)');
-    const [searchOpen, setSearchOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
     const [notificationsOpen, setNotificationsOpen] = useState(false);
 
     // ── Monitoring temps réel (WebSocket) ──
@@ -88,18 +85,10 @@ export function PlatformHeader({ santeSysteme = 'ok' }: Omit<PlatformHeaderProps
         await secureHandleLogout({ redirect: true });
     };
 
-    // ── Raccourci Cmd+K pour ouvrir la recherche ──
-    const handleSearchShortcut = useCallback((e: KeyboardEvent) => {
-        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-            e.preventDefault();
-            setSearchOpen(prev => !prev);
-        }
+    // ── Ouvrir la CommandPalette via événement custom ──
+    const openCommandPalette = useCallback(() => {
+        window.dispatchEvent(new CustomEvent('open-command-palette'));
     }, []);
-
-    useEffect(() => {
-        document.addEventListener('keydown', handleSearchShortcut);
-        return () => document.removeEventListener('keydown', handleSearchShortcut);
-    }, [handleSearchShortcut]);
 
     const santeConfig = SANTE_CONFIG[santeSysteme];
 
@@ -146,55 +135,31 @@ export function PlatformHeader({ santeSysteme = 'ok' }: Omit<PlatformHeaderProps
                 {/* Séparateur */}
                 <div className="hidden sm:block h-6 w-px bg-[var(--color-bordure)] mx-[var(--gap-xs)]" />
 
-                {/* Barre de recherche */}
-                <div className="relative hidden sm:block">
-                    <AnimatePresence>
-                        {searchOpen ? (
-                            <motion.div
-                                initial={{ width: 36, opacity: 0 }}
-                                animate={{ width: 'min(300px, calc(100vw - 300px))', opacity: 1 }}
-                                exit={{ width: 36, opacity: 0 }}
-                                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                                className="flex items-center"
-                            >
-                                <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder={t('common:header.rechercherPlateforme', 'Rechercher dans la plateforme...')}
-                                    className="h-8 w-full rounded-lg border border-[var(--color-bordure)] bg-[var(--color-fond)] px-2.5 pl-8 text-xs text-[var(--color-texte)] placeholder:text-[var(--color-texte-muted)]/60 focus:border-[var(--color-dominante)] focus:outline-none focus:ring-1 focus:ring-[var(--color-dominante)]/20"
-                                    autoFocus
-                                />
-                                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-texte-muted)]" />
-                                <button
-                                    onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
-                                    className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[var(--color-texte-muted)] hover:text-[var(--color-texte)]"
-                                >
-                                    <X className="h-3.5 w-3.5" />
-                                </button>
-                            </motion.div>
-                        ) : (
-                            <motion.button
-                                key="search-btn"
-                                onClick={() => setSearchOpen(true)}
-                                className="flex h-8 items-center gap-2 rounded-lg border border-[var(--color-bordure)] bg-[var(--color-fond)] px-2.5 text-xs text-[var(--color-texte-muted)] transition-all hover:border-[var(--color-dominante)]/30 hover:text-[var(--color-texte)]"
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                aria-label={t('common:header.rechercherPlateforme', 'Rechercher')}
-                            >
-                                <Search className="h-3.5 w-3.5" />
-                                <span className="hidden md:inline">{t('common:header.rechercherPlateforme', 'Rechercher...')}</span>
-                                <kbd className="hidden md:inline-flex items-center gap-0.5 rounded border border-[var(--color-bordure)] bg-[var(--color-surface)] px-1 py-0.5 text-[9px] font-medium text-[var(--color-texte-muted)]">
-                                    ⌘K
-                                </kbd>
-                            </motion.button>
-                        )}
-                    </AnimatePresence>
-                </div>
+                {/* Bouton recherche globale (ouvre CommandPalette) */}
+                <button
+                    onClick={openCommandPalette}
+                    className="flex h-8 items-center gap-2 rounded-lg border border-[var(--color-bordure)] bg-[var(--color-fond)] px-2.5 text-xs text-[var(--color-texte-muted)] transition-all hover:border-[var(--color-dominante)]/30 hover:text-[var(--color-texte)]"
+                    aria-label={t('common:header.rechercherPlateforme', 'Rechercher')}
+                >
+                    <Search className="h-3.5 w-3.5" />
+                    <span className="hidden md:inline">{t('common:header.rechercherPlateforme', 'Rechercher...')}</span>
+                    <kbd className="hidden md:inline-flex items-center gap-0.5 rounded border border-[var(--color-bordure)] bg-[var(--color-surface)] px-1 py-0.5 text-[9px] font-medium text-[var(--color-texte-muted)]">
+                        ⌘K
+                    </kbd>
+                </button>
             </div>
 
             {/* ── Droite : Actions ── */}
             <div className="flex items-center gap-[var(--gap-xs)]">
+                {/* Theme toggle (dark/light) */}
+                <ThemeSwitcher />
+
+                {/* Language switch (FR/EN) */}
+                <LanguageSwitcher />
+
+                {/* Connectivité réseau */}
+                <ConnectionIndicator />
+
                 {/* Indicateur santé système */}
                 <button
                     className="relative flex items-center justify-center rounded-lg transition-colors hover:bg-[var(--color-surface-hover)]"

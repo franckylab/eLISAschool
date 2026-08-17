@@ -64,21 +64,18 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-    BASE: 'Base',
-    PREMIUM: 'Premium',
-    ADDON: 'Add-ons',
+    GRATUIT: 'Gratuit',
+    PAYANT: 'Payant',
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-    BASE: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-    PREMIUM: 'border-amber-200 bg-amber-50 text-amber-700',
-    ADDON: 'border-blue-200 bg-blue-50 text-blue-700',
+    GRATUIT: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    PAYANT: 'border-blue-200 bg-blue-50 text-blue-700',
 };
 
 const CATEGORY_HEADER_BG: Record<string, string> = {
-    BASE: 'bg-emerald-50/50 border-emerald-100',
-    PREMIUM: 'bg-amber-50/50 border-amber-100',
-    ADDON: 'bg-blue-50/50 border-blue-100',
+    GRATUIT: 'bg-emerald-50/50 border-emerald-100',
+    PAYANT: 'bg-blue-50/50 border-blue-100',
 };
 
 function getLucideIcon(iconName: string): React.ComponentType<{ className?: string }> {
@@ -88,12 +85,12 @@ function getLucideIcon(iconName: string): React.ComponentType<{ className?: stri
 function groupByCategory(states: ModuleState[]): Record<string, ModuleState[]> {
     const groups: Record<string, ModuleState[]> = {};
     for (const s of states) {
-        const cat = s.entry.category || 'ADDON';
+        const cat = s.entry.category || 'PAYANT';
         if (!groups[cat]) groups[cat] = [];
         groups[cat].push(s);
     }
     const sorted = Object.keys(groups).sort((a, b) => {
-        const order = ['BASE', 'PREMIUM', 'ADDON'];
+        const order = ['GRATUIT', 'PAYANT'];
         const ia = order.indexOf(a);
         const ib = order.indexOf(b);
         return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
@@ -258,8 +255,9 @@ function ModuleCard({
 
     // Label de raison de blocage
     const blocageLabel = raisonBlocage === 'PLAN_INSUFFICIENT' ? 'Plan requis'
-        : raisonBlocage === 'ABONNEMENT_INACTIF' || raisonBlocage === 'ABONNEMENT_EXPIRE' || raisonBlocage === 'ABONNEMENT_SUSPENDU' ? 'Abonnement requis'
+        : raisonBlocage === 'AUCUN_PLAN' || raisonBlocage === 'ABONNEMENT_INACTIF' || raisonBlocage === 'ABONNEMENT_EXPIRE' || raisonBlocage === 'ABONNEMENT_SUSPENDU' ? 'Abonnement requis'
         : raisonBlocage === 'MODULE_DESACTIVE' ? 'Désactivé'
+        : raisonBlocage === 'DEGRADATION_ARCHIVE' ? 'Données archivées'
         : raisonBlocage === 'OVERRIDE_DESACTIVE' ? 'Désactivé (groupe)'
         : null;
 
@@ -292,7 +290,7 @@ function ModuleCard({
                     </h3>
                     {entry.premium && !isLocked && (
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 uppercase">
-                            Premium
+                            Payant
                         </span>
                     )}
                     {isLocked && blocageLabel && (
@@ -321,7 +319,7 @@ function ModuleCard({
                 )}
 
                 {/* CTA Upgrader pour modules verrouillés */}
-                {isLocked && (raisonBlocage === 'PLAN_INSUFFICIENT' || raisonBlocage === 'ABONNEMENT_INACTIF' || raisonBlocage === 'ABONNEMENT_EXPIRE') && (
+                {isLocked && (raisonBlocage === 'PLAN_INSUFFICIENT' || raisonBlocage === 'AUCUN_PLAN' || raisonBlocage === 'ABONNEMENT_INACTIF' || raisonBlocage === 'ABONNEMENT_EXPIRE') && (
                     <div className="mt-2">
                         <button
                             onClick={() => window.location.href = '/configuration/billing'}
@@ -540,7 +538,7 @@ export function ModulesTab() {
 
     const categories = useMemo(() => {
         if (!states) return [];
-        const cats = new Set(states.map((s) => s.entry.category || 'ADDON'));
+        const cats = new Set(states.map((s) => s.entry.category || 'PAYANT'));
         return Array.from(cats).sort();
     }, [states]);
 
@@ -559,7 +557,7 @@ export function ModulesTab() {
                     return false;
                 }
             }
-            if (categoryFilter && (s.entry.category || 'ADDON') !== categoryFilter) return false;
+            if (categoryFilter && (s.entry.category || 'PAYANT') !== categoryFilter) return false;
             if (activeFilter === 'active' && !s.actif) return false;
             if (activeFilter === 'inactive' && s.actif) return false;
             return true;
@@ -602,7 +600,7 @@ export function ModulesTab() {
     const handleBulkToggle = useCallback(async (category: string, actif: boolean) => {
         if (!states) return;
         const moduleNames = states
-            .filter((s) => (s.entry.category || 'ADDON') === category)
+            .filter((s) => (s.entry.category || 'PAYANT') === category)
             .map((s) => s.entry.name);
         if (moduleNames.length === 0) return;
 

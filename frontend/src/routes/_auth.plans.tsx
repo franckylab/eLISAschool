@@ -1,37 +1,39 @@
 /**
  * ==================================
- * eLISAschool - Plans d'Abonnement
+ * eLISAschool - Plans d'Abonnement (Tenant)
  * ==================================
  * Catalogue des plans disponibles avec détails, comparaison
  * et simulateur tarifaire intégré.
- * Refonte SaaS v9 — Menu "Mon Établissement"
+ * Refonte v3.1 — Hero + Plans + Packs + Promo + FAQ + Trust
+ *
+ * Version: 3.0.0
+ * Auteur: franck arlos chendjou
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Check,
-    X as XIcon,
-    Sparkles,
-    Users,
     Package,
-    ArrowRight,
     Calculator,
-    Crown,
-    Rocket,
-    Building2,
-    Info,
-    ChevronDown,
-    ChevronUp,
-    Zap,
     Shield,
+    ArrowRight,
+    Check,
+    X,
 } from 'lucide-react';
 import { PlanSimulator } from '@/features/billing/components/plan-simulator';
+import { TarifsPreview } from '@/features/billing/components/tarifs-preview';
+import { PacksSection } from '@/features/billing/components/packs-section';
+import { CodePromoInput } from '@/features/billing/components/code-promo-input';
+import { FAQSection } from '@/features/billing/components/faq-section';
+import { TrustBadges } from '@/features/billing/components/trust-badges';
+import { ElisaButton } from '@/components/ui';
 import { cn } from '@/lib/cn';
+import type { Plan } from '@/features/billing/types/plan.types';
+import { formatPrix } from '@/features/billing/types/plan.types';
+import { usePlans, useAbonnementActuel, useUpgradePlan } from '@/features/billing/hooks/use-billing';
 
 export const Route = createFileRoute('/_auth/plans')({
     component: PlansPage,
@@ -41,504 +43,339 @@ export const Route = createFileRoute('/_auth/plans')({
 // Types
 // =============================================
 
-interface Tranche {
-    id: string;
-    minEleves: number;
-    maxEleves: number | null;
-    montantSupplementaire: number;
-    label?: string;
-}
-
-interface Plan {
-    id: string;
-    nom: string;
-    slug: string;
-    description?: string;
-    prixBase: number;
-    devise: string;
-    maxEleves: number;
-    modulesInclus: string[];
-    tranches?: Tranche[];
-    badge?: string;
-    actif: boolean;
-}
-
-interface AbonnementActuel {
-    plan?: { id: string; nom: string };
-    statut: string;
-}
-
 type ViewMode = 'cards' | 'compare' | 'simulator';
-
-// =============================================
-// Icons mapping pour plans
-// =============================================
-
-const PLAN_ICONS: Record<string, typeof Package> = {
-    gratuit: Package,
-    standard: Zap,
-    premium: Crown,
-    enterprise: Building2,
-};
-
-const PLAN_COLORS: Record<string, { bg: string; text: string; border: string; badge: string }> = {
-    gratuit: {
-        bg: 'bg-slate-500/5',
-        text: 'text-slate-600 dark:text-slate-400',
-        border: 'border-slate-200 dark:border-slate-700',
-        badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400',
-    },
-    standard: {
-        bg: 'bg-blue-500/5',
-        text: 'text-blue-600 dark:text-blue-400',
-        border: 'border-blue-200 dark:border-blue-700',
-        badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-    },
-    premium: {
-        bg: 'bg-purple-500/5',
-        text: 'text-purple-600 dark:text-purple-400',
-        border: 'border-purple-200 dark:border-purple-700',
-        badge: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
-    },
-    enterprise: {
-        bg: 'bg-amber-500/5',
-        text: 'text-amber-600 dark:text-amber-400',
-        border: 'border-amber-200 dark:border-amber-700',
-        badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-    },
-};
-
-const DEFAULT_COLOR = {
-    bg: 'bg-emerald-500/5',
-    text: 'text-emerald-600 dark:text-emerald-400',
-    border: 'border-emerald-200 dark:border-emerald-700',
-    badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-};
-
-// =============================================
-// Hooks
-// =============================================
-
-function usePlans() {
-    return useQuery<Plan[]>({
-        queryKey: ['plans-catalogue'],
-        queryFn: async () => {
-            const res = await apiClient.get<Plan[]>('/api/billing/plans');
-            return res.data;
-        },
-    });
-}
-
-function useAbonnementActuel() {
-    return useQuery<AbonnementActuel | null>({
-        queryKey: ['mon-abonnement'],
-        queryFn: async () => {
-            const res = await apiClient.get<AbonnementActuel | null>('/api/billing/mon-abonnement');
-            return res.data;
-        },
-    });
-}
-
-// =============================================
-// Helpers
-// =============================================
-
-function getPlanColor(slug: string) {
-    return PLAN_COLORS[slug.toLowerCase()] || DEFAULT_COLOR;
-}
-
-function getPlanIcon(slug: string) {
-    return PLAN_ICONS[slug.toLowerCase()] || Rocket;
-}
-
-function formatPrix(prix: number, devise: string) {
-    return new Intl.NumberFormat('fr-FR').format(prix) + ' ' + devise;
-}
 
 // =============================================
 // Main Page
 // =============================================
 
 function PlansPage() {
+    const { t } = useTranslation('billing');
     const [viewMode, setViewMode] = useState<ViewMode>('cards');
     const { data: plans, isLoading } = usePlans();
     const { data: abonnement } = useAbonnementActuel();
+    const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
     const views: { key: ViewMode; label: string; icon: typeof Package }[] = [
-        { key: 'cards', label: 'Catalogue', icon: Package },
-        { key: 'compare', label: 'Comparer', icon: Shield },
-        { key: 'simulator', label: 'Simulateur', icon: Calculator },
+        { key: 'cards', label: t('plans.cards', 'Plans'), icon: Package },
+        { key: 'compare', label: t('plans.compare', 'Comparer'), icon: Shield },
+        { key: 'simulator', label: t('plans.simulator', 'Simuler'), icon: Calculator },
     ];
 
     return (
-        <div className="p-6 space-y-6">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-foreground">Plans d'abonnement</h1>
-                    <p className="text-muted-foreground mt-1">
-                        Découvrez nos offres, comparez les fonctionnalités et simulez votre tarif
+        <div className="space-y-0">
+            {/* ─── Sticky Header ─── */}
+            <header className="sticky top-0 z-30 border-b border-[var(--color-bordure)] bg-[var(--color-surface)]/95 backdrop-blur-sm">
+                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+                    <div className="flex items-center gap-4">
+                        <h1 className="text-lg font-bold text-[var(--color-texte)]">
+                            {t('plans.pageTitle', 'Nos Plans')}
+                        </h1>
+                        {abonnement?.plan && (
+                            <span className="hidden items-center gap-2 rounded-full bg-[var(--color-dominante)]/10 px-3 py-1 text-xs font-medium text-[var(--color-dominante)] sm:flex">
+                                {abonnement.plan.nom}
+                                <span className="text-[var(--color-texte-secondaire)]">•</span>
+                                <span className="text-[var(--color-texte-secondaire)]">{abonnement.statut}</span>
+                            </span>
+                        )}
+                    </div>
+
+                    {/* View mode switcher */}
+                    <div className="flex gap-1 rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface-hover)]/30 p-1">
+                        {views.map((v) => {
+                            const Icon = v.icon;
+                            return (
+                                <button
+                                    key={v.key}
+                                    onClick={() => setViewMode(v.key)}
+                                    className={cn(
+                                        'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                                        viewMode === v.key
+                                            ? 'bg-[var(--color-surface)] text-[var(--color-texte)] shadow-sm'
+                                            : 'text-[var(--color-texte-muted)] hover:text-[var(--color-texte)]',
+                                    )}
+                                >
+                                    <Icon className="h-4 w-4" />
+                                    <span className="hidden sm:inline">{v.label}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            </header>
+
+            {/* ─── Hero Section ─── */}
+            <section className="bg-gradient-to-b from-[var(--color-dominante)]/5 to-transparent py-12 text-center">
+                <div className="mx-auto max-w-3xl px-4">
+                    <h2 className="text-3xl font-bold tracking-tight text-[var(--color-texte)] sm:text-4xl">
+                        {t('plans.hero.titre')}
+                    </h2>
+                    <p className="mt-3 text-lg text-[var(--color-texte-secondaire)]">
+                        {t('plans.hero.sousTitre')}
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-[var(--color-success-600)]">
+                        ✓ {t('plans.sansEngagement')}
                     </p>
                 </div>
+            </section>
 
-                {/* View mode switcher */}
-                <div className="flex gap-1 border rounded-lg p-1 bg-muted/30">
-                    {views.map((v) => {
-                        const Icon = v.icon;
-                        return (
-                            <button
-                                key={v.key}
-                                onClick={() => setViewMode(v.key)}
-                                className={cn(
-                                    'flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
-                                    viewMode === v.key
-                                        ? 'bg-background text-foreground shadow-sm'
-                                        : 'text-muted-foreground hover:text-foreground',
-                                )}
-                            >
-                                <Icon className="w-4 h-4" />
-                                {v.label}
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {/* Loading */}
-            {isLoading && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className="border rounded-xl p-6 animate-pulse space-y-4">
-                            <div className="h-6 bg-muted rounded w-1/3" />
-                            <div className="h-10 bg-muted rounded w-1/2" />
-                            <div className="space-y-2">
-                                {[1, 2, 3, 4].map((j) => (
-                                    <div key={j} className="h-4 bg-muted rounded" />
-                                ))}
+            {/* ─── Main Content ─── */}
+            <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+                {/* Loading */}
+                {isLoading && (
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="animate-pulse space-y-4 rounded-xl border border-[var(--color-bordure)] p-6">
+                                <div className="h-6 w-1/3 rounded bg-[var(--color-surface-hover)]" />
+                                <div className="h-10 w-1/2 rounded bg-[var(--color-surface-hover)]" />
+                                <div className="space-y-2">
+                                    {[1, 2, 3, 4].map((j) => (
+                                        <div key={j} className="h-4 rounded bg-[var(--color-surface-hover)]" />
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+                        ))}
+                    </div>
+                )}
 
-            {/* Content */}
-            {!isLoading && (
-                <AnimatePresence mode="wait">
-                    {viewMode === 'cards' && (
-                        <motion.div
-                            key="cards"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <PlansCatalogue plans={plans || []} abonnement={abonnement} />
-                        </motion.div>
-                    )}
-                    {viewMode === 'compare' && (
-                        <motion.div
-                            key="compare"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <PlansComparison plans={plans || []} />
-                        </motion.div>
-                    )}
-                    {viewMode === 'simulator' && (
-                        <motion.div
-                            key="simulator"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <PlanSimulator />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            )}
+                {/* Content */}
+                {!isLoading && (
+                    <AnimatePresence mode="wait">
+                        {viewMode === 'cards' && (
+                            <motion.div
+                                key="cards"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.2 }}
+                                className="space-y-12"
+                            >
+                                {/* Plans Grid */}
+                                <TarifsPreview
+                                    plans={plans || []}
+                                    mode="tenant"
+                                    selectedPlanId={selectedPlanId}
+                                    onPlanSelect={setSelectedPlanId}
+                                    showComparison={false}
+                                />
+
+                                {/* Upgrade CTA */}
+                                {selectedPlanId && (
+                                    <PlanUpgradeCTA
+                                        planId={selectedPlanId}
+                                        plans={plans || []}
+                                        currentPlanId={abonnement?.plan?.id}
+                                    />
+                                )}
+
+                                {/* Packs Quota */}
+                                <PacksSection />
+
+                                {/* Code Promo */}
+                                <div className="mx-auto max-w-md">
+                                    <CodePromoInput
+                                        onCodeApplique={(code, remise) => {
+                                            toast.success(`Code ${code} appliqué !`);
+                                        }}
+                                    />
+                                </div>
+                            </motion.div>
+                        )}
+                        {viewMode === 'compare' && (
+                            <motion.div
+                                key="compare"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <ComparisonTable plans={plans || []} />
+                            </motion.div>
+                        )}
+                        {viewMode === 'simulator' && (
+                            <motion.div
+                                key="simulator"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <PlanSimulator />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                )}
+            </main>
+
+            {/* ─── FAQ Section ─── */}
+            <section className="border-t border-[var(--color-bordure)] bg-[var(--color-surface)]/50 py-12">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6">
+                    <FAQSection />
+                </div>
+            </section>
+
+            {/* ─── Trust Badges ─── */}
+            <section className="border-t border-[var(--color-bordure)]">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6">
+                    <TrustBadges />
+                </div>
+            </section>
         </div>
     );
 }
 
 // =============================================
-// Catalogue View — Plan Cards
+// Plan Upgrade CTA
 // =============================================
 
-function PlansCatalogue({ plans, abonnement }: { plans: Plan[]; abonnement: AbonnementActuel | null | undefined }) {
-    const queryClient = useQueryClient();
+function PlanUpgradeCTA({ planId, plans, currentPlanId }: { planId: string; plans: Plan[]; currentPlanId?: string }) {
+    const { t } = useTranslation('billing');
+    const plan = plans.find(p => p.id === planId);
+    const isCurrentPlan = planId === currentPlanId;
 
-    const upgradeMutation = useMutation({
-        mutationFn: async (planId: string) => {
-            const res = await apiClient.patch('/api/billing/abonnement/upgrade', { nouveauPlanId: planId });
-            return res.data;
-        },
-    });
+    const upgradeMutation = useUpgradePlan();
 
-    const handleUpgrade = (planId: string) => {
+    const handleUpgrade = () => {
         upgradeMutation.mutate(planId, {
-            onSuccess: () => {
-                toast.success('Plan mis à jour avec succès');
-                queryClient.invalidateQueries({ queryKey: ['mon-abonnement'] });
-                queryClient.invalidateQueries({ queryKey: ['plans-catalogue'] });
-            },
-            onError: () => toast.error('Erreur lors du changement de plan'),
+            onSuccess: () => toast.success(t('plans.upgradeSucces', 'Plan mis à jour avec succès')),
+            onError: () => toast.error(t('plans.upgradeErreur', 'Erreur lors du changement de plan')),
         });
     };
 
-    const currentPlanId = abonnement?.plan?.id;
+    if (!plan) return null;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {plans.map((plan) => {
-                const colors = getPlanColor(plan.slug);
-                const Icon = getPlanIcon(plan.slug);
-                const isCurrentPlan = plan.id === currentPlanId;
-
-                return (
-                    <motion.div
-                        key={plan.id}
-                        whileHover={{ y: -4 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                        className={cn(
-                            'relative border rounded-xl p-6 space-y-5 transition-shadow',
-                            colors.border,
-                            isCurrentPlan && 'ring-2 ring-primary shadow-lg',
-                        )}
-                    >
-                        {/* Badge actuel */}
-                        {isCurrentPlan && (
-                            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                                <span className="bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full shadow">
-                                    Plan actuel
-                                </span>
-                            </div>
-                        )}
-
-                        {/* Badge plan */}
-                        {plan.badge && !isCurrentPlan && (
-                            <div className="absolute -top-3 right-4">
-                                <span className={cn('text-xs font-bold px-3 py-1 rounded-full', colors.badge)}>
-                                    {plan.badge}
-                                </span>
-                            </div>
-                        )}
-
-                        {/* Header */}
-                        <div className="flex items-center gap-3">
-                            <div className={cn('p-2.5 rounded-xl', colors.bg)}>
-                                <Icon className={cn('w-6 h-6', colors.text)} />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold">{plan.nom}</h3>
-                                {plan.description && (
-                                    <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{plan.description}</p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Prix */}
-                        <div className="flex items-baseline gap-1">
-                            <span className="text-3xl font-bold">{formatPrix(plan.prixBase, plan.devise)}</span>
-                            <span className="text-sm text-muted-foreground">/mois</span>
-                        </div>
-
-                        {/* Capacité */}
-                        <div className="flex items-center gap-2 text-sm">
-                            <Users className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-muted-foreground">Jusqu'à</span>
-                            <span className="font-semibold">{plan.maxEleves}</span>
-                            <span className="text-muted-foreground">élèves</span>
-                            {plan.maxEleves === 999999 && <span className="text-muted-foreground">(illimité)</span>}
-                        </div>
-
-                        {/* Modules inclus */}
-                        <div className="space-y-2">
-                            <h4 className="text-sm font-semibold flex items-center gap-2">
-                                <Sparkles className="w-4 h-4" />
-                                Modules inclus
-                            </h4>
-                            <div className="space-y-1.5">
-                                {plan.modulesInclus.slice(0, 6).map((module) => (
-                                    <div key={module} className="flex items-center gap-2 text-sm">
-                                        <Check className={cn('w-3.5 h-3.5 shrink-0', colors.text)} />
-                                        <span className="text-muted-foreground">{module}</span>
-                                    </div>
-                                ))}
-                                {plan.modulesInclus.length > 6 && (
-                                    <p className="text-xs text-muted-foreground pl-5">
-                                        + {plan.modulesInclus.length - 6} autre{plan.modulesInclus.length - 6 > 1 ? 's' : ''}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Tranches tarifaires */}
-                        {plan.tranches && plan.tranches.length > 0 && (
-                            <div className="space-y-2 pt-2 border-t">
-                                <h4 className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                                    <Info className="w-3 h-3" />
-                                    Tranches supplémentaires
-                                </h4>
-                                {plan.tranches.slice(0, 3).map((tranche) => (
-                                    <div key={tranche.id} className="flex justify-between text-xs text-muted-foreground">
-                                        <span>{tranche.label || `${tranche.minEleves}+ élèves`}</span>
-                                        <span className="font-mono">+{formatPrix(tranche.montantSupplementaire, plan.devise)}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* CTA */}
-                        <button
-                            onClick={() => !isCurrentPlan && handleUpgrade(plan.id)}
-                            disabled={isCurrentPlan || upgradeMutation.isPending}
-                            className={cn(
-                                'w-full py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2',
-                                isCurrentPlan
-                                    ? 'bg-muted text-muted-foreground cursor-default'
-                                    : `bg-primary text-primary-foreground hover:opacity-90 ${upgradeMutation.isPending ? 'opacity-50' : ''}`,
-                            )}
-                        >
-                            {isCurrentPlan ? (
-                                <Check className="w-4 h-4" />
-                            ) : (
-                                <>
-                                    Choisir {plan.nom}
-                                    <ArrowRight className="w-4 h-4" />
-                                </>
-                            )}
-                        </button>
-                    </motion.div>
-                );
-            })}
-
-            {plans.length === 0 && (
-                <div className="col-span-full text-center py-12 space-y-3">
-                    <Package className="w-12 h-12 mx-auto text-muted-foreground/50" />
-                    <p className="text-muted-foreground">Aucun plan disponible pour le moment</p>
-                    <p className="text-sm text-muted-foreground">Contactez l'administrateur de la plateforme</p>
+        <div className="sticky bottom-4 rounded-xl border border-[var(--color-dominante)]/30 bg-[var(--color-surface)] p-6 shadow-lg">
+            <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+                <div>
+                    <h3 className="text-lg font-bold text-[var(--color-texte)]">
+                        {plan.nom}
+                    </h3>
+                    <p className="text-sm text-[var(--color-texte-secondaire)]">
+                        {plan.entitlements?.modules?.length ?? 0} {t('plans.modulesInclus', 'modules inclus')}
+                        {plan.essai?.autorise && ` — ${t('plans.essaiJours', { count: plan.essai.dureeJours })}`}
+                    </p>
                 </div>
-            )}
-        </div>
-    );
-}
-
-// =============================================
-// Comparison View — Feature Matrix
-// =============================================
-
-function PlansComparison({ plans }: { plans: Plan[] }) {
-    const [showAllModules, setShowAllModules] = useState(false);
-
-    // Collecter tous les modules uniques
-    const allModules = useMemo(() => {
-        const modules = new Set<string>();
-        plans.forEach((p) => p.modulesInclus.forEach((m) => modules.add(m)));
-        return Array.from(modules);
-    }, [plans]);
-
-    const displayedModules = showAllModules ? allModules : allModules.slice(0, 10);
-
-    return (
-        <div className="border rounded-xl overflow-hidden">
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="bg-muted/30">
-                            <th className="text-left p-4 font-semibold min-w-[200px]">Fonctionnalité</th>
-                            {plans.map((plan) => {
-                                const colors = getPlanColor(plan.slug);
-                                return (
-                                    <th key={plan.id} className={cn('p-4 text-center min-w-[160px]', colors.bg)}>
-                                        <div className="space-y-1">
-                                            <div className={cn('font-bold', colors.text)}>{plan.nom}</div>
-                                            <div className="text-xs text-muted-foreground">
-                                                {formatPrix(plan.prixBase, plan.devise)}/mois
-                                            </div>
-                                        </div>
-                                    </th>
-                                );
-                            })}
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                        {/* Capacité élèves */}
-                        <tr className="hover:bg-muted/20">
-                            <td className="p-4 font-medium">Nombre d'élèves max</td>
-                            {plans.map((plan) => (
-                                <td key={plan.id} className="p-4 text-center font-mono">
-                                    {plan.maxEleves >= 999999 ? 'Illimité' : plan.maxEleves}
-                                </td>
-                            ))}
-                        </tr>
-
-                        {/* Nombre de modules */}
-                        <tr className="hover:bg-muted/20">
-                            <td className="p-4 font-medium">Modules inclus</td>
-                            {plans.map((plan) => (
-                                <td key={plan.id} className="p-4 text-center font-semibold">
-                                    {plan.modulesInclus.length}
-                                </td>
-                            ))}
-                        </tr>
-
-                        {/* Tranches tarifaires */}
-                        <tr className="hover:bg-muted/20">
-                            <td className="p-4 font-medium">Tranches tarifaires</td>
-                            {plans.map((plan) => (
-                                <td key={plan.id} className="p-4 text-center">
-                                    {plan.tranches && plan.tranches.length > 0 ? (
-                                        <span className="text-foreground">{plan.tranches.length}</span>
-                                    ) : (
-                                        <span className="text-muted-foreground">—</span>
-                                    )}
-                                </td>
-                            ))}
-                        </tr>
-
-                        {/* Modules détaillés */}
-                        {displayedModules.map((module) => (
-                            <tr key={module} className="hover:bg-muted/20">
-                                <td className="p-4 text-muted-foreground">{module}</td>
-                                {plans.map((plan) => (
-                                    <td key={plan.id} className="p-4 text-center">
-                                        {plan.modulesInclus.includes(module) ? (
-                                            <Check className="w-4 h-4 text-emerald-500 mx-auto" />
-                                        ) : (
-                                            <XIcon className="w-4 h-4 text-muted-foreground/40 mx-auto" />
-                                        )}
-                                    </td>
-                                ))}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                <div className="flex items-center gap-4">
+                    <ElisaButton
+                        onClick={handleUpgrade}
+                        disabled={isCurrentPlan || upgradeMutation.isPending}
+                        isLoading={upgradeMutation.isPending}
+                        variant={isCurrentPlan ? 'outline' : 'primary'}
+                        icon={!isCurrentPlan && !upgradeMutation.isPending ? <ArrowRight className="h-4 w-4" /> : undefined}
+                    >
+                        {isCurrentPlan ? t('plans.planActuel') : t('plans.choisirCePlan', 'Choisir ce plan')}
+                    </ElisaButton>
+                </div>
             </div>
-
-            {/* Show more modules */}
-            {allModules.length > 10 && (
-                <div className="border-t p-3 text-center">
-                    <button
-                        onClick={() => setShowAllModules(!showAllModules)}
-                        className="flex items-center gap-1 text-sm text-primary hover:underline mx-auto"
-                    >
-                        {showAllModules ? (
-                            <>
-                                Voir moins <ChevronUp className="w-4 h-4" />
-                            </>
-                        ) : (
-                            <>
-                                Voir {allModules.length - 10} modules de plus <ChevronDown className="w-4 h-4" />
-                            </>
-                        )}
-                    </button>
-                </div>
-            )}
         </div>
     );
 }
 
 export default PlansPage;
+
+// =============================================
+// Tableau comparatif avancé
+// =============================================
+
+function ComparisonTable({ plans }: { plans: Plan[] }) {
+    const { t } = useTranslation('billing');
+
+    const features = [
+        { key: 'eleves', label: t('plans.compare.eleves', 'Élèves inclus'), format: (p: Plan) => p.quotas?.eleves === 0 ? '∞' : String(p.quotas?.eleves ?? 0) },
+        { key: 'utilisateurs', label: t('plans.compare.utilisateurs', 'Utilisateurs'), format: (p: Plan) => p.quotas?.utilisateurs === 0 ? '∞' : String(p.quotas?.utilisateurs ?? 0) },
+        { key: 'classes', label: t('plans.compare.classes', 'Classes'), format: (p: Plan) => p.quotas?.classes === 0 ? '∞' : String(p.quotas?.classes ?? 0) },
+        { key: 'stockage', label: t('plans.compare.stockage', 'Stockage (Go)'), format: (p: Plan) => p.quotas?.stockageGo === 0 ? '∞' : String(p.quotas?.stockageGo ?? 0) },
+        { key: 'sms', label: t('plans.compare.sms', 'SMS/mois'), format: (p: Plan) => p.quotas?.sms === 0 ? '∞' : String(p.quotas?.sms ?? 0) },
+        { key: 'modules', label: t('plans.compare.modules', 'Modules inclus'), format: (p: Plan) => String(p.entitlements?.modules?.length ?? 0) },
+        { key: 'fonctionnalites', label: t('plans.compare.fonctionnalites', 'Fonctionnalités'), format: (p: Plan) => String(p.entitlements?.fonctionnalites?.length ?? 0) },
+        { key: 'prixEleve', label: t('plans.compare.prixEleve', 'Prix / élève sup.'), format: (p: Plan) => Number(p.tarification?.prixParEleve) > 0 ? `${formatPrix(Number(p.tarification?.prixParEleve))} F` : '—' },
+        { key: 'essai', label: t('plans.compare.essai', 'Essai gratuit'), format: (p: Plan) => p.essai?.autorise ? `${p.essai.dureeJours}j` : '—' },
+        { key: 'cycles', label: t('plans.compare.cycles', 'Cycles autorisés'), format: (p: Plan) => (p.cyclesAutorises ?? []).map((c: string) => c === 'MENSUEL' ? 'M' : c === 'TRIMESTRIEL' ? 'T' : c === 'SEMESTRIEL' ? 'S' : 'A').join('/') },
+    ];
+
+    const plansSorted = [...plans].sort((a, b) => (a.rang ?? 0) - (b.rang ?? 0));
+
+    return (
+        <div className="overflow-x-auto rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)]">
+            <table className="w-full text-sm">
+                <thead>
+                    <tr className="border-b border-[var(--color-bordure)]">
+                        <th className="px-4 py-3 text-left font-medium text-[var(--color-texte-secondaire)]">
+                            {t('plans.compare.caracteristique', 'Caractéristique')}
+                        </th>
+                        {plansSorted.map((p) => (
+                            <th key={p.id} className="px-4 py-3 text-center">
+                                <div className="font-bold text-[var(--color-texte)]">{p.nom}</div>
+                                <div className="text-xs font-normal text-[var(--color-texte-secondaire)]">
+                                    {formatPrix(Number(p.prixBase))} F/mois
+                                </div>
+                            </th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {features.map((f) => (
+                        <tr key={f.key} className="border-b border-[var(--color-bordure)]/50 hover:bg-[var(--color-surface-hover)]">
+                            <td className="px-4 py-3 font-medium text-[var(--color-texte)]">{f.label}</td>
+                            {plansSorted.map((p) => {
+                                const val = f.format(p);
+                                const isInfinity = val === '∞';
+                                const isDash = val === '—';
+                                return (
+                                    <td key={p.id} className="px-4 py-3 text-center">
+                                        <span className={cn(
+                                            'text-sm',
+                                            isInfinity && 'font-semibold text-[var(--color-success-600)]',
+                                            isDash && 'text-[var(--color-texte-muted)]',
+                                            !isInfinity && !isDash && 'font-medium text-[var(--color-texte)]',
+                                        )}>
+                                            {val}
+                                        </span>
+                                    </td>
+                                );
+                            })}
+                        </tr>
+                    ))}
+                    {/* Ligne modules détaillés */}
+                    <tr className="border-b border-[var(--color-bordure)]/50">
+                        <td className="px-4 py-3 font-medium text-[var(--color-texte)]">
+                            {t('plans.compare.exportPdf', 'Export PDF')}
+                        </td>
+                        {plansSorted.map((p) => (
+                            <td key={p.id} className="px-4 py-3 text-center">
+                                {p.entitlements?.fonctionnalites?.includes('export_pdf')
+                                    ? <Check className="mx-auto h-4 w-4 text-[var(--color-success-600)]" />
+                                    : <X className="mx-auto h-4 w-4 text-[var(--color-texte-muted)]" />}
+                            </td>
+                        ))}
+                    </tr>
+                    <tr className="border-b border-[var(--color-bordure)]/50">
+                        <td className="px-4 py-3 font-medium text-[var(--color-texte)]">
+                            {t('plans.compare.apiRest', 'API REST')}
+                        </td>
+                        {plansSorted.map((p) => (
+                            <td key={p.id} className="px-4 py-3 text-center">
+                                {p.entitlements?.fonctionnalites?.includes('api_rest')
+                                    ? <Check className="mx-auto h-4 w-4 text-[var(--color-success-600)]" />
+                                    : <X className="mx-auto h-4 w-4 text-[var(--color-texte-muted)]" />}
+                            </td>
+                        ))}
+                    </tr>
+                    <tr className="border-b border-[var(--color-bordure)]/50">
+                        <td className="px-4 py-3 font-medium text-[var(--color-texte)]">
+                            {t('plans.compare.sso', 'SSO / White Label')}
+                        </td>
+                        {plansSorted.map((p) => (
+                            <td key={p.id} className="px-4 py-3 text-center">
+                                {p.entitlements?.fonctionnalites?.includes('sso')
+                                    ? <Check className="mx-auto h-4 w-4 text-[var(--color-success-600)]" />
+                                    : <X className="mx-auto h-4 w-4 text-[var(--color-texte-muted)]" />}
+                            </td>
+                        ))}
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    );
+}

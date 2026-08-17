@@ -9,7 +9,7 @@
  * Phase 4.4 — Refonte SaaS
  */
 
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { logger } from '@common/utils/logger.util';
 import { FeatureFlagTenant } from '../entities';
@@ -63,29 +63,29 @@ export class FeatureFlagService {
             return override.enabled;
         }
 
-        // 2. Vérifier les flags du plan d'abonnement
+        // 2. Vérifier les flags du plan d'abonnement (I4 v3 : ACTIF + ESSAI)
         const abonnement = await this.abonnementRepo.findOne({
             where: {
                 etablissementId,
-                statut: StatutAbonnement.ACTIF,
+                statut: In([StatutAbonnement.ACTIF, StatutAbonnement.ESSAI]),
             },
             relations: ['plan'],
         });
 
-        if (abonnement?.plan?.featureFlags) {
-            const planFlag = abonnement.plan.featureFlags[flagName];
-            if (planFlag !== undefined) {
-                this.setCache(cacheKey, planFlag);
-                return planFlag;
+        if (abonnement?.plan?.entitlements?.fonctionnalites) {
+            // Refonte v3 : fonctionnalités listées dans entitlements JSONB
+            if (abonnement.plan.entitlements.fonctionnalites.includes(flagName)) {
+                this.setCache(cacheKey, true);
+                return true;
             }
         }
 
         // 3. Vérifier les modules inclus du plan
-        if (abonnement?.plan?.modulesInclus) {
+        if (abonnement?.plan?.entitlements?.modules) {
             // Les modules inclus activent automatiquement les flags associés
-            // Ex: si 'transport' est dans modulesInclus, alors 'module_transport' = true
+            // Ex: si 'transport' est dans entitlements.modules, alors 'module_transport' = true
             const moduleFlag = flagName.replace('module_', '');
-            if (abonnement.plan.modulesInclus.includes(moduleFlag)) {
+            if (abonnement.plan.entitlements.modules.includes(moduleFlag)) {
                 this.setCache(cacheKey, true);
                 return true;
             }
@@ -102,23 +102,25 @@ export class FeatureFlagService {
     async getAllFlags(etablissementId: string): Promise<Record<string, boolean>> {
         const result: Record<string, boolean> = {};
 
-        // Récupérer l'abonnement et le plan
+        // Récupérer l'abonnement et le plan (I4 v3 : ACTIF + ESSAI)
         const abonnement = await this.abonnementRepo.findOne({
             where: {
                 etablissementId,
-                statut: StatutAbonnement.ACTIF,
+                statut: In([StatutAbonnement.ACTIF, StatutAbonnement.ESSAI]),
             },
             relations: ['plan'],
         });
 
-        // Flags du plan
-        if (abonnement?.plan?.featureFlags) {
-            Object.assign(result, abonnement.plan.featureFlags);
+        // Flags du plan (Refonte v3 : entitlements.fonctionnalites)
+        if (abonnement?.plan?.entitlements?.fonctionnalites) {
+            for (const cle of abonnement.plan.entitlements.fonctionnalites) {
+                result[cle] = true;
+            }
         }
 
-        // Modules inclus
-        if (abonnement?.plan?.modulesInclus) {
-            for (const module of abonnement.plan.modulesInclus) {
+        // Modules inclus (Refonte v3 : entitlements.modules)
+        if (abonnement?.plan?.entitlements?.modules) {
+            for (const module of abonnement.plan.entitlements.modules) {
                 result[`module_${module}`] = true;
             }
         }
@@ -341,7 +343,7 @@ export class FeatureFlagService {
 
         // Récupérer les infos de l'établissement pour évaluer les règles
         const abonnement = await this.abonnementRepo.findOne({
-            where: { etablissementId, statut: StatutAbonnement.ACTIF },
+            where: { etablissementId, statut: In([StatutAbonnement.ACTIF, StatutAbonnement.ESSAI]) },
             relations: ['plan'],
         });
 

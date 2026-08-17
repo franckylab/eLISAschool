@@ -43,7 +43,11 @@ const STRICT_MODE = process.env.STRICT_TENANT_ISOLATION === 'true'
 const GLOBAL_ENTITIES = new Set([
     'ParametreSysteme',
     'PlanAbonnement',
-    'TrancheEleves',
+    // Refonte v3 (migration 213) — commerce configurable global
+    'CycleFacturationConfig',
+    'RemiseAbonnement',
+    'PackQuota',
+    'StrategieExpiration',
     'AbonnementClient',
     'ModuleRegistry',
     'AuditLog',

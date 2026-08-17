@@ -9,7 +9,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import ProvidersPaiementPage from '@/features/admin/components/providers-paiement-page';
+import ProvidersPaiementPage from '@/features/platform/components/providers-paiement-page';
 
 function PlatformProvidersPage() {
     return (

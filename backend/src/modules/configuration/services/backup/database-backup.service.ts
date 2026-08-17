@@ -41,7 +41,7 @@ const TENANT_TABLES = [
     'paiements',
     'parametres_systeme',
     'abonnements_client',
-    'usage_meters',
+    'usage_unifie',
     'transactions_ledger',
 ];
 

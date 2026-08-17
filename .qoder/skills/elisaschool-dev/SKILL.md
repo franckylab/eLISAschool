@@ -2254,3 +2254,124 @@ defineAbility(ctx: { id, role, etablissementId? }) → AppAbility
 // SUPER_ADMIN, PLATEFORME_ADMIN, PLATEFORME_SUPPORT,
 // PLATEFORME_BILLING, PLATEFORME_ANALYST, PLATEFORME_AUDITOR
 ```
+
+---
+
+## Workflow : Billing API — Endpoints packs, coupons et abonnements (v3.1)
+
+### Contexte
+
+La refonte Billing v3.1 a ajouté 4 nouveaux endpoints client et corrigé le moteur de remises. Cette section documente les patterns de développement pour ces endpoints.
+
+### Nouveaux endpoints (v3.1)
+
+#### `GET /api/billing/remises/verify?code=XXX`
+Vérifie la validité d'un code coupon/promo avant application.
+
+```typescript
+// Controller : billing.controller.ts → clientBillingRouter
+// Logique :
+// 1. Trim du code
+// 2. Recherche remise par code (where: { code, actif: true })
+// 3. Vérification dates (dateDebut <= now <= dateFin)
+// 4. Vérification maxUtilisations vs nombreUtilisations
+// 5. Retour : { valide, remise: { code, nom, typeRemise, valeur } }
+```
+
+#### `GET /api/billing/mon-abonnement/detail`
+Retourne l'abonnement complet avec packs, remises et quotas effectifs.
+
+```typescript
+// Controller : billing.controller.ts → clientBillingRouter
+// Logique :
+// 1. Récupérer AbonnementClient par etablissementId
+// 2. Joindre planId → PlanAbonnement
+// 3. Joindre packsSouscrits → PackQuotaSouscrit (où dateFin > now)
+// 4. Joindre remisesActives → RemiseAbonnement (via cible TENANT)
+// 5. Calculer quotasEffectifs = quotas plan + sum(packs)
+// 6. Retour : { abonnement, plan, packsSouscrits, remisesActives, quotasEffectifs }
+```
+
+#### `GET /api/billing/packs`
+Liste les packs quota disponibles à l'achat.
+
+```typescript
+// Logique : findAll({ actif: true }) sur PackQuota entity
+// Tri par ressource puis prix croissant
+```
+
+#### `POST /api/billing/packs/:id/souscrire`
+Achat d'un pack quota avec calcul prorata.
+
+```typescript
+// Logique :
+// 1. Récupérer le pack par id
+// 2. Calculer prorata via packQuotaService.calculerProrata()
+// 3. Créer PackQuotaSouscrit avec dateFin calculée
+// 4. Mettre à jour les quotas de l'abonnement
+```
+
+### Pattern de contexte remise
+
+Pour tout endpoint qui applique des remises, enrichir le `ContexteApplicationRemise` :
+
+```typescript
+import { ContexteApplicationRemise } from '@modules/billing/services/remise.service';
+
+const contexte: ContexteApplicationRemise = {
+    planId: abonnement.planId,
+    etablissementId: req.etablissementId,
+    cycleCode: cycle.code,
+    nombreEleves: await compterElevesActifs(req.etablissementId),
+    dateDebutAbonnement: abonnement.dateDebut,
+    dateFinAbonnement: abonnement.dateFin,
+};
+const resultat = await remiseService.appliquer(montant, contexte);
+// resultat.montantFinal ← montant après remises (plafond 40% appliqué)
+```
+
+### Migration 214 — Colonnes conditionnelles
+
+```sql
+-- backend/database/migrations/214-remise-conditions-plafond.sql
+ALTER TABLE remises_abonnement ADD COLUMN condition_eleves_min INTEGER;
+ALTER TABLE remises_abonnement ADD COLUMN condition_anciennete_mois INTEGER;
+```
+
+**Entité** : les colonnes sont déjà déclarées dans `RemiseAbonnement` entity avec `@Column({ nullable: true })`.
+
+### Tests unitaires
+
+**Fichier** : `backend/test/unit/remise-plafond.spec.ts`
+
+Pattern de test pour le moteur de remises :
+```typescript
+describe('RemiseService v3.1', () => {
+    it('plafond 40% — cumul écrêté', async () => {
+        const remises = [/* 20% + 15% + 10% = 45% → plafonné à 40% */];
+        const resultat = await remiseService.appliquer(100000, contexte);
+        expect(resultat.montantFinal).toBe(60000); // 40% de déduction max
+    });
+
+    it('filtrage volume — 500 élèves requis', async () => {
+        const ctx = { nombreEleves: 300 }; // < 500
+        // VOL-500 ne doit PAS s'appliquer
+    });
+
+    it('filtrage fidélité — 12 mois d'ancienneté', async () => {
+        const ctx = { dateDebutAbonnement: new Date('2025-06-01') };
+        // FID-12M ne doit PAS s'appliquer si < 12 mois
+    });
+});
+```
+
+### Fichiers de référence
+
+| Fichier | Rôle |
+|---------|------|
+| `billing.controller.ts` | Routes client + plateforme |
+| `remise.service.ts` | Moteur remises v3.1 (filtrage + plafond) |
+| `pack-quota.service.ts` | Calcul prorata cycle réel |
+| `facturation.service.ts` | Orchestration + contexte enrichi |
+| `cron-jobs.ts` | cronNotificationsExpiration (J-7, J-3, J-1) |
+| `214-remise-conditions-plafond.sql` | Migration colonnes |

@@ -22,6 +22,7 @@ import { errorHandler } from '@common/filters/error.filter';
 import { notFoundHandler } from '@common/filters/not-found.filter';
 import { requestLogger } from '@common/interceptors/request-logger.interceptor';
 import { tenantMiddleware } from '@common/middlewares/tenant.middleware';
+import { requirePlanActif } from '@common/middlewares/plan-actif.middleware';
 import { tenantRateLimitMiddleware } from '@common/middlewares/rate-limit.middleware';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from '@config/swagger.config';
@@ -414,6 +415,15 @@ export function createApp(): Application {
     // Phase 3 — Defense-in-depth. Filtrage automatique par etablissementId au niveau DB.
     app.use('/api/', rlsMiddleware);
     app.use('/api/', rlsTransactionEnd);
+
+    // [Hard-gate v3] Exige un plan d'abonnement ACTIF ou ESSAI pour tout accès tenant.
+    // Les routes critiques (auth, config, notifications, utilisateurs) et billing (souscription) sont exemptées.
+    // SUPER_ADMIN et utilisateurs non authentifiés transitent sans blocage.
+    app.use('/api/', requirePlanActif([
+        '/auth', '/configuration', '/notifications', '/notification-providers',
+        '/utilisateurs', '/preferences', '/billing', '/backups',
+        '/platform', '/audit', '/types-enum',
+    ]));
 
     // Désactiver le cache navigateur pour les routes API (React Query gère le cache applicatif)
     app.use('/api/', (req, res, next) => {

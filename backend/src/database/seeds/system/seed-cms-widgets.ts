@@ -70,7 +70,7 @@ export async function seedCmsWidgets(): Promise<{ created: number; skipped: numb
             const widget = widgetRepo.create({
                 ...widgetDef,
                 etablissementId: etab.id,
-                estActif: true,
+                actif: true,
                 ordre: DEFAULT_WIDGETS.indexOf(widgetDef) + 1,
             });
             await widgetRepo.save(widget);

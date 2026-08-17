@@ -5,16 +5,17 @@
  * [Phase 4.2] Service dédié aux alertes de consommation de quotas.
  * Alertes à 80% (warning), 90% (critique), 100% (blocage).
  * Notification admin établissement (email + in-app).
+ * Refonte v3 (migration 213) : lecture via usage_unifie + quota effectif (plan + packs).
  */
 
 import { Repository } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { logger } from '@common/utils/logger.util';
 import {
-    QuotaUtilisation,
     AbonnementClient,
     StatutAbonnement,
 } from '../entities';
+import { quotaService } from './quota.service';
 import { NotificationOrchestratorService } from '@modules/notifications/services/notification-orchestrator.service';
 
 // =============================================
@@ -52,7 +53,6 @@ const SEUILS_ALERTES = {
 // =============================================
 
 export class QuotaAlertService {
-    private quotaRepo: Repository<QuotaUtilisation>;
     private abonnementRepo: Repository<AbonnementClient>;
     private orchestrator: NotificationOrchestratorService;
 
@@ -63,7 +63,6 @@ export class QuotaAlertService {
     private readonly COOLDOWN_ALERTES = 60 * 60 * 1000;
 
     constructor(orchestrator?: NotificationOrchestratorService) {
-        this.quotaRepo = AppDataSource.getRepository(QuotaUtilisation);
         this.abonnementRepo = AppDataSource.getRepository(AbonnementClient);
         this.orchestrator = orchestrator ?? new NotificationOrchestratorService();
     }
@@ -73,17 +72,16 @@ export class QuotaAlertService {
      * Appelé périodiquement ou après une mise à jour de quota.
      */
     async verifierEtAlerter(etablissementId: string): Promise<ResultatVerification> {
-        const quotas = await this.quotaRepo.find({
-            where: { etablissementId },
-        });
+        // Refonte v3 : quotas résolus depuis usage_unifie + quota effectif (plan + packs)
+        const quotas = await quotaService.getQuotasEtablissement(etablissementId);
 
         const alertes: AlerteQuota[] = [];
         let alertesCritiques = 0;
 
         for (const quota of quotas) {
-            if (quota.limiteMax <= 0) continue; // Illimité
+            if (quota.limite <= 0) continue; // 0 = illimité
 
-            const pourcentage = (quota.utilisationActuelle / quota.limiteMax) * 100;
+            const pourcentage = quota.pourcentage;
 
             // Déterminer le seuil atteint
             let seuilAtteint = 0;
@@ -100,17 +98,17 @@ export class QuotaAlertService {
             if (seuilAtteint > 0) {
                 const alerte: AlerteQuota = {
                     etablissementId,
-                    typeQuota: quota.typeQuota,
+                    typeQuota: quota.ressource,
                     seuil: seuilAtteint,
-                    utilisation: quota.utilisationActuelle,
-                    limite: quota.limiteMax,
+                    utilisation: quota.utilisation,
+                    limite: quota.limite,
                     pourcentage: Math.round(pourcentage * 10) / 10,
                     bloquer: pourcentage >= SEUILS_ALERTES.BLOCAGE,
                 };
                 alertes.push(alerte);
 
                 // Envoyer la notification si pas déjà fait récemment
-                await this.envoyerAlerteSiNecessaire(alerte, quota);
+                await this.envoyerAlerteSiNecessaire(alerte);
             }
         }
 
@@ -175,7 +173,6 @@ export class QuotaAlertService {
      */
     private async envoyerAlerteSiNecessaire(
         alerte: AlerteQuota,
-        quota: QuotaUtilisation,
     ): Promise<void> {
         const cle = `${alerte.etablissementId}:${alerte.typeQuota}:${alerte.seuil}`;
         const dernierEnvoi = this.alertesEnvoyees.get(cle) || 0;
@@ -186,12 +183,6 @@ export class QuotaAlertService {
         }
 
         try {
-            // Mettre à jour le flag d'alerte sur le quota
-            if (alerte.seuil >= SEUILS_ALERTES.WARNING && !quota.alerte80pourcent) {
-                quota.alerte80pourcent = true;
-                await this.quotaRepo.save(quota);
-            }
-
             // Envoyer la notification via l'orchestrator
             const niveauLabel =
                 alerte.seuil >= SEUILS_ALERTES.BLOCAGE ? 'CRITIQUE — Quota atteint' :
@@ -224,15 +215,6 @@ export class QuotaAlertService {
      * Réinitialise les alertes d'un établissement (après upgrade de plan).
      */
     async reinitialiserAlertes(etablissementId: string): Promise<void> {
-        const quotas = await this.quotaRepo.find({
-            where: { etablissementId },
-        });
-
-        for (const quota of quotas) {
-            quota.alerte80pourcent = false;
-            await this.quotaRepo.save(quota);
-        }
-
         // Nettoyer le cache
         for (const [cle] of this.alertesEnvoyees) {
             if (cle.startsWith(`${etablissementId}:`)) {

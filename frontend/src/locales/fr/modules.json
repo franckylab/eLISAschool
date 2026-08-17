@@ -13,9 +13,8 @@
         "upgradables": "disponibles"
     },
     "categories": {
-        "BASE": "Base",
-        "PREMIUM": "Premium",
-        "ADDON": "Supplément"
+        "GRATUIT": "Gratuit",
+        "PAYANT": "Payant"
     },
     "statuts": {
         "ACTIF": "Actif",
@@ -25,7 +24,7 @@
         "EN_ATTENTE": "En attente"
     },
     "sources": {
-        "base": "Base",
+        "gratuit": "Gratuit",
         "essai": "Essai gratuit",
         "plan": "Inclus dans le plan",
         "groupe": "Override groupe",
@@ -34,9 +33,11 @@
         "override": "Override"
     },
     "raisons": {
-        "ABONNEMENT_INACTIF": "Abonnement requis",
+        "AUCUN_PLAN": "Aucun plan actif",
         "ABONNEMENT_EXPIRE": "Abonnement expiré",
-        "PLAN_INSUFFICIENT": "Plan insuffisant"
+        "PLAN_INSUFFICIENT": "Plan insuffisant",
+        "MODULE_DESACTIVE": "Module désactivé",
+        "DEGRADATION_ARCHIVE": "Données archivées"
     },
     "card": {
         "active": "Actif",

@@ -51,6 +51,7 @@ export enum TypeEvenement {
 }
 
 export enum CategoriePartenaire {
+    PARTENAIRE = 'PARTENAIRE',
     SPONSOR = 'SPONSOR',
     ASSOCIATION = 'ASSOCIATION',
     INSTITUTION = 'INSTITUTION',

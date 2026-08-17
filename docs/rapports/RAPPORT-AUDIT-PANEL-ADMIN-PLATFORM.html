@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit Panel Admin Platform — eLISAschool</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-2: #334155;
+  --border: #475569;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --accent: #3b82f6;
+  --accent-2: #8b5cf6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #06b6d4;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+header { text-align: center; padding: 3rem 0; border-bottom: 1px solid var(--border); margin-bottom: 3rem; }
+header h1 { font-size: 2.5rem; background: linear-gradient(135deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
+header .subtitle { color: var(--text-muted); font-size: 1.1rem; }
+header .meta { margin-top: 1rem; display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; }
+header .meta span { background: var(--surface); padding: 0.4rem 1rem; border-radius: 9999px; font-size: 0.85rem; border: 1px solid var(--border); }
+h2 { font-size: 1.8rem; margin: 3rem 0 1.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 0.75rem; }
+h2 .num { background: var(--accent); color: white; width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+h3 { font-size: 1.3rem; margin: 2rem 0 1rem; color: var(--accent); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-align: center; }
+.stat-card .value { font-size: 2.5rem; font-weight: 700; }
+.stat-card .label { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem; }
+.stat-card.danger .value { color: var(--danger); }
+.stat-card.warning .value { color: var(--warning); }
+.stat-card.success .value { color: var(--success); }
+.stat-card.info .value { color: var(--info); }
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+th { background: var(--surface-2); font-weight: 600; position: sticky; top: 0; }
+tr:hover { background: rgba(59,130,246,0.05); }
+.badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+.badge-danger { background: rgba(239,68,68,0.15); color: var(--danger); }
+.badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); }
+.badge-success { background: rgba(16,185,129,0.15); color: var(--success); }
+.badge-info { background: rgba(6,182,212,0.15); color: var(--info); }
+.severity-bar { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; margin-top: 0.5rem; }
+.severity-bar .fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+.toc { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem 2rem; margin-bottom: 3rem; }
+.toc h3 { margin-top: 0; }
+.toc ol { padding-left: 1.5rem; }
+.toc li { margin: 0.5rem 0; }
+.toc a { color: var(--accent); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+.mermaid { background: var(--surface); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; overflow-x: auto; }
+.redundancy-item { border-left: 3px solid var(--danger); padding-left: 1rem; margin: 1rem 0; }
+.redundancy-item.warning { border-left-color: var(--warning); }
+.redundancy-item.info { border-left-color: var(--info); }
+.proposal { background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.08)); border: 1px solid rgba(59,130,246,0.3); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+.phase { border: 1px solid var(--border); border-radius: 12px; margin: 1rem 0; overflow: hidden; }
+.phase-header { background: var(--surface-2); padding: 1rem 1.5rem; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+.phase-body { padding: 1.5rem; }
+.comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.comparison .before { border: 1px solid var(--danger); border-radius: 12px; padding: 1.5rem; }
+.comparison .after { border: 1px solid var(--success); border-radius: 12px; padding: 1.5rem; }
+.comparison h4 { margin-bottom: 1rem; }
+.comparison .before h4 { color: var(--danger); }
+.comparison .after h4 { color: var(--success); }
+code { background: var(--surface-2); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.85em; font-family: 'JetBrains Mono', monospace; }
+.chart-bar { display: flex; align-items: center; gap: 0.75rem; margin: 0.5rem 0; }
+.chart-bar .bar-label { width: 180px; font-size: 0.85rem; text-align: right; flex-shrink: 0; }
+.chart-bar .bar-track { flex: 1; height: 24px; background: var(--surface-2); border-radius: 6px; overflow: hidden; }
+.chart-bar .bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 0.5rem; font-size: 0.75rem; font-weight: 600; color: white; min-width: 2rem; }
+.question { background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.3); border-radius: 12px; padding: 1.5rem; margin: 1rem 0; }
+.question h4 { color: var(--accent-2); margin-bottom: 0.75rem; }
+.question ul { padding-left: 1.5rem; }
+.question li { margin: 0.4rem 0; }
+footer { text-align: center; padding: 3rem 0; border-top: 1px solid var(--border); margin-top: 3rem; color: var(--text-muted); }
+@media (max-width: 768px) {
+  .container { padding: 1rem; }
+  header h1 { font-size: 1.8rem; }
+  .comparison { grid-template-columns: 1fr; }
+  .chart-bar .bar-label { width: 100px; font-size: 0.75rem; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Audit Panel Administration Platform</h1>
+  <p class="subtitle">eLISAschool — Analyse approfondie, redondances et plan de restructuration</p>
+  <div class="meta">
+    <span>📅 2026-08-16</span>
+    <span>📊 10 groupes / 37 items</span>
+    <span>🔴 10 redondances critiques</span>
+    <span>📁 ~19,600 lignes frontend</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <h3>📋 Table des matières</h3>
+  <ol>
+    <li><a href="#resume">Résumé exécutif</a></li>
+    <li><a href="#architecture">Architecture actuelle</a></li>
+    <li><a href="#redondances">Matrice des redondances</a></li>
+    <li><a href="#distribution">Distribution du code</a></li>
+    <li><a href="#benchmarks">Benchmark vs meilleures pratiques SaaS</a></li>
+    <li><a href="#restructuration">Proposition de restructuration</a></li>
+    <li><a href="#composants">Plan d'extraction composants</a></li>
+    <li><a href="#decomposition">Décomposition fichiers massifs</a></li>
+    <li><a href="#migration">Plan de migration</a></li>
+    <li><a href="#recommandations">Recommandations détaillées</a></li>
+    <li><a href="#questions">Questions de validation</a></li>
+  </ol>
+</nav>
+
+<!-- 1. RESUME EXECUTIF -->
+<h2 id="resume"><span class="num">1</span> Résumé exécutif</h2>
+
+<div class="card-grid">
+  <div class="stat-card danger">
+    <div class="value">10</div>
+    <div class="label">Redondances critiques</div>
+  </div>
+  <div class="stat-card warning">
+    <div class="value">3,935</div>
+    <div class="label">Lignes fichier max</div>
+  </div>
+  <div class="stat-card info">
+    <div class="value">4</div>
+    <div class="label">Locations Feature Flags</div>
+  </div>
+  <div class="stat-card success">
+    <div class="value">6→4</div>
+    <div class="label">Groupes cibles (réduction)</div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Score de santé actuel</h3>
+  <table>
+    <tr><th>Dimension</th><th>Score</th><th>Problème principal</th></tr>
+    <tr>
+      <td>Séparation des responsabilités</td>
+      <td><span class="badge badge-danger">3/10</span></td>
+      <td>Feature Flags dans 4 pages, Groupes dans 2 pages</td>
+    </tr>
+    <tr>
+      <td>Cohérence navigation</td>
+      <td><span class="badge badge-danger">4/10</span></td>
+      <td>13 items sidebar pointent vers 4 routes avec ?tab=</td>
+    </tr>
+    <tr>
+      <td>Taille composants</td>
+      <td><span class="badge badge-danger">2/10</span></td>
+      <td>1 fichier à 3,935 lignes, 3 à >900 lignes</td>
+    </tr>
+    <tr>
+      <td>Réutilisabilité</td>
+      <td><span class="badge badge-warning">4/10</span></td>
+      <td>Card styling dupliqué 25+ fois, pas de shared Panel</td>
+    </tr>
+    <tr>
+      <td>Couplage cross-feature</td>
+      <td><span class="badge badge-warning">5/10</span></td>
+      <td>6 composants admin utilisés directement par platform</td>
+    </tr>
+    <tr>
+      <td>Routes mortes</td>
+      <td><span class="badge badge-warning">6/10</span></td>
+      <td>2 routes redirect-only, CommandPalette incomplet</td>
+    </tr>
+  </table>
+</div>
+
+<!-- 2. ARCHITECTURE ACTUELLE -->
+<h2 id="architecture"><span class="num">2</span> Architecture actuelle</h2>
+
+<h3>Structure du sidebar — 10 groupes, 37 items</h3>
+<div class="mermaid">
+graph TD
+    subgraph "🎯 Pilotage (3)"
+        A1[Dashboard]
+        A2[Revenus → redirect]
+        A3[Monitoring]
+    end
+    subgraph "🏢 Tenants (4)"
+        B1[Établissements]
+        B2[Groupes SaaS]
+        B3[Utilisateurs]
+        B4[Rôles]
+    end
+    subgraph "💰 Facturation (5)"
+        C1[Plans ?tab=plans]
+        C2[Abonnements ?tab=abonnements]
+        C3[Factures ?tab=factures]
+        C4[Providers]
+        C5[Remises]
+    end
+    subgraph "📦 Catalogue (4)"
+        D1[Modules ?tab=catalogue]
+        D2[Fonctionnalités]
+        D3[Packs Quota]
+        D4[Cycles Stratégies]
+    end
+    subgraph "🔒 Sécurité (4)"
+        E1[Audit]
+        E2[Approbations]
+        E3[Sessions]
+        E4[Paramètres Cascade]
+    end
+    subgraph "⚙️ Configuration (4)"
+        F1[Configuration 7 sections]
+        F2[Configuration Cascade]
+        F3[Notifications Config]
+        F4[Tarifs]
+    end
+    subgraph "🔔 Notifications (3)"
+        G1[Providers ?tab=providers]
+        G2[Templates ?tab=templates]
+        G3[Test ?tab=test]
+    end
+    subgraph "📊 Analytics (4)"
+        H1[Usage ?tab=usage]
+        H2[Health ?tab=health]
+        H3[Alertes ?tab=alertes]
+        H4[Export ?tab=export]
+    end
+    subgraph "💾 Sauvegardes (3)"
+        I1[Backup ?tab=backup]
+        I2[Historique ?tab=historique]
+        I3[Restore ?tab=restore]
+    end
+    subgraph "🐛 Debug (3)"
+        J1[Entitlements]
+        J2[API]
+        J3[Features]
+    end
+
+    style A2 fill:#ef4444,stroke:#ef4444,color:#fff
+    style F1 fill:#f59e0b,stroke:#f59e0b,color:#fff
+    style C1 fill:#f59e0b,stroke:#f59e0b,color:#fff
+</div>
+
+<div class="card">
+  <h3>🔗 Connexions croisées (redondances)</h3>
+  <div class="mermaid">
+  graph LR
+      FF[Feature Flags] --> L1["facturation?tab=flags"]
+      FF --> L2["configuration overlay"]
+      FF --> L3["fonctionnalités page"]
+      FF --> L4["plan-form-modal"]
+      
+      GR[Groupes SaaS] --> G1["/platform/groupes"]
+      GR --> G2["facturation?tab=groupes"]
+      
+      MOD[Modules] --> M1["modules?tab=catalogue"]
+      MOD --> M2["configuration ModulesTab"]
+      MOD --> M3["facturation PlansTab"]
+      
+      CAS[Cascade Params] --> C1["parametres-cascade"]
+      CAS --> C2["configuration-cascade"]
+      
+      SAU[Sauvegardes] --> S1["configuration?tab=backup"]
+      SAU --> S2["configuration?tab=historique"]
+      SAU --> S3["configuration?tab=restore"]
+      
+      NOT[Notifications] --> N1["notifications-config?tab=providers"]
+      NOT --> N2["configuration section notifications"]
+      
+      style FF fill:#ef4444,color:#fff
+      style GR fill:#f59e0b,color:#fff
+      style MOD fill:#f59e0b,color:#fff
+  </div>
+</div>
+
+<!-- 3. MATRICE REDONDANCES -->
+<h2 id="redondances"><span class="num">3</span> Matrice des redondances</h2>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Redondance</th>
+        <th>Locations</th>
+        <th>Sévérité</th>
+        <th>Impact</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>R1</td>
+        <td><strong>Feature Flags</strong> — 4 emplacements distincts</td>
+        <td>facturation FlagsTab, configuration overlay, fonctionnalités page, plan-form-modal</td>
+        <td><span class="badge badge-danger">CRITIQUE</span></td>
+        <td><div class="severity-bar"><div class="fill" style="width:95%;background:var(--danger)"></div></div></td>
+      </tr>
+      <tr>
+        <td>R2</td>
+        <td><strong>Groupes SaaS</strong> — page standalone + tab facturation</td>
+        <td>/platform/groupes, facturation?tab=groupes</td>
+        <td><span class="badge badge-danger">CRITIQUE</span></td>
+        <td><div class="severity-bar"><div class="fill" style="width:85%;background:var(--danger)"></div></div></td>
+      </tr>
+      <tr>
+        <td>R3</td>
+        <td><strong>Paramètres Cascade</strong> — 2 pages quasi-identiques</td>
+        <td>parametres-cascade, configuration-cascade</td>
+        <td><span class="badge badge-danger">CRITIQUE</span></td>
+        <td><div class="severity-bar"><div class="fill" style="width:80%;background:var(--danger)"></div></div></td>
+      </tr>
+      <tr>
+        <td>R4</td>
+        <td><strong>Modules</strong> — 3 emplacements de gestion</td>
+        <td>modules catalogue, configuration ModulesTab, facturation PlansTab</td>
+        <td><span class="badge badge-warning">HAUTE</span></td>
+        <td><div class="severity-bar"><div class="fill" style="width:75%;background:var(--warning)"></div></div></td>
+      </tr>
+      <tr>
+        <td>R5</td>
+        <td><strong>Facturation dispersée</strong> — 6+ routes</td>
+        <td>facturation, remises, packs-quota, cycles-strategies, providers, tarifs</td>
+        <td><span class="badge badge-warning">HAUTE</span></td>
+        <td><div class="severity-bar"><div class="fill" style="width:70%;background:var(--warning)"></div></div></td>
+      </tr>
+      <tr>
+        <td>R6</td>
+        <td><strong>Detail page shell</strong> — pattern copié 3 fois</td>
+        <td>etablissement-detail, utilisateur-detail, role-detail</td>
+        <td><span class="badge badge-warning">HAUTE</span></td>
+        <td><div class="severity-bar"><div class="fill" style="width:65%;background:var(--warning)"></div></div></td>
+      </tr>
+      <tr>
+        <td>R7</td>
+        <td><strong>Card styling</strong> — 25+ duplications</td>
+        <td>rounded-xl border border-gray-200... partout</td>
+        <td><span class="badge badge-info">MOYENNE</span></td>
+        <td><div class="severity-bar"><div class="fill" style="width:50%;background:var(--info)"></div></div></td>
+      </tr>
+      <tr>
+        <td>R8</td>
+        <td><strong>Fichier massif</strong> — 3,935 lignes</td>
+        <td>platform-etablissement-detail-page.tsx</td>
+        <td><span class="badge badge-danger">CRITIQUE</span></td>
+        <td><div class="severity-bar"><div class="fill" style="width:90%;background:var(--danger)"></div></div></td>
+      </tr>
+      <tr>
+        <td>R9</td>
+        <td><strong>Routes mortes</strong> — redirect-only</td>
+        <td>revenus.tsx, debug/index.tsx</td>
+        <td><span class="badge badge-info">MOYENNE</span></td>
+        <td><div class="severity-bar"><div class="fill" style="width:30%;background:var(--info)"></div></div></td>
+      </tr>
+      <tr>
+        <td>R10</td>
+        <td><strong>Configuration mega-page</strong> — 7 sections dont 4 ont des pages dédiées</td>
+        <td>modules, notifications, backups, feature flags dans configuration</td>
+        <td><span class="badge badge-danger">CRITIQUE</span></td>
+        <td><div class="severity-bar"><div class="fill" style="width:85%;background:var(--danger)"></div></div></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<h3>Carte de chaleur — Items sidebar vs routes réelles</h3>
+<div class="card">
+  <p style="color:var(--text-muted);margin-bottom:1rem">13 items sidebar pointent vers seulement 4 routes avec des paramètres <code>?tab=</code> différents</p>
+  <table>
+    <tr><th>Route cible</th><th>Items sidebar</th><th>Tabs/Sections</th></tr>
+    <tr><td><code>/platform/facturation</code></td><td>3 (Plans, Abonnements, Factures)</td><td>7 tabs (Plans, Abonnements, Factures, Usage, Revenus, Flags, Groupes)</td></tr>
+    <tr><td><code>/platform/configuration</code></td><td>3 (Backup, Historique, Restore)</td><td>7 sections (système, sécurité, modules, notifications, régional, sauvegarde, historique)</td></tr>
+    <tr><td><code>/platform/monitoring</code></td><td>4 (Usage, Health, Alertes, Export)</td><td>9 sections séquentielles (pas de tabs!)</td></tr>
+    <tr><td><code>/platform/notifications-config</code></td><td>3 (Providers, Templates, Test)</td><td>3 tabs</td></tr>
+  </table>
+</div>
+
+<!-- 4. DISTRIBUTION DU CODE -->
+<h2 id="distribution"><span class="num">4</span> Distribution du code</h2>
+
+<h3>Taille des fichiers platform (lignes)</h3>
+<div class="card">
+  <div class="chart-bar">
+    <span class="bar-label">etablissement-detail</span>
+    <div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--danger)">3,935</div></div>
+  </div>
+  <div class="chart-bar">
+    <span class="bar-label">platform.modules</span>
+    <div class="bar-track"><div class="bar-fill" style="width:24%;background:var(--warning)">928</div></div>
+  </div>
+  <div class="chart-bar">
+    <span class="bar-label">monitoring-sections</span>
+    <div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--warning)">971</div></div>
+  </div>
+  <div class="chart-bar">
+    <span class="bar-label">audit-page</span>
+    <div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--warning)">987</div></div>
+  </div>
+  <div class="chart-bar">
+    <span class="bar-label">plan-form-modal</span>
+    <div class="bar-track"><div class="bar-fill" style="width:22%;background:var(--warning)">883</div></div>
+  </div>
+  <div class="chart-bar">
+    <span class="bar-label">etablissement-form-modal</span>
+    <div class="bar-track"><div class="bar-fill" style="width:26%;background:var(--warning)">1,034</div></div>
+  </div>
+  <div class="chart-bar">
+    <span class="bar-label">platform.facturation</span>
+    <div class="bar-track"><div class="bar-fill" style="width:16%;background:var(--accent)">648</div></div>
+  </div>
+  <div class="chart-bar">
+    <span class="bar-label">platform.configuration</span>
+    <div class="bar-track"><div class="bar-fill" style="width:15%;background:var(--accent)">596</div></div>
+  </div>
+  <div class="chart-bar">
+    <span class="bar-label">platform-sidebar</span>
+    <div class="bar-track"><div class="bar-fill" style="width:13%;background:var(--success)">504</div></div>
+  </div>
+  <div class="chart-bar">
+    <span class="bar-label">approbations-page</span>
+    <div class="bar-track"><div class="bar-fill" style="width:16%;background:var(--accent)">627</div></div>
+  </div>
+  <div class="chart-bar">
+    <span class="bar-label">groupes-saas-page</span>
+    <div class="bar-track"><div class="bar-fill" style="width:16%;background:var(--accent)">622</div></div>
+  </div>
+</div>
+
+<h3>Répartition par dossier</h3>
+<div class="card-grid">
+  <div class="stat-card">
+    <div class="value" style="color:var(--accent)">26</div>
+    <div class="label">Composants admin<br><small>~11,019 lignes</small></div>
+  </div>
+  <div class="stat-card">
+    <div class="value" style="color:var(--accent-2)">9</div>
+    <div class="label">Composants platform<br><small>~8,589 lignes</small></div>
+  </div>
+  <div class="stat-card">
+    <div class="value" style="color:var(--warning)">15</div>
+    <div class="label">Routes platform<br><small>~5,200 lignes</small></div>
+  </div>
+  <div class="stat-card">
+    <div class="value" style="color:var(--success)">1,828</div>
+    <div class="label">Lignes i18n admin.json<br><small>FR + EN = 3,656</small></div>
+  </div>
+</div>
+
+<!-- 5. BENCHMARKS -->
+<h2 id="benchmarks"><span class="num">5</span> Benchmark vs meilleures pratiques SaaS</h2>
+
+<div class="comparison">
+  <div class="before">
+    <h4>❌ eLISAschool actuel</h4>
+    <ul style="padding-left:1.5rem;font-size:0.9rem">
+      <li>10 groupes, 37 items — trop granulaire</li>
+      <li>Feature Flags dans 4 endroits</li>
+      <li>Configuration = 4 pages en 1</li>
+      <li>Monitoring = 9 sections sans tabs</li>
+      <li>Fichier 3,935 lignes</li>
+      <li>0 composant Panel/Card partagé</li>
+      <li>13 sidebar items → 4 routes (?tab=)</li>
+      <li>Couplage admin↔platform</li>
+    </ul>
+  </div>
+  <div class="after">
+    <h4>✅ Stripe / Vercel / Linear</h4>
+    <ul style="padding-left:1.5rem;font-size:0.9rem">
+      <li>4-6 groupes, max 20 items</li>
+      <li>1 feature = 1 page dédiée</li>
+      <li>Settings = paramètres uniquement</li>
+      <li>Monitoring = tabs clairs (3-4 max)</li>
+      <li>Max 400 lignes par composant</li>
+      <li>Design system avec primitives partagées</li>
+      <li>1 sidebar item = 1 route unique</li>
+      <li>Séparation stricte des features</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Principes des meilleurs panels SaaS (2025-2026)</h3>
+  <table>
+    <tr><th>Principe</th><th>Stripe</th><th>Vercel</th><th>Linear</th><th>eLISAschool</th></tr>
+    <tr><td>Groupes nav</td><td>4</td><td>5</td><td>4</td><td><span class="badge badge-danger">10</span></td></tr>
+    <tr><td>Items max</td><td>18</td><td>15</td><td>12</td><td><span class="badge badge-danger">37</span></td></tr>
+    <tr><td>Profondeur max</td><td>2</td><td>2</td><td>1</td><td><span class="badge badge-warning">3 (?tab=)</span></td></tr>
+    <tr><td>Composants partagés</td><td>oui</td><td>oui</td><td>oui</td><td><span class="badge badge-danger">non</span></td></tr>
+    <tr><td>1 item = 1 route</td><td>oui</td><td>oui</td><td>oui</td><td><span class="badge badge-danger">non (13→4)</span></td></tr>
+  </table>
+</div>
+
+<!-- 6. RESTRUCTURATION PROPOSEE -->
+<h2 id="restructuration"><span class="num">6</span> Proposition de restructuration</h2>
+
+<div class="proposal">
+  <h3>🎯 Objectif : 10 groupes → 6 groupes, 37 items → 22 items</h3>
+  <p style="margin-top:0.5rem;color:var(--text-muted)">Réduction de 40% des items, élimination de toutes les redondances, 1 item = 1 route unique.</p>
+</div>
+
+<h3>Architecture cible</h3>
+<div class="mermaid">
+graph TD
+    subgraph "🎯 Pilotage (3 items)"
+        P1["🏠 Dashboard<br>/platform/dashboard"]
+        P2["📊 Monitoring<br>/platform/monitoring"]
+        P3["📈 Revenus & KPIs<br>/platform/revenus"]
+    end
+    
+    subgraph "🏢 Tenants & Commerce (5 items)"
+        T1["🏫 Établissements<br>/platform/etablissements"]
+        T2["👥 Groupes<br>/platform/groupes"]
+        T3["👤 Utilisateurs<br>/platform/utilisateurs"]
+        T4["🔑 Rôles & Permissions<br>/platform/roles"]
+        T5["💰 Plans & Tarifs<br>/platform/plans"]
+    end
+    
+    subgraph "💳 Facturation (4 items)"
+        F1["📋 Abonnements<br>/platform/abonnements"]
+        F2["🧾 Factures<br>/platform/factures"]
+        F3["💳 Providers<br>/platform/providers"]
+        F4["🎁 Remises & Packs<br>/platform/remises"]
+    end
+    
+    subgraph "🔒 Sécurité & Audit (4 items)"
+        S1["📜 Audit Trail<br>/platform/audit"]
+        S2["✅ Approbations<br>/platform/approbations"]
+        S3["🖥️ Sessions<br>/platform/sessions"]
+        S4["🔐 Paramètres Sécurité<br>/platform/security"]
+    end
+    
+    subgraph "⚙️ Système (4 items)"
+        C1["🔧 Configuration<br>/platform/configuration"]
+        C2["🔔 Notifications<br>/platform/notifications"]
+        C3["💾 Sauvegardes<br>/platform/backups"]
+        C4["🚩 Feature Flags<br>/platform/features"]
+    end
+    
+    subgraph "📦 Catalogue (2 items)"
+        M1["📦 Modules<br>/platform/modules"]
+        M2["📊 Quotas & Cycles<br>/platform/quotas"]
+    end
+
+    style P1 fill:#10b981,color:#fff
+    style F1 fill:#3b82f6,color:#fff
+    style S4 fill:#ef4444,color:#fff
+    style C4 fill:#f59e0b,color:#fff
+</div>
+
+<h3>Mapping des changements</h3>
+<div class="card">
+  <table>
+    <thead>
+      <tr><th>Avant (sidebar actuel)</th><th>Après</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="3" style="background:rgba(16,185,129,0.1)"><strong>🎯 Pilotage</strong></td></tr>
+      <tr><td>Dashboard</td><td>Dashboard</td><td><span class="badge badge-success">Gardé</span></td></tr>
+      <tr><td>Revenus (redirect)</td><td>Revenus & KPIs (page réelle)</td><td><span class="badge badge-info">Recréé</span></td></tr>
+      <tr><td>Monitoring (9 sections)</td><td>Monitoring (4 tabs)</td><td><span class="badge badge-warning">Refondu</span></td></tr>
+      
+      <tr><td colspan="3" style="background:rgba(59,130,246,0.1)"><strong>🏢 Tenants & Commerce</strong></td></tr>
+      <tr><td>Établissements</td><td>Établissements</td><td><span class="badge badge-success">Gardé</span></td></tr>
+      <tr><td>Groupes SaaS</td><td>Groupes</td><td><span class="badge badge-success">Gardé</span></td></tr>
+      <tr><td>Utilisateurs</td><td>Utilisateurs</td><td><span class="badge badge-success">Gardé</span></td></tr>
+      <tr><td>Rôles</td><td>Rôles & Permissions</td><td><span class="badge badge-info">Enrichi</span></td></tr>
+      <tr><td>Tarifs (dans configuration)</td><td>Plans & Tarifs</td><td><span class="badge badge-info">Déplacé</span></td></tr>
+      
+      <tr><td colspan="3" style="background:rgba(139,92,246,0.1)"><strong>💳 Facturation</strong></td></tr>
+      <tr><td>facturation?tab=plans</td><td>→ /platform/plans</td><td><span class="badge badge-info">Extrait</span></td></tr>
+      <tr><td>facturation?tab=abonnements</td><td>→ /platform/abonnements</td><td><span class="badge badge-info">Extrait</span></td></tr>
+      <tr><td>facturation?tab=factures</td><td>→ /platform/factures</td><td><span class="badge badge-info">Extrait</span></td></tr>
+      <tr><td>Providers</td><td>Providers</td><td><span class="badge badge-success">Gardé</span></td></tr>
+      <tr><td>Remises</td><td>Remises & Packs</td><td><span class="badge badge-info">Fusionné</span></td></tr>
+      <tr><td>facturation?tab=flags</td><td>→ SUPPRIMÉ (doublon)</td><td><span class="badge badge-danger">Supprimé</span></td></tr>
+      <tr><td>facturation?tab=groupes</td><td>→ SUPPRIMÉ (doublon)</td><td><span class="badge badge-danger">Supprimé</span></td></tr>
+      
+      <tr><td colspan="3" style="background:rgba(239,68,68,0.1)"><strong>🔒 Sécurité & Audit</strong></td></tr>
+      <tr><td>Audit</td><td>Audit Trail</td><td><span class="badge badge-success">Gardé</span></td></tr>
+      <tr><td>Approbations</td><td>Approbations</td><td><span class="badge badge-success">Gardé</span></td></tr>
+      <tr><td>Sessions</td><td>Sessions</td><td><span class="badge badge-success">Gardé</span></td></tr>
+      <tr><td>Paramètres Cascade</td><td>Paramètres Sécurité</td><td><span class="badge badge-warning">Refondu</span></td></tr>
+      
+      <tr><td colspan="3" style="background:rgba(245,158,11,0.1)"><strong>⚙️ Système</strong></td></tr>
+      <tr><td>Configuration (7 sections)</td><td>Configuration (paramètres seuls)</td><td><span class="badge badge-warning">Allégé</span></td></tr>
+      <tr><td>Notifications Config</td><td>Notifications</td><td><span class="badge badge-success">Gardé</span></td></tr>
+      <tr><td>Configuration?tab=backup/historique/restore</td><td>Sauvegardes (page dédiée)</td><td><span class="badge badge-info">Extrait</span></td></tr>
+      <tr><td>Fonctionnalités (feature flags)</td><td>Feature Flags</td><td><span class="badge badge-info">Déplacé</span></td></tr>
+      <tr><td>Configuration Cascade</td><td>→ SUPPRIMÉ (doublon)</td><td><span class="badge badge-danger">Supprimé</span></td></tr>
+      
+      <tr><td colspan="3" style="background:rgba(6,182,212,0.1)"><strong>📦 Catalogue</strong></td></tr>
+      <tr><td>Modules?tab=catalogue</td><td>Modules</td><td><span class="badge badge-warning">Simplifié</span></td></tr>
+      <tr><td>Packs Quota + Cycles Stratégies</td><td>Quotas & Cycles</td><td><span class="badge badge-info">Fusionné</span></td></tr>
+      <tr><td>Modules?tab=builder</td><td>→ SUPPRIMÉ</td><td><span class="badge badge-danger">Supprimé</span></td></tr>
+      <tr><td>Modules?tab=resolution</td><td>→ intégré dans Modules</td><td><span class="badge badge-warning">Intégré</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 7. PLAN EXTRACTION COMPOSANTS -->
+<h2 id="composants"><span class="num">7</span> Plan d'extraction composants partagés</h2>
+
+<div class="card">
+  <h3>Composants à extraire</h3>
+  <table>
+    <tr><th>Composant</th><th>Source</th><th>Utilisations</th><th>Priorité</th></tr>
+    <tr>
+      <td><code>PlatformCard</code></td>
+      <td>Card styling dupliqué 25+ fois</td>
+      <td>Toutes les pages platform</td>
+      <td><span class="badge badge-danger">P0</span></td>
+    </tr>
+    <tr>
+      <td><code>DetailPageLayout</code></td>
+      <td>Shell copié dans 3 detail pages</td>
+      <td>etablissement, utilisateur, role</td>
+      <td><span class="badge badge-danger">P0</span></td>
+    </tr>
+    <tr>
+      <td><code>StatCard</code> (platform)</td>
+      <td>Pattern identique dans 8+ pages</td>
+      <td>Dashboard, facturation, monitoring...</td>
+      <td><span class="badge badge-warning">P1</span></td>
+    </tr>
+    <tr>
+      <td><code>TabbedPage</code></td>
+      <td>Pattern tabs+content dans 6 routes</td>
+      <td>facturation, modules, notifications...</td>
+      <td><span class="badge badge-warning">P1</span></td>
+    </tr>
+    <tr>
+      <td><code>SectionHeader</code></td>
+      <td>Titre+description+action dupliqué</td>
+      <td>Toutes les sections</td>
+      <td><span class="badge badge-info">P2</span></td>
+    </tr>
+    <tr>
+      <td><code>EmptyState</code> (platform)</td>
+      <td>État vide avec icône+CTA</td>
+      <td>5+ pages</td>
+      <td><span class="badge badge-info">P2</span></td>
+    </tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>PlatformCard — spécification</h3>
+  <pre style="background:var(--bg);padding:1rem;border-radius:8px;overflow-x:auto;font-size:0.85rem"><code>// frontend/src/components/ui/platform/PlatformCard.tsx
+interface PlatformCardProps {
+  title?: string;
+  description?: string;
+  action?: ReactNode;        // Bouton dans le header
+  variant?: 'default' | 'elevated' | 'outlined' | 'filled';
+  padding?: 'none' | 'sm' | 'md' | 'lg';
+  hoverable?: boolean;       // Shadow + scale au hover
+  children: ReactNode;
+  className?: string;
+}
+
+// Remplace 25+ occurrences de:
+// rounded-xl border border-gray-200 dark:border-gray-700 
+// bg-white dark:bg-gray-800/60 p-6</code></pre>
+</div>
+
+<div class="card">
+  <h3>DetailPageLayout — spécification</h3>
+  <pre style="background:var(--bg);padding:1rem;border-radius:8px;overflow-x:auto;font-size:0.85rem"><code>// frontend/src/components/ui/platform/DetailPageLayout.tsx
+interface DetailPageLayoutProps&lt;T extends string&gt; {
+  // Header
+  title: string;
+  subtitle?: string;
+  avatar?: { src?: string; initials: string; color?: string };
+  badges?: Array<{ label: string; variant: 'success'|'warning'|'danger'|'info' }>;
+  actions?: ReactNode;          // Boutons d'action dans le header
+  onBack?: () => void;
+  
+  // Tabs
+  tabs: Array<{ id: T; label: string; icon?: LucideIcon; badge?: number }>;
+  activeTab: T;
+  onTabChange: (tab: T) => void;
+  
+  // Content
+  children: ReactNode;
+  
+  // Loading
+  isLoading?: boolean;
+}</code></pre>
+</div>
+
+<!-- 8. DECOMPOSITION FICHIERS MASSIFS -->
+<h2 id="decomposition"><span class="num">8</span> Décomposition fichiers massifs</h2>
+
+<div class="card">
+  <h3>platform-etablissement-detail-page.tsx — 3,935 lignes → 9 fichiers</h3>
+  <div class="mermaid">
+  graph LR
+      A["platform-etablissement-detail<br/>3,935 lignes"] --> B["etablissement-detail-page<br/>~200 lignes (shell)"]
+      A --> C["tabs/identite-tab<br/>~350 lignes"]
+      A --> D["tabs/sante-tab<br/>~280 lignes"]
+      A --> E["tabs/activite-tab<br/>~520 lignes"]
+      A --> F["tabs/finances-tab<br/>~380 lignes"]
+      A --> G["tabs/configuration-tab<br/>~340 lignes"]
+      A --> H["tabs/utilisateurs-tab<br/>~280 lignes"]
+      A --> I["tabs/journal-tab<br/>~220 lignes"]
+      A --> J["components/detail-utils<br/>~180 lignes<br/>(SectionCard, InfoGrid, etc.)"]
+      
+      style A fill:#ef4444,color:#fff
+      style B fill:#10b981,color:#fff
+  </div>
+</div>
+
+<div class="card">
+  <h3>Autres fichiers à décomposer</h3>
+  <table>
+    <tr><th>Fichier</th><th>Lignes</th><th>Découpe proposée</th></tr>
+    <tr>
+      <td><code>platform.facturation.tsx</code></td>
+      <td>648</td>
+      <td>Extraire PlansTab, AbonnementsTab, FacturesTab, FlagsTab en fichiers séparés</td>
+    </tr>
+    <tr>
+      <td><code>platform.configuration.tsx</code></td>
+      <td>596</td>
+      <td>Déjà bien structuré avec ConfigSidebar — extraire ModulesTab restant</td>
+    </tr>
+    <tr>
+      <td><code>platform.modules.tsx</code></td>
+      <td>928</td>
+      <td>Extraire CatalogueTab, BuilderTab, ResolutionTab en fichiers séparés</td>
+    </tr>
+    <tr>
+      <td><code>etablissement-form-modal.tsx</code></td>
+      <td>1,034</td>
+      <td>Extraire steps (identité, contact, config) + form validation</td>
+    </tr>
+  </table>
+</div>
+
+<!-- 9. PLAN DE MIGRATION -->
+<h2 id="migration"><span class="num">9</span> Plan de migration</h2>
+
+<div class="proposal">
+  <h3>Approche : Migration directe et brutale sans intermédiaires</h3>
+  <p style="color:var(--text-muted);margin-top:0.5rem">Pas de période de transition, pas de double-routes, pas de deprecated warnings. Suppression + remplacement immédiat.</p>
+</div>
+
+<div class="phase">
+  <div class="phase-header">
+    <span>Phase 1 — Composants partagés</span>
+    <span class="badge badge-danger">P0 — 1 jour</span>
+  </div>
+  <div class="phase-body">
+    <ul style="padding-left:1.5rem">
+      <li>Créer <code>components/ui/platform/PlatformCard.tsx</code></li>
+      <li>Créer <code>components/ui/platform/DetailPageLayout.tsx</code></li>
+      <li>Créer <code>components/ui/platform/StatCard.tsx</code> (version platform)</li>
+      <li>Remplacer les 25+ occurrences de card styling</li>
+      <li>Remplacer les 3 detail page shells</li>
+    </ul>
+  </div>
+</div>
+
+<div class="phase">
+  <div class="phase-header">
+    <span>Phase 2 — Décomposition etablissement-detail</span>
+    <span class="badge badge-danger">P0 — 1 jour</span>
+  </div>
+  <div class="phase-body">
+    <ul style="padding-left:1.5rem">
+      <li>Extraire les 7 tabs dans <code>features/platform/components/etablissement-detail/tabs/</code></li>
+      <li>Extraire les utils dans <code>components/detail-utils.tsx</code></li>
+      <li>Shell <code>etablissement-detail-page.tsx</code> → ~200 lignes</li>
+      <li>Remplacer les 6 appels apiClient directs par des hooks TanStack Query</li>
+    </ul>
+  </div>
+</div>
+
+<div class="phase">
+  <div class="phase-header">
+    <span>Phase 3 — Élimination redondances Feature Flags</span>
+    <span class="badge badge-danger">P0 — 0.5 jour</span>
+  </div>
+  <div class="phase-body">
+    <ul style="padding-left:1.5rem">
+      <li><strong>Supprimer</strong> FlagsTab de <code>platform.facturation.tsx</code></li>
+      <li><strong>Supprimer</strong> FeatureFlagsManager overlay de <code>platform.configuration.tsx</code></li>
+      <li><strong>Garder</strong> <code>platform.fonctionnalites.tsx</code> comme source unique</li>
+      <li>Déplacer sidebar item "Fonctionnalités" du groupe Catalogue → groupe Système</li>
+      <li>plan-form-modal : remplacer liste hardcodée par hook API</li>
+    </ul>
+  </div>
+</div>
+
+<div class="phase">
+  <div class="phase-header">
+    <span>Phase 4 — Élimination redondances Groupes + Cascade</span>
+    <span class="badge badge-warning">P1 — 0.5 jour</span>
+  </div>
+  <div class="phase-body">
+    <ul style="padding-left:1.5rem">
+      <li><strong>Supprimer</strong> tab "groupes" de <code>platform.facturation.tsx</code></li>
+      <li><strong>Supprimer</strong> <code>platform.configuration-cascade.tsx</code> (doublon de parametres-cascade)</li>
+      <li>Garder <code>/platform/groupes</code> comme source unique GroupesSaaSPage</li>
+      <li>Garder <code>/platform/parametres-cascade</code> comme source unique cascade</li>
+    </ul>
+  </div>
+</div>
+
+<div class="phase">
+  <div class="phase-header">
+    <span>Phase 5 — Éclatement facturation en pages dédiées</span>
+    <span class="badge badge-warning">P1 — 1.5 jours</span>
+  </div>
+  <div class="phase-body">
+    <ul style="padding-left:1.5rem">
+      <li>Extraire PlansTab → <code>platform.plans.tsx</code> (page dédiée)</li>
+      <li>Extraire AbonnementsTab → <code>platform.abonnements.tsx</code> (page dédiée, remplacer redirect)</li>
+      <li>Extraire FacturesTab → <code>platform.factures.tsx</code> (page dédiée)</li>
+      <li>Extraire UsageMetersDashboard + RevenusDashboard → <code>platform.revenus.tsx</code> (page dédiée, remplacer redirect)</li>
+      <li><strong>Supprimer</strong> <code>platform.facturation.tsx</code> (la mega-page 7 tabs)</li>
+      <li>Fusionner Remises + Packs Quota + Cycles → <code>platform.commerce.tsx</code> ou pages séparées</li>
+    </ul>
+  </div>
+</div>
+
+<div class="phase">
+  <div class="phase-header">
+    <span>Phase 6 — Nettoyage configuration</span>
+    <span class="badge badge-info">P2 — 0.5 jour</span>
+  </div>
+  <div class="phase-body">
+    <ul style="padding-left:1.5rem">
+      <li>configuration : garder uniquement paramètres système/sécurité/régional</li>
+      <li>Supprimer section "modules" (doublon avec /platform/modules)</li>
+      <li>Supprimer section "notifications" (doublon avec /platform/notifications)</li>
+      <li>Extraire backup/historique/restore → <code>platform.backups.tsx</code> (page dédiée)</li>
+      <li>Supprimer section "sauvegarde" de configuration</li>
+    </ul>
+  </div>
+</div>
+
+<div class="phase">
+  <div class="phase-header">
+    <span>Phase 7 — Refonte sidebar + monitoring + CommandPalette</span>
+    <span class="badge badge-info">P2 — 1 jour</span>
+  </div>
+  <div class="phase-body">
+    <ul style="padding-left:1.5rem">
+      <li>Réécrire <code>platform-sidebar.tsx</code> avec la nouvelle structure 6 groupes / 22 items</li>
+      <li>Refondre <code>platform.monitoring.tsx</code> : 9 sections → 4 tabs (Health, Signaux, Alertes, Export)</li>
+      <li>Compléter <code>CommandPalette.tsx</code> : ajouter les 7 commandes manquantes</li>
+      <li>Supprimer routes redirect-only : <code>platform.revenus.tsx</code> (ancien), <code>platform.debug.index.tsx</code></li>
+      <li>Mettre à jour i18n : nettoyer clés navigation obsolètes, ajouter nouvelles</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Estimation totale</h3>
+  <table>
+    <tr><th>Phase</th><th>Durée</th><th>Fichiers impactés</th><th>Risque</th></tr>
+    <tr><td>P1 — Composants partagés</td><td>1 jour</td><td>~15</td><td><span class="badge badge-success">Faible</span></td></tr>
+    <tr><td>P2 — Décomposition detail</td><td>1 jour</td><td>~10</td><td><span class="badge badge-success">Faible</span></td></tr>
+    <tr><td>P3 — Redondances Flags</td><td>0.5 jour</td><td>~5</td><td><span class="badge badge-success">Faible</span></td></tr>
+    <tr><td>P4 — Redondances Groupes/Cascade</td><td>0.5 jour</td><td>~4</td><td><span class="badge badge-success">Faible</span></td></tr>
+    <tr><td>P5 — Éclatement facturation</td><td>1.5 jours</td><td>~12</td><td><span class="badge badge-warning">Moyen</span></td></tr>
+    <tr><td>P6 — Nettoyage configuration</td><td>0.5 jour</td><td>~4</td><td><span class="badge badge-success">Faible</span></td></tr>
+    <tr><td>P7 — Sidebar + monitoring + palette</td><td>1 jour</td><td>~8</td><td><span class="badge badge-warning">Moyen</span></td></tr>
+    <tr style="font-weight:600;background:rgba(59,130,246,0.1)"><td>TOTAL</td><td>6 jours</td><td>~58 fichiers</td><td></td></tr>
+  </table>
+</div>
+
+<!-- 10. RECOMMANDATIONS -->
+<h2 id="recommandations"><span class="num">10</span> Recommandations détaillées</h2>
+
+<h3>Backend</h3>
+<div class="card">
+  <table>
+    <tr><th>#</th><th>Recommandation</th><th>Détail</th><th>Priorité</th></tr>
+    <tr>
+      <td>B1</td>
+      <td>Endpoint <code>GET /platform/stats</code> unifié</td>
+      <td>Agréger KPIs dashboard en 1 appel (établissements, utilisateurs, MRR, santé) au lieu de 4+ appels séparés</td>
+      <td><span class="badge badge-warning">P1</span></td>
+    </tr>
+    <tr>
+      <td>B2</td>
+      <td>Validation Zod sur toutes les routes POST/PUT</td>
+      <td>platform.routes.ts n'a pas de validation Zod sur les body — convention non respectée</td>
+      <td><span class="badge badge-danger">P0</span></td>
+    </tr>
+    <tr>
+      <td>B3</td>
+      <td>Permissions granulaires par sous-section</td>
+      <td>Ajouter <code>requirePlatformCasl</code> sur routes commerce (remises, packs, cycles) — actuellement guard global seulement</td>
+      <td><span class="badge badge-warning">P1</span></td>
+    </tr>
+    <tr>
+      <td>B4</td>
+      <td>Endpoint <code>GET /platform/navigation</code></td>
+      <td>Retourner la structure de navigation dynamique (groupes, items, badges, visibility) pour alimenter le sidebar frontend</td>
+      <td><span class="badge badge-info">P2</span></td>
+    </tr>
+  </table>
+</div>
+
+<h3>Frontend</h3>
+<div class="card">
+  <table>
+    <tr><th>#</th><th>Recommandation</th><th>Détail</th><th>Priorité</th></tr>
+    <tr>
+      <td>F1</td>
+      <td>Barrel export <code>features/platform/index.ts</code></td>
+      <td>Créer barrel pour tous les composants platform (actuellement imports directs par chemin)</td>
+      <td><span class="badge badge-warning">P1</span></td>
+    </tr>
+    <tr>
+      <td>F2</td>
+      <td>Hooks TanStack Query pour etablissement-detail</td>
+      <td>Les 6 appels apiClient directs contournent le cache TanStack Query — créer <code>use-etablissement-detail.ts</code></td>
+      <td><span class="badge badge-danger">P0</span></td>
+    </tr>
+    <tr>
+      <td>F3</td>
+      <td>Dark mode : éliminer toutes les classes gray-*</td>
+      <td>25+ occurrences de <code>border-gray-200 dark:border-gray-700</code> → utiliser les CSS vars via PlatformCard</td>
+      <td><span class="badge badge-warning">P1</span></td>
+    </tr>
+    <tr>
+      <td>F4</td>
+      <td>Monitoring : 9 sections → 4 tabs</td>
+      <td>Le rendu séquentiel de 9 sections est un problème performance — charger en tabs avec lazy loading</td>
+      <td><span class="badge badge-warning">P1</span></td>
+    </tr>
+    <tr>
+      <td>F5</td>
+      <td>Responsive sidebar</td>
+      <td>La sidebar actuelle est déjà responsive (drawer mobile) — ajouter collapse desktop (icônes seules)</td>
+      <td><span class="badge badge-info">P2</span></td>
+    </tr>
+    <tr>
+      <td>F6</td>
+      <td>Supprimer imports cross-feature</td>
+      <td>6 composants <code>features/admin/components/*</code> importés par les routes platform → déplacer vers <code>features/platform/</code></td>
+      <td><span class="badge badge-warning">P1</span></td>
+    </tr>
+  </table>
+</div>
+
+<!-- 11. QUESTIONS DE VALIDATION -->
+<h2 id="questions"><span class="num">11</span> Questions de validation</h2>
+
+<div class="question">
+  <h4>Q1 — Fusion Remises + Packs Quota + Cycles Stratégies ?</h4>
+  <p>Actuellement 3 pages séparées dans le groupe Catalogue. Options :</p>
+  <ul>
+    <li><strong>A.</strong> Fusionner en 1 page "Commerce" avec 3 tabs (recommandé — même domaine fonctionnel)</li>
+    <li><strong>B.</strong> Garder séparés mais déplacer dans groupe "Facturation"</li>
+    <li><strong>C.</strong> Garder séparés dans groupe "Catalogue" (statu quo)</li>
+  </ul>
+</div>
+
+<div class="question">
+  <h4>Q2 — Sort du groupe "Debug" ?</h4>
+  <p>3 items (Entitlements, API, Features) — uniquement pour développeurs. Options :</p>
+  <ul>
+    <li><strong>A.</strong> Supprimer du sidebar, accessible uniquement via CommandPalette (Ctrl+K) (recommandé)</li>
+    <li><strong>B.</strong> Garder mais ajouter un flag "mode développeur" pour afficher/masquer</li>
+    <li><strong>C.</strong> Garder tel quel</li>
+  </ul>
+</div>
+
+<div class="question">
+  <h4>Q3 — Sort de la page "configuration" ?</h4>
+  <p>Actuellement 7 sections dont 4 ont des pages dédiées ailleurs. Options :</p>
+  <ul>
+    <li><strong>A.</strong> Réduire à 3 sections (paramètres système, sécurité, régional) — le reste va dans ses pages dédiées (recommandé)</li>
+    <li><strong>B.</strong> Supprimer complètement — chaque catégorie a sa propre page</li>
+    <li><strong>C.</strong> Garder tel quel</li>
+  </ul>
+</div>
+
+<div class="question">
+  <h4>Q4 — Fichier etablissement-detail (3,935 lignes) — décomposition ?</h4>
+  <ul>
+    <li><strong>A.</strong> 9 fichiers (1 shell + 7 tabs + 1 utils) — chaque tab est autonome (recommandé)</li>
+    <li><strong>B.</strong> 5 fichiers (1 shell + 3 tabs groupés + 1 utils) — moins de fichiers</li>
+    <li><strong>C.</strong> Garder tel quel mais extraire uniquement les utils partagés</li>
+  </ul>
+</div>
+
+<div class="question">
+  <h4>Q5 — Ordre des phases de migration ?</h4>
+  <ul>
+    <li><strong>A.</strong> Séquentiel P1→P7 (composants partagés d'abord, puis refonte progressive)</li>
+    <li><strong>B.</strong> Big bang : tout en 1 session (plus rapide mais plus risqué)</li>
+    <li><strong>C.</strong> Priorité risques : P3/P4 (redondances) → P5 (facturation) → P1/P2 (composants) → P6/P7</li>
+  </ul>
+</div>
+
+<footer>
+  <p><strong>eLISAschool</strong> — Audit Panel Admin Platform v1.0</p>
+  <p>Généré le 2026-08-16 • 10 groupes analysés • 37 items inspectés • ~19,600 lignes de code frontend</p>
+</footer>
+
+</div>
+
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#3b82f6',
+    primaryTextColor: '#f1f5f9',
+    primaryBorderColor: '#475569',
+    lineColor: '#94a3b8',
+    secondaryColor: '#1e293b',
+    tertiaryColor: '#334155',
+    fontFamily: 'Inter, sans-serif',
+    fontSize: '14px'
+  },
+  flowchart: { curve: 'basis', padding: 20 }
+});
+</script>
+</body>
+</html>

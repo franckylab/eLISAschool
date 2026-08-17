@@ -355,3 +355,5 @@ export function useComparerPermissions() {
 
 export { useCreatePlatformRole as useCreateRole };
 export { useSupprimerRolePlateforme as useDeleteRole };
+export { useModifierRolePlateforme as useUpdatePlatformRole };
+export { useSupprimerRolePlateforme as useDeletePlatformRole };

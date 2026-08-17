@@ -64,7 +64,9 @@ export type Subject =
     | 'Organisation'
     | 'GroupeEtablissement'
     | 'Recrutement'
-    | 'Bibliotheque';
+    | 'Bibliotheque'
+    | 'Billing'
+    | 'Backup';
 
 export type AppAbility = PureAbility<[Action, Subject | ForcedSubject<Subject>]>;
 

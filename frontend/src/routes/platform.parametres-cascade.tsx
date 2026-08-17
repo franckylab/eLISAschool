@@ -8,7 +8,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import { ParametresCascadePage } from '@/features/admin/components/parametres-cascade-page';
+import { ParametresCascadePage } from '@/features/platform/components/parametres-cascade-page';
 
 function ParametresCascadeRoute() {
     return <ParametresCascadePage />;

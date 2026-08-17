@@ -8,7 +8,7 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
-import GroupesSaaSPage from '@/features/admin/components/groupes-saas-page';
+import GroupesSaaSPage from '@/features/platform/components/groupes-saas-page';
 
 function PlatformGroupesPage() {
     return (

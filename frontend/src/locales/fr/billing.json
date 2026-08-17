@@ -83,5 +83,93 @@
         "changerPlan": "Changer de plan",
         "contacterSupport": "Contacter le support",
         "simuler": "Simuler"
+    },
+    "packs": {
+        "titre": "Boostez votre abonnement",
+        "description": "Ajoutez des quotas supplémentaires à votre plan actuel",
+        "populaire": "Populaire",
+        "cycleCourant": "Cycle en cours",
+        "illimite": "Durée illimitée",
+        "acheter": "Acheter",
+        "succes": "Pack activé avec succès",
+        "erreur": "Erreur lors de l'achat du pack",
+        "confirmation": {
+            "titre": "Confirmer l'achat",
+            "message": "Votre pack sera activé immédiatement et facturé au prorata du cycle en cours.",
+            "annuler": "Annuler",
+            "confirmer": "Confirmer"
+        }
+    },
+    "promo": {
+        "titre": "Code promo",
+        "placeholder": "Entrez votre code",
+        "appliquer": "Appliquer",
+        "codeInvalide": "Code promo invalide ou expiré",
+        "erreurVerification": "Erreur lors de la vérification"
+    },
+    "faq": {
+        "titre": "Questions fréquentes",
+        "description": "Tout ce que vous devez savoir sur nos plans et la facturation",
+        "items": [
+            { "q": "Puis-je essayer gratuitement avant de m'abonner ?", "r": "Oui, la plupart de nos plans offrent un essai gratuit de 14 à 30 jours sans engagement. Vous pouvez explorer toutes les fonctionnalités avant de vous décider." },
+            { "q": "Comment fonctionnent les cycles de facturation ?", "r": "Nous proposons 4 cycles : mensuel, trimestriel, semestriel et annuel. Plus le cycle est long, plus la remise est importante. Vous pouvez changer de cycle à tout moment." },
+            { "q": "Qu'est-ce qu'un pack quota ?", "r": "Un pack quota vous permet d'ajouter des ressources supplémentaires (élèves, stockage, SMS) à votre plan sans changer d'abonnement. Le prix est calculé au prorata du cycle restant." },
+            { "q": "Comment fonctionnent les remises et codes promo ?", "r": "Les remises peuvent être automatiques (volume, fidélité) ou appliquées via un code promo. Elles sont cumulables dans la limite d'un plafond de 40% du montant total." },
+            { "q": "Puis-je changer de plan en cours de route ?", "r": "Oui, vous pouvez upgrader ou downgrader votre plan à tout moment. Un calcul prorata temporis est effectué automatiquement pour ajuster la facturation." },
+            { "q": "Que se passe-t-il si je dépasse mon quota ?", "r": "Vous recevrez une notification à 80% et 90% de consommation. Au-delà de la limite, vous pouvez acheter un pack quota supplémentaire ou upgrader votre plan." },
+            { "q": "Comment annuler mon abonnement ?", "r": "Vous pouvez annuler à tout moment depuis votre espace d'administration. Sans engagement ni frais de résiliation. Vos données restent accessibles pendant la période payée." },
+            { "q": "Mes données sont-elles sécurisées ?", "r": "Absolument. Vos données sont hébergées sur des serveurs sécurisés avec chiffrement de bout en bout. Nous effectuons des sauvegardes quotidiennes et respectons les normes de protection des données." },
+            { "q": "Quels moyens de paiement acceptez-vous ?", "r": "Nous acceptons les paiements par Mobile Money (MTN, Orange), virement bancaire, et les principales cartes bancaires. Les paiements sont sécurisés et conformes aux standards PCI DSS." },
+            { "q": "Proposez-vous des tarifs spéciaux pour les grands groupes ?", "r": "Oui, à partir de 3 établissements, des remises groupe sont disponibles. Contactez notre équipe commerciale pour obtenir un devis personnalisé." }
+        ]
+    },
+    "trust": {
+        "securise": "Paiement sécurisé",
+        "securiseDesc": "Transactions chiffrées et conformes PCI DSS",
+        "heberge": "Données hébergées",
+        "hebergeDesc": "Sauvegardes quotidiennes et chiffrement de bout en bout",
+        "support": "Support réactif",
+        "supportDesc": "Assistance technique disponible 6j/7",
+        "sansEngagement": "Sans engagement",
+        "sansEngagementDesc": "Annulez à tout moment sans frais"
+    },
+    "plans": {
+        "pageTitle": "Nos Plans",
+        "cards": "Plans",
+        "compare": "Comparer",
+        "simulator": "Simuler",
+        "hero": {
+            "titre": "Choisissez le plan adapté à votre établissement",
+            "sousTitre": "Des solutions flexibles pour chaque taille d'établissement. Sans engagement."
+        },
+        "sansEngagement": "Sans engagement — annulez à tout moment",
+        "gratuit": "GRATUIT",
+        "populaire": "Populaire",
+        "meilleurRapport": "Meilleur rapport qualité-prix",
+        "commencerGratuitement": "Commencer gratuitement",
+        "choisirCePlan": "Choisir ce plan",
+        "contacter": "Contacter",
+        "planActuel": "Plan actuel",
+        "chargement": "Chargement...",
+        "modulesInclus": "modules inclus",
+        "essaiJours": "{{count}} jours d'essai",
+        "upgradeSucces": "Plan mis à jour avec succès",
+        "upgradeErreur": "Erreur lors du changement de plan",
+        "compare": {
+            "caracteristique": "Caractéristique",
+            "eleves": "Élèves inclus",
+            "utilisateurs": "Utilisateurs",
+            "classes": "Classes",
+            "stockage": "Stockage (Go)",
+            "sms": "SMS/mois",
+            "modules": "Modules inclus",
+            "fonctionnalites": "Fonctionnalités",
+            "prixEleve": "Prix / élève sup.",
+            "essai": "Essai gratuit",
+            "cycles": "Cycles autorisés",
+            "exportPdf": "Export PDF",
+            "apiRest": "API REST",
+            "sso": "SSO / White Label"
+        }
     }
 }
