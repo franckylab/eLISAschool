@@ -1,20 +1,21 @@
 /**
  * ==================================
- * eLISAschool - Service Facturation (Refonte v3)
+ * eLISAschool - Service Facturation (Refonte v4)
  * ==================================
  *
- * Formule v3 (migration 213, plans pilotés par JSONB) :
+ * Formule v4 (migration 216, promotions multi-scopes) :
  *   montant = (prixBase + max(0, nbÉlèves − franchise) × prixParEleve) × coefCycle
- *             − remises + modules supplément + packs quota
+ *             + modules sup. + packs quota
+ *             − cascade promotions (5 phases : plan/packs/quota/modules/gratuités)
  *
- * - tarification : plan.tarification (prixBase, prixParEleve, elevesInclusGratuits, paliers)
- * - coefCycle    : cycles_facturation.remisePourcent (ex-enum dur supprimé)
- * - remises      : remises_abonnement via RemiseService.appliquer()
- * - packs        : abonnements_packs (facturés au prorata à la souscription)
+ * - tarification    : plan.tarification (prixBase, prixParEleve, elevesInclusGratuits, paliers)
+ * - coefCycle       : cycles_facturation.remisePourcent (ex-enum dur supprimé)
+ * - promotions      : promotionService.appliquerCascade() (cascade 5 phases)
+ * - packs           : abonnements_packs (facturés au prorata à la souscription)
  *
  * Conformité OHADA : TVA 19.25%, numéro séquentiel, mentions légales.
  *
- * Version: 3.0.0
+ * Version: 4.0.0
  * Auteur: franck arlos chendjou
  */
 
@@ -37,7 +38,7 @@ import {
 } from '../entities';
 import { CycleFacturationConfig } from '../entities/cycle-facturation-config.entity';
 import { AbonnementPack } from '../entities/abonnement-pack.entity';
-import { remiseService } from './remise.service';
+import { promotionService } from './promotion.service';
 
 /** Taux TVA Cameroun : 19.25% stocké en centièmes (1925 = 19.25%) */
 const TAUX_TVA_CENTIERES = 1925;
@@ -53,8 +54,12 @@ export interface CalculFactureResult {
     montantBase: number;
     /** Élèves supplémentaires au-delà de la franchise (ex-montantTranches) */
     montantElevesSupplementaires: number;
-    /** Modules en supplément + packs quota (ex-montantOptions) */
+    /** Modules supplémentaires */
     montantOptions: number;
+    /** Dont modules sup. (pour cascade promotions) */
+    montantModules: number;
+    /** Dont packs quota (pour cascade promotions) */
+    montantPacks: number;
     montantRemises: number;
     coefCycle: number;
     cycleCode: string;
@@ -63,6 +68,8 @@ export interface CalculFactureResult {
     tauxTVA: number;
     montantTotal: number;
     remisesAppliquees: Array<{ remiseId: string; code: string; montantDeduit: number }>;
+    /** Détail cascade promotions v4 (par scope) */
+    promotionsCascade?: any;
     lignes: Array<{
         description: string;
         type: TypeLigneFacture;
@@ -170,7 +177,12 @@ export class FacturationService {
             });
         }
 
-        let montantOptions = 0;
+        let montantModules = 0;
+        let montantPacks = 0;
+        const modulesSouscritsIds: string[] = [];
+        const packsSouscritsIds: string[] = [];
+        const packMontants: Record<string, number> = {};
+        const packRessources: Record<string, string> = {};
 
         // 4. Modules souscrits en supplément (catalogue unifié)
         if (abonnementId) {
@@ -179,9 +191,11 @@ export class FacturationService {
                 relations: ['module'],
             });
             for (const am of modulesActifs) {
+                // Collecter les IDs pour le contexte promotions (Phase 3)
+                modulesSouscritsIds.push(am.moduleOptionnelId);
                 if (am.module?.estActif && am.module.prixMensuel > 0) {
                     const prix = Number(am.module.prixMensuel);
-                    montantOptions += prix;
+                    montantModules += prix;
                     lignes.push({
                         description: `Module: ${am.module.nom}`,
                         type: TypeLigneFacture.OPTION,
@@ -202,8 +216,17 @@ export class FacturationService {
             for (const souscription of packs) {
                 if (souscription.dateFin && new Date(souscription.dateFin) < now) continue;
                 const montantPack = Number(souscription.montantFacture ?? 0);
+                // Collecter les IDs et montants pour le contexte promotions (Phase 2 + bundles)
+                packsSouscritsIds.push(souscription.packId);
+                if (montantPack > 0) {
+                    packMontants[souscription.packId] = montantPack;
+                }
+                // Collecter les ressources pour le filtrage cibleRessource (BUG-2)
+                if (souscription.pack?.ressource) {
+                    packRessources[souscription.packId] = souscription.pack.ressource;
+                }
                 if (montantPack <= 0) continue;
-                montantOptions += montantPack;
+                montantPacks += montantPack;
                 lignes.push({
                     description: `Pack quota: ${souscription.pack?.nom ?? 'quota supplémentaire'}`,
                     type: TypeLigneFacture.OPTION,
@@ -215,60 +238,81 @@ export class FacturationService {
             }
         }
 
+        const montantOptions = montantModules + montantPacks;
         const sousTotal = Math.round((montantForfaitCycle + montantOptions) * 100) / 100;
 
-        // 6. Remises commerciales (priorité, cumul, plancher 0, plafond 40%)
-        // Enrichir le contexte avec le nombre d'élèves et les dates d'abonnement
-        // pour le filtrage conditionnel (conditionElevesMin, conditionAncienneteMois)
-        const contexteRemise: import('./remise.service').ContexteApplicationRemise = {
+        // 6. Promotions commerciales — cascade 5 phases (v4)
+        // Phase 1: PLAN (plafond 40%) → Phase 2: PACKS → Phase 3: QUOTA → Phase 4: MODULES → Phase 5: GRATUITS
+        const contextePromo: import('./promotion.service').ContextePromotion = {
             planId,
             etablissementId,
             cycleCode,
+            nombreEleves,
+            packsSouscritsIds,
+            modulesSouscritsIds,
+            packMontants,
+            packRessources,
         };
 
         // Enrichir avec les données d'abonnement si disponibles
         if (abonnementId) {
             const aboCtx = await this.abonnementRepo.findOne({ where: { id: abonnementId } });
             if (aboCtx) {
-                contexteRemise.dateDebutAbonnement = aboCtx.dateDebut;
-                contexteRemise.dateFinAbonnement = aboCtx.dateFin;
+                contextePromo.dateDebutAbonnement = aboCtx.dateDebut;
+                contextePromo.dateFinAbonnement = aboCtx.dateFin;
+            }
+            // Calculer le numéro de cycle (nombre de factures émises pour cet abonnement)
+            const nbFacturesEmises = await this.factureRepo.count({
+                where: { abonnementId },
+            });
+            contextePromo.numeroCycle = nbFacturesEmises;
+        }
+
+        const resultatCascade = await promotionService.appliquerCascade(
+            montantForfaitCycle,
+            montantPacks,
+            montantModules,
+            contextePromo
+        );
+
+        // Lignes de facture pour chaque promotion appliquée
+        const toutesPromos = resultatCascade.toutesPromotions;
+        for (const promo of toutesPromos) {
+            if (promo.montantDeduit > 0) {
+                lignes.push({
+                    description: `Promo ${promo.scope}: ${promo.code} (−${promo.montantDeduit.toFixed(0)} F)`,
+                    type: TypeLigneFacture.REMISE,
+                    montant: -promo.montantDeduit,
+                    quantite: 1,
+                    total: -promo.montantDeduit,
+                    referenceId: promo.promotionId,
+                });
             }
         }
-        // Le nombre d'élèves est déjà connu (passé en paramètre)
-        contexteRemise.nombreEleves = nombreEleves;
 
-        const resultatRemises = await remiseService.appliquer(sousTotal, contexteRemise);
-        const montantRemises = Math.round((sousTotal - resultatRemises.montantFinal) * 100) / 100;
-        for (const appliquee of resultatRemises.remisesAppliquees) {
-            lignes.push({
-                description: `Remise: ${appliquee.code}`,
-                type: TypeLigneFacture.REMISE,
-                montant: -appliquee.montantDeduit,
-                quantite: 1,
-                total: -appliquee.montantDeduit,
-                referenceId: appliquee.remiseId,
-            });
-        }
-
-        const montantHT = Math.max(0, Math.round(resultatRemises.montantFinal));
+        const montantTotalRemises = resultatCascade.montantAvantPromotions - resultatCascade.montantFinal;
+        const montantHT = Math.max(0, Math.round(sousTotal - montantTotalRemises));
         const montantTVA = this.calculerTVA(montantHT);
 
         return {
             montantBase: Math.round(montantForfaitCycle - montantEleves * coefCycle),
             montantElevesSupplementaires: Math.round(montantEleves * coefCycle),
             montantOptions: Math.round(montantOptions),
-            montantRemises,
+            montantModules: Math.round(montantModules),
+            montantPacks: Math.round(montantPacks),
+            montantRemises: Math.round(montantTotalRemises),
             coefCycle,
             cycleCode,
             montantHT,
             montantTVA,
             tauxTVA: TAUX_TVA_CENTIERES,
             montantTotal: montantHT + montantTVA,
-            remisesAppliquees: resultatRemises.remisesAppliquees.map((r) => ({
-                remiseId: r.remiseId,
-                code: r.code,
-                montantDeduit: r.montantDeduit,
+            remisesAppliquees: toutesPromos.map((p) => ({
+                remiseId: p.promotionId,
+                code: p.code,
+                montantDeduit: p.montantDeduit,
             })),
+            promotionsCascade: resultatCascade,
             lignes,
         };
     }
@@ -355,9 +399,50 @@ export class FacturationService {
             await this.ligneFactureRepo.save(ligne);
         }
 
-        // Incrémenter les compteurs d'utilisation des remises appliquées
+        // Incrémenter les compteurs d'utilisation des promotions appliquées + traçabilité (v4.1)
         if (calcul.remisesAppliquees.length > 0) {
-            await remiseService.enregistrerUtilisation(calcul.remisesAppliquees.map((r) => r.remiseId));
+            const toutesPromos = calcul.promotionsCascade?.toutesPromotions ?? [];
+
+            // Séparer les promotions classiques des bundles (scope=BUNDLE)
+            const promoIds = calcul.remisesAppliquees
+                .map((r) => r.remiseId)
+                .filter((id) => !toutesPromos.some((p: any) => p.promotionId === id && p.scope === 'BUNDLE'));
+            const bundlePromos = toutesPromos.filter((p: any) => p.scope === 'BUNDLE');
+
+            // Tracking promotions classiques
+            if (promoIds.length > 0) {
+                await promotionService.enregistrerUtilisation(promoIds, {
+                    etablissementId: abonnement.etablissementId,
+                    factureId: savedFacture.id,
+                    remises: calcul.remisesAppliquees
+                        .filter((r) => promoIds.includes(r.remiseId))
+                        .map((r) => {
+                            const promoDetail = toutesPromos.find((p: any) => p.promotionId === r.remiseId);
+                            return {
+                                remiseId: r.remiseId,
+                                code: r.code,
+                                scope: promoDetail?.scope ?? 'PLAN',
+                                montantDeduit: r.montantDeduit,
+                            };
+                        }),
+                });
+            }
+
+            // Tracking bundles (BUG-3 FIX)
+            if (bundlePromos.length > 0) {
+                await promotionService.enregistrerUtilisationBundle(
+                    bundlePromos.map((p: any) => p.promotionId),
+                    {
+                        etablissementId: abonnement.etablissementId,
+                        factureId: savedFacture.id,
+                        bundles: bundlePromos.map((p: any) => ({
+                            bundleId: p.promotionId,
+                            code: p.code,
+                            montantDeduit: p.montantDeduit,
+                        })),
+                    }
+                );
+            }
         }
 
         // Mettre à jour l'abonnement

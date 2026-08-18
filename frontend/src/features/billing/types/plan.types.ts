@@ -6,7 +6,8 @@
  * stratégies d'expiration et packs de quota.
  *
  * Refonte v4.3 — Élimination des duplications (4 définitions → 1)
- * v3.1 — Types étendus : RemiseAbonnement, MonAbonnement, PackQuotaSouscrit
+ * v3.1 — Types étendus : MonAbonnement, PackQuotaSouscrit
+  * v4.5 — RemiseAbonnement supprimé (remplacé par Promotion depuis promotion.types)
  *
  * Version: 1.1.0
  * Auteur: franck arlos chendjou
@@ -21,6 +22,7 @@ import {
     Package,
     type LucideIcon,
 } from 'lucide-react';
+import type { Promotion } from './promotion.types';
 
 // =============================================
 // Plan d'abonnement (JSONB v3)
@@ -135,33 +137,6 @@ export interface PackQuota {
 export type PackQuotaForm = Omit<PackQuota, 'id'>;
 
 // =============================================
-// Remise d'abonnement (lecture frontend)
-// =============================================
-
-export interface RemiseAbonnement {
-    id: string;
-    code: string;
-    nom: string;
-    typeRemise: 'POURCENTAGE' | 'MONTANT_FIXE';
-    valeur: number;
-    dureeApplication: 'PREMIERE_FACTURE' | 'N_CYCLES' | 'PERMANENTE';
-    nbCycles?: number;
-    cible: 'GLOBAL' | 'PLAN' | 'TENANT' | 'CYCLE';
-    cibleId?: string;
-    cibleCycle?: string;
-    dateDebut: string;
-    dateFin?: string;
-    maxUtilisations?: number;
-    utilisations: number;
-    cumulable: boolean;
-    priorite: number;
-    codeCoupon?: string;
-    conditionElevesMin?: number;
-    conditionAncienneteMois?: number;
-    actif: boolean;
-}
-
-// =============================================
 // Pack souscrit (lecture frontend)
 // =============================================
 
@@ -193,7 +168,8 @@ export interface MonAbonnement {
     nombreElevesActuel: number;
     prochaineFacturation: string;
     packsSouscrits?: PackQuotaSouscrit[];
-    remisesActives?: RemiseAbonnement[];
+    /** Promotions éligibles (v4.5 — remplace remisesActives/RemiseAbonnement) */
+    promotionsEligibles?: Promotion[];
     quotasEffectifs?: Record<string, { quotaPlan: number; quotaPacks: number; quotaEffectif: number; utilisation: number }>;
 }
 

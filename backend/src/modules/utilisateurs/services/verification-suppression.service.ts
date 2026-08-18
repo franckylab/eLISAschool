@@ -186,7 +186,7 @@ export class VerificationSuppressionService {
 
             // Relations directes SANS CASCADE
             membrePersonnel: { nombre: membrePersonnel ? 1 : 0 },
-            responsableEleves: await this.countResponsableEleves(utilisateurId),
+            responsableEleves: await this.countParents(utilisateurId),
             eleves: await this.countEleves(utilisateurId, etablissementId),
             auditLogs: await this.countDirect('AuditLog', { utilisateurId }),
             
@@ -445,9 +445,9 @@ export class VerificationSuppressionService {
     /**
      * Comptage des élèves dont l'utilisateur est responsable
      */
-    private async countResponsableEleves(utilisateurId: string): Promise<{ nombre: number }> {
+    private async countParents(utilisateurId: string): Promise<{ nombre: number }> {
         try {
-            const repo = AppDataSource.getRepository('ResponsableEleve');
+            const repo = AppDataSource.getRepository('Parent');
             const count = await repo.count({
                 where: { utilisateurId, actif: true }
             });

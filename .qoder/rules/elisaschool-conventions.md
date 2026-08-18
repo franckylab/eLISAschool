@@ -1989,115 +1989,197 @@ Colonne `dateExpirationReelle` sur `abonnements_client` pour tracker J0.
 
 ---
 
-## 31. Billing v3.1 — Corrections moteur remises, prorata et page plans
+## 31. Billing v3.1 — Legacy RemiseService (DÉPRÉCIÉ → voir §33)
 
-### 31.1 Contexte
+> **STATUT** : `RemiseService` est **déprécié** depuis la refonte v4.0 (migration 216).
+> Le système actif est documenté en **section 33** (PromotionService v4.0 → v5).
 
-La refonte Billing v3 a introduit des bugs dans le moteur de remises et le calcul prorata des packs. Cette section documente les corrections apportées (migration 214) et les nouveaux composants frontend.
+### Conservé pour référence historique
 
-### 31.2 RemiseService v3.1 — Filtrage conditionnel + plafond 40%
+- **Plafond 40%** sur scope PLAN : repris par `PromotionService.PLAFOND_PLAN_POURCENT`
+- **Prorata cycle réel** : `PackQuotaService` utilise toujours le calcul réel (`dureeCycleJours`)
+- **Notifications expiration** : `cronNotificationsExpiration()` toujours actif (quotidien 08h00)
+- **Legacy** : table `remises_abonnement` renommée `_legacy_remises_abonnement` (migration 216), lecture seule
 
-**Fichier** : `backend/src/modules/billing/services/remise.service.ts`
+---
 
-**Interface `ContexteApplicationRemise` étendue** :
-```typescript
-export interface ContexteApplicationRemise {
-    planId?: string;
-    etablissementId?: string;
-    cycleCode?: string;
-    numeroCycle?: number;
-    codeCoupon?: string;
-    nombreEleves?: number;          // ← v3.1
-    dateDebutAbonnement?: Date;     // ← v3.1
-    dateFinAbonnement?: Date;       // ← v3.1
-}
-```
+## 32. Billing v3.4 — Seeds, Polish Platforme & Cohérence Commerce
 
-**Filtrage conditionnel** (méthode `estValide()`) :
-- `conditionElevesMin` : la remise ne s'applique que si `ctx.nombreEleves >= conditionElevesMin`
-- `conditionAncienneteMois` : la remise ne s'applique que si l'ancienneté (calculée depuis `ctx.dateDebutAbonnement`) >= `conditionAncienneteMois` mois
+### 32.1 Architecture Plans v3.4 (3 plans)
 
-**Plafond global 40%** :
-- Constante `PLAFOND_REMISE_POURCENT = 40`
-- Après cumul des remises, la déduction totale ne peut dépasser 40% du montant initial
-- Écrêtage progressif : si le cumul dépasse, chaque remise est réduite proportionnellement
+| Plan | Prix | Élèves inclus | Modules | Quotas clés |
+|------|------|---------------|---------|-------------|
+| Découverte | 14 900 F | 100 | 8 (cœur) | 10 users, 8 classes, 10 Go, 200 SMS |
+| Standard | 39 900 F | 300 | 14 (cœur + gestion) | 30 users, 25 classes, 50 Go, 1000 SMS |
+| Premium | 59 900 F | Illimité (0) | Tous + API + SSO | Tout illimité (0 = illimité) |
 
-**Remises conditionnées** (seed) :
-| Code | Condition |
-|------|-----------|
-| VOL-500 | `conditionElevesMin = 500` |
-| VOL-1000 | `conditionElevesMin = 1000` |
-| FID-12M | `conditionAncienneteMois = 12` |
-| FID-24M | `conditionAncienneteMois = 24` |
+**Règle** : Dans les quotas, `0` = illimité. La tarification v3 utilise `tarification.prixParEleve` avec franchise (`elevesInclusGratuits`). Premium a des paliers dégressifs (500→40F, 1000→30F).
 
-### 31.3 PackQuotaService — Prorata cycle réel
+### 32.2 Seeds idempotents (source de vérité)
 
-**Fichier** : `backend/src/modules/billing/services/pack-quota.service.ts`
+| Seed | Entités | Version |
+|------|---------|---------|
+| `seed-plans-abonnement.ts` | 3 plans (découverte, standard, premium) | v3.4 |
+| `seed-cycles-facturation.ts` | 4 cycles (M, T, S, A) | v3.0 |
+| `seed-packs-quota.ts` | 6 packs (3 élèves, 2 stockage, 1 SMS) | v3.4 |
+| `seed-strategies-expiration.ts` | 3 stratégies (15j, 30j, 90j SLA) | v3.4 |
+| `seed-remises.ts` | 7 remises (2 volume, 2 fidélité, 3 promo) | v3.4 |
 
-Remplacement de `dureeCycleJours = 30` (hardcodé) par le calcul réel :
-```typescript
-const dureeCycleJours = Math.max(1, Math.ceil(
-    (dateFin.getTime() - dateDebut.getTime()) / (1000 * 60 * 60 * 24)
-));
-```
+**Règle** : Les seeds sont **idempotents** par `slug` (plans) ou `code` (autres). Si l'entité existe → skip. Les remises font exception : upsert (update si existe, create sinon).
 
-### 31.4 FacturationService — Contexte enrichi
+### 32.3 Cohérence inter-entités
 
-**Fichier** : `backend/src/modules/billing/services/facturation.service.ts`
+- Les `planSlug` des stratégies d'expiration **doivent** correspondre aux `slug` des plans
+- Les `ressource` des packs (`eleves`, `stockageGo`, `sms`) **doivent** correspondre aux clés de `quotas` dans les plans
+- Les `cyclesAutorises` des plans **doivent** être un sous-ensemble des codes cycles (`MENSUEL`, `TRIMESTRIEL`, `SEMESTRIEL`, `ANNUEL`)
+- Le plafond de remises sur le scope PLAN est **40%** (appliqué par `promotionService.PLAFOND_PLAN_POURCENT`)
 
-Le contexte remise transmis au `RemiseService.appliquer()` inclut désormais :
-- `nombreEleves` : compté depuis les inscriptions actives de l'établissement
-- `dateDebutAbonnement` / `dateFinAbonnement` : lus depuis l'`AbonnementClient`
+### 32.4 Endpoints API Commerce
 
-### 31.5 Migration 214
+| Route | Usage |
+|-------|-------|
+| `GET /api/platform/facturation/plans` | CRUD platform (tous plans) |
+| `GET /api/billing/plans` | Catalogue public tenant (actifs + visibles) |
+| `GET /api/platform/cycles-facturation` | CRUD cycles |
+| `GET /api/platform/strategies-expiration` | CRUD stratégies |
+| `GET /api/platform/packs-quota` | CRUD packs |
+| `GET /api/platform/remises` | ⚠️ DÉPRÉCIÉ — Legacy lecture seule (→ `/api/platform/facturation/promotions`) |
 
-**Fichier** : `backend/database/migrations/214-remise-conditions-plafond.sql`
+### 32.5 Frontend — Pages plateforme polishées
 
-- Ajout colonnes `condition_eleves_min` (integer) et `condition_anciennete_mois` (integer) sur `remises_abonnement`
-- Backfill des remises VOL-500/1000 et FID-12M/24M
-- Index partiels pour les requêtes de filtrage
+Les 4 pages ont : skeleton loading, error states, animations Framer Motion, responsive 320px-2560px, dark mode, empty states améliorés.
 
-### 31.6 Nouveaux endpoints API
+| Page | Composants clés |
+|------|------------------|
+| `platform.plans.tsx` | Stats résumé, grille cartes, badges statut/défaut |
+| `platform.cycles-strategies.tsx` | 2 onglets animés, tableau cycles, timeline stratégies |
+| `platform.packs-quota.tsx` | Grille cartes, icônes ressource contextuelles |
+| `platform.remises.tsx` | Tableau responsive, colonnes conditionnelles |
 
-| Endpoint | Méthode | Rôle |
-|----------|---------|------|
-| `/api/billing/remises/verify?code=XXX` | GET | Vérifie validité code coupon (dates, maxUtilisations) |
-| `/api/billing/mon-abonnement/detail` | GET | Abonnement complet : plan + packs souscrits + remises actives + quotas effectifs |
-
-### 31.7 Notifications expiration (cron)
-
-**Fichier** : `backend/src/modules/billing/cron-jobs.ts`
-
-- Fonction `cronNotificationsExpiration()` : vérification quotidienne à 08h00
-- Paliers : J-7, J-3, J-1 avant expiration
-- Notification in-app + email (TODO: intégration service email)
-
-### 31.8 Composants frontend (page plans)
-
-| Composant | Fichier | Rôle |
-|-----------|---------|------|
-| `TarifsPreview` v2 | `frontend/src/features/billing/components/tarifs-preview.tsx` | Grille plans dynamique avec toggle cycle |
-| `PacksSection` | `frontend/src/features/billing/components/packs-section.tsx` | Achat packs quota (prorata affiché) |
-| `CodePromoInput` | `frontend/src/features/billing/components/code-promo-input.tsx` | Saisie et validation code promo |
-| `FaqSection` | `frontend/src/features/billing/components/faq-section.tsx` | FAQ accordéon (10 questions) |
-| `TrustBadges` | `frontend/src/features/billing/components/trust-badges.tsx` | Signaux confiance (sécurité, support, sans engagement) |
-| `MonAbonnement` | `frontend/src/features/billing/components/mon-abonnement.tsx` | Dashboard tenant (quotas, remises, packs) |
-| `use-billing.ts` | `frontend/src/features/billing/hooks/use-billing.ts` | Hooks centralisés (plans, packs, coupons, abonnement) |
-
-### 31.9 Alignement seeds
-
-- `seed-plans-abonnement.ts` : `MODULES_DECOUVERTE` aligné avec migration 213 (`['eleves', 'classes', 'notes', 'bulletins', 'annees-scolaires', 'messagerie']`)
-- `seed-remises.ts` : conditions `conditionElevesMin` / `conditionAncienneteMois` ajoutées aux remises volume/fidélité
-
-### 31.10 Fichiers de référence
+### 32.6 Fichiers de référence
 
 | Fichier | Rôle |
 |---------|------|
-| `backend/src/modules/billing/services/remise.service.ts` | Moteur remises v3.1 (filtrage + plafond) |
-| `backend/src/modules/billing/services/pack-quota.service.ts` | Prorata cycle réel |
-| `backend/src/modules/billing/services/facturation.service.ts` | Orchestration facturation + contexte remise |
-| `backend/database/migrations/214-remise-conditions-plafond.sql` | Migration colonnes conditionnelles |
-| `backend/src/database/seeds/system/seed-remises.ts` | Seeds remises avec conditions |
-| `backend/test/unit/remise-plafond.spec.ts` | Tests unitaires plafond + filtrage |
-| `frontend/src/routes/_auth.plans.tsx` | Page plans restructurée |
-| `frontend/src/features/billing/hooks/use-billing.ts` | Hooks API billing |
+| `backend/src/database/seeds/system/seed-plans-abonnement.ts` | 3 plans v3.4 |
+| `backend/src/database/seeds/system/seed-packs-quota.ts` | 6 packs |
+| `backend/src/database/seeds/system/seed-strategies-expiration.ts` | 3 stratégies |
+| `backend/src/database/seeds/system/seed-remises.ts` | 7 remises |
+| `backend/src/database/seeds/index.ts` | Registre seeds (descriptions à jour) |
+| `frontend/src/routes/platform.plans.tsx` | Page platform plans |
+| `frontend/src/routes/platform.cycles-strategies.tsx` | Page platform cycles |
+| `frontend/src/routes/platform.packs-quota.tsx` | Page platform packs |
+| `frontend/src/routes/platform.remises.tsx` | Page platform remises |
+| `frontend/src/locales/fr/plans.json` | i18n FR namespace plans |
+| `frontend/src/locales/en/plans.json` | i18n EN namespace plans |
+
+---
+
+## 33. Système de Promotions v4.0 — Multi-Scopes (migration 216)
+
+### Architecture
+
+Le système de promotions v4 remplace l'ancien RemiseService (mono-scope plan) par un moteur en cascade 5 phases couvrant tous les composants de la facture :
+
+- **5 scopes** : PLAN (forfait base + élèves), PACK (quota), QUOTA (ressource spécifique), MODULE (supplémentaire), BUNDLE (combo packs)
+- **3 types** : POURCENTAGE (0-100%), MONTANT_FIXE (devise), GRATUITE (module offert N mois)
+- **6 types auto-promotions** : MANUELLE, NOUVEAU_CLIENT, FIDELITE, UPGRADE, CROSS_SELL, FREE_TRIAL
+- **Conditions JSONB** : nombreElevesMin, ancienneteMois, plansRequis, packsRequis, modulesRequis, nbCycles, dureeGratuiteMois
+- **Paliers volume** : dégressivité par quantité (scope=QUOTA/PACK) via `PalierVolume[]`
+- **Bundles** : entité BundlePromotion (combo 2+ packs avec remise spéciale)
+- **Planification** : `estProgrammee` + `dateProgrammation` → activation automatique par cron
+
+### Cascade 5 phases (PromotionService)
+
+```
+Phase 1 PLAN   : plafond 40% sur base + élèves sup. × coefCycle
+Phase 2 PACK   : pas de plafond (remise libre sur packs + bundles)
+Phase 3 QUOTA  : pas de plafond (remise sur ressource quota spécifique, paliers volume)
+Phase 4 MODULE : pas de plafond (remise libre sur modules)
+Phase 5 GRATUITÉ : 100% (module offert pendant N mois)
+```
+
+### Intégration FacturationService
+
+`calculerMontantMensuel()` utilise `promotionService.appliquerCascade(montantForfaitCycle, montantPacks, montantModules, ctx)` au lieu de `remiseService.appliquer(sousTotal, ctx)`. Les montants options sont séparés : `montantModules` + `montantPacks`.
+
+### API REST
+
+- **Platform** : `GET/POST/PATCH/DELETE /api/platform/facturation/promotions` + `/bundles` + `/simuler` + `/analytics` + `/export/csv`
+- **Client** : `GET /api/billing/promotions/eligibles` + `/bundles/eligibles` + `/historique` + `POST /verifier-coupon`
+
+### Extensions v4.4 — Polish & Portail Client
+
+**v4.1** : CRUD platform complet (promotions + bundles), simulateur cascade, export CSV serveur, preview/duplication.
+**v4.2** : Intégration facturation (`facturation.service.ts` utilise `appliquerCascade()`), tracking `PromotionUtilisee`.
+**v4.3** : Stats dashboard (usage, économie, top promos), responsive 320px-2560px, dark mode, i18n FR/EN.
+**v4.4** : Page client `mon-abonnement.tsx` avec historique promotions appliquées, composants réutilisables (promo-badge, facture-breakdown, code-promo-input migré v4).
+
+### Extensions v5 — Auto-Promotions, QUOTA, Planification, Analytics
+
+#### 5 scopes (ajout QUOTA)
+
+`ScopePromotion.QUOTA` : remise sur une ressource quota spécifique (eleves, stockageGo, sms, emails, bandePassante). Utilise `PalierVolume[]` pour dégressivité par quantité. Cascade 5 phases : PLAN → PACK → **QUOTA** → MODULE → GRATUITE.
+
+#### Auto-promotions contextuelles
+
+`TypeAutoPromotion` (6 types) : MANUELLE, NOUVEAU_CLIENT (`estPremierAbonnement`), FIDELITE (`ancienneteMois`), UPGRADE (`planPrecedentId`), CROSS_SELL (`packsSouscritsIds`), FREE_TRIAL.
+Déclenchement automatique dans `trouverPromotionsEligibles()` — pas de code coupon requis.
+
+#### Planification
+
+`estProgrammee` + `dateProgrammation` : promotion créée mais inactive jusqu'à la date. Activation automatique par `cronExpirationPromotions()` (quotidien 00h05) qui gère 3 opérations : expiration promos, expiration bundles, activation programmées.
+
+#### Analytics avancés
+
+`GET /api/platform/facturation/promotions/analytics` → `promotionService.getAnalytics(etablissementId?)` :
+- Répartition par scope (montant déduit, nb utilisations, pourcentage)
+- Évolution mensuelle (6 derniers mois, sparkline)
+- Top 5 promotions par montant déduit
+- Répartition auto-promotions par type
+- Taux d'activité (promotions actives vs utilisées 30j)
+
+Frontend : composant `AnalyticsPanels` (graphiques CSS/SVG purs, pas de dépendance externe).
+
+#### Portail client
+
+`GET /api/billing/promotions/historique` → historique paginé des promotions appliquées à l'établissement.
+Composant `HistoriquePromotionsClient` dans `mon-abonnement.tsx` (auto-masquant si pas de données).
+
+### Conventions
+
+- **TOUJOURS** utiliser `promotionService.appliquerCascade()` pour le calcul de facture (source unique)
+- **TOUJOURS** utiliser `promotionService.trouverPromotionsEligibles(ctx)` pour les promos éligibles
+- **TOUJOURS** utiliser `promotionService.getAnalytics()` pour le dashboard analytics
+- **JAMAIS** réintroduire `remiseService.appliquer()` dans le flux de facturation
+- **TOUJOURS** séparer les montants modules/packs dans le CalculFactureResult
+- **TOUJOURS** utiliser les types du shared (`ScopePromotion`, `TypePromotion`, `TypeAutoPromotion`) — JAMAIS de string literal
+- **Méthodes publiques** : `estValide()`, `estBundleValide()`, `trouverPromotionsEligibles()`, `trouverBundlesEligibles()`, `activerPromotionsProgrammees()`, `getAnalytics()`, `genererExportCSV()`
+- **Migration 216** : ancienne table `remises_abonnement` renommée `_legacy_remises_abonnement`
+- **Migration 218** : ajouts v5 (est_programmee, date_programmation, paliers_volume, quota_ressource, type_auto_promotion) + seeds exemples
+- **Legacy déprécié** : `remise.service.ts`, routes `/api/platform/remises`, `/api/billing/remises` marqués @deprecated (lecture seule)
+
+### Fichiers de Référence
+
+| Fichier | Rôle |
+|---------|------|
+| `backend/src/modules/billing/entities/promotion.entity.ts` | Entité Promotion v4+v5 (228 lignes, 5 scopes, 6 types auto) |
+| `backend/src/modules/billing/entities/bundle-promotion.entity.ts` | Entité BundlePromotion (87 lignes) |
+| `backend/src/modules/billing/entities/promotion-utilisee.entity.ts` | Tracking utilisations |
+| `backend/src/modules/billing/services/promotion.service.ts` | Moteur cascade 5 phases + CRUD + analytics (1099 lignes) |
+| `backend/src/modules/billing/dto/promotion.dto.ts` | Schémas Zod |
+| `backend/src/modules/billing/controllers/promotions.controller.ts` | Routes platform + client + analytics |
+| `backend/src/modules/billing/cron-jobs.ts` | Expiration + activation programmée (quotidien 00h05) |
+| `backend/database/migrations/216-promotions-v4-refonte.sql` | Migration v4 (renommage legacy) |
+| `backend/database/migrations/218-promotions-v5-extensions.sql` | Migration v5 (auto-promo, QUOTA, planification) |
+| `frontend/src/features/billing/types/promotion.types.ts` | Types + enums + helpers + analytics |
+| `frontend/src/features/billing/hooks/use-promotions.ts` | Hooks TanStack Query (CRUD + analytics + historique) |
+| `frontend/src/features/billing/components/promo-badge.tsx` | Badge scope+type |
+| `frontend/src/features/billing/components/promotion-form-modal.tsx` | CRUD modal tabs |
+| `frontend/src/features/billing/components/bundle-card.tsx` | Carte bundle |
+| `frontend/src/features/billing/components/facture-breakdown.tsx` | Récap cascade ligne par ligne |
+| `frontend/src/features/billing/components/code-promo-input.tsx` | Saisie coupon (migré v4) |
+| `frontend/src/features/billing/components/mon-abonnement.tsx` | Dashboard client + historique promos |
+| `frontend/src/routes/platform.promotions.tsx` | Dashboard platform (CRUD, bundles, simulateur, stats, analytics) |
+| `frontend/src/locales/fr/promotions.json` | i18n FR namespace promotions |
+| `frontend/src/locales/en/promotions.json` | i18n EN namespace promotions |
+

@@ -20,7 +20,7 @@
     "rolesPlateforme": "Rôles & Permissions",
     "featureFlags": "Fonctionnalités",
     "remises": "Remises & Promotions",
-    "cyclesStrategies": "Cycles & Stratégies",
+    "cyclesStrategies": "Cycles & Strat\u00e9gies",
     "plansAbonnement": "Plans",
     "factures": "Factures",
     "quotasPacks": "Quotas & Packs",
@@ -30,7 +30,9 @@
     "parametresSysteme": "Param\u00e8tres syst\u00e8me",
     "sauvegardes": "Sauvegardes",
     "sessions": "Sessions & Activit\u00e9",
-    "tarifs": "Tarifs"
+    "tarifs": "Tarifs",
+    "promotions": "Promotions v4",
+    "promotionsRemises": "Promotions & Remises"
   },
   "sidebar": {
     "titre": "Plateforme",
@@ -1867,6 +1869,10 @@
     "providersDesc": "MTN, OM, Wave, Stripe...",
     "remises": "Remises & Promotions",
     "remisesDesc": "Coupons, réductions",
+    "promotions": "Promotions v4",
+    "promotionsDesc": "Promotions multi-scopes, bundles, cascade",
+    "promotionsRemises": "Promotions & Remises",
+    "promotionsRemisesDesc": "Promotions multi-scopes, bundles, cascade, coupons, réductions",
     "modules": "Modules",
     "modulesDesc": "Registre & activation module",
     "featureFlags": "Feature Flags",

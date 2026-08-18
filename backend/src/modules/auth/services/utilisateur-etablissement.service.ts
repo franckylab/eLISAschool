@@ -388,14 +388,14 @@ export class UtilisateurEtablissementService {
         }
 
         // VÉRIFICATION 3: L'utilisateur est-il responsable d'élèves ?
-        const responsableRepo = queryRunner.manager.getRepository('ResponsableEleve');
-        const responsablesEleves = await responsableRepo.count({
+        const responsableRepo = queryRunner.manager.getRepository('Parent');
+        const nbParents = await responsableRepo.count({
             where: { utilisateurId }
         });
 
-        if (responsablesEleves > 0) {
+        if (nbParents > 0) {
             logger.info(
-                `[INFO] Utilisateur ${utilisateurId} est responsable de ${responsablesEleves} élève(s)`
+                `[INFO] Utilisateur ${utilisateurId} est responsable de ${nbParents} élève(s)`
             );
             // Pas de blocage - les responsables peuvent être multi-établissements
         }
@@ -672,9 +672,9 @@ export class UtilisateurEtablissementService {
         }
 
         // VÉRIFICATION 3: L'utilisateur est-il responsable d'élèves dans CET établissement ?
-        // NOTE: ResponsableEleve n'a pas d'etablissementId, il faut passer par Eleve
-        // ResponsableEleve.enfantId = Utilisateur.id → Eleve.utilisateurId → Eleve.etablissementId
-        const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
+        // NOTE: Parent n'a pas d'etablissementId, il faut passer par Eleve
+        // Parent.enfantId = Utilisateur.id → Eleve.utilisateurId → Eleve.etablissementId
+        const responsableRepo = AppDataSource.getRepository('Parent');
         const eleveRepo = AppDataSource.getRepository('Eleve');
         
         // Trouver tous les enfants dont cet utilisateur est responsable

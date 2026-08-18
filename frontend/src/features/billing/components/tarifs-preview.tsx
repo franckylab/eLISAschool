@@ -28,6 +28,9 @@ import {
     CreditCard,
     Sparkles,
     Star,
+    School,
+    HardDrive,
+    MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ElisaButton } from '@/components/ui';
@@ -73,8 +76,9 @@ function useCyclesFacturation() {
     return useQuery<CycleFacturation[]>({
         queryKey: ['cycles-facturation-tarifs'],
         queryFn: async () => {
-            const res = await apiClient.get<{ success: boolean; data: CycleFacturation[] }>('/api/platform/cycles-facturation');
-            return res.data?.data ?? [];
+            const res = await apiClient.get<CycleFacturation[]>('/api/platform/cycles-facturation');
+            const payload = res.data as any;
+            return Array.isArray(payload) ? payload : payload?.data ?? [];
         },
     });
 }
@@ -152,13 +156,16 @@ export function TarifsPreview({
         <div className="space-y-6">
             {/* Cycle toggle */}
             <div className="flex justify-center">
-                <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface-hover)]/30 p-1">
+                <div className="inline-flex flex-wrap items-center justify-center gap-1 rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface-hover)]/30 p-1" role="radiogroup" aria-label={t('tarifs.cycleFacturation', 'Cycle de facturation')}>
                     {cyclesDisponibles.map((c) => (
                         <button
                             key={c}
                             onClick={() => setCycle(c)}
+                            role="radio"
+                            aria-checked={cycle === c}
                             className={cn(
                                 'relative rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 sm:px-4',
+                                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-dominante)]/50',
                                 cycle === c
                                     ? 'bg-[var(--color-dominante)] text-white shadow-sm'
                                     : 'text-[var(--color-texte-secondaire)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-texte)]',
@@ -189,7 +196,7 @@ export function TarifsPreview({
                     const quotas = plan.quotas ?? {};
                     const nbEleves = quotas.eleves;
                     const isSelected = selectedPlanId === plan.id;
-                    const estRecommande = plan.estParDefaut === true || plan.badge === 'Recommandé' || plan.badge === 'Recommended';
+                    const estRecommande = plan.estParDefaut === true || /recommand/i.test(plan.badge ?? '') || /recommended/i.test(plan.badge ?? '');
 
                     return (
                         <motion.div
@@ -281,10 +288,22 @@ export function TarifsPreview({
                                         <span><strong>{quotas.utilisateurs}</strong> {t('tarifs.utilisateurs')}</span>
                                     </li>
                                 )}
+                                {quotas.classes !== undefined && quotas.classes > 0 && (
+                                    <li className="flex items-center gap-2">
+                                        <School className="h-4 w-4 shrink-0 text-[var(--color-texte-secondaire)]" />
+                                        <span><strong>{quotas.classes}</strong> {t('tarifs.classes').toLowerCase()}</span>
+                                    </li>
+                                )}
                                 {quotas.stockageGo !== undefined && quotas.stockageGo > 0 && (
                                     <li className="flex items-center gap-2">
-                                        <Package className="h-4 w-4 shrink-0 text-[var(--color-texte-secondaire)]" />
-                                        <span><strong>{quotas.stockageGo}</strong> {t('tarifs.stockage')}</span>
+                                        <HardDrive className="h-4 w-4 shrink-0 text-[var(--color-texte-secondaire)]" />
+                                        <span><strong>{quotas.stockageGo}</strong> Go {t('tarifs.stockage').toLowerCase()}</span>
+                                    </li>
+                                )}
+                                {quotas.sms !== undefined && quotas.sms > 0 && (
+                                    <li className="flex items-center gap-2">
+                                        <MessageSquare className="h-4 w-4 shrink-0 text-[var(--color-texte-secondaire)]" />
+                                        <span><strong>{quotas.sms.toLocaleString('fr-FR')}</strong> SMS</span>
                                     </li>
                                 )}
                                 <li className="flex items-center gap-2">

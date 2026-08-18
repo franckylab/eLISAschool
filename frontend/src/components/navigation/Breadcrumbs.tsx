@@ -50,7 +50,7 @@ const LABEL_MAP: Record<string, string> = {
     specialites: 'Spécialités',
     'examens-nationaux': 'Examens nationaux',
     'diplomes-eleves': 'Diplômes élèves',
-    'responsables-eleves': 'Responsables élèves',
+    parents: 'Parents',
     messagerie: 'Messagerie',
     annonces: 'Annonces',
     dashboard: 'Dashboard',

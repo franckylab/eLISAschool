@@ -723,7 +723,16 @@ export function initBillingCronJobs(): void {
         }
     }, { timezone: 'Africa/Douala' });
 
-    logger.info('[Cron] ✅ Cron jobs billing enregistrés (quotidien 00h, mensuel 1er, quota 6h, contrôle quotas 02h, flags 03h, notifs 08h)');
+    // Refonte v4.1 — Expiration automatique des promotions — Quotidien 00h05
+    scheduleWithLock('billing-expiration-promotions', '5 0 * * *', async () => {
+        try {
+            await cronExpirationPromotions();
+        } catch (error) {
+            logger.error('[Cron] Erreur expiration promotions:', error);
+        }
+    }, { timezone: 'Africa/Douala' });
+
+    logger.info('[Cron] ✅ Cron jobs billing enregistrés (quotidien 00h, mensuel 1er, quota 6h, contrôle quotas 02h, flags 03h, notifs 08h, promos 00h05)');
 }
 
 // =============================================
@@ -820,3 +829,81 @@ export async function cronControleQuotas(): Promise<CronResult> {
 }
 
 // cronControleTranches supprimé (Refonte v3 — remplacé par cronControleQuotas)
+
+// =============================================
+// Refonte v4.1 — Expiration automatique des promotions
+// =============================================
+
+/**
+ * Expiration automatique des promotions et bundles.
+ * Schedule : quotidien à 00h05
+ *
+ * 1. Désactive les promotions dont dateFin < now() et actif = true
+ * 2. Désactive les bundles dont dateFin < now() et actif = true
+ * 3. Log le résumé (nombre désactivés)
+ */
+async function cronExpirationPromotions(): Promise<CronResult> {
+    const startTime = Date.now();
+    logger.info('[Cron Promos] 🔄 Expiration automatique des promotions...');
+
+    const now = new Date();
+    const promoRepo = AppDataSource.getRepository('Promotion');
+    const bundleRepo = AppDataSource.getRepository('BundlePromotion');
+
+    let promosDesactivees = 0;
+    let bundlesDesactives = 0;
+    let programmeesActivees = 0;
+
+    try {
+        // 1. Promotions expirées
+        const promosExpirees = await promoRepo
+            .createQueryBuilder('p')
+            .update('promotions')
+            .set({ actif: false })
+            .where('actif = true')
+            .andWhere('date_fin IS NOT NULL')
+            .andWhere('date_fin < :now', { now })
+            .execute();
+        promosDesactivees = promosExpirees.affected ?? 0;
+
+        // 2. Bundles expirés
+        const bundlesExpirees = await bundleRepo
+            .createQueryBuilder('b')
+            .update('bundle_promotions')
+            .set({ actif: false })
+            .where('actif = true')
+            .andWhere('date_fin IS NOT NULL')
+            .andWhere('date_fin < :now', { now })
+            .execute();
+        bundlesDesactives = bundlesExpirees.affected ?? 0;
+
+        // 3. v5 — Activer les promotions programmées (dateProgrammation atteinte)
+        const programmeesActiveesResult = await promoRepo
+            .createQueryBuilder('p')
+            .update('promotions')
+            .set({ actif: true, estProgrammee: false })
+            .where('actif = false')
+            .andWhere('est_programmee = true')
+            .andWhere('date_programmation IS NOT NULL')
+            .andWhere('date_programmation <= :now', { now })
+            .execute();
+        programmeesActivees = programmeesActiveesResult.affected ?? 0;
+
+    } catch (error) {
+        logger.error('[Cron Promos] Erreur lors de la désactivation:', error);
+    }
+
+    const duration = Date.now() - startTime;
+    logger.info(
+        `[Cron Promos] ✅ Terminé en ${duration}ms — ` +
+        `${promosDesactivees} expirées, ${bundlesDesactives} bundles désactivés, ${programmeesActivees} programmées activées`
+    );
+
+    return {
+        job: 'expiration-promotions',
+        executed: true,
+        results: { promosDesactivees, bundlesDesactives, programmeesActivees },
+        duration,
+        timestamp: new Date(),
+    };
+}

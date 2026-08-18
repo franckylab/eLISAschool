@@ -23,7 +23,7 @@ export interface Eleve {
     nationalite?: string;
     sousSysteme: SousSysteme;
     
-    // Parents directs (déprécié, utiliser ResponsableEleve)
+    // Parents directs (déprécié, utiliser Parent)
     nomPere?: string;
     professionPere?: string;
     telephonePere?: string;
@@ -154,7 +154,7 @@ export interface EleveStats {
     cantine: number;
 }
 
-export interface ResponsableEleve {
+export interface ParentEleve {
     id: string;
     utilisateurId: string;
     enfantId: string;

@@ -1,20 +1,23 @@
 /**
  * ==========================================
- * eLISAschool - Seed : Plans d'abonnement v3 (migration 213)
+ * eLISAschool - Seed : Plans d'abonnement v3.4 (migration 213)
  * ==========================================
  *
- * Seed idempotent des 5 plans plateforme pilotés par JSONB :
- * decouverte, starter, standard (par défaut), pro, enterprise.
+ * Seed idempotent des 3 plans plateforme pilotés par JSONB :
+ * decouverte (14 900 F), standard (39 900 F), premium (59 900 F).
  *
- * Valeurs issues du rapport v3 (§5.3) :
- *   - Découverte : GRATUIT, 0 FCFA/mois, 50 élèves inclus, 6 modules cœur
- *   - Standard   : 25 000 FCFA/mois + 150 F/élève > 200 (RECOMMANDÉ)
- *   - Enterprise : sur devis, visiblePubliquement=false, cycle annuel uniquement
+ * Architecture tarifaire v3.4 :
+ *   - Découverte : 14 900 F/mois, 100 élèves inclus, 8 modules cœur
+ *   - Standard   : 39 900 F/mois, 300 élèves inclus, 14 modules (RECOMMANDÉ)
+ *   - Premium    : 59 900 F/mois, élèves illimités, tous modules + API + SSO
+ *
+ * Formule v3 : prixBase + max(0, nbÉlèves − franchise) × prixParEleve
+ * Quotas : 0 = illimité
  *
  * Idempotence : création uniquement si le slug est absent — les plans
- * restent éditables en profondeur depuis l'espace plateforme (EX-2).
+ * restent éditables en profondeur depuis l'espace plateforme.
  *
- * Version: 3.0.0
+ * Version: 3.4.0
  * Auteur: franck arlos chendjou
  * ==========================================
  */
@@ -23,124 +26,100 @@ import { AppDataSource } from '@database/data-source';
 import { PlanAbonnement, StatutPlan } from '@modules/billing/entities/plan-abonnement.entity';
 import { logger } from '@common/utils/logger.util';
 
-/** 6 modules cœur du plan Découverte (aligné migration 213) */
-const MODULES_DECOUVERTE = ['eleves', 'classes', 'notes', 'bulletins', 'annees-scolaires', 'messagerie'];
-
-/** Modules supplémentaires Starter */
-const MODULES_STARTER = [...MODULES_DECOUVERTE, 'emploi-du-temps', 'personnel'];
-
-/** 16 modules du plan Standard (rapport §5.3) */
-const MODULES_STANDARD = [
-    ...MODULES_STARTER,
-    'orientation', 'cantine', 'transport', 'comptabilite',
-    'clubs', 'gamification', 'bibliotheque', 'cartes',
+/** 8 modules cœur du plan Découverte */
+const MODULES_DECOUVERTE = [
+    'eleves', 'classes', 'notes', 'bulletins',
+    'annees-scolaires', 'messagerie', 'emploi-du-temps', 'personnel',
 ];
 
-/** Pro = Standard + scoring */
-const MODULES_PRO = [...MODULES_STANDARD, 'scoring'];
+/** 14 modules du plan Standard (cœur + gestion avancée) */
+const MODULES_STANDARD = [
+    ...MODULES_DECOUVERTE,
+    'orientation', 'cantine', 'transport', 'comptabilite',
+    'bibliotheque', 'gamification',
+];
+
+/** Premium = tous les modules disponibles */
+const MODULES_PREMIUM = [
+    ...MODULES_STANDARD,
+    'clubs', 'cartes', 'scoring',
+];
 
 /**
- * Définition des 5 plans v3 — toutes dimensions en JSONB.
+ * Définition des 3 plans v3.4 — toutes dimensions en JSONB.
  * 0 = illimité dans le bloc quotas.
  */
-const PLANS_V3 = [
+const PLANS_V34 = [
     {
         nom: 'Découverte',
         slug: 'decouverte',
-        description: 'Plan gratuit de repli — pour démarrer avec eLISAschool sans engagement',
-        prixBase: 0,
+        description: 'L\'essentiel pour digitaliser votre établissement — idéal pour démarrer',
+        prixBase: 14900,
         rang: 0,
         estParDefaut: false,
         visiblePubliquement: true,
         badge: undefined as string | undefined,
-        tarification: { prixBase: 0, prixParEleve: 0, elevesInclusGratuits: 50 },
-        quotas: { eleves: 50, utilisateurs: 5, classes: 3, stockageGo: 5, sms: 100 },
-        entitlements: { modules: MODULES_DECOUVERTE, fonctionnalites: ['export_pdf'] },
-        cyclesAutorises: ['MENSUEL'],
-        essai: { autorise: false },
-        ordre: 1,
-    },
-    {
-        nom: 'Starter',
-        slug: 'starter',
-        description: 'Pour les petits établissements qui démarrent la digitalisation',
-        prixBase: 15000,
-        rang: 1,
-        estParDefaut: false,
-        visiblePubliquement: true,
-        badge: undefined as string | undefined,
-        tarification: { prixBase: 15000, prixParEleve: 100, elevesInclusGratuits: 100 },
-        quotas: { eleves: 200, utilisateurs: 15, classes: 10, stockageGo: 20, sms: 500 },
-        entitlements: { modules: MODULES_STARTER, fonctionnalites: ['export_pdf'] },
-        cyclesAutorises: ['MENSUEL', 'ANNUEL'],
+        tarification: { prixBase: 14900, prixParEleve: 100, elevesInclusGratuits: 100 },
+        quotas: { eleves: 100, utilisateurs: 10, classes: 8, stockageGo: 10, sms: 200 },
+        entitlements: {
+            modules: MODULES_DECOUVERTE,
+            fonctionnalites: ['export_pdf'],
+        },
+        cyclesAutorises: ['MENSUEL', 'TRIMESTRIEL', 'ANNUEL'],
         essai: { autorise: true, dureeJours: 14, quotasReduits: false },
-        ordre: 2,
+        ordre: 1,
     },
     {
         nom: 'Standard',
         slug: 'standard',
-        description: 'Le plan complet pour établissements en croissance — 200 élèves inclus',
-        prixBase: 25000,
-        rang: 2,
+        description: 'La suite complète pour les établissements en croissance — 300 élèves inclus',
+        prixBase: 39900,
+        rang: 1,
         estParDefaut: true,
         visiblePubliquement: true,
         badge: 'RECOMMANDÉ',
-        tarification: { prixBase: 25000, prixParEleve: 150, elevesInclusGratuits: 200 },
+        tarification: { prixBase: 39900, prixParEleve: 80, elevesInclusGratuits: 300 },
         quotas: { eleves: 500, utilisateurs: 30, classes: 25, stockageGo: 50, sms: 1000 },
-        entitlements: { modules: MODULES_STANDARD, fonctionnalites: ['export_pdf', 'backup_auto', 'api_rest'] },
-        cyclesAutorises: ['MENSUEL', 'ANNUEL'],
+        entitlements: {
+            modules: MODULES_STANDARD,
+            fonctionnalites: ['export_pdf', 'backup_auto', 'api_rest'],
+        },
+        cyclesAutorises: ['MENSUEL', 'TRIMESTRIEL', 'SEMESTRIEL', 'ANNUEL'],
         essai: { autorise: true, dureeJours: 14, quotasReduits: false },
-        ordre: 3,
+        ordre: 2,
     },
     {
-        nom: 'Pro',
-        slug: 'pro',
-        description: 'Pour les grands établissements multi-sites exigeants',
-        prixBase: 60000,
-        rang: 3,
+        nom: 'Premium',
+        slug: 'premium',
+        description: 'Performance maximale — élèves illimités, tous modules, API & SSO',
+        prixBase: 59900,
+        rang: 2,
         estParDefaut: false,
         visiblePubliquement: true,
-        badge: undefined as string | undefined,
+        badge: 'MEILLEUR CHOIX',
         tarification: {
-            prixBase: 60000, prixParEleve: 120, elevesInclusGratuits: 400,
-            paliers: [{ seuilEleves: 1000, prixParEleve: 100 }],
-        },
-        quotas: { eleves: 1500, utilisateurs: 75, classes: 60, stockageGo: 200, sms: 3000 },
-        entitlements: {
-            modules: MODULES_PRO,
-            fonctionnalites: ['export_pdf', 'backup_auto', 'api_rest', 'webhooks', 'monitoring_advanced', 'multi_etablissement'],
-        },
-        cyclesAutorises: ['MENSUEL', 'TRIMESTRIEL', 'ANNUEL'],
-        essai: { autorise: true, dureeJours: 30, quotasReduits: false },
-        ordre: 4,
-    },
-    {
-        nom: 'Enterprise',
-        slug: 'enterprise',
-        description: 'Sur devis — franchise négociée, SSO, white label, API SLA + remises contrat',
-        prixBase: 150000,
-        rang: 4,
-        estParDefaut: false,
-        visiblePubliquement: false,
-        badge: undefined as string | undefined,
-        // 0 = illimité (franchise négociée au contrat)
-        tarification: { prixBase: 150000, prixParEleve: 0, elevesInclusGratuits: 0 },
-        quotas: { eleves: 0, utilisateurs: 0, classes: 0, stockageGo: 0, sms: 0 },
-        entitlements: {
-            modules: MODULES_PRO,
-            fonctionnalites: [
-                'export_pdf', 'backup_auto', 'api_rest', 'webhooks',
-                'monitoring_advanced', 'multi_etablissement', 'sso', 'white_label',
+            prixBase: 59900, prixParEleve: 50, elevesInclusGratuits: 0,
+            paliers: [
+                { seuilEleves: 500, prixParEleve: 40 },
+                { seuilEleves: 1000, prixParEleve: 30 },
             ],
         },
-        cyclesAutorises: ['ANNUEL'],
-        essai: { autorise: false },
-        ordre: 5,
+        quotas: { eleves: 0, utilisateurs: 0, classes: 0, stockageGo: 0, sms: 0 },
+        entitlements: {
+            modules: MODULES_PREMIUM,
+            fonctionnalites: [
+                'export_pdf', 'backup_auto', 'api_rest', 'webhooks',
+                'monitoring_advanced', 'multi_etablissement', 'sso',
+            ],
+        },
+        cyclesAutorises: ['MENSUEL', 'TRIMESTRIEL', 'SEMESTRIEL', 'ANNUEL'],
+        essai: { autorise: true, dureeJours: 30, quotasReduits: false },
+        ordre: 3,
     },
 ];
 
 /**
- * Seed idempotent des 5 plans v3.
+ * Seed idempotent des 3 plans v3.4.
  * @returns { created, skipped }
  */
 export async function seedPlansAbonnement(): Promise<{ created: number; skipped: number }> {
@@ -148,7 +127,7 @@ export async function seedPlansAbonnement(): Promise<{ created: number; skipped:
     let created = 0;
     let skipped = 0;
 
-    for (const plan of PLANS_V3) {
+    for (const plan of PLANS_V34) {
         const existing = await repo.findOne({ where: { slug: plan.slug } });
         if (existing) {
             skipped++;
@@ -186,7 +165,7 @@ export async function seedPlansAbonnement(): Promise<{ created: number; skipped:
         logger.warn('📦 Aucun plan par défaut — "standard" marqué estParDefaut');
     }
 
-    logger.info(`📦 Seed plans abonnement v3 : ${created} créés, ${skipped} ignorés (déjà existants)`);
+    logger.info(`📦 Seed plans abonnement v3.4 : ${created} créés, ${skipped} ignorés (déjà existants)`);
     return { created, skipped };
 }
 

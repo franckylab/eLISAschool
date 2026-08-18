@@ -56,8 +56,9 @@ export function useCyclesFacturation() {
     return useQuery<CycleFacturation[]>({
         queryKey: ['cycles-facturation'],
         queryFn: async () => {
-            const res = await apiClient.get<{ success: boolean; data: CycleFacturation[] }>('/api/platform/cycles-facturation');
-            return res.data?.data ?? [];
+            const res = await apiClient.get<CycleFacturation[]>('/api/platform/cycles-facturation');
+            const payload = res.data as any;
+            return Array.isArray(payload) ? payload : payload?.data ?? [];
         },
     });
 }
@@ -70,8 +71,10 @@ export function usePacks() {
     return useQuery<PackQuota[]>({
         queryKey: ['packs-quota-disponibles'],
         queryFn: async () => {
-            const res = await apiClient.get<{ success: boolean; data: PackQuota[] }>('/api/billing/packs');
-            return (res.data?.data ?? []).filter((p) => p.actif).sort((a, b) => a.ordre - b.ordre);
+            const res = await apiClient.get<PackQuota[]>('/api/billing/packs');
+            const payload = res.data as any;
+            const liste = Array.isArray(payload) ? payload : payload?.data ?? [];
+            return (liste as PackQuota[]).filter((p) => p.actif).sort((a, b) => a.ordre - b.ordre);
         },
     });
 }
@@ -95,18 +98,24 @@ export function useSouscrirePack() {
 }
 
 // =============================================
-// Vérification code coupon
+// Vérification code coupon — DÉPRÉCIÉ
 // =============================================
 
-export function useVerifierCoupon(code: string | null) {
+/**
+ * @deprecated v4.0 — Utiliser `useVerifierCoupon` depuis `use-promotions.ts`.
+ * Import : `import { useVerifierCoupon } from '../hooks/use-promotions';`
+ */
+export function useVerifierCouponLegacy(code: string | null) {
     return useQuery<{ valide: boolean; nom?: string; typeRemise?: string; valeur?: number; message?: string }>({
-        queryKey: ['verifier-coupon', code],
+        queryKey: ['verifier-coupon-legacy', code],
         queryFn: async () => {
             if (!code) return { valide: false, message: 'Aucun code' };
-            const res = await apiClient.get<{ success: boolean; data: any }>(
-                `/api/billing/remises/verify?code=${encodeURIComponent(code)}`
+            const res = await apiClient.post<any>(
+                `/api/billing/promotions/verifier-coupon`,
+                { codeCoupon: code }
             );
-            return res.data?.data ?? { valide: false, message: 'Code invalide' };
+            const payload = res.data as any;
+            return (payload?.valide !== undefined ? payload : payload?.data) ?? { valide: false, message: 'Code invalide' };
         },
         enabled: !!code,
         retry: false,
@@ -121,8 +130,9 @@ export function useMonAbonnementDetail() {
     return useQuery<MonAbonnement>({
         queryKey: ['mon-abonnement-detail'],
         queryFn: async () => {
-            const res = await apiClient.get<{ success: boolean; data: MonAbonnement }>('/api/billing/mon-abonnement/detail');
-            return res.data?.data;
+            const res = await apiClient.get<MonAbonnement>('/api/billing/mon-abonnement/detail');
+            const payload = res.data as any;
+            return (payload?.plan ? payload : payload?.data) as MonAbonnement;
         },
     });
 }

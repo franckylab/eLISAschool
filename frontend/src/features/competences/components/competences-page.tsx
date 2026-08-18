@@ -14,6 +14,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Plus, Edit, Trash2, Eye, BookOpen, GraduationCap, Layers, Brain } from 'lucide-react';
 import { useTousNiveaux } from '@/features/niveaux/hooks/use-tous-niveaux';
+import { useMatieres } from '@/features/matieres/hooks/use-matieres';
 import {
     useCompetences,
     useCreerCompetence,
@@ -339,6 +340,8 @@ interface CompetenceFormModalProps {
 
 function CompetenceFormModal({ open, onOpenChange, competence, onSave, isLoading, niveauxOptions }: CompetenceFormModalProps) {
     const { t: tComp } = useTranslation('competences');
+    const { data: matieresData } = useMatieres({ limit: 500 });
+    const matieres = matieresData?.items ?? [];
     const [code, setCode] = useState('');
     const [libelle, setLibelle] = useState('');
     const [description, setDescription] = useState('');
@@ -483,14 +486,18 @@ function CompetenceFormModal({ open, onOpenChange, competence, onSave, isLoading
                         <label className="text-sm font-medium text-foreground mb-2 block">
                             {tComp('matiereOptionnelle')}
                         </label>
-                        <input
-                            type="text"
+                        <select
                             value={matiereId}
                             onChange={(e) => setMatiereId(e.target.value)}
-                            placeholder="ID matière ou laisser vide"
                             className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
-                            maxLength={50}
-                        />
+                        >
+                            <option value="">{tComp('aucuneMatiere')}</option>
+                            {matieres.map((m) => (
+                                <option key={m.id} value={m.id}>
+                                    {m.nom}{m.code ? ` (${m.code})` : ''}
+                                </option>
+                            ))}
+                        </select>
                         <p className="text-xs text-muted-foreground mt-1">
                             {tComp('laisserVide')}
                         </p>

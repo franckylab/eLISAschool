@@ -1339,8 +1339,7 @@ clientBillingRouter.get('/modules/mes-modules', authMiddleware, async (req: Requ
 // --- REMISES (client — lecture) ---
 
 /**
- * GET /api/billing/remises
- * Liste les remises actives applicables au tenant
+ * @deprecated v4.0 — Utiliser GET /api/billing/promotions/eligibles à la place.
  */
 clientBillingRouter.get('/remises', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -1351,8 +1350,7 @@ clientBillingRouter.get('/remises', authMiddleware, async (req: Request, res: Re
 });
 
 /**
- * GET /api/billing/remises/verify?code=XXX
- * Vérifie la validité d'un code coupon/promo
+ * @deprecated v4.0 — Utiliser POST /api/billing/promotions/verifier-coupon à la place.
  */
 clientBillingRouter.get('/remises/verify', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -1418,15 +1416,15 @@ clientBillingRouter.get('/mon-abonnement/detail', authMiddleware, async (req: Re
         const { packQuotaService } = await import('../services/pack-quota.service');
         const packsSouscrits = await packQuotaService.getPacksSouscrits(abonnement.id);
 
-        // Remises actives
-        const { remiseService } = await import('../services/remise.service');
-        const toutesRemises = await remiseService.findAll({ actif: true });
-        const remisesActives = toutesRemises.filter((r) => {
-            if (r.cible === 'GLOBAL') return true;
-            if (r.cible === 'PLAN') return r.cibleId === abonnement.planId;
-            if (r.cible === 'TENANT') return r.cibleId === etablissementId;
-            if (r.cible === 'CYCLE') return r.cibleCycle === abonnement.cycleFacturation;
-            return false;
+        // Promotions actives (v4) — contexte enrichci pour évaluation correcte des conditions
+        const { promotionService } = await import('../services/promotion.service');
+        const promosEligibles = await promotionService.trouverPromotionsEligibles({
+            planId: abonnement.planId,
+            etablissementId,
+            nombreEleves: abonnement.nombreElevesActuel,
+            dateDebutAbonnement: abonnement.dateDebut,
+            dateFinAbonnement: abonnement.dateFin,
+            packsSouscritsIds: packsSouscrits.map((p: any) => p.packId || p.id),
         });
 
         // Quotas effectifs par ressource
@@ -1448,7 +1446,7 @@ clientBillingRouter.get('/mon-abonnement/detail', authMiddleware, async (req: Re
             data: {
                 ...abonnement,
                 packsSouscrits,
-                remisesActives,
+                promotionsEligibles: promosEligibles,
                 quotasEffectifs,
             },
         });

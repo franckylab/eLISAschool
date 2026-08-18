@@ -1,21 +1,20 @@
 /**
  * ==================================
- * eLISAschool - Code Promo Input
+ * eLISAschool - Code Promo Input (v4.0)
  * ==================================
  * Champ de saisie de code promo avec validation API.
- * Animation de succès/erreur.
+ * Utilise le nouveau système de promotions v4 (POST /api/billing/promotions/verifier-coupon).
  *
- * Version: 1.0.0
+ * Version: 4.0.0
  * Auteur: franck arlos chendjou
  */
 
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
-import { Tag, Check, X, Loader2 } from 'lucide-react';
+import { Tag, Check, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ElisaButton } from '@/components/ui';
+import { useVerifierCoupon } from '../hooks/use-promotions';
 
 // =============================================
 // Types
@@ -32,28 +31,10 @@ interface VerificationResult {
     valide: boolean;
     code?: string;
     nom?: string;
+    typePromotion?: string;
     typeRemise?: string;
     valeur?: number;
     message?: string;
-}
-
-// =============================================
-// Hook — Vérification code promo
-// =============================================
-
-function useVerifierCoupon(code: string | null) {
-    return useQuery<{ valide: boolean; nom?: string; typeRemise?: string; valeur?: number; message?: string }>({
-        queryKey: ['verifier-coupon', code],
-        queryFn: async () => {
-            if (!code) return { valide: false, message: 'Aucun code' };
-            const res = await apiClient.get<{ success: boolean; data: VerificationResult }>(
-                `/api/billing/remises/verify?code=${encodeURIComponent(code)}`
-            );
-            return res.data?.data ?? { valide: false, message: 'Code invalide' };
-        },
-        enabled: !!code,
-        retry: false,
-    });
 }
 
 // =============================================
@@ -65,24 +46,20 @@ export function CodePromoInput({ onCodeApplique, className }: CodePromoInputProp
     const [codeSaisi, setCodeSaisi] = useState('');
     const [codeActif, setCodeActif] = useState<string | null>(null);
     const [erreur, setErreur] = useState<string | null>(null);
-    const [enCours, setEnCours] = useState(false);
+    const verifierCoupon = useVerifierCoupon();
 
     const verifier = useCallback(async () => {
         if (!codeSaisi.trim()) return;
 
-        setEnCours(true);
         setErreur(null);
 
         try {
-            const res = await apiClient.get<{ success: boolean; data: VerificationResult }>(
-                `/api/billing/remises/verify?code=${encodeURIComponent(codeSaisi.trim())}`
-            );
-            const data = res.data?.data;
+            const data = await verifierCoupon.mutateAsync(codeSaisi.trim()) as VerificationResult;
 
             if (data?.valide) {
                 setCodeActif(codeSaisi.trim());
                 onCodeApplique?.(codeSaisi.trim(), {
-                    type: data.typeRemise ?? 'POURCENTAGE',
+                    type: data.typePromotion ?? data.typeRemise ?? 'POURCENTAGE',
                     valeur: data.valeur ?? 0,
                 });
             } else {
@@ -91,10 +68,8 @@ export function CodePromoInput({ onCodeApplique, className }: CodePromoInputProp
             }
         } catch {
             setErreur(t('promo.erreurVerification', 'Erreur lors de la vérification'));
-        } finally {
-            setEnCours(false);
         }
-    }, [codeSaisi, onCodeApplique, t]);
+    }, [codeSaisi, onCodeApplique, t, verifierCoupon]);
 
     const retirer = () => {
         setCodeActif(null);
@@ -140,8 +115,8 @@ export function CodePromoInput({ onCodeApplique, className }: CodePromoInputProp
                     />
                     <ElisaButton
                         onClick={verifier}
-                        disabled={!codeSaisi.trim() || enCours}
-                        isLoading={enCours}
+                        disabled={!codeSaisi.trim() || verifierCoupon.isPending}
+                        isLoading={verifierCoupon.isPending}
                         size="sm"
                     >
                         {t('promo.appliquer', 'Appliquer')}

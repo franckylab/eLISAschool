@@ -17,7 +17,7 @@ import { validationWorkflowService } from '@modules/validation-workflow/services
 import { getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { notificationsService } from '@modules/notifications/services/notifications.service';
 import { TypeNotification, PrioriteNotification } from '@modules/notifications/entities';
-import { parentsService } from '@modules/responsables-eleves/services';
+import { parentService } from '@modules/parents/services';
 import { Classe } from '@modules/classes/entities';
 import { AffectationEleve } from '@modules/classes/entities';
 import { AnneeScolaire } from '@modules/annees-scolaires/entities';
@@ -539,13 +539,13 @@ export class ElevesService {
         await this.repo.save(preinscription);
 
         // ==================================
-        // MIGRATION DES PARENTS VERS ResponsableEleve
+        // MIGRATION DES PARENTS VERS Parent
         // ==================================
         let migrationResult = null;
         try {
-            logger.info(`[Conversion] Migration des parents vers ResponsableEleve pour ${preinscription.matricule}`);
+            logger.info(`[Conversion] Migration des parents vers Parent pour ${preinscription.matricule}`);
             
-            migrationResult = await parentsService.migrerDepuisChampsDirects(preinscription);
+            migrationResult = await parentService.migrerDepuisChampsDirects(preinscription);
             
             logger.info(`[Conversion] Migration terminée: ${migrationResult.parentsCrees} parent(s) créé(s)`);
             

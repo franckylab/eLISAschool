@@ -1,17 +1,29 @@
 /**
- * ==================================
- * eLISAschool - Seed Remises Abonnement
- * ==================================
- * Version: 3.1.0
+ * ==========================================
+ * eLISAschool - Seed Remises Abonnement v3.4
+ * ==========================================
  *
- * Crée les règles de remise commerciale v3.1 (migration 213 + 214).
+ * Crée les règles de remise commerciale v3.4 (migration 213 + 214).
  * Idempotent : upsert par code unique.
  *
- * 5 règles automatiques + 3 promotions (code coupon)
- * v3.1 : conditions d'éligibilité (conditionElevesMin, conditionAncienneteMois)
- * v3.2 : suppression remises CYCLE (doublon avec CycleFacturationConfig.remisePourcent)
- *        + dateDebut/dateFin sur les promotions
- *        + GRP-3ETAB désactivé (condition groupe non implémentée)
+ * Cohérent avec les 3 plans v3.4 :
+ *   - Découverte (14 900 F, 100 élèves inclus)
+ *   - Standard   (39 900 F, 300 élèves inclus)
+ *   - Premium    (59 900 F, illimité)
+ *
+ * 4 règles automatiques + 3 promotions (code coupon) :
+ *   - VOL-500  : -10% permanent si ≥500 élèves (cible Standard+)
+ *   - VOL-1000 : -20% permanent si ≥1000 élèves (cible Premium)
+ *   - FID-12M  : -5% permanent après 12 mois d'ancienneté
+ *   - FID-24M  : -10% permanent après 24 mois d'ancienneté
+ *   - PROMO-RENTREE-2026 : -20% 1ʳᵉ facture, code RENTREE2026
+ *   - PROMO-LANCEMENT-V2 : -15% 3 cycles, code LANCEMENT
+ *   - PROMO-BF-2026      : -25% 1ʳᵉ facture, code BF2026
+ *
+ * Plafond global 40% appliqué par remise.service.ts.
+ *
+ * Version: 3.4.0
+ * Auteur: franck arlos chendjou
  */
 
 import { AppDataSource } from '../../data-source';
@@ -96,44 +108,25 @@ const REMISES: RemiseSeed[] = [
         actif: true,
     },
 
-    // ─── Remise groupe — DÉSACTIVÉE (condition non implémentée) ───
-    {
-        code: 'GRP-3ETAB',
-        nom: 'Remise groupe ≥3 établissements',
-        typeRemise: TypeRemise.POURCENTAGE,
-        valeur: 15,
-        dureeApplication: DureeApplicationRemise.PERMANENTE,
-        cible: CibleRemise.GLOBAL,
-        cumulable: false,
-        priorite: 50,
-        actif: false, // ← Désactivé : aucun filtrage groupe n'est implémenté
-        // À réactiver quand conditionGroupeMin sera implémenté dans remise.service.ts
-    },
-
-    // ─── Remises cycle — SUPPRIMÉES (doublon avec CycleFacturationConfig.remisePourcent) ───
-    // Les remises CYCLE-ANNUEL (10%) et CYCLE-SEMESTRIEL (7.5%) faisaient doublon
-    // avec le champ remisePourcent de la config cycle de facturation.
-    // La source unique de vérité pour les remises cycle est CycleFacturationConfig.
-
     // ─── Promotions (code coupon, non cumulables, avec dateFin) ───
     {
-        code: 'PROMO-RENTREE-2025',
-        nom: 'Promotion rentrée scolaire 2025',
+        code: 'PROMO-RENTREE-2026',
+        nom: 'Promotion rentrée scolaire 2026',
         typeRemise: TypeRemise.POURCENTAGE,
         valeur: 20,
         dureeApplication: DureeApplicationRemise.PREMIERE_FACTURE,
         cible: CibleRemise.GLOBAL,
         cumulable: false,
         priorite: 100,
-        codeCoupon: 'RENTREE2025',
+        codeCoupon: 'RENTREE2026',
         maxUtilisations: 50,
-        dateDebut: new Date('2025-09-01'),
-        dateFin: new Date('2025-11-30'),
+        dateDebut: new Date('2026-09-01'),
+        dateFin: new Date('2026-11-30'),
         actif: true,
     },
     {
-        code: 'PROMO-LANCEMENT',
-        nom: 'Promotion lancement plateforme',
+        code: 'PROMO-LANCEMENT-V3',
+        nom: 'Promotion lancement v3.4',
         typeRemise: TypeRemise.POURCENTAGE,
         valeur: 15,
         dureeApplication: DureeApplicationRemise.N_CYCLES,
@@ -142,23 +135,23 @@ const REMISES: RemiseSeed[] = [
         cumulable: false,
         priorite: 90,
         codeCoupon: 'LANCEMENT',
-        dateDebut: new Date('2025-08-01'),
-        dateFin: new Date('2026-02-28'),
+        dateDebut: new Date('2026-08-01'),
+        dateFin: new Date('2027-02-28'),
         actif: true,
     },
     {
-        code: 'PROMO-BF-2025',
-        nom: 'Black Friday 2025',
+        code: 'PROMO-BF-2026',
+        nom: 'Black Friday 2026',
         typeRemise: TypeRemise.POURCENTAGE,
         valeur: 25,
         dureeApplication: DureeApplicationRemise.PREMIERE_FACTURE,
         cible: CibleRemise.GLOBAL,
         cumulable: false,
         priorite: 110,
-        codeCoupon: 'BF2025',
+        codeCoupon: 'BF2026',
         maxUtilisations: 30,
-        dateDebut: new Date('2025-11-20'),
-        dateFin: new Date('2025-12-05'),
+        dateDebut: new Date('2026-11-20'),
+        dateFin: new Date('2026-12-05'),
         actif: true,
     },
 ];
@@ -166,7 +159,7 @@ const REMISES: RemiseSeed[] = [
 export async function seedRemises(): Promise<{ created: number; updated: number }> {
     const remiseRepo = AppDataSource.getRepository(RemiseAbonnement);
 
-    logger.info('[Seed] Insertion des remises abonnement v3...');
+    logger.info('[Seed] Insertion des remises abonnement v3.4...');
 
     let created = 0;
     let updated = 0;
@@ -212,7 +205,7 @@ export async function seedRemises(): Promise<{ created: number; updated: number 
                 conditionAncienneteMois: remise.conditionAncienneteMois,
                 actif: remise.actif,
                 dateDebut: remise.dateDebut ?? new Date(),
-                dateFin: remise.dateFin ?? null,
+                dateFin: remise.dateFin,
                 utilisations: 0,
             });
             await remiseRepo.save(entity);
@@ -220,6 +213,6 @@ export async function seedRemises(): Promise<{ created: number; updated: number 
         }
     }
 
-    logger.info(`[Seed] ✅ Remises abonnement: ${created} créées, ${updated} mises à jour (${REMISES.length} total)`);
+    logger.info(`[Seed] ✅ Remises abonnement v3.4: ${created} créées, ${updated} mises à jour (${REMISES.length} total)`);
     return { created, updated };
 }

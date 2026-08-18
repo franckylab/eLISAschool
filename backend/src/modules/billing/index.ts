@@ -42,6 +42,7 @@
  */
 
 export { platformBillingRouter, clientBillingRouter } from './controllers/billing.controller';
+export { platformPromotionRouter, clientPromotionRouter } from './controllers/promotions.controller';
 export * from './entities';
 export * from './services';
 export { initBillingCronJobs } from './cron-jobs';

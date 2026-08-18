@@ -46,8 +46,9 @@ function useCyclesFacturation() {
     return useQuery<CycleFacturation[]>({
         queryKey: ['cycles-facturation-simulateur'],
         queryFn: async () => {
-            const res = await apiClient.get<{ success: boolean; data: CycleFacturation[] }>('/api/platform/cycles-facturation');
-            return res.data?.data ?? [];
+            const res = await apiClient.get<CycleFacturation[]>('/api/platform/cycles-facturation');
+            const payload = res.data as any;
+            return Array.isArray(payload) ? payload : payload?.data ?? [];
         },
     });
 }

@@ -37,8 +37,6 @@ export { PlanFormModal } from './components/plan-form-modal';
 export { CycleFormModal } from './components/cycle-form-modal';
 export { StrategieFormModal } from './components/strategie-form-modal';
 export { PackFormModal } from './components/pack-form-modal';
-export { RemiseFormModal } from './components/remise-form-modal';
-export type { Remise, RemiseForm } from './components/remise-form-modal';
 export { AbonnementDetail } from './components/abonnement-detail';
 export { UsageMetersDashboard } from './components/usage-meters-dashboard';
 export { RevenusDashboard } from './components/revenus-dashboard';

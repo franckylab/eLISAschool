@@ -34,6 +34,8 @@ import { seedCyclesFacturation } from './system/seed-cycles-facturation';
 import { seedPacksQuota } from './system/seed-packs-quota';
 import { seedStrategiesExpiration } from './system/seed-strategies-expiration';
 import { seedRemises } from './system/seed-remises';
+import { seedPromotions } from './system/seed-promotions';
+import { seedBundlePromotions } from './system/seed-bundles';
 import { seedParametresBilling } from './system/seed-parametres-billing';
 import { seedCmsTemplates } from './system/seed-cms-templates';
 import { seedCmsWidgets } from './system/seed-cms-widgets';
@@ -99,8 +101,14 @@ export async function runSystemSeeds(): Promise<{
     // 8f. Stratégies d'expiration d'abonnement (migration 213)
     await seedStrategiesExpiration();
 
-    // 8g. Remises abonnement commerciales (migration 213)
+    // 8g. Remises abonnement commerciales (migration 213 — legacy, table _legacy_remises_abonnement)
     await seedRemises();
+
+    // 8g-bis. Promotions v4 (migration 216 — table promotions, multi-scopes)
+    await seedPromotions();
+
+    // 8g-ter. Bundles de packs quota (migration 216 — table bundle_promotions)
+    await seedBundlePromotions();
 
     // 8h. Paramètres système billing (onboarding, essai, facturation)
     await seedParametresBilling();

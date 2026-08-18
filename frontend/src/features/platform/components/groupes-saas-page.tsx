@@ -410,6 +410,24 @@ function MembresTab({ groupe }: { groupe: GroupeEtablissement }) {
     const addMembre = useAddMembre(t);
     const removeMembre = useRemoveMembre(t);
 
+    // Charger les établissements disponibles (avec labels lisibles)
+    const { data: tousEtablissements = [] } = useQuery({
+        queryKey: ['groupes-saas-etablissements'],
+        queryFn: async () => {
+            const res = await apiClient.get<any[]>('/api/platform/facturation/etablissements');
+            return (res.data ?? []).map((e: any) => ({
+                id: e.id,
+                nom: e.nom || e.nomCommercial || 'Établissement',
+                ville: e.ville || '',
+            }));
+        },
+        staleTime: 60 * 1000,
+    });
+
+    // Filtrer les établissements déjà membres du groupe
+    const membresIds = new Set(groupe.etablissements?.map(l => l.etablissementId) ?? []);
+    const etablissementsDisponibles = tousEtablissements.filter((e: { id: string }) => !membresIds.has(e.id));
+
     const handleAdd = () => {
         if (!newEtabId) return;
         addMembre.mutate({ groupeId: groupe.id, etablissementId: newEtabId });
@@ -419,14 +437,19 @@ function MembresTab({ groupe }: { groupe: GroupeEtablissement }) {
     return (
         <div className="flex flex-col gap-[var(--gap-md)]">
             <div className="flex gap-[var(--gap-sm)]">
-                <input
-                    type="text"
+                <select
                     value={newEtabId}
                     onChange={(e) => setNewEtabId(e.target.value)}
-                    placeholder={t('groupes.etablissementId', 'ID établissement')}
-                    className="flex-1 rounded-[var(--radius-md)] border border-[var(--color-bordure)] px-[var(--space-md)] py-[var(--space-sm)]"
-                />
-                <ElisaButton variant="primary" size="sm" onClick={handleAdd} icon={<Plus className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}>
+                    className="flex-1 rounded-[var(--radius-md)] border border-[var(--color-bordure)] px-[var(--space-md)] py-[var(--space-sm)] text-sm text-[var(--color-texte)] bg-[var(--color-surface)]"
+                >
+                    <option value="">{t('groupes.selectionnerEtab', 'Sélectionner un établissement...')}</option>
+                    {etablissementsDisponibles.map((e: { id: string; nom: string; ville: string }) => (
+                        <option key={e.id} value={e.id}>
+                            {e.nom}{e.ville ? ` (${e.ville})` : ''}
+                        </option>
+                    ))}
+                </select>
+                <ElisaButton variant="primary" size="sm" onClick={handleAdd} disabled={!newEtabId} icon={<Plus className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />}>
                     {t('groupes.ajouter', 'Ajouter')}
                 </ElisaButton>
             </div>
@@ -511,14 +534,14 @@ function ModulesTab({ groupe }: { groupe: GroupeEtablissement }) {
     );
 }
 
-// ─── Tab Remises (v3 — refonte entitlements) ─────────────────────
+// ─── Tab Promotions (v4 — nouveau système promotions) ─────────────────────
 
 function RemisesTab({ groupe }: { groupe: GroupeEtablissement }) {
     const { t } = useTranslation('admin');
-    const { data: remises, isLoading } = useQuery({
-        queryKey: ['groupes-remises', groupe.id],
+    const { data: promotions, isLoading } = useQuery({
+        queryKey: ['groupes-promotions', groupe.id],
         queryFn: async () => {
-            const res = await apiClient.get<any>(`/api/billing/remises?cible=PLAN&cibleId=${groupe.id}`);
+            const res = await apiClient.get<any>(`/api/platform/facturation/promotions?scope=PLAN&actif=true`);
             return res.data?.data ?? res.data ?? [];
         },
     });
@@ -527,33 +550,41 @@ function RemisesTab({ groupe }: { groupe: GroupeEtablissement }) {
 
     return (
         <div className="flex flex-col gap-[var(--gap-md)]">
-            {!remises?.length ? (
+            {!promotions?.length ? (
                 <p className="text-center text-[var(--text-sm)] text-[var(--color-text-tertiary)] py-[var(--space-lg)]">
-                    {t('groupes.aucuneRemise', 'Aucune remise configurée pour ce groupe')}
+                    {t('groupes.aucunePromotion', 'Aucune promotion configurée pour ce groupe')}
                 </p>
             ) : (
                 <div className="border rounded-[var(--radius-lg)] overflow-hidden">
                     <table className="w-full text-sm">
                         <thead className="bg-[var(--color-surface-hover)]">
                             <tr>
-                                <th className="text-left p-[var(--space-sm)] font-medium">{t('groupes.remises.code', 'Code')}</th>
-                                <th className="text-left p-[var(--space-sm)] font-medium">{t('groupes.remises.nom', 'Nom')}</th>
-                                <th className="text-right p-[var(--space-sm)] font-medium">{t('groupes.remises.valeur', 'Valeur')}</th>
-                                <th className="text-left p-[var(--space-sm)] font-medium">{t('groupes.remises.type', 'Type')}</th>
+                                <th className="text-left p-[var(--space-sm)] font-medium">{t('groupes.promotions.code', 'Code')}</th>
+                                <th className="text-left p-[var(--space-sm)] font-medium">{t('groupes.promotions.nom', 'Nom')}</th>
+                                <th className="text-right p-[var(--space-sm)] font-medium">{t('groupes.promotions.valeur', 'Valeur')}</th>
+                                <th className="text-left p-[var(--space-sm)] font-medium">{t('groupes.promotions.type', 'Type')}</th>
+                                <th className="text-left p-[var(--space-sm)] font-medium">{t('groupes.promotions.scope', 'Scope')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[var(--color-bordure)]">
-                            {remises.map((r: any) => (
-                                <tr key={r.id}>
-                                    <td className="p-[var(--space-sm)] font-mono text-xs">{r.code}</td>
-                                    <td className="p-[var(--space-sm)]">{r.nom}</td>
+                            {promotions.map((p: any) => (
+                                <tr key={p.id}>
+                                    <td className="p-[var(--space-sm)] font-mono text-xs">{p.code}</td>
+                                    <td className="p-[var(--space-sm)]">{p.nom}</td>
                                     <td className="p-[var(--space-sm)] text-right font-mono">
-                                        {r.typeRemise === 'POURCENTAGE' ? `${r.valeur}%` : `${r.valeur} XAF`}
+                                        {p.typePromotion === 'POURCENTAGE' ? `${p.valeur}%` : `${Number(p.valeur).toLocaleString('fr-FR')} XAF`}
                                     </td>
                                     <td className="p-[var(--space-sm)]">
                                         <span className="px-2 py-0.5 rounded-full text-xs bg-[var(--color-dominant-100)] text-[var(--color-dominant-700)]">
-                                            {r.dureeApplication === 'PERMANENTE' ? 'Permanente' :
-                                             r.dureeApplication === 'N_CYCLES' ? `${r.nbCycles} cycles` : '1ère facture'}
+                                            {p.typePromotion === 'POURCENTAGE' ? 'Pourcentage' :
+                                             p.typePromotion === 'GRATUITE' ? 'Gratuité' : 'Montant fixe'}
+                                        </span>
+                                    </td>
+                                    <td className="p-[var(--space-sm)]">
+                                        <span className="px-2 py-0.5 rounded-full text-xs bg-[var(--color-surface)] text-[var(--color-text-secondary)]">
+                                            {p.scope === 'PLAN' ? 'Plan' :
+                                             p.scope === 'PACK' ? 'Pack' :
+                                             p.scope === 'MODULE' ? 'Module' : 'Bundle'}
                                         </span>
                                     </td>
                                 </tr>

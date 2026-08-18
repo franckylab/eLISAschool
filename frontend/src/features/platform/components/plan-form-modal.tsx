@@ -15,7 +15,7 @@
  * Auteur: franck arlos chendjou
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
@@ -159,32 +159,43 @@ export function PlanFormModal({ open, onOpenChange, plan, mode }: PlanFormModalP
     const [form, setForm] = useState<PlanFormData>(() => normaliserPlan(plan));
     const [error, setError] = useState<string | null>(null);
 
+    // Synchroniser le formulaire quand la prop plan change (ouverture modal édition)
+    useEffect(() => {
+        if (open) {
+            setForm(normaliserPlan(plan));
+            setStep(0);
+            setError(null);
+        }
+    }, [open, plan]);
+
     // Données dynamiques (catalogue modules + définitions fonctionnalités)
-    const { data: dynamicModules } = useQuery({
+    const { data: dynamicModules } = useQuery<any[]>({
         queryKey: ['modules-catalogue'],
         queryFn: async () => {
-            const res = await apiClient.get<{ success: boolean; data: any[] }>('/api/platform/facturation/modules/catalogue');
-            return res.data?.data ?? [];
+            const res = await apiClient.get<any[]>('/api/platform/facturation/modules/catalogue');
+            const payload = res.data as any;
+            return Array.isArray(payload) ? payload : payload?.data ?? [];
         },
         staleTime: 60 * 1000,
     });
 
-    const { data: dynamicFlags } = useQuery({
+    const { data: dynamicFlags } = useQuery<any[]>({
         queryKey: ['feature-flag-definitions'],
         queryFn: async () => {
-            const res = await apiClient.get<{ success: boolean; data: any[] }>('/api/platform/facturation/feature-flags/definitions');
-            return res.data?.data ?? [];
+            const res = await apiClient.get<any[]>('/api/platform/facturation/feature-flags/definitions');
+            const payload = res.data as any;
+            return Array.isArray(payload) ? payload : payload?.data ?? [];
         },
         staleTime: 60 * 1000,
     });
 
     const modulesCatalogue = useMemo(
-        () => (dynamicModules ?? []).map((m: any) => ({ id: m.code, nom: m.nom, categorie: m.categorie })),
+        () => (dynamicModules ?? []).map((m: any) => ({ id: m.code as string, nom: m.nom as string, categorie: m.categorie as string })),
         [dynamicModules],
     );
 
     const fonctionnalitesList = useMemo(
-        () => (dynamicFlags ?? []).map((f: any) => ({ key: f.cle, label: f.label })),
+        () => (dynamicFlags ?? []).map((f: any) => ({ key: f.cle as string, label: f.label as string })),
         [dynamicFlags],
     );
 

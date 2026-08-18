@@ -15,6 +15,7 @@ import { auditService, AuditAction } from '@modules/auth';
 import { Request } from 'express';
 import { notificationsService } from '@modules/notifications/services';
 import { TypeNotification, PrioriteNotification } from '@modules/notifications/entities';
+import { getResponsablesForNotification } from '@modules/parents/adapters';
 
 type CreateDossierMedicalDto = z.infer<typeof createDossierMedicalSchema>;
 type CreateConsultationMedicaleDto = z.infer<typeof createConsultationMedicaleSchema>;
@@ -246,11 +247,8 @@ export class SanteService {
             try {
                 // Trouver les responsables du patient (uniquement si c'est un élève)
                 if (dossier.typePatient === TypePatient.ELEVE) {
-                    const responsableRepo = AppDataSource.getRepository('ResponsableEleve');
                     const patientId = dossier.eleveId || dossier.patientId;
-                    const responsabilites = await responsableRepo.find({
-                        where: { enfantId: patientId },
-                    }) as unknown as Array<{ utilisateurId: string }>;
+                    const responsabilites = await getResponsablesForNotification(patientId);
 
                     for (const resp of responsabilites) {
                         await notificationsService.create({

@@ -42,7 +42,12 @@ export enum CibleRemise {
     CYCLE = 'CYCLE',
 }
 
-@Entity('remises_abonnement')
+/**
+ * @deprecated Supprimée en v4.0 (migration 216). Table renommée _legacy_remises_abonnement.
+ * Utiliser PromotionEntity + BundlePromotionEntity à la place.
+ * Conservée uniquement pour rollback et compatibilité lecture seule.
+ */
+@Entity('_legacy_remises_abonnement')
 @Index(['cible', 'cibleId'])
 @Index(['actif'])
 export class RemiseAbonnement {

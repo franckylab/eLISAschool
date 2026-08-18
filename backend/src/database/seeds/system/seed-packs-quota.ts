@@ -1,17 +1,22 @@
 /**
  * ==========================================
- * eLISAschool - Seed : Packs de quota (migration 213)
+ * eLISAschool - Seed : Packs de quota v3.4 (migration 213)
  * ==========================================
  *
  * Seed idempotent des packs d'achat de quota supplémentaire.
- * Valeurs identiques à celles posées par la migration 213 en SQL :
+ * Cohérent avec les 3 plans v3.4 :
+ *   - Découverte (100 élèves inclus) → packs +50/+200 élèves
+ *   - Standard (300 élèves inclus) → packs +200/+500 élèves
+ *   - Premium (illimité) → packs stockage/SMS uniquement
  *
- *   - PACK_ELEVES_50    : +50 élèves   —  5 000 FCFA (cycle courant)
- *   - PACK_ELEVES_200   : +200 élèves  — 18 000 FCFA (cycle courant)
- *   - PACK_STOCKAGE_10GO: +10 Go       —  3 000 FCFA (illimité)
- *   - PACK_SMS_500      : +500 SMS     —  7 500 FCFA (cycle courant)
+ *   - PACK_ELEVES_50    : +50 élèves   —  5 000 F (cycle courant)
+ *   - PACK_ELEVES_200   : +200 élèves  — 15 000 F (cycle courant)
+ *   - PACK_ELEVES_500   : +500 élèves  — 30 000 F (cycle courant, dégressif)
+ *   - PACK_STOCKAGE_10GO: +10 Go       —  3 000 F (permanent)
+ *   - PACK_STOCKAGE_50GO: +50 Go       — 12 000 F (permanent, dégressif)
+ *   - PACK_SMS_500      : +500 SMS     —  5 000 F (cycle courant)
  *
- * Version: 3.0.0
+ * Version: 3.4.0
  * Auteur: franck arlos chendjou
  * ==========================================
  */
@@ -29,21 +34,33 @@ const PACKS = [
     },
     {
         code: 'PACK_ELEVES_200', nom: 'Pack +200 élèves', ressource: 'eleves',
-        quantite: 200, prix: 18000, dureeValidite: DureeValiditePack.CYCLE_COURANT,
-        description: 'Augmente le quota d\'élèves de 200 jusqu\'à la fin du cycle de facturation courant (tarif dégressif)',
+        quantite: 200, prix: 15000, dureeValidite: DureeValiditePack.CYCLE_COURANT,
+        description: 'Augmente le quota d\'élèves de 200 — tarif dégressif, idéal Standard',
         ordre: 2,
+    },
+    {
+        code: 'PACK_ELEVES_500', nom: 'Pack +500 élèves', ressource: 'eleves',
+        quantite: 500, prix: 30000, dureeValidite: DureeValiditePack.CYCLE_COURANT,
+        description: 'Augmente le quota d\'élèves de 500 — tarif préférentiel, gros établissements',
+        ordre: 3,
     },
     {
         code: 'PACK_STOCKAGE_10GO', nom: 'Pack +10 Go stockage', ressource: 'stockageGo',
         quantite: 10, prix: 3000, dureeValidite: DureeValiditePack.ILLIMITE,
         description: 'Ajoute définitivement 10 Go de stockage au quota de l\'établissement',
-        ordre: 3,
+        ordre: 4,
+    },
+    {
+        code: 'PACK_STOCKAGE_50GO', nom: 'Pack +50 Go stockage', ressource: 'stockageGo',
+        quantite: 50, prix: 12000, dureeValidite: DureeValiditePack.ILLIMITE,
+        description: 'Ajoute définitivement 50 Go de stockage — tarif dégressif',
+        ordre: 5,
     },
     {
         code: 'PACK_SMS_500', nom: 'Pack 500 SMS', ressource: 'sms',
-        quantite: 500, prix: 7500, dureeValidite: DureeValiditePack.CYCLE_COURANT,
+        quantite: 500, prix: 5000, dureeValidite: DureeValiditePack.CYCLE_COURANT,
         description: 'Crédit de 500 SMS valable jusqu\'à la fin du cycle de facturation courant',
-        ordre: 4,
+        ordre: 6,
     },
 ];
 
@@ -68,7 +85,7 @@ export async function seedPacksQuota(): Promise<{ created: number; skipped: numb
         created++;
     }
 
-    logger.info(`🎒 Seed packs quota : ${created} créés, ${skipped} ignorés (déjà existants)`);
+    logger.info(`🎒 Seed packs quota v3.4 : ${created} créés, ${skipped} ignorés (déjà existants)`);
     return { created, skipped };
 }
 

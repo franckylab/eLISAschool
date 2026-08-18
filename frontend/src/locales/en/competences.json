@@ -71,6 +71,6 @@
         "ordre": "Order",
         "statut": "Status",
         "aucunNiveau": "-",
-        "aucuneMatiere": "-"
+        "aucuneMatiere": "— No subject —"
     }
 }

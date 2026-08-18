@@ -282,7 +282,7 @@ const NAV_SECTIONS: NavSection[] = [
     {
         title: 'Relations',
         items: [
-            { label: 'Responsables', path: '/responsables-eleves', icon: Users, module: 'responsables-eleves' },
+            { label: 'Parents', path: '/parents', icon: Users, module: 'parents' },
         ],
     },
     {

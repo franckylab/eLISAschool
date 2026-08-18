@@ -14,7 +14,7 @@ import { LigneTransport, InscriptionTransport, PresenceTransport } from '../enti
 import { CreateLigneDto, CreateInscriptionTransportDto, EnregistrerPresenceDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
-import { parentsService } from '@modules/responsables-eleves/services';
+import { getResponsablesForNotification } from '@modules/parents/adapters';
 import { getParamBoolean, getParamNumber } from '@modules/configuration/utils/config.helper';
 import { notificationTemplates } from '@modules/notifications/services';
 import { Eleve } from '@modules/eleves/entities';
@@ -300,7 +300,7 @@ export class TransportService {
                 if (!eleve?.utilisateurId) continue;
 
                 // Trouver les responsables
-                const responsables = await parentsService.getResponsablesForNotification(eleve.utilisateurId);
+                const responsables = await getResponsablesForNotification(eleve.utilisateurId);
 
                 if (!responsables || responsables.length === 0) continue;
 

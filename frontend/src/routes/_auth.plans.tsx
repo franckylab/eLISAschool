@@ -85,19 +85,15 @@ function PlansPage() {
                         {views.map((v) => {
                             const Icon = v.icon;
                             return (
-                                <button
+                                <ElisaButton
                                     key={v.key}
+                                    variant={viewMode === v.key ? 'primary' : 'ghost'}
+                                    size="xs"
                                     onClick={() => setViewMode(v.key)}
-                                    className={cn(
-                                        'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                                        viewMode === v.key
-                                            ? 'bg-[var(--color-surface)] text-[var(--color-texte)] shadow-sm'
-                                            : 'text-[var(--color-texte-muted)] hover:text-[var(--color-texte)]',
-                                    )}
+                                    icon={<Icon className="h-4 w-4" />}
                                 >
-                                    <Icon className="h-4 w-4" />
                                     <span className="hidden sm:inline">{v.label}</span>
-                                </button>
+                                </ElisaButton>
                             );
                         })}
                     </div>
@@ -105,7 +101,12 @@ function PlansPage() {
             </header>
 
             {/* ─── Hero Section ─── */}
-            <section className="bg-gradient-to-b from-[var(--color-dominante)]/5 to-transparent py-12 text-center">
+            <motion.section
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+                className="bg-gradient-to-b from-[var(--color-dominante)]/5 to-transparent py-12 text-center"
+            >
                 <div className="mx-auto max-w-3xl px-4">
                     <h2 className="text-3xl font-bold tracking-tight text-[var(--color-texte)] sm:text-4xl">
                         {t('plans.hero.titre')}
@@ -117,7 +118,7 @@ function PlansPage() {
                         ✓ {t('plans.sansEngagement')}
                     </p>
                 </div>
-            </section>
+            </motion.section>
 
             {/* ─── Main Content ─── */}
             <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -245,7 +246,12 @@ function PlanUpgradeCTA({ planId, plans, currentPlanId }: { planId: string; plan
     if (!plan) return null;
 
     return (
-        <div className="sticky bottom-4 rounded-xl border border-[var(--color-dominante)]/30 bg-[var(--color-surface)] p-6 shadow-lg">
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="sticky bottom-4 rounded-xl border border-[var(--color-dominante)]/30 bg-[var(--color-surface)] p-6 shadow-lg"
+        >
             <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
                 <div>
                     <h3 className="text-lg font-bold text-[var(--color-texte)]">
@@ -268,7 +274,7 @@ function PlanUpgradeCTA({ planId, plans, currentPlanId }: { planId: string; plan
                     </ElisaButton>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 }
 

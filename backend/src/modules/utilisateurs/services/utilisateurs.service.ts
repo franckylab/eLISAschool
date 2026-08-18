@@ -716,9 +716,9 @@ export class UtilisateursService {
             // SET NULL géré automatiquement par la FK ON DELETE SET NULL
             // Les dossiers personnel sont conservés pour l'historique
 
-            // 2b. ResponsableEleve (lié par utilisateurId)
+            // 2b. Parent (lié par utilisateurId)
             await queryRunner.manager.query(
-                `DELETE FROM responsables_eleves WHERE "utilisateurId" = $1`,
+                `DELETE FROM parents WHERE "utilisateurId" = $1`,
                 [id]
             );
 

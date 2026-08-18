@@ -109,11 +109,12 @@ export function UsageMetersDashboard() {
     const { data: quotas, isLoading, refetch } = useQuery<QuotaData[] | undefined>({
         queryKey: ['platform-quotas', selectedEtablissement],
         queryFn: async () => {
-            const res = await apiClient.get<{ success: boolean; data: any[] }>(
+            const res = await apiClient.get<any[]>(
                 `/api/platform/facturation/quotas/${selectedEtablissement}`
             );
             // Refonte v3 — EtatQuota { ressource, utilisation, limite, pourcentage }
-            const liste = res.data?.data ?? [];
+            const payload = res.data as any;
+            const liste = Array.isArray(payload) ? payload : payload?.data ?? [];
             return liste.map((q: any, i: number) => ({
                 id: q.id ?? `${q.ressource}-${i}`,
                 type: q.ressource,

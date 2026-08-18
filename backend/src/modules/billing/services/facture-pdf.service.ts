@@ -74,6 +74,7 @@ export interface FacturePdfData {
         montantTranches: number;
         montantOptions: number;
         montantPenalites: number;
+        montantRemises: number;
         montantHT: number;
         montantTVA: number;
         tauxTVA: string; // Ex: "19.25%"
@@ -81,6 +82,14 @@ export interface FacturePdfData {
         montantPaye: number;
         montantRestant: number;
     };
+    // Promotions appliquées (récap cascade)
+    promotions: Array<{
+        nom: string;
+        scope: string;
+        type: string;
+        valeur: number;
+        montantDeduit: number;
+    }>;
     // Mentions légales
     mentionsLegales: string;
     // Conditions de paiement
@@ -155,6 +164,18 @@ export class FacturePdfService {
                 ordre: ligne.ordre,
             }));
 
+        // Extraire les promotions (lignes REMISE) pour le récap cascade
+        const promotions = (facture.lignes || [])
+            .filter(l => l.type === TypeLigneFacture.REMISE)
+            .map(l => ({
+                nom: l.description || 'Remise',
+                scope: 'FACTURE',
+                type: 'REMISE',
+                valeur: Number(l.total),
+                montantDeduit: Math.abs(Number(l.total)),
+            }));
+        const montantRemises = promotions.reduce((s, p) => s + p.montantDeduit, 0);
+
         // Taux TVA formaté
         const tauxTVA = `${(facture.tauxTVA / 100).toFixed(2)}%`;
 
@@ -202,6 +223,7 @@ export class FacturePdfService {
                 montantTranches: facture.montantTranches,
                 montantOptions: facture.montantOptions,
                 montantPenalites: facture.montantPenalites,
+                montantRemises,
                 montantHT: facture.montantHT,
                 montantTVA: facture.montantTVA,
                 tauxTVA,
@@ -209,6 +231,7 @@ export class FacturePdfService {
                 montantPaye: facture.montantPaye,
                 montantRestant,
             },
+            promotions,
             mentionsLegales: facture.mentionsLegales || '',
             conditionsPaiement:
                 'Paiement à 30 jours. Passé ce délai, des pénalités de retard seront appliquées. ' +

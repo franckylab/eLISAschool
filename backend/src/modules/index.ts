@@ -79,7 +79,7 @@ export * from './periodes';
 export * from './programmes';
 export * from './eleves';
 export * from './bulletins';
-export * from './responsables-eleves';
+export * from './parents';
 export * from './diplomes-eleves';
 // Auth plateforme (ADR-005 — source unique de vérité)
 // ADR-005 (v11) : Modules identites, utilisateurs-plateforme, memberships,

@@ -18,10 +18,19 @@
         "illimite": "Illimité",
         "chargement": "Chargement des plans...",
         "aucunPlan": "Aucun plan défini",
+        "aucunPlanDesc": "Créez votre premier plan d'abonnement pour commencer.",
         "creeAvecSucces": "Plan créé avec succès",
         "misAJourAvecSucces": "Plan mis à jour avec succès",
         "supprimeAvecSucces": "Plan supprimé avec succès",
-        "supprimerTitre": "Supprimer ce plan"
+        "supprimerTitre": "Supprimer ce plan",
+        "parDefaut": "Défaut",
+        "reessayer": "Réessayer",
+        "erreurChargement": "Erreur de chargement des plans",
+        "stats": {
+            "total": "plans",
+            "actifs": "actifs",
+            "defaut": "par défaut"
+        }
     },
     "cycles": {
         "titre": "Cycles & Stratégies",
@@ -45,6 +54,7 @@
         "aucunCycle": "Aucun cycle défini.",
         "aucuneStrategie": "Aucune stratégie définie.",
         "chargement": "Chargement…",
+        "erreurChargement": "Erreur de chargement",
         "phases": "Phases de dégradation (dans l'ordre)",
         "ajouterPhase": "Ajouter une phase",
         "nomPhase": "Nom de la phase",
@@ -86,6 +96,8 @@
         "inactif": "Inactif",
         "confirmerSuppression": "Supprimer le pack « {{nom}} » ?",
         "aucunPack": "Aucun pack défini.",
+        "aucunPackDesc": "Créez des packs de quotas pour permettre aux établissements d'augmenter leurs limites.",
+        "erreurChargement": "Erreur de chargement des packs",
         "chargement": "Chargement…",
         "creeAvecSucces": "Pack créé avec succès",
         "misAJourAvecSucces": "Pack mis à jour avec succès",
@@ -97,6 +109,7 @@
         "description": "Prévisualisation des plans et tarifs pour les établissements.",
         "choisissezPlan": "Choisissez le plan adapté à votre établissement.",
         "tousPlansIncluent": "Tous les plans incluent les modules critiques.",
+        "cycleFacturation": "Cycle de facturation",
         "mensuel": "Mensuel",
         "trimestriel": "Trimestriel",
         "semestriel": "Semestriel",
@@ -205,8 +218,8 @@
             "ancienneteMois": "Ancienneté (mois)",
             "aucune": "Aucune condition",
             "colonne": "Conditions",
-            "elevesFormat": "\u2265{{count}} \u00e9l\u00e8ves",
-            "ancienneteFormat": "\u2265{{count}} mois"
+            "elevesFormat": "≥{{count}} élèves",
+            "ancienneteFormat": "≥{{count}} mois"
         },
         "coupon": "Code coupon",
         "maxUtilisations": "Max utilisations",
@@ -215,6 +228,8 @@
         "cycleCibleLabel": "Cycle visé",
         "confirmerSuppression": "Supprimer la remise « {{nom}} » ?",
         "aucuneRemise": "Aucune remise définie.",
+        "aucuneRemiseDesc": "Créez des remises commerciales pour attirer et fidéliser les établissements.",
+        "erreurChargement": "Erreur de chargement des remises",
         "chargement": "Chargement…",
         "creeAvecSucces": "Remise créée avec succès",
         "misAJourAvecSucces": "Remise mise à jour avec succès",

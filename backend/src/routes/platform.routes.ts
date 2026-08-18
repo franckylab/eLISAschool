@@ -29,6 +29,8 @@ import { requirePlatformAccess, requirePlatformCasl, dualCaslMiddleware } from '
 import { platformAuthMiddleware } from '@common/middlewares/platform-auth.middleware';
 import { platformStatsService } from '@modules/dashboard/services/platform-stats.service';
 import { AppError } from '@common/filters/error.filter';
+import { DureeValiditePack } from '@modules/billing/entities/pack-quota.entity';
+import { ComportementPhase } from '@modules/billing/entities/strategie-expiration.entity';
 
 // =============================================
 // Schémas Zod — Validation bodies (B2 — Audit V3)
@@ -60,7 +62,7 @@ const createPackQuotaSchema = z.object({
     quantite: z.number().int().positive(),
     prix: z.number().min(0).optional(),
     devise: z.string().max(10).optional(),
-    dureeValidite: z.enum(['CYCLE_COURANT', 'ILLIMITE']).optional(),
+    dureeValidite: z.nativeEnum(DureeValiditePack).optional(),
     description: z.string().optional(),
     actif: z.boolean().optional(),
     ordre: z.number().int().min(0).optional(),
@@ -79,7 +81,7 @@ const createCycleFacturationSchema = z.object({
 const phaseExpirationSchema = z.object({
     nom: z.string().min(1),
     jours: z.number().int().positive().nullable(),
-    comportement: z.enum(['READ_ONLY', 'LOCKED', 'ARCHIVED']),
+    comportement: z.nativeEnum(ComportementPhase),
 });
 
 const createStrategieExpirationSchema = z.object({
@@ -116,7 +118,7 @@ import { monitoringController } from '@modules/monitoring';
 import { auditController } from '@modules/audit';
 import { etablissementController } from '@modules/etablissement';
 import { dashboardController } from '@modules/dashboard';
-import { platformBillingRouter } from '@modules/billing';
+import { platformBillingRouter, platformPromotionRouter } from '@modules/billing';
 import { platformUsersController } from '@modules/platform-users';
 import { platformRolesController } from '@modules/platform-roles';
 import { platformAuthController } from '@modules/platform-auth';
@@ -296,6 +298,12 @@ router.use('/dashboard', dashboardController);
  */
 router.use('/facturation', platformBillingRouter);
 
+/**
+ * /api/platform/facturation/promotions
+ * CRUD promotions et bundles (migration 216 — refonte v4 multi-scopes).
+ */
+router.use('/facturation/promotions', platformPromotionRouter);
+
 // =============================================
 // UTILISATEURS PLATEFORME — V2.2
 // =============================================
@@ -333,9 +341,8 @@ router.use('/parametres/cascade', parametresCascadeController);
 // =============================================
 
 /**
- * /api/platform/remises
- * CRUD des remises d'abonnement (cibles GLOBAL/PLAN/TENANT/CYCLE,
- * priorité, cumul, durée d'application).
+ * @deprecated v4.0 — Utiliser /api/platform/facturation/promotions à la place.
+ * Routes legacy conservées pour compatibilité lecture seule (table _legacy_remises_abonnement).
  */
 router.get('/remises', requirePlatformCasl('read', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -350,7 +357,7 @@ router.get('/remises', requirePlatformCasl('read', 'Billing'), async (req: Reque
 router.post('/remises', requirePlatformCasl('manage', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createRemiseSchema, req.body);
-        const data = await remiseService.create(dto);
+        const data = await remiseService.create(dto as any);
         res.status(201).json({ success: true, data });
     } catch (error) { next(error); }
 });
@@ -358,7 +365,7 @@ router.post('/remises', requirePlatformCasl('manage', 'Billing'), async (req: Re
 router.put('/remises/:id', requirePlatformCasl('manage', 'Billing'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validate(createRemiseSchema.partial(), req.body);
-        const data = await remiseService.update(req.params.id, dto);
+        const data = await remiseService.update(req.params.id, dto as any);
         res.json({ success: true, data });
     } catch (error) { next(error); }
 });

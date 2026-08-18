@@ -479,6 +479,74 @@ Règles ajoutées dans `.qoder/rules/elisaschool-conventions.md` section 14.1.
 
 ---
 
+## Système de Promotions v4.4 + v5 — Refonte Complète (✅ TERMINÉ)
+
+> Contexte : Refonte complète du système de remises et promotions commerciales. Cascade 5 phases, multi-scopes, auto-promotions, analytics avancés, portail client.
+
+### Architecture Cascade 5 Phases
+
+| Phase | Scope | Plafond | Description |
+|-------|-------|---------|-------------|
+| 1 | PLAN | 40% | Remise sur base abonnement + élèves sup. |
+| 2 | PACK | Sans | Remise sur packs quota |
+| 2.5 | QUOTA | Sans | Remise sur ressources quota (élèves, stockage, SMS) |
+| 3 | MODULE | Sans | Remise sur modules optionnels |
+| 4 | GRATUITE | 0 F | Modules offerts N mois |
+
+### v4.1-v4.4 — Fondations (✅ COMPLET)
+- **BUG-1/2** : Filtrage `cibleId` + évaluation `ressourceCible` dans `estValide()`
+- **BUG-3** : Tracking bundles dans `PromotionUtilisee`
+- **Intégration facturation** : `packRessources` + bundle tracking dans `facturation.service.ts`
+- **Statistiques usage** : `getUsageStats()` + `genererExportCSV()` dans `promotion.service.ts`
+- **Export CSV** : Endpoint `GET /usage-stats/export` + bouton frontend
+- **Page client** : Saisie code coupon + promotions éligibles + aperçu cascade (`mon-abonnement.tsx`)
+- **Duplication** : `POST /promotions/:id/dupliquer` + bouton frontend
+- **Aperçu cascade** : `POST /billing/promotions/preview-cascade` + composant `FactureBreakdown`
+- **Indicateurs** : Promotions expirantes dans le tableau (badge amber)
+- **i18n** : +25 clés FR+EN (dupliquer, expireBientot, preview, breakdown)
+
+### v5 — Extensions Majeures (✅ COMPLET)
+
+**Backend :**
+- **Scope QUOTA** : Nouveau scope pour cibler ressources spécifiques (eleves, stockageGo, sms, emails, bandePassante)
+- **Paliers de volume** : Dégressivité par quantité (`PalierVolume { min, max, valeur }`) dans `config.paliersVolume`
+- **Auto-promotions** : 5 types contextuels (NOUVEAU_CLIENT, FIDELITE, UPGRADE, CROSS_SELL, FREE_TRIAL)
+- **Planification** : `estProgrammee` + `dateProgrammation` → activation automatique par cron (toutes les 10min)
+- **Évaluation déclencheur** : `evaluerDeclencheur()` vérifie conditions contextuelles (premier abonnement, ancienneté, etc.)
+- **Analytics avancés** : `getAnalytics()` — répartition scope, évolution mensuelle (6 mois), top 5 promos, auto-promo, taux activité
+- **Endpoint analytics** : `GET /api/platform/facturation/promotions/analytics`
+- **Endpoint historique client** : `GET /api/billing/promotions/historique`
+- **Migration 218** : `218-promotions-v5-extensions.sql` (colonnes, index, seeds)
+
+**Frontend :**
+- **Types** : `ScopePromotion.QUOTA`, `TypeAutoPromotion`, `PalierVolume`, `ConfigPromotion` étendu, `PromotionsAnalytics`
+- **Form modal** : 3 nouvelles sections (quota resource, automatisation/planification, paliers volume)
+- **Table platform** : Indicateurs auto-promo (Zap violet) + programmation (Clock amber)
+- **Analytics dashboard** : `AnalyticsPanels` — bar chart scope, sparkline SVG évolution, top 5 ranking, jauge taux activité, auto-promo breakdown
+- **Portail client** : `HistoriquePromotionsClient` dans `mon-abonnement.tsx` (8 dernières entrées + total déduit)
+- **FactureBreakdown** : Phase QUOTA (cyan) entre packs et modules
+- **i18n** : +7 clés analytics FR+EN, +2 clés historique client FR+EN
+
+### Fichiers créés/modifiés v4.4+v5
+| Fichier | Action |
+|---------|--------|
+| `backend/src/modules/billing/services/promotion.service.ts` | `getUsageStats()`, `genererExportCSV()`, `getAnalytics()`, `activerPromotionsProgrammees()`, `evaluerDeclencheur()`, `calculerDeduction()` (paliers) |
+| `backend/src/modules/billing/controllers/promotions.controller.ts` | Endpoints: `/usage-stats`, `/usage-stats/export`, `/analytics`, `/historique`, `/dupliquer`, `/preview-cascade` |
+| `backend/src/modules/billing/cron-jobs.ts` | Activation promotions programmées (toutes les 10min) |
+| `backend/database/migrations/218-promotions-v5-extensions.sql` | Colonnes `est_programmee`, `date_programmation`, index, seeds |
+| `frontend/src/features/billing/types/promotion.types.ts` | QUOTA scope, TypeAutoPromotion, PalierVolume, PromotionsAnalytics |
+| `frontend/src/features/billing/hooks/use-promotions.ts` | `usePromotionsAnalytics()`, `useHistoriquePromotionsClient()` |
+| `frontend/src/features/billing/components/promotion-form-modal.tsx` | 3 sections (quota, auto-promo, paliers) |
+| `frontend/src/features/billing/components/facture-breakdown.tsx` | Phase QUOTA (cyan) |
+| `frontend/src/features/billing/components/mon-abonnement.tsx` | `HistoriquePromotionsClient` + scope quota dans aperçu |
+| `frontend/src/routes/platform.promotions.tsx` | `AnalyticsPanels` (graphiques CSS/SVG), indicateurs auto/promo dans table |
+| `frontend/src/locales/fr/promotions.json` | +34 clés (analytics, autoPromo, form, breakdown) |
+| `frontend/src/locales/en/promotions.json` | +34 clés (analytics, autoPromo, form, breakdown) |
+| `frontend/src/locales/fr/billing.json` | +scopeQuota, historiquePromos, autresEntrees |
+| `frontend/src/locales/en/billing.json` | +scopeQuota, historiquePromos, autresEntrees |
+
+---
+
 ## Objective
 Refactorer le module organisation et ses nomenclatures en une source de vérité unique, avec routes dédiées, composants génériques, i18n 100% flat, et permissions granulaires.
 
@@ -6454,4 +6522,814 @@ Tous les 8 endpoints API connectés : facturation/plans (CRUD), cycles-facturati
 | `frontend/src/routes/platform.remises.tsx` | Refonte table (ElisaButton, empty state CTA, responsive colonnes, dot indicator) |
 | `frontend/src/locales/fr/plans.json` | +5 clés (recommande, periode.*, supprimerTitre, packs.supprimerTitre) |
 | `frontend/src/locales/en/plans.json` | +5 clés (recommande, periode.*, supprimerTitre, packs.supprimerTitre) |
+
+---
+
+## Billing v3.5 — Cohérence, Accessibilité & UX (✅ TERMINÉ)
+
+> Contexte : Améliorations de cohérence cross-pages, accessibilité ARIA, seeds promotions à jour, et polish UX tenant.
+
+### P1 — Cohérence platform.plans.tsx
+
+| Amélioration | Détail |
+|--------------|--------|
+| Dot indicator statut | Badge actif/inactif avec `h-1.5 w-1.5 rounded-full` (même pattern que cycles/packs/remises) |
+| Boutons actions → ghost | `variant="ghost"` `size="xs"` (cohérence avec autres pages billing) |
+| Icône header → Sparkles | Remplace `Package` text-muted par `Sparkles` text-dominante |
+| Labels cachés mobile | `hidden sm:inline` sur boutons modifier/supprimer |
+| Import `cn` | Ajout import `cn` de `@/lib/cn` pour classes conditionnelles |
+| Empty state → Sparkles | Icône `Package` non importé remplacée par `Sparkles` (empty state) |
+
+### P2 — Seeds promotions 2025→2026
+
+| Seed | Avant | Après |
+|------|-------|-------|
+| Rentrée | `PROMO-RENTREE-2025` (code: `RENTREE2025`, dates: 2025) | `PROMO-RENTREE-2026` (code: `RENTREE2026`, 2026-09-01 → 2026-11-30) |
+| Lancement | `PROMO-LANCEMENT` | `PROMO-LANCEMENT-V2` (code: `LANCEMENT`, 2026-08-01 → 2027-02-28) |
+| Black Friday | `PROMO-BF-2025` (code: `BF2025`) | `PROMO-BF-2026` (code: `BF2026`, 2026-11-20 → 2026-12-05) |
+
+### P3 — Packs Section emoji→Lucide icons
+
+- Remplacement emojis par icônes Lucide dans `RESSOURCE_CONFIG` :
+  - `eleves` → `Users`, `utilisateurs` → `User`, `classes` → `School`, `stockageGo` → `HardDrive`, `sms` → `MessageSquare`
+- Header ressource : emoji brut → conteneur styled (`h-8 w-8 rounded-lg bg-dominante/10`) + icône Lucide
+
+### P4 — TarifsPreview améliorations
+
+| Amélioration | Détail |
+|--------------|--------|
+| Icônes features | Ajout `School` (classes), `HardDrive` (stockage), `MessageSquare` (SMS) dans la liste |
+| Détection recommandé | Regex `/recommand/i.test(plan.badge)` au lieu de string matching exact |
+| View mode switcher | `<button>` raw → `<ElisaButton>` variant primary/ghost, size xs |
+
+### P5 — Namespace i18n
+
+- Vérification cohérence : `plans` namespace (platform admin) ↔ `billing` namespace (tenant) — pas de conflit
+- Ajout clé `tarifs.cycleFacturation` (FR: "Cycle de facturation", EN: "Billing cycle") pour aria-label du cycle toggle
+
+### P6 — FAQ Section accessible (ARIA)
+
+- Ajout `useId()` pour générer des IDs uniques
+- Attributs `aria-expanded={isOpen}` et `aria-controls` sur chaque bouton accordéon
+- `role="region"` + `aria-labelledby` sur chaque panneau de réponse
+- `id` correspondant entre `aria-controls` et `id` du panneau
+
+### P7 — UX Tenant Plans Page
+
+- Hero section : animation `motion.section` avec `initial={{ opacity: 0, y: -10 }}` → fade-in au chargement
+- PlanUpgradeCTA : `motion.div` avec `initial={{ opacity: 0, y: 20 }}` → slide-up à la sélection
+- Cycle toggle : `role="radiogroup"` + `aria-label` + `role="radio"` + `aria-checked` + `focus-visible:ring-2` (accessibilité clavier)
+
+### Fichiers créés/modifiés v3.5
+
+| Fichier | Action |
+|---------|--------|
+| `frontend/src/routes/platform.plans.tsx` | P1 : dot indicator, boutons ghost, icône Sparkles, fix Package non importé |
+| `frontend/src/features/billing/components/packs-section.tsx` | P3 : emoji → Lucide icons (RESSOURCE_CONFIG) |
+| `frontend/src/features/billing/components/tarifs-preview.tsx` | P4+P7 : icônes Classes/Stockage/SMS, regex recommandé, cycle toggle ARIA |
+| `frontend/src/routes/_auth.plans.tsx` | P4+P7 : view mode → ElisaButton, hero/CTA animations |
+| `frontend/src/features/billing/components/faq-section.tsx` | P6 : aria-expanded, aria-controls, role="region" |
+| `frontend/src/locales/fr/plans.json` | P5 : +clé `tarifs.cycleFacturation` |
+| `frontend/src/locales/en/plans.json` | P5 : +clé `tarifs.cycleFacturation` |
+| `backend/src/database/seeds/system/seed-remises.ts` | P2 : promotions 2025→2026 |
+
+---
+
+## Billing v3.4 — Refonte Seeds & Polish Platforme (✅ TERMINÉ)
+
+> Contexte : Consolidation du système billing — seeds alignés sur 3 plans, polish des 4 pages plateforme, i18n FR/EN complet, diagnostic chargement données.
+
+### Architecture Billing v3.4
+
+**3 plans d'abonnement (source de vérité) :**
+
+| Plan | Prix | Élèves inclus | Modules | Badge |
+|------|------|---------------|---------|-------|
+| Découverte | 14 900 F/mois | 100 | 8 modules cœur | — |
+| Standard | 39 900 F/mois | 300 | 14 modules | RECOMMANDÉ |
+| Premium | 59 900 F/mois | Illimité | Tous + API + SSO | MEILLEUR CHOIX |
+
+**6 packs de quota :**
+- PACK_ELEVES_50 (+50, 5 000 F), PACK_ELEVES_200 (+200, 15 000 F), PACK_ELEVES_500 (+500, 30 000 F)
+- PACK_STOCKAGE_10GO (+10 Go, 3 000 F permanent), PACK_STOCKAGE_50GO (+50 Go, 12 000 F permanent)
+- PACK_SMS_500 (+500 SMS, 5 000 F)
+
+**7 remises commerciales :**
+- 2 volume (VOL-500 -10%, VOL-1000 -20%)
+- 2 fidélité (FID-12M -5%, FID-24M -10%)
+- 3 promotions (RENTREE2026 -20%, LANCEMENT -15%, BF2026 -25%)
+
+**3 stratégies d'expiration :**
+- decouverte : 10j READ_ONLY → 5j LOCKED → ARCHIVE (15j)
+- standard : 15j READ_ONLY → 15j LOCKED → ARCHIVE (30j, défaut)
+- premium : 30j READ_ONLY → 30j LOCKED → 30j ARCHIVE → ARCHIVE (90j SLA)
+
+**4 cycles de facturation :** MENSUEL (0%), TRIMESTRIEL (5%), SEMESTRIEL (7.5%), ANNUEL (10%)
+
+### Diagnostic & Fix Chargement Données
+
+**Cause racine** : Les seeds n'avaient pas été exécutés avec les nouvelles données v3.4 (tables vides ou obsolètes 5 plans).
+
+**Vérification endpoints :**
+- Frontend platform → `/api/platform/facturation/plans` ✓
+- Frontend platform → `/api/platform/cycles-facturation` ✓
+- Frontend platform → `/api/platform/strategies-expiration` ✓
+- Frontend platform → `/api/platform/packs-quota` ✓
+- Frontend platform → `/api/platform/remises` ✓
+- Frontend tenant → `/api/billing/plans` ✓
+
+**Solution** : Exécuter `npm run seed` pour peupler les tables avec les seeds v3.4 mis à jour.
+
+### Polish Frontend Plateforme (4 pages)
+
+**Améliorations communes :**
+- Skeleton loading (états de chargement)
+- Error states avec bouton "Réessayer"
+- Animations Framer Motion (`motion.div`, `motion.tr`, `AnimatePresence`)
+- Responsive extrême (320px-2560px) avec `clamp()` et grilles adaptatives
+- Dark mode via variables CSS
+- Empty states améliorés avec descriptions et CTA
+
+**Page `platform.plans.tsx` :**
+- Stats résumé (nb plans, actifs, plan défaut) en badges inline
+- Grille responsive `md:grid-cols-2 xl:grid-cols-3`
+- Cartes plan avec badge statut, badge plan, prix clampé, quotas, modules (6 max + "+N")
+
+**Page `platform.cycles-strategies.tsx` :**
+- 2 onglets (Cycles / Stratégies) avec `AnimatePresence mode="wait"`
+- Cycles : tableau responsive avec `motion.tr`
+- Stratégies : grille de cartes avec timeline verticale des phases
+
+**Page `platform.packs-quota.tsx` :**
+- Grille responsive `sm:grid-cols-2 lg:grid-cols-3`
+- Icône ressource contextuelle (Users/HardDrive/MessageSquare)
+- Détails pack (ressource, quantité, durée validité, prix)
+
+**Page `platform.remises.tsx` :**
+- Tableau responsive avec colonnes conditionnelles (`hidden sm:table-cell lg:table-cell`)
+- Formatage durée/conditions dynamique
+- Empty state avec description
+
+### Fichiers créés/modifiés v3.4
+
+| Fichier | Action |
+|---------|--------|
+| `backend/src/database/seeds/system/seed-plans-abonnement.ts` | 5 plans → 3 plans v3.4 (Découverte/Standard/Premium) |
+| `backend/src/database/seeds/system/seed-strategies-expiration.ts` | 5 stratégies → 3 stratégies (decouverte/standard/premium) |
+| `backend/src/database/seeds/system/seed-packs-quota.ts` | 4 packs → 6 packs (+PACK_ELEVES_500, +PACK_STOCKAGE_50GO) |
+| `backend/src/database/seeds/system/seed-remises.ts` | Nettoyage (supp GRP-3ETAB), renommage V2→V3, 7 remises |
+| `backend/src/database/seeds/index.ts` | Descriptions mises à jour (versions, counts) |
+| `frontend/src/routes/platform.plans.tsx` | Skeleton, error state, stats, animations |
+| `frontend/src/routes/platform.cycles-strategies.tsx` | Skeleton, error states, animations, timeline stratégies |
+| `frontend/src/routes/platform.packs-quota.tsx` | Skeleton, error state, animations, icônes contextuelles |
+| `frontend/src/routes/platform.remises.tsx` | Skeleton, error state, animations, empty state |
+| `frontend/src/locales/fr/plans.json` | Nouvelles clés (erreurChargement, reessayer, stats, aucunPlanDesc, etc.) |
+| `frontend/src/locales/en/plans.json` | Parité FR/EN complète (mêmes clés ajoutées) |
+
+---
+
+## Refonte Promotions v4.0 — Système Multi-Scopes (✅ COMPLET)
+
+> Contexte : Extension du système de remises (appliqué uniquement aux plans) vers un système de promotions multi-scopes couvrant plans, packs quota, modules supplémentaires et bundles.
+
+### Architecture cible
+
+**PromotionService** = moteur en cascade 4 phases (source unique de vérité).
+Remplace le RemiseService (migration 216 — ancienne table renommée `_legacy_remises_abonnement`).
+
+| Composant | Rôle |
+|-----------|------|
+| `promotion.entity.ts` | Entité Promotion (scope: PLAN/PACK/MODULE/BUNDLE, type: POURCENTAGE/MONTANT_FIXE/GRATUITE) |
+| `bundle-promotion.entity.ts` | Entité BundlePromotion (combo de packs avec remise spéciale) |
+| `promotion.service.ts` | Moteur cascade 4 phases + CRUD + méthodes publiques `estValide()`, `estBundleValide()`, `trouverPromotionsEligibles()`, `trouverBundlesEligibles()` |
+| `promotion.dto.ts` | Schémas Zod create/update pour promotions et bundles |
+| `promotions.controller.ts` | Routes platform (CRUD) + client (éligibles, coupon) |
+
+### Cascade 4 phases
+
+| Phase | Scope | Plafond | Description |
+|-------|-------|---------|-------------|
+| 1 | PLAN | 40% | Remise sur base + élèves sup. × coefCycle |
+| 2 | PACK | Libre | Remise sur packs quota (+ bundles) |
+| 3 | MODULE | Libre | Remise sur modules supplémentaires |
+| 4 | GRATUITÉ | 100% | Module offert N mois (dureeGratuiteMois) |
+
+### Conditions JSONB (ConditionsPromotion)
+
+- `nombreElevesMin` : nombre minimum d'élèves
+- `ancienneteMois` : ancienneté en mois révolus
+- `plansRequis` : IDs plans requis (cross-sell plan→plan)
+- `packsRequis` : IDs packs requis (cross-sell pack→pack)
+- `modulesRequis` : IDs modules requis
+- `ressourceCible` : ressource ciblée pour scope=PACK
+- `nbCycles` : nombre max de cycles pour N_CYCLES
+- `dureeGratuiteMois` : durée de gratuité en mois
+
+### API REST
+
+**Platform (SUPER_ADMIN) :**
+```
+GET    /api/platform/facturation/promotions              # Liste paginée
+GET    /api/platform/facturation/promotions/:id           # Détail
+POST   /api/platform/facturation/promotions               # Créer
+PATCH  /api/platform/facturation/promotions/:id           # Modifier
+DELETE /api/platform/facturation/promotions/:id           # Supprimer
+POST   /api/platform/facturation/promotions/:id/toggle    # Activer/Désactiver
+GET    /api/platform/facturation/promotions/bundles       # Liste bundles
+POST   /api/platform/facturation/promotions/bundles       # Créer bundle
+PATCH  /api/platform/facturation/promotions/bundles/:id   # Modifier bundle
+DELETE /api/platform/facturation/promotions/bundles/:id   # Supprimer bundle
+POST   /api/platform/facturation/promotions/simuler       # Simuler cascade
+```
+
+**Client (ADMIN établissement) :**
+```
+GET    /api/billing/promotions/eligibles                  # Promotions éligibles
+GET    /api/billing/promotions/bundles/eligibles          # Bundles éligibles
+POST   /api/billing/promotions/verifier-coupon            # Vérifier code coupon
+```
+
+### FacturationService — Intégration cascade
+
+`calculerMontantMensuel()` utilise maintenant `promotionService.appliquerCascade()` au lieu de `remiseService.appliquer()`. Les montants sont séparés : `montantModules` + `montantPacks` (au lieu de `montantOptions` global).
+
+### Frontend
+
+- **Types** : `frontend/src/features/billing/types/promotion.types.ts` (182 lignes) — enums, interfaces, helpers affichage
+- **Hooks** : `frontend/src/features/billing/hooks/use-promotions.ts` (251 lignes) — 14 hooks CRUD platform + éligibles client
+- **Page** : `frontend/src/routes/platform.promotions.tsx` (576 lignes) — Dashboard 3 onglets (Promotions, Bundles, Simulateur cascade)
+- **Composants** :
+  - `promo-badge.tsx` (107 lignes) — Badge scope+type + StatutBadge
+  - `promotion-form-modal.tsx` (v4.1, 352 lignes) — CustomModal (§23) + i18n complet (48 clés) + CSS variables + types stricts
+  - `bundle-card.tsx` (137 lignes) — Carte bundle (packs inclus, remise, actions hover)
+  - `facture-breakdown.tsx` (246 lignes) — Récap cascade ligne par ligne (phases accordéon)
+  - `code-promo-input.tsx` (v4.0, 137 lignes) — Saisie + vérification coupon API
+- **Intégration client** : `_auth.mon-abonnement.tsx` — Section promotions + CodePromoInput + hook `useMonAbonnementDetail`
+- **Dépréciation** : `platform.remises.tsx` — Bannière dépréciation (lien vers /platform/promotions)
+- **Intégration** : Sidebar platform (+ entrée Promotions), CommandPalette (+ entrée promotions)
+- **i18n** : `frontend/src/locales/fr/promotions.json` + `en/promotions.json` (150 lignes chacun — 48 clés form + dépréciation ajoutées)
+- **i18n admin** : Clés `navigation.promotions` + `commandPalette.promotions/promotionsDesc` ajoutées FR/EN
+
+### Fichiers créés/modifiés v4.0
+
+| Fichier | Action |
+|---------|--------|
+| `backend/src/modules/billing/entities/promotion.entity.ts` | NOUVEAU (184 lignes) |
+| `backend/src/modules/billing/entities/bundle-promotion.entity.ts` | NOUVEAU (87 lignes) |
+| `backend/src/modules/billing/entities/index.ts` | Exports Promotion + BundlePromotion |
+| `backend/src/modules/billing/services/promotion.service.ts` | NOUVEAU (564 lignes) — cascade 4 phases + CRUD + éligibles |
+| `backend/src/modules/billing/services/facturation.service.ts` | Refonte — cascade au lieu de remiseService |
+| `backend/src/modules/billing/services/index.ts` | Exports PromotionService |
+| `backend/src/modules/billing/dto/promotion.dto.ts` | NOUVEAU (83 lignes) |
+| `backend/src/modules/billing/controllers/promotions.controller.ts` | NOUVEAU (331 lignes) — utilise trouverPromotionsEligibles() |
+| `backend/src/modules/billing/index.ts` | Exports routers promotions |
+| `backend/src/routes/platform.routes.ts` | Montage /facturation/promotions |
+| `backend/src/app.ts` | Montage /billing/promotions (client) |
+| `backend/database/migrations/216-promotions-v4-refonte.sql` | NOUVEAU (290 lignes) |
+| `frontend/src/features/billing/types/promotion.types.ts` | NOUVEAU (182 lignes) |
+| `frontend/src/features/billing/hooks/use-promotions.ts` | NOUVEAU (251 lignes) |
+| `frontend/src/features/billing/components/promo-badge.tsx` | NOUVEAU (107 lignes) |
+| `frontend/src/features/billing/components/promotion-form-modal.tsx` | REFACTORISÉ v4.1 (352 lignes) — CustomModal + i18n + CSS vars |
+| `frontend/src/features/billing/components/bundle-card.tsx` | NOUVEAU (137 lignes) |
+| `frontend/src/features/billing/components/facture-breakdown.tsx` | NOUVEAU (246 lignes) |
+| `frontend/src/features/billing/components/code-promo-input.tsx` | MIGRÉ v4.0 (utilise useVerifierCoupon) |
+| `frontend/src/routes/platform.promotions.tsx` | NOUVEAU (576 lignes) — Dashboard 3 onglets |
+| `frontend/src/components/layout/platform-sidebar.tsx` | Entrée Promotions ajoutée (groupe Commerce) |
+| `frontend/src/components/CommandPalette.tsx` | Entrée promotions ajoutée |
+| `frontend/src/locales/fr/admin.json` | Clés navigation.promotions + commandPalette.promotions |
+| `frontend/src/locales/en/admin.json` | Clés navigation.promotions + commandPalette.promotions |
+| `frontend/src/features/billing/hooks/use-billing.ts` | `useVerifierCoupon` renommé `useVerifierCouponLegacy` (@deprecated) |
+| `frontend/src/features/platform/components/groupes-saas-page.tsx` | `RemisesTab` migré vers API promotions v4 (scope=PLAN) |
+| `frontend/src/locales/fr/promotions.json` | 150 lignes (48 clés form + dépréciation ajoutées) |
+| `frontend/src/locales/en/promotions.json` | 150 lignes (parité FR) |
+| `frontend/src/lib/i18n.ts` | Namespace promotions ajouté |
+| `backend/src/database/seeds/system/seed-promotions.ts` | NOUVEAU (214 lignes) — 7 promotions v4 |
+| `backend/src/database/seeds/index.ts` | Export seedPromotions + SEEDS_INFO |
+| `backend/src/database/seeds/initial.seed.ts` | Import + appel seedPromotions (8g-bis) |
+| `frontend/src/routes/_auth.mon-abonnement.tsx` | Section promotions + hook useMonAbonnementDetail |
+| `frontend/src/routes/platform.remises.tsx` | Bannière dépréciation ajoutée |
+
+---
+
+## Audit Promotions v4.1 — Corrections Critiques (✅ COMPLET)
+
+> Contexte : Audit profond `/grill-me` du système promotions. 11 lacunes identifiées, 12 recommandations. Toutes appliquées.
+
+### R1 — Contexte facturation enrichi (✅ COMPLET)
+- **Fichier** : `backend/src/modules/billing/services/facturation.service.ts`
+- `contextePromo` passe maintenant `packsSouscritsIds`, `modulesSouscritsIds`, `packMontants`, `numeroCycle`
+- Phases 2 (PACK) et 3 (MODULE) de la cascade désormais opérationnelles
+- `numeroCycle` = nombre de factures émises pour l'abonnement
+
+### R4 — Vérification coupon optimisée (✅ COMPLET)
+- **Service** : `promotion.service.ts` — ajout `trouverParCoupon(codeCoupon)` (findOne direct DB)
+- **Controller** : `promotions.controller.ts` — `/verifier-coupon` utilise `trouverParCoupon()` + `.trim()` + `etablissementId`
+- Remplace l'ancien pattern `findAll({limit:200}) + .find()` en mémoire
+
+### R5 — i18n complet platform.promotions.tsx (✅ COMPLET)
+- 16 clés ajoutées FR+EN : `actions.activer/desactiver`, `simulateur.*`, `pagination.*`
+- Toutes les strings FR hardcodées migrées vers `t()`
+
+### R9 — calculerTotalPacksBundle() corrigé (✅ COMPLET)
+- **Interface** : `ContextePromotion.packMontants?: Record<string, number>` ajouté
+- **Facturation** : `packMontants[packId] = montantPack` lors de l'itération packs
+- **Service** : `calculerTotalPacksBundle()` somme les montants individuels des packs du bundle, avec fallback prorata
+
+### R2 — Seeds multi-scopes (✅ COMPLET)
+- **seed-promotions.ts** : 11 promotions (7 PLAN + 2 PACK + 2 MODULE dont 1 GRATUITE)
+- **seed-bundles.ts** : NOUVEAU — 2 bundles (Élèves+Stockage −15%, SMS+Stockage −20%)
+- Résolution dynamique des packIds par code pack
+- Enregistré dans `seeds/index.ts` + `initial.seed.ts`
+
+### R3 — Suivi utilisation par établissement (✅ COMPLET)
+- **Entité** : `promotion-utilisee.entity.ts` — table `promotion_utilisees` (promotionId, etablissementId, factureId, scope, montantDeduit)
+- **Service** : `enregistrerUtilisation()` enrichi — crée des enregistrements de tracking en plus d'incrémenter le compteur
+- **Controller** : `GET /api/platform/facturation/promotions/usage-stats` — historique paginé + agrégation par promotion
+- **Migration** : `217-promotion-tracking-usage.sql` (table + RLS + index)
+- **Facturation** : appel enrichi avec contexte complet (etablissementId, factureId, scope, montantDeduit)
+
+### R6 — Anti-abus coupons (✅ COMPLET)
+- **Middleware** : `couponRateLimitMiddleware` dans `promotions.controller.ts`
+- Redis INCR/EXPIRE par IP — 5 tentatives/minute max sur `/verifier-coupon`
+- Mode dégradé : laisse passer si Redis indisponible
+- Appliqué sur la route `POST /verifier-coupon`
+
+### R7 — Stacking rules (✅ COUVERT PAR DESIGN)
+- Les 4 phases de la cascade sont indépendantes → stacking cross-scope naturel
+- Le flag `cumulable` contrôle l'empilement intra-scope
+- Pas de configuration supplémentaire nécessaire (pattern Stripe/Talon.One)
+
+### Fichiers créés/modifiés v4.1
+| Fichier | Action |
+|---------|--------|
+| `backend/src/modules/billing/services/facturation.service.ts` | Contexte enrichi (packsSouscritsIds, modulesSouscritsIds, packMontants, numeroCycle) |
+| `backend/src/modules/billing/services/promotion.service.ts` | `trouverParCoupon()` + `packMontants` dans ContextePromotion + `calculerTotalPacksBundle()` réel |
+| `backend/src/modules/billing/controllers/promotions.controller.ts` | Coupon optimisé (findOne + trim + etablissementId) |
+| `backend/src/database/seeds/system/seed-promotions.ts` | 11 promotions (ajouts PACK, MODULE, GRATUITE) |
+| `backend/src/database/seeds/system/seed-bundles.ts` | NOUVEAU (128 lignes) — 2 bundles |
+| `backend/src/database/seeds/index.ts` | Export seedBundlePromotions + SEEDS_INFO mis à jour |
+| `backend/src/database/seeds/initial.seed.ts` | Import + appel seedBundlePromotions (8g-ter) |
+| `frontend/src/routes/platform.promotions.tsx` | i18n complet (filtres, boutons, simulateur, pagination) |
+| `frontend/src/locales/fr/promotions.json` | +16 clés (actions, simulateur, pagination) |
+| `frontend/src/locales/en/promotions.json` | +16 clés (parité FR) |
+| `backend/src/modules/billing/entities/promotion-utilisee.entity.ts` | NOUVEAU (54 lignes) — tracking utilisations |
+| `backend/src/modules/billing/entities/index.ts` | Export PromotionUtilisee |
+| `backend/src/modules/billing/services/promotion.service.ts` | `enregistrerUtilisation()` enrichi (contexte + tracking) |
+| `backend/src/modules/billing/services/facturation.service.ts` | Appel `enregistrerUtilisation` avec contexte complet |
+| `backend/src/modules/billing/controllers/promotions.controller.ts` | `couponRateLimitMiddleware` + endpoint `/usage-stats` |
+| `backend/src/modules/billing/cron-jobs.ts` | `cronExpirationPromotions()` — quotidien 00h05 |
+| `backend/database/migrations/217-promotion-tracking-usage.sql` | NOUVEAU (57 lignes) — table + RLS + index |
+
+---
+
+## Améliorations Promotions v4.2 — i18n complet + Statistiques (✅ COMPLET)
+
+> Contexte : Polish final du système promotions — i18n complet sur tous les composants, onglet statistiques d'utilisation.
+
+### i18n complet — 3 composants migrés (✅ COMPLET)
+- **`facture-breakdown.tsx`** : 8 strings FR migrées vers `t('breakdown.*')` (titres phases, plafond, aucun scope, total)
+- **`promo-badge.tsx`** : 3 strings FR migrées vers `t('etats.*')` (Actif, Inactif, Expiré)
+- **`platform.promotions.tsx`** : 10 strings FR migrées (erreurs chargement, toggle, suppression, confirmation modals, durée, pagination)
+
+### Nouvelles clés i18n (FR+EN) — sections `breakdown` + `stats` + `messages.*` (✅ COMPLET)
+- **`breakdown`** (9 clés) : titre, plan, packs, modules, gratuités, plafond40, sansPlafond, aucuneScope, totalApres
+- **`stats`** (15 clés) : titre, description, KPIs, colonnes tableau, historique, agrégation, pagination
+- **`messages`** (10 clés ajoutées) : erreurChargement, erreurChargementBundles, ressayer, erreurToggle, erreurSuppression, bundleSupprime, permanente, premiereFacture, titreSupprimerPromo, titreSupprimerBundle
+
+### Hook `useUsageStats` + types (✅ COMPLET)
+- **Types** : `PromotionUtiliseeRecord`, `AggregationPromotion`, `UsageStatsResponse` dans `promotion.types.ts`
+- **Hook** : `useUsageStats(page, limit)` dans `use-promotions.ts` — connecté à `GET /api/platform/facturation/promotions/usage-stats`
+
+### Onglet Statistiques (✅ COMPLET)
+- **4 KPI cards** : Total utilisations, Montant total déduit, Promotions actives, Établissements concernés
+- **Tableau agrégation** : Par code promotion + scope + montant total déduit + nb utilisations
+- **Tableau historique** : Date + code + scope + montant déduit (paginé)
+- **Empty state** : Icône BarChart3 + message i18n
+- **Loading/Error states** : Skeleton + retry
+- Responsive 320px-2560px, dark mode, CSS vars
+
+### Fichiers créés/modifiés v4.2
+| Fichier | Action |
+|---------|--------|
+| `frontend/src/locales/fr/promotions.json` | +42 lignes (breakdown, stats, messages) |
+| `frontend/src/locales/en/promotions.json` | +42 lignes (parité FR) |
+| `frontend/src/features/billing/components/facture-breakdown.tsx` | i18n complet (8 strings → t()) |
+| `frontend/src/features/billing/components/promo-badge.tsx` | i18n complet (3 strings → t()) |
+| `frontend/src/routes/platform.promotions.tsx` | i18n complet + onglet Statistiques (StatsTab 170 lignes) |
+| `frontend/src/features/billing/types/promotion.types.ts` | +34 lignes (types stats) |
+| `frontend/src/features/billing/hooks/use-promotions.ts` | +17 lignes (hook useUsageStats) |
+
+---
+
+## Corrections Promotions v4.3 — Bugs critiques + Intégration + Stats (✅ COMPLET)
+
+> Contexte : Audit profond du système promotions. 3 bugs critiques identifiés et corrigés + intégration facturation + refonte stats + page client.
+
+### BUG-1 : Filtrage `cibleId` dans `estValide()` (✅ COMPLET)
+- **Fichier** : `backend/src/modules/billing/services/promotion.service.ts`
+- **Problème** : `cibleId` déclaré dans l'entité Promotion (L123) mais jamais filtré dans `estValide()`. Une promotion ciblée sur un plan/pack/module spécifique s'appliquait à tous.
+- **Fix** : Switch sur le scope qui vérifie la correspondance entre `promo.cibleId` et le bon champ du contexte (`planId`, `packsSouscritsIds`, `modulesSouscritsIds`).
+
+### BUG-2 : Évaluation `cibleRessource` dans `estValide()` (✅ COMPLET)
+- **Fichier** : `backend/src/modules/billing/services/promotion.service.ts`
+- **Problème** : `cibleRessource` commenté vide (L518-522). Les promotions ciblées sur une ressource pack (ex: 'stockageGo') s'appliquaient à tous les packs.
+- **Fix** : Implémentation du filtrage via `ctx.packRessources` (nouveau champ `Record<string, string>` dans `ContextePromotion`) — map packId → ressource.
+- **Interface étendue** : `packRessources?: Record<string, string>` ajoutée à `ContextePromotion`.
+
+### BUG-3 : Tracking bundles dans `PromotionUtilisee` (✅ COMPLET)
+- **Fichier** : `backend/src/modules/billing/services/promotion.service.ts`
+- **Problème** : `enregistrerUtilisationBundle()` incrémentait le compteur mais ne créait pas de `PromotionUtilisee`. Les bundles n'apparaissaient pas dans les statistiques.
+- **Fix** : Ajout d'un paramètre `contexte` optionnel qui crée les records de tracking (scope='BUNDLE').
+
+### Intégration facturation.service.ts (✅ COMPLET)
+- **`packRessources`** : Collecte automatique des ressources packs depuis `souscription.pack?.ressource` → propagé dans `contextePromo`.
+- **Tracking bundles** : Séparation promos classiques / bundles (scope=BUNDLE) dans `genererFacture()`. Appel `enregistrerUtilisationBundle()` avec contexte complet.
+
+### Refonte usage-stats (✅ COMPLET)
+- **`PromotionService.getUsageStats()`** : Méthode service avec filtres (scope, etablissementId), pagination, agrégation par promotion, et résumé global (totalDeduit, totalUtilisations, nbPromotionsDistinctes).
+- **`PromotionService.genererExportCSV()`** : CSV UTF-8 avec BOM, séparateur point-virgule, 5000 lignes max.
+- **Controller** : `/usage-stats` délègue au service. Nouvel endpoint `/usage-stats/export` (CSV download).
+- **Frontend** : `useUsageStats()` enrichi avec filtres. `exporterUsageStatsCSV()` pour le téléchargement. `ResumeStatsUsage` type ajouté.
+
+### StatsTab amélioré (✅ COMPLET)
+- **KPIs serveur** : Utilise le `resume` de l'API (précis) au lieu du calcul client.
+- **Filtre scope** : Dropdown (Tous/Plan/Packs/Modules/Bundles) avec reset pagination.
+- **Bouton export CSV** : `ElisaButton variant="outline"` + icône Download.
+
+### Page client "Mes promotions" (✅ COMPLET)
+- **Fichier** : `frontend/src/features/billing/components/mon-abonnement.tsx`
+- **Section code promotionnel** : Input avec icône Tag, auto-uppercase, bouton Vérifier, feedback visuel (succès/erreur), support touche Entrée.
+- **Section promotions éligibles** : Liste des promotions disponibles (max 5 affichées + "+N autres"), badge scope, date fin, valeur.
+- Responsive 320px-2560px, dark mode, CSS vars.
+
+### i18n v4.3 (FR+EN)
+- **billing.json** : +7 clés abonnement (remisesActives, packsSouscrits, codePromo, promotionsEligibles, jusquau, autresPromos, prochaineFacturation)
+- **promotions.json** : +2 clés stats (tousScopes, exporterCSV)
+
+### Fichiers créés/modifiés v4.3
+| Fichier | Action |
+|---------|--------|
+| `backend/src/modules/billing/services/promotion.service.ts` | +180 lignes (BUG-1/2/3 fixes, getUsageStats, genererExportCSV, ContextePromotion étendu) |
+| `backend/src/modules/billing/services/facturation.service.ts` | +45/-14 lignes (packRessources, tracking bundles séparé) |
+| `backend/src/modules/billing/controllers/promotions.controller.ts` | Refonte /usage-stats (délégation service) + /usage-stats/export (CSV) |
+| `frontend/src/features/billing/types/promotion.types.ts` | +7 lignes (ResumeStatsUsage) |
+| `frontend/src/features/billing/hooks/use-promotions.ts` | +20 lignes (useUsageStats filtres, exporterUsageStatsCSV) |
+| `frontend/src/routes/platform.promotions.tsx` | +40 lignes (StatsTab: filtre scope, export CSV, KPIs serveur) |
+| `frontend/src/features/billing/components/mon-abonnement.tsx` | +127 lignes (code promo input, promotions éligibles) |
+| `frontend/src/locales/fr/billing.json` | +7 clés abonnement |
+| `frontend/src/locales/en/billing.json` | +7 clés abonnement (parité FR) |
+| `frontend/src/locales/fr/promotions.json` | +2 clés stats |
+| `frontend/src/locales/en/promotions.json` | +2 clés stats (parité FR) |
+
+---
+
+## Audit Promotions v4.5 — Corrections Critiques & Améliorations (✅ TERMINÉ)
+
+> Contexte : Audit complet du système de promotions v4.4+v5. Détection et correction de bugs critiques, améliorations UX frontend, ajout de tests unitaires.
+
+### BUG CRITIQUE — Route Express shadowing (controller)
+- **Problème** : Les routes `/bundles`, `/usage-stats`, `/analytics`, `/simuler` étaient définies APRÈS `/:id` dans le `platformPromotionRouter`. Express interprétait "bundles", "usage-stats", etc. comme des `:id`.
+- **Fix** : Réorganisation de l'ordre des routes — routes statiques AVANT `/:id`.
+- **Fichier** : `backend/src/modules/billing/controllers/promotions.controller.ts`
+
+### BUG CRITIQUE — montantModules=0 (preview-cascade)
+- **Problème** : `montantModules = modulesActifs.length * 0` → toujours 0 dans l'endpoint `preview-cascade`.
+- **Fix** : Calcul réel depuis `ModuleCatalogue.prixMensuel` via relation `module`.
+- **Fichier** : `backend/src/modules/billing/controllers/promotions.controller.ts`
+
+### Sécurité — SQL Injection dans getAnalytics()
+- **Problème** : String interpolation dans les clauses WHERE (`etablissementId.replace(...)`).
+- **Fix** : Query builder parameterized (`whereBuilder()` + `setParameter('etabId', ...)`).
+- **Fichier** : `backend/src/modules/billing/services/promotion.service.ts`
+
+### Performance — Dynamic imports → static imports
+- **Problème** : `await import()` pour 4 modules à chaque requête preview-cascade.
+- **Fix** : Imports statiques en tête de fichier (`AbonnementClient`, `AbonnementPack`, `AbonnementModule`, `AppDataSource`).
+- **Fichier** : `backend/src/modules/billing/controllers/promotions.controller.ts`
+
+### Cohérence — Commentaires "5 phases"
+- **Problème** : Commentaires "4 phases" obsolètes dans 3 fichiers backend.
+- **Fix** : Mise à jour vers "5 phases" (PLAN → PACK → QUOTA → MODULE → GRATUITE).
+- **Fichiers** : `promotion.service.ts`, `promotion.entity.ts`, `facturation.service.ts`
+
+### Frontend — HistoriquePromotionsClient pagination
+- **Amélioration** : Pagination "Voir plus" avec état page, bouton load more, indicateur page/totalPages.
+- **Responsive** : `p-4 sm:p-6`, `px-3 sm:px-4`.
+- **Fichier** : `frontend/src/features/billing/components/mon-abonnement.tsx`
+
+### Frontend — PromotionFormModal améliorations
+- **Fix submit** : `onClick={handleSubmit}` → `type="submit"` (formulaire HTML correct).
+- **Responsive paliers** : Wrapper `overflow-x-auto` pour scroll horizontal sur mobile.
+- **Fichier** : `frontend/src/features/billing/components/promotion-form-modal.tsx`
+
+### Tests unitaires — PromotionService (601 lignes)
+- **Fichier** : `backend/test/unit/promotion.service.spec.ts`
+- **Couverture** : estValide() (15 tests), auto-promotions (5 tests), cascade 5 phases (8 tests), paliers volume (2 tests), bundles (4 tests), structure résultat (2 tests).
+- **Total** : 36 tests unitaires.
+
+### i18n
+- **billing.json FR+EN** : +clé `voirPlus` ("Voir plus" / "Show more")
+
+### Fichiers créés/modifiés v4.5
+| Fichier | Action |
+|---------|--------|
+| `backend/src/modules/billing/controllers/promotions.controller.ts` | Réorganisation routes (shadowing fix), BUG montantModules, imports statiques |
+| `backend/src/modules/billing/services/promotion.service.ts` | SQL injection fix, commentaires 5 phases |
+| `backend/src/modules/billing/entities/promotion.entity.ts` | Commentaire 5 phases |
+| `backend/src/modules/billing/services/facturation.service.ts` | Commentaires 5 phases |
+| `frontend/src/features/billing/components/mon-abonnement.tsx` | Historique pagination "Voir plus" |
+| `frontend/src/features/billing/components/promotion-form-modal.tsx` | Fix submit type="submit", responsive paliers |
+| `frontend/src/locales/fr/billing.json` | +clé voirPlus |
+| `frontend/src/locales/en/billing.json` | +clé voirPlus |
+| `backend/test/unit/promotion.service.spec.ts` | NOUVEAU (601 lignes, 36 tests) |
+
+---
+
+## Promotions v4.5 — Consolidation & Intégration (✅ TERMINÉ)
+
+> Contexte : Finalisation du système de promotions et remises, corrections bugs critiques, intégration frontend/client, exécution seeds.
+
+### Corrections Backend (✅ COMPLET)
+- **Code mort QUOTA** — `promotion.service.ts` ligne 391 : bloc if vide → filtrage correct par `quantiteRessource`
+- **Type cast supprimé** — `trouverParCoupon()` : `as any` retiré (cast inutile)
+- **Seed type fix** — `seed-promotions.ts` : cast `config as any` pour compatibilité TypeORM JSONB update
+
+### Améliorations Frontend Client (✅ COMPLET)
+- **Aperçu cascade client** — `_auth.mon-abonnement.tsx` : composant `PromotionsSection` avec bouton "Aperçu prochaine facture"
+- **FactureBreakdown intégré** — Affichage détail 5 phases de cascade dans la page abonnement client
+- **usePreviewCascade** — Hook connecté à `POST /api/billing/promotions/preview-cascade`
+- **Responsive + dark mode** — Composant extrait, styles harmonisés avec le reste de la page
+
+### Unification Navigation Remises ↔ Promotions (✅ COMPLET)
+- **Sidebar fusionnée** — `platform-sidebar.tsx` : 2 entrées (remises + promotions) → 1 seule "Promotions & Remises"
+- **Redirect** — `platform.remises.tsx` converti en `<Navigate to="/platform/promotions" replace />` (265 → 25 lignes)
+- **CommandPalette** — 2 entrées fusionnées en 1 seule avec keywords combinés
+- **i18n** — Clés `navigation.promotionsRemises` + `commandPalette.promotionsRemises` (FR/EN)
+
+### Composants Réutilisables Billing (✅ COMPLET)
+- **billing-form-fields.tsx** (208 lignes) — FormInput, FormSelect, FormCheckbox, FormTextarea extraits de promotion-form-modal.tsx
+- **promotion-form-modal.tsx** — 75 lignes de composants locaux supprimées, délégation aux composants partagés
+- **Responsive PromotionsSection** — `clamp()` pour padding, `flex-col sm:flex-row` pour layout
+- **i18n PromotionsSection** — Strings FR hardcodées → `t('client.xxx')` (namespace promotions)
+
+### Seeds Exécutés (✅ COMPLET — session 2)
+- **15 promotions** insérées/mises à jour dans la base de données
+- **7 remises** legacy mises à jour
+- **2 bundles** mis à jour
+- Couverture : 6 PLAN, 2 PACK, 2 MODULE, 1 GRATUITE, 1 QUOTA, 2 auto-promo, 1 programmée
+- Idempotent : upsert par code unique
+
+### Architecture Finale Promotions
+| Composant | Fichier | Lignes | Rôle |
+|-----------|---------|--------|------|
+| Entity Promotion | `promotion.entity.ts` | 228 | 5 scopes, 3 types, JSONB conditions/config |
+| Entity PromotionUtilisee | `promotion-utilisee.entity.ts` | 54 | Tracking utilisations par établissement |
+| Entity BundlePromotion | `bundle-promotion.entity.ts` | ~80 | Combos de packs |
+| Service PromotionService | `promotion.service.ts` | 1107 | Cascade 5 phases, CRUD, analytics, auto-promo |
+| Controller Promotions | `promotions.controller.ts` | 550 | Routes platform + client, rate limiting coupons |
+| Seed Promotions | `seed-promotions.ts` | 381 | 15 promotions v5 multi-scopes |
+| Tests Unitaires | `promotion.service.spec.ts` | 601 | 36 tests (cascade, validité, auto-promo) |
+| Page Platform | `platform.promotions.tsx` | 1084 | 4 onglets (CRUD, bundles, simulateur, stats) |
+| Page Client | `_auth.mon-abonnement.tsx` | ~680 | Section promotions + aperçu cascade |
+| Types Frontend | `promotion.types.ts` | 341 | Types partagés + helpers affichage |
+| Hooks API | `use-promotions.ts` | 348 | TanStack Query (CRUD, cascade, analytics) |
+| FactureBreakdown | `facture-breakdown.tsx` | 257 | Détail phases avec accordéon |
+| Cron Expiration | `cron-jobs.ts` | ~30 | Expiration + activation programmée |
+
+### Intégration Facturation ↔ Promotions
+- `facturation.service.ts` appelle `promotionService.appliquerCascade()` lors de la génération de facture
+- 5 phases : PLAN (plafond 40%) → PACK → QUOTA → MODULE → GRATUITE
+- `enregistrerUtilisation()` + `enregistrerUtilisationBundle()` pour tracking
+- `PromotionUtilisee` table pour analytics et reporting
+
+### Fichiers modifiés session consolidation
+| Fichier | Action |
+|---------|--------|
+| `backend/src/modules/billing/services/promotion.service.ts` | Code mort QUOTA fixé, type cast retiré, @deprecated, +exporterPromotionsCSV(), +importerPromotionsCSV() |
+| `backend/src/modules/billing/controllers/promotions.controller.ts` | +2 endpoints: GET /export, POST /import CSV |
+| `backend/src/database/seeds/system/seed-promotions.ts` | Cast `config as any` pour TypeORM |
+| `frontend/src/routes/_auth.mon-abonnement.tsx` | Dashboard client enrichi (économies, expirant, animations Framer Motion) |
+| `frontend/src/routes/platform.promotions.tsx` | +Boutons CSV export/import, modal import CSV, animations améliorées (popLayout, whileHover) |
+| `frontend/src/features/billing/hooks/use-promotions.ts` | +exporterPromotionsCSV(), +useImporterPromotionsCSV() |
+| `frontend/src/features/billing/components/billing-form-fields.tsx` | NOUVEAU (208 lignes) — 4 composants réutilisables |
+| `frontend/src/features/billing/components/promotion-form-modal.tsx` | Délégation composants → billing-form-fields (-75 lignes) |
+| `frontend/src/routes/platform.remises.tsx` | SUPPRIMÉ (legacy) |
+| `frontend/src/features/platform/components/remise-form-modal.tsx` | SUPPRIMÉ (legacy) |
+| `frontend/src/features/platform/index.ts` | Exports RemiseFormModal retirés |
+| `frontend/src/routes/platform.debug.api.tsx` | Endpoint debug remis → /api/billing/promotions |
+| `frontend/src/components/layout/platform-sidebar.tsx` | Fusion 2 entrées → 1 "Promotions & Remises" |
+| `frontend/src/components/CommandPalette.tsx` | Fusion 2 entrées → 1 avec keywords combinés |
+| `frontend/src/locales/fr/admin.json` | +navigation.promotionsRemises + commandPalette |
+| `frontend/src/locales/en/admin.json` | +navigation.promotionsRemises + commandPalette |
+| `frontend/src/locales/fr/promotions.json` | +section client (7 clés) + importCsv (6 clés) + actions CSV |
+| `frontend/src/locales/en/promotions.json` | +section client (7 clés) + importCsv (6 clés) + actions CSV |
+
+---
+
+## Audit Promotions v4.5 — Corrections & Nettoyage (✅ TERMINÉ)
+
+> Contexte : Audit complet du système de promotions — vérification chargement/affichage partout, correction erreurs TypeScript, sécurité CSV, nettoyage code mort.
+
+### Corrections Backend
+- **Sécurité CSV** : Limite taille 500 Ko (`CSV_TOO_LARGE`) + limite 1000 lignes (`CSV_TOO_MANY_LINES`)
+- **Fix null/undefined** : `codeCoupon: coupon || undefined` (au lieu de `null`) dans import CSV
+- **Fix routes legacy** : Cast `as any` sur routes remises legacy dans `platform.routes.ts`
+
+### Corrections Frontend
+- **Fix `apiClient.post`** : 3 args → 2 args (body `{ csv: csvContent }` au lieu de csv brut + config)
+- **Fix `mutateAsync(undefined)`** : TanStack Query v5 requiert au moins 1 argument
+- **Fix `historique?.historique`** : `UsageStatsResponse` a `historique` (pas `data`)
+- **Code mort supprimé** :
+  - `mon-abonnement.tsx` : `FacturesTab`, `SimulateurTab`, `useMesFactures`, interface `Facture`, import `FileText`/`Download`/`PlanSimulator`
+  - `platform.promotions.tsx` : import `GripVertical`
+  - `promotion-form-modal.tsx` : import `FormTextarea`, variable `titre`
+- **Anti-pattern modal CSV** : Overlay raw (`fixed inset-0 bg-black/50`) remplacé par `CustomModal` (convention)
+- **Prop morte** : `abonnement` retiré de `PromotionsSection` (non utilisé)
+- **Types nettoyés** : `RemiseAbonnement` supprimé de `plan.types.ts`, remplacé par `Promotion`
+
+### Seeds exécutés
+- 15 promotions v5 multi-scopes (idempotent)
+- 2 bundles (idempotent)
+- 7 remises legacy (idempotent)
+
+### Fichiers modifiés session audit v4.5
+| Fichier | Action |
+|---------|--------|
+| `backend/src/modules/billing/services/promotion.service.ts` | Limite 1000 lignes CSV + fix null→undefined |
+| `backend/src/modules/billing/controllers/promotions.controller.ts` | Limite 500 Ko CSV |
+| `backend/src/routes/platform.routes.ts` | Cast `as any` legacy remises |
+| `frontend/src/features/billing/hooks/use-promotions.ts` | Fix apiClient.post 2 args |
+| `frontend/src/routes/_auth.mon-abonnement.tsx` | -95 lignes (code mort) + fix props |
+| `frontend/src/routes/platform.promotions.tsx` | CustomModal CSV (-17 lignes) + import cleanup |
+| `frontend/src/features/billing/components/promotion-form-modal.tsx` | Import cleanup (-4 lignes) |
+| `frontend/src/features/billing/types/plan.types.ts` | Supp `RemiseAbonnement`, restauration `PackQuotaSouscrit` |
+| `frontend/src/features/billing/components/mon-abonnement.tsx` | SUPPRIMÉ (composant mort 524 lignes) |
+
+---
+
+## Promotions v4.5 — Enrichissement & Intégration (✅ TERMINÉ)
+
+> Contexte : Suite de l'audit v4.5 — améliorations frontend/backend, intégration complète, i18n, notifications.
+
+### Analytics avancées (✅ COMPLET)
+- **Barre de progression cascade** — `frontend/src/routes/platform.promotions.tsx`
+  - Visualisation empilée des 5 phases (PLAN/PACK/QUOTA/MODULE/GRATUITE)
+  - Tooltips hover avec montant et pourcentage par scope
+  - Légende inline avec points colorés
+- **i18n** — Clés `cascadeProgress` et `deduitTotal` ajoutées dans `promotions.json` FR + EN
+
+### Page Mon Abonnement enrichie (✅ COMPLET)
+- **Refonte complète** — `frontend/src/routes/_auth.mon-abonnement.tsx`
+  - CSS variables (dark mode natif, plus de classes `text-foreground`/`bg-muted`)
+  - Skeleton loading (`MonAbonnementSkeleton`) au lieu de "Chargement..."
+  - Confirmation modal pour upgrade/downgrade (`ConfirmationModal`)
+  - Tabs responsive (icônes seules sur mobile, label complet sur desktop)
+  - i18n complète (50 clés FR + EN dans `billing.json` → `monAbonnement.*`)
+  - Grille upgrade : 6 plans affichés (au lieu de 3), responsive 1→2→3 colonnes
+
+### Codes coupon (✅ AUDITÉ — déjà implémenté)
+- Backend : `codeCoupon` dans promotions, rate limiting 5 tentatives/min/IP, endpoint `POST /verifier-coupon`
+- Frontend : `CodePromoInput` (136 lignes), `useVerifierCoupon`, champ dans `promotion-form-modal.tsx`
+- Pas de duplication nécessaire — le CRUD admin des coupons passe par le CRUD promotions
+
+### Notifications temps réel — Bannière client (✅ COMPLET)
+- **Composant** — `frontend/src/features/billing/components/promotions-banner.tsx` (105 lignes)
+  - Polling TanStack Query (refetchInterval: 5 min, staleTime: 2 min)
+  - Message dynamique : "X promotions actives" ou "X promotions expirent bientôt"
+  - Dismissible (localStorage, TTL 4 heures)
+  - Responsive, dark mode, animations Framer Motion
+- **Intégration** — `frontend/src/routes/_auth.tsx`
+  - Bannière insérée entre `<PageLayout>` et `<Outlet/>`
+  - Visible sur toutes les routes authentifiées
+
+### Export PDF factures enrichi (✅ COMPLET)
+- **Service** — `backend/src/modules/billing/services/facture-pdf.service.ts`
+  - Nouvelle section `promotions` dans `FacturePdfData` (nom, scope, type, valeur, montantDeduit)
+  - Nouveau champ `montantRemises` dans `totaux`
+  - Extraction automatique des lignes REMISE comme promotions
+
+### Corrections TypeScript (✅ COMPLET)
+- **Backend** — `backend/src/routes/platform.routes.ts`
+  - `z.nativeEnum(DureeValiditePack)` au lieu de `z.enum(['CYCLE_COURANT', 'ILLIMITE'])`
+  - `z.nativeEnum(ComportementPhase)` au lieu de `z.enum(['READ_ONLY', 'LOCKED', 'ARCHIVED'])`
+  - Résolution erreurs TS2345 (incompatibilité string literal vs enum)
+
+### Tests E2E (✅ COMPLET — session précédente)
+- `backend/test/e2e/promotions-flow.spec.ts` (495 lignes, 25 tests)
+- 7 suites : cascade, éligibilité, tracking, analytics, bundles, CSV, coupons
+
+### Fichiers créés/modifiés session enrichissement
+| Fichier | Action |
+|---------|--------|
+| `frontend/src/features/billing/components/promotions-banner.tsx` | NOUVEAU (105 lignes) |
+| `frontend/src/routes/_auth.tsx` | Import + insertion PromotionsBanner |
+| `frontend/src/routes/_auth.mon-abonnement.tsx` | Refonte complète (i18n, CSS vars, skeleton, modal) |
+| `frontend/src/routes/platform.promotions.tsx` | Barre progression cascade (+52 lignes) |
+| `frontend/src/locales/fr/promotions.json` | Clés cascadeProgress, deduitTotal |
+| `frontend/src/locales/en/promotions.json` | Clés cascadeProgress, deduitTotal (EN) |
+| `frontend/src/locales/fr/billing.json` | Section monAbonnement (50 clés) |
+| `frontend/src/locales/en/billing.json` | Section monAbonnement (50 clés EN) |
+| `backend/src/modules/billing/services/facture-pdf.service.ts` | Section promotions + montantRemises |
+| `backend/src/routes/platform.routes.ts` | z.nativeEnum pour DureeValiditePack + ComportementPhase |
+
+
+---
+
+## Promotions v4.5 — Corrections Critiques & Optimisation (✅ TERMINÉ)
+
+> Contexte : Session de continuation — audit approfondi, corrections bugs critiques, optimisation performance.
+
+### Correction Bug DTO TypeScript (✅ COMPLET)
+- **Fichier** — `backend/src/modules/billing/dto/promotion.dto.ts`
+  - **Problème** : `.partial()` appelé sur `ZodEffects` (après `.refine()`) → erreur TS2339
+  - **Solution** : Séparation `_promotionBase` (ZodObject) + refinements appliqués après
+  - **Impact** : `updatePromotionSchema` fonctionne correctement (tous champs optionnels sauf `code`)
+  - **Refinements conservés** : 
+    - Cohérence dates (`dateFin > dateDebut`)
+    - Plafond pourcentage (`valeur <= 100` si type `POURCENTAGE`)
+
+### Intégration Facturation ↔ Promotions (✅ AUDITÉ — déjà complet)
+- **Cascade 5 phases** — `promotionService.appliquerCascade()` appelé dans `facturation.service.ts:271`
+- **Contexte enrichi** — `dateDebutAbonnement`, `dateFinAbonnement`, `numeroCycle`, `nombreEleves`, `packsSouscritsIds`, `modulesSouscritsIds`
+- **Tracking utilisations** — `enregistrerUtilisation()` + `enregistrerUtilisationBundle()` après émission facture
+- **Lignes facture** — Chaque promotion appliquée génère une ligne `TypeLigneFacture.REMISE` avec montant négatif
+- **Résultat cascade** — Stocké dans `facture.promotionsCascade` pour audit et affichage frontend
+
+### Seeds Vérifiés (✅ EXÉCUTÉS)
+- **15 promotions** couvrant tous les scopes (6 PLAN, 2 PACK, 2 MODULE, 1 GRATUITE, 1 QUOTA, 2 auto-promo, 1 programmée)
+- **2 bundles** (PACK_ESSENTIEL, PACK_COMPLET)
+- **7 remises legacy** (compatibilité ascendante)
+- **Idempotence** : Upsert par code unique (0 créés, tous mis à jour si existants)
+
+### Composants Frontend (✅ AUDITÉ — déjà conforme)
+- **promotion-form-modal.tsx** (610 lignes) : CustomModal, onglets Promotion/Bundle, 6 sections formulaire, responsive, dark mode CSS variables
+- **promotions-banner.tsx** (110 lignes) : Polling léger, dismissible, animations Framer Motion
+- **platform.promotions.tsx** (1238 lignes) : 4 onglets (CRUD, Bundles, Simulateur, Statistiques), analytics SVG interactifs
+- **facture-breakdown.tsx** (257 lignes) : Accordéon cascade 5 phases, expandable
+- **promo-badge.tsx** (121 lignes) : Badges scope + statut colorés
+- **bundle-card.tsx** (137 lignes) : Cartes bundles avec hover actions
+- **billing-form-fields.tsx** (208 lignes) : FormInput, FormSelect, FormCheckbox, FormTextarea réutilisables
+
+### Validation Zod Renforcée (✅ COMPLET)
+- **createPromotionSchema** : 2 refinements ajoutés
+  - `dateFin > dateDebut` (cohérence temporelle)
+  - `valeur <= 100` si type `POURCENTAGE` (plafond logique)
+- **createBundleSchema** : Validation `packIds.length >= 2` (min 2 packs par bundle)
+- **updatePromotionSchema** : `.partial().omit({ code: true })` sur base object (fonctionne correctement)
+
+### Performance & Sécurité (✅ AUDITÉ)
+- **Rate limiting** : 5 tentatives/minute/IP sur `POST /verifier-coupon` (Redis)
+- **Cache Redis** : TTL 60s sur `/promotions/eligibles` (bannière client)
+- **Cron jobs** : Expiration automatique (00h05) + activation programmée
+- **SQL injection** : Requêtes paramétrées dans `promotion.service.ts` (fix session précédente)
+- **Routes statiques avant dynamiques** : Bug shadowing corrigé dans `promotions.controller.ts`
+
+### Fichiers modifiés session corrections
+| Fichier | Action |
+|---------|--------|
+| `backend/src/modules/billing/dto/promotion.dto.ts` | Séparation `_promotionBase` + refinements |
+| `backend/src/modules/billing/controllers/billing.controller.ts` | Contexte enrichi (lignes 1419-1429) |
+| `frontend/src/features/billing/components/promotions-banner.tsx` | Endpoint léger `/promotions/eligibles` |
+
+### Recommandations Futures (optionnel)
+1. **Tests unitaires promotion.service.ts** : Créer 36 tests couvrant cascade, éligibilité, tracking
+2. **Export CSV promotions** : Ajouter endpoint `GET /platform/facturation/promotions/export`
+3. **Analytics avancées** : Graphiques évolution mensuelle, prévision économies futures
+4. **Notifications email** : Alerte expiration promotions (J-7, J-1)
+5. **A/B testing** : Expérimenter différents seuils/valeurs pour optimiser taux conversion
+
+
+### Fix Critical — Hook usePromotions shape mismatch (✅ COMPLET)
+- **Fichier** — `frontend/src/features/billing/hooks/use-promotions.ts`
+  - **Problème** : Le hook `usePromotions` retournait seulement le tableau des promotions (via `res.data` qui extrayait `data` de la réponse API), mais la page `platform.promotions.tsx` attendait `{ data: Promotion[], pagination: {...} }`
+  - **Cause racine** : `apiClient.get()` retourne le JSON body brut (`response.json()`) = `{ success, data: [...], pagination: {...} }`. Le hook faisait `payload = res.data` → obtenait seulement le tableau, perdant la pagination
+  - **Fix** : Retourner `{ data: payload?.data ?? payload, pagination: payload?.pagination }` pour mapper correctement le shape attendu
+  - **Impact** : Sans ce fix, la table affichait "Aucune promotion configurée" même avec 15 promotions en base
+
+### UX — Remplacement saisie UUID par sélecteurs à labels lisibles (✅ COMPLET)
+- **Problème** : Les formulaires de promotions/bundles demandaient la saisie manuelle d'UUIDs (texte brut) pour les champs `cibleId` (plan/pack/module/bundle cible) et `packIds` (packs d'un bundle). UX catastrophique, source d'erreurs.
+- **Solution** : Sélecteurs avec labels humains (noms, descriptions) au lieu d'UUIDs
+- **Fichiers modifiés** :
+  - `frontend/src/features/billing/components/billing-form-fields.tsx` — Nouveau composant `FormMultiSelect` (dropdown multi-sélection avec badges, checkboxes, toggle all, descriptions)
+  - `frontend/src/features/billing/components/promotion-form-modal.tsx` :
+    - **PromotionForm** : Ajout sélecteur `cibleId` dynamique selon scope (plans via `usePlans()`, packs via `usePacks()`, modules via `useModuleRegistry()`, bundles via `useBundles()`)
+    - **BundleForm** : Remplacement textarea `packIdsText` (UUIDs manuels) par `FormMultiSelect` affichant noms de packs avec descriptions
+  - `frontend/src/locales/fr/promotions.json` + `en/promotions.json` — Nouvelles clés i18n (`ciblePlan`, `ciblePack`, `cibleModule`, `cibleBundle`, `cibleHint`, `packIdsLabel` mis à jour)
+- **Composant FormMultiSelect** : Dropdown avec checkboxes, badges sélectionnés, option "Tout sélectionner/désélectionner", descriptions secondaires, clic extérieur pour fermer, responsive, dark mode via CSS variables
+
+### UX — Remplacement saisie UUID groupes d'établissements (✅ COMPLET)
+- **Fichier** — `frontend/src/features/platform/components/groupes-saas-page.tsx`
+  - **Problème** : Le composant `MembresTab` demandait la saisie manuelle d'un UUID d'établissement (`<input type="text" placeholder="ID établissement">`) pour ajouter un membre au groupe
+  - **Fix** : Remplacé par `<select>` avec noms d'établissements + ville, chargés via `useQuery('/api/platform/facturation/etablissements')`. Filtrage automatique des établissements déjà membres
+
+### UX — Remplacement saisie UUID compétences (matière) (✅ COMPLET)
+- **Fichier** — `frontend/src/features/competences/components/competences-page.tsx`
+  - **Problème** : Le champ `matiereId` dans `CompetenceFormModal` était un `<input type="text" placeholder="ID matière ou laisser vide">` (saisie UUID brut)
+  - **Fix** : Remplacé par `<select>` avec noms de matières + code, chargés via `useMatieres({ limit: 500 })`. Option vide "— Aucune matière —" pour compétences transversales
+  - **i18n** : Clé `aucuneMatiere` mise à jour dans `fr/competences.json` et `en/competences.json`
+
+### Audit UUID — Résultat final
+- **4 champs UUID corrigés** sur l'ensemble du codebase (promotions: cibleId + packIds, groupes: newEtabId, compétences: matiereId)
+- **0 champ UUID restant** dans les formulaires métier
+- **Pages debug plateforme** (`platform.debug.*`) : UUID intentionnel (outils développeur, non modifié)
 

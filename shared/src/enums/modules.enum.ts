@@ -31,7 +31,7 @@ export enum ModuleName {
   EMPLOI_DU_TEMPS = 'emploi-du-temps',
   ELEVES = 'eleves',
   ORIENTATION = 'orientation',
-  RESPONSABLES_ELEVES = 'responsables-eleves',
+  PARENTS = 'parents',
   PROGRAMMES = 'programmes',
   
   // Modules logistiques
@@ -125,7 +125,7 @@ export const MODULE_CATEGORIES: Record<ModuleName, ModuleCategory> = {
   [ModuleName.EMPLOI_DU_TEMPS]: ModuleCategory.ACADEMIQUES,
   [ModuleName.ELEVES]: ModuleCategory.ACADEMIQUES,
   [ModuleName.ORIENTATION]: ModuleCategory.ACADEMIQUES,
-  [ModuleName.RESPONSABLES_ELEVES]: ModuleCategory.ACADEMIQUES,
+  [ModuleName.PARENTS]: ModuleCategory.ACADEMIQUES,
   [ModuleName.PROGRAMMES]: ModuleCategory.ACADEMIQUES,
   
   [ModuleName.CANTINE]: ModuleCategory.LOGISTIQUES,

@@ -74,7 +74,9 @@ import { bulletinsController } from '@modules/bulletins';
 import { emploiDuTempsModuleController } from '@modules/emploi-du-temps';
 import { sallesController } from '@modules/salles';
 import { optionsController } from '@modules/options';
-import { responsablesElevesController } from '@modules/responsables-eleves';
+import { parentController } from '@modules/parents';
+import { registerParentAdapter } from '@modules/parents/adapters';
+import { parentService } from '@modules/parents/services';
 import { monitoringController } from '@modules/monitoring';
 import rbacController from '@modules/rbac';
 import { auditController } from '@modules/audit';
@@ -94,7 +96,7 @@ import { ipAllowlistMiddleware } from '@common/middlewares/ip-allowlist.middlewa
 import { caslMiddleware } from '@casl/casl.middleware';
 import { dualCaslMiddleware } from '@common/middlewares/dual-casl.middleware';
 import { rlsMiddleware, rlsTransactionEnd } from '@common/middlewares/rls.middleware';
-import { clientBillingRouter } from '@modules/billing';
+import { clientBillingRouter, clientPromotionRouter } from '@modules/billing';
 import { marketplaceRouter } from '@modules/billing/controllers/marketplace.controller';
 import { paiementController } from '@modules/paiement';
 import { publicEtablissementController } from '@modules/cms/controllers/public-etablissement.controller';
@@ -538,7 +540,14 @@ export function createApp(): Application {
     app.use('/api/usages-niveau', authMiddleware, filterByEtablissement(), usagesNiveauController);
     app.use('/api/programmes', requireModuleActive('programmes'), authMiddleware, filterByEtablissement(), programmesController);
     app.use('/api/eleves', authMiddleware, filterByEtablissement(), elevesController);
-    app.use('/api/responsables-eleves', authMiddleware, filterByEtablissement(), responsablesElevesController);
+    app.use('/api/parents', authMiddleware, requireModuleActive('parents'), filterByEtablissement(), parentController);
+
+    // Enregistrer l'adaptateur de notifications parents (module actif)
+    registerParentAdapter({
+        getResponsablesForNotification: (eleveUtilisateurId: string) =>
+            parentService.getResponsablesForNotification(eleveUtilisateurId),
+        estModuleActif: () => true,
+    });
 
     // Module CMS (pages publiques white-label) — authentifié + module actif + multi-tenant
     app.use('/api/cms', authMiddleware, requireModuleActive('cms'), filterByEtablissement(), cmsController);
@@ -554,6 +563,8 @@ export function createApp(): Application {
     // ==================================
     app.use('/api/billing', clientBillingRouter);
     app.use('/api/billing/marketplace', marketplaceRouter);
+    // Migration 216 — Promotions v4 (multi-scopes, bundles, gratuités)
+    app.use('/api/billing/promotions', clientPromotionRouter);
 
     // ==================================
     // Routes PLATEFORME (Control Plane) — SUPER_ADMIN uniquement

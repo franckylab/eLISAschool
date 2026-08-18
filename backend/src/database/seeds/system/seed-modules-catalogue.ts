@@ -128,6 +128,15 @@ const MODULES_CATALOGUE_COMPLET = [
         config: { includeRanking: true, includeComments: true, templateId: 'default' },
     },
     {
+        code: 'parents', nom: 'Parents', nomEn: 'Parents',
+        description: 'Portail parent : suivi enfants, notes, bulletins, paiements',
+        categorie: CategorieModule.PAYANT, icone: 'Users',
+        prixMensuel: 0, prixAnnuel: 0,
+        estFacturable: false, estSouscriptible: true, actifParDefaut: false,
+        planMinimal: 'starter', dependencies: ['eleves'], ordre: 15, estSysteme: false,
+        config: { enablePortal: true, allowPayments: true, notificationEnabled: true },
+    },
+    {
         code: 'messagerie', nom: 'Messagerie', nomEn: 'Messaging',
         description: 'Messagerie interne : conversations, messages, pièces jointes',
         categorie: CategorieModule.PAYANT, icone: 'MessageSquare',

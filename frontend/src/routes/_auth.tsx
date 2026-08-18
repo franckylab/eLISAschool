@@ -13,6 +13,7 @@ import { AlertTriangle } from 'lucide-react';
 import { useEtablissementRequired } from '@/hooks/use-etablissement-required';
 import { useSessionExpired } from '@/hooks/use-session-expired';
 import { EtablissementSelectionModal } from '@/components/auth/EtablissementSelectionModal';
+import { PromotionsBanner } from '@/features/billing/components/promotions-banner';
 import { useAuthStore } from '@/stores/auth.store';
 import { useCallback } from 'react';
 
@@ -50,6 +51,8 @@ function AuthLayout() {
 
     return (
         <PageLayout>
+            {/* Bannière promotions (non-intrusive, dismissible, polling 5 min) */}
+            <PromotionsBanner />
             <Outlet />
             
             {/* Modal de sélection d'établissement (global) */}

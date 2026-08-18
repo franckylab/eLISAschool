@@ -22,8 +22,8 @@ import { Route as PlatformTarifsRouteImport } from './routes/platform.tarifs'
 import { Route as PlatformSessionsRouteImport } from './routes/platform.sessions'
 import { Route as PlatformRolesRouteImport } from './routes/platform.roles'
 import { Route as PlatformRevenusRouteImport } from './routes/platform.revenus'
-import { Route as PlatformRemisesRouteImport } from './routes/platform.remises'
 import { Route as PlatformProvidersRouteImport } from './routes/platform.providers'
+import { Route as PlatformPromotionsRouteImport } from './routes/platform.promotions'
 import { Route as PlatformPlansRouteImport } from './routes/platform.plans'
 import { Route as PlatformParametresCascadeRouteImport } from './routes/platform.parametres-cascade'
 import { Route as PlatformPacksQuotaRouteImport } from './routes/platform.packs-quota'
@@ -49,11 +49,11 @@ import { Route as AuthUtilisateursRouteImport } from './routes/_auth.utilisateur
 import { Route as AuthTransportRouteImport } from './routes/_auth.transport'
 import { Route as AuthSpecialitesRouteImport } from './routes/_auth.specialites'
 import { Route as AuthSallesRouteImport } from './routes/_auth.salles'
-import { Route as AuthResponsablesElevesRouteImport } from './routes/_auth.responsables-eleves'
 import { Route as AuthProgrammesRouteImport } from './routes/_auth.programmes'
 import { Route as AuthPlansRouteImport } from './routes/_auth.plans'
 import { Route as AuthPersonnelRouteImport } from './routes/_auth.personnel'
 import { Route as AuthPeriodesRouteImport } from './routes/_auth.periodes'
+import { Route as AuthParentsRouteImport } from './routes/_auth.parents'
 import { Route as AuthParametresRouteImport } from './routes/_auth.parametres'
 import { Route as AuthPaiementsRouteImport } from './routes/_auth.paiements'
 import { Route as AuthPaieRouteImport } from './routes/_auth.paie'
@@ -132,11 +132,11 @@ import { Route as AuthUtilisateursIdRouteImport } from './routes/_auth.utilisate
 import { Route as AuthSpecialitesIdRouteImport } from './routes/_auth.specialites.$id'
 import { Route as AuthSallesStatistiquesRouteImport } from './routes/_auth.salles.statistiques'
 import { Route as AuthSallesSalleIdRouteImport } from './routes/_auth.salles.$salleId'
-import { Route as AuthResponsablesElevesIdRouteImport } from './routes/_auth.responsables-eleves.$id'
 import { Route as AuthProgrammesChapitresRouteImport } from './routes/_auth.programmes.chapitres'
 import { Route as AuthProgrammesIdRouteImport } from './routes/_auth/programmes.$id'
 import { Route as AuthPersonnelIdRouteImport } from './routes/_auth.personnel.$id'
 import { Route as AuthPeriodesIdRouteImport } from './routes/_auth.periodes.$id'
+import { Route as AuthParentsIdRouteImport } from './routes/_auth.parents.$id'
 import { Route as AuthPaieConfigurationRouteImport } from './routes/_auth.paie.configuration'
 import { Route as AuthOrganisationUnitesRouteImport } from './routes/_auth.organisation.unites'
 import { Route as AuthOrganisationPostesRouteImport } from './routes/_auth.organisation.postes'
@@ -255,14 +255,14 @@ const PlatformRevenusRoute = PlatformRevenusRouteImport.update({
   path: '/revenus',
   getParentRoute: () => PlatformRoute,
 } as any)
-const PlatformRemisesRoute = PlatformRemisesRouteImport.update({
-  id: '/remises',
-  path: '/remises',
-  getParentRoute: () => PlatformRoute,
-} as any)
 const PlatformProvidersRoute = PlatformProvidersRouteImport.update({
   id: '/providers',
   path: '/providers',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformPromotionsRoute = PlatformPromotionsRouteImport.update({
+  id: '/promotions',
+  path: '/promotions',
   getParentRoute: () => PlatformRoute,
 } as any)
 const PlatformPlansRoute = PlatformPlansRouteImport.update({
@@ -393,11 +393,6 @@ const AuthSallesRoute = AuthSallesRouteImport.update({
   path: '/salles',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthResponsablesElevesRoute = AuthResponsablesElevesRouteImport.update({
-  id: '/responsables-eleves',
-  path: '/responsables-eleves',
-  getParentRoute: () => AuthRoute,
-} as any)
 const AuthProgrammesRoute = AuthProgrammesRouteImport.update({
   id: '/programmes',
   path: '/programmes',
@@ -416,6 +411,11 @@ const AuthPersonnelRoute = AuthPersonnelRouteImport.update({
 const AuthPeriodesRoute = AuthPeriodesRouteImport.update({
   id: '/periodes',
   path: '/periodes',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthParentsRoute = AuthParentsRouteImport.update({
+  id: '/parents',
+  path: '/parents',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthParametresRoute = AuthParametresRouteImport.update({
@@ -815,12 +815,6 @@ const AuthSallesSalleIdRoute = AuthSallesSalleIdRouteImport.update({
   path: '/$salleId',
   getParentRoute: () => AuthSallesRoute,
 } as any)
-const AuthResponsablesElevesIdRoute =
-  AuthResponsablesElevesIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthResponsablesElevesRoute,
-  } as any)
 const AuthProgrammesChapitresRoute = AuthProgrammesChapitresRouteImport.update({
   id: '/chapitres',
   path: '/chapitres',
@@ -840,6 +834,11 @@ const AuthPeriodesIdRoute = AuthPeriodesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => AuthPeriodesRoute,
+} as any)
+const AuthParentsIdRoute = AuthParentsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthParentsRoute,
 } as any)
 const AuthPaieConfigurationRoute = AuthPaieConfigurationRouteImport.update({
   id: '/configuration',
@@ -1168,11 +1167,11 @@ export interface FileRoutesByFullPath {
   '/paie': typeof AuthPaieRouteWithChildren
   '/paiements': typeof AuthPaiementsRoute
   '/parametres': typeof AuthParametresRoute
+  '/parents': typeof AuthParentsRouteWithChildren
   '/periodes': typeof AuthPeriodesRouteWithChildren
   '/personnel': typeof AuthPersonnelRouteWithChildren
   '/plans': typeof AuthPlansRoute
   '/programmes': typeof AuthProgrammesRouteWithChildren
-  '/responsables-eleves': typeof AuthResponsablesElevesRouteWithChildren
   '/salles': typeof AuthSallesRouteWithChildren
   '/specialites': typeof AuthSpecialitesRouteWithChildren
   '/transport': typeof AuthTransportRoute
@@ -1198,8 +1197,8 @@ export interface FileRoutesByFullPath {
   '/platform/packs-quota': typeof PlatformPacksQuotaRoute
   '/platform/parametres-cascade': typeof PlatformParametresCascadeRoute
   '/platform/plans': typeof PlatformPlansRoute
+  '/platform/promotions': typeof PlatformPromotionsRoute
   '/platform/providers': typeof PlatformProvidersRoute
-  '/platform/remises': typeof PlatformRemisesRoute
   '/platform/revenus': typeof PlatformRevenusRoute
   '/platform/roles': typeof PlatformRolesRouteWithChildren
   '/platform/sessions': typeof PlatformSessionsRoute
@@ -1241,11 +1240,11 @@ export interface FileRoutesByFullPath {
   '/organisation/postes': typeof AuthOrganisationPostesRouteWithChildren
   '/organisation/unites': typeof AuthOrganisationUnitesRouteWithChildren
   '/paie/configuration': typeof AuthPaieConfigurationRoute
+  '/parents/$id': typeof AuthParentsIdRoute
   '/periodes/$id': typeof AuthPeriodesIdRoute
   '/personnel/$id': typeof AuthPersonnelIdRoute
   '/programmes/$id': typeof AuthProgrammesIdRoute
   '/programmes/chapitres': typeof AuthProgrammesChapitresRoute
-  '/responsables-eleves/$id': typeof AuthResponsablesElevesIdRoute
   '/salles/$salleId': typeof AuthSallesSalleIdRoute
   '/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/specialites/$id': typeof AuthSpecialitesIdRoute
@@ -1332,8 +1331,8 @@ export interface FileRoutesByTo {
   '/notifications-config': typeof AuthNotificationsConfigRoute
   '/paiements': typeof AuthPaiementsRoute
   '/parametres': typeof AuthParametresRoute
+  '/parents': typeof AuthParentsRouteWithChildren
   '/plans': typeof AuthPlansRoute
-  '/responsables-eleves': typeof AuthResponsablesElevesRouteWithChildren
   '/transport': typeof AuthTransportRoute
   '/vie-scolaire': typeof AuthVieScolaireRoute
   '/vie-scolaire-avancee': typeof AuthVieScolaireAvanceeRoute
@@ -1353,8 +1352,8 @@ export interface FileRoutesByTo {
   '/platform/packs-quota': typeof PlatformPacksQuotaRoute
   '/platform/parametres-cascade': typeof PlatformParametresCascadeRoute
   '/platform/plans': typeof PlatformPlansRoute
+  '/platform/promotions': typeof PlatformPromotionsRoute
   '/platform/providers': typeof PlatformProvidersRoute
-  '/platform/remises': typeof PlatformRemisesRoute
   '/platform/revenus': typeof PlatformRevenusRoute
   '/platform/sessions': typeof PlatformSessionsRoute
   '/platform/tarifs': typeof PlatformTarifsRoute
@@ -1388,11 +1387,11 @@ export interface FileRoutesByTo {
   '/notes/saisie': typeof AuthNotesSaisieRoute
   '/organisation/modeles': typeof AuthOrganisationModelesRoute
   '/paie/configuration': typeof AuthPaieConfigurationRoute
+  '/parents/$id': typeof AuthParentsIdRoute
   '/periodes/$id': typeof AuthPeriodesIdRoute
   '/personnel/$id': typeof AuthPersonnelIdRoute
   '/programmes/$id': typeof AuthProgrammesIdRoute
   '/programmes/chapitres': typeof AuthProgrammesChapitresRoute
-  '/responsables-eleves/$id': typeof AuthResponsablesElevesIdRoute
   '/salles/$salleId': typeof AuthSallesSalleIdRoute
   '/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/specialites/$id': typeof AuthSpecialitesIdRoute
@@ -1499,11 +1498,11 @@ export interface FileRoutesById {
   '/_auth/paie': typeof AuthPaieRouteWithChildren
   '/_auth/paiements': typeof AuthPaiementsRoute
   '/_auth/parametres': typeof AuthParametresRoute
+  '/_auth/parents': typeof AuthParentsRouteWithChildren
   '/_auth/periodes': typeof AuthPeriodesRouteWithChildren
   '/_auth/personnel': typeof AuthPersonnelRouteWithChildren
   '/_auth/plans': typeof AuthPlansRoute
   '/_auth/programmes': typeof AuthProgrammesRouteWithChildren
-  '/_auth/responsables-eleves': typeof AuthResponsablesElevesRouteWithChildren
   '/_auth/salles': typeof AuthSallesRouteWithChildren
   '/_auth/specialites': typeof AuthSpecialitesRouteWithChildren
   '/_auth/transport': typeof AuthTransportRoute
@@ -1529,8 +1528,8 @@ export interface FileRoutesById {
   '/platform/packs-quota': typeof PlatformPacksQuotaRoute
   '/platform/parametres-cascade': typeof PlatformParametresCascadeRoute
   '/platform/plans': typeof PlatformPlansRoute
+  '/platform/promotions': typeof PlatformPromotionsRoute
   '/platform/providers': typeof PlatformProvidersRoute
-  '/platform/remises': typeof PlatformRemisesRoute
   '/platform/revenus': typeof PlatformRevenusRoute
   '/platform/roles': typeof PlatformRolesRouteWithChildren
   '/platform/sessions': typeof PlatformSessionsRoute
@@ -1572,11 +1571,11 @@ export interface FileRoutesById {
   '/_auth/organisation/postes': typeof AuthOrganisationPostesRouteWithChildren
   '/_auth/organisation/unites': typeof AuthOrganisationUnitesRouteWithChildren
   '/_auth/paie/configuration': typeof AuthPaieConfigurationRoute
+  '/_auth/parents/$id': typeof AuthParentsIdRoute
   '/_auth/periodes/$id': typeof AuthPeriodesIdRoute
   '/_auth/personnel/$id': typeof AuthPersonnelIdRoute
   '/_auth/programmes/$id': typeof AuthProgrammesIdRoute
   '/_auth/programmes/chapitres': typeof AuthProgrammesChapitresRoute
-  '/_auth/responsables-eleves/$id': typeof AuthResponsablesElevesIdRoute
   '/_auth/salles/$salleId': typeof AuthSallesSalleIdRoute
   '/_auth/salles/statistiques': typeof AuthSallesStatistiquesRoute
   '/_auth/specialites/$id': typeof AuthSpecialitesIdRoute
@@ -1683,11 +1682,11 @@ export interface FileRouteTypes {
     | '/paie'
     | '/paiements'
     | '/parametres'
+    | '/parents'
     | '/periodes'
     | '/personnel'
     | '/plans'
     | '/programmes'
-    | '/responsables-eleves'
     | '/salles'
     | '/specialites'
     | '/transport'
@@ -1713,8 +1712,8 @@ export interface FileRouteTypes {
     | '/platform/packs-quota'
     | '/platform/parametres-cascade'
     | '/platform/plans'
+    | '/platform/promotions'
     | '/platform/providers'
-    | '/platform/remises'
     | '/platform/revenus'
     | '/platform/roles'
     | '/platform/sessions'
@@ -1756,11 +1755,11 @@ export interface FileRouteTypes {
     | '/organisation/postes'
     | '/organisation/unites'
     | '/paie/configuration'
+    | '/parents/$id'
     | '/periodes/$id'
     | '/personnel/$id'
     | '/programmes/$id'
     | '/programmes/chapitres'
-    | '/responsables-eleves/$id'
     | '/salles/$salleId'
     | '/salles/statistiques'
     | '/specialites/$id'
@@ -1847,8 +1846,8 @@ export interface FileRouteTypes {
     | '/notifications-config'
     | '/paiements'
     | '/parametres'
+    | '/parents'
     | '/plans'
-    | '/responsables-eleves'
     | '/transport'
     | '/vie-scolaire'
     | '/vie-scolaire-avancee'
@@ -1868,8 +1867,8 @@ export interface FileRouteTypes {
     | '/platform/packs-quota'
     | '/platform/parametres-cascade'
     | '/platform/plans'
+    | '/platform/promotions'
     | '/platform/providers'
-    | '/platform/remises'
     | '/platform/revenus'
     | '/platform/sessions'
     | '/platform/tarifs'
@@ -1903,11 +1902,11 @@ export interface FileRouteTypes {
     | '/notes/saisie'
     | '/organisation/modeles'
     | '/paie/configuration'
+    | '/parents/$id'
     | '/periodes/$id'
     | '/personnel/$id'
     | '/programmes/$id'
     | '/programmes/chapitres'
-    | '/responsables-eleves/$id'
     | '/salles/$salleId'
     | '/salles/statistiques'
     | '/specialites/$id'
@@ -2013,11 +2012,11 @@ export interface FileRouteTypes {
     | '/_auth/paie'
     | '/_auth/paiements'
     | '/_auth/parametres'
+    | '/_auth/parents'
     | '/_auth/periodes'
     | '/_auth/personnel'
     | '/_auth/plans'
     | '/_auth/programmes'
-    | '/_auth/responsables-eleves'
     | '/_auth/salles'
     | '/_auth/specialites'
     | '/_auth/transport'
@@ -2043,8 +2042,8 @@ export interface FileRouteTypes {
     | '/platform/packs-quota'
     | '/platform/parametres-cascade'
     | '/platform/plans'
+    | '/platform/promotions'
     | '/platform/providers'
-    | '/platform/remises'
     | '/platform/revenus'
     | '/platform/roles'
     | '/platform/sessions'
@@ -2086,11 +2085,11 @@ export interface FileRouteTypes {
     | '/_auth/organisation/postes'
     | '/_auth/organisation/unites'
     | '/_auth/paie/configuration'
+    | '/_auth/parents/$id'
     | '/_auth/periodes/$id'
     | '/_auth/personnel/$id'
     | '/_auth/programmes/$id'
     | '/_auth/programmes/chapitres'
-    | '/_auth/responsables-eleves/$id'
     | '/_auth/salles/$salleId'
     | '/_auth/salles/statistiques'
     | '/_auth/specialites/$id'
@@ -2259,18 +2258,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlatformRevenusRouteImport
       parentRoute: typeof PlatformRoute
     }
-    '/platform/remises': {
-      id: '/platform/remises'
-      path: '/remises'
-      fullPath: '/platform/remises'
-      preLoaderRoute: typeof PlatformRemisesRouteImport
-      parentRoute: typeof PlatformRoute
-    }
     '/platform/providers': {
       id: '/platform/providers'
       path: '/providers'
       fullPath: '/platform/providers'
       preLoaderRoute: typeof PlatformProvidersRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/promotions': {
+      id: '/platform/promotions'
+      path: '/promotions'
+      fullPath: '/platform/promotions'
+      preLoaderRoute: typeof PlatformPromotionsRouteImport
       parentRoute: typeof PlatformRoute
     }
     '/platform/plans': {
@@ -2448,13 +2447,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSallesRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/_auth/responsables-eleves': {
-      id: '/_auth/responsables-eleves'
-      path: '/responsables-eleves'
-      fullPath: '/responsables-eleves'
-      preLoaderRoute: typeof AuthResponsablesElevesRouteImport
-      parentRoute: typeof AuthRoute
-    }
     '/_auth/programmes': {
       id: '/_auth/programmes'
       path: '/programmes'
@@ -2481,6 +2473,13 @@ declare module '@tanstack/react-router' {
       path: '/periodes'
       fullPath: '/periodes'
       preLoaderRoute: typeof AuthPeriodesRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/parents': {
+      id: '/_auth/parents'
+      path: '/parents'
+      fullPath: '/parents'
+      preLoaderRoute: typeof AuthParentsRouteImport
       parentRoute: typeof AuthRoute
     }
     '/_auth/parametres': {
@@ -3029,13 +3028,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSallesSalleIdRouteImport
       parentRoute: typeof AuthSallesRoute
     }
-    '/_auth/responsables-eleves/$id': {
-      id: '/_auth/responsables-eleves/$id'
-      path: '/$id'
-      fullPath: '/responsables-eleves/$id'
-      preLoaderRoute: typeof AuthResponsablesElevesIdRouteImport
-      parentRoute: typeof AuthResponsablesElevesRoute
-    }
     '/_auth/programmes/chapitres': {
       id: '/_auth/programmes/chapitres'
       path: '/chapitres'
@@ -3063,6 +3055,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/periodes/$id'
       preLoaderRoute: typeof AuthPeriodesIdRouteImport
       parentRoute: typeof AuthPeriodesRoute
+    }
+    '/_auth/parents/$id': {
+      id: '/_auth/parents/$id'
+      path: '/$id'
+      fullPath: '/parents/$id'
+      preLoaderRoute: typeof AuthParentsIdRouteImport
+      parentRoute: typeof AuthParentsRoute
     }
     '/_auth/paie/configuration': {
       id: '/_auth/paie/configuration'
@@ -3814,6 +3813,18 @@ const AuthPaieRouteWithChildren = AuthPaieRoute._addFileChildren(
   AuthPaieRouteChildren,
 )
 
+interface AuthParentsRouteChildren {
+  AuthParentsIdRoute: typeof AuthParentsIdRoute
+}
+
+const AuthParentsRouteChildren: AuthParentsRouteChildren = {
+  AuthParentsIdRoute: AuthParentsIdRoute,
+}
+
+const AuthParentsRouteWithChildren = AuthParentsRoute._addFileChildren(
+  AuthParentsRouteChildren,
+)
+
 interface AuthPeriodesRouteChildren {
   AuthPeriodesIdRoute: typeof AuthPeriodesIdRoute
   AuthPeriodesIndexRoute: typeof AuthPeriodesIndexRoute
@@ -3857,20 +3868,6 @@ const AuthProgrammesRouteChildren: AuthProgrammesRouteChildren = {
 const AuthProgrammesRouteWithChildren = AuthProgrammesRoute._addFileChildren(
   AuthProgrammesRouteChildren,
 )
-
-interface AuthResponsablesElevesRouteChildren {
-  AuthResponsablesElevesIdRoute: typeof AuthResponsablesElevesIdRoute
-}
-
-const AuthResponsablesElevesRouteChildren: AuthResponsablesElevesRouteChildren =
-  {
-    AuthResponsablesElevesIdRoute: AuthResponsablesElevesIdRoute,
-  }
-
-const AuthResponsablesElevesRouteWithChildren =
-  AuthResponsablesElevesRoute._addFileChildren(
-    AuthResponsablesElevesRouteChildren,
-  )
 
 interface AuthSallesRouteChildren {
   AuthSallesSalleIdRoute: typeof AuthSallesSalleIdRoute
@@ -3965,11 +3962,11 @@ interface AuthRouteChildren {
   AuthPaieRoute: typeof AuthPaieRouteWithChildren
   AuthPaiementsRoute: typeof AuthPaiementsRoute
   AuthParametresRoute: typeof AuthParametresRoute
+  AuthParentsRoute: typeof AuthParentsRouteWithChildren
   AuthPeriodesRoute: typeof AuthPeriodesRouteWithChildren
   AuthPersonnelRoute: typeof AuthPersonnelRouteWithChildren
   AuthPlansRoute: typeof AuthPlansRoute
   AuthProgrammesRoute: typeof AuthProgrammesRouteWithChildren
-  AuthResponsablesElevesRoute: typeof AuthResponsablesElevesRouteWithChildren
   AuthSallesRoute: typeof AuthSallesRouteWithChildren
   AuthSpecialitesRoute: typeof AuthSpecialitesRouteWithChildren
   AuthTransportRoute: typeof AuthTransportRoute
@@ -4017,11 +4014,11 @@ const AuthRouteChildren: AuthRouteChildren = {
   AuthPaieRoute: AuthPaieRouteWithChildren,
   AuthPaiementsRoute: AuthPaiementsRoute,
   AuthParametresRoute: AuthParametresRoute,
+  AuthParentsRoute: AuthParentsRouteWithChildren,
   AuthPeriodesRoute: AuthPeriodesRouteWithChildren,
   AuthPersonnelRoute: AuthPersonnelRouteWithChildren,
   AuthPlansRoute: AuthPlansRoute,
   AuthProgrammesRoute: AuthProgrammesRouteWithChildren,
-  AuthResponsablesElevesRoute: AuthResponsablesElevesRouteWithChildren,
   AuthSallesRoute: AuthSallesRouteWithChildren,
   AuthSpecialitesRoute: AuthSpecialitesRouteWithChildren,
   AuthTransportRoute: AuthTransportRoute,
@@ -4115,8 +4112,8 @@ interface PlatformRouteChildren {
   PlatformPacksQuotaRoute: typeof PlatformPacksQuotaRoute
   PlatformParametresCascadeRoute: typeof PlatformParametresCascadeRoute
   PlatformPlansRoute: typeof PlatformPlansRoute
+  PlatformPromotionsRoute: typeof PlatformPromotionsRoute
   PlatformProvidersRoute: typeof PlatformProvidersRoute
-  PlatformRemisesRoute: typeof PlatformRemisesRoute
   PlatformRevenusRoute: typeof PlatformRevenusRoute
   PlatformRolesRoute: typeof PlatformRolesRouteWithChildren
   PlatformSessionsRoute: typeof PlatformSessionsRoute
@@ -4143,8 +4140,8 @@ const PlatformRouteChildren: PlatformRouteChildren = {
   PlatformPacksQuotaRoute: PlatformPacksQuotaRoute,
   PlatformParametresCascadeRoute: PlatformParametresCascadeRoute,
   PlatformPlansRoute: PlatformPlansRoute,
+  PlatformPromotionsRoute: PlatformPromotionsRoute,
   PlatformProvidersRoute: PlatformProvidersRoute,
-  PlatformRemisesRoute: PlatformRemisesRoute,
   PlatformRevenusRoute: PlatformRevenusRoute,
   PlatformRolesRoute: PlatformRolesRouteWithChildren,
   PlatformSessionsRoute: PlatformSessionsRoute,

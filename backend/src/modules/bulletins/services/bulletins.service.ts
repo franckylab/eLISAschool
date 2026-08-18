@@ -16,7 +16,7 @@ import { Bulletin, BulletinMatiere, BulletinWorkflow } from '../entities';
 import { GenerateBulletinDto, UpdateBulletinDto, QueryBulletinsDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
-import { parentsService } from '@modules/responsables-eleves/services';
+import { getResponsablesForNotification } from '@modules/parents/adapters';
 import { periodesService } from '@modules/periodes/services';
 import { StatutPeriode } from '@modules/periodes/entities';
 import { notesBatchLoaderService } from '@modules/notes/services/notes-batch-loader.service';
@@ -665,7 +665,7 @@ export class BulletinsService {
 
                 if (!eleve?.utilisateurId) continue;
 
-                const responsables = await parentsService.getResponsablesForNotification(eleve.utilisateurId);
+                const responsables = await getResponsablesForNotification(eleve.utilisateurId);
                 if (!responsables || responsables.length === 0) continue;
 
                 for (const resp of responsables) {

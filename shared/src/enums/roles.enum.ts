@@ -364,6 +364,18 @@ export enum Permission {
     ELEVES_DOCUMENTS_GENERATE = 'eleves:documents:generate',
     ELEVES_HISTORIQUE_VIEW = 'eleves:historique:view',
 
+    // ==================================
+    // PARENTS (module payant)
+    // ==================================
+    PARENTS_VIEW = 'parents:view',
+    PARENTS_CREATE = 'parents:create',
+    PARENTS_EDIT = 'parents:edit',
+    PARENTS_DELETE = 'parents:delete',
+    PARENTS_VIEW_ENFANTS = 'parents:view-enfants',
+    PARENTS_VIEW_NOTES = 'parents:view-notes',
+    PARENTS_VIEW_BULLETINS = 'parents:view-bulletins',
+    PARENTS_PAY = 'parents:pay',
+
     ENSEIGNANTS_VIEW = 'enseignants:view',
     ENSEIGNANTS_CREATE = 'enseignants:create',
     ENSEIGNANTS_EDIT = 'enseignants:edit',
@@ -1138,6 +1150,9 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
         Permission.PAIE_EXPORT,
         Permission.PAIE_CONFIG_VIEW, Permission.PAIE_CONFIG_CREATE,
         Permission.PAIE_CONFIG_EDIT, Permission.PAIE_CONFIG_DELETE,
+        // Parents (module payant — gestion des relations parent-élève)
+        Permission.PARENTS_VIEW, Permission.PARENTS_CREATE,
+        Permission.PARENTS_EDIT, Permission.PARENTS_DELETE,
         // Audit — tous les modules
         Permission.AUDIT_VIEW,
         Permission.AUDIT_NOTES_VIEW, Permission.AUDIT_BULLETINS_VIEW,
@@ -1403,6 +1418,10 @@ export const DEFAULT_ROLE_PERMISSIONS: Partial<Record<Role, Permission[]>> = {
     ],
 
     [Role.PARENT]: [
+        Permission.PARENTS_VIEW,
+        Permission.PARENTS_VIEW_ENFANTS,
+        Permission.PARENTS_VIEW_NOTES,
+        Permission.PARENTS_VIEW_BULLETINS,
         Permission.NOTES_VIEW,
         Permission.BULLETINS_VIEW,
         Permission.CANTINE_VIEW,

@@ -27,7 +27,7 @@ interface HistoryEntry {
 
 const PRESET_ENDPOINTS = [
     { label: 'Plans abonnement', method: 'GET', url: '/api/platform/facturation/plans' },
-    { label: 'Remises', method: 'GET', url: '/api/platform/remises' },
+    { label: 'Promotions', method: 'GET', url: '/api/billing/promotions' },
     { label: 'Packs quota', method: 'GET', url: '/api/platform/packs-quota' },
     { label: 'Cycles facturation', method: 'GET', url: '/api/platform/cycles-facturation' },
     { label: 'Stratégies expiration', method: 'GET', url: '/api/platform/strategies-expiration' },

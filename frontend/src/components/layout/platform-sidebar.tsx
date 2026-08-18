@@ -50,6 +50,7 @@ import {
     MonitorSmartphone,
     TrendingUp,
     Activity,
+    Sparkles,
     type LucideIcon,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
@@ -116,12 +117,12 @@ const NAV_GROUPS: PlatformNavGroup[] = [
             { labelKey: 'navigation.tarifs', path: '/platform/tarifs', icon: TrendingUp },
         ],
     },
-    // 4. Commerce (2) — Providers et Remises
+    // 4. Commerce (2) — Providers, Promotions & Remises (unifié)
     {
         key: 'commerce', labelKey: 'sidebar.groupeCommerce', icon: Wallet,
         items: [
             { labelKey: 'navigation.providers', path: '/platform/providers', icon: Wallet },
-            { labelKey: 'navigation.remises', path: '/platform/remises', icon: Percent },
+            { labelKey: 'navigation.promotionsRemises', path: '/platform/promotions', icon: Sparkles },
         ],
     },
     // 5. Modules et fonctions (2) — Modules, Fonctionnalités

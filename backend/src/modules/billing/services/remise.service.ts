@@ -1,23 +1,13 @@
 /**
  * ==================================
- * eLISAschool - RemiseService (Refonte v3.1)
+ * eLISAschool - RemiseService (DÉPRÉCIÉ — v4.0)
  * ==================================
- * Version: 3.1.0
+ * @deprecated Utiliser PromotionService (promotion.service.ts) à la place.
+ * Conservé uniquement pour rollback et compatibilité lecture seule.
+ * La table sous-jacente est renommée _legacy_remises_abonnement (migration 216).
+ *
+ * Version: 3.1.0 (gelée)
  * Auteur: franck arlos chendjou
- *
- * CRUD des remises d'abonnement SaaS + moteur d'application :
- * priorité, cumul, durée d'application, cibles (GLOBAL/PLAN/TENANT/CYCLE).
- *
- * v3.1 — Filtrage conditionnel (conditionElevesMin, conditionAncienneteMois)
- *        + plafond global 40% sur le cumul des remises.
- *        + suppression double application remise cycle.
- *
- * Stratégie d'application (appliquer) :
- *   1. Filtrer les remises valides (actives, dates, maxUtilisations, cible, conditions)
- *   2. Trier par priorite DESC
- *   3. Si une remise non cumulable existe → elle gagne seule
- *   4. Sinon cumul des remises cumulables (plancher : montant >= 0)
- *   5. Plafond global 40% : la déduction totale ne peut dépasser 40% du montant initial
  */
 
 import { Repository } from 'typeorm';

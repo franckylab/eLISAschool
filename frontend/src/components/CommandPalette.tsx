@@ -52,6 +52,7 @@ import {
     MonitorSmartphone,
     HardDrive,
     ToggleRight,
+    Sparkles,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -98,7 +99,7 @@ const PLATFORM_COMMANDS: CommandItem[] = [
 
     // — Commerce (2)
     { id: 'p-providers', labelKey: 'admin:commandPalette.providers', labelFallback: 'Providers Paiement', descriptionKey: 'admin:commandPalette.providersDesc', descriptionFallback: 'MTN, OM, Wave, Stripe...', path: '/platform/providers', icon: Wallet, category: 'platform', categoryKey: 'admin:commandPalette.catCommerce', categoryFallback: 'Commerce', keywords: ['providers', 'paiement', 'payment', 'stripe', 'momo', 'wave'] },
-    { id: 'p-remises', labelKey: 'admin:commandPalette.remises', labelFallback: 'Remises & Promotions', descriptionKey: 'admin:commandPalette.remisesDesc', descriptionFallback: 'Coupons, réductions', path: '/platform/remises', icon: Percent, category: 'platform', categoryKey: 'admin:commandPalette.catCommerce', categoryFallback: 'Commerce', keywords: ['remises', 'promotions', 'coupons', 'reductions', 'discounts'] },
+    { id: 'p-promotions', labelKey: 'admin:commandPalette.promotionsRemises', labelFallback: 'Promotions & Remises', descriptionKey: 'admin:commandPalette.promotionsRemisesDesc', descriptionFallback: 'Promotions multi-scopes, bundles, cascade, coupons, réductions', path: '/platform/promotions', icon: Sparkles, category: 'platform', categoryKey: 'admin:commandPalette.catCommerce', categoryFallback: 'Commerce', keywords: ['promotions', 'remises', 'bundles', 'cascade', 'multi-scopes', 'coupons', 'reductions', 'discounts', 'gratuite'] },
 
     // — Modules et fonctions (2)
     { id: 'p-modules', labelKey: 'admin:commandPalette.modules', labelFallback: 'Modules', descriptionKey: 'admin:commandPalette.modulesDesc', descriptionFallback: 'Registre & activation module', path: '/platform/modules', icon: Puzzle, category: 'platform', categoryKey: 'admin:commandPalette.catModules', categoryFallback: 'Modules & fonctions', keywords: ['modules', 'activation', 'registry', 'premium', 'catalogue'] },

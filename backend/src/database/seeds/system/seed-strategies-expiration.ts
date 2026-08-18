@@ -1,18 +1,16 @@
 /**
  * ==========================================
- * eLISAschool - Seed : Stratégies d'expiration (migration 213)
+ * eLISAschool - Seed : Stratégies d'expiration v3.4 (migration 213)
  * ==========================================
  *
  * Seed idempotent des stratégies d'expiration d'abonnement.
- * v3.2 : une stratégie par plan (5 stratégies) pour un contrôle maximal.
+ * v3.4 : une stratégie par plan (3 stratégies) pour un contrôle maximal.
  *
- *   - decouverte : 7j lecture seule → archive (gratuit = rapide)
- *   - starter    : 10j lecture seule → 10j verrouillé → archive
+ *   - decouverte : 10j lecture seule → 5j verrouillé → archive
  *   - standard   : 15j lecture seule → 15j verrouillé → archive (défaut)
- *   - pro        : 20j lecture seule → 20j verrouillé → 15j archive
- *   - enterprise : 30j lecture seule → 30j verrouillé → 30j archive (SLA)
+ *   - premium    : 30j lecture seule → 30j verrouillé → 30j archive (SLA)
  *
- * Version: 3.2.0
+ * Version: 3.4.0
  * Auteur: franck arlos chendjou
  * ==========================================
  */
@@ -30,23 +28,13 @@ const STRATEGIES: Array<{
 }> = [
     {
         code: 'decouverte',
-        nom: 'Découverte — Dégradation accélérée (7 jours)',
+        nom: 'Découverte — Dégradation courte (15 jours)',
         phases: [
-            { nom: 'LECTURE_SEULE', jours: 7, comportement: ComportementPhase.READ_ONLY },
+            { nom: 'LECTURE_SEULE', jours: 10, comportement: ComportementPhase.READ_ONLY },
+            { nom: 'VERROUILLE', jours: 5, comportement: ComportementPhase.LOCKED },
             { nom: 'ARCHIVE', jours: null, comportement: ComportementPhase.ARCHIVED },
         ],
         planSlug: 'decouverte',
-        estDefaut: false,
-    },
-    {
-        code: 'starter',
-        nom: 'Starter — Dégradation courte (20 jours)',
-        phases: [
-            { nom: 'LECTURE_SEULE', jours: 10, comportement: ComportementPhase.READ_ONLY },
-            { nom: 'VERROUILLE', jours: 10, comportement: ComportementPhase.LOCKED },
-            { nom: 'ARCHIVE', jours: null, comportement: ComportementPhase.ARCHIVED },
-        ],
-        planSlug: 'starter',
         estDefaut: false,
     },
     {
@@ -61,27 +49,15 @@ const STRATEGIES: Array<{
         estDefaut: true,
     },
     {
-        code: 'pro',
-        nom: 'Pro — Dégradation étendue (55 jours)',
-        phases: [
-            { nom: 'LECTURE_SEULE', jours: 20, comportement: ComportementPhase.READ_ONLY },
-            { nom: 'VERROUILLE', jours: 20, comportement: ComportementPhase.LOCKED },
-            { nom: 'PRE_ARCHIVE', jours: 15, comportement: ComportementPhase.ARCHIVED },
-            { nom: 'ARCHIVE', jours: null, comportement: ComportementPhase.ARCHIVED },
-        ],
-        planSlug: 'pro',
-        estDefaut: false,
-    },
-    {
-        code: 'enterprise',
-        nom: 'Enterprise — SLA négocié (90 jours)',
+        code: 'premium',
+        nom: 'Premium — SLA étendu (90 jours)',
         phases: [
             { nom: 'LECTURE_SEULE', jours: 30, comportement: ComportementPhase.READ_ONLY },
             { nom: 'VERROUILLE', jours: 30, comportement: ComportementPhase.LOCKED },
             { nom: 'PRE_ARCHIVE', jours: 30, comportement: ComportementPhase.ARCHIVED },
             { nom: 'ARCHIVE', jours: null, comportement: ComportementPhase.ARCHIVED },
         ],
-        planSlug: 'enterprise',
+        planSlug: 'premium',
         estDefaut: false,
     },
 ];
@@ -107,7 +83,7 @@ export async function seedStrategiesExpiration(): Promise<{ created: number; ski
         created++;
     }
 
-    logger.info(`⏳ Seed stratégies expiration : ${created} créées, ${skipped} ignorées (déjà existantes)`);
+    logger.info(`⏳ Seed stratégies expiration v3.4 : ${created} créées, ${skipped} ignorées (déjà existantes)`);
     return { created, skipped };
 }
 

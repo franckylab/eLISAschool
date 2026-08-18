@@ -14,7 +14,7 @@ import { MenuCantine, InscriptionCantine, ConsommationCantine, StatutRepas, Stat
 import { CreateMenuDto, CreateInscriptionDto, EnregistrerConsommationDto, RechargerSoldeDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
-import { parentsService } from '@modules/responsables-eleves/services';
+import { getResponsablesForNotification } from '@modules/parents/adapters';
 import { getParamNumber, getParamBoolean, getParam } from '@modules/configuration/utils/config.helper';
 import { notificationTemplates } from '@modules/notifications/services';
 import { Eleve } from '@modules/eleves/entities';
@@ -373,7 +373,7 @@ export class CantineService {
             if (!eleve?.utilisateurId) return;
 
             // Trouver les responsables
-            const responsables = await parentsService.getResponsablesForNotification(eleve.utilisateurId);
+            const responsables = await getResponsablesForNotification(eleve.utilisateurId);
 
             if (!responsables || responsables.length === 0) return;
 
@@ -432,7 +432,7 @@ export class CantineService {
                 if (!eleve?.utilisateurId) continue;
 
                 // Trouver les responsables
-                const responsables = await parentsService.getResponsablesForNotification(eleve.utilisateurId);
+                const responsables = await getResponsablesForNotification(eleve.utilisateurId);
 
                 if (!responsables || responsables.length === 0) continue;
 

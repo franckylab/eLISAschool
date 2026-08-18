@@ -8,7 +8,7 @@
  * Auteur: franck arlos chendjou
  */
 
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -33,6 +33,7 @@ interface FAQSectionProps {
 export function FAQSection({ className }: FAQSectionProps) {
     const { t } = useTranslation('billing');
     const [openIndex, setOpenIndex] = useState<number | null>(null);
+    const baseId = useId();
 
     // Charger les items FAQ depuis i18n (fallback sur données hardcodées)
     const faqItems: FAQItem[] = t('faq.items', { returnObjects: true, defaultValue: [] as any }) as FAQItem[];
@@ -65,6 +66,9 @@ export function FAQSection({ className }: FAQSectionProps) {
                             <button
                                 onClick={() => setOpenIndex(isOpen ? null : index)}
                                 className="flex w-full items-center justify-between px-5 py-4 text-left"
+                                aria-expanded={isOpen}
+                                aria-controls={`${baseId}-panel-${index}`}
+                                id={`${baseId}-header-${index}`}
                             >
                                 <span className={cn(
                                     'text-sm font-medium transition-colors',
@@ -80,7 +84,12 @@ export function FAQSection({ className }: FAQSectionProps) {
                                 />
                             </button>
                             {isOpen && (
-                                <div className="px-5 pb-4">
+                                <div
+                                    className="px-5 pb-4"
+                                    role="region"
+                                    aria-labelledby={`${baseId}-header-${index}`}
+                                    id={`${baseId}-panel-${index}`}
+                                >
                                     <p className="text-sm leading-relaxed text-[var(--color-texte-secondaire)]">
                                         {item.r}
                                     </p>

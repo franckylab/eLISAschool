@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
-import { Package, Check, ShoppingCart, Star } from 'lucide-react';
+import { Users, User, School, HardDrive, MessageSquare, Package, Check, ShoppingCart, Star } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { ElisaButton } from '@/components/ui';
@@ -38,8 +38,10 @@ function usePacks() {
     return useQuery<PackQuota[]>({
         queryKey: ['packs-quota-disponibles'],
         queryFn: async () => {
-            const res = await apiClient.get<{ success: boolean; data: PackQuota[] }>('/api/billing/packs');
-            return (res.data?.data ?? []).filter((p) => p.actif).sort((a, b) => a.ordre - b.ordre);
+            const res = await apiClient.get<PackQuota[]>('/api/billing/packs');
+            const payload = res.data as any;
+            const liste = Array.isArray(payload) ? payload : payload?.data ?? [];
+            return (liste as PackQuota[]).filter((p) => p.actif).sort((a, b) => a.ordre - b.ordre);
         },
     });
 }
@@ -66,12 +68,12 @@ function useSouscrirePack() {
 // Label ressource
 // =============================================
 
-const RESSOURCE_LABELS: Record<string, { fr: string; icon: string }> = {
-    eleves: { fr: 'Élèves', icon: '👨‍🎓' },
-    utilisateurs: { fr: 'Utilisateurs', icon: '👤' },
-    classes: { fr: 'Classes', icon: '🏫' },
-    stockageGo: { fr: 'Stockage (Go)', icon: '💾' },
-    sms: { fr: 'SMS', icon: '📱' },
+const RESSOURCE_CONFIG: Record<string, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
+    eleves: { label: 'Élèves', icon: Users },
+    utilisateurs: { label: 'Utilisateurs', icon: User },
+    classes: { label: 'Classes', icon: School },
+    stockageGo: { label: 'Stockage (Go)', icon: HardDrive },
+    sms: { label: 'SMS', icon: MessageSquare },
 };
 
 // =============================================
@@ -118,12 +120,15 @@ export function PacksSection({ className }: PacksSectionProps) {
             </div>
 
             {Object.entries(parRessource).map(([ressource, packsRessource]) => {
-                const label = RESSOURCE_LABELS[ressource] ?? { fr: ressource, icon: '📦' };
+                const config = RESSOURCE_CONFIG[ressource] ?? { label: ressource, icon: Package };
+                const RessourceIcon = config.icon;
                 return (
                     <div key={ressource}>
                         <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[var(--color-texte)]">
-                            <span>{label.icon}</span>
-                            <span>{label.fr}</span>
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-dominante)]/10">
+                                <RessourceIcon className="h-4 w-4 text-[var(--color-dominante)]" />
+                            </div>
+                            <span>{config.label}</span>
                         </h3>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                             {packsRessource.map((pack, idx) => (
@@ -160,7 +165,7 @@ export function PacksSection({ className }: PacksSectionProps) {
                                     <ul className="mb-4 flex-1 space-y-1 text-sm text-[var(--color-texte-secondaire)]">
                                         <li className="flex items-center gap-2">
                                             <Check className="h-3.5 w-3.5 text-[var(--color-success-600)]" />
-                                            +{pack.quantite.toLocaleString('fr-FR')} {label.fr.toLowerCase()}
+                                            +{pack.quantite.toLocaleString('fr-FR')} {config.label.toLowerCase()}
                                         </li>
                                         <li className="flex items-center gap-2">
                                             <Check className="h-3.5 w-3.5 text-[var(--color-success-600)]" />

@@ -30,7 +30,9 @@
     "parametresSysteme": "System Settings",
     "sauvegardes": "Backups",
     "sessions": "Sessions & Activity",
-    "tarifs": "Pricing"
+    "tarifs": "Pricing",
+    "promotions": "Promotions v4",
+    "promotionsRemises": "Promotions & Discounts"
   },
   "sidebar": {
     "titre": "Platform",
@@ -1867,6 +1869,10 @@
     "providersDesc": "MTN, OM, Wave, Stripe...",
     "remises": "Discounts & Promotions",
     "remisesDesc": "Coupons, reductions",
+    "promotions": "Promotions v4",
+    "promotionsDesc": "Multi-scope promotions, bundles, cascade",
+    "promotionsRemises": "Promotions & Discounts",
+    "promotionsRemisesDesc": "Multi-scope promotions, bundles, cascade, coupons, discounts",
     "modules": "Modules",
     "modulesDesc": "Registry & module activation",
     "featureFlags": "Feature Flags",

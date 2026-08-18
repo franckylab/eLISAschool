@@ -131,15 +131,20 @@ interface ApiEnvelope<T> {
 // =============================================
 
 function useMarketplace() {
-    return useQuery({
+    return useQuery<{
+        modules: ResolvedModule[];
+        fonctionnalites: FonctionnaliteItem[];
+        abonnement: AbonnementStatut;
+    }>({
         queryKey: ['marketplace-v3'],
         queryFn: async () => {
-            const res = await apiClient.get<ApiEnvelope<{
+            const res = await apiClient.get<{
                 modules: ResolvedModule[];
                 fonctionnalites: FonctionnaliteItem[];
                 abonnement: AbonnementStatut;
-            }>>('/api/billing/marketplace');
-            return res.data?.data ?? { modules: [], fonctionnalites: [], abonnement: undefined };
+            }>('/api/billing/marketplace');
+            const payload = res.data as any;
+            return (payload?.modules ? payload : payload?.data) ?? { modules: [], fonctionnalites: [], abonnement: undefined as unknown as AbonnementStatut };
         },
         staleTime: 30_000,
     });
@@ -625,22 +630,24 @@ function PayantsTab() {
 function UsageTab() {
     const queryClient = useQueryClient();
 
-    const { data: usageData, isLoading } = useQuery({
+    const { data: usageData, isLoading } = useQuery<{ quotas: EtatQuota[]; abonnement: AbonnementStatut }>({
         queryKey: ['marketplace-usage'],
         queryFn: async () => {
-            const res = await apiClient.get<ApiEnvelope<{ quotas: EtatQuota[]; abonnement: AbonnementStatut }>>(
+            const res = await apiClient.get<{ quotas: EtatQuota[]; abonnement: AbonnementStatut }>(
                 '/api/billing/marketplace/usage',
             );
-            return res.data?.data;
+            const payload = res.data as any;
+            return payload?.quotas ? payload : payload?.data;
         },
         staleTime: 30_000,
     });
 
-    const { data: packs = [] } = useQuery({
+    const { data: packs = [] } = useQuery<PackItem[]>({
         queryKey: ['marketplace-packs'],
         queryFn: async () => {
-            const res = await apiClient.get<ApiEnvelope<PackItem[]>>('/api/billing/marketplace/packs');
-            return res.data?.data ?? [];
+            const res = await apiClient.get<PackItem[]>('/api/billing/marketplace/packs');
+            const payload = res.data as any;
+            return Array.isArray(payload) ? payload : payload?.data ?? [];
         },
         staleTime: 60_000,
     });

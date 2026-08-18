@@ -89,13 +89,13 @@ export class Eleve {
     // PARENTS / TUTEURS - INFORMATIONS DIRECTES
     // ==================================
     /**
-     * @deprecated Utiliser ResponsableEleve à la place
+     * @deprecated Utiliser Parent à la place
      * Ces champs sont utilisés UNIQUEMENT pour les préinscriptions.
      * Lors de la conversion en inscription, les parents doivent être
-     * migrés vers la table ResponsableEleve avec des comptes Utilisateur.
+     * migrés vers la table Parent avec des comptes Utilisateur.
      * 
-     * @see ParentsService.migrerDepuisChampsDirects()
-     * @see ParentsService.getParentsInfo()
+     * @see ParentService.migrerDepuisChampsDirects()
+     * @see ParentService.getParentsInfo()
      * 
      * Sera supprimé dans la version 3.0
      */

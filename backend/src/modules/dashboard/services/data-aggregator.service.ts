@@ -184,7 +184,7 @@ export class DataAggregatorService {
                     return personnelDashboardService;
 
                 case 'portalParentService':
-                    const { portalParentService } = require('@modules/responsables-eleves/services');
+                    const { portalParentService } = require('@modules/parents/services');
                     this.registerService('portalParentService', portalParentService);
                     return portalParentService;
 

@@ -16,7 +16,7 @@ import { AffectationEleve, StatutAffectationEleve } from '@modules/classes/entit
 import { CreateNoteDto, UpdateNoteDto, CreateBulkNotesDto, QueryNotesDto, QueryNotesStatistiquesDto } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
-import { parentsService } from '@modules/responsables-eleves/services';
+import { getResponsablesForNotification } from '@modules/parents/adapters';
 import { getParamNumber, getParamBoolean } from '@modules/configuration/utils/config.helper';
 import { auditService, AuditAction } from '@modules/auth';
 import { periodesService } from '@modules/periodes/services';
@@ -231,7 +231,7 @@ export class NotesService {
                     : null;
 
                 // Trouver les responsables de cet élève
-                const responsables = await parentsService.getResponsablesForNotification(eleve.utilisateurId);
+                const responsables = await getResponsablesForNotification(eleve.utilisateurId);
 
                 // Notifier chaque responsable
                 if (responsables && responsables.length > 0) {
