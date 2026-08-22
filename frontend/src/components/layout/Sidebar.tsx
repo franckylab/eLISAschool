@@ -265,7 +265,7 @@ const NAV_SECTIONS: NavSection[] = [
                 ]
             },
             { label: 'Classes', path: '/classes', icon: Group, module: 'classes' },
-            { label: 'Années Scolaires', path: '/annees-scolaires', icon: ClockArrowUp, module: 'anneesScolaires' },
+            { label: 'Années Scolaires', path: '/annees-scolaires', icon: ClockArrowUp, module: 'annees' },
             { label: 'Matières', path: '/matieres', icon: Atom, module: 'matieres' },
             {
                 label: 'Programmes',
@@ -473,6 +473,7 @@ export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } =
                     filieres: filieresPerms,
                     finances: financesPerms,
                     matieres: matieresPerms,
+                    annees: anneesScolairesPerms,
                     anneesScolaires: anneesScolairesPerms,
                     notes: notesPerms,
                     niveaux: niveauxPerms,

@@ -931,6 +931,19 @@ export class PeriodesService {
             }
         }
 
+        await auditService.log({
+            utilisateurId: createurId,
+            action: AuditAction.PERIODE_CLOSE,
+            cible: 'Periode',
+            cibleId: periode.id,
+            description: `Période clôturée: ${periode.nom}`,
+            module: 'periodes',
+            etablissementId,
+            parentCible: 'AnneeScolaire',
+            parentCibleId: periode.anneeScolaireId,
+            metadata: { entiteLabel: periode.nom, impacts },
+        });
+
         logger.info(`[Periodes] Période clôturée: ${periode.nom} (${periodeId})`);
         return this.findOne(periodeId, etablissementId);
     }
@@ -938,7 +951,7 @@ export class PeriodesService {
     async reouvrir(
         periodeId: string,
         dto: ReouvrirPeriodeDto,
-        _utilisateurId: string | undefined,
+        utilisateurId: string | undefined,
         etablissementId: string,
     ): Promise<Periode> {
         const periode = await this.findOne(periodeId, etablissementId);
@@ -962,6 +975,19 @@ export class PeriodesService {
                 }
             }
         }
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.PERIODE_REOPEN,
+            cible: 'Periode',
+            cibleId: periode.id,
+            description: `Période réouverte: ${periode.nom}`,
+            module: 'periodes',
+            etablissementId,
+            parentCible: 'AnneeScolaire',
+            parentCibleId: periode.anneeScolaireId,
+            metadata: { entiteLabel: periode.nom, motif: dto.motif },
+        });
 
         logger.info(`[Periodes] Période réouverte: ${periode.nom} — Motif: ${dto.motif}`);
         return this.findOne(periodeId, etablissementId);

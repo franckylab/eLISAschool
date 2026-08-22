@@ -105,8 +105,11 @@ export class AnneesScolairesService {
             queryBuilder.andWhere('annee.libelle ILIKE :recherche', { recherche: `%${options.recherche}%` });
         }
 
-        const sortBy = options?.sortBy || 'dateDebut';
-        const sortOrder = options?.sortOrder || 'DESC';
+        const SORTABLE_FIELDS = ['libelle', 'dateDebut', 'dateFin', 'statut', 'createdAt', 'updatedAt'] as const;
+        const sortBy = SORTABLE_FIELDS.includes(options?.sortBy as typeof SORTABLE_FIELDS[number])
+            ? (options?.sortBy as string)
+            : 'dateDebut';
+        const sortOrder = options?.sortOrder === 'ASC' ? 'ASC' : 'DESC';
         queryBuilder.orderBy(`annee.${sortBy}`, sortOrder);
 
         const [items, total] = await queryBuilder.skip(offset).take(limit).getManyAndCount();

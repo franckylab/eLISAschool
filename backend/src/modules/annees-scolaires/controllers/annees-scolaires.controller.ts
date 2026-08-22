@@ -6,6 +6,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { AnneesScolairesService } from '../services';
+import { StatutAnneeScolaire } from '../entities';
 import { createAnneeScolaireSchema, updateAnneeScolaireSchema } from '../dto';
 import { authMiddleware, requirePermission } from '@modules/auth/middlewares';
 import { getEtablissementId } from '@modules/auth/middlewares/etablissement.middleware';
@@ -23,7 +24,7 @@ router.get('/', authMiddleware, requirePermission(Permission.ANNEES_VIEW), async
         const sortBy = req.query.sortBy as string | undefined;
         const sortOrder = req.query.sortOrder as 'ASC' | 'DESC' | undefined;
         const filtres = {
-            statut: req.query.statut as string | undefined,
+            statut: req.query.statut as StatutAnneeScolaire | undefined,
             recherche: req.query.recherche as string | undefined,
         };
 

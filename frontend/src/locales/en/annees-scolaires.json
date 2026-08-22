@@ -38,6 +38,7 @@
     "confirmerReouvrirTitre": "Reopen this school year",
     "confirmerReouvrirMessage": "Are you sure you want to reopen the year \"{{libelle}}\" ?",
     "confirmerReouvrirDetail": "The year will be available again for normal operations.",
+    "confirmerActiverTitre": "Activate this school year",
     "form": {
         "titreCreer": "New school year",
         "titreModifier": "Edit school year",

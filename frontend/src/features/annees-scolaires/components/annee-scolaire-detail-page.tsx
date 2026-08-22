@@ -160,7 +160,7 @@ export function AnneeScolaireDetailPage() {
 
     if (isError) {
         return (
-            <div className="p-6">
+            <div style={{ padding: 'clamp(1rem, 2vw, 1.5rem)' }}>
                 <ErrorMessage message={error?.message} onRetry={() => refetch()} />
             </div>
         );
@@ -168,14 +168,14 @@ export function AnneeScolaireDetailPage() {
 
     if (!annee) {
         return (
-            <div className="p-6">
+            <div style={{ padding: 'clamp(1rem, 2vw, 1.5rem)' }}>
                 <ErrorMessage message={t('detail.nonTrouvee')} />
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col gap-[var(--gap-lg)]" style={{ padding: 'clamp(1rem, 2vw, 1.5rem)' }}>
             <PageHeader
                 variant="gradient"
                 showBreadcrumbs
@@ -302,7 +302,7 @@ export function AnneeScolaireDetailPage() {
             <TabsContent activeTab={ongletActif}>
                 {/* Informations tab */}
                 {ongletActif === 'informations' && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-[var(--gap-lg)]">
                         <CardSection
                             icon={<FileText className="h-5 w-5" />}
                             title={t('detail.informations')}
@@ -342,7 +342,7 @@ export function AnneeScolaireDetailPage() {
                             {joursRestants !== null && (
                                 <InfoField
                                     label={t('detail.joursRestants')}
-                                    value={<span className="text-amber-600 font-bold">{joursRestants} jours</span>}
+                                    value={<span className="text-[var(--color-warning-600,theme(colors.amber.600))] dark:text-[var(--color-warning-400,theme(colors.amber.400))] font-bold">{joursRestants} jours</span>}
                                 />
                             )}
                         </CardSection>
@@ -492,7 +492,7 @@ export function AnneeScolaireDetailPage() {
             <ConfirmDialog
                 open={confirmActiver}
                 onOpenChange={(open) => { if (!open) setConfirmActiver(false); }}
-                title={t('confirmerSupprimerTitre')}
+                title={t('confirmerActiverTitre') || t('detail.confirmerActiverMessage', { libelle: annee?.libelle })}
                 description={t('detail.confirmerActiverMessage', { libelle: annee?.libelle })}
                 confirmText={t('actions.activer')}
                 variant="warning"

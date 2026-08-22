@@ -190,7 +190,7 @@ export function AnneesScolairesPage() {
     }
 
     return (
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col gap-[var(--gap-lg)]" style={{ padding: 'clamp(1rem, 2vw, 1.5rem)' }}>
             <PageHeader
                 title={t('titre')}
                 subtitle={t('stats', { count: data?.meta?.totalItems || 0 })}

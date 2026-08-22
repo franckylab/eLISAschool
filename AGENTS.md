@@ -7639,3 +7639,71 @@ hasAnyPermission([
 | `frontend/src/features/periodes/components/periodes-page.tsx` | `useAnneesScolaires` → `useToutesAnneesScolaires` pour le sélecteur |
 | `frontend/src/features/annees-scolaires/components/annee-scolaire-detail-page.tsx` | Classes CSS alignées design system (variables CSS) |
 
+---
+
+## Vérification Système Année Scolaire — Continuité, Migrations & Cohérence Frontend (✅ COMPLET)
+
+> Contexte : Session continu — vérification exhaustive backend/frontend, exécution migrations, seeds, cohérence interface, accessibilité sidebar, routes.
+
+### Audit Backend (✅ COMPLET)
+
+| Domaine | Verdict | Détail |
+|---------|---------|--------|
+| **Entités** | ✅ | `AnneeScolaire` implements `ICloturable` (nomOuLibelle=libelle), `Periode` implements `ICloturable` (nomOuLibelle=nom), statut varchar source unique, `enCours` getter dérivé, colonnes `enCours`/`code` supprimées (migration 220) |
+| **Migrations 220-223** | ✅ | 220 backfill + drop colonnes + index partiel + index composites + trigger cohérence ; 221 RBAC reouvrir + audit ; 222 permissions complètes 7/7 ; 223 NOT NULL anneeScolaireId sur notes/bulletins |
+| **DB vérifiée** | ✅ | `annees_scolaires` 8 colonnes (sans enCours/code), `notes/bulletins.anneeScolaireId` NOT NULL, index `idx_annees_scolaires_active` créé, trigger `trg_check_periode_annee_coherence` actif, 6 années / 10 périodes, 2 EN_COURS |
+| **Module catalogue** | 🔧 FIXÉ | `annees-scolaires` manquait dans `modules_catalogue` → inséré (GRATUIT, actifParDefaut true, icône ClockArrowUp, ordre 5) |
+| **Index manquant** | 🔧 FIXÉ | `idx_annees_scolaires_active` manquant malgré migration → créé manuellement (`CREATE UNIQUE INDEX` sur etablissementId WHERE statut='EN_COURS') |
+| **Permissions** | ✅ | `ANNEES_*` (7) + `PERIODES_*` (11) + `VALIDATION_*` (2+2) + `AUDIT_*` (2) attribuées ADMIN/CHEF, enum AuditAction 6 valeurs année + 5 période |
+| **Audit** | 🔧 FIXÉ | `Periode.cloturer()` / `reouvrir()` sans audit → ajout `AuditAction.PERIODE_CLOSE/REOPEN` + log avec parentCible AnneeScolaire + metadata impacts/motif |
+| **App.ts** | 🔧 FIXÉ | Middleware order `requireModuleActive` AVANT `authMiddleware` → corrigé APRÈS (auth → moduleActive → filterByEtablissement) pour `annees-scolaires` et `periodes` |
+| **Service** | 🔧 FIXÉ | `findPaginated` injection SQL via `sortBy` interpolé brut → whitelist `['libelle','dateDebut','dateFin','statut','createdAt','updatedAt']` + fallback dateDebut |
+| **Controller** | 🔧 FIXÉ | `statut` typé `string` → `StatutAnneeScolaire` + import enum, fin des erreurs tsc |
+
+### Audit Frontend (✅ COMPLET)
+
+| Domaine | Verdict | Détail |
+|---------|---------|--------|
+| **Routes** | ✅ | 6 routes TanStack (`_auth.annees-scolaires.tsx` layout + index + $id ; `_auth.periodes.tsx` layout + index + $id) avec `requireModulePermission('annees'/'periodes')`, ModuleLayout outlet, routeTree.gen OK |
+| **Sidebar** | 🔧 FIXÉ | `module: 'anneesScolaires'` (camelCase) divergent de `useModulePermissions('annees')` → changé en `'annees'` + permsMap double clé `annees` + `anneesScolaires` (rétrocompat) |
+| **Hooks** | ✅ | `useAnneesScolaires` pagination serveur (items/meta fallback), `useToutesAnneesScolaires` limit 100 idempotent, `usePeriodesArbre` + `PERIODES_KEYS` complets |
+| **Composants** | 🔧 FIXÉ | 6 fixes : select natif → ElisaSelect (periodes), auto-select anneeActive via useEffect, couleurs amber hardcodées → CSS vars (periodes), joursRestants amber-600 → var(--color-warning-600), confirmActiver titre erroné (confirmerSupprimerTitre) → confirmerActiverTitre, responsive gap-6/p-6 → clamp+var(--gap-lg) |
+| **i18n** | 🔧 FIXÉ | Clé `confirmerActiverTitre` manquante FR+EN → ajoutée ("Activer cette année scolaire") |
+| **DataTable** | ✅ | `enableCollapsibleFilters` + `filtres statut` + `enableReordering/Pinning/ColumnVisibility` + pagination serveur + disableClientSearch |
+| **Breadcrumbs** | ✅ | PageHeader `showBreadcrumbs` seul (ModuleLayout sans breadcrumb), pas de double affichage |
+| **Dark mode** | 🔧 FIXÉ | 3 occurrences amber-* → `var(--color-warning-*)` avec fallbacks, COULEURS_STATUT 100% CSS vars |
+| **Responsive** | 🔧 FIXÉ | Periodes: 100% clamp/var, annees: gap-[var(--gap-lg)] + padding clamp(1rem,2vw,1.5rem) |
+| **Modals** | ✅ | CustomModal + SectionSeparator + hasUnsavedChanges + auto-libellé, conforme (StepperModal non requis < 4 champs) |
+| **Validation/Audit** | ✅ | Onglets conditionnels (peutValider via validation:annees_scolaires:level1/2, audit:annees-scolaires:view), AuditTimeline + ValidationTimeline wiring OK |
+
+### Migrations & Seeds (✅ EXÉCUTÉS)
+
+| Migration | Résultat |
+|-----------|----------|
+| 220-coherence-annee-periode | Colonnes ok, backfill 0, index ajouté, trigger actif |
+| 221-rbac-annees-scolaires | ADMIN 7/7, CHEF 7/7 |
+| 222-permissions-completes | Toutes permissions CRUD + activer/cloturer/reouvrir/dupliquer |
+| 223-not-null-annee-scolaire-id | Contrainte NOT NULL sur notes/bulletins |
+| Seeds | 6 années / 10 périodes existantes, catalogue annees-scolaires inséré |
+
+### Backend redémarré ✅
+
+`docker restart elisaschool_backend` → `🚀 Serveur démarré sur le port 7000` OK, logs sans erreur, tsc `annees/periodes` 0 erreur.
+
+### Fichiers créés/modifiés (cette session)
+
+| Fichier | Action |
+|---------|--------|
+| `backend/database` (via psql) | `idx_annees_scolaires_active` créé + `modules_catalogue` annees-scolaires inséré |
+| `backend/src/modules/auth/entities/audit-log.entity.ts` | +`PERIODE_CLOSE`, +`PERIODE_REOPEN` |
+| `backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts` | Whitelist sortBy + fallback |
+| `backend/src/modules/annees-scolaires/controllers/annees-scolaires.controller.ts` | Import StatutAnneeScolaire + typage statut |
+| `backend/src/modules/periodes/services/periodes.service.ts` | Audit log cloturer/reouvrir + metadata |
+| `backend/src/app.ts` | Ordre middleware corrigé (auth → moduleActive) |
+| `frontend/src/components/layout/Sidebar.tsx` | `anneesScolaires` → `annees` + permsMap double clé |
+| `frontend/src/features/periodes/components/periodes-page.tsx` | ElisaSelect + useEffect auto-select + COULEURS_STATUT CSS vars |
+| `frontend/src/features/annees-scolaires/components/annee-scolaire-detail-page.tsx` | Responsive + dark mode + confirmActiver fix |
+| `frontend/src/features/annees-scolaires/components/annees-scolaires-page.tsx` | Responsive clamp |
+| `frontend/src/locales/fr/annees-scolaires.json` | +confirmerActiverTitre |
+| `frontend/src/locales/en/annees-scolaires.json` | +confirmerActiverTitre |
+

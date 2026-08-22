@@ -38,6 +38,7 @@
     "confirmerReouvrirTitre": "Réouvrir cette année scolaire",
     "confirmerReouvrirMessage": "Êtes-vous sûr de vouloir réouvrir l'année \"{{libelle}}\" ?",
     "confirmerReouvrirDetail": "L'année sera à nouveau disponible pour les opérations courantes.",
+    "confirmerActiverTitre": "Activer cette année scolaire",
     "form": {
         "titreCreer": "Nouvelle année scolaire",
         "titreModifier": "Modifier l'année scolaire",

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
@@ -14,6 +14,7 @@ import {
 import { useAnneeScolaireActive } from '@/features/annees-scolaires/hooks/use-annees-scolaires';
 import { useToutesAnneesScolaires } from '@/features/annees-scolaires/hooks/use-toutes-annees-scolaires';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { ElisaSelect } from '@/components/ui/ElisaSelect';
 import { useNavigate } from '@tanstack/react-router';
 import { usePermissions } from '@/hooks';
 import { PageSkeleton } from '@/components/ui/Skeleton';
@@ -31,7 +32,7 @@ import { ModalGestionNiveaux } from './modal-gestion-niveaux';
 
 const COULEURS_STATUT: Record<string, string> = {
     OUVERTE: 'bg-[var(--color-dominant-50)] text-[var(--color-dominant-700)] border-[var(--color-dominant-200)]',
-    EN_ATTENTE_CLOTURE: 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    EN_ATTENTE_CLOTURE: 'bg-[var(--color-warning-50,rgba(245,158,11,0.1))] dark:bg-[var(--color-warning-900,rgba(120,53,15,0.3))] text-[var(--color-warning-700,theme(colors.amber.700))] dark:text-[var(--color-warning-300,theme(colors.amber.300))] border-[var(--color-warning-200,theme(colors.amber.200))] dark:border-[var(--color-warning-800,theme(colors.amber.800))]',
     CLOTUREE: 'bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] border-[var(--color-bordure)]',
 };
 
@@ -97,7 +98,14 @@ export function PeriodesPage() {
 
     const { data: annees } = useToutesAnneesScolaires();
     const { data: anneeActive } = useAnneeScolaireActive();
-    const [anneeId, setAnneeId] = useState<string>(anneeActive?.id || '');
+    const [anneeId, setAnneeId] = useState<string>('');
+
+    // Auto-sélectionner l'année active au chargement
+    useEffect(() => {
+        if (!anneeId && anneeActive?.id) {
+            setAnneeId(anneeActive.id);
+        }
+    }, [anneeActive?.id, anneeId]);
 
     const { data: arbres, isLoading, isError, error, refetch } = usePeriodesArbre({ anneeId });
     const supprimer = useSupprimerPeriode();
@@ -297,21 +305,19 @@ export function PeriodesPage() {
             />
 
             {/* Sélecteur année */}
-            <div className="flex items-center gap-[var(--gap-sm)]">
-                <select
-                    value={anneeId}
-                    onChange={(e) => setAnneeId(e.target.value)}
-                    className="rounded-[var(--radius-md)] border border-[var(--color-bordure)] bg-[var(--color-surface)] text-[var(--color-text-primary)]"
-                    style={{
-                        padding: 'var(--space-sm)',
-                        fontSize: 'clamp(0.8125rem, 0.75rem + 0.2vw, 0.9375rem)',
-                    }}
-                >
-                    <option value="">{t('selectAnnee')}</option>
-                    {listeAnnees.map((a) => (
-                        <option key={a.id} value={a.id}>{a.libelle}</option>
-                    ))}
-                </select>
+            <div className="flex items-center gap-[var(--gap-sm)]" style={{ maxWidth: 'clamp(200px, 40vw, 360px)' }}>
+                <ElisaSelect
+                    value={anneeId || '__none__'}
+                    onValueChange={(v) => setAnneeId(v === '__none__' ? '' : v)}
+                    options={[
+                        { value: '__none__', label: t('selectAnnee') },
+                        ...listeAnnees.map((a) => ({ value: a.id, label: a.libelle })),
+                    ]}
+                    placeholder={t('selectAnnee')}
+                    aria-label={t('selectAnnee')}
+                    searchable={listeAnnees.length > 5}
+                    className="min-w-[200px]"
+                />
             </div>
 
             {isError ? (
