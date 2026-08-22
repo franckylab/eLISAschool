@@ -26,7 +26,7 @@ export interface Note {
     eleveId: string;
     matiereId: string;
     classeAnneeId: string;
-    anneeScolaireId?: string;
+    anneeScolaireId: string;
     periodeId: string;
     enseignantId?: string;
     valeur: number;

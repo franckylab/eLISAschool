@@ -31,7 +31,7 @@ import {
     PalierVolume,
     TypeAutoPromotion,
 } from '../entities/promotion.entity';
-import { BundlePromotion, TypeRemiseBundle } from '../entities/bundle-promotion.entity';
+import { PackagePromotion, TypeRemisePackage } from '../entities/package-promotion.entity';
 import { PromotionUtilisee } from '../entities/promotion-utilisee.entity';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
@@ -54,7 +54,7 @@ import { logger } from '@common/utils/logger.util';
     packsSouscritsIds?: string[];
     /** IDs des modules déjà souscrits */
     modulesSouscritsIds?: string[];
-    /** Montants individuels des packs (packId → montant) pour calcul bundle */
+    /** Montants individuels des packs (packId → montant) pour calcul package */
     packMontants?: Record<string, number>;
     /** Ressources des packs souscrits (packId → ressource) pour filtrage cibleRessource */
     packRessources?: Record<string, string>;
@@ -103,14 +103,14 @@ export interface ResultatCascadePromotions {
 
 export class PromotionService {
     private promoRepo: Repository<Promotion>;
-    private bundleRepo: Repository<BundlePromotion>;
+    private packageRepo: Repository<PackagePromotion>;
 
     /** Plafond de déduction sur le PLAN uniquement (40%) */
     private static readonly PLAFOND_PLAN_POURCENT = 40;
 
     constructor() {
         this.promoRepo = AppDataSource.getRepository(Promotion);
-        this.bundleRepo = AppDataSource.getRepository(BundlePromotion);
+        this.packageRepo = AppDataSource.getRepository(PackagePromotion);
     }
 
     // =============================================
@@ -220,45 +220,45 @@ export class PromotionService {
     }
 
     // =============================================
-    // CRUD BUNDLES
+    // CRUD PACKAGES
     // =============================================
 
-    async createBundle(dto: Partial<BundlePromotion>): Promise<BundlePromotion> {
+    async createPackage(dto: Partial<PackagePromotion>): Promise<PackagePromotion> {
         if (!dto.code || !dto.nom || !dto.packIds || dto.packIds.length < 2) {
-            throw new AppError('Code, nom et minimum 2 packs sont obligatoires pour un bundle', 400, 'VALIDATION_ERROR');
+            throw new AppError('Code, nom et minimum 2 packs sont obligatoires pour un package', 400, 'VALIDATION_ERROR');
         }
-        const existant = await this.bundleRepo.findOne({ where: { code: dto.code } });
+        const existant = await this.packageRepo.findOne({ where: { code: dto.code } });
         if (existant) {
-            throw new AppError(`Un bundle avec le code "${dto.code}" existe déjà`, 409, 'BUNDLE_EXISTS');
+            throw new AppError(`Un package avec le code "${dto.code}" existe déjà`, 409, 'PACKAGE_EXISTS');
         }
-        const bundle = this.bundleRepo.create(dto);
-        const saved = await this.bundleRepo.save(bundle);
-        logger.info(`[Promotions] Bundle créé : ${saved.code} (${saved.packIds.length} packs, -${saved.valeur})`);
+        const pkg = this.packageRepo.create(dto);
+        const saved = await this.packageRepo.save(pkg);
+        logger.info(`[Promotions] Package créé : ${saved.code} (${saved.packIds.length} packs, -${saved.valeur})`);
         return saved;
     }
 
-    async findAllBundles(filters?: { actif?: boolean }): Promise<BundlePromotion[]> {
+    async findAllPackages(filters?: { actif?: boolean }): Promise<PackagePromotion[]> {
         const where: Record<string, unknown> = {};
         if (filters?.actif !== undefined) where.actif = filters.actif;
-        return this.bundleRepo.find({ where, order: { priorite: 'DESC' } });
+        return this.packageRepo.find({ where, order: { priorite: 'DESC' } });
     }
 
-    async findOneBundle(id: string): Promise<BundlePromotion> {
-        const bundle = await this.bundleRepo.findOne({ where: { id } });
-        if (!bundle) throw new AppError('Bundle introuvable', 404, 'NOT_FOUND');
-        return bundle;
+    async findOnePackage(id: string): Promise<PackagePromotion> {
+        const pkg = await this.packageRepo.findOne({ where: { id } });
+        if (!pkg) throw new AppError('Package introuvable', 404, 'NOT_FOUND');
+        return pkg;
     }
 
-    async updateBundle(id: string, dto: Partial<BundlePromotion>): Promise<BundlePromotion> {
-        const bundle = await this.findOneBundle(id);
-        Object.assign(bundle, dto);
-        return this.bundleRepo.save(bundle);
+    async updatePackage(id: string, dto: Partial<PackagePromotion>): Promise<PackagePromotion> {
+        const pkg = await this.findOnePackage(id);
+        Object.assign(pkg, dto);
+        return this.packageRepo.save(pkg);
     }
 
-    async deleteBundle(id: string): Promise<void> {
-        const bundle = await this.findOneBundle(id);
-        await this.bundleRepo.remove(bundle);
-        logger.info(`[Promotions] Bundle supprimé : ${bundle.code}`);
+    async deletePackage(id: string): Promise<void> {
+        const pkg = await this.findOnePackage(id);
+        await this.packageRepo.remove(pkg);
+        logger.info(`[Promotions] Package supprimé : ${pkg.code}`);
     }
 
     // =============================================
@@ -280,7 +280,7 @@ export class PromotionService {
         ctx: ContextePromotion,
     ): Promise<ResultatCascadePromotions> {
         const toutesPromos = await this.promoRepo.find({ where: { actif: true } });
-        const tousBundles = await this.bundleRepo.find({ where: { actif: true } });
+        const tousPackages = await this.packageRepo.find({ where: { actif: true } });
 
         const resultat: ResultatCascadePromotions = {
             montantFinal: 0,
@@ -350,22 +350,22 @@ export class PromotionService {
             resultat.packs.promotions.push(this.toLigneResult(promo, deduit));
         }
 
-        // Bundles : vérifier si tous les packs du bundle sont souscrits
-        for (const bundle of tousBundles) {
-            if (!this.estBundleValide(bundle, ctx)) continue;
-            const totalPacksBundle = this.calculerTotalPacksBundle(bundle, montantPacks, ctx);
-            if (totalPacksBundle <= 0) continue;
-            const deduit = bundle.typeRemise === TypeRemiseBundle.POURCENTAGE
-                ? Math.round(totalPacksBundle * (Number(bundle.valeur) / 100) * 100) / 100
-                : Math.min(Number(bundle.valeur), totalPacksBundle);
+        // Packages : vérifier si tous les packs du package sont souscrits
+        for (const pkg of tousPackages) {
+            if (!this.estPackageValide(pkg, ctx)) continue;
+            const totalPacksPackage = this.calculerTotalPacksPackage(pkg, montantPacks, ctx);
+            if (totalPacksPackage <= 0) continue;
+            const deduit = pkg.typeRemise === TypeRemisePackage.POURCENTAGE
+                ? Math.round(totalPacksPackage * (Number(pkg.valeur) / 100) * 100) / 100
+                : Math.min(Number(pkg.valeur), totalPacksPackage);
             if (deduit <= 0) continue;
             totalPacks -= deduit;
             resultat.packs.promotions.push({
-                promotionId: bundle.id,
-                code: bundle.code,
+                promotionId: pkg.id,
+                code: pkg.code,
                 type: TypePromotion.POURCENTAGE,
-                scope: ScopePromotion.BUNDLE,
-                valeur: Number(bundle.valeur),
+                scope: ScopePromotion.PACKAGE,
+                valeur: Number(pkg.valeur),
                 montantDeduit: deduit,
             });
         }
@@ -511,30 +511,30 @@ export class PromotionService {
         }
     }
 
-    async enregistrerUtilisationBundle(
-        bundleIds: string[],
+    async enregistrerUtilisationPackage(
+        packageIds: string[],
         contexte?: {
             etablissementId?: string;
             factureId?: string;
-            bundles?: Array<{ bundleId: string; code: string; montantDeduit: number }>;
+            packages?: Array<{ packageId: string; code: string; montantDeduit: number }>;
         }
     ): Promise<void> {
-        // 1. Incrémenter le compteur sur le bundle
-        for (const id of bundleIds) {
-            await this.bundleRepo.increment({ id }, 'utilisations', 1);
+        // 1. Incrémenter le compteur sur le package
+        for (const id of packageIds) {
+            await this.packageRepo.increment({ id }, 'utilisations', 1);
         }
 
-        // 2. BUG-3 FIX : Traçabilité PromotionUtilisee pour les bundles (comme les promos)
-        if (contexte?.etablissementId && contexte?.bundles?.length) {
+        // 2. BUG-3 FIX : Traçabilité PromotionUtilisee pour les packages (comme les promos)
+        if (contexte?.etablissementId && contexte?.packages?.length) {
             const trackingRepo = AppDataSource.getRepository(PromotionUtilisee);
-            const records = contexte.bundles.map((b) =>
+            const records = contexte.packages.map((p) =>
                 trackingRepo.create({
-                    promotionId: b.bundleId,
+                    promotionId: p.packageId,
                     etablissementId: contexte.etablissementId!,
                     factureId: contexte.factureId,
-                    codePromotion: b.code,
-                    scope: 'BUNDLE',
-                    montantDeduit: b.montantDeduit,
+                    codePromotion: p.code,
+                    scope: 'PACKAGE',
+                    montantDeduit: p.montantDeduit,
                 })
             );
             await trackingRepo.save(records);
@@ -1001,11 +1001,11 @@ export class PromotionService {
     }
 
     /**
-     * Retourne les bundles actifs et éligibles pour un contexte donné.
+     * Retourne les packages actifs et éligibles pour un contexte donné.
      */
-    async trouverBundlesEligibles(ctx: ContextePromotion): Promise<BundlePromotion[]> {
-        const tousBundles = await this.bundleRepo.find({ where: { actif: true } });
-        return tousBundles.filter((b) => this.estBundleValide(b, ctx));
+    async trouverPackagesEligibles(ctx: ContextePromotion): Promise<PackagePromotion[]> {
+        const tousPackages = await this.packageRepo.find({ where: { actif: true } });
+        return tousPackages.filter((p) => this.estPackageValide(p, ctx));
     }
 
     // =============================================
@@ -1158,40 +1158,40 @@ export class PromotionService {
         }
     }
 
-    /** Un bundle est-il applicable ? */
-    estBundleValide(bundle: BundlePromotion, ctx: ContextePromotion): boolean {
+    /** Un package est-il applicable ? */
+    estPackageValide(pkg: PackagePromotion, ctx: ContextePromotion): boolean {
         const c = ctx ?? {};
-        if (!bundle.actif) return false;
+        if (!pkg.actif) return false;
         const now = new Date();
-        if (bundle.dateDebut && now < new Date(bundle.dateDebut)) return false;
-        if (bundle.dateFin && now > new Date(bundle.dateFin)) return false;
-        if (bundle.maxUtilisations !== null && bundle.maxUtilisations !== undefined && bundle.utilisations >= bundle.maxUtilisations) {
+        if (pkg.dateDebut && now < new Date(pkg.dateDebut)) return false;
+        if (pkg.dateFin && now > new Date(pkg.dateFin)) return false;
+        if (pkg.maxUtilisations !== null && pkg.maxUtilisations !== undefined && pkg.utilisations >= pkg.maxUtilisations) {
             return false;
         }
         // Code coupon
-        if (bundle.codeCoupon && c.codeCoupon !== bundle.codeCoupon) return false;
-        // Vérifier que tous les packs du bundle sont souscrits
+        if (pkg.codeCoupon && c.codeCoupon !== pkg.codeCoupon) return false;
+        // Vérifier que tous les packs du package sont souscrits
         const souscrits = c.packsSouscritsIds ?? [];
-        return bundle.packIds.every((id) => souscrits.includes(id));
+        return pkg.packIds.every((id) => souscrits.includes(id));
     }
 
-    /** Calcule le total des packs concernés par un bundle */
-    private calculerTotalPacksBundle(bundle: BundlePromotion, _montantTotalPacks: number, ctx: ContextePromotion): number {
+    /** Calcule le total des packs concernés par un package */
+    private calculerTotalPacksPackage(pkg: PackagePromotion, _montantTotalPacks: number, ctx: ContextePromotion): number {
         const c = ctx ?? {};
         const packMontants = c.packMontants ?? {};
         const souscrits = c.packsSouscritsIds ?? [];
-        // Sommer uniquement les montants des packs du bundle effectivement souscrits
+        // Sommer uniquement les montants des packs du package effectivement souscrits
         let total = 0;
-        for (const packId of bundle.packIds) {
+        for (const packId of pkg.packIds) {
             if (souscrits.includes(packId) && packMontants[packId]) {
                 total += packMontants[packId];
             }
         }
         // Fallback : si aucun montant individuel, utiliser le montant total prorata
         if (total === 0 && souscrits.length > 0) {
-            const nbPacksBundle = bundle.packIds.filter((id) => souscrits.includes(id)).length;
-            if (nbPacksBundle > 0) {
-                total = (_montantTotalPacks / souscrits.length) * nbPacksBundle;
+            const nbPacksPackage = pkg.packIds.filter((id) => souscrits.includes(id)).length;
+            if (nbPacksPackage > 0) {
+                total = (_montantTotalPacks / souscrits.length) * nbPacksPackage;
             }
         }
         return Math.round(total * 100) / 100;

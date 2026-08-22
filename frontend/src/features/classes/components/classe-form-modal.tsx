@@ -147,7 +147,7 @@ export function ClasseFormModal({ mode, classe, onSuccess, onCancel }: ClasseFor
 
     const optionsAnneesScolaires = anneesScolaires.map((a: { id: string; libelle: string; statut: string }) => ({
         value: a.id,
-        label: `${a.libelle} (${a.statut === 'active' ? t('annee.enCours') : t('annee.cloturee')})`,
+        label: `${a.libelle} (${a.statut === 'EN_COURS' ? t('annee.enCours') : t('annee.cloturee')})`,
     }));
 
     const optionsTypesClasse = [

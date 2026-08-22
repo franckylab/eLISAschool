@@ -28,7 +28,7 @@ export { seedPacksQuota } from './system/seed-packs-quota';
 export { seedStrategiesExpiration } from './system/seed-strategies-expiration';
 export { seedRemises } from './system/seed-remises';
 export { seedPromotions } from './system/seed-promotions';
-export { seedBundlePromotions } from './system/seed-bundles';
+export { seedPackagePromotions } from './system/seed-packages';
 export { seedParametresBilling } from './system/seed-parametres-billing';
 export { RBACSeedService } from './system/rbac.seed';
 
@@ -68,7 +68,7 @@ export const SEEDS_INFO = [
     { name: 'seedStrategiesExpiration', file: 'system/seed-strategies-expiration.ts', description: 'Crée 3 stratégies d\'expiration (decouverte 15j, standard 30j, premium 90j SLA)', version: '3.4.0', multiTenant: false, idempotent: true },
     { name: 'seedRemises', file: 'system/seed-remises.ts', description: 'Crée 7 remises commerciales legacy (table _legacy_remises_abonnement)', version: '3.4.0', multiTenant: false, idempotent: true },
     { name: 'seedPromotions', file: 'system/seed-promotions.ts', description: 'Crée 15 promotions v5 multi-scopes (6 PLAN, 2 PACK, 2 MODULE, 1 GRATUITE, 1 QUOTA, 2 auto-promo, 1 programmée)', version: '5.0.0', multiTenant: false, idempotent: true },
-    { name: 'seedBundlePromotions', file: 'system/seed-bundles.ts', description: 'Crée 2 bundles de packs (élèves+stockage, SMS+stockage) — table bundle_promotions', version: '4.0.0', multiTenant: false, idempotent: true },
+    { name: 'seedPackagePromotions', file: 'system/seed-packages.ts', description: 'Crée 2 packages de packs (élèves+stockage, SMS+stockage) — table package_promotions', version: '4.0.0', multiTenant: false, idempotent: true },
     { name: 'seedParametresBilling', file: 'system/seed-parametres-billing.ts', description: 'Crée les 16 paramètres système billing (onboarding, essai, facturation, expiration, dunning)', version: '3.0.0', multiTenant: false, idempotent: true },
     // Demo
     { name: 'seedUtilisateursParRole', file: 'demo/seed-utilisateurs-par-role.ts', description: 'Crée 44 utilisateurs de test (38 tenant + 6 plateforme)', version: '3.0.0', multiTenant: true, idempotent: true, requires: ['etablissementPrincipalId', 'etablissementSecondaireId (optionnel)'], defaultPassword: 'Test123456!' },
@@ -82,7 +82,7 @@ export const RECOMMENDED_ORDER = [
     'seedEtablissementsParDefaut', 'seedStructureAcademique', 'seedAnneesScolaires',
     'seedClassesParDefaut', 'seedMatieres', 'seedMatieresNiveaux',
     'seedPlansAbonnement', 'seedCyclesFacturation', 'seedPacksQuota', 'seedStrategiesExpiration',
-    'seedRemises', 'seedPromotions', 'seedBundlePromotions', 'seedParametresBilling',
+    'seedRemises', 'seedPromotions', 'seedPackagePromotions', 'seedParametresBilling',
     'seedSuperAdmin', 'seedParametresFinances', 'seedEmploiDuTemps', 'seedModeleRecu',
     'seedUtilisateursParRole', 'seedElevesExemples', 'seedGroupesEtablissements',
 ];

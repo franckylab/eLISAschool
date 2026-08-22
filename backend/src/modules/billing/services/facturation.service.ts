@@ -216,7 +216,7 @@ export class FacturationService {
             for (const souscription of packs) {
                 if (souscription.dateFin && new Date(souscription.dateFin) < now) continue;
                 const montantPack = Number(souscription.montantFacture ?? 0);
-                // Collecter les IDs et montants pour le contexte promotions (Phase 2 + bundles)
+                // Collecter les IDs et montants pour le contexte promotions (Phase 2 + packages)
                 packsSouscritsIds.push(souscription.packId);
                 if (montantPack > 0) {
                     packMontants[souscription.packId] = montantPack;
@@ -403,11 +403,11 @@ export class FacturationService {
         if (calcul.remisesAppliquees.length > 0) {
             const toutesPromos = calcul.promotionsCascade?.toutesPromotions ?? [];
 
-            // Séparer les promotions classiques des bundles (scope=BUNDLE)
+            // Séparer les promotions classiques des packages (scope=PACKAGE)
             const promoIds = calcul.remisesAppliquees
                 .map((r) => r.remiseId)
-                .filter((id) => !toutesPromos.some((p: any) => p.promotionId === id && p.scope === 'BUNDLE'));
-            const bundlePromos = toutesPromos.filter((p: any) => p.scope === 'BUNDLE');
+                .filter((id) => !toutesPromos.some((p: any) => p.promotionId === id && p.scope === 'PACKAGE'));
+            const packagePromos = toutesPromos.filter((p: any) => p.scope === 'PACKAGE');
 
             // Tracking promotions classiques
             if (promoIds.length > 0) {
@@ -428,15 +428,15 @@ export class FacturationService {
                 });
             }
 
-            // Tracking bundles (BUG-3 FIX)
-            if (bundlePromos.length > 0) {
-                await promotionService.enregistrerUtilisationBundle(
-                    bundlePromos.map((p: any) => p.promotionId),
+            // Tracking packages (BUG-3 FIX)
+            if (packagePromos.length > 0) {
+                await promotionService.enregistrerUtilisationPackage(
+                    packagePromos.map((p: any) => p.promotionId),
                     {
                         etablissementId: abonnement.etablissementId,
                         factureId: savedFacture.id,
-                        bundles: bundlePromos.map((p: any) => ({
-                            bundleId: p.promotionId,
+                        packages: packagePromos.map((p: any) => ({
+                            packageId: p.promotionId,
                             code: p.code,
                             montantDeduit: p.montantDeduit,
                         })),

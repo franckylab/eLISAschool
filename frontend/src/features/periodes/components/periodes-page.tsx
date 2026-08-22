@@ -11,7 +11,8 @@ import {
     useReouvrirPeriode, useGenererTemplate,
     useTemplatesPeriode, useNiveauxPeriode,
 } from '../hooks/use-periodes';
-import { useAnneesScolaires, useAnneeScolaireActive } from '@/features/annees-scolaires/hooks/use-annees-scolaires';
+import { useAnneeScolaireActive } from '@/features/annees-scolaires/hooks/use-annees-scolaires';
+import { useToutesAnneesScolaires } from '@/features/annees-scolaires/hooks/use-toutes-annees-scolaires';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import { useNavigate } from '@tanstack/react-router';
 import { usePermissions } from '@/hooks';
@@ -94,7 +95,7 @@ export function PeriodesPage() {
     const { hasPermission } = usePermissions();
     const { t } = useTranslation('periodes');
 
-    const { data: annees } = useAnneesScolaires();
+    const { data: annees } = useToutesAnneesScolaires();
     const { data: anneeActive } = useAnneeScolaireActive();
     const [anneeId, setAnneeId] = useState<string>(anneeActive?.id || '');
 
@@ -194,7 +195,7 @@ export function PeriodesPage() {
         return { total, ouvertes, enAttente, cloturees };
     }, [arbres]);
 
-    const listeAnnees = annees?.items || [];
+    const listeAnnees = annees || [];
 
     const arbreToPeriode = (a: PeriodeArbre): Periode => ({
         id: a.id,

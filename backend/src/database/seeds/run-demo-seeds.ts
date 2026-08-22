@@ -91,10 +91,10 @@ async function main(): Promise<void> {
 
         // 5. Élèves exemples (principal uniquement)
         const { AppDataSource } = require('../data-source');
-        const { AnneeScolaire } = require('@modules/annees-scolaires/entities');
+        const { AnneeScolaire, StatutAnneeScolaire } = require('@modules/annees-scolaires/entities');
         const anneeRepo = AppDataSource.getRepository(AnneeScolaire);
         const anneeActive = await anneeRepo.findOne({
-            where: { enCours: true, etablissementId: etablissementPrincipalId },
+            where: { statut: StatutAnneeScolaire.EN_COURS, etablissementId: etablissementPrincipalId },
         });
         if (anneeActive) {
             await seedElevesExemples(etablissementPrincipalId, anneeActive.id);

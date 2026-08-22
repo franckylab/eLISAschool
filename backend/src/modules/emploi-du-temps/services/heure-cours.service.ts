@@ -917,10 +917,10 @@ export class HeureCoursService {
 
         const anneeRepo = AppDataSource.getRepository(AnneeScolaire);
         const annee = await anneeRepo.findOne({
-            where: [
-                { etablissementId, enCours: true },
-                { etablissementId, statut: StatutAnneeScolaire.EN_COURS },
-            ],
+            where: {
+                etablissementId,
+                statut: StatutAnneeScolaire.EN_COURS,
+            },
             order: { dateDebut: 'DESC' },
         });
 

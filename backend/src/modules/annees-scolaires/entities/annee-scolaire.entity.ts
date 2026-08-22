@@ -17,6 +17,7 @@ import {
 } from 'typeorm';
 import { Etablissement } from '@modules/etablissement/entities';
 import { Periode } from '@modules/periodes/entities';
+import type { ICloturable, StatutCloturable } from '@shared/interfaces/cloturable.interface';
 
 /**
  * Statut workflow d'une année scolaire
@@ -31,15 +32,12 @@ export enum StatutAnneeScolaire {
 @Entity('annees_scolaires')
 @Index(['etablissementId'])
 @Index(['libelle', 'etablissementId'], { unique: true })
-export class AnneeScolaire {
+export class AnneeScolaire implements ICloturable {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
     @Column({ type: 'varchar', length: 50 })
     libelle!: string; // ex: 2024-2025
-
-    @Column({ type: 'varchar', length: 50, nullable: true })
-    code!: string; // ex: 2024-2025
 
     @Column({ type: 'date' })
     dateDebut!: Date;
@@ -47,22 +45,26 @@ export class AnneeScolaire {
     @Column({ type: 'date' })
     dateFin!: Date;
 
-    @Column({ type: 'boolean', default: false })
-    enCours!: boolean;
-
     /**
-     * Statut workflow de l'année scolaire
-     * Remplace l'ancien champ cloturee (boolean) pour éviter la redondance
+     * Statut workflow de l'année scolaire (source unique de vérité)
+     * Remplace l'ancien champ enCours (boolean) et cloturee (boolean)
      */
     @Column({ type: 'varchar', length: 30, default: StatutAnneeScolaire.OUVERTE })
     statut!: StatutAnneeScolaire;
 
     /**
-     * Getter de compatibilité pour l'ancien champ cloturee
-     * @deprecated Utiliser statut === StatutAnneeScolaire.CLOTUREE à la place
+     * Getter de compatibilité — dérivé de statut.
+     * Équivalent à `statut === StatutAnneeScolaire.EN_COURS`
      */
-    get cloturee(): boolean {
-        return this.statut === StatutAnneeScolaire.CLOTUREE;
+    get enCours(): boolean {
+        return this.statut === StatutAnneeScolaire.EN_COURS;
+    }
+
+    /**
+     * Implémentation ICloturable — nom affichable pour logs/messages
+     */
+    get nomOuLibelle(): string {
+        return this.libelle;
     }
 
     /**

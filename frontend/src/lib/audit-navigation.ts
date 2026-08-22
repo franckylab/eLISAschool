@@ -29,7 +29,7 @@ const CIBLE_ROUTE_MAP: Record<string, { basePath: string; permission: string; la
     Classe: { basePath: '/classes', permission: 'classes:view', labelKey: 'audit.relations.classe' },
     Matiere: { basePath: '/matieres', permission: 'matieres:view', labelKey: 'audit.relations.matiere' },
     Periode: { basePath: '/periodes', permission: 'periodes:view', labelKey: 'audit.relations.periode' },
-    AnneeScolaire: { basePath: '/annees-scolaires', permission: 'annees-scolaires:view', labelKey: 'audit.relations.anneeScolaire' },
+    AnneeScolaire: { basePath: '/annees-scolaires', permission: 'annees:view', labelKey: 'audit.relations.anneeScolaire' },
     MembrePersonnel: { basePath: '/personnel', permission: 'personnel:view', labelKey: 'audit.relations.personnel' },
     Bulletin: { basePath: '/bulletins', permission: 'bulletins:view', labelKey: 'audit.relations.bulletin' },
     Eleve: { basePath: '/eleves', permission: 'eleves:view', labelKey: 'audit.relations.eleve' },

@@ -4,22 +4,22 @@
     "stats_plural": "{{count}} school years",
     "nouvelleAnnee": "New school year",
     "rechercher": "Search...",
+    "aucuneAnneeTrouvee": "No school year found",
     "colonne": {
-        "code": "Code",
         "libelle": "Label",
         "periode": "Period",
         "duree": "Duration",
         "statut": "Status",
         "actions": "Actions",
+        "tousStatuts": "All statuses",
         "mois": "{{count}} month",
         "mois_plural": "{{count}} months"
     },
     "statut": {
-        "actuelle": "Current",
-        "active": "Active",
-        "inactive": "Inactive",
-        "future": "Future",
-        "archivee": "Archived"
+        "OUVERTE": "Open",
+        "EN_COURS": "In progress",
+        "EN_ATTENTE_CLOTURE": "Pending closure",
+        "CLOTUREE": "Closed"
     },
     "actions": {
         "voir": "View details",
@@ -43,12 +43,9 @@
         "titreModifier": "Edit school year",
         "libelle": "Label",
         "libellePlaceholder": "Ex: 2024-2025",
-        "code": "Code",
-        "codePlaceholder": "Ex: 2024-2025",
         "dateDebut": "Start date",
         "dateFin": "End date",
         "libelleRequis": "Label is required",
-        "codeRequis": "Code is required",
         "dateDebutRequise": "Start date is required",
         "dateFinRequise": "End date is required",
         "dateFinApresDebut": "End date must be after start date",
@@ -76,7 +73,6 @@
         "progression": "Progress",
         "progressionMessage": "Year progress",
         "statut": "Status",
-        "anneeCourante": "Current year",
         "nonTrouvee": "School year not found",
         "tabInformationsDesc": "General school year details",
         "tabPeriodesDesc": "Period management (trimesters, semesters, sequences)",
@@ -90,6 +86,9 @@
         "confirmerActiverDetail": "The year will become the active year. Other years will be automatically deactivated.",
         "historique": "History"
     },
-    "validation": "Validation",
-    "aucunWorkflow": "No active validation workflow"
+    "validation": {
+        "titre": "Validation",
+        "aucunWorkflow": "No active validation workflow"
+    },
+    "chargement": "Loading..."
 }

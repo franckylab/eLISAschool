@@ -1,0 +1,1841 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport — Espace Enseignant eLISAschool</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+  --primary: #7c3aed;
+  --primary-light: rgba(124,58,237,0.12);
+  --success: #16a34a;
+  --success-light: rgba(22,163,74,0.1);
+  --warning: #d97706;
+  --warning-light: rgba(217,119,6,0.1);
+  --danger: #e11d48;
+  --danger-light: rgba(225,29,72,0.1);
+  --info: #2563eb;
+  --info-light: rgba(37,99,235,0.1);
+  --teal: #0d9488;
+  --teal-light: rgba(13,148,136,0.1);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.7;
+  font-size: 14px;
+}
+.container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+.header {
+  text-align: center;
+  padding: 48px 24px;
+  border-bottom: 2px solid var(--color-border);
+  margin-bottom: 40px;
+}
+.header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+.header .subtitle {
+  font-size: 16px;
+  color: var(--color-text-muted);
+  margin-bottom: 16px;
+}
+.header .meta {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+.header .meta span { display: flex; align-items: center; gap: 4px; }
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.badge-primary { background: var(--primary-light); color: var(--primary); }
+.badge-success { background: var(--success-light); color: var(--success); }
+.badge-warning { background: var(--warning-light); color: var(--warning); }
+.badge-danger { background: var(--danger-light); color: var(--danger); }
+.badge-info { background: var(--info-light); color: var(--info); }
+.badge-teal { background: var(--teal-light); color: var(--teal); }
+h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 40px 0 20px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--primary);
+  color: var(--color-text);
+}
+h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 28px 0 14px;
+  color: var(--color-text);
+}
+h4 { font-size: 15px; font-weight: 600; margin: 20px 0 10px; color: var(--color-text); }
+p { margin-bottom: 12px; color: var(--color-text); }
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.card-grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+.stat-card .value { font-size: 28px; font-weight: 700; color: var(--primary); }
+.stat-card .label { font-size: 12px; color: var(--color-text-muted); margin-top: 4px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+th, td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+th {
+  background: var(--color-surface);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+}
+tr:hover { background: var(--color-hover); }
+.flow-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.flow-step {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.flow-arrow { color: var(--primary); font-size: 18px; font-weight: bold; }
+.toc {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+.toc h3 { margin-top: 0; }
+.toc ol { padding-left: 20px; }
+.toc li { margin-bottom: 6px; }
+.toc a { color: var(--color-accent-light); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+.highlight-box {
+  border-left: 4px solid var(--primary);
+  padding: 14px 18px;
+  margin: 16px 0;
+  background: var(--primary-light);
+  border-radius: 0 8px 8px 0;
+}
+.warning-box {
+  border-left: 4px solid var(--warning);
+  padding: 14px 18px;
+  margin: 16px 0;
+  background: var(--warning-light);
+  border-radius: 0 8px 8px 0;
+}
+.success-box {
+  border-left: 4px solid var(--success);
+  padding: 14px 18px;
+  margin: 16px 0;
+  background: var(--success-light);
+  border-radius: 0 8px 8px 0;
+}
+.danger-box {
+  border-left: 4px solid var(--danger);
+  padding: 14px 18px;
+  margin: 16px 0;
+  background: var(--danger-light);
+  border-radius: 0 8px 8px 0;
+}
+.module-card {
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.module-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+}
+.module-card.presence::before { background: var(--success); }
+.module-card.discipline::before { background: var(--danger); }
+.module-card.journal::before { background: var(--info); }
+.module-card.espace::before { background: var(--primary); }
+.entity-diagram {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 16px 0;
+  overflow-x: auto;
+}
+.code-block {
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  overflow-x: auto;
+  margin: 12px 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.timeline {
+  position: relative;
+  padding-left: 30px;
+  margin: 20px 0;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-border);
+}
+.timeline-item {
+  position: relative;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -24px;
+  top: 16px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--color-bg);
+}
+.tab-container { margin: 20px 0; }
+.tab-buttons { display: flex; gap: 4px; border-bottom: 2px solid var(--color-border); margin-bottom: 16px; }
+.tab-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-size: 13px;
+}
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 16px 0; }
+.kpi-item {
+  text-align: center;
+  padding: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+.kpi-item .kpi-value { font-size: 24px; font-weight: 700; }
+.kpi-item .kpi-label { font-size: 11px; color: var(--color-text-muted); margin-top: 2px; }
+.integration-map {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin: 16px 0;
+}
+.integration-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+.integration-row .source { font-weight: 600; min-width: 140px; font-size: 13px; }
+.integration-row .arrow { color: var(--primary); }
+.integration-row .target { color: var(--color-text-muted); font-size: 13px; }
+.print-only { display: none; }
+@media print {
+  .print-only { display: block; }
+  .no-print { display: none; }
+  body { font-size: 11px; }
+  .container { padding: 0; }
+  h2 { page-break-before: always; }
+}
+.mermaid { margin: 16px 0; text-align: center; }
+.section-intro {
+  font-size: 15px;
+  color: var(--color-text-muted);
+  margin-bottom: 20px;
+  font-style: italic;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ═══════════════════════ EN-TÊTE ═══════════════════════ -->
+<div class="header">
+  <h1>Espace Enseignant eLISAschool</h1>
+  <p class="subtitle">Rapport d'Architecture — Modules Présence, Discipline & Journal de Classe</p>
+  <div class="meta">
+    <span>📅 Août 2026</span>
+    <span>📄 Version 1.0</span>
+    <span>🏷️ Architecture & Conception</span>
+    <span>🔒 Confidentiel</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════ TABLE DES MATIÈRES ═══════════════════════ -->
+<div class="toc">
+  <h3>📋 Table des Matières</h3>
+  <ol>
+    <li><a href="#resume">Résumé Exécutif</a></li>
+    <li><a href="#audit">Audit de l'Existant eLISAschool</a></li>
+    <li><a href="#benchmark">Benchmark & Meilleures Pratiques</a></li>
+    <li><a href="#architecture">Architecture Proposée — Vue d'Ensemble</a></li>
+    <li><a href="#module-presence">Module Présence — Conception Détaillée</a></li>
+    <li><a href="#module-discipline">Module Discipline — Conception Détaillée</a></li>
+    <li><a href="#module-journal">Module Journal de Classe — Conception Détaillée</a></li>
+    <li><a href="#espace-enseignant">Espace Enseignant — Portail Unifié</a></li>
+    <li><a href="#integration">Matrice d'Intégration Inter-Modules</a></li>
+    <li><a href="#implementation">Plan d'Implémentation</a></li>
+    <li><a href="#conclusion">Conclusion & Recommandations</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════ 1. RÉSUMÉ EXÉCUTIF ═══════════════════════ -->
+<h2 id="resume">1. Résumé Exécutif</h2>
+
+<p class="section-intro">
+  Ce rapport présente l'analyse approfondie et la conception architecturale de trois nouveaux modules 
+  pour eLISAschool : Présence, Discipline et Journal de Classe. Ces modules forment le socle de 
+  l'Espace Enseignant complet.
+</p>
+
+<div class="card-grid">
+  <div class="stat-card">
+    <div class="value">3</div>
+    <div class="label">Nouveaux Modules</div>
+  </div>
+  <div class="stat-card">
+    <div class="value">12</div>
+    <div class="label">Entités TypeORM</div>
+  </div>
+  <div class="stat-card">
+    <div class="value">45+</div>
+    <div class="label">Endpoints API</div>
+  </div>
+  <div class="stat-card">
+    <div class="value">100%</div>
+    <div class="label">Compatible Existant</div>
+  </div>
+</div>
+
+<div class="highlight-box">
+  <strong>🎯 Objectif stratégique :</strong> Offrir aux enseignants un espace numérique de travail complet, 
+  intégré et modulaire, permettant la gestion quotidienne de leurs cours (appel, discipline, journal) 
+  tout en enrichissant automatiquement le dossier scolaire de l'élève et le scoring existant.
+</div>
+
+<h3>Principes Directeurs</h3>
+<div class="card-grid-3">
+  <div class="card">
+    <h4>🧩 Autonomie</h4>
+    <p>Chaque module est <strong>désactivable/réactivable</strong> sans impact sur le fonctionnement global. 
+    Isolation complète via <code>modules_catalogue</code>.</p>
+  </div>
+  <div class="card">
+    <h4>🔗 Intégration</h4>
+    <p>Les modules s'appuient sur <strong>HeureCours</strong> comme point d'ancrage commun et enrichissent 
+    le <strong>Scoring</strong>, les <strong>Bulletins</strong> et le <strong>Suivi Élèves</strong>.</p>
+  </div>
+  <div class="card">
+    <h4>🌍 Multi-Tenant</h4>
+    <p>Isolation stricte par <code>etablissementId</code>, RLS PostgreSQL, 
+    et paramètres configurables par établissement via <code>ParametreSysteme</code>.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════ 2. AUDIT EXISTANT ═══════════════════════ -->
+<h2 id="audit">2. Audit de l'Existant eLISAschool</h2>
+
+<p class="section-intro">
+  Analyse approfondie des modules déjà en place qui interagissent avec les 3 nouveaux modules proposés.
+</p>
+
+<h3>2.1 Modules Existants Connexes</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Module</th>
+      <th>Entités Clés</th>
+      <th>Rôle</th>
+      <th>Lien Nouveaux Modules</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="badge badge-primary">Emploi du Temps</span></td>
+      <td>CreneauHoraire, HeureCours, RemplacementHeureCours</td>
+      <td>Planification hebdomadaire + instances datées</td>
+      <td><strong>Point d'ancrage</strong> — Présence & Journal liés à HeureCours</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-danger">Suivi Élèves</span></td>
+      <td>IncidentEleve, ObservationEleve, SanctionEleve, FelicitationEleve</td>
+      <td>Suivi comportemental + sanctions</td>
+      <td>Discipline <strong>enrichit</strong> ce module (contexte cours)</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-success">Scoring</span></td>
+      <td>ScoreEleve (ACADÉMIQUE, COMPORTEMENT, ASSIDUITÉ, PARTICIPATION)</td>
+      <td>5 indicateurs pondérés + gamification</td>
+      <td>Présence → ASSIDUITÉ, Discipline → COMPORTEMENT</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-info">Notes/Bulletins</span></td>
+      <td>Note, Bulletin, BulletinMatiere</td>
+      <td>Chaîne académique complète</td>
+      <td>Journal → devoirs/contenus → notes</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-teal">Personnel</span></td>
+      <td>MembrePersonnel, AbsencePersonnel, ContratPersonnel</td>
+      <td>Gestion RH enseignants</td>
+      <td>Remplacement → lien présence enseignant</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-warning">Absences (types)</span></td>
+      <td>Types frontend: absence, retard, departure_anticipe</td>
+      <td>Types définis mais module dédié inexistant</td>
+      <td>Module Présence <strong>opérationnalise</strong> ces types</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>2.2 Entité Pivot — HeureCours</h3>
+
+<div class="highlight-box">
+  <strong>💡 Point clé :</strong> <code>HeureCours</code> est l'instance concrète d'un cours à une date précise. 
+  C'est le <strong>point d'ancrage naturel</strong> pour la Présence (appel des élèves du cours) et le 
+  Journal de Classe (contenu du cours effectué).
+</div>
+
+<div class="entity-diagram">
+  <svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:320px">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0,0 L10,5 L0,10 Z" fill="var(--color-text-muted)"/>
+      </marker>
+    </defs>
+    <!-- CreneauHoraire -->
+    <rect x="20" y="20" width="200" height="120" rx="6" fill="var(--color-surface)" stroke="var(--color-border)" stroke-width="1.5"/>
+    <text x="120" y="45" text-anchor="middle" fill="var(--color-text)" font-weight="600" font-size="13">CreneauHoraire</text>
+    <text x="120" y="65" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">Template hebdomadaire</text>
+    <text x="30" y="85" fill="var(--color-text-muted)" font-size="10">jourSemaine, heureDebut/Fin</text>
+    <text x="30" y="100" fill="var(--color-text-muted)" font-size="10">affectationMatiereId</text>
+    <text x="30" y="115" fill="var(--color-text-muted)" font-size="10">salleId, statut</text>
+    <!-- HeureCours -->
+    <rect x="350" y="20" width="200" height="140" rx="6" fill="rgba(124,58,237,0.15)" stroke="var(--color-accent)" stroke-width="2"/>
+    <text x="450" y="45" text-anchor="middle" fill="var(--color-text)" font-weight="700" font-size="13">HeureCours</text>
+    <text x="450" y="65" text-anchor="middle" fill="var(--primary)" font-size="10">★ Instance datée — PIVOT</text>
+    <text x="360" y="85" fill="var(--color-text-muted)" font-size="10">date, heureDebut/Fin</text>
+    <text x="360" y="100" fill="var(--color-text-muted)" font-size="10">enseignantId, classeAnneeId</text>
+    <text x="360" y="115" fill="var(--color-text-muted)" font-size="10">matiereId, salleId</text>
+    <text x="360" y="130" fill="var(--color-text-muted)" font-size="10">statutEffectue, creneauId</text>
+    <!-- Presence (nouveau) -->
+    <rect x="680" y="10" width="190" height="90" rx="6" fill="var(--success-light)" stroke="var(--success)" stroke-width="1.5"/>
+    <text x="775" y="35" text-anchor="middle" fill="var(--success)" font-weight="600" font-size="13">PresenceCours</text>
+    <text x="775" y="55" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">🆕 Appel des élèves</text>
+    <text x="690" y="75" fill="var(--color-text-muted)" font-size="10">heureCoursId, eleveId</text>
+    <text x="690" y="90" fill="var(--color-text-muted)" font-size="10">statut, motif</text>
+    <!-- Journal (nouveau) -->
+    <rect x="680" y="120" width="190" height="90" rx="6" fill="var(--info-light)" stroke="var(--info)" stroke-width="1.5"/>
+    <text x="775" y="145" text-anchor="middle" fill="var(--info)" font-weight="600" font-size="13">JournalDeClasse</text>
+    <text x="775" y="165" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">🆕 Cahier de texte</text>
+    <text x="690" y="185" fill="var(--color-text-muted)" font-size="10">heureCoursId, contenu</text>
+    <text x="690" y="200" fill="var(--color-text-muted)" font-size="10">devoirs, ressources</text>
+    <!-- Discipline (nouveau) -->
+    <rect x="680" y="230" width="190" height="80" rx="6" fill="var(--danger-light)" stroke="var(--danger)" stroke-width="1.5"/>
+    <text x="775" y="255" text-anchor="middle" fill="var(--danger)" font-weight="600" font-size="13">IncidentCours</text>
+    <text x="775" y="275" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">🆕 Discipline en cours</text>
+    <text x="690" y="295" fill="var(--color-text-muted)" font-size="10">heureCoursId, type, gravite</text>
+    <!-- Arrows -->
+    <line x1="220" y1="80" x2="348" y2="80" stroke="var(--color-text-muted)" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text x="280" y="72" fill="var(--color-text-muted)" font-size="9">propagation</text>
+    <line x1="550" y1="55" x2="678" y2="55" stroke="var(--success)" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <line x1="550" y1="100" x2="678" y2="165" stroke="var(--info)" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <line x1="550" y1="130" x2="678" y2="270" stroke="var(--danger)" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <!-- Legend -->
+    <rect x="20" y="200" width="300" height="100" rx="6" fill="var(--color-surface)" stroke="var(--color-border)"/>
+    <text x="30" y="220" fill="var(--color-text)" font-weight="600" font-size="11">Flux de données</text>
+    <text x="30" y="240" fill="var(--color-text-muted)" font-size="10">CreneauHoraire → materialisation → HeureCours</text>
+    <text x="30" y="258" fill="var(--success)" font-size="10">HeureCours → appel present → PresenceCours</text>
+    <text x="30" y="276" fill="var(--info)" font-size="10">HeureCours → saisie contenu → JournalDeClasse</text>
+    <text x="30" y="294" fill="var(--danger)" font-size="10">HeureCours → incident → IncidentCours</text>
+  </svg>
+</div>
+
+<h3>2.3 Lacunes Identifiées</h3>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>❌ Présence des élèves</h4>
+    <p>Les types d'absence existent dans le frontend mais <strong>aucun module backend</strong> ne permet 
+    l'appel systématique par cours. Le scoring mentionne l'ASSIDUITÉ mais n'a pas de source de données.</p>
+  </div>
+  <div class="card">
+    <h4>❌ Journal de classe</h4>
+    <p>Aucun cahier de texte numérique. Les enseignants n'ont pas d'outil pour tracer les contenus 
+    enseignés, les devoirs donnés ou les ressources partagées.</p>
+  </div>
+  <div class="card">
+    <h4>⚠️ Discipline contextuelle</h4>
+    <p>Le module <code>suivi-eleves</code> gère les incidents mais sans <strong>lien direct au cours</strong>. 
+    Un incident pendant un cours spécifique n'est pas contextualisé (matière, heure, présence).</p>
+  </div>
+  <div class="card">
+    <h4>❌ Espace enseignant unifié</h4>
+    <p>Pas de portail dédié à l'enseignant regroupant ses cours du jour, les appels à faire, 
+    les journaux à remplir et les incidents à signaler.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════ 3. BENCHMARK ═══════════════════════ -->
+<h2 id="benchmark">3. Benchmark & Meilleures Pratiques</h2>
+
+<p class="section-intro">
+  Analyse comparative des solutions leaders du marché et des standards internationaux en matière de gestion scolaire numérique.
+</p>
+
+<h3>3.1 Comparatif des Solutions Leaders</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Solution</th>
+      <th>Présence</th>
+      <th>Discipline</th>
+      <th>Cahier de texte</th>
+      <th>Espace enseignant</th>
+      <th>Points forts</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Classe365</strong></td>
+      <td>✅ QR + Manuel</td>
+      <td>✅ Complet</td>
+      <td>✅ Riche</td>
+      <td>✅ Dashboard</td>
+      <td>Mobile-first, notifications parents</td>
+    </tr>
+    <tr>
+      <td><strong>Pronote (FR)</strong></td>
+      <td>✅ Appel cours</td>
+      <td>✅ Observations</td>
+      <td>⭐ Référence</td>
+      <td>✅ Complet</td>
+      <td>Cahier de texte très riche, standard ENT</td>
+    </tr>
+    <tr>
+      <td><strong>PowerSchool</strong></td>
+      <td>✅ Biométrie</td>
+      <td>✅ PBIS</td>
+      <td>✅ Basique</td>
+      <td>✅ Portal</td>
+      <td>Intégration biométrique, analytics avancés</td>
+    </tr>
+    <tr>
+      <td><strong>EcoleDirecte</strong></td>
+      <td>✅ Manuel</td>
+      <td>✅ Simple</td>
+      <td>✅ Complet</td>
+      <td>✅ Essentiel</td>
+      <td>Simplicité, adoption rapide</td>
+    </tr>
+    <tr>
+      <td><strong>MyScol (BE)</strong></td>
+      <td>✅ QR code</td>
+      <td>✅ Basique</td>
+      <td>✅ Avancé</td>
+      <td>⚠️ Partiel</td>
+      <td>Cahier de texte riche, gratuité</td>
+    </tr>
+    <tr style="background: var(--primary-light);">
+      <td><strong>eLISAschool (cible)</strong></td>
+      <td>✅ QR + Manuel + Auto</td>
+      <td>✅ Contextuel cours</td>
+      <td>✅ Riche + Devoirs</td>
+      <td>⭐ Unifié</td>
+      <td>Intégration scoring, multi-tenant, gamification</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>3.2 Meilleures Pratiques Identifiées</h3>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>📱 Multi-modalité de l'appel</h4>
+    <p><strong>Pratique :</strong> Combiner 3 méthodes d'appel — manuel (liste), QR code (scan carte élève), 
+    et automatique (géofencing/NFC pour les grands campus).</p>
+    <p><strong>Choix eLISAschool :</strong> <span class="badge badge-success">Manuel + QR code</span></p>
+  </div>
+  <div class="card">
+    <h4>⚡ Appel rapide (< 2 min)</h4>
+    <p><strong>Pratique :</strong> L'appel ne doit pas dépasser 2 minutes. Présélection "tous présents", 
+    l'enseignant signale uniquement les absents/retards.</p>
+    <p><strong>Choix eLISAschool :</strong> <span class="badge badge-success">Default PRÉSENT + exceptions</span></p>
+  </div>
+  <div class="card">
+    <h4>🔔 Notification instantanée</h4>
+    <p><strong>Pratique :</strong> Alertes SMS/push aux parents dans les 15 minutes suivant l'absence constatée. 
+    Réduction du décrochage scolaire de 30%.</p>
+    <p><strong>Choix eLISAschool :</strong> <span class="badge badge-success">Via NotificationOrchestrator</span></p>
+  </div>
+  <div class="card">
+    <h4>📊 Analytics comportementaux</h4>
+    <p><strong>Pratique :</strong> Tableaux de bord par classe/matière/période avec indicateurs : 
+    taux d'absence, récidivistes, patterns temporels.</p>
+    <p><strong>Choix eLISAschool :</strong> <span class="badge badge-success">Intégré au Scoring</span></p>
+  </div>
+  <div class="card">
+    <h4>📝 Cahier de texte structuré</h4>
+    <p><strong>Pratique :</strong> Contenu pédagogique par séance : objectifs, déroulement, devoirs, 
+    ressources. Visible par les élèves et parents en consultation.</p>
+    <p><strong>Choix eLISAschool :</strong> <span class="badge badge-success">Lié à HeureCours</span></p>
+  </div>
+  <div class="card">
+    <h4>🎯 Discipline contextuelle</h4>
+    <p><strong>Pratique :</strong> L'incident est toujours contextualisé (cours, matière, heure) pour 
+    permettre une analyse fine et un suivi cohérent.</p>
+    <p><strong>Choix eLISAschool :</strong> <span class="badge badge-success">Extension suivi-eleves</span></p>
+  </div>
+</div>
+
+<h3>3.3 Standards du Contexte Africain/Camerounais</h3>
+
+<div class="warning-box">
+  <strong>⚠️ Adaptations nécessaires :</strong> Le contexte camerounais impose des spécificités :
+  <ul style="margin-top:8px; padding-left:20px;">
+    <li><strong>Effectifs importants</strong> : classes de 60-120 élèves → appel rapide obligatoire</li>
+    <li><strong>Connectivité limitée</strong> : mode hors-ligne + synchronisation différée</li>
+    <li><strong>Saisons rurales</strong> : type d'absence "abandon temporaire" (récoltes)</li>
+    <li><strong>Frais de scolarité</strong> : lien présence ↔ paiement frais</li>
+    <li><strong>Uniforme obligatoire</strong> : type d'incident "tenue non conforme"</li>
+  </ul>
+</div>
+
+<!-- ═══════════════════════ 4. ARCHITECTURE ═══════════════════════ -->
+<h2 id="architecture">4. Architecture Proposée — Vue d'Ensemble</h2>
+
+<p class="section-intro">
+  Les 3 modules sont conçus comme des unités autonomes mais fortement intégrées via HeureCours comme pivot commun.
+</p>
+
+<h3>4.1 Diagramme d'Architecture Globale</h3>
+
+<div class="entity-diagram">
+  <svg viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:500px">
+    <defs>
+      <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0,0 L10,5 L0,10 Z" fill="var(--color-text-muted)"/>
+      </marker>
+      <marker id="arrowP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0,0 L10,5 L0,10 Z" fill="var(--primary)"/>
+      </marker>
+    </defs>
+    
+    <!-- Titre -->
+    <text x="450" y="25" text-anchor="middle" fill="var(--color-text)" font-weight="700" font-size="16">Architecture Modulaire — Espace Enseignant</text>
+    
+    <!-- Couche Infrastructure -->
+    <rect x="20" y="440" width="860" height="50" rx="6" fill="var(--color-surface)" stroke="var(--color-border)" stroke-dasharray="4"/>
+    <text x="450" y="470" text-anchor="middle" fill="var(--color-text-muted)" font-size="11">Infrastructure : Auth (JWT/RBAC) • RLS PostgreSQL • Cache Redis • NotificationOrchestrator • ParametreSysteme • modules_catalogue</text>
+    
+    <!-- Module Emploi du Temps (existant) -->
+    <rect x="320" y="40" width="260" height="70" rx="8" fill="var(--primary-light)" stroke="var(--primary)" stroke-width="2"/>
+    <text x="450" y="65" text-anchor="middle" fill="var(--primary)" font-weight="700" font-size="13">⏱️ Emploi du Temps</text>
+    <text x="450" y="85" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">CreneauHoraire → HeureCours (PIVOT)</text>
+    <text x="450" y="100" text-anchor="middle" fill="var(--color-text-muted)" font-size="9">Existant — Source de vérité planning</text>
+    
+    <!-- Module Présence -->
+    <rect x="30" y="160" width="240" height="120" rx="8" fill="var(--success-light)" stroke="var(--success)" stroke-width="2"/>
+    <text x="150" y="185" text-anchor="middle" fill="var(--success)" font-weight="700" font-size="13">✅ Module PRÉSENCE</text>
+    <text x="150" y="205" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">🆕 Nouveau — Désactivable</text>
+    <text x="40" y="225" fill="var(--color-text-muted)" font-size="9">• Appel des élèves par cours</text>
+    <text x="40" y="240" fill="var(--color-text-muted)" font-size="9">• QR code / Manuel / Auto</text>
+    <text x="40" y="255" fill="var(--color-text-muted)" font-size="9">• Statistiques assiduité</text>
+    <text x="40" y="270" fill="var(--color-text-muted)" font-size="9">• Notifications parents</text>
+    
+    <!-- Module Journal de Classe -->
+    <rect x="330" y="160" width="240" height="120" rx="8" fill="var(--info-light)" stroke="var(--info)" stroke-width="2"/>
+    <text x="450" y="185" text-anchor="middle" fill="var(--info)" font-weight="700" font-size="13">📖 Module JOURNAL</text>
+    <text x="450" y="205" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">🆕 Nouveau — Désactivable</text>
+    <text x="340" y="225" fill="var(--color-text-muted)" font-size="9">• Contenu de chaque séance</text>
+    <text x="340" y="240" fill="var(--color-text-muted)" font-size="9">• Devoirs & ressources</text>
+    <text x="340" y="255" fill="var(--color-text-muted)" font-size="9">• Progression pédagogique</text>
+    <text x="340" y="270" fill="var(--color-text-muted)" font-size="9">• Consultation élèves/parents</text>
+    
+    <!-- Module Discipline -->
+    <rect x="630" y="160" width="240" height="120" rx="8" fill="var(--danger-light)" stroke="var(--danger)" stroke-width="2"/>
+    <text x="750" y="185" text-anchor="middle" fill="var(--danger)" font-weight="700" font-size="13">⚠️ Module DISCIPLINE</text>
+    <text x="750" y="205" text-anchor="middle" fill="var(--color-text-muted)" font-size="10">🆕 Nouveau — Désactivable</text>
+    <text x="640" y="225" fill="var(--color-text-muted)" font-size="9">• Incidents en cours</text>
+    <text x="640" y="240" fill="var(--color-text-muted)" font-size="9">• Points comportement</text>
+    <text x="640" y="255" fill="var(--color-text-muted)" font-size="9">• Sanctions / Félicitations</text>
+    <text x="640" y="270" fill="var(--color-text-muted)" font-size="9">• Workflow validation</text>
+    
+    <!-- Modules existants enrichis -->
+    <rect x="30" y="330" width="200" height="80" rx="6" fill="var(--color-surface)" stroke="var(--color-border)"/>
+    <text x="130" y="355" text-anchor="middle" fill="var(--color-text)" font-weight="600" font-size="11">🏆 Scoring</text>
+    <text x="130" y="375" text-anchor="middle" fill="var(--color-text-muted)" font-size="9">ASSIDUITÉ ← Présence</text>
+    <text x="130" y="390" text-anchor="middle" fill="var(--color-text-muted)" font-size="9">COMPORTEMENT ← Discipline</text>
+    
+    <rect x="250" y="330" width="200" height="80" rx="6" fill="var(--color-surface)" stroke="var(--color-border)"/>
+    <text x="350" y="355" text-anchor="middle" fill="var(--color-text)" font-weight="600" font-size="11">📋 Bulletins</text>
+    <text x="350" y="375" text-anchor="middle" fill="var(--color-text-muted)" font-size="9">Appréciations ← Journal</text>
+    <text x="350" y="390" text-anchor="middle" fill="var(--color-text-muted)" font-size="9">Moyennes ← Notes</text>
+    
+    <rect x="470" y="330" width="200" height="80" rx="6" fill="var(--color-surface)" stroke="var(--color-border)"/>
+    <text x="570" y="355" text-anchor="middle" fill="var(--color-text)" font-weight="600" font-size="11">👤 Suivi Élèves</text>
+    <text x="570" y="375" text-anchor="middle" fill="var(--color-text-muted)" font-size="9">Incidents ← Discipline</text>
+    <text x="570" y="390" text-anchor="middle" fill="var(--color-text-muted)" font-size="9">Dossier complet</text>
+    
+    <rect x="690" y="330" width="180" height="80" rx="6" fill="var(--color-surface)" stroke="var(--color-border)"/>
+    <text x="780" y="355" text-anchor="middle" fill="var(--color-text)" font-weight="600" font-size="11">🔔 Notifications</text>
+    <text x="780" y="375" text-anchor="middle" fill="var(--color-text-muted)" font-size="9">Alertes parents</text>
+    <text x="780" y="390" text-anchor="middle" fill="var(--color-text-muted)" font-size="9">Rappels devoirs</text>
+    
+    <!-- Flèches Emploi du Temps → Modules -->
+    <line x1="380" y1="110" x2="180" y2="158" stroke="var(--success)" stroke-width="2" marker-end="url(#arrow2)"/>
+    <line x1="450" y1="110" x2="450" y2="158" stroke="var(--info)" stroke-width="2" marker-end="url(#arrow2)"/>
+    <line x1="520" y1="110" x2="720" y2="158" stroke="var(--danger)" stroke-width="2" marker-end="url(#arrow2)"/>
+    
+    <!-- Flèches Modules → Modules enrichis -->
+    <line x1="150" y1="280" x2="130" y2="328" stroke="var(--color-text-muted)" stroke-width="1.5" marker-end="url(#arrow2)"/>
+    <line x1="200" y1="280" x2="350" y2="328" stroke="var(--color-text-muted)" stroke-width="1.5" marker-end="url(#arrow2)"/>
+    <line x1="450" y1="280" x2="350" y2="328" stroke="var(--color-text-muted)" stroke-width="1.5" marker-end="url(#arrow2)"/>
+    <line x1="750" y1="280" x2="570" y2="328" stroke="var(--color-text-muted)" stroke-width="1.5" marker-end="url(#arrow2)"/>
+    <line x1="150" y1="280" x2="780" y2="328" stroke="var(--color-text-muted)" stroke-width="1" stroke-dasharray="4" marker-end="url(#arrow2)"/>
+    
+    <!-- Légende -->
+    <rect x="30" y="420" width="12" height="12" rx="2" fill="var(--success-light)" stroke="var(--success)"/>
+    <text x="48" y="431" fill="var(--color-text-muted)" font-size="9">Nouveau (désactivable)</text>
+    <rect x="170" y="420" width="12" height="12" rx="2" fill="var(--primary-light)" stroke="var(--primary)"/>
+    <text x="188" y="431" fill="var(--color-text-muted)" font-size="9">Existant (pivot)</text>
+    <rect x="300" y="420" width="12" height="12" rx="2" fill="var(--color-surface)" stroke="var(--color-border)"/>
+    <text x="318" y="431" fill="var(--color-text-muted)" font-size="9">Enrichi automatiquement</text>
+  </svg>
+</div>
+
+<h3>4.2 Principe d'Autonomie — Désactivation Sans Impact</h3>
+
+<div class="success-box">
+  <strong>✅ Garantie d'autonomie :</strong> Chaque module peut être désactivé via <code>modules_catalogue</code> 
+  sans casser le fonctionnement d'eLISAschool. Les données restent accessibles en lecture seule, 
+  les intégrations amont (scoring, bulletins) ignorent gracieusement les données manquantes.
+</div>
+
+<div class="code-block">
+// Pattern de résilience — IntegrationGracefulDegradation
+async enrichirScoreAssiduite(eleveId: string): Promise&lt;void&gt; {
+    const moduleActif = await entitlementService.isAccessible(etabId, 'presence');
+    if (!moduleActif) {
+        logger.info('[Scoring] Module présence inactif — assiduité ignorée');
+        return; // ← PAS d'erreur, PAS de blocage
+    }
+    const stats = await presenceService.getStatsEleve(eleveId);
+    await scoringService.attribuerPoints(eleveId, TypeIndicateur.ASSIDUITE, stats.score);
+}
+</div>
+
+<h3>4.3 Entités proposées — Vue Synthétique</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Module</th>
+      <th>Entité</th>
+      <th>Table</th>
+      <th>Rôle</th>
+      <th>Lien Pivot</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="4"><span class="badge badge-success">Présence</span></td>
+      <td>AppelCours</td>
+      <td>appels_cours</td>
+      <td>Session d'appel pour un cours</td>
+      <td>FK → HeureCours</td>
+    </tr>
+    <tr>
+      <td>PresenceEleve</td>
+      <td>presences_eleves</td>
+      <td>Statut de chaque élève par appel</td>
+      <td>FK → AppelCours</td>
+    </tr>
+    <tr>
+      <td>MotifAbsence</td>
+      <td>motifs_absence</td>
+      <td>Nomenclature des motifs</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td>StatistiquePresence</td>
+      <td>— (vue SQL)</td>
+      <td>Aggregats par classe/période</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td rowspan="3"><span class="badge badge-danger">Discipline</span></td>
+      <td>IncidentCours</td>
+      <td>incidents_cours</td>
+      <td>Incident pendant un cours spécifique</td>
+      <td>FK → HeureCours</td>
+    </tr>
+    <tr>
+      <td>PointComportement</td>
+      <td>points_comportement</td>
+      <td>Crédits comportement par élève</td>
+      <td>FK → Eleve</td>
+    </tr>
+    <tr>
+      <td>ReglementDiscipline</td>
+      <td>reglements_discipline</td>
+      <td>Règles de vie de l'établissement</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td rowspan="4"><span class="badge badge-info">Journal</span></td>
+      <td>JournalSeance</td>
+      <td>journal_seances</td>
+      <td>Contenu pédagogique d'une séance</td>
+      <td>FK → HeureCours</td>
+    </tr>
+    <tr>
+      <td>JournalDevoir</td>
+      <td>journal_devoirs</td>
+      <td>Devoirs/travaux donnés</td>
+      <td>FK → JournalSeance</td>
+    </tr>
+    <tr>
+      <td>JournalRessource</td>
+      <td>journal_ressources</td>
+      <td>Ressources partagées</td>
+      <td>FK → JournalSeance</td>
+    </tr>
+    <tr>
+      <td>ProgressionPedagogique</td>
+      <td>progressions_pedagogiques</td>
+      <td>Avancement programme par matière</td>
+      <td>FK → AffectationMatiere</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════ 5. MODULE PRÉSENCE ═══════════════════════ -->
+<h2 id="module-presence">5. Module Présence — Conception Détaillée</h2>
+
+<div class="module-card presence">
+<h3>5.1 Architecture & Entités</h3>
+
+<h4>Entité principale : AppelCours</h4>
+<div class="code-block">
+@Entity('appels_cours')
+@Index(['heureCoursId'], { unique: true })  // 1 appel = 1 cours
+@Index(['etablissementId'])
+@Index(['date'])
+export class AppelCours {
+    id: string;                    // UUID
+    heureCoursId: string;          // FK → HeureCours (PIVOT)
+    date: Date;                    // Date de l'appel
+    heureDebut: string;            // Heure début appel
+    heureFin?: string;             // Heure fin appel
+    enseignantId: string;          // FK → MembrePersonnel
+    classeAnneeId: string;         // FK → ClasseAnnee
+    matiereId: string;             // FK → Matiere
+    statut: StatutAppel;           // OUVERT | CLOTURE | ANNULE
+    methode: MethodeAppel;         // MANUEL | QR_CODE | MIXTE
+    totalPresents: number;         // Calculé
+    totalAbsents: number;          // Calculé
+    totalRetards: number;          // Calculé
+    commentaire?: string;          // Observation générale
+    etablissementId: string;       // Multi-tenant
+}
+
+export enum StatutAppel {
+    OUVERT = 'OUVERT',        // Appel en cours
+    CLOTURE = 'CLOTURE',      // Appel terminé
+    ANNULE = 'ANNULE',        // Annulé
+}
+
+export enum MethodeAppel {
+    MANUEL = 'MANUEL',        // Liste manuelle
+    QR_CODE = 'QR_CODE',      // Scan carte élève
+    MIXTE = 'MIXTE',          // Combinaison
+}
+</div>
+
+<h4>Entité détail : PresenceEleve</h4>
+<div class="code-block">
+@Entity('presences_eleves')
+@Index(['appelCoursId'])
+@Index(['eleveId'])
+@Index(['statut'])
+@Index(['etablissementId'])
+@Unique(['appelCoursId', 'eleveId'])  // 1 statut par élève par appel
+export class PresenceEleve {
+    id: string;                    // UUID
+    appelCoursId: string;          // FK → AppelCours
+    eleveId: string;               // FK → Eleve
+    statut: StatutPresence;        // PRESENT | ABSENT | RETARD | EXCUSE | SORTIE
+    heureArrivee?: string;         // Si retard
+    motifAbsenceId?: string;       // FK → MotifAbsence (nomenclature)
+    motifLibre?: string;           // Motif libre (si non nomenclaturé)
+    justificatif?: string;         // URL fichier justificatif
+    signaleParId?: string;         // Qui a signalé
+    dateSignalement?: Date;        // Quand
+    notifieParent: boolean;        // Parent notifié ?
+    etablissementId: string;       // Multi-tenant
+}
+
+export enum StatutPresence {
+    PRESENT = 'PRESENT',           // Présent en classe
+    ABSENT = 'ABSENT',             // Absent non justifié
+    RETARD = 'RETARD',             // Arrivé en retard
+    EXCUSE = 'EXCUSE',             // Absence justifiée (à l'avance)
+    SORTIE_ANTICIPEE = 'SORTIE_ANTICIPEE',  // Parti avant la fin
+    INFIRMERIE = 'INFIRMERIE',     // Envoyé à l'infirmerie
+    EXCLU_COURS = 'EXCLU_COURS',   // Exclu du cours (discipline)
+    ACTIVITE_EXTERNE = 'ACTIVITE_EXTERNE',  // Competition, sortie...
+}
+</div>
+
+<h4>Nomenclature : MotifAbsence</h4>
+<div class="code-block">
+@Entity('motifs_absence')
+export class MotifAbsence {
+    id: string;
+    code: string;                  // ML-001, ML-002...
+    libelle: string;               // "Maladie", "Rendez-vous médical"...
+    categorie: CategorieMotif;     // MALADIE | FAMILLE | ADMIN | AUTRE
+    estJustificatifRequis: boolean;
+    estSysteme: boolean;           // Non supprimable si true
+    etablissementId: string;       // Scopé établissement
+}
+</div>
+
+<h3>5.2 Flux Fonctionnel — Appel des élèves</h3>
+
+<div class="flow-box">
+  <div class="flow-step">1. Enseignant ouvre l'appel</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">2. Liste élèves chargée (effectif)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">3. Tous pré-remplis "PRÉSENT"</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">4. Signale exceptions</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">5. Clôture appel</div>
+</div>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>Mode Manuel (défaut)</h4>
+    <p>Enseignant voit la liste complète des élèves de la classe. Par défaut tous marqués "PRÉSENT". 
+    Il clique sur les élèves absents/retards pour changer le statut.</p>
+    <p><strong>Avantage :</strong> Simple, rapide, pas de matériel requis.</p>
+  </div>
+  <div class="card">
+    <h4>Mode QR Code</h4>
+    <p>Chaque élève a un QR code sur sa carte scolaire. L'enseignant scanne les cartes 
+    au début du cours. Les élèves non-scannés sont marqués absents.</p>
+    <p><strong>Avantage :</strong> Traçabilité, rapidité pour grands effectifs.</p>
+  </div>
+  <div class="card">
+    <h4>Notifications Parents</h4>
+    <p>Dès la clôture de l'appel, les parents des élèves absents/retards reçoivent une notification 
+    (push, SMS, email) via le NotificationOrchestrator.</p>
+    <p><strong>Avantage :</strong> Transparence, réduction absentéisme.</p>
+  </div>
+</div>
+
+<h3>5.3 API REST — Endpoints</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Méthode</th>
+      <th>Route</th>
+      <th>Rôle</th>
+      <th>Permission</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>POST</td><td>/api/presence/appels</td><td>Créer un appel</td><td>presence:appels:create</td></tr>
+    <tr><td>GET</td><td>/api/presence/appels/:id</td><td>Détail d'un appel</td><td>presence:appels:view</td></tr>
+    <tr><td>GET</td><td>/api/presence/appels</td><td>Lister les appels</td><td>presence:appels:view</td></tr>
+    <tr><td>PATCH</td><td>/api/presence/appels/:id/cloturer</td><td>Clôturer l'appel</td><td>presence:appels:close</td></tr>
+    <tr><td>POST</td><td>/api/presence/appels/:id/eleves/:eleveId</td><td>Modifier statut élève</td><td>presence:appels:edit</td></tr>
+    <tr><td>POST</td><td>/api/presence/appels/:id/qr-scan</td><td>Scan QR code élève</td><td>presence:appels:edit</td></tr>
+    <tr><td>GET</td><td>/api/presence/eleves/:eleveId/statistiques</td><td>Stats assiduité élève</td><td>presence:stats:view</td></tr>
+    <tr><td>GET</td><td>/api/presence/classes/:classeId/statistiques</td><td>Stats classe</td><td>presence:stats:view</td></tr>
+    <tr><td>GET</td><td>/api/presence/etablissement/statistiques</td><td>Stats établissement</td><td>presence:stats:admin</td></tr>
+    <tr><td>GET</td><td>/api/presence/export/csv</td><td>Export CSV présences</td><td>presence:export</td></tr>
+    <tr><td>GET</td><td>/api/presence/motifs</td><td>Liste motifs absence</td><td>presence:motifs:view</td></tr>
+    <tr><td>POST</td><td>/api/presence/motifs</td><td>Créer motif</td><td>presence:motifs:create</td></tr>
+  </tbody>
+</table>
+
+<h3>5.4 Intégration Scoring & Notifications</h3>
+
+<div class="code-block">
+// Après clôture de l'appel — non bloquant
+async cloturerAppel(appelId: string): Promise&lt;AppelCours&gt; {
+    // 1. Clôturer l'appel
+    appel.statut = StatutAppel.CLOTURE;
+    await this.repo.save(appel);
+    
+    // 2. Intégration Scoring (non bloquant)
+    try {
+        for (const presence of presences) {
+            if (presence.statut === StatutPresence.PRESENT) {
+                await scoringService.attribuerPoints(
+                    presence.eleveId, TypeIndicateur.ASSIDUITE, +2
+                );
+            } else if (presence.statut === StatutPresence.RETARD) {
+                await scoringService.attribuerPoints(
+                    presence.eleveId, TypeIndicateur.ASSIDUITE, -1
+                );
+            } else if (presence.statut === StatutPresence.ABSENT) {
+                await scoringService.attribuerPoints(
+                    presence.eleveId, TypeIndicateur.ASSIDUITE, -3
+                );
+            }
+        }
+    } catch (e) { logger.warn('[Présence] Scoring échec (non bloquant)', e); }
+    
+    // 3. Notifications parents (non bloquant)
+    try {
+        const absents = presences.filter(p =&gt; 
+            p.statut === StatutPresence.ABSENT || p.statut === StatutPresence.RETARD
+        );
+        for (const absent of absents) {
+            await notificationTemplates.absenceEleve({
+                destinataireId: absent.eleve.utilisateurId,
+                etablissementId,
+                metadata: { eleveId: absent.eleveId, motif: absent.motifLibre }
+            }, { eleveNom: absent.eleve.utilisateur.profil.nom });
+        }
+    } catch (e) { logger.warn('[Présence] Notification échec (non bloquant)', e); }
+    
+    return appel;
+}
+</div>
+</div>
+
+<!-- ═══════════════════════ 6. MODULE DISCIPLINE ═══════════════════════ -->
+<h2 id="module-discipline">6. Module Discipline — Conception Détaillée</h2>
+
+<div class="module-card discipline">
+<h3>6.1 Positionnement — Extension de suivi-eleves</h3>
+
+<div class="highlight-box">
+  <strong>💡 Décision architecturale :</strong> Le module Discipline ne remplace PAS <code>suivi-eleves</code>. 
+  Il l'<strong>enrichit</strong> avec un contexte cours. Un IncidentCours peut être "promu" en IncidentEleve 
+  si la gravité le justifie (workflow de escalation).
+</div>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>IncidentCours (léger)</h4>
+    <p>Incident pendant un cours spécifique. Types : bavardage, téléphone, non-respect, retard, travail non fait. 
+    Gravités : MINEUR, MODERE. Résolu directement par l'enseignant.</p>
+  </div>
+  <div class="card">
+    <h4>Escalade vers IncidentEleve</h4>
+    <p>Si gravité GRAVE/TRES_GRAVE ou récidive → l'incident est escaladé vers <code>suivi-eleves</code> 
+    pour traitement par la direction avec sanctions potentielles.</p>
+  </div>
+  <div class="card">
+    <h4>Points Comportement</h4>
+    <p>Système de crédits/débits comportement. Solde initial 100. Actions positives (+), négatives (-). 
+    Seuil d'alerte configurable. Intégré au scoring COMPORTEMENT.</p>
+  </div>
+</div>
+
+<h3>6.2 Entités</h3>
+
+<div class="code-block">
+@Entity('incidents_cours')
+@Index(['heureCoursId'])
+@Index(['eleveId'])
+@Index(['etablissementId'])
+export class IncidentCours {
+    id: string;
+    heureCoursId: string;          // FK → HeureCours (contexte cours)
+    eleveId: string;               // FK → Eleve
+    enseignantId: string;          // FK → MembrePersonnel (déclarant)
+    type: TypeIncidentCours;       // BAVARDAGE | TELEPHONE | IRRESPECT | TRICHERIE | RETARD | TRAVAIL_NON_FAIT | TENUE | AUTRE
+    gravite: GraviteIncidentCours; // MINEUR | MODERE | GRAVE | TRES_GRAVE
+    description: string;
+    actionImmediate?: string;      // Action prise par l'enseignant
+    escaladeVersSuivi: boolean;    // true si promu en IncidentEleve
+    incidentEleveId?: string;      // FK → IncidentEleve si escaladé
+    pointsImpact: number;          // Impact sur points comportement
+    etablissementId: string;
+}
+
+@Entity('points_comportement')
+@Index(['eleveId'])
+@Index(['etablissementId'])
+@Index(['date'])
+export class PointComportement {
+    id: string;
+    eleveId: string;
+    type: TypePointComportement;   // CREDIT | DEBIT
+    valeur: number;                // +5, -3, +10...
+    motif: string;
+    source: SourcePointComportement; // INCIDENT_COURS | SANCTION | FELICITATION | MANUEL
+    sourceId?: string;             // ID de l'entité source
+    attribueParId: string;         // FK → Utilisateur
+    soldeApres: number;            // Solde après opération
+    etablissementId: string;
+    date: Date;
+}
+
+@Entity('reglements_discipline')
+export class ReglementDiscipline {
+    id: string;
+    titre: string;
+    description: string;
+    categorie: CategorieRegle;     // VIE_SCOLAIRE | COURS | RELATIONS | MATERIEL
+    pointsCredit: number;          // Points si respecté (optionnel)
+    pointsDebit: number;           // Points si non respecté
+    estActif: boolean;
+    ordre: number;
+    etablissementId: string;
+}
+</div>
+
+<h3>6.3 Système de Points Comportement</h3>
+
+<div class="kpi-grid">
+  <div class="kpi-item">
+    <div class="kpi-value" style="color:var(--success)">100</div>
+    <div class="kpi-label">Solde initial</div>
+  </div>
+  <div class="kpi-item">
+    <div class="kpi-value" style="color:var(--warning)">70</div>
+    <div class="kpi-label">Seuil alerte</div>
+  </div>
+  <div class="kpi-item">
+    <div class="kpi-value" style="color:var(--danger)">50</div>
+    <div class="kpi-label">Seuil critique</div>
+  </div>
+  <div class="kpi-item">
+    <div class="kpi-value" style="color:var(--info)">120</div>
+    <div class="kpi-label">Bonus max/mois</div>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Action</th><th>Points</th><th>Catégorie</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Participation active en cours</td><td style="color:var(--success)">+2</td><td>Cours</td></tr>
+    <tr><td>Travail fait / bon résultat</td><td style="color:var(--success)">+3</td><td>Cours</td></tr>
+    <tr><td>Aide à un camarade</td><td style="color:var(--success)">+5</td><td>Relations</td></tr>
+    <tr><td>Responsabilité assumée</td><td style="color:var(--success)">+5</td><td>Vie scolaire</td></tr>
+    <tr><td>Bavardage répété</td><td style="color:var(--danger)">-2</td><td>Cours</td></tr>
+    <tr><td>Téléphone en cours</td><td style="color:var(--danger)">-5</td><td>Cours</td></tr>
+    <tr><td>Irrespect enseignant</td><td style="color:var(--danger)">-10</td><td>Relations</td></tr>
+    <tr><td>Tricherie</td><td style="color:var(--danger)">-15</td><td>Cours</td></tr>
+    <tr><td>Absence non justifiée</td><td style="color:var(--danger)">-3</td><td>Vie scolaire</td></tr>
+    <tr><td>Retard répété</td><td style="color:var(--danger)">-2</td><td>Vie scolaire</td></tr>
+  </tbody>
+</table>
+
+<h3>6.4 Workflow d'Escalade</h3>
+
+<div class="flow-box">
+  <div class="flow-step" style="border-color:var(--success)">IncidentCours (MINEUR)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Résolu par enseignant</div>
+  <div class="flow-arrow" style="color:var(--color-text-muted)">✓</div>
+  <div class="flow-step" style="background:var(--success-light)">Clôturé</div>
+</div>
+<div class="flow-box">
+  <div class="flow-step" style="border-color:var(--warning)">IncidentCours (MODERE+)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="background:var(--warning-light)">Escalade → IncidentEleve</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Direction traite</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="background:var(--danger-light)">Sanction possible</div>
+</div>
+</div>
+
+<!-- ═══════════════════════ 7. MODULE JOURNAL ═══════════════════════ -->
+<h2 id="module-journal">7. Module Journal de Classe — Conception Détaillée</h2>
+
+<div class="module-card journal">
+<h3>7.1 Concept — Cahier de Texte Numérique</h3>
+
+<p>Le journal de classe est le pendant numérique du cahier de texte papier. Il permet à l'enseignant 
+ de tracer le contenu de chaque séance et de communiquer les devoirs aux élèves et parents.</p>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>📝 Contenu de séance</h4>
+    <p>Pour chaque cours effectué, l'enseignant saisit : titre, objectifs, contenu déroulé, 
+    méthodologie, observations. Lié directement à HeureCours.</p>
+  </div>
+  <div class="card">
+    <h4>📚 Devoirs & travaux</h4>
+    <p>Devoirs donnés avec date limite, description, pièces jointes. Visible par les élèves 
+    dans leur espace. Rappels automatiques avant échéance.</p>
+  </div>
+  <div class="card">
+    <h4>📎 Ressources partagées</h4>
+    <p>Documents, liens, vidéos partagés avec la classe. Stockage via le module médias existant 
+    ou upload direct.</p>
+  </div>
+  <div class="card">
+    <h4>📊 Progression pédagogique</h4>
+    <p>Suivi de l'avancement du programme par matière et par classe. Pourcentage complété, 
+    chapitres traités, estimation date de fin.</p>
+  </div>
+</div>
+
+<h3>7.2 Entités</h3>
+
+<div class="code-block">
+@Entity('journal_seances')
+@Index(['heureCoursId'], { unique: true })
+@Index(['enseignantId'])
+@Index(['etablissementId'])
+@Index(['date'])
+export class JournalSeance {
+    id: string;
+    heureCoursId: string;          // FK → HeureCours (1 séance = 1 cours)
+    enseignantId: string;          // FK → MembrePersonnel
+    classeAnneeId: string;         // FK → ClasseAnnee
+    matiereId: string;             // FK → Matiere
+    date: Date;
+    titre: string;                 // "Chapitre 3 - Les fractions"
+    objectifs: string;             // Objectifs pédagogiques (texte libre ou JSON)
+    contenuDeroule: string;        // Déroulement de la séance
+    methodologie?: string;         // Méthode pédagogique utilisée
+    remarques?: string;            // Observations, difficultés rencontrées
+    dureeEffective?: number;       // Minutes effectives d'enseignement
+    chapitreNumero?: number;       // N° chapitre en cours
+    statut: StatutJournal;         // BROUILLON | PUBLIE | ARCHIVE
+    etablissementId: string;
+}
+
+@Entity('journal_devoirs')
+@Index(['journalSeanceId'])
+@Index(['dateLimite'])
+@Index(['etablissementId'])
+export class JournalDevoir {
+    id: string;
+    journalSeanceId: string;       // FK → JournalSeance
+    titre: string;                 // "Exercices page 45 n°1-10"
+    description: string;           // Instructions détaillées
+    type: TypeDevoir;              // EXERCICE | LECTURE | RECHERCHE | PROJET | REVISION
+    dateLimite?: Date;             // Date de rendu
+    dureeEstimee?: number;         // Minutes estimées
+    estEnGroupe: boolean;          // Travail de groupe ?
+    ressources: string[];          // URLs fichiers joints
+    estPublie: boolean;            // Visible par élèves ?
+    etablissementId: string;
+}
+
+@Entity('journal_ressources')
+@Index(['journalSeanceId'])
+export class JournalRessource {
+    id: string;
+    journalSeanceId: string;       // FK → JournalSeance
+    titre: string;
+    type: TypeRessource;           // DOCUMENT | LIEN | VIDEO | IMAGE | AUDIO
+    url: string;                   // URL ou chemin fichier
+    description?: string;
+    ordre: number;
+    etablissementId: string;
+}
+
+@Entity('progressions_pedagogiques')
+@Index(['affectationMatiereId'])
+@Index(['classeAnneeId'])
+@Index(['etablissementId'])
+export class ProgressionPedagogique {
+    id: string;
+    affectationMatiereId: string;  // FK → AffectationMatiere
+    classeAnneeId: string;         // FK → ClasseAnnee
+    chapitreNom: string;
+    chapitreOrdre: number;
+    datePrevue?: Date;
+    dateRealisee?: Date;
+    statut: StatutProgression;     // PREVU | EN_COURS | REALISE | REPORTE
+    nombreSeances: number;
+    remarques?: string;
+    etablissementId: string;
+}
+</div>
+
+<h3>7.3 Flux de Saisie — Interface Enseignant</h3>
+
+<div class="flow-box">
+  <div class="flow-step">1. Fin du cours</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">2. Ouvrir journal (auto-suggéré)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">3. Saisir contenu (2 min)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">4. Ajouter devoirs</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">5. Publier</div>
+</div>
+
+<div class="success-box">
+  <strong>✅ UX optimisée :</strong> Le journal propose un formulaire simplifié avec auto-complétion 
+  depuis le programme pédagogique, templates de séances récurrentes, et saisie rapide par défaut 
+  (titre + contenu + devoirs en 3 champs). Mode avancé optionnel.
+</div>
+
+<h3>7.4 API REST — Endpoints</h3>
+
+<table>
+  <thead>
+    <tr><th>Méthode</th><th>Route</th><th>Rôle</th><th>Permission</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>POST</td><td>/api/journal/seances</td><td>Créer une séance</td><td>journal:seances:create</td></tr>
+    <tr><td>GET</td><td>/api/journal/seances</td><td>Lister séances</td><td>journal:seances:view</td></tr>
+    <tr><td>GET</td><td>/api/journal/seances/:id</td><td>Détail séance</td><td>journal:seances:view</td></tr>
+    <tr><td>PATCH</td><td>/api/journal/seances/:id</td><td>Modifier séance</td><td>journal:seances:edit</td></tr>
+    <tr><td>POST</td><td>/api/journal/seances/:id/devoirs</td><td>Ajouter devoir</td><td>journal:devoirs:create</td></tr>
+    <tr><td>POST</td><td>/api/journal/seances/:id/ressources</td><td>Ajouter ressource</td><td>journal:ressources:create</td></tr>
+    <tr><td>GET</td><td>/api/journal/progressions</td><td>Progression matière</td><td>journal:progressions:view</td></tr>
+    <tr><td>POST</td><td>/api/journal/progressions</td><td>Créer progression</td><td>journal:progressions:create</td></tr>
+    <tr><td>GET</td><td>/api/public/journal/:classeCode</td><td>Journal public (élèves)</td><td>— (public)</td></tr>
+    <tr><td>GET</td><td>/api/public/journal/:classeCode/devoirs</td><td>Devoirs à faire</td><td>— (public)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════ 8. ESPACE ENSEIGNANT ═══════════════════════ -->
+<h2 id="espace-enseignant">8. Espace Enseignant — Portail Unifié</h2>
+
+<div class="module-card espace">
+<h3>8.1 Concept — Dashboard Enseignant</h3>
+
+<p>L'espace enseignant est un portail unifié qui agrège les 3 modules + les modules existants 
+(emploi du temps, notes, bulletins) dans une interface dédiée au rôle ENSEIGNANT.</p>
+
+<div class="entity-diagram">
+  <svg viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:400px">
+    <!-- Titre -->
+    <text x="450" y="25" text-anchor="middle" fill="var(--color-text)" font-weight="700" font-size="15">Dashboard Enseignant — Vue Quotidienne</text>
+    
+    <!-- Header -->
+    <rect x="20" y="40" width="860" height="50" rx="6" fill="var(--primary-light)" stroke="var(--primary)" stroke-width="1.5"/>
+    <text x="40" y="62" fill="var(--primary)" font-weight="600" font-size="12">Bonjour M. Franck</text>
+    <text x="40" y="78" fill="var(--color-text-muted)" font-size="10">Lundi 18 Août 2026 — 4 cours aujourd'hui</text>
+    <text x="800" y="70" text-anchor="end" fill="var(--color-text-muted)" font-size="10">🔔 3 notifications</text>
+    
+    <!-- Widget 1: Cours du jour -->
+    <rect x="20" y="100" width="420" height="140" rx="6" fill="var(--color-surface)" stroke="var(--color-border)"/>
+    <text x="30" y="120" fill="var(--color-text)" font-weight="600" font-size="12">📅 Cours du jour</text>
+    <rect x="30" y="130" width="400" height="24" rx="4" fill="var(--success-light)"/>
+    <text x="40" y="147" fill="var(--success)" font-size="11">✅ 08:00-09:00 — Mathématiques — 6ème A — Salle 12</text>
+    <rect x="30" y="158" width="400" height="24" rx="4" fill="var(--color-surface-elevated)"/>
+    <text x="40" y="175" fill="var(--color-text-muted)" font-size="11">⏳ 10:00-11:00 — Mathématiques — 5ème B — Salle 08</text>
+    <rect x="30" y="186" width="400" height="24" rx="4" fill="var(--color-surface-elevated)"/>
+    <text x="40" y="203" fill="var(--color-text-muted)" font-size="11">⏳ 14:00-15:00 — Mathématiques — 4ème A — Salle 15</text>
+    <rect x="30" y="214" width="400" height="24" rx="4" fill="var(--warning-light)"/>
+    <text x="40" y="231" fill="var(--warning)" font-size="11">⚠️ 15:00-16:00 — Mathématiques — 3ème C — Appel non fait</text>
+    
+    <!-- Widget 2: Actions rapides -->
+    <rect x="460" y="100" width="420" height="140" rx="6" fill="var(--color-surface)" stroke="var(--color-border)"/>
+    <text x="470" y="120" fill="var(--color-text)" font-weight="600" font-size="12">⚡ Actions rapides</text>
+    <rect x="470" y="130" width="190" height="44" rx="6" fill="var(--success-light)" stroke="var(--success)" stroke-width="1"/>
+    <text x="565" y="150" text-anchor="middle" fill="var(--success)" font-size="11" font-weight="600">✅ Faire l'appel</text>
+    <text x="565" y="165" text-anchor="middle" fill="var(--color-text-muted)" font-size="9">Cours actuel — 6ème A</text>
+    <rect x="680" y="130" width="190" height="44" rx="6" fill="var(--info-light)" stroke="var(--info)" stroke-width="1"/>
+    <text x="775" y="150" text-anchor="middle" fill="var(--info)" font-size="11" font-weight="600">📖 Remplir journal</text>
+    <text x="775" y="165" text-anchor="middle" fill="var(--color-text-muted)" font-size="9">Séance du jour</text>
+    <rect x="470" y="184" width="190" height="44" rx="6" fill="var(--danger-light)" stroke="var(--danger)" stroke-width="1"/>
+    <text x="565" y="204" text-anchor="middle" fill="var(--danger)" font-size="11" font-weight="600">⚠️ Signaler incident</text>
+    <text x="565" y="219" text-anchor="middle" fill="var(--color-text-muted)" font-size="9">Pendant le cours</text>
+    <rect x="680" y="184" width="190" height="44" rx="6" fill="var(--primary-light)" stroke="var(--primary)" stroke-width="1"/>
+    <text x="775" y="204" text-anchor="middle" fill="var(--primary)" font-size="11" font-weight="600">📝 Saisir notes</text>
+    <text x="775" y="219" text-anchor="middle" fill="var(--color-text-muted)" font-size="9">Évaluation en cours</text>
+    
+    <!-- Widget 3: Alertes -->
+    <rect x="20" y="250" width="280" height="140" rx="6" fill="var(--color-surface)" stroke="var(--color-border)"/>
+    <text x="30" y="270" fill="var(--color-text)" font-weight="600" font-size="12">🔔 Alertes</text>
+    <text x="30" y="290" fill="var(--danger)" font-size="10">● Jean KAMGA — 3 absences non justifiées</text>
+    <text x="30" y="308" fill="var(--warning)" font-size="10">● Devoir 4ème A — échéance demain</text>
+    <text x="30" y="326" fill="var(--info)" font-size="10">● Conseil de classe le 22/08</text>
+    <text x="30" y="344" fill="var(--color-text-muted)" font-size="10">● 2 demandes de remplacement</text>
+    <text x="30" y="362" fill="var(--color-text-muted)" font-size="10">● Progression : 65% du programme</text>
+    
+    <!-- Widget 4: Stats rapides -->
+    <rect x="320" y="250" width="280" height="140" rx="6" fill="var(--color-surface)" stroke="var(--color-border)"/>
+    <text x="330" y="270" fill="var(--color-text)" font-weight="600" font-size="12">📊 Mes statistiques</text>
+    <text x="330" y="295" fill="var(--color-text)" font-size="11">Taux présence moyen</text>
+    <text x="560" y="295" text-anchor="end" fill="var(--success)" font-weight="600" font-size="14">92%</text>
+    <text x="330" y="315" fill="var(--color-text)" font-size="11">Incidents ce mois</text>
+    <text x="560" y="315" text-anchor="end" fill="var(--warning)" font-weight="600" font-size="14">3</text>
+    <text x="330" y="335" fill="var(--color-text)" font-size="11">Devoirs corrigés</text>
+    <text x="560" y="335" text-anchor="end" fill="var(--info)" font-weight="600" font-size="14">24/28</text>
+    <text x="330" y="355" fill="var(--color-text)" font-size="11">Séances journalisées</text>
+    <text x="560" y="355" text-anchor="end" fill="var(--primary)" font-weight="600" font-size="14">87%</text>
+    <text x="330" y="375" fill="var(--color-text)" font-size="11">Notes en retard</text>
+    <text x="560" y="375" text-anchor="end" fill="var(--danger)" font-weight="600" font-size="14">2</text>
+    
+    <!-- Widget 5: Prochains événements -->
+    <rect x="620" y="250" width="260" height="140" rx="6" fill="var(--color-surface)" stroke="var(--color-border)"/>
+    <text x="630" y="270" fill="var(--color-text)" font-weight="600" font-size="12">📆 Prochains événements</text>
+    <text x="630" y="290" fill="var(--color-text)" font-size="10">Mar 19 — Composition Math 4ème</text>
+    <text x="630" y="308" fill="var(--color-text)" font-size="10">Ven 22 — Conseil de classe 3ème</text>
+    <text x="630" y="326" fill="var(--color-text)" font-size="10">Lun 25 — Réunion département</text>
+    <text x="630" y="344" fill="var(--color-text)" font-size="10">Ven 29 — Remise bulletins T1</text>
+    <text x="630" y="362" fill="var(--color-text-muted)" font-size="10" font-style="italic">+ Ajouter un événement</text>
+  </svg>
+</div>
+
+<h3>8.2 Routes Frontend — Espace Enseignant</h3>
+
+<table>
+  <thead>
+    <tr><th>Route</th><th>Composant</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>/espace-enseignant</code></td><td>_auth.enseignant.index.tsx</td><td>Dashboard principal (vue ci-dessus)</td></tr>
+    <tr><td><code>/espace-enseignant/cours</code></td><td>_auth.enseignant.cours.tsx</td><td>Mes cours du jour/semaine + appels</td></tr>
+    <tr><td><code>/espace-enseignant/presence</code></td><td>_auth.enseignant.presence.tsx</td><td>Historique appels + statistiques</td></tr>
+    <tr><td><code>/espace-enseignant/journal</code></td><td>_auth.enseignant.journal.tsx</td><td>Journal de classe + devoirs</td></tr>
+    <tr><td><code>/espace-enseignant/discipline</code></td><td>_auth.enseignant.discipline.tsx</td><td>Incidents + points comportement</td></tr>
+    <tr><td><code>/espace-enseignant/eleves</code></td><td>_auth.enseignant.eleves.tsx</td><td>Mes élèves (par classe)</td></tr>
+    <tr><td><code>/espace-enseignant/progression</code></td><td>_auth.enseignant.progression.tsx</td><td>Progression pédagogique</td></tr>
+    <tr><td><code>/espace-enseignant/statistiques</code></td><td>_auth.enseignant.stats.tsx</td><td>Mes statistiques globales</td></tr>
+  </tbody>
+</table>
+
+<h3>8.3 Permissions RBAC — Espace Enseignant</h3>
+
+<table>
+  <thead>
+    <tr><th>Permission</th><th>Description</th><th>Rôle</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>presence:appels:create</code></td><td>Créer un appel</td><td>ENSEIGNANT</td></tr>
+    <tr><td><code>presence:appels:view</code></td><td>Voir les appels</td><td>ENSEIGNANT</td></tr>
+    <tr><td><code>presence:appels:edit</code></td><td>Modifier un appel</td><td>ENSEIGNANT</td></tr>
+    <tr><td><code>journal:seances:create</code></td><td>Créer une séance journal</td><td>ENSEIGNANT</td></tr>
+    <tr><td><code>journal:seances:edit</code></td><td>Modifier séance</td><td>ENSEIGNANT</td></tr>
+    <tr><td><code>journal:devoirs:create</code></td><td>Créer devoir</td><td>ENSEIGNANT</td></tr>
+    <tr><td><code>discipline:incidents-cours:create</code></td><td>Signaler incident cours</td><td>ENSEIGNANT</td></tr>
+    <tr><td><code>discipline:points:view</code></td><td>Voir points comportement</td><td>ENSEIGNANT</td></tr>
+    <tr><td><code>progression:view</code></td><td>Voir progression</td><td>ENSEIGNANT</td></tr>
+    <tr><td><code>progression:edit</code></td><td>Modifier progression</td><td>ENSEIGNANT</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════ 9. MATRICE INTÉGRATION ═══════════════════════ -->
+<h2 id="integration">9. Matrice d'Intégration Inter-Modules</h2>
+
+<p class="section-intro">
+  Cette matrice détaille comment les 3 nouveaux modules interagissent avec les modules existants d'eLISAschool.
+</p>
+
+<h3>9.1 Flux de Données</h3>
+
+<div class="integration-map">
+  <div class="integration-row">
+    <span class="source" style="color:var(--primary)">⏱️ Emploi du Temps</span>
+    <span class="arrow">→</span>
+    <span class="target">HeureCours alimente Présence, Journal, Discipline</span>
+  </div>
+  <div class="integration-row">
+    <span class="source" style="color:var(--success)">✅ Présence</span>
+    <span class="arrow">→</span>
+    <span class="target">Scoring (ASSIDUITÉ) + Notifications parents + Bulletins (appréciation)</span>
+  </div>
+  <div class="integration-row">
+    <span class="source" style="color:var(--danger)">⚠️ Discipline</span>
+    <span class="arrow">→</span>
+    <span class="target">Scoring (COMPORTEMENT) + Suivi-Élèves (escalade) + Bulletins (conduite)</span>
+  </div>
+  <div class="integration-row">
+    <span class="source" style="color:var(--info)">📖 Journal</span>
+    <span class="arrow">→</span>
+    <span class="target">Progression pédagogique + Devoirs élèves + Bulletins (programme couvert)</span>
+  </div>
+  <div class="integration-row">
+    <span class="source" style="color:var(--teal)">🏆 Gamification</span>
+    <span class="arrow">←</span>
+    <span class="target">Scoring (ASSIDUITÉ + COMPORTEMENT) → Badges, Classement, Points</span>
+  </div>
+  <div class="integration-row">
+    <span class="source" style="color:var(--warning)">🔔 Notifications</span>
+    <span class="arrow">←</span>
+    <span class="target">Présence (absences) + Journal (devoirs) + Discipline (incidents graves)</span>
+  </div>
+</div>
+
+<h3>9.2 Paramètres Système — Configuration par Module</h3>
+
+<table>
+  <thead>
+    <tr><th>Clé</th><th>Type</th><th>Défaut</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>presence.enabled</code></td><td>BOOLEAN</td><td>true</td><td>Activer le module présence</td></tr>
+    <tr><td><code>presence.default_statut</code></td><td>STRING</td><td>PRESENT</td><td>Statut par défaut à l'ouverture</td></tr>
+    <tr><td><code>presence.notify_parents</code></td><td>BOOLEAN</td><td>true</td><td>Notifier parents automatiquement</td></tr>
+    <tr><td><code>presence.qr_code_enabled</code></td><td>BOOLEAN</td><td>false</td><td>Activer scan QR code</td></tr>
+    <tr><td><code>presence.auto_close_minutes</code></td><td>NUMBER</td><td>15</td><td>Fermeture auto après N min</td></tr>
+    <tr><td><code>discipline.enabled</code></td><td>BOOLEAN</td><td>true</td><td>Activer le module discipline</td></tr>
+    <tr><td><code>discipline.points_initial</code></td><td>NUMBER</td><td>100</td><td>Solde initial comportement</td></tr>
+    <tr><td><code>discipline.seuil_alerte</code></td><td>NUMBER</td><td>70</td><td>Seuil d'alerte</td></tr>
+    <tr><td><code>discipline.seuil_critique</code></td><td>NUMBER</td><td>50</td><td>Seuil critique (direction)</td></tr>
+    <tr><td><code>discipline.auto_escalade</code></td><td>BOOLEAN</td><td>true</td><td>Escalade auto si seuil critique</td></tr>
+    <tr><td><code>journal.enabled</code></td><td>BOOLEAN</td><td>true</td><td>Activer le journal de classe</td></tr>
+    <tr><td><code>journal.visible_parents</code></td><td>BOOLEAN</td><td>true</td><td>Journal visible par parents</td></tr>
+    <tr><td><code>journal.rappel_devoir_heures</code></td><td>NUMBER</td><td>24</td><td>Rappel devoir N heures avant</td></tr>
+    <tr><td><code>journal.progression_auto</code></td><td>BOOLEAN</td><td>true</td><td>MAJ auto progression</td></tr>
+  </tbody>
+</table>
+
+<h3>9.3 Modules Catalogue — Enregistrement</h3>
+
+<div class="code-block">
+-- Seed modules_catalogue pour les 3 nouveaux modules
+INSERT INTO modules_catalogue (code, nom, categorie, plan_minimal, actif_par_defaut, dependencies) VALUES
+('presence', 'Présence & Assiduité', 'ACADÉMIQUE', 'decouverte', true, '["emploi-du-temps"]'),
+('discipline', 'Discipline & Comportement', 'VIE_SCOLAIRE', 'decouverte', true, '["suivi-eleves"]'),
+('journal-classe', 'Journal de Classe', 'ACADÉMIQUE', 'decouverte', true, '["emploi-du-temps"]');
+</div>
+</div>
+
+<!-- ═══════════════════════ 10. PLAN IMPLÉMENTATION ═══════════════════════ -->
+<h2 id="implementation">10. Plan d'Implémentation</h2>
+
+<p class="section-intro">
+  Plan de déploiement en 4 phases, chaque module étant indépendamment livrable.
+</p>
+
+<h3>10.1 Timeline — 4 Phases</h3>
+
+<div class="timeline">
+  <div class="timeline-item">
+    <h4 style="color:var(--success)">Phase 1 — Module Présence (Semaines 1-4)</h4>
+    <p><strong>S1 :</strong> Entités + Migrations (AppelCours, PresenceEleve, MotifAbsence) + RLS</p>
+    <p><strong>S2 :</strong> Service + Controller + DTOs + Tests unitaires</p>
+    <p><strong>S3 :</strong> Frontend — Interface appel (liste + QR) + Stats</p>
+    <p><strong>S4 :</strong> Intégration Scoring + Notifications + Tests E2E</p>
+    <div style="margin-top:8px;">
+      <span class="badge badge-success">Priorité haute</span>
+      <span class="badge badge-info">~80h dev</span>
+    </div>
+  </div>
+  <div class="timeline-item">
+    <h4 style="color:var(--info)">Phase 2 — Module Journal (Semaines 5-8)</h4>
+    <p><strong>S5 :</strong> Entités + Migrations (JournalSeance, JournalDevoir, JournalRessource, ProgressionPedagogique)</p>
+    <p><strong>S6 :</strong> Service + Controller + DTOs + API publique élèves</p>
+    <p><strong>S7 :</strong> Frontend — Éditeur séance + Liste devoirs + Progression</p>
+    <p><strong>S8 :</strong> Intégration notifications rappels + Tests E2E</p>
+    <div style="margin-top:8px;">
+      <span class="badge badge-info">Priorité moyenne</span>
+      <span class="badge badge-info">~70h dev</span>
+    </div>
+  </div>
+  <div class="timeline-item">
+    <h4 style="color:var(--danger)">Phase 3 — Module Discipline (Semaines 9-12)</h4>
+    <p><strong>S9 :</strong> Entités + Migrations (IncidentCours, PointComportement, ReglementDiscipline)</p>
+    <p><strong>S10 :</strong> Service + Controller + Workflow escalade + Intégration suivi-eleves</p>
+    <p><strong>S11 :</strong> Frontend — Saisie incident + Points comportement + Règles</p>
+    <p><strong>S12 :</strong> Intégration Scoring + Tests E2E</p>
+    <div style="margin-top:8px;">
+      <span class="badge badge-warning">Priorité moyenne</span>
+      <span class="badge badge-info">~65h dev</span>
+    </div>
+  </div>
+  <div class="timeline-item">
+    <h4 style="color:var(--primary)">Phase 4 — Espace Enseignant Unifié (Semaines 13-16)</h4>
+    <p><strong>S13 :</strong> Layout _auth.enseignant.tsx + Dashboard principal</p>
+    <p><strong>S14 :</strong> Pages cours du jour + Actions rapides + Alertes</p>
+    <p><strong>S15 :</strong> Pages statistiques + Progression + Événements</p>
+    <p><strong>S16 :</strong> Polish UX + i18n FR/EN + Tests E2E + Documentation</p>
+    <div style="margin-top:8px;">
+      <span class="badge badge-primary">Priorité haute</span>
+      <span class="badge badge-info">~60h dev</span>
+    </div>
+  </div>
+</div>
+
+<h3>10.2 Estimation Globale</h3>
+
+<div class="kpi-grid">
+  <div class="kpi-item">
+    <div class="kpi-value" style="color:var(--primary)">16</div>
+    <div class="kpi-label">Semaines</div>
+  </div>
+  <div class="kpi-item">
+    <div class="kpi-value" style="color:var(--info)">275h</div>
+    <div class="kpi-label">Dev total estimé</div>
+  </div>
+  <div class="kpi-item">
+    <div class="kpi-value" style="color:var(--success)">12</div>
+    <div class="kpi-label">Entités TypeORM</div>
+  </div>
+  <div class="kpi-item">
+    <div class="kpi-value" style="color:var(--warning)">45+</div>
+    <div class="kpi-label">Endpoints API</div>
+  </div>
+  <div class="kpi-item">
+    <div class="kpi-value" style="color:var(--teal)">8</div>
+    <div class="kpi-label">Pages frontend</div>
+  </div>
+  <div class="kpi-item">
+    <div class="kpi-value" style="color:var(--danger)">4</div>
+    <div class="kpi-label">Migrations SQL</div>
+  </div>
+</div>
+
+<h3>10.3 Dépendances & Risques</h3>
+
+<table>
+  <thead>
+    <tr><th>Risque</th><th>Probabilité</th><th>Impact</th><th>Mitigation</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Performance appel (classes 100+ élèves)</td>
+      <td><span class="badge badge-warning">Moyenne</span></td>
+      <td><span class="badge badge-danger">Élevé</span></td>
+      <td>Pagination + default PRÉSENT + bulk insert</td>
+    </tr>
+    <tr>
+      <td>Résistance adoption enseignants</td>
+      <td><span class="badge badge-danger">Haute</span></td>
+      <td><span class="badge badge-warning">Moyen</span></td>
+      <td>UX ultra-simple (3 clics max) + formation</td>
+    </tr>
+    <tr>
+      <td>Connectivité limitée (mode offline)</td>
+      <td><span class="badge badge-warning">Moyenne</span></td>
+      <td><span class="badge badge-warning">Moyen</span></td>
+      <td>PWA + queue sync + localStorage</td>
+    </tr>
+    <tr>
+      <td>Intégration scoring existante</td>
+      <td><span class="badge badge-success">Faible</span></td>
+      <td><span class="badge badge-warning">Moyen</span></td>
+      <td>Pattern non-bloquant (try/catch) + feature flag</td>
+    </tr>
+    <tr>
+      <td>Migration données absences existantes</td>
+      <td><span class="badge badge-success">Faible</span></td>
+      <td><span class="badge badge-success">Faible</span></td>
+      <td>Types frontend déjà définis — mapping direct</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════ 11. CONCLUSION ═══════════════════════ -->
+<h2 id="conclusion">11. Conclusion & Recommandations</h2>
+
+<h3>11.1 Synthèse</h3>
+
+<div class="success-box">
+  <strong>✅ Faisabilité confirmée :</strong> Les 3 modules (Présence, Discipline, Journal de Classe) 
+  sont parfaitement intégrables dans l'architecture existante d'eLISAschool. Le pivot <code>HeureCours</code> 
+  fournit le point d'ancrage naturel, et le système de modules_catalogue garantit l'autonomie 
+  (désactivation sans impact).
+</div>
+
+<h3>11.2 Recommandations Stratégiques</h3>
+
+<div class="card-grid">
+  <div class="card">
+    <h4>1. Prioriser la Présence</h4>
+    <p>Module à plus fort impact immédiat. Réduction absentéisme + valorisation scoring + 
+    notification parents. ROI rapide visible.</p>
+  </div>
+  <div class="card">
+    <h4>2. UX avant fonctionnalités</h4>
+    <p>Enseignants = utilisateurs pressés. Chaque action doit se faire en 3 clics maximum. 
+    Mode "appel rapide" par défaut (2 min max).</p>
+  </div>
+  <div class="card">
+    <h4>3. Mode hors-ligne PWA</h4>
+    <p>Contexte africain = connectivité variable. Queue de synchronisation + localStorage 
+    pour présence et journal. Sync automatique au retour réseau.</p>
+  </div>
+  <div class="card">
+    <h4>4. Intégration Gamification</h4>
+    <p>Lever le système de gamification existant (badges, classement) pour motiver 
+    les élèves (présence, comportement) et les enseignants (journal à jour).</p>
+  </div>
+</div>
+
+<h3>11.3 Prochaines Étapes</h3>
+
+<div class="flow-box">
+  <div class="flow-step" style="background:var(--success-light);border-color:var(--success)">1. Validation rapport</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="background:var(--info-light);border-color:var(--info)">2. Phase 1 — Présence</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="background:var(--warning-light);border-color:var(--warning)">3. Tests pilotes (1 établissement)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step" style="background:var(--primary-light);border-color:var(--primary)">4. Déploiement progressif</div>
+</div>
+
+<div class="highlight-box">
+  <strong>🚀 Vision :</strong> À terme, l'Espace Enseignant eLISAschool deviendra le hub quotidien 
+  de l'enseignant — un guichet unique pour gérer ses cours, ses élèves, ses évaluations et sa 
+  progression pédagogique, le tout intégré dans l'écosystème eLISAschool (bulletins, scoring, 
+  notifications, gamification).
+</div>
+
+<!-- ═══════════════════════ CHARTS ═══════════════════════ -->
+<h2>Annexes — Visualisations</h2>
+
+<h3>A. Répartition Effort de Développement</h3>
+<canvas id="chartEffort" style="width:100%;max-height:300px"></canvas>
+
+<h3>B. Matrice d'Intégration — Score de Couplage</h3>
+<canvas id="chartIntegration" style="width:100%;max-height:300px"></canvas>
+
+<h3>C. Impact Attendu par Module</h3>
+<canvas id="chartImpact" style="width:100%;max-height:300px"></canvas>
+
+<script>
+const cs = getComputedStyle(document.documentElement);
+const muted = cs.getPropertyValue('--color-text-muted').trim() || '#888';
+const borderC = cs.getPropertyValue('--color-border').trim() || '#333';
+
+// Chart 1 — Effort
+new Chart(document.getElementById('chartEffort'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Présence (80h)', 'Journal (70h)', 'Discipline (65h)', 'Espace Enseignant (60h)'],
+    datasets: [{
+      data: [80, 70, 65, 60],
+      backgroundColor: ['#16a34a', '#2563eb', '#e11d48', '#7c3aed'],
+      borderWidth: 0
+    }]
+  },
+  options: {
+    cutout: '65%',
+    plugins: {
+      legend: { position: 'bottom', labels: { color: muted, padding: 16 } }
+    }
+  }
+});
+
+// Chart 2 — Integration radar
+new Chart(document.getElementById('chartIntegration'), {
+  type: 'radar',
+  data: {
+    labels: ['Emploi du Temps', 'Scoring', 'Suivi Élèves', 'Notifications', 'Bulletins', 'Gamification'],
+    datasets: [
+      { label: 'Présence', data: [9, 8, 3, 9, 4, 6], borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,0.15)', pointRadius: 3 },
+      { label: 'Discipline', data: [2, 7, 9, 6, 3, 8], borderColor: '#e11d48', backgroundColor: 'rgba(225,29,72,0.15)', pointRadius: 3 },
+      { label: 'Journal', data: [9, 2, 2, 5, 6, 3], borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.15)', pointRadius: 3 }
+    ]
+  },
+  options: {
+    scales: {
+      r: {
+        beginAtZero: true,
+        max: 10,
+        ticks: { color: muted, backdropColor: 'transparent' },
+        grid: { color: borderC },
+        pointLabels: { color: muted }
+      }
+    },
+    plugins: { legend: { position: 'bottom', labels: { color: muted } } }
+  }
+});
+
+// Chart 3 — Impact bar
+new Chart(document.getElementById('chartImpact'), {
+  type: 'bar',
+  data: {
+    labels: ['Réduction absentéisme', 'Communication parents', 'Suivi pédagogique', 'Discipline classe', 'Motivation élèves', 'Efficacité enseignant'],
+    datasets: [
+      { label: 'Présence', data: [95, 90, 30, 20, 40, 85], backgroundColor: 'rgba(22,163,74,0.7)', borderRadius: 4 },
+      { label: 'Discipline', data: [15, 40, 25, 95, 70, 50], backgroundColor: 'rgba(225,29,72,0.7)', borderRadius: 4 },
+      { label: 'Journal', data: [10, 60, 90, 15, 35, 75], backgroundColor: 'rgba(37,99,235,0.7)', borderRadius: 4 }
+    ]
+  },
+  options: {
+    scales: {
+      x: { ticks: { color: muted }, grid: { display: false } },
+      y: { beginAtZero: true, max: 100, ticks: { color: muted, callback: v => v + '%' }, grid: { color: borderC } }
+    },
+    plugins: { legend: { position: 'bottom', labels: { color: muted } } }
+  }
+});
+</script>
+
+</div>
+</body>
+</html>

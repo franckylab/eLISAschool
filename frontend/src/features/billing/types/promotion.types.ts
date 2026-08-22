@@ -4,7 +4,7 @@
  * ==================================
  *
  * Types partagés pour le système de promotions multi-scopes
- * (plan, pack, module, bundle, quota) avec cascade, paliers
+ * (plan, pack, module, package, quota) avec cascade, paliers
  * de volume, auto-promotions et planification.
  *
  * Version: 5.0.0
@@ -25,7 +25,7 @@ export enum ScopePromotion {
     PLAN = 'PLAN',
     PACK = 'PACK',
     MODULE = 'MODULE',
-    BUNDLE = 'BUNDLE',
+    PACKAGE = 'PACKAGE',
     /** Remise sur une ressource quota spécifique (élèves, stockage, SMS…) */
     QUOTA = 'QUOTA',
 }
@@ -53,7 +53,7 @@ export enum DureeApplicationPromotion {
     N_MOIS_GRATUIT = 'N_MOIS_GRATUIT',
 }
 
-export enum TypeRemiseBundle {
+export enum TypeRemisePackage {
     POURCENTAGE = 'POURCENTAGE',
     MONTANT_FIXE = 'MONTANT_FIXE',
 }
@@ -84,8 +84,8 @@ export interface PalierVolume {
 }
 
 export interface ConfigPromotion {
-    prixOriginalBundle?: number;
-    reductionBundle?: number;
+    prixOriginalPackage?: number;
+    reductionPackage?: number;
     noteInterne?: string;
     /** Paliers de volume pour dégressivité (scope=QUOTA ou PACK) */
     paliersVolume?: PalierVolume[];
@@ -130,13 +130,13 @@ export interface Promotion {
     updatedAt: string;
 }
 
-export interface BundlePromotion {
+export interface PackagePromotion {
     id: string;
     code: string;
     nom: string;
     description?: string;
     packIds: string[];
-    typeRemise: TypeRemiseBundle;
+    typeRemise: TypeRemisePackage;
     valeur: number;
     codeCoupon?: string | null;
     dateDebut: string;
@@ -182,7 +182,7 @@ export const SCOPE_LABELS: Record<ScopePromotion, string> = {
     [ScopePromotion.PLAN]: 'Plan',
     [ScopePromotion.PACK]: 'Pack quota',
     [ScopePromotion.MODULE]: 'Module',
-    [ScopePromotion.BUNDLE]: 'Bundle',
+    [ScopePromotion.PACKAGE]: 'Package',
     [ScopePromotion.QUOTA]: 'Ressource quota',
 };
 
@@ -190,7 +190,7 @@ export const SCOPE_COLORS: Record<ScopePromotion, string> = {
     [ScopePromotion.PLAN]: 'bg-blue-500/15 text-blue-400 border-blue-500/20',
     [ScopePromotion.PACK]: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20',
     [ScopePromotion.MODULE]: 'bg-violet-500/15 text-violet-400 border-violet-500/20',
-    [ScopePromotion.BUNDLE]: 'bg-amber-500/15 text-amber-400 border-amber-500/20',
+    [ScopePromotion.PACKAGE]: 'bg-amber-500/15 text-amber-400 border-amber-500/20',
     [ScopePromotion.QUOTA]: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/20',
 };
 

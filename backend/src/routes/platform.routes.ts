@@ -300,7 +300,7 @@ router.use('/facturation', platformBillingRouter);
 
 /**
  * /api/platform/facturation/promotions
- * CRUD promotions et bundles (migration 216 — refonte v4 multi-scopes).
+ * CRUD promotions et packages (migration 216 — refonte v4 multi-scopes).
  */
 router.use('/facturation/promotions', platformPromotionRouter);
 

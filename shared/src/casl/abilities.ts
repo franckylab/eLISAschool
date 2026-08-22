@@ -358,6 +358,7 @@ function mapPermissionsToCasl(
         'matieres': 'Matiere',
         'programmes': 'Programme',
         'periodes': 'Periode',
+        'annees': 'AnneeScolaire',
         'finances': 'Finances',
         'transport': 'Transport',
         'cantine': 'Cantine',

@@ -35,10 +35,10 @@ export { FeatureFlagHistory, ActionFeatureFlag } from './feature-flag-history.en
 // Migration 213 — Refonte Entitlements v3
 export { CycleFacturationConfig } from './cycle-facturation-config.entity';
 export { RemiseAbonnement, TypeRemise, DureeApplicationRemise, CibleRemise } from './remise-abonnement.entity';
-// Migration 215 — Refonte Promotions v4 (scope multi-cible, bundles, gratuités)
+// Migration 215 — Refonte Promotions v4 (scope multi-cible, packages, gratuités)
 export { Promotion, TypePromotion, ScopePromotion, DureeApplicationPromotion } from './promotion.entity';
 export type { ConditionsPromotion, ConfigPromotion } from './promotion.entity';
-export { BundlePromotion, TypeRemiseBundle } from './bundle-promotion.entity';
+export { PackagePromotion, TypeRemisePackage } from './package-promotion.entity';
 export { PromotionUtilisee } from './promotion-utilisee.entity';
 export { PackQuota, DureeValiditePack } from './pack-quota.entity';
 export { AbonnementPack } from './abonnement-pack.entity';

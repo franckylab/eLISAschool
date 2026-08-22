@@ -20,7 +20,7 @@ import { TypeNotification, PrioriteNotification } from '@modules/notifications/e
 import { parentService } from '@modules/parents/services';
 import { Classe } from '@modules/classes/entities';
 import { AffectationEleve } from '@modules/classes/entities';
-import { AnneeScolaire } from '@modules/annees-scolaires/entities';
+import { AnneeScolaire, StatutAnneeScolaire } from '@modules/annees-scolaires/entities';
 
 export class ElevesService {
     private repo: Repository<Eleve>;
@@ -861,7 +861,7 @@ export class ElevesService {
             const anneeEnCours = await anneeRepo.findOne({
                 where: {
                     etablissementId: eleve.etablissementId,
-                    enCours: true
+                    statut: StatutAnneeScolaire.EN_COURS
                 }
             });
             anneeId = anneeEnCours?.id;

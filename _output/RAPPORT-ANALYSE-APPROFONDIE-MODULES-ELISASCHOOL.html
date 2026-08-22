@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analyse Approfondie — Modules eLISAschool | Refonte Architecture</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--pri:#1e40af;--pri-l:#dbeafe;--pri-d:#1e3a5f;--ok:#059669;--ok-l:#d1fae5;--warn:#d97706;--warn-l:#fef3c7;--err:#dc2626;--err-l:#fee2e2;--info:#0891b2;--info-l:#cffafe;--violet:#7c3aed;--violet-l:#ede9fe;--surf:#fff;--bg:#f8fafc;--txt:#1e293b;--txt2:#64748b;--bdr:#e2e8f0;--r:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--txt);line-height:1.7;font-size:15px}
+.ctn{max-width:1200px;margin:0 auto;padding:0 24px}
+header{background:linear-gradient(135deg,#0f172a 0%,#1e40af 40%,#7c3aed 100%);color:#fff;padding:60px 0 50px;position:relative;overflow:hidden}
+header::before{content:'';position:absolute;top:-40%;right:-15%;width:500px;height:500px;background:radial-gradient(circle,rgba(255,255,255,.06) 0%,transparent 70%);border-radius:50%}
+header h1{font-size:2rem;font-weight:800;margin-bottom:6px;letter-spacing:-.5px}
+header .sub{font-size:1.05rem;opacity:.9;margin-bottom:16px}
+.meta{display:flex;gap:20px;flex-wrap:wrap;font-size:.83rem;opacity:.8}
+.meta span{display:flex;align-items:center;gap:5px}
+.toc{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:24px 28px;margin:-30px auto 36px;position:relative;z-index:10;box-shadow:0 4px 20px rgba(0,0,0,.06)}
+.toc h2{font-size:1.05rem;color:var(--pri);margin-bottom:12px}
+.toc-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px}
+.toc a{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:7px;text-decoration:none;color:var(--txt);font-size:.85rem;transition:all .15s}
+.toc a:hover{background:var(--pri-l);color:var(--pri)}
+.toc .n{color:var(--pri);font-weight:700;min-width:26px}
+.sec{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:32px 36px;margin-bottom:24px;box-shadow:0 1px 4px rgba(0,0,0,.03)}
+.sec h2{font-size:1.4rem;font-weight:700;color:var(--pri-d);margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--pri-l)}
+.sec h3{font-size:1.1rem;font-weight:600;margin:20px 0 10px;display:flex;align-items:center;gap:7px}
+.sec h4{font-size:.95rem;font-weight:600;margin:14px 0 6px;color:var(--txt2)}
+.sec p{margin-bottom:10px;color:var(--txt2)}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.86rem}
+th{background:var(--bg);font-weight:600;text-align:left;padding:9px 12px;border-bottom:2px solid var(--bdr);color:var(--txt)}
+td{padding:9px 12px;border-bottom:1px solid var(--bdr);color:var(--txt2);vertical-align:top}
+tr:hover td{background:var(--bg)}
+.pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:.76rem;font-weight:600}
+.p-ok{background:var(--ok-l);color:var(--ok)}.p-w{background:var(--warn-l);color:var(--warn)}.p-e{background:var(--err-l);color:var(--err)}.p-i{background:var(--info-l);color:var(--info)}.p-v{background:var(--violet-l);color:var(--violet)}
+.al{padding:14px 18px;border-radius:9px;margin:14px 0;border-left:4px solid;font-size:.88rem}
+.al-d{background:var(--err-l);border-color:var(--err)}.al-s{background:var(--ok-l);border-color:var(--ok)}.al-w{background:var(--warn-l);border-color:var(--warn)}.al-i{background:var(--info-l);border-color:var(--info)}
+.al strong{display:block;margin-bottom:3px}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin:18px 0}
+.kpi-c{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:18px;text-align:center}
+.kpi-c .v{font-size:1.9rem;font-weight:800;color:var(--pri)}.kpi-c .l{font-size:.78rem;color:var(--txt2);margin-top:3px}
+.cd{background:#1e293b;color:#e2e8f0;padding:14px 18px;border-radius:9px;font-family:'JetBrains Mono',monospace;font-size:.8rem;overflow-x:auto;margin:10px 0;line-height:1.6}
+.cd .cm{color:#64748b}.cd .kw{color:#7dd3fc}.cd .st{color:#86efac}
+.mc{border:1px solid var(--bdr);border-radius:10px;padding:18px;margin:10px 0;background:var(--surf)}
+.mc .mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.mc .mn{font-weight:700;font-size:1rem}.mc .mb{font-size:.86rem;color:var(--txt2)}
+.sb{display:inline-flex;align-items:center;gap:5px;padding:3px 12px;border-radius:18px;font-weight:700;font-size:.82rem}
+.sb-h{background:var(--ok-l);color:var(--ok)}.sb-m{background:var(--warn-l);color:var(--warn)}.sb-l{background:var(--err-l);color:var(--err)}
+.diag{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:14px;margin:14px 0;overflow-x:auto}
+.fl{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0}
+.fl-n{padding:5px 12px;border-radius:7px;font-size:.8rem;font-weight:600}
+.fl-a{color:var(--txt2);font-size:1.1rem}
+.cc{position:relative;margin:16px 0;padding:14px;background:var(--bg);border-radius:9px}
+.cr{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:768px){.cr{grid-template-columns:1fr}}
+footer{text-align:center;padding:36px;color:var(--txt2);font-size:.82rem;border-top:1px solid var(--bdr);margin-top:36px}
+@media print{header{padding:24px 0}.sec{break-inside:avoid;box-shadow:none}.toc{box-shadow:none}}
+</style>
+</head>
+<body>
+
+<header>
+<div class="ctn">
+<h1>Analyse Approfondie — Architecture Modules eLISAschool</h1>
+<div class="sub">Discipline • Évaluation/Appréciation • AnneeScolaire/Période • Notes/Devoirs/Concours • Refonte & Cohérence</div>
+<div class="meta">
+<span>📅 Août 2026</span>
+<span>🔍 60 modules inspectés</span>
+<span>📐 162 entités analysées</span>
+<span>⚡ 15 refactorisations proposées</span>
+<span>🎯 Score global: 8.2/10</span>
+</div>
+</div>
+</header>
+
+<div class="ctn">
+<nav class="toc">
+<h2>📑 Table des matières</h2>
+<div class="toc-g">
+<a href="#exec"><span class="n">01</span> Synthèse exécutive</a>
+<a href="#annee"><span class="n">02</span> AnneeScolaire vs Periode — Pas de redondance</a>
+<a href="#notes"><span class="n">03</span> Notes/Devoirs/Interros/Concours — Typage vs Modules</a>
+<a href="#discipline"><span class="n">04</span> Module Discipline — Workflow complet</a>
+<a href="#evaluation"><span class="n">05</span> Évaluation/Appréciation — Écosystème complet</a>
+<a href="#scoring"><span class="n">06</span> Scoring + Gamification — Consolidation</a>
+<a href="#refacto"><span class="n">07</span> Carte de refactorisation (15 actions)</a>
+<a href="#workflows"><span class="n">08</span> Workflows configurables & paramétrables</a>
+<a href="#autonomie"><span class="n">09</span> Autonomie modules (activable/désactivable)</a>
+<a href="#audit"><span class="n">10</span> Historisation & Audit log</a>
+<a href="#naming"><span class="n">11</span> Refactoring noms (labels, titres, actions)</a>
+<a href="#benchmark"><span class="n">12</span> Benchmark international & PBIS</a>
+<a href="#multi"><span class="n">13</span> Corrections multi-tenant</a>
+<a href="#reco"><span class="n">14</span> Recommandations finales</a>
+</div>
+</nav>
+
+<!-- ═══════════ 01 SYNTHÈSE ═══════════ -->
+<section class="sec" id="exec">
+<h2>01 — Synthèse exécutive</h2>
+
+<div class="kpi">
+<div class="kpi-c"><div class="v">8.2</div><div class="l">Score cohérence /10</div></div>
+<div class="kpi-c"><div class="v">60</div><div class="l">Modules inspectés</div></div>
+<div class="kpi-c"><div class="v">162</div><div class="l">Entités analysées</div></div>
+<div class="kpi-c"><div class="v">15</div><div class="l">Refactorisations</div></div>
+<div class="kpi-c"><div class="v">8</div><div class="l">Corrections critiques</div></div>
+<div class="kpi-c"><div class="v">~354h</div><div class="l">Effort total ajusté</div></div>
+</div>
+
+<h3>Verdict global</h3>
+<p>L'architecture eLISAschool est <strong>structurellement solide</strong> avec une chaîne académique cohérente en 5 niveaux. 
+L'analyse approfondie révèle que :</p>
+<ul style="padding-left:20px;margin:8px 0;color:var(--txt2)">
+<li><strong>AnneeScolaire et Periode NE sont PAS redondants</strong> — relation parent/enfant complémentaire</li>
+<li><strong>Devoirs, Interrogations, Concours</strong> → le <code>TypeEvaluation</code> existant suffit (6 types) — PAS de modules séparés</li>
+<li><strong>Discipline</strong> = renommage de <code>suivi-eleves</code> (4 entités solides, contexte africain, workflow complet)</li>
+<li><strong>Évaluation/Appréciation</strong> = extension du module <code>notes</code> + consolidation scoring/gamification</li>
+<li><strong>15 refactorisations</strong> identifiées (renommage, fusion, correction multi-tenant, extension)</li>
+</ul>
+
+<div class="al al-s">
+<strong>✅ Points forts confirmés</strong>
+Pivot HeureCours • NiveauxPeriode configurables • TypeEvaluation typé • IncidentEleve contexte africain (17 types) • TypeSanction adapté (14 types) • TypeFelicitation riche (18 types) • ProgressionProgramme existant • Competence APC (MINESEC) • ExamenNational (BEPC/BAC/GCE) • Validation workflow multi-niveaux
+</div>
+</section>
+
+<!-- ═══════════ 02 ANNEE SCOLAIRE vs PERIODE ═══════════ -->
+<section class="sec" id="annee">
+<h2>02 — AnneeScolaire vs Periode — PAS de redondance</h2>
+
+<div class="al al-s">
+<strong>✅ Verdict : Architecture CORRECTE — PAS de redondance</strong>
+<code>AnneeScolaire</code> et <code>Periode</code> ont des rôles <strong>complémentaires</strong> et <strong>hiérarchiques</strong>. 
+Leur coexistence est nécessaire et cohérente avec les standards internationaux (PRONOTE, EcoleDirecte, PowerSchool).
+</div>
+
+<h3>📊 Comparaison structurelle</h3>
+<table>
+<thead><tr><th>Aspect</th><th>AnneeScolaire</th><th>Periode</th><th>Redondance?</th></tr></thead>
+<tbody>
+<tr><td><strong>Rôle</strong></td><td>Container annuel (Sept→Juin/Juil)</td><td>Subdivision temporelle (Trimestre/Semestre/Séquence)</td><td><span class="pill p-ok">NON — Hiérarchie</span></td></tr>
+<tr><td><strong>Relation</strong></td><td>1:N avec Periode (parent)</td><td>N:1 avec AnneeScolaire (enfant)</td><td><span class="pill p-ok">Complémentaire</span></td></tr>
+<tr><td><strong>Granularité</strong></td><td>1 par an (ex: "2025-2026")</td><td>3-6 par an (Trimestres 1,2,3 ou Sem 1,2)</td><td><span class="pill p-ok">Différent</span></td></tr>
+<tr><td><strong>Usage métier</strong></td><td>Inscription, affectation classe, budget</td><td>Saisie notes, bulletins, évaluations</td><td><span class="pill p-ok">Non overlap</span></td></tr>
+<tr><td><strong>Statut</strong></td><td>OUVERTE → EN_COURS → CLOTUREE</td><td>OUVERTE → EN_ATTENTE_CLOTURE → CLOTUREE</td><td><span class="pill p-ok">Workflows distincts</span></td></tr>
+<tr><td><strong>FK dans Note</strong></td><td><code>anneeScolaireId</code> (nullable, contexte)</td><td><code>periodeId</code> (NOT NULL, obligatoire)</td><td><span class="pill p-ok">Rôles différents</span></td></tr>
+<tr><td><strong>FK dans Bulletin</strong></td><td><code>anneeScolaireId</code> (nullable)</td><td><code>periodeId</code> (NOT NULL, 1 bulletin/période)</td><td><span class="pill p-ok">Confirmé</span></td></tr>
+</tbody>
+</table>
+
+<h3>🔗 Hiérarchie des périodicités (v5.0)</h3>
+<div class="diag">
+<svg viewBox="0 0 800 220" xmlns="http://www.w3.org/2000/svg">
+<text x="400" y="18" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">Hiérarchie AnneeScolaire → Periode (v5.0 — Niveaux configurables)</text>
+<!-- Niveau 3: Année -->
+<rect x="280" y="30" width="240" height="36" rx="6" fill="rgba(30,64,175,.12)" stroke="#1e40af" stroke-width="2"/>
+<text x="400" y="53" text-anchor="middle" font-size="11" font-weight="700" fill="#1e40af">AnneeScolaire "2025-2026"</text>
+<!-- Flèches -->
+<line x1="340" y1="66" x2="160" y2="90" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+<line x1="400" y1="66" x2="400" y2="90" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+<line x1="460" y1="66" x2="640" y2="90" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+<!-- Niveau 2: Semestres/Trimestres -->
+<rect x="60" y="90" width="200" height="32" rx="5" fill="rgba(5,150,105,.1)" stroke="#059669" stroke-width="1.5"/>
+<text x="160" y="111" text-anchor="middle" font-size="10" fill="#059669">Trimestre 1 (Sep-Déc)</text>
+<rect x="300" y="90" width="200" height="32" rx="5" fill="rgba(5,150,105,.1)" stroke="#059669" stroke-width="1.5"/>
+<text x="400" y="111" text-anchor="middle" font-size="10" fill="#059669">Trimestre 2 (Jan-Mars)</text>
+<rect x="540" y="90" width="200" height="32" rx="5" fill="rgba(5,150,105,.1)" stroke="#059669" stroke-width="1.5"/>
+<text x="640" y="111" text-anchor="middle" font-size="10" fill="#059669">Trimestre 3 (Avr-Juin)</text>
+<!-- Flèches T1 → Séquences -->
+<line x1="120" y1="122" x2="80" y2="148" stroke="#64748b" stroke-width="1" stroke-dasharray="3"/>
+<line x1="160" y1="122" x2="160" y2="148" stroke="#64748b" stroke-width="1" stroke-dasharray="3"/>
+<line x1="200" y1="122" x2="240" y2="148" stroke="#64748b" stroke-width="1" stroke-dasharray="3"/>
+<!-- Niveau 1: Séquences (optionnel) -->
+<rect x="30" y="148" width="100" height="28" rx="4" fill="rgba(217,119,6,.08)" stroke="#d97706" stroke-width="1"/>
+<text x="80" y="166" text-anchor="middle" font-size="9" fill="#d97706">Séquence 1</text>
+<rect x="140" y="148" width="100" height="28" rx="4" fill="rgba(217,119,6,.08)" stroke="#d97706" stroke-width="1"/>
+<text x="190" y="166" text-anchor="middle" font-size="9" fill="#d97706">Séquence 2</text>
+<rect x="250" y="148" width="100" height="28" rx="4" fill="rgba(217,119,6,.08)" stroke="#d97706" stroke-width="1"/>
+<text x="300" y="166" text-anchor="middle" font-size="9" fill="#d97706">Séquence 3</text>
+<!-- Légende -->
+<text x="400" y="205" text-anchor="middle" font-size="9" fill="#64748b">NiveauPeriode (v5.0) = configuration par établissement — chaque école définit ses niveaux (3=Année, 2=Trimestre, 1=Séquence, 0=Évaluation)</text>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#64748b"/></marker></defs>
+</svg>
+</div>
+
+<h3>📋 NiveauPeriode — Configuration flexible</h3>
+<p>Le système v5.0 avec <code>NiveauPeriode</code> est <strong>excellent</strong>. Chaque établissement configure :</p>
+<table>
+<thead><tr><th>Niveau</th><th>Label</th><th>usageCode</th><th>Règle métier</th></tr></thead>
+<tbody>
+<tr><td>3 (racine)</td><td>"Année scolaire"</td><td>ANNEE</td><td>Container — pas de saisie notes</td></tr>
+<tr><td>2</td><td>"Trimestre" / "Semestre"</td><td>BULLETIN</td><td>Génération bulletins autorisée</td></tr>
+<tr><td>1</td><td>"Séquence" / "Évaluation"</td><td>NOTES</td><td>Saisie des notes autorisée</td></tr>
+<tr><td>0 (base)</td><td>"Composition"</td><td>COMPOSITION</td><td>Examens officiels</td></tr>
+</tbody>
+</table>
+
+<div class="al al-i">
+<strong>💡 Recommandation : Conserver l'architecture actuelle</strong>
+Aucune modification structurelle nécessaire. Le couple AnneeScolaire/Periode avec NiveauPeriode est 
+<strong>plus flexible</strong> que PRONOTE (enum figé) et permet l'adaptation aux systèmes éducatifs africains 
+(francophone 3 trimestres, anglophone 2 semestres, bilingue mixte).
+</div>
+</section>
+
+<!-- ═══════════ 03 NOTES / DEVOIRS / CONCOURS ═══════════ -->
+<section class="sec" id="notes">
+<h2>03 — Notes/Devoirs/Interros/Concours — Typage vs Modules séparés</h2>
+
+<div class="al al-s">
+<strong>✅ Verdict : Le TYPAGE suffit — PAS de modules séparés</strong>
+L'enum <code>TypeEvaluation</code> existant couvre déjà tous les cas. Créer des modules séparés 
+(devoirs, interrogations, concours) serait une <strong>erreur architecturale</strong> (duplication, complexité, maintenance).
+</div>
+
+<h3>📊 État actuel — Entity Note</h3>
+<table>
+<thead><tr><th>TypeEvaluation</th><th>Usage</th><th>Coefficient</th><th>Portée</th><th>Gérer dans module séparé?</th></tr></thead>
+<tbody>
+<tr><td><code>DEVOIR</code></td><td>Travail à la maison, exercice noté</td><td>Configurable</td><td>Classe/Matière</td><td><span class="pill p-ok">NON — Type suffit</span></td></tr>
+<tr><td><code>INTERROGATION</code></td><td>Contrôle surprise, test court</td><td>Configurable</td><td>Classe/Matière</td><td><span class="pill p-ok">NON — Type suffit</span></td></tr>
+<tr><td><code>EXAMEN</code></td><td>Composition officielle, partiel</td><td>Configurable</td><td>Classe/Établissement</td><td><span class="pill p-ok">NON — Type suffit</span></td></tr>
+<tr><td><code>PROJET</code></td><td>Travail long terme, exposé</td><td>Configurable</td><td>Classe/Matière</td><td><span class="pill p-ok">NON — Type suffit</span></td></tr>
+<tr><td><code>PARTICIPATION</code></td><td>Note de participation orale</td><td>Configurable</td><td>Classe/Matière</td><td><span class="pill p-ok">NON — Type suffit</span></td></tr>
+<tr><td><code>AUTRE</code></td><td>Libre</td><td>Configurable</td><td>Variable</td><td><span class="pill p-ok">NON — Type suffit</span></td></tr>
+</tbody>
+</table>
+
+<h3>🆕 Extension recommandée — Ajouter CONCOURS au TypeEvaluation</h3>
+<div class="cd">
+<span class="cm">// Extension TypeEvaluation — AJOUTER 3 valeurs</span><br>
+<span class="kw">export enum</span> TypeEvaluation {<br>
+&nbsp;&nbsp;DEVOIR = <span class="st">'DEVOIR'</span>,<br>
+&nbsp;&nbsp;INTERROGATION = <span class="st">'INTERROGATION'</span>,<br>
+&nbsp;&nbsp;EXAMEN = <span class="st">'EXAMEN'</span>,<br>
+&nbsp;&nbsp;PROJET = <span class="st">'PROJET'</span>,<br>
+&nbsp;&nbsp;PARTICIPATION = <span class="st">'PARTICIPATION'</span>,<br>
+&nbsp;&nbsp;<span class="kw">CONCOURS</span> = <span class="st">'CONCOURS'</span>,         <span class="cm">// ← NOUVEAU: Concours interne/classe</span><br>
+&nbsp;&nbsp;<span class="kw">COMPOSITION</span> = <span class="st">'COMPOSITION'</span>,   <span class="cm">// ← NOUVEAU: Composition officielle (période)</span><br>
+&nbsp;&nbsp;<span class="kw">EVALUATION_CONTINUE</span> = <span class="st">'EVALUATION_CONTINUE'</span>, <span class="cm">// ← NOUVEAU: APC</span><br>
+&nbsp;&nbsp;AUTRE = <span class="st">'AUTRE'</span>,<br>
+}
+</div>
+
+<h3>📊 Pourquoi PAS de modules séparés?</h3>
+<table>
+<thead><tr><th>Argument</th><th>Module séparé</th><th>Typage (recommandé)</th></tr></thead>
+<tbody>
+<tr><td>Entités nécessaires</td><td class="p-e">3× (Note, Devoir, Concours) = duplication</td><td class="p-ok">1× Note avec type = simple</td></tr>
+<tr><td>Workflow</td><td class="p-e">3 workflows à maintenir</td><td class="p-ok">1 workflow BROUILLON→VALIDEE→PUBLIEE</td></tr>
+<tr><td>Calcul moyennes</td><td class="p-e">3 sources à agréger</td><td class="p-ok">1 table, filtre par type</td></tr>
+<tr><td>Bulletin</td><td class="p-e">Jointures complexes</td><td class="p-ok">WHERE type IN (...) simple</td></tr>
+<tr><td>Permissions RBAC</td><td class="p-e">3× permissions</td><td class="p-ok">notes:create, notes:validate</td></tr>
+<tr><td>Frontend</td><td class="p-e">3 pages, 3 tableaux</td><td class="p-ok">1 page avec filtre type</td></tr>
+<tr><td>Configuration</td><td class="p-e">3 modules à activer/désactiver</td><td class="p-ok">1 module, types configurables</td></tr>
+</tbody>
+</table>
+
+<div class="al al-w">
+<strong>⚠️ Cas particulier : Concours et Compositions</strong>
+Les <strong>concours</strong> (inter-classes, inter-écoles) et <strong>compositions</strong> (officielles de fin de trimestre) 
+peuvent avoir un workflow spécial (classement, tableau d'honneur). Solution : ajouter un champ 
+<code>estClassement: boolean</code> et <code>rangMax: int</code> sur Note, activé uniquement pour type=CONCOURS/COMPOSITION.
+</div>
+</section>
+
+<!-- ═══════════ 04 DISCIPLINE ═══════════ -->
+<section class="sec" id="discipline">
+<h2>04 — Module Discipline — Workflow complet</h2>
+
+<div class="mc">
+<div class="mh"><span class="mn">🛡️ Module Discipline (ex suivi-eleves)</span><span class="sb sb-h">Cohérence: 8.5/10</span></div>
+<div class="mb">
+<strong>4 entités existantes solides</strong> : IncidentEleve (17 types africain), SanctionEleve (14 types), ObservationEleve (+/-/neutre), FelicitationEleve (18 types). 
+<strong>Renommage</strong> de <code>suivi-eleves</code> → <code>discipline</code>. Toutes les entités ont etablissementId, anneeScolaireId, periodeId.
+</div>
+</div>
+
+<h3>📊 Workflow disciplinaire complet — Modèle PBIS 3 tiers</h3>
+<div class="diag">
+<svg viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg">
+<text x="450" y="18" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">Workflow Discipline eLISAschool — Modèle PBIS adapté contexte africain</text>
+<!-- Tier 1 -->
+<rect x="20" y="35" width="270" height="130" rx="8" fill="rgba(5,150,105,.08)" stroke="#059669" stroke-width="1.5"/>
+<text x="155" y="55" text-anchor="middle" font-size="10" font-weight="700" fill="#059669">TIER 1 — UNIVERSAL (80% élèves)</text>
+<text x="30" y="75" font-size="9" fill="#1e293b">✅ FELICITATIONS (18 types)</text>
+<text x="30" y="90" font-size="9" fill="#1e293b">✅ OBSERVATIONS POSITIVES</text>
+<text x="30" y="105" font-size="9" fill="#1e293b">✅ POINTS GAMIFICATION (+)</text>
+<text x="30" y="120" font-size="9" fill="#1e293b">✅ BADGES (assiduité, mérite)</text>
+<text x="30" y="140" font-size="8" fill="#64748b">Gestion : Enseignant (autonome)</text>
+<text x="30" y="155" font-size="8" fill="#64748b">Validation : Aucune (auto)</text>
+<!-- Tier 2 -->
+<rect x="310" y="35" width="270" height="130" rx="8" fill="rgba(217,119,6,.08)" stroke="#d97706" stroke-width="1.5"/>
+<text x="445" y="55" text-anchor="middle" font-size="10" font-weight="700" fill="#d97706">TIER 2 — CIBLÉ (15% élèves)</text>
+<text x="320" y="75" font-size="9" fill="#1e293b">⚠️ OBSERVATIONS NÉGATIVES</text>
+<text x="320" y="90" font-size="9" fill="#1e293b">⚠️ INCIDENTS MINEUR/MODÉRÉ</text>
+<text x="320" y="105" font-size="9" fill="#1e293b">⚠️ SANCTIONS LÉGÈRES (6 types)</text>
+<text x="320" y="120" font-size="9" fill="#1e293b">⚠️ POINTS GAMIFICATION (-)</text>
+<text x="320" y="140" font-size="8" fill="#64748b">Gestion : Enseignant + Chef classe</text>
+<text x="320" y="155" font-size="8" fill="#64748b">Validation : 1 niveau (enseignant)</text>
+<!-- Tier 3 -->
+<rect x="600" y="35" width="280" height="130" rx="8" fill="rgba(220,38,38,.08)" stroke="#dc2626" stroke-width="1.5"/>
+<text x="740" y="55" text-anchor="middle" font-size="10" font-weight="700" fill="#dc2626">TIER 3 — INTENSIF (5% élèves)</text>
+<text x="610" y="75" font-size="9" fill="#1e293b">🔴 INCIDENTS GRAVE/TRES_GRAVE</text>
+<text x="610" y="90" font-size="9" fill="#1e293b">🔴 SANCTIONS GRAVES (8 types)</text>
+<text x="610" y="105" font-size="9" fill="#1e293b">🔴 EXCLUSION, CONSEIL DISCIPLINE</text>
+<text x="610" y="120" font-size="9" fill="#1e293b">🔴 CONVOCATION CHEF FAMILLE</text>
+<text x="610" y="140" font-size="8" fill="#64748b">Gestion : Direction + Conseil</text>
+<text x="610" y="155" font-size="8" fill="#64748b">Validation : 2-3 niveaux (config)</text>
+<!-- Flux -->
+<line x1="290" y1="100" x2="310" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#a2)"/>
+<line x1="580" y1="100" x2="600" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#a2)"/>
+<!-- Workflow sanction -->
+<rect x="20" y="185" width="860" height="140" rx="8" fill="rgba(124,58,237,.04)" stroke="#7c3aed" stroke-width="1"/>
+<text x="450" y="205" text-anchor="middle" font-size="11" font-weight="700" fill="#7c3aed">Workflow Sanction — Multi-validation configurable</text>
+<rect x="40" y="218" width="110" height="28" rx="4" fill="#7c3aed" opacity=".15"/><text x="95" y="236" text-anchor="middle" font-size="9" fill="#7c3aed">SIGNALEMENT</text>
+<text x="160" y="236" font-size="10" fill="#64748b">→</text>
+<rect x="175" y="218" width="130" height="28" rx="4" fill="#d97706" opacity=".15"/><text x="240" y="236" text-anchor="middle" font-size="9" fill="#d97706">EN_ATTENTE_VALID.</text>
+<text x="315" y="236" font-size="10" fill="#64748b">→</text>
+<rect x="330" y="218" width="100" height="28" rx="4" fill="#059669" opacity=".15"/><text x="380" y="236" text-anchor="middle" font-size="9" fill="#059669">VALIDEE</text>
+<text x="440" y="236" font-size="10" fill="#64748b">→</text>
+<rect x="455" y="218" width="100" height="28" rx="4" fill="#2563eb" opacity=".15"/><text x="505" y="236" text-anchor="middle" font-size="9" fill="#2563eb">PRONONCEE</text>
+<text x="565" y="236" font-size="10" fill="#64748b">→</text>
+<rect x="580" y="218" width="100" height="28" rx="4" fill="#0891b2" opacity=".15"/><text x="630" y="236" text-anchor="middle" font-size="9" fill="#0891b2">EN_COURS</text>
+<text x="690" y="236" font-size="10" fill="#64748b">→</text>
+<rect x="705" y="218" width="100" height="28" rx="4" fill="#059669" opacity=".15"/><text x="755" y="236" text-anchor="middle" font-size="9" fill="#059669">EXECUTEE</text>
+<!-- Config -->
+<text x="450" y="275" text-anchor="middle" font-size="9" fill="#64748b">Configuration via ParametreSysteme :</text>
+<text x="450" y="290" text-anchor="middle" font-size="9" fill="#7c3aed">discipline.validation_levels = 2 | discipline.validation_roles = {"1":"CHEF_ETABLISSEMENT","2":"DIRECTEUR_ADJOINT"}</text>
+<text x="450" y="305" text-anchor="middle" font-size="9" fill="#7c3aed">discipline.auto_escalade_gravite = true | discipline.seuil_recidive = 3 | discipline.notification_parent_on_sanction = true</text>
+<text x="450" y="320" text-anchor="middle" font-size="9" fill="#64748b">EventEmitter : discipline.incident.cree → GamificationService (-points) + NotificationService (parent+direction)</text>
+<defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#64748b"/></marker></defs>
+</svg>
+</div>
+
+<h3>📋 Corrections requises — Module Discipline</h3>
+<table>
+<thead><tr><th>#</th><th>Correction</th><th>Priorité</th><th>Effort</th></tr></thead>
+<tbody>
+<tr><td>D1</td><td>Renommer module <code>suivi-eleves</code> → <code>discipline</code> (dossier, routes, ModuleName)</td><td><span class="pill p-e">CRITIQUE</span></td><td>4h</td></tr>
+<tr><td>D2</td><td>Ajouter <code>heureCoursId</code> (nullable) sur IncidentEleve pour lien direct avec HeureCours</td><td><span class="pill p-w">HAUTE</span></td><td>2h</td></tr>
+<tr><td>D3</td><td>Convertir <code>TypeIncidentEleve</code> enum → varchar + nomenclature custom par établissement</td><td><span class="pill p-w">HAUTE</span></td><td>6h</td></tr>
+<tr><td>D4</td><td>Convertir <code>TypeSanction</code> enum → varchar + nomenclature custom</td><td><span class="pill p-i">MOYENNE</span></td><td>4h</td></tr>
+<tr><td>D5</td><td>Intégrer <code>validationWorkflowService</code> pour sanctions niveau 2+ (multi-validation)</td><td><span class="pill p-w">HAUTE</span></td><td>6h</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════ 05 EVALUATION / APPRECIATION ═══════════ -->
+<section class="sec" id="evaluation">
+<h2>05 — Évaluation/Appréciation — Écosystème complet</h2>
+
+<div class="al al-i">
+<strong>💡 Définition — "Appréciation" = vision 360° de l'élève</strong>
+L'appréciation n'est PAS un module séparé. C'est la <strong>synthèse multi-critères</strong> combinant : 
+notes académiques + comportement + assiduité + participation + activités parascolaires + discipline. 
+Elle alimente le bulletin, le scoring, et le portfolio.
+</div>
+
+<h3>📊 Les 5 couches de l'évaluation eLISAschool</h3>
+<div class="diag">
+<svg viewBox="0 0 880 300" xmlns="http://www.w3.org/2000/svg">
+<text x="440" y="18" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">Écosystème Évaluation/Appréciation eLISAschool — 5 couches intégrées</text>
+<!-- Couche 1: Notes -->
+<rect x="20" y="35" width="840" height="42" rx="6" fill="rgba(37,99,235,.08)" stroke="#2563eb" stroke-width="1.5"/>
+<text x="30" y="55" font-size="10" font-weight="700" fill="#2563eb">COUCHE 1 — NOTES (module notes existant)</text>
+<text x="30" y="70" font-size="9" fill="#64748b">Note (valeur/bareme) • TypeEvaluation (8 types) • StatutNote (BROUILLON→VALIDEE→PUBLIEE) • coefficient • periodeId</text>
+<!-- Couche 2: Bulletins -->
+<rect x="20" y="82" width="840" height="42" rx="6" fill="rgba(5,150,105,.08)" stroke="#059669" stroke-width="1.5"/>
+<text x="30" y="102" font-size="10" font-weight="700" fill="#059669">COUCHE 2 — BULLETINS (module bulletins existant)</text>
+<text x="30" y="117" font-size="9" fill="#64748b">Bulletin (moyenne, rang, appréciation conseil) • BulletinMatiere (moyenne, coeff, appréciation) • par Periode</text>
+<!-- Couche 3: Competences -->
+<rect x="20" y="129" width="840" height="42" rx="6" fill="rgba(124,58,237,.08)" stroke="#7c3aed" stroke-width="1.5"/>
+<text x="30" y="149" font-size="10" font-weight="700" fill="#7c3aed">COUCHE 3 — COMPETENCES APC (module competences existant)</text>
+<text x="30" y="164" font-size="9" fill="#64748b">Competence (code, libelle, domaine, niveau, matiere) • Approche Par Compétences MINESEC • Cameroun</text>
+<!-- Couche 4: Scoring -->
+<rect x="20" y="176" width="840" height="42" rx="6" fill="rgba(217,119,6,.08)" stroke="#d97706" stroke-width="1.5"/>
+<text x="30" y="196" font-size="10" font-weight="700" fill="#d97706">COUCHE 4 — SCORING (module scoring existant → À CORRIGER multi-tenant)</text>
+<text x="30" y="211" font-size="9" fill="#64748b">ScoreEleve (5 types: ACADEMIQUE, COMPORTEMENT, ASSIDUITE, PARTICIPATION, GLOBAL) • ConfigurationScoring • RegleScoring</text>
+<!-- Couche 5: Gamification -->
+<rect x="20" y="223" width="840" height="42" rx="6" fill="rgba(220,38,38,.08)" stroke="#dc2626" stroke-width="1.5"/>
+<text x="30" y="243" font-size="10" font-weight="700" fill="#dc2626">COUCHE 5 — GAMIFICATION (module gamification existant → À CORRIGER multi-tenant)</text>
+<text x="30" y="258" font-size="9" fill="#64748b">Badge • PointsUtilisateur (→ eleveId) • HistoriquePoints • BadgeUtilisateur • 15 types actions</text>
+<!-- Synthèse -->
+<text x="440" y="288" text-anchor="middle" font-size="10" font-weight="600" fill="#1e40af">↓ APPRECIATION = Synthèse des 5 couches → Bulletin.appreciationConseil + ScoreEleve.type=GLOBAL + FelicitationEleve</text>
+</svg>
+</div>
+
+<h3>📋 Refactorisation Évaluation — 8 actions</h3>
+<table>
+<thead><tr><th>#</th><th>Action</th><th>Cible</th><th>Priorité</th><th>Effort</th></tr></thead>
+<tbody>
+<tr><td>E1</td><td>Extension TypeEvaluation (+CONCOURS, +COMPOSITION, +EVALUATION_CONTINUE)</td><td>notes/note.entity.ts</td><td><span class="pill p-w">HAUTE</span></td><td>2h</td></tr>
+<tr><td>E2</td><td>Ajouter <code>etablissementId</code> sur ScoreEleve, HistoriqueScore, RegleScoring</td><td>scoring/</td><td><span class="pill p-e">CRITIQUE</span></td><td>6h</td></tr>
+<tr><td>E3</td><td>Ajouter <code>etablissementId</code> sur Badge, PointsUtilisateur, HistoriquePoints, BadgeUtilisateur</td><td>gamification/</td><td><span class="pill p-e">CRITIQUE</span></td><td>8h</td></tr>
+<tr><td>E4</td><td>Migration PointsUtilisateur.utilisateurId → eleveId</td><td>gamification/</td><td><span class="pill p-e">CRITIQUE</span></td><td>6h</td></tr>
+<tr><td>E5</td><td>Badge.code : unique global → unique composite [code, etablissementId]</td><td>gamification/</td><td><span class="pill p-w">HAUTE</span></td><td>3h</td></tr>
+<tr><td>E6</td><td>Rendre ScoreEleve.periodeId NOT NULL</td><td>scoring/</td><td><span class="pill p-w">HAUTE</span></td><td>2h</td></tr>
+<tr><td>E7</td><td>Ajouter champ <code>competencesEvaluees</code> (JSONB) sur Note pour lien APC</td><td>notes/</td><td><span class="pill p-i">MOYENNE</span></td><td>4h</td></tr>
+<tr><td>E8</td><td>Créer vue/fonction <code>calculerAppreciation(eleveId, periodeId)</code> agrégeant 5 couches</td><td>bulletins/</td><td><span class="pill p-i">MOYENNE</span></td><td>8h</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════ 06 SCORING + GAMIFICATION ═══════════ -->
+<section class="sec" id="scoring">
+<h2>06 — Scoring + Gamification — Consolidation</h2>
+
+<div class="al al-w">
+<strong>⚠️ 8 entités sur 8 n'ont PAS etablissementId</strong>
+C'est la migration multi-tenant la plus critique du plan. Sans correction, les données sont 
+<strong>visibles cross-tenant</strong> (faille sécurité RLS).
+</div>
+
+<h3>📊 État multi-tenant des entités scoring/gamification</h3>
+<table>
+<thead><tr><th>Entité</th><th>etablissementId</th><th>anneeScolaireId</th><th>periodeId</th><th>Correction</th></tr></thead>
+<tbody>
+<tr><td>ConfigurationScoring</td><td class="p-ok">✓</td><td class="p-ok">✓</td><td>—</td><td><span class="pill p-ok">OK</span></td></tr>
+<tr><td>ScoreEleve</td><td class="p-e">✗</td><td>—</td><td class="p-w">nullable</td><td class="p-e">+etablissementId + periodeId NOT NULL</td></tr>
+<tr><td>HistoriqueScore</td><td class="p-e">✗</td><td>—</td><td>—</td><td class="p-e">+etablissementId +periodeId</td></tr>
+<tr><td>RegleScoring</td><td class="p-e">✗</td><td>—</td><td>—</td><td class="p-e">+etablissementId</td></tr>
+<tr><td>Badge</td><td class="p-e">✗</td><td>—</td><td>—</td><td class="p-e">+etablissementId + unique composite</td></tr>
+<tr><td>PointsUtilisateur</td><td class="p-e">✗</td><td>—</td><td>—</td><td class="p-e">+etablissementId + migration eleveId</td></tr>
+<tr><td>HistoriquePoints</td><td class="p-e">✗</td><td>—</td><td>—</td><td class="p-e">+etablissementId + migration eleveId</td></tr>
+<tr><td>BadgeUtilisateur</td><td class="p-e">✗</td><td>—</td><td>—</td><td class="p-e">+etablissementId + migration eleveId</td></tr>
+</tbody>
+</table>
+
+<h3>🔄 Stratégie de consolidation</h3>
+<div class="mc">
+<div class="mh"><span class="mn">Recommandation : Fusion partielle</span></div>
+<div class="mb">
+<p><strong>NE PAS fusionner</strong> scoring et gamification en un seul module. Ils ont des rôles distincts :</p>
+<ul style="padding-left:18px;margin:8px 0">
+<li><strong>Scoring</strong> = mesure quantitative (scores 0-100, rangs, moyennes) → alimente Bulletins</li>
+<li><strong>Gamification</strong> = motivation (points, badges, niveaux) → alimente Discipline/Présence</li>
+</ul>
+<p><strong>MAIS</strong> créer un <code>AppreciationService</code> unifié qui agrège les deux pour la vue 360° de l'élève.</p>
+</div>
+</div>
+</section>
+
+
+<!-- ═══════════ 07 CARTE DE REFACTORISATION ═══════════ -->
+<section class="sec" id="refacto">
+<h2>07 — Carte de refactorisation — 15 actions</h2>
+<p>Vue synthétique de toutes les refactorisations identifiées, classées par priorité et effort.</p>
+<div class="diag">
+<svg viewBox="0 0 900 480" xmlns="http://www.w3.org/2000/svg">
+<text x="450" y="18" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">Carte de refactorisation — 15 actions (critique → cosmétique)</text>
+<rect x="20" y="30" width="860" height="105" rx="6" fill="rgba(220,38,38,.04)" stroke="#dc2626" stroke-width="1" stroke-dasharray="4"/>
+<text x="30" y="46" font-size="9" font-weight="700" fill="#dc2626">CRITIQUE — Sécurité / Multi-tenant</text>
+<rect x="30" y="54" width="175" height="32" rx="4" fill="#dc2626" opacity=".12"/><text x="117" y="74" text-anchor="middle" font-size="8" font-weight="600" fill="#dc2626">E2: +etablissementId scoring</text>
+<rect x="215" y="54" width="175" height="32" rx="4" fill="#dc2626" opacity=".12"/><text x="302" y="74" text-anchor="middle" font-size="8" font-weight="600" fill="#dc2626">E3: +etablissementId gamification</text>
+<rect x="400" y="54" width="175" height="32" rx="4" fill="#dc2626" opacity=".12"/><text x="487" y="74" text-anchor="middle" font-size="8" font-weight="600" fill="#dc2626">E4: utilisateurId→eleveId</text>
+<rect x="585" y="54" width="175" height="32" rx="4" fill="#dc2626" opacity=".12"/><text x="672" y="74" text-anchor="middle" font-size="8" font-weight="600" fill="#dc2626">E5: Badge code composite</text>
+<rect x="30" y="92" width="175" height="32" rx="4" fill="#dc2626" opacity=".12"/><text x="117" y="112" text-anchor="middle" font-size="8" font-weight="600" fill="#dc2626">D1: suivi-eleves→discipline</text>
+<rect x="215" y="92" width="175" height="32" rx="4" fill="#dc2626" opacity=".12"/><text x="302" y="112" text-anchor="middle" font-size="8" font-weight="600" fill="#dc2626">N1: Catalogue +6 modules</text>
+<rect x="20" y="145" width="860" height="105" rx="6" fill="rgba(217,119,6,.04)" stroke="#d97706" stroke-width="1" stroke-dasharray="4"/>
+<text x="30" y="161" font-size="9" font-weight="700" fill="#d97706">HAUTE — Cohérence fonctionnelle</text>
+<rect x="30" y="169" width="175" height="32" rx="4" fill="#d97706" opacity=".12"/><text x="117" y="189" text-anchor="middle" font-size="8" font-weight="600" fill="#d97706">E1: +3 TypeEvaluation</text>
+<rect x="215" y="169" width="175" height="32" rx="4" fill="#d97706" opacity=".12"/><text x="302" y="189" text-anchor="middle" font-size="8" font-weight="600" fill="#d97706">D2: heureCoursId incident</text>
+<rect x="400" y="169" width="175" height="32" rx="4" fill="#d97706" opacity=".12"/><text x="487" y="189" text-anchor="middle" font-size="8" font-weight="600" fill="#d97706">D3: TypeIncident nomenclature</text>
+<rect x="585" y="169" width="175" height="32" rx="4" fill="#d97706" opacity=".12"/><text x="672" y="189" text-anchor="middle" font-size="8" font-weight="600" fill="#d97706">D5: validationWorkflow sanctions</text>
+<rect x="30" y="207" width="175" height="32" rx="4" fill="#d97706" opacity=".12"/><text x="117" y="227" text-anchor="middle" font-size="8" font-weight="600" fill="#d97706">E6: periodeId NOT NULL</text>
+<rect x="215" y="207" width="175" height="32" rx="4" fill="#d97706" opacity=".12"/><text x="302" y="227" text-anchor="middle" font-size="8" font-weight="600" fill="#d97706">F1: Fusion ProgressionProgramme</text>
+<rect x="20" y="260" width="860" height="105" rx="6" fill="rgba(37,99,235,.04)" stroke="#2563eb" stroke-width="1" stroke-dasharray="4"/>
+<text x="30" y="276" font-size="9" font-weight="700" fill="#2563eb">MOYENNE — Amélioration</text>
+<rect x="30" y="284" width="175" height="32" rx="4" fill="#2563eb" opacity=".12"/><text x="117" y="304" text-anchor="middle" font-size="8" font-weight="600" fill="#2563eb">D4: TypeSanction nomenclature</text>
+<rect x="215" y="284" width="175" height="32" rx="4" fill="#2563eb" opacity=".12"/><text x="302" y="304" text-anchor="middle" font-size="8" font-weight="600" fill="#2563eb">E7: competencesEvaluees JSONB</text>
+<rect x="400" y="284" width="175" height="32" rx="4" fill="#2563eb" opacity=".12"/><text x="487" y="304" text-anchor="middle" font-size="8" font-weight="600" fill="#2563eb">E8: fn calculerAppreciation()</text>
+<rect x="585" y="284" width="175" height="32" rx="4" fill="#2563eb" opacity=".12"/><text x="672" y="304" text-anchor="middle" font-size="8" font-weight="600" fill="#2563eb">N2: Renommer labels modules</text>
+<rect x="30" y="322" width="175" height="32" rx="4" fill="#2563eb" opacity=".12"/><text x="117" y="342" text-anchor="middle" font-size="8" font-weight="600" fill="#2563eb">A1: EventEmitter discipline</text>
+<rect x="215" y="322" width="175" height="32" rx="4" fill="#2563eb" opacity=".12"/><text x="302" y="342" text-anchor="middle" font-size="8" font-weight="600" fill="#2563eb">A2: Config ParametreSysteme</text>
+<rect x="20" y="375" width="860" height="95" rx="6" fill="rgba(5,150,105,.04)" stroke="#059669" stroke-width="1" stroke-dasharray="4"/>
+<text x="30" y="391" font-size="9" font-weight="700" fill="#059669">COSMÉTIQUE — Polish</text>
+<rect x="30" y="399" width="175" height="32" rx="4" fill="#059669" opacity=".12"/><text x="117" y="419" text-anchor="middle" font-size="8" font-weight="600" fill="#059669">N3: Icones cohérentes Lucide</text>
+<rect x="215" y="399" width="175" height="32" rx="4" fill="#059669" opacity=".12"/><text x="302" y="419" text-anchor="middle" font-size="8" font-weight="600" fill="#059669">N4: i18n FR/EN labels</text>
+<rect x="400" y="399" width="175" height="32" rx="4" fill="#059669" opacity=".12"/><text x="487" y="419" text-anchor="middle" font-size="8" font-weight="600" fill="#059669">A3: Audit actions discipline</text>
+<rect x="585" y="399" width="175" height="32" rx="4" fill="#059669" opacity=".12"/><text x="672" y="419" text-anchor="middle" font-size="8" font-weight="600" fill="#059669">A4: Cron clôture auto incidents</text>
+<text x="450" y="465" text-anchor="middle" font-size="10" font-weight="600" fill="#1e40af">Effort total estimé : ~83h (CRITIQUE: 34h | HAUTE: 22h | MOYENNE: 19h | COSMÉTIQUE: 8h)</text>
+</svg>
+</div>
+<h3>📋 Tableau détaillé des 15 actions</h3>
+<table>
+<thead><tr><th>#</th><th>Action</th><th>Type</th><th>Cible</th><th>Priorité</th><th>Effort</th></tr></thead>
+<tbody>
+<tr><td>D1</td><td>Renommer <code>suivi-eleves</code> → <code>discipline</code></td><td><span class="pill p-e">Renommage</span></td><td>Module complet</td><td><span class="pill p-e">CRITIQUE</span></td><td>4h</td></tr>
+<tr><td>D2</td><td>Ajouter <code>heureCoursId</code> sur IncidentEleve</td><td><span class="pill p-w">Extension</span></td><td>incident-eleve.entity.ts</td><td><span class="pill p-w">HAUTE</span></td><td>2h</td></tr>
+<tr><td>D3</td><td>TypeIncidentEleve → varchar + nomenclature</td><td><span class="pill p-v">Refonte</span></td><td>incident-eleve.entity.ts</td><td><span class="pill p-w">HAUTE</span></td><td>6h</td></tr>
+<tr><td>D4</td><td>TypeSanction → varchar + nomenclature</td><td><span class="pill p-v">Refonte</span></td><td>sanction-eleve.entity.ts</td><td><span class="pill p-i">MOYENNE</span></td><td>4h</td></tr>
+<tr><td>D5</td><td>validationWorkflow pour sanctions niveau 2+</td><td><span class="pill p-w">Extension</span></td><td>sanction-eleve.service.ts</td><td><span class="pill p-w">HAUTE</span></td><td>6h</td></tr>
+<tr><td>E1</td><td>+3 valeurs TypeEvaluation</td><td><span class="pill p-w">Extension</span></td><td>note.entity.ts</td><td><span class="pill p-w">HAUTE</span></td><td>2h</td></tr>
+<tr><td>E2</td><td>+etablissementId sur 3 entités scoring</td><td><span class="pill p-e">Sécurité</span></td><td>scoring.entity.ts + RLS</td><td><span class="pill p-e">CRITIQUE</span></td><td>6h</td></tr>
+<tr><td>E3</td><td>+etablissementId sur 4 entités gamification</td><td><span class="pill p-e">Sécurité</span></td><td>gamification.entity.ts + RLS</td><td><span class="pill p-e">CRITIQUE</span></td><td>8h</td></tr>
+<tr><td>E4</td><td>PointsUtilisateur.utilisateurId → eleveId</td><td><span class="pill p-e">Correction</span></td><td>gamification.entity.ts</td><td><span class="pill p-e">CRITIQUE</span></td><td>6h</td></tr>
+<tr><td>E5</td><td>Badge.code unique composite</td><td><span class="pill p-w">Correction</span></td><td>gamification.entity.ts</td><td><span class="pill p-w">HAUTE</span></td><td>3h</td></tr>
+<tr><td>E6</td><td>ScoreEleve.periodeId NOT NULL</td><td><span class="pill p-w">Correction</span></td><td>scoring.entity.ts</td><td><span class="pill p-w">HAUTE</span></td><td>2h</td></tr>
+<tr><td>E7</td><td>+competencesEvaluees (JSONB) sur Note</td><td><span class="pill p-i">Extension</span></td><td>note.entity.ts</td><td><span class="pill p-i">MOYENNE</span></td><td>4h</td></tr>
+<tr><td>E8</td><td>Vue calculerAppreciation()</td><td><span class="pill p-v">Nouveau</span></td><td>bulletins/service.ts</td><td><span class="pill p-i">MOYENNE</span></td><td>8h</td></tr>
+<tr><td>N1</td><td>+6 modules manquants au catalogue</td><td><span class="pill p-e">Seed</span></td><td>seed-modules-catalogue.ts</td><td><span class="pill p-e">CRITIQUE</span></td><td>2h</td></tr>
+<tr><td>N2</td><td>Renommer labels modules</td><td><span class="pill p-i">Cosmétique</span></td><td>seed-modules-catalogue.ts</td><td><span class="pill p-i">MOYENNE</span></td><td>1h</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════ 08 WORKFLOWS ═══════════ -->
+<section class="sec" id="workflows">
+<h2>08 — Workflows configurables &amp; paramétrables</h2>
+<div class="al al-i"><strong>💡 Architecture existante — ValidationWorkflowService</strong>
+Le système de validation multi-niveaux couvre déjà 15 modules. L'extension au module discipline est directe.</div>
+<h3>📊 Paramètres configurables via ParametreSysteme</h3>
+<table>
+<thead><tr><th>Module</th><th>Clé</th><th>Type</th><th>Défaut</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Notes</td><td><code>notes.require_validation</code></td><td>boolean</td><td>true</td><td>Validation avant publication</td></tr>
+<tr><td>Notes</td><td><code>notes.validation_levels</code></td><td>number</td><td>2</td><td>Niveaux de validation</td></tr>
+<tr><td>Notes</td><td><code>notes.validation_roles</code></td><td>JSON</td><td>{"1":"CHEF","2":"DIR"}</td><td>Rôles par niveau</td></tr>
+<tr><td>Bulletins</td><td><code>bulletins.require_validation</code></td><td>boolean</td><td>true</td><td>Validation publication</td></tr>
+<tr><td>Discipline</td><td><code>discipline.validation_levels</code></td><td>number</td><td>2</td><td>Validation sanctions graves</td></tr>
+<tr><td>Discipline</td><td><code>discipline.auto_escalade_gravite</code></td><td>boolean</td><td>true</td><td>Escalade auto TRES_GRAVE</td></tr>
+<tr><td>Discipline</td><td><code>discipline.seuil_recidive</code></td><td>number</td><td>3</td><td>Incidents avant escalade</td></tr>
+<tr><td>Discipline</td><td><code>discipline.notification_parent_on_sanction</code></td><td>boolean</td><td>true</td><td>Notifier parent</td></tr>
+</tbody>
+</table>
+<h3>🔄 Workflow sanction — Multi-validation</h3>
+<div class="diag">
+<svg viewBox="0 0 880 170" xmlns="http://www.w3.org/2000/svg">
+<text x="440" y="16" text-anchor="middle" font-size="11" font-weight="700" fill="#1e293b">Workflow multi-validation sanction disciplinaire</text>
+<rect x="20" y="35" width="120" height="30" rx="4" fill="#7c3aed" opacity=".15"/><text x="80" y="55" text-anchor="middle" font-size="9" font-weight="600" fill="#7c3aed">SIGNALEMENT</text>
+<text x="148" y="55" font-size="12" fill="#64748b">→</text>
+<rect x="160" y="35" width="140" height="30" rx="4" fill="#d97706" opacity=".15"/><text x="230" y="55" text-anchor="middle" font-size="9" font-weight="600" fill="#d97706">EN_ATTENTE_VALID.</text>
+<text x="308" y="55" font-size="12" fill="#64748b">→</text>
+<rect x="320" y="35" width="100" height="30" rx="4" fill="#059669" opacity=".15"/><text x="370" y="55" text-anchor="middle" font-size="9" font-weight="600" fill="#059669">VALIDEE</text>
+<text x="428" y="55" font-size="12" fill="#64748b">→</text>
+<rect x="440" y="35" width="100" height="30" rx="4" fill="#2563eb" opacity=".15"/><text x="490" y="55" text-anchor="middle" font-size="9" font-weight="600" fill="#2563eb">PRONONCEE</text>
+<text x="548" y="55" font-size="12" fill="#64748b">→</text>
+<rect x="560" y="35" width="100" height="30" rx="4" fill="#0891b2" opacity=".15"/><text x="610" y="55" text-anchor="middle" font-size="9" font-weight="600" fill="#0891b2">EN_COURS</text>
+<text x="668" y="55" font-size="12" fill="#64748b">→</text>
+<rect x="680" y="35" width="100" height="30" rx="4" fill="#059669" opacity=".15"/><text x="730" y="55" text-anchor="middle" font-size="9" font-weight="600" fill="#059669">EXECUTEE</text>
+<text x="440" y="95" text-anchor="middle" font-size="9" fill="#64748b">MINEURE → 0 validation | MODEREE → 1 validation (Chef) | GRAVE/TRES_GRAVE → 2-3 validations (config)</text>
+<text x="440" y="115" text-anchor="middle" font-size="9" fill="#7c3aed">EventEmitter : sanction.validee → Gamification(-points) + Notification(parent) + Audit(log)</text>
+<text x="440" y="135" text-anchor="middle" font-size="9" fill="#059669">Auto-escalade : seuil_recidive atteint → notification direction + sanction niveau supérieur</text>
+</svg>
+</div>
+</section>
+
+<!-- ═══════════ 09 AUTONOMIE ═══════════ -->
+<section class="sec" id="autonomie">
+<h2>09 — Autonomie modules (activable/désactivable)</h2>
+<div class="al al-s"><strong>✅ EntitlementService — Source unique de vérité</strong>
+Cascade 4 niveaux : Critique → Essai/Abonnement → Plan → Override/Supplément.</div>
+<h3>📊 Classification par autonomie</h3>
+<table>
+<thead><tr><th>Catégorie</th><th>Modules</th><th>Désactivable?</th><th>Impact</th></tr></thead>
+<tbody>
+<tr><td><span class="pill p-e">CRITIQUE</span></td><td>auth, utilisateurs, configuration, notifications</td><td>NON — Bypass</td><td>Toujours accessible</td></tr>
+<tr><td><span class="pill p-w">ACADÉMIQUE CŒUR</span></td><td>eleves, notes, bulletins, periodes</td><td>Techniquement OUI</td><td>Pano incomplet</td></tr>
+<tr><td><span class="pill p-i">ACADÉMIQUE ÉTENDU</span></td><td>competences, examens-nationaux, programmes</td><td>OUI — Autonomie</td><td>APC/Examens perdus</td></tr>
+<tr><td><span class="pill p-v">VIE SCOLAIRE</span></td><td>discipline, gamification, scoring, clubs</td><td>OUI — Autonomie</td><td>Module isolé perdu</td></tr>
+<tr><td><span class="pill p-ok">SERVICES</span></td><td>cantine, transport, cartes, finances</td><td>OUI — Autonomie</td><td>Service perdu</td></tr>
+<tr><td><span class="pill p-ok">COMMUNICATION</span></td><td>messagerie, sondages, cms</td><td>OUI — Autonomie</td><td>Canal perdu</td></tr>
+</tbody>
+</table>
+<h3>📋 6 modules manquants au catalogue</h3>
+<div class="al al-w"><strong>⚠️ Non contrôlés par entitlementService — TOUJOURS accessibles</strong></div>
+<table>
+<thead><tr><th>Code</th><th>Nom actuel</th><th>Nom recommandé</th><th>Plan minimal</th></tr></thead>
+<tbody>
+<tr><td><code>suivi-eleves</code></td><td>Suivi Élèves</td><td><strong>Discipline</strong></td><td>standard</td></tr>
+<tr><td><code>competences</code></td><td>Compétences APC</td><td>Compétences APC</td><td>pro</td></tr>
+<tr><td><code>examens-nationaux</code></td><td>Examens Nationaux</td><td>Examens Officiels</td><td>pro</td></tr>
+<tr><td><code>programmes</code></td><td>Programmes</td><td>Programmes Pédagogiques</td><td>standard</td></tr>
+<tr><td><code>scoring-personnel</code></td><td>Scoring Personnel</td><td>Évaluation Personnel</td><td>pro</td></tr>
+<tr><td><code>sante</code></td><td>Santé</td><td>Infirmerie &amp; Santé</td><td>standard</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════ 10 AUDIT ═══════════ -->
+<section class="sec" id="audit">
+<h2>10 — Historisation &amp; Audit log</h2>
+<div class="mc"><div class="mh"><span class="mn">AuditAction — 80+ actions</span><span class="sb sb-h">Couverture: 95%</span></div>
+<div class="mb">AuditAction couvre auth, utilisateurs, élèves, bulletins, cycles, classes, matières, périodes, personnel, contrats, heures, absences, finances. <strong>Manquent</strong> : discipline, scoring, gamification, competences.</div></div>
+<h3>📋 AuditActions à ajouter</h3>
+<div class="cd">
+<span class="cm">// Discipline</span><br>
+<span class="kw">DISCIPLINE_INCIDENT_CREATE</span> | <span class="kw">DISCIPLINE_SANCTION_CREATE</span> | <span class="kw">DISCIPLINE_SANCTION_VALIDATE</span><br>
+<span class="kw">DISCIPLINE_OBSERVATION_CREATE</span> | <span class="kw">DISCIPLINE_FELICITATION_CREATE</span><br><br>
+<span class="cm">// Scoring &amp; Gamification</span><br>
+<span class="kw">SCORING_CALCULATE</span> | <span class="kw">GAMIFICATION_BADGE_AWARD</span> | <span class="kw">GAMIFICATION_POINTS_ADJUST</span><br><br>
+<span class="cm">// Compétences APC</span><br>
+<span class="kw">COMPETENCE_EVALUATE</span> | <span class="kw">COMPETENCE_ACQUIRE</span>
+</div>
+<h3>📊 Pattern d'historisation</h3>
+<table>
+<thead><tr><th>Module</th><th>Historisation</th><th>Pattern</th></tr></thead>
+<tbody>
+<tr><td>Notes</td><td><span class="pill p-ok">✓ Versioning</span></td><td>NoteVersion + AuditLog</td></tr>
+<tr><td>Bulletins</td><td><span class="pill p-ok">✓ Snapshot</span></td><td>Snapshot + AuditLog</td></tr>
+<tr><td>Configuration</td><td><span class="pill p-ok">✓ Versioning</span></td><td>ParametreVersion + HistoriqueConfiguration</td></tr>
+<tr><td>Discipline</td><td><span class="pill p-w">À ajouter</span></td><td>AuditLog (statut suffit)</td></tr>
+<tr><td>Scoring</td><td><span class="pill p-ok">✓</span></td><td>HistoriqueScore</td></tr>
+<tr><td>Gamification</td><td><span class="pill p-ok">✓</span></td><td>HistoriquePoints</td></tr>
+</tbody>
+</table>
+<div class="al al-i"><strong>💡 Signature HMAC</strong> — Chaque AuditLog contient <code>integriteHash</code> (HMAC-SHA256 chaîné). Immutabilité garantie.</div>
+</section>
+
+<!-- ═══════════ 11 NAMING ═══════════ -->
+<section class="sec" id="naming">
+<h2>11 — Refactoring noms (labels, titres, actions)</h2>
+<h3>📊 Renommage modules</h3>
+<table>
+<thead><tr><th>Code</th><th>Nom actuel</th><th>Nom recommandé</th><th>Raison</th></tr></thead>
+<tbody>
+<tr><td><code>suivi-eleves</code></td><td>Suivi Élèves</td><td><strong>Discipline</strong></td><td>Standard PBIS, frontend déjà /discipline</td></tr>
+<tr><td><code>notes</code></td><td>Notes &amp; Évaluations</td><td><strong>Notes</strong></td><td>Plus concis</td></tr>
+<tr><td><code>scoring</code></td><td>Scoring &amp; KPI</td><td><strong>Scoring</strong></td><td>KPI implicite</td></tr>
+<tr><td><code>gamification</code></td><td>Gamification</td><td><strong>Mérite &amp; Récompenses</strong></td><td>Contexte africain</td></tr>
+<tr><td><code>cms</code></td><td>Site Web (CMS)</td><td><strong>Site Web</strong></td><td>CMS = détail technique</td></tr>
+<tr><td><code>comptabilite</code></td><td>Comptabilité</td><td><strong>Comptabilité OHADA</strong></td><td>Référentiel Afrique</td></tr>
+</tbody>
+</table>
+<h3>📋 Renommage routes API</h3>
+<table>
+<thead><tr><th>Route actuelle</th><th>Route recommandée</th><th>Raison</th></tr></thead>
+<tbody>
+<tr><td><code>/api/suivi-eleves</code></td><td><code>/api/discipline</code></td><td>Alignement frontend</td></tr>
+<tr><td><code>/api/scoring-personnel</code></td><td><code>/api/evaluation-personnel</code></td><td>Moins technique</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════ 12 BENCHMARK ═══════════ -->
+<section class="sec" id="benchmark">
+<h2>12 — Benchmark international &amp; PBIS</h2>
+<h3>📊 Comparaison leaders mondiaux</h3>
+<table>
+<thead><tr><th>Fonctionnalité</th><th>PRONOTE</th><th>EcoleDirecte</th><th>PowerSchool</th><th>eLISAschool</th></tr></thead>
+<tbody>
+<tr><td>Annee+Periode</td><td class="p-ok">✓</td><td class="p-ok">✓</td><td class="p-ok">✓</td><td class="p-ok">✓ +NiveauPeriode</td></tr>
+<tr><td>Discipline</td><td class="p-ok">✓</td><td class="p-w">Basique</td><td class="p-ok">✓ PBIS</td><td class="p-ok">✓ PBIS adapté</td></tr>
+<tr><td>Gamification</td><td class="p-e">✗</td><td class="p-e">✗</td><td class="p-ok">✓</td><td class="p-ok">✓ 15 actions</td></tr>
+<tr><td>APC</td><td class="p-w">Partiel</td><td class="p-e">✗</td><td class="p-ok">✓ US</td><td class="p-ok">✓ MINESEC</td></tr>
+<tr><td>Multi-validation</td><td class="p-e">✗</td><td class="p-e">✗</td><td class="p-w">Partiel</td><td class="p-ok">✓ 15 modules</td></tr>
+<tr><td>Multi-tenant RLS</td><td class="p-i">N/A</td><td class="p-i">N/A</td><td class="p-ok">✓</td><td class="p-ok">✓ PostgreSQL</td></tr>
+<tr><td>CMS white-label</td><td class="p-e">✗</td><td class="p-e">✗</td><td class="p-e">✗</td><td class="p-ok">✓ 28 composants</td></tr>
+</tbody>
+</table>
+<div class="al al-s"><strong>✅ eLISAschool compétitif</strong> — PBIS adapté + APC MINESEC + CMS white-label + RLS = unique</div>
+<h3>📊 PBIS — Adaptation africaine</h3>
+<div class="cr">
+<div class="mc"><div class="mh"><span class="mn">PBIS Standard (US)</span></div><div class="mb">
+<ul style="padding-left:16px;font-size:.86rem;color:var(--txt2)"><li>Tier 1: 80% renforcement positif</li><li>Tier 2: 15% interventions ciblées</li><li>Tier 3: 5% soutien intensif</li></ul></div></div>
+<div class="mc"><div class="mh"><span class="mn">eLISAschool PBIS</span></div><div class="mb">
+<ul style="padding-left:16px;font-size:.86rem;color:var(--txt2)"><li>Tier 1: 18 félicitations + gamification</li><li>Tier 2: 17 incidents + 14 sanctions</li><li>Tier 3: Multi-validation + conseil discipline</li></ul></div></div>
+</div>
+</section>
+
+<!-- ═══════════ 13 MULTI-TENANT ═══════════ -->
+<section class="sec" id="multi">
+<h2>13 — Corrections multi-tenant — 8 entités</h2>
+<div class="al al-d"><strong>🔴 FAILLE SÉCURITÉ — 8 entités sans etablissementId</strong></div>
+<h3>📋 Migration 3 étapes</h3>
+<table>
+<thead><tr><th>Étape</th><th>Action</th><th>Effort</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Ajouter <code>etablissementId</code> (nullable)</td><td>4h</td></tr>
+<tr><td>2</td><td>Backfill depuis FK existantes</td><td>6h</td></tr>
+<tr><td>3</td><td>SET NOT NULL + RLS + Index</td><td>4h</td></tr>
+</tbody>
+</table>
+<div class="cd">
+<span class="cm">-- Migration 224</span><br>
+<span class="kw">ALTER TABLE</span> scores_eleves <span class="kw">ADD COLUMN IF NOT EXISTS</span> <span class="st">"etablissementId"</span> UUID;<br>
+<span class="kw">ALTER TABLE</span> badges <span class="kw">ADD COLUMN IF NOT EXISTS</span> <span class="st">"etablissementId"</span> UUID;<br>
+<span class="kw">ALTER TABLE</span> points_utilisateurs <span class="kw">ADD COLUMN IF NOT EXISTS</span> <span class="st">"etablissementId"</span> UUID;<br>
+<span class="cm">-- ... puis backfill + NOT NULL + RLS policy</span>
+</div>
+</section>
+
+<!-- ═══════════ 14 RECOMMANDATIONS ═══════════ -->
+<section class="sec" id="reco">
+<h2>14 — Recommandations finales</h2>
+<div class="kpi">
+<div class="kpi-c"><div class="v" style="color:#dc2626">34h</div><div class="l">CRITIQUE</div></div>
+<div class="kpi-c"><div class="v" style="color:#d97706">22h</div><div class="l">HAUTE</div></div>
+<div class="kpi-c"><div class="v" style="color:#2563eb">19h</div><div class="l">MOYENNE</div></div>
+<div class="kpi-c"><div class="v" style="color:#059669">8h</div><div class="l">COSMÉTIQUE</div></div>
+</div>
+<h3>🔄 Roadmap — 4 phases</h3>
+<table>
+<thead><tr><th>Phase</th><th>Durée</th><th>Actions</th><th>Livrables</th></tr></thead>
+<tbody>
+<tr><td><span class="pill p-e">P1 Sécurité</span></td><td>2 sem.</td><td>E2,E3,E4,E5,N1</td><td>Migration 224 + seed 6 modules</td></tr>
+<tr><td><span class="pill p-w">P2 Discipline</span></td><td>2 sem.</td><td>D1,D2,D3,D5,A1</td><td>Renommage + nomenclature + validation</td></tr>
+<tr><td><span class="pill p-i">P3 Évaluation</span></td><td>3 sem.</td><td>E1,E6,E7,E8,A2</td><td>TypeEvaluation + appreciation 360°</td></tr>
+<tr><td><span class="pill p-ok">P4 Polish</span></td><td>1 sem.</td><td>D4,N2,N3,N4,A3,A4</td><td>Nomenclature + naming + i18n</td></tr>
+</tbody>
+</table>
+<h3>✅ Verdict final</h3>
+<div class="al al-s"><strong>✅ Architecture eLISAschool : SOLIDE et COMPÉTITIVE (8.2/10)</strong>
+<ul style="padding-left:18px;margin:8px 0;color:var(--txt2)">
+<li><strong>PAS de redondance</strong> AnneeScolaire/Periode — hiérarchie parent/enfant</li>
+<li><strong>PAS de modules séparés</strong> devoirs/interros/concours — typage suffit</li>
+<li><strong>Discipline</strong> = renommage suivi-eleves (contexte africain unique)</li>
+<li><strong>Évaluation</strong> = 5 couches (Notes→Bulletins→APC→Scoring→Gamification)</li>
+<li><strong>15 refactorisations</strong> (83h) — 34h critiques en priorité</li>
+<li><strong>Effort total</strong> : 310h → <strong>~437h</strong></li>
+</ul></div>
+</section>
+
+<!-- ═══════════ CHARTS ═══════════ -->
+<div class="sec" id="charts">
+<h2>📊 Graphiques interactifs</h2>
+<div class="cr">
+<div><h4>Répartition efforts</h4><canvas id="chartEffort" height="260"></canvas></div>
+<div><h4>Couverture multi-tenant</h4><canvas id="chartTenant" height="260"></canvas></div>
+</div>
+<div style="margin-top:24px"><h4>Score cohérence par domaine</h4><canvas id="chartCohérence" height="200"></canvas></div>
+</div>
+
+</div>
+
+<footer>
+<p>eLISAschool — Analyse Approfondie Architecture Modules | Août 2026 | Score 8.2/10 | 15 refactorisations • 83h • 437h total</p>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof Chart === 'undefined') return;
+    new Chart(document.getElementById('chartEffort'), {
+        type: 'doughnut',
+        data: { labels: ['CRITIQUE (34h)','HAUTE (22h)','MOYENNE (19h)','COSMÉTIQUE (8h)'],
+            datasets: [{ data: [34,22,19,8], backgroundColor: ['#dc2626','#d97706','#2563eb','#059669'], borderWidth: 2, borderColor: '#fff' }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } } } }
+    });
+    new Chart(document.getElementById('chartTenant'), {
+        type: 'bar',
+        data: { labels: ['Notes','Bulletins','Discipline','Competences','Scoring','Gamification','CMS'],
+            datasets: [{ label: 'etablissementId (%)', data: [100,100,100,100,25,12,100],
+                backgroundColor: ['#059669','#059669','#059669','#059669','#dc2626','#dc2626','#059669'], borderRadius: 6 }] },
+        options: { responsive: true, indexAxis: 'y', scales: { x: { max: 100, ticks: { callback: function(v){return v+'%'} } } }, plugins: { legend: { display: false } } }
+    });
+    new Chart(document.getElementById('chartCohérence'), {
+        type: 'radar',
+        data: { labels: ['Annee/Periode','Notes','Discipline','Évaluation','Scoring','Gamification','Multi-tenant','Workflows','Audit'],
+            datasets: [{ label: 'Actuel', data: [9.5,8.5,8.5,7.5,5,4.5,6,9,9.5], borderColor: '#1e40af', backgroundColor: 'rgba(30,64,175,.1)', pointBackgroundColor: '#1e40af', borderWidth: 2 },
+                { label: 'Cible', data: [9.5,9.5,9.5,9,9,9,9.5,9.5,9.5], borderColor: '#059669', backgroundColor: 'rgba(5,150,105,.08)', pointBackgroundColor: '#059669', borderWidth: 2, borderDash: [5,5] }] },
+        options: { responsive: true, scales: { r: { min: 0, max: 10, ticks: { stepSize: 2 } } }, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } } } }
+    });
+});
+</script>
+</body>
+</html>

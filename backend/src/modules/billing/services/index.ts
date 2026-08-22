@@ -43,6 +43,6 @@ export { PackQuotaService, packQuotaService } from './pack-quota.service';
 export type { QuotaEffectifResult } from './pack-quota.service';
 export { CycleFacturationService, cycleFacturationService } from './cycle-facturation.service';
 export { StrategieExpirationService, strategieExpirationService } from './strategie-expiration.service';
-// Migration 216 — Refonte Promotions v4 (multi-scopes, bundles, gratuités)
+// Migration 216 — Refonte Promotions v4 (multi-scopes, packages, gratuités)
 export { PromotionService, promotionService } from './promotion.service';
 export type { ContextePromotion, ResultatCascadePromotions } from './promotion.service';

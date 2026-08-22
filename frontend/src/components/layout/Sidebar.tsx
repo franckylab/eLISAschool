@@ -400,7 +400,7 @@ export function Sidebar({ forceExpanded = false }: { forceExpanded?: boolean } =
     const examensNationauxPerms = useModulePermissions('examens-nationaux');
     const diplomesElevesPerms = useModulePermissions('diplomes-eleves');
     const classesPerms = useModulePermissions('classes');
-    const anneesScolairesPerms = useModulePermissions('anneesScolaires');
+    const anneesScolairesPerms = useModulePermissions('annees');
     const matieresPerms = useModulePermissions('matieres');
     const elevesPerms = useModulePermissions('eleves');
     const personnelPerms = useModulePermissions('personnel');

@@ -3,8 +3,8 @@
  * eLISAschool - Plateforme — Promotions v4.0
  * ==================================
  *
- * Dashboard des promotions et bundles (multi-scopes).
- * 3 onglets : Promotions (CRUD), Bundles (CRUD), Simulateur cascade.
+ * Dashboard des promotions et packages (multi-scopes).
+ * 3 onglets : Promotions (CRUD), Packages (CRUD), Simulateur cascade.
  * Responsive 320px-2560px, dark mode, animations.
  *
  * Version: 4.0.0
@@ -26,7 +26,7 @@ import { ElisaButton } from '@/components/ui';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import {
     type Promotion,
-    type BundlePromotion,
+    type PackagePromotion,
     ScopePromotion,
     TypeAutoPromotion,
     SCOPE_LABELS,
@@ -35,10 +35,10 @@ import {
 } from '@/features/billing/types/promotion.types';
 import {
     usePromotions,
-    useBundles,
+    usePackages,
     useTogglePromotion,
     useDeletePromotion,
-    useDeleteBundle,
+    useDeletePackage,
     useSimulerCascade,
     useUsageStats,
     exporterUsageStatsCSV,
@@ -48,7 +48,8 @@ import {
     useImporterPromotionsCSV,
 } from '@/features/billing/hooks/use-promotions';
 import { PromoBadge, StatutBadge } from '@/features/billing/components/promo-badge';
-import { BundleCard } from '@/features/billing/components/bundle-card';
+import { PackageCard } from '@/features/billing/components/package-card';
+import { usePacks } from '@/features/billing/hooks/use-billing';
 import { FactureBreakdown } from '@/features/billing/components/facture-breakdown';
 import { PromotionFormModal } from '@/features/billing/components/promotion-form-modal';
 import { CustomModal } from '@/components/modals/CustomModal';
@@ -57,7 +58,7 @@ import { CustomModal } from '@/components/modals/CustomModal';
 // Types
 // =============================================
 
-type TabId = 'promotions' | 'bundles' | 'simulateur' | 'statistiques';
+type TabId = 'promotions' | 'packages' | 'simulateur' | 'statistiques';
 
 // =============================================
 // Skeleton
@@ -94,10 +95,10 @@ function PromotionsPage() {
     // Modals
     const [promoModalOpen, setPromoModalOpen] = useState(false);
     const [editPromo, setEditPromo] = useState<Promotion | null>(null);
-    const [editBundle, setEditBundle] = useState<BundlePromotion | null>(null);
-    const [bundleModalOpen, setBundleModalOpen] = useState(false);
+    const [editPackage, setEditPackage] = useState<PackagePromotion | null>(null);
+    const [packageModalOpen, setPackageModalOpen] = useState(false);
     const [promoToDelete, setPromoToDelete] = useState<Promotion | null>(null);
-    const [bundleToDelete, setBundleToDelete] = useState<BundlePromotion | null>(null);
+    const [packageToDelete, setPackageToDelete] = useState<PackagePromotion | null>(null);
     const [csvImportOpen, setCsvImportOpen] = useState(false);
     const [csvContent, setCsvContent] = useState('');
 
@@ -108,10 +109,12 @@ function PromotionsPage() {
         page,
         limit: 20,
     });
-    const { data: bundles, isLoading: isLoadingBundles, isError: isErrorBundles, refetch: refetchBundles } = useBundles();
+    const { data: packages, isLoading: isLoadingPackages, isError: isErrorPackages, refetch: refetchPackages } = usePackages();
+    const { data: packs = [] } = usePacks();
+    const packNames = Object.fromEntries(packs.map((p) => [p.id, p.nom]));
     const toggleMutation = useTogglePromotion();
     const deletePromoMutation = useDeletePromotion();
-    const deleteBundleMutation = useDeleteBundle();
+    const deletePackageMutation = useDeletePackage();
     const dupliquerMutation = useDupliquerPromotion();
     const simulerCascade = useSimulerCascade();
     const importerCSVMutation = useImporterPromotionsCSV();
@@ -149,21 +152,21 @@ function PromotionsPage() {
         }
     }, [promoToDelete, deletePromoMutation, t]);
 
-    const handleDeleteBundle = useCallback(async () => {
-        if (!bundleToDelete) return;
+    const handleDeletePackage = useCallback(async () => {
+        if (!packageToDelete) return;
         try {
-            await deleteBundleMutation.mutateAsync(bundleToDelete.id);
-            toast.success(t('messages.bundleSupprime'));
-            setBundleToDelete(null);
+            await deletePackageMutation.mutateAsync(packageToDelete.id);
+            toast.success(t('messages.packageSupprime'));
+            setPackageToDelete(null);
         } catch {
             toast.error(t('messages.erreurSuppression'));
         }
-    }, [bundleToDelete, deleteBundleMutation, t]);
+    }, [packageToDelete, deletePackageMutation, t]);
 
     const openEditPromo = (p: Promotion) => { setEditPromo(p); setPromoModalOpen(true); };
     const openCreatePromo = () => { setEditPromo(null); setPromoModalOpen(true); };
-    const openEditBundle = (b: BundlePromotion) => { setEditBundle(b); setBundleModalOpen(true); };
-    const openCreateBundle = () => { setEditBundle(null); setBundleModalOpen(true); };
+    const openEditPackage = (b: PackagePromotion) => { setEditPackage(b); setPackageModalOpen(true); };
+    const openCreatePackage = () => { setEditPackage(null); setPackageModalOpen(true); };
 
     const handleDupliquer = useCallback(async (id: string) => {
         try {
@@ -190,7 +193,7 @@ function PromotionsPage() {
 
     const TABS: { id: TabId; label: string; icon: any }[] = [
         { id: 'promotions', label: t('tabs.promotions'), icon: Layers },
-        { id: 'bundles', label: t('tabs.bundles'), icon: Package },
+        { id: 'packages', label: t('tabs.packages'), icon: Package },
         { id: 'simulateur', label: t('tabs.simulateur'), icon: Calculator },
         { id: 'statistiques', label: t('tabs.statistiques'), icon: BarChart3 },
     ];
@@ -210,14 +213,14 @@ function PromotionsPage() {
                         <p className="text-sm text-[var(--color-texte-secondaire)]">{t('description')}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1.5 xs:gap-2">
                     {tab === 'promotions' && (
                         <>
                             <ElisaButton
                                 variant="outline"
                                 size="sm"
                                 onClick={() => exporterPromotionsCSV(scopeFilter || undefined, actifFilter)}
-                                icon={<Download className="h-4 w-4" />}
+                                icon={<Download className="h-3.5 w-3.5 xs:h-4 xs:w-4" />}
                             >
                                 <span className="hidden sm:inline">{t('actions.exporterCSV')}</span>
                             </ElisaButton>
@@ -225,7 +228,7 @@ function PromotionsPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setCsvImportOpen(true)}
-                                icon={<Upload className="h-4 w-4" />}
+                                icon={<Upload className="h-3.5 w-3.5 xs:h-4 xs:w-4" />}
                             >
                                 <span className="hidden sm:inline">{t('actions.importerCSV')}</span>
                             </ElisaButton>
@@ -236,20 +239,21 @@ function PromotionsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => exporterUsageStatsCSV()}
-                            icon={<FileSpreadsheet className="h-4 w-4" />}
+                            icon={<FileSpreadsheet className="h-3.5 w-3.5 xs:h-4 xs:w-4" />}
                         >
                             <span className="hidden sm:inline">{t('actions.exporterStats')}</span>
                         </ElisaButton>
                     )}
-                    {tab === 'bundles' ? (
-                        <ElisaButton onClick={openCreateBundle} size="sm">
-                            <Plus className="h-4 w-4 mr-2" />
-                            {t('actions.creerBundle')}
+                    {tab === 'packages' ? (
+                        <ElisaButton onClick={openCreatePackage} size="sm">
+                            <Plus className="h-3.5 w-3.5 xs:h-4 xs:w-4 mr-1 xs:mr-2" />
+                            <span className="hidden xs:inline">{t('actions.creerPackage')}</span>
+                            <span className="xs:hidden">{t('actions.creer')}</span>
                         </ElisaButton>
                     ) : (
                         <ElisaButton onClick={openCreatePromo} size="sm">
-                            <Plus className="h-4 w-4 mr-2" />
-                            {t('actions.creer')}
+                            <Plus className="h-3.5 w-3.5 xs:h-4 xs:w-4 mr-1 xs:mr-2" />
+                            <span className="hidden xs:inline">{t('actions.creer')}</span>
                         </ElisaButton>
                     )}
                 </div>
@@ -490,47 +494,48 @@ function PromotionsPage() {
                 </motion.div>
             )}
 
-            {/* ====== TAB BUNDLES ====== */}
-            {tab === 'bundles' && (
+            {/* ====== TAB PACKAGES ====== */}
+            {tab === 'packages' && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                    {isLoadingBundles && <PromotionsSkeleton />}
+                    {isLoadingPackages && <PromotionsSkeleton />}
 
-                    {isErrorBundles && (
+                    {isErrorPackages && (
                         <div className="flex flex-col items-center rounded-2xl border border-[var(--color-danger-200)] bg-[var(--color-danger-50)] py-8">
                             <AlertCircle className="mb-2 h-8 w-8 text-[var(--color-danger-500)]" />
-                            <p className="text-[var(--color-texte)]">{t('messages.erreurChargementBundles')}</p>
-                            <ElisaButton variant="ghost" size="sm" className="mt-2" onClick={() => refetchBundles()} icon={<RefreshCw className="h-4 w-4" />}>
+                            <p className="text-[var(--color-texte)]">{t('messages.erreurChargementPackages')}</p>
+                            <ElisaButton variant="ghost" size="sm" className="mt-2" onClick={() => refetchPackages()} icon={<RefreshCw className="h-4 w-4" />}>
                                 {t('messages.ressayer')}
                             </ElisaButton>
                         </div>
                     )}
 
-                    {!isLoadingBundles && !isErrorBundles && (
+                    {!isLoadingPackages && !isErrorPackages && (
                         <>
-                            {(!bundles || bundles.length === 0) ? (
+                            {(!packages || packages.length === 0) ? (
                                 <div className="flex flex-col items-center rounded-2xl border border-[var(--color-bordure)] bg-[var(--color-surface)] py-12">
                                     <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--color-surface-hover)]">
                                         <Package className="h-7 w-7 text-[var(--color-texte-muted)]" />
                                     </div>
-                                    <p className="text-[var(--color-texte-secondaire)]">{t('messages.aucunBundle')}</p>
-                                    <p className="mt-1 text-xs text-[var(--color-texte-muted)]">{t('bundle.minPacks')}</p>
-                                    <ElisaButton size="sm" className="mt-3" onClick={openCreateBundle} icon={<Plus className="h-4 w-4" />}>
-                                        {t('actions.creerBundle')}
+                                    <p className="text-[var(--color-texte-secondaire)]">{t('messages.aucunPackage')}</p>
+                                    <p className="mt-1 text-xs text-[var(--color-texte-muted)]">{t('package.minPacks')}</p>
+                                    <ElisaButton size="sm" className="mt-3" onClick={openCreatePackage} icon={<Plus className="h-4 w-4" />}>
+                                        {t('actions.creerPackage')}
                                     </ElisaButton>
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                                    {bundles.map((b, index) => (
+                                    {packages.map((p, index) => (
                                         <motion.div
-                                            key={b.id}
+                                            key={p.id}
                                             initial={{ opacity: 0, scale: 0.95 }}
                                             animate={{ opacity: 1, scale: 1 }}
                                             transition={{ delay: index * 0.05 }}
                                         >
-                                            <BundleCard
-                                                bundle={b}
-                                                onEdit={openEditBundle}
-                                                onDelete={(bundle) => setBundleToDelete(bundle)}
+                                            <PackageCard
+                                                pkg={p}
+                                                packNames={packNames}
+                                                onEdit={openEditPackage}
+                                                onDelete={(pkg) => setPackageToDelete(pkg)}
                                             />
                                         </motion.div>
                                     ))}
@@ -602,10 +607,10 @@ function PromotionsPage() {
                 promotion={editPromo}
             />
             <PromotionFormModal
-                open={bundleModalOpen}
-                onOpenChange={setBundleModalOpen}
-                modeBundle
-                bundle={editBundle}
+                open={packageModalOpen}
+                onOpenChange={setPackageModalOpen}
+                modePackage
+                pkg={editPackage}
             />
             <ConfirmationModal
                 isOpen={!!promoToDelete}
@@ -618,14 +623,14 @@ function PromotionsPage() {
                 onCancel={() => setPromoToDelete(null)}
             />
             <ConfirmationModal
-                isOpen={!!bundleToDelete}
-                title={t('messages.titreSupprimerBundle')}
-                message={t('messages.confirmSuppressionBundle')}
+                isOpen={!!packageToDelete}
+                title={t('messages.titreSupprimerPackage')}
+                message={t('messages.confirmSuppressionPackage')}
                 variant="danger"
                 confirmLabel={t('actions.supprimer')}
                 cancelLabel={t('form.annuler')}
-                onConfirm={handleDeleteBundle}
-                onCancel={() => setBundleToDelete(null)}
+                onConfirm={handleDeletePackage}
+                onCancel={() => setPackageToDelete(null)}
             />
 
             {/* ====== MODAL IMPORT CSV ====== */}
@@ -704,7 +709,7 @@ const SCOPE_CHART_COLORS: Record<string, string> = {
     PLAN: '#3b82f6',
     PACK: '#10b981',
     MODULE: '#8b5cf6',
-    BUNDLE: '#f59e0b',
+    PACKAGE: '#f59e0b',
     QUOTA: '#06b6d4',
 };
 
@@ -1067,7 +1072,7 @@ function StatsTab() {
                         <option value="PLAN">Plan</option>
                         <option value="PACK">Packs</option>
                         <option value="MODULE">Modules</option>
-                        <option value="BUNDLE">Bundles</option>
+                        <option value="PACKAGE">Packages</option>
                         <option value="QUOTA">Quota</option>
                     </select>
                 </div>

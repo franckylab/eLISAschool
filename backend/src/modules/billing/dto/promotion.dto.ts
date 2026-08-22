@@ -3,7 +3,7 @@
  * eLISAschool - DTOs Promotions v4.0
  * ==================================
  *
- * Schémas Zod pour la validation des promotions et bundles.
+ * Schémas Zod pour la validation des promotions et packages.
  *
  * Version: 4.0.0
  * Auteur: franck arlos chendjou
@@ -27,8 +27,8 @@ export const conditionsPromotionSchema = z.object({
 }).optional();
 
 export const configPromotionSchema = z.object({
-    prixOriginalBundle: z.number().min(0).optional(),
-    reductionBundle: z.number().min(0).optional(),
+    prixOriginalPackage: z.number().min(0).optional(),
+    reductionPackage: z.number().min(0).optional(),
     noteInterne: z.string().max(500).optional(),
     paliersVolume: z.array(z.object({
         min: z.number().int().min(0),
@@ -48,7 +48,7 @@ const _promotionBase = z.object({
     code: z.string().min(2).max(100),
     nom: z.string().min(2).max(150),
     typePromotion: z.enum(['POURCENTAGE', 'MONTANT_FIXE', 'GRATUITE']),
-    scope: z.enum(['PLAN', 'PACK', 'MODULE', 'BUNDLE', 'QUOTA']),
+    scope: z.enum(['PLAN', 'PACK', 'MODULE', 'PACKAGE', 'QUOTA']),
     cibleId: z.string().uuid().optional().nullable(),
     cibleRessource: z.string().max(100).optional().nullable(),
     valeur: z.number().min(0),
@@ -84,14 +84,14 @@ export type CreatePromotionDto = z.infer<typeof createPromotionSchema>;
 export type UpdatePromotionDto = z.infer<typeof updatePromotionSchema>;
 
 // =============================================
-// SCHÉMAS BUNDLE
+// SCHÉMAS PACKAGE
 // =============================================
 
-export const createBundleSchema = z.object({
+export const createPackageSchema = z.object({
     code: z.string().min(2).max(100),
     nom: z.string().min(2).max(150),
     description: z.string().max(500).optional(),
-    packIds: z.array(z.string().uuid()).min(2, 'Un bundle doit contenir au moins 2 packs'),
+    packIds: z.array(z.string().uuid()).min(2, 'Un package doit contenir au moins 2 packs'),
     typeRemise: z.enum(['POURCENTAGE', 'MONTANT_FIXE']),
     valeur: z.number().min(0),
     codeCoupon: z.string().max(100).optional().nullable(),
@@ -102,7 +102,7 @@ export const createBundleSchema = z.object({
     priorite: z.number().int().min(0).default(0),
 });
 
-export const updateBundleSchema = createBundleSchema.partial().omit({ code: true });
+export const updatePackageSchema = createPackageSchema.partial().omit({ code: true });
 
-export type CreateBundleDto = z.infer<typeof createBundleSchema>;
-export type UpdateBundleDto = z.infer<typeof updateBundleSchema>;
+export type CreatePackageDto = z.infer<typeof createPackageSchema>;
+export type UpdatePackageDto = z.infer<typeof updatePackageSchema>;

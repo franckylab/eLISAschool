@@ -511,7 +511,7 @@ export function createApp(): Application {
     app.use('/api/competences', authMiddleware, filterByEtablissement(), competencesController);
     app.use('/api/examens-nationaux', authMiddleware, filterByEtablissement(), examensNationauxController);
     app.use('/api/diplomes-eleves', authMiddleware, filterByEtablissement(), diplomesElevesController);
-    app.use('/api/annees-scolaires', authMiddleware, filterByEtablissement(), anneesScolairesController);
+    app.use('/api/annees-scolaires', requireModuleActive('annees-scolaires'), authMiddleware, filterByEtablissement(), anneesScolairesController);
     // Sous-routes personnel (spécifiques — doivent être AVANT /api/personnel pour éviter que /:id n'intercepte)
     app.use('/api/personnel/contrats', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), contratController);
     app.use('/api/personnel/types-contrat', requireModuleActive('personnel'), authMiddleware, filterByEtablissement(), typeContratController);
@@ -534,10 +534,10 @@ export function createApp(): Application {
     app.use('/api/classes-annees', authMiddleware, filterByEtablissement(), classesAnneesController);
     app.use('/api/scoring/config', authMiddleware, filterByEtablissement(), configurationScoringController);
     app.use('/api/matieres', authMiddleware, filterByEtablissement(), matieresController);
-    app.use('/api/periodes', authMiddleware, filterByEtablissement(), periodesController);
-    app.use('/api/periodes-templates', authMiddleware, filterByEtablissement(), templatesPeriodeController);
-    app.use('/api/niveaux-periode', authMiddleware, filterByEtablissement(), niveauxPeriodeController);
-    app.use('/api/usages-niveau', authMiddleware, filterByEtablissement(), usagesNiveauController);
+    app.use('/api/periodes', requireModuleActive('periodes'), authMiddleware, filterByEtablissement(), periodesController);
+    app.use('/api/periodes-templates', requireModuleActive('periodes'), authMiddleware, filterByEtablissement(), templatesPeriodeController);
+    app.use('/api/niveaux-periode', requireModuleActive('periodes'), authMiddleware, filterByEtablissement(), niveauxPeriodeController);
+    app.use('/api/usages-niveau', requireModuleActive('periodes'), authMiddleware, filterByEtablissement(), usagesNiveauController);
     app.use('/api/programmes', requireModuleActive('programmes'), authMiddleware, filterByEtablissement(), programmesController);
     app.use('/api/eleves', authMiddleware, filterByEtablissement(), elevesController);
     app.use('/api/parents', authMiddleware, requireModuleActive('parents'), filterByEtablissement(), parentController);
@@ -563,7 +563,7 @@ export function createApp(): Application {
     // ==================================
     app.use('/api/billing', clientBillingRouter);
     app.use('/api/billing/marketplace', marketplaceRouter);
-    // Migration 216 — Promotions v4 (multi-scopes, bundles, gratuités)
+    // Migration 216 — Promotions v4 (multi-scopes, packages, gratuités)
     app.use('/api/billing/promotions', clientPromotionRouter);
 
     // ==================================

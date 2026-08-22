@@ -3,7 +3,7 @@
  * eLISAschool - Controller Promotions v4.0
  * ==================================
  *
- * API REST pour le CRUD des promotions et bundles.
+ * API REST pour le CRUD des promotions et packages.
  *
  * Routes plateforme (SUPER_ADMIN) : /api/platform/facturation/promotions
  * Routes client (ADMIN)            : /api/billing/promotions
@@ -23,8 +23,8 @@ import { promotionService } from '../services/promotion.service';
 import {
     createPromotionSchema,
     updatePromotionSchema,
-    createBundleSchema,
-    updateBundleSchema,
+    createPackageSchema,
+    updatePackageSchema,
 } from '../dto/promotion.dto';
 import { AbonnementClient } from '../entities/abonnement-client.entity';
 import { AbonnementPack } from '../entities/abonnement-pack.entity';
@@ -88,46 +88,46 @@ const platformPromotionRouter = Router();
 // ROUTES STATIQUES — définies AVANT /:id pour éviter le shadowing Express
 // =============================================
 
-// --- BUNDLES CRUD (doit être avant /:id) ---
+// --- PACKAGES CRUD (doit être avant /:id) ---
 
 /**
- * GET /api/platform/facturation/promotions/bundles
- * Liste tous les bundles
+ * GET /api/platform/facturation/promotions/packages
+ * Liste tous les packages
  */
-platformPromotionRouter.get('/bundles', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+platformPromotionRouter.get('/packages', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { actif } = req.query;
         const filters: any = {};
         if (actif !== undefined) filters.actif = actif === 'true';
 
-        const bundles = await promotionService.findAllBundles(filters);
-        res.json({ success: true, data: bundles });
+        const packages = await promotionService.findAllPackages(filters);
+        res.json({ success: true, data: packages });
     } catch (error) {
         next(error);
     }
 });
 
 /**
- * GET /api/platform/facturation/promotions/bundles/:id
- * Détail d'un bundle
+ * GET /api/platform/facturation/promotions/packages/:id
+ * Détail d'un package
  */
-platformPromotionRouter.get('/bundles/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+platformPromotionRouter.get('/packages/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const bundle = await promotionService.findOneBundle(req.params.id);
-        res.json({ success: true, data: bundle });
+        const pkg = await promotionService.findOnePackage(req.params.id);
+        res.json({ success: true, data: pkg });
     } catch (error) {
         next(error);
     }
 });
 
 /**
- * POST /api/platform/facturation/promotions/bundles
- * Créer un bundle
+ * POST /api/platform/facturation/promotions/packages
+ * Créer un package
  */
-platformPromotionRouter.post('/bundles', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+platformPromotionRouter.post('/packages', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(createBundleSchema, req.body);
-        const created = await promotionService.createBundle(dto);
+        const dto = validate(createPackageSchema, req.body);
+        const created = await promotionService.createPackage(dto);
         res.status(201).json({ success: true, data: created });
     } catch (error) {
         next(error);
@@ -135,13 +135,13 @@ platformPromotionRouter.post('/bundles', authMiddleware, async (req: Request, re
 });
 
 /**
- * PATCH /api/platform/facturation/promotions/bundles/:id
- * Modifier un bundle
+ * PATCH /api/platform/facturation/promotions/packages/:id
+ * Modifier un package
  */
-platformPromotionRouter.patch('/bundles/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+platformPromotionRouter.patch('/packages/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const dto = validate(updateBundleSchema, req.body);
-        const updated = await promotionService.updateBundle(req.params.id, dto);
+        const dto = validate(updatePackageSchema, req.body);
+        const updated = await promotionService.updatePackage(req.params.id, dto);
         res.json({ success: true, data: updated });
     } catch (error) {
         next(error);
@@ -149,13 +149,13 @@ platformPromotionRouter.patch('/bundles/:id', authMiddleware, async (req: Reques
 });
 
 /**
- * DELETE /api/platform/facturation/promotions/bundles/:id
- * Supprimer un bundle
+ * DELETE /api/platform/facturation/promotions/packages/:id
+ * Supprimer un package
  */
-platformPromotionRouter.delete('/bundles/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+platformPromotionRouter.delete('/packages/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await promotionService.deleteBundle(req.params.id);
-        res.json({ success: true, message: 'Bundle supprimé' });
+        await promotionService.deletePackage(req.params.id);
+        res.json({ success: true, message: 'Package supprimé' });
     } catch (error) {
         next(error);
     }
@@ -440,16 +440,16 @@ clientPromotionRouter.get('/eligibles', authMiddleware, async (req: Request, res
 });
 
 /**
- * GET /api/billing/promotions/bundles/eligibles
- * Liste les bundles éligibles pour le tenant actuel
+ * GET /api/billing/promotions/packages/eligibles
+ * Liste les packages éligibles pour le tenant actuel
  */
-clientPromotionRouter.get('/bundles/eligibles', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+clientPromotionRouter.get('/packages/eligibles', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const packsSouscritsIds = req.query.packsSouscritsIds
             ? (req.query.packsSouscritsIds as string).split(',')
             : [];
 
-        const eligibles = await promotionService.trouverBundlesEligibles({
+        const eligibles = await promotionService.trouverPackagesEligibles({
             packsSouscritsIds,
         });
 

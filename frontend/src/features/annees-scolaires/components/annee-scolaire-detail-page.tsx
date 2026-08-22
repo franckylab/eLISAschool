@@ -27,15 +27,15 @@ import { useWorkflowByEntite } from '@/hooks/use-validation-workflow';
 import { usePermissions } from '@/hooks';
 
 const COULEURS_STATUT: Record<string, string> = {
-    active: 'bg-[var(--color-dominant-50)] text-[var(--color-dominant-700)] border-[var(--color-dominant-200)]',
-    inactive: 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] border-[var(--color-bordure)]',
-    future: 'bg-blue-50 text-blue-700 border-blue-200',
-    archivee: 'bg-purple-50 text-purple-700 border-purple-200',
+    EN_COURS: 'bg-[var(--color-dominant-50)] text-[var(--color-dominant-700)] border-[var(--color-dominant-200)]',
+    OUVERTE: 'bg-[var(--color-info-50,rgba(59,130,246,0.1))] text-[var(--color-info-700,rgba(59,130,246,0.8))] border-[var(--color-info-200,rgba(59,130,246,0.2))]',
+    EN_ATTENTE_CLOTURE: 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)] border-[var(--color-bordure)]',
+    CLOTUREE: 'bg-[var(--color-purple-50,rgba(168,85,247,0.1))] text-[var(--color-purple-700,rgba(168,85,247,0.8))] border-[var(--color-purple-200,rgba(168,85,247,0.2))]',
 };
 
 const COULEURS_STATUT_PERIODE: Record<string, string> = {
     OUVERTE: 'bg-[var(--color-dominant-50)] text-[var(--color-dominant-700)]',
-    EN_ATTENTE_CLOTURE: 'bg-amber-50 text-amber-700',
+    EN_ATTENTE_CLOTURE: 'bg-[var(--color-warning-50,rgba(245,158,11,0.1))] text-[var(--color-warning-700,rgba(245,158,11,0.8))]',
     CLOTUREE: 'bg-[var(--color-surface-alt)] text-[var(--color-text-tertiary)]',
 };
 
@@ -61,7 +61,7 @@ export function AnneeScolaireDetailPage() {
     const navigate = useNavigate();
     const { id } = useParams({ from: '/_auth/annees-scolaires/$id' });
     const { t, i18n } = useTranslation('annees-scolaires');
-    const { hasPermission } = usePermissions();
+    const { hasPermission, hasAnyPermission } = usePermissions();
     const [ongletActif, setOngletActif] = useState('informations');
     const [confirmActiver, setConfirmActiver] = useState(false);
     const [confirmSupprimer, setConfirmSupprimer] = useState(false);
@@ -74,10 +74,13 @@ export function AnneeScolaireDetailPage() {
     const cloturer = useCloturerAnneeScolaire();
     const reouvrir = useReouvrirAnneeScolaire();
 
-    const peutValider = hasPermission('annees-scolaires:validate');
+    const peutValider = hasAnyPermission([
+        'validation:annees_scolaires:level1',
+        'validation:annees_scolaires:level2',
+    ]);
     const workflowQuery = useWorkflowByEntite('annees_scolaires', id);
 
-    const estCloturee = annee?.statut === 'archivee';
+    const estCloturee = annee?.statut === 'CLOTUREE';
 
     const dureeJours = useMemo(() => {
         if (!annee) return 0;
@@ -88,7 +91,7 @@ export function AnneeScolaireDetailPage() {
     }, [annee]);
 
     const joursRestants = useMemo(() => {
-        if (!annee || annee.statut !== 'active') return null;
+        if (!annee || annee.statut !== 'EN_COURS') return null;
         const restants = Math.ceil(
             (new Date(annee.dateFin).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
         );
@@ -145,7 +148,7 @@ export function AnneeScolaireDetailPage() {
     const onglets: Tab[] = [
         { id: 'informations', label: t('detail.informations'), description: t('detail.tabInformationsDesc'), icon: FileText },
         { id: 'periodes', label: t('detail.periodes'), description: t('detail.tabPeriodesDesc'), icon: CalendarDays, count: totalPeriodes },
-        ...(peutValider ? [{ id: 'validation', label: t('validation'), icon: ShieldCheck }] : []),
+        ...(peutValider ? [{ id: 'validation', label: t('validation.titre'), icon: ShieldCheck }] : []),
         ...(hasPermission('audit:annees-scolaires:view') || hasPermission('audit:view')
             ? [{ id: 'historique', label: t('detail.historique'), icon: History }]
             : []),
@@ -181,7 +184,7 @@ export function AnneeScolaireDetailPage() {
                 onBack={() => navigate({ to: '/annees-scolaires' })}
                 actions={
                     <div className="flex gap-2">
-                        {!estCloturee && !annee.estActuelle && annee.statut !== 'active' && (
+                        {hasPermission('annees:activer') && !estCloturee && annee.statut !== 'EN_COURS' && (
                             <ElisaButton
                                 variant="primary"
                                 size="sm"
@@ -192,7 +195,7 @@ export function AnneeScolaireDetailPage() {
                                 {t('actions.activer')}
                             </ElisaButton>
                         )}
-                        {!estCloturee && (
+                        {hasPermission('annees:cloturer') && !estCloturee && (
                             <ElisaButton
                                 variant="outline"
                                 size="sm"
@@ -203,7 +206,7 @@ export function AnneeScolaireDetailPage() {
                                 {t('actions.cloturer')}
                             </ElisaButton>
                         )}
-                        {estCloturee && (
+                        {hasPermission('annees:reouvrir') && estCloturee && (
                             <ElisaButton
                                 variant="accent"
                                 size="sm"
@@ -214,15 +217,17 @@ export function AnneeScolaireDetailPage() {
                                 {t('actions.reouvrir')}
                             </ElisaButton>
                         )}
-                        <ElisaButton
-                            variant="danger"
-                            size="sm"
-                            icon={<Trash2 className="h-4 w-4" />}
-                            isLoading={supprimer.isPending}
-                            onClick={() => setConfirmSupprimer(true)}
-                        >
-                            {t('actions.supprimer')}
-                        </ElisaButton>
+                        {hasPermission('annees:delete') && annee.statut !== 'EN_COURS' && (
+                            <ElisaButton
+                                variant="danger"
+                                size="sm"
+                                icon={<Trash2 className="h-4 w-4" />}
+                                isLoading={supprimer.isPending}
+                                onClick={() => setConfirmSupprimer(true)}
+                            >
+                                {t('actions.supprimer')}
+                            </ElisaButton>
+                        )}
                     </div>
                 }
             />
@@ -260,7 +265,7 @@ export function AnneeScolaireDetailPage() {
             </div>
 
             {/* Progression bar */}
-            {annee.statut === 'active' && (
+            {annee.statut === 'EN_COURS' && (
                 <Card>
                     <div className="p-4">
                         <div className="flex items-center justify-between mb-2">
@@ -308,22 +313,10 @@ export function AnneeScolaireDetailPage() {
                                 value={annee.libelle}
                             />
                             <InfoField
-                                label={t('form.code')}
-                                value={annee.code}
-                            />
-                            <InfoField
                                 label={t('detail.statut')}
                                 value={
                                     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium border ${COULEURS_STATUT[annee.statut]}`}>
                                         {t(`statut.${annee.statut}`)}
-                                    </span>
-                                }
-                            />
-                            <InfoField
-                                label={t('detail.anneeCourante')}
-                                value={
-                                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${annee.estActuelle ? 'bg-[var(--color-dominant-50)] text-[var(--color-dominant-700)]' : 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]'}`}>
-                                        {annee.estActuelle ? t('statut.actuelle') : t('statut.inactive')}
                                     </span>
                                 }
                             />
@@ -378,29 +371,29 @@ export function AnneeScolaireDetailPage() {
                 {ongletActif === 'periodes' && (
                     <div className="space-y-6">
                         {totalPeriodes === 0 ? (
-                            <div className="rounded-xl border border-border bg-card text-center p-12">
-                                <CalendarDays className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                                <p className="text-base font-medium text-card-foreground">
+                            <div className="rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] text-center p-12">
+                                <CalendarDays className="h-16 w-16 text-[var(--color-text-tertiary)] mx-auto mb-4" />
+                                <p className="text-base font-medium text-[var(--color-text-primary)]">
                                     {t('detail.aucunePeriode')}
                                 </p>
-                                <p className="text-sm text-muted-foreground mt-2">
+                                <p className="text-sm text-[var(--color-text-muted)] mt-2">
                                     {t('detail.aucunePeriodeDesc')}
                                 </p>
                             </div>
                         ) : (
                             <>
                                 {/* Period summary */}
-                                <div className="flex items-center gap-4 flex-wrap rounded-xl border border-border bg-card p-4">
+                                <div className="flex items-center gap-4 flex-wrap rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] p-4">
                                     <div className="flex items-center gap-2">
-                                        <CheckCircle2 className="h-4 w-4 text-dominant-600" />
-                                        <span className="text-sm text-muted-foreground">
-                                            <strong className="text-card-foreground">{periodesOuvertes}</strong> ouverte{periodesOuvertes > 1 ? 's' : ''}
+                                        <CheckCircle2 className="h-4 w-4 text-[var(--color-dominant-600)]" />
+                                        <span className="text-sm text-[var(--color-text-muted)]">
+                                            <strong className="text-[var(--color-text-primary)]">{periodesOuvertes}</strong> ouverte{periodesOuvertes > 1 ? 's' : ''}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <XCircle className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-sm text-muted-foreground">
-                                            <strong className="text-card-foreground">{totalPeriodes - periodesOuvertes}</strong> clôturée{totalPeriodes - periodesOuvertes > 1 ? 's' : ''}
+                                        <XCircle className="h-4 w-4 text-[var(--color-text-muted)]" />
+                                        <span className="text-sm text-[var(--color-text-muted)]">
+                                            <strong className="text-[var(--color-text-primary)]">{totalPeriodes - periodesOuvertes}</strong> clôturée{totalPeriodes - periodesOuvertes > 1 ? 's' : ''}
                                         </span>
                                     </div>
                                 </div>
@@ -421,13 +414,13 @@ export function AnneeScolaireDetailPage() {
                                                 return (
                                                     <div
                                                         key={periode.id}
-                                                        className="flex items-center justify-between flex-wrap gap-2 rounded-lg border border-border bg-surface-alt p-3"
+                                                        className="flex items-center justify-between flex-wrap gap-2 rounded-lg border border-[var(--color-bordure)] bg-[var(--color-surface-alt)] p-3"
                                                     >
                                                         <div className="min-w-0">
-                                                            <p className="font-medium text-card-foreground truncate text-sm">
+                                                            <p className="font-medium text-[var(--color-text-primary)] truncate text-sm">
                                                                 {periode.nom}
                                                             </p>
-                                                            <p className="text-xs text-muted-foreground">
+                                                            <p className="text-xs text-[var(--color-text-muted)]">
                                                                 {formatDate(periode.dateDebut, i18n.language)} → {formatDate(periode.dateFin, i18n.language)}
                                                                 <span className="ml-2">• {periodeJours}j</span>
                                                             </p>
@@ -449,13 +442,13 @@ export function AnneeScolaireDetailPage() {
                 {ongletActif === 'validation' && peutValider && (
                     <Card>
                         <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
-                            <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
-                                <ShieldCheck className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-primary inline mr-2" />
-                                {t('validation')}
+                            <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-[var(--color-text-primary)] mb-4">
+                                <ShieldCheck className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-[var(--color-dominant-600)] inline mr-2" />
+                                {t('validation.titre')}
                             </h3>
-                            <div className="border-b border-border mb-6" />
+                            <div className="border-b border-[var(--color-bordure)] mb-6" />
                             {workflowQuery.isLoading ? (
-                                <p className="text-sm text-muted-foreground">{t('chargement')}</p>
+                                <p className="text-sm text-[var(--color-text-muted)]">{t('chargement')}</p>
                             ) : workflowQuery.data ? (
                                 <>
                                     <ValidationTimeline
@@ -475,7 +468,7 @@ export function AnneeScolaireDetailPage() {
                                     />
                                 </>
                             ) : (
-                                <p className="text-sm text-muted-foreground">{t('validation.aucunWorkflow')}</p>
+                                <p className="text-sm text-[var(--color-text-muted)]">{t('validation.aucunWorkflow')}</p>
                             )}
                         </div>
                     </Card>
@@ -484,11 +477,11 @@ export function AnneeScolaireDetailPage() {
                 {ongletActif === 'historique' && (
                     <Card>
                         <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
-                            <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
-                                <History className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-primary inline mr-2" />
+                            <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-[var(--color-text-primary)] mb-4">
+                                <History className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-[var(--color-dominant-600)] inline mr-2" />
                                 {t('detail.historique')}
                             </h3>
-                            <div className="border-b border-border mb-4" />
+                            <div className="border-b border-[var(--color-bordure)] mb-4" />
                             <AuditTimeline cible="AnneeScolaire" cibleId={id} module="annees-scolaires" />
                         </div>
                     </Card>

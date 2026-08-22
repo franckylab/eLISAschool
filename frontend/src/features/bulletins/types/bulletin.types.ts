@@ -15,7 +15,7 @@ export interface Bulletin {
     id: string;
     eleveId: string;
     classeAnneeId: string;
-    anneeScolaireId?: string;
+    anneeScolaireId: string;
     periodeId: string;
     etablissementId: string;
     moyenneGenerale: number;

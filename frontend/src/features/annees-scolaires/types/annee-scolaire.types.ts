@@ -11,12 +11,10 @@ import type { NiveauPeriode } from '@/features/periodes/types/periode.types';
 export interface AnneeScolaire {
     id: string;
     libelle: string;
-    code: string;
     dateDebut: string;
     dateFin: string;
     etablissementId: string;
-    statut: 'active' | 'inactive' | 'future' | 'archivee';
-    estActuelle: boolean;
+    statut: 'OUVERTE' | 'EN_COURS' | 'EN_ATTENTE_CLOTURE' | 'CLOTUREE';
     createdAt: string;
     updatedAt: string;
     periodes?: Periode[];
@@ -38,7 +36,6 @@ export interface Periode {
 
 export interface CreerAnneeScolaireDto {
     libelle: string;
-    code: string;
     dateDebut: string;
     dateFin: string;
 }
@@ -49,8 +46,7 @@ export interface ModifierAnneeScolaireDto extends Partial<CreerAnneeScolaireDto>
 
 export interface AnneeScolaireFiltres {
     recherche?: string;
-    statut?: 'active' | 'inactive' | 'future' | 'archivee';
-    estActuelle?: boolean;
+    statut?: 'OUVERTE' | 'EN_COURS' | 'EN_ATTENTE_CLOTURE' | 'CLOTUREE';
     page?: number;
     limit?: number;
     sortBy?: string;

@@ -35,7 +35,7 @@ import { seedPacksQuota } from './system/seed-packs-quota';
 import { seedStrategiesExpiration } from './system/seed-strategies-expiration';
 import { seedRemises } from './system/seed-remises';
 import { seedPromotions } from './system/seed-promotions';
-import { seedBundlePromotions } from './system/seed-bundles';
+import { seedPackagePromotions } from './system/seed-packages';
 import { seedParametresBilling } from './system/seed-parametres-billing';
 import { seedCmsTemplates } from './system/seed-cms-templates';
 import { seedCmsWidgets } from './system/seed-cms-widgets';
@@ -107,8 +107,8 @@ export async function runSystemSeeds(): Promise<{
     // 8g-bis. Promotions v4 (migration 216 — table promotions, multi-scopes)
     await seedPromotions();
 
-    // 8g-ter. Bundles de packs quota (migration 216 — table bundle_promotions)
-    await seedBundlePromotions();
+    // 8g-ter. Packages de packs quota (migration 216 — table package_promotions)
+    await seedPackagePromotions();
 
     // 8h. Paramètres système billing (onboarding, essai, facturation)
     await seedParametresBilling();

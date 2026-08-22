@@ -46,6 +46,8 @@ import { initClassesCronJobs } from '@modules/classes/cron-jobs';
 import { initAuditCronJobs } from '@modules/audit/cron-jobs';
 import { initEmploiDuTempsCronJobs } from '@modules/emploi-du-temps/cron-jobs';
 import { initBillingCronJobs } from '@modules/billing/cron-jobs';
+import { initAnneesScolairesCronJobs } from '@modules/annees-scolaires/cron-jobs';
+import { initPeriodesCronJobs } from '@modules/periodes/cron-jobs';
 import { keyManagerService } from '@modules/configuration/services/key-manager.service';
 import { permissionResolverService } from '@modules/auth/services';
 
@@ -142,7 +144,9 @@ async function bootstrap(): Promise<void> {
             initAuditCronJobs();
             initEmploiDuTempsCronJobs();
             initBillingCronJobs();
-            logger.info('✅ Cron jobs activés (notifications + finances + gamification + scoring personnel + sondages + auth + classes + audit + emploi-du-temps + billing)');
+            initAnneesScolairesCronJobs();
+            initPeriodesCronJobs();
+            logger.info('✅ Cron jobs activés (notifications + finances + gamification + scoring personnel + sondages + auth + classes + audit + emploi-du-temps + billing + années-scolaires + périodes)');
         } else {
             logger.info('ℹ️  Cron jobs désactivés (mode développement)');
             logger.info('💡 Pour activer: ENABLE_CRON_JOBS=true ou NODE_ENV=production');

@@ -2183,3 +2183,86 @@ Composant `HistoriquePromotionsClient` dans `mon-abonnement.tsx` (auto-masquant 
 | `frontend/src/locales/fr/promotions.json` | i18n FR namespace promotions |
 | `frontend/src/locales/en/promotions.json` | i18n EN namespace promotions |
 
+---
+
+## 30. Convention FK Dénormalisée — Pattern A/B/C pour `anneeScolaireId`
+
+### Contexte
+
+Lorsqu'une entité est liée à une `Periode` (et donc indirectement à une `AnneeScolaire`), trois patterns sont possibles pour stocker la référence à l'année scolaire :
+
+### Pattern A — `periodeId` seul (pas de FK dénormalisée)
+
+```typescript
+@Column({ type: 'uuid' })
+periodeId!: string;
+
+@ManyToOne(() => Periode)
+@JoinColumn({ name: 'periodeId' })
+periode?: Periode;
+// anneeScolaire dérivable via periode.anneeScolaireId
+```
+
+**Usage** : Entités qui n'ont pas besoin de requêter directement par année scolaire.
+
+### Pattern B — `periodeId` + `anneeScolaireId` NOT NULL (FK dénormalisée)
+
+```typescript
+@Column({ type: 'uuid' })
+periodeId!: string;
+
+@Column({ type: 'uuid' }) // NOT NULL — pas de nullable: true
+anneeScolaireId!: string;
+```
+
+**Usage** : Entités qui requêtent fréquemment par `anneeScolaireId` (notes, bulletins).
+**Règle** : La FK dénormalisée est **TOUJOURS NOT NULL** — elle est remplie à la création via `periode.anneeScolaireId`.
+**Migration de sécurité** : Backfill avant `SET NOT NULL` (voir migration 223).
+
+### Pattern C — `anneeScolaireId` seul (pas de `periodeId`)
+
+```typescript
+@Column({ type: 'uuid' })
+anneeScolaireId!: string;
+```
+
+**Usage** : Entités liées à l'année scolaire sans lien à une période spécifique (ex: certaines configurations).
+
+### Règles
+
+1. **JAMAIS** de `nullable: true` sur une FK dénormalisée — elle est toujours dérivable
+2. **TOUJOURS** backfill avant `SET NOT NULL` dans une migration idempotente
+3. **TOUJOURS** aligner les types frontend (`: string` et non `?: string`)
+4. **TOUJOURS** vérifier que les services créateurs passent la valeur à la création
+
+---
+
+## 31. Interface ICloturable — Contrat commun de clôture
+
+### Définition
+
+```typescript
+// shared/src/interfaces/cloturable.interface.ts
+export type StatutCloturable = 'OUVERTE' | 'EN_COURS' | 'EN_ATTENTE_CLOTURE' | 'CLOTUREE';
+
+export interface ICloturable {
+    id: string;
+    statut: StatutCloturable;
+    nomOuLibelle: string; // Getter pour logs/messages
+}
+```
+
+### Entités implémentant ICloturable
+
+| Entité | Fichier | `nomOuLibelle` |
+|--------|---------|----------------|
+| `AnneeScolaire` | `backend/src/modules/annees-scolaires/entities/annee-scolaire.entity.ts` | `this.libelle` |
+| `Periode` | `backend/src/modules/periodes/entities/periode.entity.ts` | `this.nom` |
+
+### Règles
+
+1. **TOUJOURS** utiliser `implements ICloturable` pour les entités avec workflow de clôture
+2. **TOUJOURS** implémenter le getter `nomOuLibelle` pour les logs et messages d'erreur
+3. **TOUJOURS** exporter depuis `shared/src/index.ts` pour accès cross-module
+4. Les types `CloturerOptions` et `ImpactsCloture` sont dans le même fichier pour les options de clôture
+

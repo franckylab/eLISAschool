@@ -15,6 +15,7 @@
 import { Repository, In, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { AppDataSource } from '@database/data-source';
 import { StatutNote } from '@modules/notes/entities/note.entity';
+import { AnneeScolaire, StatutAnneeScolaire } from '@modules/annees-scolaires/entities';
 import { Periode, PeriodeComposition, StatutPeriode, NiveauPeriode } from '../entities';
 import {
     CreatePeriodeDto,
@@ -70,10 +71,12 @@ export interface PeriodeArbre {
 export class PeriodesService {
     private periodeRepo: Repository<Periode>;
     private compositionRepo: Repository<PeriodeComposition>;
+    private anneeScolaireRepo: Repository<AnneeScolaire>;
 
     constructor() {
         this.periodeRepo = AppDataSource.getRepository(Periode);
         this.compositionRepo = AppDataSource.getRepository(PeriodeComposition);
+        this.anneeScolaireRepo = AppDataSource.getRepository(AnneeScolaire);
     }
 
     // ================================================================
@@ -85,9 +88,11 @@ export class PeriodesService {
      * Vérifie anti-chevauchement avec les périodes de même niveau.
      */
     async create(dto: CreatePeriodeDto, etablissementId: string, utilisateurId?: string, req?: Request): Promise<Periode> {
-        // Vérifier la cohérence multi-tenant
-        const { anneesScolairesService } = await import('@modules/annees-scolaires/services');
-        await anneesScolairesService.findOne(dto.anneeScolaireId, etablissementId);
+        // Vérifier la cohérence multi-tenant (via repository direct — évite import circulaire)
+        const annee = await this.anneeScolaireRepo.findOne({
+            where: { id: dto.anneeScolaireId, etablissementId },
+        });
+        if (!annee) throw new AppError('Année scolaire non trouvée', 404, 'ANNEE_NOT_FOUND');
 
         // Vérifier que le niveau existe pour cet établissement
         const { niveauxPeriodeService } = await import('./niveaux-periode.service');
@@ -233,7 +238,7 @@ export class PeriodesService {
     /**
      * Période en cours pour l'établissement.
      * Déterminée par :
-     * 1. Année scolaire active (enCours=true)
+     * 1. Année scolaire active (statut=EN_COURS)
      * 2. Niveau hiérarchique configuré (periodes.niveau_affichage_courant)
      * 3. Période avec dateDebut <= now <= dateFin et statut OUVERTE
      */
@@ -268,8 +273,10 @@ export class PeriodesService {
     }
 
     async findActive(etablissementId: string): Promise<Periode | null> {
-        const { anneesScolairesService } = await import('@modules/annees-scolaires/services');
-        const anneeActive = await anneesScolairesService.findActive(etablissementId);
+        // Recherche de l'année active via repository direct (évite import circulaire)
+        const anneeActive = await this.anneeScolaireRepo.findOne({
+            where: { statut: StatutAnneeScolaire.EN_COURS, etablissementId },
+        });
         if (!anneeActive) return null;
 
         const niveauParam = await getParamNumber('periodes.niveau_affichage_courant', {

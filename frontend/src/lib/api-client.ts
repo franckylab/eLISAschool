@@ -252,6 +252,15 @@ class ApiClient {
         return this.accessToken;
     }
 
+    /**
+     * Récupérer le token approprié pour une route donnée.
+     * - Routes plateforme (/api/platform/*) → platformAccessToken
+     * - Routes tenant (autres) → accessToken
+     */
+    getTokenForRoute(endpoint: string): string | null {
+        return this.isPlatformRoute(endpoint) ? this.platformAccessToken : this.accessToken;
+    }
+
     isAuthenticated(): boolean {
         return !!this.accessToken;
     }

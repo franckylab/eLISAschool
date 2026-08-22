@@ -4,7 +4,7 @@
  * ==================================
  *
  * Composants de formulaire génériques pour les modules billing
- * (promotions, bundles, plans, providers, etc.).
+ * (promotions, packages, plans, providers, etc.).
  * Design épuré, responsive, dark mode via CSS variables.
  *
  * Version: 1.0.0

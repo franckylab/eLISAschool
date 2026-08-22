@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAPPORT COHÉRENCE — Espace Enseignant vs Modules Existants eLISAschool</title>
+<style>
+:root{--primary:#7c3aed;--primary-light:rgba(124,58,237,.12);--success:#16a34a;--success-light:rgba(22,163,74,.1);--danger:#dc2626;--danger-light:rgba(220,38,38,.08);--warning:#d97706;--warning-light:rgba(217,119,6,.1);--info:#2563eb;--info-light:rgba(37,99,235,.1);--bg:#f8fafc;--surface:#fff;--border:#e2e8f0;--text:#1e293b;--muted:#64748b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;font-size:.95rem}
+header{background:linear-gradient(135deg,#1e1b4b 0%,#7c3aed 50%,#2563eb 100%);color:#fff;padding:50px 0;text-align:center}
+header h1{font-size:1.8rem;margin-bottom:6px}
+header p{opacity:.9;font-size:1rem}
+.container{max-width:1100px;margin:0 auto;padding:20px 30px}
+h2{font-size:1.5rem;color:var(--primary);margin:36px 0 14px;padding-bottom:8px;border-bottom:2px solid var(--primary-light)}
+h3{font-size:1.15rem;margin:20px 0 10px;color:var(--text)}
+h4{font-size:1rem;margin:14px 0 6px}
+table{width:100%;border-collapse:collapse;margin:10px 0 18px;font-size:.87rem}
+thead{background:var(--primary-light)}
+th{padding:9px 11px;text-align:left;font-weight:600;color:var(--primary);border-bottom:2px solid var(--border)}
+td{padding:7px 11px;border-bottom:1px solid var(--border)}
+tr:hover{background:rgba(124,58,237,.02)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;margin:10px 0}
+.card h4{color:var(--primary);margin-top:0}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:14px 0}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat-card .value{font-size:1.8rem;font-weight:700;color:var(--primary)}
+.stat-card .label{font-size:.82rem;color:var(--muted)}
+.badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:.73rem;font-weight:600}
+.b-ok{background:var(--success-light);color:var(--success)}
+.b-err{background:var(--danger-light);color:var(--danger)}
+.b-warn{background:var(--warning-light);color:var(--warning)}
+.b-info{background:var(--info-light);color:var(--info)}
+.b-pri{background:var(--primary-light);color:var(--primary)}
+code{background:#f1f5f9;padding:1px 5px;border-radius:3px;font-size:.87em;color:#6d28d9}
+pre{background:#1e293b;color:#e2e8f0;padding:14px 18px;border-radius:8px;overflow-x:auto;margin:10px 0;font-size:.83rem;line-height:1.5}
+pre code{background:none;color:inherit;padding:0}
+.alert{padding:12px 16px;border-radius:8px;margin:14px 0}
+.alert-danger{background:var(--danger-light);border-left:4px solid var(--danger)}
+.alert-success{background:var(--success-light);border-left:4px solid var(--success)}
+.alert-warning{background:var(--warning-light);border-left:4px solid var(--warning)}
+.alert-info{background:var(--info-light);border-left:4px solid var(--info)}
+.high{color:var(--danger);font-weight:600}
+.med{color:var(--warning);font-weight:600}
+.low{color:var(--success)}
+.diagram{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin:14px 0;overflow-x:auto}
+.toc{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px 28px;margin:18px 0}
+.toc h3{margin-top:0;color:var(--primary)}
+.toc ol{padding-left:18px}
+.toc li{margin:5px 0}
+.toc a{color:var(--primary);text-decoration:none}
+.toc a:hover{text-decoration:underline}
+.page-break{page-break-before:always}
+footer{text-align:center;padding:28px;color:var(--muted);font-size:.83rem;border-top:1px solid var(--border);margin-top:36px}
+.conflict-card{border-left:4px solid var(--danger);background:var(--danger-light);padding:16px;border-radius:0 10px 10px 0;margin:14px 0}
+.resolve-card{border-left:4px solid var(--success);background:var(--success-light);padding:16px;border-radius:0 10px 10px 0;margin:14px 0}
+</style>
+</head>
+<body>
+
+<header>
+<div class="container">
+<p style="font-size:.85rem;opacity:.8;margin-bottom:4px;">eLISAschool — Rapport d'Analyse de Cohérence</p>
+<h1>Vérification Plan d'Implémentation vs Modules Existants</h1>
+<p>Analyse approfondie • Conflits • Redondances • Corrections architecturales</p>
+<p style="font-size:.82rem;opacity:.7;margin-top:10px;">Août 2026 • 60 modules inspectés • 162 entités analysées • 5 conflits identifiés</p>
+</div>
+</header>
+
+<div class="container">
+
+<div class="toc">
+<h3>Sommaire</h3>
+<ol>
+<li><a href="#resume">Résumé Exécutif & Verdict</a></li>
+<li><a href="#cartographie">Cartographie Complète des 60 Modules</a></li>
+<li><a href="#chaine">Chaîne Académique — Analyse Approfondie</a></li>
+<li><a href="#conflits">5 Conflits Identifiés & Résolutions</a></li>
+<li><a href="#presence">Cohérence Module Présence</a></li>
+<li><a href="#discipline">Cohérence Module Discipline</a></li>
+<li><a href="#journal">Cohérence Module Journal</a></li>
+<li><a href="#evaluation">Cohérence Module Évaluation</a></li>
+<li><a href="#nomenclatures">Cohérence Nomenclatures</a></li>
+<li><a href="#corrections">Corrections Requises au Plan</a></li>
+<li><a href="#benchmark">Benchmark Standards Internationaux</a></li>
+<li><a href="#recommandations">Recommandations Finales</a></li>
+</ol>
+</div>
+
+<!-- ═══════════════ 1. RÉSUMÉ EXÉCUTIF ═══════════════ -->
+<section id="resume">
+<h2>1. Résumé Exécutif & Verdict</h2>
+
+<div class="card-grid">
+<div class="stat-card"><div class="value">60</div><div class="label">Modules inspectés</div></div>
+<div class="stat-card"><div class="value">162</div><div class="label">Entités analysées</div></div>
+<div class="stat-card"><div class="value high">5</div><div class="label">Conflits identifiés</div></div>
+<div class="stat-card"><div class="value">12</div><div class="label">Corrections requises</div></div>
+</div>
+
+<div class="alert alert-warning">
+<strong>Verdict global :</strong> Le plan d'implémentation est <strong>globalement cohérent</strong> avec l'architecture existante. 
+Cependant, <strong>5 conflits architecturaux</strong> et <strong>12 corrections</strong> sont nécessaires avant implémentation. 
+Le conflit le plus critique est la <strong>redondance ProgressionPedagogique vs ProgressionProgramme</strong> (entité existante dans le module personnel).
+</div>
+
+<h3>Matrice de cohérence globale</h3>
+<table>
+<thead><tr><th>Module planifié</th><th>Cohérence</th><th>Conflits</th><th>Corrections</th><th>Prêt à implémenter</th></tr></thead>
+<tbody>
+<tr><td>Module Présence</td><td><span class="badge b-ok">ÉLEVÉE</span></td><td>0</td><td>2 mineures</td><td><span class="badge b-ok">OUI</span></td></tr>
+<tr><td>Module Discipline</td><td><span class="badge b-warn">MOYENNE</span></td><td>1 majeur</td><td>3 corrections</td><td><span class="badge b-warn">APRÈS CORRECTION</span></td></tr>
+<tr><td>Module Journal</td><td><span class="badge b-warn">MOYENNE</span></td><td>1 majeur</td><td>2 corrections</td><td><span class="badge b-warn">APRÈS CORRECTION</span></td></tr>
+<tr><td>Module Évaluation</td><td><span class="badge b-err">À RÉVISER</span></td><td>2 majeurs</td><td>4 corrections</td><td><span class="badge b-err">NON — refonte requise</span></td></tr>
+<tr><td>Nomenclatures</td><td><span class="badge b-ok">ÉLEVÉE</span></td><td>0</td><td>1 mineure</td><td><span class="badge b-ok">OUI</span></td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════ 2. CARTOGRAPHIE ═══════════════ -->
+<section id="cartographie" class="page-break">
+<h2>2. Cartographie Complète des 60 Modules</h2>
+
+<div class="diagram">
+<svg viewBox="0 0 950 620" xmlns="http://www.w3.org/2000/svg">
+<text x="475" y="22" text-anchor="middle" font-size="13" font-weight="700" fill="#1e293b">Cartographie des 60 modules eLISAschool — Modules cibles surlignés</text>
+<!-- Critiques -->
+<rect x="20" y="40" width="200" height="130" rx="8" fill="rgba(124,58,237,.08)" stroke="#7c3aed" stroke-width="1.5"/>
+<text x="120" y="58" text-anchor="middle" font-size="10" font-weight="700" fill="#7c3aed">CRITIQUES (5)</text>
+<text x="30" y="76" font-size="9" fill="#1e293b">auth • utilisateurs • configuration</text>
+<text x="30" y="90" font-size="9" fill="#1e293b">notifications • notes</text>
+<text x="30" y="110" font-size="8" fill="#64748b">Toujours actifs — bypass gating</text>
+<text x="30" y="126" font-size="8" fill="#64748b">35 entités • ~4000 lignes</text>
+<!-- Académiques -->
+<rect x="240" y="40" width="220" height="130" rx="8" fill="rgba(22,163,74,.08)" stroke="#16a34a" stroke-width="1.5"/>
+<text x="350" y="58" text-anchor="middle" font-size="10" font-weight="700" fill="#16a34a">ACADÉMIQUES (14)</text>
+<text x="250" y="76" font-size="9" fill="#1e293b">etablissement • cycles • niveaux</text>
+<text x="250" y="90" font-size="9" fill="#1e293b">filieres • specialites • annees-scolaires</text>
+<text x="250" y="104" font-size="9" fill="#1e293b">classes • matieres • periodes</text>
+<text x="250" y="118" font-size="9" fill="#1e293b">programmes • eleves • bulletins</text>
+<text x="250" y="132" font-size="9" fill="#1e293b">parents • competences • diplomes-eleves</text>
+<text x="250" y="148" font-size="9" fill="#1e293b">examens-nationaux</text>
+<!-- Vie scolaire -->
+<rect x="480" y="40" width="220" height="130" rx="8" fill="rgba(37,99,235,.08)" stroke="#2563eb" stroke-width="1.5"/>
+<text x="590" y="58" text-anchor="middle" font-size="10" font-weight="700" fill="#2563eb">VIE SCOLAIRE (8)</text>
+<text x="490" y="76" font-size="9" fill="#1e293b">emploi-du-temps • scoring • gamification</text>
+<text x="490" y="90" font-size="9" fill="#1e293b">suivi-eleves • suivi-personnel</text>
+<text x="490" y="104" font-size="9" fill="#1e293b">sante • clubs • cartes</text>
+<text x="490" y="124" font-size="8" fill="#dc2626" font-weight="600">★ MODULES CIBLES (plan):</text>
+<text x="490" y="138" font-size="9" fill="#dc2626">presence • discipline • journal</text>
+<text x="490" y="152" font-size="9" fill="#dc2626">evaluation-eleves (fusion scoring+gami)</text>
+<!-- Logistique -->
+<rect x="720" y="40" width="210" height="130" rx="8" fill="rgba(217,119,6,.08)" stroke="#d97706" stroke-width="1.5"/>
+<text x="825" y="58" text-anchor="middle" font-size="10" font-weight="700" fill="#d97706">LOGISTIQUE (8)</text>
+<text x="730" y="76" font-size="9" fill="#1e293b">cantine • transport • parking</text>
+<text x="730" y="90" font-size="9" fill="#1e293b">materiel • finances • paie</text>
+<text x="730" y="104" font-size="9" fill="#1e293b">recrutement • impressions</text>
+<!-- Communication -->
+<rect x="20" y="190" width="200" height="100" rx="8" fill="rgba(37,99,235,.06)" stroke="#3b82f6" stroke-width="1.5"/>
+<text x="120" y="208" text-anchor="middle" font-size="10" font-weight="700" fill="#3b82f6">COMMUNICATION (5)</text>
+<text x="30" y="226" font-size="9" fill="#1e293b">messagerie • requetes • sondages</text>
+<text x="30" y="240" font-size="9" fill="#1e293b">annonces • cms</text>
+<!-- SaaS/Billing -->
+<rect x="240" y="190" width="220" height="100" rx="8" fill="rgba(124,58,237,.06)" stroke="#8b5cf6" stroke-width="1.5"/>
+<text x="350" y="208" text-anchor="middle" font-size="10" font-weight="700" fill="#8b5cf6">SAAS & BILLING (6)</text>
+<text x="250" y="226" font-size="9" fill="#1e293b">billing • paiement • platform-auth</text>
+<text x="250" y="240" font-size="9" fill="#1e293b">platform-roles • platform-users</text>
+<text x="250" y="254" font-size="9" fill="#1e293b">groupes-etablissements</text>
+<!-- Système -->
+<rect x="480" y="190" width="220" height="100" rx="8" fill="rgba(100,116,139,.08)" stroke="#64748b" stroke-width="1.5"/>
+<text x="590" y="208" text-anchor="middle" font-size="10" font-weight="700" fill="#64748b">SYSTÈME (7)</text>
+<text x="490" y="226" font-size="9" fill="#1e293b">monitoring • audit • dashboard</text>
+<text x="490" y="240" font-size="9" fill="#1e293b">validation-workflow • rbac</text>
+<text x="490" y="254" font-size="9" fill="#1e293b">types-enum • organisation • options</text>
+<!-- RH -->
+<rect x="720" y="190" width="210" height="100" rx="8" fill="rgba(236,72,153,.08)" stroke="#ec4899" stroke-width="1.5"/>
+<text x="825" y="208" text-anchor="middle" font-size="10" font-weight="700" fill="#ec4899">RH & ORG (5)</text>
+<text x="730" y="226" font-size="9" fill="#1e293b">personnel • organisation</text>
+<text x="730" y="240" font-size="9" fill="#1e293b">salles • orientation</text>
+<text x="730" y="254" font-size="9" fill="#1e293b">recrutement</text>
+<!-- Légende modules cibles -->
+<rect x="20" y="310" width="910" height="280" rx="8" fill="#fff" stroke="#e2e8f0"/>
+<text x="475" y="332" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">Modules impactés par le plan — Relations avec l'existant</text>
+<!-- Relations -->
+<rect x="40" y="350" width="160" height="70" rx="6" fill="rgba(22,163,74,.12)" stroke="#16a34a" stroke-width="2"/>
+<text x="120" y="370" text-anchor="middle" font-size="10" font-weight="600" fill="#16a34a">PRÉSENCE</text>
+<text x="120" y="386" text-anchor="middle" font-size="8" fill="#64748b">→ emploi-du-temps (HeureCours)</text>
+<text x="120" y="398" text-anchor="middle" font-size="8" fill="#64748b">→ scoring (ASSIDUITÉ)</text>
+<text x="120" y="410" text-anchor="middle" font-size="8" fill="#64748b">→ eleves • notifications</text>
+<rect x="220" y="350" width="160" height="70" rx="6" fill="rgba(220,38,38,.1)" stroke="#dc2626" stroke-width="2"/>
+<text x="300" y="370" text-anchor="middle" font-size="10" font-weight="600" fill="#dc2626">DISCIPLINE</text>
+<text x="300" y="386" text-anchor="middle" font-size="8" fill="#64748b">→ suivi-eleves (extension)</text>
+<text x="300" y="398" text-anchor="middle" font-size="8" fill="#64748b">→ emploi-du-temps (HeureCours)</text>
+<text x="300" y="410" text-anchor="middle" font-size="8" fill="#64748b">→ scoring (COMPORTEMENT)</text>
+<rect x="400" y="350" width="160" height="70" rx="6" fill="rgba(37,99,235,.1)" stroke="#2563eb" stroke-width="2"/>
+<text x="480" y="370" text-anchor="middle" font-size="10" font-weight="600" fill="#2563eb">JOURNAL</text>
+<text x="480" y="386" text-anchor="middle" font-size="8" fill="#64748b">→ emploi-du-temps (HeureCours)</text>
+<text x="480" y="398" text-anchor="middle" font-size="8" fill="#64748b">→ programmes (chapitres)</text>
+<text x="480" y="410" text-anchor="middle" font-size="8" fill="#64748b">→ notes (devoirs → notes)</text>
+<rect x="580" y="350" width="160" height="70" rx="6" fill="rgba(217,119,6,.12)" stroke="#d97706" stroke-width="2"/>
+<text x="660" y="370" text-anchor="middle" font-size="10" font-weight="600" fill="#d97706">ÉVALUATION</text>
+<text x="660" y="386" text-anchor="middle" font-size="8" fill="#64748b">→ scoring (FUSION)</text>
+<text x="660" y="398" text-anchor="middle" font-size="8" fill="#64748b">→ gamification (FUSION)</text>
+<text x="660" y="410" text-anchor="middle" font-size="8" fill="#64748b">→ notes/bulletins (lecture)</text>
+<rect x="760" y="350" width="160" height="70" rx="6" fill="rgba(124,58,237,.1)" stroke="#7c3aed" stroke-width="2"/>
+<text x="840" y="370" text-anchor="middle" font-size="10" font-weight="600" fill="#7c3aed">NOMENCLATURES</text>
+<text x="840" y="386" text-anchor="middle" font-size="8" fill="#64748b">→ tous les 4 modules</text>
+<text x="840" y="398" text-anchor="middle" font-size="8" fill="#64748b">→ configuration (paramètres)</text>
+<text x="840" y="410" text-anchor="middle" font-size="8" fill="#64748b">→ etablissement (scopé)</text>
+<!-- Conflits -->
+<text x="475" y="450" text-anchor="middle" font-size="11" font-weight="700" fill="#dc2626">⚠ 5 CONFLITS IDENTIFIÉS</text>
+<rect x="40" y="462" width="870" height="24" rx="4" fill="rgba(220,38,38,.06)"/>
+<text x="50" y="478" font-size="9" fill="#dc2626">C1: ProgressionPedagogique ↔ ProgressionProgramme (REDONDANCE)</text>
+<text x="500" y="478" font-size="9" fill="#dc2626">C2: IncidentCours ↔ IncidentEleve (chevauchement contexte)</text>
+<rect x="40" y="490" width="870" height="24" rx="4" fill="rgba(220,38,38,.06)"/>
+<text x="50" y="506" font-size="9" fill="#dc2626">C3: ScoreEleve structure (1 ligne/type → 1 ligne/élève+colonnes)</text>
+<text x="500" y="506" font-size="9" fill="#dc2626">C4: Badge.code unique → doit être scoped par etablissement</text>
+<rect x="40" y="518" width="870" height="24" rx="4" fill="rgba(220,38,38,.06)"/>
+<text x="50" y="534" font-size="9" fill="#dc2626">C5: PointsUtilisateur (utilisateurId) → doit migrer vers eleveId</text>
+</svg>
+</div>
+</section>
+
+<!-- ═══════════════ 3. CHAÎNE ACADÉMIQUE ═══════════════ -->
+<section id="chaine" class="page-break">
+<h2>3. Chaîne Académique — Analyse Approfondie</h2>
+
+<p>La chaîne académique d'eLISAschool est le flux de calcul principal qui va de la planification à l'évaluation des élèves.</p>
+
+<h3>3.1 Diagramme de la chaîne existante</h3>
+
+<div class="diagram">
+<svg viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#64748b"/></marker></defs>
+<text x="450" y="18" text-anchor="middle" font-size="12" font-weight="700" fill="#1e293b">Chaîne Académique eLISAschool — Flux complet</text>
+<!-- Niveau 1: Structure -->
+<rect x="20" y="35" width="860" height="55" rx="6" fill="rgba(124,58,237,.06)" stroke="#7c3aed" stroke-width="1"/>
+<text x="30" y="52" font-size="9" font-weight="600" fill="#7c3aed">NIVEAU 1 — STRUCTURE</text>
+<rect x="30" y="58" width="100" height="24" rx="4" fill="#7c3aed" opacity=".15"/><text x="80" y="74" text-anchor="middle" font-size="9" fill="#7c3aed">Etablissement</text>
+<text x="145" y="74" font-size="9" fill="#64748b">→</text>
+<rect x="160" y="58" width="60" height="24" rx="4" fill="#7c3aed" opacity=".15"/><text x="190" y="74" text-anchor="middle" font-size="9" fill="#7c3aed">Cycle</text>
+<text x="235" y="74" font-size="9" fill="#64748b">→</text>
+<rect x="250" y="58" width="65" height="24" rx="4" fill="#7c3aed" opacity=".15"/><text x="282" y="74" text-anchor="middle" font-size="9" fill="#7c3aed">Niveau</text>
+<text x="330" y="74" font-size="9" fill="#64748b">→</text>
+<rect x="345" y="58" width="65" height="24" rx="4" fill="#7c3aed" opacity=".15"/><text x="377" y="74" text-anchor="middle" font-size="9" fill="#7c3aed">Classe</text>
+<text x="425" y="74" font-size="9" fill="#64748b">→</text>
+<rect x="440" y="58" width="90" height="24" rx="4" fill="#7c3aed" opacity=".15"/><text x="485" y="74" text-anchor="middle" font-size="9" fill="#7c3aed">ClasseAnnee</text>
+<text x="545" y="74" font-size="9" fill="#64748b">→</text>
+<rect x="560" y="58" width="100" height="24" rx="4" fill="#7c3aed" opacity=".15"/><text x="610" y="74" text-anchor="middle" font-size="9" fill="#7c3aed">AnneeScolaire</text>
+<text x="675" y="74" font-size="9" fill="#64748b">→</text>
+<rect x="690" y="58" width="70" height="24" rx="4" fill="#7c3aed" opacity=".15"/><text x="725" y="74" text-anchor="middle" font-size="9" fill="#7c3aed">Periode</text>
+<text x="775" y="74" font-size="9" fill="#64748b">→</text>
+<rect x="790" y="58" width="80" height="24" rx="4" fill="#7c3aed" opacity=".15"/><text x="830" y="74" text-anchor="middle" font-size="9" fill="#7c3aed">Matiere</text>
+<!-- Niveau 2: Programme -->
+<rect x="20" y="100" width="860" height="55" rx="6" fill="rgba(22,163,74,.06)" stroke="#16a34a" stroke-width="1"/>
+<text x="30" y="117" font-size="9" font-weight="600" fill="#16a34a">NIVEAU 2 — PROGRAMME</text>
+<rect x="30" y="123" width="140" height="24" rx="4" fill="#16a34a" opacity=".15"/><text x="100" y="139" text-anchor="middle" font-size="9" fill="#16a34a">ProgrammePedagogique</text>
+<text x="185" y="139" font-size="9" fill="#64748b">→</text>
+<rect x="200" y="123" width="130" height="24" rx="4" fill="#16a34a" opacity=".15"/><text x="265" y="139" text-anchor="middle" font-size="9" fill="#16a34a">ProgrammeMatiere</text>
+<text x="345" y="139" font-size="9" fill="#64748b">→</text>
+<rect x="360" y="123" width="140" height="24" rx="4" fill="#16a34a" opacity=".15"/><text x="430" y="139" text-anchor="middle" font-size="9" fill="#16a34a">ProgrammeChapitre</text>
+<text x="515" y="139" font-size="9" fill="#64748b">→</text>
+<rect x="530" y="123" width="130" height="24" rx="4" fill="#16a34a" opacity=".15"/><text x="595" y="139" text-anchor="middle" font-size="9" fill="#16a34a">MatiereNiveau</text>
+<text x="675" y="139" font-size="9" fill="#64748b">→</text>
+<rect x="690" y="123" width="160" height="24" rx="4" fill="#16a34a" opacity=".15"/><text x="770" y="139" text-anchor="middle" font-size="9" fill="#16a34a">AffectationMatiere ★</text>
+<!-- Niveau 3: Enseignement -->
+<rect x="20" y="165" width="860" height="55" rx="6" fill="rgba(37,99,235,.06)" stroke="#2563eb" stroke-width="1"/>
+<text x="30" y="182" font-size="9" font-weight="600" fill="#2563eb">NIVEAU 3 — ENSEIGNEMENT (pivot)</text>
+<rect x="30" y="188" width="110" height="24" rx="4" fill="#2563eb" opacity=".15"/><text x="85" y="204" text-anchor="middle" font-size="9" fill="#2563eb">CreneauHoraire</text>
+<text x="155" y="204" font-size="9" fill="#64748b">→ propagation →</text>
+<rect x="270" y="188" width="100" height="24" rx="4" fill="#2563eb" opacity=".25" stroke="#2563eb" stroke-width="1.5"/><text x="320" y="204" text-anchor="middle" font-size="9" font-weight="700" fill="#2563eb">HeureCours ★</text>
+<text x="385" y="204" font-size="9" fill="#64748b">← PIVOT →</text>
+<rect x="460" y="188" width="130" height="24" rx="4" fill="#16a34a" opacity=".15" stroke="#16a34a" stroke-dasharray="3"/><text x="525" y="204" text-anchor="middle" font-size="9" fill="#16a34a">🆕 AppelCours</text>
+<rect x="605" y="188" width="130" height="24" rx="4" fill="#16a34a" opacity=".15" stroke="#16a34a" stroke-dasharray="3"/><text x="670" y="204" text-anchor="middle" font-size="9" fill="#16a34a">🆕 JournalSeance</text>
+<rect x="750" y="188" width="120" height="24" rx="4" fill="#dc2626" opacity=".1" stroke="#dc2626" stroke-dasharray="3"/><text x="810" y="204" text-anchor="middle" font-size="9" fill="#dc2626">🆕 IncidentCours</text>
+<!-- Niveau 4: Évaluation -->
+<rect x="20" y="230" width="860" height="55" rx="6" fill="rgba(217,119,6,.06)" stroke="#d97706" stroke-width="1"/>
+<text x="30" y="247" font-size="9" font-weight="600" fill="#d97706">NIVEAU 4 — ÉVALUATION</text>
+<rect x="30" y="253" width="60" height="24" rx="4" fill="#d97706" opacity=".15"/><text x="60" y="269" text-anchor="middle" font-size="9" fill="#d97706">Note</text>
+<text x="105" y="269" font-size="9" fill="#64748b">→</text>
+<rect x="120" y="253" width="80" height="24" rx="4" fill="#d97706" opacity=".15"/><text x="160" y="269" text-anchor="middle" font-size="9" fill="#d97706">Bulletin</text>
+<text x="215" y="269" font-size="9" fill="#64748b">→</text>
+<rect x="230" y="253" width="110" height="24" rx="4" fill="#d97706" opacity=".15"/><text x="285" y="269" text-anchor="middle" font-size="9" fill="#d97706">BulletinMatiere</text>
+<text x="355" y="269" font-size="9" fill="#64748b">│</text>
+<rect x="380" y="253" width="100" height="24" rx="4" fill="#dc2626" opacity=".15" stroke="#dc2626" stroke-dasharray="3"/><text x="430" y="269" text-anchor="middle" font-size="9" fill="#dc2626">🔄 ScoreEleve</text>
+<text x="495" y="269" font-size="9" fill="#64748b">+</text>
+<rect x="510" y="253" width="80" height="24" rx="4" fill="#dc2626" opacity=".15" stroke="#dc2626" stroke-dasharray="3"/><text x="550" y="269" text-anchor="middle" font-size="9" fill="#dc2626">🔄 Badge</text>
+<text x="605" y="269" font-size="9" fill="#64748b">+</text>
+<rect x="620" y="253" width="120" height="24" rx="4" fill="#dc2626" opacity=".15" stroke="#dc2626" stroke-dasharray="3"/><text x="680" y="269" text-anchor="middle" font-size="9" fill="#dc2626">🔄 RegleEvaluation</text>
+<!-- Niveau 5: Progression (CONFLITS) -->
+<rect x="20" y="295" width="860" height="55" rx="6" fill="rgba(220,38,38,.06)" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4"/>
+<text x="30" y="312" font-size="9" font-weight="600" fill="#dc2626">NIVEAU 5 — PROGRESSION (⚠ CONFLITS)</text>
+<rect x="30" y="318" width="160" height="24" rx="4" fill="#ec4899" opacity=".15"/><text x="110" y="334" text-anchor="middle" font-size="9" fill="#ec4899">ProgressionProgramme ★</text>
+<text x="205" y="334" font-size="9" fill="#dc2626" font-weight="700">⚔ CONFLITS AVEC →</text>
+<rect x="330" y="318" width="170" height="24" rx="4" fill="#dc2626" opacity=".15" stroke="#dc2626" stroke-dasharray="3"/><text x="415" y="334" text-anchor="middle" font-size="9" fill="#dc2626">🆕 ProgressionPedagogique</text>
+<text x="520" y="334" font-size="9" fill="#64748b">ET AUSSI:</text>
+<rect x="580" y="318" width="140" height="24" rx="4" fill="#16a34a" opacity=".15"/><text x="650" y="334" text-anchor="middle" font-size="9" fill="#16a34a">ProgrammeChapitre</text>
+<text x="735" y="334" font-size="9" fill="#64748b">(a déjà progression%)</text>
+<!-- Note explicative -->
+<text x="450" y="370" text-anchor="middle" font-size="9" fill="#64748b">★ = entité existante avec etablissementId • 🆕 = entité planifiée • 🔄 = entité à corriger (multi-tenant)</text>
+</svg>
+</div>
+
+<h3>3.2 Entités clés de la chaîne — Vérification</h3>
+
+<table>
+<thead><tr><th>Entité existante</th><th>FK clés</th><th>etablissementId</th><th>Utilisée par (plan)</th><th>Cohérence</th></tr></thead>
+<tbody>
+<tr><td><code>HeureCours</code></td><td>enseignantId, classeAnneeId, matiereId, periodeId, affectationMatiereId</td><td class="low">✓ Oui</td><td>Présence, Discipline, Journal</td><td><span class="badge b-ok">PARFAIT</span></td></tr>
+<tr><td><code>AffectationMatiere</code></td><td>matiereId, classeAnneeId, enseignantId</td><td class="low">✓ Oui</td><td>ProgressionPedagogique (plan)</td><td><span class="badge b-ok">PARFAIT</span></td></tr>
+<tr><td><code>ProgrammePedagogique</code></td><td>cycleId, niveauId</td><td class="low">✓ Oui</td><td>ProgrammeChapitre → Progression</td><td><span class="badge b-ok">PARFAIT</span></td></tr>
+<tr><td><code>ProgrammeChapitre</code></td><td>programmeMatiereId, periodeId</td><td class="low">✓ Oui</td><td>Journal (contenu chapitre)</td><td><span class="badge b-ok">PARFAIT</span></td></tr>
+<tr><td><code>Periode</code></td><td>niveauId, anneeScolaireId</td><td class="low">✓ Oui</td><td>Tous les 4 modules</td><td><span class="badge b-ok">PARFAIT</span></td></tr>
+<tr><td><code>ProgressionProgramme</code></td><td>enseignantId, matiereId, classeId, periodeId, programmeChapitreId</td><td class="low">✓ Oui</td><td>—</td><td><span class="badge b-err">CONFLIT C1</span></td></tr>
+<tr><td><code>IncidentEleve</code></td><td>eleveId, classeId, matiereId, enseignantId, periodeId</td><td class="low">✓ Oui</td><td>—</td><td><span class="badge b-warn">CONFLIT C2</span></td></tr>
+<tr><td><code>ScoreEleve</code></td><td>eleveId, periodeId (nullable), type (enum)</td><td class="high">✗ NON</td><td>—</td><td><span class="badge b-err">CONFLITS C3+C5</span></td></tr>
+<tr><td><code>Badge</code></td><td>code (unique global!)</td><td class="high">✗ NON</td><td>—</td><td><span class="badge b-err">CONFLIT C4</span></td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════ 4. CONFLITS ═══════════════ -->
+<section id="conflits" class="page-break">
+<h2>4. Les 5 Conflits Identifiés & Résolutions</h2>
+
+<!-- CONFLIT C1 -->
+<div class="conflict-card">
+<h4>⚠ CONFLIT C1 — ProgressionPedagogique vs ProgressionProgramme (CRITIQUE)</h4>
+<p><strong>Problème :</strong> Le plan propose une nouvelle entité <code>ProgressionPedagogique</code> (liée à <code>AffectationMatiere</code>) dans le module Journal. 
+Or, <strong>une entité identique existe déjà</strong> : <code>ProgressionProgramme</code> dans le module <code>personnel/</code>.</p>
+</div>
+
+<table>
+<thead><tr><th>Aspect</th><th>ProgressionProgramme (EXISTANT — personnel)</th><th>ProgressionPedagogique (PLAN — journal)</th></tr></thead>
+<tbody>
+<tr><td>Module</td><td>personnel/</td><td>journal/ (planifié)</td></tr>
+<tr><td>FK</td><td>enseignantId, matiereId, classeId, periodeId, programmeChapitreId</td><td>affectationMatiereId, periodeId</td></tr>
+<tr><td>Contenu</td><td>pourcentageRealise, chapitreCourant, modeCalcul, remarques</td><td>chapitre, pourcentageAvancement, statut, nbSeancesConsacrees</td></tr>
+<tr><td>Lien programme</td><td>OUI → programmeChapitreId (FK directe)</td><td>NON (pas de lien vers ProgrammeChapitre)</td></tr>
+<tr><td>etablissementId</td><td class="low">✓ Oui</td><td class="low">✓ Oui (plan)</td></tr>
+<tr><td>Soft delete</td><td class="low">✓ @DeleteDateColumn</td><td>Non prévu</td></tr>
+</tbody>
+</table>
+
+<div class="resolve-card">
+<h4>✅ Résolution C1 — FUSION des deux entités</h4>
+<p><strong>NE PAS créer <code>ProgressionPedagogique</code></strong>. Étendre <code>ProgressionProgramme</code> existant :</p>
+<ul>
+<li>Ajouter <code>affectationMatiereId</code> (nullable) pour lien direct avec l'affectation</li>
+<li>Ajouter <code>statut</code> (PLANIFIE | EN_COURS | TERMINE)</li>
+<li>Ajouter <code>nbSeancesConsacrees</code> (int, default 0)</li>
+<li>Ajouter <code>datePrevue</code> / <code>dateEffective</code></li>
+<li>Le module Journal <strong>lit et met à jour</strong> ProgressionProgramme via son service, sans créer de nouvelle table</li>
+</ul>
+<p><strong>Gain :</strong> Pas de redondance, pas de migration de données, lien ProgrammeChapitre conservé.</p>
+</div>
+
+<!-- CONFLIT C2 -->
+<div class="conflict-card">
+<h4>⚠ CONFLIT C2 — IncidentCours vs IncidentEleve (chevauchement)</h4>
+<p><strong>Problème :</strong> Le plan crée <code>IncidentCours</code> (lié à HeureCours) mais <code>IncidentEleve</code> existant a déjà <code>classeId</code>, <code>matiereId</code>, <code>enseignantId</code> — soit le contexte cours.</p>
+</div>
+
+<div class="resolve-card">
+<h4>✅ Résolution C2 — IncidentCours comme LÉGER, IncidentEleve comme LOURD</h4>
+<p>Les deux entités ont des rôles <strong>complémentaires</strong>, pas redondants :</p>
+<ul>
+<li><code>IncidentCours</code> (NOUVEAU) = incident <strong>ponctuel</strong> pendant un cours spécifique. Résolu par l'enseignant. Pas d'escalade. Table légère.</li>
+<li><code>IncidentEleve</code> (EXISTANT) = incident <strong>persistant</strong> au dossier de l'élève. Escalade direction. Sanctions. Workflow complet.</li>
+<li>Flux : IncidentCours (MINEUR) → résolu. Si récidive ou GRAVE+ → créer IncidentEleve (escalade).</li>
+</ul>
+<p><strong>Requis :</strong> Ajouter <code>incidentCoursId</code> (nullable) sur <code>IncidentEleve</code> pour tracer l'origine cours.</p>
+</div>
+
+<!-- CONFLIT C3 -->
+<div class="conflict-card">
+<h4>⚠ CONFLIT C3 — Structure ScoreEleve (1 ligne/type → 1 ligne/élève)</h4>
+<p><strong>Problème :</strong> Actuellement <code>ScoreEleve</code> stocke <strong>1 ligne par type</strong> (ACADÉMIQUE, COMPORTEMENT, etc.) avec <code>type: TypeIndicateur</code>. 
+Le plan propose <strong>1 ligne par élève+periode</strong> avec colonnes séparées (scoreAcademique, scoreComportement...). 
+C'est un <strong>breaking change</strong> de structure.</p>
+</div>
+
+<div class="resolve-card">
+<h4>✅ Résolution C3 — Conserver le modèle 1 ligne/type + ajouter GLOBAL</h4>
+<p>Garder la structure existante (plus flexible) et ajouter :</p>
+<ul>
+<li><code>etablissementId</code> (CORRECTION multi-tenant)</li>
+<li>Index unique sur <code>[eleveId, periodeId, type, etablissementId]</code></li>
+<li>Le score GLOBAL est calculé comme une 5ème ligne type=GLOBAL</li>
+</ul>
+</div>
+
+<!-- CONFLIT C4 -->
+<div class="conflict-card">
+<h4>⚠ CONFLIT C4 — Badge.code contrainte unique globale</h4>
+<p><strong>Problème :</strong> <code>Badge.code</code> a <code>unique: true</code> — impossible d'avoir des badges par établissement.</p>
+</div>
+
+<div class="resolve-card">
+<h4>✅ Résolution C4 — Unique composite [code, etablissementId]</h4>
+<ul>
+<li>Supprimer <code>unique: true</code> sur <code>code</code></li>
+<li>Ajouter <code>etablissementId</code> (uuid, NOT NULL)</li>
+<li>Créer index unique composite <code>[code, etablissementId]</code></li>
+<li>Migration : badges existants → etablissement du premier créateur</li>
+</ul>
+</div>
+
+<!-- CONFLIT C5 -->
+<div class="conflict-card">
+<h4>⚠ CONFLIT C5 — PointsUtilisateur utilise utilisateurId au lieu de eleveId</h4>
+<p><strong>Problème :</strong> La gamification stocke <code>utilisateurId</code> (pas <code>eleveId</code>). Or le scoring utilise <code>eleveId</code>. 
+Ce sont deux clés différentes pour le même élève.</p>
+</div>
+
+<div class="resolve-card">
+<h4>✅ Résolution C5 — Migration vers eleveId + etablissementId</h4>
+<ul>
+<li>Renommer <code>PointsUtilisateur</code> → <code>PointsEleve</code> (ou ajouter <code>eleveId</code>)</li>
+<li>Ajouter <code>etablissementId</code> sur toutes les entités gamification</li>
+<li>Script migration : JOIN eleves.utilisateurId → eleves.id pour remplir eleveId</li>
+<li>Fusionner avec le système de points comportement du plan (PointComportement)</li>
+</ul>
+</div>
+</section>
+
+<!-- ═══════════════ 5-8. COHÉRENCE DÉTAILLÉE ═══════════════ -->
+<section id="presence" class="page-break">
+<h2>5. Cohérence Module Présence</h2>
+
+<div class="alert alert-success"><strong>Verdict : <span class="low">ÉLEVÉE</span></strong> — Le module Présence est le plus cohérent du plan. Le pivot HeureCours est correct. Les 8 statuts couvrent le contexte africain.</div>
+
+<h3>5.1 Points de cohérence validés</h3>
+<table>
+<thead><tr><th>Aspect</th><th>Vérification</th><th>Résultat</th></tr></thead>
+<tbody>
+<tr><td>Pivot HeureCours</td><td><code>AppelCours.heureCoursId</code> → FK vers entité existante avec etablissementId</td><td><span class="badge b-ok">✓ OK</span></td></tr>
+<tr><td>Multi-tenant</td><td><code>AppelCours</code> et <code>PresenceEleve</code> ont etablissementId</td><td><span class="badge b-ok">✓ OK</span></td></tr>
+<tr><td>8 statuts présence</td><td>INFIRMERIE, EXCLU_COURS, ACTIVITE_EXTERNE = contexte africain réaliste</td><td><span class="badge b-ok">✓ OK</span></td></tr>
+<tr><td>Intégration scoring ASSIDUITÉ</td><td>ScoreEleve.type=ASSIDUITE existant → mise à jour via event</td><td><span class="badge b-ok">✓ OK</span></td></tr>
+<tr><td>Notification parents</td><td>Module notifications existant + module parents</td><td><span class="badge b-ok">✓ OK</span></td></tr>
+<tr><td>PeriodeId</td><td>HeureCours a periodeId → propagation vers AppelCours</td><td><span class="badge b-ok">✓ OK</span></td></tr>
+</tbody>
+</table>
+
+<h3>5.2 Corrections mineures requises</h3>
+<div class="card">
+<h4>Correction P1 — Ajouter anneeScolaireId</h4>
+<p><code>IncidentEleve</code> et <code>SanctionEleve</code> ont <code>anneeScolaireId</code>. Le plan ne le prévoit pas sur <code>AppelCours</code>. 
+<strong>Ajouter</strong> <code>anneeScolaireId</code> sur <code>AppelCours</code> pour cohérence avec le pattern existant.</p>
+</div>
+<div class="card">
+<h4>Correction P2 — Mode QR : référence vers RemplacementHeureCours</h4>
+<p>Si un cours est remplacé (<code>RemplacementHeureCours</code>), l'appel doit suivre le remplaçant. 
+<strong>Prévoir</strong> : <code>AppelCours.enseignantId</code> = enseignant effectif (pas planifié).</p>
+</div>
+</section>
+
+<section id="discipline">
+<h2>6. Cohérence Module Discipline</h2>
+
+<div class="alert alert-warning"><strong>Verdict : <span class="med">MOYENNE — après résolution C2</span></strong></div>
+
+<h3>6.1 Points de cohérence</h3>
+<table>
+<thead><tr><th>Aspect</th><th>Analyse</th><th>Résultat</th></tr></thead>
+<tbody>
+<tr><td>Extension suivi-eleves</td><td>IncidentEleve a déjà contexte cours (classeId, matiereId, enseignantId)</td><td><span class="badge b-warn">C2 à résoudre</span></td></tr>
+<tr><td>Types d'incidents</td><td>TypeIncidentEleve existant = 17 types (contexte africain). Le plan veut des nomenclatures.</td><td><span class="badge b-ok">✓ Compatible</span></td></tr>
+<tr><td>Types de sanctions</td><td>TypeSanction existant = 14 types (Afrique). Le plan veut nomenclatures.</td><td><span class="badge b-ok">✓ Compatible</span></td></tr>
+<tr><td>Workflow escalade</td><td>IncidentEleve → SanctionEleve (workflow complet existant)</td><td><span class="badge b-ok">✓ OK</span></td></tr>
+<tr><td>Points comportement</td><td>Nouveau concept — pas d'équivalent existant</td><td><span class="badge b-ok">✓ OK (nouveau)</span></td></tr>
+<tr><td>Enum GraviteIncident</td><td>MINEUR, MODERE, GRAVE, TRES_GRAVE — identique dans plan et existant</td><td><span class="badge b-ok">✓ PARFAIT</span></td></tr>
+</tbody>
+</table>
+
+<div class="card">
+<h4>Correction D1 — Nomenclatures vs Enums existants</h4>
+<p>Les enums <code>TypeIncidentEleve</code> et <code>TypeSanction</code> sont <strong>déjà très complets</strong> (17+14 valeurs contexte africain). 
+Les nomenclatures ne doivent PAS les remplacer mais les <strong>étendre</strong> :</p>
+<ul>
+<li>Les enums restent comme <strong>valeurs système par défaut</strong> (seeds)</li>
+<li>Les nomenclatures permettent d'<strong>ajouter</strong> des types custom par établissement</li>
+<li>Le champ <code>type</code> sur IncidentEleve passe de <code>enum</code> à <code>varchar</code> pour accepter les valeurs custom</li>
+</ul>
+</div>
+</section>
+
+<section id="journal">
+<h2>7. Cohérence Module Journal</h2>
+
+<div class="alert alert-warning"><strong>Verdict : <span class="med">MOYENNE — après résolution C1</span></strong></div>
+
+<h3>7.1 Analyse de cohérence</h3>
+<table>
+<thead><tr><th>Aspect</th><th>Analyse</th><th>Résultat</th></tr></thead>
+<tbody>
+<tr><td>JournalSeance → HeureCours</td><td>Pivot correct, HeureCours a tous les FK nécessaires</td><td><span class="badge b-ok">✓ OK</span></td></tr>
+<tr><td>JournalDevoir → Notes</td><td>Les devoirs peuvent devenir des Notes (workflow BROUILLON→PUBLIÉE)</td><td><span class="badge b-ok">✓ Compatible</span></td></tr>
+<tr><td>ProgressionPedagogique</td><td>REDONDANT avec ProgressionProgramme existant</td><td><span class="badge b-err">CONFLIT C1</span></td></tr>
+<tr><td>ProgrammeChapitre</td><td>A déjà <code>progressionPourcentage</code> — tracking avancement</td><td><span class="badge b-warn">À articuler</span></td></tr>
+<tr><td>API publique</td><td>Pas d'équivalent existant — nouveau concept</td><td><span class="badge b-ok">✓ OK (nouveau)</span></td></tr>
+</tbody>
+</table>
+
+<div class="card">
+<h4>Correction J1 — JournalSeance doit référencer ProgrammeChapitre</h4>
+<p>Ajouter <code>programmeChapitreId</code> (nullable) sur <code>JournalSeance</code> pour lier le contenu de séance 
+au chapitre du programme. Cela permet de mettre à jour automatiquement <code>ProgrammeChapitre.progressionPourcentage</code>.</p>
+</div>
+</section>
+
+<section id="evaluation" class="page-break">
+<h2>8. Cohérence Module Évaluation</h2>
+
+<div class="alert alert-danger"><strong>Verdict : <span class="high">À RÉVISER</span></strong> — 2 conflits majeurs (C3 structure ScoreEleve + C5 utilisateurId→eleveId). Refonte architecturale requise.</div>
+
+<h3>8.1 État actuel vs plan — Comparaison détaillée</h3>
+
+<table>
+<thead><tr><th>Entité</th><th>État actuel</th><th>Plan proposé</th><th>Écart</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><code>ConfigurationScoring</code></td><td>✓ etablissementId, methodes calcul, mentions</td><td>Renommée ConfigurationEvaluation</td><td class="low">Faible</td><td>Renommage + extension</td></tr>
+<tr><td><code>ScoreEleve</code></td><td>1 ligne/type, PAS de etablissementId</td><td>1 ligne/élève+colonnes</td><td class="high">Majeur</td><td class="high">Garder 1 ligne/type + ajouter etablissementId</td></tr>
+<tr><td><code>HistoriqueScore</code></td><td>PAS de etablissementId, PAS de periodeId</td><td>Corrigé</td><td class="med">Moyen</td><td>Ajouter etablissementId + periodeId</td></tr>
+<tr><td><code>RegleScoring</code></td><td>PAS de etablissementId, enum TypeIndicateur</td><td>Corrigé</td><td class="med">Moyen</td><td>Ajouter etablissementId + passer à varchar</td></tr>
+<tr><td><code>Badge</code></td><td>code unique GLOBAL, PAS de etablissementId</td><td>Scopé établissement</td><td class="high">Majeur</td><td class="high">Unique composite + etablissementId</td></tr>
+<tr><td><code>PointsUtilisateur</code></td><td>utilisateurId (pas eleveId), PAS de etablissementId</td><td>Fusionné</td><td class="high">Majeur</td><td class="high">Migration eleveId + etablissementId</td></tr>
+<tr><td><code>HistoriquePoints</code></td><td>utilisateurId, PAS de etablissementId</td><td>Fusionné</td><td class="high">Majeur</td><td class="high">Migration eleveId + etablissementId</td></tr>
+<tr><td><code>BadgeUtilisateur</code></td><td>utilisateurId, PAS de etablissementId</td><td>Corrigé</td><td class="high">Majeur</td><td class="high">Migration eleveId + etablissementId</td></tr>
+</tbody>
+</table>
+
+<div class="alert alert-danger">
+<strong>Bilan : 8 entités sur 8 nécessitent une correction multi-tenant.</strong> 
+C'est la migration la plus risquée du plan (migration 224). 
+<strong>Recommandation :</strong> Procéder en 2 étapes — (1) ajout colonnes, (2) backfill données, (3) pose des contraintes NOT NULL.
+</div>
+
+<h3>8.2 Correction fondamentale — Structure ScoreEleve</h3>
+
+<div class="resolve-card">
+<h4>✅ Solution retenue — Conserver 1 ligne par type</h4>
+<pre><code>// EXISTANT (conservé) — 1 ligne par (eleveId, periodeId, type)
+@Entity('scores_eleves')
+@Index(['eleveId', 'periodeId', 'type', 'etablissementId'], { unique: true })
+export class ScoreEleve {
+    @Column({ type: 'uuid' })
+    etablissementId!: string;  // ← AJOUT (migration 224)
+    
+    @Column({ type: 'uuid' })
+    eleveId!: string;
+    
+    @Column({ type: 'uuid' })
+    periodeId!: string;  // ← RENDU OBLIGATOIRE (était nullable)
+    
+    @Column({ type: 'enum', enum: TypeIndicateur })
+    type!: TypeIndicateur;  // ACADEMIQUE, COMPORTEMENT, ASSIDUITE, PARTICIPATION, GLOBAL
+    
+    @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+    score!: number;
+    
+    @Column({ type: 'int', nullable: true })
+    rang?: number;
+}
+// Le score GLOBAL est calculé comme une 5ème ligne type=GLOBAL
+// Poids configurés via ParametreSysteme (evaluation.weight_*)</code></pre>
+</div>
+</section>
+
+<!-- ═══════════════ 9. NOMENCLATURES ═══════════════ -->
+<section id="nomenclatures">
+<h2>9. Cohérence Nomenclatures</h2>
+
+<div class="alert alert-success"><strong>Verdict : <span class="low">ÉLEVÉE</span></strong> — Le pattern NomenclatureService&lt;T&gt; est cohérent. Aucune entité existante ne fait double emploi.</div>
+
+<h3>9.1 Vérification — Pas de redondance avec les enums existants</h3>
+<table>
+<thead><tr><th>Nomenclature plan</th><th>Enum existant équivalent</th><th>Cohabitation</th></tr></thead>
+<tbody>
+<tr><td>MotifAbsence</td><td>Aucun (pas d'enum motif dans le code)</td><td><span class="badge b-ok">✓ Nouveau — OK</span></td></tr>
+<tr><td>TypeIncident</td><td>TypeIncidentEleve (17 valeurs)</td><td><span class="badge b-warn">Cohabiter — seed depuis enum</span></td></tr>
+<tr><td>TypeSanction</td><td>TypeSanction (14 valeurs)</td><td><span class="badge b-warn">Cohabiter — seed depuis enum</span></td></tr>
+<tr><td>TypeFelicitation</td><td>Aucun</td><td><span class="badge b-ok">✓ Nouveau — OK</span></td></tr>
+<tr><td>TypeObservation</td><td>Aucun</td><td><span class="badge b-ok">✓ Nouveau — OK</span></td></tr>
+<tr><td>TypeDevoir</td><td>Aucun</td><td><span class="badge b-ok">✓ Nouveau — OK</span></td></tr>
+<tr><td>TypeRessource</td><td>Aucun</td><td><span class="badge b-ok">✓ Nouveau — OK</span></td></tr>
+</tbody>
+</table>
+
+<div class="card">
+<h4>Correction N1 — TypeRessource vs ProgrammeChapitre.ressourcesPedagogiques</h4>
+<p><code>ProgrammeChapitre</code> a déjà un champ JSON <code>ressourcesPedagogiques</code> avec types MANUEL, VIDEO, DOCUMENT, LIEN. 
+La nomenclature <code>TypeRessource</code> doit inclure ces mêmes valeurs pour cohérence. 
+À terme, migrer le JSON vers des entités <code>JournalRessource</code> liées.</p>
+</div>
+</section>
+
+<!-- ═══════════════ 10. CORRECTIONS REQUISES ═══════════════ -->
+<section id="corrections" class="page-break">
+<h2>10. Synthèse des 12 Corrections Requises</h2>
+
+<table>
+<thead><tr><th>#</th><th>Correction</th><th>Module</th><th>Priorité</th><th>Impact</th><th>Effort</th></tr></thead>
+<tbody>
+<tr><td>C1</td><td>Fusion ProgressionPedagogique → étendre ProgressionProgramme existant</td><td>Journal</td><td><span class="badge b-err">CRITIQUE</span></td><td>Supprime 1 entité redondante</td><td>4h</td></tr>
+<tr><td>C2</td><td>Articuler IncidentCours (léger) vs IncidentEleve (lourd) + FK incidentCoursId</td><td>Discipline</td><td><span class="badge b-err">CRITIQUE</span></td><td>Clarifie le flux disciplinaire</td><td>6h</td></tr>
+<tr><td>C3</td><td>Conserver structure ScoreEleve 1 ligne/type (pas colonnes)</td><td>Évaluation</td><td><span class="badge b-err">CRITIQUE</span></td><td>Évite breaking change</td><td>8h</td></tr>
+<tr><td>C4</td><td>Badge.code → unique composite [code, etablissementId]</td><td>Évaluation</td><td><span class="badge b-warn">HAUTE</span></td><td>Multi-tenant correct</td><td>4h</td></tr>
+<tr><td>C5</td><td>PointsUtilisateur → eleveId + etablissementId</td><td>Évaluation</td><td><span class="badge b-warn">HAUTE</span></td><td>Alignement scoring</td><td>8h</td></tr>
+<tr><td>P1</td><td>Ajouter anneeScolaireId sur AppelCours</td><td>Présence</td><td><span class="badge b-info">MOYENNE</span></td><td>Cohérence pattern</td><td>1h</td></tr>
+<tr><td>P2</td><td>Gérer RemplacementHeureCours dans l'appel</td><td>Présence</td><td><span class="badge b-info">MOYENNE</span></td><td>Cas réel</td><td>2h</td></tr>
+<tr><td>D1</td><td>Nomenclatures cohabitent avec enums (seed depuis enums)</td><td>Discipline</td><td><span class="badge b-info">MOYENNE</span></td><td>Transition douce</td><td>3h</td></tr>
+<tr><td>J1</td><td>Ajouter programmeChapitreId sur JournalSeance</td><td>Journal</td><td><span class="badge b-info">MOYENNE</span></td><td>Lien programme</td><td>2h</td></tr>
+<tr><td>E1</td><td>Rendre ScoreEleve.periodeId NOT NULL</td><td>Évaluation</td><td><span class="badge b-warn">HAUTE</span></td><td>Intégrité données</td><td>3h</td></tr>
+<tr><td>E2</td><td>ConfigurationScoring → ConfigurationEvaluation (renommage)</td><td>Évaluation</td><td><span class="badge b-info">MOYENNE</span></td><td>Cohérence naming</td><td>2h</td></tr>
+<tr><td>N1</td><td>Aligner TypeRessource avec ProgrammeChapitre.ressourcesPedagogiques</td><td>Nomenclatures</td><td><span class="badge b-info">BASSE</span></td><td>Cohérence types</td><td>1h</td></tr>
+</tbody>
+</table>
+
+<div class="alert alert-info">
+<strong>Effort total des corrections : ~44h</strong> — À intégrer dans le plan initial (310h → 354h). 
+Les 3 corrections CRITIQUES (C1, C2, C3) doivent être traitées <strong>avant</strong> le début de l'implémentation.
+</div>
+</section>
+
+<!-- ═══════════════ 11. BENCHMARK ═══════════════ -->
+<section id="benchmark" class="page-break">
+<h2>11. Benchmark Standards Internationaux</h2>
+
+<h3>11.1 Comparatif des solutions leaders</h3>
+
+<table>
+<thead><tr><th>Fonctionnalité</th><th>PRONOTE</th><th>EcoleDirecte</th><th>PowerSchool</th><th>Classe365</th><th>eLISAschool (plan)</th></tr></thead>
+<tbody>
+<tr><td>Appel par cours</td><td class="low">✓</td><td class="low">✓</td><td class="low">✓</td><td class="low">✓</td><td class="low">✓ (8 statuts)</td></tr>
+<tr><td>QR code présence</td><td class="high">✗</td><td class="high">✗</td><td class="low">✓</td><td class="high">✗</td><td class="low">✓</td></tr>
+<tr><td>Cahier de texte</td><td class="low">✓</td><td class="low">✓</td><td class="low">✓</td><td class="low">✓</td><td class="low">✓ (+ API publique)</td></tr>
+<tr><td>Progression programme</td><td class="low">✓</td><td class="med">Partiel</td><td class="low">✓</td><td class="high">✗</td><td class="low">✓ (via ProgressionProgramme)</td></tr>
+<tr><td>Points comportement</td><td class="high">✗</td><td class="low">✓</td><td class="low">✓</td><td class="high">✗</td><td class="low">✓ (solde 100)</td></tr>
+<tr><td>Badges/Gamification</td><td class="high">✗</td><td class="high">✗</td><td class="low">✓</td><td class="low">✓</td><td class="low">✓ (fusion)</td></tr>
+<tr><td>Nomenclatures custom</td><td class="high">✗</td><td class="high">✗</td><td class="low">✓</td><td class="high">✗</td><td class="low">✓ (7 tables)</td></tr>
+<tr><td>API publique élèves</td><td class="high">✗</td><td class="high">✗</td><td class="low">✓</td><td class="high">✗</td><td class="low">✓</td></tr>
+<tr><td>Mode hors-ligne</td><td class="high">✗</td><td class="high">✗</td><td class="high">✗</td><td class="high">✗</td><td class="low">✓ (PWA)</td></tr>
+<tr><td>Contexte africain</td><td class="high">✗</td><td class="high">✗</td><td class="high">✗</td><td class="high">✗</td><td class="low">✓ (adapté)</td></tr>
+</tbody>
+</table>
+
+<div class="alert alert-success">
+<strong>eLISAschool (plan corrigé) est compétitif</strong> avec les leaders du marché sur 10/10 critères, 
+et se différencie sur 4 points uniques : QR code, API publique, mode hors-ligne, et adaptation contexte africain.
+</div>
+
+<h3>11.2 Standards SIES (Système d'Information Éducatif) — Afrique</h3>
+<div class="card">
+<h4>Adaptations contexte camerounais/africain validées</h4>
+<ul>
+<li><strong>Effectifs 60-120 élèves</strong> → Appel rapide mode négatif (&lt;2 min) ✓</li>
+<li><strong>Saisons rurales</strong> → Statut ABANDON_TEMPORAIRE dans TypeIncidentEleve ✓</li>
+<li><strong>Tenue uniforme</strong> → TENUE_NON_CONFORME dans nomenclature ✓</li>
+<li><strong>Frais scolarité</strong> → FRAIS_SCOLARITE_NON_PAYES dans TypeIncidentEleve ✓</li>
+<li><strong>Travail enfant</strong> → TRAVAIL_ENFANT (aide famille) ✓</li>
+<li><strong>Chefs traditionnels</strong> → EXCUSES_DEVANT_CHEF dans TypeSanction ✓</li>
+<li><strong>Connectivité limitée</strong> → PWA offline + sync différée ✓</li>
+</ul>
+</div>
+</section>
+
+<!-- ═══════════════ 12. RECOMMANDATIONS ═══════════════ -->
+<section id="recommandations">
+<h2>12. Recommandations Finales</h2>
+
+<div class="card-grid">
+<div class="card">
+<h4>🔴 Avant implémentation</h4>
+<ol>
+<li>Résoudre les 3 conflits CRITIQUES (C1, C2, C3)</li>
+<li>Mettre à jour le plan avec les 12 corrections</li>
+<li>Ajuster effort : 310h → 354h</li>
+<li>Valider architecture avec les parties prenantes</li>
+</ol>
+</div>
+<div class="card">
+<h4>🟡 Pendant implémentation</h4>
+<ol>
+<li>Phase 1 (Nomenclatures) : inclure correction D1 (cohabitation enums)</li>
+<li>Phase 2 (Présence) : inclure corrections P1+P2</li>
+<li>Phase 4 (Journal) : utiliser ProgressionProgramme existant (pas de nouvelle table)</li>
+<li>Phase 5 (Évaluation) : migration 224 en 3 étapes (ajout → backfill → contraintes)</li>
+</ol>
+</div>
+<div class="card">
+<h4>🟢 Après implémentation</h4>
+<ol>
+<li>Tests isolation multi-tenant sur toutes les nouvelles entités</li>
+<li>Vérification graceful degradation (désactiver chaque module)</li>
+<li>Audit performance (appel 120 élèves &lt; 2s)</li>
+<li>Documentation migration pour établissements existants</li>
+</ol>
+</div>
+</div>
+
+<div class="alert alert-success">
+<strong>Conclusion :</strong> Le plan d'implémentation est <strong>solide dans sa conception</strong> mais nécessite 
+<strong>12 corrections</strong> avant implémentation, dont 3 sont critiques. 
+Les conflits proviennent principalement d'un manque de connaissance de 3 entités existantes : 
+<code>ProgressionProgramme</code> (personnel), <code>IncidentEleve</code> (contexte cours déjà présent), 
+et la structure <code>ScoreEleve</code> (1 ligne/type). 
+Après corrections, le plan sera <strong>prêt pour implémentation</strong> avec un effort ajusté de ~354h.
+</div>
+</section>
+
+</div>
+
+<footer>
+<p><strong>eLISAschool — Rapport de Cohérence Espace Enseignant</strong></p>
+<p>Analyse approfondie • 60 modules • 162 entités • 5 conflits • 12 corrections</p>
+<p>Août 2026 — Document technique de validation avant implémentation</p>
+</footer>
+
+</body>
+</html>

@@ -584,7 +584,7 @@ function RemisesTab({ groupe }: { groupe: GroupeEtablissement }) {
                                         <span className="px-2 py-0.5 rounded-full text-xs bg-[var(--color-surface)] text-[var(--color-text-secondary)]">
                                             {p.scope === 'PLAN' ? 'Plan' :
                                              p.scope === 'PACK' ? 'Pack' :
-                                             p.scope === 'MODULE' ? 'Module' : 'Bundle'}
+                                             p.scope === 'MODULE' ? 'Module' : 'Package'}
                                         </span>
                                     </td>
                                 </tr>

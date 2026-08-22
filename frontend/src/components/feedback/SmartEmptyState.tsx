@@ -76,7 +76,7 @@ const CREATE_PERMISSIONS: Record<string, string> = {
     'eleves': 'eleves:create',
     'classes': 'classes:create',
     'matieres': 'matieres:create',
-    'annees-scolaires': 'annees-scolaires:create',
+    'annees-scolaires': 'annees:create',
     'niveaux': 'niveaux:create',
     'filieres': 'filieres:create',
     'periodes': 'periodes:create',

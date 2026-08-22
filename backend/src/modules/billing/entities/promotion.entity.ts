@@ -7,7 +7,7 @@
  *   - PLAN   : remise sur le forfait plan (base + élèves sup.)
  *   - PACK   : remise sur un pack quota spécifique ou ressource
  *   - MODULE : remise sur un module supplémentaire (ou gratuité N mois)
- *   - BUNDLE : remise sur un combo de packs ( BundlePromotion )
+ *   - PACKAGE : remise sur un combo de packs ( PackagePromotion )
  *
  * Moteur en cascade 5 phases (plan → packs → quota → modules → gratuités),
  * chaque scope a son propre plafond (40% sur plan, pas de plafond sur options).
@@ -43,8 +43,8 @@ export enum ScopePromotion {
     PACK = 'PACK',
     /** Remise sur un module supplémentaire */
     MODULE = 'MODULE',
-    /** Remise sur un bundle de packs */
-    BUNDLE = 'BUNDLE',
+    /** Remise sur un package de packs */
+    PACKAGE = 'PACKAGE',
     /** Remise sur une ressource quota spécifique (élèves, stockage, SMS…) */
     QUOTA = 'QUOTA',
 }
@@ -96,10 +96,10 @@ export interface PalierVolume {
 
 /** Configuration additionnelle selon le type */
 export interface ConfigPromotion {
-    /** Prix original du bundle (pour affichage économie) */
-    prixOriginalBundle?: number;
-    /** Réduction fixe sur le bundle en devise */
-    reductionBundle?: number;
+    /** Prix original du package (pour affichage économie) */
+    prixOriginalPackage?: number;
+    /** Réduction fixe sur le package en devise */
+    reductionPackage?: number;
     /** Description longue / note interne */
     noteInterne?: string;
     /** Paliers de volume pour dégressivité (scope=QUOTA ou PACK) */
@@ -155,7 +155,7 @@ export class Promotion {
     @Column({ type: 'varchar', length: 20, default: ScopePromotion.PLAN })
     scope!: ScopePromotion;
 
-    /** ID de la cible selon le scope (planId, packId, moduleId, bundleId) */
+    /** ID de la cible selon le scope (planId, packId, moduleId, packageId) */
     @Column({ type: 'uuid', nullable: true })
     cibleId?: string;
 

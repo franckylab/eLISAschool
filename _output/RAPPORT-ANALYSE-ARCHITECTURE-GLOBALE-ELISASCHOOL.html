@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport d'Analyse Architecture Globale — eLISAschool</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-light: #dbeafe;
+  --primary-dark: #1e40af;
+  --success: #059669;
+  --success-light: #d1fae5;
+  --warning: #d97706;
+  --warning-light: #fef3c7;
+  --danger: #dc2626;
+  --danger-light: #fee2e2;
+  --info: #0891b2;
+  --info-light: #cffafe;
+  --surface: #ffffff;
+  --surface-alt: #f8fafc;
+  --text: #1e293b;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--text);
+  background: var(--surface-alt);
+  line-height: 1.7;
+  font-size: 15px;
+}
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* Header */
+.report-header {
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #06b6d4 100%);
+  color: white;
+  padding: 60px 0 50px;
+  position: relative;
+  overflow: hidden;
+}
+.report-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.report-header h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+.report-header .subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  font-weight: 400;
+}
+.report-header .meta {
+  display: flex;
+  gap: 24px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.report-header .meta-item {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(8px);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Scores */
+.scores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin: -30px 0 40px;
+  position: relative;
+  z-index: 2;
+}
+.score-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  border-top: 4px solid var(--primary);
+}
+.score-card.global { border-top-color: var(--success); }
+.score-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.score-value.high { color: var(--success); }
+.score-value.medium { color: var(--warning); }
+.score-value.low { color: var(--danger); }
+.score-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+.score-bar {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+.score-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+/* Sections */
+.section {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 32px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--primary-dark);
+}
+.section-title .num {
+  background: var(--primary);
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.section-desc {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  font-size: 0.95rem;
+}
+
+/* Callout boxes */
+.callout {
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin: 20px 0;
+  border-left: 4px solid;
+  display: flex;
+  gap: 12px;
+}
+.callout-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 2px; }
+.callout.critical { background: var(--danger-light); border-color: var(--danger); }
+.callout.warning { background: var(--warning-light); border-color: var(--warning); }
+.callout.success { background: var(--success-light); border-color: var(--success); }
+.callout.info { background: var(--info-light); border-color: var(--info); }
+.callout-title { font-weight: 700; margin-bottom: 4px; font-size: 0.95rem; }
+.callout-text { font-size: 0.9rem; color: var(--text); }
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 0.88rem;
+}
+th {
+  background: var(--surface-alt);
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  border-bottom: 2px solid var(--border);
+}
+td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+tr:hover td { background: var(--surface-alt); }
+
+/* Tags/Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  gap: 4px;
+}
+.badge.critical { background: var(--danger-light); color: var(--danger); }
+.badge.warning { background: var(--warning-light); color: var(--warning); }
+.badge.success { background: var(--success-light); color: var(--success); }
+.badge.info { background: var(--info-light); color: var(--info); }
+.badge.neutral { background: #f1f5f9; color: var(--text-secondary); }
+
+/* Priority matrix */
+.priority-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+.priority-card {
+  border-radius: var(--radius);
+  padding: 20px;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.priority-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+.priority-card.p1::before { background: var(--danger); }
+.priority-card.p2::before { background: var(--warning); }
+.priority-card.p3::before { background: var(--info); }
+.priority-card.p4::before { background: var(--success); }
+.priority-card h4 {
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.priority-card p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.priority-card .effort {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 12px;
+}
+
+/* Mermaid */
+.mermaid-container {
+  background: var(--surface-alt);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin: 20px 0;
+  border: 1px solid var(--border);
+  overflow-x: auto;
+}
+.mermaid { text-align: center; }
+
+/* Charts */
+.chart-container {
+  background: var(--surface-alt);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin: 20px 0;
+  border: 1px solid var(--border);
+}
+.chart-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 20px 0;
+}
+@media (max-width: 768px) {
+  .chart-row { grid-template-columns: 1fr; }
+}
+
+/* Module map */
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+.module-chip {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.module-chip:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+.module-chip.critique { border-left: 3px solid var(--success); background: var(--success-light); }
+.module-chip.payant { border-left: 3px solid var(--primary); background: var(--primary-light); }
+.module-chip.gratuit { border-left: 3px solid var(--info); }
+.module-chip.fusion { border-left: 3px solid var(--warning); background: var(--warning-light); opacity: 0.85; }
+.module-chip .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Comparison */
+.comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin: 20px 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.comparison-col {
+  padding: 20px;
+}
+.comparison-col.before { background: #fef2f2; }
+.comparison-col.after { background: #f0fdf4; }
+.comparison-col h4 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.comparison-col.before h4 { color: var(--danger); }
+.comparison-col.after h4 { color: var(--success); }
+.comparison-col ul { list-style: none; }
+.comparison-col li {
+  font-size: 0.85rem;
+  padding: 4px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+/* TOC */
+.toc {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 24px 32px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.toc h3 {
+  font-size: 1rem;
+  margin-bottom: 16px;
+  color: var(--primary-dark);
+}
+.toc ol {
+  columns: 2;
+  column-gap: 40px;
+  padding-left: 20px;
+}
+.toc li {
+  padding: 4px 0;
+  font-size: 0.9rem;
+}
+.toc a {
+  color: var(--primary);
+  text-decoration: none;
+}
+.toc a:hover { text-decoration: underline; }
+
+/* Stats row */
+.stats-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.stat-item {
+  background: var(--surface-alt);
+  border-radius: 8px;
+  padding: 12px 20px;
+  text-align: center;
+  border: 1px solid var(--border);
+  flex: 1;
+  min-width: 120px;
+}
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+/* Footer */
+.report-footer {
+  text-align: center;
+  padding: 40px 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+}
+
+@media print {
+  body { background: white; }
+  .report-header { padding: 30px 0; }
+  .section { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+  .scores-grid { margin-top: 20px; }
+}
+@media (max-width: 640px) {
+  .report-header h1 { font-size: 1.5rem; }
+  .section { padding: 20px; }
+  .toc ol { columns: 1; }
+  .comparison { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="report-header">
+  <div class="container">
+    <h1>Analyse Architecture Globale — eLISAschool</h1>
+    <p class="subtitle">Audit complet de la plateforme SaaS de gestion scolaire : 61 modules, 162 entités, workflows métier, cohérence frontend/backend</p>
+    <div class="meta">
+      <span class="meta-item">📅 20 août 2026</span>
+      <span class="meta-item">🏗️ Branche migration_saas</span>
+      <span class="meta-item">📊 61 modules analysés</span>
+      <span class="meta-item">🎯 Score global 7.8/10</span>
+    </div>
+  </div>
+</header>
+
+<!-- SCORES -->
+<div class="container">
+  <div class="scores-grid">
+    <div class="score-card">
+      <div class="score-value high">8.5</div>
+      <div class="score-label">Architecture Backend</div>
+      <div class="score-bar"><div class="score-bar-fill" style="width:85%;background:var(--success)"></div></div>
+    </div>
+    <div class="score-card">
+      <div class="score-value medium">6.8</div>
+      <div class="score-label">Cohérence Frontend</div>
+      <div class="score-bar"><div class="score-bar-fill" style="width:68%;background:var(--warning)"></div></div>
+    </div>
+    <div class="score-card">
+      <div class="score-value high">8.2</div>
+      <div class="score-label">Logique Métier</div>
+      <div class="score-bar"><div class="score-bar-fill" style="width:82%;background:var(--success)"></div></div>
+    </div>
+    <div class="score-card">
+      <div class="score-value medium">6.5</div>
+      <div class="score-label">Intégration Modules</div>
+      <div class="score-bar"><div class="score-bar-fill" style="width:65%;background:var(--warning)"></div></div>
+    </div>
+    <div class="score-card global">
+      <div class="score-value high">7.8</div>
+      <div class="score-label">Score Global</div>
+      <div class="score-bar"><div class="score-bar-fill" style="width:78%;background:var(--success)"></div></div>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <nav class="toc">
+    <h3>📑 Table des matières</h3>
+    <ol>
+      <li><a href="#synthese">Synthèse exécutive</a></li>
+      <li><a href="#discipline">Module Discipline — Analyse complète</a></li>
+      <li><a href="#evaluation">Système d'évaluation des élèves</a></li>
+      <li><a href="#calendrier">Année scolaire vs Périodes</a></li>
+      <li><a href="#notes">Notes & Bulletins — Pipeline académique</a></li>
+      <li><a href="#cartographie">Cartographie des 61 modules</a></li>
+      <li><a href="#refactoring">Propositions de refactoring</a></li>
+      <li><a href="#workflows">Workflows & configurabilité</a></li>
+      <li><a href="#bonnes-pratiques">Bonnes pratiques & benchmarks</a></li>
+      <li><a href="#plan-action">Plan d'action priorisé</a></li>
+    </ol>
+  </nav>
+
+  <!-- SECTION 1: SYNTHESE -->
+  <section class="section" id="synthese">
+    <h2 class="section-title"><span class="num">1</span> Synthèse exécutive</h2>
+    <p class="section-desc">Vue d'ensemble de l'audit architecture avec les constats majeurs et recommandations prioritaires.</p>
+
+    <div class="stats-row">
+      <div class="stat-item"><div class="stat-value">61</div><div class="stat-label">Modules</div></div>
+      <div class="stat-item"><div class="stat-value">162</div><div class="stat-label">Entités</div></div>
+      <div class="stat-item"><div class="stat-value">192</div><div class="stat-label">Services</div></div>
+      <div class="stat-item"><div class="stat-value">102</div><div class="stat-label">Controllers</div></div>
+      <div class="stat-item"><div class="stat-value">47</div><div class="stat-label">Enums modules</div></div>
+    </div>
+
+    <div class="callout critical">
+      <span class="callout-icon">🔴</span>
+      <div>
+        <div class="callout-title">CRITIQUE — Discipline frontend déconnectée du backend</div>
+        <div class="callout-text">Le module frontend <code>features/discipline/</code> appelle des endpoints <code>/api/discipline/*</code> qui <strong>n'existent pas</code></strong>. Le backend expose <code>/api/suivi-eleves/*</code> avec 4 entités (Incident, Observation, Sanction, Félicitation) et 18 types de sanctions. Le frontend n'en connaît que 6. La page <code>DisciplinePage</code> est du code mort — aucun routeur ne l'importe.</div>
+      </div>
+    </div>
+
+    <div class="callout warning">
+      <span class="callout-icon">🟡</span>
+      <div>
+        <div class="callout-title">ATTENTION — Redondance AnneeScolaire.enCours</div>
+        <div class="callout-text">Le boolean <code>enCours</code> sur <code>AnneeScolaire</code> duplique l'information déjà portée par <code>statut === EN_COURS</code>. Risque d'incohérence si les deux sont modifiés indépendamment. De même, <code>anneeScolaireId</code> sur <code>Note</code> et <code>Bulletin</code> est une dénormalisation qui peut diverger du chemin <code>Periode → AnneeScolaire</code>.</div>
+      </div>
+    </div>
+
+    <div class="callout success">
+      <span class="callout-icon">🟢</span>
+      <div>
+        <div class="callout-title">VALIDÉ — TypeEvaluation couvre tous les types d'évaluation</div>
+        <div class="callout-text">L'enum <code>TypeEvaluation</code> (DEVOIR, INTERROGATION, EXAMEN, PROJET, PARTICIPATION, AUTRE) sur l'entité <code>Note</code> gère nativement tous les types d'évaluation. <strong>Aucun module séparé</strong> n'est nécessaire pour devoirs, interrogations ou concours. Le module frontend <code>examens</code> est un système distinct de planification d'examens (calendrier, convocations).</div>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">🔵</span>
+      <div>
+        <div class="callout-title">REFACTORING — 5 fusions de modules recommandées</div>
+        <div class="callout-text">Sur les 61 modules, 5 fusions sont identifiées : <code>rbac→auth</code> (0 entités propres), <code>platform-*→platform-admin</code> (5 modules minces), <code>paiement→finances</code> (pattern adapter), <code>types-enum→configuration</code> (1 entité), <code>suivi-eleves+suivi-personnel→shared</code> (abstraction commune). Cela réduirait le nombre de modules de ~12%.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2: DISCIPLINE -->
+  <section class="section" id="discipline">
+    <h2 class="section-title"><span class="num">2</span> Module Discipline — Analyse complète</h2>
+    <p class="section-desc">Le module discipline (suivi-eleves) gère incidents, observations, sanctions et félicitations avec un workflow progressif et une intégration gamification.</p>
+
+    <h3 style="margin:20px 0 12px;font-size:1.1rem;">2.1 — Architecture backend (4 entités)</h3>
+
+    <table>
+      <thead>
+        <tr><th>Entité</th><th>Table</th><th>Types/Enums</th><th>Rôle</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>IncidentEleve</strong></td>
+          <td><code>incidents_eleves</code></td>
+          <td>23 types d'incidents, 4 gravités, 4 statuts</td>
+          <td>Déclaration d'un événement disciplinaire</td>
+        </tr>
+        <tr>
+          <td><strong>ObservationEleve</strong></td>
+          <td><code>observations_eleves</code></td>
+          <td>3 types (POSITIVE/NEGATIVE/NEUTRE), 5 catégories</td>
+          <td>Appréciation comportementale (gamification ±points)</td>
+        </tr>
+        <tr>
+          <td><strong>SanctionEleve</strong></td>
+          <td><code>sanctions_eleves</code></td>
+          <td>18 types progressifs, 7 statuts</td>
+          <td>Sanction disciplinaire liée à un incident</td>
+        </tr>
+        <tr>
+          <td><strong>FelicitationEleve</strong></td>
+          <td><code>felicitations_eleves</code></td>
+          <td>20 types (académique, comportement, parascolaire)</td>
+          <td>Récompense positive (gamification +points)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin:20px 0 12px;font-size:1.1rem;">2.2 — Workflow disciplinaire (diagramme)</h3>
+
+    <div class="mermaid-container">
+      <div class="mermaid">
+flowchart TD
+    A[🔔 Incident signalé] --> B{Gravité?}
+    B -->|MINEUR| C[Observation négative<br/>-5 points gamification]
+    B -->|MODERE| D[Observation +<br/>Notification parent]
+    B -->|GRAVE| E[Ouverture dossier<br/>Validation requise]
+    B -->|TRES_GRAVE| F[Urgence<br/>Direction notifiée]
+    
+    E --> G{Validation<br/>multi-niveaux?}
+    F --> G
+    G -->|Approuvé| H[Sanction appliquée]
+    G -->|Rejeté| I[Classement sans suite]
+    
+    H --> J{Type sanction}
+    J -->|Légère| K[Observation orale<br/>Excuse écrite]
+    J -->|Moyenne| L[Retenue<br/>Exclusion temporaire]
+    J -->|Lourde| M[Exclusion définitive<br/>Conseil discipline]
+    
+    C --> N[📊 Dashboard<br/>Score comportement]
+    D --> N
+    K --> N
+    L --> N
+    M --> N
+    
+    O[⭐ Félicitation] --> P[+points gamification]
+    P --> N
+    
+    N --> Q[📈 Bulletin<br/>Appréciation globale]
+    
+    style A fill:#fee2e2,stroke:#dc2626
+    style O fill:#d1fae5,stroke:#059669
+    style N fill:#dbeafe,stroke:#2563eb
+    style Q fill:#fef3c7,stroke:#d97706
+      </div>
+    </div>
+
+    <h3 style="margin:20px 0 12px;font-size:1.1rem;">2.3 — Progression des sanctions (18 niveaux)</h3>
+
+    <table>
+      <thead>
+        <tr><th>Niveau</th><th>Type</th><th>Gravité</th><th>Validation</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1-3</td><td>OBSERVATION_ORALE, EXCUSE_ECRITE, RETENUE_PEDAGOGIQUE</td><td><span class="badge success">Légère</span></td><td>Enseignant</td></tr>
+        <tr><td>4-6</td><td>DEVOIR_SUPPLEMENTAIRE, TRAVAIL_INTERET, EXCLUSION_COURS</td><td><span class="badge info">Modérée</span></td><td>Censeur</td></tr>
+        <tr><td>7-10</td><td>EXCLUSION_TEMPORAIRE_1J à EXCLUSION_TEMPORAIRE_8J</td><td><span class="badge warning">Sérieuse</span></td><td>Chef établissement</td></tr>
+        <tr><td>11-14</td><td>EXCLUSION_TEMPORAIRE_15J+, EXCLUSION_DEFINITIVE</td><td><span class="badge critical">Grave</span></td><td>Conseil discipline</td></tr>
+        <tr><td>15-18</td><td>CONSEIL_DISCIPLINE, RENVOI, SIGNATURE_PROTOCOLE, MESURE_REEDUCATIVE</td><td><span class="badge critical">Très grave</span></td><td>Direction + Parents</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin:20px 0 12px;font-size:1.1rem;">2.4 — Contexte africain (23 types d'incidents)</h3>
+    <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:12px;">
+      Les types d'incidents sont contextualisés pour le système éducatif camerounais/africain :
+      <strong>RETARD</strong>, <strong>ABSENCE_INJUSTIFIEE</strong>, <strong>TENUE_NON_CONFORME</strong>,
+      <strong>TRICHERIE</strong>, <strong>VIOLENCE_VERBALE</strong>, <strong>VIOLENCE_PHYSIQUE</strong>,
+      <strong>HARCLEMENT</strong>, <strong>NON_RESPECT AUTORITE</strong>, <strong>PERTURBATION_COURS</strong>,
+      <strong>TELEPHONE_PORTABLE</strong>, <strong>DEGRADATION_BIENS</strong>, <strong>VOL</strong>,
+      <strong>COMPORTEMENT_INAPPROPRIE</strong>, <strong>LANGAGE_INAPPROPRIE</strong>,
+      <strong>INTRODUCTION_OBJET_DANGEREUX</strong>, <strong>FAUSSE_DECLARATION</strong>,
+      <strong>FRAUDE_EXAMEN</strong>, <strong>INSOUMISSION</strong>, <strong>PROPOS_DISCRIMINATOIRES</strong>,
+      <strong>HARCLEMENT_CYBER</strong>, <strong>ABSENCE_REUNION</strong>, <strong>NEGLIGENCE</strong>, <strong>AUTRE</strong>.
+    </p>
+
+    <div class="callout critical">
+      <span class="callout-icon">🔴</span>
+      <div>
+        <div class="callout-title">DISCORDANCE FRONTEND/BACKEND</div>
+        <div class="callout-text">
+          <strong>Backend</strong> : 18 <code>TypeSanction</code>, 23 <code>TypeIncident</code>, 20 <code>TypeFelicitation</code>, endpoint <code>/api/suivi-eleves/*</code><br>
+          <strong>Frontend</strong> : 6 sanctions, 0 incident typé, endpoint <code>/api/discipline/*</code> (INEXISTANT)<br>
+          <strong>Impact</strong> : Le module discipline est totalement inopérant en frontend. La page <code>DisciplinePage</code> n'est importée par aucun routeur.
+        </div>
+      </div>
+    </div>
+
+    <div class="comparison">
+      <div class="comparison-col before">
+        <h4>❌ Avant (état actuel)</h4>
+        <ul>
+          <li>⛔ Frontend appelle <code>/api/discipline/*</code> (404)</li>
+          <li>⛔ 6 types de sanctions au lieu de 18</li>
+          <li>⛔ Pas de gestion des incidents</li>
+          <li>⛔ Pas de workflow de validation</li>
+          <li>⛔ Gamification non connectée</li>
+          <li>⛔ DisciplinePage = code mort</li>
+        </ul>
+      </div>
+      <div class="comparison-col after">
+        <h4>✅ Après (correction requise)</h4>
+        <ul>
+          <li>✅ Frontend appelle <code>/api/suivi-eleves/*</code></li>
+          <li>✅ 18 types de sanctions progressifs</li>
+          <li>✅ CRUD incidents avec gravité</li>
+          <li>✅ Workflow multi-niveaux (grave→validation)</li>
+          <li>✅ Points gamification auto-calculés</li>
+          <li>✅ Route <code>/discipline</code> connectée</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: EVALUATION -->
+  <section class="section" id="evaluation">
+    <h2 class="section-title"><span class="num">3</span> Système d'évaluation des élèves</h2>
+    <p class="section-desc">L'évaluation d'un élève est multi-dimensionnelle : notes académiques, comportement (discipline), présence, activités scolaires, gamification.</p>
+
+    <div class="mermaid-container">
+      <div class="mermaid">
+flowchart LR
+    subgraph EVAL["🎓 Évaluation Académique"]
+        N[Notes<br/>TypeEvaluation]
+        C[Compétences APC<br/>NiveauMaitrise]
+        EX[Examens<br/>Planification]
+    end
+    
+    subgraph COMP["📋 Comportement"]
+        D[Discipline<br/>Incidents/Sanctions]
+        O[Observations<br/>+/-/neutre]
+        F[Félicitations]
+    end
+    
+    subgraph ASSID["📅 Assiduité"]
+        P[Présences]
+        A[Absences<br/>justifiées/non]
+        R[Retards]
+    end
+    
+    subgraph ACTIV["🏆 Activités"]
+        S[Activités parascolaires]
+        CL[Clubs]
+        SP[Sport]
+    end
+    
+    subgraph GAMIF["🎮 Gamification"]
+        PTS[Points<br/>comportement]
+        BDG[Badges]
+        RANK[Classement]
+    end
+    
+    N --> BUL[📊 Bulletin<br/>synthèse globale]
+    C --> BUL
+    D --> BUL
+    O --> GAMIF
+    F --> GAMIF
+    A --> BUL
+    PTS --> BUL
+    BDG --> BUL
+    
+    style EVAL fill:#dbeafe,stroke:#2563eb
+    style COMP fill:#fef3c7,stroke:#d97706
+    style ASSID fill:#d1fae5,stroke:#059669
+    style ACTIV fill:#ede9fe,stroke:#7c3aed
+    style GAMIF fill:#fce7f3,stroke:#db2777
+    style BUL fill:#fee2e2,stroke:#dc2626
+      </div>
+    </div>
+
+    <h3 style="margin:20px 0 12px;font-size:1.1rem;">3.1 — TypeEvaluation : une enum, pas des modules séparés</h3>
+
+    <table>
+      <thead>
+        <tr><th>Valeur</th><th>Description</th><th>Coefficient typique</th><th>Périodicité</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>DEVOIR</code></td><td>Évaluation écrite programmée</td><td>1.0</td><td>2-4/mois par matière</td></tr>
+        <tr><td><code>INTERROGATION</code></td><td>Contrôle rapide (15-30 min)</td><td>0.5</td><td>Hebdomadaire</td></tr>
+        <tr><td><code>EXAMEN</code></td><td>Évaluation sommative de fin de période</td><td>2.0</td><td>1-3/période</td></tr>
+        <tr><td><code>PROJET</code></td><td>Travail de longue durée</td><td>1.5</td><td>1-2/période</td></tr>
+        <tr><td><code>PARTICIPATION</code></td><td>Note de participation orale</td><td>0.25</td><td>Continue</td></tr>
+        <tr><td><code>AUTRE</code></td><td>Évaluation personnalisée</td><td>Variable</td><td>Variable</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout success">
+      <span class="callout-icon">🟢</span>
+      <div>
+        <div class="callout-title">RECOMMANDATION — Pas de modules séparés pour devoirs/interrogations/concours</div>
+        <div class="callout-text">L'enum <code>TypeEvaluation</code> suffit. Créer des modules séparés ajouterait de la complexité sans bénéfice. Le module <code>examens</code> (frontend) gère la planification logistique des examens (calendrier, salles, convocations) — c'est un complément, pas un doublon.</div>
+      </div>
+    </div>
+
+    <h3 style="margin:20px 0 12px;font-size:1.1rem;">3.2 — Intégration gamification & discipline</h3>
+    <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:12px;">
+      Le système de gamification attribue des points de comportement basés sur les observations et félicitations :
+    </p>
+    <table>
+      <thead>
+        <tr><th>Action</th><th>Points</th><th>Source</th><th>Intégration frontend</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Observation POSITIVE</td><td style="color:var(--success);font-weight:700">+5 à +20</td><td>observation-eleve.entity.ts</td><td><span class="badge critical">Non connecté</span></td></tr>
+        <tr><td>Observation NEGATIVE</td><td style="color:var(--danger);font-weight:700">-5 à -20</td><td>observation-eleve.entity.ts</td><td><span class="badge critical">Non connecté</span></td></tr>
+        <tr><td>Félicitation</td><td style="color:var(--success);font-weight:700">+10 à +50</td><td>felicitation-eleve.entity.ts</td><td><span class="badge critical">Non connecté</span></td></tr>
+        <tr><td>Sanction appliquée</td><td style="color:var(--danger);font-weight:700">-10 à -50</td><td>sanction-eleve.entity.ts</td><td><span class="badge critical">Non connecté</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SECTION 4: CALENDRIER -->
+  <section class="section" id="calendrier">
+    <h2 class="section-title"><span class="num">4</span> Année scolaire vs Périodes — Hiérarchie temporelle</h2>
+    <p class="section-desc">Le système gère une hiérarchie stricte AnneeScolaire (1) → Periode (N) avec niveaux configurables et templates.</p>
+
+    <div class="mermaid-container">
+      <div class="mermaid">
+flowchart TD
+    AS["📅 AnneeScolaire<br/>2025-2026<br/>dateDebut → dateFin<br/>statut: EN_COURS"]
+    
+    AS --> P1["Trimestre 1<br/>Sept → Déc<br/>niveauId: TRIMESTRE"]
+    AS --> P2["Trimestre 2<br/>Jan → Avr<br/>niveauId: TRIMESTRE"]
+    AS --> P3["Trimestre 3<br/>Mai → Jul<br/>niveauId: TRIMESTRE"]
+    
+    P1 --> PC1["Composition 1<br/>Novembre<br/>poids: 0.4"]
+    P1 --> PC2["Composition 2<br/>Décembre<br/>poids: 0.6"]
+    
+    P2 --> PC3["Composition 3"]
+    P2 --> PC4["Composition 4"]
+    
+    NP["⚙️ NiveauPeriode<br/>(config par établissement)"]
+    NP --> N1["TRIMESTRE<br/>usage: NOTES, BULLETIN"]
+    NP --> N2["SEMESTRE<br/>usage: COMPOSITION"]
+    NP --> N3["MOIS<br/>usage: AUTRE"]
+    
+    TP["📋 TemplatePeriode<br/>(structure JSONB récursive)"]
+    TP --> AS2["Auto-création<br/>périodes à l'année"]
+    
+    style AS fill:#dbeafe,stroke:#2563eb
+    style NP fill:#fef3c7,stroke:#d97706
+    style TP fill:#d1fae5,stroke:#059669
+      </div>
+    </div>
+
+    <h3 style="margin:20px 0 12px;font-size:1.1rem;">4.1 — Redondances identifiées</h3>
+
+    <table>
+      <thead>
+        <tr><th>Redondance</th><th>Sévérité</th><th>Correction proposée</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>AnneeScolaire.enCours</code> boolean</td>
+          <td><span class="badge warning">Moyenne</span></td>
+          <td>Supprimer — dériver de <code>statut === EN_COURS</code></td>
+        </tr>
+        <tr>
+          <td><code>Note.anneeScolaireId</code> FK directe</td>
+          <td><span class="badge info">Faible</span></td>
+          <td>Dénormalisation acceptable (performance) — documenter</td>
+        </tr>
+        <tr>
+          <td><code>Bulletin.anneeScolaireId</code> FK directe</td>
+          <td><span class="badge info">Faible</span></td>
+          <td>Idem — dénormalisation acceptable</td>
+        </tr>
+        <tr>
+          <td><code>NiveauPeriode</code> avec usage='ANNEE'</td>
+          <td><span class="badge warning">Moyenne</span></td>
+          <td>Clarifier : usage ANNEE = wrapper, pas un sous-niveau</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout info">
+      <span class="callout-icon">🔵</span>
+      <div>
+        <div class="callout-title">ARCHITECTURE — Séparation claire AnneeScolaire / Periode</div>
+        <div class="callout-text">
+          <strong>AnneeScolaire</strong> = cadre temporel annuel (septembre → août). Contient les périodes.<br>
+          <strong>Periode</strong> = subdivision configurable (trimestre, semestre, mois). Porte les notes et bulletins.<br>
+          <strong>NiveauPeriode</strong> = catalogue des niveaux configurables par établissement (pas une instance).<br>
+          <strong>PeriodeComposition</strong> = sous-période d'évaluation (composition 1, 2...) avec poids relatif.<br>
+          Pas de fusion nécessaire — la hiérarchie est saine.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: NOTES & BULLETINS -->
+  <section class="section" id="notes">
+    <h2 class="section-title"><span class="num">5</span> Notes & Bulletins — Pipeline académique</h2>
+    <p class="section-desc">Le pipeline de génération des bulletins est bien architecturé avec batch loading, résolution de coefficients et classement automatique.</p>
+
+    <div class="mermaid-container">
+      <div class="mermaid">
+flowchart LR
+    subgraph SAISIE["Saisie des notes"]
+        N1[Note individuelle<br/>POST /api/notes]
+        N2[Saisie en masse<br/>POST /api/notes/bulk]
+    end
+    
+    subgraph VALID["Validation"]
+        V1{Workflow<br/>activé?}
+        V2[EN_ATTENTE_VALIDATION]
+        V3[VALIDEE]
+    end
+    
+    subgraph CALCUL["Calcul bulletin"]
+        B1[NotesBatchLoader<br/>résolution N+1]
+        B2[CoefficientResolver<br/>cascade AffectationMatiere]
+        B3[Moyennes + Rangs<br/>par matière + globale]
+    end
+    
+    subgraph BULLETIN["Bulletin"]
+        BL[Bulletin entity<br/>sanctions + encouragements]
+        BM[BulletinMatiere<br/>moyenne, coeff, rang, appreciation]
+        PDF[Export HTML/PDF<br/>A4 imprimable]
+    end
+    
+    N1 --> V1
+    N2 --> V1
+    V1 -->|Oui| V2
+    V1 -->|Non| V3
+    V2 -->|Approuvé| V3
+    V3 --> B1
+    B1 --> B2
+    B2 --> B3
+    B3 --> BL
+    BL --> BM
+    BM --> PDF
+    
+    style SAISIE fill:#dbeafe,stroke:#2563eb
+    style VALID fill:#fef3c7,stroke:#d97706
+    style CALCUL fill:#d1fae5,stroke:#059669
+    style BULLETIN fill:#ede9fe,stroke:#7c3aed
+      </div>
+    </div>
+
+    <h3 style="margin:20px 0 12px;font-size:1.1rem;">5.1 — Points forts du pipeline</h3>
+    <table>
+      <thead>
+        <tr><th>Composant</th><th>Architecture</th><th>Score</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>NotesBatchLoaderService</strong></td>
+          <td>Résolution N+1 avec cache in-memory TTL 5min. Charge toutes les notes d'un élève/période en 1 requête.</td>
+          <td><span class="badge success">Excellent</span></td>
+        </tr>
+        <tr>
+          <td><strong>CoefficientResolverService</strong></td>
+          <td>Cascade : AffectationMatiere → ProgrammeMatiere → MatiereNiveau → défaut 1. Résolution dynamique par contexte.</td>
+          <td><span class="badge success">Excellent</span></td>
+        </tr>
+        <tr>
+          <td><strong>NoteVersion</strong></td>
+          <td>Audit trail JSONB avec snapshot complet. Historique des modifications de chaque note.</td>
+          <td><span class="badge success">Excellent</span></td>
+        </tr>
+        <tr>
+          <td><strong>Validation workflow</strong></td>
+          <td>Multi-niveaux configurable. <code>notes.validation_levels</code> dans ParametreSysteme.</td>
+          <td><span class="badge info">Bon</span></td>
+        </tr>
+        <tr>
+          <td><strong>Appréciations</strong></td>
+          <td>Tableaux <code>sanctions[]</code> et <code>encouragements[]</code> en string[] sur Bulletin — pas de relation FK.</td>
+          <td><span class="badge warning">À améliorer</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout warning">
+      <span class="callout-icon">🟡</span>
+      <div>
+        <div class="callout-title">AMÉLIORATION — Sanctions/encouragements sur le bulletin</div>
+        <div class="callout-text">Les champs <code>sanctions[]</code> et <code>encouragements[]</code> sur <code>Bulletin</code> sont des <code>string[]</code> sans relation FK vers les entités <code>SanctionEleve</code> et <code>FelicitationEleve</code>. Recommandation : créer des tables de jointure <code>bulletin_sanctions</code> et <code>bulletin_felicitations</code> pour traçabilité et cohérence.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 6: CARTOGRAPHIE -->
+  <section class="section" id="cartographie">
+    <h2 class="section-title"><span class="num">6</span> Cartographie des 61 modules</h2>
+    <p class="section-desc">Répartition des modules par catégorie, avec indication du statut commercial (gratuit/payant) et des candidats à la fusion.</p>
+
+    <div class="chart-row">
+      <div class="chart-container">
+        <canvas id="chartCategories" height="280"></canvas>
+      </div>
+      <div class="chart-container">
+        <canvas id="chartCommercial" height="280"></canvas>
+      </div>
+    </div>
+
+    <h3 style="margin:20px 0 12px;font-size:1.1rem;">6.1 — Modules par catégorie</h3>
+
+    <div class="module-grid">
+      <div class="module-chip critique"><span class="dot" style="background:var(--success)"></span>auth</div>
+      <div class="module-chip critique"><span class="dot" style="background:var(--success)"></span>utilisateurs</div>
+      <div class="module-chip critique"><span class="dot" style="background:var(--success)"></span>configuration</div>
+      <div class="module-chip critique"><span class="dot" style="background:var(--success)"></span>notifications</div>
+      <div class="module-chip critique"><span class="dot" style="background:var(--success)"></span>annees-scolaires</div>
+      <div class="module-chip critique"><span class="dot" style="background:var(--success)"></span>niveaux</div>
+      <div class="module-chip critique"><span class="dot" style="background:var(--success)"></span>periodes</div>
+      <div class="module-chip critique"><span class="dot" style="background:var(--success)"></span>classes</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>eleves</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>notes</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>bulletins</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>matieres</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>competences</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>programmes</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>emploi-du-temps</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>suivi-eleves</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>organisation</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>personnel</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>paie</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>contrats</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>finances</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>billing</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>cantine</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>transport</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>bibliotheque</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>laboratoire</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>infirmerie</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>stages</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>examens</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>clubs</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>sondages</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>cms</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>communication</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>evenements</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>comptabilite</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>inventaire</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>archivage</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>documents</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>courriers</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>parking</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>rapports</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>statistiques</div>
+      <div class="module-chip payant"><span class="dot" style="background:var(--primary)"></span>monitoring</div>
+      <div class="module-chip gratuit"><span class="dot" style="background:var(--info)"></span>gamification</div>
+      <div class="module-chip gratuit"><span class="dot" style="background:var(--info)"></span>requetes</div>
+      <div class="module-chip fusion"><span class="dot" style="background:var(--warning)"></span>rbac → auth</div>
+      <div class="module-chip fusion"><span class="dot" style="background:var(--warning)"></span>platform-users → admin</div>
+      <div class="module-chip fusion"><span class="dot" style="background:var(--warning)"></span>platform-roles → admin</div>
+      <div class="module-chip fusion"><span class="dot" style="background:var(--warning)"></span>platform-auth → admin</div>
+      <div class="module-chip fusion"><span class="dot" style="background:var(--warning)"></span>platform-sessions → admin</div>
+      <div class="module-chip fusion"><span class="dot" style="background:var(--warning)"></span>paiement → finances</div>
+      <div class="module-chip fusion"><span class="dot" style="background:var(--warning)"></span>suivi-personnel → personnel</div>
+    </div>
+
+    <div class="mermaid-container">
+      <div class="mermaid">
+graph TD
+    subgraph CORE["🔒 Modules critiques (toujours actifs)"]
+        AUTH[auth]
+        USERS[utilisateurs]
+        CONFIG[configuration]
+        NOTIF[notifications]
+    end
+    
+    subgraph PEDAGO["📚 Pédagogique"]
+        ELEVES[élèves]
+        NOTES[notes]
+        BUL[bulletins]
+        MAT[matières]
+        COMP[compétences]
+        PROG[programmes]
+        EDT[emploi-du-temps]
+        EXAM[examens]
+    end
+    
+    subgraph RH["👥 Ressources humaines"]
+        ORG[organisation]
+        PERS[personnel]
+        PAIE[paie]
+        CONTR[contrats]
+        SUIV_P[suivi-personnel]
+    end
+    
+    subgraph VIE["🏫 Vie scolaire"]
+        SUIV_E[suivi-élèves]
+        CANT[cantine]
+        TRANS[transport]
+        BIB[ bibliothèque]
+        LAB[laboratoire]
+        INF[infirmerie]
+        CLUB[clubs]
+        EVEN[événements]
+        STAG[stages]
+    end
+    
+    subgraph FIN["💰 Finance & Commerce"]
+        FINANC[finances]
+        BILL[billing]
+        PAIEMENT[paiement]
+        COMPTA[comptabilité]
+    end
+    
+    subgraph ADMIN["🛡️ Administration plateforme"]
+        RBAC[rbac]
+        P_USERS[platform-users]
+        P_ROLES[platform-roles]
+        P_AUTH[platform-auth]
+        P_SESS[platform-sessions]
+        MONIT[monitoring]
+    end
+    
+    AUTH --> PEDAGO
+    AUTH --> RH
+    AUTH --> VIE
+    CONFIG --> FIN
+    ELEVES --> NOTES
+    NOTES --> BUL
+    SUIV_E -.->|fusion|SUIV_P
+    
+    style CORE fill:#d1fae5,stroke:#059669
+    style PEDAGO fill:#dbeafe,stroke:#2563eb
+    style RH fill:#fef3c7,stroke:#d97706
+    style VIE fill:#ede9fe,stroke:#7c3aed
+    style FIN fill:#fce7f3,stroke:#db2777
+    style ADMIN fill:#fee2e2,stroke:#dc2626
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 7: REFACTORING -->
+  <section class="section" id="refactoring">
+    <h2 class="section-title"><span class="num">7</span> Propositions de refactoring</h2>
+    <p class="section-desc">5 fusions de modules recommandées pour réduire la complexité et améliorer la cohérence.</p>
+
+    <div class="mermaid-container">
+      <div class="mermaid">
+flowchart LR
+    subgraph AVANT["Avant (61 modules)"]
+        A1[rbac<br/>0 entités]
+        A2[platform-users<br/>0 entités]
+        A3[platform-roles<br/>0 entités]
+        A4[platform-auth<br/>0 entités]
+        A5[platform-sessions<br/>0 entités]
+        A6[paiement<br/>3 entités]
+        A7[suivi-personnel<br/>0 entités]
+    end
+    
+    subgraph APRES["Après (~54 modules)"]
+        B1[auth + rbac]
+        B2[platform-admin<br/>unifié]
+        B3[finances + paiement<br/>adapter pattern]
+        B4[personnel + suivi<br/>abstraction commune]
+    end
+    
+    A1 --> B1
+    A2 --> B2
+    A3 --> B2
+    A4 --> B2
+    A5 --> B2
+    A6 --> B3
+    A7 --> B4
+    
+    style AVANT fill:#fee2e2,stroke:#dc2626
+    style APRES fill:#d1fae5,stroke:#059669
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Fusion</th><th>Modules concernés</th><th>Effort</th><th>Bénéfice</th><th>Risque</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1. rbac → auth</strong></td>
+          <td>Le module <code>rbac</code> n'a aucune entité propre — il utilise les entités de <code>auth</code> (Role, Permission, Utilisateur)</td>
+          <td><span class="badge success">Faible</span></td>
+          <td>-1 module, logique auth unifiée</td>
+          <td><span class="badge info">Faible</span></td>
+        </tr>
+        <tr>
+          <td><strong>2. platform-* → platform-admin</strong></td>
+          <td>5 modules (platform-users, platform-roles, platform-auth, platform-sessions, platform-permissions) → 1 module unifié</td>
+          <td><span class="badge warning">Moyen</span></td>
+          <td>-4 modules, code admin groupé</td>
+          <td><span class="badge warning">Moyen</span></td>
+        </tr>
+        <tr>
+          <td><strong>3. paiement → finances</strong></td>
+          <td>Intégrer les providers paiement dans <code>finances</code> via pattern adapter</td>
+          <td><span class="badge warning">Moyen</span></td>
+          <td>-1 module, flux financier unifié</td>
+          <td><span class="badge warning">Moyen</span></td>
+        </tr>
+        <tr>
+          <td><strong>4. suivi-personnel → personnel</strong></td>
+          <td>Absorber le suivi personnel dans le module personnel (même entité MembrePersonnel)</td>
+          <td><span class="badge success">Faible</span></td>
+          <td>-1 module, logique RH unifiée</td>
+          <td><span class="badge info">Faible</span></td>
+        </tr>
+        <tr>
+          <td><strong>5. Abstraction suivi commune</strong></td>
+          <td>Extraire un pattern partagé entre suivi-eleves et suivi-personnel (observations, sanctions, félicitations)</td>
+          <td><span class="badge critical">Élevé</span></td>
+          <td>Factorisation logique, cohérence</td>
+          <td><span class="badge critical">Élevé</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SECTION 8: WORKFLOWS -->
+  <section class="section" id="workflows">
+    <h2 class="section-title"><span class="num">8</span> Workflows & configurabilité</h2>
+    <p class="section-desc">État des lieux des workflows de validation, activation modules et configurabilité profonde.</p>
+
+    <h3 style="margin:20px 0 12px;font-size:1.1rem;">8.1 — Modules avec workflow de validation</h3>
+    <table>
+      <thead>
+        <tr><th>Module</th><th>Workflow</th><th>Niveaux</th><th>Configurable</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Notes</td><td>Validation avant publication</td><td>2 (enseignant → censeur)</td><td><span class="badge success">Oui</span> via ParametreSysteme</td></tr>
+        <tr><td>Bulletins</td><td>Validation avant publication</td><td>2 (enseignant principal → direction)</td><td><span class="badge success">Oui</span></td></tr>
+        <tr><td>Sanctions graves</td><td>Approbation avant application</td><td>2-3 (censeur → chef → conseil)</td><td><span class="badge warning">Hardcodé</span></td></tr>
+        <tr><td>Contrats personnel</td><td>Validation embauche</td><td>2 (RH → direction)</td><td><span class="badge success">Oui</span></td></tr>
+        <tr><td>Dépenses</td><td>Validation budgétaire</td><td>2 (comptable → directeur)</td><td><span class="badge success">Oui</span></td></tr>
+        <tr><td>Modules (toggle)</td><td>Activation/désactivation</td><td>1 (SUPER_ADMIN)</td><td><span class="badge info">Entitlement</span></td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin:20px 0 12px;font-size:1.1rem;">8.2 — Cascade d'activation des modules</h3>
+    <div class="mermaid-container">
+      <div class="mermaid">
+flowchart TD
+    L0["Niveau 0 : Module CRITIQUE<br/>(auth, config, notif, users)<br/>→ Bypass total"]
+    L1["Niveau 1 : Catalogue DB<br/>(modules_catalogue)<br/>→ Module existe & actif?"]
+    L2["Niveau 2 : Catégorie CRITIQUE<br/>→ Bypass total"]
+    L3["Niveau 3 : Abonnement ACTIF<br/>→ Sans plan ACTIF → blocage"]
+    L4["Niveau 4 : Plan (modulesInclus)<br/>→ Le plan inclut le module?"]
+    L5["Niveau 5 : Override groupe<br/>(ModulesGroupe)"]
+    L6["Niveau 6 : Supplément<br/>(AbonnementModule)"]
+    L7["Niveau 7 : Plan minimal requis"]
+    L8["Niveau 8 : Défaut catalogue<br/>(actifParDefaut)"]
+    
+    L0 -->|Non| L1
+    L1 -->|Non| L2
+    L2 -->|Non| L3
+    L3 -->|Non| BLOCAGE
+    L3 -->|Oui| L4
+    L4 -->|Non| L5
+    L5 -->|Non| L6
+    L6 -->|Non| L7
+    L7 -->|Non| L8
+    L8 -->|Non| BLOCAGE
+    L0 -->|Oui| ACCES
+    L2 -->|Oui| ACCES
+    L4 -->|Oui| ACCES
+    L5 -->|Oui| ACCES
+    L6 -->|Oui| ACCES
+    L7 -->|Oui| ACCES
+    L8 -->|Oui| ACCES
+    
+    ACCES["✅ Module accessible"]
+    BLOCAGE["🔒 Module bloqué<br/>(message explicatif)"]
+    
+    style L0 fill:#d1fae5,stroke:#059669
+    style ACCES fill:#d1fae5,stroke:#059669
+    style BLOCAGE fill:#fee2e2,stroke:#dc2626
+      </div>
+    </div>
+
+    <h3 style="margin:20px 0 12px;font-size:1.1rem;">8.3 — Autonomie des modules</h3>
+    <p style="font-size:0.9rem;margin-bottom:12px;">
+      Chaque module est activable/désactivable indépendamment via <code>EntitlementService</code>. Les modules critiques (auth, utilisateurs, configuration, notifications) ne peuvent pas être désactivés. Les dépendances inter-modules sont gérées via le champ <code>dependencies</code> dans <code>modules_catalogue</code>.
+    </p>
+    <div class="callout success">
+      <span class="callout-icon">🟢</span>
+      <div>
+        <div class="callout-title">VALIDÉ — Autonomie module respectée</div>
+        <div class="callout-text">Aucun module non-critique n'est hardcodé comme dépendance d'un autre. La cascade EntitlementService gère dynamiquement les activations. Un établissement peut désactiver CMS, Cantine, Transport, etc. sans casser le système.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 9: BONNES PRATIQUES -->
+  <section class="section" id="bonnes-pratiques">
+    <h2 class="section-title"><span class="num">9</span> Bonnes pratiques & benchmarks</h2>
+    <p class="section-desc">Comparaison avec les standards de l'industrie (SIS, PowerSchool, Infinite Campus) et recommandations d'amélioration.</p>
+
+    <table>
+      <thead>
+        <tr><th>Pratique</th><th>Standard industrie</th><th>eLISAschool</th><th>Écart</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Multi-tenancy</strong></td>
+          <td>RLS PostgreSQL ou schema-per-tenant</td>
+          <td>RLS sur ~40 tables + AsyncLocalStorage</td>
+          <td><span class="badge success">Conforme</span></td>
+        </tr>
+        <tr>
+          <td><strong>Authorization</strong></td>
+          <td>CASL/Permiso/Rebac</td>
+          <td>CASL.js + RBAC 73 rôles + permissions granulaires</td>
+          <td><span class="badge success">Conforme</span></td>
+        </tr>
+        <tr>
+          <td><strong>Discipline tracking</strong></td>
+          <td>Progressive discipline (PBIS framework)</td>
+          <td>18 niveaux progressifs + gamification</td>
+          <td><span class="badge success">Conforme</span></td>
+        </tr>
+        <tr>
+          <td><strong>Grading system</strong></td>
+          <td>Flexible (categories, weights, drops)</td>
+          <td>TypeEvaluation + coefficientResolver (cascade)</td>
+          <td><span class="badge info">Partiel</span> — pas de "drop lowest"</td>
+        </tr>
+        <tr>
+          <td><strong>Attendance</strong></td>
+          <td>Period-level tracking + auto-alerts</td>
+          <td>Module absent — pas de suivi d'assiduité dédié</td>
+          <td><span class="badge critical">Manquant</span></td>
+        </tr>
+        <tr>
+          <td><strong>Parent portal</strong></td>
+          <td>Real-time grades, attendance, messaging</td>
+          <td>Portail parent avec notes/bulletins/discipline</td>
+          <td><span class="badge info">Partiel</span> — pas de messaging</td>
+        </tr>
+        <tr>
+          <td><strong>API REST</strong></td>
+          <td>OpenAPI/Swagger, versioning</td>
+          <td>Endpoints REST + Zod validation, pas de versioning</td>
+          <td><span class="badge warning">À améliorer</span></td>
+        </tr>
+        <tr>
+          <td><strong>Audit trail</strong></td>
+          <td>SOX/GDPR compliant logging</td>
+          <td>AuditLog avec metadata JSONB, relations parent-enfant</td>
+          <td><span class="badge success">Conforme</span></td>
+        </tr>
+        <tr>
+          <td><strong>White-label</strong></td>
+          <td>Custom domains, themes per tenant</td>
+          <td>CMS 28 composants Puck + thèmes custom + routing /e/:code</td>
+          <td><span class="badge success">Conforme</span></td>
+        </tr>
+        <tr>
+          <td><strong>Offline/PWA</strong></td>
+          <td>Service workers, offline-first</td>
+          <td>Vite PWA plugin configuré mais non testé</td>
+          <td><span class="badge warning">À valider</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SECTION 10: PLAN ACTION -->
+  <section class="section" id="plan-action">
+    <h2 class="section-title"><span class="num">10</span> Plan d'action priorisé</h2>
+    <p class="section-desc">Recommandations classées par priorité (P1 = critique, P4 = amélioration continue).</p>
+
+    <div class="priority-grid">
+      <div class="priority-card p1">
+        <h4><span class="badge critical">P1</span> Connecter discipline frontend</h4>
+        <p>Réécrire <code>features/discipline/</code> pour appeler <code>/api/suivi-eleves/*</code>. Aligner les 18 types de sanctions, 23 types d'incidents, 20 félicitations. Créer la route <code>/discipline</code>.</p>
+        <div class="effort">
+          <span>⏱️ 3-5 jours</span>
+          <span>📁 8 fichiers</span>
+          <span>🔗 Backend OK</span>
+        </div>
+      </div>
+
+      <div class="priority-card p1">
+        <h4><span class="badge critical">P1</span> Intégrer gamification discipline</h4>
+        <p>Connecter les points de comportement (observations + félicitations) au système de gamification. Afficher le score comportement sur le bulletin et le dashboard élève.</p>
+        <div class="effort">
+          <span>⏱️ 2-3 jours</span>
+          <span>📁 5 fichiers</span>
+          <span>🔗 Backend partiel</span>
+        </div>
+      </div>
+
+      <div class="priority-card p1">
+        <h4><span class="badge critical">P1</span> Sanctions ↔ Bulletin (FK)</h4>
+        <p>Remplacer <code>sanctions[]: string[]</code> et <code>encouragements[]: string[]</code> sur Bulletin par des tables de jointure avec FK vers SanctionEleve et FelicitationEleve.</p>
+        <div class="effort">
+          <span>⏱️ 2 jours</span>
+          <span>📁 4 fichiers + migration</span>
+          <span>🔗 Full-stack</span>
+        </div>
+      </div>
+
+      <div class="priority-card p2">
+        <h4><span class="badge warning">P2</span> Supprimer AnneeScolaire.enCours</h4>
+        <p>Retirer le boolean redondant. Dériver de <code>statut === EN_COURS</code>. Migration de backfill + mise à jour des requêtes.</p>
+        <div class="effort">
+          <span>⏱️ 1 jour</span>
+          <span>📁 3 fichiers + migration</span>
+          <span>🔗 Backend</span>
+        </div>
+      </div>
+
+      <div class="priority-card p2">
+        <h4><span class="badge warning">P2</span> Fusion rbac → auth</h4>
+        <p>Déplacer le contenu de <code>modules/rbac/</code> dans <code>modules/auth/</code>. 0 entité propre, uniquement des controllers/services qui utilisent les entités auth.</p>
+        <div class="effort">
+          <span>⏱️ 1 jour</span>
+          <span>📁 6 fichiers</span>
+          <span>🔗 Backend</span>
+        </div>
+      </div>
+
+      <div class="priority-card p2">
+        <h4><span class="badge warning">P2</span> Fusion platform-* → platform-admin</h4>
+        <p>Consolider 5 modules platform minces en 1 module <code>platform-admin/</code>. Réduire la fragmentation du code admin.</p>
+        <div class="effort">
+          <span>⏱️ 2-3 jours</span>
+          <span>📁 15 fichiers</span>
+          <span>🔗 Backend</span>
+        </div>
+      </div>
+
+      <div class="priority-card p2">
+        <h4><span class="badge warning">P2</span> Module assiduité manquant</h4>
+        <p>Créer un module <code>assiduite/</code> avec entités PresenceEleve, AbsenceEleve, RetardEleve. Intégrer au bulletin et aux alertes parent.</p>
+        <div class="effort">
+          <span>⏱️ 5-7 jours</span>
+          <span>📁 12 fichiers</span>
+          <span>🔗 Full-stack</span>
+        </div>
+      </div>
+
+      <div class="priority-card p3">
+        <h4><span class="badge info">P3</span> Grading "drop lowest"</h4>
+        <p>Ajouter la possibilité d'exclure la note la plus basse d'une catégorie (standard PowerSchool/Infinite Campus). Config via <code>ParametreSysteme</code>.</p>
+        <div class="effort">
+          <span>⏱️ 2 jours</span>
+          <span>📁 3 fichiers</span>
+          <span>🔗 Backend</span>
+        </div>
+      </div>
+
+      <div class="priority-card p3">
+        <h4><span class="badge info">P3</span> Paiement → Finances (adapter)</h4>
+        <p>Intégrer les providers paiement dans le module finances via pattern adapter. Réduire la fragmentation des modules financiers.</p>
+        <div class="effort">
+          <span>⏱️ 2 jours</span>
+          <span>📁 8 fichiers</span>
+          <span>🔗 Backend</span>
+        </div>
+      </div>
+
+      <div class="priority-card p3">
+        <h4><span class="badge info">P3</span> API versioning</h4>
+        <p>Ajouter un préfixe <code>/api/v1/</code> avec header <code>Accept-Version</code>. Permettre l'évolution sans breaking changes pour les clients mobiles.</p>
+        <div class="effort">
+          <span>⏱️ 3 jours</span>
+          <span>📁 Middleware + config</span>
+          <span>🔗 Backend</span>
+        </div>
+      </div>
+
+      <div class="priority-card p4">
+        <h4><span class="badge success">P4</span> Suivi-eleves + suivi-personnel → shared</h4>
+        <p>Extraire une abstraction commune pour les observations/sanctions/félicitations appliquées aux élèves ET au personnel.</p>
+        <div class="effort">
+          <span>⏱️ 5 jours</span>
+          <span>📁 10 fichiers</span>
+          <span>🔗 Full-stack refactor</span>
+        </div>
+      </div>
+
+      <div class="priority-card p4">
+        <h4><span class="badge success">P4</span> Parent messaging</h4>
+        <p>Ajouter un système de messagerie intégré entre enseignants et parents (standard PowerSchool). Notifications push + email.</p>
+        <div class="effort">
+          <span>⏱️ 7-10 jours</span>
+          <span>📁 15 fichiers</span>
+          <span>🔗 Full-stack</span>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin:24px 0 12px;font-size:1.1rem;">Résumé de l'effort total</h3>
+    <table>
+      <thead>
+        <tr><th>Priorité</th><th>Tâches</th><th>Effort total</th><th>Impact</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="badge critical">P1</span></td><td>3 tâches</td><td>7-10 jours</td><td>🔴 Bloquant — discipline inopérante</td></tr>
+        <tr><td><span class="badge warning">P2</span></td><td>4 tâches</td><td>8-12 jours</td><td>🟡 Important — cohérence architecture</td></tr>
+        <tr><td><span class="badge info">P3</span></td><td>3 tâches</td><td>7 jours</td><td>🔵 Amélioration — standard industrie</td></tr>
+        <tr><td><span class="badge success">P4</span></td><td>2 tâches</td><td>12-15 jours</td><td>🟢 Nice-to-have — fonctionnalités avancées</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="report-footer">
+    <div class="container">
+      <p><strong>eLISAschool</strong> — Rapport d'analyse architecture globale</p>
+      <p>Généré le 20 août 2026 · Branche <code>migration_saas</code> · 61 modules · 162 entités</p>
+      <p style="margin-top:8px;font-size:0.8rem;color:var(--text-secondary);">
+        Score global : <strong style="color:var(--success);">7.8/10</strong> — Architecture solide, cohérence frontend à améliorer, discipline à reconnecter.
+      </p>
+    </div>
+  </footer>
+</div>
+
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'base',
+  themeVariables: {
+    primaryColor: '#dbeafe',
+    primaryTextColor: '#1e293b',
+    primaryBorderColor: '#2563eb',
+    lineColor: '#64748b',
+    secondaryColor: '#fef3c7',
+    tertiaryColor: '#d1fae5',
+    fontFamily: 'Inter, sans-serif',
+    fontSize: '13px'
+  },
+  flowchart: { curve: 'basis', padding: 16 }
+});
+
+// Chart.js — Module categories
+new Chart(document.getElementById('chartCategories'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Pédagogique (12)', 'Vie scolaire (10)', 'RH (5)', 'Finance (4)', 'Administration (6)', 'Support (8)', 'CMS/Comm (5)', 'Autres (11)'],
+    datasets: [{
+      data: [12, 10, 5, 4, 6, 8, 5, 11],
+      backgroundColor: ['#2563eb','#7c3aed','#d97706','#db2777','#dc2626','#059669','#0891b2','#64748b'],
+      borderWidth: 2,
+      borderColor: '#fff'
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      title: { display: true, text: 'Répartition par catégorie (61 modules)', font: { size: 14, weight: 'bold' } },
+      legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } }
+    }
+  }
+});
+
+// Chart.js — Commercial
+new Chart(document.getElementById('chartCommercial'), {
+  type: 'bar',
+  data: {
+    labels: ['GRATUIT', 'PAYANT', 'Fusion proposée'],
+    datasets: [{
+      label: 'Nombre de modules',
+      data: [8, 46, 7],
+      backgroundColor: ['#0891b2', '#2563eb', '#d97706'],
+      borderRadius: 8,
+      barThickness: 40
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      title: { display: true, text: 'Statut commercial des modules', font: { size: 14, weight: 'bold' } },
+      legend: { display: false }
+    },
+    scales: {
+      y: { beginAtZero: true, grid: { color: '#e2e8f0' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+</script>
+
+</body>
+</html>

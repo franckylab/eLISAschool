@@ -36,7 +36,7 @@ export class PromotionUtilisee {
     @Column({ type: 'varchar', length: 100 })
     codePromotion!: string;
 
-    /** Scope de la promotion (PLAN, PACK, MODULE, BUNDLE) */
+    /** Scope de la promotion (PLAN, PACK, MODULE, PACKAGE) */
     @Column({ type: 'varchar', length: 20 })
     scope!: string;
 

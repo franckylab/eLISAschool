@@ -8,56 +8,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
 import type { AnneeScolaire, CreerAnneeScolaireDto, ModifierAnneeScolaireDto, AnneeScolaireFiltres } from '../types/annee-scolaire.types';
-import type { NiveauPeriode } from '@/features/periodes/types/periode.types';
 import type { PaginatedResult } from '@shared/types/api.types';
 import { toast } from 'sonner';
-
-/**
- * Mapping de l'entité backend vers le type frontend.
- * Backend: enCours, cloturee, statut (OUVERTE|EN_COURS|EN_ATTENTE_CLOTURE|CLOTUREE)
- * Frontend: estActuelle, statut (active|inactive|future|archivee)
- */
-interface AnneeScolaireBackend {
-    id: string;
-    libelle: string;
-    code: string;
-    dateDebut: string;
-    dateFin: string;
-    enCours: boolean;
-    statut: 'OUVERTE' | 'EN_COURS' | 'EN_ATTENTE_CLOTURE' | 'CLOTUREE';
-    etablissementId: string;
-    createdAt: string;
-    updatedAt: string;
-    periodes?: Array<{
-        id: string;
-        nom: string;
-        niveauId: string;
-        niveau?: NiveauPeriode;
-        dateDebut: string;
-        dateFin: string;
-        statut: 'OUVERTE' | 'EN_ATTENTE_CLOTURE' | 'CLOTUREE';
-    }>;
-}
-
-function mapperAnneeScolaire(raw: AnneeScolaireBackend): AnneeScolaire {
-    let statutFrontend: AnneeScolaire['statut'];
-    if (raw.statut === 'CLOTUREE') {
-        statutFrontend = 'archivee';
-    } else if (raw.enCours || raw.statut === 'EN_COURS') {
-        statutFrontend = 'active';
-    } else if (raw.statut === 'EN_ATTENTE_CLOTURE') {
-        statutFrontend = 'inactive';
-    } else {
-        // OUVERTE → vérifier si dateDebut dans le futur
-        const debut = new Date(raw.dateDebut);
-        statutFrontend = debut > new Date() ? 'future' : 'active';
-    }
-    return {
-        ...raw,
-        estActuelle: raw.enCours,
-        statut: statutFrontend,
-    };
-}
 
 const ANNEES_KEYS = {
     all: ['annees-scolaires'] as const,
@@ -74,33 +26,35 @@ export function useAnneesScolaires(filtres: AnneeScolaireFiltres = {}) {
     return useQuery({
         queryKey: ANNEES_KEYS.liste(filtres, etablissementId || ''),
         queryFn: async () => {
-            // Le backend GET /api/annees-scolaires retourne un tableau simple (AnneeScolaire[])
-            // et non un PaginatedResult. On adapte la réponse pour le DataTable.
-            const response = await apiClient.get<AnneeScolaireBackend[]>('/api/annees-scolaires', {
+            const response = await apiClient.get<AnneeScolaire[]>('/api/annees-scolaires', {
                 page: filtres.page || 1,
                 limit: filtres.limit || 20,
                 sortBy: filtres.sortBy,
                 sortOrder: filtres.sortOrder,
+                statut: filtres.statut,
+                recherche: filtres.recherche,
             });
 
-            const rawItems = response.data || [];
-            // Mapper les entités backend vers le format frontend
-            const items = rawItems.map(mapperAnneeScolaire);
+            // Réponse paginée serveur (items + meta)
+            if (response.data && Array.isArray((response.data as any).items)) {
+                const paginated = response.data as unknown as { items: AnneeScolaire[]; meta: PaginatedResult<AnneeScolaire>['meta'] };
+                return paginated as PaginatedResult<AnneeScolaire>;
+            }
+
+            // Fallback rétrocompatibilité : réponse en tableau brut
+            const rawItems = (response.data as AnneeScolaire[]) || [];
             const page = filtres.page || 1;
             const limit = filtres.limit || 20;
-
-            // Construire un PaginatedResult compatible avec le DataTable
-            const paginatedResult: PaginatedResult<AnneeScolaire> = {
-                items,
+            return {
+                items: rawItems,
                 meta: {
-                    totalItems: items.length,
-                    itemCount: items.length,
+                    totalItems: rawItems.length,
+                    itemCount: rawItems.length,
                     itemsPerPage: limit,
-                    totalPages: Math.ceil(items.length / limit) || 1,
+                    totalPages: Math.ceil(rawItems.length / limit) || 1,
                     currentPage: page,
                 },
-            };
-            return paginatedResult;
+            } satisfies PaginatedResult<AnneeScolaire>;
         },
         enabled: isAuthenticated && !!etablissementId,
         staleTime: 15 * 60 * 1000,
@@ -113,8 +67,8 @@ export function useAnneeScolaire(id: string) {
     return useQuery({
         queryKey: ANNEES_KEYS.detail(id, etablissementId || ''),
         queryFn: async () => {
-            const response = await apiClient.get<AnneeScolaireBackend>(`/api/annees-scolaires/${id}`);
-            return response.data ? mapperAnneeScolaire(response.data) : undefined;
+            const response = await apiClient.get<AnneeScolaire>(`/api/annees-scolaires/${id}`);
+            return response.data || undefined;
         },
         enabled: !!id && !!etablissementId,
         placeholderData: (previousData) => previousData,
@@ -127,8 +81,8 @@ export function useAnneeScolaireActive() {
     return useQuery({
         queryKey: ANNEES_KEYS.active(etablissementId || ''),
         queryFn: async () => {
-            const response = await apiClient.get<AnneeScolaireBackend>('/api/annees-scolaires/active');
-            return response.data ? mapperAnneeScolaire(response.data) : undefined;
+            const response = await apiClient.get<AnneeScolaire>('/api/annees-scolaires/active');
+            return response.data || undefined;
         },
         enabled: isAuthenticated && !!etablissementId,
         staleTime: 30 * 60 * 1000,
@@ -140,8 +94,8 @@ export function useCreerAnneeScolaire() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (dto: CreerAnneeScolaireDto) => {
-            const response = await apiClient.post<AnneeScolaireBackend>('/api/annees-scolaires', dto);
-            return response.data ? mapperAnneeScolaire(response.data) : undefined;
+            const response = await apiClient.post<AnneeScolaire>('/api/annees-scolaires', dto);
+            return response.data || undefined;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ANNEES_KEYS.listes() });
@@ -157,8 +111,8 @@ export function useModifierAnneeScolaire() {
     return useMutation({
         mutationFn: async (dto: ModifierAnneeScolaireDto) => {
             const { id, ...data } = dto;
-            const response = await apiClient.patch<AnneeScolaireBackend>(`/api/annees-scolaires/${id}`, data);
-            return response.data ? mapperAnneeScolaire(response.data) : undefined;
+            const response = await apiClient.patch<AnneeScolaire>(`/api/annees-scolaires/${id}`, data);
+            return response.data || undefined;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ANNEES_KEYS.listes() });
@@ -173,8 +127,8 @@ export function useActiverAnneeScolaire() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (id: string) => {
-            const response = await apiClient.post<AnneeScolaireBackend>(`/api/annees-scolaires/${id}/activer`, {});
-            return response.data ? mapperAnneeScolaire(response.data) : undefined;
+            const response = await apiClient.post<AnneeScolaire>(`/api/annees-scolaires/${id}/activer`, {});
+            return response.data || undefined;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ANNEES_KEYS.listes() });
@@ -189,8 +143,8 @@ export function useCloturerAnneeScolaire() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (id: string) => {
-            const response = await apiClient.post<AnneeScolaireBackend>(`/api/annees-scolaires/${id}/cloturer`, {});
-            return response.data ? mapperAnneeScolaire(response.data) : undefined;
+            const response = await apiClient.post<AnneeScolaire>(`/api/annees-scolaires/${id}/cloturer`, {});
+            return response.data || undefined;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ANNEES_KEYS.listes() });
@@ -205,8 +159,8 @@ export function useReouvrirAnneeScolaire() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (id: string) => {
-            const response = await apiClient.post<AnneeScolaireBackend>(`/api/annees-scolaires/${id}/reouvrir`, {});
-            return response.data ? mapperAnneeScolaire(response.data) : undefined;
+            const response = await apiClient.post<AnneeScolaire>(`/api/annees-scolaires/${id}/reouvrir`, {});
+            return response.data || undefined;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ANNEES_KEYS.listes() });

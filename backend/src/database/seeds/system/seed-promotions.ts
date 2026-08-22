@@ -16,7 +16,7 @@
  *   - PACK-FIDELITE : -10% PACKS après 6 mois d'ancienneté
  *   - MOD-DECOUVERTE : -15% MODULES 1ʳᵉ facture, code DECOUVERTE
  *   - GRAT-TRANSPORT-3M : module transport gratuit 3 mois, code GRATTRANSPORT
- *   - PROMO-BUNDLE-2026 : -20% PACKS si ≥3 packs, code BUNDLE2026
+ *   - PROMO-PACKAGE-2026 : -20% PACKS si ≥3 packs, code PACKAGE2026
  *   - QUOTA-SMS-5000 : paliers dégressifs SMS (v5 QUOTA)
  *   - AUTO-NOUVEAU : -10% automatique nouveau client (v5 auto-promo)
  *   - AUTO-UPGRADE : -15% automatique upgrade plan (v5 auto-promo)
@@ -218,17 +218,17 @@ const PROMOTIONS: PromotionSeed[] = [
         actif: true,
     },
 
-    // ─── Scope PACK + coupon bundle : remise si ≥3 packs ───
+    // ─── Scope PACK + coupon package : remise si ≥3 packs ───
     {
-        code: 'PROMO-BUNDLE-2026',
-        nom: 'Super bundle packs 2026',
+        code: 'PROMO-PACKAGE-2026',
+        nom: 'Super package packs 2026',
         typePromotion: TypePromotion.POURCENTAGE,
         scope: ScopePromotion.PACK,
         valeur: 20,
         dureeApplication: DureeApplicationPromotion.N_CYCLES,
         cumulable: false,
         priorite: 95,
-        codeCoupon: 'BUNDLE2026',
+        codeCoupon: 'PACKAGE2026',
         conditions: { nbCycles: 6, packsRequis: ['pack-1', 'pack-2', 'pack-3'] },
         maxUtilisations: 25,
         dateDebut: new Date('2026-08-01'),

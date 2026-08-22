@@ -7333,3 +7333,309 @@ POST   /api/billing/promotions/verifier-coupon            # Vérifier code coupo
 - **0 champ UUID restant** dans les formulaires métier
 - **Pages debug plateforme** (`platform.debug.*`) : UUID intentionnel (outils développeur, non modifié)
 
+---
+
+## Cohérence Permissions Année Scolaire — Alignement RBAC (✅ COMPLET)
+
+> Contexte : Audit des permissions `annees-scolaires:*` vs `annees:*` — incohérence entre le contrôleur backend, les routes frontend, le sidebar et l'enum des permissions.
+
+### Problèmes identifiés et corrigés
+
+| Problème | Avant | Après |
+|----------|-------|-------|
+| Permission `ANNEES_REOUVRIR` manquante | Absente du enum | `ANNEES_REOUVRIR = 'annees:reouvrir'` ajouté |
+| Controller utilise strings au lieu de l'enum | `requirePermission('annees-scolaires:activer')` | `requirePermission(Permission.ANNEES_ACTIVER)` |
+| Routes frontend utilisent le mauvais nom de module | `requireModulePermission('annees-scolaires')` | `requireModulePermission('annees')` |
+| Sidebar utilise le mauvais nom de module | `useModulePermissions('anneesScolaires')` | `useModulePermissions('annees')` |
+| Module absent du ModuleName enum | Non enregistré | `ANNEES_SCOLAIRES = 'annees-scolaires'` ajouté |
+| Routes sans middleware gating | Pas de `requireModuleActive` | `requireModuleActive('annees-scolaires')` ajouté |
+| Permission audit manquante | `audit:annees-scolaires:view` non défini | `AUDIT_ANNEES_SCOLAIRES_VIEW` ajouté |
+| CASL subject map incomplet | `annees` absent | `'annees': 'AnneeScolaire'` ajouté |
+| Permissions CRUD manquantes pour ADMIN/CHEF | Seulement `ANNEES_VIEW` | Toutes les permissions `ANNEES_*` assignées |
+
+### Convention de nommage (source de vérité)
+
+| Contexte | Nom du module | Exemple |
+|----------|---------------|----------|
+| Permission enum (`roles.enum.ts`) | `annees` | `ANNEES_VIEW = 'annees:view'` |
+| Module catalogue (`modules_catalogue`) | `annees-scolaires` | `code: 'annees-scolaires'` |
+| ModuleName enum (`modules.enum.ts`) | `annees-scolaires` | `ANNEES_SCOLAIRES = 'annees-scolaires'` |
+| Middleware gating (`app.ts`) | `annees-scolaires` | `requireModuleActive('annees-scolaires')` |
+| Frontend route guard | `annees` | `requireModulePermission('annees')` |
+| Frontend sidebar hook | `annees` | `useModulePermissions('annees')` |
+| CASL subject map | `annees` | `'annees': 'AnneeScolaire'` |
+
+### Fichiers modifiés
+
+| Fichier | Action |
+|---------|--------|
+| `shared/src/enums/roles.enum.ts` | +`ANNEES_REOUVRIR`, +`AUDIT_ANNEES_SCOLAIRES_VIEW`, permissions CRUD assignées à ADMIN + CHEF |
+| `shared/src/enums/modules.enum.ts` | +`ANNEES_SCOLAIRES` dans ModuleName + MODULE_CATEGORIES |
+| `shared/src/casl/abilities.ts` | +`'annees': 'AnneeScolaire'` dans subjectMap |
+| `backend/src/modules/annees-scolaires/controllers/annees-scolaires.controller.ts` | Toutes les permissions alignées sur l'enum `Permission` |
+| `backend/src/app.ts` | +`requireModuleActive('annees-scolaires')` et `requireModuleActive('periodes')` sur toutes les routes |
+| `frontend/src/routes/_auth.annees-scolaires*.tsx` | 3 fichiers : `requireModulePermission('annees')` |
+| `frontend/src/components/layout/Sidebar.tsx` | `useModulePermissions('annees')` |
+| `frontend/src/components/feedback/SmartEmptyState.tsx` | Permission `'annees:create'` |
+| `frontend/src/features/annees-scolaires/components/annees-scolaires-page.tsx` | 6 permissions corrigées `annees:*` |
+| `frontend/src/lib/audit-navigation.ts` | Permission `'annees:view'` |
+
+---
+
+## Cohérence Année Scolaire — Améliorations Audit, Dark Mode & Permissions (✅ COMPLET)
+
+> Contexte : Suite de l'audit de cohérence — intégration audit service, dark mode, permissions validation workflow.
+
+### Corrections apportées
+
+| Correction | Fichier | Détail |
+|------------|---------|--------|
+| Controller `reouvrir` — passage `createurId` | `backend/src/modules/annees-scolaires/controllers/annees-scolaires.controller.ts` | `service.reouvrir(id, etablissementId, req.utilisateur?.id)` |
+| Permission validation détail | `frontend/src/features/annees-scolaires/components/annee-scolaire-detail-page.tsx` | `hasPermission('annees-scolaires:validate')` → `hasAnyPermission(['validation:annees_scolaires:level1', 'validation:annees_scolaires:level2'])` |
+| Dark mode badges statut (page liste) | `frontend/src/features/annees-scolaires/components/annees-scolaires-page.tsx` | Couleurs hardcodées (`bg-green-100`, `bg-blue-100`, etc.) → CSS variables (`var(--color-success-50)`, `var(--color-info-50)`, etc.) avec fallback rgba |
+| Dark mode badges statut (page détail) | `frontend/src/features/annees-scolaires/components/annee-scolaire-detail-page.tsx` | `COULEURS_STATUT` et `COULEURS_STATUT_PERIODE` migrés vers CSS variables |
+| Audit logging `cloturer()` | `backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts` | Ajout `auditService.log()` avec `AuditAction.ANNEE_SCOLAIRE_CLOSE` |
+| Audit logging `reouvrir()` | `backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts` | Ajout `auditService.log()` avec `AuditAction.ANNEE_SCOLAIRE_REOPEN` |
+| AuditAction enum | `backend/src/modules/auth/entities/audit-log.entity.ts` | +`ANNEE_SCOLAIRE_CLOSE`, +`ANNEE_SCOLAIRE_REOPEN` |
+| Migration 221 RBAC | `backend/database/migrations/221-rbac-annees-scolaires.sql` | Création permissions `annees:reouvrir` + `audit:annees-scolaires:view` + attribution ADMIN/CHEF |
+
+### Pattern CSS variables pour dark mode
+
+```typescript
+// ❌ INTERDIT — couleurs hardcodées (ne s'adapte pas au dark mode)
+'bg-blue-50 text-blue-700 border-blue-200'
+'bg-green-100 text-green-800'
+
+// ✅ CORRECT — CSS variables avec fallback rgba
+'bg-[var(--color-info-50,rgba(59,130,246,0.1))] text-[var(--color-info-700,rgba(59,130,246,0.8))]'
+'bg-[var(--color-success-50,rgba(34,197,94,0.1))] text-[var(--color-success-700,rgba(34,197,94,0.8))]'
+```
+
+### Permission validation workflow
+
+Les permissions de validation suivent le pattern `validation:module:levelN` (pas `module:validate`) :
+
+```typescript
+// ❌ INTERDIT — n'existe pas dans l'enum
+hasPermission('annees-scolaires:validate')
+
+// ✅ CORRECT — permissions réelles
+hasAnyPermission([
+    'validation:annees_scolaires:level1',
+    'validation:annees_scolaires:level2',
+])
+```
+
+### Fichiers modifiés (cette session)
+
+| Fichier | Action |
+|---------|--------|
+| `backend/src/modules/annees-scolaires/controllers/annees-scolaires.controller.ts` | `reouvrir()` passe `req.utilisateur?.id` |
+| `backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts` | Audit logging `cloturer()` + `reouvrir()` |
+| `backend/src/modules/auth/entities/audit-log.entity.ts` | +`ANNEE_SCOLAIRE_CLOSE`, +`ANNEE_SCOLAIRE_REOPEN` |
+| `backend/database/migrations/221-rbac-annees-scolaires.sql` | NOUVEAU (90 lignes) — permissions RBAC |
+| `frontend/src/features/annees-scolaires/components/annee-scolaire-detail-page.tsx` | Permission validation corrigée + dark mode CSS variables |
+| `frontend/src/features/annees-scolaires/components/annees-scolaires-page.tsx` | Dark mode CSS variables pour badges statut |
+
+---
+
+## Année Scolaire — Vérification finale, Migrations & Permissions complètes (✅ COMPLET)
+
+> Contexte : Vérification finale de cohérence, exécution des migrations, correction permissions manquantes.
+
+### Migrations exécutées
+
+| Migration | Statut | Contenu |
+|-----------|--------|----------|
+| **220** — Cohérence année-période | ✅ Exécutée | Drop colonnes redondantes (`enCours`, `code`), backfill `anneeScolaireId`, index unique active, trigger cross-tenant |
+| **221** — RBAC permissions | ✅ Exécutée | `annees:reouvrir` + `audit:annees-scolaires:view` pour ADMIN + CHEF |
+| **222** — Permissions complètes | ✅ Exécutée | `annees:create`, `edit`, `delete`, `activer`, `cloturer` pour ADMIN + CHEF |
+
+### Corrections apportées
+
+| Correction | Fichier | Détail |
+|------------|---------|--------|
+| Bug i18n `t('validation')` → `t('validation.titre')` | `annee-scolaire-detail-page.tsx` | `t('validation')` retournait un objet (bug d'affichage) |
+| Clé i18n `aucuneAnneeTrouvee` manquante | `fr/annees-scolaires.json` + `en/annees-scolaires.json` | Ajoutée dans les 2 langues |
+| Permissions ADMIN/CHEF incomplètes | Migration 222 (NOUVEAU) | 5 permissions manquantes ajoutées |
+
+### État des permissions après migration 222
+
+| Rôle | Permissions `annees:*` |
+|------|------------------------|
+| ADMIN | view, create, edit, delete, activer, cloturer, reouvrir (7) |
+| CHEF_ETABLISSEMENT | view, create, edit, delete, activer, cloturer, reouvrir (7) |
+| SUPER_ADMIN | view, create, edit, delete, activer, cloturer, dupliquer (7) |
+| PLATEFORME_SUPER_ADMIN | view, create, edit, delete, activer, cloturer, dupliquer (7) |
+
+### Fichiers créés/modifiés
+
+| Fichier | Action |
+|---------|--------|
+| `backend/database/migrations/222-permissions-completes-annees-scolaires.sql` | NOUVEAU (87 lignes) |
+| `frontend/src/features/annees-scolaires/components/annee-scolaire-detail-page.tsx` | Fix i18n `validation.titre` |
+| `frontend/src/locales/fr/annees-scolaires.json` | +`aucuneAnneeTrouvee` |
+| `frontend/src/locales/en/annees-scolaires.json` | +`aucuneAnneeTrouvee` |
+| `docs/rapports/RAPPORT-COMPLETUDE-ANNEE-SCOLAIRE.md` | Mise à jour avec migration 222 |
+
+---
+
+## Cohérence Année/Période — Corrections C2, C6, R2 (✅ COMPLET)
+
+> Contexte : Audit de cohérence croisée Année Scolaire ↔ Période. Les rapports d'audit identifient 6 incohérences (C1-C6) et 5 redondances (R1-R5). La majorité est déjà résolue via les migrations 220-222. Cette session couvre les 4 actions restantes.
+
+### Phase 1 — NOT NULL `anneeScolaireId` sur Note + Bulletin (C2/F3/F4)
+
+**Objectif** : Éliminer la redondance nullable — `anneeScolaireId` est toujours dérivable via `periodeId` et le backfill (migration 220) a déjà rempli les valeurs.
+
+| Correction | Fichier | Détail |
+|------------|---------|--------|
+| Migration 223 | `backend/database/migrations/223-not-null-annee-scolaire-id.sql` | Backfill sécurité + `SET NOT NULL` sur notes et bulletins |
+| Entity Note | `backend/src/modules/notes/entities/note.entity.ts` | `nullable: true` retiré, `anneeScolaireId?: string` → `anneeScolaireId!: string` |
+| Entity Bulletin | `backend/src/modules/bulletins/entities/bulletin.entity.ts` | Idem Note |
+| Type frontend Note | `frontend/src/features/notes/types/note.types.ts` | `anneeScolaireId?: string` → `anneeScolaireId: string` |
+| Type frontend Bulletin | `frontend/src/features/bulletins/types/bulletin.types.ts` | `anneeScolaireId?: string` → `anneeScolaireId: string` |
+
+**Services vérifiés** : `notes.service.ts` et `bulletins.service.ts` passent déjà `anneeScolaireId` via `periode.anneeScolaireId` — aucun changement nécessaire.
+
+### Phase 2 — Résolution import circulaire (C6)
+
+**Objectif** : Éliminer le dernier `await import('@modules/annees-scolaires/services')` dans `templates-periode.service.ts`.
+
+| Correction | Fichier | Détail |
+|------------|---------|--------|
+| Import circulaire résolu | `backend/src/modules/periodes/services/templates-periode.service.ts` | `await import(...)` remplacé par `AppDataSource.getRepository(AnneeScolaire)` + `findOne()` direct |
+
+### Phase 3 — Interface ICloturable commune (R2)
+
+**Objectif** : Extraire la logique commune de clôture/réouverture dans une interface partagée.
+
+| Correction | Fichier | Détail |
+|------------|---------|--------|
+| Interface créée | `shared/src/interfaces/cloturable.interface.ts` | `ICloturable`, `StatutCloturable`, `CloturerOptions`, `ImpactsCloture` |
+| Export shared | `shared/src/index.ts` | `export * from './interfaces/cloturable.interface'` |
+| Entity AnneeScolaire | `backend/src/modules/annees-scolaires/entities/annee-scolaire.entity.ts` | `implements ICloturable` + getter `nomOuLibelle` |
+| Entity Periode | `backend/src/modules/periodes/entities/periode.entity.ts` | `implements ICloturable` + getter `nomOuLibelle` |
+
+### Phase 4 — Audit frontend Périodes
+
+**Vérification** : Tous les 5 modals utilisent `CustomModal` ✅, `PageHeader` avec `showBreadcrumbs` ✅, CSS variables dark mode ✅, responsive `clamp()` ✅, vue arbre custom justifiée (hiérarchie parent/enfant) ✅.
+
+### Migrations exécutées (cumul)
+
+| Migration | Statut | Contenu |
+|-----------|--------|----------|
+| **220** — Cohérence année-période | ✅ | Drop colonnes redondantes, backfill `anneeScolaireId`, index unique, trigger |
+| **221** — RBAC permissions | ✅ | `annees:reouvrir` + `audit:annees-scolaires:view` |
+| **222** — Permissions complètes | ✅ | 5 permissions CRUD manquantes |
+| **223** — NOT NULL anneeScolaireId | ✅ | Backfill + `SET NOT NULL` sur notes et bulletins |
+
+### Fichiers créés/modifiés (cette session)
+
+| Fichier | Action |
+|---------|--------|
+| `backend/database/migrations/223-not-null-annee-scolaire-id.sql` | NOUVEAU (68 lignes) |
+| `backend/src/modules/notes/entities/note.entity.ts` | `anneeScolaireId` NOT NULL |
+| `backend/src/modules/bulletins/entities/bulletin.entity.ts` | `anneeScolaireId` NOT NULL |
+| `frontend/src/features/notes/types/note.types.ts` | Type aligné (non-nullable) |
+| `frontend/src/features/bulletins/types/bulletin.types.ts` | Type aligné (non-nullable) |
+| `backend/src/modules/periodes/services/templates-periode.service.ts` | Import circulaire résolu |
+| `shared/src/interfaces/cloturable.interface.ts` | NOUVEAU (74 lignes) — interface ICloturable |
+| `shared/src/index.ts` | Export ICloturable |
+| `backend/src/modules/annees-scolaires/entities/annee-scolaire.entity.ts` | `implements ICloturable` |
+| `backend/src/modules/periodes/entities/periode.entity.ts` | `implements ICloturable` |
+
+---
+
+## Nettoyage DTO `enCours` — Suppression artefact historique (✅ COMPLET)
+
+> Contexte : Le DTO backend `annee-scolaire.dto.ts` acceptait encore `enCours` (boolean) comme champ de création/requête, et le service l'utilisait pour déterminer si une année devait être activée immédiatement. Le frontend n'envoyait plus ce champ. L'activation passe exclusivement par la méthode `activer()` dédiée.
+
+### Corrections apportées
+
+| Correction | Fichier | Détail |
+|------------|---------|--------|
+| DTO create — `enCours` supprimé | `backend/src/modules/annees-scolaires/dto/annee-scolaire.dto.ts` | `enCours: z.boolean().default(false)` retiré du `createAnneeScolaireSchema` |
+| DTO query — `enCours` supprimé | `backend/src/modules/annees-scolaires/dto/annee-scolaire.dto.ts` | `enCours: z.coerce.boolean().optional()` retiré du `queryAnneesScolairesSchema` |
+| Service `create()` — logique simplifiée | `backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts` | Bloc `estActive` supprimé, `statut: statutInitial` toujours utilisé |
+| Service `update()` — logique simplifiée | `backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts` | Bloc `devientActive` supprimé, activation via `activer()` uniquement |
+
+---
+
+## Audit complet système Année Scolaire — Pagination, migrations, frontend (✅ COMPLET)
+
+> Contexte : Audit complet du système Année Scolaire/Période dans l'interface web. Vérification routes, sidebar, permissions, migrations, seeds, cohérence frontend/backend.
+
+### Audit — Ce qui fonctionnait déjà
+
+| Composant | Statut | Détail |
+|-----------|--------|--------|
+| Routes backend | ✅ | 9 routes avec `authMiddleware` + `requirePermission` |
+| Routes frontend | ✅ | Layout + Index + Detail avec `requireModulePermission('annees')` |
+| Sidebar | ✅ | "Années Scolaires" (Organisation) + "Périodes" (Académique) |
+| Module catalogue | ✅ | `annees-scolaires` + `periodes` seedés (PAYANT, planMinimal: starter) |
+| i18n FR/EN | ✅ | `annees-scolaires.json` (94 lignes) + `periodes.json` (197 lignes) |
+| Hooks TanStack Query | ✅ | 8 hooks (CRUD + activer/cloturer/reouvrir/active) |
+| Service audit + workflow | ✅ | `auditService.log()` + `validationWorkflowService` intégré |
+| Page détail | ✅ | 4 onglets (Informations, Périodes, Validation, Historique) |
+| Formulaire | ✅ | CustomModal, validation Zod, auto-génération libellé |
+| Responsive + dark mode | ✅ | CSS variables, clamp(), grid responsive |
+| Cron jobs | ✅ | `cronActivationAnneesScolaires` + `cronClotureAnneesScolaires` |
+
+### Corrections apportées
+
+| Correction | Fichier | Détail |
+|------------|---------|--------|
+| Pagination serveur | `backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts` | Nouvelle méthode `findPaginated()` avec pagination, tri, filtre |
+| Controller paginé | `backend/src/modules/annees-scolaires/controllers/annees-scolaires.controller.ts` | Détection `page`/`limit` → `findPaginated()`, sinon `findAll()` (rétrocompatibilité) |
+| Hook frontend paginé | `frontend/src/features/annees-scolaires/hooks/use-annees-scolaires.ts` | Détection réponse paginée (`items` + `meta`) ou fallback tableau brut |
+| Hook dropdown | `frontend/src/features/annees-scolaires/hooks/use-toutes-annees-scolaires.ts` | Extraction `items` de la réponse paginée |
+| Logique redondante | `backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts` | `requireValidation` dans `create()` supprimé (les 2 branches retournaient `OUVERTE`) |
+| Formulaire hasUnsavedChanges | `frontend/src/features/annees-scolaires/components/annee-scolaire-form-modal.tsx` | Comparaison avec `initialData` (au lieu de `FORM_INIT`) pour mode édition |
+
+### Migrations exécutées
+
+| Migration | Résultat | Détail |
+|-----------|----------|--------|
+| 220 — Cohérence Année/Période | ✅ | Backfill 0 lignes, colonnes déjà supprimées, index + trigger créés |
+| 221 — Permissions RBAC | ✅ | ADMIN=2, CHEF_ETABLISSEMENT=2 (reouvrir + audit) |
+| 222 — Permissions complètes | ✅ | ADMIN=7, CHEF_ETABLISSEMENT=7 (toutes permissions annees:*) |
+| 223 — NOT NULL anneeScolaireId | ✅ | Contrainte NOT NULL ajoutée sur notes et bulletins |
+
+### Fichiers créés/modifiés
+
+| Fichier | Action |
+|---------|--------|
+| `backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts` | `findPaginated()` ajouté + logique `create()` simplifiée |
+| `backend/src/modules/annees-scolaires/controllers/annees-scolaires.controller.ts` | Pagination ajoutée (détection page/limit) |
+| `frontend/src/features/annees-scolaires/hooks/use-annees-scolaires.ts` | Détection réponse paginée serveur |
+| `frontend/src/features/annees-scolaires/hooks/use-toutes-annees-scolaires.ts` | Extraction `items` de réponse paginée |
+| `frontend/src/features/annees-scolaires/components/annee-scolaire-form-modal.tsx` | `hasUnsavedChanges` corrigé (mode édition) |
+| `scripts/deploy-coherence-annee-periode.sh` | NOUVEAU — Script déploiement migrations 220-223 |
+| `backend/database/migrations/220-coherence-annee-periode.sql` | Exécuté ✅ |
+| `backend/database/migrations/221-rbac-annees-scolaires.sql` | Exécuté ✅ |
+| `backend/database/migrations/222-permissions-completes-annees-scolaires.sql` | Exécuté ✅ |
+| `backend/database/migrations/223-not-null-annee-scolaire-id.sql` | Exécuté ✅ |
+
+---
+
+## Corrections post-audit Année Scolaire — Bug service, sélecteur périodes, design system (✅ COMPLET)
+
+> Contexte : Session de continuation. Audit de cohérence globale après les améliorations précédentes.
+
+### Bugs corrigés
+
+| Bug | Fichier | Correction |
+|-----|---------|------------|
+| **`requireValidation` non déclaré** | `backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts` | Suppression du bloc workflow mort dans `create()` (référence fantôme depuis simplification précédente). Les imports `validationWorkflowService` + `getParamBoolean` sont conservés (utilisés dans `cloturer()`) |
+| **Sélecteur années limité à 20** | `frontend/src/features/periodes/components/periodes-page.tsx` | Remplacement `useAnneesScolaires()` → `useToutesAnneesScolaires()` pour le dropdown (charge jusqu'à 100 années au lieu de 20) |
+| **Classes CSS inconsistentes** | `frontend/src/features/annees-scolaires/components/annee-scolaire-detail-page.tsx` | Remplacement classes Tailwind standards (`text-muted-foreground`, `bg-card`, `border-border`) → variables CSS design system (`text-[var(--color-text-muted)]`, `bg-[var(--color-surface)]`, `border-[var(--color-bordure)]`) |
+
+### Fichiers modifiés
+
+| Fichier | Action |
+|---------|--------|
+| `backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts` | Bloc `requireValidation` mort supprimé dans `create()` |
+| `frontend/src/features/periodes/components/periodes-page.tsx` | `useAnneesScolaires` → `useToutesAnneesScolaires` pour le sélecteur |
+| `frontend/src/features/annees-scolaires/components/annee-scolaire-detail-page.tsx` | Classes CSS alignées design system (variables CSS) |
+

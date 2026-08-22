@@ -26,6 +26,7 @@ import {
 } from '../dto';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
+import { AnneeScolaire } from '@modules/annees-scolaires/entities';
 
 export class TemplatesPeriodeService {
     private templateRepo: Repository<TemplatePeriodeEntity>;
@@ -315,9 +316,14 @@ export class TemplatesPeriodeService {
             throw new AppError('Accès refusé à ce template', 403, 'FORBIDDEN');
         }
 
-        // Vérifier l'année scolaire
-        const { anneesScolairesService } = await import('@modules/annees-scolaires/services');
-        await anneesScolairesService.findOne(dto.anneeScolaireId, etablissementId);
+        // Vérifier l'année scolaire (accès direct au repository pour éviter l'import circulaire)
+        const anneeScolaireRepo = AppDataSource.getRepository(AnneeScolaire);
+        const annee = await anneeScolaireRepo.findOne({
+            where: { id: dto.anneeScolaireId, etablissementId },
+        });
+        if (!annee) {
+            throw new AppError('Année scolaire non trouvée', 404, 'NOT_FOUND');
+        }
 
         // Conversion de la structure si elle est au format v4 (champ `type`)
         const structure = this.convertirStructureV4(template.structure as unknown as Record<string, unknown>);

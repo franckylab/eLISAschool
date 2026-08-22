@@ -1,9 +1,9 @@
 /**
  * ==================================
- * eLISAschool - Composant BundleCard
+ * eLISAschool - Composant PackageCard
  * ==================================
  *
- * Carte visuelle pour afficher un bundle de packs.
+ * Carte visuelle pour afficher un package de packs.
  * Affiche packs inclus, remise, statut, utilisations.
  *
  * Version: 4.0.0
@@ -12,26 +12,26 @@
 
 import { memo } from 'react';
 import { Package, Calendar, Hash, ToggleLeft, ToggleRight, Pencil, Trash2 } from 'lucide-react';
-import type { BundlePromotion } from '@/features/billing/types/promotion.types';
+import type { PackagePromotion } from '@/features/billing/types/promotion.types';
 import { StatutBadge } from './promo-badge';
 
-interface BundleCardProps {
-    bundle: BundlePromotion;
-    onEdit?: (bundle: BundlePromotion) => void;
-    onDelete?: (bundle: BundlePromotion) => void;
-    onToggle?: (bundle: BundlePromotion) => void;
+interface PackageCardProps {
+    pkg: PackagePromotion;
+    onEdit?: (pkg: PackagePromotion) => void;
+    onDelete?: (pkg: PackagePromotion) => void;
+    onToggle?: (pkg: PackagePromotion) => void;
     /** Noms des packs (pour affichage lisible) */
     packNames?: Record<string, string>;
 }
 
-export const BundleCard = memo(function BundleCard({
-    bundle,
+export const PackageCard = memo(function PackageCard({
+    pkg,
     onEdit,
     onDelete,
     onToggle,
     packNames = {},
-}: BundleCardProps) {
-    const estExpire = bundle.dateFin ? new Date(bundle.dateFin) < new Date() : false;
+}: PackageCardProps) {
+    const estExpire = pkg.dateFin ? new Date(pkg.dateFin) < new Date() : false;
 
     return (
         <div className="group relative rounded-2xl border border-[var(--color-bordure)] bg-[var(--color-surface)] p-4 sm:p-5 transition-all hover:border-amber-500/30 hover:shadow-lg hover:shadow-amber-500/5">
@@ -43,48 +43,51 @@ export const BundleCard = memo(function BundleCard({
                     </div>
                     <div className="min-w-0">
                         <h3 className="truncate text-sm font-semibold text-[var(--color-texte)]">
-                            {bundle.nom}
+                            {pkg.nom}
                         </h3>
                         <p className="truncate text-xs font-mono text-[var(--color-texte-muted)]">
-                            {bundle.code}
+                            {pkg.code}
                         </p>
                     </div>
                 </div>
-                <StatutBadge actif={bundle.actif} dateFin={bundle.dateFin} compact />
+                <StatutBadge actif={pkg.actif} dateFin={pkg.dateFin} compact />
             </div>
 
             {/* Description */}
-            {bundle.description && (
+            {pkg.description && (
                 <p className="mt-3 text-xs text-[var(--color-texte-secondaire)] line-clamp-2">
-                    {bundle.description}
+                    {pkg.description}
                 </p>
             )}
 
             {/* Remise */}
             <div className="mt-3 flex items-center gap-2">
                 <span className="inline-flex items-center rounded-lg bg-amber-500/10 px-2.5 py-1 text-sm font-bold text-amber-400">
-                    {bundle.typeRemise === 'POURCENTAGE' ? `−${bundle.valeur}%` : `−${bundle.valeur.toLocaleString('fr-FR')} F`}
+                    {pkg.typeRemise === 'POURCENTAGE' ? `−${pkg.valeur}%` : `−${pkg.valeur.toLocaleString('fr-FR')} F`}
                 </span>
                 <span className="text-xs text-[var(--color-texte-muted)]">
-                    sur le bundle
+                    sur le package
                 </span>
             </div>
 
             {/* Packs inclus */}
             <div className="mt-3">
                 <p className="text-xs font-medium text-[var(--color-texte-secondaire)] mb-1.5">
-                    Packs inclus ({bundle.packIds.length})
+                    Packs inclus ({pkg.packIds.length})
                 </p>
                 <div className="flex flex-wrap gap-1.5">
-                    {bundle.packIds.map((id) => (
-                        <span
-                            key={id}
-                            className="inline-flex items-center rounded-md border border-[var(--color-bordure)] bg-[var(--color-surface-hover)] px-2 py-0.5 text-[10px] font-mono text-[var(--color-texte-secondaire)]"
-                            title={id}
-                        >
-                            {packNames[id] || `${id.slice(0, 8)}…`}
-                        </span>
-                    ))}
+                    {pkg.packIds.map((id) => {
+                        const nom = packNames[id];
+                        return (
+                            <span
+                                key={id}
+                                className={`inline-flex items-center rounded-md border border-[var(--color-bordure)] px-2 py-0.5 text-[10px] ${nom ? 'bg-amber-500/8 text-amber-400' : 'bg-[var(--color-surface-hover)] font-mono text-[var(--color-texte-secondaire)]'}`}
+                                title={nom ? `${nom} (${id.slice(0, 8)}…)` : id}
+                            >
+                                {nom || `${id.slice(0, 8)}…`}
+                            </span>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -92,12 +95,12 @@ export const BundleCard = memo(function BundleCard({
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-[var(--color-texte-muted)]">
                 <span className="flex items-center gap-1">
                     <Hash className="h-3 w-3" />
-                    {bundle.utilisations}{bundle.maxUtilisations ? ` / ${bundle.maxUtilisations}` : ''}
+                    {pkg.utilisations}{pkg.maxUtilisations ? ` / ${pkg.maxUtilisations}` : ''}
                 </span>
                 <span className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    {new Date(bundle.dateDebut).toLocaleDateString('fr-FR')}
-                    {bundle.dateFin && !estExpire && ` → ${new Date(bundle.dateFin).toLocaleDateString('fr-FR')}`}
+                    {new Date(pkg.dateDebut).toLocaleDateString('fr-FR')}
+                    {pkg.dateFin && !estExpire && ` → ${new Date(pkg.dateFin).toLocaleDateString('fr-FR')}`}
                 </span>
             </div>
 
@@ -105,16 +108,16 @@ export const BundleCard = memo(function BundleCard({
             <div className="mt-3 flex items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                 {onToggle && (
                     <button
-                        onClick={() => onToggle(bundle)}
-                        className={`rounded-lg p-1.5 transition-colors ${bundle.actif ? 'text-green-400 hover:bg-green-500/10' : 'text-zinc-500 hover:bg-zinc-500/10'}`}
-                        title={bundle.actif ? 'Désactiver' : 'Activer'}
+                        onClick={() => onToggle(pkg)}
+                        className={`rounded-lg p-1.5 transition-colors ${pkg.actif ? 'text-green-400 hover:bg-green-500/10' : 'text-zinc-500 hover:bg-zinc-500/10'}`}
+                        title={pkg.actif ? 'Désactiver' : 'Activer'}
                     >
-                        {bundle.actif ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                        {pkg.actif ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
                     </button>
                 )}
                 {onEdit && (
                     <button
-                        onClick={() => onEdit(bundle)}
+                        onClick={() => onEdit(pkg)}
                         className="rounded-lg p-1.5 text-zinc-400 hover:bg-white/5 hover:text-white transition-colors"
                         title="Modifier"
                     >
@@ -123,7 +126,7 @@ export const BundleCard = memo(function BundleCard({
                 )}
                 {onDelete && (
                     <button
-                        onClick={() => onDelete(bundle)}
+                        onClick={() => onDelete(pkg)}
                         className="rounded-lg p-1.5 text-red-400 hover:bg-red-500/10 transition-colors"
                         title="Supprimer"
                     >

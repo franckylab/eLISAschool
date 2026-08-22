@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport de Cohérence — Espace Enseignant Unifié | eLISAschool</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.0/dist/mermaid.min.js"></script>
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-light: #dbeafe;
+  --primary-dark: #1e40af;
+  --success: #059669;
+  --success-light: #d1fae5;
+  --warning: #d97706;
+  --warning-light: #fef3c7;
+  --danger: #dc2626;
+  --danger-light: #fee2e2;
+  --info: #0891b2;
+  --info-light: #cffafe;
+  --surface: #ffffff;
+  --surface-alt: #f8fafc;
+  --text: #1e293b;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --radius: 12px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--surface-alt);
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 15px;
+}
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* Header */
+.report-header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #0891b2 100%);
+  color: white;
+  padding: 60px 0 50px;
+  position: relative;
+  overflow: hidden;
+}
+.report-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.report-header h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
+.report-header .subtitle { font-size: 1.1rem; opacity: 0.9; margin-bottom: 20px; }
+.header-meta { display: flex; gap: 24px; flex-wrap: wrap; font-size: 0.85rem; opacity: 0.85; }
+.header-meta span { display: flex; align-items: center; gap: 6px; }
+
+/* Navigation */
+.toc {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  margin: -30px auto 40px;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+}
+.toc h2 { font-size: 1.1rem; color: var(--primary); margin-bottom: 16px; }
+.toc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+.toc a {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 8px;
+  text-decoration: none; color: var(--text);
+  font-size: 0.88rem; transition: all 0.15s;
+}
+.toc a:hover { background: var(--primary-light); color: var(--primary); }
+.toc .num { color: var(--primary); font-weight: 700; min-width: 28px; }
+
+/* Sections */
+.section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 36px 40px;
+  margin-bottom: 28px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+.section h2 {
+  font-size: 1.5rem; font-weight: 700; color: var(--primary-dark);
+  margin-bottom: 20px; padding-bottom: 12px;
+  border-bottom: 2px solid var(--primary-light);
+}
+.section h3 {
+  font-size: 1.15rem; font-weight: 600; color: var(--text);
+  margin: 24px 0 12px; display: flex; align-items: center; gap: 8px;
+}
+.section h4 { font-size: 1rem; font-weight: 600; margin: 16px 0 8px; color: var(--text-secondary); }
+.section p { margin-bottom: 12px; color: var(--text-secondary); }
+
+/* Score badge */
+.score-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 14px; border-radius: 20px; font-weight: 700; font-size: 0.85rem;
+}
+.score-high { background: var(--success-light); color: var(--success); }
+.score-mid { background: var(--warning-light); color: var(--warning); }
+.score-low { background: var(--danger-light); color: var(--danger); }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.88rem; }
+th { background: var(--surface-alt); font-weight: 600; text-align: left; padding: 10px 14px; border-bottom: 2px solid var(--border); color: var(--text); }
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: top; }
+tr:hover td { background: var(--surface-alt); }
+
+/* Status pills */
+.pill { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; }
+.pill-ok { background: var(--success-light); color: var(--success); }
+.pill-warn { background: var(--warning-light); color: var(--warning); }
+.pill-err { background: var(--danger-light); color: var(--danger); }
+.pill-info { background: var(--info-light); color: var(--info); }
+.pill-new { background: #ede9fe; color: #7c3aed; }
+
+/* Alert boxes */
+.alert {
+  padding: 16px 20px; border-radius: 10px; margin: 16px 0;
+  border-left: 4px solid; font-size: 0.9rem;
+}
+.alert-danger { background: var(--danger-light); border-color: var(--danger); }
+.alert-warning { background: var(--warning-light); border-color: var(--warning); }
+.alert-success { background: var(--success-light); border-color: var(--success); }
+.alert-info { background: var(--info-light); border-color: var(--info); }
+.alert strong { display: block; margin-bottom: 4px; }
+
+/* Charts */
+.chart-container { position: relative; margin: 20px 0; padding: 16px; background: var(--surface-alt); border-radius: 10px; }
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 768px) { .chart-row { grid-template-columns: 1fr; } }
+
+/* Mermaid */
+.mermaid { margin: 20px 0; padding: 20px; background: var(--surface-alt); border-radius: 10px; overflow-x: auto; }
+
+/* KPI cards */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin: 20px 0; }
+.kpi-card {
+  background: var(--surface-alt); border: 1px solid var(--border);
+  border-radius: 10px; padding: 20px; text-align: center;
+}
+.kpi-card .value { font-size: 2rem; font-weight: 800; color: var(--primary); }
+.kpi-card .label { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
+
+/* Module cards */
+.module-card {
+  border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin: 12px 0;
+  background: var(--surface); transition: box-shadow 0.2s;
+}
+.module-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+.module-card .module-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.module-card .module-name { font-weight: 700; font-size: 1.05rem; }
+.module-card .module-body { font-size: 0.88rem; color: var(--text-secondary); }
+
+/* Dependency flow */
+.dep-flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.dep-node { padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; }
+.dep-arrow { color: var(--text-secondary); font-size: 1.2rem; }
+
+/* Code block */
+.code-block {
+  background: #1e293b; color: #e2e8f0; padding: 16px 20px;
+  border-radius: 10px; font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem; overflow-x: auto; margin: 12px 0; line-height: 1.6;
+}
+.code-block .comment { color: #64748b; }
+.code-block .keyword { color: #7dd3fc; }
+.code-block .string { color: #86efac; }
+
+/* Print */
+@media print {
+  .report-header { padding: 30px 0; }
+  .section { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+  .toc { box-shadow: none; }
+}
+
+/* Footer */
+.report-footer {
+  text-align: center; padding: 40px 0; color: var(--text-secondary);
+  font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 40px;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════ HEADER ═══ -->
+<header class="report-header">
+<div class="container">
+  <h1>Rapport de Cohérence — Espace Enseignant Unifié</h1>
+  <div class="subtitle">Vérification d'intégration des modules Présence, Discipline, Journal & Évaluation avec le codebase eLISAschool existant</div>
+  <div class="header-meta">
+    <span>📅 20 août 2026</span>
+    <span>📊 Score global: <strong>7.8/10</strong></span>
+    <span>🔍 57 modules backend inspectés</span>
+    <span>📐 67 features frontend analysées</span>
+  </div>
+</div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════ TOC ═══ -->
+<div class="container">
+<nav class="toc">
+  <h2>📑 Table des matières</h2>
+  <div class="toc-grid">
+    <a href="#exec"><span class="num">01</span> Synthèse exécutive</a>
+    <a href="#arch"><span class="num">02</span> Architecture existante</a>
+    <a href="#activation"><span class="num">03</span> Système d'activation modules</a>
+    <a href="#coherence"><span class="num">04</span> Matrice de cohérence</a>
+    <a href="#presence"><span class="num">05</span> Module Présence — Analyse</a>
+    <a href="#discipline"><span class="num">06</span> Module Discipline — Analyse</a>
+    <a href="#journal"><span class="num">07</span> Module Journal — Analyse</a>
+    <a href="#evaluation"><span class="num">08</span> Module Évaluation — Analyse</a>
+    <a href="#mismatches"><span class="num">09</span> Incohérences frontend/backend</a>
+    <a href="#dependencies"><span class="num">10</span> Carte des dépendances</a>
+    <a href="#bestpractices"><span class="num">11</span> Bonnes pratiques (OCDE/PBIS)</a>
+    <a href="#roadmap"><span class="num">12</span> Feuille de route</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════ 01 EXEC ═══ -->
+<section class="section" id="exec">
+<h2>01 — Synthèse exécutive</h2>
+
+<div class="kpi-grid">
+  <div class="kpi-card"><div class="value">7.8</div><div class="label">Score cohérence /10</div></div>
+  <div class="kpi-card"><div class="value">4</div><div class="label">Nouveaux modules cible</div></div>
+  <div class="kpi-card"><div class="value">18</div><div class="label">Entités TypeORM à créer</div></div>
+  <div class="kpi-card"><div class="value">6</div><div class="label">Incohérences critiques</div></div>
+  <div class="kpi-card"><div class="value">12</div><div class="label">Points d'intégration existants</div></div>
+  <div class="kpi-card"><div class="value">~300h</div><div class="label">Effort estimé</div></div>
+</div>
+
+<h3>Verdict global</h3>
+<p>Le plan d'implémentation de l'espace enseignant unifié est <strong>structurellement cohérent</strong> avec l'architecture eLISAschool. Les 4 modules cibles (Présence, Discipline, Journal, Évaluation) s'intègrent naturellement dans le modèle de données existant via les pivots <code>HeureCours</code> et <code>ProgrammeChapitre</code>. Cependant, <strong>6 incohérences critiques</strong> entre le frontend et le backend doivent être résolues avant le démarrage de l'implémentation.</p>
+
+<div class="alert alert-warning">
+  <strong>⚠️ Points d'attention majeurs</strong>
+  3 modules backend existent déjà sans frontend (gamification, scoring, suivi-eleves). Le plan doit les consolider plutôt que les remplacer. 6 routes frontend appellent des endpoints inexistants.
+</div>
+
+<div class="chart-row">
+  <div class="chart-container"><canvas id="chartScores"></canvas></div>
+  <div class="chart-container"><canvas id="chartEffort"></canvas></div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ 02 ARCH ═══ -->
+<section class="section" id="arch">
+<h2>02 — Architecture existante du codebase</h2>
+
+<h3>📊 Vue d'ensemble du codebase</h3>
+<div class="kpi-grid">
+  <div class="kpi-card"><div class="value">57</div><div class="label">Modules backend</div></div>
+  <div class="kpi-card"><div class="value">67</div><div class="label">Features frontend</div></div>
+  <div class="kpi-card"><div class="value">48</div><div class="label">ModuleName enum</div></div>
+  <div class="kpi-card"><div class="value">67</div><div class="label">Rôles RBAC</div></div>
+  <div class="kpi-card"><div class="value">~230</div><div class="label">Permissions</div></div>
+  <div class="kpi-card"><div class="value">22+</div><div class="label">Cron jobs</div></div>
+</div>
+
+<h3>🏗️ Architecture multi-tenant</h3>
+<div class="mermaid">
+graph TB
+    subgraph "Control Plane"
+        SA[SUPER_ADMIN]-->PR[Platform Routes]
+        PR-->BILL[Billing Module]
+        PR-->MON[Monitoring]
+        PR-->CFG[Configuration]
+    end
+    subgraph "Data Plane — Tenant"
+        AD[ADMIN]-->TR[Tenant Routes]
+        TR-->MOD[Modules Activés]
+        TR-->RLS[RLS PostgreSQL]
+        MOD-->ENT[EntitlementService]
+        ENT-->CAT[modules_catalogue]
+        ENT-->PLAN[PlanAbonnement]
+        ENT-->SUB[AbonnementClient]
+    end
+    subgraph "Casl.js"
+        AB[defineAbility]-->GUARD[Guards]
+        GUARD-->CTRL[Controllers]
+    end
+    SA-.->|plane:platform|AB
+    AD-.->|plane:tenant|AB
+</div>
+
+<h3>📦 Modules existants pertinents pour l'espace enseignant</h3>
+<table>
+<thead><tr><th>Module</th><th>Code</th><th>Statut</th><th>Lien avec nouveaux modules</th></tr></thead>
+<tbody>
+<tr><td><strong>Emploi du temps</strong></td><td><code>emploi-du-temps</code></td><td><span class="pill pill-ok">Actif</span></td><td><strong>Pivot central</strong> — CreneauHoraire → HeureCours = ancre Présence + Journal</td></tr>
+<tr><td><strong>Programmes</strong></td><td><code>programmes</code></td><td><span class="pill pill-ok">Actif</span></td><td>ProgrammeChapitre → progression auto dans Journal</td></tr>
+<tr><td><strong>Notes</strong></td><td><code>notes</code></td><td><span class="pill pill-ok">Actif</span></td><td>Évaluation formative → intégration avec module Évaluation</td></tr>
+<tr><td><strong>Bulletins</strong></td><td><code>bulletins</code></td><td><span class="pill pill-ok">Actif</span></td><td>Synthèse périodique des évaluations</td></tr>
+<tr><td><strong>Périodes</strong></td><td><code>periodes</code></td><td><span class="pill pill-ok">Actif</span></td><td>Cadre temporel pour Présence + Journal + Évaluation</td></tr>
+<tr><td><strong>Élèves</strong></td><td><code>eleves</code></td><td><span class="pill pill-ok">Actif</span></td><td>Sujets de Présence, Discipline, Journal</td></tr>
+<tr><td><strong>Personnel</strong></td><td><code>personnel</code></td><td><span class="pill pill-ok">Actif</span></td><td>Enseignants = acteurs principaux</td></tr>
+<tr><td><strong>Suivi élèves</strong></td><td><code>suivi-eleves</code></td><td><span class="pill pill-warn">Backend seul</span></td><td><strong>À renommer → Discipline</strong></td></tr>
+<tr><td><strong>Gamification</strong></td><td><code>gamification</code></td><td><span class="pill pill-warn">Backend seul</span></td><td>Points/badges → consolidé avec Discipline</td></tr>
+<tr><td><strong>Scoring</strong></td><td><code>scoring</code></td><td><span class="pill pill-warn">Backend seul</span></td><td>Configuration scoring → absorbé par Gamification</td></tr>
+<tr><td><strong>Matieres</strong></td><td><code>matieres</code></td><td><span class="pill pill-ok">Actif</span></td><td>MatièreNiveau.volumeHoraire → lien Journal</td></tr>
+<tr><td><strong>Classes</strong></td><td><code>classes</code></td><td><span class="pill pill-ok">Actif</span></td><td>ClasseAnnee → contexte Présence + Journal</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ 03 ACTIVATION ═══ -->
+<section class="section" id="activation">
+<h2>03 — Système d'activation des modules</h2>
+
+<p>Chaque nouveau module doit s'intégrer dans la chaîne d'activation à 5 niveaux d'eLISAschool. Voici l'analyse de conformité pour les 4 modules cibles.</p>
+
+<h3>🔗 Chaîne d'activation (5 niveaux)</h3>
+<div class="mermaid">
+graph LR
+    A["1. ModuleName enum<br/><i>shared/src/enums/modules.enum.ts</i>"] --> B["2. Seed catalogue<br/><i>seed-modules-catalogue.ts</i>"]
+    B --> C["3. EntitlementService<br/><i>entitlement.service.ts</i>"]
+    C --> D["4. Middleware<br/><i>requireModuleActive()</i>"]
+    D --> E["5. Route mount<br/><i>app.ts</i>"]
+    style A fill:#dbeafe,stroke:#2563eb
+    style B fill:#dbeafe,stroke:#2563eb
+    style C fill:#d1fae5,stroke:#059669
+    style D fill:#d1fae5,stroke:#059669
+    style E fill:#d1fae5,stroke:#059669
+</div>
+
+<h3>✅ Checklist d'enregistrement par module</h3>
+<table>
+<thead><tr><th>Étape</th><th>Fichier</th><th>Présence</th><th>Discipline</th><th>Journal</th><th>Évaluation</th></tr></thead>
+<tbody>
+<tr><td>1. Enum ModuleName</td><td><code>shared/src/enums/modules.enum.ts</code></td><td><span class="pill pill-new">À ajouter</span></td><td><span class="pill pill-warn">Renommer</span></td><td><span class="pill pill-new">À ajouter</span></td><td><span class="pill pill-new">À ajouter</span></td></tr>
+<tr><td>2. Seed catalogue</td><td><code>seed-modules-catalogue.ts</code></td><td><span class="pill pill-new">À créer</span></td><td><span class="pill pill-warn">Migrer</span></td><td><span class="pill pill-new">À créer</span></td><td><span class="pill pill-new">À créer</span></td></tr>
+<tr><td>3. Migration SQL</td><td><code>database/migrations/</code></td><td><span class="pill pill-new">Nouvelle</span></td><td><span class="pill pill-warn">Rename table</span></td><td><span class="pill pill-new">Nouvelle</span></td><td><span class="pill pill-new">Nouvelle</span></td></tr>
+<tr><td>4. Middleware route</td><td><code>app.ts</code></td><td><span class="pill pill-new"> Monter</span></td><td><span class="pill pill-warn">Renommer</span></td><td><span class="pill pill-new">Monter</span></td><td><span class="pill pill-new">Monter</span></td></tr>
+<tr><td>5. Sidebar</td><td><code>Sidebar.tsx</code></td><td><span class="pill pill-new">Ajouter</span></td><td><span class="pill pill-warn">Mettre à jour</span></td><td><span class="pill pill-new">Ajouter</span></td><td><span class="pill pill-new">Ajouter</span></td></tr>
+<tr><td>6. Permissions RBAC</td><td><code>roles.enum.ts</code></td><td><span class="pill pill-new">+8 perms</span></td><td><span class="pill pill-warn">Migrer</span></td><td><span class="pill pill-new">+6 perms</span></td><td><span class="pill pill-new">+6 perms</span></td></tr>
+<tr><td>7. i18n</td><td><code>locales/{fr,en}/</code></td><td><span class="pill pill-new">Namespace</span></td><td><span class="pill pill-warn">Renommer</span></td><td><span class="pill pill-new">Namespace</span></td><td><span class="pill pill-new">Namespace</span></td></tr>
+</tbody>
+</table>
+
+<div class="alert alert-info">
+  <strong>💡 Module Discipline = renommage de suivi-eleves</strong>
+  Le module <code>suivi-eleves</code> existe déjà dans le backend (4 entités, routes CRUD) mais le frontend appelle <code>/api/discipline/*</code>. La solution la plus propre est de renommer le module backend en <code>discipline</code> et d'aligner les routes.
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ 04 COHERENCE ═══ -->
+<section class="section" id="coherence">
+<h2>04 — Matrice de cohérence cross-modules</h2>
+
+<h3>🔍 Vérification d'intégration avec les modules existants</h3>
+<p>Chaque nouveau module a été vérifié contre les 12 modules existants les plus pertinents. Score de cohérence = qualité des points d'intégration identifiés.</p>
+
+<table>
+<thead><tr><th>Module existant ↓ / Nouveau →</th><th>Présence</th><th>Discipline</th><th>Journal</th><th>Évaluation</th></tr></thead>
+<tbody>
+<tr><td><strong>Emploi du temps</strong> (HeureCours)</td><td><span class="pill pill-ok">Pivot</span> Ancre temporelle</td><td><span class="pill pill-info">Lien</span> Contexte horaire</td><td><span class="pill pill-ok">Pivot</span> Entrée par séance</td><td><span class="pill pill-info">Lien</span> Créneau → évaluation</td></tr>
+<tr><td><strong>Programmes</strong> (ProgrammeChapitre)</td><td><span class="pill pill-err">—</span> Pas de lien</td><td><span class="pill pill-err">—</span> Pas de lien</td><td><span class="pill pill-ok">Pivot</span> Progression auto</td><td><span class="pill pill-ok">Fort</span> Objectifs → notes</td></tr>
+<tr><td><strong>Élèves</strong> (Eleve, ClasseAnnee)</td><td><span class="pill pill-ok">Pivot</span> Présence par élève</td><td><span class="pill pill-ok">Pivot</span> Incidents par élève</td><td><span class="pill pill-ok">Pivot</span> Entrées par classe</td><td><span class="pill pill-ok">Pivot</span> Notes par élève</td></tr>
+<tr><td><strong>Notes</strong> (Note, TypeEvaluation)</td><td><span class="pill pill-err">—</span> Pas de lien</td><td><span class="pill pill-info">Lien</span> Impact sur moyenne comportement</td><td><span class="pill pill-err">—</span> Pas de lien</td><td><span class="pill pill-ok">Fusion</span> Réutiliser types</td></tr>
+<tr><td><strong>Périodes</strong> (Periode)</td><td><span class="pill pill-ok">Fort</span> Cadre temporel</td><td><span class="pill pill-ok">Fort</span> Période de validité</td><td><span class="pill pill-ok">Fort</span> Progression par période</td><td><span class="pill pill-ok">Fort</span> Évaluations par période</td></tr>
+<tr><td><strong>Personnel</strong> (MembrePersonnel)</td><td><span class="pill pill-ok">Fort</span> Enseignant présent</td><td><span class="pill pill-ok">Fort</span> Auteur incident</td><td><span class="pill pill-ok">Fort</span> Auteur entrée</td><td><span class="pill pill-ok">Fort</span> Correcteur</td></tr>
+<tr><td><strong>Gamification</strong> (Badge, Points)</td><td><span class="pill pill-ok">Pivot</span> Points présence</td><td><span class="pill pill-ok">Pivot</span> Points comportement</td><td><span class="pill pill-err">—</span> Pas de lien</td><td><span class="pill pill-info">Lien</span> Badges académiques</td></tr>
+<tr><td><strong>Matieres</strong> (MatiereNiveau)</td><td><span class="pill pill-info">Lien</span> Contexte matière</td><td><span class="pill pill-err">—</span> Pas de lien</td><td><span class="pill pill-ok">Fort</span> Progression par matière</td><td><span class="pill pill-ok">Fort</span> Compétences par matière</td></tr>
+<tr><td><strong>Classes</strong> (Classe, ClasseAnnee)</td><td><span class="pill pill-ok">Fort</span> Présence par classe</td><td><span class="pill pill-ok">Fort</span> Incidents par classe</td><td><span class="pill pill-ok">Fort</span> Journal par classe</td><td><span class="pill pill-ok">Fort</span> Évaluations par classe</td></tr>
+<tr><td><strong>Notifications</strong></td><td><span class="pill pill-ok">Fort</span> Alertes absence</td><td><span class="pill pill-ok">Fort</span> Alertes incident</td><td><span class="pill pill-info">Lien</span> Devoirs à faire</td><td><span class="pill pill-ok">Fort</span> Notes publiées</td></tr>
+<tr><td><strong>Portail parent</strong></td><td><span class="pill pill-ok">Fort</span> Suivi assiduité</td><td><span class="pill pill-ok">Fort</span> Suivi comportement</td><td><span class="pill pill-ok">Fort</span> Lecture journal</td><td><span class="pill pill-ok">Fort</span> Consultation notes</td></tr>
+<tr><td><strong>Bulletins</strong></td><td><span class="pill pill-info">Lien</span> Taux présence</td><td><span class="pill pill-info">Lien</span> Appréciation</td><td><span class="pill pill-info">Lien</span> Progression</td><td><span class="pill pill-ok">Fusion</span> Source données</td></tr>
+</tbody>
+</table>
+
+<div class="chart-container"><canvas id="chartCoherence"></canvas></div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ 05 PRESENCE ═══ -->
+<section class="section" id="presence">
+<h2>05 — Module Présence — Analyse détaillée</h2>
+
+<div class="module-card">
+  <div class="module-header">
+    <span class="module-name">📋 Module Présence</span>
+    <span class="score-badge score-high">Cohérence: 8.5/10</span>
+  </div>
+  <div class="module-body">
+    <p><strong>Points d'intégration forts :</strong> HeureCours (pivot), Eleve (sujet), Periode (cadre), Gamification (points), Notifications (alertes parents).</p>
+    <p><strong>Entités proposées :</strong> SeancePresence, PointagePresence, StatutPresence, MotifAbsence, Nomenclature (7 tables config).</p>
+    <p><strong>8 statuts de présence :</strong> PRESENT, RETARD, ABSENT, ABSENT_JUSTIFIE, EXCUSÉ, STAGE, SORTIE_PEDAGOGIQUE, NON_SAISI.</p>
+  </div>
+</div>
+
+<h3>🔗 Flux de données Présence</h3>
+<div class="mermaid">
+sequenceDiagram
+    participant E as Enseignant
+    participant H as HeureCours
+    participant P as PrésenceService
+    participant G as GamificationService
+    participant N as NotificationService
+    participant PP as Portail Parent
+
+    E->>H: Sélectionne la séance (date + créneau)
+    H->>P: Charge liste élèves (ClasseAnnee)
+    E->>P: Saisie statuts (8 types)
+    P->>P: Validation (période ouverte?)
+    P->>G: EventEmitter('presence.enregistre')
+    G->>G: +10 pts si présent, -5 si absent
+    P->>N: Alertes seuil (>3 absences)
+    N->>PP: Push parent (absence détectée)
+    P->>P: Calcul taux présence classe
+</div>
+
+<h3>⚠️ Bug critique identifié — Cron gamification</h3>
+<div class="alert alert-danger">
+  <strong>🐛 BUG : Attribution points sans vérification présence</strong>
+  Le cron <code>gamification/cron-jobs.ts</code> (ligne ~180) attribue des points de présence à <strong>TOUS les élèves</strong> sans vérifier s'ils étaient réellement présents. Le commentaire <code>// TODO: vérifier la présence réelle</code> confirme que cette logique est incomplète.
+  <br><br>
+  <strong>Impact :</strong> Le module Présence doit corriger ce cron pour qu'il ne s'exécute qu'après enregistrement effectif des présences.
+</div>
+
+<h3>📊 Modèle de données proposé</h3>
+<div class="mermaid">
+erDiagram
+    HEURE_COURS ||--o{ SEANCE_PRESENCE : "ancre"
+    SEANCE_PRESENCE ||--|{ POINTAGE_PRESENCE : "contient"
+    ELEVE ||--o{ POINTAGE_PRESENCE : "concerne"
+    SEANCE_PRESENCE }o--|| PERIODE : "cadre"
+    POINTAGE_PRESENCE }o--|| STATUT_PRESENCE : "statut"
+    POINTAGE_PRESENCE }o--o| MOTIF_ABSENCE : "justification"
+    
+    SEANCE_PRESENCE {
+        uuid id
+        uuid heureCoursId FK
+        date dateSeance
+        uuid enseignantId FK
+        uuid etablissementId FK
+        enum statutSaisie
+        timestamp createdAt
+    }
+    POINTAGE_PRESENCE {
+        uuid id
+        uuid seanceId FK
+        uuid eleveId FK
+        enum statut
+        uuid motifId FK nullable
+        text commentaire
+        timestamp createdAt
+    }
+</div>
+
+<h3>🌍 Standards internationaux (OCDE/UNESCO)</h3>
+<table>
+<thead><tr><th>Indicateur</th><th>Standard</th><th>Conformité plan</th></tr></thead>
+<tbody>
+<tr><td>Assiduité régulière</td><td>≥ 90% de présence</td><td><span class="pill pill-ok">✅</span> Seuil configurable</td></tr>
+<tr><td>Absentéisme chronique</td><td>≤ 70% (seuil alerte)</td><td><span class="pill pill-ok">✅</span> Alerte automatique</td></tr>
+<tr><td>Granularité</td><td>Session-level (pas journalier)</td><td><span class="pill pill-ok">✅</span> Par séance HeureCours</td></tr>
+<tr><td>Multi-causal</td><td>Categories: médical, familial, scolaire, personnel</td><td><span class="pill pill-ok">✅</span> 7 motifs nomenclature</td></tr>
+<tr><td>Intervention précoce</td><td>Alerte après 3 absences consécutives</td><td><span class="pill pill-ok">✅</span> Notifications parents</td></tr>
+<tr><td>Données longitudinales</td><td>Historique complet par période</td><td><span class="pill pill-ok">✅</span> Analytics terme complet</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ 06 DISCIPLINE ═══ -->
+<section class="section" id="discipline">
+<h2>06 — Module Discipline — Analyse détaillée</h2>
+
+<div class="module-card">
+  <div class="module-header">
+    <span class="module-name">🛡️ Module Discipline</span>
+    <span class="score-badge score-mid">Cohérence: 7.0/10</span>
+  </div>
+  <div class="module-body">
+    <p><strong>Existant :</strong> Module <code>suivi-eleves</code> (4 entités, routes CRUD, intégration gamification). <strong>À renommer</strong> en <code>discipline</code>.</p>
+    <p><strong>Entités existantes :</strong> IncidentEleve (17 types, 4 sévérités), SanctionEleve (14 types, workflow), ObservationEleve (+/-/neutre), FelicitationEleve (18 types).</p>
+    <p><strong>Consolidation requise :</strong> Absorber <code>gamification</code> + <code>scoring</code> → un seul système de points unifié.</p>
+  </div>
+</div>
+
+<h3>🔄 Migration suivi-eleves → discipline</h3>
+<div class="mermaid">
+graph LR
+    subgraph "Avant (fragmenté)"
+        SE["suivi-eleves<br/>4 entités"]
+        GAM["gamification<br/>4 entités + cron"]
+        SCO["scoring<br/>4 entités"]
+    end
+    subgraph "Après (unifié)"
+        DIS["discipline<br/>6 entités"]
+        GAM2["gamification<br/>2 entités core"]
+    end
+    SE -->|"rename"| DIS
+    GAM -->|"absorber config"| GAM2
+    SCO -->|"supprimer"| DIS
+    GAM2 -->|"points"| DIS
+    style SE fill:#fee2e2,stroke:#dc2626
+    style GAM fill:#fee2e2,stroke:#dc2626
+    style SCO fill:#fee2e2,stroke:#dc2626
+    style DIS fill:#d1fae5,stroke:#059669
+    style GAM2 fill:#dbeafe,stroke:#2563eb
+</div>
+
+<h3>📊 Modèle PBIS (Positive Behavioral Interventions & Supports)</h3>
+<div class="chart-container"><canvas id="chartPBIS"></canvas></div>
+
+<table>
+<thead><tr><th>Niveau PBIS</th><th>Population</th><th>Actions</th><th>Implémentation eLISAschool</th></tr></thead>
+<tbody>
+<tr><td><strong>Tier 1 — Universel</strong></td><td>~80% des élèves</td><td>Renforcement positif, règles claires</td><td>Félicitations (+points), Observations positives, Badges</td></tr>
+<tr><td><strong>Tier 2 — Ciblé</strong></td><td>~15% des élèves</td><td>Interventions groupées, contrats</td><td>Observations négatives, Sanctions légères, Alertes parents</td></tr>
+<tr><td><strong>Tier 3 — Intensif</strong></td><td>~5% des élèves</td><td>Plan individualisé, suivi rapproché</td><td>Sanctions lourdes, Exclusions, Dossier renforcé, Direction</td></tr>
+</tbody>
+</table>
+
+<h3>⚠️ Incohérence critique — Routes frontend/backend</h3>
+<div class="alert alert-danger">
+  <strong>🔴 Route mismatch : Frontend appelle /api/discipline/* mais backend sert /api/suivi-eleves/*</strong>
+  Le frontend dans <code>features/discipline/</code> fait des appels vers <code>/api/discipline/sanctions</code>, <code>/api/discipline/incidents</code>, etc. Mais le backend monte les routes sur <code>/api/suivi-eleves</code>. Résultat : <strong>toutes les requêtes retournent 404</strong>.
+  <br><br>
+  <strong>Solution :</strong> Renommer le module backend de <code>suivi-eleves</code> → <code>discipline</code> et mettre à jour les routes dans <code>app.ts</code>.
+</div>
+
+<h3>🔗 Flux de données Discipline</h3>
+<div class="mermaid">
+sequenceDiagram
+    participant E as Enseignant
+    participant D as DisciplineService
+    participant G as GamificationService
+    participant N as NotificationService
+    participant DIR as Direction
+
+    E->>D: Signale incident (type, sévérité)
+    D->>D: Vérifie workflow (escalade auto si grave)
+    D->>G: EventEmitter('discipline.incident.cree')
+    G->>G: -points si négatif, +points si positif
+    D->>N: Notification parent (si sanction)
+    N->>N: SMS/Email/Push selon config
+    D->>D: Vérifie seuils récidive
+    alt Récidive > 3
+        D->>DIR: Escalade automatique
+        DIR->>D: Décision direction
+    end
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ 07 JOURNAL ═══ -->
+<section class="section" id="journal">
+<h2>07 — Module Journal de Classe — Analyse détaillée</h2>
+
+<div class="module-card">
+  <div class="module-header">
+    <span class="module-name">📖 Module Journal de Classe</span>
+    <span class="score-badge score-high">Cohérence: 9.0/10</span>
+  </div>
+  <div class="module-body">
+    <p><strong>Module entièrement nouveau.</strong> Point d'intégration le plus fort avec les modules existants : HeureCours (ancre), ProgrammeChapitre (progression), MatiereNiveau (volume horaire).</p>
+    <p><strong>Inspiré de :</strong> Pronote (France), Registro Elettronico (Italie), Ecole Directe — standards européens du cahier de texte numérique.</p>
+    <p><strong>Entités :</strong> JournalSeance, JournalDevoir, JournalRessource, ProgressionAuto.</p>
+  </div>
+</div>
+
+<h3>🔗 Intégration programmes — Progression automatique</h3>
+<div class="mermaid">
+graph TB
+    subgraph "Programmes (existant)"
+        PP[ProgrammePedagogique]
+        PM[ProgrammeMatiere]
+        PC[ProgrammeChapitre<br/>progressionPourcentage]
+    end
+    subgraph "Journal (nouveau)"
+        JS[JournalSeance]
+        JD[JournalDevoir]
+        JR[JournalRessource]
+        PA[ProgressionAuto]
+    end
+    subgraph "Emploi du temps (existant)"
+        HC[HeureCours]
+    end
+    
+    HC -->|"ancre temporelle"| JS
+    PC -->|"chapitre prévu"| PA
+    JS -->|"chapitre traité"| PA
+    PA -->|"calcul écart"| PC
+    JS -->|"devoirs"| JD
+    JS -->|"ressources"| JR
+    
+    style PA fill:#fef3c7,stroke:#d97706
+</div>
+
+<h3>📊 Calcul de progression automatique</h3>
+<div class="code-block">
+<span class="comment">// ProgressionAuto — calcul déclaré vs réel</span>
+<span class="keyword">function</span> calculerProgression(programme: ProgrammeMatiere, seances: JournalSeance[]) {
+  <span class="keyword">const</span> chapitres = programme.chapitres;  <span class="comment">// ex: 12 chapitres</span>
+  <span class="keyword">const</span> totalHeures = chapitres.reduce((sum, ch) => sum + ch.nbHeuresPrevues, 0);
+  
+  <span class="comment">// Progression déclarée (ce qui était prévu à cette date)</span>
+  <span class="keyword">const</span> progressionDeclaree = chapitres
+    .filter(ch => ch.datePrevue <= now)
+    .reduce((sum, ch) => sum + ch.progressionPourcentage, 0) / totalHeures;
+  
+  <span class="comment">// Progression réelle (ce qui a été effectivement fait)</span>
+  <span class="keyword">const</span> progressionReelle = seances
+    .filter(s => s.chapitreTraite)
+    .reduce((sum, s) => sum + s.dureeEffective, 0) / totalHeures;
+  
+  <span class="keyword">return</span> { declaree: progressionDeclaree, reelle: progressionReelle, ecart: declaree - reelle };
+}
+</div>
+
+<h3>🌍 Standards internationaux — Cahier de texte numérique</h3>
+<table>
+<thead><tr><th>Feature</th><th>Pronote (FR)</th><th>Registro (IT)</th><th>Plan eLISAschool</th></tr></thead>
+<tbody>
+<tr><td>Entrée par séance</td><td>✅ Oui</td><td>✅ Oui</td><td><span class="pill pill-ok">✅</span> JournalSeance liée à HeureCours</td></tr>
+<tr><td>Devoirs avec échéance</td><td>✅ Oui</td><td>✅ Oui</td><td><span class="pill pill-ok">✅</span> JournalDevoir (date, type, différencié)</td></tr>
+<tr><td>Ressources multimédias</td><td>✅ Fichiers</td><td>✅ Fichiers</td><td><span class="pill pill-ok">✅</span> JournalRessource (lien/fichier/texte)</td></tr>
+<tr><td>Progression auto</td><td>✅ Partielle</td><td>❌ Non</td><td><span class="pill pill-ok">✅</span> Calcul déclaré vs réel</td></tr>
+<tr><td>Accès parent (lecture)</td><td>✅ Oui</td><td>✅ Oui</td><td><span class="pill pill-ok">✅</span> Via portail parent CASL</td></tr>
+<tr><td>Mode hors-ligne</td><td>❌ Non</td><td>❌ Non</td><td><span class="pill pill-ok">✅</span> IndexedDB + sync delta</td></tr>
+<tr><td>Accessibilité (dyslexie)</td><td>❌ Non</td><td>❌ Non</td><td><span class="pill pill-ok">✅</span> Font OpenDyslexic, audio</td></tr>
+</tbody>
+</table>
+
+<div class="alert alert-success">
+  <strong>✅ Point fort du plan : Mode hors-ligne</strong>
+  Contrairement aux solutions européennes (Pronote, Registro), le plan eLISAschool intègre un mode offline-first avec IndexedDB et synchronisation delta. C'est un avantage compétitif majeur pour le contexte africain où la connectivité est intermittente.
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ 08 EVALUATION ═══ -->
+<section class="section" id="evaluation">
+<h2>08 — Module Évaluation — Analyse détaillée</h2>
+
+<div class="module-card">
+  <div class="module-header">
+    <span class="module-name">📝 Module Évaluation</span>
+    <span class="score-badge score-mid">Cohérence: 7.5/10</span>
+  </div>
+  <div class="module-body">
+    <p><strong>Extension du module Notes existant.</strong> Ne pas recréer — enrichir le module <code>notes</code> avec les fonctionnalités d'évaluation formative, compétences, et grilles d'évaluation.</p>
+    <p><strong>Risque :</strong> Duplication avec le module <code>notes</code> existant. Le plan doit clairement définir ce qui est ajouté vs ce qui existe.</p>
+  </div>
+</div>
+
+<h3>🔗 Distinction Notes vs Évaluation</h3>
+<table>
+<thead><tr><th>Aspect</th><th>Module Notes (existant)</th><th>Module Évaluation (extension)</th></tr></thead>
+<tbody>
+<tr><td>Scope</td><td>Note chiffrée /20</td><td>Compétence, grille, portfolio</td></tr>
+<tr><td>Types</td><td>DEVOIR, EXAMEN, INTERROGATION</td><td>+ FORMATIVE, SOMMATIVE, DIAGNOSTIQUE</td></tr>
+<tr><td>Granularité</td><td>1 note par évaluation</td><td>+ Multi-critères, rubriques</td></tr>
+<tr><td>Restitution</td><td>Moyenne, rang</td><td>+ Radar compétences, progression</td></tr>
+<tr><td>Lien programme</td><td>Indirect (via matière)</td><td>Direct (via ProgrammeChapitre.objectifs)</td></tr>
+</tbody>
+</table>
+
+<div class="alert alert-warning">
+  <strong>⚠️ Recommandation : Fusionner plutôt que créer</strong>
+  Au lieu d'un nouveau module <code>evaluation</code>, enrichir le module <code>notes</code> existant avec :
+  <ul style="margin-top:8px; padding-left:20px;">
+    <li>Types d'évaluation étendus (formative, diagnostique)</li>
+    <li>Grilles d'évaluation par compétences (JSONB)</li>
+    <li>Lien direct avec ProgrammeChapitre.objectifs</li>
+    <li>Visualisation radar des compétences</li>
+  </ul>
+  Cela évite la duplication d'entités et simplifie le modèle de données.
+</div>
+
+<h3>🔗 Flux Évaluation → Bulletin</h3>
+<div class="mermaid">
+graph LR
+    subgraph "Évaluation"
+        EV[Évaluation]
+        GR[Grille compétences]
+        OB[Objectifs chapitre]
+    end
+    subgraph "Notes (existant)"
+        N[Note]
+        TE[TypeEvaluation]
+    end
+    subgraph "Bulletins (existant)"
+        B[Bulletin]
+        BM[BulletinMatiere]
+    end
+    
+    EV -->|"enrichit"| N
+    GR -->|"multi-critères"| N
+    OB -->|"lien programme"| EV
+    N -->|"agrégation"| BM
+    BM -->|"synthèse"| B
+    
+    style EV fill:#ede9fe,stroke:#7c3aed
+    style GR fill:#ede9fe,stroke:#7c3aed
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ 09 MISMATCHES ═══ -->
+<section class="section" id="mismatches">
+<h2>09 — Incohérences frontend/backend identifiées</h2>
+
+<p>L'inspection approfondie du codebase a révélé <strong>6 incohérences critiques</strong> entre le frontend et le backend. Ces problèmes doivent être résolus <strong>avant</strong> le démarrage de l'implémentation des nouveaux modules.</p>
+
+<div class="chart-container"><canvas id="chartMismatches"></canvas></div>
+
+<h3>🔴 Incohérences critiques (à résoudre en priorité)</h3>
+
+<table>
+<thead><tr><th>#</th><th>Problème</th><th>Frontend</th><th>Backend</th><th>Impact</th><th>Solution</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>1</strong></td>
+  <td>Routes absences inexistantes</td>
+  <td><code>features/absences/</code> appelle <code>/api/absences</code></td>
+  <td>Aucun endpoint <code>/api/absences</code></td>
+  <td><span class="pill pill-err">CRITIQUE</span></td>
+  <td>Créer endpoint ou rediriger vers Présence</td>
+</tr>
+<tr>
+  <td><strong>2</strong></td>
+  <td>Routes discipline mismatch</td>
+  <td><code>features/discipline/</code> appelle <code>/api/discipline/*</code></td>
+  <td>Backend sert <code>/api/suivi-eleves/*</code></td>
+  <td><span class="pill pill-err">CRITIQUE</span></td>
+  <td>Renommer module backend → <code>discipline</code></td>
+</tr>
+<tr>
+  <td><strong>3</strong></td>
+  <td>Routes pointages inexistantes</td>
+  <td><code>features/pointages/</code> appelle <code>/api/pointages</code></td>
+  <td>Aucun endpoint <code>/api/pointages</code></td>
+  <td><span class="pill pill-err">CRITIQUE</span></td>
+  <td>Intégrer dans module Présence</td>
+</tr>
+<tr>
+  <td><strong>4</strong></td>
+  <td>Pages vie-scolaire mortes</td>
+  <td><code>_auth.vie-scolaire.tsx</code> retourne <code>null</code></td>
+  <td>N/A</td>
+  <td><span class="pill pill-warn">MAJEUR</span></td>
+  <td>Supprimer ou rediriger vers nouveaux modules</td>
+</tr>
+<tr>
+  <td><strong>5</strong></td>
+  <td>Gamification sans UI</td>
+  <td>Aucun <code>features/gamification/</code></td>
+  <td>Module complet (4 entités, 4 crons)</td>
+  <td><span class="pill pill-warn">MAJEUR</span></td>
+  <td>Créer UI ou consolider dans Discipline</td>
+</tr>
+<tr>
+  <td><strong>6</strong></td>
+  <td>Scoring sans UI</td>
+  <td>Aucun <code>features/scoring/</code></td>
+  <td>Module complet (4 entités)</td>
+  <td><span class="pill pill-warn">MAJEUR</span></td>
+  <td>Absorber dans Gamification unifié</td>
+</tr>
+</tbody>
+</table>
+
+<h3>📋 Modules non seedés dans le catalogue</h3>
+<div class="alert alert-warning">
+  <strong>⚠️ 14 modules montés dans app.ts mais absents du seed-modules-catalogue.ts</strong>
+  Ces modules fonctionnent car <code>actifParDefaut=true</code> est le fallback dans EntitlementService, mais ils ne sont pas officiellement enregistrés :
+  <br><br>
+  <code>salles</code>, <code>options</code>, <code>recrutement</code>, <code>suivi-eleves</code>, <code>suivi-personnel</code>, <code>sante</code>, <code>impressions</code>, <code>dashboard</code>, <code>contrats</code>, <code>paie</code>, <code>documents</code>, <code>parking</code>, <code>materiel</code>, <code>gamification</code>
+  <br><br>
+  <strong>Recommandation :</strong> Ajouter tous les modules actifs au seed catalogue avant d'ajouter les 4 nouveaux modules.
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ 10 DEPENDENCIES ═══ -->
+<section class="section" id="dependencies">
+<h2>10 — Carte des dépendances cross-modules</h2>
+
+<h3>🗺️ Architecture cible — 4 nouveaux modules</h3>
+<div class="mermaid">
+graph TB
+    subgraph "Pivots existants"
+        HC["HeureCours<br/>(emploi-du-temps)"]
+        PC["ProgrammeChapitre<br/>(programmes)"]
+        EL["Eleve / ClasseAnnee<br/>(eleves)"]
+        PR["Periode<br/>(periodes)"]
+        MP["MembrePersonnel<br/>(personnel)"]
+    end
+    
+    subgraph "Nouveaux modules"
+        PRE["📋 Présence"]
+        DIS["🛡️ Discipline"]
+        JRN["📖 Journal"]
+        EVA["📝 Évaluation"]
+    end
+    
+    subgraph "Modules à consolider"
+        GAM["Gamification<br/>(absorber scoring)"]
+        SUI["suivi-eleves<br/>(→ discipline)"]
+    end
+    
+    subgraph "Consommateurs"
+        PP["Portail Parent"]
+        BUL["Bulletins"]
+        NOT["Notifications"]
+    end
+    
+    HC --> PRE
+    HC --> JRN
+    PC --> JRN
+    PC --> EVA
+    EL --> PRE
+    EL --> DIS
+    EL --> JRN
+    EL --> EVA
+    PR --> PRE
+    PR --> DIS
+    PR --> JRN
+    PR --> EVA
+    MP --> PRE
+    MP --> DIS
+    MP --> JRN
+    
+    PRE --> GAM
+    DIS --> GAM
+    SUI --> DIS
+    GAM --> DIS
+    
+    PRE --> PP
+    DIS --> PP
+    JRN --> PP
+    EVA --> PP
+    EVA --> BUL
+    PRE --> NOT
+    DIS --> NOT
+    EVA --> NOT
+    
+    style PRE fill:#dbeafe,stroke:#2563eb,color:#1e293b
+    style DIS fill:#dbeafe,stroke:#2563eb,color:#1e293b
+    style JRN fill:#dbeafe,stroke:#2563eb,color:#1e293b
+    style EVA fill:#dbeafe,stroke:#2563eb,color:#1e293b
+    style GAM fill:#fef3c7,stroke:#d97706,color:#1e293b
+    style SUI fill:#fee2e2,stroke:#dc2626,color:#1e293b
+</div>
+
+<h3>📡 Communication inter-modules — EventEmitter</h3>
+<table>
+<thead><tr><th>Événement</th><th>Émetteur</th><th>Auditeur(s)</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><code>presence.enregistre</code></td><td>PrésenceService</td><td>GamificationService, NotificationService</td><td>+10 pts présent, alerte parent si absent</td></tr>
+<tr><td><code>presence.seance.terminee</code></td><td>PrésenceService</td><td>JournalService</td><td>Auto-créer entrée journal si liée</td></tr>
+<tr><td><code>discipline.incident.cree</code></td><td>DisciplineService</td><td>GamificationService, NotificationService</td><td>-points, alerte parent+direction</td></tr>
+<tr><td><code>discipline.felicitation</code></td><td>DisciplineService</td><td>GamificationService</td><td>+points bonus, badge potentiel</td></tr>
+<tr><td><code>journal.seance.creee</code></td><td>JournalService</td><td>ProgrammeService</td><td>Mise à jour progression auto</td></tr>
+<tr><td><code>journal.devoir.cree</code></td><td>JournalService</td><td>NotificationService</td><td>Rappel devoir J-1 aux parents</td></tr>
+<tr><td><code>evaluation.note.publiee</code></td><td>NotesService (existant)</td><td>NotificationService</td><td>Alerte parent note publiée</td></tr>
+<tr><td><code>evaluation.competence.maj</code></td><td>ÉvaluationService</td><td>BulletinService</td><td>Mise à jour radar compétences</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ 11 BEST PRACTICES ═══ -->
+<section class="section" id="bestpractices">
+<h2>11 — Bonnes pratiques internationales</h2>
+
+<h3>🌍 Benchmark des solutions existantes</h3>
+<table>
+<thead><tr><th>Solution</th><th>Pays</th><th>Présence</th><th>Discipline</th><th>Journal</th><th>Hors-ligne</th><th>Afrique</th></tr></thead>
+<tbody>
+<tr><td><strong>Pronote</strong></td><td>🇫🇷 France</td><td><span class="pill pill-ok">✅</span></td><td><span class="pill pill-info">Partiel</span></td><td><span class="pill pill-ok">✅</span></td><td><span class="pill pill-err">❌</span></td><td><span class="pill pill-err">❌</span></td></tr>
+<tr><td><strong>Ecole Directe</strong></td><td>🇫🇷 France</td><td><span class="pill pill-ok">✅</span></td><td><span class="pill pill-err">❌</span></td><td><span class="pill pill-ok">✅</span></td><td><span class="pill pill-err">❌</span></td><td><span class="pill pill-err">❌</span></td></tr>
+<tr><td><strong>Classter</strong></td><td>🇪🇸 Espagne</td><td><span class="pill pill-ok">✅</span></td><td><span class="pill pill-ok">✅</span></td><td><span class="pill pill-ok">✅</span></td><td><span class="pill pill-err">❌</span></td><td><span class="pill pill-warn">Limité</span></td></tr>
+<tr><td><strong>ClassDojo</strong></td><td>🇺🇸 USA</td><td><span class="pill pill-info">Basique</span></td><td><span class="pill pill-ok">✅</span></td><td><span class="pill pill-err">❌</span></td><td><span class="pill pill-err">❌</span></td><td><span class="pill pill-err">❌</span></td></tr>
+<tr><td><strong>Registro Elettronico</strong></td><td>🇮🇹 Italie</td><td><span class="pill pill-ok">✅</span></td><td><span class="pill pill-info">Partiel</span></td><td><span class="pill pill-ok">✅</span></td><td><span class="pill pill-err">❌</span></td><td><span class="pill pill-err">❌</span></td></tr>
+<tr><td style="background:#dbeafe;"><strong>eLISAschool (cible)</strong></td><td>🌍 Afrique</td><td><span class="pill pill-ok">✅</span></td><td><span class="pill pill-ok">✅</span></td><td><span class="pill pill-ok">✅</span></td><td><span class="pill pill-ok">✅</span></td><td><span class="pill pill-ok">✅</span></td></tr>
+</tbody>
+</table>
+
+<h3>🎯 Adaptation au contexte africain</h3>
+<div class="chart-row">
+  <div class="chart-container"><canvas id="chartContext"></canvas></div>
+  <div>
+    <h4>Contraintes spécifiques</h4>
+    <table>
+    <tbody>
+    <tr><td><strong>Classes surchargées</strong></td><td>60-120 élèves/classe → saisie rapide obligatoire (QR, bulk)</td></tr>
+    <tr><td><strong>Connectivité</strong></td><td>Offline-first mandatory, sync delta</td></tr>
+    <tr><td><strong>Notifications</strong></td><td>SMS-first (Africa's Talking), WhatsApp fallback</td></tr>
+    <tr><td><strong>Devices</strong></td><td>Android low-end, écran 5-6"</td></tr>
+    <tr><td><strong>Coût</strong></td><td>SMS payant → notifications groupées, temps réel uniquement</td></tr>
+    <tr><td><strong>Langues</strong></td><td>FR + EN + langues locales (interface)</td></tr>
+    </tbody>
+    </table>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ 12 ROADMAP ═══ -->
+<section class="section" id="roadmap">
+<h2>12 — Feuille de route d'implémentation</h2>
+
+<h3>📅 Plan en 5 phases (recommandé)</h3>
+<div class="mermaid">
+gantt
+    title Feuille de route — Espace Enseignant Unifié
+    dateFormat YYYY-MM-DD
+    axisFormat %b %Y
+    
+    section Phase 0 — Préalables
+    Fix incohérences F/B           :crit, p0, 2026-08-21, 7d
+    Consolidation gamification     :p0b, after p0, 5d
+    Seed catalogue complet         :p0c, after p0, 2d
+    
+    section Phase 1 — Présence
+    Entités + Migration            :p1a, after p0c, 5d
+    Service + Controller           :p1b, after p1a, 7d
+    Frontend + i18n                :p1c, after p1b, 10d
+    Tests + Polish                 :p1d, after p1c, 3d
+    
+    section Phase 2 — Discipline
+    Rename suivi-eleves            :p2a, after p1d, 3d
+    Consolidation scoring          :p2b, after p2a, 5d
+    Frontend + PBIS                :p2c, after p2b, 10d
+    Tests + Polish                 :p2d, after p2c, 3d
+    
+    section Phase 3 — Journal
+    Entités + Migration            :p3a, after p2d, 5d
+    Service + Controller           :p3b, after p3a, 7d
+    Offline-first                  :p3c, after p3b, 7d
+    Frontend + i18n                :p3d, after p3c, 10d
+    
+    section Phase 4 — Évaluation
+    Extension module notes         :p4a, after p3d, 5d
+    Grilles compétences            :p4b, after p4a, 7d
+    Frontend + Radar               :p4c, after p4b, 7d
+    
+    section Phase 5 — Intégration
+    EventEmitter cross-modules     :p5a, after p4c, 5d
+    Portail parent                 :p5b, after p5a, 7d
+    Analytics + Reports            :p5c, after p5b, 5d
+    Documentation + Formation      :p5d, after p5c, 5d
+</div>
+
+<h3>📊 Estimation d'effort par phase</h3>
+<div class="chart-container"><canvas id="chartRoadmap"></canvas></div>
+
+<h3>✅ Recommandations finales</h3>
+<div class="alert alert-success">
+  <strong>✅ Points forts du plan</strong>
+  <ul style="margin-top:8px; padding-left:20px;">
+    <li><strong>Pivot HeureCours</strong> — Excellente décision d'ancrer Présence et Journal sur les séances existantes</li>
+    <li><strong>Nomenclatures configurables</strong> — 7 tables CRUD au lieu d'enums hardcodées = flexibilité maximale</li>
+    <li><strong>Mode hors-ligne</strong> — Avantage compétitif unique vs solutions européennes</li>
+    <li><strong>EventEmitter</strong> — Couplage faible entre modules, extensibilité garantie</li>
+    <li><strong>PBIS</strong> — Modèle disciplinaire validé scientifiquement (80/15/5)</li>
+    <li><strong>Progression auto</strong> — Calcul déclaré vs réel = valeur ajoutée majeure</li>
+  </ul>
+</div>
+
+<div class="alert alert-danger">
+  <strong>🔴 Actions obligatoires avant implémentation</strong>
+  <ol style="margin-top:8px; padding-left:20px;">
+    <li><strong>Résoudre les 6 incohérences F/B</strong> — Routes absences, discipline, pointages, vie-scolaire, gamification, scoring</li>
+    <li><strong>Compléter le seed catalogue</strong> — Ajouter les 14 modules manquants</li>
+    <li><strong>Corriger le cron gamification</strong> — Vérifier présence réelle avant attribution points</li>
+    <li><strong>Renommer suivi-eleves → discipline</strong> — Aligner routes backend avec frontend</li>
+    <li><strong>Fusionner scoring → gamification</strong> — Un seul système de points/badges</li>
+    <li><strong>Décider Évaluation vs Notes</strong> — Extension ou nouveau module ? (recommandé : extension)</li>
+  </ol>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ FOOTER ═══ -->
+<footer class="report-footer">
+  <p><strong>Rapport de Cohérence — Espace Enseignant Unifié</strong></p>
+  <p>eLISAschool — Analyse approfondie du codebase (57 modules backend, 67 features frontend)</p>
+  <p>Généré le 20 août 2026 — Version 1.0</p>
+</footer>
+
+</div><!-- /container -->
+
+<!-- ═══════════════════════════════════════════════════ SCRIPTS ═══ -->
+<script>
+mermaid.initialize({ startOnLoad: true, theme: 'base', themeVariables: { primaryColor: '#dbeafe', primaryTextColor: '#1e293b', primaryBorderColor: '#2563eb', lineColor: '#64748b', fontSize: '13px' }});
+
+// Chart 1 — Scores de cohérence
+new Chart(document.getElementById('chartScores'), {
+  type: 'radar',
+  data: {
+    labels: ['Présence', 'Discipline', 'Journal', 'Évaluation'],
+    datasets: [{
+      label: 'Cohérence architecture',
+      data: [8.5, 7.0, 9.0, 7.5],
+      backgroundColor: 'rgba(37, 99, 235, 0.15)',
+      borderColor: '#2563eb',
+      borderWidth: 2,
+      pointBackgroundColor: '#2563eb'
+    }, {
+      label: 'Maturité backend',
+      data: [3.0, 6.5, 2.0, 7.0],
+      backgroundColor: 'rgba(5, 150, 105, 0.15)',
+      borderColor: '#059669',
+      borderWidth: 2,
+      pointBackgroundColor: '#059669'
+    }, {
+      label: 'Maturité frontend',
+      data: [2.0, 4.0, 1.0, 6.0],
+      backgroundColor: 'rgba(217, 119, 6, 0.15)',
+      borderColor: '#d97706',
+      borderWidth: 2,
+      pointBackgroundColor: '#d97706'
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { title: { display: true, text: 'Scores par module cible (/10)', font: { size: 14, weight: 'bold' }}},
+    scales: { r: { min: 0, max: 10, ticks: { stepSize: 2 }}}
+  }
+});
+
+// Chart 2 — Effort estimé
+new Chart(document.getElementById('chartEffort'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Phase 0 — Préalables', 'Phase 1 — Présence', 'Phase 2 — Discipline', 'Phase 3 — Journal', 'Phase 4 — Évaluation', 'Phase 5 — Intégration'],
+    datasets: [{
+      data: [25, 55, 50, 65, 45, 60],
+      backgroundColor: ['#64748b', '#2563eb', '#059669', '#d97706', '#7c3aed', '#0891b2'],
+      borderWidth: 2,
+      borderColor: '#fff'
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { title: { display: true, text: 'Répartition effort (~300h total)', font: { size: 14, weight: 'bold' }}, legend: { position: 'bottom' }}
+  }
+});
+
+// Chart 3 — Coherence matrix
+new Chart(document.getElementById('chartCoherence'), {
+  type: 'bar',
+  data: {
+    labels: ['Emploi du temps', 'Programmes', 'Élèves', 'Notes', 'Périodes', 'Personnel', 'Gamification', 'Matieres', 'Classes', 'Notifications', 'Portail parent', 'Bulletins'],
+    datasets: [{
+      label: 'Présence',
+      data: [10, 2, 10, 2, 8, 8, 9, 5, 8, 8, 8, 5],
+      backgroundColor: '#2563eb'
+    }, {
+      label: 'Discipline',
+      data: [5, 2, 10, 5, 8, 8, 9, 2, 8, 8, 8, 5],
+      backgroundColor: '#059669'
+    }, {
+      label: 'Journal',
+      data: [10, 10, 10, 2, 8, 8, 2, 8, 10, 5, 8, 5],
+      backgroundColor: '#d97706'
+    }, {
+      label: 'Évaluation',
+      data: [5, 9, 10, 8, 8, 8, 5, 8, 8, 8, 8, 9],
+      backgroundColor: '#7c3aed'
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { title: { display: true, text: "Intensité d'intégration par module existant (0=aucun, 10=pivot)", font: { size: 14, weight: 'bold' }}},
+    scales: { y: { min: 0, max: 10 }, x: { grid: { display: false }}}
+  }
+});
+
+// Chart 4 — PBIS
+new Chart(document.getElementById('chartPBIS'), {
+  type: 'pie',
+  data: {
+    labels: ['Tier 1 — Universel (80%)', 'Tier 2 — Ciblé (15%)', 'Tier 3 — Intensif (5%)'],
+    datasets: [{
+      data: [80, 15, 5],
+      backgroundColor: ['#059669', '#d97706', '#dc2626'],
+      borderWidth: 2,
+      borderColor: '#fff'
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { title: { display: true, text: 'Modèle PBIS — Répartition population élèves', font: { size: 14, weight: 'bold' }}, legend: { position: 'bottom' }}
+  }
+});
+
+// Chart 5 — Mismatches
+new Chart(document.getElementById('chartMismatches'), {
+  type: 'bar',
+  data: {
+    labels: ['Routes absences', 'Routes discipline', 'Routes pointages', 'Pages vie-scolaire', 'Gamification UI', 'Scoring UI'],
+    datasets: [{
+      label: 'Sévérité',
+      data: [10, 10, 10, 6, 6, 6],
+      backgroundColor: ['#dc2626', '#dc2626', '#dc2626', '#d97706', '#d97706', '#d97706']
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    plugins: { title: { display: true, text: 'Incohérences frontend/backend — Sévérité', font: { size: 14, weight: 'bold' }}, legend: { display: false }},
+    scales: { x: { min: 0, max: 10, title: { display: true, text: 'Sévérité (10=critique)' }}}
+  }
+});
+
+// Chart 6 — Context africain
+new Chart(document.getElementById('chartContext'), {
+  type: 'bar',
+  data: {
+    labels: ['Taille classes', 'Connectivité', 'Device power', 'Budget SMS', 'Formation IT'],
+    datasets: [{
+      label: 'Contrainte',
+      data: [9, 8, 7, 6, 5],
+      backgroundColor: '#dc2626'
+    }, {
+      label: 'Opportunité',
+      data: [3, 7, 6, 4, 8],
+      backgroundColor: '#059669'
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { title: { display: true, text: 'Contexte africain — Contraintes vs Opportunités', font: { size: 14, weight: 'bold' }}},
+    scales: { y: { min: 0, max: 10 }}
+  }
+});
+
+// Chart 7 — Roadmap effort
+new Chart(document.getElementById('chartRoadmap'), {
+  type: 'bar',
+  data: {
+    labels: ['Phase 0\nPréalables', 'Phase 1\nPrésence', 'Phase 2\nDiscipline', 'Phase 3\nJournal', 'Phase 4\nÉvaluation', 'Phase 5\nIntégration'],
+    datasets: [{
+      label: 'Backend (heures)',
+      data: [15, 25, 20, 25, 18, 15],
+      backgroundColor: '#2563eb'
+    }, {
+      label: 'Frontend (heures)',
+      data: [5, 25, 25, 30, 22, 30],
+      backgroundColor: '#059669'
+    }, {
+      label: 'Tests + Docs (heures)',
+      data: [5, 5, 5, 10, 5, 15],
+      backgroundColor: '#d97706'
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { title: { display: true, text: 'Effort par phase (heures)', font: { size: 14, weight: 'bold' }}},
+    scales: { x: { stacked: true }, y: { stacked: true, title: { display: true, text: 'Heures' }}}
+  }
+});
+</script>
+</body>
+</html>

@@ -4,22 +4,22 @@
     "stats_plural": "{{count}} années scolaires",
     "nouvelleAnnee": "Nouvelle année scolaire",
     "rechercher": "Rechercher...",
+    "aucuneAnneeTrouvee": "Aucune année scolaire trouvée",
     "colonne": {
-        "code": "Code",
         "libelle": "Libellé",
         "periode": "Période",
         "duree": "Durée",
         "statut": "Statut",
         "actions": "Actions",
+        "tousStatuts": "Tous les statuts",
         "mois": "{{count}} mois",
         "mois_plural": "{{count}} mois"
     },
     "statut": {
-        "actuelle": "Actuelle",
-        "active": "Active",
-        "inactive": "Inactive",
-        "future": "Future",
-        "archivee": "Archivée"
+        "OUVERTE": "Ouverte",
+        "EN_COURS": "En cours",
+        "EN_ATTENTE_CLOTURE": "En attente de clôture",
+        "CLOTUREE": "Clôturée"
     },
     "actions": {
         "voir": "Voir détails",
@@ -43,12 +43,9 @@
         "titreModifier": "Modifier l'année scolaire",
         "libelle": "Libellé",
         "libellePlaceholder": "Ex : 2024-2025",
-        "code": "Code",
-        "codePlaceholder": "Ex : 2024-2025",
         "dateDebut": "Date de début",
         "dateFin": "Date de fin",
         "libelleRequis": "Le libellé est requis",
-        "codeRequis": "Le code est requis",
         "dateDebutRequise": "La date de début est requise",
         "dateFinRequise": "La date de fin est requise",
         "dateFinApresDebut": "La date de fin doit être après la date de début",
@@ -76,7 +73,6 @@
         "progression": "Progression",
         "progressionMessage": "Progression de l'année",
         "statut": "Statut",
-        "anneeCourante": "Année en cours",
         "nonTrouvee": "Année scolaire non trouvée",
         "tabInformationsDesc": "Détails généraux de l'année scolaire",
         "tabPeriodesDesc": "Gestion des périodes (trimestres, semestres, séquences)",
@@ -90,6 +86,9 @@
         "confirmerActiverDetail": "L'année deviendra l'année active. Les autres années seront automatiquement désactivées.",
         "historique": "Historique"
     },
-    "validation": "Validation",
-    "aucunWorkflow": "Aucun workflow de validation actif"
+    "validation": {
+        "titre": "Validation",
+        "aucunWorkflow": "Aucun workflow de validation actif"
+    },
+    "chargement": "Chargement..."
 }

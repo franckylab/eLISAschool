@@ -44,7 +44,7 @@ export enum CibleRemise {
 
 /**
  * @deprecated Supprimée en v4.0 (migration 216). Table renommée _legacy_remises_abonnement.
- * Utiliser PromotionEntity + BundlePromotionEntity à la place.
+ * Utiliser PromotionEntity + PackagePromotionEntity à la place.
  * Conservée uniquement pour rollback et compatibilité lecture seule.
  */
 @Entity('_legacy_remises_abonnement')

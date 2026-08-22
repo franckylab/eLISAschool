@@ -13,3 +13,4 @@ export * from './validators';
 export * from './config';
 export * from './casl';
 export * from './helpers/system-protection.helper';
+export * from './interfaces/cloturable.interface';

@@ -10,7 +10,7 @@
  */
 
 import { AppDataSource } from '@database/data-source';
-import { AnneeScolaire } from '@modules/annees-scolaires/entities';
+import { AnneeScolaire, StatutAnneeScolaire } from '@modules/annees-scolaires/entities';
 import { logger } from '@common/utils/logger.util';
 
 export async function seedAnneesScolaires(etablissementId: string): Promise<string | null> {
@@ -21,24 +21,21 @@ export async function seedAnneesScolaires(etablissementId: string): Promise<stri
     const anneesData = [
         {
             libelle: '2024-2025',
-            code: '2024-2025',
             dateDebut: new Date('2024-09-01'),
             dateFin: new Date('2025-07-31'),
-            enCours: false,
+            statut: StatutAnneeScolaire.OUVERTE,
         },
         {
             libelle: '2025-2026',
-            code: '2025-2026',
             dateDebut: new Date('2025-09-01'),
             dateFin: new Date('2026-07-31'),
-            enCours: true,
+            statut: StatutAnneeScolaire.EN_COURS,
         },
         {
             libelle: '2026-2027',
-            code: '2026-2027',
             dateDebut: new Date('2026-09-01'),
             dateFin: new Date('2027-07-31'),
-            enCours: false,
+            statut: StatutAnneeScolaire.OUVERTE,
         },
     ];
 
@@ -54,7 +51,7 @@ export async function seedAnneesScolaires(etablissementId: string): Promise<stri
 
         if (existing) {
             logger.info(`   ⏭️ Année existante: ${data.libelle}`);
-            if (data.enCours) {
+            if (data.statut === StatutAnneeScolaire.EN_COURS) {
                 anneeActiveId = existing.id;
             }
             continue;
@@ -66,9 +63,9 @@ export async function seedAnneesScolaires(etablissementId: string): Promise<stri
         });
 
         await anneeRepo.save(annee);
-        logger.info(`   ✅ Année créée: ${data.libelle}${data.enCours ? ' (ACTIVE)' : ''}`);
+        logger.info(`   ✅ Année créée: ${data.libelle}${data.statut === StatutAnneeScolaire.EN_COURS ? ' (ACTIVE)' : ''}`);
         
-        if (data.enCours) {
+        if (data.statut === StatutAnneeScolaire.EN_COURS) {
             anneeActiveId = annee.id;
         }
     }

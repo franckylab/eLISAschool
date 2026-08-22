@@ -650,13 +650,13 @@ export function PeriodeDetailPage() {
                     >
                         <Card>
                             <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
-                                <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
-                                    <ShieldCheck className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-primary inline mr-2" />
+                                <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-[var(--color-text-primary)] mb-4">
+                                    <ShieldCheck className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-[var(--color-dominant-600)] inline mr-2" />
                                     {t('detail.validation')}
                                 </h3>
-                                <div className="border-b border-border mb-6" />
+                                <div className="border-b border-[var(--color-bordure)] mb-6" />
                                 {workflowQuery.isLoading ? (
-                                    <p className="text-sm text-muted-foreground">{t('chargement')}</p>
+                                    <p className="text-sm text-[var(--color-text-muted)]">{t('chargement')}</p>
                                 ) : workflowQuery.data ? (
                                     <>
                                         <ValidationTimeline
@@ -676,7 +676,7 @@ export function PeriodeDetailPage() {
                                         />
                                     </>
                                 ) : (
-                                    <p className="text-sm text-muted-foreground">{t('validation.aucunWorkflow')}</p>
+                                    <p className="text-sm text-[var(--color-text-muted)]">{t('validation.aucunWorkflow')}</p>
                                 )}
                             </div>
                         </Card>
@@ -692,11 +692,11 @@ export function PeriodeDetailPage() {
                     >
                         <Card>
                             <div className="p-[clamp(0.75rem,1.5vw,1.25rem)]">
-                                <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-foreground mb-4">
-                                    <History className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-primary inline mr-2" />
+                                <h3 className="text-[clamp(0.9375rem,1.5vw,1.0625rem)] font-semibold text-[var(--color-text-primary)] mb-4">
+                                    <History className="h-[var(--icon-sm)] w-[var(--icon-sm)] text-[var(--color-dominant-600)] inline mr-2" />
                                     {t('detail.historique')}
                                 </h3>
-                                <div className="border-b border-border mb-4" />
+                                <div className="border-b border-[var(--color-bordure)] mb-4" />
                                 <AuditTimeline cible="Periode" cibleId={id} module="periodes" />
                             </div>
                         </Card>

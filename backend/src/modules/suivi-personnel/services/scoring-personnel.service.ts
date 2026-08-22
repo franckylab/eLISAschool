@@ -491,13 +491,13 @@ export class ScoringPersonnelService {
      * Obtenir l'année scolaire courante
      */
     private async getAnneeScolaireCourante(etablissementId: string): Promise<string> {
-        const { AnneeScolaire } = await import('@modules/annees-scolaires/entities');
+        const { AnneeScolaire, StatutAnneeScolaire } = await import('@modules/annees-scolaires/entities');
         const anneeRepo = AppDataSource.getRepository(AnneeScolaire);
 
         const annee = await anneeRepo.findOne({
             where: {
                 etablissementId,
-                enCours: true,
+                statut: StatutAnneeScolaire.EN_COURS,
             },
         });
 

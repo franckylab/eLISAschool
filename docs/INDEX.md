@@ -165,6 +165,7 @@
 | Document | Description | Statut |
 |----------|-------------|--------|
 | [RAPPORT-GESTION-MODULES-SAAS.html](rapports/RAPPORT-GESTION-MODULES-SAAS.html) | Audit gestion modules SaaS — architecture, failles, recommandations | ✅ Actif |
+| [RAPPORT-COMPLETUDE-ANNEE-SCOLAIRE.md](rapports/RAPPORT-COMPLETUDE-ANNEE-SCOLAIRE.md) | Audit complétude système Année Scolaire — backend, frontend, RBAC, i18n, migrations | ✅ Actif |
 
 ---
 

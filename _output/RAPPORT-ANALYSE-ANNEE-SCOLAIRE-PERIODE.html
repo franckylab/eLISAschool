@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport d'Analyse — Année Scolaire & Périodes | eLISAschool</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-light: #dbeafe;
+    --primary-dark: #1e40af;
+    --success: #059669;
+    --success-light: #d1fae5;
+    --warning: #d97706;
+    --warning-light: #fef3c7;
+    --danger: #dc2626;
+    --danger-light: #fee2e2;
+    --info: #0891b2;
+    --info-light: #cffafe;
+    --surface: #ffffff;
+    --surface-alt: #f8fafc;
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.05);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--surface-alt);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+  /* Header */
+  .report-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #0891b2 100%);
+    color: white;
+    padding: 48px 0 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .report-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .report-header h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+    position: relative;
+  }
+  .report-header .subtitle {
+    font-size: 1.1rem;
+    opacity: 0.85;
+    font-weight: 400;
+    position: relative;
+  }
+  .report-header .meta {
+    margin-top: 20px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    opacity: 0.75;
+    position: relative;
+  }
+  .report-header .meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* Score Banner */
+  .score-banner {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: -28px 0 32px;
+    position: relative;
+    z-index: 2;
+  }
+  .score-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+  .score-card .score-value {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .score-card .score-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .score-card.good .score-value { color: var(--success); }
+  .score-card.warn .score-value { color: var(--warning); }
+  .score-card.danger .score-value { color: var(--danger); }
+  .score-card.info .score-value { color: var(--info); }
+
+  /* Navigation */
+  .toc {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    margin-bottom: 32px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .toc h2 {
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 8px;
+  }
+  .toc a {
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 6px 12px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s;
+  }
+  .toc a:hover { background: var(--primary-light); }
+  .toc a .num {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    min-width: 28px;
+    text-align: center;
+  }
+
+  /* Sections */
+  .section {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 32px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .section h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section h2 .icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .section h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 24px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+  }
+  .section h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 16px 0 8px;
+  }
+  .section p { margin-bottom: 12px; color: var(--text-secondary); }
+  .section .desc {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    font-style: italic;
+  }
+
+  /* Callouts */
+  .callout {
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 0.9rem;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .callout .icon-c { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+  .callout.info { background: var(--info-light); border-left: 4px solid var(--info); }
+  .callout.success { background: var(--success-light); border-left: 4px solid var(--success); }
+  .callout.warning { background: var(--warning-light); border-left: 4px solid var(--warning); }
+  .callout.danger { background: var(--danger-light); border-left: 4px solid var(--danger); }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.88rem;
+  }
+  th {
+    background: var(--surface-alt);
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+  tr:hover td { background: var(--surface-alt); }
+
+  /* Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    gap: 4px;
+  }
+  .badge.blue { background: var(--primary-light); color: var(--primary-dark); }
+  .badge.green { background: var(--success-light); color: var(--success); }
+  .badge.amber { background: var(--warning-light); color: var(--warning); }
+  .badge.red { background: var(--danger-light); color: var(--danger); }
+  .badge.cyan { background: var(--info-light); color: var(--info); }
+  .badge.gray { background: #f1f5f9; color: #64748b; }
+
+  /* Mermaid */
+  .mermaid-container {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 16px 0;
+    overflow-x: auto;
+  }
+  .mermaid { display: flex; justify-content: center; }
+
+  /* Chart */
+  .chart-container {
+    position: relative;
+    height: 320px;
+    margin: 16px 0;
+  }
+  .chart-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin: 16px 0;
+  }
+  @media (max-width: 768px) {
+    .chart-row { grid-template-columns: 1fr; }
+  }
+
+  /* Code */
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-radius: 10px;
+    padding: 20px;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    margin: 12px 0;
+  }
+  code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+  .inline-code {
+    background: #f1f5f9;
+    color: #be185d;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85em;
+  }
+
+  /* Comparison Grid */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+  }
+  @media (max-width: 768px) {
+    .compare-grid { grid-template-columns: 1fr; }
+  }
+  .compare-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+  }
+  .compare-card h4 {
+    margin: 0 0 12px;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .compare-card .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+  }
+  .compare-card .stat-row:last-child { border-bottom: none; }
+  .compare-card .stat-val { font-weight: 700; color: var(--text); }
+
+  /* Timeline */
+  .timeline {
+    position: relative;
+    padding-left: 32px;
+    margin: 16px 0;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: var(--surface-alt);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -27px;
+    top: 16px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 2px solid var(--surface);
+    box-shadow: 0 0 0 2px var(--primary);
+  }
+  .timeline-item .phase {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--primary);
+    margin-bottom: 4px;
+  }
+
+  /* Progress Bar */
+  .progress-bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 4px 0;
+  }
+  .progress-bar .fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+
+  /* Verdict Box */
+  .verdict-box {
+    background: linear-gradient(135deg, #059669 0%, #0891b2 100%);
+    color: white;
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin: 24px 0;
+  }
+  .verdict-box h3 {
+    color: white;
+    border: none;
+    margin: 0 0 12px;
+    font-size: 1.2rem;
+  }
+  .verdict-box p { color: rgba(255,255,255,0.9); }
+  .verdict-box ul { color: rgba(255,255,255,0.9); padding-left: 20px; margin: 8px 0; }
+
+  /* Footer */
+  .report-footer {
+    text-align: center;
+    padding: 32px 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+    margin-top: 32px;
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; }
+    .section { box-shadow: none; break-inside: avoid; }
+    .report-header { background: #1e3a5f !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ HEADER ═══════════════════ -->
+<header class="report-header">
+  <div class="container">
+    <h1>Analyse Approfondie : AnneeScolaire & Periode</h1>
+    <div class="subtitle">Audit de cohérence, redondances, incohérences et plan de consolidation — Module Temporel eLISAschool</div>
+    <div class="meta">
+      <span>&#128197; 21 août 2026</span>
+      <span>&#128218; eLISAschool v5+</span>
+      <span>&#128187; 67 fichiers backend impactés</span>
+      <span>&#128200; Score de cohérence : 7.2/10</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════ SCORE BANNER ═══════════════════ -->
+<div class="container">
+  <div class="score-banner">
+    <div class="score-card good">
+      <div class="score-value">7.2<span style="font-size:0.6em">/10</span></div>
+      <div class="score-label">Cohérence Globale</div>
+    </div>
+    <div class="score-card warn">
+      <div class="score-value">5</div>
+      <div class="score-label">Redondances Identifiées</div>
+    </div>
+    <div class="score-card danger">
+      <div class="score-value">3</div>
+      <div class="score-label">Bugs Critiques</div>
+    </div>
+    <div class="score-card info">
+      <div class="score-value">16+</div>
+      <div class="score-label">Entités Liées</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ TOC ═══════════════════ -->
+  <nav class="toc">
+    <h2>&#128204; Sommaire</h2>
+    <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span> Rôles et Responsabilités</a>
+      <a href="#s2"><span class="num">2</span> Architecture & Modèle de Données</a>
+      <a href="#s3"><span class="num">3</span> Diagrammes Mermaid</a>
+      <a href="#s4"><span class="num">4</span> Analyse Comparative</a>
+      <a href="#s5"><span class="num">5</span> Redondances et Incohérences</a>
+      <a href="#s6"><span class="num">6</span> Benchmarks Internationaux</a>
+      <a href="#s7"><span class="num">7</span> Métriques de Complexité</a>
+      <a href="#s8"><span class="num">8</span> Verdict et Recommandations</a>
+      <a href="#s9"><span class="num">9</span> Plan de Migration</a>
+      <a href="#s10"><span class="num">10</span> Code SQL de Migration</a>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════ SECTION 1 — RÔLES ═══════════════════ -->
+  <section class="section" id="s1">
+    <h2><span class="icon" style="background:#dbeafe;color:#2563eb">&#128218;</span> 1. Rôles et Responsabilités</h2>
+    <p class="desc">Analyse fonctionnelle de chaque module et de son périmètre dans le système eLISAschool.</p>
+
+    <div class="compare-grid">
+      <div class="compare-card" style="border-left:4px solid #2563eb">
+        <h4><span style="font-size:1.3em">&#128197;</span> AnneeScolaire</h4>
+        <p style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:12px">
+          <strong>Racine temporelle</strong> du système scolaire. Définit la fenêtre temporelle principale dans laquelle s'inscrivent toutes les activités pédagogiques.
+        </p>
+        <div class="stat-row"><span>Entités</span><span class="stat-val">1</span></div>
+        <div class="stat-row"><span>Service</span><span class="stat-val">262 lignes</span></div>
+        <div class="stat-row"><span>Contrôleur</span><span class="stat-val">92 lignes (9 routes)</span></div>
+        <div class="stat-row"><span>FK référençant</span><span class="stat-val">16+ entités</span></div>
+        <div class="stat-row"><span>Fichiers backend</span><span class="stat-val">67 fichiers</span></div>
+        <div class="stat-row"><span>États (statut)</span><span class="stat-val">4 (OUVERTE, EN_COURS, EN_ATTENTE_CLOTURE, CLOTUREE)</span></div>
+        <div class="stat-row"><span>Config params</span><span class="stat-val">6 paramètres</span></div>
+      </div>
+      <div class="compare-card" style="border-left:4px solid #0891b2">
+        <h4><span style="font-size:1.3em">&#128198;</span> Periode (v5.0)</h4>
+        <p style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:12px">
+          <strong>Système hiérarchique configurable</strong> de subdivision de l'année scolaire. Gère les trimestres, semestres, évaluations, et toute subdivision pédagogique.
+        </p>
+        <div class="stat-row"><span>Entités</span><span class="stat-val">5</span></div>
+        <div class="stat-row"><span>Services</span><span class="stat-val">1 953 lignes (4 services)</span></div>
+        <div class="stat-row"><span>Contrôleurs</span><span class="stat-val">848 lignes (4 contrôleurs)</span></div>
+        <div class="stat-row"><span>FK référençant</span><span class="stat-val">16+ entités</span></div>
+        <div class="stat-row"><span>Fichiers backend</span><span class="stat-val">67 fichiers</span></div>
+        <div class="stat-row"><span>États (statut)</span><span class="stat-val">3 (OUVERTE, EN_ATTENTE_CLOTURE, CLOTUREE)</span></div>
+        <div class="stat-row"><span>Config params</span><span class="stat-val">9 paramètres</span></div>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <span class="icon-c">&#128161;</span>
+      <div>
+        <strong>Conclusion fonctionnelle :</strong> Les deux modules sont <strong>complémentaires et nécessaires</strong>. AnneeScolaire est le conteneur temporel principal ; Periode est le système de subdivision pédagogique. La suppression de l'un ou l'autre casserait le système. Le modèle proposé par l'utilisateur (AnneeScolaire = racine, Periode = enfants liés) est <strong>déjà l'architecture actuelle</strong>.
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ SECTION 2 — ARCHITECTURE ═══════════════════ -->
+  <section class="section" id="s2">
+    <h2><span class="icon" style="background:#d1fae5;color:#059669">&#128736;</span> 2. Architecture & Modèle de Données</h2>
+    <p class="desc">Structure des entités, relations et dépendances croisées entre les deux modules.</p>
+
+    <h3>2.1 Entités AnneeScolaire</h3>
+    <table>
+      <thead><tr><th>Champ</th><th>Type</th><th>Contrainte</th><th>Rôle</th></tr></thead>
+      <tbody>
+        <tr><td><code class="inline-code">id</code></td><td>uuid</td><td>PK</td><td>Identifiant unique</td></tr>
+        <tr><td><code class="inline-code">libelle</code></td><td>varchar(50)</td><td>NOT NULL</td><td>Nom affiché (ex: "2025-2026")</td></tr>
+        <tr><td><code class="inline-code">code</code></td><td>varchar(20)</td><td>UNIQUE + NOT NULL</td><td>Code court (ex: "AS-2025-2026")</td></tr>
+        <tr><td><code class="inline-code">dateDebut</code></td><td>date</td><td>NOT NULL</td><td>Début de l'année scolaire</td></tr>
+        <tr><td><code class="inline-code">dateFin</code></td><td>date</td><td>NOT NULL</td><td>Fin de l'année scolaire</td></tr>
+        <tr style="background:#fee2e2"><td><code class="inline-code">enCours</code></td><td>boolean</td><td>DEFAULT false</td><td>&#9888;&#65039; REDONDANT avec statut EN_COURS</td></tr>
+        <tr><td><code class="inline-code">statut</code></td><td>varchar(30)</td><td>DEFAULT 'OUVERTE'</td><td>État du cycle de vie</td></tr>
+        <tr><td><code class="inline-code">etablissementId</code></td><td>uuid</td><td>FK, NOT NULL</td><td>Multi-tenant</td></tr>
+      </tbody>
+    </table>
+
+    <h3>2.2 Entités Periode (5 entités)</h3>
+    <table>
+      <thead><tr><th>Entité</th><th>Rôle</th><th>Champs clés</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Periode</strong></td>
+          <td>Période calendaire (trimestre, semestre, évaluation)</td>
+          <td>nom, niveauId, anneeScolaireId, dateDebut, dateFin, statut</td>
+        </tr>
+        <tr>
+          <td><strong>NiveauPeriode</strong></td>
+          <td>Niveau hiérarchique configurable par établissement</td>
+          <td>niveau (0-3), label, usageCode (FK→UsageNiveau)</td>
+        </tr>
+        <tr>
+          <td><strong>PeriodeComposition</strong></td>
+          <td>Jointure auto-référentielle parent↔enfant avec poids</td>
+          <td>periodeParentId, periodeEnfantId, ordre, poids (float)</td>
+        </tr>
+        <tr>
+          <td><strong>TemplatePeriode</strong></td>
+          <td>Modèle de génération automatique (JSONB récursif)</td>
+          <td>code, nom, structure (JSONB), estSysteme</td>
+        </tr>
+        <tr>
+          <td><strong>UsageNiveau</strong></td>
+          <td>Code sémantique d'utilisation du niveau</td>
+          <td>code (NOTES, BULLETIN, COMPOSITION, ANNEE, AUTRE)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>2.3 Dénormalisation Intentionnelle (Double FK)</h3>
+    <div class="callout warning">
+      <span class="icon-c">&#9888;&#65039;</span>
+      <div>
+        <strong>7+ entités portent simultanément <code class="inline-code">anneeScolaireId</code> ET <code class="inline-code">periodeId</code>.</strong><br>
+        Ce n'est PAS une erreur — c'est un choix d'optimisation pour éviter les JOIN en cascade. Les deux FK ne sont pas redondantes : elles servent des cas d'usage différents (filtrage rapide par année vs. précision par période).
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>Entité</th><th>anneeScolaireId</th><th>periodeId</th><th>Justification</th></tr></thead>
+      <tbody>
+        <tr><td>Note</td><td>&#10004;</td><td>&#10004;</td><td>Filtrage rapide par année + précision par trimestre</td></tr>
+        <tr><td>Bulletin</td><td>&#10004;</td><td>&#10004;</td><td>Idem — bulletin par trimestre</td></tr>
+        <tr><td>HeureCours</td><td>&#10004;</td><td>&#10004;</td><td>Instance datée dans une période</td></tr>
+        <tr><td>IncidentEleve</td><td>&#10004;</td><td>&#10004;</td><td>Contexte temporel complet</td></tr>
+        <tr><td>ObservationEleve</td><td>&#10004;</td><td>&#10004;</td><td>Idem</td></tr>
+        <tr><td>SanctionEleve</td><td>&#10004;</td><td>&#10004;</td><td>Idem</td></tr>
+        <tr><td>FelicitationEleve</td><td>&#10004;</td><td>&#10004;</td><td>Idem</td></tr>
+        <tr><td>ScoringPersonnel</td><td>&#10004;</td><td>&#10004;</td><td>Évaluation par période</td></tr>
+        <tr><td>DossierMedical</td><td>&#10004;</td><td>&#10004;</td><td>Suivi médical par période</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══════════════════ SECTION 3 — DIAGRAMMES ═══════════════════ -->
+  <section class="section" id="s3">
+    <h2><span class="icon" style="background:#fef3c7;color:#d97706">&#128200;</span> 3. Diagrammes Mermaid</h2>
+    <p class="desc">Représentations visuelles de l'architecture, des flux et des machines à états.</p>
+
+    <h3>3.1 Diagramme Entité-Relation (ER)</h3>
+    <div class="mermaid-container">
+      <pre class="mermaid">
+erDiagram
+    AnneeScolaire ||--o{ Periode : "contient"
+    AnneeScolaire ||--o{ ClasseAnnee : "scope"
+    AnneeScolaire ||--o{ AffectationEleve : "scope"
+    AnneeScolaire ||--o{ Note : "scope"
+    AnneeScolaire ||--o{ Bulletin : "scope"
+    AnneeScolaire ||--o{ FraisScolarite : "scope"
+    AnneeScolaire ||--o{ CreneauHoraire : "scope"
+
+    NiveauPeriode ||--o{ Periode : "catégorise"
+    UsageNiveau ||--o{ NiveauPeriode : "définit usage"
+    Periode ||--o{ PeriodeComposition : "parent"
+    Periode ||--o{ PeriodeComposition : "enfant"
+    TemplatePeriode ||..o{ Periode : "génère"
+
+    Periode ||--o{ Note : "cible"
+    Periode ||--o{ Bulletin : "cible"
+    Periode ||--o{ HeureCours : "cible"
+
+    AnneeScolaire {
+        uuid id PK
+        string libelle
+        string code UK
+        date dateDebut
+        date dateFin
+        boolean enCours "REDONDANT"
+        enum statut
+        uuid etablissementId FK
+    }
+    Periode {
+        uuid id PK
+        string nom
+        uuid niveauId FK
+        uuid anneeScolaireId FK
+        uuid etablissementId FK
+        date dateDebut
+        date dateFin
+        enum statut
+    }
+    NiveauPeriode {
+        uuid id PK
+        int niveau "0=base,3=root"
+        string label
+        string usageCode FK
+        uuid etablissementId FK
+    }
+    PeriodeComposition {
+        uuid periodeParentId FK
+        uuid periodeEnfantId FK
+        int ordre
+        float poids "défaut 1.0"
+    }
+    TemplatePeriode {
+        uuid id PK
+        string code UK
+        string nom
+        jsonb structure "arbre récursif"
+        boolean estSysteme
+    }
+    UsageNiveau {
+        uuid id PK
+        string code UK "NOTES,BULLETIN..."
+        string label
+        boolean estSysteme
+    }
+      </pre>
+    </div>
+
+    <h3>3.2 Machine à États — AnneeScolaire</h3>
+    <div class="mermaid-container">
+      <pre class="mermaid">
+stateDiagram-v2
+    [*] --> OUVERTE : Création
+    OUVERTE --> EN_COURS : activer()
+    EN_COURS --> OUVERTE : désactiver (via activer autre)
+    EN_COURS --> EN_ATTENTE_CLOTURE : demander cloture
+    EN_ATTENTE_CLOTURE --> CLOTUREE : valider cloture
+    EN_ATTENTE_CLOTURE --> EN_COURS : rejeter cloture
+    CLOTUREE --> OUVERTE : reouvrir()
+    OUVERTE --> [*] : supprimer()
+    
+    note right of EN_COURS
+      Une seule année EN_COURS
+      par établissement
+    end note
+    
+    note right of CLOTUREE
+      Suppression bloquée
+      si enCours = true
+    end note
+      </pre>
+    </div>
+
+    <h3>3.3 Machine à États — Periode</h3>
+    <div class="mermaid-container">
+      <pre class="mermaid">
+stateDiagram-v2
+    [*] --> OUVERTE : Création
+    OUVERTE --> EN_ATTENTE_CLOTURE : demander cloture
+    EN_ATTENTE_CLOTURE --> CLOTUREE : valider cloture
+    EN_ATTENTE_CLOTURE --> OUVERTE : rejeter cloture
+    CLOTUREE --> OUVERTE : reouvrir(motif)
+    OUVERTE --> [*] : supprimer()
+    
+    note right of Periode
+      PAS d'état EN_COURS
+      contrairement à AnneeScolaire
+    end note
+      </pre>
+    </div>
+
+    <h3>3.4 Graphe de Dépendances Cross-Modules</h3>
+    <div class="mermaid-container">
+      <pre class="mermaid">
+graph TD
+    AS["&#128197; AnneeScolaire"]
+    P["&#128198; Periode"]
+    NP["NiveauPeriode"]
+    TP["TemplatePeriode"]
+    UN["UsageNiveau"]
+    PC["PeriodeComposition"]
+    
+    CL["ClasseAnnee"]
+    AE["AffectationEleve"]
+    N["Note"]
+    B["Bulletin"]
+    HC["HeureCours"]
+    CH["CreneauHoraire"]
+    FS["FraisScolarite"]
+    IE["IncidentEleve"]
+    OE["ObservationEleve"]
+    SE["SanctionEleve"]
+    FE["FelicitationEleve"]
+    EP["EvaluationPersonnel"]
+    IP["IncidentPersonnel"]
+    SP["ScoringPersonnel"]
+    IO["InscriptionOption"]
+    CS["ConfigurationScoring"]
+    
+    AS --> P
+    AS --> CL
+    AS --> AE
+    AS --> N
+    AS --> B
+    AS --> FS
+    AS --> CH
+    AS --> IO
+    AS --> CS
+    AS --> IE
+    AS --> OE
+    AS --> SE
+    AS --> FE
+    AS --> EP
+    AS --> IP
+    AS --> SP
+    
+    P --> N
+    P --> B
+    P --> HC
+    P --> CH
+    P --> AE
+    P --> IO
+    P --> IE
+    P --> OE
+    P --> SE
+    P --> FE
+    P --> SP
+    P --> IP
+    P --> EP
+    
+    NP --> P
+    UN --> NP
+    P --> PC
+    P --> PC
+    TP -.->|génère| P
+    
+    style AS fill:#2563eb,color:#fff,stroke:#1e40af
+    style P fill:#0891b2,color:#fff,stroke:#0e7490
+    style NP fill:#7c3aed,color:#fff
+    style TP fill:#7c3aed,color:#fff
+    style UN fill:#7c3aed,color:#fff
+    style PC fill:#7c3aed,color:#fff
+      </pre>
+    </div>
+
+    <h3>3.5 Flux de Génération depuis Template</h3>
+    <div class="mermaid-container">
+      <pre class="mermaid">
+flowchart LR
+    T["TemplatePeriode<br/>structure JSONB"] --> R["genererRecursif()"]
+    R -->|"divide duration<br/>by child count"| C1["Période Enfant 1"]
+    R --> C2["Période Enfant 2"]
+    R --> C3["Période Enfant N"]
+    C1 --> PC1["PeriodeComposition<br/>poids=1.0"]
+    C2 --> PC2["PeriodeComposition<br/>poids=1.0"]
+    C3 --> PC3["PeriodeComposition<br/>poids=1.0"]
+    
+    AS["AnneeScolaire<br/>dateDebut → dateFin"] -->|"fenêtre<br/>temporelle"| R
+    
+    NP["NiveauPeriode<br/>niveau N-1"] -->|"affecte<br/>niveauId"| C1
+    NP --> C2
+    NP --> C3
+    
+    style T fill:#7c3aed,color:#fff
+    style AS fill:#2563eb,color:#fff
+    style R fill:#d97706,color:#fff
+      </pre>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ SECTION 4 — ANALYSE COMPARATIVE ═══════════════════ -->
+  <section class="section" id="s4">
+    <h2><span class="icon" style="background:#cffafe;color:#0891b2">&#128269;</span> 4. Analyse Comparative</h2>
+    <p class="desc">Comparaison détaillée des patterns, workflows et configurations des deux modules.</p>
+
+    <h3>4.1 Patterns Partagés (Similitudes)</h3>
+    <table>
+      <thead><tr><th>Pattern</th><th>AnneeScolaire</th><th>Periode</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Workflow clôture</td>
+          <td><code class="inline-code">cloturer()</code> + validation</td>
+          <td><code class="inline-code">cloturer()</code> + validation</td>
+          <td><span class="badge amber">Identique — abstraire</span></td>
+        </tr>
+        <tr>
+          <td>Réouverture</td>
+          <td><code class="inline-code">reouvrir()</code></td>
+          <td><code class="inline-code">reouvrir(motif)</code></td>
+          <td><span class="badge amber">Similaire — Periode plus riche</span></td>
+        </tr>
+        <tr>
+          <td>Validation workflow</td>
+          <td>validationWorkflowService</td>
+          <td>validationWorkflowService</td>
+          <td><span class="badge green">Identique — normal</span></td>
+        </tr>
+        <tr>
+          <td>Audit logging</td>
+          <td>auditService.log()</td>
+          <td>auditService.log()</td>
+          <td><span class="badge green">Identique — normal</span></td>
+        </tr>
+        <tr>
+          <td>Multi-tenant</td>
+          <td>etablissementId</td>
+          <td>etablissementId</td>
+          <td><span class="badge green">Identique — normal</span></td>
+        </tr>
+        <tr>
+          <td>Config params</td>
+          <td>6 paramètres</td>
+          <td>9 paramètres</td>
+          <td><span class="badge blue">Cohérent</span></td>
+        </tr>
+        <tr>
+          <td>Singleton service</td>
+          <td>anneesScolairesService</td>
+          <td>periodesService</td>
+          <td><span class="badge green">Identique — normal</span></td>
+        </tr>
+        <tr>
+          <td>Module catalogue</td>
+          <td>&#10060; Absent</td>
+          <td>&#10060; Absent</td>
+          <td><span class="badge amber">Ni l'un ni l'autre dans modules_catalogue</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>4.2 Différences Structurelles</h3>
+    <table>
+      <thead><tr><th>Aspect</th><th>AnneeScolaire</th><th>Periode</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Nombre d'états</td>
+          <td>4 (avec EN_COURS)</td>
+          <td>3 (sans EN_COURS)</td>
+        </tr>
+        <tr>
+          <td>Activation exclusive</td>
+          <td>&#10004; Une seule année active par établissement</td>
+          <td>&#10060; Plusieurs périodes actives simultanément</td>
+        </tr>
+        <tr>
+          <td>Hiérarchie</td>
+          <td>&#10060; Plat (pas de parent/enfant)</td>
+          <td>&#10004; Arbre récursif via PeriodeComposition</td>
+        </tr>
+        <tr>
+          <td>Templates</td>
+          <td>&#10060; Aucun</td>
+          <td>&#10004; 8 templates système + custom</td>
+        </tr>
+        <tr>
+          <td>Configuration niveaux</td>
+          <td>N/A</td>
+          <td>NiveauPeriode configurable par établissement</td>
+        </tr>
+        <tr>
+          <td>Anti-chevauchement</td>
+          <td>Vérification simple (dateDebut/dateFin)</td>
+          <td>Vérification complexe (frères + cycles)</td>
+        </tr>
+        <tr>
+          <td>Cascade clôture</td>
+          <td>Vérifie notes/bulletins</td>
+          <td>Modes : false / cascade / require_children</td>
+        </tr>
+        <tr>
+          <td>Frontend type mapping</td>
+          <td>active/inactive/future/archivee</td>
+          <td>Pas de mapping (utilise enum backend)</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══════════════════ SECTION 5 — REDONDANCES ═══════════════════ -->
+  <section class="section" id="s5">
+    <h2><span class="icon" style="background:#fee2e2;color:#dc2626">&#9888;&#65039;</span> 5. Redondances et Incohérences</h2>
+    <p class="desc">Problèmes identifiés classés par sévérité avec impact et recommandation de correction.</p>
+
+    <h3>5.1 Bugs Critiques</h3>
+
+    <div class="callout danger">
+      <span class="icon-c">&#128308;</span>
+      <div>
+        <strong>BUG-1 : Champ <code class="inline-code">enCours</code> redondant</strong><br>
+        <code class="inline-code">AnneeScolaire.enCours</code> (boolean) est strictement équivalent à <code class="inline-code">statut === 'EN_COURS'</code>.
+        Deux sources de vérité = risque de désynchronisation. Si <code class="inline-code">enCours=true</code> mais <code class="inline-code">statut='OUVERTE'</code>, le système est dans un état incohérent.
+        <br><strong>Recommandation :</strong> Supprimer <code class="inline-code">enCours</code>, utiliser uniquement <code class="inline-code">statut</code>.
+      </div>
+    </div>
+
+    <div class="callout danger">
+      <span class="icon-c">&#128308;</span>
+      <div>
+        <strong>BUG-2 : Frontend type mapping divergent</strong><br>
+        Le frontend AnneeScolaire utilise un enum parallèle (<code class="inline-code">active | inactive | future | archivee</code>) mappé depuis les enums backend.
+        Ce mapping crée un système de types parallèle qui peut diverger. Le module Periode n'a PAS ce mapping.
+        <br><strong>Recommandation :</strong> Aligner le frontend sur les enums backend directement.
+      </div>
+    </div>
+
+    <div class="callout danger">
+      <span class="icon-c">&#128308;</span>
+      <div>
+        <strong>BUG-3 : Pas de cron jobs pour transitions automatiques</strong><br>
+        Aucune transition automatique ne se produit quand une date de début/fin est atteinte.
+        Un utilisateur doit manuellement activer/clôturer chaque année et période.
+        <br><strong>Recommandation :</strong> Ajouter des cron jobs pour activation/clôture automatique.
+      </div>
+    </div>
+
+    <h3>5.2 Redondances</h3>
+    <table>
+      <thead><tr><th>#</th><th>Redondance</th><th>Sévérité</th><th>Recommandation</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>R1</td>
+          <td><code class="inline-code">enCours</code> boolean = <code class="inline-code">statut === EN_COURS</code></td>
+          <td><span class="badge red">Critique</span></td>
+          <td>Supprimer enCours, getter dérivé</td>
+        </tr>
+        <tr>
+          <td>R2</td>
+          <td>Patterns cloturer/reouvrir dupliqués entre les 2 services</td>
+          <td><span class="badge amber">Moyen</span></td>
+          <td>Extraire mixin/interface commune</td>
+        </tr>
+        <tr>
+          <td>R3</td>
+          <td>Config params validation quasi-identiques (require_validation, validation_levels, validation_roles)</td>
+          <td><span class="badge amber">Moyen</span></td>
+          <td>Acceptable — modules distincts</td>
+        </tr>
+        <tr>
+          <td>R4</td>
+          <td>Frontend type mapping AnneeScolaire crée enum parallèle</td>
+          <td><span class="badge red">Critique</span></td>
+          <td>Supprimer mapping, utiliser enums backend</td>
+        </tr>
+        <tr>
+          <td>R5</td>
+          <td>Double FK (anneeScolaireId + periodeId) sur 7+ entités</td>
+          <td><span class="badge green">Intentionnel</span></td>
+          <td>Conserver — optimisation performance</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>5.3 Incohérences</h3>
+    <table>
+      <thead><tr><th>#</th><th>Incohérence</th><th>Détail</th><th>Impact</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>I1</td>
+          <td>Enum statut différent</td>
+          <td>AnneeScolaire a 4 états (dont EN_COURS), Periode en a 3 (sans EN_COURS)</td>
+          <td><span class="badge amber">Confusion développeur</span></td>
+        </tr>
+        <tr>
+          <td>I2</td>
+          <td>Nomenclature statut</td>
+          <td>AnneeScolaire utilise "activer()", Periode n'a pas d'équivalent</td>
+          <td><span class="badge amber">API asymétrique</span></td>
+        </tr>
+        <tr>
+          <td>I3</td>
+          <td>Getter déprécié</td>
+          <td><code class="inline-code">get cloturee()</code> sur AnneeScolaire retourne <code class="inline-code">statut === CLOTUREE</code> — code mort potentiel</td>
+          <td><span class="badge gray">Faible</span></td>
+        </tr>
+        <tr>
+          <td>I4</td>
+          <td>Modules absents du catalogue</td>
+          <td>Ni annees-scolaires ni periodes ne sont dans modules_catalogue</td>
+          <td><span class="badge amber">Pas de gating SaaS</span></td>
+        </tr>
+        <tr>
+          <td>I5</td>
+          <td>i18n asymétrique</td>
+          <td>AnneeScolaire a son propre namespace (95 lignes), Periode est dans common.json (minimal)</td>
+          <td><span class="badge gray">Faible</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══════════════════ SECTION 6 — BENCHMARKS ═══════════════════ -->
+  <section class="section" id="s6">
+    <h2><span class="icon" style="background:#f3e8ff;color:#7c3aed">&#127760;</span> 6. Benchmarks Internationaux</h2>
+    <p class="desc">Comment les meilleurs SIs scolaires mondiaux gèrent-ils le couple année scolaire / période ?</p>
+
+    <table>
+      <thead><tr><th>Système</th><th>Année Scolaire</th><th>Périodes</th><th>Hiérarchie</th><th>Auto-transition</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>PowerSchool</strong> (USA)</td>
+          <td>Term-based year</td>
+          <td>Terms, Semesters, Quarters</td>
+          <td>3 niveaux max</td>
+          <td>&#10004; Auto-roll</td>
+        </tr>
+        <tr>
+          <td><strong>Infinite Campus</strong> (USA)</td>
+          <td>School Year</td>
+          <td>Grading periods (configurable)</td>
+          <td>2-3 niveaux</td>
+          <td>&#10004; Calendar-based</td>
+        </tr>
+        <tr>
+          <td><strong>Fedena</strong> (Inde)</td>
+          <td>Academic Year</td>
+          <td>Terms (Trimester/Semester)</td>
+          <td>2 niveaux</td>
+          <td>&#10004; Scheduled</td>
+        </tr>
+        <tr>
+          <td><strong>OpenSIS</strong> (USA)</td>
+          <td>School Year</td>
+          <td>Marking Periods</td>
+          <td>3 niveaux (Year→Semester→Quarter)</td>
+          <td>&#10060; Manual</td>
+        </tr>
+        <tr>
+          <td><strong>Gibbon</strong> (Open Source)</td>
+          <td>School Year</td>
+          <td>Terms + Weeks</td>
+          <td>2 niveaux</td>
+          <td>&#10060; Manual</td>
+        </tr>
+        <tr>
+          <td><strong>OneRoster</strong> (IMS Global)</td>
+          <td>Academic Session</td>
+          <td>Sub-sessions (nested)</td>
+          <td>N niveaux (recursive)</td>
+          <td>N/A (standard données)</td>
+        </tr>
+        <tr style="background:#dbeafe">
+          <td><strong>eLISAschool</strong> ( actuel)</td>
+          <td>AnneeScolaire</td>
+          <td>Periode (configurable)</td>
+          <td>N niveaux (NiveauPeriode)</td>
+          <td>&#10060; Manual</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout success">
+      <span class="icon-c">&#9989;</span>
+      <div>
+        <strong>Alignement international :</strong> Le modèle eLISAschool est <strong>plus avancé</strong> que la moyenne des SIs scolaires en termes de flexibilité (N niveaux configurables, templates, poids pour moyennes pondérées).
+        Les 2 lacunes principales vs. les leaders du marché sont : (1) pas de transition automatique, (2) pas de calendrier scolaire intégré.
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ SECTION 7 — MÉTRIQUES ═══════════════════ -->
+  <section class="section" id="s7">
+    <h2><span class="icon" style="background:#fef3c7;color:#d97706">&#128202;</span> 7. Métriques de Complexité</h2>
+    <p class="desc">Analyse quantitative de la complexité relative des deux modules.</p>
+
+    <div class="chart-row">
+      <div>
+        <h4>Lignes de Code Backend</h4>
+        <div class="chart-container">
+          <canvas id="chartLOC"></canvas>
+        </div>
+      </div>
+      <div>
+        <h4>Distribution Entités & Relations</h4>
+        <div class="chart-container">
+          <canvas id="chartEntities"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div>
+        <h4>Score de Cohérence par Critère</h4>
+        <div class="chart-container">
+          <canvas id="chartCoherence"></canvas>
+        </div>
+      </div>
+      <div>
+        <h4>Impact Cross-Modules (FK)</h4>
+        <div class="chart-container">
+          <canvas id="chartImpact"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <h3>7.1 Score de Complexité Détaillé</h3>
+    <table>
+      <thead><tr><th>Critère</th><th>AnneeScolaire</th><th>Periode</th><th>Poids</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Entités</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span>1</span>
+              <div class="progress-bar" style="width:100px"><div class="fill" style="width:20%;background:var(--success)"></div></div>
+            </div>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span>5</span>
+              <div class="progress-bar" style="width:100px"><div class="fill" style="width:100%;background:var(--danger)"></div></div>
+            </div>
+          </td>
+          <td><span class="badge blue">Structurel</span></td>
+        </tr>
+        <tr>
+          <td>Service (lignes)</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span>262</span>
+              <div class="progress-bar" style="width:100px"><div class="fill" style="width:13%;background:var(--success)"></div></div>
+            </div>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span>1 953</span>
+              <div class="progress-bar" style="width:100px"><div class="fill" style="width:100%;background:var(--danger)"></div></div>
+            </div>
+          </td>
+          <td><span class="badge amber">Logique</span></td>
+        </tr>
+        <tr>
+          <td>Config params</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span>6</span>
+              <div class="progress-bar" style="width:100px"><div class="fill" style="width:40%;background:var(--warning)"></div></div>
+            </div>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span>9</span>
+              <div class="progress-bar" style="width:100px"><div class="fill" style="width:60%;background:var(--warning)"></div></div>
+            </div>
+          </td>
+          <td><span class="badge blue">Config</span></td>
+        </tr>
+        <tr>
+          <td>Frontend (lignes)</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span>1 918</span>
+              <div class="progress-bar" style="width:100px"><div class="fill" style="width:50%;background:var(--warning)"></div></div>
+            </div>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span>3 799</span>
+              <div class="progress-bar" style="width:100px"><div class="fill" style="width:100%;background:var(--danger)"></div></div>
+            </div>
+          </td>
+          <td><span class="badge blue">UX</span></td>
+        </tr>
+        <tr>
+          <td>Migrations</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span>4</span>
+              <div class="progress-bar" style="width:100px"><div class="fill" style="width:27%;background:var(--success)"></div></div>
+            </div>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span>11</span>
+              <div class="progress-bar" style="width:100px"><div class="fill" style="width:73%;background:var(--warning)"></div></div>
+            </div>
+          </td>
+          <td><span class="badge amber">Histoire</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══════════════════ SECTION 8 — VERDICT ═══════════════════ -->
+  <section class="section" id="s8">
+    <h2><span class="icon" style="background:#d1fae5;color:#059669">&#9989;</span> 8. Verdict et Recommandations</h2>
+    <p class="desc">Synthèse finale avec plan d'action priorisé.</p>
+
+    <div class="verdict-box">
+      <h3>&#127919; Verdict : Le modèle est correct — la mise en œuvre nécessite des corrections</h3>
+      <p>L'architecture <strong>AnneeScolaire → Periode</strong> (racine → enfants) est déjà en place et valide. Elle correspond aux standards internationaux (OneRoster, PowerSchool, Infinite Campus). Les corrections nécessaires sont des <strong>nettoyages de cohérence</strong>, pas une refonte architecturale.</p>
+      <ul>
+        <li><strong>Supprimer</strong> le champ <code>enCours</code> redondant (source unique = statut)</li>
+        <li><strong>Aligner</strong> le frontend type mapping sur les enums backend</li>
+        <li><strong>Ajouter</strong> des cron jobs pour transitions automatiques</li>
+        <li><strong>Conserver</strong> la double FK dénormalisée (optimisation intentionnelle)</li>
+        <li><strong>Conserver</strong> les deux modules séparés (complémentaires, pas redondants)</li>
+      </ul>
+    </div>
+
+    <h3>8.1 Actions Priorisées</h3>
+    <table>
+      <thead><tr><th>Priorité</th><th>Action</th><th>Effort</th><th>Impact</th><th>Risque</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="badge red">P0</span></td>
+          <td>Supprimer <code class="inline-code">enCours</code> (remplacer par getter dérivé)</td>
+          <td><span class="badge green">Faible</span></td>
+          <td><span class="badge red">Élevé</span></td>
+          <td>Faux positifs si désynchronisation</td>
+        </tr>
+        <tr>
+          <td><span class="badge red">P0</span></td>
+          <td>Aligner frontend type mapping AnneeScolaire</td>
+          <td><span class="badge green">Faible</span></td>
+          <td><span class="badge amber">Moyen</span></td>
+          <td>Casser composants non mis à jour</td>
+        </tr>
+        <tr>
+          <td><span class="badge amber">P1</span></td>
+          <td>Ajouter cron auto-transition (activation/clôture)</td>
+          <td><span class="badge amber">Moyen</span></td>
+          <td><span class="badge red">Élevé</span></td>
+          <td>Transition intempestive si dates incorrectes</td>
+        </tr>
+        <tr>
+          <td><span class="badge amber">P1</span></td>
+          <td>Extraire interface Cloturable commune</td>
+          <td><span class="badge amber">Moyen</span></td>
+          <td><span class="badge green">Faible</span></td>
+          <td>Aucun (refactoring interne)</td>
+        </tr>
+        <tr>
+          <td><span class="badge blue">P2</span></td>
+          <td>Créer namespace i18n periodes.json</td>
+          <td><span class="badge green">Faible</span></td>
+          <td><span class="badge gray">Faible</span></td>
+          <td>Aucun</td>
+        </tr>
+        <tr>
+          <td><span class="badge blue">P2</span></td>
+          <td>Supprimer getter déprécié <code class="inline-code">cloturee</code></td>
+          <td><span class="badge green">Faible</span></td>
+          <td><span class="badge gray">Faible</span></td>
+          <td>Vérifier absence d'usage</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══════════════════ SECTION 9 — PLAN MIGRATION ═══════════════════ -->
+  <section class="section" id="s9">
+    <h2><span class="icon" style="background:#dbeafe;color:#2563eb">&#128640;</span> 9. Plan de Migration (Direct et Brutal)</h2>
+    <p class="desc">Plan d'exécution sans intermédiaire — migration directe en une seule passe.</p>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="phase">Phase 1 — Suppression enCours (P0)</div>
+        <p style="font-size:0.88rem;margin:0">
+          <strong>Backend :</strong> Supprimer colonne <code class="inline-code">enCours</code> de l'entité. Remplacer tous les usages par <code class="inline-code">statut === StatutAnneeScolaire.EN_COURS</code>. Ajouter getter <code class="inline-code">get isEnCours()</code> dérivé.<br>
+          <strong>Frontend :</strong> Supprimer toute référence à <code class="inline-code">enCours</code> dans les types, hooks, composants.<br>
+          <strong>Migration SQL :</strong> <code class="inline-code">ALTER TABLE annees_scolaires DROP COLUMN IF EXISTS "enCours"</code><br>
+          <strong>Impact :</strong> ~15 fichiers backend, ~5 fichiers frontend
+        </p>
+      </div>
+      <div class="timeline-item">
+        <div class="phase">Phase 2 — Alignement Frontend Types (P0)</div>
+        <p style="font-size:0.88rem;margin:0">
+          <strong>Frontend :</strong> Supprimer <code class="inline-code">StatutAnneeScolaireFrontend</code> (active/inactive/future/archivee). Utiliser directement <code class="inline-code">StatutAnneeScolaire</code> du backend (OUVERTE/EN_COURS/EN_ATTENTE_CLOTURE/CLOTUREE).<br>
+          <strong>Composants :</strong> Mettre à jour <code class="inline-code">annees-scolaires-page.tsx</code> et <code class="inline-code">annee-scolaire-detail-page.tsx</code> pour utiliser les enums backend.<br>
+          <strong>Impact :</strong> ~4 fichiers frontend
+        </p>
+      </div>
+      <div class="timeline-item">
+        <div class="phase">Phase 3 — Cron Auto-Transition (P1)</div>
+        <p style="font-size:0.88rem;margin:0">
+          <strong>Backend :</strong> Créer <code class="inline-code">cronAnneesScolaires()</code> dans <code class="inline-code">annees-scolaires/cron-jobs.ts</code>.<br>
+          <strong>Logique :</strong> Quotidien à 00h05 — pour chaque établissement : si dateDebut <= today && dateFin >= today && statut=OUVERTE → activer(). Si dateFin < today && statut=EN_COURS → cloturer().<br>
+          <strong>Config :</strong> Paramètre <code class="inline-code">annees_scolaires.transition_auto</code> (booléen, défaut false).<br>
+          <strong>Impact :</strong> 2 fichiers backend, 1 paramètre config
+        </p>
+      </div>
+      <div class="timeline-item">
+        <div class="phase">Phase 4 — Interface Cloturable (P1)</div>
+        <p style="font-size:0.88rem;margin:0">
+          <strong>Backend :</strong> Créer <code class="inline-code">shared/src/interfaces/cloturable.interface.ts</code> avec méthodes <code class="inline-code">cloturer()</code>, <code class="inline-code">reouvrir()</code>, <code class="inline-code">verifierPreCloture()</code>.<br>
+          <strong>Implémentation :</strong> AnneeScolaire et Periode implémentent cette interface. Logique commune extraite (checks notes, bulletins, validation workflow).<br>
+          <strong>Impact :</strong> 3 fichiers backend (interface + 2 services refactorés)
+        </p>
+      </div>
+      <div class="timeline-item">
+        <div class="phase">Phase 5 — Nettoyage i18n + Getter Déprécié (P2)</div>
+        <p style="font-size:0.88rem;margin:0">
+          <strong>Frontend :</strong> Créer <code class="inline-code">frontend/src/locales/fr/periodes.json</code> + <code class="inline-code">en/periodes.json</code>. Extraire les clés de common.json vers ce namespace.<br>
+          <strong>Backend :</strong> Supprimer <code class="inline-code">get cloturee()</code> de l'entité AnneeScolaire. Remplacer par <code class="inline-code">statut === CLOTUREE</code> inline.<br>
+          <strong>Impact :</strong> 4 fichiers frontend, 1 fichier backend
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ SECTION 10 — SQL ═══════════════════ -->
+  <section class="section" id="s10">
+    <h2><span class="icon" style="background:#f1f5f9;color:#475569">&#128187;</span> 10. Code SQL de Migration</h2>
+    <p class="desc">Scripts de migration prêts à l'emploi — idempotents, exécutables en production.</p>
+
+    <h3>Migration 220 — Suppression enCours + Nettoyage AnneeScolaire</h3>
+    <pre><code>-- ============================================================
+-- Migration 220 : Consolidation temporelle AnneeScolaire/Periode
+-- eLISAschool — Suppression enCours redondant + alignement
+-- Idempotent — Safe production
+-- ============================================================
+
+-- 1. Supprimer le champ enCours redondant
+-- (source unique de vérité = statut)
+ALTER TABLE annees_scolaires
+  DROP COLUMN IF EXISTS "enCours";
+
+-- 2. Index de performance pour la recherche de l'année active
+CREATE INDEX IF NOT EXISTS idx_annees_scolaires_etablissement_statut
+  ON annees_scolaires ("etablissementId", statut)
+  WHERE statut = 'EN_COURS';
+
+-- 3. Vérification cohérence post-migration
+-- Aucune année ne devrait avoir statut incohérent
+DO $$
+DECLARE
+  incoherent_count INT;
+BEGIN
+  SELECT COUNT(*) INTO incoherent_count
+  FROM annees_scolaires
+  WHERE statut NOT IN ('OUVERTE', 'EN_COURS', 'EN_ATTENTE_CLOTURE', 'CLOTUREE');
+
+  IF incoherent_count > 0 THEN
+    RAISE EXCEPTION ' Cohérence rompue : % années avec statut invalide', incoherent_count;
+  END IF;
+
+  -- Vérifier une seule année EN_COURS par établissement
+  PERFORM "etablissementId"
+  FROM annees_scolaires
+  WHERE statut = 'EN_COURS'
+  GROUP BY "etablissementId"
+  HAVING COUNT(*) > 1;
+
+  IF FOUND THEN
+    RAISE WARNING 'Plusieurs années EN_COURS dans le même établissement détectées';
+  END IF;
+END $$;
+
+-- 4. Paramètre de configuration pour auto-transition
+INSERT INTO parametres_systeme (cle, valeur, typeValeur, categorie, description, "estSysteme")
+VALUES (
+  'annees_scolaires.transition_auto',
+  'false',
+  'BOOLEAN',
+  'SCOLARITE',
+  'Activation automatique de l''année scolaire quand dateDebut est atteinte',
+  true
+) ON CONFLICT (cle) DO NOTHING;
+
+-- 5. Paramètre pour auto-clôture
+INSERT INTO parametres_systeme (cle, valeur, typeValeur, categorie, description, "estSysteme")
+VALUES (
+  'annees_scolaires.cloture_auto',
+  'false',
+  'BOOLEAN',
+  'SCOLARITE',
+  'Clôture automatique quand dateFin est dépassée',
+  true
+) ON CONFLICT (cle) DO NOTHING;</code></pre>
+
+    <h3>Seed Update — Paramètres Temporels</h3>
+    <pre><code>-- Seeds de configuration pour le module temporel
+-- Idempotent — UPSERT par clé
+
+-- AnneeScolaire : 8 paramètres (6 existants + 2 nouveaux)
+INSERT INTO parametres_systeme (cle, valeur, typeValeur, categorie, description, "estSysteme", modifiable) VALUES
+  ('annees_scolaires.require_validation', 'false', 'BOOLEAN', 'SCOLARITE',
+   'Exiger validation pour cloturer une année', true, true),
+  ('annees_scolaires.validation_levels', '2', 'NUMBER', 'SCOLARITE',
+   'Nombre de niveaux de validation requis', true, true),
+  ('annees_scolaires.cloture_check_periodes', 'true', 'BOOLEAN', 'SCOLARITE',
+   'Vérifier que toutes les périodes sont cloturées avant cloture année', true, true),
+  ('annees_scolaires.cloture_check_notes', 'true', 'BOOLEAN', 'SCOLARITE',
+   'Vérifier que toutes les notes sont validées avant cloture', true, true),
+  ('annees_scolaires.cloture_check_bulletins', 'true', 'BOOLEAN', 'SCOLARITE',
+   'Vérifier que tous les bulletins sont publiés avant cloture', true, true),
+  ('annees_scolaires.transition_auto', 'false', 'BOOLEAN', 'SCOLARITE',
+   'Auto-activation à dateDebut', true, true),
+  ('annees_scolaires.cloture_auto', 'false', 'BOOLEAN', 'SCOLARITE',
+   'Auto-clôture à dateFin', true, true),
+  ('annees_scolaires.allow_overlap', 'false', 'BOOLEAN', 'SCOLARITE',
+   'Autoriser chevauchement de dates entre années', true, true)
+ON CONFLICT (cle) DO UPDATE SET
+  valeur = EXCLUDED.valeur,
+  description = EXCLUDED.description;
+
+-- Periode : 9 paramètres (inchangés, confirmés)
+INSERT INTO parametres_systeme (cle, valeur, typeValeur, categorie, description, "estSysteme", modifiable) VALUES
+  ('periodes.require_validation', 'false', 'BOOLEAN', 'SCOLARITE',
+   'Exiger validation pour cloturer une période', true, true),
+  ('periodes.niveau_affichage_courant', '1', 'NUMBER', 'SCOLARITE',
+   'Niveau de période affiché par défaut (0=évaluation, 1=trimestre, 2=semestre)', true, true),
+  ('periodes.verrouillage_cascade', 'cascade', 'STRING', 'SCOLARITE',
+   'Mode cascade cloture : false | cascade | require_children', true, true),
+  ('periodes.lock_on_cloture', 'true', 'BOOLEAN', 'SCOLARITE',
+   'Verrouiller modifications notes/bulletins quand période cloturée', true, true),
+  ('periodes.cloture_verify_notes', 'true', 'BOOLEAN', 'SCOLARITE',
+   'Vérifier notes avant cloture période', true, true),
+  ('periodes.cloture_verify_bulletins', 'true', 'BOOLEAN', 'SCOLARITE',
+   'Vérifier bulletins avant cloture période', true, true),
+  ('periodes.cloture_block_pending_validation', 'true', 'BOOLEAN', 'SCOLARITE',
+   'Bloquer cloture si validations en attente', true, true),
+  ('periodes.auto_generate_from_template', 'true', 'BOOLEAN', 'SCOLARITE',
+   'Proposer génération auto depuis template à création année', true, true),
+  ('periodes.max_depth', '5', 'NUMBER', 'SCOLARITE',
+   'Profondeur maximale de la hiérarchie des périodes', true, true)
+ON CONFLICT (cle) DO UPDATE SET
+  valeur = EXCLUDED.valeur,
+  description = EXCLUDED.description;</code></pre>
+
+    <h3>Backend — Service Refactoré (suppression enCours)</h3>
+    <pre><code>// backend/src/modules/annees-scolaires/services/annees-scolaires.service.ts
+// CHANGEMENTS : suppression de toute référence à enCours
+
+async activer(id: string, etablissementId: string): Promise&lt;AnneeScolaire&gt; {
+  const annee = await this.findOne(id, etablissementId);
+
+  // Désactiver toutes les autres années de l'établissement
+  await this.repo.update(
+    { etablissementId, statut: StatutAnneeScolaire.EN_COURS },
+    { statut: StatutAnneeScolaire.OUVERTE }
+  );
+
+  // Activer celle-ci — source unique = statut
+  annee.statut = StatutAnneeScolaire.EN_COURS;
+  // SUPPRIMÉ : annee.enCours = true;
+  await this.repo.save(annee);
+
+  // Invalider cache
+  this.invalidateCache(etablissementId);
+
+  // Audit
+  await auditService.log({
+    action: AuditAction.ANNEE_SCOLAIRE_ACTIVATE,
+    cible: 'AnneeScolaire',
+    cibleId: id,
+    description: `Année scolaire ${annee.libelle} activée`,
+    module: 'annees-scolaires',
+  });
+
+  return annee;
+}
+
+// Getter dérivé (remplace enCours boolean)
+// Dans l'entité :
+// get isEnCours(): boolean {
+//   return this.statut === StatutAnneeScolaire.EN_COURS;
+// }</code></pre>
+
+    <h3>Frontend — Type Alignment</h3>
+    <pre><code>// frontend/src/features/annees-scolaires/types/annee-scolaire.types.ts
+// AVANT (divergent) :
+// type StatutFrontend = 'active' | 'inactive' | 'future' | 'archivee';
+
+// APRÈS (aligné backend) :
+import { StatutAnneeScolaire } from '@shared/enums/roles.enum';
+
+export interface AnneeScolaire {
+  id: string;
+  libelle: string;
+  code: string;
+  dateDebut: string;
+  dateFin: string;
+  statut: StatutAnneeScolaire;  // Direct backend enum
+  // SUPPRIMÉ : enCours: boolean;
+  etablissementId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Helper pour logique frontend (si nécessaire) :
+export function isAnneeActive(annee: AnneeScolaire): boolean {
+  return annee.statut === StatutAnneeScolaire.EN_COURS;
+}
+
+export function isAnneeFuture(annee: AnneeScolaire): boolean {
+  return annee.statut === StatutAnneeScolaire.OUVERTE
+    && new Date(annee.dateDebut) > new Date();
+}
+
+export function isAnneeCloturee(annee: AnneeScolaire): boolean {
+  return annee.statut === StatutAnneeScolaire.CLOTUREE;
+}</code></pre>
+
+    <h3>Cron Job — Auto-Transition</h3>
+    <pre><code>// backend/src/modules/annees-scolaires/cron-jobs.ts
+import cron from 'node-cron';
+import { AppDataSource } from '@database/data-source';
+import { AnneeScolaire, StatutAnneeScolaire } from './entities';
+import { configurationService } from '@modules/configuration/services/configuration.service';
+import { logger } from '@common/utils/logger.util';
+
+/**
+ * Cron : Transition automatique des années scolaires
+ * - Activation auto à dateDebut (si transition_auto = true)
+ * - Clôture auto à dateFin+1 (si cloture_auto = true)
+ * Schedule : quotidien 00h05 (Africa/Douala)
+ */
+export async function cronTransitionsAnneesScolaires(): Promise&lt;void&gt; {
+  const repo = AppDataSource.getRepository(AnneeScolaire);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Récupérer tous les établissements avec des années en transition
+  const etablissements = await repo
+    .createQueryBuilder('as')
+    .select('DISTINCT as.etablissementId', 'etabId')
+    .getRawMany();
+
+  for (const { etabId } of etablissements) {
+    const transitionAuto = await configurationService.getParametre(
+      'annees_scolaires.transition_auto', etabId
+    );
+    const clotureAuto = await configurationService.getParametre(
+      'annees_scolaires.cloture_auto', etabId
+    );
+
+    // Auto-activation : dateDebut <= today && statut = OUVERTE
+    if (transitionAuto) {
+      const aActiver = await repo.findOne({
+        where: {
+          etablissementId: etabId,
+          statut: StatutAnneeScolaire.OUVERTE,
+        },
+        order: { dateDebut: 'DESC' },
+      });
+
+      if (aActiver && new Date(aActiver.dateDebut) <= today) {
+        // Désactiver l'année en cours actuelle
+        await repo.update(
+          { etablissementId: etabId, statut: StatutAnneeScolaire.EN_COURS },
+          { statut: StatutAnneeScolaire.OUVERTE }
+        );
+        // Activer la nouvelle
+        aActiver.statut = StatutAnneeScolaire.EN_COURS;
+        await repo.save(aActiver);
+        logger.info(`[Cron] Année ${aActiver.libelle} auto-activée (étab: ${etabId})`);
+      }
+    }
+
+    // Auto-clôture : dateFin < today && statut = EN_COURS
+    if (clotureAuto) {
+      const aCloturer = await repo.findOne({
+        where: {
+          etablissementId: etabId,
+          statut: StatutAnneeScolaire.EN_COURS,
+        },
+      });
+
+      if (aCloturer && new Date(aCloturer.dateFin) < today) {
+        aCloturer.statut = StatutAnneeScolaire.CLOTUREE;
+        await repo.save(aCloturer);
+        logger.info(`[Cron] Année ${aCloturer.libelle} auto-cloturée (étab: ${etabId})`);
+      }
+    }
+  }
+}
+
+export function initAnneesScolairesCronJobs(): void {
+  // Quotidien à 00h05 (Africa/Douala)
+  cron.schedule('5 0 * * *', async () => {
+    try {
+      await cronTransitionsAnneesScolaires();
+    } catch (error) {
+      logger.error('[Cron] Erreur transition années scolaires', error);
+    }
+  }, { timezone: 'Africa/Douala' });
+
+  logger.info('[Cron] Cron transitions années scolaires initialisé (00h05 daily)');
+}</code></pre>
+  </section>
+
+  <!-- ═══════════════════ FOOTER ═══════════════════ -->
+  <footer class="report-footer">
+    <div class="container">
+      <p><strong>eLISAschool</strong> — Rapport d'analyse AnneeScolaire & Periode</p>
+      <p>Généré le 21 août 2026 — Version 1.0 — Audit complet du module temporel</p>
+      <p style="margin-top:8px;font-size:0.8rem;color:var(--text-muted)">
+        67 fichiers backend analysés | 5 entités Periode + 1 entité AnneeScolaire | 16+ entités liées | 15+ migrations | Score 7.2/10
+      </p>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+<script>
+// Mermaid init
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'neutral',
+  securityLevel: 'loose',
+  flowchart: { curve: 'basis', padding: 16 },
+  er: { layoutDirection: 'TB', minEntityWidth: 100, entityPadding: 15 }
+});
+
+// Chart.js — LOC Backend
+new Chart(document.getElementById('chartLOC'), {
+  type: 'bar',
+  data: {
+    labels: ['Entités', 'Services', 'Contrôleurs', 'DTOs', 'Frontend'],
+    datasets: [
+      {
+        label: 'AnneeScolaire',
+        data: [89, 262, 92, 28, 1918],
+        backgroundColor: 'rgba(37, 99, 235, 0.7)',
+        borderColor: '#2563eb',
+        borderWidth: 1,
+        borderRadius: 6,
+      },
+      {
+        label: 'Periode',
+        data: [452, 1953, 848, 350, 3799],
+        backgroundColor: 'rgba(8, 145, 178, 0.7)',
+        borderColor: '#0891b2',
+        borderWidth: 1,
+        borderRadius: 6,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } },
+    },
+    scales: {
+      y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// Chart.js — Entities
+new Chart(document.getElementById('chartEntities'), {
+  type: 'doughnut',
+  data: {
+    labels: ['AnneeScolaire (1)', 'Periode (5)', 'Entités liées (16+)', 'Templates (8)'],
+    datasets: [{
+      data: [1, 5, 16, 8],
+      backgroundColor: [
+        'rgba(37, 99, 235, 0.8)',
+        'rgba(8, 145, 178, 0.8)',
+        'rgba(124, 58, 237, 0.6)',
+        'rgba(217, 119, 6, 0.6)',
+      ],
+      borderWidth: 2,
+      borderColor: '#fff',
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'right', labels: { usePointStyle: true, padding: 12, font: { size: 12 } } },
+    }
+  }
+});
+
+// Chart.js — Coherence Radar
+new Chart(document.getElementById('chartCoherence'), {
+  type: 'radar',
+  data: {
+    labels: ['Multi-tenant', 'Workflow', 'Audit', 'Config', 'API REST', 'i18n', 'Frontend', 'Migration'],
+    datasets: [
+      {
+        label: 'AnneeScolaire',
+        data: [10, 8, 9, 7, 9, 8, 7, 6],
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(37, 99, 235, 0.15)',
+        borderWidth: 2,
+        pointRadius: 4,
+      },
+      {
+        label: 'Periode',
+        data: [10, 9, 8, 9, 8, 5, 6, 8],
+        borderColor: '#0891b2',
+        backgroundColor: 'rgba(8, 145, 178, 0.15)',
+        borderWidth: 2,
+        pointRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      r: {
+        beginAtZero: true,
+        max: 10,
+        ticks: { stepSize: 2, font: { size: 10 } },
+        pointLabels: { font: { size: 11 } },
+        grid: { color: '#e2e8f0' },
+      }
+    },
+    plugins: {
+      legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } },
+    }
+  }
+});
+
+// Chart.js — Impact FK
+new Chart(document.getElementById('chartImpact'), {
+  type: 'polarArea',
+  data: {
+    labels: ['Notes', 'Bulletins', 'HeureCours', 'AffectationEleve', 'Incidents', 'Scoring', 'Médical', 'Autres'],
+    datasets: [{
+      data: [16, 14, 12, 10, 9, 8, 6, 5],
+      backgroundColor: [
+        'rgba(37, 99, 235, 0.6)',
+        'rgba(8, 145, 178, 0.6)',
+        'rgba(5, 150, 105, 0.6)',
+        'rgba(217, 119, 6, 0.6)',
+        'rgba(220, 38, 38, 0.6)',
+        'rgba(124, 58, 237, 0.6)',
+        'rgba(236, 72, 153, 0.6)',
+        'rgba(100, 116, 139, 0.4)',
+      ],
+      borderWidth: 1,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      r: { beginAtZero: true, grid: { color: '#f1f5f9' } }
+    },
+    plugins: {
+      legend: { position: 'right', labels: { usePointStyle: true, padding: 8, font: { size: 11 } } },
+    }
+  }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLAN IMPLÉMENTATION UNIFIÉ — Espace Enseignant eLISAschool</title>
+<style>
+:root {
+  --primary: #7c3aed;
+  --primary-light: rgba(124,58,237,0.12);
+  --success: #16a34a;
+  --success-light: rgba(22,163,74,0.1);
+  --danger: #dc2626;
+  --danger-light: rgba(220,38,38,0.08);
+  --warning: #d97706;
+  --warning-light: rgba(217,119,6,0.1);
+  --info: #2563eb;
+  --info-light: rgba(37,99,235,0.1);
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
+  --color-text: #1e293b;
+  --color-text-muted: #64748b;
+  --color-accent: #7c3aed;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--color-bg); color: var(--color-text); line-height: 1.6; }
+.container { max-width: 1100px; margin: 0 auto; padding: 20px 30px; }
+header { background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #2563eb 100%); color: white; padding: 50px 0; text-align: center; }
+header h1 { font-size: 2rem; margin-bottom: 8px; }
+header p { opacity: 0.9; font-size: 1.1rem; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.badge-primary { background: var(--primary-light); color: var(--primary); }
+.badge-success { background: var(--success-light); color: var(--success); }
+.badge-danger { background: var(--danger-light); color: var(--danger); }
+.badge-warning { background: var(--warning-light); color: var(--warning); }
+.badge-info { background: var(--info-light); color: var(--info); }
+h2 { font-size: 1.6rem; color: var(--primary); margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--primary-light); }
+h3 { font-size: 1.2rem; margin: 24px 0 12px; color: var(--color-text); }
+h4 { font-size: 1.05rem; margin: 16px 0 8px; }
+p, li { font-size: 0.95rem; }
+table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 0.88rem; }
+thead { background: var(--primary-light); }
+th { padding: 10px 12px; text-align: left; font-weight: 600; color: var(--primary); border-bottom: 2px solid var(--color-border); }
+td { padding: 8px 12px; border-bottom: 1px solid var(--color-border); }
+tr:hover { background: rgba(124,58,237,0.03); }
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; padding: 20px; margin: 12px 0; }
+.card h4 { color: var(--primary); margin-top: 0; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 16px 0; }
+.card-grid .card { margin: 0; }
+.stat-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; padding: 18px; text-align: center; }
+.stat-card .value { font-size: 2rem; font-weight: 700; color: var(--primary); }
+.stat-card .label { font-size: 0.85rem; color: var(--color-text-muted); }
+.highlight-box { background: var(--primary-light); border-left: 4px solid var(--primary); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.alert { padding: 14px 18px; border-radius: 8px; margin: 16px 0; }
+.alert-danger { background: var(--danger-light); border-left: 4px solid var(--danger); }
+.alert-success { background: var(--success-light); border-left: 4px solid var(--success); }
+.alert-warning { background: var(--warning-light); border-left: 4px solid var(--warning); }
+.alert-info { background: var(--info-light); border-left: 4px solid var(--info); }
+code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: #6d28d9; }
+pre { background: #1e293b; color: #e2e8f0; padding: 16px 20px; border-radius: 8px; overflow-x: auto; margin: 12px 0; font-size: 0.85rem; line-height: 1.5; }
+pre code { background: none; color: inherit; padding: 0; }
+.impact-high { color: var(--danger); font-weight: 600; }
+.impact-medium { color: var(--warning); font-weight: 600; }
+.impact-low { color: var(--success); }
+.toc { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; padding: 24px 30px; margin: 20px 0; }
+.toc h3 { margin-top: 0; color: var(--primary); }
+.toc ol { padding-left: 20px; }
+.toc li { margin: 6px 0; }
+.toc a { color: var(--primary); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+.phase-header { background: linear-gradient(90deg, var(--primary-light), transparent); padding: 14px 20px; border-radius: 8px; margin: 20px 0 12px; border-left: 4px solid var(--primary); }
+.phase-header h3 { margin: 0; color: var(--primary); }
+.timeline { position: relative; padding-left: 30px; margin: 16px 0; }
+.timeline::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 3px; background: var(--primary-light); }
+.timeline-item { position: relative; margin-bottom: 18px; }
+.timeline-item::before { content: ''; position: absolute; left: -24px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--primary); border: 2px solid white; }
+.module-card { border-left: 4px solid var(--primary); }
+.module-card.presence { border-left-color: var(--success); }
+.module-card.discipline { border-left-color: var(--danger); }
+.module-card.journal { border-left-color: var(--info); }
+.module-card.eval { border-left-color: var(--warning); }
+.diagram-container { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; padding: 16px; margin: 16px 0; overflow-x: auto; }
+.page-break { page-break-before: always; }
+@media print { .page-break { page-break-before: always; } body { font-size: 11pt; } }
+.section-intro { font-size: 1.02rem; color: var(--color-text-muted); margin-bottom: 16px; font-style: italic; }
+ul, ol { padding-left: 20px; }
+li { margin: 4px 0; }
+footer { text-align: center; padding: 30px; color: var(--color-text-muted); font-size: 0.85rem; border-top: 1px solid var(--color-border); margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<header>
+<div class="container">
+<p style="font-size:0.9rem;opacity:0.8;margin-bottom:6px;">eLISAschool — Plan d'Implémentation Unifié</p>
+<h1>Espace Enseignant — Modules Présence, Discipline, Journal & Évaluation</h1>
+<p>Synthèse stratégique des rapports v1 et v2 • Plan d'implémentation complet</p>
+<p style="font-size:0.85rem;opacity:0.7;margin-top:12px;">Version 1.0 — Août 2026 • 5 phases • ~300h • 9 migrations SQL</p>
+</div>
+</header>
+
+<div class="container">
+
+<!-- TOC -->
+<div class="toc">
+<h3>Table des Matières</h3>
+<ol>
+<li><a href="#synthese">Synthèse Exécutive — Fusion des deux approches</a></li>
+<li><a href="#architecture">Architecture Cible Unifiée</a></li>
+<li><a href="#nomenclatures">Nomenclatures Configurables (7 tables)</a></li>
+<li><a href="#module-presence">Module Présence — Détail complet</a></li>
+<li><a href="#module-discipline">Module Discipline — Détail complet</a></li>
+<li><a href="#module-journal">Module Journal — Détail complet</a></li>
+<li><a href="#module-evaluation">Module Évaluation Élève — Fusion Scoring+Gamification</a></li>
+<li><a href="#espace-enseignant">Espace Enseignant Unifié — Dashboard & Routes</a></li>
+<li><a href="#integration">Matrice d'Intégration Inter-Modules</a></li>
+<li><a href="#migration">Plan de Migration — 5 Phases</a></li>
+<li><a href="#risques">Risques & Mitigations</a></li>
+<li><a href="#estimation">Estimation Effort & Ressources</a></li>
+</ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 1 : SYNTHÈSE EXÉCUTIVE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="synthese">
+<h2>1. Synthèse Exécutive — Fusion des deux approches</h2>
+
+<p class="section-intro">
+Ce plan unifie les meilleurs éléments de deux rapports complémentaires : le rapport v1 (approche conservatrice, contexte africain, graceful degradation) et le rapport v2 (fusion agressive, nomenclatures configurables, correction multi-tenant).
+</p>
+
+<div class="card-grid">
+<div class="stat-card"><div class="value">4</div><div class="label">Modules cibles</div></div>
+<div class="stat-card"><div class="value">18+</div><div class="label">Entités TypeORM</div></div>
+<div class="stat-card"><div class="value">60+</div><div class="label">Endpoints API</div></div>
+<div class="stat-card"><div class="value">7</div><div class="label">Nomenclatures CRUD</div></div>
+<div class="stat-card"><div class="value">5</div><div class="label">Phases d'implémentation</div></div>
+<div class="stat-card"><div class="value">~300h</div><div class="label">Effort total estimé</div></div>
+</div>
+
+<h3>1.1 Ce que nous prenons de chaque rapport</h3>
+
+<table>
+<thead><tr><th>Élément</th><th>Source</th><th>Raison du choix</th></tr></thead>
+<tbody>
+<tr><td>Fusion Scoring + Gamification → Évaluation Élève</td><td><span class="badge badge-primary">v2</span></td><td>Élimine la redondance critique (8 entités sans etablissementId)</td></tr>
+<tr><td>Nomenclatures configurables (7 tables CRUD)</td><td><span class="badge badge-primary">v2</span></td><td>Flexibilité par établissement, pas d'enum figé</td></tr>
+<tr><td>Pattern NomenclatureService&lt;T&gt; abstrait</td><td><span class="badge badge-primary">v2</span></td><td>Réutilisabilité, cohérence, maintenance réduite</td></tr>
+<tr><td>Correction multi-tenant (etablissementId partout)</td><td><span class="badge badge-primary">v2</span></td><td>Sécurité critique — 8/12 entités non scopées</td></tr>
+<tr><td>EventEmitter pour couplage inter-modules</td><td><span class="badge badge-primary">v2</span></td><td>Découplage propre, extensible</td></tr>
+<tr><td>Contexte africain (effectifs 60-120, connectivité)</td><td><span class="badge badge-success">v1</span></td><td>Adaptation terrain essentielle</td></tr>
+<tr><td>Graceful Degradation (modules optionnels)</td><td><span class="badge badge-success">v1</span></td><td>Résilience — aucun module ne bloque les autres</td></tr>
+<tr><td>8 statuts de présence (vs 5)</td><td><span class="badge badge-success">v1</span></td><td>Réalisme terrain (infirmerie, activité externe, exclu cours)</td></tr>
+<tr><td>Système Points Comportement (solde 100)</td><td><span class="badge badge-success">v1</span></td><td>Lisibilité pédagogique, seuils alerte</td></tr>
+<tr><td>Workflow escalade discipline</td><td><span class="badge badge-success">v1</span></td><td>Progression MINEUR → GRAVE, rôle direction</td></tr>
+<tr><td>API publique journal (élèves/parents)</td><td><span class="badge badge-success">v1</span></td><td>Transparence familiale, consultation sans auth</td></tr>
+<tr><td>Progression pédagogique</td><td><span class="badge badge-success">v1</span></td><td>Suivi avancement programme par matière</td></tr>
+<tr><td>Règlement discipline (catégories + points)</td><td><span class="badge badge-success">v1</span></td><td>Référentiel cohérent pour sanctions</td></tr>
+<tr><td>Appel rapide (défaut PRÉSENT, &lt;2 min)</td><td><span class="badge badge-info">Les deux</span></td><td>Effectifs chargés — only exceptions</td></tr>
+<tr><td>HeureCours comme pivot commun</td><td><span class="badge badge-info">Les deux</span></td><td>Architecture partagée, point d'ancrage naturel</td></tr>
+<tr><td>Autonomie module (désactivable)</td><td><span class="badge badge-info">Les deux</span></td><td>via modules_catalogue + entitlementService</td></tr>
+<tr><td>Multi-tenant strict (RLS)</td><td><span class="badge badge-info">Les deux</span></td><td>Isolation établissement obligatoire</td></tr>
+</tbody>
+</table>
+
+<h3>1.2 Principes directeurs unifiés</h3>
+
+<div class="card-grid-3" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
+<div class="card">
+<h4>🧩 Autonomie</h4>
+<p>Chaque module désactivable sans impact. Graceful degradation : si Présence inactif → scoring ignore ASSIDUITÉ.</p>
+</div>
+<div class="card">
+<h4>🔗 Intégration Events</h4>
+<p>EventEmitter pour couplage faible. <code>presence.enregistre</code>, <code>discipline.incident.cree</code>, <code>journal.seance.terminee</code>.</p>
+</div>
+<div class="card">
+<h4>🌍 Multi-Tenant Strict</h4>
+<p>TOUTE entité a <code>etablissementId</code>. RLS PostgreSQL. Correction des 8 entités orphelines scoring/gamification.</p>
+</div>
+<div class="card">
+<h4>📋 Nomenclatures CRUD</h4>
+<p>Pas d'enum figé. 7 tables configurables par établissement. Pattern <code>NomenclatureService&lt;T&gt;</code> réutilisable.</p>
+</div>
+<div class="card">
+<h4>🌍 Contexte africain</h4>
+<p>Effectifs 60-120 élèves. Appel rapide (&lt;2 min). Mode hors-ligne PWA. Saisons rurales. Tenue uniforme.</p>
+</div>
+<div class="card">
+<h4>📊 Évaluation unifiée</h4>
+<p>Fusion scoring+gamification en un seul système. Score 0-100, badges, classement, règles configurables.</p>
+</div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 2 : ARCHITECTURE CIBLE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="architecture" class="page-break">
+<h2>2. Architecture Cible Unifiée</h2>
+
+<p class="section-intro">
+4 modules autonomes articulés autour du pivot HeureCours, avec correction multi-tenant et nomenclatures configurables.
+</p>
+
+<h3>2.1 Vue d'ensemble — 4 modules cibles</h3>
+
+<div class="card-grid">
+<div class="card module-card presence">
+<h4>📋 Module Présence <span class="badge badge-success">NOUVEAU</span></h4>
+<p>Appel des élèves par cours. 8 statuts. Appel rapide défaut PRÉSENT. QR code. Intégration scoring ASSIDUITÉ.</p>
+<p><strong>3 entités</strong> : AppelCours, PresenceEleve, MotifAbsence (nomenclature)</p>
+</div>
+<div class="card module-card discipline">
+<h4>⚠️ Module Discipline <span class="badge badge-warning">REFACTORISÉ</span></h4>
+<p>Extension suivi-eleves avec contexte cours. Incidents, sanctions, observations, félicitations. Workflow escalade.</p>
+<p><strong>4 entités</strong> : IncidentCours, IncidentEleve (existant), SanctionEleve (existant), PointComportement</p>
+</div>
+<div class="card module-card journal">
+<h4>📖 Module Journal <span class="badge badge-success">NOUVEAU</span></h4>
+<p>Cahier de texte numérique. Contenus, devoirs, ressources. Progression pédagogique. API publique élèves/parents.</p>
+<p><strong>4 entités</strong> : JournalSeance, JournalDevoir, JournalRessource, ProgressionPedagogique</p>
+</div>
+<div class="card module-card eval">
+<h4>🏆 Module Évaluation Élève <span class="badge badge-danger">FUSION</span></h4>
+<p>Unification Scoring + Gamification. Un seul système de points, badges, classement, règles. Multi-tenant corrigé.</p>
+<p><strong>6 entités</strong> : ScoreEleve (corrigé), Badge, RegleEvaluation, HistoriqueScore, BadgeUtilisateur, ConfigurationEvaluation</p>
+</div>
+</div>
+
+<h3>2.2 Diagramme d'architecture</h3>
+
+<div class="diagram-container">
+<svg viewBox="0 0 950 500" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#64748b"/></marker>
+</defs>
+<!-- Titre -->
+<text x="475" y="25" text-anchor="middle" font-size="14" font-weight="700" fill="#1e293b">Architecture Unifiée — Pivot HeureCours + 4 Modules</text>
+<!-- Pivot central -->
+<rect x="350" y="200" width="250" height="70" rx="12" fill="rgba(124,58,237,0.15)" stroke="#7c3aed" stroke-width="2.5"/>
+<text x="475" y="228" text-anchor="middle" font-size="14" font-weight="700" fill="#1e293b">HeureCours (pivot)</text>
+<text x="475" y="248" text-anchor="middle" font-size="10" fill="#64748b">emploi-du-temps • instance datée</text>
+<!-- Module Présence (haut-gauche) -->
+<rect x="30" y="50" width="210" height="90" rx="8" fill="rgba(22,163,74,0.12)" stroke="#16a34a" stroke-width="1.5"/>
+<text x="135" y="75" text-anchor="middle" font-size="12" font-weight="600" fill="#16a34a">📋 Module PRÉSENCE</text>
+<text x="135" y="93" text-anchor="middle" font-size="9" fill="#64748b">AppelCours, PresenceEleve</text>
+<text x="135" y="107" text-anchor="middle" font-size="9" fill="#64748b">8 statuts • Appel rapide • QR</text>
+<text x="135" y="121" text-anchor="middle" font-size="9" fill="#64748b">Nomenclature: MotifAbsence</text>
+<line x1="240" y1="100" x2="350" y2="215" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arr)"/>
+<!-- Module Discipline (haut-droit) -->
+<rect x="710" y="50" width="210" height="90" rx="8" fill="rgba(220,38,38,0.1)" stroke="#dc2626" stroke-width="1.5"/>
+<text x="815" y="75" text-anchor="middle" font-size="12" font-weight="600" fill="#dc2626">⚠️ Module DISCIPLINE</text>
+<text x="815" y="93" text-anchor="middle" font-size="9" fill="#64748b">IncidentCours, PointComportement</text>
+<text x="815" y="107" text-anchor="middle" font-size="9" fill="#64748b">Escalade • Points 100 • Sanctions</text>
+<text x="815" y="121" text-anchor="middle" font-size="9" fill="#64748b">Nomenclatures: TypeIncident, etc.</text>
+<line x1="710" y1="100" x2="600" y2="215" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arr)"/>
+<!-- Module Journal (bas-gauche) -->
+<rect x="30" y="320" width="210" height="90" rx="8" fill="rgba(37,99,235,0.1)" stroke="#2563eb" stroke-width="1.5"/>
+<text x="135" y="345" text-anchor="middle" font-size="12" font-weight="600" fill="#2563eb">📖 Module JOURNAL</text>
+<text x="135" y="363" text-anchor="middle" font-size="9" fill="#64748b">JournalSeance, JournalDevoir</text>
+<text x="135" y="377" text-anchor="middle" font-size="9" fill="#64748b">Progression pédagogique</text>
+<text x="135" y="391" text-anchor="middle" font-size="9" fill="#64748b">API publique élèves/parents</text>
+<line x1="240" y1="360" x2="350" y2="255" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arr)"/>
+<!-- Module Évaluation (bas-droit) -->
+<rect x="710" y="320" width="210" height="90" rx="8" fill="rgba(217,119,6,0.12)" stroke="#d97706" stroke-width="1.5"/>
+<text x="815" y="345" text-anchor="middle" font-size="12" font-weight="600" fill="#d97706">🏆 Module ÉVALUATION</text>
+<text x="815" y="363" text-anchor="middle" font-size="9" fill="#64748b">ScoreEleve, Badge, RegleEvaluation</text>
+<text x="815" y="377" text-anchor="middle" font-size="9" fill="#64748b">FUSION scoring+gamification</text>
+<text x="815" y="391" text-anchor="middle" font-size="9" fill="#64748b">Multi-tenant corrigé</text>
+<line x1="710" y1="360" x2="600" y2="255" stroke="#d97706" stroke-width="1.5" marker-end="url(#arr)"/>
+<!-- Events -->
+<rect x="310" y="400" width="330" height="70" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+<text x="475" y="420" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">EventEmitter — Couplage faible</text>
+<text x="475" y="438" text-anchor="middle" font-size="9" fill="#64748b">presence.enregistre → scoring.assiduite</text>
+<text x="475" y="453" text-anchor="middle" font-size="9" fill="#64748b">discipline.incident → scoring.comportement → evaluation.badge</text>
+<!-- Connections events -->
+<line x1="135" y1="140" x2="370" y2="400" stroke="#64748b" stroke-width="0.8" stroke-dasharray="4" marker-end="url(#arr)"/>
+<line x1="815" y1="140" x2="580" y2="400" stroke="#64748b" stroke-width="0.8" stroke-dasharray="4" marker-end="url(#arr)"/>
+<line x1="815" y1="320" x2="580" y2="470" stroke="#64748b" stroke-width="0.8" stroke-dasharray="4"/>
+<!-- Nomenclatures -->
+<rect x="30" y="180" width="210" height="100" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+<text x="135" y="200" text-anchor="middle" font-size="11" font-weight="600" fill="#7c3aed">Nomenclatures (7 tables)</text>
+<text x="135" y="218" text-anchor="middle" font-size="9" fill="#64748b">MotifAbsence • TypeIncident</text>
+<text x="135" y="233" text-anchor="middle" font-size="9" fill="#64748b">TypeSanction • TypeFelicitation</text>
+<text x="135" y="248" text-anchor="middle" font-size="9" fill="#64748b">TypeObservation • TypeDevoir</text>
+<text x="135" y="263" text-anchor="middle" font-size="9" fill="#64748b">TypeRessource</text>
+<!-- Modules existants -->
+<rect x="710" y="180" width="210" height="100" rx="8" fill="#f8fafc" stroke="#e2e8f0"/>
+<text x="815" y="200" text-anchor="middle" font-size="11" font-weight="600" fill="#64748b">Modules existants (lecture)</text>
+<text x="815" y="218" text-anchor="middle" font-size="9" fill="#64748b">Notes/Bulletins → devoirs</text>
+<text x="815" y="233" text-anchor="middle" font-size="9" fill="#64748b">Suivi-élèves → incidents/félicitations</text>
+<text x="815" y="248" text-anchor="middle" font-size="9" fill="#64748b">Emploi du temps → HeureCours</text>
+<text x="815" y="263" text-anchor="middle" font-size="9" fill="#64748b">Notifications → parents</text>
+</svg>
+</div>
+
+<h3>2.3 Synthèse entités par module</h3>
+
+<table>
+<thead><tr><th>Module</th><th>Entité</th><th>Table</th><th>etablissementId</th><th>Statut</th></tr></thead>
+<tbody>
+<tr><td rowspan="3"><strong>Présence</strong></td><td>AppelCours</td><td>appels_cours</td><td class="impact-low">Oui</td><td><span class="badge badge-success">NOUVEAU</span></td></tr>
+<tr><td>PresenceEleve</td><td>presences_eleves</td><td class="impact-low">Oui</td><td><span class="badge badge-success">NOUVEAU</span></td></tr>
+<tr><td>MotifAbsence</td><td>nomenclature_motif_absence</td><td class="impact-low">Oui</td><td><span class="badge badge-success">NOUVEAU</span></td></tr>
+<tr><td rowspan="4"><strong>Discipline</strong></td><td>IncidentCours</td><td>incidents_cours</td><td class="impact-low">Oui</td><td><span class="badge badge-success">NOUVEAU</span></td></tr>
+<tr><td>PointComportement</td><td>points_comportement</td><td class="impact-low">Oui</td><td><span class="badge badge-success">NOUVEAU</span></td></tr>
+<tr><td>IncidentEleve</td><td>incidents_eleves</td><td class="impact-low">Oui</td><td><span class="badge badge-warning">EXISTANT → enrichi</span></td></tr>
+<tr><td>SanctionEleve</td><td>sanctions_eleves</td><td class="impact-low">Oui</td><td><span class="badge badge-warning">EXISTANT → enrichi</span></td></tr>
+<tr><td rowspan="4"><strong>Journal</strong></td><td>JournalSeance</td><td>journal_seances</td><td class="impact-low">Oui</td><td><span class="badge badge-success">NOUVEAU</span></td></tr>
+<tr><td>JournalDevoir</td><td>journal_devoirs</td><td class="impact-low">Oui</td><td><span class="badge badge-success">NOUVEAU</span></td></tr>
+<tr><td>JournalRessource</td><td>journal_ressources</td><td class="impact-low">Oui</td><td><span class="badge badge-success">NOUVEAU</span></td></tr>
+<tr><td>ProgressionPedagogique</td><td>progressions_pedagogiques</td><td class="impact-low">Oui</td><td><span class="badge badge-success">NOUVEAU</span></td></tr>
+<tr><td rowspan="6"><strong>Évaluation</strong></td><td>ScoreEleve</td><td>scores_eleves</td><td class="impact-low">Oui (CORRIGÉ)</td><td><span class="badge badge-danger">CORRECTION</span></td></tr>
+<tr><td>Badge</td><td>badges</td><td class="impact-low">Oui (CORRIGÉ)</td><td><span class="badge badge-danger">CORRECTION</span></td></tr>
+<tr><td>RegleEvaluation</td><td>regles_evaluation</td><td class="impact-low">Oui (CORRIGÉ)</td><td><span class="badge badge-danger">RENAME+CORRECTION</span></td></tr>
+<tr><td>HistoriqueScore</td><td>historique_scores</td><td class="impact-low">Oui (CORRIGÉ)</td><td><span class="badge badge-danger">CORRECTION</span></td></tr>
+<tr><td>BadgeUtilisateur</td><td>badges_utilisateurs</td><td class="impact-low">Oui (CORRIGÉ)</td><td><span class="badge badge-danger">CORRECTION</span></td></tr>
+<tr><td>ConfigurationEvaluation</td><td>configurations_evaluation</td><td class="impact-low">Oui</td><td><span class="badge badge-warning">RENAME</span></td></tr>
+<tr><td rowspan="7"><strong>Nomenclatures</strong></td><td>NomenclatureMotifAbsence</td><td>nomenclature_motif_absence</td><td class="impact-low">Oui</td><td><span class="badge badge-success">NOUVEAU</span></td></tr>
+<tr><td>NomenclatureTypeIncident</td><td>nomenclature_type_incident</td><td class="impact-low">Oui</td><td><span class="badge badge-success">NOUVEAU</span></td></tr>
+<tr><td>NomenclatureTypeSanction</td><td>nomenclature_type_sanction</td><td class="impact-low">Oui</td><td><span class="badge badge-success">NOUVEAU</span></td></tr>
+<tr><td>NomenclatureTypeFelicitation</td><td>nomenclature_type_felicitation</td><td class="impact-low">Oui</td><td><span class="badge badge-success">NOUVEAU</span></td></tr>
+<tr><td>NomenclatureTypeObservation</td><td>nomenclature_type_observation</td><td class="impact-low">Oui</td><td><span class="badge badge-success">NOUVEAU</span></td></tr>
+<tr><td>NomenclatureTypeDevoir</td><td>nomenclature_type_devoir</td><td class="impact-low">Oui</td><td><span class="badge badge-success">NOUVEAU</span></td></tr>
+<tr><td>NomenclatureTypeRessource</td><td>nomenclature_type_ressource</td><td class="impact-low">Oui</td><td><span class="badge badge-success">NOUVEAU</span></td></tr>
+</tbody>
+</table>
+
+<div class="alert alert-success">
+<strong>Bilan : 100% des entités ont etablissementId</strong> — contre 33% avant (4/12). La fusion scoring+gamification corrige 8 entités orphelines.
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 3 : NOMENCLATURES CONFIGURABLES -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="nomenclatures" class="page-break">
+<h2>3. Nomenclatures Configurables — 7 tables CRUD</h2>
+
+<p class="section-intro">
+Système de nomenclatures par établissement pour remplacer les enums figés. Chaque établissement peut personnaliser ses propres valeurs (tout en ayant des valeurs système par défaut).
+</p>
+
+<h3>3.1 Entité de base — Pattern commun</h3>
+
+<pre><code>@Entity('nomenclature_{type}')
+@Index(['code', 'etablissementId'], { unique: true })
+@Index(['etablissementId', 'statut'])
+export class Nomenclature{Type} {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'varchar', length: 50 })
+    code!: string;              // Code unique (ex: 'MALADIE', 'RETARD')
+
+    @Column({ type: 'varchar', length: 200 })
+    intitule!: string;          // Libellé affiché
+
+    @Column({ type: 'varchar', length: 20, default: 'ACTIVE' })
+    statut!: string;            // ACTIVE | INACTIVE | ARCHIVEE
+
+    @Column({ default: true })
+    estSysteme!: boolean;       // true = valeur système (non supprimable)
+
+    @Column({ type: 'int', default: 0 })
+    ordre!: number;             // Ordre d'affichage
+
+    @Column({ type: 'jsonb', nullable: true })
+    metadata?: any;             // Données spécifiques (JSONB)
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;   // Multi-tenant strict
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    categorie?: string;         // Catégorisation optionnelle
+
+    @Column({ default: true })
+    estVisibleEnseignant!: boolean;  // Visible en mode enseignant
+
+    @CreateDateColumn()
+    createdAt!: Date;
+
+    @UpdateDateColumn()
+    updatedAt!: Date;
+}</code></pre>
+
+<h3>3.2 Les 7 nomenclatures avec seeds système</h3>
+
+<table>
+<thead><tr><th>Nomenclature</th><th>Module</th><th>Valeurs système (seed)</th><th>Personnalisable</th></tr></thead>
+<tbody>
+<tr><td><strong>MotifAbsence</strong></td><td>Présence</td><td>MALADIE, FAMILLE, TRANSPORT, ADMINISTATIF, NON_JUSTIFIE, INFIRMERIE, EXCLU_COURS, ACTIVITE_EXTERNE</td><td>Oui</td></tr>
+<tr><td><strong>TypeIncident</strong></td><td>Discipline</td><td>BROUT, PERTURBATION, TRICHERIE, VIOLENCE_VERBALE, VIOLENCE_PHYSIQUE, HARCÈLEMENT, NON_RESPECT_REGLES, RETARD_RECURRENT</td><td>Oui</td></tr>
+<tr><td><strong>TypeSanction</strong></td><td>Discipline</td><td>AVERTISSEMENT_ORAL, AVERTISSEMENT_ECRIT, CONSIGNATION, EXCLUSION_COURS, EXCLUSION_TEMPORAIRE, CONSEIL_DISCIPLINE, EXCLUSION_DEFINITIVE</td><td>Oui</td></tr>
+<tr><td><strong>TypeFelicitation</strong></td><td>Discipline</td><td>EXCELLENCE_ACADEMIQUE, PROGRESSION, PARTICIPATION_ACTIVE, AIDE_CAMARADE, COMPORTEMENT_EXEMPLAIRE, ASSIDUITE_PARFAITE, INITIATIVE_POSITIVE</td><td>Oui</td></tr>
+<tr><td><strong>TypeObservation</strong></td><td>Discipline</td><td>COMPORTEMENT_GENERAL, EFFORT_ACADEMIQUE, SOCIALISATION, HYGIENE, TENUE, MATERIEL, AUTRE</td><td>Oui</td></tr>
+<tr><td><strong>TypeDevoir</strong></td><td>Journal</td><td>EXERCICE, REDACTION, PROBLEME, EXPOSE, RECHERCHE, REVISION, PREPARATION_COURS, PROJET</td><td>Oui</td></tr>
+<tr><td><strong>TypeRessource</strong></td><td>Journal</td><td>FICHE_PEDAGOGIQUE, DOCUMENT_COURS, LIEN_WEB, VIDEO, AUDIO, POLYCOPIE, MANUEL_SCOLAIRE, AUTRE</td><td>Oui</td></tr>
+</tbody>
+</table>
+
+<h3>3.3 Pattern NomenclatureService&lt;T&gt; abstrait</h3>
+
+<pre><code>export abstract class NomenclatureService&lt;T extends NomenclatureBase&gt; {
+    protected repo: Repository&lt;T&gt;;
+
+    constructor(entity: EntityTarget&lt;T&gt;) {
+        this.repo = AppDataSource.getRepository(entity);
+    }
+
+    async findAll(etablissementId: string): Promise&lt;T[]&gt; {
+        return this.repo.find({
+            where: { etablissementId, statut: 'ACTIVE' },
+            order: { ordre: 'ASC', intitule: 'ASC' }
+        });
+    }
+
+    async create(dto: CreateNomenclatureDto, etablissementId: string): Promise&lt;T&gt; {
+        // Vérifier unicité code + etablissementId
+        const existing = await this.repo.findOne({
+            where: { code: dto.code, etablissementId }
+        });
+        if (existing) throw new AppError('Code déjà utilisé', 409, 'CODE_EXISTS');
+        return this.repo.save(this.repo.create({ ...dto, etablissementId }));
+    }
+
+    async delete(id: string, etablissementId: string): Promise&lt;void&gt; {
+        const item = await this.repo.findOne({ where: { id, etablissementId } });
+        if (!item) throw new AppError('Non trouvé', 404, 'NOT_FOUND');
+        if (item.estSysteme) throw new AppError('Valeur système non supprimable', 403, 'SYSTEM_ITEM');
+        await this.repo.remove(item);
+    }
+
+    async getValeursSysteme(etablissementId: string): Promise&lt;T[]&gt; {
+        return this.repo.find({
+            where: { etablissementId, estSysteme: true },
+            order: { ordre: 'ASC' }
+        });
+    }
+}
+
+// Implémentation concrète
+export class MotifAbsenceService extends NomenclatureService&lt;NomenclatureMotifAbsence&gt; {
+    constructor() { super(NomenclatureMotifAbsence); }
+}</code></pre>
+
+<h3>3.4 API REST Nomenclatures (commune aux 7)</h3>
+
+<table>
+<thead><tr><th>Méthode</th><th>Route</th><th>Action</th><th>Permission</th></tr></thead>
+<tbody>
+<tr><td>GET</td><td><code>/api/nomenclatures/:type</code></td><td>Lister valeurs actives</td><td>Authentifié</td></tr>
+<tr><td>GET</td><td><code>/api/nomenclatures/:type/systeme</code></td><td>Valeurs système uniquement</td><td>Authentifié</td></tr>
+<tr><td>POST</td><td><code>/api/nomenclatures/:type</code></td><td>Créer valeur custom</td><td>ADMIN, SUPER_ADMIN</td></tr>
+<tr><td>PATCH</td><td><code>/api/nomenclatures/:type/:id</code></td><td>Modifier valeur custom</td><td>ADMIN, SUPER_ADMIN</td></tr>
+<tr><td>DELETE</td><td><code>/api/nomenclatures/:type/:id</code></td><td>Supprimer (si !estSysteme)</td><td>ADMIN, SUPER_ADMIN</td></tr>
+<tr><td>POST</td><td><code>/api/nomenclatures/:type/reinitialiser</code></td><td>Restaurer valeurs système</td><td>ADMIN, SUPER_ADMIN</td></tr>
+</tbody>
+</table>
+</section>
+
+</div>
+</body>
+</html>
+
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 4 : MODULE PRÉSENCE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="module-presence" class="page-break">
+<h2>4. Module Présence — Détail complet</h2>
+
+<p class="section-intro">
+Module de gestion de l'appel des élèves par cours. Pivot HeureCours, appel rapide (&lt;2 min), 8 statuts réalistes, intégration scoring non-bloquante.
+</p>
+
+<h3>4.1 Entités</h3>
+
+<h4>4.1.1 AppelCours — Session d'appel</h4>
+<pre><code>@Entity('appels_cours')
+@Index(['heureCoursId'], { unique: true })
+@Index(['etablissementId', 'date'])
+export class AppelCours {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @ManyToOne(() => HeureCours)
+    @JoinColumn({ name: 'heureCoursId' })
+    heureCours!: HeureCours;
+
+    @Column({ type: 'uuid' })
+    heureCoursId!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @ManyToOne(() => MembrePersonnel)
+    @JoinColumn({ name: 'enseignantId' })
+    enseignant!: MembrePersonnel;
+
+    @Column({ type: 'uuid' })
+    enseignantId!: string;
+
+    @Column({ type: 'date' })
+    date!: string;
+
+    @Column({ type: 'time' })
+    heureDebut!: string;
+
+    @Column({ type: 'time', nullable: true })
+    heureFin?: string;
+
+    @Column({ type: 'varchar', length: 20, default: 'EN_COURS' })
+    statut!: string;  // EN_COURS | CLOTURE | ANNULE
+
+    @Column({ type: 'int', default: 0 })
+    nombrePresents!: number;
+
+    @Column({ type: 'int', default: 0 })
+    nombreAbsents!: number;
+
+    @Column({ type: 'int', default: 0 })
+    nombreRetards!: number;
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    modeAppel?: string;  // MANUEL | QR_CODE | AUTOMATIQUE
+
+    @CreateDateColumn()
+    createdAt!: Date;
+
+    @UpdateDateColumn()
+    updatedAt!: Date;
+}</code></pre>
+
+<h4>4.1.2 PresenceEleve — Ligne d'appel par élève</h4>
+<pre><code>@Entity('presences_eleves')
+@Index(['appelCoursId', 'eleveId'], { unique: true })
+@Index(['eleveId', 'date'])
+export class PresenceEleve {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @ManyToOne(() => AppelCours)
+    @JoinColumn({ name: 'appelCoursId' })
+    appelCours!: AppelCours;
+
+    @Column({ type: 'uuid' })
+    appelCoursId!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @ManyToOne(() => Eleve)
+    @JoinColumn({ name: 'eleveId' })
+    eleve!: Eleve;
+
+    @Column({ type: 'uuid' })
+    eleveId!: string;
+
+    @Column({ type: 'date' })
+    date!: string;
+
+    @Column({ type: 'varchar', length: 30, default: 'PRESENT' })
+    statut!: StatutPresence;
+
+    @Column({ type: 'time', nullable: true })
+    heureArrivee?: string;  // Heure réelle d'arrivée (retard)
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    motifAbsenceCode?: string;  // FK logique vers nomenclature
+
+    @Column({ type: 'text', nullable: true })
+    commentaire?: string;
+
+    @Column({ type: 'uuid', nullable: true })
+    enregistreParId?: string;  // Enseignant qui a enregistré
+
+    @Column({ default: false })
+    estJustifie!: boolean;
+
+    @Column({ type: 'text', nullable: true })
+    justificatifUrl?: string;
+
+    @CreateDateColumn()
+    createdAt!: Date;
+
+    @UpdateDateColumn()
+    updatedAt!: Date;
+}
+
+// 8 statuts de présence (v1 + v2 unifiés)
+export enum StatutPresence {
+    PRESENT = 'PRESENT',
+    ABSENT = 'ABSENT',
+    RETARD = 'RETARD',
+    EXCUSE = 'EXCUSE',
+    SORTIE_ANTICIPEE = 'SORTIE_ANTICIPEE',
+    INFIRMERIE = 'INFIRMERIE',
+    EXCLU_COURS = 'EXCLU_COURS',
+    ACTIVITE_EXTERNE = 'ACTIVITE_EXTERNE'
+}</code></pre>
+
+<h3>4.2 Flux d'appel — Contexte africain</h3>
+
+<div class="highlight-box">
+<strong>Adaptation terrain :</strong> Effectifs 60-120 élèves → appel rapide par défaut PRÉSENT + exceptions. 
+L'enseignant ne marque QUE les absents/retards (mode négatif). Temps cible : &lt;2 minutes par cours.
+</div>
+
+<div class="card">
+<h4>Flux d'appel complet</h4>
+<ol>
+<li><strong>Initialisation</strong> : L'enseignant ouvre l'appel du cours (HeureCours du jour)
+    → Auto-création <code>AppelCours</code> + pré-remplissage <code>PresenceEleve</code> avec statut=PRESENT pour tous les élèves</li>
+<li><strong>Mode négatif</strong> : L'enseignant ne modifie QUE les exceptions (ABSENT, RETARD, etc.)
+    → Interface rapide : swipe ou tap sur l'élève → menu 8 statuts</li>
+<li><strong>Mode QR (optionnel)</strong> : QR code affiché au tableau → les élèves scannent → auto-marqués PRESENT
+    → Timeout 5 min → bascule en mode manuel</li>
+<li><strong>Clôture</strong> : L'enseignant valide l'appel
+    → Calcul stats (presents/absents/retards)
+    → Émission event <code>presence.enregistre</code>
+    → Intégration scoring ASSIDUITÉ (non-bloquante, try/catch)</li>
+<li><strong>Notifications</strong> : Si élève ABSENT → notification parent (SMS/push)
+    → Non-bloquant, try/catch</li>
+</ol>
+</div>
+
+<h3>4.3 Graceful Degradation (depuis v1)</h3>
+
+<pre><code>// Pattern graceful degradation — aucun module ne bloque les autres
+async enrichirScoreAssiduite(eleveId: string, etablissementId: string): Promise&lt;void&gt; {
+    const moduleActif = await entitlementService.isAccessible(etablissementId, 'presence');
+    if (!moduleActif) {
+        logger.info('[Scoring] Module présence inactif — assiduité ignorée');
+        return; // PAS d'erreur, PAS de blocage
+    }
+    // Calcul normal du score assiduité...
+}
+
+// Dans le service scoring/evaluation
+async recalculerIndicateurAssiduite(eleveId: string, periodeId: string): Promise&lt;number&gt; {
+    const presenceRepo = AppDataSource.getRepository(PresenceEleve);
+    const totalCours = await presenceRepo.count({ where: { eleveId } });
+    const coursPresents = await presenceRepo.count({ 
+        where: { eleveId, statut: StatutPresence.PRESENT } 
+    });
+    return totalCours > 0 ? (coursPresents / totalCours) * 100 : 100;
+}</code></pre>
+
+<h3>4.4 API REST — Module Présence (15 endpoints)</h3>
+
+<table>
+<thead><tr><th>Méthode</th><th>Route</th><th>Action</th><th>Permission</th></tr></thead>
+<tbody>
+<tr><td>POST</td><td><code>/api/presence/appels</code></td><td>Créer session appel (auto-rempli PRÉSENT)</td><td>presence:appels:create</td></tr>
+<tr><td>GET</td><td><code>/api/presence/appels</code></td><td>Lister appels (paginé, filtres date/classe)</td><td>presence:appels:view</td></tr>
+<tr><td>GET</td><td><code>/api/presence/appels/:id</code></td><td>Détail appel + présences élèves</td><td>presence:appels:view</td></tr>
+<tr><td>PATCH</td><td><code>/api/presence/appels/:id/statut</code></td><td>Clôturer appel (déclenche scoring)</td><td>presence:appels:close</td></tr>
+<tr><td>PUT</td><td><code>/api/presence/appels/:id/presences</code></td><td>Mise à jour bulk des présences</td><td>presence:appels:edit</td></tr>
+<tr><td>PATCH</td><td><code>/api/presence/presences/:id</code></td><td>Modifier présence individuelle</td><td>presence:appels:edit</td></tr>
+<tr><td>GET</td><td><code>/api/presence/eleves/:eleveId/statistiques</code></td><td>Stats présence élève (période)</td><td>presence:stats:view</td></tr>
+<tr><td>GET</td><td><code>/api/presence/classes/:classeId/statistiques</code></td><td>Stats présence classe (jour/semaine)</td><td>presence:stats:view</td></tr>
+<tr><td>POST</td><td><code>/api/presence/appels/:id/qr-generer</code></td><td>Générer QR code appel</td><td>presence:appels:create</td></tr>
+<tr><td>POST</td><td><code>/api/presence/appels/:id/qr-scanner</code></td><td>Scanner QR (marque PRESENT)</td><td>Authentifié (élève)</td></tr>
+<tr><td>GET</td><td><code>/api/presence/mes-absences</code></td><td>Mes absences (espace élève/parent)</td><td>Authentifié</td></tr>
+<tr><td>POST</td><td><code>/api/presence/justificatifs</code></td><td>Soumettre justificatif</td><td>Authentifié (parent)</td></tr>
+<tr><td>GET</td><td><code>/api/presence/rapport/:periode</code></td><td>Rapport période (PDF data)</td><td>presence:rapports:view</td></tr>
+<tr><td>GET</td><td><code>/api/presence/alertes</code></td><td>Élèves seuil absence critique</td><td>presence:alertes:view</td></tr>
+<tr><td>POST</td><td><code>/api/presence/import</code></td><td>Import CSV présences (bulk)</td><td>presence:appels:create</td></tr>
+</tbody>
+</table>
+
+<h3>4.5 Paramètres système (ParametreSysteme)</h3>
+
+<table>
+<thead><tr><th>Clé</th><th>Type</th><th>Défaut</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>presence.appel_rapide</code></td><td>BOOLEAN</td><td>true</td><td>Mode négatif (défaut PRÉSENT)</td></tr>
+<tr><td><code>presence.qr_code_active</code></td><td>BOOLEAN</td><td>false</td><td>Activer scan QR par élèves</td></tr>
+<tr><td><code>presence.notification_parents</code></td><td>BOOLEAN</td><td>true</td><td>Notifier parents si absence</td></tr>
+<tr><td><code>presence.seuil_alerte_absence</code></td><td>NUMBER</td><td>3</td><td>Nb absences consécutives → alerte</td></tr>
+<tr><td><code>presence.seuil_criticalite</code></td><td>NUMBER</td><td>20</td><td>% absence mensuelle → critique</td></tr>
+<tr><td><code>presence.retard_delai_minutes</code></td><td>NUMBER</td><td>15</td><td>Minutes max avant statut RETARD</td></tr>
+<tr><td><code>presence.integration_scoring</code></td><td>BOOLEAN</td><td>true</td><td>Enrichir score ASSIDUITÉ</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 5 : MODULE DISCIPLINE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="module-discipline" class="page-break">
+<h2>5. Module Discipline — Détail complet</h2>
+
+<p class="section-intro">
+Extension du module suivi-eleves avec contexte cours. Système points comportement (solde initial 100), workflow escalade, nomenclatures configurables, événements vers Évaluation.
+</p>
+
+<h3>5.1 Entités</h3>
+
+<h4>5.1.1 IncidentCours — Incident contextualisé (NOUVEAU)</h4>
+<pre><code>@Entity('incidents_cours')
+@Index(['heureCoursId'])
+@Index(['etablissementId', 'date'])
+@Index(['enseignantId'])
+export class IncidentCours {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @ManyToOne(() => HeureCours)
+    @JoinColumn({ name: 'heureCoursId' })
+    heureCours!: HeureCours;
+
+    @Column({ type: 'uuid', nullable: true })
+    heureCoursId?: string;  // Nullable si incident hors cours
+
+    @ManyToOne(() => MembrePersonnel)
+    @JoinColumn({ name: 'enseignantId' })
+    enseignant!: MembrePersonnel;
+
+    @Column({ type: 'uuid' })
+    enseignantId!: string;
+
+    @ManyToOne(() => Eleve)
+    @JoinColumn({ name: 'eleveId' })
+    eleve!: Eleve;
+
+    @Column({ type: 'uuid' })
+    eleveId!: string;
+
+    @Column({ type: 'varchar', length: 50 })
+    typeIncidentCode!: string;  // FK logique → nomenclature TypeIncident
+
+    @Column({ type: 'varchar', length: 20, default: 'MINEUR' })
+    gravite!: string;  // MINEUR | MODERE | GRAVE | TRES_GRAVE
+
+    @Column({ type: 'text' })
+    description!: string;
+
+    @Column({ type: 'varchar', length: 20, default: 'EN_COURS' })
+    statut!: string;  // EN_COURS | RESOLU | ESCALADE | CLASSE
+
+    @Column({ type: 'varchar', length: 20, default: 'ENSEIGNANT' })
+    resoluPar!: string;  // ENSEIGNANT | DIRECTION | CONSEIL_DISCIPLINE
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    actionPrise?: string;  // Action immédiate
+
+    @Column({ type: 'uuid', nullable: true })
+    incidentEleveId?: string;  // Lien vers IncidentEleve si escaladé
+
+    @Column({ type: 'date' })
+    date!: string;
+
+    @CreateDateColumn()
+    createdAt!: Date;
+}</code></pre>
+
+<h4>5.1.2 PointComportement — Système points (de v1)</h4>
+<pre><code>@Entity('points_comportement')
+@Index(['eleveId', 'periodeId'])
+@Index(['etablissementId'])
+export class PointComportement {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @ManyToOne(() => Eleve)
+    @JoinColumn({ name: 'eleveId' })
+    eleve!: Eleve;
+
+    @Column({ type: 'uuid' })
+    eleveId!: string;
+
+    @Column({ type: 'uuid' })
+    periodeId!: string;
+
+    @Column({ type: 'int', default: 100 })
+    solde!: number;  // Solde courant (initial: 100)
+
+    @Column({ type: 'int' })
+    valeur!: number;  // +crédit ou -débit
+
+    @Column({ type: 'varchar', length: 50 })
+    motif!: string;  // Code nomenclature
+
+    @Column({ type: 'varchar', length: 20 })
+    type!: string;  // CREDIT | DEBIT
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    sourceModule!: string;  // 'discipline', 'presence', 'evaluation'
+
+    @Column({ type: 'uuid', nullable: true })
+    sourceId?: string;  // ID entité source (incidentCoursId, etc.)
+
+    @Column({ type: 'text', nullable: true })
+    commentaire?: string;
+
+    @Column({ type: 'uuid' })
+    attribueParId!: string;  // Enseignant/personnel
+
+    @CreateDateColumn()
+    createdAt!: Date;
+}</code></pre>
+
+<h3>5.2 Système Points Comportement</h3>
+
+<div class="card">
+<h4>Règles métier</h4>
+<ul>
+<li><strong>Solde initial</strong> : 100 points par élève par période</li>
+<li><strong>Seuils d'alerte</strong> : 70 (avertissement), 50 (critique), 30 (convocation parents)</li>
+<li><strong>Crédits</strong> : Comportement exemplaire (+5), Aide camarade (+3), Participation active (+2), Excellence académique (+5)</li>
+<li><strong>Débits</strong> : Perturbation cours (-5), Tricherie (-10), Violence verbale (-15), Violence physique (-25), Non-respect règles (-3)</li>
+</ul>
+</div>
+
+<table>
+<thead><tr><th>Action</th><th>Valeur</th><th>Source</th><th>Automatique</th></tr></thead>
+<tbody>
+<tr><td>Comportement exemplaire</td><td class="impact-low">+5</td><td>Discipline</td><td>Manuel (enseignant)</td></tr>
+<tr><td>Aide camarade</td><td class="impact-low">+3</td><td>Discipline</td><td>Manuel</td></tr>
+<tr><td>Participation active</td><td class="impact-low">+2</td><td>Discipline</td><td>Manuel</td></tr>
+<tr><td>Excellence académique</td><td class="impact-low">+5</td><td>Évaluation</td><td>Auto (note &gt; 18/20)</td></tr>
+<tr><td>Assiduité parfaite</td><td class="impact-low">+3</td><td>Présence</td><td>Auto (0 absence mois)</td></tr>
+<tr><td>Perturbation cours</td><td class="impact-high">-5</td><td>Discipline</td><td>Auto (incident MINEUR)</td></tr>
+<tr><td>Tricherie</td><td class="impact-high">-10</td><td>Discipline</td><td>Auto (incident MODERE)</td></tr>
+<tr><td>Retard récurrent</td><td class="impact-high">-3</td><td>Présence</td><td>Auto (3+ retards/semaine)</td></tr>
+<tr><td>Violence verbale</td><td class="impact-high">-15</td><td>Discipline</td><td>Auto (incident GRAVE)</td></tr>
+<tr><td>Violence physique</td><td class="impact-high">-25</td><td>Discipline</td><td>Auto (incident TRES_GRAVE)</td></tr>
+</tbody>
+</table>
+
+<h3>5.3 Workflow Escalade</h3>
+
+<div class="card">
+<h4>Progression par niveau de gravité</h4>
+<table>
+<thead><tr><th>Gravité</th><th>Niveau</th><th>Résolu par</th><th>Action</th><th>Délai</th></tr></thead>
+<tbody>
+<tr><td><span class="badge badge-success">MINEUR</span></td><td>1</td><td>Enseignant</td><td>Résolu en cours (avertissement oral, changement place)</td><td>Immédiat</td></tr>
+<tr><td><span class="badge badge-warning">MODERE</span></td><td>2</td><td>Enseignant + Cahier</td><td>Incident consigné + notification parent</td><td>24h</td></tr>
+<tr><td><span class="badge badge-danger">GRAVE</span></td><td>3</td><td>Direction</td><td>Escalade → IncidentEleve + convocation</td><td>48h</td></tr>
+<tr><td><span class="badge badge-danger">TRES_GRAVE</span></td><td>4</td><td>Conseil discipline</td><td>Escalade + sanction immédiate + exclusion possible</td><td>Immédiat</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>5.4 Événements émis (EventEmitter)</h3>
+
+<pre><code>// Émis par discipline.service.ts
+eventEmitter.emit('discipline.incident.cree', {
+    incidentId: incident.id,
+    eleveId: incident.eleveId,
+    gravite: incident.gravite,
+    typeCode: incident.typeIncidentCode,
+    etablissementId: incident.etablissementId,
+});
+
+// Émis par discipline.service.ts (points)
+eventEmitter.emit('discipline.points.modifie', {
+    eleveId,
+    solde: nouveauSolde,
+    variation: valeur,
+    seuilAlerte: nouveauSolde &lt; 70,
+    seuilCritique: nouveauSolde &lt; 50,
+});
+
+// Émis vers module Évaluation (non-bloquant)
+eventEmitter.emit('discipline.observation.positive', {
+    eleveId, etablissementId, type: 'COMPORTEMENT_EXEMPLAIRE',
+    points: +5, source: 'discipline'
+});</code></pre>
+
+<h3>5.5 API REST — Module Discipline (14 endpoints)</h3>
+
+<table>
+<thead><tr><th>Méthode</th><th>Route</th><th>Action</th><th>Permission</th></tr></thead>
+<tbody>
+<tr><td>POST</td><td><code>/api/discipline/incidents-cours</code></td><td>Créer incident cours</td><td>discipline:incidents:create</td></tr>
+<tr><td>GET</td><td><code>/api/discipline/incidents-cours</code></td><td>Lister incidents cours</td><td>discipline:incidents:view</td></tr>
+<tr><td>PATCH</td><td><code>/api/discipline/incidents-cours/:id/escalader</code></td><td>Escalader vers IncidentEleve</td><td>discipline:incidents:escalate</td></tr>
+<tr><td>PATCH</td><td><code>/api/discipline/incidents-cours/:id/resoudre</code></td><td>Marquer résolu</td><td>discipline:incidents:resolve</td></tr>
+<tr><td>GET</td><td><code>/api/discipline/eleves/:eleveId/historique</code></td><td>Historique disciplinaire élève</td><td>discipline:incidents:view</td></tr>
+<tr><td>POST</td><td><code>/api/discipline/points/crediter</code></td><td>Créditer points comportement</td><td>discipline:points:credit</td></tr>
+<tr><td>POST</td><td><code>/api/discipline/points/debiter</code></td><td>Débiter points comportement</td><td>discipline:points:debit</td></tr>
+<tr><td>GET</td><td><code>/api/discipline/eleves/:eleveId/solde</code></td><td>Solde comportement élève</td><td>discipline:points:view</td></tr>
+<tr><td>GET</td><td><code>/api/discipline/alertes</code></td><td>Élèves sous seuils critiques</td><td>discipline:alertes:view</td></tr>
+<tr><td>POST</td><td><code>/api/discipline/observations</code></td><td>Créer observation</td><td>discipline:observations:create</td></tr>
+<tr><td>POST</td><td><code>/api/discipline/felicitations</code></td><td>Créer félicitation</td><td>discipline:felicitations:create</td></tr>
+<tr><td>GET</td><td><code>/api/discipline/sanctions</code></td><td>Lister sanctions</td><td>discipline:sanctions:view</td></tr>
+<tr><td>POST</td><td><code>/api/discipline/sanctions</code></td><td>Créer sanction (direction)</td><td>discipline:sanctions:create</td></tr>
+<tr><td>GET</td><td><code>/api/discipline/rapport/:periode</code></td><td>Rapport discipline période</td><td>discipline:rapports:view</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 6 : MODULE JOURNAL -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="module-journal" class="page-break">
+<h2>6. Module Journal — Détail complet</h2>
+
+<p class="section-intro">
+Cahier de texte numérique. Suivi des contenus enseignés, devoirs, ressources partagées et progression pédagogique. API publique pour élèves/parents.
+</p>
+
+<h3>6.1 Entités</h3>
+
+<h4>6.1.1 JournalSeance — Contenu d'une séance</h4>
+<pre><code>@Entity('journal_seances')
+@Index(['heureCoursId'])
+@Index(['etablissementId', 'date'])
+export class JournalSeance {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @ManyToOne(() => HeureCours)
+    @JoinColumn({ name: 'heureCoursId' })
+    heureCours!: HeureCours;
+
+    @Column({ type: 'uuid' })
+    heureCoursId!: string;
+
+    @Column({ type: 'uuid' })
+    enseignantId!: string;
+
+    @Column({ type: 'date' })
+    date!: string;
+
+    @Column({ type: 'text', nullable: true })
+    contenuSeance?: string;  // Résumé du cours (markdown)
+
+    @Column({ type: 'text', nullable: true })
+    objectifsPedagogiques?: string;  // Objectifs de la séance
+
+    @Column({ type: 'text', nullable: true })
+    competencesVisees?: string;  // Compétences travaillées
+
+    @Column({ type: 'varchar', length: 20, default: 'BROUILLON' })
+    statut!: string;  // BROUILLON | PUBLIE | ARCHIVE
+
+    @Column({ type: 'boolean', default: false })
+    estPublie!: boolean;  // Visible élèves/parents
+
+    @Column({ type: 'timestamp', nullable: true })
+    datePublication?: Date;
+
+    @Column({ type: 'int', default: 0 })
+    dureeMinutes!: number;  // Durée effective du cours
+
+    @Column({ type: 'varchar', length: 100, nullable: true })
+    chapitreOuTheme?: string;  // Chapitre en cours
+
+    @CreateDateColumn()
+    createdAt!: Date;
+
+    @UpdateDateColumn()
+    updatedAt!: Date;
+}</code></pre>
+
+<h4>6.1.2 JournalDevoir — Devoir donné en classe</h4>
+<pre><code>@Entity('journal_devoirs')
+@Index(['journalSeanceId'])
+@Index(['eleveId'])  // Pour l'espace élève
+export class JournalDevoir {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @ManyToOne(() => JournalSeance)
+    @JoinColumn({ name: 'journalSeanceId' })
+    journalSeance!: JournalSeance;
+
+    @Column({ type: 'uuid' })
+    journalSeanceId!: string;
+
+    @Column({ type: 'varchar', length: 50 })
+    typeDevoirCode!: string;  // FK logique → nomenclature TypeDevoir
+
+    @Column({ type: 'varchar', length: 200 })
+    titre!: string;
+
+    @Column({ type: 'text' })
+    consignes!: string;
+
+    @Column({ type: 'date', nullable: true })
+    dateEcheance?: string;  // Date de rendu
+
+    @Column({ type: 'int', nullable: true })
+    dureeEstimeeMinutes?: number;  // Temps estimé pour l'élève
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    matiereNom?: string;  // Redondance pour affichage rapide
+
+    @Column({ default: false })
+    estFacultatif!: boolean;
+
+    @CreateDateColumn()
+    createdAt!: Date;
+}</code></pre>
+
+<h4>6.1.3 JournalRessource — Ressource partagée</h4>
+<pre><code>@Entity('journal_ressources')
+@Index(['journalSeanceId'])
+export class JournalRessource {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @Column({ type: 'uuid' })
+    journalSeanceId!: string;
+
+    @Column({ type: 'varchar', length: 50 })
+    typeRessourceCode!: string;  // FK logique → nomenclature TypeRessource
+
+    @Column({ type: 'varchar', length: 200 })
+    titre!: string;
+
+    @Column({ type: 'text', nullable: true })
+    description?: string;
+
+    @Column({ type: 'varchar', length: 500, nullable: true })
+    url?: string;  // Lien ou chemin fichier
+
+    @Column({ type: 'varchar', length: 50, nullable: true })
+    format?: string;  // PDF, DOCX, LINK, VIDEO, etc.
+
+    @Column({ type: 'int', default: 0 })
+    tailleOctets?: number;
+
+    @CreateDateColumn()
+    createdAt!: Date;
+}</code></pre>
+
+<h4>6.1.4 ProgressionPedagogique — Avancement programme</h4>
+<pre><code>@Entity('progressions_pedagogiques')
+@Index(['affectationMatiereId', 'periodeId'])
+@Index(['etablissementId'])
+export class ProgressionPedagogique {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;
+
+    @ManyToOne(() => AffectationMatiere)
+    @JoinColumn({ name: 'affectationMatiereId' })
+    affectationMatiere!: AffectationMatiere;
+
+    @Column({ type: 'uuid' })
+    affectationMatiereId!: string;
+
+    @Column({ type: 'uuid' })
+    periodeId!: string;
+
+    @Column({ type: 'varchar', length: 200 })
+    chapitre!: string;
+
+    @Column({ type: 'int', default: 0 })
+    pourcentageAvancement!: number;  // 0-100
+
+    @Column({ type: 'varchar', length: 20, default: 'EN_COURS' })
+    statut!: string;  // PLANIFIE | EN_COURS | TERMINE
+
+    @Column({ type: 'date', nullable: true })
+    datePrevue?: string;
+
+    @Column({ type: 'date', nullable: true })
+    dateEffective?: string;
+
+    @Column({ type: 'int', default: 0 })
+    nbSeancesConsacrees!: number;
+
+    @Column({ type: 'text', nullable: true })
+    remarques?: string;
+
+    @CreateDateColumn()
+    createdAt!: Date;
+
+    @UpdateDateColumn()
+    updatedAt!: Date;
+}</code></pre>
+
+<h3>6.2 API publique élèves/parents (de v1)</h3>
+
+<div class="alert alert-info">
+<strong>API publique sans authentification</strong> — Les élèves et parents peuvent consulter le journal de classe 
+de leur classe sans avoir besoin de compte. Accès via code classe unique.
+</div>
+
+<table>
+<thead><tr><th>Méthode</th><th>Route</th><th>Action</th><th>Auth</th></tr></thead>
+<tbody>
+<tr><td>GET</td><td><code>/api/public/journal/:classeCode</code></td><td>Journal de la classe (séances publiées)</td><td>Aucune</td></tr>
+<tr><td>GET</td><td><code>/api/public/journal/:classeCode/seance/:id</code></td><td>Détail séance + devoirs</td><td>Aucune</td></tr>
+<tr><td>GET</td><td><code>/api/public/journal/:classeCode/devoirs</code></td><td>Devoirs en cours (non échus)</td><td>Aucune</td></tr>
+</tbody>
+</table>
+
+<h3>6.3 API REST admin — Module Journal (14 endpoints)</h3>
+
+<table>
+<thead><tr><th>Méthode</th><th>Route</th><th>Action</th><th>Permission</th></tr></thead>
+<tbody>
+<tr><td>POST</td><td><code>/api/journal/seances</code></td><td>Créer séance</td><td>journal:seances:create</td></tr>
+<tr><td>GET</td><td><code>/api/journal/seances</code></td><td>Lister séances (filtres date, classe)</td><td>journal:seances:view</td></tr>
+<tr><td>GET</td><td><code>/api/journal/seances/:id</code></td><td>Détail séance + devoirs + ressources</td><td>journal:seances:view</td></tr>
+<tr><td>PATCH</td><td><code>/api/journal/seances/:id</code></td><td>Modifier séance</td><td>journal:seances:edit</td></tr>
+<tr><td>DELETE</td><td><code>/api/journal/seances/:id</code></td><td>Supprimer séance</td><td>journal:seances:delete</td></tr>
+<tr><td>POST</td><td><code>/api/journal/seances/:id/publish</code></td><td>Publier (visible élèves/parents)</td><td>journal:seances:publish</td></tr>
+<tr><td>POST</td><td><code>/api/journal/devoirs</code></td><td>Créer devoir</td><td>journal:devoirs:create</td></tr>
+<tr><td>PATCH</td><td><code>/api/journal/devoirs/:id</code></td><td>Modifier devoir</td><td>journal:devoirs:edit</td></tr>
+<tr><td>DELETE</td><td><code>/api/journal/devoirs/:id</code></td><td>Supprimer devoir</td><td>journal:devoirs:delete</td></tr>
+<tr><td>POST</td><td><code>/api/journal/ressources</code></td><td>Upload ressource</td><td>journal:ressources:create</td></tr>
+<tr><td>DELETE</td><td><code>/api/journal/ressources/:id</code></td><td>Supprimer ressource</td><td>journal:ressources:delete</td></tr>
+<tr><td>GET</td><td><code>/api/journal/progression/:affectationId</code></td><td>Progression matière</td><td>journal:progression:view</td></tr>
+<tr><td>PUT</td><td><code>/api/journal/progression/:id</code></td><td>Mettre à jour avancement</td><td>journal:progression:edit</td></tr>
+<tr><td>GET</td><td><code>/api/journal/progression/:classeId/vue-ensemble</code></td><td>Progression toutes matières</td><td>journal:progression:view</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 7 : MODULE ÉVALUATION ÉLÈVE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="module-evaluation" class="page-break">
+<h2>7. Module Évaluation Élève — Fusion Scoring+Gamification</h2>
+
+<p class="section-intro">
+Unification des deux systèmes de points (Scoring + Gamification) en un seul module cohérent. Correction multi-tenant de 8 entités orphelines. Nouveau dossier directory : evaluation-eleves/.
+</p>
+
+<h3>7.1 Problème résolu — Double système de points</h3>
+
+<table>
+<thead><tr><th>Aspect</th><th>Avant (Scoring)</th><th>Avant (Gamification)</th><th>Après (Évaluation)</th></tr></thead>
+<tbody>
+<tr><td>Entité points</td><td><code>ScoreEleve.score</code> (decimal)</td><td><code>PointsUtilisateur.pointsTotal</code> (int)</td><td><code>ScoreEleve.scoreGlobal</code> (decimal 5,2)</td></tr>
+<tr><td>Identifiant</td><td><code>eleveId</code></td><td><code>utilisateurId</code> (WRONG!)</td><td><code>eleveId</code> (unifié)</td></tr>
+<tr><td>Multi-tenant</td><td class="impact-high">NON</td><td class="impact-high">NON</td><td class="impact-low">OUI (etablissementId + periodeId)</td></tr>
+<tr><td>Historique</td><td>HistoriqueScore</td><td>HistoriquePoints</td><td>HistoriqueScore (unifié, +periodeId)</td></tr>
+<tr><td>Classement</td><td>getClassement() scoring</td><td>getClassement() gamification</td><td>getClassement() unique</td></tr>
+<tr><td>Règles</td><td>RegleScoring (events)</td><td>Hardcodé</td><td>RegleEvaluation (configurable)</td></tr>
+<tr><td>Badges</td><td>Aucun</td><td>Badge + BadgeUtilisateur</td><td>Badge + BadgeUtilisateur (scopés)</td></tr>
+<tr><td>Indicateurs</td><td>4 (ACAD, COMP, ASSID, PART)</td><td>7+ (assiduite, bonne_note...)</td><td>4 unifiés + sous-catégories</td></tr>
+</tbody>
+</table>
+
+<h3>7.2 Entités corrigées</h3>
+
+<h4>7.2.1 ScoreEleve (CORRIGÉ — +etablissementId, +periodeId)</h4>
+<pre><code>@Entity('scores_eleves')
+@Index(['eleveId', 'periodeId', 'etablissementId'], { unique: true })
+@Index(['etablissementId', 'periodeId'])
+export class ScoreEleve {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;  // ← CORRIGÉ (manquait)
+
+    @Column({ type: 'uuid' })
+    periodeId!: string;        // ← CORRIGÉ (manquait)
+
+    @ManyToOne(() => Eleve)
+    @JoinColumn({ name: 'eleveId' })
+    eleve!: Eleve;
+
+    @Column({ type: 'uuid' })
+    eleveId!: string;
+
+    // Indicateurs unifiés (0-100 chacun)
+    @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+    scoreAcademique!: number;     // Moyenne des notes
+
+    @Column({ type: 'decimal', precision: 5, scale: 2, default: 100 })
+    scoreComportement!: number;   // Basé sur points_comportement (100 = max)
+
+    @Column({ type: 'decimal', precision: 5, scale: 2, default: 100 })
+    scoreAssiduite!: number;      // % présence (depuis module présence)
+
+    @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+    scoreParticipation!: number;  // Nb participations enregistrées
+
+    @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+    scoreGlobal!: number;         // Pondération des 4 indicateurs
+
+    @Column({ type: 'int', default: 0 })
+    rangClassement?: number;      // Calculé périodiquement
+
+    @CreateDateColumn()
+    createdAt!: Date;
+
+    @UpdateDateColumn()
+    updatedAt!: Date;
+}</code></pre>
+
+<h4>7.2.2 Badge (CORRIGÉ — +etablissementId)</h4>
+<pre><code>@Entity('badges')
+@Index(['etablissementId'])
+export class Badge {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;  // ← CORRIGÉ
+
+    @Column({ type: 'varchar', length: 100 })
+    nom!: string;
+
+    @Column({ type: 'text', nullable: true })
+    description?: string;
+
+    @Column({ type: 'varchar', length: 200, nullable: true })
+    iconeUrl?: string;
+
+    @Column({ type: 'varchar', length: 50 })
+    categorie!: string;  // ACADEMIQUE | COMPORTEMENT | ASSIDUITE | PARTICIPATION | SPECIAL
+
+    @Column({ type: 'varchar', length: 20, default: 'BRONZE' })
+    niveau!: string;  // BRONZE | ARGENT | OR | PLATINE
+
+    @Column({ type: 'jsonb', nullable: true })
+    criteresObtention?: any;  // Conditions (JSON)
+
+    @Column({ type: 'int', default: 0 })
+    pointsAssocies!: number;  // Bonus points à l'obtention
+
+    @Column({ default: true })
+    estActif!: boolean;
+
+    @CreateDateColumn()
+    createdAt!: Date;
+}</code></pre>
+
+<h4>7.2.3 RegleEvaluation (ex-RegleScoring, CORRIGÉ)</h4>
+<pre><code>@Entity('regles_evaluation')
+@Index(['etablissementId'])
+export class RegleEvaluation {
+    @PrimaryGeneratedColumn('uuid')
+    id!: string;
+
+    @Column({ type: 'uuid' })
+    etablissementId!: string;  // ← CORRIGÉ
+
+    @Column({ type: 'varchar', length: 100 })
+    nom!: string;
+
+    @Column({ type: 'varchar', length: 50 })
+    evenementDeclencheur!: string;  // NOTE_PUBLIEE, PRESENCE_ENREGISTREE, INCIDENT_CREE, etc.
+
+    @Column({ type: 'varchar', length: 30 })
+    indicateurCible!: string;  // ACADEMIQUE, COMPORTEMENT, ASSIDUITE, PARTICIPATION
+
+    @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+    valeurImpact!: number;  // + ou - sur l'indicateur
+
+    @Column({ type: 'jsonb', nullable: true })
+    conditions?: any;  // Conditions d'application (JSON)
+
+    @Column({ default: true })
+    estActive!: boolean;
+
+    @Column({ type: 'int', default: 0 })
+    priorite!: number;  // Ordre d'application
+
+    @CreateDateColumn()
+    createdAt!: Date;
+}</code></pre>
+
+<h3>7.3 Paramètres système évaluation</h3>
+
+<table>
+<thead><tr><th>Clé</th><th>Type</th><th>Défaut</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>evaluation.weight_academique</code></td><td>NUMBER</td><td>40</td><td>Poids score académique (%)</td></tr>
+<tr><td><code>evaluation.weight_comportement</code></td><td>NUMBER</td><td>25</td><td>Poids score comportement (%)</td></tr>
+<tr><td><code>evaluation.weight_assiduite</code></td><td>NUMBER</td><td>20</td><td>Poids score assiduité (%)</td></tr>
+<tr><td><code>evaluation.weight_participation</code></td><td>NUMBER</td><td>15</td><td>Poids score participation (%)</td></tr>
+<tr><td><code>evaluation.points_initial_comportement</code></td><td>NUMBER</td><td>100</td><td>Solde initial comportement</td></tr>
+<tr><td><code>evaluation.seuil_alerte_comportement</code></td><td>NUMBER</td><td>70</td><td>Seuil alerte (avertissement)</td></tr>
+<tr><td><code>evaluation.seuil_critique_comportement</code></td><td>NUMBER</td><td>50</td><td>Seuil critique (convocation)</td></tr>
+<tr><td><code>evaluation.badges_actifs</code></td><td>BOOLEAN</td><td>true</td><td>Activer système badges</td></tr>
+<tr><td><code>evaluation.classement_visible</code></td><td>BOOLEAN</td><td>true</td><td>Classement visible élèves</td></tr>
+</tbody>
+</table>
+
+<h3>7.4 API REST — Module Évaluation (12 endpoints)</h3>
+
+<table>
+<thead><tr><th>Méthode</th><th>Route</th><th>Action</th><th>Permission</th></tr></thead>
+<tbody>
+<tr><td>GET</td><td><code>/api/evaluation/scores/:eleveId</code></td><td>Scores élève (tous indicateurs)</td><td>evaluation:scores:view</td></tr>
+<tr><td>GET</td><td><code>/api/evaluation/classement/:classeId</code></td><td>Classement classe</td><td>evaluation:classement:view</td></tr>
+<tr><td>GET</td><td><code>/api/evaluation/classement/:classeId/:periodeId</code></td><td>Classement par période</td><td>evaluation:classement:view</td></tr>
+<tr><td>POST</td><td><code>/api/evaluation/recalculer</code></td><td>Recalculer scores (batch/classe)</td><td>evaluation:scores:recalculate</td></tr>
+<tr><td>GET</td><td><code>/api/evaluation/badges</code></td><td>Lister badges disponibles</td><td>evaluation:badges:view</td></tr>
+<tr><td>POST</td><td><code>/api/evaluation/badges</code></td><td>Créer badge custom</td><td>evaluation:badges:create</td></tr>
+<tr><td>POST</td><td><code>/api/evaluation/badges/attribuer</code></td><td>Attribuer badge à élève</td><td>evaluation:badges:assign</td></tr>
+<tr><td>GET</td><td><code>/api/evaluation/eleve/:eleveId/badges</code></td><td>Badges obtenus par élève</td><td>evaluation:badges:view</td></tr>
+<tr><td>GET</td><td><code>/api/evaluation/regles</code></td><td>Règles évaluation actives</td><td>evaluation:regles:view</td></tr>
+<tr><td>POST</td><td><code>/api/evaluation/regles</code></td><td>Créer règle</td><td>evaluation:regles:create</td></tr>
+<tr><td>PATCH</td><td><code>/api/evaluation/regles/:id</code></td><td>Modifier règle</td><td>evaluation:regles:edit</td></tr>
+<tr><td>GET</td><td><code>/api/evaluation/eleve/:eleveId/historique</code></td><td>Historique scores + badges</td><td>evaluation:scores:view</td></tr>
+</tbody>
+</table>
+</section>
+
+</div>
+</body>
+</html>
+
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 8 : ESPACE ENSEIGNANT UNIFIÉ -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="espace-enseignant" class="page-break">
+<h2>8. Espace Enseignant Unifié — Dashboard & Routes</h2>
+
+<p class="section-intro">
+Portail dédié à l'enseignant regroupant ses cours du jour, appels à faire, journaux à remplir et incidents à signaler. Vue consolidée des 4 modules.
+</p>
+
+<h3>8.1 Dashboard Enseignant — Widgets</h3>
+
+<div class="card-grid">
+<div class="card">
+<h4>📅 Cours du jour</h4>
+<p>Liste des HeureCours du jour avec statut (appel fait/non fait, journal rempli). Badge d'alerte si actions en attente.</p>
+<p><strong>Source</strong> : emploi-du-temps + appels_cours + journal_seances</p>
+</div>
+<div class="card">
+<h4>📋 Appels en attente</h4>
+<p>Compteur appels non clôturés. Accès rapide pour faire l'appel. Alerte visuelle si cours déjà terminé sans appel.</p>
+<p><strong>Source</strong> : appels_cours (statut=EN_COURS)</p>
+</div>
+<div class="card">
+<h4>📖 Journal à remplir</h4>
+<p>Séances sans contenu saisi. Accès direct pour saisir le cahier de texte.</p>
+<p><strong>Source</strong> : journal_seances (statut=BROUILLON)</p>
+</div>
+<div class="card">
+<h4>⚠️ Alertes discipline</h4>
+<p>Élèves sous seuil comportement. Incidents à escalader. Notifications direction.</p>
+<p><strong>Source</strong> : points_comportement (solde &lt; 70) + incidents_cours (statut=ESCALADE)</p>
+</div>
+<div class="card">
+<h4>🏆 Top élèves / Progression</h4>
+<p>Classement rapide de la classe. Évolution scores sur la période.</p>
+<p><strong>Source</strong> : scores_eleves (scoreGlobal)</p>
+</div>
+</div>
+
+<h3>8.2 Routes Frontend</h3>
+
+<table>
+<thead><tr><th>Route</th><th>Composant</th><th>Description</th><th>Permission</th></tr></thead>
+<tbody>
+<tr><td><code>/espace-enseignant</code></td><td>EspaceEnseignantDashboard</td><td>Dashboard principal (5 widgets)</td><td>Authentifié (ENSEIGNANT)</td></tr>
+<tr><td><code>/espace-enseignant/presence</code></td><td>PresenceEnseignantPage</td><td>Liste cours + appels rapides</td><td>presence:appels:view</td></tr>
+<tr><td><code>/espace-enseignant/presence/:heureCoursId</code></td><td>AppelCoursPage</td><td>Appel d'un cours spécifique</td><td>presence:appels:create</td></tr>
+<tr><td><code>/espace-enseignant/journal</code></td><td>JournalEnseignantPage</td><td>Liste cours + saisie journal</td><td>journal:seances:view</td></tr>
+<tr><td><code>/espace-enseignant/journal/:heureCoursId</code></td><td>JournalSeancePage</td><td>Édition séance journal</td><td>journal:seances:create</td></tr>
+<tr><td><code>/espace-enseignant/discipline</code></td><td>DisciplineEnseignantPage</td><td>Signaler incident + historique</td><td>discipline:incidents:view</td></tr>
+<tr><td><code>/espace-enseignant/discipline/incident</code></td><td>IncidentFormPage</td><td>Formulaire incident</td><td>discipline:incidents:create</td></tr>
+<tr><td><code>/espace-enseignant/evaluation</code></td><td>EvaluationEnseignantPage</td><td>Scores classe + badges</td><td>evaluation:scores:view</td></tr>
+<tr><td><code>/espace-enseignant/progression</code></td><td>ProgressionPage</td><td>Avancement programmes</td><td>journal:progression:view</td></tr>
+</tbody>
+</table>
+
+<h3>8.3 Permissions RBAC — Synthèse complète</h3>
+
+<table>
+<thead><tr><th>Module</th><th>Permissions</th><th>Rôles</th></tr></thead>
+<tbody>
+<tr><td rowspan="3"><strong>Présence</strong></td><td>presence:appels:view, create, edit, close</td><td>ENSEIGNANT (ses cours)</td></tr>
+<tr><td>presence:stats:view, presence:rapports:view</td><td>ADMIN, CHEF_ETABLISSEMENT</td></tr>
+<tr><td>presence:alertes:view</td><td>ADMIN, SURVEILLANT</td></tr>
+<tr><td rowspan="3"><strong>Discipline</strong></td><td>discipline:incidents:view, create, resolve</td><td>ENSEIGNANT (ses cours)</td></tr>
+<tr><td>discipline:incidents:escalate, discipline:sanctions:create</td><td>DIRECTION, ADMIN</td></tr>
+<tr><td>discipline:points:view, credit, debit</td><td>ENSEIGNANT, DIRECTION, ADMIN</td></tr>
+<tr><td rowspan="3"><strong>Journal</strong></td><td>journal:seances:view, create, edit, publish</td><td>ENSEIGNANT (ses cours)</td></tr>
+<tr><td>journal:devoirs:create, edit, delete</td><td>ENSEIGNANT</td></tr>
+<tr><td>journal:progression:view, edit</td><td>ENSEIGNANT, ADMIN, COORDINATEUR</td></tr>
+<tr><td rowspan="2"><strong>Évaluation</strong></td><td>evaluation:scores:view, recalculate</td><td>ENSEIGNANT (ses classes)</td></tr>
+<tr><td>evaluation:badges:view, create, assign, evaluation:regles:*</td><td>ADMIN, SUPER_ADMIN</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 9 : MATRICE D'INTÉGRATION -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="integration" class="page-break">
+<h2>9. Matrice d'Intégration Inter-Modules</h2>
+
+<p class="section-intro">
+Couplage faible via EventEmitter. Chaque module émet des événements que les autres modules écoutent. Si un module est inactif → graceful degradation (pas d'erreur).
+</p>
+
+<h3>9.1 Événements émis et consommés</h3>
+
+<table>
+<thead><tr><th>Événement</th><th>Émis par</th><th>Consommé par</th><th>Action</th><th>Graceful</th></tr></thead>
+<tbody>
+<tr><td><code>presence.enregistre</code></td><td>Présence</td><td>Évaluation</td><td>Recalculer score ASSIDUITÉ</td><td>Si évaluation inactif → log + skip</td></tr>
+<tr><td><code>presence.enregistre</code></td><td>Présence</td><td>Discipline</td><td>Détecter retards récurrents → débit auto</td><td>Si discipline inactif → skip</td></tr>
+<tr><td><code>discipline.incident.cree</code></td><td>Discipline</td><td>Évaluation</td><td>Recalculer score COMPORTEMENT</td><td>Si évaluation inactif → log + skip</td></tr>
+<tr><td><code>discipline.points.modifie</code></td><td>Discipline</td><td>Évaluation</td><td>Vérifier badges à débloquer</td><td>Si évaluation inactif → skip</td></tr>
+<tr><td><code>discipline.observation.positive</code></td><td>Discipline</td><td>Évaluation</td><td>Attribuer points bonus</td><td>Si évaluation inactif → skip</td></tr>
+<tr><td><code>journal.seance.terminee</code></td><td>Journal</td><td>Progression</td><td>Mettre à jour avancement chapitre</td><td>Si progression inactif → skip</td></tr>
+<tr><td><code>evaluation.note.publiee</code></td><td>Notes (existant)</td><td>Évaluation</td><td>Recalculer score ACADÉMIQUE</td><td>Si évaluation inactif → skip</td></tr>
+<tr><td><code>evaluation.badge.debloque</code></td><td>Évaluation</td><td>Notifications</td><td>Notifier élève + parent</td><td>Si notif inactif → skip</td></tr>
+</tbody>
+</table>
+
+<h3>9.2 Pattern Graceful Degradation</h3>
+
+<pre><code>// Pattern standard pour TOUT consommateur d'événements
+eventEmitter.on('presence.enregistre', async (data) => {
+    // 1. Vérifier si le module cible est accessible
+    const moduleActif = await entitlementService.isAccessible(
+        data.etablissementId, 'evaluation-eleves'
+    );
+    if (!moduleActif) {
+        logger.info('[Évaluation] Module inactif — enrichissement assiduité ignoré');
+        return; // GRACEFUL : pas d'erreur, pas de retry
+    }
+
+    // 2. Exécuter la logique métier
+    try {
+        await evaluationService.recalculerAssiduite(data.eleveId, data.periodeId);
+    } catch (error) {
+        // 3. Erreur non-bloquante — log + alerte monitoring
+        logger.error('[Évaluation] Erreur recalcul assiduité', error);
+        // PAS de throw — l'appel présence a réussi, c'est le seul engagement
+    }
+});</code></pre>
+
+<h3>9.3 Modules au catalogue (modules_catalogue)</h3>
+
+<table>
+<thead><tr><th>Code</th><th>Nom</th><th>Catégorie</th><th>Actif par défaut</th><th>Dépendances</th></tr></thead>
+<tbody>
+<tr><td><code>presence</code></td><td>Présence</td><td>VIE_SCOLAIRE</td><td>true</td><td>emploi-du-temps</td></tr>
+<tr><td><code>discipline</code></td><td>Discipline</td><td>VIE_SCOLAIRE</td><td>true</td><td>suivi-eleves</td></tr>
+<tr><td><code>journal</code></td><td>Journal de Classe</td><td>PEDAGOGIE</td><td>true</td><td>emploi-du-temps</td></tr>
+<tr><td><code>evaluation-eleves</code></td><td>Évaluation Élève</td><td>PEDAGOGIE</td><td>true</td><td>notes, bulletins</td></tr>
+</tbody>
+</table>
+
+<h3>9.4 Paramètres système — Synthèse (28 clés)</h3>
+
+<table>
+<thead><tr><th>Module</th><th>Nb clés</th><th>Clés principales</th></tr></thead>
+<tbody>
+<tr><td>Présence</td><td>7</td><td>appel_rapide, qr_code_active, notification_parents, seuil_alerte, seuil_critique, retard_delai, integration_scoring</td></tr>
+<tr><td>Discipline</td><td>6</td><td>points_initial, seuil_alerte, seuil_critique, escalade_auto_grave, notification_direction, integration_scoring</td></tr>
+<tr><td>Journal</td><td>5</td><td>api_publique_active, devoirs_echeance_visible, progression_auto, ressources_taille_max, notification_devoirs</td></tr>
+<tr><td>Évaluation</td><td>9</td><td>weight_academique/comportement/assiduite/participation, points_initial, seuils, badges_actifs, classement_visible</td></tr>
+<tr><td>Transverse</td><td>1</td><td>espace_enseignant_dashboard_layout</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 10 : PLAN DE MIGRATION -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="migration" class="page-break">
+<h2>10. Plan de Migration — 5 Phases</h2>
+
+<p class="section-intro">
+5 phases sur 18 semaines, ~300h d'effort. Chaque phase est livrable indépendamment. Les phases 1-2 sont les fondations critiques.
+</p>
+
+<div class="timeline">
+<!-- Phase 1 -->
+<div class="timeline-item">
+<div class="phase-header">
+<h3>Phase 1 — Fondations & Nomenclatures (Semaines 1-3)</h3>
+</div>
+<div class="card">
+<h4>Livrables</h4>
+<ul>
+<li><strong>Migration 220</strong> : 7 tables nomenclatures + seeds système (8-14 valeurs par table)</li>
+<li><strong>NomenclatureService&lt;T&gt;</strong> abstrait + 7 implémentations concrètes</li>
+<li><strong>Controller nomenclatures</strong> : 6 routes × 7 types = 42 endpoints dynamiques</li>
+<li><strong>Frontend</strong> : Page admin nomenclatures (CRUD, réinitialisation système)</li>
+<li><strong>Tests</strong> : Unit tests NomenclatureService (unicité, protection estSysteme, multi-tenant)</li>
+</ul>
+<h4>Effort : ~45h</h4>
+<table>
+<thead><tr><th>Tâche</th><th>Effort</th><th>Complexité</th></tr></thead>
+<tbody>
+<tr><td>Migration SQL (7 tables + seeds)</td><td>8h</td><td>Moyenne</td></tr>
+<tr><td>NomenclatureService&lt;T&gt; + 7 implémentations</td><td>12h</td><td>Moyenne</td></tr>
+<tr><td>Controller + routes</td><td>8h</td><td>Faible</td></tr>
+<tr><td>Frontend admin nomenclatures</td><td>12h</td><td>Moyenne</td></tr>
+<tr><td>Tests unitaires</td><td>5h</td><td>Faible</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Phase 2 -->
+<div class="timeline-item">
+<div class="phase-header">
+<h3>Phase 2 — Module Présence (Semaines 4-7)</h3>
+</div>
+<div class="card">
+<h4>Livrables</h4>
+<ul>
+<li><strong>Migration 221</strong> : Tables appels_cours + presences_eleves + index + RLS</li>
+<li><strong>Entités</strong> : AppelCours, PresenceEleve</li>
+<li><strong>Service</strong> : PresenceService (créer appel, mode rapide, QR, clôtures, stats)</li>
+<li><strong>Controller</strong> : 15 endpoints présence</li>
+<li><strong>Frontend enseignant</strong> : Appel rapide (mode négatif), stats classe</li>
+<li><strong>Frontend parent</strong> : Consultation absences, justificatifs</li>
+<li><strong>Intégration scoring</strong> : Event presence.enregistre → recalcul ASSIDUITÉ</li>
+<li><strong>Tests</strong> : Unit + intégration (appel complet, mode QR, graceful degradation)</li>
+</ul>
+<h4>Effort : ~70h</h4>
+<table>
+<thead><tr><th>Tâche</th><th>Effort</th><th>Complexité</th></tr></thead>
+<tbody>
+<tr><td>Migration SQL (tables + RLS + index)</td><td>6h</td><td>Moyenne</td></tr>
+<tr><td>Entités + DTOs Zod</td><td>6h</td><td>Faible</td></tr>
+<tr><td>Service PresenceService (complet)</td><td>16h</td><td>Élevée</td></tr>
+<tr><td>Controller + 15 routes</td><td>8h</td><td>Moyenne</td></tr>
+<tr><td>Frontend appel rapide + stats</td><td>20h</td><td>Élevée</td></tr>
+<tr><td>Intégration scoring (events)</td><td>6h</td><td>Moyenne</td></tr>
+<tr><td>Tests</td><td>8h</td><td>Moyenne</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Phase 3 -->
+<div class="timeline-item">
+<div class="phase-header">
+<h3>Phase 3 — Module Discipline (Semaines 8-11)</h3>
+</div>
+<div class="card">
+<h4>Livrables</h4>
+<ul>
+<li><strong>Migration 222</strong> : Tables incidents_cours + points_comportement + extension incidents_eleves/sanctions_eleves</li>
+<li><strong>Entités</strong> : IncidentCours, PointComportement</li>
+<li><strong>Service</strong> : DisciplineService (incidents, escalade, points, workflow)</li>
+<li><strong>Controller</strong> : 14 endpoints discipline</li>
+<li><strong>Frontend enseignant</strong> : Formulaire incident, points crédit/débit, historique</li>
+<li><strong>Frontend direction</strong> : Escalade, sanctions, alertes</li>
+<li><strong>Intégration</strong> : Events discipline → scoring comportement</li>
+<li><strong>Tests</strong> : Unit + intégration (workflow escalade, points)</li>
+</ul>
+<h4>Effort : ~65h</h4>
+<table>
+<thead><tr><th>Tâche</th><th>Effort</th><th>Complexité</th></tr></thead>
+<tbody>
+<tr><td>Migration SQL (tables + extension existants)</td><td>8h</td><td>Élevée</td></tr>
+<tr><td>Entités + DTOs Zod</td><td>6h</td><td>Faible</td></tr>
+<tr><td>Service DisciplineService (complet)</td><td>16h</td><td>Élevée</td></tr>
+<tr><td>Controller + 14 routes</td><td>8h</td><td>Moyenne</td></tr>
+<tr><td>Frontend incidents + points</td><td>18h</td><td>Élevée</td></tr>
+<tr><td>Workflow escalade + direction</td><td>10h</td><td>Élevée</td></tr>
+<tr><td>Tests</td><td>7h (approx.)</td><td>Moyenne</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Phase 4 -->
+<div class="timeline-item">
+<div class="phase-header">
+<h3>Phase 4 — Module Journal (Semaines 12-14)</h3>
+</div>
+<div class="card">
+<h4>Livrables</h4>
+<ul>
+<li><strong>Migration 223</strong> : Tables journal_seances + journal_devoirs + journal_ressources + progressions_pedagogiques</li>
+<li><strong>Entités</strong> : JournalSeance, JournalDevoir, JournalRessource, ProgressionPedagogique</li>
+<li><strong>Service</strong> : JournalService (CRUD, publication, API publique)</li>
+<li><strong>Controller</strong> : 14 endpoints admin + 3 endpoints publics</li>
+<li><strong>Frontend enseignant</strong> : Cahier de texte, devoirs, ressources, progression</li>
+<li><strong>Frontend public</strong> : Page journal classe (élèves/parents sans auth)</li>
+<li><strong>Tests</strong> : Unit + intégration</li>
+</ul>
+<h4>Effort : ~55h</h4>
+<table>
+<thead><tr><th>Tâche</th><th>Effort</th><th>Complexité</th></tr></thead>
+<tbody>
+<tr><td>Migration SQL (4 tables + RLS)</td><td>8h</td><td>Moyenne</td></tr>
+<tr><td>Entités + DTOs Zod</td><td>6h</td><td>Faible</td></tr>
+<tr><td>Service JournalService (complet)</td><td>12h</td><td>Moyenne</td></tr>
+<tr><td>Controller + 17 routes</td><td>8h</td><td>Moyenne</td></tr>
+<tr><td>Frontend cahier de texte</td><td>14h</td><td>Élevée</td></tr>
+<tr><td>API publique + frontend élèves</td><td>6h</td><td>Moyenne</td></tr>
+<tr><td>Tests</td><td>5h (approx.)</td><td>Faible</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Phase 5 -->
+<div class="timeline-item">
+<div class="phase-header">
+<h3>Phase 5 — Fusion Évaluation + Espace Enseignant (Semaines 15-18)</h3>
+</div>
+<div class="card">
+<h4>Livrables</h4>
+<ul>
+<li><strong>Migration 224</strong> : Correction multi-tenant scoring/gamification (ajout etablissementId + periodeId sur 8 tables)</li>
+<li><strong>Migration 225</strong> : Renommage scoring → evaluation-eleves (tables + colonnes)</li>
+<li><strong>Refonte entités</strong> : ScoreEleve (corrigé), Badge (corrigé), RegleEvaluation (ex-RegleScoring)</li>
+<li><strong>Service</strong> : EvaluationService (unifié, remplace ScoringService + GamificationService)</li>
+<li><strong>Controller</strong> : 12 endpoints évaluation</li>
+<li><strong>Dashboard enseignant</strong> : Page unifiée /espace-enseignant (5 widgets)</li>
+<li><strong>Routes frontend</strong> : 9 routes espace enseignant</li>
+<li><strong>Tests</strong> : Unit fusion + E2E dashboard</li>
+<li><strong>Documentation</strong> : Guide migration pour les établissements existants</li>
+</ul>
+<h4>Effort : ~75h</h4>
+<table>
+<thead><tr><th>Tâche</th><th>Effort</th><th>Complexité</th></tr></thead>
+<tbody>
+<tr><td>Migration 224 (correction multi-tenant 8 tables)</td><td>10h</td><td>Élevée (risque data)</td></tr>
+<tr><td>Migration 225 (renommage + refactor)</td><td>8h</td><td>Élevée</td></tr>
+<tr><td>Refonte entités + services unifiés</td><td>16h</td><td>Élevée</td></tr>
+<tr><td>Controller + 12 routes</td><td>6h</td><td>Moyenne</td></tr>
+<tr><td>Dashboard enseignant (5 widgets)</td><td>18h</td><td>Élevée</td></tr>
+<tr><td>9 routes frontend espace enseignant</td><td>12h</td><td>Moyenne</td></tr>
+<tr><td>Tests E2E + documentation migration</td><td>8h (approx.)</td><td>Moyenne</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+<h3>10.1 Timeline visuelle</h3>
+
+<div class="diagram-container">
+<svg viewBox="0 0 900 200" xmlns="http://www.w3.org/2000/svg">
+<!-- Background -->
+<rect x="0" y="0" width="900" height="200" fill="none"/>
+<!-- Timeline bar -->
+<rect x="40" y="80" width="820" height="30" rx="6" fill="#f1f5f9" stroke="#e2e8f0"/>
+<!-- Phase 1 -->
+<rect x="40" y="80" width="136" height="30" rx="6" fill="rgba(124,58,237,0.2)" stroke="#7c3aed"/>
+<text x="108" y="100" text-anchor="middle" font-size="9" font-weight="600" fill="#7c3aed">P1: Nomenclatures</text>
+<text x="108" y="125" text-anchor="middle" font-size="8" fill="#64748b">S1-S3 (45h)</text>
+<!-- Phase 2 -->
+<rect x="180" y="80" width="182" height="30" rx="6" fill="rgba(22,163,74,0.2)" stroke="#16a34a"/>
+<text x="271" y="100" text-anchor="middle" font-size="9" font-weight="600" fill="#16a34a">P2: Présence</text>
+<text x="271" y="125" text-anchor="middle" font-size="8" fill="#64748b">S4-S7 (70h)</text>
+<!-- Phase 3 -->
+<rect x="366" y="80" width="182" height="30" rx="6" fill="rgba(220,38,38,0.15)" stroke="#dc2626"/>
+<text x="457" y="100" text-anchor="middle" font-size="9" font-weight="600" fill="#dc2626">P3: Discipline</text>
+<text x="457" y="125" text-anchor="middle" font-size="8" fill="#64748b">S8-S11 (65h)</text>
+<!-- Phase 4 -->
+<rect x="552" y="80" width="136" height="30" rx="6" fill="rgba(37,99,235,0.2)" stroke="#2563eb"/>
+<text x="620" y="100" text-anchor="middle" font-size="9" font-weight="600" fill="#2563eb">P4: Journal</text>
+<text x="620" y="125" text-anchor="middle" font-size="8" fill="#64748b">S12-S14 (55h)</text>
+<!-- Phase 5 -->
+<rect x="692" y="80" width="168" height="30" rx="6" fill="rgba(217,119,6,0.2)" stroke="#d97706"/>
+<text x="776" y="100" text-anchor="middle" font-size="9" font-weight="600" fill="#d97706">P5: Éval+Dashboard</text>
+<text x="776" y="125" text-anchor="middle" font-size="8" fill="#64748b">S15-S18 (75h)</text>
+<!-- Week markers -->
+<text x="40" y="155" font-size="8" fill="#64748b">S1</text>
+<text x="130" y="155" font-size="8" fill="#64748b">S4</text>
+<text x="270" y="155" font-size="8" fill="#64748b">S8</text>
+<text x="455" y="155" font-size="8" fill="#64748b">S12</text>
+<text x="550" y="155" font-size="8" fill="#64748b">S15</text>
+<text x="845" y="155" font-size="8" fill="#64748b">S18</text>
+<!-- Title -->
+<text x="450" y="30" text-anchor="middle" font-size="13" font-weight="600" fill="#1e293b">Timeline d'implémentation — 18 semaines — ~310h</text>
+<!-- Milestones -->
+<circle cx="176" cy="95" r="5" fill="#7c3aed"/>
+<text x="176" y="70" text-anchor="middle" font-size="7" fill="#7c3aed">M1: Nomenclatures prêtes</text>
+<circle cx="362" cy="95" r="5" fill="#16a34a"/>
+<text x="362" y="70" text-anchor="middle" font-size="7" fill="#16a34a">M2: Présence live</text>
+<circle cx="548" cy="95" r="5" fill="#dc2626"/>
+<text x="548" y="70" text-anchor="middle" font-size="7" fill="#dc2626">M3: Discipline live</text>
+<circle cx="688" cy="95" r="5" fill="#2563eb"/>
+<text x="688" y="70" text-anchor="middle" font-size="7" fill="#2563eb">M4: Journal live</text>
+<circle cx="860" cy="95" r="5" fill="#d97706"/>
+<text x="840" y="170" text-anchor="middle" font-size="7" fill="#d97706">M5: Dashboard unifié</text>
+</svg>
+</div>
+
+<h3>10.2 Migrations SQL — Résumé</h3>
+
+<table>
+<thead><tr><th>Migration</th><th>Phase</th><th>Contenu</th><th>Risque</th></tr></thead>
+<tbody>
+<tr><td><code>220-nomenclatures.sql</code></td><td>P1</td><td>7 tables nomenclatures + seeds système</td><td class="impact-low">Faible</td></tr>
+<tr><td><code>221-module-presence.sql</code></td><td>P2</td><td>appels_cours + presences_eleves + RLS + index</td><td class="impact-low">Faible</td></tr>
+<tr><td><code>222-module-discipline.sql</code></td><td>P3</td><td>incidents_cours + points_comportement + extension suivi-eleves</td><td class="impact-medium">Moyen</td></tr>
+<tr><td><code>223-module-journal.sql</code></td><td>P4</td><td>4 tables journal + progressions + RLS</td><td class="impact-low">Faible</td></tr>
+<tr><td><code>224-correction-multi-tenant.sql</code></td><td>P5</td><td>Ajout etablissementId + periodeId sur 8 tables scoring/gamification</td><td class="impact-high">Élevé</td></tr>
+<tr><td><code>225-refonte-evaluation.sql</code></td><td>P5</td><td>Renommage tables + colonnes scoring → evaluation</td><td class="impact-high">Élevé</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 11 : RISQUES & MITIGATIONS -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="risques" class="page-break">
+<h2>11. Risques & Mitigations</h2>
+
+<table>
+<thead><tr><th>Risque</th><th>Probabilité</th><th>Impact</th><th>Mitigation</th></tr></thead>
+<tbody>
+<tr>
+<td><strong>Perte de données scoring/gamification</strong> lors migration 224</td>
+<td class="impact-medium">Moyenne</td>
+<td class="impact-high">Critique</td>
+<td>Backup complet avant migration. Script dry-run. Validation post-migration (count, sum). Rollback plan documenté.</td>
+</tr>
+<tr>
+<td><strong>Rupture compatibilité ascendante</strong> — Anciens clients scoring/gamification</td>
+<td class="impact-high">Haute</td>
+<td class="impact-medium">Élevé</td>
+<td>Alias de routes legacy (6 mois). Dépréciation progressive. Migration guide pour frontend existant.</td>
+</tr>
+<tr>
+<td><strong>Performance appel</strong> — 120 élèves par cours, temps réponse &gt; 2s</td>
+<td class="impact-medium">Moyenne</td>
+<td class="impact-medium">Moyen</td>
+<td>Mode négatif (défaut PRÉSENT) = 1 requête bulk. Index sur (appelCoursId, eleveId). Pagination stats.</td>
+</tr>
+<tr>
+<td><strong>Connectivité limitée</strong> — Enseignants en zone sans internet</td>
+<td class="impact-high">Haute (contexte africain)</td>
+<td class="impact-medium">Moyen</td>
+<td>PWA offline : queue synchronisation + localStorage. Sync au retour connexion. Mode dégradé fonctionnel.</td>
+</tr>
+<tr>
+<td><strong>Résistance adoption</strong> — Enseignants non-tech</td>
+<td class="impact-medium">Moyenne</td>
+<td class="impact-medium">Moyen</td>
+<td>Interface minimaliste (appel &lt;2 min). Formation progressive. Mode optionnel (modules désactivables).</td>
+</tr>
+<tr>
+<td><strong>Couplage inter-modules</strong> — Cascade d'erreurs via events</td>
+<td class="impact-low">Faible</td>
+<td class="impact-medium">Moyen</td>
+<td>Graceful degradation systématique. Try/catch sur chaque listener. Monitoring events échoués.</td>
+</tr>
+<tr>
+<td><strong>Multi-tenant fuite</strong> — Données inter-établissements</td>
+<td class="impact-low">Faible</td>
+<td class="impact-high">Critique</td>
+<td>RLS sur TOUTES les tables. Tests isolation systématiques. Audit queries sans etablissementId.</td>
+</tr>
+<tr>
+<td><strong>Scope creep</strong> — Ajouts fonctionnels en cours de route</td>
+<td class="impact-high">Haute</td>
+<td class="impact-medium">Moyen</td>
+<td>Phases livrables indépendamment. Backlog priorisé. Chaque ajout = réévaluation timeline.</td>
+</tr>
+</tbody>
+</table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SECTION 12 : ESTIMATION EFFORT -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="estimation">
+<h2>12. Estimation Effort & Ressources</h2>
+
+<h3>12.1 Résumé global</h3>
+
+<div class="card-grid">
+<div class="stat-card"><div class="value">~310h</div><div class="label">Effort total</div></div>
+<div class="stat-card"><div class="value">18</div><div class="label">Semaines</div></div>
+<div class="stat-card"><div class="value">6</div><div class="label">Migrations SQL</div></div>
+<div class="stat-card"><div class="value">18+</div><div class="label">Entités</div></div>
+<div class="stat-card"><div class="value">60+</div><div class="label">Endpoints API</div></div>
+<div class="stat-card"><div class="value">9</div><div class="label">Routes frontend</div></div>
+</div>
+
+<h3>12.2 Répartition par phase</h3>
+
+<table>
+<thead><tr><th>Phase</th><th>Backend</th><th>Frontend</th><th>Tests</th><th>Total</th><th>%</th></tr></thead>
+<tbody>
+<tr><td>P1 — Nomenclatures</td><td>20h</td><td>12h</td><td>5h</td><td><strong>37h</strong></td><td>12%</td></tr>
+<tr><td>P2 — Présence</td><td>30h</td><td>20h</td><td>8h</td><td><strong>58h</strong></td><td>19%</td></tr>
+<tr><td>P3 — Discipline</td><td>32h</td><td>18h</td><td>7h</td><td><strong>57h</strong></td><td>18%</td></tr>
+<tr><td>P4 — Journal</td><td>26h</td><td>14h</td><td>5h</td><td><strong>45h</strong></td><td>15%</td></tr>
+<tr><td>P5 — Éval+Dashboard</td><td>34h</td><td>30h</td><td>8h</td><td><strong>72h</strong></td><td>23%</td></tr>
+<tr><td>Buffer (10%)</td><td>—</td><td>—</td><td>—</td><td><strong>41h</strong></td><td>13%</td></tr>
+<tr style="font-weight:700;background:var(--primary-light)"><td>TOTAL</td><td>142h</td><td>94h</td><td>33h</td><td>310h</td><td>100%</td></tr>
+</tbody>
+</table>
+
+<h3>12.3 Répartition par compétence</h3>
+
+<div class="card-grid">
+<div class="card">
+<h4>Backend TypeScript</h4>
+<p><strong>142h</strong> (46%)</p>
+<ul>
+<li>Entités TypeORM + migrations</li>
+<li>Services + controllers</li>
+<li>Events + graceful degradation</li>
+<li>NomenclatureService&lt;T&gt;</li>
+</ul>
+</div>
+<div class="card">
+<h4>Frontend React</h4>
+<p><strong>94h</strong> (30%)</p>
+<ul>
+<li>Dashboard enseignant</li>
+<li>Appel rapide + QR</li>
+<li>Cahier de texte</li>
+<li>Admin nomenclatures</li>
+</ul>
+</div>
+<div class="card">
+<h4>Tests & QA</h4>
+<p><strong>33h</strong> (11%)</p>
+<ul>
+<li>Tests unitaires (services)</li>
+<li>Tests intégration (events)</li>
+<li>Tests E2E (dashboard)</li>
+<li>Tests isolation multi-tenant</li>
+</ul>
+</div>
+<div class="card">
+<h4>Documentation & Buffer</h4>
+<p><strong>41h</strong> (13%)</p>
+<ul>
+<li>Guide migration</li>
+<li>Documentation API</li>
+<li>Formation enseignants</li>
+<li>Buffer imprévus (10%)</li>
+</ul>
+</div>
+</div>
+
+<h3>12.4 Ordre de priorité recommandé</h3>
+
+<div class="alert alert-success">
+<strong>Recommandation :</strong> Si les ressources sont limitées, prioriser dans cet ordre :
+<ol>
+<li><strong>Phase 1</strong> (Nomenclatures) — Fondations indispensables pour les 4 modules</li>
+<li><strong>Phase 2</strong> (Présence) — Besoin le plus immédiat pour les enseignants (appel quotidien)</li>
+<li><strong>Phase 4</strong> (Journal) — Cahier de texte = transparence familiale</li>
+<li><strong>Phase 3</strong> (Discipline) — Extension utile mais moins critique</li>
+<li><strong>Phase 5</strong> (Évaluation) — Fusion complexe, peut être différée si scoring actuel fonctionne</li>
+</ol>
+</div>
+
+<h3>12.5 Critères de succès</h3>
+
+<table>
+<thead><tr><th>KPI</th><th>Cible</th><th>Mesure</th></tr></thead>
+<tbody>
+<tr><td>Temps appel</td><td>&lt; 2 min pour 60 élèves</td><td>Chronométrage en production</td></tr>
+<tr><td>Taux adoption enseignants</td><td>&gt; 80% après 3 mois</td><td>Appels/jour/enseignant</td></tr>
+<tr><td>Zéro fuite multi-tenant</td><td>0 incident sécurité</td><td>Audit queries + RLS tests</td></tr>
+<tr><td>Events sans erreur</td><td>&gt; 99.5% succès</td><td>Monitoring events échoués</td></tr>
+<tr><td>Performance API</td><td>p95 &lt; 500ms</td><td>Monitoring latence</td></tr>
+<tr><td>Satisfaction enseignants</td><td>&gt; 4/5</td><td>Sondage interne</td></tr>
+</tbody>
+</table>
+</section>
+
+</div>
+
+<footer>
+<p><strong>eLISAschool — Plan d'Implémentation Unifié Espace Enseignant</strong></p>
+<p>Version 1.0 — Août 2026 — Synthèse rapports v1 + v2</p>
+<p>5 phases • 18 semaines • ~310h • 6 migrations • 18+ entités • 60+ endpoints</p>
+</footer>

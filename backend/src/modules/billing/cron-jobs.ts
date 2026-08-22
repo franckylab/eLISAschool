@@ -835,11 +835,11 @@ export async function cronControleQuotas(): Promise<CronResult> {
 // =============================================
 
 /**
- * Expiration automatique des promotions et bundles.
+ * Expiration automatique des promotions et packages.
  * Schedule : quotidien à 00h05
  *
  * 1. Désactive les promotions dont dateFin < now() et actif = true
- * 2. Désactive les bundles dont dateFin < now() et actif = true
+ * 2. Désactive les packages dont dateFin < now() et actif = true
  * 3. Log le résumé (nombre désactivés)
  */
 async function cronExpirationPromotions(): Promise<CronResult> {
@@ -848,10 +848,10 @@ async function cronExpirationPromotions(): Promise<CronResult> {
 
     const now = new Date();
     const promoRepo = AppDataSource.getRepository('Promotion');
-    const bundleRepo = AppDataSource.getRepository('BundlePromotion');
+    const packageRepo = AppDataSource.getRepository('PackagePromotion');
 
     let promosDesactivees = 0;
-    let bundlesDesactives = 0;
+    let packagesDesactives = 0;
     let programmeesActivees = 0;
 
     try {
@@ -866,16 +866,16 @@ async function cronExpirationPromotions(): Promise<CronResult> {
             .execute();
         promosDesactivees = promosExpirees.affected ?? 0;
 
-        // 2. Bundles expirés
-        const bundlesExpirees = await bundleRepo
+        // 2. Packages expirés
+        const packagesExpirees = await packageRepo
             .createQueryBuilder('b')
-            .update('bundle_promotions')
+            .update('package_promotions')
             .set({ actif: false })
             .where('actif = true')
             .andWhere('date_fin IS NOT NULL')
             .andWhere('date_fin < :now', { now })
             .execute();
-        bundlesDesactives = bundlesExpirees.affected ?? 0;
+        packagesDesactives = packagesExpirees.affected ?? 0;
 
         // 3. v5 — Activer les promotions programmées (dateProgrammation atteinte)
         const programmeesActiveesResult = await promoRepo
@@ -896,13 +896,13 @@ async function cronExpirationPromotions(): Promise<CronResult> {
     const duration = Date.now() - startTime;
     logger.info(
         `[Cron Promos] ✅ Terminé en ${duration}ms — ` +
-        `${promosDesactivees} expirées, ${bundlesDesactives} bundles désactivés, ${programmeesActivees} programmées activées`
+        `${promosDesactivees} expirées, ${packagesDesactives} packages désactivés, ${programmeesActivees} programmées activées`
     );
 
     return {
         job: 'expiration-promotions',
         executed: true,
-        results: { promosDesactivees, bundlesDesactives, programmeesActivees },
+        results: { promosDesactivees, packagesDesactives, programmeesActivees },
         duration,
         timestamp: new Date(),
     };

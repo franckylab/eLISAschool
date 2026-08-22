@@ -10,6 +10,6 @@ import { requireModulePermission } from '@/app/permission-guards';
 import { ModuleLayout } from '@/components/layout/ModuleLayout';
 
 export const Route = createFileRoute('/_auth/annees-scolaires')({
-    beforeLoad: () => requireModulePermission('annees-scolaires'),
+    beforeLoad: () => requireModulePermission('annees'),
     component: () => <ModuleLayout />,
 });

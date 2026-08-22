@@ -57,16 +57,6 @@ export function AnneesScolairesPage() {
 
     const colonnes: Column<AnneeScolaire>[] = [
         {
-            key: 'code',
-            header: t('colonne.code'),
-            sortable: true,
-            render: (a) => (
-                <span className="font-mono text-sm font-semibold text-[var(--color-dominant-600)]">
-                    {a.code}
-                </span>
-            ),
-        },
-        {
             key: 'libelle',
             pinned: 'left' as const,
             header: t('colonne.libelle'),
@@ -79,9 +69,9 @@ export function AnneesScolairesPage() {
                     <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-[var(--color-text-muted)]" />
                         <span className="font-medium">{a.libelle}</span>
-                        {a.estActuelle && (
-                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                                {t('statut.actuelle')}
+                        {a.statut === 'EN_COURS' && (
+                            <span className="rounded-full bg-[var(--color-success-50,rgba(34,197,94,0.1))] px-2 py-0.5 text-xs font-medium text-[var(--color-success-700,rgba(34,197,94,0.8))]">
+                                {t('statut.EN_COURS')}
                             </span>
                         )}
                     </div>
@@ -119,14 +109,14 @@ export function AnneesScolairesPage() {
             className: 'text-center',
             render: (a) => {
                 const couleurs: Record<string, string> = {
-                    active: 'bg-green-100 text-green-800',
-                    inactive: 'bg-gray-100 text-gray-800',
-                    future: 'bg-blue-100 text-blue-800',
-                    archivee: 'bg-purple-100 text-purple-800',
+                    EN_COURS: 'bg-[var(--color-success-50,rgba(34,197,94,0.1))] text-[var(--color-success-700,rgba(34,197,94,0.8))]',
+                    OUVERTE: 'bg-[var(--color-info-50,rgba(59,130,246,0.1))] text-[var(--color-info-700,rgba(59,130,246,0.8))]',
+                    EN_ATTENTE_CLOTURE: 'bg-[var(--color-surface-alt)] text-[var(--color-text-secondary)]',
+                    CLOTUREE: 'bg-[var(--color-purple-50,rgba(168,85,247,0.1))] text-[var(--color-purple-700,rgba(168,85,247,0.8))]',
                 };
                 return (
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${couleurs[a.statut] || couleurs.inactive}`}>
-                        {a.statut === 'active' && <CheckCircle className="h-3 w-3" />}
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${couleurs[a.statut] || couleurs.OUVERTE}`}>
+                        {a.statut === 'EN_COURS' && <CheckCircle className="h-3 w-3" />}
                         {t(`statut.${a.statut}`)}
                     </span>
                 );
@@ -149,8 +139,8 @@ export function AnneesScolairesPage() {
                     icon: Power,
                     label: t('actions.activer'),
                     onClick: () => activer.mutateAsync(a.id),
-                    permission: 'annees-scolaires:activer',
-                    hidden: a.estActuelle || a.statut === 'archivee',
+                    permission: 'annees:activer',
+                    hidden: a.statut === 'EN_COURS' || a.statut === 'CLOTUREE',
                     variant: 'success' as const,
                 },
                 {
@@ -158,8 +148,8 @@ export function AnneesScolairesPage() {
                     icon: Lock,
                     label: t('actions.cloturer'),
                     onClick: () => setAnneeToCloturer(a),
-                    permission: 'annees-scolaires:cloturer',
-                    hidden: a.statut === 'archivee',
+                    permission: 'annees:cloturer',
+                    hidden: a.statut === 'CLOTUREE',
                     variant: 'warning' as const,
                 },
                 {
@@ -167,8 +157,8 @@ export function AnneesScolairesPage() {
                     icon: Unlock,
                     label: t('actions.reouvrir'),
                     onClick: () => setAnneeToReouvrir(a),
-                    permission: 'annees-scolaires:reouvrir',
-                    hidden: a.statut !== 'archivee',
+                    permission: 'annees:reouvrir',
+                    hidden: a.statut !== 'CLOTUREE',
                     variant: 'info' as const,
                 },
                 {
@@ -176,15 +166,15 @@ export function AnneesScolairesPage() {
                     icon: Edit,
                     label: t('actions.modifier'),
                     onClick: () => handleEdition(a),
-                    permission: 'annees-scolaires:edit',
+                    permission: 'annees:edit',
                 },
                 {
                     key: 'supprimer',
                     icon: Trash2,
                     label: t('actions.supprimer'),
                     onClick: () => setAnneeToDelete(a),
-                    permission: 'annees-scolaires:delete',
-                    hidden: a.estActuelle,
+                    permission: 'annees:delete',
+                    hidden: a.statut === 'EN_COURS',
                     variant: 'danger' as const,
                 },
             ],
@@ -207,7 +197,7 @@ export function AnneesScolairesPage() {
                 icon={ClockArrowUp}
                 variant="gradient"
                 actions={
-                    hasPermission('annees-scolaires:create') ? (
+                    hasPermission('annees:create') ? (
                         <ElisaButton
                             variant="primary"
                             size="sm"
@@ -240,10 +230,10 @@ export function AnneesScolairesPage() {
                             key: 'statut',
                             label: t('colonne.statut'),
                             options: [
-                                { value: 'active', label: t('statut.active') },
-                                { value: 'inactive', label: t('statut.inactive') },
-                                { value: 'future', label: t('statut.future') },
-                                { value: 'archivee', label: t('statut.archivee') },
+                                { value: 'OUVERTE', label: t('statut.OUVERTE') },
+                                { value: 'EN_COURS', label: t('statut.EN_COURS') },
+                                { value: 'EN_ATTENTE_CLOTURE', label: t('statut.EN_ATTENTE_CLOTURE') },
+                                { value: 'CLOTUREE', label: t('statut.CLOTUREE') },
                             ],
                             allOptionLabel: t('colonne.tousStatuts') || 'Tous',
                         },

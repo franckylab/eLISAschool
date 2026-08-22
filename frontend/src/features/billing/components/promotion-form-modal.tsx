@@ -3,7 +3,7 @@
  * eLISAschool - PromotionFormModal v5.0
  * ==================================
  *
- * Modal de création/édition d'une promotion ou d'un bundle.
+ * Modal de création/édition d'une promotion ou d'un package.
  * Formulaire multi-sections : identité, scope, conditions,
  * automatisation (auto-promo + planification), paliers volume.
  *
@@ -20,20 +20,20 @@ import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
 import {
     type Promotion,
-    type BundlePromotion,
+    type PackagePromotion,
     type PalierVolume,
     ScopePromotion,
     TypePromotion,
     TypeAutoPromotion,
     DureeApplicationPromotion,
-    TypeRemiseBundle,
+    TypeRemisePackage,
     SCOPE_LABELS,
     TYPE_LABELS,
     DUREE_LABELS,
     AUTO_PROMO_LABELS,
     QUOTA_RESSOURCES,
 } from '@/features/billing/types/promotion.types';
-import { useCreatePromotion, useUpdatePromotion, useCreateBundle, useUpdateBundle, useBundles } from '../hooks/use-promotions';
+import { useCreatePromotion, useUpdatePromotion, useCreatePackage, useUpdatePackage, usePackages } from '../hooks/use-promotions';
 import { usePlans, usePacks } from '../hooks/use-billing';
 import { useModuleRegistry } from '@/features/configuration/hooks/use-configuration';
 import { FormInput, FormSelect, FormCheckbox, FormMultiSelect } from './billing-form-fields';
@@ -47,10 +47,10 @@ interface PromotionFormModalProps {
     onOpenChange: (open: boolean) => void;
     /** Promotion existante (mode édition) ou undefined (mode création) */
     promotion?: Promotion | null;
-    /** Mode bundle */
-    modeBundle?: boolean;
-    /** Bundle existant (mode édition) */
-    bundle?: BundlePromotion | null;
+    /** Mode package */
+    modePackage?: boolean;
+    /** Package existant (mode édition) */
+    pkg?: PackagePromotion | null;
 }
 
 interface CreatePromotionPayload {
@@ -81,12 +81,12 @@ interface CreatePromotionPayload {
     dateProgrammation?: string | null;
 }
 
-interface CreateBundlePayload {
+interface CreatePackagePayload {
     code: string;
     nom: string;
     description?: string;
     packIds: string[];
-    typeRemise: TypeRemiseBundle;
+    typeRemise: TypeRemisePackage;
     valeur: number;
     codeCoupon: string | null;
     dateDebut: string;
@@ -96,23 +96,23 @@ interface CreateBundlePayload {
     priorite: number;
 }
 
-type TabMode = 'promotion' | 'bundle';
+type TabMode = 'promotion' | 'package';
 
 // =============================================
 // COMPOSANT PRINCIPAL
 // =============================================
 
-export function PromotionFormModal({ open, onOpenChange, promotion, modeBundle, bundle }: PromotionFormModalProps) {
+export function PromotionFormModal({ open, onOpenChange, promotion, modePackage, pkg }: PromotionFormModalProps) {
     const { t } = useTranslation('promotions');
-    const [tab, setTab] = useState<TabMode>(modeBundle || bundle ? 'bundle' : 'promotion');
+    const [tab, setTab] = useState<TabMode>(modePackage || pkg ? 'package' : 'promotion');
 
     useEffect(() => {
-        if (open) setTab(modeBundle || bundle ? 'bundle' : 'promotion');
-    }, [open, modeBundle, bundle]);
+        if (open) setTab(modePackage || pkg ? 'package' : 'promotion');
+    }, [open, modePackage, pkg]);
 
     const isEditPromotion = !!promotion;
-    const isEditBundle = !!bundle;
-    const isBundle = tab === 'bundle' || modeBundle || !!bundle;
+    const isEditPackage = !!pkg;
+    const isPackage = tab === 'package' || modePackage || !!pkg;
 
     return (
         <CustomModal
@@ -133,15 +133,15 @@ export function PromotionFormModal({ open, onOpenChange, promotion, modeBundle, 
                             {t('form.ongletPromotion')}
                         </button>
                         <button
-                            onClick={() => setTab('bundle')}
+                            onClick={() => setTab('package')}
                             className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                                tab === 'bundle'
+                                tab === 'package'
                                     ? 'bg-[var(--color-dominant-600)] text-white'
                                     : 'text-[var(--color-texte-muted)] hover:text-[var(--color-texte)]'
                             }`}
                         >
                             <Package className="h-3.5 w-3.5" />
-                            {t('form.ongletBundle')}
+                            {t('form.ongletPackage')}
                         </button>
                     </div>
                 </div>
@@ -157,8 +157,8 @@ export function PromotionFormModal({ open, onOpenChange, promotion, modeBundle, 
                     onCancel={() => onOpenChange(false)}
                 />
             ) : (
-                <BundleForm
-                    bundle={bundle}
+                <PackageForm
+                    pkg={pkg}
                     onSuccess={() => onOpenChange(false)}
                     onCancel={() => onOpenChange(false)}
                 />
@@ -184,7 +184,7 @@ function PromotionForm({ promotion, onSuccess, onCancel }: {
     // Sources de données pour le sélecteur de cible (remplace les UUIDs bruts)
     const { data: plans = [] } = usePlans();
     const { data: packs = [] } = usePacks();
-    const { data: bundles = [] } = useBundles();
+    const { data: packages = [] } = usePackages();
     const { data: moduleStates = [] } = useModuleRegistry();
 
     const [form, setForm] = useState({
@@ -325,7 +325,7 @@ function PromotionForm({ promotion, onSuccess, onCancel }: {
                             form.scope === ScopePromotion.PLAN ? t('form.ciblePlan') :
                             form.scope === ScopePromotion.PACK ? t('form.ciblePack') :
                             form.scope === ScopePromotion.MODULE ? t('form.cibleModule') :
-                            t('form.cibleBundle')
+                            t('form.ciblePackage')
                         }
                         value={form.cibleId}
                         onChange={(v) => setForm(f => ({ ...f, cibleId: v }))}
@@ -336,7 +336,7 @@ function PromotionForm({ promotion, onSuccess, onCancel }: {
                                 ? packs.map(p => ({ value: p.id, label: `${p.nom} (${p.quantite} ${p.ressource})` }))
                                 : form.scope === ScopePromotion.MODULE
                                 ? moduleStates.map(ms => ({ value: ms.entry.name, label: ms.entry.label || ms.entry.name }))
-                                : bundles.map(b => ({ value: b.id, label: `${b.nom} — ${b.code}` }))
+                                : packages.map(b => ({ value: b.id, label: `${b.nom} — ${b.code}` }))
                         }
                         hint={t('form.cibleHint')}
                     />
@@ -495,42 +495,42 @@ function PromotionForm({ promotion, onSuccess, onCancel }: {
 }
 
 // =============================================
-// FORMULAIRE BUNDLE
+// FORMULAIRE PACKAGE
 // =============================================
 
-function BundleForm({ bundle, onSuccess, onCancel }: {
-    bundle?: BundlePromotion | null;
+function PackageForm({ pkg, onSuccess, onCancel }: {
+    pkg?: PackagePromotion | null;
     onSuccess: () => void;
     onCancel: () => void;
 }) {
     const { t } = useTranslation('promotions');
-    const createMutation = useCreateBundle();
-    const updateMutation = useUpdateBundle();
-    const isEdit = !!bundle;
+    const createMutation = useCreatePackage();
+    const updateMutation = useUpdatePackage();
+    const isEdit = !!pkg;
 
     // Source de données pour le sélecteur de packs (remplace les UUIDs bruts)
     const { data: packs = [] } = usePacks();
 
     const [form, setForm] = useState({
-        code: bundle?.code ?? '',
-        nom: bundle?.nom ?? '',
-        description: bundle?.description ?? '',
-        typeRemise: bundle?.typeRemise ?? TypeRemiseBundle.POURCENTAGE,
-        valeur: bundle?.valeur ?? 0,
-        codeCoupon: bundle?.codeCoupon ?? '',
-        dateDebut: bundle?.dateDebut?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
-        dateFin: bundle?.dateFin?.slice(0, 10) ?? '',
-        maxUtilisations: bundle?.maxUtilisations ?? null as number | null,
-        actif: bundle?.actif ?? true,
-        priorite: bundle?.priorite ?? 0,
-        packIds: bundle?.packIds ?? [] as string[],
+        code: pkg?.code ?? '',
+        nom: pkg?.nom ?? '',
+        description: pkg?.description ?? '',
+        typeRemise: pkg?.typeRemise ?? TypeRemisePackage.POURCENTAGE,
+        valeur: pkg?.valeur ?? 0,
+        codeCoupon: pkg?.codeCoupon ?? '',
+        dateDebut: pkg?.dateDebut?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
+        dateFin: pkg?.dateFin?.slice(0, 10) ?? '',
+        maxUtilisations: pkg?.maxUtilisations ?? null as number | null,
+        actif: pkg?.actif ?? true,
+        priorite: pkg?.priorite ?? 0,
+        packIds: pkg?.packIds ?? [] as string[],
     });
 
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
         if (form.packIds.length < 2) return;
 
-        const payload: CreateBundlePayload = {
+        const payload: CreatePackagePayload = {
             code: form.code,
             nom: form.nom,
             description: form.description || undefined,
@@ -546,8 +546,8 @@ function BundleForm({ bundle, onSuccess, onCancel }: {
         };
 
         try {
-            if (isEdit && bundle) {
-                await updateMutation.mutateAsync({ id: bundle.id, data: payload });
+            if (isEdit && pkg) {
+                await updateMutation.mutateAsync({ id: pkg.id, data: payload });
             } else {
                 await createMutation.mutateAsync(payload);
             }
@@ -555,17 +555,17 @@ function BundleForm({ bundle, onSuccess, onCancel }: {
         } catch {
             // Erreur gérée par le mutation
         }
-    }, [form, isEdit, bundle, createMutation, updateMutation, onSuccess]);
+    }, [form, isEdit, pkg, createMutation, updateMutation, onSuccess]);
 
     const isLoading = createMutation.isPending || updateMutation.isPending;
 
     return (
         <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Identité bundle */}
+            {/* Identité package */}
             <fieldset className="space-y-3">
-                <legend className="text-sm font-semibold text-[var(--color-texte)]">{t('form.sectionBundleIdentite')}</legend>
+                <legend className="text-sm font-semibold text-[var(--color-texte)]">{t('form.sectionPackageIdentite')}</legend>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <FormInput label={t('form.codeUnique')} value={form.code} onChange={(v) => setForm(f => ({ ...f, code: v }))} disabled={isEdit} placeholder="BUNDLE-STOCK-SMS" required />
+                    <FormInput label={t('form.codeUnique')} value={form.code} onChange={(v) => setForm(f => ({ ...f, code: v }))} disabled={isEdit} placeholder="PKG-STOCK-SMS" required />
                     <FormInput label={t('form.nom')} value={form.nom} onChange={(v) => setForm(f => ({ ...f, nom: v }))} placeholder="Pack Éducatif Complet" required />
                 </div>
                 <div>
@@ -587,7 +587,7 @@ function BundleForm({ bundle, onSuccess, onCancel }: {
                     <FormSelect
                         label={t('form.typeRemise')}
                         value={form.typeRemise}
-                        onChange={(v) => setForm(f => ({ ...f, typeRemise: v as TypeRemiseBundle }))}
+                        onChange={(v) => setForm(f => ({ ...f, typeRemise: v as TypeRemisePackage }))}
                         options={[{ value: 'POURCENTAGE', label: t('types.POURCENTAGE') }, { value: 'MONTANT_FIXE', label: t('types.MONTANT_FIXE') }]}
                     />
                     <FormInput
@@ -614,7 +614,7 @@ function BundleForm({ bundle, onSuccess, onCancel }: {
 
             {/* Période */}
             <fieldset className="space-y-3">
-                <legend className="text-sm font-semibold text-[var(--color-texte)]">{t('form.sectionPeriodeBundle')}</legend>
+                <legend className="text-sm font-semibold text-[var(--color-texte)]">{t('form.sectionPeriodePackage')}</legend>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <FormInput label={t('form.dateDebut')} type="date" value={form.dateDebut} onChange={(v) => setForm(f => ({ ...f, dateDebut: v }))} required />
                     <FormInput label={`${t('form.dateFin')} (${t('form.optionnel')})`} type="date" value={form.dateFin} onChange={(v) => setForm(f => ({ ...f, dateFin: v }))} />
@@ -633,7 +633,7 @@ function BundleForm({ bundle, onSuccess, onCancel }: {
                     disabled={isLoading}
                     icon={<Save className="h-4 w-4" />}
                 >
-                    {isLoading ? t('form.enCours') : isEdit ? t('form.modifier') : t('form.creerBundle')}
+                    {isLoading ? t('form.enCours') : isEdit ? t('form.modifier') : t('form.creerPackage')}
                 </ElisaButton>
             </div>
         </form>

@@ -25,7 +25,6 @@ interface AnneeScolaireFormModalProps {
 
 const FORM_INIT: Partial<CreerAnneeScolaireDto> = {
     libelle: '',
-    code: '',
     dateDebut: '',
     dateFin: '',
 };
@@ -37,25 +36,28 @@ export function AnneeScolaireFormModal({ open, mode, annee, onSuccess, onOpenCha
     const isLoading = creerAnnee.isPending || modifierAnnee.isPending;
 
     const [formData, setFormData] = useState<Partial<CreerAnneeScolaireDto>>(FORM_INIT);
+    const [initialData, setInitialData] = useState<Partial<CreerAnneeScolaireDto>>(FORM_INIT);
     const [erreurs, setErreurs] = useState<Record<string, string>>({});
 
     useEffect(() => {
         if (open && annee && mode === 'edition') {
-            setFormData({
+            const data = {
                 libelle: annee.libelle || '',
-                code: annee.code || '',
                 dateDebut: annee.dateDebut?.split('T')[0] || '',
                 dateFin: annee.dateFin?.split('T')[0] || '',
-            });
+            };
+            setFormData(data);
+            setInitialData(data);
         } else if (!open) {
             setFormData(FORM_INIT);
+            setInitialData(FORM_INIT);
             setErreurs({});
         }
     }, [open, annee, mode]);
 
     const hasUnsavedChanges = useMemo(
-        () => JSON.stringify(formData) !== JSON.stringify(FORM_INIT),
-        [formData],
+        () => JSON.stringify(formData) !== JSON.stringify(initialData),
+        [formData, initialData],
     );
 
     const valider = (): boolean => {
@@ -63,9 +65,6 @@ export function AnneeScolaireFormModal({ open, mode, annee, onSuccess, onOpenCha
 
         if (!formData.libelle?.trim()) {
             nouvellesErreurs.libelle = t('form.libelleRequis');
-        }
-        if (!formData.code?.trim()) {
-            nouvellesErreurs.code = t('form.codeRequis');
         }
         if (!formData.dateDebut) {
             nouvellesErreurs.dateDebut = t('form.dateDebutRequise');
@@ -119,7 +118,6 @@ export function AnneeScolaireFormModal({ open, mode, annee, onSuccess, onOpenCha
                 const anneeDebut = newData.dateDebut.split('-')[0];
                 const anneeFin = newData.dateFin.split('-')[0];
                 handleChange('libelle', `${t('form.libelleAuto')} ${anneeDebut}-${anneeFin}`);
-                handleChange('code', `${anneeDebut}-${anneeFin}`);
             }
         }
     };
@@ -161,25 +159,15 @@ export function AnneeScolaireFormModal({ open, mode, annee, onSuccess, onOpenCha
                     </h3>
                     <SectionSeparator />
                     <div className="mt-4 space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <ElisaInput
-                                label={t('form.libelle')}
-                                value={formData.libelle || ''}
-                                onChange={(e) => handleChange('libelle', e.target.value)}
-                                error={erreurs.libelle}
-                                placeholder={t('form.libellePlaceholder')}
-                                required
-                                autoFocus
-                            />
-                            <ElisaInput
-                                label={t('form.code')}
-                                value={formData.code || ''}
-                                onChange={(e) => handleChange('code', e.target.value)}
-                                error={erreurs.code}
-                                placeholder={t('form.codePlaceholder')}
-                                required
-                            />
-                        </div>
+                        <ElisaInput
+                            label={t('form.libelle')}
+                            value={formData.libelle || ''}
+                            onChange={(e) => handleChange('libelle', e.target.value)}
+                            error={erreurs.libelle}
+                            placeholder={t('form.libellePlaceholder')}
+                            required
+                            autoFocus
+                        />
                     </div>
                 </div>
 

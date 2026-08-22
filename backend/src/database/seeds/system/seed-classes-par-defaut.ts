@@ -36,7 +36,7 @@ import { Classe, TypeClasse, CreneauHoraire } from '@modules/classes/entities';
 import { ClasseAnnee, StatutClasseAnnee } from '@modules/classes/entities/classe-annee.entity';
 import { Niveau } from '@modules/niveaux/entities';
 import { Filiere } from '@modules/filieres/entities';
-import { AnneeScolaire } from '@modules/annees-scolaires/entities';
+import { AnneeScolaire, StatutAnneeScolaire } from '@modules/annees-scolaires/entities';
 import { SousSysteme } from '@modules/etablissement/entities';
 import { logger } from '@common/utils/logger.util';
 import { In } from 'typeorm';
@@ -83,7 +83,7 @@ export async function seedClassesParDefaut(
         });
     } else {
         anneeActive = await anneeRepo.findOne({ 
-            where: { enCours: true, etablissementId } 
+            where: { statut: StatutAnneeScolaire.EN_COURS, etablissementId } 
         });
     }
 

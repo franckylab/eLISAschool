@@ -240,10 +240,10 @@ if (require.main === module) {
                 process.exit(1);
             }
 
-            const { AnneeScolaire } = await import('@modules/annees-scolaires/entities');
+            const { AnneeScolaire, StatutAnneeScolaire } = await import('@modules/annees-scolaires/entities');
             const anneeRepo = AppDataSource.getRepository(AnneeScolaire);
             const anneeActive = await anneeRepo.findOne({
-                where: { enCours: true, etablissementId: etablissement.id },
+                where: { statut: StatutAnneeScolaire.EN_COURS, etablissementId: etablissement.id },
             });
 
             if (!anneeActive) {

@@ -32,6 +32,7 @@ import { AnneeScolaire } from '@modules/annees-scolaires/entities';
 import { Etablissement } from '@modules/etablissement/entities';
 import { NiveauPeriode } from './niveau-periode.entity';
 import { PeriodeComposition } from './periode-composition.entity';
+import type { ICloturable, StatutCloturable } from '@shared/interfaces/cloturable.interface';
 
 /**
  * Statut de la période (support workflow de clôture)
@@ -48,7 +49,7 @@ export enum StatutPeriode {
 @Index(['niveauId'])
 @Index(['anneeScolaireId', 'etablissementId'])
 @Index(['anneeScolaireId', 'niveauId'])
-export class Periode {
+export class Periode implements ICloturable {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
@@ -117,4 +118,11 @@ export class Periode {
 
     @UpdateDateColumn()
     updatedAt!: Date;
+
+    /**
+     * Implémentation ICloturable — nom affichable pour logs/messages
+     */
+    get nomOuLibelle(): string {
+        return this.nom;
+    }
 }

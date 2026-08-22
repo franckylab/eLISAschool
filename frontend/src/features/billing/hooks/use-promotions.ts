@@ -3,7 +3,7 @@
  * eLISAschool - Hooks API Promotions v4.0
  * ==================================
  *
- * Hooks TanStack Query pour le CRUD des promotions et bundles.
+ * Hooks TanStack Query pour le CRUD des promotions et packages.
  * Routes platform : /api/platform/facturation/promotions
  * Routes client    : /api/billing/promotions
  *
@@ -12,10 +12,11 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, API_BASE_URL } from '@/lib/api-client';
+import { toast } from 'sonner';
 import type {
     Promotion,
-    BundlePromotion,
+    PackagePromotion,
     ResultatCascadePromotions,
     UsageStatsResponse,
     PromotionsAnalytics,
@@ -152,59 +153,59 @@ export function useTogglePromotion() {
 }
 
 // =============================================
-// HOOKS PLATFORM — CRUD Bundles
+// HOOKS PLATFORM — CRUD Packages
 // =============================================
 
-/** Liste des bundles */
-export function useBundles(actif?: boolean) {
-    return useQuery<BundlePromotion[]>({
-        queryKey: ['bundles', actif],
+/** Liste des packages */
+export function usePackages(actif?: boolean) {
+    return useQuery<PackagePromotion[]>({
+        queryKey: ['packages', actif],
         queryFn: async () => {
             const params = actif !== undefined ? `?actif=${actif}` : '';
-            const res = await apiClient.get(`/api/platform/facturation/promotions/bundles${params}`);
+            const res = await apiClient.get(`/api/platform/facturation/promotions/packages${params}`);
             const payload = res.data as any;
             return payload?.data ?? payload ?? [];
         },
     });
 }
 
-/** Créer un bundle */
-export function useCreateBundle() {
+/** Créer un package */
+export function useCreatePackage() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async (data: Partial<BundlePromotion>) => {
-            const res = await apiClient.post('/api/platform/facturation/promotions/bundles', data);
+        mutationFn: async (data: Partial<PackagePromotion>) => {
+            const res = await apiClient.post('/api/platform/facturation/promotions/packages', data);
             return (res.data as any)?.data ?? res.data;
         },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ['bundles'] });
+            qc.invalidateQueries({ queryKey: ['packages'] });
         },
     });
 }
 
-/** Modifier un bundle */
-export function useUpdateBundle() {
+/** Modifier un package */
+export function useUpdatePackage() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async ({ id, data }: { id: string; data: Partial<BundlePromotion> }) => {
-            const res = await apiClient.patch(`/api/platform/facturation/promotions/bundles/${id}`, data);
+        mutationFn: async ({ id, data }: { id: string; data: Partial<PackagePromotion> }) => {
+            const res = await apiClient.patch(`/api/platform/facturation/promotions/packages/${id}`, data);
             return (res.data as any)?.data ?? res.data;
         },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ['bundles'] });
+            qc.invalidateQueries({ queryKey: ['packages'] });
         },
     });
 }
 
-/** Supprimer un bundle */
-export function useDeleteBundle() {
+/** Supprimer un package */
+export function useDeletePackage() {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: async (id: string) => {
-            await apiClient.delete(`/api/platform/facturation/promotions/bundles/${id}`);
+            await apiClient.delete(`/api/platform/facturation/promotions/packages/${id}`);
         },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ['bundles'] });
+            qc.invalidateQueries({ queryKey: ['packages'] });
         },
     });
 }
@@ -245,15 +246,15 @@ export function usePromotionsEligibles(codeCoupon?: string) {
     });
 }
 
-/** Bundles éligibles pour le tenant (client) */
-export function useBundlesEligibles(packsSouscritsIds?: string[]) {
-    return useQuery<BundlePromotion[]>({
-        queryKey: ['bundles-eligibles', packsSouscritsIds],
+/** Packages éligibles pour le tenant (client) */
+export function usePackagesEligibles(packsSouscritsIds?: string[]) {
+    return useQuery<PackagePromotion[]>({
+        queryKey: ['packages-eligibles', packsSouscritsIds],
         queryFn: async () => {
             const params = packsSouscritsIds?.length
                 ? `?packsSouscritsIds=${packsSouscritsIds.join(',')}`
                 : '';
-            const res = await apiClient.get(`/api/billing/promotions/bundles/eligibles${params}`);
+            const res = await apiClient.get(`/api/billing/promotions/packages/eligibles${params}`);
             const payload = res.data as any;
             return payload?.data ?? payload ?? [];
         },
@@ -294,13 +295,32 @@ export function useUsageStats(
     });
 }
 
-/** Export CSV des statistiques d'utilisation (téléchargement direct) */
-export function exporterUsageStatsCSV(filters?: { scope?: string; etablissementId?: string }): void {
+/** Export CSV des statistiques d'utilisation (téléchargement direct via fetch + blob) */
+export async function exporterUsageStatsCSV(filters?: { scope?: string; etablissementId?: string }): Promise<void> {
     const params = new URLSearchParams();
     if (filters?.scope) params.set('scope', filters.scope);
     if (filters?.etablissementId) params.set('etablissementId', filters.etablissementId);
     const query = params.toString() ? `?${params.toString()}` : '';
-    window.open(`/api/platform/facturation/promotions/usage-stats/export${query}`, '_blank');
+    const url = `${API_BASE_URL}/api/platform/facturation/promotions/usage-stats/export${query}`;
+    const token = apiClient.getTokenForRoute('/api/platform/facturation/promotions/usage-stats/export');
+
+    try {
+        const res = await fetch(url, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) throw new Error(`Export échoué (${res.status})`);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `usage-stats-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Erreur lors de l\'export CSV');
+    }
 }
 
 // =============================================
@@ -355,13 +375,32 @@ export function useHistoriquePromotionsClient(page = 1, limit = 20) {
 // EXPORT / IMPORT CSV PROMOTIONS
 // =============================================
 
-/** Exporte la configuration des promotions en CSV (téléchargement direct) */
-export function exporterPromotionsCSV(scope?: string, actif?: boolean): void {
+/** Exporte la configuration des promotions en CSV (téléchargement direct via fetch + blob) */
+export async function exporterPromotionsCSV(scope?: string, actif?: boolean): Promise<void> {
     const params = new URLSearchParams();
     if (scope) params.set('scope', scope);
     if (actif !== undefined) params.set('actif', String(actif));
     const qs = params.toString();
-    window.open(`/api/platform/facturation/promotions/export${qs ? `?${qs}` : ''}`, '_blank');
+    const url = `${API_BASE_URL}/api/platform/facturation/promotions/export${qs ? `?${qs}` : ''}`;
+    const token = apiClient.getTokenForRoute('/api/platform/facturation/promotions/export');
+
+    try {
+        const res = await fetch(url, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!res.ok) throw new Error(`Export échoué (${res.status})`);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `promotions-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Erreur lors de l\'export CSV');
+    }
 }
 
 /** Import CSV de promotions (mutation) */

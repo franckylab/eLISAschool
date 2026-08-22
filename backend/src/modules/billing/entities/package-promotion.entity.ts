@@ -1,13 +1,13 @@
 /**
  * ==================================
- * eLISAschool - Entité BundlePromotion (Refonte v4.0)
+ * eLISAschool - Entité PackagePromotion (Refonte v4.0)
  * ==================================
  *
- * Bundle commercial : combo de packs quota avec remise spéciale.
- * Exemple : "Pack Stockage + SMS" → −25% sur le prix total du bundle.
+ * Package commercial : combo de packs quota avec remise spéciale.
+ * Exemple : "Pack Stockage + SMS" → −25% sur le prix total du package.
  *
- * Un bundle référence N packs (min 2). Quand le tenant souscrit à tous
- * les packs du bundle, la remise bundle s'applique automatiquement
+ * Un package référence N packs (min 2). Quand le tenant souscrit à tous
+ * les packs du package, la remise package s'applique automatiquement
  * (ou via code coupon si défini).
  *
  * Version: 4.0.0
@@ -16,21 +16,21 @@
 
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
-export enum TypeRemiseBundle {
-    /** Pourcentage sur le prix total des packs du bundle */
+export enum TypeRemisePackage {
+    /** Pourcentage sur le prix total des packs du package */
     POURCENTAGE = 'POURCENTAGE',
     /** Montant fixe déduit */
     MONTANT_FIXE = 'MONTANT_FIXE',
 }
 
-@Entity('bundle_promotions')
+@Entity('package_promotions')
 @Index(['actif'])
 @Index(['code'], { unique: true })
-export class BundlePromotion {
+export class PackagePromotion {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    /** Code unique du bundle (ex: 'BUNDLE-STOCKAGE-SMS') */
+    /** Code unique du package (ex: 'PKG-STOCKAGE-SMS') */
     @Column({ type: 'varchar', length: 100, unique: true })
     code!: string;
 
@@ -44,9 +44,9 @@ export class BundlePromotion {
     @Column({ type: 'uuid', array: true })
     packIds!: string[];
 
-    /** Type de réduction du bundle */
-    @Column({ type: 'varchar', length: 20, default: TypeRemiseBundle.POURCENTAGE })
-    typeRemise!: TypeRemiseBundle;
+    /** Type de réduction du package */
+    @Column({ type: 'varchar', length: 20, default: TypeRemisePackage.POURCENTAGE })
+    typeRemise!: TypeRemisePackage;
 
     /** Valeur : % (0-100) ou montant fixe en devise */
     @Column({ type: 'decimal', precision: 12, scale: 2 })
