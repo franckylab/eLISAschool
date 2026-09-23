@@ -1274,6 +1274,146 @@ export class ConfigurationService {
     }
 
     /**
+     * Lit un paramètre au niveau groupe (override `groupeEtablissementId`),
+     * sans passer par un établissement. Retourne null si aucun override.
+     * Utilisé par l'UI Barèmes (valeur effective par groupe) et le moteur billing.
+     */
+    async getParametreGroupe<T = any>(cle: string, groupeId: string): Promise<T | null> {
+        const cacheKey = `${cle}:groupe:${groupeId}`;
+        if (this.cache.parametres.has(cacheKey) && this.isCacheValid()) {
+            return this.cache.parametres.get(cacheKey) as T;
+        }
+        const param = await this.parametreRepository.findOne({
+            where: { cle, groupeEtablissementId: groupeId },
+        });
+        if (!param) return null;
+        const value = this.parseParametreValue(param) as T;
+        this.cache.parametres.set(cacheKey, value);
+        return value;
+    }
+
+    /**
+     * Définit un override de paramètre au niveau groupe.
+     * Miroir de setParametre() (validation Zod, audit, event, invalidation cache).
+     * La suppression de l'override se fait via resetParametreGroupe().
+     */
+    async setParametreGroupe(
+        cle: string,
+        valeur: any,
+        groupeId: string,
+        utilisateurId?: string,
+        req?: Request,
+    ): Promise<{ param: ParametreSysteme; created: boolean }> {
+        const globalRef = await this.parametreRepository.findOne({
+            where: { cle, etablissementId: IsNull(), groupeEtablissementId: IsNull() },
+        });
+        const typeValeur = globalRef?.typeValeur ?? this.detectTypeValeur(valeur);
+
+        const validation = validateParametreValue(cle, valeur, typeValeur);
+        if (!validation.success) {
+            throw new AppError(
+                `Validation échouée pour "${cle}": ${validation.errors?.join(', ')}`,
+                400,
+                'PARAM_VALIDATION_ERROR',
+            );
+        }
+        const valeurValidee = validation.parsedValue ?? valeur;
+
+        let param = await this.parametreRepository.findOne({
+            where: { cle, groupeEtablissementId: groupeId },
+        });
+        const ancienneValeur = param?.valeur;
+        const created = !param;
+
+        if (!param) {
+            param = this.parametreRepository.create({
+                cle,
+                valeur: this.serializeParametreValue(
+                    { typeValeur } as ParametreSysteme,
+                    valeurValidee,
+                ),
+                typeValeur,
+                categorie: globalRef?.categorie ?? CategorieParametre.CUSTOM,
+                module: globalRef?.module,
+                description: globalRef?.description ?? `Override groupe pour ${cle}`,
+                modifiableRuntime: true,
+                visible: globalRef?.visible ?? true,
+                ordre: globalRef?.ordre ?? 0,
+                groupeEtablissementId: groupeId,
+            });
+        } else {
+            if (!param.modifiableRuntime) {
+                throw new AppError('Ce paramètre ne peut pas être modifié en runtime', 400, 'PARAM_NOT_MODIFIABLE');
+            }
+            this.validateParametreValue(param, valeurValidee);
+            param.valeur = this.serializeParametreValue(param, valeurValidee);
+        }
+
+        await this.parametreRepository.save(param);
+        this.invalidateCache('parametres');
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.CONFIG_CHANGE,
+            cible: 'ParametreSysteme',
+            cibleId: param.id,
+            description: `Paramètre défini: ${cle} [groupe:${groupeId}]`,
+            module: 'configuration',
+            anciennesValeurs: ancienneValeur ? { valeur: ancienneValeur } : undefined,
+            nouvellesValeurs: { valeur: valeurValidee },
+        });
+
+        this.emitChange(
+            ancienneValeur ? ActionConfiguration.UPDATE : ActionConfiguration.CREATE,
+            CibleConfiguration.PARAMETRE,
+            param.id,
+            `${cle} [groupe:${groupeId}]`,
+            ancienneValeur,
+            valeurValidee,
+            utilisateurId,
+        );
+
+        logger.info(`Paramètre défini: ${cle} [groupe:${groupeId}]`);
+        return { param, created };
+    }
+
+    /**
+     * Supprime l'override groupe d'un paramètre (retour à la valeur globale).
+     * Miroir de resetParametre() pour le scope groupe.
+     */
+    async resetParametreGroupe(
+        cle: string,
+        groupeId: string,
+        utilisateurId?: string,
+        req?: Request,
+    ): Promise<void> {
+        const param = await this.parametreRepository.findOne({
+            where: { cle, groupeEtablissementId: groupeId },
+        });
+        if (!param) {
+            throw new AppError(
+                `Aucun override trouvé pour le paramètre "${cle}" dans ce groupe`,
+                404,
+                'OVERRIDE_NOT_FOUND',
+            );
+        }
+        const ancienneValeur = param.valeur;
+        await this.parametreRepository.remove(param);
+        this.invalidateCache('parametres');
+
+        await auditService.log({
+            utilisateurId,
+            action: AuditAction.CONFIG_CHANGE,
+            cible: 'ParametreSysteme',
+            description: `Override supprimé pour ${cle} [groupe:${groupeId}] - retour au global`,
+            module: 'configuration',
+            anciennesValeurs: { valeur: ancienneValeur },
+        });
+
+        logger.info(`Override supprimé pour ${cle} [groupe:${groupeId}] - retour au global`);
+    }
+
+    /**
      * Réinitialise TOUS les paramètres vers leurs valeurs par défaut
      * 
      * Si etablissementId fourni :

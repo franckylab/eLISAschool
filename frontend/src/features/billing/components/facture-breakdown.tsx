@@ -94,6 +94,15 @@ export const FactureBreakdown = memo(function FactureBreakdown({
             promotions: resultat.modules.promotions,
             color: 'violet',
         },
+        {
+            key: 'groupe',
+            label: t('breakdown.groupe'),
+            subtitle: t('breakdown.plafond40'),
+            montantAvant: resultat.groupe?.montantAvant ?? 0,
+            montantApres: resultat.groupe?.montantApres ?? 0,
+            promotions: resultat.groupe?.promotions ?? [],
+            color: 'rose',
+        },
     ];
 
     const COLOR_MAP: Record<string, { bg: string; text: string; border: string; badge: string }> = {
@@ -101,6 +110,7 @@ export const FactureBreakdown = memo(function FactureBreakdown({
         emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20', badge: 'bg-emerald-500/15 text-emerald-400' },
         cyan: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/20', badge: 'bg-cyan-500/15 text-cyan-400' },
         violet: { bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20', badge: 'bg-violet-500/15 text-violet-400' },
+        rose: { bg: 'bg-rose-500/10', text: 'text-rose-400', border: 'border-rose-500/20', badge: 'bg-rose-500/15 text-rose-400' },
     };
 
     // Ne pas afficher si aucune promotion

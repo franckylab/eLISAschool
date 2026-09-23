@@ -38,6 +38,8 @@ import {
 } from '../entities';
 import { CycleFacturationConfig } from '../entities/cycle-facturation-config.entity';
 import { AbonnementPack } from '../entities/abonnement-pack.entity';
+import { GroupeEtablissementLien } from '@modules/groupes-etablissements/entities/groupe-etablissement-lien.entity';
+import { baremeGroupeService } from './bareme-groupe.service';
 import { promotionService } from './promotion.service';
 
 /** Taux TVA Cameroun : 19.25% stocké en centièmes (1925 = 19.25%) */
@@ -239,10 +241,9 @@ export class FacturationService {
         }
 
         const montantOptions = montantModules + montantPacks;
-        const sousTotal = Math.round((montantForfaitCycle + montantOptions) * 100) / 100;
+        const montantTotalAvantRemises = montantForfaitCycle + montantOptions;
 
-        // 6. Promotions commerciales — cascade 5 phases (v4)
-        // Phase 1: PLAN (plafond 40%) → Phase 2: PACKS → Phase 3: QUOTA → Phase 4: MODULES → Phase 5: GRATUITS
+        // Contexte pour les promotions (cascade 5 phases)
         const contextePromo: import('./promotion.service').ContextePromotion = {
             planId,
             etablissementId,
@@ -253,6 +254,50 @@ export class FacturationService {
             packMontants,
             packRessources,
         };
+
+        // 6. Dégressivité groupe (barème membres, sans gate abonnement — facturation groupe supprimée)
+        // La dégressivité s'applique sur le montant total (forfait cycle + options) AVANT promotions.
+        // Barème unique partagé avec GroupeSaaSService + frontend (types.ts).
+        let montantApresDegressiviteGroupe = montantTotalAvantRemises;
+        let remiseGroupe = 0;
+        let groupeInfo: { id: string; nom: string; degressivite: number } | null = null;
+
+        if (etablissementId) {
+            const lienRepo = AppDataSource.getRepository(GroupeEtablissementLien);
+            const lien = await lienRepo.findOne({
+                where: { etablissementId },
+                relations: ['groupe'],
+            });
+            if (lien?.groupe?.actif) {
+                // Dégressivité via le barème configurable (override groupe → global → défaut)
+                const nbMembres = await AppDataSource.getRepository(GroupeEtablissementLien).count({
+                    where: { groupeId: lien.groupeId },
+                });
+                const { taux: degressivite } = await baremeGroupeService.getTauxDegressivite(lien.groupeId, nbMembres);
+
+                if (degressivite > 0) {
+                    const montantAvantDegressivite = montantTotalAvantRemises;
+                    remiseGroupe = Math.round(montantAvantDegressivite * (degressivite / 100) * 100) / 100;
+                    montantApresDegressiviteGroupe = montantAvantDegressivite - remiseGroupe;
+                    groupeInfo = {
+                        id: lien.groupeId,
+                        nom: lien.groupe.nom,
+                        degressivite,
+                    };
+                    lignes.push({
+                        description: `Remise groupe ${groupeInfo.nom} (−${degressivite}%) — ${nbMembres} membres`,
+                        type: TypeLigneFacture.REMISE,
+                        montant: -remiseGroupe,
+                        quantite: 1,
+                        total: -remiseGroupe,
+                    });
+                }
+
+                // Contexte promotions scope GROUPE (Q23-A : remise ligne par facture membre)
+                contextePromo.groupeId = lien.groupeId;
+                contextePromo.nombreMembresGroupe = nbMembres;
+            }
+        }
 
         // Enrichir avec les données d'abonnement si disponibles
         if (abonnementId) {
@@ -269,7 +314,7 @@ export class FacturationService {
         }
 
         const resultatCascade = await promotionService.appliquerCascade(
-            montantForfaitCycle,
+            montantApresDegressiviteGroupe,
             montantPacks,
             montantModules,
             contextePromo
@@ -290,9 +335,12 @@ export class FacturationService {
             }
         }
 
-        const montantTotalRemises = resultatCascade.montantAvantPromotions - resultatCascade.montantFinal;
-        const montantHT = Math.max(0, Math.round(sousTotal - montantTotalRemises));
+        const montantTotalRemisesPromos = resultatCascade.montantAvantPromotions - resultatCascade.montantFinal;
+        const montantTotalRemises = remiseGroupe + montantTotalRemisesPromos;
+        const montantNetApresRemises = Math.max(0, Math.round(montantApresDegressiviteGroupe - montantTotalRemisesPromos));
+        const montantHT = montantNetApresRemises;
         const montantTVA = this.calculerTVA(montantHT);
+        const montantTotal = montantHT + montantTVA;
 
         return {
             montantBase: Math.round(montantForfaitCycle - montantEleves * coefCycle),
@@ -306,7 +354,7 @@ export class FacturationService {
             montantHT,
             montantTVA,
             tauxTVA: TAUX_TVA_CENTIERES,
-            montantTotal: montantHT + montantTVA,
+            montantTotal,
             remisesAppliquees: toutesPromos.map((p) => ({
                 remiseId: p.promotionId,
                 code: p.code,
@@ -341,7 +389,7 @@ export class FacturationService {
             where: { etablissementId: abonnement.etablissementId } as any,
         });
 
-        // Calculer le montant (formule v3 avec cycle et remises)
+        // Calculer le montant (formule v3 avec cycle, remises et dégressivité groupe)
         const calcul = await this.calculerMontantMensuel(
             abonnement.planId,
             nombreEleves,
@@ -349,6 +397,17 @@ export class FacturationService {
             abonnement.cycleFacturation as unknown as string,
             abonnement.etablissementId
         );
+
+        // Déterminer le groupeId pour traçabilité (si établissement dans un groupe)
+        let groupeId: string | undefined;
+        if (abonnement.etablissementId) {
+            const lienRepo = AppDataSource.getRepository(GroupeEtablissementLien);
+            const lien = await lienRepo.findOne({
+                where: { etablissementId: abonnement.etablissementId },
+                select: ['groupeId'],
+            });
+            groupeId = lien?.groupeId;
+        }
 
         // Générer les numéros de facture
         const numero = await this.genererNumeroFacture();
@@ -365,6 +424,7 @@ export class FacturationService {
             numeroOHADA,
             abonnementId: abonnement.id,
             etablissementId: abonnement.etablissementId,
+            groupeId,
             dateEmission: now,
             dateEcheance,
             montantBase: calcul.montantBase,

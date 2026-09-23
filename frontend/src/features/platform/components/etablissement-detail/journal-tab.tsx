@@ -6,17 +6,25 @@
  * Auteur: franck arlos chendjou
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
-    FileText, Download, RefreshCw, ChevronLeft, ChevronRight,
-    ShieldAlert, ScrollText, AlertTriangle, Info,
+    FileText, ArrowUpRight,
+    XCircle, UserCircle, ScrollText, Info, AlertCircle, AlertTriangle,
 } from 'lucide-react';
-import { SectionCard } from './shared';
+import { formatRelativeTime } from './shared';
 import type { AuditLogResponse, AuditLogEntry } from '@/features/etablissements/types/etablissement.types';
 import { apiClient } from '@/lib/api-client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
+
+// Configuration des sévérités pour l'affichage
+const SEVERITY_CONFIG: Record<string, { icon: typeof XCircle; color: string; label: string }> = {
+    info: { icon: Info, color: 'var(--color-info-500)', label: 'Info' },
+    warning: { icon: AlertTriangle, color: 'var(--color-warning-500)', label: 'Warning' },
+    error: { icon: AlertCircle, color: 'var(--color-danger-500)', label: 'Error' },
+    critical: { icon: AlertCircle, color: 'var(--color-danger-700, #b91c1c)', label: 'Critical' },
+};
 
 export function JournalTab({ etablissementId }: { etablissementId: string }) {
     const { t } = useTranslation('admin');

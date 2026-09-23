@@ -115,10 +115,11 @@ export function SanteTab({ sante, etablissementId, recalculerSante, historique }
             {/* 4 critères détaillés */}
             <SanteEtablissement variant="detail" score={sante.score} categorie={sante.categorie} details={sante.details} />
 
-            {/* Radar chart SVG — 4 critères */}
+            {/* Radar chart SVG — 4 critères (visuel spatial ; le détail chiffré
+                est affiché juste au-dessus via SanteEtablissement) */}
             {sante.details && (
                 <SectionCard title={t('etablissements.detail.sante.radarTitre', 'Profil santé')} icon={BarChart3}>
-                    <div className="flex flex-col sm:flex-row items-center gap-[var(--gap-lg)]">
+                    <div className="flex items-center justify-center">
                         {/* Radar SVG */}
                         {(() => {
                             const criteres = [
@@ -178,25 +179,6 @@ export function SanteTab({ sante, etablissementId, recalculerSante, historique }
                                 </div>
                             );
                         })()}
-                        {/* Légende */}
-                        <div className="flex-1 grid grid-cols-2 gap-[var(--gap-sm)]">
-                            {[
-                                { label: t('etablissements.detail.sante.critereAbonnement', 'Abonnement'), score: sante.details.abonnement.score, color: 'var(--color-info-500)', sub: sante.details.abonnement.statut },
-                                { label: t('etablissements.detail.sante.criterePaiements', 'Paiements'), score: sante.details.paiements.score, color: 'var(--color-success-500)', sub: `${sante.details.paiements.tauxRecouvrement}%` },
-                                { label: t('etablissements.detail.sante.critereActivite', 'Activité'), score: sante.details.activite.score, color: 'var(--color-accent-500)', sub: `${sante.details.activite.elevesActifs} élèves` },
-                                { label: t('etablissements.detail.sante.critereModules', 'Modules'), score: sante.details.modules.score, color: 'var(--color-warning-500)', sub: `${sante.details.modules.actifs}/${sante.details.modules.disponibles}` },
-                            ].map((c) => (
-                                <div key={c.label} className="flex items-center gap-[var(--gap-xs)]">
-                                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-                                    <div className="min-w-0">
-                                        <p className="text-xs font-medium truncate" style={{ color: 'var(--color-texte)' }}>{c.label}</p>
-                                        <p className="text-xs" style={{ color: 'var(--color-texte-muted)' }}>
-                                            <span className="font-bold" style={{ color: c.color }}>{c.score}</span>/100 · {c.sub}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
                     </div>
                 </SectionCard>
             )}

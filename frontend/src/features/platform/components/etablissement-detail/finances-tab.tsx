@@ -2,25 +2,41 @@
  * ==================================
  * eLISAschool - FinancesTab — Detail etablissement
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0 — Abonnement canonique (rapatrié de Configuration)
  * Auteur: franck arlos chendjou
  */
 
+import { useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
-    DollarSign, Receipt, Percent, AlertCircle, CreditCard,
-    FileText, TrendingUp, ArrowUpRight, ArrowDownRight, Banknote,
+    DollarSign, Receipt, AlertCircle, CreditCard,
+    FileText, TrendingUp, BarChart3, Calendar, RefreshCw, CheckCircle2,
+    Download,
 } from 'lucide-react';
-import { SectionCard } from './shared';
+import { SectionCard, InfoGrid, InfoField } from './shared';
 import type { FactureEtablissement, EtablissementConfig, ActiviteEtablissementResult } from '@/features/etablissements/types/etablissement.types';
 import type { EvolutionPaiementMois } from '@/features/etablissements/types/etablissement.types';
+import { PLAN_LABELS } from '@/features/etablissements/types/etablissement.types';
+
+// Labels des statuts de facture (badge bg/text du design system).
+const STATUT_FACTURE_LABELS: Record<string, { label: string; bg: string; text: string }> = {
+    BROUILLON: { label: 'Brouillon', bg: 'bg-[var(--color-surface-hover)]', text: 'text-[var(--color-text-muted)]' },
+    EMISE: { label: 'Émise', bg: 'bg-[var(--color-info-500)]/10', text: 'text-[var(--color-info-600)]' },
+    EN_PAIEMENT: { label: 'En paiement', bg: 'bg-[var(--color-warning-500)]/10', text: 'text-[var(--color-warning-600)]' },
+    PARTIELLEMENT_PAYEE: { label: 'Partiellement payée', bg: 'bg-[var(--color-warning-500)]/10', text: 'text-[var(--color-warning-600)]' },
+    PAYEE: { label: 'Payée', bg: 'bg-[var(--color-success-500)]/10', text: 'text-[var(--color-success-600)]' },
+    EN_RETARD: { label: 'En retard', bg: 'bg-[var(--color-danger-500)]/10', text: 'text-[var(--color-danger-600)]' },
+    ANNULEE: { label: 'Annulée', bg: 'bg-[var(--color-surface-hover)]', text: 'text-[var(--color-text-muted)]' },
+    AVOIR: { label: 'Avoir', bg: 'bg-[var(--color-accent-500)]/10', text: 'text-[var(--color-accent-600)]' },
+};
 
 export function FinancesTab({ factures, config, activite, evolutionPaiements }: {
     factures: FactureEtablissement[];
-    config: EtablissementConfig;
-    activite: ActiviteEtablissementResult;
-    evolutionPaiements: EvolutionPaiementMois[];
+    // Optionnels : le parent rend l'onglet avant la fin du chargement.
+    config?: EtablissementConfig;
+    activite?: ActiviteEtablissementResult;
+    evolutionPaiements?: EvolutionPaiementMois[];
 }) {
     const { t } = useTranslation('admin');
     const finances = activite?.finances;
@@ -408,27 +424,95 @@ export function FinancesTab({ factures, config, activite, evolutionPaiements }: 
                 </SectionCard>
             )}
 
-            {/* ===== Section 2 — Abonnement ===== */}
-            {config && (
+            {/* ===== Section 2 — Abonnement (canonique : plan, expiration, renouvellement) ===== */}
+            {config && (() => {
+                const plan = config.planAbonnement;
+                const expiration = config.dateExpirationAbonnement ? new Date(config.dateExpirationAbonnement) : null;
+                const maintenant = new Date();
+                const joursRestants = expiration ? Math.ceil((expiration.getTime() - maintenant.getTime()) / (1000 * 60 * 60 * 24)) : null;
+                const estExpire = joursRestants !== null && joursRestants < 0;
+                const expireBientot = joursRestants !== null && joursRestants >= 0 && joursRestants <= 30;
+                const statutColor = estExpire
+                    ? { bg: 'var(--color-danger-50)', border: 'var(--color-danger-200)', text: 'var(--color-danger-700)', dot: 'bg-[var(--color-danger-500)]' }
+                    : expireBientot
+                        ? { bg: 'var(--color-warning-50)', border: 'var(--color-warning-200)', text: 'var(--color-warning-700)', dot: 'bg-[var(--color-warning-500)]' }
+                        : { bg: 'var(--color-success-50)', border: 'var(--color-success-200)', text: 'var(--color-success-700)', dot: 'bg-[var(--color-success-500)]' };
+                const statutLabel = estExpire
+                    ? t('etablissements.detail.config.abonnementExpire', 'Expiré')
+                    : expireBientot
+                        ? t('etablissements.detail.config.expireBientot', 'Expire bientôt')
+                        : t('etablissements.detail.config.actif', 'Actif');
+                return (
                 <SectionCard title={t('etablissements.detail.finances.abonnement', 'Abonnement')} icon={CreditCard}>
-                    <InfoGrid>
-                        <InfoField icon={CreditCard} label={t('etablissements.detail.config.plan', 'Plan')}
-                            value={config.planAbonnement ? (PLAN_LABELS[config.planAbonnement] || config.planAbonnement) : undefined} />
-                        <InfoField icon={Calendar} label={t('etablissements.detail.config.expiration', 'Expiration')}
-                            value={config.dateExpirationAbonnement
-                                ? new Date(config.dateExpirationAbonnement).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
-                                : undefined} />
-                        {finances?.abonnement?.montantMensuel !== undefined && (
-                            <InfoField icon={DollarSign} label={t('etablissements.detail.finances.montantMensuel', 'Montant mensuel')}
-                                value={`${finances.abonnement.montantMensuel.toLocaleString('fr-FR')} FCFA`} />
+                    <div className="space-y-[var(--space-md)]">
+                        {/* Ligne principale : plan + statut + countdown */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-[var(--gap-sm)]">
+                            <span className="inline-flex items-center gap-[var(--gap-xs)] rounded-full px-[clamp(0.5rem,0.4rem+0.3vw,1rem)] py-[clamp(0.25rem,0.2rem+0.1vw,0.5rem)] text-sm font-semibold"
+                                style={{
+                                    backgroundColor: plan === 'entreprise' ? 'var(--color-warning-100)' : plan === 'premium' ? 'var(--color-accent-100)' : plan === 'standard' ? 'var(--color-info-100)' : 'var(--color-surface-alt)',
+                                    color: plan === 'entreprise' ? 'var(--color-warning-700)' : plan === 'premium' ? 'var(--color-accent-700)' : plan === 'standard' ? 'var(--color-info-700)' : 'var(--color-texte-muted)',
+                                }}>
+                                <CreditCard className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
+                                {plan ? (PLAN_LABELS[plan] || plan) : t('etablissements.detail.config.aucunPlan', 'Aucun plan')}
+                            </span>
+                            <span className="inline-flex items-center gap-[var(--gap-xxs)] rounded-full px-2 py-0.5 text-xs font-medium"
+                                style={{ backgroundColor: statutColor.bg, color: statutColor.text, border: `1px solid ${statutColor.border}` }}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${statutColor.dot}`} />
+                                {statutLabel}
+                            </span>
+                            {joursRestants !== null && (
+                                <span className="text-xs font-medium" style={{ color: estExpire ? 'var(--color-danger-600)' : expireBientot ? 'var(--color-warning-600)' : 'var(--color-texte-muted)' }}>
+                                    {estExpire
+                                        ? t('etablissements.detail.config.expireDepuis', 'Expiré depuis {{jours}} jour(s)', { jours: Math.abs(joursRestants) })
+                                        : joursRestants <= 30
+                                            ? t('etablissements.detail.config.joursRestants', '{{jours}} jour(s) restant(s)', { jours: joursRestants })
+                                            : expiration
+                                                ? t('etablissements.detail.config.expireLe', 'Expire le {{date}}', { date: expiration.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) })
+                                                : null
+                                    }
+                                </span>
+                            )}
+                        </div>
+                        {/* Barre de progression expiration */}
+                        {joursRestants !== null && joursRestants >= 0 && (
+                            <div className="space-y-[var(--space-xs)]">
+                                <div className="flex justify-between text-xs" style={{ color: 'var(--color-texte-muted)' }}>
+                                    <span>{t('etablissements.detail.config.dureeAbonnement', 'Durée abonnement')}</span>
+                                    <span style={{ color: joursRestants <= 30 ? 'var(--color-warning-600)' : 'var(--color-texte-muted)' }}>
+                                        {joursRestants}j restants
+                                    </span>
+                                </div>
+                                <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--color-bordure)' }}>
+                                    <motion.div
+                                        initial={{ width: '100%' }}
+                                        animate={{ width: `${Math.max(Math.min((joursRestants / 365) * 100, 100), 2)}%` }}
+                                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                                        className="h-full rounded-full"
+                                        style={{ backgroundColor: joursRestants <= 7 ? 'var(--color-danger-500)' : joursRestants <= 30 ? 'var(--color-warning-500)' : 'var(--color-success-500)' }}
+                                    />
+                                </div>
+                            </div>
                         )}
-                        {finances?.abonnement?.autoRenouvellement !== undefined && (
+                        <InfoGrid>
+                            <InfoField icon={Calendar} label={t('etablissements.detail.config.expiration', 'Expiration')}
+                                value={expiration
+                                    ? expiration.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
+                                    : undefined} />
+                            {finances?.abonnement?.montantMensuel !== undefined && (
+                                <InfoField icon={DollarSign} label={t('etablissements.detail.finances.montantMensuel', 'Montant mensuel')}
+                                    value={`${finances.abonnement.montantMensuel.toLocaleString('fr-FR')} FCFA`} />
+                            )}
                             <InfoField icon={RefreshCw} label={t('etablissements.detail.finances.autoRenouvellement', 'Auto-renouvellement')}
-                                value={finances.abonnement.autoRenouvellement ? 'Oui' : 'Non'} />
-                        )}
-                    </InfoGrid>
+                                value={config.autoRenouvellement !== undefined
+                                    ? (config.autoRenouvellement ? t('common.oui', 'Oui') : t('common.non', 'Non'))
+                                    : finances?.abonnement?.autoRenouvellement !== undefined
+                                        ? (finances.abonnement.autoRenouvellement ? t('common.oui', 'Oui') : t('common.non', 'Non'))
+                                        : undefined} />
+                        </InfoGrid>
+                    </div>
                 </SectionCard>
-            )}
+                );
+            })()}
 
             {/* ===== Section 3 — Historique des factures ===== */}
             <SectionCard title={t('etablissements.detail.finances.historique', 'Historique des factures')} icon={FileText} fullWidth>

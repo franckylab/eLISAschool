@@ -373,6 +373,7 @@ class ApiClient {
             '/api/auth/complete-login',
             '/api/auth/etablissements-disponibles',
             '/api/auth/switch-etablissement', // Multi-établissements: token sans etablissementId
+            '/api/auth/dev', // Dev endpoints (users list, etc.)
             '/api/public', // ← Routes publiques CMS (sans auth)
         ];
         const isAuthRoute = authRoutes.some(route => endpoint.startsWith(route));

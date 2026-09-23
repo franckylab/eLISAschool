@@ -2,27 +2,35 @@
  * ==================================
  * eLISAschool - ConfigurationTab — Detail etablissement
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0 — Spécialisé configuration (sans abonnement)
  * Auteur: franck arlos chendjou
+ *
+ * Spécialisation : paramétrage technique UNIQUEMENT (complétion,
+ * quotas, modules, cycles, bulletin). L'abonnement (plan, expiration,
+ * renouvellement) vit dans l'onglet Finances (canonique).
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { apiClient } from '@/lib/api-client';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import {
-    Settings, Package, Shield, CheckCircle2, XCircle,
-    AlertTriangle, ExternalLink, Edit, RefreshCw,
-    Users, GraduationCap, BookOpen, Layers,
+    Settings, Package, CheckCircle2, XCircle,
+    AlertCircle, RefreshCw,
+    Users, GraduationCap, BookOpen, Layers, Heart,
+    FileText,
 } from 'lucide-react';
-import { SectionCard, InfoGrid, InfoField, ActionButton, ConfigBadge } from './shared';
+import type { LucideIcon } from 'lucide-react';
+import { SectionCard, InfoGrid, InfoField, ConfigBadge } from './shared';
 import type { Etablissement, EtablissementConfig, ConfigCompleteResult, EtablissementDetailStats, UtilisateursResumeResult } from '@/features/etablissements/types/etablissement.types';
-import { TYPE_LABELS, SOUS_SYSTEME_LABELS, PLAN_LABELS } from '@/features/etablissements/types/etablissement.types';
 
 export function ConfigurationTab({ config, etablissement, configComplete, stats, utilisateurs, etablissementId, onRefetch }: {
     config: EtablissementConfig;
     etablissement: Etablissement;
-    configComplete: ConfigCompleteResult;
+    /** Optionnel : modules détaillés (fallback liste vide pendant le chargement). */
+    configComplete?: ConfigCompleteResult;
     stats: EtablissementDetailStats;
     utilisateurs: UtilisateursResumeResult;
     etablissementId: string;
@@ -271,107 +279,6 @@ export function ConfigurationTab({ config, etablissement, configComplete, stats,
                         ))}
                     </div>
                 </div>
-            </SectionCard>
-
-            {/* Abonnement — carte enrichie avec countdown et alertes */}
-            <SectionCard title={t('etablissements.detail.config.abonnement', 'Abonnement')} icon={CreditCard} fullWidth>
-                {(() => {
-                    const plan = config.planAbonnement;
-                    const expiration = config.dateExpirationAbonnement ? new Date(config.dateExpirationAbonnement) : null;
-                    const maintenant = new Date();
-                    const joursRestants = expiration ? Math.ceil((expiration.getTime() - maintenant.getTime()) / (1000 * 60 * 60 * 24)) : null;
-                    const estExpire = joursRestants !== null && joursRestants < 0;
-                    const expireBientot = joursRestants !== null && joursRestants >= 0 && joursRestants <= 30;
-                    const statutColor = estExpire
-                        ? { bg: 'var(--color-danger-50)', border: 'var(--color-danger-200)', text: 'var(--color-danger-700)', dot: 'bg-[var(--color-danger-500)]' }
-                        : expireBientot
-                            ? { bg: 'var(--color-warning-50)', border: 'var(--color-warning-200)', text: 'var(--color-warning-700)', dot: 'bg-[var(--color-warning-500)]' }
-                            : { bg: 'var(--color-success-50)', border: 'var(--color-success-200)', text: 'var(--color-success-700)', dot: 'bg-[var(--color-success-500)]' };
-                    const statutLabel = estExpire
-                        ? t('etablissements.detail.config.abonnementExpire', 'Expiré')
-                        : expireBientot
-                            ? t('etablissements.detail.config.expireBientot', 'Expire bientôt')
-                            : t('etablissements.detail.config.actif', 'Actif');
-
-                    return (
-                        <div className="space-y-[var(--space-md)]">
-                            {/* Ligne principale : plan + statut */}
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-[var(--gap-sm)]">
-                                {/* Badge plan */}
-                                <span className="inline-flex items-center gap-[var(--gap-xs)] rounded-full px-[clamp(0.5rem,0.4rem+0.3vw,1rem)] py-[clamp(0.25rem,0.2rem+0.1vw,0.5rem)] text-sm font-semibold"
-                                    style={{
-                                        backgroundColor: plan === 'enterprise' ? 'var(--color-warning-100)' : plan === 'premium' ? 'var(--color-accent-100)' : plan === 'standard' ? 'var(--color-info-100)' : 'var(--color-surface-alt)',
-                                        color: plan === 'enterprise' ? 'var(--color-warning-700)' : plan === 'premium' ? 'var(--color-accent-700)' : plan === 'standard' ? 'var(--color-info-700)' : 'var(--color-texte-muted)',
-                                    }}>
-                                    <CreditCard className="h-[var(--icon-sm)] w-[var(--icon-sm)]" />
-                                    {plan ? (PLAN_LABELS[plan] || plan) : t('etablissements.detail.config.aucunPlan', 'Aucun plan')}
-                                </span>
-                                {/* Badge statut */}
-                                <span className="inline-flex items-center gap-[var(--gap-xxs)] rounded-full px-2 py-0.5 text-xs font-medium"
-                                    style={{ backgroundColor: statutColor.bg, color: statutColor.text, border: `1px solid ${statutColor.border}` }}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${statutColor.dot}`} />
-                                    {statutLabel}
-                                </span>
-                                {/* Countdown */}
-                                {joursRestants !== null && (
-                                    <span className="text-xs font-medium" style={{ color: estExpire ? 'var(--color-danger-600)' : expireBientot ? 'var(--color-warning-600)' : 'var(--color-texte-muted)' }}>
-                                        {estExpire
-                                            ? t('etablissements.detail.config.expireDepuis', 'Expiré depuis {{jours}} jour(s)', { jours: Math.abs(joursRestants) })
-                                            : joursRestants <= 30
-                                                ? t('etablissements.detail.config.joursRestants', '{{jours}} jour(s) restant(s)', { jours: joursRestants })
-                                                : expiration
-                                                    ? t('etablissements.detail.config.expireLe', 'Expire le {{date}}', { date: expiration.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) })
-                                                    : null
-                                        }
-                                    </span>
-                                )}
-                                <div className="sm:ml-auto flex items-center gap-[var(--gap-xs)]">
-                                    <motion.button
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={() => navigate({ to: '/platform/etablissements/$id', params: { id: etablissementId }, search: { tab: 'configuration' } })}
-                                        className="inline-flex items-center gap-[var(--gap-xxs)] rounded-lg border px-[clamp(0.375rem,0.3rem+0.2vw,0.75rem)] py-[clamp(0.25rem,0.2rem+0.1vw,0.5rem)] text-xs font-medium transition-colors"
-                                        style={{ borderColor: 'var(--color-dominant-200)', backgroundColor: 'var(--color-dominant-50)', color: 'var(--color-dominant-700)' }}
-                                    >
-                                        <Edit className="h-3 w-3" />
-                                        {t('etablissements.detail.config.changerPlan', 'Changer le plan')}
-                                    </motion.button>
-                                </div>
-                            </div>
-                            {/* Barre de progression expiration (30 jours = critique) */}
-                            {joursRestants !== null && joursRestants >= 0 && (
-                                <div className="space-y-[var(--space-xs)]">
-                                    <div className="flex justify-between text-xs" style={{ color: 'var(--color-texte-muted)' }}>
-                                        <span>{t('etablissements.detail.config.dureeAbonnement', 'Durée abonnement')}</span>
-                                        <span style={{ color: joursRestants <= 30 ? 'var(--color-warning-600)' : 'var(--color-texte-muted)' }}>
-                                            {joursRestants}j restants
-                                        </span>
-                                    </div>
-                                    <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--color-bordure)' }}>
-                                        <motion.div
-                                            initial={{ width: '100%' }}
-                                            animate={{ width: `${Math.max(Math.min((joursRestants / 365) * 100, 100), 2)}%` }}
-                                            transition={{ duration: 0.8, ease: 'easeOut' }}
-                                            className="h-full rounded-full"
-                                            style={{ backgroundColor: joursRestants <= 7 ? 'var(--color-danger-500)' : joursRestants <= 30 ? 'var(--color-warning-500)' : 'var(--color-success-500)' }}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                            {/* Détails */}
-                            <InfoGrid>
-                                <InfoField icon={Calendar} label={t('etablissements.detail.config.expiration', 'Expiration')}
-                                    value={expiration
-                                        ? expiration.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
-                                        : undefined} />
-                                <InfoField icon={CreditCard} label={t('etablissements.detail.config.autoRenouvellement', 'Auto-renouvellement')}
-                                    value={config.autoRenouvellement !== undefined
-                                        ? (config.autoRenouvellement ? t('common.oui', 'Oui') : t('common.non', 'Non'))
-                                        : joursRestants !== null ? t('common.oui', 'Oui') : undefined} />
-                            </InfoGrid>
-                        </div>
-                    );
-                })()}
             </SectionCard>
 
             {/* Quotas — barres de progression */}

@@ -100,6 +100,37 @@ export const keyValidationSchemas: Record<string, z.ZodSchema> = {
     'billing.expiration.jours_grace': z.number().int().min(0).max(90),
     'billing.dunning.max_relances': z.number().int().min(0).max(10),
     'billing.dunning.intervalle_jours': z.number().int().min(1).max(30),
+    // Remises groupe & plafonds promotions (barème configurable — tri auto par minMembres)
+    'billing.remise_groupe.paliers': z.preprocess((val) => {
+        let arr = val;
+        if (typeof val === 'string') {
+            try { arr = JSON.parse(val); } catch { return val; }
+        }
+        if (Array.isArray(arr)) {
+            return [...arr].sort((a, b) => Number(a?.minMembres ?? 0) - Number(b?.minMembres ?? 0));
+        }
+        return arr;
+    }, z.array(z.object({
+        minMembres: z.number().int().min(2),
+        remisePct: z.number().min(0).max(100),
+    })).min(1).refine((paliers) => {
+        const mins = paliers.map((p) => p.minMembres);
+        return new Set(mins).size === mins.length;
+    }, { message: 'minMembres dupliqués — chaque palier doit avoir un seuil distinct' })),
+    'billing.plafond_plan': z.preprocess((val) => {
+        if (typeof val === 'string' && val.trim() !== '') {
+            const num = Number(val);
+            if (!isNaN(num)) return num;
+        }
+        return val;
+    }, z.number().min(0).max(100)),
+    'billing.plafond_groupe': z.preprocess((val) => {
+        if (typeof val === 'string' && val.trim() !== '') {
+            const num = Number(val);
+            if (!isNaN(num)) return num;
+        }
+        return val;
+    }, z.number().min(0).max(100)),
     
     // Notifications
     'notifications.max_recipients': z.number().int().min(1).max(10000),

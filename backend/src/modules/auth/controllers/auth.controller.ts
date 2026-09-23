@@ -16,6 +16,7 @@ import { auditService, AuditAction, AuditSeverity } from '../services/audit.serv
 import { mfaService } from '../services/mfa.service';
 import { webauthnService } from '../services/webauthn.service';
 import { AppDataSource } from '@database/data-source';
+import { Utilisateur, ProfilUtilisateur } from '@modules/auth/entities';
 import {
     loginSchema,
     registerSchema,
@@ -871,6 +872,88 @@ router.delete('/webauthn/credentials/:id', authMiddleware, async (req: Request, 
         next(error);
     }
 });
+
+/**
+ * GET /api/auth/dev/users
+ * Récupère la liste de tous les utilisateurs pour l'aide à la connexion (DEV ONLY)
+ * Disponible uniquement en mode développement (NODE_ENV !== 'production')
+ * Retourne : email, matricule, role, nom, prenom, etablissementId, etablissementNom, estPlateforme
+ * Optimisé : 3 requêtes SQL au total (utilisateurs + profils + affectations), pas de N+1.
+ */
+if (process.env.NODE_ENV !== 'production') {
+    router.get('/dev/users', async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const userRepo = AppDataSource.getRepository(Utilisateur);
+            const profilRepo = AppDataSource.getRepository(ProfilUtilisateur);
+            const ueRepo = AppDataSource.getRepository('UtilisateurEtablissement');
+
+            const utilisateurs = await userRepo.find({
+                where: { statut: 'ACTIF' as never },
+                order: { role: 'ASC', email: 'ASC' },
+            });
+
+            if (utilisateurs.length === 0) {
+                res.status(200).json({ success: true, data: [], timestamp: new Date().toISOString() });
+                return;
+            }
+
+            const userIds = utilisateurs.map((u) => u.id);
+
+            // Batch : profils + affectations (avec établissement) en 2 requêtes
+            const [profils, affectations] = await Promise.all([
+                profilRepo
+                    .createQueryBuilder('p')
+                    .where('p."utilisateurId" IN (:...userIds)', { userIds })
+                    .getMany(),
+                ueRepo
+                    .createQueryBuilder('ue')
+                    .leftJoinAndSelect('ue.etablissement', 'etablissement')
+                    .where('ue."utilisateurId" IN (:...userIds)', { userIds })
+                    .andWhere('ue.actif = :actif', { actif: true })
+                    .getMany(),
+            ]);
+
+            const profilByUserId = new Map(profils.map((p) => [p.utilisateurId, p]));
+            const affectationsByUserId = new Map<string, typeof affectations>();
+            for (const a of affectations) {
+                const list = affectationsByUserId.get(a.utilisateurId) || [];
+                list.push(a);
+                affectationsByUserId.set(a.utilisateurId, list);
+            }
+
+            const usersWithDetails = utilisateurs.map((u) => {
+                const profil = profilByUserId.get(u.id);
+                const userAffectations = affectationsByUserId.get(u.id) || [];
+                const principale =
+                    userAffectations.find((a) => a.etablissementPrincipal) || userAffectations[0];
+                const etablissement = principale?.etablissement;
+
+                return {
+                    id: u.id,
+                    email: u.email,
+                    matricule: u.matricule,
+                    role: u.role,
+                    nom: profil?.nom || '',
+                    prenom: profil?.prenom || '',
+                    estPlateforme: u.estPlateforme,
+                    etablissementId: etablissement?.id || null,
+                    etablissementNom: etablissement?.nom || null,
+                    etablissementCode: etablissement?.code || null,
+                    // Source de vérité MFA = mfaActif (auth.service), avec fallback deuxFacteursActif
+                    hasMfa: u.mfaActif === true || (u as { deuxFacteursActif?: boolean }).deuxFacteursActif === true,
+                };
+            });
+
+            res.status(200).json({
+                success: true,
+                data: usersWithDetails,
+                timestamp: new Date().toISOString(),
+            });
+        } catch (error) {
+            next(error);
+        }
+    });
+}
 
 export const authController = router;
 export default router;

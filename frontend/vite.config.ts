@@ -133,6 +133,15 @@ export default defineConfig(({ mode }) => {
                 target: backendUrl,
                 changeOrigin: true,
             },
+            // WebSocket monitoring (Socket.IO, path /monitoring).
+            // Permet au hook useRealtimeMonitoring de se connecter en
+            // same-origin en dev (pas de CORS, pas d'URL hardcodée).
+            // Le path Socket.IO complet est /monitoring/socket.io/.
+            '/monitoring': {
+                target: backendUrl,
+                changeOrigin: true,
+                ws: true,
+            },
             '/uploads': {
                 target: backendUrl,
                 changeOrigin: true,

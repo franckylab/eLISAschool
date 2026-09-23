@@ -72,6 +72,8 @@ export class ConfigurationHistoryService {
     async getHistorique(options: {
         cible?: CibleConfiguration;
         cibleId?: string;
+        /** Filtre sur le nom de cible (ILIKE partiel — ex. clé de paramètre, suffixe scope groupe inclus) */
+        cle?: string;
         action?: ActionConfiguration;
         utilisateurId?: string;
         dateDebut?: Date;
@@ -84,6 +86,7 @@ export class ConfigurationHistoryService {
 
         if (options.cible) qb.andWhere('h.cible = :cible', { cible: options.cible });
         if (options.cibleId) qb.andWhere('h.cibleId = :cibleId', { cibleId: options.cibleId });
+        if (options.cle) qb.andWhere('h."cibleNom" ILIKE :cle', { cle: `%${options.cle}%` });
         if (options.action) qb.andWhere('h.action = :action', { action: options.action });
         if (options.utilisateurId) qb.andWhere('h.utilisateurId = :utilisateurId', { utilisateurId: options.utilisateurId });
         if (options.dateDebut) qb.andWhere('h.createdAt >= :dateDebut', { dateDebut: options.dateDebut });
@@ -98,7 +101,9 @@ export class ConfigurationHistoryService {
     }
 
     /**
-     * Restaure une configuration depuis l'historique
+     * Restaure une configuration depuis l'historique.
+     * Scope groupe : si cibleNom porte le suffixe ` [groupe:<id>]`, la restauration
+     * s'applique à l'override groupe (suppression si l'entrée créait l'override).
      */
     async restaurer(historiqueId: string, utilisateurId?: string): Promise<void> {
         const entry = await this.historiqueRepo.findOne({ where: { id: historiqueId } });
@@ -106,15 +111,35 @@ export class ConfigurationHistoryService {
             throw new AppError('Entrée historique non trouvée', 404, 'HISTORY_NOT_FOUND');
         }
 
-        if (!entry.restaurable || !entry.ancienneValeur) {
-            throw new AppError('Cette entrée ne peut pas être restaurée', 400, 'NOT_RESTORABLE');
-        }
-
         // Restaurer selon le type de cible
         switch (entry.cible) {
-            case CibleConfiguration.PARAMETRE:
+            case CibleConfiguration.PARAMETRE: {
+                const { cle, groupeId } = this.parseCibleParametre(entry.cibleNom || '');
+                if (groupeId) {
+                    // Import dynamique : évite tout cycle avec configuration.service
+                    const { configurationService } = await import('./configuration.service');
+                    if (entry.ancienneValeur === null || entry.ancienneValeur === undefined) {
+                        await configurationService.resetParametreGroupe(cle, groupeId, utilisateurId);
+                    } else {
+                        await configurationService.setParametreGroupe(cle, entry.ancienneValeur, groupeId, utilisateurId);
+                    }
+                    await this.logAction({
+                        utilisateurId,
+                        action: ActionConfiguration.RESTORE,
+                        cible: CibleConfiguration.PARAMETRE,
+                        cibleNom: entry.cibleNom,
+                        description: `Paramètre ${cle} [groupe:${groupeId}] restauré`,
+                        ancienneValeur: entry.nouvelleValeur,
+                        nouvelleValeur: entry.ancienneValeur,
+                    });
+                    break;
+                }
+                if (!entry.restaurable || !entry.ancienneValeur) {
+                    throw new AppError('Cette entrée ne peut pas être restaurée', 400, 'NOT_RESTORABLE');
+                }
                 await this.restaurerParametre(entry.cibleNom || '', entry.ancienneValeur, utilisateurId);
                 break;
+            }
             case CibleConfiguration.APP:
                 // ConfigurationApp supprimée (v3.0) — legacy non restaurable
                 throw new AppError('ConfigurationApp supprimée — restauration legacy non supportée', 400, 'LEGACY_NOT_SUPPORTED');
@@ -123,6 +148,16 @@ export class ConfigurationHistoryService {
         }
 
         logger.info(`Configuration restaurée depuis historique ${historiqueId}`);
+    }
+
+    /**
+     * Extrait la clé et l'éventuel scope groupe d'un cibleNom
+     * (`cle` ou `cle [groupe:<uuid>]`).
+     */
+    private parseCibleParametre(cibleNom: string): { cle: string; groupeId?: string } {
+        const match = cibleNom.match(/^(.*) \[groupe:(.+)\]$/);
+        if (match) return { cle: match[1], groupeId: match[2] };
+        return { cle: cibleNom };
     }
 
     /**

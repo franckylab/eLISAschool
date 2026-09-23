@@ -9,7 +9,7 @@
  * animations Framer Motion, et illustration scolaire
  */
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRouter, useSearch, Link } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
@@ -18,6 +18,7 @@ import {
     Mail, Lock, LogIn, Eye, EyeOff, QrCode,
     BookOpen, Users, Award,
     AlertCircle, CheckCircle2,
+    UserCog, Search, ChevronRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth.store';
@@ -30,12 +31,32 @@ import { EtablissementSelectionModal } from '@/components/auth/EtablissementSele
 import { LoginSlideshow } from './LoginSlideshow';
 import { FondAnime } from '@/components/layout/fond-anime';
 import { WebAuthnLogin } from './components/WebAuthnLogin';
+import { apiClient } from '@/lib/api-client';
 
 interface LoginForm {
     identifiant: string;
     motDePasse: string;
     seSouvenir: boolean;
 }
+
+/* ─── DEV ONLY : type utilisateur pour la sélection rapide ───
+ * Mot de passe seed = 'Test123456!' pour tous les comptes démo,
+ * SAUF le SUPER_ADMIN (mot de passe aléatoire ou SEED_ADMIN_PASSWORD). */
+interface DevLoginUser {
+    id: string;
+    email: string;
+    matricule: string;
+    role: string;
+    nom: string;
+    prenom: string;
+    estPlateforme: boolean;
+    etablissementId: string | null;
+    etablissementNom: string | null;
+    hasMfa: boolean;
+}
+
+const DEV_DEFAULT_PASSWORD = 'Test123456!';
+const DEV_SUPER_ADMIN_EMAIL = 'admin@elisaschool.cm';
 
 /* ─── Configuration des images de fond ────────────── */
 const BACKGROUND_IMAGES = [
@@ -331,6 +352,13 @@ export function LoginPage() {
     const [qrOpen, setQrOpen] = useState(false);
     const [successPulse, setSuccessPulse] = useState(false);
     
+    // Dev mode: quick user selection
+    const [devUsersOpen, setDevUsersOpen] = useState(false);
+    const [devUsers, setDevUsers] = useState<DevLoginUser[]>([]);
+    const [devUsersLoading, setDevUsersLoading] = useState(false);
+    const [devUsersError, setDevUsersError] = useState<string | null>(null);
+    const [devUsersSearch, setDevUsersSearch] = useState('');
+    
     // Suivi des tentatives de connexion - UNIQUEMENT depuis le backend
     const [tentativesRestantes, setTentativesRestantes] = useState<number>(20);
     const [bloqueJusqua, setBloqueJusqua] = useState<Date | null>(null);
@@ -619,6 +647,69 @@ export function LoginPage() {
     const handleQRScan = useCallback((value: string) => {
         setValue('identifiant', value);
         setQrOpen(false);
+    }, [setValue]);
+
+    // Dev mode: fetch users for quick login.
+    // NOTE : apiClient.get<T>() retourne déjà ApiResponse<T> (enveloppe { success, data }),
+    // donc T = DevLoginUser[] et les données sont dans response.data (pas de double-déballage).
+    const fetchDevUsers = useCallback(async () => {
+        if (import.meta.env.PROD) return;
+        setDevUsersLoading(true);
+        setDevUsersError(null);
+        try {
+            const response = await apiClient.get<DevLoginUser[]>('/api/auth/dev/users');
+            const list = Array.isArray(response?.data) ? response.data : [];
+            setDevUsers(list);
+            if (list.length === 0) {
+                setDevUsersError('Aucun utilisateur retourné par le serveur (base vide ou seeds non exécutés).');
+            }
+        } catch (err) {
+            const message = err instanceof Error ? err.message : typeof err === 'object' && err !== null && 'message' in err
+                ? String((err as { message: unknown }).message)
+                : 'Erreur inconnue';
+            setDevUsersError(`Chargement impossible : ${message}`);
+        } finally {
+            setDevUsersLoading(false);
+        }
+    }, []);
+
+    // Charger à l'ouverture du modal (évite la course bouton → fetch → open)
+    useEffect(() => {
+        if (devUsersOpen && !import.meta.env.PROD) {
+            setDevUsersSearch('');
+            fetchDevUsers();
+        }
+    }, [devUsersOpen, fetchDevUsers]);
+
+    const devUsersFiltres = useMemo(() => {
+        const q = devUsersSearch.trim().toLowerCase();
+        if (!q) return devUsers;
+        return devUsers.filter((u) => {
+            const nomComplet = `${u.prenom || ''} ${u.nom || ''}`.toLowerCase();
+            const etab = (u.etablissementNom || '').toLowerCase();
+            return (
+                u.email.toLowerCase().includes(q) ||
+                nomComplet.includes(q) ||
+                u.role.toLowerCase().includes(q) ||
+                (u.matricule || '').toLowerCase().includes(q) ||
+                (etab !== '' && etab.includes(q))
+            );
+        });
+    }, [devUsers, devUsersSearch]);
+
+    const handleDevUserSelect = useCallback((user: DevLoginUser) => {
+        setValue('identifiant', user.email);
+        // Le SUPER_ADMIN seed a un mot de passe aléatoire (ou SEED_ADMIN_PASSWORD),
+        // pas le mot de passe démo par défaut → on ne pré-remplit pas pour lui.
+        if (user.email === DEV_SUPER_ADMIN_EMAIL || user.role === 'SUPER_ADMIN') {
+            setValue('motDePasse', '');
+            toast.info('Compte SUPER_ADMIN : saisissez son mot de passe seed manuellement.');
+        } else {
+            setValue('motDePasse', DEV_DEFAULT_PASSWORD);
+        }
+        setError(null);
+        setDevUsersOpen(false);
+        // Pas de soumission auto (spec) : l'utilisateur clique sur « Connexion » normalement.
     }, [setValue]);
 
     return (
@@ -1021,6 +1112,138 @@ export function LoginPage() {
                         router.navigate({ to: '/platform/dashboard' });
                     }}
                 />
+            )}
+
+            {/* ─── DEV ONLY : Modal sélection rapide utilisateur ─── */}
+            {!import.meta.env.PROD && (
+                <>
+                    {/* Bouton flottant */}
+                    <motion.button
+                        type="button"
+                        onClick={() => setDevUsersOpen(true)}
+                        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-[var(--color-dominante)] px-4 py-2 text-white shadow-lg hover:shadow-xl transition-all"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        aria-label="Sélection rapide utilisateur (DEV)"
+                        title="Sélection rapide utilisateur (DEV uniquement)"
+                        style={{ fontSize: 'clamp(0.75rem, 1vh, 0.875rem)' }}
+                    >
+                        <UserCog className="h-4 w-4" />
+                        <span className="hidden sm:inline">Utilisateurs DEV</span>
+                    </motion.button>
+
+                    {/* Modal utilisateurs DEV */}
+                    <CustomModal
+                        open={devUsersOpen}
+                        onOpenChange={setDevUsersOpen}
+                        title={`Sélection rapide utilisateur (DEV)${devUsers.length > 0 ? ` — ${devUsers.length}` : ''}`}
+                        description="Cliquez sur un utilisateur pour pré-remplir le formulaire, puis cliquez sur « Connexion »."
+                        size="lg"
+                        draggable={false}
+                    >
+                        <div className="space-y-4">
+                            {/* Search */}
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--color-texte-secondaire)]" />
+                                <input
+                                    // eslint-disable-next-line jsx-a11y/no-autofocus
+                                    autoFocus
+                                    type="text"
+                                    placeholder="Rechercher par email, nom, matricule, rôle, établissement..."
+                                    value={devUsersSearch}
+                                    onChange={(e) => setDevUsersSearch(e.target.value)}
+                                    aria-label="Rechercher un utilisateur"
+                                    className="w-full rounded-xl border border-[var(--color-bordure)] bg-[var(--color-surface)] pl-10 pr-4 py-2 text-[var(--color-texte)] placeholder:text-[var(--color-texte-secondaire)]/50 focus:border-[var(--color-dominante)] focus:outline-none focus:ring-2 focus:ring-[var(--color-dominante)]/20"
+                                />
+                            </div>
+
+                            {/* Users list : chargement / erreur / vide / résultats */}
+                            {devUsersLoading ? (
+                                <div className="flex flex-col items-center justify-center gap-2 py-8" role="status" aria-live="polite">
+                                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-dominante)] border-t-transparent" />
+                                    <p className="text-sm text-[var(--color-texte-secondaire)]">Chargement des utilisateurs…</p>
+                                </div>
+                            ) : devUsersError ? (
+                                <div className="flex flex-col items-center gap-3 py-8 text-center">
+                                    <AlertCircle className="h-10 w-10 text-[var(--color-error)]" />
+                                    <p className="text-sm text-[var(--color-texte-secondaire)]">{devUsersError}</p>
+                                    <button
+                                        type="button"
+                                        onClick={fetchDevUsers}
+                                        className="rounded-lg bg-[var(--color-dominante)] px-4 py-2 text-sm font-medium text-white"
+                                    >
+                                        Réessayer
+                                    </button>
+                                </div>
+                            ) : devUsers.length === 0 ? (
+                                <div className="text-center py-8 text-[var(--color-texte-secondaire)]">
+                                    <UserCog className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                                    <p>Aucun utilisateur trouvé</p>
+                                    <p className="mt-1 text-xs">Vérifiez que les seeds ont été exécutés (npm run seed + seed:demo).</p>
+                                </div>
+                            ) : devUsersFiltres.length === 0 ? (
+                                <div className="text-center py-8 text-[var(--color-texte-secondaire)]">
+                                    <Search className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                                    <p>Aucun résultat pour « {devUsersSearch.trim()} »</p>
+                                </div>
+                            ) : (
+                                <div className="max-h-[50vh] overflow-y-auto space-y-2" role="listbox" aria-label="Utilisateurs disponibles">
+                                    {devUsersFiltres.map((user) => (
+                                            <motion.button
+                                                key={user.id}
+                                                type="button"
+                                                role="option"
+                                                aria-selected="false"
+                                                aria-label={`${user.prenom} ${user.nom} — ${user.email} — ${user.role}`}
+                                                onClick={() => handleDevUserSelect(user)}
+                                                className={cn(
+                                                    'w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all',
+                                                    'hover:bg-[var(--color-surface-hover)] hover:border-[var(--color-dominante)]/30',
+                                                    'focus:outline-none focus:ring-2 focus:ring-[var(--color-dominante)]/20'
+                                                )}
+                                                whileHover={{ scale: 1.01 }}
+                                                whileTap={{ scale: 0.98 }}
+                                            >
+                                                <div className="flex-shrink-0 flex items-center justify-center rounded-lg bg-[var(--color-dominante)]/10"
+                                                     style={{ height: 'clamp(40px, 4vh, 48px)', width: 'clamp(40px, 4vh, 48px)' }}>
+                                                    {user.estPlateforme ? (
+                                                        <Users className="h-5 w-5 text-[var(--color-dominante)]" />
+                                                    ) : (
+                                                        <UserCog className="h-5 w-5 text-[var(--color-dominante)]" />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className="font-medium text-[var(--color-texte)] truncate">
+                                                            {user.prenom} {user.nom}
+                                                        </span>
+                                                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-dominante)]/10 text-[var(--color-dominante)]">
+                                                            {user.role}
+                                                        </span>
+                                                        {user.hasMfa && (
+                                                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                                                                MFA
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-sm text-[var(--color-texte-secondaire)]">
+                                                        <span className="truncate">{user.email}</span>
+                                                        {user.etablissementNom && (
+                                                            <>
+                                                                <span aria-hidden="true">•</span>
+                                                                <span className="truncate">{user.etablissementNom}</span>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <ChevronRight className="h-4 w-4 shrink-0 text-[var(--color-texte-secondaire)]/50" aria-hidden="true" />
+                                            </motion.button>
+                                        ))}
+                                </div>
+                            )}
+                        </div>
+                    </CustomModal>
+                </>
             )}
         </div>
     );

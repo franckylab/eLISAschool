@@ -53,6 +53,10 @@ export class Facture {
     @Column({ type: 'uuid' })
     etablissementId!: string;
 
+    /** Groupe auquel appartient l'établissement au moment de la facturation (nullable, pour traçabilité) */
+    @Column({ type: 'uuid', nullable: true })
+    groupeId?: string;
+
     @Column({ type: 'date' })
     dateEmission!: Date;
 

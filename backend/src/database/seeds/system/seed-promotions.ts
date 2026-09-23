@@ -5,7 +5,7 @@
  *
  * Peuple la table `promotions` avec des exemples couvrant toutes les fonctionnalités v5 :
  * 
- * 15 promotions :
+ * 17 promotions :
  *   - VOL-500  : -10% permanent PLAN si ≥500 élèves
  *   - VOL-1000 : -20% permanent PLAN si ≥1000 élèves
  *   - FID-12M  : -5% permanent après 12 mois d'ancienneté
@@ -311,6 +311,42 @@ const PROMOTIONS: PromotionSeed[] = [
         estProgrammee: true,
         dateProgrammation: new Date('2027-01-01T00:00:00'),
         actif: false, // Sera activée automatiquement par le cron job
+    },
+
+    // ─── Scope GROUPE (suppression facturation groupe — remise ligne par facture membre) ───
+    {
+        code: 'GRP-5PLUS',
+        nom: 'Remise groupe 5+ établissements -10%',
+        typePromotion: TypePromotion.POURCENTAGE,
+        scope: ScopePromotion.GROUPE,
+        valeur: 10,
+        dureeApplication: DureeApplicationPromotion.PERMANENTE,
+        cumulable: false,
+        priorite: 50,
+        conditions: { nombreMembresMin: 5 },
+        config: {
+            noteInterne: 'Appliquée en ligne REMISE sur chaque facture individuelle des membres du groupe',
+        },
+        dateDebut: new Date('2026-01-01'),
+        actif: true,
+    },
+    {
+        code: 'GRP-RENTREE-2026',
+        nom: 'Rentrée groupes -15% (coupon)',
+        typePromotion: TypePromotion.POURCENTAGE,
+        scope: ScopePromotion.GROUPE,
+        valeur: 15,
+        dureeApplication: DureeApplicationPromotion.N_CYCLES,
+        cumulable: false,
+        priorite: 60,
+        codeCoupon: 'GROUPE15',
+        conditions: { nbCycles: 3, nombreMembresMin: 2 },
+        config: {
+            noteInterne: 'Coupon groupe valable 3 cycles pour les groupes de 2+ établissements',
+        },
+        dateDebut: new Date('2026-08-01'),
+        dateFin: new Date('2026-12-31'),
+        actif: true,
     },
 ];
 

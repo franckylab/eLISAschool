@@ -26,7 +26,7 @@
  * - DunningService: relances automatiques (3/7/15/30 jours)
  * - LedgerService: journal comptable OHADA double entrée
  * - FacturePdfService: préparation données export PDF
- * - FacturationGroupeService: facturation groupes (3 modèles)
+ * - GroupeSaaSService: groupes SaaS (CRUD, membres, modules, vue consolidée)
  * 
  * Cron Jobs:
  * - Renouvellement auto (quotidien 00h00)

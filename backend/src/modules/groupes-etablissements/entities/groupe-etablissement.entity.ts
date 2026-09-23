@@ -17,6 +17,7 @@ import {
     UpdateDateColumn,
     ManyToOne,
     OneToMany,
+    OneToOne,
     JoinColumn,
     Index,
 } from 'typeorm';

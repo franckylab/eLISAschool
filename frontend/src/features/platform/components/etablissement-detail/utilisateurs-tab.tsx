@@ -6,18 +6,25 @@
  * Auteur: franck arlos chendjou
  */
 
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
-    Users, UserCheck, UserX, Shield, CheckCircle2,
-    XCircle, LogIn, MoreHorizontal,
+    Users, Shield, CheckCircle2,
+    XCircle, Download, UserCircle, BarChart3,
 } from 'lucide-react';
 import { SectionCard } from './shared';
 import { formatRelativeTime } from './shared';
-import type { UtilisateursResumeResult } from '@/features/etablissements/types/etablissement.types';
+import type { UtilisateursResumeResult, HistoriqueConnexionsResult } from '@/features/etablissements/types/etablissement.types';
 
-export function UtilisateursTab({ utilisateurs }: { utilisateurs: UtilisateursResumeResult }) {
+export function UtilisateursTab({ utilisateurs, connexions }: {
+    utilisateurs: UtilisateursResumeResult;
+    /** Historique connexions 30j — affiché ici (canonique), plus dans Identité. */
+    connexions?: HistoriqueConnexionsResult;
+}) {
     const { t } = useTranslation('admin');
+
+    const maxConnexions = connexions?.serie?.reduce((max, d) => Math.max(max, d.connexions), 0) || 1;
 
     const ROLE_COLORS: Record<string, { bg: string; text: string; hex: string }> = {
         ADMIN: { bg: 'bg-[color-mix(in_srgb,var(--color-danger-500)_10%,transparent)]', text: 'text-[var(--color-danger-600)]', hex: '#ef4444' },
@@ -229,9 +236,83 @@ export function UtilisateursTab({ utilisateurs }: { utilisateurs: UtilisateursRe
                 )}
             </SectionCard>
 
+                        {/* Activité connexions (30 jours) — rapatrié d'Identité : la mesure
+                d'activité des comptes appartient à cet onglet */}
+            {connexions && connexions.serie.length > 0 && (
+                <SectionCard title={t('etablissements.detail.identite.connexionsTitre', 'Activité connexions (30 jours)')} icon={BarChart3} fullWidth>
+                    {/* KPIs */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-[var(--gap-sm)] mb-[var(--space-md)]">
+                        <div className="rounded-lg border p-[var(--space-sm)]" style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface-alt)' }}>
+                            <span className="text-xs block" style={{ color: 'var(--color-texte-muted)' }}>{t('etablissements.detail.identite.totalConnexions', 'Total 30j')}</span>
+                            <span className="text-lg font-bold" style={{ color: 'var(--color-texte)' }}>{connexions.total30j}</span>
+                        </div>
+                        <div className="rounded-lg border p-[var(--space-sm)]" style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface-alt)' }}>
+                            <span className="text-xs block" style={{ color: 'var(--color-texte-muted)' }}>{t('etablissements.detail.identite.moyenneJour', 'Moy./jour')}</span>
+                            <span className="text-lg font-bold" style={{ color: 'var(--color-texte)' }}>{connexions.moyenneJour}</span>
+                        </div>
+                        <div className="rounded-lg border p-[var(--space-sm)]" style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface-alt)' }}>
+                            <span className="text-xs block" style={{ color: 'var(--color-texte-muted)' }}>{t('etablissements.detail.identite.picJour', 'Pic')}</span>
+                            <span className="text-lg font-bold" style={{ color: 'var(--color-dominant-600)' }}>{connexions.picJour}</span>
+                        </div>
+                        <div className="rounded-lg border p-[var(--space-sm)]" style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface-alt)' }}>
+                            <span className="text-xs block" style={{ color: 'var(--color-texte-muted)' }}>{t('etablissements.detail.identite.utilisateursActifs', 'Util. actifs')}</span>
+                            <span className="text-lg font-bold" style={{ color: 'var(--color-success-600)' }}>{connexions.utilisateursActifs30j}</span>
+                        </div>
+                    </div>
+                    {/* Graphique barres CSS avec axe Y */}
+                    <div className="flex gap-[var(--gap-xs)]">
+                        {/* Axe Y — graduations */}
+                        <div className="hidden sm:flex flex-col justify-between h-20 text-right shrink-0 w-6">
+                            {[maxConnexions, Math.round(maxConnexions * 0.75), Math.round(maxConnexions * 0.5), Math.round(maxConnexions * 0.25), 0].map((v, i) => (
+                                <span key={i} className="text-[0.55rem] leading-none" style={{ color: 'var(--color-texte-muted)' }}>{v}</span>
+                            ))}
+                        </div>
+                        {/* Barres */}
+                        <div className="flex-1 space-y-[var(--space-xxs)]">
+                            <div className="flex items-end gap-[1px] h-20" role="img" aria-label="Graphique connexions 30 jours">
+                                {connexions.serie.map((day) => {
+                                    const rawPct = maxConnexions > 0 ? ((day.connexions ?? 0) / maxConnexions) * 100 : 0;
+                                    const heightPct = Number.isFinite(rawPct) ? rawPct : 0;
+                                    return (
+                                        <div
+                                            key={day.date}
+                                            className="flex-1 rounded-t transition-all hover:opacity-80 relative group"
+                                            style={{
+                                                height: `${Math.max(heightPct, 2)}%`,
+                                                backgroundColor: day.connexions > 0 ? 'var(--color-dominant-500)' : 'var(--color-bordure)',
+                                                minWidth: '3px',
+                                            }}
+                                            title={`${day.date}: ${day.connexions} connexions, ${day.utilisateursUniques} utilisateur(s)`}
+                                        >
+                                            {/* Tooltip au survol */}
+                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-10 pointer-events-none">
+                                                <div className="rounded-md border px-2 py-1 text-[0.6rem] whitespace-nowrap shadow-sm"
+                                                    style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-bordure)', color: 'var(--color-texte)' }}>
+                                                    <p className="font-semibold">{day.date}</p>
+                                                    <p>{day.connexions} connexions</p>
+                                                    <p>{day.utilisateursUniques} utilisateur(s)</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            {/* Axe X — dates extrêmes */}
+                            <div className="flex justify-between">
+                                <span className="text-[0.6rem]" style={{ color: 'var(--color-texte-muted)' }}>
+                                    {connexions.serie[0]?.date}
+                                </span>
+                                <span className="text-[0.6rem]" style={{ color: 'var(--color-texte-muted)' }}>
+                                    {connexions.serie[connexions.serie.length - 1]?.date}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </SectionCard>
+            )}
+
             {/* Derniers utilisateurs inscrits */}
-            <SectionCard title={t('etablissements.detail.utilisateurs.derniersInscrits', 'Derniers inscrits')} icon={UserCircle} fullWidth>
-                {utilisateurs.derniers.length > 0 ? (
+            <SectionCard title={t('etablissements.detail.utilisateurs.derniersInscrits', 'Derniers inscrits')} icon={UserCircle} fullWidth>                {utilisateurs.derniers.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>

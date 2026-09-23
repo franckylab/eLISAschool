@@ -83,6 +83,28 @@ const PUBLIC_CONFIG_KEYS = new Set([
     'app.maintenance', 'app.licence',
 ]);
 
+/**
+ * Barèmes financiers (Q4-B) : écriture brute désactivée.
+ * Ces clés s'éditent uniquement via l'onglet Barèmes (/platform/groupes) :
+ * validation métier, confirmation d'impact, simulateur, historique dédié.
+ * Lecture (GET, cascade, exports) inchangée.
+ */
+const CLES_BAREMES_UI_ONLY = new Set([
+    'billing.remise_groupe.paliers',
+    'billing.plafond_plan',
+    'billing.plafond_groupe',
+]);
+
+function rejeterEcritureBaremesBrute(cle: unknown): void {
+    if (typeof cle === 'string' && CLES_BAREMES_UI_ONLY.has(cle)) {
+        throw new AppError(
+            'Barèmes financiers : utilisez l’onglet Barèmes (/platform/groupes) — édition brute désactivée',
+            403,
+            'BAREMES_UI_ONLY',
+        );
+    }
+}
+
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     try {
         // Récupérer les paramètres globaux depuis ParametreSysteme
@@ -445,6 +467,7 @@ router.get('/parametres/:cle', authMiddleware, canViewParams, async (req: Reques
 router.post('/parametres', authMiddleware, canCreateParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(createParametreSchema, req.body);
+        rejeterEcritureBaremesBrute(dto.cle);
         
         // SUPER_ADMIN peut créer pour un établissement spécifique
         const etablissementId = req.utilisateur?.role === Role.SUPER_ADMIN
@@ -480,6 +503,9 @@ router.post('/parametres', authMiddleware, canCreateParams, async (req: Request,
 router.put('/parametres/bulk', authMiddleware, canEditParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const dto = validateDto(updateParametresBulkSchema, req.body);
+        for (const item of dto.parametres ?? []) {
+            rejeterEcritureBaremesBrute((item as { cle?: unknown })?.cle);
+        }
         const count = await configurationService.updateParametresBulk(dto, req.utilisateur?.id, req);
         res.json({ success: true, data: { updated: count }, message: `${count} paramètres mis à jour` });
     } catch (error) { next(error); }
@@ -509,6 +535,7 @@ router.post('/parametres/reset-all', authMiddleware, requirePermission('super_ad
 
 router.put('/parametres/:cle', authMiddleware, canEditParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
+        rejeterEcritureBaremesBrute(req.params.cle);
         const dto = validateDto(updateParametreSchema, req.body);
         
         // Utiliser req.etablissementId pour le scopage
@@ -558,6 +585,7 @@ router.put('/parametres/:cle', authMiddleware, canEditParams, async (req: Reques
 
 router.delete('/parametres/:cle', authMiddleware, canDeleteParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
+        rejeterEcritureBaremesBrute(req.params.cle);
         // Utiliser req.etablissementId pour le scopage
         const etablissementId = req.utilisateur?.role === Role.SUPER_ADMIN
             ? (req.query.etablissementId as string | undefined)
@@ -607,6 +635,7 @@ router.delete('/parametres/:cle', authMiddleware, canDeleteParams, async (req: R
 
 router.post('/parametres/:cle/reset', authMiddleware, canResetParams, async (req: Request, res: Response, next: NextFunction) => {
     try {
+        rejeterEcritureBaremesBrute(req.params.cle);
         const ancienParam = await configurationService.getParametreByKey(req.params.cle);
         await configurationService.resetParametre(req.params.cle);
         const nouveauParam = await configurationService.getParametreByKey(req.params.cle);

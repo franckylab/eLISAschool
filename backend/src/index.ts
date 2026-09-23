@@ -50,6 +50,7 @@ import { initAnneesScolairesCronJobs } from '@modules/annees-scolaires/cron-jobs
 import { initPeriodesCronJobs } from '@modules/periodes/cron-jobs';
 import { keyManagerService } from '@modules/configuration/services/key-manager.service';
 import { permissionResolverService } from '@modules/auth/services';
+import { monitoringGateway } from '@modules/monitoring/websocket/monitoring.gateway';
 
 // Chargement des variables d'environnement (déjà fait en haut du fichier)
 // dotenv.config(); // ← DÉPLACÉ EN HAUT
@@ -168,7 +169,9 @@ async function bootstrap(): Promise<void> {
         // Démarrage du serveur HTTP
         // Express écoute par défaut sur 0.0.0.0 (toutes les interfaces)
         // Ce qui permet l'accès depuis le réseau local
-        app.listen(port, '0.0.0.0', () => {
+        // NOTE : `app.listen()` retourne le HttpServer — indispensable
+        // pour brancher le gateway WebSocket monitoring (Socket.IO).
+        const server = app.listen(port, '0.0.0.0', () => {
             const os = require('os');
             const interfaces = os.networkInterfaces();
             const addresses: string[] = [];
@@ -201,15 +204,26 @@ async function bootstrap(): Promise<void> {
             }
         });
 
+        // WebSocket monitoring temps réel (Socket.IO, path /monitoring).
+        // Initialisation non-bloquante : un échec ne doit pas empêcher
+        // le démarrage de l'API REST.
+        try {
+            monitoringGateway.initialize(server);
+        } catch (error) {
+            logger.warn('⚠️  WebSocket monitoring non disponible (non bloquant)', error);
+        }
+
         // Gestion de l'arrêt gracieux
         process.on('SIGTERM', async () => {
             logger.info('📴 Signal SIGTERM reçu, arrêt gracieux...');
+            monitoringGateway.destroy();
             await AppDataSource.destroy();
             process.exit(0);
         });
 
         process.on('SIGINT', async () => {
             logger.info('📴 Signal SIGINT reçu, arrêt gracieux...');
+            monitoringGateway.destroy();
             await AppDataSource.destroy();
             process.exit(0);
         });

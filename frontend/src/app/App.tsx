@@ -13,7 +13,6 @@ import { SplashScreen } from '@/components/feedback/SplashScreen';
 import { useThemeStore } from '@/stores/theme.store';
 import { useAuthStore } from '@/stores/auth.store';
 import { routeTree } from '@/routeTree.gen';
-import { DebugPermissions } from '@/components/debug/DebugPermissions';
 import { AlertTriangle, Home } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 
@@ -141,8 +140,6 @@ export function App() {
             </AnimatePresence>
 
             <RouterProvider router={router} />
-            {/* Debug Panel - uniquement en développement */}
-            {import.meta.env.DEV && <DebugPermissions />}
         </ErrorBoundary>
     );
 }

@@ -2,41 +2,48 @@
  * ==================================
  * eLISAschool - ActiviteTab — Detail etablissement
  * ==================================
- * Version: 1.0.0
+ * Version: 2.0.0 — Spécialisé pédagogique (sans redondances)
  * Auteur: franck arlos chendjou
+ *
+ * Spécialisation : vie scolaire UNIQUEMENT (effectifs, occupation,
+ * ventilation, timeline d'activité, comparaison plateforme).
+ * - Les modules vivent dans l'onglet Configuration (canonique).
+ * - Les métriques financières vivent dans l'onglet Finances (canonique).
+ * - La timeline est un APERÇU (compteurs + 5 derniers) ; le Journal
+ *   reste l'exhaustif paginé avec filtres.
  */
 
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import {
-    Users, GraduationCap, BookOpen, Layers, Clock,
-    TrendingUp, BarChart3, Activity, AlertCircle, Info,
+    Users, GraduationCap, BookOpen, Layers,
+    TrendingUp, BarChart3, Activity,
+    UserCheck, UserX, ArrowUpRight, ArrowDownRight, Heart,
+    Package, DollarSign, ArrowRight,
 } from 'lucide-react';
-import { SectionCard, getTauxColor } from './shared';
+import { SectionCard, getTauxColor, formatRelativeTime } from './shared';
+import { usePlatformStats, useEtablissementComparaison } from '../../hooks/use-etablissement-detail';
 import type { Etablissement, EtablissementDetailStats, ActiviteEtablissementResult } from '@/features/etablissements/types/etablissement.types';
 
 export function ActiviteTab({ stats, etablissement, activite }: {
     stats: EtablissementDetailStats;
     etablissement: Etablissement;
-    activite: ActiviteEtablissementResult;
+    // Optionnel : l'onglet reste utilisable (stats de base) pendant
+    // le chargement ou en cas d'échec de la requête activité.
+    activite?: ActiviteEtablissementResult;
 }) {
     const { t } = useTranslation('admin');
+    const navigate = useNavigate();
+    const goTab = (tab: 'configuration' | 'finances' | 'journal') =>
+        navigate({ to: '/platform/etablissements/$id', params: { id: etablissement.id }, search: { tab } as never });
 
     // Données de ventilation (depuis activite ou fallback sur stats)
     const ventilation = activite?.ventilation;
-    const modules = activite?.modules;
     const timeline = activite?.timeline;
-    const finances = activite?.finances;
 
-    // Stats plateforme pour comparaison
-    const { data: platformStats } = useQuery({
-        queryKey: ['platform-etablissements-stats'],
-        queryFn: async () => {
-            const res = await apiClient.get<{ total: number; totalEleves: number; totalUtilisateurs: number; scoreMoyen: number }>('/api/platform/etablissements/stats');
-            return res.data;
-        },
-        staleTime: 5 * 60_000,
-    });
+    // Stats plateforme pour comparaison (hook centralisé — voir use-etablissement-detail.ts)
+    const { data: platformStats } = usePlatformStats();
 
     // Cards de base (toujours visibles)
     const cards = [
@@ -210,68 +217,8 @@ export function ActiviteTab({ stats, etablissement, activite }: {
                 </SectionCard>
             )}
 
-            {/* ===== Section 3 — Modules actifs ===== */}
-            {modules && (
-                <SectionCard title={t('etablissements.detail.activite.modules.titre', 'Modules actifs')} icon={Package}>
-                    <div className="space-y-[var(--space-md)]">
-                        {/* Résumé */}
-                        <div className="flex items-center gap-[var(--gap-sm)]">
-                            <span className="text-2xl font-bold" style={{ color: 'var(--color-dominant-600)' }}>
-                                {modules.totalActifs}
-                            </span>
-                            <span className="text-sm" style={{ color: 'var(--color-texte-muted)' }}>
-                                {t('etablissements.detail.activite.modules.actifsSur', 'actifs sur')} {modules.actifs.length}
-                            </span>
-                        </div>
-
-                        {/* Grille modules */}
-                        {modules.actifs.length > 0 && (
-                            <div className="flex flex-wrap gap-[var(--gap-xs)]">
-                                {modules.actifs.slice(0, 20).map((mod) => (
-                                    <span
-                                        key={mod.nom}
-                                        className="inline-flex items-center gap-[var(--gap-xxs)] rounded-full px-[clamp(0.375rem,0.3rem+0.2vw,0.75rem)] py-[clamp(0.125rem,0.1rem+0.1vw,0.375rem)] text-xs font-medium"
-                                        style={{
-                                            backgroundColor: mod.actif ? 'var(--color-success-50)' : 'var(--color-surface-alt)',
-                                            color: mod.actif ? 'var(--color-success-700)' : 'var(--color-texte-muted)',
-                                            border: `1px solid ${mod.actif ? 'var(--color-success-200)' : 'var(--color-bordure)'}`,
-                                        }}
-                                    >
-                                        <span className={`w-1.5 h-1.5 rounded-full ${mod.actif ? 'bg-[var(--color-success-400)]' : 'bg-[var(--color-text-muted)]'}`} />
-                                        {mod.nom}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Derniers changements */}
-                        {modules.derniersChangements.length > 0 && (
-                            <div className="pt-[var(--space-sm)]" style={{ borderTop: '1px solid var(--color-bordure)' }}>
-                                <p className="text-xs font-medium mb-[var(--space-xs)]" style={{ color: 'var(--color-texte-muted)' }}>
-                                    {t('etablissements.detail.activite.modules.derniersChangements', 'Derniers changements')}
-                                </p>
-                                <div className="space-y-1">
-                                    {modules.derniersChangements.slice(0, 5).map((ch, idx) => (
-                                        <div key={idx} className="flex items-center gap-[var(--gap-xs)] text-xs">
-                                            <Package className="h-3 w-3" style={{ color: 'var(--color-texte-muted)' }} />
-                                            <span style={{ color: 'var(--color-texte)' }}>{ch.module}</span>
-                                            <span style={{ color: ch.action === 'activé' ? 'var(--color-success-600)' : 'var(--color-danger-600)' }}>
-                                                {ch.action}
-                                            </span>
-                                            <span className="ml-auto" style={{ color: 'var(--color-texte-muted)' }}>
-                                                {formatRelativeTime(ch.date)}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </SectionCard>
-            )}
-
-            {/* ===== Section 4 — Timeline activité ===== */}
-            {timeline && (
+            {/* ===== Aperçu activité récente (compteurs + 5 derniers, sans doublonner le Journal) ===== */}
+            {timeline && (timeline.compteurs.length > 0 || timeline.evenements.length > 0) && (
                 <SectionCard title={t('etablissements.detail.activite.timeline.titre', 'Activité récente')} icon={Activity}>
                     {/* Compteurs par module */}
                     {timeline.compteurs.length > 0 && (
@@ -291,14 +238,14 @@ export function ActiviteTab({ stats, etablissement, activite }: {
                         </div>
                     )}
 
-                    {/* Timeline événements */}
+                    {/* 5 derniers événements + renvoi vers le Journal exhaustif */}
                     {timeline.evenements.length > 0 && (
                         <div className="space-y-[var(--space-sm)]">
                             <p className="text-xs font-medium" style={{ color: 'var(--color-texte-muted)' }}>
                                 {t('etablissements.detail.activite.timeline.derniersEvenements', 'Derniers événements')}
                             </p>
-                            <div className="space-y-1 max-h-[400px] overflow-y-auto">
-                                {timeline.evenements.slice(0, 15).map((evt) => (
+                            <div className="space-y-1">
+                                {timeline.evenements.slice(0, 5).map((evt) => (
                                     <div key={evt.id} className="flex items-start gap-[var(--gap-xs)] rounded-lg p-[var(--space-xs)]"
                                         style={{ backgroundColor: 'var(--color-surface-alt)' }}>
                                         {/* Indicateur sévérité */}
@@ -319,11 +266,6 @@ export function ActiviteTab({ stats, etablissement, activite }: {
                                                         {evt.module}
                                                     </span>
                                                 )}
-                                                {evt.cible && (
-                                                    <span className="text-xs" style={{ color: 'var(--color-texte-muted)' }}>
-                                                        {evt.cible}
-                                                    </span>
-                                                )}
                                             </div>
                                             {evt.utilisateurEmail && (
                                                 <p className="text-xs truncate" style={{ color: 'var(--color-texte-muted)' }}>
@@ -337,105 +279,64 @@ export function ActiviteTab({ stats, etablissement, activite }: {
                                     </div>
                                 ))}
                             </div>
-                        </div>
-                    )}
-
-                    {timeline.evenements.length === 0 && timeline.compteurs.length === 0 && (
-                        <p className="text-sm text-center py-[var(--space-md)]" style={{ color: 'var(--color-texte-muted)' }}>
-                            {t('etablissements.detail.activite.timeline.aucuneActivite', 'Aucune activité enregistrée')}
-                        </p>
-                    )}
-                </SectionCard>
-            )}
-
-            {/* ===== Section 5 — Métriques financières ===== */}
-            {finances && (
-                <SectionCard title={t('etablissements.detail.activite.finances.titre', 'Métriques financières')} icon={DollarSign}>
-                    {/* Cards financières */}
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-[var(--gap-md)]">
-                        <div className="rounded-lg border p-[var(--space-sm)]" style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface-alt)' }}>
-                            <div className="flex items-center gap-[var(--gap-xxs)]">
-                                <DollarSign className="h-[var(--icon-xs)] w-[var(--icon-xs)]" style={{ color: 'var(--color-success-600)' }} />
-                                <span className="text-xs" style={{ color: 'var(--color-texte-muted)' }}>
-                                    {t('etablissements.detail.activite.finances.paiementsMois', 'Paiements ce mois')}
-                                </span>
-                            </div>
-                            <span className="text-xl font-bold" style={{ color: 'var(--color-texte)' }}>
-                                {finances.paiementsMois.toLocaleString('fr-FR')}
-                            </span>
-                            {finances.montantPaiementsMois > 0 && (
-                                <p className="text-xs" style={{ color: 'var(--color-texte-muted)' }}>
-                                    {finances.montantPaiementsMois.toLocaleString('fr-FR')} FCFA
-                                </p>
-                            )}
-                        </div>
-                        <div className="rounded-lg border p-[var(--space-sm)]" style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface-alt)' }}>
-                            <div className="flex items-center gap-[var(--gap-xxs)]">
-                                <Receipt className="h-[var(--icon-xs)] w-[var(--icon-xs)]" style={{ color: 'var(--color-warning-600)' }} />
-                                <span className="text-xs" style={{ color: 'var(--color-texte-muted)' }}>
-                                    {t('etablissements.detail.activite.finances.facturesEnAttente', 'Factures en attente')}
-                                </span>
-                            </div>
-                            <span className="text-xl font-bold" style={{ color: 'var(--color-texte)' }}>
-                                {finances.facturesEnAttente}
-                            </span>
-                            {finances.montantEnAttente > 0 && (
-                                <p className="text-xs" style={{ color: 'var(--color-texte-muted)' }}>
-                                    {finances.montantEnAttente.toLocaleString('fr-FR')} FCFA
-                                </p>
-                            )}
-                        </div>
-                        <div className="rounded-lg border p-[var(--space-sm)] col-span-2 lg:col-span-1" style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface-alt)' }}>
-                            <div className="flex items-center gap-[var(--gap-xxs)]">
-                                <Percent className="h-[var(--icon-xs)] w-[var(--icon-xs)]" style={{ color: 'var(--color-dominant-600)' }} />
-                                <span className="text-xs" style={{ color: 'var(--color-texte-muted)' }}>
-                                    {t('etablissements.detail.activite.finances.tauxRecouvrement', 'Taux recouvrement')}
-                                </span>
-                            </div>
-                            <span className="text-xl font-bold" style={{ color: getTauxColor(100 - finances.tauxRecouvrement) }}>
-                                {finances.tauxRecouvrement}%
-                            </span>
-                            <div className="w-full h-1.5 rounded-full mt-1 overflow-hidden" style={{ backgroundColor: 'var(--color-bordure)' }}>
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${finances.tauxRecouvrement}%` }}
-                                    transition={{ duration: 0.6, ease: 'easeOut' }}
-                                    className="h-full rounded-full"
-                                    style={{ backgroundColor: finances.tauxRecouvrement >= 80 ? 'var(--color-success-500)' : finances.tauxRecouvrement >= 50 ? 'var(--color-warning-500)' : 'var(--color-danger-500)' }}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Info abonnement */}
-                    {finances.abonnement && (
-                        <div className="pt-[var(--space-sm)]" style={{ borderTop: '1px solid var(--color-bordure)' }}>
-                            <div className="flex flex-wrap items-center gap-[var(--gap-sm)]">
-                                <span className="text-xs font-medium px-2 py-1 rounded" style={{
-                                    backgroundColor: 'var(--color-dominant-100)',
-                                    color: 'var(--color-dominant-700)',
-                                }}>
-                                    {finances.abonnement.plan}
-                                </span>
-                                <span className="text-xs" style={{ color: 'var(--color-texte-muted)' }}>
-                                    {finances.abonnement.statut}
-                                </span>
-                                <span className="text-xs" style={{ color: 'var(--color-texte-muted)' }}>
-                                    {finances.abonnement.dateFin ? new Date(finances.abonnement.dateFin).toLocaleDateString('fr-FR') : '—'}
-                                </span>
-                                {finances.abonnement.autoRenouvellement && (
-                                    <span className="text-xs flex items-center gap-0.5" style={{ color: 'var(--color-success-600)' }}>
-                                        <RefreshCw className="h-3 w-3" />
-                                        Auto-renouvellement
-                                    </span>
-                                )}
-                            </div>
+                            <button
+                                onClick={() => goTab('journal')}
+                                className="inline-flex items-center gap-[var(--gap-xxs)] text-xs font-medium transition-opacity hover:opacity-80"
+                                style={{ color: 'var(--color-dominant-600)' }}
+                            >
+                                {t('etablissements.detail.activite.voirJournalComplet', 'Voir le journal complet')}
+                                <ArrowRight className="h-3 w-3" />
+                            </button>
                         </div>
                     )}
                 </SectionCard>
             )}
 
-            {/* ===== Section 6 — Comparaison vs moyenne plateforme ===== */}
+            {/* ===== Renvois vers les onglets canoniques (modules, finances) ===== */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-[var(--gap-md)]">
+                <button
+                    onClick={() => goTab('configuration')}
+                    className="flex items-center justify-between gap-[var(--gap-sm)] rounded-xl border px-[clamp(1rem,0.8rem+0.5vw,1.5rem)] py-[clamp(0.75rem,0.6rem+0.4vw,1rem)] text-left transition-colors hover:bg-[var(--color-surface-alt)]"
+                    style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
+                >
+                    <span className="flex items-center gap-[var(--gap-sm)]">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: 'var(--color-success-100)' }}>
+                            <Package className="h-[var(--icon-sm)] w-[var(--icon-sm)]" style={{ color: 'var(--color-success-700)' }} />
+                        </span>
+                        <span>
+                            <span className="block text-sm font-semibold" style={{ color: 'var(--color-texte)' }}>
+                                {t('etablissements.detail.activite.voirModules', 'Voir les modules')}
+                            </span>
+                            <span className="block text-xs" style={{ color: 'var(--color-texte-muted)' }}>
+                                {t('etablissements.detail.activite.voirModulesHint', 'Modules actifs et quotas dans Configuration')}
+                            </span>
+                        </span>
+                    </span>
+                    <ArrowRight className="h-[var(--icon-sm)] w-[var(--icon-sm)] shrink-0" style={{ color: 'var(--color-texte-muted)' }} />
+                </button>
+                <button
+                    onClick={() => goTab('finances')}
+                    className="flex items-center justify-between gap-[var(--gap-sm)] rounded-xl border px-[clamp(1rem,0.8rem+0.5vw,1.5rem)] py-[clamp(0.75rem,0.6rem+0.4vw,1rem)] text-left transition-colors hover:bg-[var(--color-surface-alt)]"
+                    style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}
+                >
+                    <span className="flex items-center gap-[var(--gap-sm)]">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: 'var(--color-warning-100)' }}>
+                            <DollarSign className="h-[var(--icon-sm)] w-[var(--icon-sm)]" style={{ color: 'var(--color-warning-700)' }} />
+                        </span>
+                        <span>
+                            <span className="block text-sm font-semibold" style={{ color: 'var(--color-texte)' }}>
+                                {t('etablissements.detail.activite.voirFinances', 'Voir les finances')}
+                            </span>
+                            <span className="block text-xs" style={{ color: 'var(--color-texte-muted)' }}>
+                                {t('etablissements.detail.activite.voirFinancesHint', 'Factures, recouvrement et abonnement')}
+                            </span>
+                        </span>
+                    </span>
+                    <ArrowRight className="h-[var(--icon-sm)] w-[var(--icon-sm)] shrink-0" style={{ color: 'var(--color-texte-muted)' }} />
+                </button>
+            </div>
+
+            {/* ===== Comparaison vs moyenne plateforme ===== */}
             {platformStats && platformStats.total > 1 && (
                 <SectionCard title={t('etablissements.detail.activite.comparaison.titre', 'Comparaison plateforme')} icon={BarChart3}>
                     <ComparaisonPlateforme
@@ -461,19 +362,8 @@ export function ComparaisonPlateforme({
     platformStats: { total: number; totalEleves: number; totalUtilisateurs: number; scoreMoyen: number };
     t: (key: string, fallback: string, options?: Record<string, unknown>) => string;
 }) {
-    // Données de comparaison enrichies depuis le backend
-    const { data: comparaison } = useQuery({
-        queryKey: ['etablissement-comparaison', etablissement.id],
-        queryFn: async () => {
-            const res = await apiClient.get<{
-                local: { eleves: number; personnel: number; classes: number; tauxOccupation: number; scoreSante: number | null; modulesActifs: number | null; inscriptionsMois: number };
-                plateforme: { totalEtablissements: number; moyenneEleves: number; moyenneCapacite: number; moyenneTauxOccupation: number; moyenneScoreSante: number; moyenneClasses: number; moyennePersonnel: number };
-            }>(`/api/platform/etablissements/${etablissement.id}/comparaison`);
-            return res.data;
-        },
-        staleTime: 5 * 60_000,
-        retry: 1,
-    });
+    // Données de comparaison enrichies depuis le backend (hook centralisé)
+    const { data: comparaison } = useEtablissementComparaison(etablissement.id);
 
     // Fallback sur les anciennes données si l'endpoint échoue
     const moyEleves = platformStats.total > 0 ? Math.round(platformStats.totalEleves / platformStats.total) : 0;

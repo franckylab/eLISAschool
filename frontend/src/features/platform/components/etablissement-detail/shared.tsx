@@ -81,9 +81,11 @@ export function InfoField({ label, value, icon: Icon, href }: {
 // Boutons d'action
 // =============================================
 
-export function ActionButton({ onClick, children, variant = 'default', loading, icon: Icon }: {
+export function ActionButton({ onClick, children, label, variant = 'default', loading, icon: Icon }: {
     onClick: () => void;
-    children: React.ReactNode;
+    children?: React.ReactNode;
+    /** Libellé du bouton (alias de `children`, utilisé par le shell détail). */
+    label?: React.ReactNode;
     variant?: 'default' | 'danger' | 'success';
     loading?: boolean;
     icon?: LucideIcon;
@@ -130,7 +132,7 @@ export function ActionButton({ onClick, children, variant = 'default', loading, 
             ) : Icon ? (
                 <Icon className="h-3 w-3" />
             ) : null}
-            {children}
+            {label ?? children}
         </motion.button>
     );
 }

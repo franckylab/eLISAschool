@@ -19,6 +19,8 @@ interface ElisaToggleProps {
     id?: string;
     size?: 'sm' | 'md' | 'lg';
     className?: string;
+    /** Nom accessible sans label visible (listes denses : le libellé est déjà affiché à côté) */
+    'aria-label'?: string;
 }
 
 export const ElisaToggle = forwardRef<HTMLButtonElement, ElisaToggleProps>(
@@ -32,6 +34,7 @@ export const ElisaToggle = forwardRef<HTMLButtonElement, ElisaToggleProps>(
             id: idProp,
             size = 'md',
             className,
+            'aria-label': ariaLabel,
         },
         ref,
     ) => {
@@ -67,6 +70,7 @@ export const ElisaToggle = forwardRef<HTMLButtonElement, ElisaToggleProps>(
                     role="switch"
                     aria-checked={checked}
                     aria-disabled={disabled}
+                    aria-label={ariaLabel ?? (label ? undefined : 'Toggle')}
                     disabled={disabled}
                     onClick={() => !disabled && onCheckedChange(!checked)}
                     className={cn(
@@ -80,7 +84,7 @@ export const ElisaToggle = forwardRef<HTMLButtonElement, ElisaToggleProps>(
                     )}
                 >
                     <span className="sr-only">
-                        {label || 'Toggle'}
+                        {ariaLabel ?? label ?? 'Toggle'}
                     </span>
                     <motion.span
                         className={cn(

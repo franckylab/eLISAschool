@@ -212,13 +212,18 @@ export class ActiviteEtablissementService {
         });
 
         // Dernières inscriptions (5 plus récentes affectations créées)
-        const dernieresAffectations = await this.affectationRepo.find({
-            where: { etablissementId },
-            relations: ['eleve', 'classe'],
-            order: { createdAt: 'DESC' },
-            take: 5,
-            select: ['createdAt'],
-        });
+        // NOTE : `find({ take, order, relations, select })` génère une
+        // sous-requête DISTINCT sur les IDs dont l'ORDER BY casse dès que
+        // la PK n'est pas sélectionnée
+        // (`column distinctAlias... does not exist` sur PostgreSQL).
+        // QueryBuilder + LIMIT direct : pas de sous-requête, tri fiable.
+        const dernieresAffectations = await this.affectationRepo.createQueryBuilder('aff')
+            .leftJoinAndSelect('aff.eleve', 'eleve')
+            .leftJoinAndSelect('aff.classe', 'classe')
+            .where('aff.etablissementId = :etablissementId', { etablissementId })
+            .orderBy('aff.createdAt', 'DESC')
+            .limit(5)
+            .getMany();
 
         const dernieresInscriptions = await Promise.all(
             dernieresAffectations.map(async (aff: any) => {
@@ -322,12 +327,14 @@ export class ActiviteEtablissementService {
             .slice(0, 10);
 
         // 20 derniers événements
-        const evenements = await this.auditLogRepo.find({
-            where: { etablissementId },
-            order: { createdAt: 'DESC' },
-            take: 20,
-            relations: ['utilisateur'],
-        });
+        // NOTE : même anti-pattern DISTINCT que ci-dessus avec `take` +
+        // jointure — QueryBuilder + LIMIT direct (voir calculerVentilation).
+        const evenements = await this.auditLogRepo.createQueryBuilder('log')
+            .leftJoinAndSelect('log.utilisateur', 'utilisateur')
+            .where('log.etablissementId = :etablissementId', { etablissementId })
+            .orderBy('log.createdAt', 'DESC')
+            .limit(20)
+            .getMany();
 
         const evenementsFormates: AuditLogEntry[] = evenements.map((e: any) => ({
             id: e.id,

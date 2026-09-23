@@ -42,7 +42,18 @@ import { FacturePdfService } from '../services/facture-pdf.service';
 import { seedModulesCatalogue } from '@database/seeds/system/seed-modules-catalogue';
 // Phase 7 Lot C — Refonte SaaS v7 (groupes SaaS)
 import { groupeSaaSService } from '../services/groupe-saas.service';
-import { ModeFacturationGroupe, RepartitionFacturation } from '../entities/abonnement-groupe.entity';
+// Barèmes configurables (paliers dégressivité + plafonds) — source unique
+import {
+    baremeGroupeService,
+    CLE_PALIERS_GROUPE,
+    CLE_PLAFOND_PLAN,
+    CLE_PLAFOND_GROUPE,
+} from '../services/bareme-groupe.service';
+import { configurationHistoryService } from '@modules/configuration/services/configuration-history.service';
+import {
+    ActionConfiguration,
+    CibleConfiguration,
+} from '@modules/configuration/entities/historique-configuration.entity';
 // Phase 7 Lot D — Refonte SaaS v7 (providers paiement dynamiques)
 import { providerPaiementService } from '../services/provider-paiement.service';
 import { TypeProviderPaiement } from '../entities/provider-paiement.entity';
@@ -1418,6 +1429,16 @@ clientBillingRouter.get('/mon-abonnement/detail', authMiddleware, async (req: Re
 
         // Promotions actives (v4) — contexte enrichci pour évaluation correcte des conditions
         const { promotionService } = await import('../services/promotion.service');
+        const { GroupeEtablissementLien } = await import('@modules/groupes-etablissements/entities/groupe-etablissement-lien.entity');
+        const lienGroupe = await AppDataSource.getRepository(GroupeEtablissementLien).findOne({
+            where: { etablissementId },
+            relations: ['groupe'],
+        });
+        const nbMembresGroupe = lienGroupe?.groupe?.actif
+            ? await AppDataSource.getRepository(GroupeEtablissementLien).count({
+                where: { groupeId: lienGroupe.groupeId },
+            })
+            : 0;
         const promosEligibles = await promotionService.trouverPromotionsEligibles({
             planId: abonnement.planId,
             etablissementId,
@@ -1425,6 +1446,8 @@ clientBillingRouter.get('/mon-abonnement/detail', authMiddleware, async (req: Re
             dateDebutAbonnement: abonnement.dateDebut,
             dateFinAbonnement: abonnement.dateFin,
             packsSouscritsIds: packsSouscrits.map((p: any) => p.packId || p.id),
+            groupeId: lienGroupe?.groupe?.actif ? lienGroupe.groupeId : undefined,
+            nombreMembresGroupe: nbMembresGroupe || undefined,
         });
 
         // Quotas effectifs par ressource
@@ -1531,9 +1554,12 @@ clientBillingRouter.get('/cycles', authMiddleware, async (_req: Request, res: Re
  * GET /api/platform/facturation/groupes
  * Liste tous les groupes d'établissements
  */
-platformBillingRouter.get('/groupes', async (_req: Request, res: Response, next: NextFunction) => {
+platformBillingRouter.get('/groupes', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const groupes = await groupeSaaSService.getAllGroupes();
+        const actif = req.query.actif === undefined
+            ? undefined
+            : req.query.actif === 'true';
+        const groupes = await groupeSaaSService.getAllGroupes(actif);
         res.json({ success: true, data: groupes });
     } catch (error) { next(error); }
 });
@@ -1572,19 +1598,19 @@ platformBillingRouter.post('/groupes', async (req: Request, res: Response, next:
  */
 platformBillingRouter.patch('/groupes/:id', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const groupe = await groupeSaaSService.updateGroupe(req.params.id, req.body);
+        const groupe = await groupeSaaSService.updateGroupe(req.params.id, req.body, req.utilisateur?.id);
         res.json({ success: true, data: groupe });
     } catch (error) { next(error); }
 });
 
 /**
  * DELETE /api/platform/facturation/groupes/:id
- * Supprimer un groupe
+ * Désactiver un groupe (soft delete — libère les membres, suspend l'abonnement)
  */
 platformBillingRouter.delete('/groupes/:id', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await groupeSaaSService.deleteGroupe(req.params.id);
-        res.json({ success: true, message: 'Groupe supprimé' });
+        await groupeSaaSService.deleteGroupe(req.params.id, req.utilisateur?.id);
+        res.json({ success: true, message: 'Groupe désactivé' });
     } catch (error) { next(error); }
 });
 
@@ -1610,7 +1636,7 @@ platformBillingRouter.post('/groupes/:id/membres', async (req: Request, res: Res
  */
 platformBillingRouter.delete('/groupes/:id/membres/:etablissementId', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        await groupeSaaSService.removeMembre(req.params.id, req.params.etablissementId);
+        await groupeSaaSService.removeMembre(req.params.id, req.params.etablissementId, req.utilisateur?.id);
         res.json({ success: true, message: 'Membre retiré du groupe' });
     } catch (error) { next(error); }
 });
@@ -1643,48 +1669,219 @@ platformBillingRouter.put('/groupes/:id/modules/:moduleId', async (req: Request,
 });
 
 // Routes tranches groupe supprimées (Refonte v3 — tarification prix/élève + franchise)
+// Routes abonnement groupe supprimées (suppression facturation groupe — dégressivité sur factures individuelles)
+
+// --- VUE CONSOLIDÉE (lecture seule) ---
 
 /**
- * GET /api/platform/facturation/groupes/:id/abonnement
- * Récupère l'abonnement du groupe
+ * GET /api/platform/facturation/groupes/:id/stats
+ * Statistiques consolidées du groupe : factures individuelles des membres
+ * agrégées (dégressivité appliquée sur chaque facture, pas de facture groupe).
  */
-platformBillingRouter.get('/groupes/:id/abonnement', async (req: Request, res: Response, next: NextFunction) => {
+platformBillingRouter.get('/groupes/:id/stats', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const ab = await groupeSaaSService.getAbonnementGroupe(req.params.id);
-        res.json({ success: true, data: ab });
+        const stats = await groupeSaaSService.getStatsGroupe(req.params.id);
+        res.json({ success: true, data: stats });
+    } catch (error) { next(error); }
+});
+
+// --- BARÈMES CONFIGURABLES (paliers dégressivité + plafonds) ---
+// Source unique : ParametreSysteme (global + override groupe), résolution
+// sans doublon via baremeGroupeService, historique dédié restaurable.
+
+/**
+ * GET /api/platform/facturation/baremes/config
+ * Configuration globale effective (paliers + plafonds + sources).
+ */
+platformBillingRouter.get('/baremes/config', async (_req: Request, res: Response, next: NextFunction) => {
+    try {
+        const config = await baremeGroupeService.getConfigComplete();
+        res.json({ success: true, data: config });
     } catch (error) { next(error); }
 });
 
 /**
- * PUT /api/platform/facturation/groupes/:id/abonnement
- * Configure l'abonnement du groupe
+ * PUT /api/platform/facturation/baremes/config
+ * Modifie la configuration globale (clés fournies uniquement).
+ * Body : { paliers?: [{minMembres, remisePct}], plafondPlan?: number, plafondGroupe?: number }
  */
-platformBillingRouter.put('/groupes/:id/abonnement', async (req: Request, res: Response, next: NextFunction) => {
+platformBillingRouter.put('/baremes/config', async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { planId, modeFacturation, repartitionFacturation, tarifDegressif, dateDebut, dateFin } = req.body;
-        if (!planId) throw new AppError('planId requis', 400, 'VALIDATION_ERROR');
+        const { paliers, plafondPlan, plafondGroupe } = req.body ?? {};
+        if (paliers === undefined && plafondPlan === undefined && plafondGroupe === undefined) {
+            throw new AppError('Au moins un champ requis (paliers, plafondPlan, plafondGroupe)', 400, 'VALIDATION_ERROR');
+        }
+        const { configurationService } = await import('@modules/configuration/services/configuration.service');
+        const utilisateurId = req.utilisateur?.id;
+        const modifications: Array<{ cle: string; avant: unknown; apres: unknown; paramId: string }> = [];
 
-        const ab = await groupeSaaSService.setAbonnementGroupe(req.params.id, {
-            planId,
-            modeFacturation: modeFacturation as ModeFacturationGroupe,
-            repartitionFacturation: repartitionFacturation as RepartitionFacturation,
-            tarifDegressif,
-            dateDebut: dateDebut ? new Date(dateDebut) : undefined,
-            dateFin: dateFin ? new Date(dateFin) : undefined,
-            creePar: req.utilisateur?.id,
+        if (paliers !== undefined) {
+            const avant = await configurationService.getParametre(CLE_PALIERS_GROUPE);
+            const param = await baremeGroupeService.setPaliersGlobal(paliers, utilisateurId);
+            modifications.push({ cle: CLE_PALIERS_GROUPE, avant, apres: paliers, paramId: param.id });
+        }
+        if (plafondPlan !== undefined) {
+            const avant = await configurationService.getParametre(CLE_PLAFOND_PLAN);
+            const param = await baremeGroupeService.setPlafondGlobal(CLE_PLAFOND_PLAN, plafondPlan, utilisateurId);
+            modifications.push({ cle: CLE_PLAFOND_PLAN, avant, apres: plafondPlan, paramId: param.id });
+        }
+        if (plafondGroupe !== undefined) {
+            const avant = await configurationService.getParametre(CLE_PLAFOND_GROUPE);
+            const param = await baremeGroupeService.setPlafondGlobal(CLE_PLAFOND_GROUPE, plafondGroupe, utilisateurId);
+            modifications.push({ cle: CLE_PLAFOND_GROUPE, avant, apres: plafondGroupe, paramId: param.id });
+        }
+
+        for (const modif of modifications) {
+            await configurationHistoryService.logAction({
+                utilisateurId,
+                action: ActionConfiguration.UPDATE,
+                cible: CibleConfiguration.PARAMETRE,
+                cibleId: modif.paramId,
+                cibleNom: modif.cle,
+                description: `Barème global modifié : ${modif.cle}`,
+                ancienneValeur: modif.avant ?? null,
+                nouvelleValeur: modif.apres,
+                restaurable: true,
+            });
+        }
+
+        const config = await baremeGroupeService.getConfigComplete();
+        res.json({ success: true, data: config });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /api/platform/facturation/groupes/:id/baremes
+ * Configuration effective pour un groupe (override → global → défaut + sources).
+ */
+platformBillingRouter.get('/groupes/:id/baremes', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        await groupeSaaSService.getGroupe(req.params.id);
+        const config = await baremeGroupeService.getConfigComplete(req.params.id);
+        res.json({ success: true, data: config });
+    } catch (error) { next(error); }
+});
+
+/**
+ * PUT /api/platform/facturation/groupes/:id/baremes
+ * Définit un override groupe (paliers et/ou plafond GROUPE).
+ * Body : { paliers?: [...], plafondGroupe?: number, heriter?: boolean }
+ * heriter=true → supprime les overrides (retour au global).
+ */
+platformBillingRouter.put('/groupes/:id/baremes', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const groupe = await groupeSaaSService.getGroupe(req.params.id);
+        const { paliers, plafondGroupe, heriter } = req.body ?? {};
+        const utilisateurId = req.utilisateur?.id;
+
+        if (heriter === true) {
+            const supprimees = await baremeGroupeService.resetOverrideGroupe(groupe.id, utilisateurId);
+            if (!supprimees.length) {
+                throw new AppError('Aucun override à réinitialiser pour ce groupe', 404, 'OVERRIDE_NOT_FOUND');
+            }
+            for (const cle of supprimees) {
+                await configurationHistoryService.logAction({
+                    utilisateurId,
+                    action: ActionConfiguration.RESET,
+                    cible: CibleConfiguration.PARAMETRE,
+                    cibleId: groupe.id,
+                    cibleNom: `${cle} [groupe:${groupe.id}]`,
+                    description: `Override supprimé : ${cle} [${groupe.nom}] — retour au global`,
+                    restaurable: false,
+                });
+            }
+        } else {
+            if (paliers === undefined && plafondGroupe === undefined) {
+                throw new AppError('Au moins un champ requis (paliers, plafondGroupe) ou heriter=true', 400, 'VALIDATION_ERROR');
+            }
+            const { configurationService } = await import('@modules/configuration/services/configuration.service');
+            if (paliers !== undefined) {
+                const avant = await configurationService.getParametreGroupe(CLE_PALIERS_GROUPE, groupe.id);
+                const { created } = await configurationService.setParametreGroupe(CLE_PALIERS_GROUPE, paliers, groupe.id, utilisateurId);
+                await configurationHistoryService.logAction({
+                    utilisateurId,
+                    action: created ? ActionConfiguration.CREATE : ActionConfiguration.UPDATE,
+                    cible: CibleConfiguration.PARAMETRE,
+                    cibleId: groupe.id,
+                    cibleNom: `${CLE_PALIERS_GROUPE} [groupe:${groupe.id}]`,
+                    description: `Paliers groupe ${created ? 'créés' : 'modifiés'} : ${groupe.nom}`,
+                    ancienneValeur: avant ?? null,
+                    nouvelleValeur: paliers,
+                    restaurable: true,
+                });
+            }
+            if (plafondGroupe !== undefined) {
+                const avant = await configurationService.getParametreGroupe(CLE_PLAFOND_GROUPE, groupe.id);
+                const { created } = await configurationService.setParametreGroupe(CLE_PLAFOND_GROUPE, plafondGroupe, groupe.id, utilisateurId);
+                await configurationHistoryService.logAction({
+                    utilisateurId,
+                    action: created ? ActionConfiguration.CREATE : ActionConfiguration.UPDATE,
+                    cible: CibleConfiguration.PARAMETRE,
+                    cibleId: groupe.id,
+                    cibleNom: `${CLE_PLAFOND_GROUPE} [groupe:${groupe.id}]`,
+                    description: `Plafond GROUPE ${created ? 'créé' : 'modifié'} : ${groupe.nom}`,
+                    ancienneValeur: avant ?? null,
+                    nouvelleValeur: plafondGroupe,
+                    restaurable: true,
+                });
+            }
+        }
+
+        const config = await baremeGroupeService.getConfigComplete(groupe.id);
+        res.json({ success: true, data: config });
+    } catch (error) { next(error); }
+});
+
+/**
+ * DELETE /api/platform/facturation/groupes/:id/baremes
+ * Supprime les overrides du groupe (retour au global). Idempotent partiel :
+ * 404 seulement si aucun override n'existait.
+ */
+platformBillingRouter.delete('/groupes/:id/baremes', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const groupe = await groupeSaaSService.getGroupe(req.params.id);
+        const supprimees = await baremeGroupeService.resetOverrideGroupe(groupe.id, req.utilisateur?.id);
+        if (!supprimees.length) {
+            throw new AppError('Aucun override à réinitialiser pour ce groupe', 404, 'OVERRIDE_NOT_FOUND');
+        }
+        for (const cle of supprimees) {
+            await configurationHistoryService.logAction({
+                utilisateurId: req.utilisateur?.id,
+                action: ActionConfiguration.RESET,
+                cible: CibleConfiguration.PARAMETRE,
+                cibleId: groupe.id,
+                cibleNom: `${cle} [groupe:${groupe.id}]`,
+                description: `Override supprimé : ${cle} [${groupe.nom}] — retour au global`,
+                restaurable: false,
+            });
+        }
+        const config = await baremeGroupeService.getConfigComplete(groupe.id);
+        res.json({ success: true, data: { supprimees, config } });
+    } catch (error) { next(error); }
+});
+
+/**
+ * GET /api/platform/facturation/baremes/historique
+ * Historique des modifications barèmes (global + groupes).
+ * Query : cle (filtre partiel), groupeId (filtre scope groupe), limit, offset.
+ * Restauration via POST /api/platform/configuration/historique/:id/restore (existant).
+ */
+platformBillingRouter.get('/baremes/historique', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { cle, groupeId, limit, offset } = req.query as {
+            cle?: string;
+            groupeId?: string;
+            limit?: string;
+            offset?: string;
+        };
+        const result = await configurationHistoryService.getHistorique({
+            cible: CibleConfiguration.PARAMETRE,
+            cle: cle || undefined,
+            cibleId: groupeId || undefined,
+            limit: limit ? Math.min(100, Math.max(1, parseInt(limit, 10))) : 50,
+            offset: offset ? Math.max(0, parseInt(offset, 10)) : 0,
         });
-        res.json({ success: true, data: ab });
-    } catch (error) { next(error); }
-});
-
-/**
- * POST /api/platform/facturation/groupes/:id/abonnement/suspendre
- * Suspend l'abonnement du groupe
- */
-platformBillingRouter.post('/groupes/:id/abonnement/suspendre', async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const ab = await groupeSaaSService.suspendreAbonnementGroupe(req.params.id);
-        res.json({ success: true, data: ab });
+        res.json({ success: true, data: result.items, total: result.total });
     } catch (error) { next(error); }
 });
 

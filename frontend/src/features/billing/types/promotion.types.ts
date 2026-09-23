@@ -28,6 +28,8 @@ export enum ScopePromotion {
     PACKAGE = 'PACKAGE',
     /** Remise sur une ressource quota spécifique (élèves, stockage, SMS…) */
     QUOTA = 'QUOTA',
+    /** Remise groupe : ligne REMISE sur chaque facture individuelle des membres */
+    GROUPE = 'GROUPE',
 }
 
 /** Types de promotions automatiques contextuelles */
@@ -71,6 +73,10 @@ export interface ConditionsPromotion {
     ressourceCible?: string;
     nbCycles?: number;
     dureeGratuiteMois?: number;
+    /** Groupes éligibles pour scope=GROUPE (vide = tous les groupes) */
+    groupeIds?: string[];
+    /** Nombre minimum de membres du groupe pour scope=GROUPE */
+    nombreMembresMin?: number;
 }
 
 /** Palier de volume pour dégressivité */
@@ -170,6 +176,7 @@ export interface ResultatCascadePromotions {
     packs: { montantAvant: number; montantApres: number; promotions: LignePromotionResult[] };
     quota: { montantAvant: number; montantApres: number; promotions: LignePromotionResult[] };
     modules: { montantAvant: number; montantApres: number; promotions: LignePromotionResult[] };
+    groupe: { montantAvant: number; montantApres: number; promotions: LignePromotionResult[] };
     gratuités: LignePromotionResult[];
     toutesPromotions: LignePromotionResult[];
 }
@@ -184,6 +191,7 @@ export const SCOPE_LABELS: Record<ScopePromotion, string> = {
     [ScopePromotion.MODULE]: 'Module',
     [ScopePromotion.PACKAGE]: 'Package',
     [ScopePromotion.QUOTA]: 'Ressource quota',
+    [ScopePromotion.GROUPE]: 'Groupe',
 };
 
 export const SCOPE_COLORS: Record<ScopePromotion, string> = {
@@ -192,6 +200,7 @@ export const SCOPE_COLORS: Record<ScopePromotion, string> = {
     [ScopePromotion.MODULE]: 'bg-violet-500/15 text-violet-400 border-violet-500/20',
     [ScopePromotion.PACKAGE]: 'bg-amber-500/15 text-amber-400 border-amber-500/20',
     [ScopePromotion.QUOTA]: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/20',
+    [ScopePromotion.GROUPE]: 'bg-rose-500/15 text-rose-400 border-rose-500/20',
 };
 
 /** Labels pour les types d'auto-promotion */

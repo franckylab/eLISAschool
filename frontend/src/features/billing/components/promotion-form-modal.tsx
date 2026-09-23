@@ -15,9 +15,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { Save, Package, Layers, Plus, Trash2 } from 'lucide-react';
 import { CustomModal } from '@/components/modals/CustomModal';
 import { ElisaButton } from '@/components/ui/ElisaButton';
+import { apiClient } from '@/lib/api-client';
 import {
     type Promotion,
     type PackagePromotion,
@@ -186,6 +188,18 @@ function PromotionForm({ promotion, onSuccess, onCancel }: {
     const { data: packs = [] } = usePacks();
     const { data: packages = [] } = usePackages();
     const { data: moduleStates = [] } = useModuleRegistry();
+    // Groupes d'établissements pour scope=GROUPE (cibleId = groupeId)
+    const { data: groupes = [] } = useQuery({
+        queryKey: ['promotions-groupes-options'],
+        queryFn: async (): Promise<Array<{ id: string; nom: string; code: string }>> => {
+            const res = await apiClient.get<Array<{ id: string; nom: string; code: string }>>(
+                '/api/platform/facturation/groupes',
+                { actif: true },
+            );
+            return res.data ?? [];
+        },
+        staleTime: 60_000,
+    });
 
     const [form, setForm] = useState({
         code: promotion?.code ?? '',
@@ -207,6 +221,8 @@ function PromotionForm({ promotion, onSuccess, onCancel }: {
         ancienneteMois: promotion?.conditions?.ancienneteMois ?? null as number | null,
         nbCycles: promotion?.conditions?.nbCycles ?? null as number | null,
         dureeGratuiteMois: promotion?.conditions?.dureeGratuiteMois ?? null as number | null,
+        // Scope GROUPE — membres minimum du groupe
+        nombreMembresMin: promotion?.conditions?.nombreMembresMin ?? null as number | null,
         // v5 — Automatisation & Planification
         typeAutomatique: promotion?.config?.typeAutomatique ?? TypeAutoPromotion.MANUELLE,
         estProgrammee: promotion?.estProgrammee ?? false,
@@ -223,6 +239,9 @@ function PromotionForm({ promotion, onSuccess, onCancel }: {
         if (form.ancienneteMois) conditions.ancienneteMois = form.ancienneteMois;
         if (form.nbCycles) conditions.nbCycles = form.nbCycles;
         if (form.dureeGratuiteMois) conditions.dureeGratuiteMois = form.dureeGratuiteMois;
+        if (form.scope === ScopePromotion.GROUPE && form.nombreMembresMin) {
+            conditions.nombreMembresMin = form.nombreMembresMin;
+        }
 
         // v5 — Config (paliers, quota, auto-promo)
         const config: CreatePromotionPayload['config'] = {};
@@ -291,7 +310,10 @@ function PromotionForm({ promotion, onSuccess, onCancel }: {
                         label={t('form.type')}
                         value={form.typePromotion}
                         onChange={(v) => setForm(f => ({ ...f, typePromotion: v as TypePromotion }))}
-                        options={Object.entries(TYPE_LABELS).map(([k, l]) => ({ value: k, label: l }))}
+                        options={Object.entries(TYPE_LABELS)
+                            .filter(([k]) => form.scope !== ScopePromotion.GROUPE || k !== TypePromotion.GRATUITE)
+                            .map(([k, l]) => ({ value: k, label: l }))}
+                        hint={form.scope === ScopePromotion.GROUPE ? t('form.typeGroupeHint') : undefined}
                     />
                     <FormInput
                         label={form.typePromotion === TypePromotion.POURCENTAGE ? t('form.valeurPourcent') : t('form.valeurMontant')}
@@ -325,6 +347,7 @@ function PromotionForm({ promotion, onSuccess, onCancel }: {
                             form.scope === ScopePromotion.PLAN ? t('form.ciblePlan') :
                             form.scope === ScopePromotion.PACK ? t('form.ciblePack') :
                             form.scope === ScopePromotion.MODULE ? t('form.cibleModule') :
+                            form.scope === ScopePromotion.GROUPE ? t('form.cibleGroupe') :
                             t('form.ciblePackage')
                         }
                         value={form.cibleId}
@@ -336,6 +359,8 @@ function PromotionForm({ promotion, onSuccess, onCancel }: {
                                 ? packs.map(p => ({ value: p.id, label: `${p.nom} (${p.quantite} ${p.ressource})` }))
                                 : form.scope === ScopePromotion.MODULE
                                 ? moduleStates.map(ms => ({ value: ms.entry.name, label: ms.entry.label || ms.entry.name }))
+                                : form.scope === ScopePromotion.GROUPE
+                                ? groupes.map(g => ({ value: g.id, label: `${g.nom} (${g.code})` }))
                                 : packages.map(b => ({ value: b.id, label: `${b.nom} — ${b.code}` }))
                         }
                         hint={t('form.cibleHint')}
@@ -352,6 +377,12 @@ function PromotionForm({ promotion, onSuccess, onCancel }: {
                     <FormInput label={t('conditions.nbCycles')} type="number" value={form.nbCycles ? String(form.nbCycles) : ''} onChange={(v) => setForm(f => ({ ...f, nbCycles: v ? Number(v) : null }))} placeholder="3" />
                     <FormInput label={t('conditions.dureeGratuiteMois')} type="number" value={form.dureeGratuiteMois ? String(form.dureeGratuiteMois) : ''} onChange={(v) => setForm(f => ({ ...f, dureeGratuiteMois: v ? Number(v) : null }))} placeholder="3" />
                 </div>
+                {/* Scope GROUPE — membres minimum (vide = tous les groupes / dès 2 membres) */}
+                {form.scope === ScopePromotion.GROUPE && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <FormInput label={t('conditions.nombreMembresMin')} type="number" value={form.nombreMembresMin ? String(form.nombreMembresMin) : ''} onChange={(v) => setForm(f => ({ ...f, nombreMembresMin: v ? Number(v) : null }))} placeholder="5" hint={t('conditions.nombreMembresMinHint')} />
+                    </div>
+                )}
             </fieldset>
 
             {/* v5 — Quota resource (visible si scope=QUOTA) */}

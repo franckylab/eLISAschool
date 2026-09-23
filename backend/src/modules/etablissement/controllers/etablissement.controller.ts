@@ -738,12 +738,10 @@ router.get(
             // Moyennes plateforme (agrégation SQL directe — plus performant)
             const qb = AppDataSource.createQueryBuilder();
             const moyennes = await qb
-                .select([
-                    'COUNT(DISTINCT e.id)', 'totalEtablissements',
-                    'COALESCE(AVG(e."effectifActuel"), 0)', 'moyenneEleves',
-                    'COALESCE(AVG(e."effectifMax"), 0)', 'moyenneCapacite',
-                    'COALESCE(AVG(CASE WHEN e."effectifMax" > 0 THEN (e."effectifActuel"::float / e."effectifMax") * 100 ELSE 0 END), 0)', 'moyenneTauxOccupation',
-                ])
+                .select('COUNT(DISTINCT e.id)', 'totalEtablissements')
+                .addSelect('COALESCE(AVG(e."effectifActuel"), 0)', 'moyenneEleves')
+                .addSelect('COALESCE(AVG(e."effectifMax"), 0)', 'moyenneCapacite')
+                .addSelect('COALESCE(AVG(CASE WHEN e."effectifMax" > 0 THEN (e."effectifActuel"::float / e."effectifMax") * 100 ELSE 0 END), 0)', 'moyenneTauxOccupation')
                 .from('etablissements', 'e')
                 .where('e.statut != :statut', { statut: 'BROUILLON' })
                 .getRawOne();

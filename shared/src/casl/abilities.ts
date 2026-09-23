@@ -102,7 +102,39 @@ export interface AbilityContext {
  * @returns AppAbility instance pour vérifier les accès
  */
 export function defineAbility(ctx: AbilityContext): AppAbility {
-    const { can, cannot, build } = new AbilityBuilder<AppAbility>(PureAbility);
+    const { can, cannot, build } = new AbilityBuilder<AppAbility>(PureAbility, {
+        // conditionsMatcher requis pour supporter les conditions (ex: { matiereId: [...] })
+        // CASL appelle ce matcher pour évaluer si un sujet correspond à la condition
+        conditionsMatcher: (condition: Record<string, unknown>, subject: Record<string, unknown>) => {
+            if (!subject) return false;
+            
+            // Pour chaque clé de la condition, vérifier que le sujet a cette propriété
+            // et que sa valeur correspond (exacte ou incluse dans un tableau)
+            for (const [key, expectedValue] of Object.entries(condition)) {
+                const subjectValue = subject[key];
+                
+                // Si le sujet n'a pas cette propriété, ne matche pas
+                if (subjectValue === undefined || subjectValue === null) {
+                    return false;
+                }
+                
+                // Si la valeur attendue est un tableau, vérifier l'inclusion
+                if (Array.isArray(expectedValue)) {
+                    // subjectValue peut être une string ou un tableau
+                    const valuesToCheck = Array.isArray(subjectValue) ? subjectValue : [subjectValue];
+                    const hasMatch = valuesToCheck.some((v) => expectedValue.includes(v));
+                    if (!hasMatch) return false;
+                } else {
+                    // Comparaison directe
+                    if (subjectValue !== expectedValue) {
+                        return false;
+                    }
+                }
+            }
+            
+            return true;
+        },
+    });
     void cannot;
 
     switch (ctx.role) {

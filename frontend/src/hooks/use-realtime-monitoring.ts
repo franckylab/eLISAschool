@@ -79,9 +79,20 @@ interface UseRealtimeMonitoringResult {
  * Invalide automatiquement les queries TanStack pour rafraîchir les données.
  *
  * Compatibilité protocole : Socket.IO client ↔ Socket.IO server (backend).
- * Reconnexion automatique gérée par Socket.IO (retry avec backoff exponentiel).
+ *
+ * Best practices appliquées :
+ * - `transports: ['polling', 'websocket']` — le polling d'abord évite
+ *   l'erreur console navigateur immédiate (`WebSocket ... failed:`)
+ *   quand le serveur est indisponible ; upgrade WS ensuite.
+ * - Reconnexion bornée (10 tentatives, backoff 2s→30s) : au-delà, le
+ *   hook bascule silencieusement en mode polling (les queries TanStack
+ *   restent la source de vérité). `Infinity` spammait la console.
+ * - Base URL same-origin par défaut (proxy Vite `/monitoring` en dev,
+ *   nginx en prod) ; surcharge via `VITE_WS_URL` puis `VITE_API_URL`.
+ * - Paramètre `enabled` : les pages sans besoin temps réel peuvent
+ *   désactiver la connexion (`useRealtimeMonitoring(false)`).
  */
-export function useRealtimeMonitoring(): UseRealtimeMonitoringResult {
+export function useRealtimeMonitoring(enabled = true): UseRealtimeMonitoringResult {
     const { utilisateur: user, etablissementId } = useAuth();
     const queryClient = useQueryClient();
 
@@ -95,26 +106,31 @@ export function useRealtimeMonitoring(): UseRealtimeMonitoringResult {
     const clearAlerts = useCallback(() => setAlerts([]), []);
 
     useEffect(() => {
-        // Seulement pour SUPER_ADMIN et ADMIN
-        if (!user || !['SUPER_ADMIN', 'ADMIN'].includes(user.role)) {
+        // Seulement pour SUPER_ADMIN et ADMIN, et si explicitement activé
+        if (!enabled || !user || !['SUPER_ADMIN', 'ADMIN'].includes(user.role)) {
             return;
         }
 
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:7000';
+        // Same-origin par défaut (proxy dev / nginx prod), surcharge explicite sinon.
+        const wsBase =
+            import.meta.env.VITE_WS_URL ||
+            import.meta.env.VITE_API_URL ||
+            window.location.origin;
 
         // Connexion Socket.IO avec le path /monitoring (match le backend)
-        const socket = io(apiUrl, {
+        const socket = io(wsBase, {
             path: '/monitoring',
-            transports: ['websocket', 'polling'],
+            transports: ['polling', 'websocket'],
             query: {
                 userId: user.id,
                 role: user.role,
                 ...(etablissementId ? { etablissementId } : {}),
             },
             reconnection: true,
-            reconnectionAttempts: Infinity,
-            reconnectionDelay: 1000,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 2000,
             reconnectionDelayMax: 30000,
+            timeout: 10000,
         });
 
         socketRef.current = socket;
@@ -128,6 +144,9 @@ export function useRealtimeMonitoring(): UseRealtimeMonitoringResult {
             setConnected(false);
         });
 
+        // Échec de connexion : bascule silencieuse en mode polling.
+        // Les données restent disponibles via les queries TanStack ;
+        // on évite tout log bruyant (le navigateur log déjà l'échec WS).
         socket.on('connect_error', () => {
             setConnected(false);
         });
@@ -181,7 +200,7 @@ export function useRealtimeMonitoring(): UseRealtimeMonitoringResult {
             socket.disconnect();
             socketRef.current = null;
         };
-    }, [user, etablissementId, queryClient]);
+    }, [enabled, user, etablissementId, queryClient]);
 
     return {
         alerts,

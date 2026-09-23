@@ -61,6 +61,11 @@ const PARAMETRES_BILLING: ParametreSeed[] = [
     { cle: 'billing.dunning.max_relances', valeur: '4', typeValeur: mapType('NUMBER'), description: 'Nombre maximum de relances avant suspension', visible: true },
     { cle: 'billing.dunning.intervalle_jours', valeur: '3', typeValeur: mapType('NUMBER'), description: 'Intervalle entre relances (jours)', visible: true },
     { cle: 'billing.dunning.suspension_auto', valeur: 'true', typeValeur: mapType('BOOLEAN'), description: 'Suspension automatique après max relances', visible: true },
+
+    // ─── Remises groupe & plafonds promotions (barème configurable) ───
+    { cle: 'billing.remise_groupe.paliers', valeur: '[{"minMembres":2,"remisePct":5},{"minMembres":4,"remisePct":10},{"minMembres":6,"remisePct":15},{"minMembres":11,"remisePct":20},{"minMembres":21,"remisePct":25}]', typeValeur: mapType('JSON'), description: 'Barème dégressivité groupe : paliers ordonnés {minMembres, remisePct}. Appliqué en ligne REMISE sur chaque facture membre', visible: true },
+    { cle: 'billing.plafond_plan', valeur: '40', typeValeur: mapType('NUMBER'), description: 'Plafond remise phase PLAN (% du montant plan, défaut 40)', visible: true },
+    { cle: 'billing.plafond_groupe', valeur: '40', typeValeur: mapType('NUMBER'), description: 'Plafond remise phase GROUPE (% de la base post-cascade, défaut 40, indépendant du plafond PLAN)', visible: true },
 ];
 
 export async function seedParametresBilling(): Promise<{ created: number; updated: number }> {

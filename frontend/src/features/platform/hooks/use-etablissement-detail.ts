@@ -21,7 +21,6 @@ import type {
     UtilisateursResumeResult,
     FactureEtablissement,
     HistoriqueConnexionsResult,
-    AuditLogResponse,
     HistoriqueScoreSante,
     EvolutionPaiementMois,
 } from '@/features/etablissements/types/etablissement.types';
@@ -37,12 +36,33 @@ import type {
  * Extrait `data` d'une réponse API et lève une erreur si absente.
  * Garantit que queryFn retourne T (et non T | undefined),
  * ce qui permet à TanStack Query de correctement inférer les types.
+ *
+ * Règle absolue : une queryFn TanStack ne doit JAMAIS résoudre
+ * `undefined` (erreur `Query data cannot be undefined`). Pour les
+ * listes, préférer `unwrapList()` qui normalise vers `[]`.
  */
-function unwrap<T>(res: { data?: T; success?: boolean }, endpoint: string): T {
-    if (res.data === undefined || res.data === null) {
+function unwrap<T>(res: { data?: T; success?: boolean } | undefined | null, endpoint: string): T {
+    if (res?.data === undefined || res?.data === null) {
         throw new Error(`Réponse API vide pour ${endpoint}`);
     }
     return res.data;
+}
+
+/**
+ * Variante liste de `unwrap()` : ne lève jamais, normalise vers `[]`.
+ * Couvre les 3 formes rencontrées côté backend :
+ * - `{ success, data: [...] }` (tableau direct — cas standard)
+ * - `{ success, data: { data: [...] } }` (double-nesté legacy)
+ * - réponse vide / 204 → `[]`
+ */
+function unwrapList<T>(res: unknown): T[] {
+    if (!res || typeof res !== 'object') return [];
+    const data = (res as { data?: unknown }).data;
+    if (Array.isArray(data)) return data as T[];
+    if (data && typeof data === 'object' && Array.isArray((data as { data?: unknown }).data)) {
+        return (data as { data: T[] }).data;
+    }
+    return [];
 }
 
 // =============================================
@@ -60,16 +80,38 @@ const ETABLISSEMENT_DETAIL_KEYS = {
     utilisateurs: (id: string) => [...ETABLISSEMENT_DETAIL_KEYS.all, 'utilisateurs', id] as const,
     factures: (id: string) => [...ETABLISSEMENT_DETAIL_KEYS.all, 'factures', id] as const,
     connexions: (id: string) => [...ETABLISSEMENT_DETAIL_KEYS.all, 'connexions', id] as const,
-    audit: (id: string) => [...ETABLISSEMENT_DETAIL_KEYS.all, 'audit', id] as const,
     historiqueSante: (id: string) => [...ETABLISSEMENT_DETAIL_KEYS.all, 'historique-sante', id] as const,
     evolutionPaiements: (id: string) => [...ETABLISSEMENT_DETAIL_KEYS.all, 'evolution-paiements', id] as const,
 };
 
 // =============================================
-// Hook principal — agrège toutes les données
+// Hook principal — agrège les données de l'onglet actif
 // =============================================
+// v2.0.0 — Chargement paresseux par onglet : seules les requêtes
+// utiles à l'onglet affiché sont déclenchées (les autres restent
+// en cache après première visite via staleTime). L'audit n'est
+// plus chargé ici : JournalTab gère ses propres requêtes paginées
+// (l'ancienne queryAudit de 50 logs pour le seul bouton d'export
+// du shell était un fetch redondant).
+//
+// Cartographie onglet → requêtes :
+// - identite      : base uniquement (données incluses dans l'entité)
+// - sante         : sante + historiqueSante
+// - activite      : stats + activite
+// - configuration : config + configComplete + stats + utilisateurs (quotas)
+// - finances      : factures + activite (finances) + config + evolutionPaiements
+// - utilisateurs  : utilisateurs + connexions
+// - journal       : requêtes propres (aucune ici)
 
-export function useEtablissementDetail(id: string) {
+export type OngletEtablissement =
+    | 'identite' | 'sante' | 'activite' | 'configuration'
+    | 'finances' | 'utilisateurs' | 'journal';
+
+export function useEtablissementDetail(id: string, activeTab?: OngletEtablissement | string) {
+    // Sans onglet précisé (compatibilité) : tout est chargé comme avant.
+    const need = (tabs: OngletEtablissement[]): boolean =>
+        !activeTab || tabs.includes(activeTab as OngletEtablissement);
+
     const queryBase = useQuery<Etablissement>({
         queryKey: ETABLISSEMENT_DETAIL_KEYS.base(id),
         queryFn: async () => {
@@ -87,7 +129,7 @@ export function useEtablissementDetail(id: string) {
             const res = await apiClient.get<EtablissementDetailStats>(`/api/platform/etablissements/${id}/stats`);
             return unwrap(res, `etablissement/${id}/stats`);
         },
-        enabled: !!id,
+        enabled: !!id && need(['activite', 'configuration']),
         staleTime: 60_000,
         retry: 2,
     });
@@ -98,7 +140,7 @@ export function useEtablissementDetail(id: string) {
             const res = await apiClient.get<SanteEtablissementResult>(`/api/platform/etablissements/${id}/sante`);
             return unwrap(res, `etablissement/${id}/sante`);
         },
-        enabled: !!id,
+        enabled: !!id && need(['sante']),
         staleTime: 5 * 60_000,
         retry: 2,
     });
@@ -109,7 +151,7 @@ export function useEtablissementDetail(id: string) {
             const res = await apiClient.get<EtablissementConfig>(`/api/platform/etablissements/${id}/config`);
             return unwrap(res, `etablissement/${id}/config`);
         },
-        enabled: !!id,
+        enabled: !!id && need(['configuration', 'finances']),
         staleTime: 2 * 60_000,
         retry: 2,
     });
@@ -120,7 +162,7 @@ export function useEtablissementDetail(id: string) {
             const res = await apiClient.get<ConfigCompleteResult>(`/api/platform/etablissements/${id}/config-complete`);
             return unwrap(res, `etablissement/${id}/config-complete`);
         },
-        enabled: !!id,
+        enabled: !!id && need(['configuration']),
         staleTime: 2 * 60_000,
         retry: 2,
     });
@@ -131,7 +173,7 @@ export function useEtablissementDetail(id: string) {
             const res = await apiClient.get<ActiviteEtablissementResult>(`/api/platform/etablissements/${id}/activite`);
             return unwrap(res, `etablissement/${id}/activite`);
         },
-        enabled: !!id,
+        enabled: !!id && need(['activite', 'finances']),
         staleTime: 60_000,
         retry: 2,
     });
@@ -142,7 +184,7 @@ export function useEtablissementDetail(id: string) {
             const res = await apiClient.get<UtilisateursResumeResult>(`/api/platform/etablissements/${id}/utilisateurs`);
             return unwrap(res, `etablissement/${id}/utilisateurs`);
         },
-        enabled: !!id,
+        enabled: !!id && need(['utilisateurs', 'configuration']),
         staleTime: 2 * 60_000,
         retry: 2,
     });
@@ -156,7 +198,7 @@ export function useEtablissementDetail(id: string) {
             );
             return unwrap(res, 'facturation/factures').data || [];
         },
-        enabled: !!id,
+        enabled: !!id && need(['finances']),
         staleTime: 2 * 60_000,
         retry: 2,
     });
@@ -167,45 +209,34 @@ export function useEtablissementDetail(id: string) {
             const res = await apiClient.get<HistoriqueConnexionsResult>(`/api/platform/etablissements/${id}/connexions`);
             return unwrap(res, `etablissement/${id}/connexions`);
         },
-        enabled: !!id,
+        enabled: !!id && need(['utilisateurs']),
         staleTime: 5 * 60_000,
-        retry: 2,
-    });
-
-    const queryAudit = useQuery<AuditLogResponse>({
-        queryKey: ETABLISSEMENT_DETAIL_KEYS.audit(id),
-        queryFn: async () => {
-            const res = await apiClient.get<AuditLogResponse>(`/api/platform/etablissements/${id}/audit`, {
-                page: '1',
-                limit: '50',
-            });
-            return unwrap(res, `etablissement/${id}/audit`);
-        },
-        enabled: !!id,
-        staleTime: 2 * 60_000,
         retry: 2,
     });
 
     // Historique scores santé (sparkline)
+    // NOTE : le backend renvoie `{ success, data: [...] }` (tableau direct).
+    // L'ancien code supposait un double-nesté `{ data: { data: [...] } }`
+    // → `.data` valait `undefined` → `Query data cannot be undefined`.
     const queryHistoriqueSante = useQuery<HistoriqueScoreSante[]>({
         queryKey: ETABLISSEMENT_DETAIL_KEYS.historiqueSante(id),
         queryFn: async () => {
-            const res = await apiClient.get<{ data: HistoriqueScoreSante[] }>(`/api/platform/etablissements/${id}/sante/historique`);
-            return unwrap(res, `etablissement/${id}/sante/historique`).data;
+            const res = await apiClient.get<HistoriqueScoreSante[]>(`/api/platform/etablissements/${id}/sante/historique`);
+            return unwrapList<HistoriqueScoreSante>(res);
         },
-        enabled: !!id,
+        enabled: !!id && need(['sante']),
         staleTime: 5 * 60_000,
         retry: 1,
     });
 
-    // Évolution mensuelle des paiements
+    // Évolution mensuelle des paiements (même correctif que ci-dessus)
     const queryEvolutionPaiements = useQuery<EvolutionPaiementMois[]>({
         queryKey: ETABLISSEMENT_DETAIL_KEYS.evolutionPaiements(id),
         queryFn: async () => {
-            const res = await apiClient.get<{ data: EvolutionPaiementMois[] }>(`/api/platform/etablissements/${id}/finances/evolution`);
-            return unwrap(res, `etablissement/${id}/finances/evolution`).data;
+            const res = await apiClient.get<EvolutionPaiementMois[]>(`/api/platform/etablissements/${id}/finances/evolution`);
+            return unwrapList<EvolutionPaiementMois>(res);
         },
-        enabled: !!id,
+        enabled: !!id && need(['finances']),
         staleTime: 5 * 60_000,
         retry: 1,
     });
@@ -221,7 +252,6 @@ export function useEtablissementDetail(id: string) {
         utilisateurs: queryUtilisateurs.data,
         factures: queryFactures.data,
         connexions: queryConnexions.data,
-        audit: queryAudit.data,
         historiqueSante: queryHistoriqueSante.data,
         evolutionPaiements: queryEvolutionPaiements.data,
 
@@ -235,7 +265,6 @@ export function useEtablissementDetail(id: string) {
         isLoadingUtilisateurs: queryUtilisateurs.isLoading,
         isLoadingFactures: queryFactures.isLoading,
         isLoadingConnexions: queryConnexions.isLoading,
-        isLoadingAudit: queryAudit.isLoading,
         isFetching: queryBase.isFetching,
 
         // États d'erreur
@@ -248,7 +277,6 @@ export function useEtablissementDetail(id: string) {
         errorUtilisateurs: queryUtilisateurs.error,
         errorFactures: queryFactures.error,
         errorConnexions: queryConnexions.error,
-        errorAudit: queryAudit.error,
 
         // Rafraîchissement
         refetchAll: () => {
@@ -261,7 +289,6 @@ export function useEtablissementDetail(id: string) {
             queryUtilisateurs.refetch();
             queryFactures.refetch();
             queryConnexions.refetch();
-            queryAudit.refetch();
             queryHistoriqueSante.refetch();
             queryEvolutionPaiements.refetch();
         },
@@ -274,7 +301,6 @@ export function useEtablissementDetail(id: string) {
         refetchUtilisateurs: queryUtilisateurs.refetch,
         refetchFactures: queryFactures.refetch,
         refetchConnexions: queryConnexions.refetch,
-        refetchAudit: queryAudit.refetch,
         refetchHistoriqueSante: queryHistoriqueSante.refetch,
         refetchEvolutionPaiements: queryEvolutionPaiements.refetch,
     };
@@ -456,12 +482,84 @@ interface EtablissementResume {
     config: EtablissementConfig;
 }
 
+// =============================================
+// Hooks — Statistiques plateforme + Comparaison
+// =============================================
+
+export interface PlatformEtablissementsStats {
+    total: number;
+    totalEleves: number;
+    totalUtilisateurs: number;
+    scoreMoyen: number;
+}
+
+export interface EtablissementComparaison {
+    local: {
+        eleves: number;
+        personnel: number;
+        classes: number;
+        tauxOccupation: number;
+        scoreSante: number | null;
+        modulesActifs: number | null;
+        inscriptionsMois: number;
+    };
+    plateforme: {
+        totalEtablissements: number;
+        moyenneEleves: number;
+        moyenneCapacite: number;
+        moyenneTauxOccupation: number;
+        moyenneScoreSante: number;
+        moyenneClasses: number;
+        moyennePersonnel: number;
+    };
+}
+
+/**
+ * Statistiques globales plateforme (moyennes pour comparaison).
+ * Best practice : data-fetching centralisé dans les hooks,
+ * jamais inline dans les composants présentationnels.
+ */
+export function usePlatformStats(enabled = true) {
+    return useQuery<PlatformEtablissementsStats>({
+        queryKey: ['platform-etablissements-stats'],
+        queryFn: async () => {
+            const res = await apiClient.get<PlatformEtablissementsStats>('/api/platform/etablissements/stats');
+            return unwrap(res, 'platform/etablissements/stats');
+        },
+        staleTime: 5 * 60_000,
+        retry: 1,
+        enabled,
+    });
+}
+
+/**
+ * Comparaison d'un établissement vs moyenne plateforme.
+ * Retry limité à 1 : la vue dégrade gracieusement vers les
+ * moyennes locales si l'endpoint est indisponible.
+ */
+export function useEtablissementComparaison(etablissementId: string, enabled = true) {
+    return useQuery<EtablissementComparaison>({
+        queryKey: [...ETABLISSEMENT_DETAIL_KEYS.all, 'comparaison', etablissementId],
+        queryFn: async () => {
+            const res = await apiClient.get<EtablissementComparaison>(
+                `/api/platform/etablissements/${etablissementId}/comparaison`,
+            );
+            return unwrap(res, `etablissement/${etablissementId}/comparaison`);
+        },
+        enabled: !!etablissementId && enabled,
+        staleTime: 5 * 60_000,
+        retry: 1,
+    });
+}
+
 export function useEtablissementResume(id: string) {
     return useQuery<EtablissementResume>({
         queryKey: [...ETABLISSEMENT_DETAIL_KEYS.all, 'resume', id] as const,
         queryFn: async () => {
-            const res = await apiClient.get<{ data: EtablissementResume }>(`/api/platform/etablissements/${id}/resume`);
-            return unwrap(res, `etablissement/${id}/resume`).data;
+            // NOTE : le backend renvoie `{ success, data: { etablissement, stats, sante, config } }`
+            // (objet direct, pas double-nesté) — même piège que historique/evolution.
+            const res = await apiClient.get<EtablissementResume>(`/api/platform/etablissements/${id}/resume`);
+            return unwrap(res, `etablissement/${id}/resume`);
         },
         enabled: !!id,
         staleTime: 2 * 60_000,

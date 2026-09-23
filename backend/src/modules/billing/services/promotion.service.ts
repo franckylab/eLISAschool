@@ -33,6 +33,7 @@ import {
 } from '../entities/promotion.entity';
 import { PackagePromotion, TypeRemisePackage } from '../entities/package-promotion.entity';
 import { PromotionUtilisee } from '../entities/promotion-utilisee.entity';
+import { baremeGroupeService } from './bareme-groupe.service';
 import { AppError } from '@common/filters/error.filter';
 import { logger } from '@common/utils/logger.util';
 
@@ -50,6 +51,10 @@ import { logger } from '@common/utils/logger.util';
     nombreEleves?: number;
     dateDebutAbonnement?: Date;
     dateFinAbonnement?: Date;
+    /** Groupe de l'établissement (scope=GROUPE : remise ligne par facture membre) */
+    groupeId?: string;
+    /** Nombre de membres du groupe (condition nombreMembresMin) */
+    nombreMembresGroupe?: number;
     /** IDs des packs déjà souscrits (pour cross-sell pack→pack) */
     packsSouscritsIds?: string[];
     /** IDs des modules déjà souscrits */
@@ -92,6 +97,8 @@ export interface ResultatCascadePromotions {
     /** Quota (scope=QUOTA) — déduction sur ressource spécifique */
     quota: { montantAvant: number; montantApres: number; promotions: LignePromotionResult[] };
     modules: { montantAvant: number; montantApres: number; promotions: LignePromotionResult[] };
+    /** Groupe (scope=GROUPE) — remise sur base post-cascade, plafond 40% indépendant */
+    groupe: { montantAvant: number; montantApres: number; promotions: LignePromotionResult[] };
     gratuités: LignePromotionResult[];
     /** Toutes les promotions appliquées (aplati) */
     toutesPromotions: LignePromotionResult[];
@@ -105,8 +112,7 @@ export class PromotionService {
     private promoRepo: Repository<Promotion>;
     private packageRepo: Repository<PackagePromotion>;
 
-    /** Plafond de déduction sur le PLAN uniquement (40%) */
-    private static readonly PLAFOND_PLAN_POURCENT = 40;
+    // Les plafonds PLAN/GROUPE sont résolus via baremeGroupeService (configurables, défaut 40).
 
     constructor() {
         this.promoRepo = AppDataSource.getRepository(Promotion);
@@ -289,18 +295,21 @@ export class PromotionService {
             packs: { montantAvant: montantPacks, montantApres: montantPacks, promotions: [] },
             quota: { montantAvant: 0, montantApres: 0, promotions: [] },
             modules: { montantAvant: montantModules, montantApres: montantModules, promotions: [] },
+            groupe: { montantAvant: 0, montantApres: 0, promotions: [] },
             gratuités: [],
             toutesPromotions: [],
         };
 
-        // ─── PHASE 1 : PLAN (plafond 40%) ───
+        // ─── PHASE 1 : PLAN (plafond configurable, défaut 40%) ───
         const promosPlan = toutesPromos.filter((p) => p.scope === ScopePromotion.PLAN);
         const validesPlan = promosPlan
             .filter((p) => this.estValide(p, ctx))
             .sort((a, b) => (b.priorite ?? 0) - (a.priorite ?? 0));
 
         let totalPlan = montantPlan;
-        const deductionMaxPlan = montantPlan * (PromotionService.PLAFOND_PLAN_POURCENT / 100);
+        // Plafond PLAN configurable (global — défaut 40), jamais bloquant en cas d'échec lecture
+        const { valeur: plafondPlan } = await baremeGroupeService.getPlafondPlan();
+        const deductionMaxPlan = montantPlan * (plafondPlan / 100);
         let totalDeduitPlan = 0;
 
         for (const promo of validesPlan) {
@@ -417,6 +426,48 @@ export class PromotionService {
         }
         resultat.modules.montantApres = Math.max(0, Math.round(totalModules * 100) / 100);
 
+        // ─── PHASE GROUPE : remise groupe sur base post-cascade (plafond 40% indépendant) ───
+        // Q23-A : appliquée en ligne REMISE sur chaque facture individuelle des membres.
+        // Base = somme des montants après phases 1-4 (indépendante du plafond PLAN).
+        const baseGroupe = Math.max(
+            0,
+            Math.round(
+                (resultat.plan.montantApres + resultat.packs.montantApres + resultat.quota.montantApres + resultat.modules.montantApres) * 100,
+            ) / 100,
+        );
+        resultat.groupe.montantAvant = baseGroupe;
+        let totalGroupe = baseGroupe;
+        if (ctx.groupeId && baseGroupe > 0) {
+            // GRATUITE exclue au niveau groupe (Q3 : module offert = niveau membre uniquement)
+            const promosGroupe = toutesPromos.filter(
+                (p) => p.scope === ScopePromotion.GROUPE && p.typePromotion !== TypePromotion.GRATUITE,
+            );
+            const validesGroupe = promosGroupe
+                .filter((p) => this.estValide(p, ctx))
+                .sort((a, b) => (b.priorite ?? 0) - (a.priorite ?? 0));
+
+            const deductionMaxGroupe = baseGroupe * ((await baremeGroupeService.getPlafondGroupe(ctx.groupeId)).valeur / 100);
+            let totalDeduitGroupe = 0;
+
+            for (const promo of validesGroupe) {
+                if (ctx.codeCoupon && promo.codeCoupon && promo.codeCoupon !== ctx.codeCoupon) continue;
+                if (totalDeduitGroupe >= deductionMaxGroupe) break;
+
+                if (!promo.cumulable && resultat.groupe.promotions.length > 0) continue;
+                const deduit = this.écréter(
+                    this.calculerDeduction(promo, totalGroupe, ctx),
+                    totalDeduitGroupe,
+                    deductionMaxGroupe,
+                );
+                if (deduit <= 0) continue;
+                totalGroupe -= deduit;
+                totalDeduitGroupe += deduit;
+                resultat.groupe.promotions.push(this.toLigneResult(promo, deduit));
+                if (!promo.cumulable) break;
+            }
+        }
+        resultat.groupe.montantApres = Math.max(0, Math.round(totalGroupe * 100) / 100);
+
         // ─── PHASE 4 : GRATUITÉS (modules à 0 F) ───
         const gratuités = toutesPromos.filter(
             (p) => p.scope === ScopePromotion.MODULE && p.typePromotion === TypePromotion.GRATUITE,
@@ -448,7 +499,7 @@ export class PromotionService {
 
         // ─── TOTAL ───
         resultat.montantFinal = Math.round(
-            (resultat.plan.montantApres + resultat.packs.montantApres + resultat.quota.montantApres + resultat.modules.montantApres) * 100,
+            (resultat.plan.montantApres + resultat.packs.montantApres + resultat.quota.montantApres + resultat.modules.montantApres - (resultat.groupe.montantAvant - resultat.groupe.montantApres)) * 100,
         ) / 100;
 
         resultat.toutesPromotions = [
@@ -456,6 +507,7 @@ export class PromotionService {
             ...resultat.packs.promotions,
             ...resultat.quota.promotions,
             ...resultat.modules.promotions,
+            ...resultat.groupe.promotions,
             ...resultat.gratuités,
         ];
 
@@ -1047,10 +1099,25 @@ export class PromotionService {
                 case ScopePromotion.MODULE:
                     if (c.modulesSouscritsIds?.length && !c.modulesSouscritsIds.includes(promo.cibleId)) return false;
                     break;
+                case ScopePromotion.GROUPE:
+                    // cibleId = groupeId spécifique — l'établissement doit en être membre
+                    if (!c.groupeId || c.groupeId !== promo.cibleId) return false;
+                    break;
             }
         }
 
         const cond = promo.conditions ?? {};
+
+        // ─── Scope GROUPE : l'établissement doit appartenir à un groupe ───
+        if (promo.scope === ScopePromotion.GROUPE) {
+            if (!c.groupeId) return false;
+            // Restriction à une liste de groupes (vide = tous les groupes)
+            if (cond.groupeIds && cond.groupeIds.length > 0 && !cond.groupeIds.includes(c.groupeId)) return false;
+            // Nombre minimum de membres du groupe
+            if (cond.nombreMembresMin !== undefined && cond.nombreMembresMin !== null) {
+                if ((c.nombreMembresGroupe ?? 0) < cond.nombreMembresMin) return false;
+            }
+        }
 
         // Condition nombre d'élèves
         if (cond.nombreElevesMin !== undefined && cond.nombreElevesMin !== null) {

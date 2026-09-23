@@ -16,7 +16,15 @@ import { AppDataSource } from '@database/data-source';
 import { logger } from '@common/utils/logger.util';
 import { StatutAbonnement } from '@modules/billing/entities/abonnement-client.entity';
 import { StatutFacture } from '@modules/billing/entities/facture.entity';
+import { StatutUtilisateur } from '@modules/auth/entities/utilisateur.entity';
 import { santeEtablissementService } from '@modules/etablissement/services/sante-etablissement.service';
+// Types uniquement (zéro impact runtime) — typer les repositories
+// convertit les fautes de frappe sur les colonnes en erreurs de
+// compilation au lieu de 500 au runtime (cf. bug `actif` sur Utilisateur).
+import type { Etablissement } from '@modules/etablissement/entities/etablissement.entity';
+import type { Utilisateur } from '@modules/auth/entities/utilisateur.entity';
+import type { AbonnementClient } from '@modules/billing/entities/abonnement-client.entity';
+import type { Facture } from '@modules/billing/entities/facture.entity';
 
 // =============================================
 // Types
@@ -65,10 +73,10 @@ export interface StatsComplet {
 // =============================================
 
 export class PlatformStatsService {
-    private etablissementRepo: Repository<any>;
-    private utilisateurRepo: Repository<any>;
-    private abonnementRepo: Repository<any>;
-    private factureRepo: Repository<any>;
+    private etablissementRepo: Repository<Etablissement>;
+    private utilisateurRepo: Repository<Utilisateur>;
+    private abonnementRepo: Repository<AbonnementClient>;
+    private factureRepo: Repository<Facture>;
 
     // Cache in-memory — TTL 60 secondes
     private cache: { value: PlatformStats; timestamp: number } | null = null;
@@ -94,6 +102,9 @@ export class PlatformStatsService {
         }
 
         // 2. Cache miss → requêtes DB parallèles
+        // NOTE : `Etablissement` porte un booléen `actif`, mais
+        // `Utilisateur` utilise l'enum `statut` (StatutUtilisateur) —
+        // il n'a PAS de colonne `actif` (cf. crash EntityPropertyNotFoundError).
         const [
             totalEtablissements,
             etablissementsActifs,
@@ -103,7 +114,7 @@ export class PlatformStatsService {
             this.etablissementRepo.count(),
             this.etablissementRepo.count({ where: { actif: true } }),
             this.utilisateurRepo.count(),
-            this.utilisateurRepo.count({ where: { actif: true } }),
+            this.utilisateurRepo.count({ where: { statut: StatutUtilisateur.ACTIF } }),
         ]);
 
         const stats: PlatformStats = {
@@ -138,7 +149,7 @@ export class PlatformStatsService {
             where: { statut: StatutAbonnement.ACTIF },
             select: ['montantMensuel'],
         });
-        const mrr = abonnementsActifs.reduce((sum: number, a: any) => sum + Number(a.montantMensuel || 0), 0);
+        const mrr = abonnementsActifs.reduce((sum: number, a: AbonnementClient) => sum + Number(a.montantMensuel || 0), 0);
         const arr = mrr * 12;
 
         // Factures — agrégats

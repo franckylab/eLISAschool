@@ -298,7 +298,8 @@ export async function seedModulesCatalogue(force: boolean = false): Promise<numb
 
     if (count > 0 && force) {
         logger.info(`🔄 Réinitialisation du catalogue modules (${count} entrées supprimées)`);
-        await repo.clear();
+        // Use TRUNCATE CASCADE to properly handle foreign key references (modules_groupe, abonnement_module)
+        await AppDataSource.query('TRUNCATE TABLE modules_catalogue CASCADE');
     }
 
     let inserted = 0;

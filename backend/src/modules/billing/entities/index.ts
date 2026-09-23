@@ -23,7 +23,7 @@ export { CreditNote, StatutCreditNote } from './credit-note.entity';
 export { ModuleCatalogue, CategorieModule } from './module-catalogue.entity';
 // Phase 7 Lot C — Refonte SaaS v7 (groupes SaaS)
 export { ModulesGroupe } from './modules-groupe.entity';
-export { AbonnementGroupe, StatutAbonnementGroupe, ModeFacturationGroupe, RepartitionFacturation } from './abonnement-groupe.entity';
+// AbonnementGroupe supprimé (suppression facturation groupe — migration 220)
 // Phase 7 Lot D — Refonte SaaS v7 (providers paiement dynamiques)
 export { ProviderPaiement, TypeProviderPaiement } from './provider-paiement.entity';
 export { ProviderAssignment, ScopeAssignment } from './provider-assignment.entity';

@@ -428,9 +428,20 @@ clientPromotionRouter.get('/eligibles', authMiddleware, async (req: Request, res
         const etablissementId = (req as any).etablissementId;
         const codeCoupon = req.query.codeCoupon as string | undefined;
 
+        // Contexte groupe pour les promotions scope=GROUPE
+        const { GroupeEtablissementLien: LienElig } = await import('@modules/groupes-etablissements/entities/groupe-etablissement-lien.entity');
+        const lienRepoElig = AppDataSource.getRepository(LienElig);
+        const lienElig = etablissementId
+            ? await lienRepoElig.findOne({ where: { etablissementId }, relations: ['groupe'] })
+            : null;
+
         const eligibles = await promotionService.trouverPromotionsEligibles({
             etablissementId,
             codeCoupon,
+            groupeId: lienElig?.groupe?.actif ? lienElig.groupeId : undefined,
+            nombreMembresGroupe: lienElig?.groupe?.actif
+                ? await lienRepoElig.count({ where: { groupeId: lienElig.groupeId } })
+                : undefined,
         });
 
         res.json({ success: true, data: eligibles });
@@ -478,7 +489,20 @@ clientPromotionRouter.post('/verifier-coupon', authMiddleware, couponRateLimitMi
         }
 
         const etablissementId = (req as any).etablissementId;
-        const valide = promotionService.estValide(matching, { codeCoupon, etablissementId });
+        // Contexte groupe pour les coupons scope=GROUPE
+        const { GroupeEtablissementLien: LienCoupon } = await import('@modules/groupes-etablissements/entities/groupe-etablissement-lien.entity');
+        const lienRepoCoupon = AppDataSource.getRepository(LienCoupon);
+        const lienCoupon = etablissementId
+            ? await lienRepoCoupon.findOne({ where: { etablissementId }, relations: ['groupe'] })
+            : null;
+        const valide = promotionService.estValide(matching, {
+            codeCoupon,
+            etablissementId,
+            groupeId: lienCoupon?.groupe?.actif ? lienCoupon.groupeId : undefined,
+            nombreMembresGroupe: lienCoupon?.groupe?.actif
+                ? await lienRepoCoupon.count({ where: { groupeId: lienCoupon.groupeId } })
+                : undefined,
+        });
         res.json({
             success: true,
             data: {
@@ -574,6 +598,20 @@ clientPromotionRouter.post('/preview-cascade', authMiddleware, async (req: Reque
             dateDebutAbonnement: abonnement.dateDebut,
             dateFinAbonnement: abonnement.dateFin,
         };
+
+        // Contexte groupe (scope=GROUPE) — cohérence preview ↔ facture réelle
+        const { GroupeEtablissementLien } = await import('@modules/groupes-etablissements/entities/groupe-etablissement-lien.entity');
+        const lienRepoPreview = AppDataSource.getRepository(GroupeEtablissementLien);
+        const lienPreview = await lienRepoPreview.findOne({
+            where: { etablissementId },
+            relations: ['groupe'],
+        });
+        if (lienPreview?.groupe?.actif) {
+            (ctx as Record<string, unknown>).groupeId = lienPreview.groupeId;
+            (ctx as Record<string, unknown>).nombreMembresGroupe = await lienRepoPreview.count({
+                where: { groupeId: lienPreview.groupeId },
+            });
+        }
 
         const cascade = await promotionService.appliquerCascade(
             montantPlan,

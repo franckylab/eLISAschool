@@ -79,7 +79,7 @@ jest.mock('@database/data-source', () => ({
                     })),
                 };
             }
-            if (name.includes('Bundle')) return mockBundleRepo;
+            if (name.includes('Bundle') || name.includes('Package')) return mockBundleRepo;
             return mockPromoRepo;
         }),
     },
@@ -520,10 +520,10 @@ describe('PromotionService', () => {
     // BUNDLES
     // =============================================
 
-    describe('estBundleValide()', () => {
+    describe('estPackageValide()', () => {
         it('refuse un bundle inactif', () => {
             const bundle = { actif: false, packIds: ['p1', 'p2'] } as any;
-            expect(service.estBundleValide(bundle, {})).toBe(false);
+            expect((service as any).estPackageValide(bundle, {})).toBe(false);
         });
 
         it('refuse si tous les packs du bundle ne sont pas souscrits', () => {
@@ -532,8 +532,8 @@ describe('PromotionService', () => {
                 dateDebut: new Date('2025-01-01'), dateFin: undefined,
                 maxUtilisations: null, utilisations: 0,
             } as any;
-            expect(service.estBundleValide(bundle, { packsSouscritsIds: ['p1', 'p2'] })).toBe(false);
-            expect(service.estBundleValide(bundle, { packsSouscritsIds: ['p1', 'p2', 'p3'] })).toBe(true);
+            expect((service as any).estPackageValide(bundle, { packsSouscritsIds: ['p1', 'p2'] })).toBe(false);
+            expect((service as any).estPackageValide(bundle, { packsSouscritsIds: ['p1', 'p2', 'p3'] })).toBe(true);
         });
 
         it('vérifie le code coupon du bundle', () => {
@@ -543,8 +543,8 @@ describe('PromotionService', () => {
                 dateDebut: new Date('2025-01-01'), dateFin: undefined,
                 maxUtilisations: null, utilisations: 0,
             } as any;
-            expect(service.estBundleValide(bundle, { packsSouscritsIds: ['p1', 'p2'] })).toBe(false);
-            expect(service.estBundleValide(bundle, { packsSouscritsIds: ['p1', 'p2'], codeCoupon: 'BUNDLE2025' })).toBe(true);
+            expect((service as any).estPackageValide(bundle, { packsSouscritsIds: ['p1', 'p2'] })).toBe(false);
+            expect((service as any).estPackageValide(bundle, { packsSouscritsIds: ['p1', 'p2'], codeCoupon: 'BUNDLE2025' })).toBe(true);
         });
 
         it('refuse si maxUtilisations atteint', () => {
@@ -553,7 +553,7 @@ describe('PromotionService', () => {
                 maxUtilisations: 10, utilisations: 10,
                 dateDebut: new Date('2025-01-01'), dateFin: undefined,
             } as any;
-            expect(service.estBundleValide(bundle, { packsSouscritsIds: ['p1', 'p2'] })).toBe(false);
+            expect((service as any).estPackageValide(bundle, { packsSouscritsIds: ['p1', 'p2'] })).toBe(false);
         });
     });
 
@@ -595,6 +595,113 @@ describe('PromotionService', () => {
                 ...resultat.gratuités,
             ];
             expect(resultat.toutesPromotions).toEqual(totalFromPhases);
+        });
+    });
+
+    // =============================================
+    // SCOPE GROUPE (suppression facturation groupe)
+    // =============================================
+
+    describe('scope GROUPE', () => {
+        const ctxGroupe = { groupeId: 'groupe-1', nombreMembresGroupe: 6 };
+
+        it('estValide() refuse sans groupeId dans le contexte', () => {
+            const promo = creerPromotion({ scope: ScopePromotion.GROUPE, valeur: 10 });
+            expect(service.estValide(promo, {})).toBe(false);
+        });
+
+        it('estValide() refuse si cibleId ne correspond pas au groupe', () => {
+            const promo = creerPromotion({ scope: ScopePromotion.GROUPE, valeur: 10, cibleId: 'autre-groupe' });
+            expect(service.estValide(promo, ctxGroupe)).toBe(false);
+        });
+
+        it('estValide() accepte si cibleId correspond au groupe', () => {
+            const promo = creerPromotion({ scope: ScopePromotion.GROUPE, valeur: 10, cibleId: 'groupe-1' });
+            expect(service.estValide(promo, ctxGroupe)).toBe(true);
+        });
+
+        it('estValide() filtre sur conditions.groupeIds', () => {
+            const promo = creerPromotion({
+                scope: ScopePromotion.GROUPE,
+                valeur: 10,
+                conditions: { groupeIds: ['groupe-2'] },
+            });
+            expect(service.estValide(promo, ctxGroupe)).toBe(false);
+            const promoOk = creerPromotion({
+                scope: ScopePromotion.GROUPE,
+                valeur: 10,
+                conditions: { groupeIds: ['groupe-1', 'groupe-2'] },
+            });
+            expect(service.estValide(promoOk, ctxGroupe)).toBe(true);
+        });
+
+        it('estValide() vérifie conditions.nombreMembresMin', () => {
+            const promo = creerPromotion({
+                scope: ScopePromotion.GROUPE,
+                valeur: 10,
+                conditions: { nombreMembresMin: 10 },
+            });
+            expect(service.estValide(promo, ctxGroupe)).toBe(false);
+            expect(service.estValide(promo, { ...ctxGroupe, nombreMembresGroupe: 12 })).toBe(true);
+        });
+
+        it('cascade : applique la promo groupe après les autres phases (plafond 40% indépendant)', async () => {
+            const promoGroupe = creerPromotion({
+                id: 'grp', code: 'GROUPE-10', scope: ScopePromotion.GROUPE,
+                typePromotion: TypePromotion.POURCENTAGE, valeur: 10, cumulable: true,
+            });
+            mockPromoRepo.find.mockResolvedValue([promoGroupe]);
+            mockBundleRepo.find.mockResolvedValue([]);
+
+            const resultat = await service.appliquerCascade(10000, 0, 0, ctxGroupe);
+
+            expect(resultat.groupe.promotions).toHaveLength(1);
+            expect(resultat.groupe.montantAvant).toBe(10000);
+            expect(resultat.groupe.montantApres).toBe(9000);
+            expect(resultat.montantFinal).toBe(9000);
+            expect(resultat.toutesPromotions.some((p) => p.code === 'GROUPE-10')).toBe(true);
+        });
+
+        it('cascade : plafond groupe 40% même si valeur supérieure', async () => {
+            const promoGroupe = creerPromotion({
+                id: 'grp', code: 'GROUPE-90', scope: ScopePromotion.GROUPE,
+                typePromotion: TypePromotion.POURCENTAGE, valeur: 90, cumulable: true,
+            });
+            mockPromoRepo.find.mockResolvedValue([promoGroupe]);
+            mockBundleRepo.find.mockResolvedValue([]);
+
+            const resultat = await service.appliquerCascade(10000, 0, 0, ctxGroupe);
+
+            expect(resultat.groupe.montantApres).toBe(6000);
+            expect(resultat.montantFinal).toBe(6000);
+        });
+
+        it('cascade : GRATUITE exclue au niveau groupe', async () => {
+            const gratuite = creerPromotion({
+                id: 'grat', code: 'GROUPE-GRATUIT', scope: ScopePromotion.GROUPE,
+                typePromotion: TypePromotion.GRATUITE, valeur: 100,
+            });
+            mockPromoRepo.find.mockResolvedValue([gratuite]);
+            mockBundleRepo.find.mockResolvedValue([]);
+
+            const resultat = await service.appliquerCascade(10000, 0, 0, ctxGroupe);
+
+            expect(resultat.groupe.promotions).toHaveLength(0);
+            expect(resultat.montantFinal).toBe(10000);
+        });
+
+        it('cascade : sans groupeId, la phase groupe est vide', async () => {
+            const promoGroupe = creerPromotion({
+                id: 'grp', code: 'GROUPE-10', scope: ScopePromotion.GROUPE,
+                typePromotion: TypePromotion.POURCENTAGE, valeur: 10, cumulable: true,
+            });
+            mockPromoRepo.find.mockResolvedValue([promoGroupe]);
+            mockBundleRepo.find.mockResolvedValue([]);
+
+            const resultat = await service.appliquerCascade(10000, 0, 0, {});
+
+            expect(resultat.groupe.promotions).toHaveLength(0);
+            expect(resultat.montantFinal).toBe(10000);
         });
     });
 });

@@ -14,14 +14,15 @@ export { DunningService } from './dunning.service';
 export { LedgerService } from './ledger.service';
 export { FacturePdfService } from './facture-pdf.service';
 export type { FacturePdfData } from './facture-pdf.service';
-export { FacturationGroupeService } from './facturation-groupe.service';
-export type { FacturationGroupeResult, ConsommationMembre } from './facturation-groupe.service';
-export { ModeleFacturationGroupe } from './facturation-groupe.service';
 // TrancheConfigService supprimé (Refonte v3 — tarification prix/élève + franchise)
 // ModuleResolutionService supprimé (fusion P0.1) — utiliser EntitlementService
 // Refonte SaaS — Unification Modules (migration 200)
 export { EntitlementService, entitlementService } from './entitlement.service';
 export type { EntitlementResult, EntitlementBatchResult, EntitlementSource, EntitlementRaison } from './entitlement.service';
+// Barèmes configurables (paliers dégressivité + plafonds — source unique, sans doublon)
+export { baremeGroupeService, BaremeGroupeService } from './bareme-groupe.service';
+export type { PalierRemiseGroupe, SourceValeur } from './bareme-groupe.service';
+export { CLE_PALIERS_GROUPE, CLE_PLAFOND_PLAN, CLE_PLAFOND_GROUPE, DEFAUT_PALIERS_GROUPE, DEFAUT_PLAFOND_POURCENT } from './bareme-groupe.service';
 // Phase 4.2 — Alertes quotas
 export { QuotaAlertService, quotaAlertService } from './quota-alert.service';
 // Phase 7 Lot F — Refonte SaaS v7 (workflow actions critiques)

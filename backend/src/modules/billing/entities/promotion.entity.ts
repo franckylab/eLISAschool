@@ -47,6 +47,8 @@ export enum ScopePromotion {
     PACKAGE = 'PACKAGE',
     /** Remise sur une ressource quota spécifique (élèves, stockage, SMS…) */
     QUOTA = 'QUOTA',
+    /** Remise groupe : s'applique en ligne REMISE sur chaque facture individuelle des membres */
+    GROUPE = 'GROUPE',
 }
 
 export enum DureeApplicationPromotion {
@@ -82,6 +84,10 @@ export interface ConditionsPromotion {
     nbCycles?: number;
     /** Nombre de mois de gratuité pour type=GRATUITE */
     dureeGratuiteMois?: number;
+    /** Groupes éligibles pour scope=GROUPE (IDs, vide + cibleId = tous les groupes) */
+    groupeIds?: string[];
+    /** Nombre minimum de membres du groupe pour scope=GROUPE */
+    nombreMembresMin?: number;
 }
 
 /** Palier de volume pour dégressivité */

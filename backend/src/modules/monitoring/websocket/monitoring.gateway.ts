@@ -102,30 +102,58 @@ export class MonitoringGateway {
 
     /**
      * Initialise le serveur Socket.IO attaché au serveur HTTP.
+     *
+     * Best practice : le gateway doit être branché sur le HttpServer
+     * retourné par `app.listen()` (voir `backend/src/index.ts`).
+     * Sans cet appel, aucun serveur WebSocket n'écoute et le client
+     * échoue avec `WebSocket connection to 'ws://.../monitoring/' failed`.
      */
     initialize(server: HttpServer): void {
+        const isProduction = process.env.NODE_ENV === 'production';
         this.io = new SocketIOServer(server, {
             path: '/monitoring',
             cors: {
-                origin: '*',
+                // En production : restreindre à l'URL frontend.
+                // En développement : accepter localhost + sous-réseaux privés.
+                origin: isProduction
+                    ? (process.env.FRONTEND_URL || true)
+                    : true,
                 methods: ['GET', 'POST'],
+                credentials: true,
             },
-            transports: ['websocket', 'polling'],
+            // Best practice : polling d'abord, upgrade websocket ensuite.
+            // Tenter le websocket en premier génère une erreur console
+            // navigateur immédiate (`failed:`) quand le serveur est
+            // indisponible, avant même le fallback polling.
+            transports: ['polling', 'websocket'],
         });
 
         this.io.on('connection', (socket: Socket) => {
             this.handleConnection(socket);
         });
 
-        logger.info('[MonitoringGateway] WebSocket gateway initialisé');
+        logger.info('[MonitoringGateway] WebSocket gateway initialisé (path: /monitoring)');
     }
 
     /**
      * Gère une nouvelle connexion socket.
+     *
+     * NOTE sécurité : le rôle est fourni par le client (query param)
+     * et n'est PAS vérifié ici. Ne jamais diffuser de données
+     * sensibles sur ce canal sans vérification JWT préalable
+     * (`socket.handshake.auth.token`). Le gateway ne diffuse que
+     * des métriques/alertes agrégées non sensibles.
      */
     private handleConnection(socket: Socket): void {
-        const userId = socket.handshake.query.userId as string;
-        const role = socket.handshake.query.role as string;
+        const userId = socket.handshake.query.userId as string | undefined;
+        const role = socket.handshake.query.role as string | undefined;
+
+        // Rejet des connexions anonymes ou sans rôle reconnu.
+        if (!userId || !['SUPER_ADMIN', 'ADMIN'].includes(role ?? '')) {
+            logger.warn(`[MonitoringGateway] Connexion rejetée: ${socket.id} (user: ${userId ?? '?'}, role: ${role ?? '?'})`);
+            socket.disconnect(true);
+            return;
+        }
 
         logger.info(`[MonitoringGateway] Connexion: ${socket.id} (user: ${userId}, role: ${role})`);
 

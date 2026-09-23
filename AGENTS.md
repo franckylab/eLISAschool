@@ -630,6 +630,70 @@ Refactorer le module organisation et ses nomenclatures en une source de vérité
 ### Blocked
 — (none)
 
+## Travail effectué — Session 2026-09-21 (fix ActiviteTab + WebSocket monitoring + endpoint activite)
+
+### Erreur 1 — `ReferenceError: useQuery is not defined` (ActiviteTab)
+- **Cause racine** : `activite-tab.tsx` utilisait `useQuery` + `apiClient` + 10 icônes lucide + `formatRelativeTime` sans les importer (esbuild/Vite ne vérifie pas les types → crash au runtime, capté par l'ErrorBoundary).
+- **Audit étendu** : même classe de bug dans 4 autres onglets du dossier `etablissement-detail/` (imports manquants systématiques, probablement un refactor ayant nettoyé les imports) :
+  - `finances-tab.tsx` : `useMemo`/`useCallback` + `BarChart3`/`Calendar`/`RefreshCw` + `InfoGrid`/`InfoField` + `PLAN_LABELS` + `STATUT_FACTURE_LABELS` (constante fantôme, définie nulle part → créée localement, 8 statuts).
+  - `journal-tab.tsx` : `useMemo` + `keepPreviousData` + `ArrowUpRight` + `formatRelativeTime`.
+  - `configuration-tab.tsx` : `useMemo` + `apiClient` + `AlertCircle`/`Heart`/`Calendar`.
+  - `utilisateurs-tab.tsx` : `useCallback` (aucun import react).
+- **Best practice appliquée** : data-fetching extrait du composant présentationnel vers `use-etablissement-detail.ts` (`usePlatformStats()`, `useEtablissementComparaison(id)` — query keys centralisées, `retry: 1`, dégradation gracieuse). Props `activite`/`config`/`evolutionPaiements` rendues optionnelles (le parent rend l'onglet avant la fin du chargement).
+- **Vérification** : script d'audit d'imports sur les 7 fichiers (0 identifiant manquant), tsc backend 0 erreur in-scope.
+
+### Erreur 2 — `WebSocket connection to 'ws://localhost:7000/monitoring/' failed`
+- **Cause racine** : `monitoringGateway.initialize(server)` n'était JAMAIS appelé — `backend/src/index.ts` faisait `app.listen()` sans conserver le `HttpServer`. Aucun serveur Socket.IO n'écoutait (le gateway existait depuis la v3 mais n'était branché nulle part — vérifié par grep : 0 appel).
+- **Fix backend** (`index.ts`) : `const server = app.listen(...)` + `monitoringGateway.initialize(server)` (non-bloquant, try/catch) + `destroy()` sur SIGTERM/SIGINT.
+- **Durcissement gateway** : CORS restreint en prod (`FRONTEND_URL`), `transports: ['polling','websocket']` (polling d'abord → pas d'erreur console immédiate si serveur down), rejet des connexions sans `userId`/rôle ADMIN/SUPER_ADMIN, note sécurité JWT (`handshake.auth.token` recommandé).
+- **Fix frontend** (`use-realtime-monitoring.ts`) : `reconnectionAttempts: Infinity` → **10** (fini le spam console), backoff 2s→30s, `timeout: 10s`, base URL same-origin (`VITE_WS_URL` → `VITE_API_URL` → `window.location.origin`) au lieu de `http://localhost:7000` hardcodé, param `enabled` pour opt-out, `connect_error` silencieux (le badge UI "Polling" couvre déjà la dégradation).
+- **Proxy Vite** : entrée `/monitoring` (`ws: true`) ajoutée dans `vite.config.ts` + type `VITE_WS_URL?` dans `vite-env.d.ts`.
+- **Vérification live** : `curl /monitoring/socket.io/?EIO=4&transport=polling` → `0{"sid":"..."}` (handshake 200 direct + via proxy :7001). Backend redémarré (docker).
+
+### Bonus — Endpoint `GET /:id/activite` 500 (même page)
+- **Cause** : `find({ take, order, relations, select })` génère une sous-requête DISTINCT dont l'ORDER BY casse sans la PK (`column distinctAlias.AffectationEleve_id does not exist`, log backend 02:51:43).
+- **Fix** (`activite-etablissement.service.ts`) : `dernieresAffectations` + `evenements` réécrits en QueryBuilder (`leftJoinAndSelect` + `orderBy` + `limit`) — pas de sous-requête DISTINCT. Relations vérifiées (`aff.eleve`, `aff.classe`, `log.utilisateur`). tsc 0 erreur.
+
+### Fichiers modifiés (10)
+| Fichier | Action |
+|---------|--------|
+| `frontend/.../etablissement-detail/activite-tab.tsx` | Imports + hooks centralisés + props optionnelles |
+| `frontend/.../etablissement-detail/finances-tab.tsx` | Imports + STATUT_FACTURE_LABELS + props optionnelles |
+| `frontend/.../etablissement-detail/journal-tab.tsx` | Imports (`useMemo`, `keepPreviousData`, `ArrowUpRight`, `formatRelativeTime`) |
+| `frontend/.../etablissement-detail/configuration-tab.tsx` | Imports (`useMemo`, `apiClient`, 3 icônes) |
+| `frontend/.../etablissement-detail/utilisateurs-tab.tsx` | Import `useCallback` |
+| `frontend/.../hooks/use-etablissement-detail.ts` | `usePlatformStats` + `useEtablissementComparaison` |
+| `frontend/src/hooks/use-realtime-monitoring.ts` | Reconnexion bornée, polling-first, same-origin, `enabled` |
+| `frontend/vite.config.ts` | Proxy `/monitoring` ws |
+| `frontend/src/vite-env.d.ts` | `VITE_WS_URL?` |
+| `backend/src/index.ts` | Branchage `monitoringGateway` + destroy gracieux |
+| `backend/.../monitoring.gateway.ts` | CORS prod, polling-first, rejet anonymes |
+| `backend/.../activite-etablissement.service.ts` | 2 requêtes DISTINCT→QueryBuilder |
+
+### Addendum — `Query data cannot be undefined` (historique-sante, evolution-paiements)
+- **Cause racine** : double-déballage. Le backend renvoie `{ success, data: [...] }` (tableau DIRECT dans `data`), mais les queryFns faisaient `apiClient.get<{ data: X[] }>` + `unwrap(res).data` → `[...].data` = `undefined` → TanStack jette `Query data cannot be undefined`.
+- **Fix** (`use-etablissement-detail.ts`) :
+  - `historiqueSante` + `evolutionPaiements` : typage `get<X[]>` + nouveau helper `unwrapList()` (normalise vers `[]`, tolère les 3 formes : tableau direct, double-nesté legacy, vide/204).
+  - `audit` : le backend renvoie `{ success, data: logs[], meta }` (meta SŒUR, pas nested) → reconstruction `{ data, meta }` alignée sur le pattern éprouvé de `JournalTab` (l'ancien code typait `res.data` comme `{data, meta}` → l'export CSV parent `audit?.data?.length` était silencieusement mort).
+  - `useEtablissementResume` (latent, hook inutilisé à ce jour) : même piège double-nesté corrigé (`get<EtablissementResume>` + `unwrap` direct).
+  - `unwrap()` durci null-safe (`res?`, cas 204).
+- **Audit backend** : vérifié les 8 endpoints (`stats`, `sante`, `config`, `activite`, `utilisateurs`, `connexions`, `factures`, `comparaison`) — tous en objet direct compatible avec `unwrap()` simple ; seuls les 4 cas ci-dessus étaient faux.
+- **Règle** : une queryFn TanStack ne doit JAMAIS résoudre `undefined` — listes → `unwrapList()`, objets → `unwrap()` (qui lève, état `error` propre au lieu d'un crash framework).
+
+### Addendum — `GET /api/platform/stats/complet` 500 (`Property "actif" was not found in "Utilisateur"`)
+- **Cause racine** : `platform-stats.service.ts:106` filtrait `Utilisateur` sur `{ actif: true }`, mais l'entité n'a PAS de colonne `actif` — elle porte l'enum `statut` (`StatutUtilisateur`). Bug pré-existant (déjà visible dans les logs du 2026-09-16), masqué par les `Repository<any>` qui neutralisent la vérification TS.
+- **Fix** : `{ where: { statut: StatutUtilisateur.ACTIF } }` (pattern utilisé partout ailleurs : `sante-etablissement`, `monitoring`, `etablissement.service`).
+- **Durcissement** : les 4 repositories du service typés (`Repository<Etablissement/Utilisateur/AbonnementClient/Facture>` via `import type` — zéro impact runtime) + `reduce` sans `any`. Une faute de frappe sur une colonne devient désormais une erreur de compilation, pas un 500.
+- **Audit du service** : `Etablissement.actif` existe (requête OK dans les logs) ; `Facture` (`montantTotal`, `montantPaye`, `nombreRelances`, `dateEcheance`) ✓ ; `StatutAbonnement.ACTIF/SUSPENDU` ✓ ; `getResumeSante()` → `{sains, attention, critiques}` ✓ ; `monitoring.service.ts` déjà en `statut: 'ACTIF'` ✓. Aucun autre piège `actif`-sur-Utilisateur dans le codebase.
+- **Vérification** : tsc backend 0 erreur in-scope ; conteneur sain (pas de crash-loop après reload nodemon) ; endpoint répond 401 sans auth (garde OK — l'appel SUPER_ADMIN authentifié exécute désormais le bon filtre).
+- **Règle** : JAMAIS `Repository<any>` sur du code métier — typer les repositories (au minimum via `import type`) pour que tsc attrape les colonnes inexistantes.
+
+### Addendum — `GET /monitoring/?EIO=4&transport=polling` 500 via :7001
+- **Cause racine** : PAS le backend (handshake direct `:7000` OK). Chaîne réelle : navigateur `:7001` → **nginx** (`nginx.conf`, `location /` → Vite) — aucune règle `/monitoring` → Vite dev server → son proxy `target: localhost:7000` **irrésolvable dans le conteneur frontend** (`ECONNREFUSED`, log `[vite] http proxy error`) → 500. L'entrée proxy Vite ajoutée plus tôt ne sert qu'hors-Docker ; en Docker, nginx intercepte avant Vite.
+- **Fix infra** (`docker/nginx.conf` + `docker/nginx-frontend.conf` parité prod) : `location /monitoring` → `backend_api` avec headers Upgrade/Connection (`polling` + upgrade WS), timeouts 300s/75s, `proxy_cache_bypass $http_upgrade`. `nginx -s reload` (config bind-mountée, sans restart).
+- **Vérification live** : handshake polling `0{"sid":...}` via :7001 ✓ ; upgrade transport `polling` → **`websocket`** de bout en bout ✓ ; connexion anonyme rejetée par le serveur (`io server disconnect` — la garde `userId`/rôle est bien en place) ✓ ; SUPER_ADMIN connecté ✓.
+- **Règle** : toute route temps réel (WS/SSE) DOIT exister aux 3 niveaux — Vite proxy (dev hors-Docker), nginx dev (`nginx.conf`), nginx prod (`nginx-frontend.conf`) — sinon 500 (Docker) ou fallback SPA silencieuse (prod, `index.html` 200 → échec parsing client).
+
 ## Travail effectué — Session 2026-08-07 (templates toggle toolbar + validation masse EDT)
 
 ### Templates — section dédiée dans la toolbar
@@ -7707,3 +7771,122 @@ hasAnyPermission([
 | `frontend/src/locales/fr/annees-scolaires.json` | +confirmerActiverTitre |
 | `frontend/src/locales/en/annees-scolaires.json` | +confirmerActiverTitre |
 
+
+## Suppression Facturation Groupe — Vue Consolidée + Promotions scope GROUPE (✅ TERMINÉ — 2026-09-22)
+
+> Décision grilling R3 (brutale, totale, directe) : **suppression complète de la facturation groupe**.
+> Chaque établissement est facturé individuellement ; la dégressivité groupe (barème membres)
+> est appliquée en ligne REMISE sur sa facture. La facture groupe n'existe plus :
+> l'onglet groupe affiche une **Vue Consolidée** (agrégation lecture seule).
+
+### Principe retenu (meilleure pratique SaaS multi-tenant)
+- **Source unique de vérité** : `Facture` par `AbonnementClient` (établissement). `Facture.groupeId`
+  nullable = traçabilité d'appartenance au moment de l'émission.
+- **Dégressivité automatique** : barème unique membres (2-3→5%, 4-5→10%, 6-10→15%, 11-20→20%, 21+→25%),
+  partagé backend (`GroupeSaaSService.degressiviteParMembres`) ↔ frontend (`types.ts:degressiviteGroupe`).
+  Aucune config, aucun gate abonnement.
+- **Promotions scope=GROUPE** : nouvelle phase cascade (plafond 40% indépendant du plafond PLAN),
+  appliquée en ligne REMISE par facture membre (Q23-A). Éligibilité : `cibleId`=groupeId OU
+  `conditions.groupeIds` + `nombreMembresMin`. GRATUITE exclue au niveau groupe.
+
+### Backend
+- **Migrations** : `219-suppression-facturation-groupe.sql` (drop colonnes `abonnements_groupe`,
+  `groupeId` sur factures + index) → `220-suppression-abonnements-groupe.sql` (DROP TABLE).
+- **Supprimés** : `facturation-groupe.service.ts` (+ spec test), `abonnement-groupe.entity.ts`,
+  routes `/groupes/:id/abonnement*` (get/put/suspendre/reactiver).
+- **`facturation.service.ts`** : dégressivité groupe auto + `groupeId`/`nombreMembresGroupe` dans
+  `ContextePromotion` + `groupeId` sur `Facture`.
+- **`promotion.service.ts`** : `ScopePromotion.GROUPE`, conditions `groupeIds`/`nombreMembresMin`,
+  phase cascade GROUPE + `resultat.groupe`, `estValide()` filtrant, plafond 40% dédié.
+- **`groupe-saas.service.ts`** : `getStatsGroupe()` (factures mois, HT/TVA/TTC, économie dégressivité
+  via lignes REMISE groupe, répartition par plan, 10 factures récentes) + route `GET /groupes/:id/stats`.
+- **Éligibilité/preview/coupon** enrichis du contexte groupe (`billing.controller.ts` mon-abonnement,
+  `promotions.controller.ts` eligibles/verifier-coupon/preview-cascade).
+- **Seeds** : `GRP-5PLUS` (-10% permanent dès 5 membres), `GRP-RENTREE-2026` (-15% coupon GROUPE15, 3 cycles).
+
+### Frontend (`/platform/groupes`)
+- **Restructuré** en `features/platform/groupes/` : types (barème partagé), hooks centralisés,
+  `GroupeCard` (badge dégressivité −X%), `GroupeStats` (4 cartes dont groupes avec remise),
+  `GroupeFormModal`, `GroupeConfigureModal` (Membres / Modules / Promotions / **Vue consolidée**).
+- **Onglet Abonnement supprimé** → `ConsolidatedViewTab` (KPIs, détail dégressivité, répartition plans,
+  factures récentes, export CSV client-side pattern `finances-tab`).
+- **Onglet Promotions fonctionnel** : assignation/retrait promos GROUPE via `conditions.groupeIds`
+  (PATCH existant, non destructif) ; exclusives (`cibleId`) signalées par badge.
+- **Formulaire promotion** (`platform/promotions`) : scope GROUPE (sélecteur groupes, condition
+  membres min, GRATUITE masqué) ; `facture-breakdown.tsx` affiche la phase groupe (rose).
+- **i18n** : `admin.groupes` enrichi FR/EN (vueConsolidee, promotions assignées, toasts),
+  `promotions.json` (+cibleGroupe, nombreMembresMin, breakdown.groupe).
+
+### Qualité
+- Backend tsc : 0 erreur périmètre (128 préexistantes hors périmètre). Frontend tsc : 0 erreur
+  périmètre (3 préexistantes `promotion-form-modal` 115-117).
+- Tests : `promotion.service.spec.ts` **45/45** (9 nouveaux scope GROUPE + fix mock
+  `PackagePromotion`→mockBundleRepo + fix `estBundleValide`→`estPackageValide` préexistants).
+
+### Addendum — Nettoyage final + vérification boot
+- Supprimés : `AbonnementTab.tsx`, hook `usePlansOptions`, type `PlanOption` (groupes), clé i18n
+  `groupes.abonnementComing`, spec `facturation-groupe.service.spec.ts`. Zéro référence restante
+  à `AbonnementGroupe`/`FacturationGroupeService`/`ModeFacturationGroupe` (hors migrations SQL historiques).
+- Export CSV vue consolidée : 100% client-side (BOM + `;`, pattern `finances-tab`), aucune route `/export`.
+- Backend redémarré : `🚀 Serveur démarré sur le port 7000`, synchronize sans erreur (table
+  `abonnements_groupe` supprimée, FK nettoyées), crons billing OK.
+
+### Addendum — Finition (continuation)
+
+- **Bloc réseaux sociaux restauré** dans IdentiteTab (Facebook/Twitter — info d'identité légitime, conservée dans Contact & Localisation).
+- **Clé `audit` morte** retirée de `ETABLISSEMENT_DETAIL_KEYS` (JournalTab utilise sa propre clé littérale paginée).
+- **i18n** : 17 clés orphelines supprimées FR+EN (`detail.kpi.*` ×6, `exporterJournalCSV`, `identite.utilisateurs/actifs30j`, `activite.modules.{titre,actifsSur,derniersChangements}`, `activite.timeline.aucuneActivite`, `activite.finances.*` ×6, `config.{abonnement,changerPlan,autoRenouvellement}`). 13 orphelines restantes = préexistantes hors périmètre (laissées intactes).
+- **Vérification** : `tsc` 0 erreur sur tous les fichiers du périmètre ; erreurs restantes (`platform.etablissements.index.tsx`, autres modules) = préexistantes, fichiers non touchés. Arbre de travail partagé avec un chantier parallèle (journal-tab, groupes SaaS, billing) — diffs vérifiés compatibles, aucune interférence.
+
+### Addendum — Barèmes & plafonds configurables (Q1-Q7 validés, Q3 = tout configurable)
+- **Stockage** : `ParametreSysteme` — `billing.remise_groupe.paliers` (JSON, seedé),
+  `billing.plafond_plan` / `billing.plafond_groupe` (NUMBER 40). Validation Zod par clé
+  (`param-validation.ts`, tri auto paliers, unicité seuils, 0-100).
+- **Cascade sans doublon** : override groupe (`groupeEtablissementId`) → global → défaut codé.
+  Nouveautés `configuration.service.ts` : `getParametreGroupe` / `setParametreGroupe` /
+  `resetParametreGroupe` (miroir set/reset existants : validation, audit, event, cache).
+- **Résolveur unique** : `bareme-groupe.service.ts` (paliers/plafonds effectifs + sources +
+  écritures). `facturation.service`, `promotion.service` (plafonds PLAN/GROUPE lus, plus de
+  constantes 40 en dur), `groupe-saas.service` (stats au taux effectif) y délèguent.
+  `GroupeSaaSService.degressiviteParMembres` = fallback défaut via le résolveur.
+- **Endpoints** (`/api/platform/facturation`) : `GET/PUT /baremes/config`,
+  `GET/PUT/DELETE /groupes/:id/baremes` (heriter=true → reset), `GET /baremes/historique`
+  (filtres cle/groupeId). Restauration via `POST /api/platform/configuration/historique/:id/restore`
+  existant, étendu au scope groupe (` [groupe:<id>]`, création → suppression override).
+  `getHistorique()` + filtre `cle` (ILIKE cibleNom).
+- **Frontend** : onglet **Barèmes** dans la modale groupe (effectives + simulateur + override
+  groupe + globales avec confirmation d'impact + historique/restauration), badges/cards sur
+  paliers globaux lus de l'API (`tauxPourPaliers`, repli `DEFAUT_PALIERS_GROUPE`), i18n
+  `admin.groupes.baremes` FR/EN (~40 clés), toasts dédiés.
+- **Qualité** : backend tsc 0 périmètre ; frontend tsc 0 périmètre ; jest
+  `bareme-groupe` 11/11 + `promotion` 45/45 = **56/56** ; boot container propre
+  (synchronize OK) ; `GET /baremes/config` répond 401 via guard (wiring vérifié live).
+
+### Addendum — Réponses grill Q1-Q5 implémentées
+- **Q1-B Section globale** : `BaremesGlobauxSection` en tête de `/platform/groupes`
+  (résumé paliers + plafonds + modale d'édition). Plus d'édition globale dans la modale
+  par-groupe (lecture seule + renvoi) — un seul point d'édition globale.
+- **Q2-B Texte honnête** : la confirmation globale mentionne les établissements hors groupe
+  (plafond PLAN à portée plateforme). Ancienne clé `confirmerGlobalMessage` mise à jour +
+  `confirmerGlobalMessageComplet` pour la modale globale.
+- **Q3-A Override gardé** : plafond GROUPE + paliers surchargeables par groupe (badge de
+  source Groupe/Global/Défaut partout). Pas de plafond par plan (Q5-A : dimension inexistante,
+  promotions déjà granulaires).
+- **Q4-B Verrou brut** : `BAREMES_UI_ONLY` (403) sur POST/PUT/DELETE/reset unitaire + bulk
+  dans `configuration.controller.ts`. Lecture/cascade/exports inchangés. Bulk/reset-all :
+  reset-all ignore ces clés (pas de valeurDefaut) ; bulk les rejette explicitement.
+- **Anti-doublon** : `baremes-shared.tsx` (éditeur, simulateur, historique, badges) partagé
+  entre section globale et onglet groupe ; `BaremesTab` réécrit dessus (~40% plus court).
+- **Qualité** : jest 56/56 inchangé ; tsc 0 périmètre ; boot OK ; `GET /baremes/config` et
+  `/baremes/historique` → 401 via guard (wiring live vérifié).
+
+### Addendum — Continuation : baseline tests & nettoyage résiduel
+- **Baseline suite unitaire** : 14 suites / 49 tests en échec vérifiés **préexistants**
+  (mocks incomplets `find: jest.fn()`, assertions `quota.service`, domaines non touchés :
+  EDT, heures-cours, CASL, auth, organisation, action-critique). Preuve : échecs sur code
+  non modifié par les diffs (ex. `quota-guard` → assertion `quota.service`, jamais touché).
+- Suites du périmètre : `promotion` 45/45 + `bareme-groupe` 11/11 = **56/56** (dont fix
+  préexistant `estBundleValide` → `estPackageValide` + mapping mock `PackagePromotion`).
+- Nettoyage résiduel : `usePlansOptions`/`PlanOption` (groupes), `abonnementComing` FR/EN,
+  commentaire `GroupeConfigureModal` alignés. Zéro référence restante aux entités/services
+  facturation-groupe supprimés (hors migrations historiques).

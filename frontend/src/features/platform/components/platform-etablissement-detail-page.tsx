@@ -2,10 +2,17 @@
  * ==================================
  * eLISAschool - Platform Etablissement Detail Page (Shell)
  * ==================================
- * Version: 2.0.0 — Decompose en 7 onglets extraits
+ * Version: 3.0.0 — Shell allégé, onglets spécialisés
  * Auteur: franck arlos chendjou
  *
- * Shell principal : header, KPI, navigation onglets, actions.
+ * Shell principal : header, navigation onglets, actions.
+ * Règles de non-duplication :
+ * - Le header affiche l'identité (nom, statut, type, système) ; le
+ *   résumé détaillé vit dans l'onglet Identité.
+ * - Pas de bandeau KPI : chaque métrique vit dans son onglet
+ *   canonique (Activité, Santé, Finances, Configuration).
+ * - Pas de badge santé dans le header : le score vit dans Santé.
+ * - Pas d'export journal ici : le Journal gère son export paginé.
  * Les 7 onglets sont dans ./etablissement-detail/
  */
 
@@ -16,12 +23,12 @@ import { useTranslation } from 'react-i18next';
 import { apiClient } from '@/lib/api-client';
 import {
     Building2, Activity, Settings, Heart,
-    Users, GraduationCap, BookOpen,
+    Users,
     Pause, Play, ExternalLink, RefreshCw, Edit,
     CreditCard, DollarSign,
     MoreHorizontal, ChevronLeft, ChevronRight,
-    Download, FileText, ScrollText,
-    Shield, Globe, BarChart3,
+    Download, ScrollText,
+    Shield, Globe,
     Upload, Trash2, CheckCircle2,
 } from 'lucide-react';
 import {
@@ -33,9 +40,7 @@ import {
     useChangerPlan,
     useRecalculerSante,
 } from '../hooks/use-etablissement-detail';
-import { SanteEtablissement } from '@/features/platform/components/sante-etablissement';
 import { EtablissementFormModal } from './etablissement-form-modal';
-import type { AuditLogEntry } from '@/features/etablissements/types/etablissement.types';
 import {
     TYPE_LABELS,
     SOUS_SYSTEME_LABELS,
@@ -54,7 +59,7 @@ import type { Tab } from '@/components/ui';
 import {
     IdentiteTab, SanteTab, ActiviteTab, ConfigurationTab,
     FinancesTab, UtilisateursTab, JournalTab,
-    ActionButton, TabSkeleton, getScoreColor,
+    ActionButton, TabSkeleton,
 } from './etablissement-detail';
 
 type Onglet = 'identite' | 'sante' | 'activite' | 'configuration' | 'finances' | 'utilisateurs' | 'journal';
@@ -77,10 +82,10 @@ export function PlatformEtablissementDetailPage() {
     });
 
     const {
-        etablissement, stats, sante, config, configComplete, activite, utilisateurs, factures, connexions, audit,
+        etablissement, stats, sante, config, configComplete, activite, utilisateurs, factures, connexions,
         historiqueSante, evolutionPaiements,
         isLoading, error, refetchAll,
-    } = useEtablissementDetail(id);
+    } = useEtablissementDetail(id, ongletActif);
 
     const desactiver = useDesactiverEtablissement();
     const activer = useActiverEtablissement();
@@ -173,34 +178,6 @@ export function PlatformEtablissementDetailPage() {
             },
         });
     }, [etablissement, changerPlan, confirm, t]);
-
-    // Handler export CSV audit
-    const handleExportAuditCSV = useCallback(() => {
-        if (!audit?.data?.length) return;
-        setActionsMenuOpen(false);
-        const headers = ['Date', 'Action', 'Sévérité', 'Module', 'Utilisateur', 'Rôle', 'Description', 'Cible', 'IP', 'Échec'];
-        const rows = audit.data.map((l: AuditLogEntry) => [
-            new Date(l.createdAt).toLocaleString('fr-FR'),
-            l.action?.replace(/_/g, ' ') || '',
-            l.severity,
-            l.module || '',
-            l.utilisateur ? `${l.utilisateur.prenom || ''} ${l.utilisateur.nom || ''}`.trim() || l.utilisateur.email || '' : '',
-            l.utilisateur?.role || '',
-            l.description || '',
-            l.cible || '',
-            l.ipAddress || '',
-            l.estEchec ? 'Oui' : 'Non',
-        ]);
-        const csv = [headers, ...rows].map((r: (string | number)[]) => r.map((c: string | number) => `"${String(c).replace(/"/g, '""')}"`).join(';')).join('\n');
-        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `journal-audit-${etablissement?.nom || 'etablissement'}-${new Date().toISOString().slice(0, 10)}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast.success(`${audit.data.length} lignes exportées`);
-    }, [audit, etablissement]);
 
     // Export fiche complète établissement (CSV)
     const handleExportFicheCSV = useCallback(() => {
@@ -386,14 +363,6 @@ export function PlatformEtablissementDetailPage() {
                                 <Globe className="h-[clamp(0.625rem,1vw,0.75rem)] w-[clamp(0.625rem,1vw,0.75rem)]" />
                                 {SOUS_SYSTEME_LABELS[etablissement.sousSysteme] || etablissement.sousSysteme}
                             </span>
-                            {/* Badge santé */}
-                            {sante && (
-                                <SanteEtablissement
-                                    variant="badge"
-                                    score={sante.score}
-                                    categorie={sante.categorie}
-                                />
-                            )}
                         </div>
                     </div>
                 </div>
@@ -419,7 +388,7 @@ export function PlatformEtablissementDetailPage() {
                 <div className="relative" ref={planMenuRef}>
                     <ActionButton
                         icon={CreditCard}
-                        label={`${t('etablissements.detail.planActuel', 'Plan')}: ${PLAN_LABELS[config?.planAbonnement || 'gratuit'] || '—'}`}
+                        label={`${t('etablissements.detail.planActuel', 'Plan')}: ${PLAN_LABELS[config?.planAbonnement ?? etablissement.configuration?.planAbonnement ?? ''] || '—'}`}
                         onClick={() => setPlanMenuOpen(!planMenuOpen)}
                     />
                     {planMenuOpen && (
@@ -484,15 +453,6 @@ export function PlatformEtablissementDetailPage() {
                                 </button>
                                 <div className="my-1" style={{ borderTop: '1px solid var(--color-bordure)' }} />
                                 <button
-                                    onClick={handleExportAuditCSV}
-                                    disabled={!audit?.data?.length}
-                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--color-surface-alt)] disabled:opacity-40"
-                                    style={{ fontSize: 'clamp(0.75rem, 0.68rem + 0.25vw, 0.875rem)', color: 'var(--color-texte)' }}
-                                >
-                                    <FileText className="h-3.5 w-3.5" style={{ color: 'var(--color-dominant-600)' }} />
-                                    {t('etablissements.detail.exporterJournalCSV', 'Exporter journal (CSV)')}
-                                </button>
-                                <button
                                     onClick={() => { setActionsMenuOpen(false); setOngletActif('journal'); }}
                                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--color-surface-alt)]"
                                     style={{ fontSize: 'clamp(0.75rem, 0.68rem + 0.25vw, 0.875rem)', color: 'var(--color-texte)' }}
@@ -542,72 +502,6 @@ export function PlatformEtablissementDetailPage() {
                 </div>
             </div>
 
-            {/* Bandeau KPI compact — résumé rapide des métriques clés */}
-            {(stats || sante) && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-[var(--gap-xs)]">
-                    {stats?.nombreEleves !== undefined && (
-                        <div className="flex items-center gap-[var(--gap-xs)] rounded-lg border px-[clamp(0.5rem,0.4rem+0.3vw,0.875rem)] py-[clamp(0.375rem,0.3rem+0.2vw,0.625rem)]"
-                            style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}>
-                            <GraduationCap className="h-[var(--icon-sm)] w-[var(--icon-sm)] shrink-0" style={{ color: 'var(--color-accent-600)' }} />
-                            <div className="min-w-0">
-                                <p className="text-xs font-bold truncate" style={{ color: 'var(--color-texte)' }}>{stats.nombreEleves.toLocaleString('fr-FR')}</p>
-                                <p className="text-[0.625rem] truncate" style={{ color: 'var(--color-texte-muted)' }}>{t('etablissements.detail.kpi.eleves', 'Élèves')}</p>
-                            </div>
-                        </div>
-                    )}
-                    {stats?.nombreClasses !== undefined && (
-                        <div className="flex items-center gap-[var(--gap-xs)] rounded-lg border px-[clamp(0.5rem,0.4rem+0.3vw,0.875rem)] py-[clamp(0.375rem,0.3rem+0.2vw,0.625rem)]"
-                            style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}>
-                            <BookOpen className="h-[var(--icon-sm)] w-[var(--icon-sm)] shrink-0" style={{ color: 'var(--color-info-600)' }} />
-                            <div className="min-w-0">
-                                <p className="text-xs font-bold truncate" style={{ color: 'var(--color-texte)' }}>{stats.nombreClasses}</p>
-                                <p className="text-[0.625rem] truncate" style={{ color: 'var(--color-texte-muted)' }}>{t('etablissements.detail.kpi.classes', 'Classes')}</p>
-                            </div>
-                        </div>
-                    )}
-                    {stats?.nombrePersonnel !== undefined && (
-                        <div className="flex items-center gap-[var(--gap-xs)] rounded-lg border px-[clamp(0.5rem,0.4rem+0.3vw,0.875rem)] py-[clamp(0.375rem,0.3rem+0.2vw,0.625rem)]"
-                            style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}>
-                            <Users className="h-[var(--icon-sm)] w-[var(--icon-sm)] shrink-0" style={{ color: 'var(--color-success-600)' }} />
-                            <div className="min-w-0">
-                                <p className="text-xs font-bold truncate" style={{ color: 'var(--color-texte)' }}>{stats.nombrePersonnel}</p>
-                                <p className="text-[0.625rem] truncate" style={{ color: 'var(--color-texte-muted)' }}>{t('etablissements.detail.kpi.personnel', 'Personnel')}</p>
-                            </div>
-                        </div>
-                    )}
-                    {stats?.tauxOccupation !== undefined && (
-                        <div className="flex items-center gap-[var(--gap-xs)] rounded-lg border px-[clamp(0.5rem,0.4rem+0.3vw,0.875rem)] py-[clamp(0.375rem,0.3rem+0.2vw,0.625rem)]"
-                            style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}>
-                            <BarChart3 className="h-[var(--icon-sm)] w-[var(--icon-sm)] shrink-0" style={{ color: stats.tauxOccupation > 85 ? 'var(--color-danger-600)' : 'var(--color-warning-600)' }} />
-                            <div className="min-w-0">
-                                <p className="text-xs font-bold truncate" style={{ color: 'var(--color-texte)' }}>{stats.tauxOccupation}%</p>
-                                <p className="text-[0.625rem] truncate" style={{ color: 'var(--color-texte-muted)' }}>{t('etablissements.detail.kpi.occupation', 'Occupation')}</p>
-                            </div>
-                        </div>
-                    )}
-                    {sante && (
-                        <div className="flex items-center gap-[var(--gap-xs)] rounded-lg border px-[clamp(0.5rem,0.4rem+0.3vw,0.875rem)] py-[clamp(0.375rem,0.3rem+0.2vw,0.625rem)]"
-                            style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}>
-                            <Heart className="h-[var(--icon-sm)] w-[var(--icon-sm)] shrink-0" style={{ color: getScoreColor(sante.score) }} />
-                            <div className="min-w-0">
-                                <p className="text-xs font-bold truncate" style={{ color: getScoreColor(sante.score) }}>{sante.score}/100</p>
-                                <p className="text-[0.625rem] truncate" style={{ color: 'var(--color-texte-muted)' }}>{t('etablissements.detail.kpi.sante', 'Santé')}</p>
-                            </div>
-                        </div>
-                    )}
-                    {config?.planAbonnement && (
-                        <div className="flex items-center gap-[var(--gap-xs)] rounded-lg border px-[clamp(0.5rem,0.4rem+0.3vw,0.875rem)] py-[clamp(0.375rem,0.3rem+0.2vw,0.625rem)]"
-                            style={{ borderColor: 'var(--color-bordure)', backgroundColor: 'var(--color-surface)' }}>
-                            <CreditCard className="h-[var(--icon-sm)] w-[var(--icon-sm)] shrink-0" style={{ color: 'var(--color-dominant-600)' }} />
-                            <div className="min-w-0">
-                                <p className="text-xs font-bold truncate" style={{ color: 'var(--color-texte)' }}>{PLAN_LABELS[config.planAbonnement] || config.planAbonnement}</p>
-                                <p className="text-[0.625rem] truncate" style={{ color: 'var(--color-texte-muted)' }}>{t('etablissements.detail.kpi.plan', 'Plan')}</p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
-
             {/* Onglets */}
             <TabsBar
                 tabs={onglets}
@@ -619,7 +513,7 @@ export function PlatformEtablissementDetailPage() {
 
             <TabsContent activeTab={ongletActif}>
                 {ongletActif === 'identite' && (
-                    <IdentiteTab etablissement={etablissement} utilisateurs={utilisateurs} connexions={connexions} />
+                    <IdentiteTab etablissement={etablissement} />
                 )}
                 {ongletActif === 'sante' && (
                     sante ? <SanteTab sante={sante} etablissementId={id} recalculerSante={recalculerSante} historique={historiqueSante} /> : (
@@ -632,7 +526,7 @@ export function PlatformEtablissementDetailPage() {
                     )
                 )}
                 {ongletActif === 'configuration' && (
-                    config ? <ConfigurationTab config={config} etablissement={etablissement} configComplete={configComplete} stats={stats} utilisateurs={utilisateurs} etablissementId={id} onRefetch={refetchAll} /> : (
+                    config && stats && utilisateurs ? <ConfigurationTab config={config} etablissement={etablissement} configComplete={configComplete} stats={stats} utilisateurs={utilisateurs} etablissementId={id} onRefetch={refetchAll} /> : (
                         <TabSkeleton variant="configuration" />
                     )
                 )}
@@ -640,7 +534,7 @@ export function PlatformEtablissementDetailPage() {
                     <FinancesTab factures={factures || []} config={config} activite={activite} evolutionPaiements={evolutionPaiements} />
                 )}
                 {ongletActif === 'utilisateurs' && (
-                    utilisateurs ? <UtilisateursTab utilisateurs={utilisateurs} /> : (
+                    utilisateurs ? <UtilisateursTab utilisateurs={utilisateurs} connexions={connexions} /> : (
                         <TabSkeleton variant="utilisateurs" />
                     )
                 )}
